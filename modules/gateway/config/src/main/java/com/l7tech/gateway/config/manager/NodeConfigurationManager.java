@@ -43,6 +43,7 @@ public class NodeConfigurationManager {
 
     private static final String NODE_PROPS_FILE = "node.properties";
     private static final String DERBY_SQL_FILE = "derby.sql";
+    private static final String DERBY_PATH = varPath + "/db/ssgdb";
 
     private static final String NODEPROPERTIES_ID = "node.id";
     private static final String NODEPROPERTIES_ENABLED = "node.enabled";
@@ -87,6 +88,19 @@ public class NodeConfigurationManager {
 
         public String getNodeConfigFilePath() {
             return file==null ? "" : file.getAbsolutePath();
+        }
+    }
+
+    /**
+     * Thrown if there is an error deleting the embedded database.
+     */
+    public static final class DeleteEmbeddedDatabaseException extends Exception {
+        public DeleteEmbeddedDatabaseException( final String message ) {
+            super(message);
+        }
+
+        public DeleteEmbeddedDatabaseException( final String message, final Throwable cause ) {
+            super(message, cause);
         }
     }
 
@@ -412,6 +426,23 @@ public class NodeConfigurationManager {
         }
     }
 
+    /**
+     * Deletes the embedded derby database for the specified node.
+     *
+     * @param nodeName the name of the node for which to delete the embedded derby database.
+     * @throws DeleteEmbeddedDatabaseException if unable to delete the embedded derby database.
+     */
+    public static void deleteDerbyDatabase(@NotNull final String nodeName) throws DeleteEmbeddedDatabaseException {
+        try{
+            final File derbyDirectory = getDerbyDirectory(nodeName);
+            if (!FileUtils.deleteDir(derbyDirectory)) {
+                throw new DeleteEmbeddedDatabaseException("Could not delete derby database.");
+            }
+        } catch (final IOException e) {
+            throw new DeleteEmbeddedDatabaseException("Error deleting derby database: " + e.getMessage(), e);
+        }
+    }
+
     public static NodeConfig loadNodeConfig( final String name, final boolean loadSecrets ) throws IOException {
         return loadNodeConfig( name, new File(getConfigurationDirectory(name), NODE_PROPS_FILE), loadSecrets );
     }
@@ -590,6 +621,18 @@ public class NodeConfigurationManager {
     private static File getVarDirectory(final String nodeName) throws IOException {
         final String path = MessageFormat.format( varPath, nodeName );
         return new File( nodesDir, path ).getCanonicalFile();
+    }
+
+    /**
+     * Retrieve the directory which holds the embedded derby database for the given node.
+     *
+     * @param nodeName the name of the node that contains the embedded derby database.
+     * @return a File directory which holds the embedded derby database.
+     * @throws IOException
+     */
+    private static File getDerbyDirectory(final String nodeName) throws IOException {
+        final String path = MessageFormat.format(DERBY_PATH, nodeName);
+        return new File(nodesDir, path).getCanonicalFile();
     }
 
     private static void setPropertyIfNotNull( final PropertiesConfiguration props, final String propName, final Object propValue ) {

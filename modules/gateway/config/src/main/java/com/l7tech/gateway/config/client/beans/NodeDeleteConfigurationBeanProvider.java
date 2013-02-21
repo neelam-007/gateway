@@ -6,6 +6,7 @@ import com.l7tech.config.client.options.OptionSet;
 import com.l7tech.config.client.options.Option;
 import com.l7tech.config.client.beans.ConfigurationBean;
 import com.l7tech.config.client.beans.ConfigurationBeanProvider;
+import com.l7tech.gateway.config.manager.NodeConfigurationManager;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.server.management.api.node.NodeManagementApi;
@@ -13,6 +14,7 @@ import com.l7tech.server.management.config.node.NodeConfig;
 import com.l7tech.server.management.config.node.DatabaseType;
 import com.l7tech.server.management.config.node.DatabaseConfig;
 import com.l7tech.util.ExceptionUtils;
+import org.apache.commons.collections.CollectionUtils;
 
 import javax.xml.ws.WebServiceException;
 import java.util.*;
@@ -66,22 +68,23 @@ public class NodeDeleteConfigurationBeanProvider extends NodeConfigurationBeanPr
         NodeManagementApi managementService = getManagementService();
         try {
             if ( config != null ) {
-                boolean deleteConfig = getOption("node.delete", configuration) != null && this.<Boolean>getOption("node.delete", configuration);
-                boolean deleteDatabase = getOption("database.admin.user", configuration) != null;
+                boolean deleteConfig = getOption(NODE_DELETE_OPTION, configuration) != null && this.<Boolean>getOption(NODE_DELETE_OPTION, configuration);
+                final boolean mysqlDelete = getOption(DATABASE_ADMIN_USER_OPTION, configuration) != null;
+                final boolean derbyDelete = getOption(DERBY_DELETE_OPTION, configuration) == null ? false : (Boolean)getOption(DERBY_DELETE_OPTION, configuration);
 
-                if ( deleteDatabase && !deleteConfig ) {
+                if ( !deleteConfig && ( mysqlDelete || derbyDelete )) {
                     throw new ConfigurationException("Cannot delete database unless configuration is also deleted.");
                 }
 
                 DatabaseConfig databaseConfig = config.getDatabase(DatabaseType.NODE_ALL, NodeConfig.ClusterType.STANDALONE, NodeConfig.ClusterType.REPL_MASTER);
                 if ( databaseConfig != null ) {
-                    databaseConfig.setDatabaseAdminUsername( this.<String>getOption("database.admin.user", configuration) );
+                    databaseConfig.setDatabaseAdminUsername( this.<String>getOption(DATABASE_ADMIN_USER_OPTION, configuration) );
                     databaseConfig.setDatabaseAdminPassword( this.<String>getOption("database.admin.pass", configuration) );
 
                 }
 
                 if ( deleteConfig ) {
-                    if ( deleteDatabase ) {
+                    if (mysqlDelete && databaseConfig != null) {
                         // check db creds before attempting delete
                         if ( !managementService.testDatabaseConfig( databaseConfig ) ) {
                             throw new ConfigurationException("Invalid database credentials.");
@@ -90,22 +93,26 @@ public class NodeDeleteConfigurationBeanProvider extends NodeConfigurationBeanPr
 
                     managementService.deleteNode( config.getName(), 20000 );
                 }
-                
-                if ( deleteDatabase ) {
-                    if ( databaseConfig != null ) {
-                        Collection<String> hosts = new ArrayList<String>();
-                        for ( DatabaseConfig dbConfig : config.getDatabases() ) {
-                            hosts.add( dbConfig.getHost() );
-                        }
 
-                        managementService.deleteDatabase( databaseConfig, hosts );
+                if (mysqlDelete && databaseConfig != null) {
+                    Collection<String> hosts = new ArrayList<String>();
+                    for ( DatabaseConfig dbConfig : config.getDatabases() ) {
+                        hosts.add( dbConfig.getHost() );
                     }
+
+                    managementService.deleteDatabase( databaseConfig, hosts );
+                }
+
+                if (derbyDelete) {
+                    deleteDerbyDatabase();
                 }
             }
         } catch ( ObjectModelException ome ) {
             throw new ConfigurationException( "Error when deleting node '"+ome.getMessage()+"'" );
         } catch (NodeManagementApi.DatabaseDeletionException dde) {
             throw new ConfigurationException( "Error deleting database '"+dde.getMessage()+"'" );
+        } catch (final NodeConfigurationManager.DeleteEmbeddedDatabaseException e) {
+            throw new ConfigurationException( "Error deleting embedded database '" + e.getMessage() + "'" );
         } catch ( WebServiceException e ) {
             String message = "Unexpected error saving configuration '"+e.getMessage()+"'";
             logger.log( Level.WARNING, message, e);
@@ -133,10 +140,19 @@ public class NodeDeleteConfigurationBeanProvider extends NodeConfigurationBeanPr
             active = deleteActive;
         }
 
+        if (DERBY_DELETE_OPTION.equals(option.getConfigName()) && CollectionUtils.isNotEmpty(config.getDatabases())) {
+            // there is at least one mysql database
+            active = false;
+        }
+
         return active;
     }
 
     //- PACKAGE
+
+    static final String DERBY_DELETE_OPTION = "derby.delete";
+    static final String NODE_DELETE_OPTION = "node.delete";
+    static final String DATABASE_ADMIN_USER_OPTION = "database.admin.user";
 
     @Override
     NodeManagementApi getManagementService() {
@@ -152,6 +168,13 @@ public class NodeDeleteConfigurationBeanProvider extends NodeConfigurationBeanPr
     @SuppressWarnings({"unchecked"})
     Collection<ConfigurationBean> toBeans( final NodeConfig config ) {
         return new ArrayList<ConfigurationBean>();
+    }
+
+    /**
+     * Overridden in unit tests.
+     */
+    void deleteDerbyDatabase() throws NodeConfigurationManager.DeleteEmbeddedDatabaseException {
+        NodeConfigurationManager.deleteDerbyDatabase(config.getName());
     }
 
     //- PRIVATE

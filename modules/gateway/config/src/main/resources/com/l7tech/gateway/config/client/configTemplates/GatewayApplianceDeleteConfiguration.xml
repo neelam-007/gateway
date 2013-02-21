@@ -46,5 +46,11 @@ deleted and can only be restored if a backup is available.</prompt>
         <description>Administrative Database Password</description>
         <prompt>Enter the administrative database password.</prompt>
     </option>
+    <option id="derby-delete" group="dbdelete" type="BOOLEAN" order="203" name="Delete Embedded Database">
+        <configName>derby.delete</configName>
+        <configValue>false</configValue>
+        <description>Delete Embedded Database</description>
+        <prompt>Delete the embedded database.</prompt>
+    </option>
 
 </optionSet>
