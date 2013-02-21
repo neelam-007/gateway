@@ -81,6 +81,8 @@ public class EditSslAssertionPropertiesDialog extends LegacyAssertionPropertyDia
               sslForbiddenRadioButton.setSelected(true);
           }
 
+        certValidityCheckBox.setSelected(sslAssertion.isCheckCertValidity());
+
         cancelButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 dispose();
@@ -90,20 +92,19 @@ public class EditSslAssertionPropertiesDialog extends LegacyAssertionPropertyDia
         okButton.setEnabled( !readOnly );
         okButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
+                sslAssertion.setRequireClientAuthentication(false);
+                sslAssertion.setCheckCertValidity(true);
+
                 if (sslRequiredRadioButton.isSelected()) {
                     sslAssertion.setOption(SslAssertion.REQUIRED);
-                    if (requireClientCertificateCheckBox.isSelected()) {
-                        sslAssertion.setRequireClientAuthentication(true);
+                    sslAssertion.setRequireClientAuthentication(requireClientCertificateCheckBox.isSelected());
+                    if (sslAssertion.isRequireClientAuthentication()) {
                         sslAssertion.setCheckCertValidity(certValidityCheckBox.isSelected());
                     }
                 } else if (sslOptionalRadioButton.isSelected()) {
                     sslAssertion.setOption(SslAssertion.OPTIONAL);
-                    sslAssertion.setRequireClientAuthentication(false);
-                    sslAssertion.setCheckCertValidity(true);
                 } else if (sslForbiddenRadioButton.isSelected()) {
                     sslAssertion.setOption(SslAssertion.FORBIDDEN);
-                    sslAssertion.setRequireClientAuthentication(false);
-                    sslAssertion.setCheckCertValidity(true);
                 }
                 dispose();
             }
