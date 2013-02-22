@@ -16,11 +16,15 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.ResourceBundle;
 
 /**
  * @author alex
  */
 public class XpathCredentialSourcePropertiesDialog extends LegacyAssertionPropertyDialog {
+
+    private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.XpathCredentialSourcePropertiesDialog");
+
     private XpathCredentialSource xpathCredsAssertion;
     private boolean assertionChanged = false;
     private boolean readOnly = false;
@@ -39,6 +43,7 @@ public class XpathCredentialSourcePropertiesDialog extends LegacyAssertionProper
 
     public XpathCredentialSourcePropertiesDialog(XpathCredentialSource assertion, Frame owner, boolean modal, boolean readOnly) throws HeadlessException {
         super(owner, assertion, modal);
+        setTitle(resources.getString("dialog.title.xpath.credentials.props"));
         this.setContentPane( mainPanel );
 
         this.xpathCredsAssertion = assertion;
@@ -63,8 +68,8 @@ public class XpathCredentialSourcePropertiesDialog extends LegacyAssertionProper
         removeLoginCheckbox.setSelected(assertion.isRemoveLoginElement());
         removePasswordCheckbox.setSelected(assertion.isRemovePasswordElement());
 
-        editLoginXPathButton.addActionListener( makeEditXpathAction("Login", loginXpathField, loginNamespaces) );
-        editPasswordXPathButton.addActionListener( makeEditXpathAction("Password", passwordXpathField, passwordNamespaces) );
+        editLoginXPathButton.addActionListener( makeEditXpathAction(resources.getString("Login"), loginXpathField, loginNamespaces) );
+        editPasswordXPathButton.addActionListener( makeEditXpathAction(resources.getString("Password"), passwordXpathField, passwordNamespaces) );
 
         okButton.addActionListener(new ActionListener() {
             @Override
@@ -119,7 +124,7 @@ public class XpathCredentialSourcePropertiesDialog extends LegacyAssertionProper
                 holder.setXpathExpression( new XpathExpression(xpathTextComponent.getText(), namespaces) );
                 final XpathBasedAssertionPropertiesDialog ape = new XpathBasedAssertionPropertiesDialog(XpathCredentialSourcePropertiesDialog.this, holder);
                 JDialog dlg = ape.getDialog();
-                dlg.setTitle(getTitle() + " - "+name+" XPath Expression");
+                dlg.setTitle(getTitle() + " - "+name+ " " +resources.getString("xpath.expression"));
                 dlg.pack();
                 dlg.setModal(true);
                 Utilities.centerOnScreen(dlg);
