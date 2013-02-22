@@ -65,7 +65,7 @@ public @interface Secured {
      * If specified, the named class must exist and be available in the JVM on which the RBAC interceptor runs,
      * in the same classloader as the annotated interface, and must have a public nullary constructor.
      * <p/>
-     * <b>The custom interceptor becomes responsbile for <em>ALL</em> RBAC enforcement for the annotated method.</b>
+     * <b>The custom interceptor becomes responsible for <em>ALL</em> RBAC enforcement for the annotated method.</b>
      * <p/>
      * For every invocation of the annotated method the RBAC interceptor will obtain an instance of this class,
      * call its setters, and then call its
@@ -83,4 +83,24 @@ public @interface Secured {
      * @return name of custom interceptor class, or empty string if no custom class is to be used.
      */
     String customInterceptor() default "";
+
+    /**
+     * Fully qualified class name of a custom entity translator class implementing CustomEntityTranslator, or empty string.
+     * <p/>
+     * If specified, the named class must exist and be available in the JVM on which the RBAC interceptr runs,
+     * in the same classloader as the annotated interface, and must have a public nullary constructor.
+     * <p/>
+     * An instance of the custom entity translator will be created whenever an invocation is made against an admin method annotated
+     * with the stereotype FIND_ENTITIES or FIND_HEADERS that has a declared return value other than Entity[] or EntityHeader[].
+     * <p/>
+     * The translator will be invoked when the interceptor is filtering an array or collection return value from such a method
+     * and encounters an element that is not assignable to either Entity or EntityHeader.  It is the job of the translator
+     * to locate a fully-populated (all attributes) instance of the entity in question corresponding to the element being returned.
+     * <p/>
+     * Note that, to be filterable, the returned runtime type must still have a reasonably-standard implementation of equals
+     * and hashCode.
+     *
+     * @return name of custom entity translator class, or empty string if no custom class is to be used.
+     */
+    String customEntityTranslatorClassName() default "";
 }

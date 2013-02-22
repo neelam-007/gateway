@@ -18,6 +18,7 @@ import com.l7tech.util.ExceptionUtils;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
@@ -51,8 +52,8 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationC
     public SecurityFilter getSecurityFilter() {
         return new SecurityFilter() {
             @Override
-            public <T> Collection<T> filter(Collection<T> entityCollection, User user, OperationType type, String operationName) throws FindException {
-                return SecuredMethodInterceptor.this.filter( entityCollection, user, type, operationName, "internalFilter" );
+            public <T> Collection<T> filter(Collection<T> entityCollection, User user, OperationType type, @Nullable String operationName) throws FindException {
+                return SecuredMethodInterceptor.this.filter( entityCollection, user, type, operationName, "internalFilter", null );
             }
         };
     }
@@ -61,7 +62,7 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationC
         this.applicationContext = applicationContext;
     }
 
-    private <CT extends Iterable<T>, T> CT filter(CT iter, User user, OperationType type, String operationName, String methodName) throws FindException {
+    private <CT extends Iterable<T>, T> CT filter(CT iter, User user, OperationType type, @Nullable String operationName, String methodName, @Nullable CustomEntityTranslator entityTranslator) throws FindException {
         List<T> removals = new ArrayList<T>();
         for (T element : iter) {
             Entity testEntity;
@@ -70,8 +71,13 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationC
             } else if (element instanceof EntityHeader) {
                 EntityHeader header = (EntityHeader) element;
                 testEntity = entityFinder.find(header);
+            } else if (entityTranslator != null && entityFinder != null) {
+                testEntity = entityTranslator.locateEntity(element, entityFinder);
+                if (testEntity == null && element != null) {
+                    removals.add(element);
+                }
             } else {
-                throw new IllegalArgumentException("Element of collection was neither Entity nor EntityHeader");
+                throw new IllegalArgumentException("Element of collection was neither Entity nor EntityHeader (and no entityTranslator and/or entityFinder was available)");
             }
 
             if (testEntity != null && !rbacServices.isPermittedForEntity(user, testEntity, type, operationName)) {
@@ -133,6 +139,7 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationC
         final List<Secured> annotations = new ArrayList<Secured>();
         final CheckInfo check;
         String customInterceptorClassName = null;
+        String customEntityTranslatorClassName = null;
         {
             Secured methodSecured = method.getAnnotation(Secured.class);
             if (methodSecured != null) annotations.add(methodSecured);
@@ -162,6 +169,12 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationC
                     if (customInterceptorClassName != null)
                         throw new IllegalStateException("More than one declared @Secured customInterceptorClassName applies to this method");
                     customInterceptorClassName = secured.customInterceptor();
+                }
+
+                if (secured.customEntityTranslatorClassName() != null && !secured.customEntityTranslatorClassName().trim().equals("")) {
+                    if (customInterceptorClassName != null)
+                        throw new IllegalStateException("More than one declared @Secured customEntityTranslatorClassName applies to this method");
+                    customEntityTranslatorClassName = secured.customEntityTranslatorClassName();
                 }
             }
 
@@ -204,7 +217,7 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationC
                 if (Iterable.class.isAssignableFrom(rtype)) {
                     check.setBefore(CheckBefore.NONE);
                     check.setAfter(CheckAfter.COLLECTION);
-                } else if ((rtype.isArray() && (Entity.class.isAssignableFrom(rtype.getComponentType()) || EntityHeader.class.isAssignableFrom(rtype.getComponentType())))) {
+                } else if (rtype.isArray() && (customEntityTranslatorClassName != null || Entity.class.isAssignableFrom(rtype.getComponentType()) || EntityHeader.class.isAssignableFrom(rtype.getComponentType()))) {
                     check.setBefore(CheckBefore.NONE);
                     check.setAfter(CheckAfter.COLLECTION);
                 } else {
@@ -363,19 +376,27 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationC
                     return unwrapHeader(rv, rv, check);
                 } else if (rv instanceof EntityHeader[]) {
                     EntityHeader[] array = (EntityHeader[]) rv;
-                    List<EntityHeader> headers = filter(Arrays.asList(array), user, check.operation, check.otherOperationName, check.methodName);
+                    List<EntityHeader> headers = filter(Arrays.asList(array), user, check.operation, check.otherOperationName, check.methodName, null);
                     Object[] a0 = (Object[]) Array.newInstance(array.getClass().getComponentType(), 0);
                     return unwrapHeader(headers.toArray(a0), rv, check);
                 } else if (rv instanceof Entity[]) {
                     Entity[] array = (Entity[]) rv;
-                    List<Entity> entities = filter(Arrays.asList(array), user, check.operation, check.otherOperationName, check.methodName);
+                    List<Entity> entities = filter(Arrays.asList(array), user, check.operation, check.otherOperationName, check.methodName, null);
                     Object[] a0 = (Object[]) Array.newInstance(array.getClass().getComponentType(), 0);
                     return entities.toArray(a0);
                 } else if (rv instanceof Iterable) {
-                    // TODO check generic type?
-                    return filter((Iterable) rv, user, check.operation, check.otherOperationName, check.methodName);
+                    CustomEntityTranslator customEntityTranslator = customEntityTranslatorClassName == null
+                        ? null
+                        : findCustomEntityTranslator(customEntityTranslatorClassName, target.getClass().getClassLoader());
+                    return filter((Iterable) rv, user, check.operation, check.otherOperationName, check.methodName, customEntityTranslator);
+                } else if (rv instanceof Object[] && customEntityTranslatorClassName != null) {
+                    CustomEntityTranslator customEntityTranslator = findCustomEntityTranslator(customEntityTranslatorClassName, target.getClass().getClassLoader());
+                    Object[] array = (Object[])rv;
+                    List<Object> elements = filter(Arrays.asList(array), user, check.operation, check.otherOperationName, check.methodName, customEntityTranslator);
+                    Object[] a0 = (Object[]) Array.newInstance(array.getClass().getComponentType(), 0);
+                    return elements.toArray(a0);
                 } else {
-                    throw new IllegalStateException("Return value of " + mname + " was not Entity[] or Collection<Entity>");
+                    throw new IllegalStateException("Return value of " + mname + " was not Entity[], EntityHeader[] or Iterable and no custom translator is specified");
                 }
             case ENTITY:
                 if (!(rv instanceof Entity)) {
@@ -429,6 +450,21 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationC
             throw new IllegalStateException("Custom RBAC interceptor class not instantiable: " + ExceptionUtils.getMessage(e), e);
         } catch (IllegalAccessException e) {
             throw new IllegalStateException("Custom RBAC interceptor class not accessible: " + ExceptionUtils.getMessage(e), e);
+        }
+    }
+
+    private CustomEntityTranslator findCustomEntityTranslator(String customEntityTranslatorClassName, ClassLoader classLoader) {
+        try {
+            final Class<?> translatorClass = classLoader.loadClass(customEntityTranslatorClassName);
+            if (!CustomEntityTranslator.class.isAssignableFrom(translatorClass))
+                throw new ClassCastException("Custom entity translator is not an instance of CustomEntityTranslator");
+            return (CustomEntityTranslator) translatorClass.newInstance();
+        } catch (ClassNotFoundException e) {
+            throw new IllegalStateException("Custom entity translator class not found: " + ExceptionUtils.getMessage(e), e);
+        } catch (InstantiationException e) {
+            throw new IllegalStateException("Custom entity translator class not instantiable: " + ExceptionUtils.getMessage(e), e);
+        } catch (IllegalAccessException e) {
+            throw new IllegalStateException("Custom entity translator class not accessible: " + ExceptionUtils.getMessage(e), e);
         }
     }
 

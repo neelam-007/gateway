@@ -27,21 +27,12 @@ import java.util.*;
 
 import static com.l7tech.objectmodel.EntityType.GENERIC;
 import static com.l7tech.objectmodel.EntityType.USER;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Matchers.isNull;
-import static org.mockito.Mockito.verify;
+import static org.junit.Assert.*;
+import static org.mockito.Matchers.*;
 import static org.mockito.Mockito.when;
 
 /**
- * Created with IntelliJ IDEA.
- * User: vkazakov
- * Date: 11/28/12
- * Time: 10:20 AM
- * To change this template use File | Settings | File Templates.
+ * Unit test for SecuredMethodInterceptor.
  */
 @RunWith(Parameterized.class)
 public class SecureMethodInterceptorTest {
@@ -87,6 +78,8 @@ public class SecureMethodInterceptorTest {
     private static IdentityHeader allowedIdentityHeaderUserType = new IdentityHeader(allowedEntityExisting.getOid(), allowedEntityExisting.getId(), USER, null, null, null, null);
     private static IdentityHeader deniedIdentityHeaderUserType = new IdentityHeader(deniedEntityExisting.getOid(), deniedEntityExisting.getId(), USER, null, null, null, null);
     public static String genericString = UUID.randomUUID().toString();
+    private static Object wrappedAllowedEntityExisting = new MockCustomEntityTranslator.WrappedEntity(allowedEntityExisting);
+    private static Object wrappedDeniedEntityExisting = new MockCustomEntityTranslator.WrappedEntity(deniedEntityExisting);
 
     /**
      * This is the list of tests to run. Each value in the array is a parameter to that is passed into the constructor.
@@ -97,7 +90,7 @@ public class SecureMethodInterceptorTest {
      * 5) The expected return value from the SecuredMethodInterceptor
      * 6) An expected exception if one should be thrown by the SecuredMethodInterceptor
      *
-     * @return
+     * @return list of tests
      */
     @Parameterized.Parameters
     public static Collection<Object[]> data() {
@@ -123,6 +116,14 @@ public class SecureMethodInterceptorTest {
                 {"findEntities", privilegedUser, null, Arrays.asList(allowedEntityExisting, deniedEntityExisting), Arrays.asList(allowedEntityExisting, deniedEntityExisting), null},
                 {"findEntities", semiPrivilegedUser, null, Arrays.asList(allowedEntityExisting, deniedEntityExisting), Collections.singleton(allowedEntityExisting), null},
                 {"findEntities", unprivilegedUser, null, Arrays.asList(allowedEntityExisting, deniedEntityExisting), Collections.emptySet(), null},
+                // findObjectsCollection
+                {"findObjectsCollection", privilegedUser, null, Arrays.asList(wrappedAllowedEntityExisting), Arrays.asList(wrappedAllowedEntityExisting), null},
+                {"findObjectsCollection", semiPrivilegedUser, null, Arrays.asList(wrappedAllowedEntityExisting, wrappedDeniedEntityExisting), Collections.singleton(wrappedAllowedEntityExisting), null},
+                {"findObjectsCollection", unprivilegedUser, null, Arrays.asList(wrappedAllowedEntityExisting, wrappedDeniedEntityExisting), Collections.emptySet(), null},
+                // findObjectsArray
+                {"findObjectsArray", privilegedUser, null, new Object[] { wrappedAllowedEntityExisting }, new Object[] { wrappedAllowedEntityExisting }, null},
+                {"findObjectsArray", semiPrivilegedUser, null, new Object[] { wrappedAllowedEntityExisting, wrappedDeniedEntityExisting }, new Object[] { wrappedAllowedEntityExisting }, null},
+                {"findObjectsArray", unprivilegedUser, null, new Object[] { wrappedAllowedEntityExisting, wrappedDeniedEntityExisting }, new Object[0], null},
                 //find entity
                 {"findEntity", privilegedUser, null, allowedEntityExisting, allowedEntityExisting, null},
                 {"findEntity", privilegedUser, null, deniedEntityExisting, null, PermissionDeniedException.class},
@@ -225,7 +226,7 @@ public class SecureMethodInterceptorTest {
 
     @Before
     public void setup() throws Exception {
-        //Process mockito annotations
+        //Process Mockito annotations
         MockitoAnnotations.initMocks(this);
         //create the SecuredMethodInterceptor
         interceptor = new SecuredMethodInterceptor(rbacServices, entityFinder);
@@ -254,7 +255,11 @@ public class SecureMethodInterceptorTest {
         when(rbacServices.isPermittedForAnyEntityOfType(eq(privilegedUser), any(OperationType.class), any(EntityType.class))).thenReturn(true);
         when(rbacServices.isPermittedForAnyEntityOfType(eq(semiPrivilegedUser), any(OperationType.class), any(EntityType.class))).thenReturn(false);
         when(rbacServices.isPermittedForAnyEntityOfType(eq(unprivilegedUser), any(OperationType.class), any(EntityType.class))).thenReturn(false);
+        initEntityFinderMocks();
+    }
 
+    @SuppressWarnings("unchecked")
+    private void initEntityFinderMocks() throws FindException {
         //mocks the entity finder methods
         when(entityFinder.find(eq(allowedEntityHeader))).thenReturn(allowedEntityExisting);
         when(entityFinder.find(eq(deniedEntityHeader))).thenReturn(deniedEntityExisting);
@@ -303,23 +308,22 @@ public class SecureMethodInterceptorTest {
         if (expectedException != null) {
             fail("Expected exception but did not throw one: " + expectedException);
         }
-        //validates the return value from the method run. Does an explicit ckeck for collections.
+        //validates the return value from the method run. Does an explicit check for collections.
         if (expectedRtn instanceof Collection && result instanceof Collection) {
             Collection expectedRtnCollection = (Collection) expectedRtn;
             assertEquals("The returned collection size does not match the expected collection size.", expectedRtnCollection.size(), ((Collection) result).size());
             for (Object obj : expectedRtnCollection) {
                 assertTrue("The results collection does not contain the expected element: " + obj, ((Collection) result).contains(obj));
             }
+        } else if (expectedRtn instanceof Object[] && result instanceof Object[]) {
+            assertTrue(Arrays.equals((Object[])expectedRtn, (Object[])result));
         } else {
             assertEquals(expectedRtn, result);
         }
     }
 
-    /**
+    /*
      * given an array of objects this will return an array of the classes of the objects
-     *
-     * @param args
-     * @return
      */
     private Class[] getArgsClasses(Object[] args) {
         if (args == null || args.length == 0) {
@@ -340,6 +344,7 @@ public class SecureMethodInterceptorTest {
             @Override
             public T run() {
                 try {
+                    //noinspection unchecked
                     return (T) interceptor.invoke(invocation);
                 } catch (final PermissionDeniedException throwable) {
                     throw throwable;
@@ -393,9 +398,10 @@ public class SecureMethodInterceptorTest {
     }
 
     /**
-     * entity type shouldn't matter here they are all treated in a similar way. It is only used by rbasservices to find permissions
+     * entity type shouldn't matter here they are all treated in a similar way. It is only used by rbacServices to find permissions
      * These are the different types of methods that will be tested
      */
+    @SuppressWarnings("UnusedDeclaration")
     @Secured(types = EntityType.GENERIC)
     private interface MockAdmin {
 
@@ -405,8 +411,14 @@ public class SecureMethodInterceptorTest {
         @Secured(stereotype = MethodStereotype.FIND_HEADERS)
         EntityHeader findHeader();
 
+        @Secured(stereotype = MethodStereotype.FIND_HEADERS, customEntityTranslatorClassName="com.l7tech.server.security.rbac.MockCustomEntityTranslator")
+        Collection<Object> findObjectsCollection();
+
         @Secured(stereotype = MethodStereotype.FIND_ENTITIES)
         Collection<Entity> findEntities();
+
+        @Secured(stereotype = MethodStereotype.FIND_ENTITIES, customEntityTranslatorClassName="com.l7tech.server.security.rbac.MockCustomEntityTranslator")
+        Object[] findObjectsArray();
 
         @Secured(stereotype = MethodStereotype.FIND_ENTITY)
         Entity findEntity();

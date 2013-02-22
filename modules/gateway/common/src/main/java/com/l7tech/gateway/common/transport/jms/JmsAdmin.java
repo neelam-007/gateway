@@ -3,16 +3,18 @@
  */
 package com.l7tech.gateway.common.transport.jms;
 
-import com.l7tech.objectmodel.*;
-import com.l7tech.gateway.common.security.rbac.Secured;
-import com.l7tech.gateway.common.security.rbac.MethodStereotype;
-import static com.l7tech.objectmodel.EntityType.*;
 import com.l7tech.gateway.common.admin.Administrative;
+import com.l7tech.gateway.common.security.rbac.MethodStereotype;
+import com.l7tech.gateway.common.security.rbac.Secured;
+import com.l7tech.objectmodel.*;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.Serializable;
 import java.util.EnumSet;
+
+import static com.l7tech.objectmodel.EntityType.JMS_CONNECTION;
+import static com.l7tech.objectmodel.EntityType.JMS_ENDPOINT;
 
 /**
  * The SecureSpan Gateway's API for managing JMS connections and endpoints.
@@ -87,7 +89,7 @@ public interface JmsAdmin {
      * @throws FindException   if a database problem prevented the endpoints and/or connections from being retrieved
      */
     @Transactional(readOnly=true)
-    @Secured(types=JMS_ENDPOINT, stereotype=MethodStereotype.FIND_ENTITIES)
+    @Secured(types=JMS_ENDPOINT, stereotype=MethodStereotype.FIND_ENTITIES, customEntityTranslatorClassName="com.l7tech.server.admin.JmsTupleEntityTranslator")
     JmsTuple[] findAllTuples() throws FindException;
 
     /**
