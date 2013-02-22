@@ -3,6 +3,8 @@ package com.l7tech.config.client;
 import com.l7tech.config.client.beans.ConfigurationBean;
 import com.l7tech.config.client.options.Option;
 import com.l7tech.config.client.options.OptionSet;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.Console;
 import java.io.IOException;
@@ -14,51 +16,51 @@ import java.util.Map;
 
 /**
  * Extension of Interaction with support for configuration.
- * 
+ *
  * @author steve
  */
 public abstract class ConfigurationInteraction extends Interaction {
-    
+
     //- PROTECTED
-    
+
     protected final OptionSet optionSet;
     protected final Map<String,ConfigurationBean> configBeans;
-    
+
     protected ConfigurationInteraction( final OptionSet optionSet,
                                         final Map<String,ConfigurationBean> configBeans ) {
-        super();        
+        super();
         this.optionSet = optionSet;
-        this.configBeans = configBeans; 
+        this.configBeans = configBeans;
     }
-    
+
     protected ConfigurationInteraction( final Console console,
                                         final Reader reader,
                                         final Writer writer,
                                         final OptionSet optionSet,
                                         final Map<String, ConfigurationBean> configBeans ) {
-        super( console, reader, writer );        
+        super( console, reader, writer );
         this.optionSet = optionSet;
-        this.configBeans = configBeans;        
+        this.configBeans = configBeans;
     }
-    
+
     protected boolean doConfirmOption( final Option option, final String firstValue ) throws IOException {
         boolean confirmed = false;
-        
+
         print( "Confirm " );
         print( option.getName() );
         print( ": " );
 
-        String value = option.getType().isHidden() ? 
+        String value = option.getType().isHidden() ?
             fallbackReadPassword( console, reader ) :
             fallbackReadLine( console, reader );
 
         if ( firstValue.equals(value) ) {
             confirmed = true;
         }
-        
+
         return confirmed;
     }
-    
+
     protected void doOption( final Option option ) throws IOException {
         if ( option.getPrompt() != null ) {
             println();
@@ -81,7 +83,7 @@ public abstract class ConfigurationInteraction extends Interaction {
 
         boolean read = false;
         while ( !read ) {
-            String value = option.getType().isHidden() ? 
+            String value = option.getType().isHidden() ?
                 fallbackReadPassword( console, reader ) :
                 fallbackReadLine( console, reader );
             if ( value.trim().length() == 0 ) {
@@ -98,7 +100,7 @@ public abstract class ConfigurationInteraction extends Interaction {
             if ( option.getEmptyValue()!=null && option.getEmptyValue().equals(value.trim()) ) {
                 read = true;
                 configBeans.remove( option.getId() );
-                continue;                
+                continue;
             }
 
             boolean set = false;
@@ -119,9 +121,9 @@ public abstract class ConfigurationInteraction extends Interaction {
 
             if ( !set ) {
                 print("Invalid value, please try again: ");
-            } 
+            }
         }
-    }  
+    }
 
     protected boolean isValid( final String value, final Option option ) {
         boolean valid = true;
@@ -150,7 +152,7 @@ public abstract class ConfigurationInteraction extends Interaction {
 
     protected boolean hasBeanCurrentValue( Option option ) {
         boolean hasValue = false;
-        
+
         ConfigurationBean configBean = configBeans.get( option.getId() );
         if ( configBean != null && configBean.getConfigValue() != null ) {
             hasValue = true;
@@ -158,7 +160,7 @@ public abstract class ConfigurationInteraction extends Interaction {
 
         return hasValue;
     }
-    
+
     protected String getCurrentValue( Option option ) {
         String value = null;
         ConfigurationBean configBean = configBeans.get(option.getId());
@@ -195,20 +197,33 @@ public abstract class ConfigurationInteraction extends Interaction {
     }
 
     protected boolean isOptionGroupValid( String groupId ) {
+        return isOptionGroupValid(groupId, null);
+    }
+
+    /**
+     * Determine if all Options in an OptionGroup have an associated ConfigurationBean.
+     *
+     * @param groupId the group id of the OptionGroup to evaluate.
+     * @param optionFilter an optional OptionFilter which will be used to determine if a particular Option in an OptionSet should be ignored when validating.
+     * @return true if every Option in the OptionGroup that hasn't been filtered by the OptionFilter has an associated ConfigurationBean.
+     */
+    protected boolean isOptionGroupValid(final String groupId , @Nullable OptionFilter optionFilter) {
         boolean valid = true;
-        
+
         for ( Option option : optionSet.getOptionsForGroup(groupId) ) {
-            ConfigurationBean bean = configBeans.get( option.getId() );
-            //
-            // Currently checking emptyValue to allow for some config values to be null.
-            // May be better to have a separate property for "nullable"
-            //
-            if ( (bean == null || bean.getConfigValue() == null) && option.getEmptyValue()==null ) {
-                valid = false;
-                break;
+            if (optionFilter == null || optionFilter.isOptionActive(optionSet, option)) {
+                ConfigurationBean bean = configBeans.get( option.getId() );
+                //
+                // Currently checking emptyValue to allow for some config values to be null.
+                // May be better to have a separate property for "nullable"
+                //
+                if ( (bean == null || bean.getConfigValue() == null) && option.getEmptyValue()==null ) {
+                    valid = false;
+                    break;
+                }
             }
         }
-                
+
         return valid;
-    }       
+    }
 }

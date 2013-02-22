@@ -56,6 +56,20 @@ public class SummaryInteraction extends ConfigurationInteraction {
         
         return true;
     }
+
+    /**
+     * OptionFilter for null Options or those with hidden OptionTypes.
+     */
+    static final OptionFilter HIDDEN_OPTION_FILTER = new OptionFilter() {
+        @Override
+        public boolean isOptionActive(final OptionSet optionSet, final Option option) {
+            boolean active = false;
+            if (option != null && !option.getType().isHidden()) {
+                active = true;
+            }
+            return active;
+        }
+    };
        
     //- PRIVATE
     
@@ -67,9 +81,9 @@ public class SummaryInteraction extends ConfigurationInteraction {
     /**
      * Show only updatable beans in the summary
      */
-    private final boolean updatable;    
-    
-    private String getConfigurationSummary() {
+    private final boolean updatable;
+
+    String getConfigurationSummary() {
         StringBuilder summary = new StringBuilder();
 
         String group = null;
@@ -95,7 +109,7 @@ public class SummaryInteraction extends ConfigurationInteraction {
                 
                 OptionGroup optionGroup = optionSet.getOptionGroup( option.getGroup()  );
                 if ( optionGroup != null ) {
-                    if ( !optionGroup.isRequired() && !isOptionGroupValid( optionGroup.getId() )) {
+                    if ( !isOptionGroupValid(optionGroup.getId(), HIDDEN_OPTION_FILTER)) {
                         skipGroupId = group;
                         continue;
                     }
