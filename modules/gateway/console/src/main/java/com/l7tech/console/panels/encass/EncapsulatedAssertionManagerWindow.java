@@ -366,7 +366,7 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
             });
         } else {
             // policy could not be attached
-            showError("Export is unavailable because you do not have permission to read the backing policy or it is missing.", null);
+            showError("Export is unavailable because you do not have permission to read the underlying policy fragment or it is missing.", null);
         }
     }
 
