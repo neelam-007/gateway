@@ -1,5 +1,7 @@
 package com.l7tech.util;
 
+import org.jetbrains.annotations.Nullable;
+
 import java.io.*;
 import java.net.URL;
 import java.util.Properties;
@@ -185,6 +187,10 @@ public class IOUtils {
         }
     }
 
+    public static long copyStream( final Reader in, final Writer out ) throws IOException {
+        return copyStream(in, out, null);
+    }
+
     /**
      * Copy all of the in, right up to EOF, into out.  Does not flush or close either stream.
      *
@@ -193,7 +199,7 @@ public class IOUtils {
      * @return the number characters copied
      * @throws java.io.IOException if in could not be read, or out could not be written
      */
-    public static long copyStream( final Reader in, final Writer out ) throws IOException {
+    public static long copyStream( final Reader in, final Writer out, @Nullable final Functions.UnaryVoidThrows<Long, IOException> limitCallback ) throws IOException {
         if (in == null || out == null) throw new NullPointerException("in and out must both be non-null");
         char[] buf = new char[1024];
         int got;
@@ -201,6 +207,10 @@ public class IOUtils {
         while ((got = in.read(buf)) > 0) {
             out.write(buf, 0, got);
             total += got;
+            if (limitCallback != null) {
+                limitCallback.call(total);
+            }
+
         }
         return total;
     }

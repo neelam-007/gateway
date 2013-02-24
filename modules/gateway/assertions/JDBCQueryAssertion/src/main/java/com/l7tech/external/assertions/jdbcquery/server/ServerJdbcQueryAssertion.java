@@ -1,21 +1,28 @@
 package com.l7tech.external.assertions.jdbcquery.server;
 
+import com.l7tech.common.io.ByteLimitInputStream;
 import com.l7tech.external.assertions.jdbcquery.JdbcQueryAssertion;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableNameSyntaxException;
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.jdbc.JdbcQueryUtils;
 import com.l7tech.server.jdbc.JdbcQueryingManager;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.variable.ExpandVariables;
+import com.l7tech.util.*;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.context.ApplicationContext;
 import org.springframework.jdbc.support.rowset.SqlRowSet;
 import org.springframework.jdbc.support.rowset.SqlRowSetMetaData;
 
 import java.io.IOException;
+import java.io.Reader;
+import java.io.StringWriter;
+import java.sql.Clob;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Level;
@@ -28,6 +35,7 @@ import java.util.logging.Level;
 public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryAssertion> {
     private final String[] variablesUsed;
     private final JdbcQueryingManager jdbcQueryingManager;
+    private final Config config;
     private final static String EMPTY_STRING = "";
     private final static String XML_RESULT_TAG_OPEN = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><L7j:jdbcQueryResult xmlns:L7j=\"http://ns.l7tech.com/2012/08/jdbc-query-result\">";
     private final static String XML_RESULT_TAG_CLOSE = "</L7j:jdbcQueryResult>";
@@ -46,6 +54,7 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
 
         variablesUsed = assertion.getVariablesUsed();
         jdbcQueryingManager = context.getBean("jdbcQueryingManager", JdbcQueryingManager.class);
+        config = context.getBean("serverConfig", Config.class);
 
         if (assertion.getConnectionName() == null) {
             throw new PolicyAssertionException(assertion, "Assertion must supply a connection name");
@@ -152,11 +161,11 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
     /**
      * process stored procedure results
      */
-    void buildXmlResultString(int resultSetNumber, final SqlRowSet resultSet, final StringBuffer xmlResult) {
+    void buildXmlResultString(int resultSetNumber, final SqlRowSet resultSet, final StringBuffer xmlResult) throws SQLException {
         int maxRecords = assertion.getMaxRecords();
         int row = 0;
         resultSet.first();
-        StringBuffer records = new StringBuffer();
+        final StringBuilder records = new StringBuilder();
         while (resultSet.next() && row < maxRecords) {
             records.append(XML_RESULT_ROW_OPEN);
             SqlRowSetMetaData metaData = resultSet.getMetaData();
@@ -172,6 +181,8 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
                             sb.append(String.format("%02X ", b));
                         }
                         value = sb.toString();
+                    } else if (value instanceof Clob) {
+                        value = getClobStringValue((Clob) value);
                     } else {
                         colType = "type=\"" + value.getClass().getName() + "\"";
                     }
@@ -351,7 +362,14 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
         int row = 0;
         while (resultSet.next() && row < maxRecords) {
             for (String columnName : newNamingMap.keySet()) {
-                results.get(columnName).add(resultSet.getObject(columnName));
+                final List<Object> rows = results.get(columnName);
+                final Object value = resultSet.getObject(columnName);
+                //TODO - what other types may not be directly applicable as-is?
+                if (value instanceof Clob) {
+                    rows.add(getClobStringValue((Clob) value));
+                } else {
+                    rows.add(value);
+                }
             }
             row++;
         }
@@ -369,6 +387,8 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
         return row;
     }
 
+    //- PRIVATE
+
     private String getVariablePrefix(PolicyEnforcementContext context) {
         if (context == null) throw new IllegalStateException("Policy Enforcement Context cannot be null.");
 
@@ -380,5 +400,40 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
         }
 
         return prefix;
+    }
+
+    /**
+     * This may be called twice during a single call to checkRequest for the same clob value if xml output is configured.
+     * //todo caching based on some object identity
+     * @throws SQLException any problems reading the clob's stream or if the stream limit is exceeded
+     */
+    @NotNull
+    private String getClobStringValue(final Clob clob) throws SQLException {
+        Reader reader = null;
+        StringWriter writer = null;
+        final long maxClobSize = config.getLongProperty(ServerConfigParams.PARAM_JDBC_QUERY_MAX_CLOB_SIZE_OUT, 10485760L);
+        try {
+            reader = clob.getCharacterStream();
+            writer = new StringWriter( 8192 );
+            IOUtils.copyStream(reader, writer, new Functions.UnaryVoidThrows<Long, IOException>() {
+                @Override
+                public void call(Long totalRead) throws IOException {
+                    if (totalRead > maxClobSize) {
+                        throw new IOException("CLOB value has exceeded maximum allowed size of " + maxClobSize + " bytes");
+                    }
+                }
+            });
+            // todo intern to help against duplicate calls? decide when caching is implemented.
+            return writer.toString();
+        } catch( IOException ioe ) {
+            logger.log( Level.WARNING, "Error reading CLOB: '" + ExceptionUtils.getMessage(ioe) + "'.", ioe );
+            throw new SQLException(ExceptionUtils.getMessage(ioe));
+        } catch (SQLException e) {
+            logger.log(Level.WARNING, "Error reading CLOB: '" + ExceptionUtils.getMessage(e) + "'.", e);
+            throw e;
+        } finally {
+            ResourceUtils.closeQuietly(reader);
+            ResourceUtils.closeQuietly(writer);
+        }
     }
 }

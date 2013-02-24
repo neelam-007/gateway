@@ -18,12 +18,9 @@ import org.springframework.context.ApplicationListener;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.BadSqlGrammarException;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.ResultSetExtractor;
-import org.springframework.jdbc.core.metadata.CallMetaDataContext;
-import org.springframework.jdbc.core.metadata.CallMetaDataProvider;
-import org.springframework.jdbc.core.metadata.CallMetaDataProviderFactory;
-import org.springframework.jdbc.core.metadata.CallParameterMetaData;
+import org.springframework.jdbc.core.*;
+import org.springframework.jdbc.core.metadata.*;
+import org.springframework.jdbc.core.simple.AbstractJdbcCall;
 import org.springframework.jdbc.core.simple.SimpleJdbcCall;
 import org.springframework.jdbc.support.rowset.SqlRowSet;
 
@@ -31,6 +28,7 @@ import javax.naming.NamingException;
 import javax.sql.DataSource;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.lang.reflect.Field;
 import java.sql.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -266,10 +264,11 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager, PropertyCha
                              @NotNull final JdbcTemplate jdbcTemplate,
                              @NotNull final Option<String> schemaName) {
 
-        final SimpleJdbcCall simpleJdbcCall = buildSimpleJdbcCall(jdbcTemplate, query, schemaName);
-        final List<String> inParameters;
         final CachedMetaDataKey cacheKey = getCacheKey(connectionName, query, schemaName);
         try {
+            final SimpleJdbcCall simpleJdbcCall = buildSimpleJdbcCall(jdbcTemplate, query, schemaName);
+            final List<String> inParameters;
+
             //todo - compile and getInParameters will obtain the same meta data. - reduce to a single call.
 
             // Compile the simple JDBC call so it's ready for use. Any further calls to compile will not cause database traffic.
@@ -306,10 +305,88 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager, PropertyCha
     }
 
     /**
+     * Custom SimpleJdbcCall for SSG-6544 to reflectively fix incorrect java.sql.Types meta data returned from
+     * Data Direct driver for Oracle. This class will fix Clob meta data for any driver type.
+     * These classes require intimate knowledge of spring-jdbc-3.0.7.RELEASE source code and will most likely
+     * break if spring is upgraded. This is a stop gap until the data direct drivers are patched by Progress software.
+     */
+    private static class SimpleJdbcCallWithReturnClobSupport extends SimpleJdbcCall {
+
+        public SimpleJdbcCallWithReturnClobSupport(JdbcTemplate jdbcTemplate) throws NoSuchFieldException, IllegalAccessException {
+            super(jdbcTemplate);
+
+            // override default value for instance variable to custom value which can correct the meta data
+            final Field contextField = AbstractJdbcCall.class.getDeclaredField("callMetaDataContext");
+            contextField.setAccessible(true);
+            contextField.set(this, new ClobTypeFixingCallMetaDataContext());
+        }
+    }
+
+    private static class ClobTypeFixingCallMetaDataContext extends CallMetaDataContext {
+
+        @Override
+        public void initializeMetaData(DataSource dataSource) throws RuntimeException {
+            super.initializeMetaData(dataSource);
+
+            //Before any clients can access the meta data, fix it for CLOB java.sql.Types
+            final GenericCallMetaDataProvider genericProvider;
+            try {
+                genericProvider = (GenericCallMetaDataProvider) metaDataProviderField.get(this);
+            } catch (IllegalAccessException e) {
+                throw new RuntimeException(e);
+            }
+
+            final List<CallParameterMetaData> callParameterMetaData;
+            try {
+                callParameterMetaData = (List<CallParameterMetaData>) listOfCallParamMetaDataField.get(genericProvider);
+            } catch (IllegalAccessException e) {
+                throw new RuntimeException(e);
+            }
+
+            // fix each param meta data
+            for (CallParameterMetaData paramMetaData : callParameterMetaData) {
+                final String typeName = paramMetaData.getTypeName();
+                if (typeName != null && "CLOB".equalsIgnoreCase(typeName)) {
+                    final int sqlType = paramMetaData.getSqlType();
+                    if (2005 != sqlType) {
+                        // This value is part of the JDK JDBC specification, any non 2005 value is an error.
+                        try {
+                            sqlTypeField.set(paramMetaData, 2005);
+                        } catch (IllegalAccessException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+                }
+            }
+        }
+
+        //- PRIVATE
+        private final Field metaDataProviderField;
+        private final Field listOfCallParamMetaDataField;
+        private final Field sqlTypeField;
+
+        private ClobTypeFixingCallMetaDataContext() throws NoSuchFieldException {
+            metaDataProviderField = CallMetaDataContext.class.getDeclaredField("metaDataProvider");
+            metaDataProviderField.setAccessible(true);
+            listOfCallParamMetaDataField = GenericCallMetaDataProvider.class.getDeclaredField("callParameterMetaData");
+            listOfCallParamMetaDataField.setAccessible(true);
+            sqlTypeField = CallParameterMetaData.class.getDeclaredField("sqlType");
+            sqlTypeField.setAccessible(true);
+        }
+    }
+
+    /**
      * Build a SimpleJdbcCall which IS NOT compiled.
      */
-    private static SimpleJdbcCall buildSimpleJdbcCall(@NotNull JdbcTemplate jdbcTemplate, @NotNull String query, @NotNull Option<String> schemaName) {
-        SimpleJdbcCall simpleJdbcCall = new SimpleJdbcCall(jdbcTemplate);
+    private static SimpleJdbcCall buildSimpleJdbcCall(@NotNull JdbcTemplate jdbcTemplate, @NotNull String query, @NotNull Option<String> schemaName) throws DataAccessException {
+        final SimpleJdbcCall simpleJdbcCall;
+        try {
+            simpleJdbcCall = new SimpleJdbcCallWithReturnClobSupport(jdbcTemplate);
+        } catch (Exception e) {
+            throw new DataAccessException("Unexpected error initializing custom JDBC template: " + ExceptionUtils.getMessage(e), e){
+                // exception is abstract -> subclass it
+            };
+        }
         final String procName = JdbcUtil.getName(query);
         simpleJdbcCall.setProcedureName(procName);
         simpleJdbcCall.setFunction(query.toLowerCase().startsWith(JdbcCallHelper.SQL_FUNCTION));

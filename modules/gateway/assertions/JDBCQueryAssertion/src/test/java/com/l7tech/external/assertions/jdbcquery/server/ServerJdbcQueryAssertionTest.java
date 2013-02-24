@@ -23,6 +23,7 @@ import com.l7tech.test.BugId;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.Config;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.TimeSource;
 import org.junit.Before;
 import org.junit.Test;
@@ -332,6 +333,7 @@ public class ServerJdbcQueryAssertionTest {
             put("policyFactory", serverPolicyFactory);
             put("jdbcQueryingManager", qm);
             put("jdbcConnectionManager", cm);
+            put("serverConfig", ConfigFactory.getCachedConfig());
         }}));
         serverPolicyFactory.setApplicationContext(applicationContext);
 
@@ -365,6 +367,7 @@ public class ServerJdbcQueryAssertionTest {
             put("policyFactory", serverPolicyFactory);
             put("jdbcQueryingManager", qm);
             put("jdbcConnectionManager", cm);
+            put("serverConfig", ConfigFactory.getCachedConfig());
         }}));
         serverPolicyFactory.setApplicationContext(applicationContext);
 
@@ -389,6 +392,7 @@ public class ServerJdbcQueryAssertionTest {
             put("policyFactory", serverPolicyFactory);
             put("jdbcQueryingManager", jdbcQueryingManager);
             put("jdbcConnectionManager", connectionManager);
+            put("serverConfig", ConfigFactory.getCachedConfig());
         }}));
         serverPolicyFactory.setApplicationContext(applicationContext);
         assertion.setSqlQuery("SELECT * FROM myTest");
@@ -416,6 +420,7 @@ public class ServerJdbcQueryAssertionTest {
             put("policyFactory", serverPolicyFactory);
             put("jdbcQueryingManager", jdbcQueryingManager);
             put("jdbcConnectionManager", connectionManager);
+            put("serverConfig", ConfigFactory.getCachedConfig());
         }}));
         serverPolicyFactory.setApplicationContext(applicationContext);
         sass = (ServerJdbcQueryAssertion) serverPolicyFactory.compilePolicy(assertion, false);
@@ -440,6 +445,7 @@ public class ServerJdbcQueryAssertionTest {
             put("policyFactory", serverPolicyFactory);
             put("jdbcQueryingManager", jdbcQueryingManager);
             put("jdbcConnectionManager", connectionManager);
+            put("serverConfig", ConfigFactory.getCachedConfig());
         }}));
         serverPolicyFactory.setApplicationContext(applicationContext);
         sass = (ServerJdbcQueryAssertion) serverPolicyFactory.compilePolicy(assertion, false);
@@ -556,6 +562,7 @@ public class ServerJdbcQueryAssertionTest {
             put("policyFactory", serverPolicyFactory);
             put("jdbcQueryingManager", jdbcQueryingManager);
             put("jdbcConnectionManager", connectionManager);
+            put("serverConfig", ConfigFactory.getCachedConfig());
         }}));
         serverPolicyFactory.setApplicationContext(applicationContext);
         assertion.setSqlQuery("SELECT * FROM myTest");
@@ -569,6 +576,7 @@ public class ServerJdbcQueryAssertionTest {
             put("policyFactory", serverPolicyFactory);
             put("jdbcQueryingManager", jdbcQueryingManager);
             put("jdbcConnectionManager", connectionManager);
+            put("serverConfig", ConfigFactory.getCachedConfig());
         }}));
         serverPolicyFactory.setApplicationContext(applicationContext);
         ServerJdbcQueryAssertion sass = (ServerJdbcQueryAssertion) serverPolicyFactory.compilePolicy(assertion, false);
