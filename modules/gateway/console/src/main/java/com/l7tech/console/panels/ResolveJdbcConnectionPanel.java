@@ -134,6 +134,7 @@ public class ResolveJdbcConnectionPanel extends WizardStepPanel {
         newConnection.setDriverClass(connectionReference.getDriverClass());
         newConnection.setJdbcUrl(connectionReference.getJdbcUrl());
         newConnection.setUserName(connectionReference.getUserName());
+        newConnection.setAdditionalProperties(connectionReference.getAdditionalProps());
 
         EntityUtils.resetIdentity(newConnection);
         editAndSave(newConnection);

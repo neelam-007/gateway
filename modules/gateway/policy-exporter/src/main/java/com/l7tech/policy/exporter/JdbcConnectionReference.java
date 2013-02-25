@@ -9,9 +9,10 @@ import com.l7tech.policy.wsp.InvalidPolicyStreamException;
 import com.l7tech.util.DomUtils;
 import com.l7tech.util.InvalidDocumentFormatException;
 import org.jetbrains.annotations.Nullable;
-import org.w3c.dom.Element;
-import org.w3c.dom.Text;
+import org.w3c.dom.*;
 
+import java.util.Map;
+import java.util.TreeMap;
 import java.util.logging.Logger;
 
 /**
@@ -25,11 +26,16 @@ public class JdbcConnectionReference extends ExternalReference {
     public static final String ELMT_NAME_DRV_CLASS = "DriverClass";
     public static final String ELMT_NAME_JDBC_URL = "JdbcUrl";
     public static final String ELMT_NAME_USR_NAME = "UserName";
+    public static final String ELMT_ADDITIONAL_PROPERTIES = "AdditionalProperties";
+    public static final String ELMT_ADDITIONAL_PROPERTY = "Property";
+    public static final String ELMT_ADDITIONAL_PROPERTY_NAME = "Name";
+    public static final String ELMT_ADDITIONAL_PROPERTY_VALUE = "Value";
 
     private String connectionName;
     private String driverClass;
     private String jdbcUrl;
     private String userName;
+    private Map<String, Object> additionalProps = new TreeMap<String, Object>();
 
     private String localConnectionName;
     private LocalizeAction localizeType;
@@ -49,6 +55,7 @@ public class JdbcConnectionReference extends ExternalReference {
                 driverClass = connection.getDriverClass();
                 jdbcUrl = connection.getJdbcUrl();
                 userName = connection.getUserName();
+                additionalProps = connection.getAdditionalProperties();
             }
         } catch (FindException e) {
             logger.warning("Cannot find the JDBC connection entity (ConnectionName = " + connable.getConnectionName() + ").");
@@ -88,6 +95,14 @@ public class JdbcConnectionReference extends ExternalReference {
         this.userName = userName;
     }
 
+    public Map<String, Object> getAdditionalProps() {
+        return additionalProps;
+    }
+
+    public void setAdditionalProps(final Map<String, Object> additionalProps) {
+        this.additionalProps = additionalProps;
+    }
+
     @Override
     public boolean setLocalizeDelete() {
         localizeType = LocalizeAction.DELETE;
@@ -116,19 +131,43 @@ public class JdbcConnectionReference extends ExternalReference {
         output.jdbcUrl = getParamFromEl(elmt, ELMT_NAME_JDBC_URL);
         output.userName = getParamFromEl(elmt, ELMT_NAME_USR_NAME);
 
+        final NodeList additionalPropertyNodes = elmt.getElementsByTagName(ELMT_ADDITIONAL_PROPERTY);
+        for (int i = 0; i < additionalPropertyNodes.getLength(); i++) {
+            final Node node = additionalPropertyNodes.item(i);
+            if (node instanceof Element) {
+                final Element element = (Element) node;
+                final String name = getParamFromEl(element, ELMT_ADDITIONAL_PROPERTY_NAME);
+                final String value = getParamFromEl(element, ELMT_ADDITIONAL_PROPERTY_VALUE);
+                output.additionalProps.put(name, value);
+            }
+        }
         return output;
     }
 
     @Override
     protected void serializeToRefElement(final Element referencesParentElement) {
-        Element referenceElement = referencesParentElement.getOwnerDocument().createElement(ELMT_NAME_REF);
-        setTypeAttribute( referenceElement );
+        final Document doc = referencesParentElement.getOwnerDocument();
+        Element referenceElement = doc.createElement(ELMT_NAME_REF);
+        setTypeAttribute(referenceElement);
         referencesParentElement.appendChild(referenceElement);
 
         addParameterElement( ELMT_NAME_CONN_NAME, connectionName, referenceElement );
         addParameterElement( ELMT_NAME_DRV_CLASS, driverClass, referenceElement );
         addParameterElement( ELMT_NAME_JDBC_URL, jdbcUrl, referenceElement );
         addParameterElement( ELMT_NAME_USR_NAME, userName, referenceElement );
+
+        if (additionalProps != null) {
+            final Element additionalPropsElement = doc.createElement(ELMT_ADDITIONAL_PROPERTIES);
+            referenceElement.appendChild(additionalPropsElement);
+            for (final Map.Entry<String, Object> entry : additionalProps.entrySet()) {
+                final Element additionalPropElement = doc.createElement(ELMT_ADDITIONAL_PROPERTY);
+                addParameterElement(ELMT_ADDITIONAL_PROPERTY_NAME, entry.getKey(), additionalPropElement);
+                // additional property values are currently only stored as strings on the JdbcConnection
+                // see JdbcConnectionPropertiesDialog.editAndSave(final MutablePair<String, String> property)
+                addParameterElement(ELMT_ADDITIONAL_PROPERTY_VALUE, entry.getValue() != null ? entry.getValue().toString() : null, additionalPropElement);
+                additionalPropsElement.appendChild(additionalPropElement);
+            }
+        }
     }
 
     private void addParameterElement( final String name, final String value, final Element parent ) {
@@ -152,7 +191,8 @@ public class JdbcConnectionReference extends ExternalReference {
                 connection.getName().equalsIgnoreCase(connectionName) &&
                 (driverClass==null || connection.getDriverClass().equals(driverClass)) &&
                 (jdbcUrl==null || connection.getJdbcUrl().equals(jdbcUrl)) &&
-                (userName==null || connection.getUserName().equals(userName));
+                (userName==null || connection.getUserName().equals(userName)) &&
+                (additionalProps == null || connection.getAdditionalProperties().equals(additionalProps));
         } catch (FindException e) {
             logger.warning("Cannot find a JDBC connection, " + connectionName);
             return false;

@@ -1954,7 +1954,7 @@ public class ServerGatewayManagementAssertionTest {
                         "</Resource>\n" +
                         "<PolicyReferenceInstructions>\n" +
                         "    <PolicyReferenceInstruction type=\"Map\"    referenceType=\"com.l7tech.console.policy.exporter.IdProviderReference\"     referenceId=\"200\" mappedReferenceId=\"-2\"/>\n" +
-                        "    <PolicyReferenceInstruction type=\"Ignore\" referenceType=\"com.l7tech.console.policy.exporter.JdbcConnectionReference\" referenceId=\"syn:7dffbacb-72ba-3848-84d5-4a86247eb67e\" />\n" +
+                        "    <PolicyReferenceInstruction type=\"Ignore\" referenceType=\"com.l7tech.console.policy.exporter.JdbcConnectionReference\" referenceId=\"syn:70ab8caf-35e4-3c3f-a3ae-3685e4b296e0\" />\n" +
                         "    <PolicyReferenceInstruction type=\"Delete\" referenceType=\"com.l7tech.console.policy.exporter.ExternalSchemaReference\" referenceId=\"syn:e69a8c36-66c6-3f0b-ba67-74749c1c62b5\" />\n" +
                         "    <PolicyReferenceInstruction type=\"Rename\" referenceType=\"com.l7tech.console.policy.exporter.IncludedPolicyReference\" referenceId=\"006ece03-a64c-4c17-93cf-ce49e7265daa\" mappedName=\"Renamed Imported Policy Include Fragment\"/>\n" +
                         "    <PolicyReferenceInstruction type=\"Ignore\" referenceType=\"com.l7tech.console.policy.exporter.TrustedCertReference\"    referenceId=\"129630208\" />\n" +
