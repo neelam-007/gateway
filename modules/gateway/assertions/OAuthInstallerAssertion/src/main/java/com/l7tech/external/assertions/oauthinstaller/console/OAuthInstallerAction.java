@@ -28,7 +28,6 @@ public class OAuthInstallerAction extends SecureAction {
 
     @Override
     public String getName() {
-
         final Pair<String,Long> selectedFolderAndOid = OAuthInstallerTaskDialog.getSelectedFolderAndOid();
         if (selectedFolderAndOid.left != null) {
             return "Install OAuth Toolkit in " + selectedFolderAndOid.left + OAuthInstallerTaskDialog.OAUTH_FOLDER;
@@ -44,5 +43,10 @@ public class OAuthInstallerAction extends SecureAction {
         dlg.pack();
         Utilities.centerOnScreen(dlg);
         DialogDisplayer.display(dlg);
+    }
+
+    @Override
+    protected String iconResource() {
+        return "com/l7tech/console/resources/oauth.png";
     }
 }
