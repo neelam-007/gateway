@@ -394,7 +394,7 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
 
     private void setPolicyAndPolicyNameLabel(Policy policy) {
         this.policy = policy;
-        policyNameLabel.setText(policy == null ? "<Not Configured>" : policy.getName());
+        policyNameLabel.setText(EncapsulatedAssertionConsoleUtil.getPolicyDisplayName(policy, config));
     }
 
     private void updateBean() {

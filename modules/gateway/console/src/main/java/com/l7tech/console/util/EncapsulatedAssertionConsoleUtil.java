@@ -116,4 +116,41 @@ public final class EncapsulatedAssertionConsoleUtil {
             }
         }
     }
+
+    /**
+     * Determine the name to display for the given Policy or an appropriate message to display if the Policy is null.
+     *
+     * @param policy the Policy for which to determine a display name (may not necessarily be the current backing policy set on the given EncapsulatedAssertionConfig).
+     *               If null, the EncapsulatedAssertionConfig will be used to determine what to display.
+     * @param config the EncapsulatedAssertionConfig which uses or will use the given Policy.
+     * @return a display name for the given Policy or an appropriate message if the Policy is null.
+     */
+    public static String getPolicyDisplayName(@Nullable final Policy policy, @NotNull final EncapsulatedAssertionConfig config) {
+        final String name;
+        if (policy != null) {
+            name = policy.getName();
+        } else if (config.getGuid() == null) {
+            // new encass
+            name = NOT_CONFIGURED;
+        } else {
+            // existing encass but policy could not be attached
+            name = POLICY_UNAVAILABLE;
+        }
+        return name;
+    }
+
+    /**
+     * Determine the name or message to display for the backing Policy of the given EncapsulatedAssertionConfig.
+     *
+     * If the backing Policy is null, an appropriate message will be returned.
+     *
+     * @param config the EncapsulatedAssertionConfig which holds the backing Policy.
+     * @return a name or message to display for the backing Policy of the given EncapsulatedAssertionConfig.
+     */
+    public static String getPolicyDisplayName(@NotNull final EncapsulatedAssertionConfig config) {
+        return getPolicyDisplayName(config.getPolicy(), config);
+    }
+
+    static final String NOT_CONFIGURED = "<Not Configured>";
+    static final String POLICY_UNAVAILABLE = "<Policy Unavailable>";
 }

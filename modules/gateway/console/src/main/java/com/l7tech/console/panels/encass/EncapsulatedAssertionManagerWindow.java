@@ -459,8 +459,7 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
         return new Functions.Unary<String, EncapsulatedAssertionConfig>() {
             @Override
             public String call(EncapsulatedAssertionConfig encapsulatedAssertionConfig) {
-                Policy policy = encapsulatedAssertionConfig.getPolicy();
-                return policy == null ? "<No Policy>" : policy.getName();
+                return EncapsulatedAssertionConsoleUtil.getPolicyDisplayName(encapsulatedAssertionConfig);
             }
         };
     }
