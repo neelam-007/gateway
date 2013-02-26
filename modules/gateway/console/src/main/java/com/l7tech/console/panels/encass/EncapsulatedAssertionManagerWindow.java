@@ -10,7 +10,6 @@ import com.l7tech.console.policy.EncapsulatedAssertionRegistry;
 import com.l7tech.console.policy.exporter.ConsoleExternalReferenceFinder;
 import com.l7tech.console.policy.exporter.EncapsulatedAssertionConfigExportUtil;
 import com.l7tech.console.policy.exporter.PolicyExportUtils;
-import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.tree.PaletteFolderRegistry;
 import com.l7tech.console.tree.ServicesAndPoliciesTree;
 import com.l7tech.console.util.EncapsulatedAssertionConsoleUtil;
@@ -419,11 +418,13 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
     }
 
     private void enableOrDisable() {
-        boolean haveConfig = getSelectedConfig() != null;
+        final EncapsulatedAssertionConfig selected = getSelectedConfig();
+        boolean haveConfig = selected != null;
         removeButton.setEnabled(flags.canDeleteSome() && haveConfig);
         propertiesButton.setEnabled(haveConfig);
         cloneButton.setEnabled(flags.canCreateSome() && haveConfig);
-        exportButton.setEnabled(haveConfig);
+        // do not enable export if the backing policy could not be attached
+        exportButton.setEnabled(haveConfig && selected.getPolicy() != null);
         importButton.setEnabled(flags.canCreateSome());
         createButton.setEnabled(flags.canCreateSome());
     }
