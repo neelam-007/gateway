@@ -27,6 +27,7 @@ import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.CertificateFinderImpl;
 import com.l7tech.server.policy.ServiceFinderImpl;
+import com.l7tech.server.policy.VariableServicesImpl;
 import com.l7tech.server.policy.custom.CustomAuditorImpl;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.IOUtils;
@@ -368,7 +369,7 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
             // plug in the message parts in here
             context.put("messageParts", extractParts(pec.getResponse()));
             //add the ServiceFinder
-            context.put("serviceFinder", new ServiceFinderImpl(new CertificateFinderImpl((TrustedCertManager) applicationContext.getBean("trustedCertManager"))));
+            context.put("serviceFinder", new ServiceFinderImpl(new CertificateFinderImpl((TrustedCertManager) applicationContext.getBean("trustedCertManager")), new VariableServicesImpl(getAudit())));
 
             securityContext = new SecurityContext() {
                 @Override
@@ -469,7 +470,7 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
             // plug in the message parts in here
             context.put("messageParts", extractParts(pec.getRequest()));
             //add ServiceFinder
-            context.put("serviceFinder", new ServiceFinderImpl(new CertificateFinderImpl((TrustedCertManager) applicationContext.getBean("trustedCertManager"))));
+            context.put("serviceFinder", new ServiceFinderImpl(new CertificateFinderImpl((TrustedCertManager) applicationContext.getBean("trustedCertManager")), new VariableServicesImpl(getAudit())));
 
             securityContext = new SecurityContext() {
                 @Override
