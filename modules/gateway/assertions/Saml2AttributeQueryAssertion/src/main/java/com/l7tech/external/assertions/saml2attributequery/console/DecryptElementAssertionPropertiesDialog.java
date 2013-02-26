@@ -1,9 +1,11 @@
 package com.l7tech.external.assertions.saml2attributequery.console;
 
+import com.japisoft.xmlpad.XMLContainer;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.panels.NamespaceMapEditor;
 import com.l7tech.console.panels.SampleMessageDialog;
+import com.l7tech.console.panels.XpathBasedAssertionPropertiesDialog;
 import com.l7tech.console.policy.SsmPolicyVariableUtils;
 import com.l7tech.console.tree.EntityWithPolicyNode;
 import com.l7tech.console.tree.ServiceNode;
@@ -13,11 +15,7 @@ import com.l7tech.console.tree.wsdl.BindingTreeNode;
 import com.l7tech.console.tree.wsdl.WsdlTreeNode;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.console.xmlviewer.ExchangerDocument;
-import com.l7tech.console.xmlviewer.Viewer;
-import com.l7tech.console.xmlviewer.ViewerToolBar;
-import com.l7tech.console.xmlviewer.properties.ConfigurationProperties;
-import com.l7tech.console.xmlviewer.util.DocumentUtilities;
+import com.l7tech.console.util.XMLContainerFactory;
 import com.l7tech.external.assertions.saml2attributequery.DecryptElementAssertion;
 import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
 import com.l7tech.gateway.common.service.SampleMessage;
@@ -45,7 +43,6 @@ import com.l7tech.xml.soap.SoapMessageGenerator.Message;
 import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.xml.tarari.util.TarariXpathConverter;
 import com.l7tech.xml.xpath.*;
-import org.dom4j.Document;
 import org.dom4j.DocumentException;
 import org.jaxen.XPathSyntaxException;
 import org.jaxen.saxpath.SAXPathException;
@@ -125,9 +122,8 @@ public class DecryptElementAssertionPropertiesDialog extends JDialog {
     private String blankMessage = "<empty />";
     private Map<String, String> namespaces = new HashMap<String, String>();
     private Map<String, String> requiredNamespaces = new HashMap<String, String>();
-    private Viewer messageViewer;
-    private ViewerToolBar messageViewerToolBar;
-    private ExchangerDocument exchangerDocument;
+    private XMLContainer messageViewer;
+    private XpathBasedAssertionPropertiesDialog.XpathToolBar messageViewerToolBar;
     private ActionListener okActionListener;
     private boolean haveTarari;
     private org.w3c.dom.Document testEvaluator;
@@ -323,7 +319,7 @@ public class DecryptElementAssertionPropertiesDialog extends JDialog {
             public void actionPerformed(ActionEvent e) {
                 final SampleMessage sm;
                 try {
-                    String xml = messageViewer.getContent();
+                    String xml = messageViewer.getAccessibility().getText();
                     try {
                         org.w3c.dom.Document doc = XmlUtil.parse(new ByteArrayInputStream(xml.getBytes("UTF-8")));
                         xml = XmlUtil.nodeToFormattedString(doc);
@@ -702,28 +698,27 @@ public class DecryptElementAssertionPropertiesDialog extends JDialog {
     }
 
     private void initializeSoapMessageViewer(String msg)
-      throws IOException, SAXParseException, DocumentException {
-        ConfigurationProperties cp = new ConfigurationProperties();
-        exchangerDocument = asExchangerDocument(msg);
-        messageViewer = new Viewer(cp.getViewer(), exchangerDocument, false);
-        messageViewerToolBar = new ViewerToolBar(cp.getViewer(), messageViewer, new Functions.Nullary<Map<String, String>>() {
+        throws IOException, SAXParseException, DocumentException {
+        messageViewer = XMLContainerFactory.createXmlContainer(true);
+        setMessageViewerText(msg);
+        messageViewer.setEditableDocumentMode(false);
+        messageViewer.getUIAccessibility().setPopupAvailable(false);
+        messageViewer.getUIAccessibility().setTreePopupAvailable(false);
+        messageViewer.setEditable(false);
+        messageViewerToolBar = new XpathBasedAssertionPropertiesDialog.XpathToolBar(messageViewer, new Functions.Nullary<Map<String, String>>() {
             @Override
             public Map<String, String> call() {
                 return namespaces;
             }
         });
-        com.intellij.uiDesigner.core.GridConstraints gridConstraints = new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 0, 3, 7, 7, null, null, null);
-        messageViewerToolbarPanel.add(messageViewerToolBar, gridConstraints);
+        messageViewerToolbarPanel.setLayout(new BorderLayout());
+        messageViewerToolbarPanel.add(messageViewerToolBar, BorderLayout.CENTER);
         com.intellij.uiDesigner.core.GridConstraints gridConstraints2 = new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 0, 3, 7, 7, null, null, null);
-        messageViewerPanel.add(messageViewer, gridConstraints2);
+        messageViewerPanel.add(messageViewer.getView(), gridConstraints2);
     }
 
-    private ExchangerDocument asExchangerDocument(String content)
-            throws IOException, DocumentException, SAXParseException {
-        Document document = DocumentUtilities.readDocument(content, false);
-        ExchangerDocument exchangerDocument = new ExchangerDocument(document, false);
-        exchangerDocument.load();
-        return exchangerDocument;
+    private void setMessageViewerText(String xml) {
+        messageViewer.getAccessibility().setText(XmlUtil.reformatXml(xml));
     }
 
     /**
@@ -783,7 +778,7 @@ public class DecryptElementAssertionPropertiesDialog extends JDialog {
                 if (lpc instanceof BindingTreeNode) {
                     messageViewerToolBar.setToolbarEnabled(false);
                     try {
-                        exchangerDocument.load("<all/>");
+                        setMessageViewerText("<all/>");
 
                         return;
                     } catch (Exception e1) {
@@ -859,7 +854,7 @@ public class DecryptElementAssertionPropertiesDialog extends JDialog {
             } catch (Exception e) {
                 log.log(Level.WARNING, "Couldn't get namespaces from non-XML document", e);
             }
-            exchangerDocument.load(soapMessage);
+            setMessageViewerText(soapMessage);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

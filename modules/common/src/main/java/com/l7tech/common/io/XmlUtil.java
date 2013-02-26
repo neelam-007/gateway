@@ -1193,6 +1193,25 @@ public class XmlUtil extends DomUtils {
         return schemaSchema;
     }
 
+    /**
+     * Pretty-print the specified XML snippet, if it can be parsed.
+     *
+     * @param xml an XML snippet.  If it can't be parsed as a fragment, it will be returned unchanged.
+     * @return the XML as it would be returned by {@link #nodeToFormattedString(org.w3c.dom.Node)}, or the original
+     *         XML string if it could not be parsed.
+     */
+    public static String reformatXml(String xml) {
+        if (xml == null || xml.length() < 1 || xml.trim().length() < 1)
+            return xml;
+        try {
+            return nodeToFormattedString(stringToDocument(xml));
+        } catch (SAXException e) {
+            return xml;
+        } catch (IOException e) {
+            return xml;
+        }
+    }
+
     public static class BadSchemaException extends Exception {
         public BadSchemaException(String s){super(s);}
         public BadSchemaException(Throwable e){super(e.getMessage(), e);}

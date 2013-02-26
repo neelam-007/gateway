@@ -1,5 +1,10 @@
 package com.l7tech.console.panels;
 
+import com.japisoft.fastparser.node.SimpleNode;
+import com.japisoft.xmlpad.LocationEvent;
+import com.japisoft.xmlpad.LocationListener;
+import com.japisoft.xmlpad.XMLContainer;
+import com.japisoft.xmlpad.editor.renderer.LineRenderer;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.policy.SsmPolicyVariableUtils;
@@ -11,17 +16,14 @@ import com.l7tech.console.tree.wsdl.BindingTreeNode;
 import com.l7tech.console.tree.wsdl.WsdlTreeNode;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.console.xmlviewer.ExchangerDocument;
-import com.l7tech.console.xmlviewer.Viewer;
-import com.l7tech.console.xmlviewer.ViewerToolBar;
-import com.l7tech.console.xmlviewer.properties.ConfigurationProperties;
-import com.l7tech.console.xmlviewer.util.DocumentUtilities;
+import com.l7tech.console.util.XMLContainerFactory;
 import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
 import com.l7tech.gateway.common.service.SampleMessage;
 import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.gui.util.*;
 import com.l7tech.gui.widgets.SpeedIndicator;
 import com.l7tech.gui.widgets.SquigglyField;
+import com.l7tech.gui.widgets.SquigglyTextField;
 import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.EntityHeader;
@@ -48,7 +50,6 @@ import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.xml.soap.SoapVersion;
 import com.l7tech.xml.tarari.util.TarariXpathConverter;
 import com.l7tech.xml.xpath.*;
-import org.dom4j.Document;
 import org.dom4j.DocumentException;
 import org.jaxen.XPathSyntaxException;
 import org.jaxen.saxpath.SAXPathException;
@@ -60,6 +61,7 @@ import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.TreeSelectionEvent;
@@ -112,15 +114,13 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
     private String blankMessage = "<empty />";
     private Map<String, String> namespaces = new HashMap<String, String>();
     private Map<String, String> allOperationNamespaces = new HashMap<String, String>();
-    private Viewer messageViewer;
-    private ViewerToolBar messageViewerToolBar;
-    private ExchangerDocument exchangerDocument;
+    private XMLContainer messageViewer;
+    private XpathToolBar messageViewerToolBar;
     private ActionListener okActionListener;
     private boolean isEncryption;
     private boolean haveTarari;
     private org.w3c.dom.Document testEvaluator;
     private JButton namespaceButton;
-    private JLabel hardwareAccelStatusLabel;
     private JPanel speedIndicatorPanel;
     private JPanel encryptionAlgorithmsPanel;
     private JPanel signatureResponseConfigPanel;
@@ -401,7 +401,7 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
             public void actionPerformed(ActionEvent e) {
                 final SampleMessage sm;
                 try {
-                    String xml = messageViewer.getContent();
+                    String xml = messageViewer.getUIAccessibility().getEditor().getText();
                     try {
                         org.w3c.dom.Document doc = XmlUtil.parse(new ByteArrayInputStream(xml.getBytes(Charsets.UTF8)));
                         xml = XmlUtil.nodeToFormattedString(doc);
@@ -1104,10 +1104,21 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
 
     private void initializeSoapMessageViewer(String msg)
       throws IOException, SAXParseException, DocumentException {
-        ConfigurationProperties cp = new ConfigurationProperties();
-        exchangerDocument = asExchangerDocument(msg);
-        messageViewer = new Viewer(cp.getViewer(), exchangerDocument, false, "Copy Sample Message");
-        messageViewerToolBar = new ViewerToolBar(cp.getViewer(), messageViewer, new Functions.Nullary<Map<String, String>>() {
+        messageViewer = XMLContainerFactory.createXmlContainer(true);
+        setMessageViewerText(msg);
+        messageViewer.setEditableDocumentMode(false);
+        messageViewer.getUIAccessibility().setPopupAvailable(false);
+        messageViewer.getUIAccessibility().setTreePopupAvailable(false);
+        messageViewer.getUIAccessibility().getEditor().setSelectionLineRenderer(new LineRenderer() {
+            public void renderer(Graphics gc, Color color, int x, int y, int width, int height) {
+                gc.setColor(Color.BLACK);
+                gc.setXORMode(Color.WHITE);
+                gc.fillRect(x, y, width, height);
+            }
+        });
+
+        messageViewer.setEditable(false);
+        messageViewerToolBar = new XpathToolBar(messageViewer, new Functions.Nullary<Map<String, String>>() {
             @Override
             public Map<String, String> call() {
                 return getNamespacesWithOperationNamespaces();
@@ -1129,22 +1140,18 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
                 namespaces.putAll(toAdd);
             }
         });
-        com.intellij.uiDesigner.core.GridConstraints gridConstraints = new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 0, 3, 7, 7, null, null, null);
-        messageViewerToolbarPanel.add(messageViewerToolBar, gridConstraints);
+        messageViewerToolbarPanel.setLayout(new BorderLayout());
+        messageViewerToolbarPanel.add(messageViewerToolBar, BorderLayout.CENTER);
         com.intellij.uiDesigner.core.GridConstraints gridConstraints2 = new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 0, 3, 7, 7, null, null, null);
-        messageViewerPanel.add(messageViewer, gridConstraints2);
+        messageViewerPanel.add(messageViewer.getView(), gridConstraints2);
+    }
+
+    private void setMessageViewerText(String xml) {
+        messageViewer.getAccessibility().setText(XmlUtil.reformatXml(xml));
     }
 
     private XpathVersion getXpathVersion() {
         return XpathVersion.fromVersionString((String) xpathVersionComboBox.getSelectedItem());
-    }
-
-    private ExchangerDocument asExchangerDocument(String content)
-            throws IOException, DocumentException, SAXParseException {
-        Document document = DocumentUtilities.readDocument(content, false);
-        ExchangerDocument exchangerDocument = new ExchangerDocument(document, false);
-        exchangerDocument.load();
-        return exchangerDocument;
     }
 
     /**
@@ -1205,7 +1212,7 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
                 if (lpc instanceof BindingTreeNode) {
                     messageViewerToolBar.setToolbarEnabled(false);
                     try {
-                        exchangerDocument.load("<all/>");
+                        setMessageViewerText("<all/>");
 
                         return;
                     } catch (Exception e1) {
@@ -1315,8 +1322,8 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
                 log.log(Level.WARNING, "Couldn't get namespaces from non-XML document", e);
             }
             JTextField xpathTextField = messageViewerToolBar.getxpathField();
-            xpathFieldPauseListener.textEntryPaused( xpathTextField, 0 );
-            exchangerDocument.load( soapMessage );
+            xpathFieldPauseListener.textEntryPaused(xpathTextField, 0);
+            setMessageViewerText(soapMessage);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -1371,16 +1378,13 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
         processFeedBack(feedBack, xpathField);
     }
 
-    private void processHardwareFeedBack(XpathFeedBack hardwareFeedBack, JTextField xpathField) {
+    private void updateHardwareAccelSpeedIndicator(XpathFeedBack hardwareFeedBack) {
         if (!showHardwareAccelStatus) {
-            hardwareAccelStatusLabel.setVisible(false);
             speedIndicator.setVisible(false);
             return;
         }
 
         if (!haveTarari) {
-            hardwareAccelStatusLabel.setText("");
-            hardwareAccelStatusLabel.setToolTipText(null);
             speedIndicator.setSpeed(SpeedIndicator.SPEED_FAST);
             String n = hardwareFeedBack == null ? "" : " be too complex to";
             speedIndicator.setToolTipText("Accelerated XPath not present on Gateway, but if it were, this expression would" + n + " be accelerated at full speed");
@@ -1388,13 +1392,9 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
         }
 
         if (hardwareFeedBack == null) {
-            hardwareAccelStatusLabel.setText("");
-            hardwareAccelStatusLabel.setToolTipText(null);
             speedIndicator.setSpeed(SpeedIndicator.SPEED_FASTEST);
             speedIndicator.setToolTipText("Expression will be accelerated at full speed");
         } else {
-            hardwareAccelStatusLabel.setText("");
-            hardwareAccelStatusLabel.setToolTipText(null);
             speedIndicator.setSpeed(SpeedIndicator.SPEED_FASTER);
             speedIndicator.setToolTipText("Expression will be accelerated, but is too complex to run at full speed");
         }
@@ -1409,11 +1409,11 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
                 squigglyField.setNone();
             }
             xpathField.setToolTipText(null);
-            processHardwareFeedBack(feedBack.hardwareAccelFeedback, xpathField);
+            updateHardwareAccelSpeedIndicator(feedBack.hardwareAccelFeedback);
             return;
         }
 
-        processHardwareFeedBack(feedBack.hardwareAccelFeedback, xpathField);
+        updateHardwareAccelSpeedIndicator(feedBack.hardwareAccelFeedback);
         speedIndicator.setSpeed(0);
         speedIndicator.setToolTipText(null);
         StringBuffer tooltip = new StringBuffer();
@@ -1590,5 +1590,129 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
         public String getVariableName() { return _variableName; }
         @Override
         public String toString() { return _displayName; }
+    }
+
+    public static class XpathToolBar extends JToolBar {
+        private JTextField xpathField = null;
+        private Functions.UnaryVoid<String> xpathBuiltListener = null;
+
+        public XpathToolBar(final XMLContainer v, final Functions.Nullary<Map<String, String>> namespaceMapFactory) {
+            setFloatable(false);
+
+            xpathField = new SquigglyTextField();
+
+            JLabel xpathLabel = new JLabel("XPath:");
+            xpathLabel.setForeground(new Color(102, 102, 102));
+
+            JPanel xpathPanel = new JPanel(new BorderLayout(5, 0));
+            xpathPanel.setBorder(new EmptyBorder(2, 5, 2, 2));
+            JPanel xpanel = new JPanel(new BorderLayout());
+            xpanel.setBorder(new EmptyBorder(1, 0, 1, 0));
+
+            xpathField.setFont(xpathField.getFont().deriveFont(Font.PLAIN, 12));
+            xpathField.setPreferredSize(new Dimension(100, 19));
+            xpathField.setEditable(true);
+
+            xpanel.add(xpathField, BorderLayout.CENTER);
+            xpathPanel.add(xpathLabel, BorderLayout.WEST);
+            xpathPanel.add(xpanel, BorderLayout.CENTER);
+
+            add(xpathPanel, BorderLayout.CENTER);
+
+            v.setLocationListener(new LocationListener() {
+                @Override
+                public void locationChanged(LocationEvent locationEvent) {
+                    SimpleNode node = locationEvent.getDocumentLocation();
+                    if (node != null) {
+                        v.getUIAccessibility().getEditor().highlightLine(node.getStartingLine());
+                        final StringBuilder builder = new StringBuilder();
+                        buildPath(builder, namespaceMapFactory == null ? new HashMap<String, String>() : namespaceMapFactory.call(), node);
+                        xpathField.setText(builder.toString());
+                        if (xpathBuiltListener != null)
+                            xpathBuiltListener.call(xpathField.getText());
+                    }
+                }
+            });
+        }
+
+        public Functions.UnaryVoid<String> getXpathBuiltListener() {
+            return xpathBuiltListener;
+        }
+
+        /**
+         * Set a single listener that will be notified when a new xpath expresion is built.
+         *
+         * @param xpathBuiltListener the new listener, or null.
+         */
+        public void setXpathBuiltListener(Functions.UnaryVoid<String> xpathBuiltListener) {
+            this.xpathBuiltListener = xpathBuiltListener;
+        }
+
+        /**
+         * Access the xpath combo box component. This accesses
+         *
+         * @return the xpath combo box
+         */
+        public JTextField getxpathField() {
+            return xpathField;
+        }
+
+        /**
+         * Sets whether or not this component controls are enabled.
+         *
+         * @param enabled true if this component controls should be enabled, false otherwise
+         */
+        public void setToolbarEnabled(boolean enabled) {
+            xpathField.setEnabled(enabled);
+        }
+
+        private void buildPath( final StringBuilder builder,
+                                final Map<String, String> namespaces,
+                                final SimpleNode element ) {
+
+            if ( element.getSimpleParent() != null ) {
+                buildPath( builder, namespaces, element.getSimpleParent() );
+            }
+
+            builder.append( '/' );
+
+            String prefix = element.getNameSpacePrefix();
+            String namespace = element.getNameSpaceURI();
+
+            String nodeName = element.getNodeContent();
+            String nodeQname = element.getQualifiedContent();
+
+            if ( namespace == null ) {
+                builder.append( nodeName );
+            } else if ( prefix == null || !namespace.equals(namespaces.get(prefix)) ) {
+                if ( namespaces.containsValue( namespace )) {
+                    builder.append( findPrefix(namespaces, namespace) );
+                    builder.append( ':' );
+                    builder.append( nodeName );
+                } else {
+                    builder.append( "*[local-name()='" );
+                    builder.append( nodeName ); // name cannot contain "'"
+                    builder.append( "' and namespace-uri()=" );
+                    builder.append( XpathUtil.literalExpression(namespace) );
+                    builder.append( ']' );
+                }
+            } else {
+                builder.append( nodeQname );
+            }
+        }
+
+
+        private String findPrefix( final Map<String,String> namespaces, final String namespace ) {
+            String prefix = null;
+
+            for ( final Map.Entry<String,String> entry : namespaces.entrySet() ) {
+                if ( namespace.equals(entry.getValue()) ) {
+                    prefix = entry.getKey();
+                    break;
+                }
+            }
+
+            return prefix;
+        }
     }
 }

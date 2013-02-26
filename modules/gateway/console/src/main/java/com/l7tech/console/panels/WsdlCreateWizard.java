@@ -1,12 +1,14 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.console.util.WsdlDependenciesResolver;
-import com.l7tech.gui.util.DialogDisplayer;
-import com.l7tech.gui.util.Utilities;
-import com.l7tech.console.util.WsdlComposer;
+import com.japisoft.xmlpad.XMLContainer;
+import com.l7tech.common.io.XmlUtil;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.console.xmlviewer.Viewer;
+import com.l7tech.console.util.WsdlComposer;
+import com.l7tech.console.util.WsdlDependenciesResolver;
+import com.l7tech.console.util.XMLContainerFactory;
+import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gui.util.Utilities;
 import org.apache.commons.lang.StringUtils;
 import org.dom4j.DocumentException;
 import org.xml.sax.SAXException;
@@ -170,10 +172,16 @@ public class WsdlCreateWizard extends Wizard {
 
             super(mw, true);
             setTitle(title);
-            Viewer viewer = Viewer.createMessageViewer(wsdlString);
-            viewer.setPreferredSize(new Dimension(580, 640));
+            XMLContainer viewer = XMLContainerFactory.createXmlContainer(true);
+            viewer.getAccessibility().setText(XmlUtil.reformatXml(wsdlString));
+            viewer.setEditableDocumentMode(false);
+            viewer.getUIAccessibility().setPopupAvailable(false);
+            viewer.setEditable(false);
+
+            JComponent editor = viewer.getUIAccessibility().getEditor();
+            editor.setPreferredSize(new Dimension(580, 640));
             JPanel panel = new JPanel(new BorderLayout());
-            panel.add(viewer, BorderLayout.CENTER);
+            panel.add(new JScrollPane(editor), BorderLayout.CENTER);
 
             getContentPane().add(panel, BorderLayout.CENTER);
 

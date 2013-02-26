@@ -1,45 +1,48 @@
 package com.l7tech.skunkworks.signer;
 
-import com.l7tech.console.xmlviewer.Viewer;
-import com.l7tech.console.xmlviewer.XmlElementNode;
-import com.l7tech.console.xmlviewer.ExchangerElement;
-import com.l7tech.console.xmlviewer.XmlTree;
+import com.japisoft.fastparser.node.SimpleNode;
+import com.japisoft.xmlpad.LocationEvent;
+import com.japisoft.xmlpad.LocationListener;
+import com.japisoft.xmlpad.XMLContainer;
+import com.l7tech.common.io.CertUtils;
+import com.l7tech.common.io.XmlUtil;
+import com.l7tech.console.util.XMLContainerFactory;
 import com.l7tech.gui.util.GuiCertUtil;
 import com.l7tech.gui.util.GuiPasswordCallbackHandler;
 import com.l7tech.gui.util.Utilities;
-import com.l7tech.common.io.CertUtils;
-import com.l7tech.common.io.XmlUtil;
-import com.l7tech.util.ExceptionUtils;
+import com.l7tech.message.Message;
+import com.l7tech.security.xml.KeyInfoInclusionType;
+import com.l7tech.security.xml.decorator.DecorationRequirements;
+import com.l7tech.security.xml.decorator.WssDecoratorImpl;
 import com.l7tech.util.DomUtils;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.NamespaceContextImpl;
 import com.l7tech.util.ResourceUtils;
-import com.l7tech.security.xml.decorator.WssDecoratorImpl;
-import com.l7tech.security.xml.decorator.DecorationRequirements;
-import com.l7tech.security.xml.KeyInfoInclusionType;
-import com.l7tech.message.Message;
+import com.l7tech.xml.xpath.XpathUtil;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 import javax.swing.*;
-import javax.swing.tree.TreePath;
-import javax.swing.event.TreeSelectionListener;
-import javax.swing.event.TreeSelectionEvent;
-import javax.xml.xpath.XPathFactory;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
-import java.awt.event.ActionListener;
-import java.awt.event.ActionEvent;
+import javax.xml.xpath.XPathFactory;
 import java.awt.*;
-import java.awt.datatransfer.StringSelection;
 import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.StringSelection;
 import java.awt.datatransfer.Transferable;
-import java.security.cert.X509Certificate;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.security.PrivateKey;
-import java.util.*;
-import java.io.*;
-
-import org.w3c.dom.Element;
-import org.w3c.dom.Document;
-import org.w3c.dom.NodeList;
-import org.w3c.dom.Node;
+import java.security.cert.X509Certificate;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Utility for signing messages.
@@ -65,7 +68,7 @@ public class Signer extends JDialog {
     private JComboBox keyReferenceType;
     private JCheckBox useEncryptedKeyCheckBox;
 
-    private Viewer viewer;
+    private XMLContainer viewer;
     private Document document;
     private Set<String> elementsToSign = new LinkedHashSet<String>();
     private X509Certificate clientCertificate;
@@ -105,7 +108,7 @@ public class Signer extends JDialog {
         expandAllButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                viewer.expandAll();
+                /* Not supported */
             }
         });
 
@@ -132,7 +135,7 @@ public class Signer extends JDialog {
                         Object obj = trans.getTransferData(DataFlavor.selectBestTextFlavor(trans.getTransferDataFlavors()));
                         if ( obj instanceof String ) {
                             document = XmlUtil.parse((String)obj);
-                            viewer.setContent( XmlUtil.nodeToString(document) );                            
+                            viewer.getAccessibility().setText(XmlUtil.nodeToString(document));
                             onClearSigningList();
                         }
                     }
@@ -156,28 +159,33 @@ public class Signer extends JDialog {
             }
         });
 
-        viewer = Viewer.createMessageViewer("<empty/>");
-        viewer.addDocumentTreeSelectionListener( new TreeSelectionListener(){
+        viewer = XMLContainerFactory.createXmlContainer(true);
+        viewer.getAccessibility().setText("<empty/>");
+        viewer.setEnabledTreeLocation(true);
+        viewer.getUIAccessibility().setPopupAvailable(false);
+        viewer.getUIAccessibility().setTreePopupAvailable(false);
+        viewer.setEditableDocumentMode(false);
+        viewer.setEditable(false);
+        viewer.addLocationListener(new LocationListener() {
             @Override
-            public void valueChanged(final TreeSelectionEvent e) {
-                TreePath path = ((XmlTree)e.getSource()).getSelectionPath();
-                if (path != null) {
-                    XmlElementNode node = (XmlElementNode)path.getLastPathComponent();
-                    ExchangerElement element = node.getElement();
+            public void locationChanged(LocationEvent locationEvent) {
+                SimpleNode node = locationEvent.getDocumentLocation();
+                if (node == null || SimpleNode.TAG_NODE != node.getType())
+                    return;
+                final StringBuilder builder = new StringBuilder();
+                buildPath(builder, new HashMap<String, String>(), node);
+                String loc = builder.toString();
 
-                    if (element != null) {
-                        elementsToSign.add( element.getPath() );
-                        DefaultListModel model = new DefaultListModel();
-                        for ( String elementPath : elementsToSign ) {
-                            model.addElement( elementPath );
-                        }
-                        signList.setModel( model );
-                    }
+                elementsToSign.add(loc);
+                DefaultListModel model = new DefaultListModel();
+                for (String elementPath : elementsToSign) {
+                    model.addElement(elementPath);
                 }
+                signList.setModel(model);
             }
-        } );
+        });
         viewerPanel.setLayout(new BorderLayout());
-        viewerPanel.add( viewer );
+        viewerPanel.add( viewer.getView() );
 
         Utilities.setDoubleClickAction( signList, new ActionListener(){
             @Override
@@ -221,7 +229,7 @@ public class Signer extends JDialog {
             try {
                 fis = new FileInputStream(selected);
                 document = XmlUtil.parse(fis);
-                viewer.setContent( XmlUtil.nodeToString(document) );
+                viewer.getAccessibility().setText(XmlUtil.nodeToString(document));
                 onClearSigningList();
             }
             catch(Exception e) {
@@ -282,7 +290,7 @@ public class Signer extends JDialog {
                         clientPrivateKey,
                         (KeyInfoInclusionType) keyReferenceType.getSelectedObjects()[0] );
 
-                viewer.setContent( XmlUtil.nodeToString(document) );
+                viewer.getAccessibility().setText(XmlUtil.nodeToString(document));
             } catch (Exception e) {
                 throw ExceptionUtils.wrap(e);
             }
@@ -315,6 +323,54 @@ public class Signer extends JDialog {
         new WssDecoratorImpl().decorateMessage( new Message(document), decReq );
     }
 
+    private void buildPath( final StringBuilder builder,
+                            final Map<String, String> namespaces,
+                            final SimpleNode element ) {
+
+        if ( element.getSimpleParent() != null ) {
+            buildPath( builder, namespaces, element.getSimpleParent() );
+        }
+
+        builder.append( '/' );
+
+        String prefix = element.getNameSpacePrefix();
+        String namespace = element.getNameSpaceURI();
+
+        String nodeName = element.getNodeContent();
+        String nodeQname = element.getQualifiedContent();
+
+        if ( namespace == null ) {
+            builder.append( nodeName );
+        } else if ( prefix == null || !namespace.equals(namespaces.get(prefix)) ) {
+            if ( namespaces.containsValue( namespace )) {
+                builder.append( findPrefix(namespaces, namespace) );
+                builder.append( ':' );
+                builder.append( nodeName );
+            } else {
+                builder.append( "*[local-name()='" );
+                builder.append( nodeName ); // name cannot contain "'"
+                builder.append( "' and namespace-uri()=" );
+                builder.append( XpathUtil.literalExpression(namespace) );
+                builder.append( ']' );
+            }
+        } else {
+            builder.append( nodeQname );
+        }
+    }
+
+
+    private String findPrefix( final Map<String,String> namespaces, final String namespace ) {
+        String prefix = null;
+
+        for ( final Map.Entry<String,String> entry : namespaces.entrySet() ) {
+            if ( namespace.equals(entry.getValue()) ) {
+                prefix = entry.getKey();
+                break;
+            }
+        }
+
+        return prefix;
+    }
 
     public static void main(String[] args) throws Exception {
         Signer dialog = new Signer();
