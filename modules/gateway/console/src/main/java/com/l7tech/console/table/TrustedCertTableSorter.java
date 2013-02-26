@@ -23,6 +23,7 @@ public class TrustedCertTableSorter extends FilteredDefaultTableModel {
     public static final int CERT_TABLE_CERT_EXPIRATION_DATE_COLUMN_INDEX = 2;
     public static final int CERT_TABLE_THUMBPRINT_COLUMN_INDEX = 3;
     public static final int CERT_TABLE_CERT_USAGE_COLUMN_INDEX = 4;
+    public static final int CERT_TABLE_SUBJECT_DN_COLUMN_INDEX = 5;
 
     static Logger logger = Logger.getLogger(TrustedCertTableSorter.class.getName());
     private boolean ascending = true;
@@ -206,6 +207,9 @@ public class TrustedCertTableSorter extends FilteredDefaultTableModel {
                 case CERT_TABLE_CERT_USAGE_COLUMN_INDEX:
                     return sortedData[row].getUsageDescription();
 
+                case CERT_TABLE_SUBJECT_DN_COLUMN_INDEX:
+                    return sortedData[row].getSubjectDn();
+
                 default:
                     throw new IllegalArgumentException("Bad Column");
             }
@@ -274,6 +278,11 @@ public class TrustedCertTableSorter extends FilteredDefaultTableModel {
                 case CERT_TABLE_CERT_USAGE_COLUMN_INDEX:
                     elementA = a.getUsageDescription();
                     elementB = b.getUsageDescription();
+                    break;
+
+                case CERT_TABLE_SUBJECT_DN_COLUMN_INDEX:
+                    elementA = a.getSubjectDn();
+                    elementB = b.getSubjectDn();
                     break;
 
                 default:
