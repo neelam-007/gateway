@@ -1,6 +1,5 @@
 package com.l7tech.external.assertions.jdbcquery.server;
 
-import com.l7tech.common.io.ByteLimitInputStream;
 import com.l7tech.external.assertions.jdbcquery.JdbcQueryAssertion;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -8,7 +7,6 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableNameSyntaxException;
 import com.l7tech.server.ServerConfigParams;
-import com.l7tech.server.jdbc.JdbcQueryUtils;
 import com.l7tech.server.jdbc.JdbcQueryingManager;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
@@ -26,6 +24,8 @@ import java.sql.Clob;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Level;
+
+import static com.l7tech.server.jdbc.JdbcQueryUtils.getQueryStatementWithoutContextVariables;
 
 /**
  * Server side implementation of the JdbcQueryAssertion.
@@ -72,15 +72,18 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         if (context == null) throw new IllegalStateException("Policy Enforcement Context cannot be null.");
 
-        final StringBuffer xmlResult = new StringBuffer(XML_RESULT_TAG_OPEN);
-        final List<Object> preparedStmtParams = new ArrayList<Object>();
+        final StringBuilder xmlResult = new StringBuilder(XML_RESULT_TAG_OPEN);
         try {
-            final String plainQuery = JdbcQueryUtils.getQueryStatementWithoutContextVariables(assertion.getSqlQuery(), preparedStmtParams, context, assertion.getVariablesUsed(), assertion.isAllowMultiValuedVariables(),assertion.getResolveAsObjectList(), getAudit());
-            applyNullValue(assertion.getNullPattern(),preparedStmtParams);
+            final Pair<String, List<Object>> pair = getQueryStatementWithoutContextVariables(assertion.getSqlQuery(),
+                    context, assertion.getVariablesUsed(), assertion.isAllowMultiValuedVariables(), getAudit());
+            final String plainQuery = pair.left;
+            final List<Object> preparedStmtParams = pair.right;
+
+            applyNullValue(assertion.getNullPattern(), preparedStmtParams);
 
             final String connName = ExpandVariables.process(assertion.getConnectionName(), context.getVariableMap(variablesUsed, getAudit()), getAudit());
             // Get result by querying.  The result could be a ResultSet object, an integer (updated rows), or a string (a warning message).
-            final Object result = jdbcQueryingManager.performJdbcQuery(connName, plainQuery, assertion.getSchema(),assertion.getMaxRecords(), preparedStmtParams);
+            final Object result = jdbcQueryingManager.performJdbcQuery(connName, plainQuery, assertion.getSchema(), assertion.getMaxRecords(), preparedStmtParams);
 
             // Analyze the result type and perform a corresponding action.
             if (result instanceof String) {
@@ -95,20 +98,20 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
                     context.setVariable(getVariablePrefix(context) + "." + JdbcQueryAssertion.VARIABLE_COUNT, result);
                 }
             } else if (result instanceof Map) {
-                int affectedRows = setContextVariables((Map<String,List<Object>>) result, context);
+                int affectedRows = setContextVariables((Map<String, List<Object>>) result, context);
                 if (affectedRows == 0 && assertion.isAssertionFailureEnabled()) {
                     logAndAudit(AssertionMessages.JDBC_NO_QUERY_RESULT_ASSERTION_FAILED, assertion.getConnectionName());
                     return AssertionStatus.FAILED;
                 }
-                if(assertion.isGenerateXmlResult()){
-                    buildXmlResultString((Map<String,List<Object>>) result, xmlResult);
+                if (assertion.isGenerateXmlResult()) {
+                    buildXmlResultString((Map<String, List<Object>>) result, xmlResult);
                 }
             } else if (result instanceof List) {
                 List<SqlRowSet> listOfRowSet = (List<SqlRowSet>) result;
                 int affectedRows = 0;
                 if (listOfRowSet.size() == 1) {
                     affectedRows = setContextVariables(listOfRowSet.get(0), context, EMPTY_STRING);
-                    if(assertion.isGenerateXmlResult()){
+                    if (assertion.isGenerateXmlResult()) {
                         buildXmlResultString(0, listOfRowSet.get(0), xmlResult);
                     }
                 } else {
@@ -116,8 +119,8 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
                     for (SqlRowSet rowSet : listOfRowSet) {
                         String resultCountVariable = JdbcQueryAssertion.VARIABLE_RESULTSET + (resultCount++);
                         affectedRows += setContextVariables(rowSet, context, resultCountVariable);
-                        if(assertion.isGenerateXmlResult()){
-                            buildXmlResultString(resultCount-1, rowSet, xmlResult);
+                        if (assertion.isGenerateXmlResult()) {
+                            buildXmlResultString(resultCount - 1, rowSet, xmlResult);
                         }
                     }
                     if (resultCount > 1) {
@@ -161,7 +164,7 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
     /**
      * process stored procedure results
      */
-    void buildXmlResultString(int resultSetNumber, final SqlRowSet resultSet, final StringBuffer xmlResult) throws SQLException {
+    void buildXmlResultString(int resultSetNumber, final SqlRowSet resultSet, final StringBuilder xmlResult) throws SQLException {
         int maxRecords = assertion.getMaxRecords();
         int row = 0;
         resultSet.first();
@@ -209,7 +212,7 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
     /**
      * process standard SQL select results
      */
-    void buildXmlResultString(Map<String, List<Object>> resultSet, final StringBuffer xmlResult) {
+    void buildXmlResultString(Map<String, List<Object>> resultSet, final StringBuilder xmlResult) {
         int row = 0;
         //try to check how many rows we need
         for (String columnName : resultSet.keySet()) {
@@ -218,7 +221,7 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
                 break;
             }
         }
-        StringBuffer records = new StringBuffer();
+        StringBuilder records = new StringBuilder();
         for (int i = 0; i < row; i++) {
             records.append(XML_RESULT_ROW_OPEN);
             for (String columnName : resultSet.keySet()) {
@@ -257,7 +260,7 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
         if (inputObj instanceof String) {
             String inputStr = inputObj.toString();
             if (!inputStr.startsWith(XML_CDATA_TAG_OPEN) && (inputStr.indexOf('>') >= 0 || inputStr.indexOf('<') >= 0 || inputStr.indexOf('&') >= 0)) {
-                StringBuffer sb = new StringBuffer(XML_CDATA_TAG_OPEN);
+                StringBuilder sb = new StringBuilder(XML_CDATA_TAG_OPEN);
                 sb.append(inputStr);
                 sb.append(XML_CDATA_TAG_CLOSE);
                 return sb.toString();

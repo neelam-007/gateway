@@ -21,10 +21,7 @@ import com.l7tech.server.util.MockInjector;
 import com.l7tech.server.util.SimpleSingletonBeanFactory;
 import com.l7tech.test.BugId;
 import com.l7tech.test.BugNumber;
-import com.l7tech.util.CollectionUtils;
-import com.l7tech.util.Config;
-import com.l7tech.util.ConfigFactory;
-import com.l7tech.util.TimeSource;
+import com.l7tech.util.*;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -96,7 +93,6 @@ public class ServerJdbcQueryAssertionTest {
         peCtx.setVariable("var_dept", department);
         peCtx.setVariable("var_info", employee_info);
 
-        List<Object> params = new ArrayList<Object>();
         String query = "SELECT * FROM employees " +
             "WHERE employee_department = ${var_dept} " +
             "AND name = ${var_info[0]} " +
@@ -104,8 +100,10 @@ public class ServerJdbcQueryAssertionTest {
             "AND age = ${var_info[2]}";
         assertion.setSqlQuery(query);
 
-        String expectedPlainQuery = "SELECT * FROM employees WHERE employee_department = ? AND name = ? ADN sex = ? AND age = ?";
-        String actualPlainQuery = JdbcQueryUtils.getQueryStatementWithoutContextVariables(query, params, peCtx,assertion.getVariablesUsed(),assertion.isAllowMultiValuedVariables(),assertion.getResolveAsObjectList(),new TestAudit() );
+        final String expectedPlainQuery = "SELECT * FROM employees WHERE employee_department = ? AND name = ? ADN sex = ? AND age = ?";
+        final Pair<String,List<Object>> pair = JdbcQueryUtils.getQueryStatementWithoutContextVariables(query, peCtx, assertion.getVariablesUsed(), assertion.isAllowMultiValuedVariables(), new TestAudit());
+        final String actualPlainQuery = pair.left;
+        final List<Object> params = pair.right;
 
         // Check the query statement
         assertEquals("Correct plain query produced", expectedPlainQuery, actualPlainQuery);
@@ -129,13 +127,15 @@ public class ServerJdbcQueryAssertionTest {
         peCtx.setVariable("var_dept", department);
         peCtx.setVariable("var_ids", employeeIds);
 
-        List<Object> params = new ArrayList<Object>();
         String query = "select * from employees where id in (${var_ids}) and department = ${var_dept}";
         assertion.setSqlQuery(query);
         assertion.setAllowMultiValuedVariables(true);
 
         String expectedPlainQuery = "select * from employees where id in (?, ?, ?) and department = ?";
-        String actualPlainQuery = JdbcQueryUtils.getQueryStatementWithoutContextVariables(query, params, peCtx,assertion.getVariablesUsed(),assertion.isAllowMultiValuedVariables(),assertion.getResolveAsObjectList(),new TestAudit());
+        final Pair<String, List<Object>> pair = JdbcQueryUtils.getQueryStatementWithoutContextVariables(query, peCtx, assertion.getVariablesUsed(), assertion.isAllowMultiValuedVariables(), new TestAudit());
+        final String actualPlainQuery = pair.left;
+        final List<Object> params = pair.right;
+
         assertEquals(expectedPlainQuery, actualPlainQuery);
         assertEquals(employeeIds.get(0), params.get(0));
         assertEquals(employeeIds.get(1), params.get(1));
@@ -155,13 +155,15 @@ public class ServerJdbcQueryAssertionTest {
         peCtx.setVariable("var_dept", department);
         peCtx.setVariable("var_ids", employeeIds);
 
-        List<Object> params = new ArrayList<Object>();
         String query = "select * from employees where id in (${var_ids}) and department = ${var_dept}";
         assertion.setSqlQuery(query);
         assertion.setAllowMultiValuedVariables(false);
 
         String expectedPlainQuery = "select * from employees where id in (?) and department = ?";
-        String actualPlainQuery = JdbcQueryUtils.getQueryStatementWithoutContextVariables(query, params, peCtx,assertion.getVariablesUsed(),assertion.isAllowMultiValuedVariables(),assertion.getResolveAsObjectList(),new TestAudit());
+        final Pair<String, List<Object>> pair = JdbcQueryUtils.getQueryStatementWithoutContextVariables(query, peCtx, assertion.getVariablesUsed(), assertion.isAllowMultiValuedVariables(), new TestAudit());
+        final String actualPlainQuery = pair.left;
+        final List<Object> params = pair.right;
+
         assertEquals(expectedPlainQuery, actualPlainQuery);
         assertEquals("1, 2, 3", params.get(0));
         assertEquals(department, params.get(1));
@@ -179,13 +181,15 @@ public class ServerJdbcQueryAssertionTest {
         peCtx.setVariable("var_dept", department);
         peCtx.setVariable("var_ids", employeeIds);
 
-        List<Object> params = new ArrayList<Object>();
         String query = "select * from employees e1, employees e2 where e1.id in (${var_ids}) and e2.id in (${var_ids}) and e1.department = ${var_dept}";
         assertion.setSqlQuery(query);
         assertion.setAllowMultiValuedVariables(true);
 
         String expectedPlainQuery = "select * from employees e1, employees e2 where e1.id in (?, ?, ?) and e2.id in (?, ?, ?) and e1.department = ?";
-        String actualPlainQuery = JdbcQueryUtils.getQueryStatementWithoutContextVariables(query, params, peCtx,assertion.getVariablesUsed(),assertion.isAllowMultiValuedVariables(),assertion.getResolveAsObjectList(),new TestAudit());
+        final Pair<String, List<Object>> pair = JdbcQueryUtils.getQueryStatementWithoutContextVariables(query, peCtx, assertion.getVariablesUsed(), assertion.isAllowMultiValuedVariables(), new TestAudit());
+        final String actualPlainQuery = pair.left;
+        final List<Object> params = pair.right;
+
         assertEquals(expectedPlainQuery, actualPlainQuery);
         assertEquals(employeeIds.get(0), params.get(0));
         assertEquals(employeeIds.get(1), params.get(1));
@@ -206,10 +210,9 @@ public class ServerJdbcQueryAssertionTest {
         peCtx.setVariable("var_dept", "department");
         peCtx.setVariable("var_ids", "1");
 
-        List<Object> params = new ArrayList<Object>();
         String query = "select * from employees where id=${var_ids[3]} and department = ${var_dept}";
         assertion.setSqlQuery(query);
-        JdbcQueryUtils.getQueryStatementWithoutContextVariables(query, params, peCtx,assertion.getVariablesUsed(),assertion.isAllowMultiValuedVariables(),assertion.getResolveAsObjectList(),new TestAudit());
+        JdbcQueryUtils.getQueryStatementWithoutContextVariables(query, peCtx, assertion.getVariablesUsed(), assertion.isAllowMultiValuedVariables(), new TestAudit());
     }
 
     @Test
@@ -222,10 +225,12 @@ public class ServerJdbcQueryAssertionTest {
         peCtx.setVariable("var_dept", department);
         peCtx.setVariable("var_ids", "1");
 
-        List<Object> params = new ArrayList<Object>();
         String query = "select * from employees where id=${var_ids[3]} and department = ${var_dept}";
         assertion.setSqlQuery(query);
-        String actualQuery = JdbcQueryUtils.getQueryStatementWithoutContextVariables(query, params, peCtx,assertion.getVariablesUsed(),assertion.isAllowMultiValuedVariables(),assertion.getResolveAsObjectList(),new TestAudit());
+        final Pair<String, List<Object>> pair = JdbcQueryUtils.getQueryStatementWithoutContextVariables(query, peCtx, assertion.getVariablesUsed(), assertion.isAllowMultiValuedVariables(), new TestAudit());
+        final String actualQuery = pair.left;
+        final List<Object> params = pair.right;
+
         assertEquals("select * from employees where id=? and department = ?", actualQuery);
         assertEquals("", params.get(0));
         assertEquals(department, params.get(1));
@@ -234,29 +239,15 @@ public class ServerJdbcQueryAssertionTest {
     
     @Test
     public void shouldReturnUnalteredQueryStringWhenNoContextVariablesPresent() throws Exception {
-        List<Object> params = new ArrayList<Object>();
         String expectedQuery = "select * from employees where id=1 and department = 'Production'";
         assertion.setSqlQuery(expectedQuery);
-        String actualQuery = JdbcQueryUtils.getQueryStatementWithoutContextVariables(expectedQuery, params, peCtx,assertion.getVariablesUsed(),assertion.isAllowMultiValuedVariables(),assertion.getResolveAsObjectList(),new TestAudit());
+        final Pair<String, List<Object>> pair = JdbcQueryUtils.getQueryStatementWithoutContextVariables(expectedQuery, peCtx, assertion.getVariablesUsed(), assertion.isAllowMultiValuedVariables(), new TestAudit());
+        final String actualQuery = pair.left;
+        final List<Object> params = pair.right;
+
         assertEquals(expectedQuery, actualQuery);
         assertTrue(params.size() == 0);
 
-    }
-
-    @Test
-    public void resolveContextVariablesAsObjects() throws Exception {
-        Object varValue = new byte[]{0x01,0x02};
-        peCtx.setVariable("var", varValue);
-        peCtx.setVariable("var1", varValue);
-
-        List<Object> params = new ArrayList<Object>();
-        String expectedQuery = "select * from employees where id=${var} and department = ${var1}";
-        assertion.setSqlQuery(expectedQuery);
-        assertion.setResolveAsObjectList(CollectionUtils.list("var"));
-        String actualQuery = JdbcQueryUtils.getQueryStatementWithoutContextVariables(expectedQuery, params, peCtx,assertion.getVariablesUsed(),assertion.isAllowMultiValuedVariables(),assertion.getResolveAsObjectList(),new TestAudit());
-        assertTrue(params.size() == 2);
-        assertEquals(params.get(0), varValue);
-        assertEquals(params.get(1), varValue.toString());
     }
 
     /**
@@ -624,42 +615,47 @@ public class ServerJdbcQueryAssertionTest {
     public void nullValueSubstitution() throws Exception {
 
         // single value variable NO null value substitution
-        peCtx.setVariable("nullval", "NULL");
-        List<Object> params = new ArrayList<Object>();
-        assertion.setSqlQuery("SELECT FUNC('a',${nullval},'b') as output");
-        JdbcQueryUtils.getQueryStatementWithoutContextVariables(assertion.getSqlQuery(), params, peCtx,assertion.getVariablesUsed(),assertion.isAllowMultiValuedVariables(),assertion.getResolveAsObjectList(),new TestAudit());
-        ServerJdbcQueryAssertion.applyNullValue(assertion.getNullPattern(),params);
-        assertEquals("NULL", params.get(0));
+        {
+            peCtx.setVariable("nullval", "NULL");
+            assertion.setSqlQuery("SELECT FUNC('a',${nullval},'b') as output");
+            final Pair<String, List<Object>> pair = JdbcQueryUtils.getQueryStatementWithoutContextVariables(assertion.getSqlQuery(), peCtx, assertion.getVariablesUsed(), assertion.isAllowMultiValuedVariables(), new TestAudit());
+            final List<Object> params = pair.right;
+
+            ServerJdbcQueryAssertion.applyNullValue(assertion.getNullPattern(),params);
+            assertEquals("NULL", params.get(0));
+        }
 
         // single value variable WITH null value substitution
-        params.clear();
-        assertion.setNullPattern("NULL");
-        JdbcQueryUtils.getQueryStatementWithoutContextVariables(assertion.getSqlQuery(), params, peCtx,assertion.getVariablesUsed(),assertion.isAllowMultiValuedVariables(),assertion.getResolveAsObjectList(),new TestAudit());
-        ServerJdbcQueryAssertion.applyNullValue(assertion.getNullPattern(),params);
-        assertEquals(null, params.get(0));
+        {
+            assertion.setNullPattern("NULL");
+            final Pair<String, List<Object>> pair = JdbcQueryUtils.getQueryStatementWithoutContextVariables(assertion.getSqlQuery(), peCtx, assertion.getVariablesUsed(), assertion.isAllowMultiValuedVariables(), new TestAudit());
+            final List<Object> params = pair.right;
+            ServerJdbcQueryAssertion.applyNullValue(assertion.getNullPattern(),params);
+            assertEquals(null, params.get(0));
+        }
 
         // multi-value variable WITH null value substitution
-        params.clear();
-        peCtx.setVariable("args", new String[]{"one","two","NULL"});
-        assertion.setSqlQuery("SELECT FUNC(${args}) as output");
-        assertion.setAllowMultiValuedVariables(true);
-        JdbcQueryUtils.getQueryStatementWithoutContextVariables(assertion.getSqlQuery(), params, peCtx,assertion.getVariablesUsed(),assertion.isAllowMultiValuedVariables(),assertion.getResolveAsObjectList(),new TestAudit());
-        ServerJdbcQueryAssertion.applyNullValue(assertion.getNullPattern(),params);
-        assertEquals("one", params.get(0));
-        assertEquals("two", params.get(1));
-        assertEquals(null, params.get(2));
+        {
+            peCtx.setVariable("args", new String[]{"one","two","NULL"});
+            assertion.setSqlQuery("SELECT FUNC(${args}) as output");
+            assertion.setAllowMultiValuedVariables(true);
+            final Pair<String, List<Object>> pair = JdbcQueryUtils.getQueryStatementWithoutContextVariables(assertion.getSqlQuery(), peCtx, assertion.getVariablesUsed(), assertion.isAllowMultiValuedVariables(), new TestAudit());
+            final List<Object> params = pair.right;
+            ServerJdbcQueryAssertion.applyNullValue(assertion.getNullPattern(),params);
+            assertEquals("one", params.get(0));
+            assertEquals("two", params.get(1));
+            assertEquals(null, params.get(2));
+        }
 
         // multi-value variable NO null value substitution
-        params.clear();
-        assertion.setNullPattern("null");
-        JdbcQueryUtils.getQueryStatementWithoutContextVariables(assertion.getSqlQuery(), params, peCtx,assertion.getVariablesUsed(),assertion.isAllowMultiValuedVariables(),assertion.getResolveAsObjectList(),new TestAudit());
-        ServerJdbcQueryAssertion.applyNullValue(assertion.getNullPattern(),params);
-        assertEquals("one", params.get(0));
-        assertEquals("two", params.get(1));
-        assertEquals("NULL", params.get(2));
-
-
+        {
+            assertion.setNullPattern("null");
+            final Pair<String, List<Object>> pair = JdbcQueryUtils.getQueryStatementWithoutContextVariables(assertion.getSqlQuery(), peCtx, assertion.getVariablesUsed(), assertion.isAllowMultiValuedVariables(), new TestAudit());
+            final List<Object> params = pair.right;
+            ServerJdbcQueryAssertion.applyNullValue(assertion.getNullPattern(),params);
+            assertEquals("one", params.get(0));
+            assertEquals("two", params.get(1));
+            assertEquals("NULL", params.get(2));
+        }
     }
-
-
 }

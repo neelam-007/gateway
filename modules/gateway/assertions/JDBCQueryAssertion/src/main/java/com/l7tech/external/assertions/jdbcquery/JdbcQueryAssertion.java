@@ -38,7 +38,6 @@ public class JdbcQueryAssertion extends Assertion implements JdbcConnectionable,
     private int maxRecords = JdbcAdmin.ORIGINAL_MAX_RECORDS;
     private boolean assertionFailureEnabled = true;
     private Map<String, String> namingMap = new TreeMap<String, String>();
-    private List<String> resolveAsObjectList = new ArrayList<String>();
     private boolean generateXmlResult = false;
     private String nullPattern = null;
     private String schema = null;
@@ -172,18 +171,8 @@ public class JdbcQueryAssertion extends Assertion implements JdbcConnectionable,
         this.schema = schema;
     }
 
-    public boolean isUseNullPattern(){
+    public boolean isUseNullPattern() {
         return this.nullPattern != null;
-    }
-
-    // hidden properties
-    public List<String> getResolveAsObjectList() {
-        return resolveAsObjectList;
-    }
-
-    // hidden properties
-    public void setResolveAsObjectList(List<String> resolveAsObjectList) {
-        this.resolveAsObjectList = resolveAsObjectList;
     }
 
     @Override
@@ -207,7 +196,7 @@ public class JdbcQueryAssertion extends Assertion implements JdbcConnectionable,
     @Override
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {
-        return Syntax.getReferencedNames(connectionName, sqlQuery, variablePrefix,nullPattern);
+        return Syntax.getReferencedNames(connectionName, sqlQuery, variablePrefix, nullPattern);
     }
 
     @Override

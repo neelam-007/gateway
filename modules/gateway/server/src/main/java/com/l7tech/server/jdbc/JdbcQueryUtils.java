@@ -1,12 +1,13 @@
 package com.l7tech.server.jdbc;
 
 import com.l7tech.gateway.common.audit.Audit;
-import com.l7tech.policy.variable.BuiltinVariables;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableNameSyntaxException;
 import com.l7tech.server.audit.AuditSinkPolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.variable.ExpandVariables;
+import com.l7tech.util.Pair;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 import java.util.regex.Matcher;
@@ -17,46 +18,65 @@ import java.util.regex.Pattern;
  */
 public class JdbcQueryUtils {
 
-    static public Object performJdbcQuery(JdbcQueryingManager jdbcQueryingManager,String connectionName, String query,List<String> resolveAsObjectList , AuditSinkPolicyEnforcementContext context, Audit audit) throws Exception {
+    static public Object performJdbcQuery(JdbcQueryingManager jdbcQueryingManager, String connectionName, String query, List<String> resolveAsObjectList, AuditSinkPolicyEnforcementContext context, Audit audit) throws Exception {
         String[] vars = Syntax.getReferencedNames(query);
-        List<Object> preparedStmtParams = new ArrayList<Object>();
         try {
-            String plainQuery = context == null? query : JdbcQueryUtils.getQueryStatementWithoutContextVariables(query, preparedStmtParams, context, vars, false ,resolveAsObjectList,audit);
+            final Pair<String, List<Object>> pair = JdbcQueryUtils.getQueryStatementWithoutContextVariables(query, context, vars, false, resolveAsObjectList, audit);
+            String plainQuery = context == null ? query : pair.left;
             // todo add support for schema name
-            return jdbcQueryingManager.performJdbcQuery(connectionName, plainQuery, null, 1, preparedStmtParams);
+            return jdbcQueryingManager.performJdbcQuery(connectionName, plainQuery, null, 1, pair.right);
         } catch (VariableNameSyntaxException e) {
             return e.getMessage();
         }
     }
 
     /**
+     * Get the SQL query with usages of context variables replaced with ? characters.
+     * <p/>
+     * e.g.
+     * <p>
+     * select * from employees where id=${var} and department = ${var1}
+     * </p>
+     * <p/>
+     * will return
+     * <p>
+     * select * from employees where id=? and department = ?
+     * </p>
      *
-     * @param query
-     * @param params
-     * @param context
-     * @param varsWithoutIndex
-     * @param allowMultiValued
-     * @param audit
-     * @return
+     * @param query            string query which references context variables
+     * @param context          The Policy Enforcement Context with all available variables
+     * @param varsWithoutIndex get the variables used by the query with no indexes
+     * @param allowMultiValued true if multi valued variables are supported
+     * @param audit            Audit for audits related to looking up variables.
+     * @return pair of the String query with variables replaced with '?' and the list of parameters. The right side
+     *         of parameters may be empty but never null.
      */
-    static public String getQueryStatementWithoutContextVariables(String query, List<Object> params, PolicyEnforcementContext context,String[] varsWithoutIndex, boolean allowMultiValued, List<String> resolveAsObjectList , Audit audit) {
+    @NotNull
+    static public Pair<String, List<Object>> getQueryStatementWithoutContextVariables(String query,
+                                                                                      final PolicyEnforcementContext context,
+                                                                                      final String[] varsWithoutIndex,
+                                                                                      final boolean allowMultiValued,
+                                                                                      final List<String> resolveAsObjectList,
+                                                                                      final Audit audit) {
+        final List<Object> paramValues = new ArrayList<Object>();
         if (Syntax.getReferencedNames(query).length == 0) {
             // There are no context variables in the query text. Just return it immediately.
-            return query;
+            return new Pair<String, List<Object>>(query, paramValues);
         }
-        // Get values of these context variables and then store these values into the parameter list, params.
-        // params will be used in the PreparedStatement to set up values.
+
+        // Get values of these context variables and then store these values into the parameter list, paramValues.
+        // paramValues will be used in the PreparedStatement to set up values.
         final String[] varsWithIndex = Syntax.getReferencedNamesIndexedVarsNotOmitted(query);
         final Map<String, Pattern> varPatternMap = new HashMap<String, Pattern>();
         for (final String varWithIndex : varsWithIndex) {
             if (allowMultiValued) {
                 List<Object> varValues = ExpandVariables.processNoFormat("${" + varWithIndex + "}", context.getVariableMap(varsWithoutIndex, audit), audit, true);
-                //when parameters are multi-value, make each value as a separate parameter of the parameterized query separated by comma.
+                //when parameters are multi-value, make each value as a separate parameter of the parametrized query separated by comma.
                 StringBuilder sb = new StringBuilder();
                 Iterator<Object> iter = varValues.iterator();
                 while (iter.hasNext()) {
                     Object value = iter.next();
-                    params.add(value);
+                    paramValues.add(value);
                     sb.append("?").append(iter.hasNext() ? ", " : "");
                 }
 
@@ -65,11 +85,11 @@ public class JdbcQueryUtils {
                 query = matcher.replaceFirst(sb.toString());
             } else {
                 Object value;
-                if(resolveAsObjectList.contains(varWithIndex))
-                    value= ExpandVariables.processSingleVariableAsObject("${" + varWithIndex + "}", context.getVariableMap(varsWithoutIndex, audit), audit);
+                if (resolveAsObjectList.contains(varWithIndex))
+                    value = ExpandVariables.processSingleVariableAsObject("${" + varWithIndex + "}", context.getVariableMap(varsWithoutIndex, audit), audit);
                 else
                     value = ExpandVariables.process("${" + varWithIndex + "}", context.getVariableMap(varsWithoutIndex, audit), audit);
-                params.add(value);
+                paramValues.add(value);
             }
         }
 
@@ -79,7 +99,15 @@ public class JdbcQueryUtils {
             query = matcher.replaceAll("?");
         }
 
-        return query;
+        return new Pair<String, List<Object>>(query, paramValues);
+    }
+
+    static public Pair<String, List<Object>> getQueryStatementWithoutContextVariables(final String query,
+                                                                                      final PolicyEnforcementContext context,
+                                                                                      final String[] varsWithoutIndex,
+                                                                                      final boolean allowMultiValued,
+                                                                                      final Audit audit) {
+        return getQueryStatementWithoutContextVariables(query, context, varsWithoutIndex, allowMultiValued, Collections.<String>emptyList(), audit);
     }
 
      static private Pattern getSearchPattern(String varWithIndex, Map<String, Pattern> varPatternMap) {
