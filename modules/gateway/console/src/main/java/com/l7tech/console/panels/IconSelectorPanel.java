@@ -108,7 +108,7 @@ public class IconSelectorPanel extends ValidatedPanel<Pair<EncapsulatedAssertion
                 throw new IllegalArgumentException("Maximum file size is " + CUSTOM_ICON_MAX_BYTES + " bytes.");
             }
             if (fileContainsOversizedIcon(file)) {
-                throw new IllegalArgumentException("Icon may not be larger than " + ICON_MAX_SIZE + " pixels wide or tall.");
+                throw new IllegalArgumentException("Icon may not be larger than " + CUSTOM_ICON_MAX_PIXELS + " pixels wide or tall.");
             }
         }
     }
