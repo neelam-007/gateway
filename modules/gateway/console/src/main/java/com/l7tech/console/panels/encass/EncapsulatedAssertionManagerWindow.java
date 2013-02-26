@@ -177,7 +177,7 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
     }
 
     private void doImport() {
-        FileChooserUtil.loadSingleFile(this, "Import Encapsulated Assertion", ENCASS_FILE_FILTER, ".xml", new Functions.UnaryThrows<Boolean, FileInputStream, IOException>() {
+        FileChooserUtil.loadSingleFile(this, "Import Encapsulated Assertion", ENCASS_FILE_FILTER, null, new Functions.UnaryThrows<Boolean, FileInputStream, IOException>() {
             @Override
             public Boolean call(final FileInputStream fis) throws IOException {
                 // parse xml
