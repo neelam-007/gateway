@@ -453,7 +453,7 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
                         break;
                     }
                     case DELETE: {
-                        boolean explicitCheck = config.getBooleanProperty("sftp.routingExplicitlyValidateDeleteFile", true);
+                        boolean explicitCheck = config.getBooleanProperty("sftpRoutingExplicitlyValidateDeleteFile", true);
                         sftpClient.deleteFile(directory, fileName, explicitCheck);
                         break;
                     }
@@ -463,12 +463,12 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
                         break;
                     }
                     case MKDIR: {
-                        boolean explicitCheck = config.getBooleanProperty("sftp.routingExplicitlyValidateMkdir", true);
+                        boolean explicitCheck = config.getBooleanProperty("sftpRoutingExplicitlyValidateMkdir", true);
                         sftpClient.createDirectory(directory, fileName, explicitCheck);
                         break;
                     }
                     case RMDIR: {
-                        boolean explicitCheck = config.getBooleanProperty("sftp.routingExplicitlyValidateDeleteDir", true);
+                        boolean explicitCheck = config.getBooleanProperty("sftpRoutingExplicitlyValidateDeleteDir", true);
                         sftpClient.removeDirectory(directory, fileName, explicitCheck);
                         break;
                     }
@@ -487,9 +487,11 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
             } else {
                 logAndAudit(SSH_ROUTING_ERROR,
                         new String[]{SSH_IO_EXCEPTION + " '" + getMessage(e) + "', server: " + host}, getDebugException(e));
+                return AssertionStatus.FAILED;
             }
         } catch (ThreadPoolShutDownException | InterruptedException | NoSuchVariableException e) {
             logAndAudit(SSH_ROUTING_ERROR, new String[]{"SSH2 Route Assertion error: " + getMessage(e)}, getDebugException(e));
+            return AssertionStatus.FAILED;
         } catch (NoSuchPartException e) {
             logAndAudit(SSH_ROUTING_ERROR,
                     new String[]{SSH_NO_SUCH_PART_ERROR + ", server: " + host}, getDebugException(e));
