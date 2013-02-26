@@ -43,6 +43,7 @@ public class CustomAssertionHolder extends Assertion implements UsesVariables, S
     private static final long serialVersionUID = 7410439507802944818L;
 
     private static final Logger logger = Logger.getLogger(CustomAssertionHolder.class.getName());
+    static final String CUSTOM_ASSERTION = "Custom Assertion";
 
     public CustomAssertionHolder() {
         this.parent = null;
@@ -162,8 +163,8 @@ public class CustomAssertionHolder extends Assertion implements UsesVariables, S
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();
 
-        meta.put(SHORT_NAME, "Custom Assertion");
-        meta.put(DESCRIPTION, "Custom Assertion");
+        meta.put(SHORT_NAME, customAssertion == null ? CUSTOM_ASSERTION : customAssertion.getName());
+        meta.put(DESCRIPTION, descriptionText == null ? CUSTOM_ASSERTION : descriptionText);
         meta.put(POLICY_NODE_NAME_FACTORY, new AssertionNodeNameFactory<CustomAssertionHolder>(){
             @Override
             public String getAssertionName( CustomAssertionHolder assertion, boolean decorate) {
