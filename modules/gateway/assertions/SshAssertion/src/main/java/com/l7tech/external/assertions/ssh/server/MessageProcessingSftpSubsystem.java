@@ -358,15 +358,17 @@ class MessageProcessingSftpSubsystem extends SftpSubsystem {
                 return;
             }
         } else {
-            // If the file doesn't exist and create flag is set copy over the specified file attributes. If the file is sent using the SshRouteAssertion then the attributes will be preserved.
-            // This is existing legacy workflow. It may need to be rethought. It works by using the sshKnob and is only applicable if the SshRouteAssertion is used
             if (((flags & SSH_FXF_CREAT) != 0)) {
-                //attrs copy over file attributes
-                getFileAttributes(attrs, file, buffer);
                 //does nothing
                 file.create();
             }
         }
+
+        // Copy over the specified file attributes. If the file is sent using the SshRouteAssertion then the attributes will be preserved.
+        // This is existing legacy workflow. It may need to be rethought. It works by using the sshKnob and is only applicable if the SshRouteAssertion is used
+        // attrs copy over file attributes
+        getFileAttributes(attrs, file, buffer);
+
         if ((flags & SSH_FXF_TRUNC) != 0) {
             if(file.doesExist() &&
                     connector.getBooleanProperty(SshCredentialAssertion.LISTEN_PROP_ENABLE_SFTP_DELETE) &&
