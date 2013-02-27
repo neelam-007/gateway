@@ -13,6 +13,7 @@ import com.l7tech.policy.assertion.EncapsulatedAssertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.server.event.EntityInvalidationEvent;
+import com.l7tech.server.message.HasOutputVariables;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.message.ShadowsParentVariables;
@@ -185,6 +186,7 @@ public class ServerEncapsulatedAssertion extends AbstractServerAssertion<Encapsu
             ShadowsParentVariables spv = (ShadowsParentVariables) childContext;
 
             populateInputVariables(config, variableMap, context, childContext, spv);
+            declareOutputVariables(config, (HasOutputVariables) childContext);
 
             // TODO cache policy handle in instance field until policy change is detected, instead of looking up a new one for every request
             AssertionStatus result = lookupAndExecutePolicy(policy.getOid(), childContext);
@@ -228,6 +230,13 @@ public class ServerEncapsulatedAssertion extends AbstractServerAssertion<Encapsu
             } catch (NoSuchVariableException e) {
                 /* FALLTHROUGH and leave value undefined in parent context */
             }
+        }
+    }
+
+    private void declareOutputVariables(EncapsulatedAssertionConfig config, HasOutputVariables childContext) {
+        for (EncapsulatedAssertionResultDescriptor res : config.getResultDescriptors()) {
+            final String varName = res.getResultName();
+            childContext.addOutputVariableName(varName);
         }
     }
 

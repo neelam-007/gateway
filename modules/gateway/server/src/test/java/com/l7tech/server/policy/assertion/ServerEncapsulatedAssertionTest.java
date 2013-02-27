@@ -13,12 +13,16 @@ import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.event.EntityInvalidationEvent;
+import com.l7tech.server.message.HasOutputVariables;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.EncapsulatedAssertionConfigManager;
 import com.l7tech.server.policy.PolicyCache;
 import com.l7tech.server.policy.ServerPolicyHandle;
 import com.l7tech.server.util.ApplicationEventProxy;
+import com.l7tech.test.BugId;
+import com.l7tech.util.Functions;
+import org.jetbrains.annotations.Nullable;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -95,7 +99,7 @@ public class ServerEncapsulatedAssertionTest {
         inParams.add(inputParam(in, DataType.STRING));
         outParams.add(outputParam(out, DataType.STRING));
 
-        mockHandle(Collections.singletonMap(in, (Object) inVal), Collections.singletonMap(out, outVal), AssertionStatus.NONE);
+        mockHandle(Collections.singletonMap(in, (Object) inVal), Collections.singletonMap(out, outVal), AssertionStatus.NONE, null);
 
         assertEquals(AssertionStatus.NONE, serverAssertion.checkRequest(context));
         // ensure outputs from child context are set on parent context
@@ -115,7 +119,7 @@ public class ServerEncapsulatedAssertionTest {
         inParams.add(inputParam(in, DataType.STRING, true));
         outParams.add(outputParam(out, DataType.STRING));
 
-        mockHandle(Collections.singletonMap(in, (Object) inVal), Collections.singletonMap(out, outVal), AssertionStatus.NONE);
+        mockHandle(Collections.singletonMap(in, (Object) inVal), Collections.singletonMap(out, outVal), AssertionStatus.NONE, null);
 
         assertEquals(AssertionStatus.NONE, serverAssertion.checkRequest(context));
         // ensure outputs from child context are set on parent context
@@ -241,7 +245,7 @@ public class ServerEncapsulatedAssertionTest {
         final String out = "out";
         outParams.add(outputParam(out, DataType.STRING));
 
-        mockHandle(Collections.<String, Object>emptyMap(), Collections.<String, String>emptyMap(), AssertionStatus.NONE);
+        mockHandle(Collections.<String, Object>emptyMap(), Collections.<String, String>emptyMap(), AssertionStatus.NONE, null);
 
         assertEquals(AssertionStatus.NONE, serverAssertion.checkRequest(context));
         checkContextVariableNotSet(out);
@@ -268,9 +272,44 @@ public class ServerEncapsulatedAssertionTest {
         context.setVariable(inVal, msg);
         inParams.add(inputParam(in, DataType.MESSAGE, true));
 
-        mockHandle(Collections.singletonMap(in, (Object) msg), Collections.<String, String>emptyMap(), AssertionStatus.NONE);
+        mockHandle(Collections.singletonMap(in, (Object) msg), Collections.<String, String>emptyMap(), AssertionStatus.NONE, null);
 
         assertEquals(AssertionStatus.NONE, serverAssertion.checkRequest(context));
+    }
+
+    @Test
+    @BugId("SSM-4246")
+    public void checkOutputsDeclaredViaHasOutputVariables() throws Exception {
+        outParams.add(outputParam("out", DataType.STRING));
+        outParams.add(outputParam("out2", DataType.STRING));
+
+        final Set<String> declaredOutputs = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
+        mockHandle(Collections.<String, Object>emptyMap(), Collections.<String, String>emptyMap(), AssertionStatus.NONE, new Functions.UnaryVoid<PolicyEnforcementContext>() {
+            @Override
+            public void call(PolicyEnforcementContext policyEnforcementContext) {
+                declaredOutputs.addAll(((HasOutputVariables)policyEnforcementContext).getOutputVariableNames());
+            }
+        });
+        assertEquals(AssertionStatus.NONE, serverAssertion.checkRequest(context));
+        assertTrue("Output params shall be declared as HasOutVariables of the child PEC while the backing policy is being executed",
+            declaredOutputs.containsAll(Arrays.asList("out", "out2")));
+    }
+
+    @Test
+    @BugId("SSM-4246")
+    public void checkNoOutputsDeclaredViaHasOutputVariablesIfConfigHasNoOutputs() throws Exception {
+        outParams.clear();
+
+        final Set<String> declaredOutputs = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
+        mockHandle(Collections.<String, Object>emptyMap(), Collections.<String, String>emptyMap(), AssertionStatus.NONE, new Functions.UnaryVoid<PolicyEnforcementContext>() {
+            @Override
+            public void call(PolicyEnforcementContext policyEnforcementContext) {
+                declaredOutputs.addAll(((HasOutputVariables)policyEnforcementContext).getOutputVariableNames());
+            }
+        });
+        assertEquals(AssertionStatus.NONE, serverAssertion.checkRequest(context));
+        assertTrue("If the config has no outputs, then HasOutVariables of the child PEC shall be completely empty",
+            declaredOutputs.isEmpty());
     }
 
     private void checkContextVariableNotSet(final String varName) {
@@ -289,8 +328,9 @@ public class ServerEncapsulatedAssertionTest {
      * @param expectedInputs context variables that are expected on the child context (key=name,value=variable value).
      * @param outputs        context variables that should be set on the child context (key=name,value=variable value).
      * @param toReturn       AssertionStatus to return.
+     * @param callback       callback to invoke when checkRequest() is called on the backing fragment, or null.
      */
-    private void mockHandle(final Map<String, Object> expectedInputs, final Map<String, String> outputs, final AssertionStatus toReturn) throws Exception {
+    private void mockHandle(final Map<String, Object> expectedInputs, final Map<String, String> outputs, final AssertionStatus toReturn, @Nullable final Functions.UnaryVoid<PolicyEnforcementContext> callback) throws Exception {
         when(handle.checkRequest(any(PolicyEnforcementContext.class))).thenAnswer(new Answer<Object>() {
             @Override
             public Object answer(final InvocationOnMock invocationOnMock) throws Throwable {
@@ -303,6 +343,9 @@ public class ServerEncapsulatedAssertionTest {
                 // mock execution of policy here
                 for (final Map.Entry<String, String> entry : outputs.entrySet()) {
                     childContext.setVariable(entry.getKey(), entry.getValue());
+                }
+                if (callback != null) {
+                    callback.call(childContext);
                 }
                 return toReturn;
             }

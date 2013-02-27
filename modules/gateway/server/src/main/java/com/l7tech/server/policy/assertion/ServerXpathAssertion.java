@@ -10,6 +10,7 @@ import com.l7tech.policy.assertion.ResponseXpathAssertion;
 import com.l7tech.policy.assertion.SimpleXpathAssertion;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.policy.variable.PolicyVariableUtils;
+import com.l7tech.server.message.HasOutputVariables;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.util.xml.PolicyEnforcementContextXpathVariableFinder;
 import com.l7tech.util.ExceptionUtils;
@@ -36,26 +37,27 @@ import java.util.logging.Level;
  */
 public abstract class ServerXpathAssertion<AT extends SimpleXpathAssertion> extends ServerXpathBasedAssertion<AT> {
     private final boolean req; // true = operate on request; false = operate on response
-    private final String vfound;
-    private final String vcount;
-    private final String vresult;
-    private final String vmultipleResults;
-    private final String velement;
-    private final String vmultipleElements;
+    private final String staticFoundVar;
+    private final String staticCountVar;
+    private final String staticResultVar;
+    private final String staticMultipleResultsVar;
+    private final String staticElementVar;
+    private final String staticMultipleElementsVar;
     private final boolean xpathContainsVariables;
     private final boolean xpathReferencesTargetDocument;
+    private final Set<String> variablesUsedBySuccessors;
 
     public ServerXpathAssertion(AT assertion, boolean isReq) {
         super(assertion);
         this.req = isReq;
 
-        Set<String> varsUsed = PolicyVariableUtils.getVariablesUsedBySuccessors(assertion);
-        vfound = varsUsed.contains(assertion.foundVariable()) ? assertion.foundVariable() : null;
-        vresult = varsUsed.contains(assertion.resultVariable()) ? assertion.resultVariable() : null;
-        vmultipleResults = varsUsed.contains(assertion.multipleResultsVariable()) ? assertion.multipleResultsVariable() : null;
-        vcount = varsUsed.contains(assertion.countVariable()) ? assertion.countVariable() : null;
-        velement = varsUsed.contains(assertion.elementVariable()) ? assertion.elementVariable() : null;
-        vmultipleElements = varsUsed.contains(assertion.multipleElementsVariable()) ? assertion.multipleElementsVariable() : null;
+        variablesUsedBySuccessors = PolicyVariableUtils.getVariablesUsedBySuccessors(assertion);
+        staticFoundVar = variablesUsedBySuccessors.contains(assertion.foundVariable()) ? assertion.foundVariable() : null;
+        staticResultVar = variablesUsedBySuccessors.contains(assertion.resultVariable()) ? assertion.resultVariable() : null;
+        staticMultipleResultsVar = variablesUsedBySuccessors.contains(assertion.multipleResultsVariable()) ? assertion.multipleResultsVariable() : null;
+        staticCountVar = variablesUsedBySuccessors.contains(assertion.countVariable()) ? assertion.countVariable() : null;
+        staticElementVar = variablesUsedBySuccessors.contains(assertion.elementVariable()) ? assertion.elementVariable() : null;
+        staticMultipleElementsVar = variablesUsedBySuccessors.contains(assertion.multipleElementsVariable()) ? assertion.multipleElementsVariable() : null;
         xpathContainsVariables = getCompiledXpath() == null || getCompiledXpath().usesVariables();
         xpathReferencesTargetDocument = getCompiledXpath() == null || getCompiledXpath().requiresTargetDocument();
     }
@@ -90,6 +92,34 @@ public abstract class ServerXpathAssertion<AT extends SimpleXpathAssertion> exte
                     throw new RuntimeException("XML message source is a non-existent context variable (\"" + variableName + "\").");
                 }
             }
+        }
+
+        final String vfound;
+        final String vresult;
+        final String vmultipleResults;
+        final String vcount;
+        final String velement;
+        final String vmultipleElements;
+
+        // Use the statically-configured variable names, if possible
+        if (context instanceof HasOutputVariables) {
+            // User of this PEC might use variables -- we will have to check PEC outputs as well
+            HasOutputVariables hasOutputVariables = (HasOutputVariables) context;
+            Set<String> pecOutputs = hasOutputVariables.getOutputVariableNames();
+            vfound = staticFoundVar != null ? staticFoundVar : pecOutputs.contains(assertion.foundVariable()) ? assertion.foundVariable() : null;
+            vresult = staticResultVar != null ? staticResultVar : pecOutputs.contains(assertion.resultVariable()) ? assertion.resultVariable() : null;
+            vmultipleResults = staticMultipleResultsVar != null ? staticMultipleResultsVar : pecOutputs.contains(assertion.multipleResultsVariable()) ? assertion.multipleResultsVariable() : null;
+            vcount = staticCountVar != null ? staticCountVar : pecOutputs.contains(assertion.countVariable()) ? assertion.countVariable() : null;
+            velement = staticElementVar != null ? staticElementVar : pecOutputs.contains(assertion.elementVariable()) ? assertion.elementVariable() : null;
+            vmultipleElements = staticMultipleElementsVar != null ? staticMultipleElementsVar : pecOutputs.contains(assertion.multipleElementsVariable()) ? assertion.multipleElementsVariable() : null;
+        } else {
+            // Nobody uses our variables but our own policy, so it is safe to rely on the var names collected at compiled-time
+            vfound = staticFoundVar;
+            vresult = staticResultVar;
+            vmultipleResults = staticMultipleResultsVar;
+            vcount = staticCountVar;
+            velement = staticElementVar;
+            vmultipleElements = staticMultipleElementsVar;
         }
 
         context.setVariable(vfound, SimpleXpathAssertion.FALSE);

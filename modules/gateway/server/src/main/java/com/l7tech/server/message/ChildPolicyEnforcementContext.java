@@ -30,7 +30,7 @@ import java.util.*;
  * by the parent PEC. The child PEC is responsible for variables, routing and
  * other instance specific duties.</p>
  */
-class ChildPolicyEnforcementContext extends PolicyEnforcementContextWrapper implements HasOriginalContext, ShadowsParentVariables {
+class ChildPolicyEnforcementContext extends PolicyEnforcementContextWrapper implements HasOriginalContext, ShadowsParentVariables, HasOutputVariables {
 
     //- PUBLIC
 
@@ -327,6 +327,17 @@ class ChildPolicyEnforcementContext extends PolicyEnforcementContextWrapper impl
         }
     }
 
+    @NotNull
+    @Override
+    public Set<String> getOutputVariableNames() {
+        return Collections.unmodifiableSet(outputVariables);
+    }
+
+    @Override
+    public void addOutputVariableName(@NotNull String variableName) {
+        outputVariables.add(variableName);
+    }
+
     //- PACKAGE
 
     ChildPolicyEnforcementContext( final PolicyEnforcementContext parent,
@@ -367,4 +378,5 @@ class ChildPolicyEnforcementContext extends PolicyEnforcementContextWrapper impl
     private final PolicyEnforcementContext parentContext;
     private final Set<String> passthroughVariables = new HashSet<String>();
     private final TreeSet<String> passthroughPrefixes = new TreeSet<String>();
+    private final TreeSet<String> outputVariables = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
 }
