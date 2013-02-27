@@ -622,7 +622,7 @@
                       <text resource-bundle="com/l7tech/external/assertions/ssh/console/SshRouteAssertionPropertiesPanel" key="fileSizeContextVariableLabel"/>
                     </properties>
                   </component>
-                  <grid id="c6742" layout-manager="GridLayoutManager" row-count="1" column-count="3" same-size-horizontally="true" same-size-vertically="false" hgap="-1" vgap="-1">
+                  <grid id="c6742" layout-manager="GridLayoutManager" row-count="1" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
                     <margin top="0" left="0" bottom="0" right="0"/>
                     <constraints>
                       <grid row="4" column="0" row-span="1" col-span="2" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
@@ -645,15 +645,6 @@
                         <properties>
                           <text resource-bundle="com/l7tech/external/assertions/ssh/console/SshRouteAssertionPropertiesPanel" key="failIfFileExistsLabel"/>
                           <toolTipText value="Selecting this will cause the file upload to fail if the file already exists. "/>
-                        </properties>
-                      </component>
-                      <component id="56023" class="javax.swing.JCheckBox" binding="truncateExistingFileCheckBox" default-binding="true">
-                        <constraints>
-                          <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
-                        </constraints>
-                        <properties>
-                          <text resource-bundle="com/l7tech/external/assertions/ssh/console/SshRouteAssertionPropertiesPanel" key="truncateExistingFIleLabel"/>
-                          <toolTipText value="If selected and there is an existing file with the same name the file will be truncated before being written to. Uncheck this if you are uploading parts of file rather then whole files at a time. "/>
                         </properties>
                       </component>
                     </children>

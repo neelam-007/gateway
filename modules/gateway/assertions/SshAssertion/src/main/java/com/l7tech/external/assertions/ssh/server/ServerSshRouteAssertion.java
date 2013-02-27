@@ -369,7 +369,7 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
                         // Upload the message. This will block until the entire file has been uploaded.
                         sftpClient.upload(mimeKnob.getEntireMessageBodyAsInputStream(), directory, fileName,
                                 assertion.isPreserveFileMetadata() && sshKnob != null ? sshKnob.getFileMetadata() : null,
-                                fileOffset, assertion.isFailIfFileExists(), !assertion.isTruncateExistingFile());
+                                fileOffset, assertion.isFailIfFileExists());
                         break;
                     }
                     case LIST: {

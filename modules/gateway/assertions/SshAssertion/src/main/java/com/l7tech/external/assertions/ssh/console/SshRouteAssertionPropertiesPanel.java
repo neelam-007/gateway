@@ -63,7 +63,6 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
     private JCheckBox preserveFileMetadataCheckBox;
     private JRadioButton SFTPRadioButton;
     private JCheckBox failIfFileExistsCheckBox;
-    private JCheckBox truncateExistingFileCheckBox;
     private JTextField fileOffsetTextField;
     private JTextField fileLengthTextField;
     private JTextField newFileNameTextField;
@@ -358,14 +357,12 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
             fileLengthTextField.setEnabled(CommandKnob.CommandType.GET.equals(selectedCommandType) || isCommandTypeFromVariable());
             newFileNameTextField.setEnabled(CommandKnob.CommandType.MOVE.equals(selectedCommandType) || isCommandTypeFromVariable());
             failIfFileExistsCheckBox.setEnabled(CommandKnob.CommandType.PUT.equals(selectedCommandType) || isCommandTypeFromVariable());
-            truncateExistingFileCheckBox.setEnabled(CommandKnob.CommandType.PUT.equals(selectedCommandType) || isCommandTypeFromVariable());
         } else {
             preserveFileMetadataCheckBox.setEnabled(false);
             fileOffsetTextField.setEnabled(false);
             fileLengthTextField.setEnabled(CommandKnob.CommandType.PUT.equals(selectedCommandType));
             newFileNameTextField.setEnabled(false);
             failIfFileExistsCheckBox.setEnabled(false);
-            truncateExistingFileCheckBox.setEnabled(false);
         }
 
         //Advanced Tab
@@ -451,7 +448,6 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
 
         commandVariableNameTargetVariablePanel.setVariable(assertion.getCommandTypeVariableName());
         failIfFileExistsCheckBox.setSelected(assertion.isFailIfFileExists());
-        truncateExistingFileCheckBox.setSelected(assertion.isTruncateExistingFile());
         fileOffsetTextField.setText(assertion.getFileOffset());
         fileLengthTextField.setText(assertion.getFileLength());
         newFileNameTextField.setText(assertion.getNewFileName());
@@ -546,7 +542,6 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
 
         assertion.setCommandTypeVariableName(commandVariableNameTargetVariablePanel.getVariable());
         assertion.setFailIfFileExists(failIfFileExistsCheckBox.isSelected());
-        assertion.setTruncateExistingFile(truncateExistingFileCheckBox.isSelected());
         assertion.setFileOffset(fileOffsetTextField.getText());
         assertion.setFileLength(fileLengthTextField.getText());
         assertion.setNewFileName(newFileNameTextField.getText());

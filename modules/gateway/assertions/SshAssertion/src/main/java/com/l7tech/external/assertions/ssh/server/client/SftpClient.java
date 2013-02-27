@@ -64,10 +64,9 @@ public class SftpClient implements SshClient {
      * @param fileMetadata     The file metedata to use to set the attribute of the file. If this is null file attribute will not be changed from the default
      * @param fileOffset       The file offset to start writing the data to
      * @param failIfFileExists This will fail is the file already exists.
-     * @param append           This will append data to the file. If this is false the file will be truncated.
      * @throws IOException
      */
-    public void upload(InputStream in, String remoteDir, String remoteFile, SshKnob.FileMetadata fileMetadata, long fileOffset, boolean failIfFileExists, boolean append) throws IOException {
+    public void upload(InputStream in, String remoteDir, String remoteFile, SshKnob.FileMetadata fileMetadata, long fileOffset, boolean failIfFileExists) throws IOException {
         setDir(remoteDir);
 
         //checks if the file exists
@@ -76,7 +75,8 @@ public class SftpClient implements SshClient {
         }
 
         //gets the output stream and writes to it.
-        OutputStream out = sftpClient.getOutputStream(remoteFile, fileOffset, append);
+        //Note the last flag property here is completely ignored by the jscape client. It is supposed to enable of disable appending to the file (i.e toggling the truncate flag.)
+        OutputStream out = sftpClient.getOutputStream(remoteFile, fileOffset, false);
         IOUtils.copyStream(in, out);
 
         //if the file metadata is specified it is set on the file.

@@ -62,7 +62,6 @@ public class SshRouteAssertion extends RoutingAssertion implements UsesVariables
     private boolean retrieveCommandTypeFromVariable = false; //should the command type to execute come from a context variable?
     private String commandTypeVariableName; //The command type context variable.
     private boolean failIfFileExists = false; //valid for PUT commands only. If true the assertion will fail if the file already exists.
-    private boolean truncateExistingFile = true; //valid for PUT commands only. If true the file will be truncated before the data is uploaded.
     private boolean setFileSizeToContextVariable = false;
     private String saveFileSizeContextVariable="";
 
@@ -371,14 +370,6 @@ public class SshRouteAssertion extends RoutingAssertion implements UsesVariables
 
     public void setFailIfFileExists(boolean failIfFileExists) {
         this.failIfFileExists = failIfFileExists;
-    }
-
-    public boolean isTruncateExistingFile() {
-        return truncateExistingFile;
-    }
-
-    public void setTruncateExistingFile(boolean truncateExistingFile) {
-        this.truncateExistingFile = truncateExistingFile;
     }
 
     public String getFileOffset() {
