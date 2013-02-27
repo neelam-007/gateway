@@ -19,6 +19,7 @@ import static org.junit.Assert.*;
 
 import com.l7tech.security.token.OpaqueSecurityToken;
 import com.l7tech.server.ApplicationContexts;
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
@@ -165,9 +166,9 @@ public class ServerThroughputQuotaTest {
         assertion.setQuota("${max_quota}");
         serverAssertion = new ServerThroughputQuota(assertion, applicationContext);
         Map<String, String> props = new HashMap<String, String>();
-        props.put("throughputquota.enforce_max_quota", String.valueOf(expectFail));
+        props.put(ServerConfigParams.PARAM_THROUGHPUTQUOTA_ENFORCE_MAX_QUOTA, String.valueOf(expectFail));
         if (maxAllowableQuotaValue != null) {
-            props.put("throughputquota.max_throughput_quota", String.valueOf(maxAllowableQuotaValue));
+            props.put(ServerConfigParams.PARAM_THROUGHPUTQUOTA_MAX_THROUGHPUT_QUOTA, String.valueOf(maxAllowableQuotaValue));
         }
         configureServerAssertion(serverAssertion, props);
         counterManager.setCounterValue(DEFAULT_QUOTA);

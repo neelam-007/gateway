@@ -190,6 +190,6 @@ public interface ServerConfigParams {
     String PARAM_IO_MQ_MESSAGE_MAX_BYTES = "ioMqMessageMaxBytes";
     String PARAM_DATE_TIME_CUSTOM_FORMATS = "datetime.customFormats";
     String PARAM_DATE_TIME_AUTO_FORMATS = "datetime.autoFormats";
-    String PARAM_THROUGHPUTQUOTA_ENFORCE_MAX_QUOTA = "throughputquota.enforce_max_quota";
-    String PARAM_THROUGHPUTQUOTA_MAX_THROUGHPUT_QUOTA = "throughputquota.max_throughput_quota";
+    String PARAM_THROUGHPUTQUOTA_ENFORCE_MAX_QUOTA = "throughputQuota.enforce_max_quota";
+    String PARAM_THROUGHPUTQUOTA_MAX_THROUGHPUT_QUOTA = "throughputQuota.max_throughput_quota";
 }
