@@ -6,6 +6,7 @@ import com.l7tech.external.assertions.validatecertificate.ValidateCertificateAss
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.policy.assertion.AssertionMetadata;
+import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.security.types.CertificateValidationType;
 import com.l7tech.util.Functions;
 import org.jetbrains.annotations.NotNull;
@@ -73,6 +74,12 @@ public class ValidateCertificatePropertiesDialog extends AssertionPropertiesOkCa
         variablePrefixPanel.add(targetVariablePanel, BorderLayout.CENTER);
         validators = new InputValidator(this, getTitle());
         validators.constrainTextFieldToBeNonEmpty(SOURCE_VARIABLE, srcVarTextField, null);
+        validators.addRule(new InputValidator.ValidationRule() {
+            @Override
+            public String getValidationError() {
+                return VariableMetadata.validateName(srcVarTextField.getText().trim());
+            }
+        });
     }
 
     @Override
