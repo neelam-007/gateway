@@ -2,10 +2,16 @@ package com.l7tech.console.panels;
 
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
+import com.l7tech.console.util.Registry;
+import com.l7tech.gateway.common.cluster.ClusterProperty;
+import com.l7tech.gateway.common.transport.InterfaceTag;
 import com.l7tech.gateway.common.transport.firewall.SsgFirewallRule;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.widgets.SquigglyTextField;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Functions;
 import com.l7tech.util.InetAddressUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -17,7 +23,12 @@ import javax.swing.event.DocumentListener;
 import javax.swing.text.JTextComponent;
 import java.awt.*;
 import java.awt.event.*;
+import java.net.InetAddress;
+import java.text.ParseException;
 import java.util.*;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -26,6 +37,7 @@ import java.util.regex.Pattern;
  * @author K.Diep
  */
 public class SsgFirewallPropertiesDialog extends JDialog {
+    private static final Logger logger = Logger.getLogger(SsgFirewallPropertiesDialog.class.getName());
 
     private JPanel contentPanel;
 
@@ -52,6 +64,10 @@ public class SsgFirewallPropertiesDialog extends JDialog {
     private JButton buttonCancel;
     private JButton buttonOK;
     private JCheckBox enableCheckBox;
+    private JComboBox interfaceComboBox;
+    private JButton manageInterface;
+
+    private DefaultComboBoxModel interfaceComboBoxModel;
 
     private TargetOptionsPanel targetOptions;
 
@@ -76,7 +92,7 @@ public class SsgFirewallPropertiesDialog extends JDialog {
     private static final Map<String, String[]> CHAIN_FILTER;
     static {
         Map<String, String[]> m = new HashMap<String, String[]>();
-        m.put("filter", new String[]{"INPUT", "FORWARD"}); //OUTPUT is not required
+        m.put("filter", new String[]{"INPUT"}); //OUTPUT && FORWARD is not required
         m.put("NAT", new String[]{"PREROUTING", "POSTROUTING"}); //OUTPUT is not required
 
         CHAIN_FILTER = Collections.unmodifiableMap(m);
@@ -88,16 +104,12 @@ public class SsgFirewallPropertiesDialog extends JDialog {
     private SsgFirewallRule rule;
 
     public SsgFirewallPropertiesDialog(final Window owner, SsgFirewallRule rule) {
-        super(owner, "Firewall Rule Properties");
+        super(owner, "Advanced Firewall Rule Properties");
         this.rule = rule;
         setModal(true);
         add(contentPanel, BorderLayout.CENTER);
         initialize();
     }
-
-    private static final String[] ADVANCE_PROPERTIES = new String[]{"table", "chain", "jump", "protocol",
-        "source", "destination", "source-port", "destination-port", "tcp-flags", "tcp-option", "to-ports", "to-destination", "icmp-type"};
-
 
     private void modelToView() {
         rulename.setText(rule.getName());
@@ -132,12 +144,18 @@ public class SsgFirewallPropertiesDialog extends JDialog {
             }
             targetOptions.setFormValues(form);
         }
+        String in = rule.getProperty("in-interface");
+        if(in == null) interfaceComboBox.setSelectedIndex(0);
+        else interfaceComboBoxModel.setSelectedItem(in);
     }
 
 
     public void viewToModel() {
         rule.setName(rulename.getText().trim());
         rule.setEnabled(enableCheckBox.isSelected());
+        for(String p : rule.getPropertyNames()){
+            rule.removeProperty(p);
+        }
         String selectedTarget = ddTarget.getSelectedItem().toString();
         rule.putProperty("table", ddTable.getSelectedItem().toString());
         rule.putProperty("chain", ddChain.getSelectedItem().toString());
@@ -176,6 +194,10 @@ public class SsgFirewallPropertiesDialog extends JDialog {
                 rule.putProperty(ent.getKey(), ent.getValue());
             }
         }
+        Object inter = interfaceComboBoxModel.getSelectedItem();
+        if(inter != null && !"(ALL)".equalsIgnoreCase(inter.toString())){
+            rule.putProperty("in-interface", inter.toString());
+        }
     }
 
 
@@ -201,6 +223,20 @@ public class SsgFirewallPropertiesDialog extends JDialog {
     }
 
     private void initialize(){
+        manageInterface.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                InterfaceTagsDialog.show(SsgFirewallPropertiesDialog.this, new Functions.UnaryVoid<String>() {
+                    @Override
+                    public void call(String newInterfaceTags) {
+                        Object prev = interfaceComboBox.getSelectedItem();
+                        initializeInterfaceComboBox(newInterfaceTags);
+                        interfaceComboBox.getModel().setSelectedItem(prev);
+                    }
+                });
+            }
+        });
+        initializeInterfaceComboBox(null);
         getRootPane().setDefaultButton(buttonOK);
         inputValidator = new InputValidator(this, "Firewall Settings");
         inputValidator.attachToButton(buttonOK, new ActionListener() {
@@ -283,6 +319,39 @@ public class SsgFirewallPropertiesDialog extends JDialog {
             rule = new SsgFirewallRule();
         }
         addValidationRules();
+    }
+
+    private void initializeInterfaceComboBox(@Nullable String interfaceTags) {
+        List<String> entries = new ArrayList<String>();
+
+        entries.add("(All)");
+
+        try {
+            if (interfaceTags == null) {
+                ClusterProperty tagProp = Registry.getDefault().getClusterStatusAdmin().findPropertyByName(InterfaceTag.PROPERTY_NAME);
+                if (tagProp != null){
+                    interfaceTags = tagProp.getValue();
+                }
+            }
+            if (interfaceTags != null) {
+                for (InterfaceTag tag : InterfaceTag.parseMultiple(interfaceTags))
+                    entries.add(tag.getName());
+            }
+        } catch (FindException e) {
+            if (logger.isLoggable(Level.INFO))
+                logger.log(Level.INFO, "FindException looking up cluster property " + InterfaceTag.PROPERTY_NAME + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+        } catch (ParseException e) {
+            if (logger.isLoggable(Level.WARNING))
+                logger.log(Level.WARNING, "Bad value for cluster property " + InterfaceTag.PROPERTY_NAME + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+        }
+
+        InetAddress[] addrs = Registry.getDefault().getTransportAdmin().getAvailableBindAddresses();
+        for (InetAddress addr : addrs) {
+            entries.add(addr.getHostAddress());
+        }
+
+        interfaceComboBoxModel = new DefaultComboBoxModel(entries.toArray());
+        interfaceComboBox.setModel(interfaceComboBoxModel);
     }
 
     private void addValidationRules(){
@@ -378,6 +447,7 @@ public class SsgFirewallPropertiesDialog extends JDialog {
     }
 
     private void updateTarget(){
+        ddTarget.setModel(new DefaultComboBoxModel(BASE_TARGET));
         //add other rules
         final String table = ddTable.getSelectedItem().toString();
         final String chain = ddChain.getSelectedItem().toString();

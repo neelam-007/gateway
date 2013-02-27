@@ -560,4 +560,9 @@ public interface ClusterStatusAdmin {
      * to the client PIN, encrypted in some way that the GatewayLunaPinFinder will be able to decrypt.
      */
     public static final String CAPABILITY_PROPERTY_LUNAPIN = "keystore.luna.clientPin";
+
+    /**
+     * A read-only property to indicate the ability to configure firewall rules.
+     */
+    public static final String CAPABILITY_FIREWALL = "appliance.firewall";
 }

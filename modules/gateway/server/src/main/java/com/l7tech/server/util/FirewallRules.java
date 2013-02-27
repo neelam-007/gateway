@@ -267,7 +267,17 @@ public class FirewallRules {
         if(matchers != null){
             for(String m : matchers){
                 final String dash = m.length() == 1 ? "-" : "--";
-                final String value = rule.getProperty(m);
+                String value = rule.getProperty(m);
+                if(m.equals("in-interface") || m.equals("out-interface")){
+                    String bindAddress = value;
+                    if ( bindAddress != null) {
+                        value = getInterfaceForIP(bindAddress);
+                        if ( value == null ) {
+                            logger.log( Level.WARNING, "Could not determine interface for IP address ''{0}'', omitting '" + m + " value from rule.", bindAddress);
+                            continue;
+                        }
+                    }
+                }
                 if(value != null && !value.trim().isEmpty()){
                     sb.append(dash).append(m).append(" ").append(value).append(" ");
                 }

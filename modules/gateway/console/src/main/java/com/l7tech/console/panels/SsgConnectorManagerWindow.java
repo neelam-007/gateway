@@ -133,7 +133,9 @@ public class SsgConnectorManagerWindow extends JDialog {
 
         interfacesButton.setEnabled(InterfaceTagsDialog.canViewInterfaceTags());
 
-        manageFirewallRulesButton.setEnabled(flags.canDeleteSome() || flags.canDeleteAll());
+        manageFirewallRulesButton.setEnabled((flags.canDeleteSome() || flags.canDeleteAll())
+                && "true".equals(Registry.getDefault().getClusterStatusAdmin().getHardwareCapability("appliance.firewall")));
+
         manageFirewallRulesButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {

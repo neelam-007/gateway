@@ -2,7 +2,6 @@ package com.l7tech.server.cluster;
 
 import com.l7tech.common.io.failover.FailoverStrategy;
 import com.l7tech.common.io.failover.FailoverStrategyFactory;
-import com.l7tech.util.DateTimeConfigUtils;
 import com.l7tech.gateway.common.InvalidLicenseException;
 import com.l7tech.gateway.common.License;
 import com.l7tech.gateway.common.LicenseException;
@@ -32,9 +31,6 @@ import com.l7tech.server.service.ServiceMetricsManager;
 import com.l7tech.server.service.ServiceMetricsServices;
 import com.l7tech.server.util.JaasUtils;
 import com.l7tech.util.*;
-
-import static com.l7tech.util.Option.optional;
-
 import com.l7tech.util.ValidationUtils.Validator;
 import com.l7tech.xml.TarariLoader;
 import org.jetbrains.annotations.NotNull;
@@ -44,11 +40,14 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.File;
 import java.io.Serializable;
+import java.security.KeyStoreException;
 import java.util.*;
 import java.util.logging.Logger;
-import java.security.KeyStoreException;
 import java.util.regex.Pattern;
+
+import static com.l7tech.util.Option.optional;
 
 /**
  * Server side implementation of the ClusterStatusAdmin interface.
@@ -397,7 +396,8 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin, ApplicationCon
     // TODO refactor these methods into a separate HardwareCapabilityManager bean that delegates to HardwareCapability instances
 
     private static boolean isKnownCapability(String capability) {
-        return ClusterStatusAdmin.CAPABILITY_LUNACLIENT.equals(capability) || ClusterStatusAdmin.CAPABILITY_HWXPATH.equals(capability);
+        return ClusterStatusAdmin.CAPABILITY_LUNACLIENT.equals(capability) || ClusterStatusAdmin.CAPABILITY_HWXPATH.equals(capability) ||
+                ClusterStatusAdmin.CAPABILITY_FIREWALL.equals(capability);
     }
 
     @Override
@@ -408,9 +408,13 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin, ApplicationCon
             return LunaProber.isLunaClientLibraryAvailable() ? "true" : null;
         } else if (ClusterStatusAdmin.CAPABILITY_HWXPATH.equals(capability)) {
             return TarariLoader.getGlobalContext() != null ? ClusterStatusAdmin.CAPABILITY_VALUE_HWXPATH_TARARI : null;
-        } else {
-            return null;
+        } else if (ClusterStatusAdmin.CAPABILITY_FIREWALL.equals(capability)){
+            final File applianceDir = new File("/opt/SecureSpan/Appliance");
+            if (applianceDir.exists() && applianceDir.isDirectory()){
+                return "true";
+            }
         }
+        return null;
     }
 
     @Override

@@ -1,11 +1,13 @@
 package com.l7tech.gateway.common.transport.firewall;
 
 import com.l7tech.objectmodel.imp.NamedEntityImp;
+import com.l7tech.util.BeanUtils;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
 import org.hibernate.annotations.Proxy;
 
 import javax.persistence.*;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -97,16 +99,6 @@ public class SsgFirewallRule extends NamedEntityImp {
     }
 
     @Transient
-    public String getSource(){
-        return properties.get("source");
-    }
-
-    @Transient
-    public String getDestination(){
-        return properties.get("destination");
-    }
-
-    @Transient
     public String getPort(){
         return properties.get("destination-port");
     }
@@ -114,6 +106,26 @@ public class SsgFirewallRule extends NamedEntityImp {
     @Transient
     public String getJump(){
         return properties.get("jump");
+    }
+
+    @Transient
+    public String getInInterface(){
+        String i = properties.get("in-interface");
+        return i == null ? "(ALL)" : i;
+    }
+
+    @Transient
+    public SsgFirewallRule getCopy(){
+        try {
+            SsgFirewallRule copy = new SsgFirewallRule();
+            BeanUtils.copyProperties(this, copy, BeanUtils.omitProperties(BeanUtils.getProperties(getClass()), "properties"));
+            copy.setProperties(new HashMap<String, String>(getProperties()));
+            return copy;
+        } catch (InvocationTargetException e) {
+            throw new RuntimeException(e);
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override

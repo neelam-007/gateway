@@ -1,5 +1,6 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.console.util.EntityUtils;
 import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.transport.TransportAdmin;
 import com.l7tech.gateway.common.transport.firewall.SsgFirewallRule;
@@ -14,14 +15,9 @@ import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 
 import javax.swing.*;
-import javax.swing.event.TableModelEvent;
-import javax.swing.event.TableModelListener;
 import java.awt.*;
 import java.awt.event.*;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -44,12 +40,16 @@ public class SsgFirewallManagerDialog extends JDialog {
     private JButton moveUpButton;
     private JButton moveDownButton;
     private JButton restoreDefaultsButton;
+    private JButton cloneButton;
+    private JButton advancedButton;
+    private JButton advancePropertiesButton;
 
     private SimpleTableModel<SsgFirewallRule> firewallTableModel;
 
-    private PermissionFlags permissionFlags;
+    private static final java.util.List<String> ADVANCE_PROPERTIES = new ArrayList<String>(Arrays.asList(new String[]{
+            "source", "destination", "tcp-flags", "tcp-option", "icmp-type", "source-port", "to-destination"}));
 
-    private boolean isDirty;
+    private PermissionFlags permissionFlags;
 
     public SsgFirewallManagerDialog(final Window owner) {
         super(owner, "Manage Firewall Rules", ModalityType.DOCUMENT_MODAL);
@@ -64,17 +64,54 @@ public class SsgFirewallManagerDialog extends JDialog {
         setupRestoreDefaultButton();
         toggleButtonState();
 
+        cloneButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(final ActionEvent e) {
+                final SsgFirewallRule rule = getSelectedInput();
+                if (rule == null)
+                    return;
+
+                final SsgFirewallRule newRule = rule.getCopy();
+                newRule.setOrdinal(rule.getOrdinal() + 1);
+                EntityUtils.updateCopy(newRule);
+                if(canDisplaySimpleDialog(newRule)){
+                    displaySimplePropertiesDialog(newRule);
+                }
+                else {
+                    DialogDisplayer.showSafeConfirmDialog(
+                            contentPane,
+                            "<html><center><p>Warning: You are about to clone a rule with advanced configurations.  Mis-configurations may prevent access to the Gateway.</p>" +
+                                    "<p>Do you wish to continue?</p></center></html>",
+                            "Confirm Action",
+                            JOptionPane.OK_CANCEL_OPTION,
+                            JOptionPane.WARNING_MESSAGE,
+                            new DialogDisplayer.OptionListener() {
+                                @Override
+                                public void reportResult(int option) {
+                                    if (option == JOptionPane.CANCEL_OPTION) {
+                                        return;
+                                    }
+                                    displayAdvancedPropertiesDialog(newRule);
+                                }
+                            }
+                    );
+                }
+            }
+        });
         buttonClose.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                if(isDirty){
-                    final TransportAdmin ta = Registry.getDefault().getTransportAdmin();
-                    try {
-                        for(SsgFirewallRule r : firewallTableModel.getRows()){
-                            ta.saveFirewallRule(r);
+                final TransportAdmin ta = Registry.getDefault().getTransportAdmin();
+                try {
+                    for (int i = 0; i < firewallTableModel.getRowCount(); i++) {
+                        int ordinal = i + 1;
+                        SsgFirewallRule rule = firewallTableModel.getRowObject(i);
+                        if (rule.getOrdinal() != ordinal) {
+                            rule.setOrdinal(ordinal);
+                            ta.saveFirewallRule(rule);
                         }
-                    } catch (Exception e1) {
-                        logger.warning("Error updating firewall rule ordinal.");
                     }
+                } catch (Exception e1) {
+                    logger.warning("Error updating firewall rule ordinal.");
                 }
                 onClose();
             }
@@ -95,45 +132,59 @@ public class SsgFirewallManagerDialog extends JDialog {
 
         firewallTableModel = TableUtil.configureTable(firewallRulesTable,
                 column("Enabled", 30, 50, 50, enabledPropertyExtractor, Boolean.class),
-                column("Ordinal", 30, 50, 50, ordinalPropertyExtractor, Integer.class),
-                column("Name", 30, 100, 100, namePropertyExtractor, String.class),
+                column("Name", 30, 100, 200, namePropertyExtractor, String.class),
                 column("Protocol", 30, 100, 100, protocollPropertyExtractor, String.class),
-                column("Source", 30, 100, 200, sourcePropertyExtractor, String.class),
-                column("Destination", 30, 100, 200, destinationPropertyExtractor, String.class),
+                column("Interface", 30, 100, 200, interfacePropertyExtractor, String.class),
                 column("Port", 30, 100, 100, portPropertyExtractor, String.class),
-                column("Target", 30, 100, 100, targetPropertyExtractor, String.class)
+                column("Action", 30, 100, 100, targetPropertyExtractor, String.class)
         );
 
         loadFirewallRules();
 
         moveUpButton.addActionListener(TableUtil.createMoveUpAction(firewallRulesTable, firewallTableModel));
         moveDownButton.addActionListener(TableUtil.createMoveDownAction(firewallRulesTable, firewallTableModel));
-
-        firewallTableModel.addTableModelListener(new TableModelListener() {
+        advancedButton.setEnabled(permissionFlags.canCreateSome() || permissionFlags.canCreateAll());
+        advancedButton.addActionListener(new ActionListener() {
             @Override
-            public void tableChanged(final TableModelEvent e) {
-                isDirty = true;
-                if(e.getType() == TableModelEvent.UPDATE && e.getFirstRow() == e.getLastRow()){
-                    SsgFirewallRule s = firewallTableModel.getRowObject(e.getFirstRow());
-                    s.setOrdinal(e.getFirstRow() + 1);
-                }
+            public void actionPerformed(final ActionEvent e) {
+                confirmAdvanceConfiguration(null);
             }
         });
-
+        advancePropertiesButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(final ActionEvent e) {
+                confirmAdvanceConfiguration(getSelectedInput());
+            }
+        });
         addButton.setEnabled(permissionFlags.canCreateSome() || permissionFlags.canCreateAll());
         addButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(final ActionEvent e) {
-                displayPropertiesDialog(null);
+                displaySimplePropertiesDialog(null);
             }
         });
         editButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(final ActionEvent e) {
-                displayPropertiesDialog(getSelectedInput());
+                displaySimplePropertiesDialog(getSelectedInput());
             }
         });
-        Utilities.setDoubleClickAction(firewallRulesTable, editButton);
+
+        firewallRulesTable.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(final MouseEvent e) {
+                if(e.getClickCount() == 2){
+                    SsgFirewallRule input = getSelectedInput();
+                    if(canDisplaySimpleDialog(input)){
+                        displaySimplePropertiesDialog(input);
+                    }
+                    else {
+                        confirmAdvanceConfiguration(input);
+                    }
+                }
+            }
+        });
+
         firewallRulesTable.getSelectionModel().addListSelectionListener(new RunOnChangeListener(new Runnable() {
             @Override
             public void run() {
@@ -161,6 +212,41 @@ public class SsgFirewallManagerDialog extends JDialog {
         });
     }
 
+    private boolean canDisplaySimpleDialog(final SsgFirewallRule rule) {
+        boolean isSimpleAccept = "filter".equals(rule.getProperty("table")) && "INPUT".equals(rule.getProperty("chain")) && "ACCEPT".equals(rule.getProperty("jump"));
+        boolean isSimpleRedirect = "NAT".equals(rule.getProperty("table")) && "PREROUTING".equals(rule.getProperty("chain")) && "REDIRECT".equals(rule.getProperty("jump"));
+
+        boolean containOtherSettings = false;
+        java.util.List<String> myProps = rule.getPropertyNames();
+        for (final String ap : ADVANCE_PROPERTIES) {
+            if (myProps.contains(ap)){
+                containOtherSettings = true;
+                break;
+            }
+        }
+        return ((isSimpleAccept || isSimpleRedirect) && !containOtherSettings);
+    }
+
+    private void confirmAdvanceConfiguration(final SsgFirewallRule rule){
+        DialogDisplayer.showSafeConfirmDialog(
+                contentPane,
+                "<html><center><p>Warning: You are about to access the advance settings.  Mis-configurations may prevent access to the Gateway</p>" +
+                        "<p>Do you wish to continue?</p></center></html>",
+                "Confirm Action",
+                JOptionPane.OK_CANCEL_OPTION,
+                JOptionPane.WARNING_MESSAGE,
+                new DialogDisplayer.OptionListener() {
+                    @Override
+                    public void reportResult(int option) {
+                        if (option == JOptionPane.CANCEL_OPTION) {
+                            return;
+                        }
+                        displayAdvancedPropertiesDialog(rule);
+                    }
+                }
+        );
+    }
+
     private void loadFirewallRules(){
         firewallTableModel.setRows(Functions.sort(findAllFirewallRules(), new Comparator<SsgFirewallRule>() {
             @Override
@@ -171,8 +257,11 @@ public class SsgFirewallManagerDialog extends JDialog {
     }
 
     private void toggleButtonState(){
-        editButton.setEnabled((permissionFlags.canUpdateSome() || permissionFlags.canUpdateAll()) && firewallRulesTable.getSelectedRow() > -1);
+        editButton.setEnabled((permissionFlags.canUpdateSome() || permissionFlags.canUpdateAll()) && firewallRulesTable.getSelectedRow() > -1 && !(canDisplaySimpleDialog(getSelectedInput())));
+
         deleteButton.setEnabled((permissionFlags.canDeleteSome() || permissionFlags.canDeleteAll()) && firewallRulesTable.getSelectedRow() > -1);
+        cloneButton.setEnabled((permissionFlags.canCreateAll() || permissionFlags.canCreateSome()) && firewallRulesTable.getSelectedRow() > -1);
+        advancePropertiesButton.setEnabled((permissionFlags.canCreateAll() || permissionFlags.canCreateSome()) && firewallRulesTable.getSelectedRow() > -1);
 
         //can't move up if we are at the top
         moveUpButton.setEnabled((permissionFlags.canUpdateSome() || permissionFlags.canUpdateAll()) && firewallRulesTable.getSelectedRow() > 0);
@@ -184,7 +273,30 @@ public class SsgFirewallManagerDialog extends JDialog {
         return firewallTableModel.getRowObject(firewallRulesTable.getSelectedRow());
     }
 
-    private void displayPropertiesDialog(final SsgFirewallRule rule){
+    private void displaySimplePropertiesDialog(final SsgFirewallRule rule){
+        final SsgSimpleFirewallPropertiesDialog dlg = new SsgSimpleFirewallPropertiesDialog(this, rule);
+        dlg.pack();
+        Utilities.centerOnScreen(dlg);
+        DialogDisplayer.display(dlg, new Runnable(){
+            @Override
+            public void run() {
+                if(dlg.isConfirmed()){
+                    try {
+                        final SsgFirewallRule r = dlg.getRule();
+                        if(rule == null){
+                            r.setOrdinal(firewallRulesTable.getRowCount() + 1);
+                        }
+                        Registry.getDefault().getTransportAdmin().saveFirewallRule(r);
+                    } catch (Exception e) {
+                        logger.warning("Unable to save firewall rule: " + ExceptionUtils.getDebugException(e));
+                    }
+                }
+                loadFirewallRules();
+            }
+        });
+    }
+
+    private void displayAdvancedPropertiesDialog(final SsgFirewallRule rule){
         final SsgFirewallPropertiesDialog dlg = new SsgFirewallPropertiesDialog(this, rule);
         dlg.pack();
         Utilities.centerOnScreen(dlg);
@@ -263,12 +375,11 @@ public class SsgFirewallManagerDialog extends JDialog {
     }
 
     private static final Functions.Unary<Boolean, SsgFirewallRule> enabledPropertyExtractor = Functions.<Boolean, SsgFirewallRule>propertyTransform(SsgFirewallRule.class, "enabled");
-    private static final Functions.Unary<Integer, SsgFirewallRule> ordinalPropertyExtractor = Functions.<Integer, SsgFirewallRule>propertyTransform(SsgFirewallRule.class, "ordinal");
     private static final Functions.Unary<String, SsgFirewallRule> namePropertyExtractor = Functions.<String, SsgFirewallRule>propertyTransform(SsgFirewallRule.class, "name");
     private static final Functions.Unary<String, SsgFirewallRule> protocollPropertyExtractor = Functions.<String, SsgFirewallRule>propertyTransform(SsgFirewallRule.class, "protocol");
-    private static final Functions.Unary<String, SsgFirewallRule> sourcePropertyExtractor = Functions.<String, SsgFirewallRule>propertyTransform(SsgFirewallRule.class, "source");
-    private static final Functions.Unary<String, SsgFirewallRule> destinationPropertyExtractor = Functions.<String, SsgFirewallRule>propertyTransform(SsgFirewallRule.class, "destination");
     private static final Functions.Unary<String, SsgFirewallRule> portPropertyExtractor = Functions.<String, SsgFirewallRule>propertyTransform(SsgFirewallRule.class, "port");
     private static final Functions.Unary<String, SsgFirewallRule> targetPropertyExtractor = Functions.<String, SsgFirewallRule>propertyTransform(SsgFirewallRule.class, "jump");
+    private static final Functions.Unary<String, SsgFirewallRule> interfacePropertyExtractor = Functions.<String, SsgFirewallRule>propertyTransform(SsgFirewallRule.class, "inInterface");
+
 }
 
