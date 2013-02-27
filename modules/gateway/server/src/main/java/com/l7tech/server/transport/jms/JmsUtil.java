@@ -131,7 +131,7 @@ public class JmsUtil {
             Thread.currentThread().setContextClassLoader( contextClassLoader );
         }
         try {
-            jndiContext = new InitialContext( props );
+            jndiContext = new JmsServiceLocator( props );
             String cfUrl = dcfUrl;
             if ( cfUrl == null ) cfUrl = qcfUrl;
             if ( cfUrl == null ) cfUrl = tcfUrl;

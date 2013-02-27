@@ -9,9 +9,7 @@ import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.TimeUnit;
 import org.springframework.beans.factory.DisposableBean;
 
-import javax.jms.Connection;
-import javax.jms.JMSException;
-import javax.jms.Session;
+import javax.jms.*;
 import javax.naming.Context;
 import javax.naming.NamingException;
 import java.beans.PropertyChangeEvent;
@@ -24,7 +22,9 @@ import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.TreeSet;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -79,8 +79,25 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
                                     final JmsResourceCallback callback ) throws JMSException, JmsRuntimeException {
         if ( !active.get() ) throw new JmsRuntimeException("JMS resource manager is stopped.");
 
-        final JmsEndpointConfig.JmsEndpointKey key = endpoint.getJmsEndpointKey();
+        CachedConnection cachedConnection = getConnection(endpoint);
+        try {
+            cachedConnection.doWithJmsResources( callback );
+        } catch ( JMSException e ) {
+            evict( connectionHolder, endpoint.getJmsEndpointKey(), cachedConnection );
+            throw e;
+        }
+    }
 
+    /**
+     * Retrieve the JMS Connection, if the connection doesn't exist in the cache, create the connection and cache it.
+     *
+     * @param endpoint The configuration to use
+     * @return The Cached JMS Connection
+     * @throws JmsRuntimeException If an error occurs creating the resources
+     */
+    private CachedConnection getConnection(JmsEndpointConfig endpoint) throws JmsRuntimeException {
+
+        final JmsEndpointConfig.JmsEndpointKey key = endpoint.getJmsEndpointKey();
         CachedConnection cachedConnection = null;
         try {
             cachedConnection = connectionHolder.get(key);
@@ -95,14 +112,46 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
                     }
                 }
             }
-
-            cachedConnection.doWithJmsResources( callback );
-        } catch ( JMSException e ) {
-            evict( connectionHolder, key, cachedConnection );
-            throw e;
         } finally {
             if ( cachedConnection != null ) cachedConnection.unRef();
         }
+        return cachedConnection;
+    }
+
+    /**
+     * Borrow a JmsBag from the Cached Connection. Expect to return the JmsBag using returnJmsBag.
+     * Fail to return the JmsBag will leave the JMS Session open, the caller is responsible to
+     * close the jms session.
+     *
+     * @param endpointConfig The configuration endpoint to lookup the Cached Connection
+     * @return A JmsBag with JmsSession
+     * @throws JmsRuntimeException If error occur when getting the connection or getting the JmsBag
+     */
+    public JmsBag borrowJmsBag(final JmsEndpointConfig endpointConfig) throws JmsRuntimeException {
+        CachedConnection connection = getConnection(endpointConfig);
+        return connection.borrowJmsBag();
+    }
+
+    /**
+     * Return a JmsBag to the Cached Connection, the JmsBag can be reuse by other thread.
+     * @param endpointConfig The configuration endpoint to lookup the Cached Connection
+     * @param bag The bag return to the JmsSession, Caller should not change any state of JmsBag.
+     * @throws JmsRuntimeException If error occur when returning the JmsBag
+     */
+    public void returnJmsBag(final JmsEndpointConfig endpointConfig, JmsBag bag) throws JmsRuntimeException {
+        CachedConnection connection = getConnection(endpointConfig);
+        connection.returnJmsBag(bag);
+    }
+
+    /**
+     * Touch the connection and keep the connection active.
+     *
+     * @param endpointConfig The configuration endpoint to loopup the Cached Connection
+     * @throws JmsRuntimeException If error when touching the Cached Connection.
+     */
+    public void touch(final JmsEndpointConfig endpointConfig) throws JmsRuntimeException {
+        CachedConnection connection = getConnection(endpointConfig);
+        connection.touch();
     }
 
     /**
@@ -196,7 +245,7 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
 
     private static final Logger logger = Logger.getLogger(JmsResourceManager.class.getName());
 
-    private static final long DEFAULT_CONNECTION_MAX_AGE = TimeUnit.MINUTES.toMillis( 10 );
+    private static final long DEFAULT_CONNECTION_MAX_AGE = TimeUnit.MINUTES.toMillis( 30 );
     private static final long DEFAULT_CONNECTION_MAX_IDLE = TimeUnit.MINUTES.toMillis( 5 );
     private static final int DEFAULT_CONNECTION_CACHE_SIZE = 100;
 
@@ -317,6 +366,8 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
         private final String name;
         private final int endpointVersion;
         private final int connectionVersion;
+        private final BlockingQueue<JmsBag> pool;
+        private final JmsEndpointConfig endpointConfig;
 
         CachedConnection( final JmsEndpointConfig cfg,
                           final JmsBag bag) {
@@ -324,25 +375,67 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
             this.name = cfg.getJmsEndpointKey().toString();
             this.endpointVersion = cfg.getEndpoint().getVersion();
             this.connectionVersion = cfg.getConnection().getVersion();
+            this.pool = new LinkedBlockingDeque<JmsBag>();
+            this.endpointConfig = cfg;
+
+        }
+
+        /**
+         * Update the lastAccessTime, to keep the connection alive.
+         */
+        public void touch() {
+            lastAccessTime.set( System.currentTimeMillis() );
+        }
+
+        /**
+         * Borrow a JmsBag from the Cached Connection. Expect to return the JmsBag using returnJmsBag.
+         * Fail to return the JmsBag will leave the JMS Session open, the caller is responsible to
+         * close the jms session.
+         *
+         * @return A JmsBag with JmsSession
+         * @throws JmsRuntimeException If error occur when getting the JmsBag
+         */
+        public JmsBag borrowJmsBag() throws JmsRuntimeException {
+
+            touch();
+            try {
+               JmsBag jmsBag = pool.poll();
+               if (jmsBag == null) {
+
+                    Session session = bag.getConnection().createSession(false, Session.CLIENT_ACKNOWLEDGE);
+                    jmsBag = new JmsBag(bag.getJndiContext(), bag.getConnectionFactory(),
+                        bag.getConnection(), session );
+                }
+                return jmsBag;
+            } catch (JMSException e) {
+                throw new JmsRuntimeException(e);
+            }
+        }
+
+        /**
+         * Return a JmsBag to the Cached Connection, the JmsBag can be reuse by other Thread
+         * @param bag The bag return to the pool
+         */
+        public void returnJmsBag(JmsBag bag) {
+            touch();
+            pool.add(bag);
         }
 
         /**
          * Caller must hold reference.
          */
         public void doWithJmsResources( final JmsResourceCallback callback ) throws JMSException, JmsRuntimeException {
-            lastAccessTime.set( System.currentTimeMillis() );
+            touch();
             final Connection connection = bag.getConnection();
-            Session session = null;
+            JmsBag jmsBag = null;
             try {
                 try {
-                    session = connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
-                } catch ( JMSException e ) {
-                    throw new JmsRuntimeException(e); // only the callback should trigger a JMSException    
+                    jmsBag = borrowJmsBag();
                 } catch ( Throwable t ) {
                     throw new JmsRuntimeException(t);
                 }
 
-                callback.doWork( connection, session, new JndiContextProvider(){
+                callback.doWork( connection, jmsBag.getSession(), new JndiContextProvider(){
                     @Override
                     public void doWithJndiContext( final JndiContextCallback contextCallback ) throws NamingException  {
                         synchronized( contextLock ) {
@@ -359,7 +452,7 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
                     }
                 });
             } finally {
-                if ( session != null ) session.close();
+                returnJmsBag(jmsBag);
             }
         }
 
@@ -378,10 +471,15 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
                 logger.log(
                         Level.FINE,
                         "Closing JMS connection ({0}), version {1}:{2}",
-                        new Object[] {
-                            name, connectionVersion, endpointVersion
+                        new Object[]{
+                                name, connectionVersion, endpointVersion
                         });
                 bag.close();
+                Iterator<JmsBag> itr = pool.iterator();
+                while (itr.hasNext()) {
+                    itr.next().closeSession();
+                }
+                pool.clear();
             }
         }
     }
@@ -436,8 +534,8 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
                 );
             
             for ( final Map.Entry<JmsEndpointConfig.JmsEndpointKey,CachedConnection> cachedConnectionEntry : connectionHolder.entrySet() ) {
-                if ( (timeNow-cachedConnectionEntry.getValue().createdTime) > cacheConfig.maximumAge && cacheConfig.maximumAge > 0) {
-                    evict( connectionHolder, cachedConnectionEntry.getKey(), cachedConnectionEntry.getValue() );
+                if ( (timeNow-cachedConnectionEntry.getValue().createdTime) > cacheConfig.maximumAge && cacheConfig.maximumAge > 0 && cachedConnectionEntry.getValue().endpointConfig.isEvictOnExpired()) {
+                evict( connectionHolder, cachedConnectionEntry.getKey(), cachedConnectionEntry.getValue() );
                 } else if ( (timeNow-cachedConnectionEntry.getValue().lastAccessTime.get()) > cacheConfig.maximumIdleTime && cacheConfig.maximumIdleTime > 0) {
                     evict( connectionHolder, cachedConnectionEntry.getKey(), cachedConnectionEntry.getValue() );
                 } else if ( overSize > 0 ) {

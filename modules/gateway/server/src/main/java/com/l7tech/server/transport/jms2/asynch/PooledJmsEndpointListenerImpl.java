@@ -3,7 +3,6 @@ package com.l7tech.server.transport.jms2.asynch;
 import com.l7tech.server.transport.jms.JmsBag;
 import com.l7tech.server.transport.jms.JmsConfigException;
 import com.l7tech.server.transport.jms.JmsRuntimeException;
-import com.l7tech.server.transport.jms.JmsUtil;
 import com.l7tech.server.transport.jms2.AbstractJmsEndpointListener;
 import com.l7tech.server.transport.jms2.JmsEndpointConfig;
 import com.l7tech.server.transport.jms2.JmsMessages;
@@ -12,7 +11,9 @@ import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.ThreadPool;
 
-import javax.jms.*;
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.MessageConsumer;
 import javax.naming.NamingException;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.logging.Level;
@@ -41,20 +42,14 @@ class PooledJmsEndpointListenerImpl extends AbstractJmsEndpointListener {
     /**
      *
      */
-    JmsTaskBag handOffJmsBag(JmsBag bag)  throws JMSException {
+    JmsTaskBag handOffJmsBag(JmsBag bag) throws JMSException, JmsRuntimeException {
 
         synchronized (sync) {
-            JmsTaskBag handOff = new JmsTaskBag(bag.getJndiContext(), bag.getConnectionFactory(), bag.getConnection(), bag.getSession());
+            JmsTaskBag handOff = new JmsTaskBag(bag);
 
             // replace the jms connection bag with a new session
             _jmsBag = null;
-            _jmsBag = JmsUtil.connect(
-                    handOff.getJndiContext(),
-                    handOff.getConnection(),
-                    handOff.getConnectionFactory(),
-                    _endpointCfg.isQueue(),
-                    _endpointCfg.isTransactional(),
-                    Session.CLIENT_ACKNOWLEDGE);
+            _jmsBag = resourceManager.borrowJmsBag(_endpointCfg);
 
             return handOff;
         }
@@ -118,7 +113,7 @@ class PooledJmsEndpointListenerImpl extends AbstractJmsEndpointListener {
             synchronized(sync) {
                 consumer = _consumer;
             }
-            return new JmsTask(getEndpointConfig(), taskBag, jmsMessage, getFailureQueue(), consumer);
+            return new JmsTask(getEndpointConfig(), taskBag, jmsMessage, getFailureQueue(), consumer, resourceManager);
 
         } catch (JMSException jex) {
             ok = false;

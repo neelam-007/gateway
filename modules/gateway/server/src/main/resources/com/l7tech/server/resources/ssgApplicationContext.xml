@@ -214,12 +214,15 @@
         <constructor-arg ref="secureRandom"/>
     </bean>
 
+    <bean id="jmsBlockPolicy" class="com.l7tech.server.transport.jms2.JmsBlockPolicy"/>
+
     <bean id="jmsThreadPool" class="com.l7tech.server.util.ThreadPoolBean">
         <constructor-arg index="0" ref="serverConfig"/>
         <constructor-arg index="1" value="JMS Thread Pool"/>
         <constructor-arg index="2" value="jmsListenerThreadLimit"/>
         <constructor-arg index="3" value="jms.listenerThreadLimit"/>
         <constructor-arg index="4" value="25"/>
+        <constructor-arg index="5" ref="jmsBlockPolicy"/>
     </bean>
 
     <!-- JMS boot process  -->

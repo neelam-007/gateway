@@ -9,6 +9,7 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
+import java.util.concurrent.RejectedExecutionHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -26,12 +27,21 @@ public class ThreadPoolBean implements PropertyChangeListener {
                           final String maxPoolSizeClusterPropName,
                           final String maxPoolSizeClusterPropUiName,
                           final int maxPoolSizeEmergencyDefault) {
+        this(config, poolName, maxPoolSizeClusterPropName, maxPoolSizeClusterPropUiName, maxPoolSizeEmergencyDefault, null);
+    }
+
+    public ThreadPoolBean(final Config config,
+                          final String poolName,
+                          final String maxPoolSizeClusterPropName,
+                          final String maxPoolSizeClusterPropUiName,
+                          final int maxPoolSizeEmergencyDefault,
+                          final RejectedExecutionHandler handler) {
         this.poolName = poolName;
         this.maxPoolSizeClusterPropName = maxPoolSizeClusterPropName;
         this.maxPoolSizeClusterPropUiName = maxPoolSizeClusterPropUiName;
         this.maxPoolSizeEmergencyDefault = maxPoolSizeEmergencyDefault;
         this.validatedConfig = validated(config);
-        threadPool = new ThreadPool(poolName, CORE_SIZE, getMaxPoolSize());
+        threadPool = new ThreadPool(poolName, CORE_SIZE, getMaxPoolSize(), handler);
     }
 
     public void start() {

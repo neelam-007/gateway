@@ -55,8 +55,24 @@ public class ThreadPool {
     public ThreadPool(final String poolName,
                       final int corePoolSize,
                       final int maxPoolSize){
-        this(poolName, corePoolSize, maxPoolSize, 25, 30000l, TIME_UNIT, true, null, null, null);
+        this(poolName, corePoolSize, maxPoolSize, null);
     }
+
+    /**
+     * Create a ThreadPool with specific configuration.
+     *
+     * @param poolName name of the pool
+     * @param corePoolSize core thread size of the pool
+     * @param maxPoolSize max thread in the pool. Must be bigger than core pool size of 5.
+     * @param handler if null the default ThreadPoolExecutor.AbortPolicy is used, which will throw when
+     */
+    public ThreadPool(final String poolName,
+                      final int corePoolSize,
+                      final int maxPoolSize,
+                      final RejectedExecutionHandler handler){
+        this(poolName, corePoolSize, maxPoolSize, 25, 30000l, TIME_UNIT, true, handler, null, null);
+    }
+
 
     /**
      * Create a ThreadPool with specific configuration. The ThreadPoolExecutor created can be made boundless by setting

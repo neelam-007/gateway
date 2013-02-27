@@ -69,7 +69,7 @@ class LegacyJmsEndpointListenerImpl extends AbstractJmsEndpointListener {
         }
     }
 
-    MessageProducer getFailureProducer() throws JMSException, NamingException, JmsConfigException {
+    MessageProducer getFailureProducer() throws JMSException, NamingException, JmsConfigException, JmsRuntimeException {
         synchronized(sync) {
             if ( _failureProducer == null &&
                  _endpointCfg.isTransactional() &&
@@ -95,6 +95,9 @@ class LegacyJmsEndpointListenerImpl extends AbstractJmsEndpointListener {
                     message = ExceptionUtils.getMessage(e);
                     throw e;
                 } catch (RuntimeException e) {
+                    message = ExceptionUtils.getMessage(e);
+                    throw e;
+                } catch (JmsRuntimeException e) {
                     message = ExceptionUtils.getMessage(e);
                     throw e;
                 } finally {

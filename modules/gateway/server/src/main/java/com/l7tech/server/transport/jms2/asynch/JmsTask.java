@@ -7,6 +7,7 @@ import com.l7tech.server.transport.jms.JmsRuntimeException;
 import com.l7tech.server.transport.jms.JmsUtil;
 import com.l7tech.server.transport.jms2.JmsEndpointConfig;
 import com.l7tech.server.transport.jms2.JmsRequestHandlerImpl;
+import com.l7tech.server.transport.jms2.JmsResourceManager;
 import com.l7tech.util.ExceptionUtils;
 
 import javax.jms.*;
@@ -39,6 +40,9 @@ class JmsTask implements Runnable {
     /** The request handler that invokes the message processor */
     private JmsRequestHandlerImpl handler;
 
+
+    private JmsResourceManager resourceManager;
+
     /**
      * Constructor.
      */
@@ -46,7 +50,8 @@ class JmsTask implements Runnable {
              final JmsTaskBag jmsBag,
              final Message jmsMessage,
              final Queue failureQ,
-             final MessageConsumer consumer )
+             final MessageConsumer consumer,
+             final JmsResourceManager resourceManager)
     {
         this.endpointCfg = endpointCfg;
         this.consumer = consumer;
@@ -54,6 +59,7 @@ class JmsTask implements Runnable {
         this.jmsMessage = jmsMessage;
         this.failureQ = failureQ;
         this.handler = new JmsRequestHandlerImpl(endpointCfg.getApplicationContext());
+        this.resourceManager = resourceManager;
     }
 
     /**
@@ -143,8 +149,12 @@ class JmsTask implements Runnable {
             }
         }
 
-        // close the jms session
-        this.jmsBag.close();
+        try {
+            // return the jms bag
+            resourceManager.returnJmsBag(this.endpointCfg, this.jmsBag);
+        } catch (JmsRuntimeException e) {
+            handleCleanupError("Return Jms Session", e);
+        }
         this.jmsBag = null;
     }
 

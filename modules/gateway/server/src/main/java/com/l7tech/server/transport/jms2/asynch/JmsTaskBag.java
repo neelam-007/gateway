@@ -2,9 +2,7 @@ package com.l7tech.server.transport.jms2.asynch;
 
 import com.l7tech.server.transport.jms.JmsBag;
 
-import javax.jms.Connection;
-import javax.jms.ConnectionFactory;
-import javax.jms.Session;
+import javax.jms.*;
 import javax.naming.Context;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -14,11 +12,8 @@ import java.util.logging.Logger;
  */
 class JmsTaskBag extends JmsBag {
     
-    JmsTaskBag( final Context context,
-                final ConnectionFactory factory,
-                final Connection connection,
-                final Session session ) {
-        super(context, factory, connection, session);
+    JmsTaskBag( final JmsBag jmsBag ) {
+        super(jmsBag.getJndiContext(), jmsBag.getConnectionFactory(), jmsBag.getConnection(), jmsBag.getSession() );
     }
 
     @Override

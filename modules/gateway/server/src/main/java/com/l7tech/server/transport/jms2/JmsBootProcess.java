@@ -155,6 +155,7 @@ public class JmsBootProcess extends LifecycleBean implements PropertyChangeListe
                             if (!endpoint.isMessageSource() || endpoint.isDisabled()) continue;
 
                             endpointCfg = new JmsEndpointConfig(connection, endpoint, this.jmsPropertyMapper, getApplicationContext());
+                            endpointCfg.setEvictOnExpired(false);
 
                             JmsEndpointListener qListener = jmsEndpointListenerFactory.createListener(endpointCfg);
 

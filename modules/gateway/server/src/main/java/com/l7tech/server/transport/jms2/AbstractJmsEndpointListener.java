@@ -75,6 +75,7 @@ public abstract class AbstractJmsEndpointListener implements JmsEndpointListener
     private Thread _thread;
     private long lastStopRequestedTime;
     private long lastAuditErrorTime;
+    protected final JmsResourceManager resourceManager;
 
     /**
      * The only constructor for the JMS Message Receivers
@@ -88,6 +89,7 @@ public abstract class AbstractJmsEndpointListener implements JmsEndpointListener
 
         // create the ListenerThread
         this._listener = new ListenerThread();
+        resourceManager = _endpointCfg.getApplicationContext().getBean("jmsResourceManager", JmsResourceManager.class);
     }
 
     /**
@@ -98,14 +100,14 @@ public abstract class AbstractJmsEndpointListener implements JmsEndpointListener
      * Created from a single connection</li>
      * </ul>
      */
-    protected JmsBag getJmsBag() throws JMSException, NamingException, JmsConfigException {
+    protected JmsBag getJmsBag() throws JMSException, NamingException, JmsConfigException, JmsRuntimeException {
         JmsBag bag;
 
         synchronized(sync) {
             bag = _jmsBag;
             if ( bag == null ) {
                 _logger.finest( "Getting new JmsBag" );
-                bag = JmsUtil.connect(_endpointCfg, _endpointCfg.isTransactional(), Session.CLIENT_ACKNOWLEDGE);
+                bag = resourceManager.borrowJmsBag(_endpointCfg);
                 _jmsBag = bag;
             }
         }
@@ -118,7 +120,7 @@ public abstract class AbstractJmsEndpointListener implements JmsEndpointListener
      *
      * @return JMS MessageConsumer for the inbound destination
      */
-    protected MessageConsumer getConsumer() throws JMSException, NamingException, JmsConfigException {
+    protected MessageConsumer getConsumer() throws JMSException, NamingException, JmsConfigException, JmsRuntimeException {
         synchronized(sync) {
             if ( _consumer == null ) {
                 _logger.finest( "Getting new MessageConsumer" );
@@ -142,6 +144,9 @@ public abstract class AbstractJmsEndpointListener implements JmsEndpointListener
                 } catch (RuntimeException e) {
                     message = ExceptionUtils.getMessage(e);
                     throw e;
+                } catch (JmsRuntimeException e) {
+                    message = ExceptionUtils.getMessage(e);
+                    throw e;
                 } finally {
                     if (!ok) {
                         fireConnectError(message);
@@ -152,7 +157,7 @@ public abstract class AbstractJmsEndpointListener implements JmsEndpointListener
         }
     }
 
-    protected Destination getDestination() throws NamingException, JmsConfigException, JMSException {
+    protected Destination getDestination() throws NamingException, JmsConfigException, JMSException, JmsRuntimeException {
         synchronized(sync) {
             if ( _destination == null ) {
                 _logger.finest( "Getting new destination" );
@@ -165,7 +170,7 @@ public abstract class AbstractJmsEndpointListener implements JmsEndpointListener
         }
     }
 
-    protected Queue getFailureQueue() throws NamingException, JmsConfigException, JMSException {
+    protected Queue getFailureQueue() throws NamingException, JmsConfigException, JMSException, JmsRuntimeException {
         synchronized(sync) {
             if ( _failureQueue == null &&
                     _endpointCfg.isTransactional() &&
@@ -189,7 +194,7 @@ public abstract class AbstractJmsEndpointListener implements JmsEndpointListener
      * @throws JmsConfigException when a JmsBag could not be properly obtained
      * @throws JMSException when a JmsBag could not be properly obtained
      */
-    protected void ensureConnectionStarted() throws NamingException, JmsConfigException, JMSException {
+    protected void ensureConnectionStarted() throws NamingException, JmsConfigException, JMSException, JmsRuntimeException {
         synchronized(sync) {
             boolean ok = false;
             String message = null;
@@ -208,6 +213,9 @@ public abstract class AbstractJmsEndpointListener implements JmsEndpointListener
                 message = ExceptionUtils.getMessage(e);
                 throw e;
             } catch (RuntimeException e) {
+                message = ExceptionUtils.getMessage(e);
+                throw e;
+            } catch (JmsRuntimeException e) {
                 message = ExceptionUtils.getMessage(e);
                 throw e;
             } finally {
@@ -345,12 +353,16 @@ public abstract class AbstractJmsEndpointListener implements JmsEndpointListener
      * @throws NamingException
      * @throws JmsConfigException
      */
-    private Message receiveMessage() throws JMSException, NamingException, JmsConfigException
-    {
+    private Message receiveMessage() throws JMSException, NamingException, JmsConfigException, JmsRuntimeException {
         MessageConsumer receiver = getConsumer();
         ensureConnectionStarted();
 
-        return receiver.receive( RECEIVE_TIMEOUT );
+        Message message = receiver.receive( RECEIVE_TIMEOUT );
+        if (message == null) {
+            //Receive Timeout, keep the cached connection active.
+            resourceManager.touch(_endpointCfg);
+        }
+        return message;
     }
 
     /**

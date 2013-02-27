@@ -16,6 +16,7 @@ public class JmsMessages {
     public static final String WARN_LISTENER_RECEIVE_ERROR = "Unable to receive message from JMS endpoint {0}";
     public static final String WARN_LISTENER_MAX_OOPS_REACHED = "Listener for endpoint {0} received too many errors ({1}) - will try again in {2} ms";
     public static final String WARN_THREADPOOL_LIMIT_REACHED = "JMS ThreadPool size limit reached.  Unable to add new JmsTask: {0}";
+    public static final String INFO_THREADPOOL_LIMIT_REACHED_DELAY = "JMS ThreadPool size limit reached.  Delay new JmsTask until working queue is free.";
     public static final String WARN_PROPERTY_CHANGE_IGNORE_SLEEPTIME = "";
 
     /* Info messages */

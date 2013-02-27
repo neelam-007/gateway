@@ -44,6 +44,20 @@ public class JmsBag implements Closeable {
         return jndiContext;
     }
 
+    /**
+     * Close the session only.
+     */
+    public void closeSession() {
+        if ( session != null ) {
+            try {
+                session.close();
+            } catch ( Exception e ) {
+                handleCloseError( "session", e );
+            }
+            session = null;
+        }
+    }
+
     @Override
     public void close() {
         if ( !closed ) {

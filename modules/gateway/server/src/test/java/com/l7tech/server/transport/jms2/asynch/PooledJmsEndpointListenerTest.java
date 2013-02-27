@@ -206,7 +206,7 @@ public class PooledJmsEndpointListenerTest extends JmsTestCase {
         private javax.jms.Session jmsSession;
 
         TestJmsTask(JmsEndpointConfig endpoint, JmsTaskBag jmsBag, Message jmsMessage, Queue failureQ, MessageConsumer consumer) {
-            super(endpoint, jmsBag, jmsMessage, failureQ, consumer);
+            super(endpoint, jmsBag, jmsMessage, failureQ, consumer, null);
 
             this.transactional = endpoint.isTransactional();
             this.jmsSession = jmsBag.getSession();

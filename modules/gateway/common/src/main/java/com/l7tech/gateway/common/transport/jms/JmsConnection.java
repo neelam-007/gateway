@@ -82,6 +82,8 @@ public class JmsConnection extends NamedEntityImp implements Serializable {
     private boolean _template;
     private String _properties;
     private JmsProviderType _providerType;
+    @Transient private Properties cachedProperties;
+
 
     public JmsConnection(){
     }
@@ -104,6 +106,7 @@ public class JmsConnection extends NamedEntityImp implements Serializable {
         setUsername( other.getUsername() );
         setPassword( other.getPassword() );
         setProperties( other.getProperties() );
+        setCachedProperties( other.properties() );
         setProviderType( other.getProviderType() );
     }
 
@@ -210,6 +213,10 @@ public class JmsConnection extends NamedEntityImp implements Serializable {
     }
 
     public Properties properties() {
+        if (cachedProperties != null) {
+            return cachedProperties;
+        }
+
         Properties properties = new Properties();
         try {
             String propertiesStr = getProperties();
@@ -220,7 +227,9 @@ public class JmsConnection extends NamedEntityImp implements Serializable {
         catch(Exception e) {
             logger.log(Level.WARNING, "Error loading properties", e);
         }
-        return properties;
+
+        cachedProperties = properties;
+        return cachedProperties;
     }
 
     public void properties(Properties properties) {
@@ -250,6 +259,7 @@ public class JmsConnection extends NamedEntityImp implements Serializable {
     public void setProperties(String properties) {
         checkLocked();
         _properties = properties;
+        cachedProperties = null;
     }
 
     @Column(name="provider_type")
@@ -262,7 +272,12 @@ public class JmsConnection extends NamedEntityImp implements Serializable {
         checkLocked();
         this._providerType = providerType;
     }
-    
+
+    @Transient
+    private void setCachedProperties(Properties cachedProperties) {
+        this.cachedProperties = cachedProperties;
+    }
+
     /**
      * Standard validation group with additional constraints for non-templates.
      */

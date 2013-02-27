@@ -41,6 +41,8 @@ public class JmsEndpointConfig {
     /** String identifier representing this JMS endpoint configuration  */
     private JmsEndpointKey endpointKey;
 
+    private boolean evictOnExpired = true;
+
     /**
      * Constructor.
      *
@@ -93,6 +95,14 @@ public class JmsEndpointConfig {
 
         StringBuilder sb = new StringBuilder(getEndpoint().getName()).append(",").append(getConnection().getJndiUrl()).append("/").append(getEndpoint().getDestinationName());
         this.displayName =  sb.toString();
+    }
+
+    public boolean isEvictOnExpired() {
+        return evictOnExpired;
+    }
+
+    public void setEvictOnExpired(boolean evictOnExpired) {
+        this.evictOnExpired = evictOnExpired;
     }
 
     /* Getters */
