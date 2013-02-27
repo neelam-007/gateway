@@ -1,5 +1,7 @@
 package com.l7tech.server.policy.assertion;
 
+import com.l7tech.gateway.common.audit.AssertionMessages;
+import com.l7tech.gateway.common.audit.TestAudit;
 import com.l7tech.message.Message;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionArgumentDescriptor;
@@ -21,6 +23,7 @@ import com.l7tech.server.policy.PolicyCache;
 import com.l7tech.server.policy.ServerPolicyHandle;
 import com.l7tech.server.util.ApplicationEventProxy;
 import com.l7tech.test.BugId;
+import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.Functions;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Before;
@@ -50,6 +53,7 @@ public class ServerEncapsulatedAssertionTest {
     private EncapsulatedAssertion assertion;
     private ServerEncapsulatedAssertion serverAssertion;
     private PolicyEnforcementContext context;
+    private TestAudit testAudit;
     @Mock
     private EncapsulatedAssertionConfigManager configManager;
     private ApplicationEventProxy applicationEventProxy;
@@ -60,6 +64,7 @@ public class ServerEncapsulatedAssertionTest {
 
     @Before
     public void setup() throws Exception {
+        testAudit = new TestAudit();
         inParams = new HashSet<EncapsulatedAssertionArgumentDescriptor>();
         outParams = new HashSet<EncapsulatedAssertionResultDescriptor>();
         policy = new Policy(PolicyType.INCLUDE_FRAGMENT, "testPolicy", "xml", false);
@@ -77,11 +82,8 @@ public class ServerEncapsulatedAssertionTest {
         when(configManager.findByGuid(CONFIG_GUID)).thenReturn(config);
         when(policyCache.getServerPolicy(POLICY_ID)).thenReturn(handle);
 
-        serverAssertion = new ServerEncapsulatedAssertion(assertion);
-        serverAssertion.setEncapsulatedAssertionConfigManager(configManager);
         applicationEventProxy = new ApplicationEventProxy();
-        serverAssertion.setApplicationEventProxy(applicationEventProxy);
-        serverAssertion.setPolicyCache(policyCache);
+        setupServerAssertion();
         serverAssertion.afterPropertiesSet();
         context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message());
     }
@@ -148,16 +150,14 @@ public class ServerEncapsulatedAssertionTest {
     public void entityInvalidationEventReloadsConfigWithError() throws Exception {
         // config it references does not yet exist
         assertion.setEncapsulatedAssertionConfigGuid("doesNotExistYet");
-        serverAssertion = new ServerEncapsulatedAssertion(assertion);
-        serverAssertion.setEncapsulatedAssertionConfigManager(configManager);
-        serverAssertion.setApplicationEventProxy(applicationEventProxy);
+        setupServerAssertion();
         serverAssertion.afterPropertiesSet();
         assertTrue(serverAssertion.getConfigOrErrorRef().get().isLeft());
 
         // simulate import of config
         when(configManager.findByGuid("doesNotExistYet")).thenReturn(config);
         applicationEventProxy.publishEvent(new EntityInvalidationEvent("source", EncapsulatedAssertionConfig.class,
-            new long[]{CONFIG_ID}, new char[]{EntityInvalidationEvent.UPDATE}));
+                new long[]{CONFIG_ID}, new char[]{EntityInvalidationEvent.UPDATE}));
 
         // config should now be loaded
         assertEquals(ENCAPSULATED_ASSERTION_NAME, serverAssertion.getConfigOrErrorRef().get().right().getName());
@@ -287,12 +287,12 @@ public class ServerEncapsulatedAssertionTest {
         mockHandle(Collections.<String, Object>emptyMap(), Collections.<String, String>emptyMap(), AssertionStatus.NONE, new Functions.UnaryVoid<PolicyEnforcementContext>() {
             @Override
             public void call(PolicyEnforcementContext policyEnforcementContext) {
-                declaredOutputs.addAll(((HasOutputVariables)policyEnforcementContext).getOutputVariableNames());
+                declaredOutputs.addAll(((HasOutputVariables) policyEnforcementContext).getOutputVariableNames());
             }
         });
         assertEquals(AssertionStatus.NONE, serverAssertion.checkRequest(context));
         assertTrue("Output params shall be declared as HasOutVariables of the child PEC while the backing policy is being executed",
-            declaredOutputs.containsAll(Arrays.asList("out", "out2")));
+                declaredOutputs.containsAll(Arrays.asList("out", "out2")));
     }
 
     @Test
@@ -304,12 +304,21 @@ public class ServerEncapsulatedAssertionTest {
         mockHandle(Collections.<String, Object>emptyMap(), Collections.<String, String>emptyMap(), AssertionStatus.NONE, new Functions.UnaryVoid<PolicyEnforcementContext>() {
             @Override
             public void call(PolicyEnforcementContext policyEnforcementContext) {
-                declaredOutputs.addAll(((HasOutputVariables)policyEnforcementContext).getOutputVariableNames());
+                declaredOutputs.addAll(((HasOutputVariables) policyEnforcementContext).getOutputVariableNames());
             }
         });
         assertEquals(AssertionStatus.NONE, serverAssertion.checkRequest(context));
         assertTrue("If the config has no outputs, then HasOutVariables of the child PEC shall be completely empty",
-            declaredOutputs.isEmpty());
+                declaredOutputs.isEmpty());
+    }
+
+    @Test
+    @BugId("SSM-4223")
+    public void checkRequestInvalidBackingPolicy() throws Exception {
+        policy.setOid(5555L);
+        when(policyCache.getServerPolicy(5555L)).thenReturn(null);
+        assertEquals(AssertionStatus.SERVER_ERROR, serverAssertion.checkRequest(context));
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.ENCASS_INVALID_BACKING_POLICY));
     }
 
     private void checkContextVariableNotSet(final String varName) {
@@ -369,5 +378,15 @@ public class ServerEncapsulatedAssertionTest {
         output.setResultName(name);
         output.setResultType(type.getShortName());
         return output;
+    }
+
+    private void setupServerAssertion() {
+        serverAssertion = new ServerEncapsulatedAssertion(assertion);
+        ApplicationContexts.inject(serverAssertion,
+                CollectionUtils.MapBuilder.<String, Object>builder()
+                        .put("auditFactory", testAudit.factory())
+                        .put("encapsulatedAssertionConfigManager", configManager)
+                        .put("applicationEventProxy", applicationEventProxy)
+                        .put("policyCache", policyCache).map());
     }
 }

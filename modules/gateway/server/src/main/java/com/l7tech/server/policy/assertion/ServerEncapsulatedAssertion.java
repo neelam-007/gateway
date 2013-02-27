@@ -202,10 +202,15 @@ public class ServerEncapsulatedAssertion extends AbstractServerAssertion<Encapsu
     private AssertionStatus lookupAndExecutePolicy(final long policyOid, PolicyEnforcementContext childContext) throws PolicyAssertionException, IOException {
         AssertionStatus result;
         final ServerPolicyHandle sph = policyCache.getServerPolicy(policyOid);
-        try {
-            result = executePolicy(sph, childContext);
-        } finally {
-            ResourceUtils.closeQuietly(sph);
+        if (sph != null) {
+            try {
+                result = executePolicy(sph, childContext);
+            } finally {
+                ResourceUtils.closeQuietly(sph);
+            }
+        } else {
+            getAudit().logAndAudit(AssertionMessages.ENCASS_INVALID_BACKING_POLICY, assertion.getEncapsulatedAssertionConfigName());
+            result = AssertionStatus.SERVER_ERROR;
         }
         return result;
     }
@@ -282,18 +287,6 @@ public class ServerEncapsulatedAssertion extends AbstractServerAssertion<Encapsu
     }
 
     // protected getters/setters for unit tests
-
-    void setEncapsulatedAssertionConfigManager(@NotNull final EncapsulatedAssertionConfigManager encapsulatedAssertionConfigManager) {
-        this.encapsulatedAssertionConfigManager = encapsulatedAssertionConfigManager;
-    }
-
-    void setApplicationEventProxy(@NotNull final ApplicationEventProxy applicationEventProxy) {
-        this.applicationEventProxy = applicationEventProxy;
-    }
-
-    void setPolicyCache(@NotNull final PolicyCache policyCache) {
-        this.policyCache = policyCache;
-    }
 
     AtomicReference<Either<String, EncapsulatedAssertionConfig>> getConfigOrErrorRef() {
         return configOrErrorRef;

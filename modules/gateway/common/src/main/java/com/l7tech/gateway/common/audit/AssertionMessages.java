@@ -1207,5 +1207,8 @@ public class AssertionMessages extends Messages {
     public static final M CERT_VALIDATION_STATUS_FAILURE = m(10001, Level.WARNING, "Certificate {0} validation ({1}) failed with status: {2}");
     public static final M CERT_VALIDATION_FAILURE = m(10002, Level.WARNING, "Certificate {0} validation ({1}) failed: {2}");
 
+    // Encapsulated Assertion
+    public static final M ENCASS_INVALID_BACKING_POLICY = m(10050, Level.WARNING, "Underlying policy fragment is invalid for Encapsulated Assertion: {0}");
+
     // Highest ID reserved for AssertionMessages = 99999
 }
