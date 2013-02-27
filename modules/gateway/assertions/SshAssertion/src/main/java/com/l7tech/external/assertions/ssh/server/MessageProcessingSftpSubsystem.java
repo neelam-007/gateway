@@ -563,8 +563,8 @@ class MessageProcessingSftpSubsystem extends SftpSubsystem {
      * @throws IOException This is only thrown if there was an error attempting to send a message to the client
      */
     private void sshFxpWrite(final Buffer buffer, final int id) throws IOException {
-        // Validate that uploading files is enabled on this connector.
-        if (!connector.getBooleanProperty(SshCredentialAssertion.LISTEN_PROP_ENABLE_SFTP_PUT)) {
+        // Validate that uploading files is enabled on this connector. Or if there are no goatfish options set
+        if (!connector.getBooleanProperty(SshCredentialAssertion.LISTEN_PROP_ENABLE_SFTP_PUT) && !noGoatfishOptionsEnabled()) {
             logger.log(Level.INFO, "An sftp client attempted to write a file but this is not enabled in this connector.");
             sendStatus(id, SSH_FX_FAILURE, "This SFTP server does not support uploading files.");
             return;
@@ -661,6 +661,22 @@ class MessageProcessingSftpSubsystem extends SftpSubsystem {
             }
             sendStatus(id, SSH_FX_OK, "");
         }
+    }
+
+    /**
+     * This will return true if none of the new options introduced in Goatfish have been set. This is used to determine the upgrade scenario from pre-goatfish.
+     *
+     * @return True if no new goatfish options have been set.
+     */
+    private boolean noGoatfishOptionsEnabled() {
+        return connector.getProperty(SshCredentialAssertion.LISTEN_PROP_ENABLE_SFTP_PUT) == null
+                && connector.getProperty(SshCredentialAssertion.LISTEN_PROP_ENABLE_SFTP_GET) == null
+                && connector.getProperty(SshCredentialAssertion.LISTEN_PROP_ENABLE_SFTP_DELETE) == null
+                && connector.getProperty(SshCredentialAssertion.LISTEN_PROP_ENABLE_SFTP_LIST) == null
+                && connector.getProperty(SshCredentialAssertion.LISTEN_PROP_ENABLE_SFTP_STAT) == null
+                && connector.getProperty(SshCredentialAssertion.LISTEN_PROP_ENABLE_SFTP_MKDIR) == null
+                && connector.getProperty(SshCredentialAssertion.LISTEN_PROP_ENABLE_SFTP_RMDIR) == null
+                && connector.getProperty(SshCredentialAssertion.LISTEN_PROP_ENABLE_SFTP_MOVE) == null;
     }
 
     /**
