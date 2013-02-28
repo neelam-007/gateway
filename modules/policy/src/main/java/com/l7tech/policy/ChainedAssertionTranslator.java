@@ -31,7 +31,9 @@ public class ChainedAssertionTranslator implements AssertionTranslator {
     public Assertion translate(@Nullable Assertion sourceAssertion) throws PolicyAssertionException {
         Assertion toTranslate = sourceAssertion;
         for (final AssertionTranslator translator : translators) {
-            toTranslate = translator.translate(toTranslate);
+            final Assertion translated = translator.translate(toTranslate);
+            translator.translationFinished(toTranslate);
+            toTranslate = translated;
         }
         return toTranslate;
     }

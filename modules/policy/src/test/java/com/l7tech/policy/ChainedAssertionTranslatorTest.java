@@ -45,7 +45,9 @@ public class ChainedAssertionTranslatorTest {
         assertSame(assertion, translated);
         final InOrder inOrder = inOrder(t1, t2);
         inOrder.verify(t1).translate(assertion);
+        inOrder.verify(t1).translationFinished(assertion);
         inOrder.verify(t2).translate(assertion);
+        inOrder.verify(t2).translationFinished(assertion);
     }
 
     /**
@@ -64,7 +66,9 @@ public class ChainedAssertionTranslatorTest {
         assertNotSame(assertion, translated);
         final InOrder inOrder = inOrder(t1, t2);
         inOrder.verify(t1).translate(assertion);
+        inOrder.verify(t1).translationFinished(assertion);
         inOrder.verify(t2).translate(returnedAssertion);
+        inOrder.verify(t2).translationFinished(returnedAssertion);
     }
 
     /**
@@ -80,7 +84,9 @@ public class ChainedAssertionTranslatorTest {
         assertNull(translated);
         final InOrder inOrder = inOrder(t1, t2);
         inOrder.verify(t1).translate(assertion);
+        inOrder.verify(t1).translationFinished(assertion);
         inOrder.verify(t2).translate(null);
+        inOrder.verify(t2).translationFinished(null);
     }
 
     @Test(expected = PolicyAssertionException.class)
@@ -92,6 +98,7 @@ public class ChainedAssertionTranslatorTest {
         } catch (final PolicyAssertionException e) {
             // expected
             verify(t1).translate(assertion);
+            verify(t1, never()).translationFinished(assertion);
             verify(t2, never()).translate(any(Assertion.class));
             throw e;
         }
