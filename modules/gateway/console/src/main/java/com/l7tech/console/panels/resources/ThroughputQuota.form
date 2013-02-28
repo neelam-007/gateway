@@ -128,13 +128,13 @@
               </component>
             </children>
           </grid>
-          <component id="9b973" class="javax.swing.JCheckBox" binding="synchronousCheckBox" default-binding="true">
+          <component id="9b973" class="javax.swing.JCheckBox" binding="highPerformanceModeCheckBox" default-binding="true">
             <constraints>
               <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
-              <text value="Update counter synchronously"/>
-              <toolTipText value="Synchronous updates guarantee that the assertion will never pass if a counter update would fail, substantially reduce counter performance and scalability."/>
+              <text value="Enable &amp;high-performance mode (recommended)"/>
+              <toolTipText value="Improves scalability but may permit brief quota overflows under rare conditions"/>
             </properties>
           </component>
         </children>

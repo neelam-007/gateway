@@ -44,7 +44,7 @@ public class ThroughputQuotaForm extends LegacyAssertionPropertyDialog {
     private JRadioButton incrementOnSuccessRadio;
     private JPanel varPrefixFieldPanel;
     private JCheckBox logOnlyCheckBox;
-    private JCheckBox synchronousCheckBox;
+    private JCheckBox highPerformanceModeCheckBox;
     private JRadioButton resetRadio;
     private TargetVariablePanel varPrefixField;
 
@@ -96,7 +96,7 @@ public class ThroughputQuotaForm extends LegacyAssertionPropertyDialog {
                 quotaUnitCombo.setEnabled(false);
                 logOnlyCheckBox.setSelected(false);
                 logOnlyCheckBox.setEnabled(false);
-                synchronousCheckBox.setEnabled(true);
+                highPerformanceModeCheckBox.setEnabled(true);
             }
         });
         alwaysIncrementRadio.addActionListener(new ActionListener() {
@@ -105,7 +105,7 @@ public class ThroughputQuotaForm extends LegacyAssertionPropertyDialog {
                 quotaValueField.setEnabled(true);
                 quotaUnitCombo.setEnabled(true);
                 logOnlyCheckBox.setEnabled(true);
-                synchronousCheckBox.setEnabled(true);
+                highPerformanceModeCheckBox.setEnabled(true);
             }
         });
         incrementOnSuccessRadio.addActionListener(new ActionListener() {
@@ -114,7 +114,7 @@ public class ThroughputQuotaForm extends LegacyAssertionPropertyDialog {
                 quotaValueField.setEnabled(true);
                 quotaUnitCombo.setEnabled(true);
                 logOnlyCheckBox.setEnabled(true);
-                synchronousCheckBox.setEnabled(true);
+                highPerformanceModeCheckBox.setEnabled(true);
             }
         });
         resetRadio.addActionListener(new ActionListener() {
@@ -124,8 +124,7 @@ public class ThroughputQuotaForm extends LegacyAssertionPropertyDialog {
                 quotaUnitCombo.setEnabled(false);
                 logOnlyCheckBox.setSelected(false);
                 logOnlyCheckBox.setEnabled(false);
-                synchronousCheckBox.setSelected(false);
-                synchronousCheckBox.setEnabled(false);
+                highPerformanceModeCheckBox.setEnabled(false);
             }
         });
         okButton.setEnabled(!readOnly);
@@ -244,7 +243,7 @@ public class ThroughputQuotaForm extends LegacyAssertionPropertyDialog {
         }
         assertion.setCounterStrategy(counterStrategy);
         assertion.setLogOnly(logOnlyCheckBox.isSelected());
-        assertion.setSynchronous(synchronousCheckBox.isSelected());
+        assertion.setSynchronous(counterStrategy == ThroughputQuota.RESET || !highPerformanceModeCheckBox.isSelected());
 
         return assertion;
     }
@@ -253,7 +252,7 @@ public class ThroughputQuotaForm extends LegacyAssertionPropertyDialog {
         this.subject = assertion;
         quotaValueField.setText(subject.getQuota());
         logOnlyCheckBox.setSelected(subject.isLogOnly());
-        synchronousCheckBox.setSelected(subject.isSynchronous());
+        highPerformanceModeCheckBox.setSelected(!subject.isSynchronous());
 
         DefaultComboBoxModel model = (DefaultComboBoxModel)quotaUnitCombo.getModel();
         model.setSelectedItem(TIME_UNITS[subject.getTimeUnit()-1]);
@@ -298,7 +297,8 @@ public class ThroughputQuotaForm extends LegacyAssertionPropertyDialog {
                 break;
             case ThroughputQuota.RESET:
                 resetRadio.setSelected(true);
-                synchronousCheckBox.setEnabled(false);
+                highPerformanceModeCheckBox.setEnabled(false);
+                highPerformanceModeCheckBox.setSelected(false);
                 quotaValueField.setEnabled(false);
                 quotaUnitCombo.setEnabled(false);
                 logOnlyCheckBox.setEnabled(false);
