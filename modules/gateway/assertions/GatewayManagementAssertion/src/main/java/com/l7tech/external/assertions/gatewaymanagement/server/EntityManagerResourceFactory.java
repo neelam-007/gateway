@@ -20,6 +20,7 @@ import com.l7tech.util.Functions;
 import com.l7tech.util.Option;
 import static com.l7tech.util.Option.optional;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import java.lang.reflect.Method;
@@ -65,6 +66,7 @@ abstract class EntityManagerResourceFactory<R, E extends PersistentEntity, EH ex
             baseSelectors.add(GUID_SELECTOR);
         }
 
+        baseSelectors.addAll(getCustomSelectors());
         return Collections.unmodifiableSet(baseSelectors);
     }
 
@@ -406,7 +408,7 @@ abstract class EntityManagerResourceFactory<R, E extends PersistentEntity, EH ex
             }
         }
 
-        if ( entity == null && name != null ) {
+        if ( entity == null && allowNameSelection && name != null ) {
             try {
                 entity = manager.findByUniqueName( name );
             } catch (FindException e) {
@@ -422,6 +424,10 @@ abstract class EntityManagerResourceFactory<R, E extends PersistentEntity, EH ex
             } catch (FindException e) {
                 handleObjectModelException(e);
             }
+        }
+
+        if ( entity == null ) {
+            entity = selectEntityCustom(selectorMap);
         }
 
         // Verify all selectors match (selectors must be AND'd)
@@ -457,6 +463,31 @@ abstract class EntityManagerResourceFactory<R, E extends PersistentEntity, EH ex
         }
 
         return entity;
+    }
+
+    /**
+     * If the entity type has any custom selectors then override this method.
+     *
+     * See  {@link #selectEntityCustom(java.util.Map)}
+     * @return set of any custom selectors.
+     */
+    protected Set<String> getCustomSelectors() {
+        return Collections.emptySet();
+    }
+
+    /**
+     * If the default single selectors are not sufficient to find a unique entity for the entity type, then allow the
+     * resource factory impl to look up the entity using it's own custom constraints.
+     *
+     * If a non null entity is returned, then the returned entity will still need to satisfy the selector constraints
+     * imposed by this class - the id, name and guid must match if provided and if they exist for the entity.
+     *
+     * @param selectorMap map of selectors
+     * @return E the found entity or null if no matching entity could be found.
+     */
+    @Nullable
+    protected E selectEntityCustom(final Map<String, String> selectorMap) throws ResourceAccessException, InvalidResourceSelectors {
+        return null;
     }
 
     /**

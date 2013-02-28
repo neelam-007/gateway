@@ -25,3 +25,4 @@ ServiceMO
 StoredPasswordMO
 TrustedCertificateMO
 EncapsulatedAssertionMO
+GenericEntityMO

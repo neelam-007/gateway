@@ -152,6 +152,9 @@
                     <constructor-arg index="3" ref="encapsulatedAssertionConfigManager"/>
                     <constructor-arg index="4" ref="policyManager"/>
                 </bean>
+                <bean class="com.l7tech.external.assertions.gatewaymanagement.server.GenericEntityResourceFactory" parent="resourceFactoryParent">
+                    <constructor-arg index="3" ref="genericEntityManager" />
+                </bean>
             </list>
         </constructor-arg>
     </bean>

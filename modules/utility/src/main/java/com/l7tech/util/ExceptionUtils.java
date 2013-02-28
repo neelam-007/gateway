@@ -71,7 +71,7 @@ public class ExceptionUtils {
     }
 
     /**
-     * Wrap another exeception in a RuntimeException.
+     * Wrap another exception in a RuntimeException.
      */
     public static RuntimeException wrap(Throwable t) {
         if (t instanceof RuntimeException) return (RuntimeException)t;

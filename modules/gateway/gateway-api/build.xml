@@ -1,7 +1,7 @@
 <project name="layer7-gateway-api" default="compile">
     <property name="module.package.root" value="com/l7tech/gateway/api"/>
     <property name="module.sign" value="true"/>
-    <property name="module.version.target" value="1.1"/> <!-- This is the API version -->
+    <property name="module.version.target" value="1.2"/> <!-- This is the API version -->
     <import file="../../../etc/build/build-common.xml"/>
 
     <!--

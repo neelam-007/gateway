@@ -167,6 +167,8 @@ public class ServerGatewayManagementAssertion extends AbstractServerAssertion<Ga
                     }
 
                     if ( response == null ) {
+                        // fyi - this request will be processed in a thread pool local to the WSManAgent
+                        // the current message processing thread will be parked while this happens
                         response = super.handleRequest(request, context);
                     }
 

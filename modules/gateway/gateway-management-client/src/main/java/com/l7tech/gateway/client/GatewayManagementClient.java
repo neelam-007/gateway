@@ -534,6 +534,10 @@ public class GatewayManagementClient {
                 selectors.put( "guid", arguments.guid.trim() );
             }
 
+            if (arguments.genericEntityType != null && !arguments.genericEntityType.trim().isEmpty()) {
+                selectors.put( "genericEntityType", arguments.genericEntityType.trim() );
+            }
+
             if ( selectors.isEmpty() ) {
                 throw new CommandException("Invalid options: name, id or guid is required.");
             }
@@ -1248,6 +1252,9 @@ public class GatewayManagementClient {
 
         @Cli.Arg(name="-guid", description="The guid for the target item", required=false)
         private String guid;
+
+        @Cli.Arg(name="-genericEntityType", description="The type of the generic entity", required=false)
+        private String genericEntityType;
 
         @Cli.Arg(name="-in", description="The input item", required=false)
         private String in;

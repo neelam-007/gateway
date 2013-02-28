@@ -4,15 +4,27 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.policy.GenericEntityHeader;
 import com.l7tech.policy.GenericEntity;
 import com.l7tech.server.EntityManagerStub;
+import com.l7tech.util.Functions;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Collection;
-import java.util.Map;
+import java.util.*;
 
 /**
  *
  */
 public class GenericEntityManagerStub extends EntityManagerStub<GenericEntity, GenericEntityHeader> implements GenericEntityManager {
+
+    private List<GenericEntity> entities;
+
+    public GenericEntityManagerStub() {
+        entities = Collections.emptyList();
+    }
+
+    public GenericEntityManagerStub(GenericEntity... entitiesIn) {
+        super(entitiesIn);
+        this.entities = new ArrayList(Arrays.asList(entitiesIn));
+    }
+
     @Override
     public void registerClass(@NotNull Class<? extends GenericEntity> entityClass) throws IllegalArgumentException {
         throw new UnsupportedOperationException("Not yet implemented for stub");
@@ -24,28 +36,43 @@ public class GenericEntityManagerStub extends EntityManagerStub<GenericEntity, G
     }
 
     @Override
+    public boolean isRegistered(String entityClassName) {
+        return false;
+    }
+
+    @Override
     public <ET extends GenericEntity> EntityManager<ET, GenericEntityHeader> getEntityManager(@NotNull Class<ET> entityClass) {
         throw new UnsupportedOperationException("Not yet implemented for stub");
     }
 
     @Override
     public <ET extends GenericEntity> ET findByGenericClassAndPrimaryKey(@NotNull Class<ET> entityClass, long oid) throws FindException {
-        throw new UnsupportedOperationException("Not yet implemented for stub");
+        for (GenericEntity entity : entities) {
+            if (entity.getEntityClassName().equals(entityClass.getName()) && Long.valueOf(entity.getId()) == oid) {
+                return (ET) entity;
+            }
+        }
+        return null;
     }
 
     @Override
     public <ET extends GenericEntity> Collection<ET> findAll(Class<ET> entityClass) throws FindException {
-        throw new UnsupportedOperationException("Not yet implemented for stub");
+        return (Collection<ET>) entities;
     }
 
     @Override
     public Collection<GenericEntityHeader> findAllHeaders(@NotNull Class<? extends GenericEntity> entityClass) throws FindException {
-        throw new UnsupportedOperationException("Not yet implemented for stub");
+        return new ArrayList<GenericEntityHeader>(Functions.map(entities, new Functions.Unary<GenericEntityHeader, GenericEntity>() {
+            @Override
+            public GenericEntityHeader call(GenericEntity genericEntity) {
+                return new GenericEntityHeader(genericEntity);
+            }
+        }));
     }
 
     @Override
     public Collection<GenericEntityHeader> findAllHeaders(@NotNull Class<? extends GenericEntity> entityClass, int offset, int windowSize) throws FindException {
-        throw new UnsupportedOperationException("Not yet implemented for stub");
+        return findAllHeaders(entityClass);
     }
 
     @Override
@@ -75,7 +102,22 @@ public class GenericEntityManagerStub extends EntityManagerStub<GenericEntity, G
 
     @Override
     public <ET extends GenericEntity> ET findByUniqueName(@NotNull Class<ET> entityClass, String name) throws FindException {
-        throw new UnsupportedOperationException("Not yet implemented for stub");
+        for (GenericEntity entity : entities) {
+            if (entity.getName().equals(name)) {
+                return (ET) entity;
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public GenericEntity findByUniqueName(@NotNull String entityClass, String name) throws FindException {
+        for (GenericEntity entity : entities) {
+            if (entity.getName().equals(name)) {
+                return entity;
+            }
+        }
+        return null;
     }
 
     @Override

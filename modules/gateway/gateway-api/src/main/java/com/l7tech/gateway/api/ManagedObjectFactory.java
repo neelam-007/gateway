@@ -373,10 +373,19 @@ public class ManagedObjectFactory {
      * <p/>
      * The new instance will have the default (not-yet-saved) OID, no name, no GUID, and no backing policy.
      *
-     * @return THe new instance.
+     * @return The new instance.
      */
     public static EncapsulatedAssertionMO createEncapsulatedAssertion() {
         return new EncapsulatedAssertionMO();
+    }
+
+    /**
+     * Create a new GenericEntityMO instance.
+     *
+     * @return The new instance
+     */
+    public static GenericEntityMO createGenericEntity() {
+        return new GenericEntityMO();
     }
 
     /**

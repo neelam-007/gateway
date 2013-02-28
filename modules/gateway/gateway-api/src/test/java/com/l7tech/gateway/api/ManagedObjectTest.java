@@ -920,6 +920,25 @@ public class ManagedObjectTest {
     }
 
     @Test
+    public void testGenericEntitySerialization() throws Exception {
+        debug = true;
+        final GenericEntityMO genericEntityMO = ManagedObjectFactory.createGenericEntity();
+        genericEntityMO.setName("Test");
+        genericEntityMO.setDescription("Test description");
+        genericEntityMO.setEnabled(true);
+        genericEntityMO.setEntityClassName("com.l7tech.gateway.api.ManagedObjectTest");
+        genericEntityMO.setValueXml("<xml>Test value</xml>");
+
+        final GenericEntityMO roundTripped = roundTrip(genericEntityMO);
+
+        assertEquals("Test", roundTripped.getName());
+        assertEquals("Test description", roundTripped.getDescription());
+        assertEquals(true, roundTripped.getEnabled());
+        assertEquals("com.l7tech.gateway.api.ManagedObjectTest", roundTripped.getEntityClassName());
+        assertEquals("<xml>Test value</xml>", roundTripped.getValueXml());
+    }
+
+    @Test
     public void testMapSerialization() throws Exception {
         final Map<String,Object> properties = new HashMap<String,Object>();
         properties.put( "1", "string value" );
@@ -1145,6 +1164,7 @@ public class ManagedObjectTest {
     }
 
     private void testUnmarshal( final String suffix ) throws Exception {
+        //todo update tests for encapsulated assertions and generic entities
         testUnmarshal( suffix, getSchema( "gateway-management-6.1.xsd" ), MANAGED_OBJECTS_2 );
         testUnmarshal( suffix, ValidationUtils.getSchema() );
     }

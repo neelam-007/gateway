@@ -36,6 +36,14 @@ public interface GenericEntityManager extends EntityManager<GenericEntity, Gener
     boolean unRegisterClass(String entityClassName);
 
     /**
+     * Check if the generic entity class name is registered.
+     *
+     * @param entityClassName name of the class to check if registered. Required.
+     * @return true iff. a registered class with this name was already registered.
+     */
+    boolean isRegistered(String entityClassName);
+
+    /**
      * Get a concrete entity manager.
      *
      * @param entityClass the concrete generic entity class.  Required.
@@ -72,6 +80,8 @@ public interface GenericEntityManager extends EntityManager<GenericEntity, Gener
 
     <ET extends GenericEntity>
     ET findByUniqueName(@NotNull Class<ET> entityClass, String name) throws FindException;
+
+    GenericEntity findByUniqueName(@NotNull String entityClass, String name) throws FindException;
 
     <ET extends GenericEntity>
     void delete(@NotNull Class<ET> entityClass, long oid) throws DeleteException, FindException;

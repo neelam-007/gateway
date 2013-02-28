@@ -88,6 +88,12 @@ public class GenericEntityManagerImpl extends HibernateEntityManager<GenericEnti
         return prev != null;
     }
 
+    @Transactional(readOnly=true)
+    @Override
+    public boolean isRegistered(String entityClassName) {
+        return registeredClasses.containsKey(entityClassName);
+    }
+
     @Override
     @Transactional(readOnly=true)
     public <ET extends GenericEntity> EntityManager<ET, GenericEntityHeader> getEntityManager(@NotNull final Class<ET> entityClass) {
@@ -387,6 +393,15 @@ public class GenericEntityManagerImpl extends HibernateEntityManager<GenericEnti
             return null;
 
         return entityClass.isInstance(ret) ? entityClass.cast(ret) : asConcreteEntity(ret, entityClass);
+    }
+
+    @Override
+    public GenericEntity findByUniqueName(@NotNull String entityClass, String name) throws FindException {
+        if (!isRegistered(entityClass)) {
+            throw new FindException("No generic entity class named " + entityClass + " is registered");
+        }
+
+        return doFindByUniqueName(entityClass, name);
     }
 
     private GenericEntity doFindByUniqueName(final @NotNull String entityClassname, final String name) throws FindException {

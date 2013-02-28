@@ -38,6 +38,7 @@ import com.l7tech.server.MockClusterPropertyManager;
 import com.l7tech.server.cluster.ClusterPropertyCache;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.encass.EncapsulatedAssertionConfigManagerStub;
+import com.l7tech.server.entity.GenericEntityManagerStub;
 import com.l7tech.server.export.PolicyExporterImporterManagerStub;
 import com.l7tech.server.folder.FolderManagerStub;
 import com.l7tech.server.globalresources.ResourceEntryManagerStub;
@@ -67,6 +68,9 @@ import com.l7tech.xml.soap.SoapUtil;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.runners.MockitoJUnitRunner;
 import org.springframework.beans.factory.support.StaticListableBeanFactory;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
@@ -88,6 +92,7 @@ import static org.junit.Assert.*;
 /**
  * Test the GatewayManagementAssertion.
  */
+@RunWith(MockitoJUnitRunner.class)
 public class ServerGatewayManagementAssertionTest {
 
     //- PUBLIC
@@ -298,9 +303,54 @@ public class ServerGatewayManagementAssertionTest {
         final Element addressPatterns = XmlUtil.findExactlyOneChildElementByName(interfaceTag, NS_GATEWAY_MANAGEMENT, "AddressPatterns");
         final Element stringValue = XmlUtil.findExactlyOneChildElementByName(addressPatterns, NS_GATEWAY_MANAGEMENT, "StringValue");
 
+        // FYI the GUID below is generated via UUID.nameUUIDFromBytes which produces a constant UUID for it's input
+        // in this case its generated from the above selector name value of 'localhost'.
+        // due to this deterministic value behaviour there is no mocking required in this test case.
         assertEquals("Interface tag id", "421aa90e-079f-3326-b649-4f812ad13e79", interfaceTag.getAttribute("id"));
         assertEquals("Interface tag name", "localhost", XmlUtil.getTextValue( name ));
         assertEquals("Interface tag ip pattern", "127.0.0.1", XmlUtil.getTextValue(stringValue));
+    }
+
+    @BugId("SSG-5572")
+    @Test
+    public void testGetGenericEntity() throws Exception {
+        final String message =
+                "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" \n" +
+                "            xmlns:a=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" \n" +
+                "            xmlns:w=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\">\n" +
+                "  <s:Header>\n" +
+                "    <a:MessageID>uuid:4ED2993C-4339-4E99-81FC-C2FD3812781A</a:MessageID> \n" +
+                "    <a:To>http://127.0.0.1:8080/wsman</a:To> \n" +
+                "    <a:ReplyTo> \n" +
+                "      <a:Address s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</a:Address> \n" +
+                "    </a:ReplyTo> \n" +
+                "    <a:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Get</a:Action> \n" +
+                "    <w:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/genericEntities</w:ResourceURI> \n" +
+                "    <w:SelectorSet>\n" +
+                "      <w:Selector Name=\"id\">1</w:Selector> \n" +
+                "    </w:SelectorSet>\n" +
+                "    <w:OperationTimeout>PT60.000S</w:OperationTimeout> \n" +
+                "  </s:Header>\n" +
+                "  <s:Body/> \n" +
+                "</s:Envelope>";
+
+        final Document result = processRequest("http://schemas.xmlsoap.org/ws/2004/09/transfer/Get", message);
+        System.out.println(XmlUtil.nodeToFormattedString(result));
+
+        final Element soapBody = SoapUtil.getBodyElement(result);
+        final Element genericEntityElm = XmlUtil.findExactlyOneChildElementByName(soapBody, NS_GATEWAY_MANAGEMENT, "GenericEntity");
+        System.out.println(XmlUtil.nodeToString(genericEntityElm));
+        final Element nameElm = XmlUtil.findExactlyOneChildElementByName(genericEntityElm, NS_GATEWAY_MANAGEMENT, "Name");
+        final Element descriptionElm = XmlUtil.findExactlyOneChildElementByName(genericEntityElm, NS_GATEWAY_MANAGEMENT, "Description");
+        final Element entityClassNameElm = XmlUtil.findExactlyOneChildElementByName(genericEntityElm, NS_GATEWAY_MANAGEMENT, "EntityClassName");
+        final Element enabledElm = XmlUtil.findExactlyOneChildElementByName(genericEntityElm, NS_GATEWAY_MANAGEMENT, "Enabled");
+        final Element valueXmlElm = XmlUtil.findExactlyOneChildElementByName(genericEntityElm, NS_GATEWAY_MANAGEMENT, "ValueXml");
+
+        assertEquals("Name", "My Test Entity", DomUtils.getTextValue(nameElm));
+        assertEquals("Description", "My test entity description", DomUtils.getTextValue(descriptionElm));
+        assertEquals("Entity class name", this.getClass().getName(), DomUtils.getTextValue(entityClassNameElm));
+        assertTrue("Enabled", Boolean.valueOf(DomUtils.getTextValue(enabledElm)));
+        assertEquals("ValueXml", "<xml>xml value</xml>", DomUtils.getTextValue(valueXmlElm));
     }
 
     @Test
@@ -493,6 +543,15 @@ public class ServerGatewayManagementAssertionTest {
         String payload = "<n1:ClusterProperty xmlns:n1=\"http://ns.l7tech.com/2010/04/gateway-management\"><n1:Name>test</n1:Name><n1:Value>value</n1:Value></n1:ClusterProperty>";
         String expectedId = "6";
         doCreate( resourceUri, payload, expectedId );
+    }
+
+    @BugId("SSG-5572")
+    @Test
+    public void testCreateGenericEntity() throws Exception {
+        String resourceUri = "http://ns.l7tech.com/2010/04/gateway-management/genericEntities";
+        String payload = "<l7:GenericEntity xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\"><l7:Name>My Test Entity</l7:Name><l7:Description>My test entity description</l7:Description><l7:EntityClassName>com.l7tech.external.assertions.gatewaymanagement.server.ServerGatewayManagementAssertionTest</l7:EntityClassName><l7:Enabled>true</l7:Enabled><l7:ValueXml>&lt;xml&gt;xml value&lt;/xml&gt;</l7:ValueXml></l7:GenericEntity>";
+        // id will be 1 or 2 depending on when the test is ran
+        doCreate( resourceUri, payload, "1", "2" );
     }
 
     @Test
@@ -1066,6 +1125,39 @@ public class ServerGatewayManagementAssertionTest {
         putAndVerify( message, verifier, true );
     }
 
+    @BugId("SSG-5572")
+    @Test
+    public void testPutGenericEntity() throws Exception {
+        final String message = "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns:n1=\"http://ns.l7tech.com/2010/04/gateway-management\"><s:Header><wsa:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Put</wsa:Action><wsa:To s:mustUnderstand=\"true\">http://127.0.0.1:8080/wsman</wsa:To><wsman:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/genericEntities</wsman:ResourceURI><wsa:MessageID s:mustUnderstand=\"true\">uuid:afad2993-7d39-1d39-8002-481688002100</wsa:MessageID><wsa:ReplyTo><wsa:Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo><wsman:SelectorSet><wsman:Selector Name=\"id\">1</wsman:Selector></wsman:SelectorSet><wsman:RequestEPR/></s:Header><s:Body> <n1:GenericEntity ><n1:Name>My Test Entity UPDATED</n1:Name><n1:Description>My test entity description UPDATED</n1:Description><n1:EntityClassName>com.l7tech.external.assertions.gatewaymanagement.server.ServerGatewayManagementAssertionTestUPDATED</n1:EntityClassName><n1:Enabled>false</n1:Enabled><n1:ValueXml>&lt;xml&gt;xml valueUPDATED&lt;/xml&gt;</n1:ValueXml></n1:GenericEntity>  </s:Body></s:Envelope>";
+
+        final UnaryVoidThrows<Document,Exception> verifier = new UnaryVoidThrows<Document,Exception>(){
+            @Override
+            public void call( final Document result ) throws Exception {
+                final Element soapBody = SoapUtil.getBodyElement(result);
+                final Element genericEntityElm = XmlUtil.findExactlyOneChildElementByName(soapBody, NS_GATEWAY_MANAGEMENT, "GenericEntity");
+
+                final Element nameElm = XmlUtil.findExactlyOneChildElementByName(genericEntityElm, NS_GATEWAY_MANAGEMENT, "Name");
+                final Element entityClassNameElm = XmlUtil.findExactlyOneChildElementByName(genericEntityElm, NS_GATEWAY_MANAGEMENT, "EntityClassName");
+                final Element descriptionElm = XmlUtil.findExactlyOneChildElementByName(genericEntityElm, NS_GATEWAY_MANAGEMENT, "Description");
+                final Element enabledElm = XmlUtil.findExactlyOneChildElementByName(genericEntityElm, NS_GATEWAY_MANAGEMENT, "Enabled");
+                final Element valueXmlElm = XmlUtil.findExactlyOneChildElementByName(genericEntityElm, NS_GATEWAY_MANAGEMENT, "ValueXml");
+
+                // Verify attempted changes to and entity class name were ignored
+                assertEquals("Name", "My Test Entity", XmlUtil.getTextValue(nameElm));
+                assertEquals("EntityClassName", ServerGatewayManagementAssertionTest.this.getClass().getName(), XmlUtil.getTextValue(entityClassNameElm));
+
+                // Verify other changes were persisted
+                assertEquals("Description", "My test entity description UPDATED", XmlUtil.getTextValue(descriptionElm));
+                assertFalse("Enabled", Boolean.parseBoolean(XmlUtil.getTextValue(enabledElm)));
+                assertEquals("ValueXml", "<xml>xml valueUPDATED</xml>", XmlUtil.getTextValue(valueXmlElm));
+
+            }
+        };
+
+        putAndVerify( message, verifier, false );
+        putAndVerify( message, verifier, true );
+    }
+
     @Test
     public void testPutFolder() throws Exception {
         final String message = "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns:n1=\"http://ns.l7tech.com/2010/04/gateway-management\"><s:Header><wsa:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Put</wsa:Action><wsa:To s:mustUnderstand=\"true\">http://127.0.0.1:8080/wsman</wsa:To><wsman:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/folders</wsman:ResourceURI><wsa:MessageID s:mustUnderstand=\"true\">uuid:afad2993-7d39-1d39-8002-481688002100</wsa:MessageID><wsa:ReplyTo><wsa:Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo><wsman:SelectorSet><wsman:Selector Name=\"id\">1</wsman:Selector></wsman:SelectorSet><wsman:RequestEPR/></s:Header><s:Body> <n1:Folder xmlns:n1=\"http://ns.l7tech.com/2010/04/gateway-management\" folderId=\"-5002\" id=\"1\" version=\"0\"><n1:Name>Test Folder (updated)</n1:Name></n1:Folder> </s:Body></s:Envelope>";
@@ -1507,6 +1599,19 @@ public class ServerGatewayManagementAssertionTest {
     @Test
     public void testDelete() throws Exception {        
         String message = "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\"><s:Header><wsa:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Delete</wsa:Action><wsa:To s:mustUnderstand=\"true\">http://127.0.0.1:8080/wsman</wsa:To><wsman:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/clusterProperties</wsman:ResourceURI><wsa:MessageID s:mustUnderstand=\"true\">uuid:b2794ffb-7d39-1d39-8002-481688002100</wsa:MessageID><wsa:ReplyTo><wsa:Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo><wsman:SelectorSet><wsman:Selector Name=\"id\">2</wsman:Selector></wsman:SelectorSet></s:Header><s:Body/></s:Envelope>";
+
+        final Document result = processRequest( "http://schemas.xmlsoap.org/ws/2004/09/transfer/Delete", message );
+
+        final Element soapBody = SoapUtil.getBodyElement(result);
+        assertNotNull("SOAP Body", soapBody);
+        assertNull("No body content", soapBody.getFirstChild());
+    }
+
+    @BugId("SSG-5572")
+    @Test
+    public void testDeleteGenericEntity() throws Exception {
+        String message = "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\"><s:Header><wsa:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Delete</wsa:Action><wsa:To s:mustUnderstand=\"true\">http://127.0.0.1:8080/wsman</wsa:To><wsman:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/genericEntities</wsman:ResourceURI><wsa:MessageID s:mustUnderstand=\"true\">uuid:b2794ffb-7d39-1d39-8002-481688002100</wsa:MessageID><wsa:ReplyTo><wsa:Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo>" +
+                "<wsman:SelectorSet><wsman:Selector Name=\"id\">1</wsman:Selector></wsman:SelectorSet></s:Header><s:Body/></s:Envelope>";
 
         final Document result = processRequest( "http://schemas.xmlsoap.org/ws/2004/09/transfer/Delete", message );
 
@@ -2399,11 +2504,21 @@ public class ServerGatewayManagementAssertionTest {
             }
         } );
         beanFactory.addBean( "securePasswordManager", new SecurePasswordManagerStub(
-                securePassword( 1L, "test", "password", true, SecurePassword.SecurePasswordType.PASSWORD )
+                securePassword(1L, "test", "password", true, SecurePassword.SecurePasswordType.PASSWORD)
         ) );
         beanFactory.addBean( "encapsulatedAssertionConfigManager", new EncapsulatedAssertionConfigManagerStub(
                 encapsulatedAssertion( 1L, "Test Encass Config 1", "ABCD-0001", testPolicy1, null, null, null)
         ) );
+
+        final GenericEntity genericEntity = new GenericEntity();
+        genericEntity.setId("1");
+        genericEntity.setName("My Test Entity");
+        genericEntity.setDescription("My test entity description");
+        genericEntity.setEnabled(true);
+        genericEntity.setEntityClassName(this.getClass().getName());
+        genericEntity.setValueXml("<xml>xml value</xml>");
+
+        beanFactory.addBean("genericEntityManagerWithData", new GenericEntityManagerStub(genericEntity));
 
         final ClassLoader systemClassLoader = ClassLoader.getSystemClassLoader();
         final ResourceClassLoader resourceClassLoader = new ResourceClassLoader(
