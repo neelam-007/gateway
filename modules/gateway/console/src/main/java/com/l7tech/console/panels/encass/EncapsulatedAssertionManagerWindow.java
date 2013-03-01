@@ -213,6 +213,8 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
                                     // update existing config
                                     config.setOid(sameGuid.getOid());
                                     config.setVersion(sameGuid.getVersion());
+                                    // avoid naming conflicts by using the existing name
+                                    config.setName(sameGuid.getName());
                                     // update existing policy
                                     final Policy existingPolicy = sameGuid.getPolicy();
                                     if (existingPolicy != null) {
