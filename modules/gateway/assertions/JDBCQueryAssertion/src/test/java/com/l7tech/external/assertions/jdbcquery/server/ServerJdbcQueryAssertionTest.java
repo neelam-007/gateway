@@ -3,15 +3,13 @@ package com.l7tech.external.assertions.jdbcquery.server;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.external.assertions.jdbcquery.JdbcQueryAssertion;
 import com.l7tech.gateway.common.audit.TestAudit;
-import com.l7tech.gateway.common.jdbc.JdbcAdmin;
 import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.message.Message;
-import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.AssertionRegistry;
-import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.variable.NoSuchVariableException;
+import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.TestLicenseManager;
 import com.l7tech.server.jdbc.*;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -39,6 +37,7 @@ import java.util.*;
 
 import static org.junit.Assert.*;
 import static org.mockito.Matchers.*;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
@@ -377,7 +376,7 @@ public class ServerJdbcQueryAssertionTest {
         final AssertionRegistry assertionRegistry = new AssertionRegistry();
         assertionRegistry.afterPropertiesSet();
         serverPolicyFactory = new ServerPolicyFactory(new TestLicenseManager(), new MockInjector());
-        when(jdbcQueryingManager.performJdbcQuery(anyString(), anyString(), anyString(), anyInt(), anyList())).thenReturn(getMockResults());
+        when(jdbcQueryingManager.performJdbcQuery(anyString(), anyString(), anyString(), anyInt(), anyInt(), anyList())).thenReturn(getMockResults());
         GenericApplicationContext applicationContext = new GenericApplicationContext(new SimpleSingletonBeanFactory(new HashMap<String, Object>() {{
             put("assertionRegistry", assertionRegistry);
             put("policyFactory", serverPolicyFactory);
@@ -405,7 +404,7 @@ public class ServerJdbcQueryAssertionTest {
         assertEquals("value1", valueObj[0]);
 
         //test/touch SELECT query related code, with special character result
-        when(jdbcQueryingManager.performJdbcQuery(anyString(), anyString(), anyString(), anyInt(), anyList())).thenReturn(getMockSpecialResults());
+        when(jdbcQueryingManager.performJdbcQuery(anyString(), anyString(), anyString(), anyInt(), anyInt(), anyList())).thenReturn(getMockSpecialResults());
         applicationContext = new GenericApplicationContext(new SimpleSingletonBeanFactory(new HashMap<String, Object>() {{
             put("assertionRegistry", assertionRegistry);
             put("policyFactory", serverPolicyFactory);
@@ -430,7 +429,7 @@ public class ServerJdbcQueryAssertionTest {
         //test/touch Stored Procedure related code
         assertion.setSqlQuery("CALL mockStoredProcedure()");
         assertion.setMaxRecords(12);
-        when(jdbcQueryingManager.performJdbcQuery(anyString(), anyString(), anyString(), anyInt(), anyList())).thenReturn(getMockSqlRowResults());
+        when(jdbcQueryingManager.performJdbcQuery(anyString(), anyString(), anyString(), anyInt(), anyInt(), anyList())).thenReturn(getMockSqlRowResults());
         applicationContext = new GenericApplicationContext(new SimpleSingletonBeanFactory(new HashMap<String, Object>() {{
             put("assertionRegistry", assertionRegistry);
             put("policyFactory", serverPolicyFactory);
@@ -547,7 +546,7 @@ public class ServerJdbcQueryAssertionTest {
         final AssertionRegistry assertionRegistry = new AssertionRegistry();
         assertionRegistry.afterPropertiesSet();
         serverPolicyFactory = new ServerPolicyFactory(new TestLicenseManager(), new MockInjector());
-        when(jdbcQueryingManager.performJdbcQuery(anyString(), anyString(), anyString(), anyInt(), anyList())).thenReturn(getMockResults());
+        when(jdbcQueryingManager.performJdbcQuery(anyString(), anyString(), anyString(), anyInt(), anyInt(), anyList())).thenReturn(getMockResults());
         GenericApplicationContext applicationContext = new GenericApplicationContext(new SimpleSingletonBeanFactory(new HashMap<String, Object>() {{
             put("assertionRegistry", assertionRegistry);
             put("policyFactory", serverPolicyFactory);
@@ -561,7 +560,7 @@ public class ServerJdbcQueryAssertionTest {
         assertion.setConnectionName("mockDb");
 
         //test/touch SELECT query related code, with null result
-        when(jdbcQueryingManager.performJdbcQuery(anyString(), anyString(), anyString(), anyInt(), anyList())).thenReturn(getMockWithNullResults());
+        when(jdbcQueryingManager.performJdbcQuery(anyString(), anyString(), anyString(), anyInt(), anyInt(), anyList())).thenReturn(getMockWithNullResults());
         applicationContext = new GenericApplicationContext(new SimpleSingletonBeanFactory(new HashMap<String, Object>() {{
             put("assertionRegistry", assertionRegistry);
             put("policyFactory", serverPolicyFactory);
@@ -658,4 +657,114 @@ public class ServerJdbcQueryAssertionTest {
             assertEquals("NULL", params.get(2));
         }
     }
+
+    @BugId("SSG-6572")
+    @Test
+    public void testValidLiteralQueryTimeoutValue() throws Exception {
+        MockitoAnnotations.initMocks(this);
+        when(jdbcQueryingManager.performJdbcQuery(anyString(), anyString(), anyString(), anyInt(), anyInt(), anyList())).thenReturn(getMockWithNullResults());
+        assertion.setQueryTimeout("60");
+
+        GenericApplicationContext applicationContext = new GenericApplicationContext(new SimpleSingletonBeanFactory(new HashMap<String, Object>() {{
+            put("jdbcQueryingManager", jdbcQueryingManager);
+            put("jdbcConnectionManager", connectionManager);
+            put("serverConfig", ConfigFactory.getCachedConfig());
+        }}));
+
+        ServerJdbcQueryAssertion serverAssertion = new ServerJdbcQueryAssertion(assertion, applicationContext);
+        final AssertionStatus assertionStatus = serverAssertion.checkRequest(makeContext("<xml />", "<xml />"));
+        assertEquals(AssertionStatus.NONE, assertionStatus);
+
+        verify(jdbcQueryingManager).performJdbcQuery(anyString(), anyString(), anyString(), anyInt(), eq(60), anyList());
+    }
+
+    @BugId("SSG-6572")
+    @Test
+    public void testUpgradeDefaultValue() throws Exception {
+        MockitoAnnotations.initMocks(this);
+        when(jdbcQueryingManager.performJdbcQuery(anyString(), anyString(), anyString(), anyInt(), anyInt(), anyList())).thenReturn(getMockWithNullResults());
+
+        // default value for assertion is null
+        GenericApplicationContext applicationContext = new GenericApplicationContext(new SimpleSingletonBeanFactory(new HashMap<String, Object>() {{
+            put("jdbcQueryingManager", jdbcQueryingManager);
+            put("jdbcConnectionManager", connectionManager);
+            put("serverConfig", ConfigFactory.getCachedConfig());
+        }}));
+
+        ServerJdbcQueryAssertion serverAssertion = new ServerJdbcQueryAssertion(assertion, applicationContext);
+        final AssertionStatus assertionStatus = serverAssertion.checkRequest(makeContext("<xml />", "<xml />"));
+        assertEquals(AssertionStatus.NONE, assertionStatus);
+
+        // validate null was interpreted as 0
+        verify(jdbcQueryingManager).performJdbcQuery(anyString(), anyString(), anyString(), anyInt(), eq(0), anyList());
+    }
+
+    @BugId("SSG-6572")
+    @Test
+    public void testValidVariableQueryTimeoutValue() throws Exception {
+        MockitoAnnotations.initMocks(this);
+        when(jdbcQueryingManager.performJdbcQuery(anyString(), anyString(), anyString(), anyInt(), anyInt(), anyList())).thenReturn(getMockWithNullResults());
+        assertion.setQueryTimeout("${myvar}");
+
+        GenericApplicationContext applicationContext = new GenericApplicationContext(new SimpleSingletonBeanFactory(new HashMap<String, Object>() {{
+            put("jdbcQueryingManager", jdbcQueryingManager);
+            put("jdbcConnectionManager", connectionManager);
+            put("serverConfig", ConfigFactory.getCachedConfig());
+        }}));
+
+        ServerJdbcQueryAssertion serverAssertion = new ServerJdbcQueryAssertion(assertion, applicationContext);
+        final PolicyEnforcementContext context = makeContext("<xml />", "<xml />");
+        context.setVariable("myvar", "100");
+        final AssertionStatus assertionStatus = serverAssertion.checkRequest(context);
+        assertEquals(AssertionStatus.NONE, assertionStatus);
+
+        verify(jdbcQueryingManager).performJdbcQuery(anyString(), anyString(), anyString(), anyInt(), eq(100), anyList());
+    }
+
+    @BugId("SSG-6572")
+    @Test
+    public void testInvalidQueryTimeoutValue() throws Exception {
+        assertion.setQueryTimeout("invalid");
+        ServerJdbcQueryAssertion serverAssertion = new ServerJdbcQueryAssertion(assertion, appCtx);
+        final TestAudit testAudit = new TestAudit();
+        ApplicationContexts.inject(serverAssertion, Collections.singletonMap("auditFactory", testAudit.factory()));
+        final AssertionStatus assertionStatus = serverAssertion.checkRequest(makeContext("<xml />", "<xml />"));
+        assertEquals(AssertionStatus.FAILED, assertionStatus);
+
+        for (String s : testAudit) {
+            System.out.println(s);
+        }
+
+        assertTrue(testAudit.isAuditPresentContaining("\"Perform JDBC Query\" assertion failed due to: Invalid resolved value for query timeout: invalid"));
+    }
+
+    @BugId("SSG-6572")
+    @Test
+    public void testInValidVariableQueryTimeoutValue() throws Exception {
+        MockitoAnnotations.initMocks(this);
+        when(jdbcQueryingManager.performJdbcQuery(anyString(), anyString(), anyString(), anyInt(), anyInt(), anyList())).thenReturn(getMockWithNullResults());
+        assertion.setQueryTimeout("${myvar}");
+
+        GenericApplicationContext applicationContext = new GenericApplicationContext(new SimpleSingletonBeanFactory(new HashMap<String, Object>() {{
+            put("jdbcQueryingManager", jdbcQueryingManager);
+            put("jdbcConnectionManager", connectionManager);
+            put("serverConfig", ConfigFactory.getCachedConfig());
+        }}));
+
+        ServerJdbcQueryAssertion serverAssertion = new ServerJdbcQueryAssertion(assertion, applicationContext);
+        final TestAudit testAudit = new TestAudit();
+        ApplicationContexts.inject(serverAssertion, Collections.singletonMap("auditFactory", testAudit.factory()));
+
+        final PolicyEnforcementContext context = makeContext("<xml />", "<xml />");
+        context.setVariable("myvar", "invalid");
+        final AssertionStatus assertionStatus = serverAssertion.checkRequest(context);
+        assertEquals(AssertionStatus.FAILED, assertionStatus);
+
+        for (String s : testAudit) {
+            System.out.println(s);
+        }
+
+        assertTrue(testAudit.isAuditPresentContaining("\"Perform JDBC Query\" assertion failed due to: Invalid resolved value for query timeout: invalid"));
+    }
+
 }

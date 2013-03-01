@@ -38,11 +38,12 @@ public class JdbcQueryAssertion extends Assertion implements JdbcConnectionable,
     private int maxRecords = JdbcAdmin.ORIGINAL_MAX_RECORDS;
     private boolean assertionFailureEnabled = true;
     private Map<String, String> namingMap = new TreeMap<String, String>();
-    private boolean generateXmlResult = false;
-    private String nullPattern = null;
-    private String schema = null;
+    private boolean generateXmlResult;
+    private String nullPattern;
+    private String schema;
+    private String queryTimeout;
 
-    private boolean allowMultiValuedVariables = false;
+    private boolean allowMultiValuedVariables;
 
     public JdbcQueryAssertion() {
     }
@@ -55,12 +56,12 @@ public class JdbcQueryAssertion extends Assertion implements JdbcConnectionable,
         copy.setSqlQuery(sqlQuery);
         copy.setVariablePrefix(variablePrefix);
         copy.setMaxRecords(maxRecords);
+        copy.setQueryTimeout(queryTimeout);
         copy.setAssertionFailureEnabled(assertionFailureEnabled);
         copy.setQueryName(queryName);
         copy.setNamingMap(copyMap(namingMap));
         copy.setNullPattern(nullPattern);
         copy.setSchema(schema);
-
         return copy;
     }
 
@@ -69,6 +70,7 @@ public class JdbcQueryAssertion extends Assertion implements JdbcConnectionable,
         setSqlQuery(source.getSqlQuery());
         setVariablePrefix(source.getVariablePrefix());
         setMaxRecords(source.getMaxRecords());
+        setQueryTimeout(source.getQueryTimeout());
         setAssertionFailureEnabled(source.isAssertionFailureEnabled());
         setQueryName(source.getQueryName());
         setNamingMap(copyMap(source.getNamingMap()));
@@ -110,6 +112,14 @@ public class JdbcQueryAssertion extends Assertion implements JdbcConnectionable,
 
     public void setMaxRecords(int maxRecords) {
         this.maxRecords = maxRecords;
+    }
+
+    public String getQueryTimeout() {
+        return queryTimeout;
+    }
+
+    public void setQueryTimeout(String queryTimeout) {
+        this.queryTimeout = queryTimeout;
     }
 
     public boolean isAssertionFailureEnabled() {
@@ -196,7 +206,7 @@ public class JdbcQueryAssertion extends Assertion implements JdbcConnectionable,
     @Override
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {
-        return Syntax.getReferencedNames(connectionName, sqlQuery, variablePrefix, nullPattern);
+        return Syntax.getReferencedNames(connectionName, sqlQuery, variablePrefix, nullPattern, queryTimeout);
     }
 
     @Override

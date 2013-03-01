@@ -130,7 +130,7 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager, PropertyCha
      *         a SqlRowSet representing disconnected java.sql.ResultSet data (the result of a select statement).
      */
     @Override
-    public Object performJdbcQuery(@Nullable String connectionName, @NotNull final String query, @Nullable String schema, final int maxRecords, @NotNull final List<Object> preparedStmtParams) {
+    public Object performJdbcQuery(@Nullable final String connectionName, @NotNull final String query, @Nullable final String schema, final int maxRecords, final int timeoutSeconds, @NotNull final List<Object> preparedStmtParams) {
         if (connectionName == null || connectionName.isEmpty()) {
             logger.warning("Failed to perform querying since the JDBC connection name is not specified.");
             return "JDBC Connection Name is not specified.";
@@ -144,22 +144,37 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager, PropertyCha
             logger.warning("Failed to perform querying since " + ExceptionUtils.getMessage(ExceptionUtils.unnestToRoot(e)));
             return "Cannot retrieve a C3P0 DataSource.";
         }
-        return performJdbcQuery(connectionName, dataSource, query, schema, maxRecords, preparedStmtParams);
+        return performJdbcQuery(connectionName, dataSource, query, schema, maxRecords, timeoutSeconds, preparedStmtParams);
     }
 
     @Override
-    public Object performJdbcQuery(@NotNull DataSource dataSource, @NotNull String query, @Nullable String schema, int maxRecords, @NotNull List<Object> preparedStmtParams)
-    {
+    public Object performJdbcQuery(@Nullable String connectionName, @NotNull final String query, @Nullable String schema, final int maxRecords, @NotNull final List<Object> preparedStmtParams) {
+        return performJdbcQuery(connectionName, query, schema, maxRecords, 0, preparedStmtParams);
+    }
+
+    @Override
+    public Object performJdbcQuery(@NotNull DataSource dataSource, @NotNull String query, @Nullable String schema, int maxRecords, int timeoutSeconds, @NotNull List<Object> preparedStmtParams) {
         return performJdbcQuery(null, dataSource, query, schema, maxRecords, preparedStmtParams);
     }
 
     @Override
-    public Object performJdbcQuery(@Nullable String connectionName, @NotNull DataSource dataSource, @NotNull String query, @Nullable String schema, int maxRecords, @NotNull List<Object> preparedStmtParams) {
+    public Object performJdbcQuery(@NotNull DataSource dataSource, @NotNull String query, @Nullable String schema, int maxRecords, @NotNull List<Object> preparedStmtParams) {
+        return performJdbcQuery(dataSource, query, schema, maxRecords, 0, preparedStmtParams);
+    }
+
+    @Override
+    public Object performJdbcQuery(@Nullable final String connectionName, @NotNull final DataSource dataSource, @NotNull final String query, @Nullable final String schema, final int maxRecords, final int timeoutSeconds, @NotNull final List<Object> preparedStmtParams) {
         // Create a JdbcTemplate and set the max rows.
         JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
         jdbcTemplate.setMaxRows(maxRecords);
+        jdbcTemplate.setQueryTimeout((timeoutSeconds >= 0) ? timeoutSeconds : 0);
 
         return performJdbcQuery(connectionName, jdbcTemplate, query, Option.optional(schema), preparedStmtParams);
+    }
+
+    @Override
+    public Object performJdbcQuery(@Nullable String connectionName, @NotNull DataSource dataSource, @NotNull String query, @Nullable String schema, int maxRecords, @NotNull List<Object> preparedStmtParams) {
+        return performJdbcQuery(connectionName, dataSource, query, schema, maxRecords, 0, preparedStmtParams);
     }
 
     protected Object performJdbcQuery(@Nullable String connectionName, JdbcTemplate jdbcTemplate, String query, @NotNull Option<String> schemaName, @NotNull List<Object> preparedStmtParams)
@@ -221,6 +236,8 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager, PropertyCha
                 throw either.left();
             }
             simpleJdbcCall = either.right();
+            // update the cached timeout in case the caller has changed it's value
+            simpleJdbcCall.getJdbcTemplate().setQueryTimeout(jdbcTemplate.getQueryTimeout());
             jdbcCallUtil = new JdbcCallHelper(simpleJdbcCall, cachedMetaDataValue.inParameters.some());
 
             // record time of cache hit - not used anywhere yet.

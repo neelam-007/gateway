@@ -81,9 +81,18 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
 
             applyNullValue(assertion.getNullPattern(), preparedStmtParams);
 
-            final String connName = ExpandVariables.process(assertion.getConnectionName(), context.getVariableMap(variablesUsed, getAudit()), getAudit());
+            final Map<String, Object> variableMap = context.getVariableMap(variablesUsed, getAudit());
+            final String connName = ExpandVariables.process(assertion.getConnectionName(), variableMap, getAudit());
             // Get result by querying.  The result could be a ResultSet object, an integer (updated rows), or a string (a warning message).
-            final Object result = jdbcQueryingManager.performJdbcQuery(connName, plainQuery, assertion.getSchema(), assertion.getMaxRecords(), preparedStmtParams);
+            final String queryTimeoutString = (assertion.getQueryTimeout() != null) ? assertion.getQueryTimeout() : "0";
+            final String resolvedQueryTimeout = ExpandVariables.process(queryTimeoutString, variableMap, getAudit());
+            if (!ValidationUtils.isValidInteger(resolvedQueryTimeout, false, 0, Integer.MAX_VALUE)) {
+                logAndAudit(AssertionMessages.JDBC_QUERYING_FAILURE_ASSERTION_FAILED, "Invalid resolved value for query timeout: " + resolvedQueryTimeout);
+                return AssertionStatus.FAILED;
+            }
+            final int queryTimeout = Integer.parseInt(resolvedQueryTimeout);
+
+            final Object result = jdbcQueryingManager.performJdbcQuery(connName, plainQuery, assertion.getSchema(), assertion.getMaxRecords(), queryTimeout, preparedStmtParams);
 
             // Analyze the result type and perform a corresponding action.
             if (result instanceof String) {

@@ -110,10 +110,11 @@ public interface JdbcAdmin extends AsyncAdminMethods{
      * @param connectionName: the name of a JDBC Connection entity.
      * @param query: a SQL query statement.
      * @param schemaName explicit name of the schema. Applies only to Oracle
+     * @param queryTimeout maximum query execution time in seconds.
      * @return null if the testing is successful.  Otherwise, return an error message with testing failure detail.
      */
     @Transactional(readOnly=true)
-    AsyncAdminMethods.JobId<String> testJdbcQuery(String connectionName, String query, @Nullable String schemaName);
+    AsyncAdminMethods.JobId<String> testJdbcQuery(String connectionName, String query, @Nullable String schemaName, int queryTimeout);
 
     /**
      * Get a property, default driver class list from the global cluster properties.  if failed to get its value,

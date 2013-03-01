@@ -173,15 +173,16 @@ public class JdbcAdminImpl extends AsyncAdminMethodsImpl implements JdbcAdmin {
      *
      * @param connectionName: the name of a JDBC Connection entity.
      * @param query:          a SQL query statement.
+     * @param queryTimeout    query timeout
      * @return null if the testing is successful.  Otherwise, return an error message with testing failure detail.
      */
     @Override
-    public AsyncAdminMethods.JobId<String> testJdbcQuery(final String connectionName, final String query, @Nullable final String schemaName) {
+    public AsyncAdminMethods.JobId<String> testJdbcQuery(final String connectionName, final String query, @Nullable final String schemaName, final int queryTimeout) {
         final FutureTask<String> queryTask = new FutureTask<String>(find(false).wrapCallable(new Callable<String>() {
             @Override
             public String call() throws Exception {
 
-                Object result = jdbcQueryingManager.performJdbcQuery(connectionName, query, schemaName ,1, new ArrayList<Object>());
+                Object result = jdbcQueryingManager.performJdbcQuery(connectionName, query, schemaName ,1, queryTimeout, new ArrayList<Object>());
                 return (result instanceof String) ? (String) result : null;
             }
         }));

@@ -16,6 +16,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.util.MutablePair;
 import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.ValidationUtils;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
@@ -66,6 +67,7 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
     private JTextField nullPatternTextBox;
     private JTextField schemaTextField;
     private JCheckBox schemaCheckBox;
+    private JTextField queryTimeoutTextField;
 
     private NamingTableModel namingTableModel;
     private Map<String, String> namingMap;
@@ -267,6 +269,8 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
             connectionComboBox.setSelectedItem("");
         }
 
+        final String queryTimeout = assertion.getQueryTimeout();
+        queryTimeoutTextField.setText((queryTimeout != null) ? queryTimeout : "0");
         enableOrDisableSchemaControls();
 
     }
@@ -287,6 +291,8 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
         assertion.setNamingMap(namingMap);
         assertion.setVariablePrefix(variablePrefixTextField.getVariable());
         assertion.setMaxRecords((Integer) maxRecordsSpinner.getValue());
+        final String queryTimeout = queryTimeoutTextField.getText().trim();
+        assertion.setQueryTimeout(("0".equals(queryTimeout)) ? null : queryTimeout);
         assertion.setAssertionFailureEnabled(failAssertionCheckBox.isSelected());
         assertion.setGenerateXmlResult(generateResultsAsXMLCheckBox.isSelected());
         assertion.setQueryName(queryNameTextField.getText());
@@ -465,6 +471,17 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
                         return;
                     }
 
+                    if (Syntax.getReferencedNames(queryTimeoutTextField.getText()).length > 0) {
+                        displayQueryTestingResult("Unable to evaluate a query with a context variable for query timeout.");
+                        return;
+                    }
+
+                    if (!isQueryTimeoutValid()) {
+                        displayQueryTestingResult("Unable to evaluate a query with an invalid query timeout.");
+                        return;
+                    }
+                    final int queryTimeout = Integer.parseInt(queryTimeoutTextField.getText());
+
                     final String schemaName = schemaCheckBox.isEnabled() && schemaCheckBox.isSelected() ? schemaTextField.getText().trim() : "";
 
                     final JdbcAdmin admin = getJdbcConnectionAdmin();
@@ -475,7 +492,7 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
                                 JdbcQueryAssertionPropertiesDialog.this,
                                 resources.getString("dialog.title.test.query"),
                                 resources.getString("dialog.title.test.query"),
-                                admin.testJdbcQuery(connName, query, schemaName.isEmpty() ? null : schemaName)).right());
+                                admin.testJdbcQuery(connName, query, schemaName.isEmpty() ? null : schemaName, queryTimeout)).right());
                     } catch (InterruptedException e) {
                         // operation cancelled by user, do nothing
                     } catch (InvocationTargetException e) {
@@ -630,17 +647,39 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
                 if (enableOracleSchemaCheck) {
                     isValidQuery = procedureName.indexOf('.') == procedureName.lastIndexOf('.');
                 }
+
+                if (!isValidQuery) {
+                    DialogDisplayer.showMessageDialog(this,"Query cannot reference schema from query, use schema field instead",null);
+                    return;
+                }
             }
         }
 
-        if(isValidQuery){
-            getData(assertion);
-            confirmed = true;
-            JdbcQueryAssertionPropertiesDialog.this.dispose();
-        } else{
-            DialogDisplayer.showMessageDialog(this,"Query cannot reference schema from query, use schema field instead",null);
+        if (!isQueryTimeoutValid()) {
+            DialogDisplayer.showMessageDialog(this, "Query Timeout must be a single variable reference or a valid Integer >= 0", null);
+            return;
         }
+
+        getData(assertion);
+        confirmed = true;
+        JdbcQueryAssertionPropertiesDialog.this.dispose();
     }
+
+    private boolean isQueryTimeoutValid(){
+        boolean isQueryValid = true;
+        final String text = queryTimeoutTextField.getText().trim();
+        if (!Syntax.isOnlyASingleVariableReferenced(text)) {
+            isQueryValid = false;
+        }
+
+        if (Syntax.getReferencedNames(text).length == 0) {
+            isQueryValid = ValidationUtils.isValidInteger(text, false, 0, Integer.MAX_VALUE);
+        }
+
+        return isQueryValid;
+
+    }
+
 
     private void doCancel() {
         JdbcQueryAssertionPropertiesDialog.this.dispose();

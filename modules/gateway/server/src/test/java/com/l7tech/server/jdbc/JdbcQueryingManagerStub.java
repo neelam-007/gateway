@@ -54,4 +54,18 @@ public class JdbcQueryingManagerStub implements JdbcQueryingManager {
 
     }
 
+    @Override
+    public Object performJdbcQuery(@Nullable String connectionName, @NotNull String query, @Nullable String schema, int maxRecords, int timeoutSeconds, @NotNull List<Object> preparedStmtParams) {
+        return mockResults;
+    }
+
+    @Override
+    public Object performJdbcQuery(@NotNull DataSource dataSource, @NotNull String query, @Nullable String schema, int maxRecords, int timeoutSeconds, @NotNull List<Object> preparedStmtParams) {
+        return mockResults;
+    }
+
+    @Override
+    public Object performJdbcQuery(@Nullable String connectionName, @NotNull DataSource dataSource, @NotNull String query, @Nullable String schema, int maxRecords, int timeoutSeconds, @NotNull List<Object> preparedStmtParams) {
+        return mockResults;
+    }
 }

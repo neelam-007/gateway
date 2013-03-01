@@ -33,46 +33,55 @@ public interface JdbcQueryingManager {
      *
      * @param connectionName:     the name of a JdbcConnection entity to retrieve a dataSource (i.e., a connection pool). //todo This should not be nullable.
      * @param query:              the SQL query
-     * @param schema:       the specific schema to override, for oracle only
+     * @param schema:             the specific schema to override, for oracle only
      * @param maxRecords:         the maximum number of records allowed to return.
+     * @param timeoutSeconds      the number of seconds the driver will wait for a statement object o execute. If the limit is exceeded an exception is thrown. See{@link java.sql.Statement#setQueryTimeout(int)}
      * @param preparedStmtParams: the parameters of a prepared statement.
      * @return an object, which may be:
-     *              String: (an error message)
-     *              Integer: an integer (the number of records updated), or
-     *              Map: a map of column names and values as an ordered list
-     *                   column "name" of row 5 ==> map key= "name", list index = 5
-     *                   column names are all lower case
-     *              List: for stored procedure calls a list of sql result sets
+     *         String: (an error message)
+     *         Integer: an integer (the number of records updated), or
+     *         Map: a map of column names and values as an ordered list
+     *         column "name" of row 5 ==> map key= "name", list index = 5
+     *         column names are all lower case
+     *         List: for stored procedure calls a list of sql result sets
      */
+
+    Object performJdbcQuery(@Nullable String connectionName, @NotNull String query, @Nullable String schema, int maxRecords, int timeoutSeconds, @NotNull List<Object> preparedStmtParams);
 
     Object performJdbcQuery(@Nullable String connectionName, @NotNull String query, @Nullable String schema, int maxRecords, @NotNull List<Object> preparedStmtParams);
 
     /**
      * Perform a JDBC query that could be a select statement or a non-select statement.
-     *
+     * <p/>
      * This version of performJdbcQuery should not be used by message traffic code which may be calling procedures / functions
      *
      * @param dataSource:         the data source to query
      * @param query:              the SQL query
-     * @param schema:       the specific schema to override, for oracle only
+     * @param schema:             the specific schema to override, for oracle only
      * @param maxRecords:         the maximum number of records allowed to return.
+     * @param timeoutSeconds      the number of seconds the driver will wait for a statement object o execute. If the limit is exceeded an exception is thrown. See{@link java.sql.Statement#setQueryTimeout(int)}
      * @param preparedStmtParams: the parameters of a prepared statement.
      * @return an object, which may be:
-     *              String: (an error message)
-     *              Integer: an integer (the number of records updated), or
-     *              Map: a map of column names and values as an ordered list
-     *                   column "name" of row 5 ==> map key= "name", list index = 5
-     *                   column names are all lower case
-     *              List: for stored procedure calls a list of sql result sets
+     *         String: (an error message)
+     *         Integer: an integer (the number of records updated), or
+     *         Map: a map of column names and values as an ordered list
+     *         column "name" of row 5 ==> map key= "name", list index = 5
+     *         column names are all lower case
+     *         List: for stored procedure calls a list of sql result sets
      */
+    Object performJdbcQuery(@NotNull DataSource dataSource, @NotNull String query, @Nullable String schema, int maxRecords, int timeoutSeconds, @NotNull List<Object> preparedStmtParams);
+
     Object performJdbcQuery(@NotNull DataSource dataSource, @NotNull String query, @Nullable String schema, int maxRecords, @NotNull List<Object> preparedStmtParams);
 
     /**
-    * See {@link #performJdbcQuery(javax.sql.DataSource, String, String, int, java.util.List)}, this adds a connection name
-    * so we can track the JDBCConnection entity the DataSource is associated with.
-    *
-    * @param connectionName the unique JDBCConnection entity name
-    */
+     * See {@link #performJdbcQuery(javax.sql.DataSource, String, String, int, java.util.List)}, this adds a connection name
+     * so we can track the JDBCConnection entity the DataSource is associated with.
+     *
+     * @param timeoutSeconds the number of seconds the driver will wait for a statement object o execute. If the limit is exceeded an exception is thrown. See{@link java.sql.Statement#setQueryTimeout(int)}
+     * @param connectionName the unique JDBCConnection entity name
+     */
+    Object performJdbcQuery(@Nullable String connectionName, @NotNull DataSource dataSource, @NotNull String query, @Nullable String schema, int maxRecords, int timeoutSeconds, @NotNull List<Object> preparedStmtParams);
+
     Object performJdbcQuery(@Nullable String connectionName, @NotNull DataSource dataSource, @NotNull String query, @Nullable String schema, int maxRecords, @NotNull List<Object> preparedStmtParams);
 
     /**
