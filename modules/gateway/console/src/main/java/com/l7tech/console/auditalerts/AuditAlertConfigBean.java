@@ -73,17 +73,17 @@ public class AuditAlertConfigBean {
 
     public void savePreferences() throws IOException {
         if (preferences != null) {
-            if(!preferences.getString(AUDIT_ALERT_ENABLED_PREFERENCE_KEY).equals(String.valueOf(isEnabled()))) {
+            if(!String.valueOf(isEnabled()).equals(preferences.getString(AUDIT_ALERT_ENABLED_PREFERENCE_KEY))) {
                 preferences.putProperty(AUDIT_ALERT_ENABLED_PREFERENCE_KEY, String.valueOf(isEnabled()));
                 logger.info("Audit Alerts " + (isEnabled() ? "enabled." : "disabled."));
             }
 
-            if(!preferences.getString(AUDIT_ALERT_INTERVAL_PREFERENCE_KEY).equals(String.valueOf(getAuditCheckInterval()))) {
+            if(!String.valueOf(getAuditCheckInterval()).equals(preferences.getString(AUDIT_ALERT_INTERVAL_PREFERENCE_KEY))) {
                 preferences.putProperty(AUDIT_ALERT_INTERVAL_PREFERENCE_KEY, String.valueOf(getAuditCheckInterval()));
                 logger.info("Audit Alert Check Interval set to " + getAuditCheckInterval() + " seconds.");
             }
 
-            if(!preferences.getString(AUDIT_ALERT_LEVEL_PREFERENCE_KEY).equals(getAuditAlertLevel().getName())) {
+            if(!String.valueOf(getAuditAlertLevel().getName()).equals(preferences.getString(AUDIT_ALERT_LEVEL_PREFERENCE_KEY))) {
                 preferences.putProperty(AUDIT_ALERT_LEVEL_PREFERENCE_KEY, getAuditAlertLevel().getName());
                 logger.info("Audit Alert Level set to " + getAuditAlertLevel().getName() + ".");
             }
