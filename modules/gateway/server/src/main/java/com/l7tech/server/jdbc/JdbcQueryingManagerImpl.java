@@ -158,18 +158,14 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager, PropertyCha
     }
 
     @Override
-    public Object performJdbcQuery(@NotNull DataSource dataSource, @NotNull String query, @Nullable String schema, int maxRecords, @NotNull List<Object> preparedStmtParams) {
+    public Object performJdbcQuery(@NotNull DataSource dataSource, @NotNull String query, @Nullable String schema, final int maxRecords, @NotNull List<Object> preparedStmtParams) {
         return performJdbcQuery(dataSource, query, schema, maxRecords, 0, preparedStmtParams);
     }
 
     @Override
     public Object performJdbcQuery(@Nullable final String connectionName, @NotNull final DataSource dataSource, @NotNull final String query, @Nullable final String schema, final int maxRecords, final int timeoutSeconds, @NotNull final List<Object> preparedStmtParams) {
-        // Create a JdbcTemplate and set the max rows.
-        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
-        jdbcTemplate.setMaxRows(maxRecords);
-        jdbcTemplate.setQueryTimeout((timeoutSeconds >= 0) ? timeoutSeconds : 0);
-
-        return performJdbcQuery(connectionName, jdbcTemplate, query, Option.optional(schema), preparedStmtParams);
+        // Ideally we would not construct the JdbcTemplate until we know it is needed. This instance may be ignored if a cached JdbcCallHelper is found
+        return performJdbcQuery(connectionName, buildJdbcTemplate(dataSource, maxRecords, timeoutSeconds), query, Option.optional(schema), preparedStmtParams);
     }
 
     @Override
@@ -177,6 +173,9 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager, PropertyCha
         return performJdbcQuery(connectionName, dataSource, query, schema, maxRecords, 0, preparedStmtParams);
     }
 
+    /**
+     * Method signature accepting a JdbcTemplate is to support testing only.
+     */
     protected Object performJdbcQuery(@Nullable String connectionName, JdbcTemplate jdbcTemplate, String query, @NotNull Option<String> schemaName, @NotNull List<Object> preparedStmtParams)
             throws DataAccessException {
         // Query or update and return querying results.
@@ -185,7 +184,7 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager, PropertyCha
             boolean isStoredProcedureQuery = JdbcUtil.isStoredProcedure(query);
             if (isSelectQuery) {
                 // Return a map of column names and arrays of values.
-                return jdbcTemplate.query(query, preparedStmtParams.toArray(new Object[preparedStmtParams.size()]),new QueryingManagerResultSetExtractor());
+                return jdbcTemplate.query(query, preparedStmtParams.toArray(new Object[preparedStmtParams.size()]), new QueryingManagerResultSetExtractor());
             } else if (isStoredProcedureQuery) {
                 // Return a List of SqlRowSet representing disconnected java.sql.ResultSet (s) and OUT parameters.
                 // Create or reuse an existing SimpleJdbcCall object.
@@ -222,6 +221,7 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager, PropertyCha
 
     /**
      * Try and get a cached JdbcCallHelper instance. If one is not available it will be created and added to the cache.
+     * @param jdbcTemplate Must contain a value for queryTimeout. The value it contains will be used to update the cached JdbcTemplate if found.
      */
     private JdbcCallHelper getAndCacheIfNeededCallHelper(String connectionName, JdbcTemplate jdbcTemplate, String query, Option<String> schemaName)
             throws DataAccessException {
@@ -413,6 +413,40 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager, PropertyCha
         }
 
         return simpleJdbcCall;
+    }
+
+    /**
+     * Build a JdbcTemplate which always has a query time out set and max rows if the value is >= 0.
+     *
+     * The query timeout will never be set larger than the system wide query timeout, but the input timeoutSeconds will
+     * be when it is > 0 and < system wide timeout.
+     */
+    private JdbcTemplate buildJdbcTemplate(@NotNull final DataSource dataSource, final int maxRecords, final int timeoutSeconds){
+        // Create a JdbcTemplate and set the max rows.
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+        if (maxRecords >= 0) {
+            jdbcTemplate.setMaxRows(maxRecords);
+        }
+
+        final int maxTimeOutToUse = getMaxQueryTimeout(timeoutSeconds);
+        assert maxTimeOutToUse > 0;
+       // There is always a query timeout. Never allow any query without one.
+        jdbcTemplate.setQueryTimeout(maxTimeOutToUse);
+
+        return jdbcTemplate;
+    }
+
+    private int getMaxQueryTimeout(int timeoutSeconds) {
+        final int maxTimeOutToUse;
+        {// do not accidentally let the wrong timeout leak out of scope
+            final int maxSystemTimeout = config.getIntProperty(ServerConfigParams.PARAM_JDBC_QUERY_MAX_TIME_OUT, 300);
+            if (timeoutSeconds < maxSystemTimeout && timeoutSeconds > 0) {
+                maxTimeOutToUse = timeoutSeconds;
+            } else {
+                maxTimeOutToUse = maxSystemTimeout;
+            }
+        }
+        return maxTimeOutToUse;
     }
 
     /**
@@ -715,7 +749,8 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager, PropertyCha
                 try {
 
                     final DataSource dataSource = jdbcConnectionPoolManager.getDataSource(connectionName);
-                    updateCache(connectionName, key.query, new JdbcTemplate(dataSource), key.schemaNameOption);
+                    final int timeoutSeconds = config.getIntProperty(ServerConfigParams.PARAM_JDBC_QUERY_CACHE_MAX_TIME_OUT, 120);
+                    updateCache(connectionName, key.query, buildJdbcTemplate(dataSource, 0, timeoutSeconds), key.schemaNameOption);
                     if (isCancelled) {
                         // eagerly cancel
                         logger.info("JDBC Query meta data cache task has been cancelled.");
