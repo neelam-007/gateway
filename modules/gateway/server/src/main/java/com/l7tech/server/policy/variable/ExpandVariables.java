@@ -24,6 +24,9 @@ import java.util.regex.Matcher;
  * The variables are passed in the <code>Map</code> of string key-value pairs. The default
  * variables are passed in constructor and optional overriding variables can be passed in
  * {@link ExpandVariables#process(String, Map, Audit)} method.
+ *
+ * Warning: If you are using any method other than the process() methods be very careful and make sure that you
+ * understand what you are doing. See warning here: {@link #processNoFormat(String, java.util.Map, com.l7tech.gateway.common.audit.Audit, boolean)}
  */
 public final class ExpandVariables {
 
@@ -582,6 +585,14 @@ public final class ExpandVariables {
     }
 
     /**
+     * <p>
+     * WARNING!!!!!!!!!!!!!!!!!!!!!!!!
+     *
+     * BE EXTREMELY CAREFUL IN HOW YOU USE THIS METHOD. THIS METHOD DOES NOT FORMAT THE VALUES AS ADVERTISED.
+     * IF YOU USE THIS METHOD ENSURE THAT YOU ARE NOT INTRODUCING TWO DISTINCT PROCESSING PATHS FOR VARIABLES IN YOUR
+     * ASSERTION / LOGIC. One where values are stringified and the other where they are not.
+     *
+     * </p>
      * Expands variables found in the input String similar to the process() methods,
      * but does not format the resolved values to String.
      * <p/>
@@ -629,6 +640,9 @@ public final class ExpandVariables {
         return result;
     }
 
+    /**
+     * WARNING See {@link #processNoFormat(String, java.util.Map, com.l7tech.gateway.common.audit.Audit, boolean)}
+     */
     @NotNull
     public static List<Object> processNoFormat(@NotNull final String s,
                                                @NotNull final Map<String,?> vars,
