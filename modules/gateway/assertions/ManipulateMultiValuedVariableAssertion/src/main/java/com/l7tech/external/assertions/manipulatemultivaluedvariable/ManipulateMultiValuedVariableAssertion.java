@@ -2,46 +2,66 @@ package com.l7tech.external.assertions.manipulatemultivaluedvariable;
 
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.DataType;
+import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
 
 import java.util.logging.Logger;
 
-import static com.l7tech.policy.assertion.AssertionMetadata.PALETTE_FOLDERS;
-import static com.l7tech.policy.assertion.AssertionMetadata.PALETTE_NODE_ICON;
-import static com.l7tech.policy.assertion.AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME;
+import static com.l7tech.policy.assertion.AssertionMetadata.*;
 
 /**
  * 
  */
 public class ManipulateMultiValuedVariableAssertion extends Assertion implements UsesVariables, SetsVariables {
 
-    public String getVariableName() {
-        return variableName;
+    public String getTargetVariableName() {
+        return targetVariableName;
     }
 
+    /**
+     * //TODO Delete for Goatfish. Only in place to support any dev builds which created assertions while this assertion was a prototype.
+     *
+     * @param variableName
+     */
+    @Deprecated
     public void setVariableName(String variableName) {
-        this.variableName = variableName;
+        setTargetVariableName(variableName);
     }
 
-    public String getVariableValue() {
-        return variableValue;
+    public void setTargetVariableName(String targetVariableName) {
+        this.targetVariableName = targetVariableName;
     }
 
-    public void setVariableValue(String variableValue) {
-        this.variableValue = variableValue;
+    public String getSourceVariableName() {
+        return sourceVariableName;
+    }
+
+    public void setSourceVariableName(String sourceVariableName) {
+        this.sourceVariableName = sourceVariableName;
+    }
+
+    /**
+     * //TODO Delete for Goatfish. Only in place to support any dev builds which created assertions while this assertion was a prototype.
+     * @param variableValue
+     */
+    public void setVariableValue(String variableValue){
+        this.sourceVariableName = variableValue;
     }
 
     @Override
     public String[] getVariablesUsed() {
-        // variableName will be set if it does not exist => do not declare it as being needed.
-        return new String[]{variableValue};
+        // targetVariableName will be set if it does not exist => do not declare it as being needed.
+        if (sourceVariableName != null) {
+            return Syntax.getReferencedNames(Syntax.getVariableExpression(sourceVariableName));
+        }
+        return new String[]{};
     }
 
     @Override
     public VariableMetadata[] getVariablesSet() {
-        if(variableName != null) {
+        if(targetVariableName != null) {
             return new VariableMetadata[]{
-                    new VariableMetadata(variableName, false, true, null, true, DataType.UNKNOWN)};
+                    new VariableMetadata(targetVariableName, false, true, null, true, DataType.UNKNOWN)};
         }
         return new VariableMetadata[]{};
     }
@@ -53,7 +73,8 @@ public class ManipulateMultiValuedVariableAssertion extends Assertion implements
             return meta;
 
         meta.put(AssertionMetadata.SHORT_NAME, baseName);
-        meta.put(AssertionMetadata.LONG_NAME, "Manipulate a multi valued variable. This allows the variable to be created for values to be dynamically added to the multi valued variable.");
+        meta.put(AssertionMetadata.LONG_NAME, "Allows for Multivalued variables to be both created and manipulated. Appending a variable (single or multivalued) is currently supported.");
+        meta.put(POLICY_NODE_NAME_FACTORY, policyNameFactory);
 
         meta.put(PALETTE_FOLDERS, new String[]{"policyLogic"});
         meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/check16.gif");
@@ -62,23 +83,29 @@ public class ManipulateMultiValuedVariableAssertion extends Assertion implements
 
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
 
-        meta.put(AssertionMetadata.FEATURE_SET_NAME, "set:modularAssertions");
-
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;
     }
 
-    //-PROTECTED
-    protected static final Logger logger = Logger.getLogger(ManipulateMultiValuedVariableAssertion.class.getName());
-
     //- PRIVATE
 
-    //
-    // Metadata
-    //
     private static final String META_INITIALIZED = ManipulateMultiValuedVariableAssertion.class.getName() + ".metadataInitialized";
-    private final static String baseName = "Manipulate Multi Valued Variable";
+    private final static String baseName = "Manipulate Multivalued Variable";
 
-    private String variableName;
-    private String variableValue;
+    private String targetVariableName;
+    private String sourceVariableName;
+
+    final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<ManipulateMultiValuedVariableAssertion>(){
+        @Override
+        public String getAssertionName( final ManipulateMultiValuedVariableAssertion assertion, final boolean decorate) {
+            if(!decorate) return baseName;
+
+            StringBuilder name = new StringBuilder(baseName + " ");
+            name.append(assertion.getTargetVariableName());
+            name.append(" append variable ");
+            name.append(assertion.getSourceVariableName());
+            return name.toString();
+        }
+    };
+
 }

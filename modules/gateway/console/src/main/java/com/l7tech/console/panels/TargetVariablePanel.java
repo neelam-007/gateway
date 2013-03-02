@@ -24,7 +24,7 @@ import java.util.regex.Matcher;
 
 /**
  * User: wlui
- *
+ * //todo explain how to use this Panel
  * Usage:
  *     - the following fields must be set to work properly:
  *         - assertion

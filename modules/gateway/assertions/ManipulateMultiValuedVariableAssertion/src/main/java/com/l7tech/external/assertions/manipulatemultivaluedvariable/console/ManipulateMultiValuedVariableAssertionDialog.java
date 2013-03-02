@@ -27,8 +27,8 @@ public class ManipulateMultiValuedVariableAssertionDialog extends AssertionPrope
     public ManipulateMultiValuedVariableAssertion getData(ManipulateMultiValuedVariableAssertion assertion) throws ValidationException {
         validateData();
 
-        assertion.setVariableName(targetVariableTextField.getVariable());
-        assertion.setVariableValue(VariablePrefixUtil.fixVariableName(valueVariableTextField.getText()));
+        assertion.setTargetVariableName(targetVariableTextField.getVariable());
+        assertion.setSourceVariableName(VariablePrefixUtil.fixVariableName(valueVariableTextField.getText()));
 
         return assertion;
     }
@@ -36,8 +36,8 @@ public class ManipulateMultiValuedVariableAssertionDialog extends AssertionPrope
     @Override
     public void setData(ManipulateMultiValuedVariableAssertion assertion) {
 
-        targetVariableTextField.setVariable(assertion.getVariableName());
-        valueVariableTextField.setText(assertion.getVariableValue());
+        targetVariableTextField.setVariable(assertion.getTargetVariableName());
+        valueVariableTextField.setText(assertion.getSourceVariableName());
 
         enableDisableComponents();
     }
@@ -84,7 +84,7 @@ public class ManipulateMultiValuedVariableAssertionDialog extends AssertionPrope
     }
 
     private void validateData() {
-        String message = VariableMetadata.validateName(VariablePrefixUtil.fixVariableName(valueVariableTextField.getText()));
+        String message = VariableMetadata.validateName(VariablePrefixUtil.fixVariableName(valueVariableTextField.getText()), true);
 
         if ( message != null ) {
             throw new ValidationException( message, "Invalid Property", null );

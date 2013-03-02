@@ -25,7 +25,7 @@ public class ManipulateMultiValuedVariableAssertionTest {
     @Test
     public void testVariablesSet() throws Exception {
         ManipulateMultiValuedVariableAssertion ass = new ManipulateMultiValuedVariableAssertion();
-        ass.setVariableName("myMultiVar");
+        ass.setTargetVariableName("myMultiVar");
 
         final VariableMetadata[] variablesSet = ass.getVariablesSet();
         assertNotNull(variablesSet);
@@ -38,8 +38,8 @@ public class ManipulateMultiValuedVariableAssertionTest {
     @Test
     public void testVariablesUsed() throws Exception {
         ManipulateMultiValuedVariableAssertion ass = new ManipulateMultiValuedVariableAssertion();
-        ass.setVariableName("myMultiVar");
-        ass.setVariableValue("myVariable");
+        ass.setTargetVariableName("myMultiVar");
+        ass.setSourceVariableName("myVariable");
 
         final List<String> varsUsed = Arrays.asList(ass.getVariablesUsed());
         assertNotNull(varsUsed);

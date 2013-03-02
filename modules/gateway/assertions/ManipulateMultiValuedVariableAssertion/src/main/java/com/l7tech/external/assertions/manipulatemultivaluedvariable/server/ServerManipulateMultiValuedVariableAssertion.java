@@ -24,13 +24,18 @@ public class ServerManipulateMultiValuedVariableAssertion extends AbstractServer
 
     public ServerManipulateMultiValuedVariableAssertion( final ManipulateMultiValuedVariableAssertion assertion ) throws PolicyAssertionException {
         super(assertion);
-        final String varName = assertion.getVariableName();
-        if (varName == null || varName.trim().isEmpty()) {
-            throw new PolicyAssertionException(assertion, "Variable Name must be supplied");
+        final String targetVariableName = assertion.getTargetVariableName();
+        if (targetVariableName == null || targetVariableName.trim().isEmpty()) {
+            throw new PolicyAssertionException(assertion, "Target Variable Name must be supplied");
+        }
+
+        final String sourceVariableName = assertion.getSourceVariableName();
+        if (sourceVariableName == null || sourceVariableName.trim().isEmpty()) {
+            throw new PolicyAssertionException(assertion, "Source Variable Name must be supplied");
         }
 
         final List<String> varsUsed = new ArrayList<String>(Arrays.asList(assertion.getVariablesUsed()));
-        varsUsed.add(assertion.getVariableName());
+        varsUsed.add(assertion.getTargetVariableName());
 
         this.variablesUsed = varsUsed.toArray(new String[varsUsed.size()]);
     }
@@ -42,29 +47,33 @@ public class ServerManipulateMultiValuedVariableAssertion extends AbstractServer
     @Override
     public AssertionStatus checkRequest( final PolicyEnforcementContext context ) throws IOException, PolicyAssertionException {
 
-        final String varName = assertion.getVariableName();
+        final String varName = assertion.getTargetVariableName();
         final Map<String,Object> variableMap = context.getVariableMap(variablesUsed, getAudit());
         final Object existingValue = variableMap.get(varName);
         final List<Object> multiVar;
         boolean created = false;
         if (existingValue != null) {
             if (!(existingValue instanceof List)) {
-                logAndAudit(AssertionMessages.USERDETAIL_FINEST, "Variable " + varName + " is not a multi valued variable");
-                return AssertionStatus.FALSIFIED;
+                logAndAudit(AssertionMessages.USERDETAIL_WARNING, "Variable " + varName + " is not a supported Multivalued variable. Variable must be backed by a List.");
+                return AssertionStatus.FAILED;
             }
+            //noinspection unchecked
             multiVar = (List<Object>) existingValue;
-            logAndAudit(AssertionMessages.USERDETAIL_FINEST, "Found existing variable " + varName);
+            logAndAudit(AssertionMessages.USERDETAIL_FINEST, "Target variable '" + varName + "' already exists.");
         } else {
             multiVar = new ArrayList<Object>();
             created = true;
         }
 
-        final List<Object> value = ExpandVariables.processNoFormat(Syntax.getVariableExpression(assertion.getVariableValue()), variableMap, getAudit());
+        final List<Object> value = ExpandVariables.processNoFormat(Syntax.getVariableExpression(assertion.getSourceVariableName()), variableMap, getAudit());
+
+        boolean firstIteration = true;
+        boolean createWasLogged = false;
         // if it's multi valued - support it. If a value is null, that is ok, keep it null
         for (Object o : value) {
-            final Class<? extends Object> valuesClass = o.getClass();
+            final Class valuesClass = o.getClass();
             if (!isTypeValid(valuesClass)){
-                logAndAudit(AssertionMessages.USERDETAIL_WARNING, "Type "+ o.getClass()+" is not supported. Cannot add it to multi valued variable.");
+                logAndAudit(AssertionMessages.USERDETAIL_WARNING, "Type "+ o.getClass()+" is not supported. Cannot add it to target Multivalued variable.");
                 return AssertionStatus.FALSIFIED;
             }
 
@@ -72,19 +81,25 @@ public class ServerManipulateMultiValuedVariableAssertion extends AbstractServer
                 multiVar.add(copyObject(o));
             } catch (RuntimeException e) {
                 logAndAudit(AssertionMessages.USERDETAIL_WARNING,
-                        new String[]{"Could not add variable value to variable " + varName + " due to : " +
+                        new String[]{"Could not append value to Target Multivalued variable '" + varName + "' due to : " +
                                 ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
                 return AssertionStatus.FAILED;
             }
-            logAndAudit(AssertionMessages.USERDETAIL_FINEST, "Added to variable " + varName + " value " + o);
+            if (firstIteration) {
+                if (created) {
+                    logAndAudit(AssertionMessages.USERDETAIL_FINEST, "Created Target Multivalued variable " + varName);
+                    createWasLogged = true;
+                }
+                firstIteration = false;
+            }
+            logAndAudit(AssertionMessages.USERDETAIL_FINEST, "Appended to Target Multivalued variable '" + varName + "' value '" + o + "'");
+        }
+
+        if (created && !createWasLogged) {
+            logAndAudit(AssertionMessages.USERDETAIL_FINEST, "Created Target Multivalued variable " + varName);
         }
 
         context.setVariable(varName, multiVar);
-        if (created) {
-            logAndAudit(AssertionMessages.USERDETAIL_FINEST, "Created variable " + varName);
-        } else {
-            logAndAudit(AssertionMessages.USERDETAIL_FINEST, "Used existing variable " + varName);
-        }
 
         return AssertionStatus.NONE;
     }
