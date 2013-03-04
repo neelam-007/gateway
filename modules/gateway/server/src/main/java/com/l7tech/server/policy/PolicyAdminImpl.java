@@ -11,6 +11,7 @@ import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.identity.User;
 import com.l7tech.message.Message;
 import com.l7tech.objectmodel.*;
+import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import com.l7tech.policy.*;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.Include;
@@ -161,8 +162,10 @@ public class PolicyAdminImpl implements PolicyAdmin {
         if (policy == null)
             return;
 
-        if (encapsulatedAssertionConfigManager != null && encapsulatedAssertionConfigManager.findByPolicyOid(policy.getOid()).size() > 0)
-            throw new PolicyDeletionForbiddenException(policy, EntityType.ENCAPSULATED_ASSERTION, "it is currently in use by an encapsulated assertion");
+        final Collection<EncapsulatedAssertionConfig> configsWhichReferencePolicy = encapsulatedAssertionConfigManager.findByPolicyOid(policy.getOid());
+        if (encapsulatedAssertionConfigManager != null && configsWhichReferencePolicy.size() > 0) {
+            throw  new PolicyDeletionForbiddenException(policy, EntityType.ENCAPSULATED_ASSERTION, configsWhichReferencePolicy.iterator().next());
+        }
 
         if (!(PolicyType.INTERNAL.equals(policy.getType())))
             return;

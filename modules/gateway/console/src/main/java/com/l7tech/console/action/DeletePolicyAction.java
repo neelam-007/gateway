@@ -9,7 +9,9 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.admin.PolicyAdmin;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.NamedEntity;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.policy.PolicyDeletionForbiddenException;
 import com.l7tech.policy.PolicyHeader;
@@ -112,8 +114,15 @@ public final class DeletePolicyAction extends DeleteEntityNodeAction<PolicyEntit
     private String pdfeMessage(PolicyDeletionForbiddenException pdfe) {
         if (EntityType.POLICY.equals(pdfe.getReferringEntityType()))
             return node.getName() + " cannot be deleted at this time; it is still in use by another policy";
-        if (EntityType.ENCAPSULATED_ASSERTION.equals(pdfe.getReferringEntityType()))
-            return node.getName() + " cannot be deleted at this time; it is still in use as the backing policy for an encapsulated assertion";
+        if (EntityType.ENCAPSULATED_ASSERTION.equals(pdfe.getReferringEntityType())) {
+            String encassMsg = node.getName() + " cannot be deleted at this time; it is still in use as the underlying policy fragment for an encapsulated assertion";
+            final Entity referringEntity = pdfe.getReferringEntity();
+            if (referringEntity != null && referringEntity instanceof NamedEntity) {
+                final NamedEntity named = (NamedEntity) referringEntity;
+                encassMsg = encassMsg + " (" + named.getName() + ")";
+            }
+            return encassMsg;
+        }
         return pdfe.getMessage() != null && pdfe.getMessage().contains(" trace ") ?
                 node.getName() + " cannot be deleted at this time: debug tracing is still enabled on at least one service" :
                 node.getName() + " cannot be deleted at this time; it is still in use as the audit sink policy";
