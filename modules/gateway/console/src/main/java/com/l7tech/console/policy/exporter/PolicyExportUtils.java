@@ -157,7 +157,7 @@ public class PolicyExportUtils {
 
     private static final Logger logger = Logger.getLogger( PolicyExportUtils.class.getName() );
     private static String FOUND_ENCASS_MSG = "<html>This file contains an encapsulated assertion configuration. <br/>" +
-                "If you proceed then the backing policy will be imported but the encapsulated assertion information within this file will be ignored.</html>";
+                "If you proceed then the underlying policy fragment will be imported but the encapsulated assertion information within this file will be ignored.</html>";
 
     public static void addPoliciesToPolicyReferenceAssertions( final @Nullable Assertion rootAssertion,
                                                                final HashMap<String, Policy> fragments ) throws IOException {
