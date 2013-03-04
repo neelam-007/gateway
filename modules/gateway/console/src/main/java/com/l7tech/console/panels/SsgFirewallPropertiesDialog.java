@@ -394,10 +394,10 @@ public class SsgFirewallPropertiesDialog extends JDialog {
                 if(!tcpOptionsPanel.isVisible()) return null;
                 String flags = tcpFlags.getText().trim();
                 if(!flags.isEmpty()){
-                    if(flags.indexOf("!") > -1){
-                        flags = flags.substring(flags.indexOf("!") + 1).trim();
-                    }
-                    String[] fields = flags.split("\\s+");
+                    Pattern pattern = Pattern.compile("(?:!\\s+)?(.+)");
+                    Matcher matcher = pattern.matcher(flags);
+                    if(!matcher.matches()) return "Invalid TCP Flag.";
+                    String[] fields = matcher.group(1).split("\\s+");
                     if(fields.length != 2){
                         return "TCP Flags require two arguments.";
                     }
@@ -423,11 +423,13 @@ public class SsgFirewallPropertiesDialog extends JDialog {
                 if(!tcpOptionsPanel.isVisible()) return null;
                 String options = tcpOptions.getText().trim();
                 if(!options.isEmpty()){
-                    if(options.indexOf("!") > -1){
-                        options = options.substring(options.indexOf("!") + 1).trim();
+                    Pattern pattern = Pattern.compile("(?:!\\s+)?(\\d{1,3})");
+                    Matcher matcher = pattern.matcher(options);
+                    if(!matcher.matches()){
+                        return "Invalid TCP Options.";
                     }
                     try{
-                        Integer num = Integer.parseInt(options);
+                        Integer num = Integer.parseInt(matcher.group(1));
                         if(num.intValue() < 0 || num.intValue() > 255){
                             return "TCP Option must be between 0 and 255";
                         }
@@ -734,7 +736,7 @@ public class SsgFirewallPropertiesDialog extends JDialog {
     }
 
     private static class InvertablePortValidator extends InputValidator.ComponentValidationRule {
-        private static final Pattern INVERTABLE_PORT = Pattern.compile("(?:!\\s)?(\\d{1,5})(?:-(\\d{1,5}))?");
+        private static final Pattern INVERTABLE_PORT = Pattern.compile("(?:!\\s+)?(\\d{1,5})(?:-(\\d{1,5}))?");
 
         private InvertablePortValidator(final Component component) {
             super(component);
