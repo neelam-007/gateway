@@ -210,7 +210,13 @@ public class SsgFirewallPropertiesDialog extends JDialog {
                     String text = ((SquigglyTextField) c).getText();
                     if(text == null || text.trim().isEmpty()){
                         c.requestFocusInWindow();
-                        return "Target option(s) is required";
+                        String name = c.getName();
+                        if("to-ports".equals(name)){
+                            name = "To Port";
+                        } else if("to-destination".equals(name)){
+                            name = "To Destination";
+                        }
+                        return name + " is required.";
                     }
                     if(feedback != null && !feedback.isEmpty()){
                         c.requestFocusInWindow();
@@ -519,6 +525,7 @@ public class SsgFirewallPropertiesDialog extends JDialog {
         icmpType.setEnabled(isIcmp);
         icmpOptionsPanel.setVisible(isIcmp);
         targetHolderPanel.setVisible(!isIcmp);
+        DialogDisplayer.pack(this);
     }
 
     private void onOK() {
