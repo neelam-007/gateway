@@ -3,6 +3,8 @@
  */
 package com.l7tech.console.panels;
 
+import com.l7tech.console.util.Registry;
+import com.l7tech.gateway.common.transport.jms.JmsAdmin;
 import com.l7tech.policy.assertion.JmsMessagePropertyRule;
 
 import javax.swing.*;
@@ -29,6 +31,7 @@ public class JmsMessagePropertyDialog extends JDialog {
     private final Set<String> _existingNames;
     private JmsMessagePropertyRule _rule;
     private boolean _exitedWithOK = false;
+    private JmsAdmin jmsAdmin;
 
     /**
      * @param owner the non-null parent dialog from which this dialog is displayed
@@ -39,6 +42,7 @@ public class JmsMessagePropertyDialog extends JDialog {
      */
     public JmsMessagePropertyDialog(final JDialog owner, final Set<String> existingNames, final JmsMessagePropertyRule rule) {
         super(owner, true);
+        jmsAdmin = Registry.getDefault().getJmsManager();
         _existingNames = existingNames;
         _rule = rule;
         if (_rule != null) {
@@ -157,6 +161,15 @@ public class JmsMessagePropertyDialog extends JDialog {
                                           "Reserved name not allowed.",
                                           "JMS Message Property Error",
                                           JOptionPane.ERROR_MESSAGE);
+            return;     // Don't exit the dialog. Let the user fix the error.
+        }
+
+        JmsMessagePropertyRule rule = new JmsMessagePropertyRule(name, passThru, customPattern);
+        if (!jmsAdmin.isValidProperty(rule)) {
+            JOptionPane.showMessageDialog(this,
+                    "Invalid JMS Defined Property Data Type.",
+                    "JMS Message Property Error",
+                    JOptionPane.ERROR_MESSAGE);
             return;     // Don't exit the dialog. Let the user fix the error.
         }
 

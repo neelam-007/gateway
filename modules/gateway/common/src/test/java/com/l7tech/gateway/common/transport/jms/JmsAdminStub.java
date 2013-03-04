@@ -2,6 +2,7 @@ package com.l7tech.gateway.common.transport.jms;
 
 import com.l7tech.gateway.common.StubDataStore;
 import com.l7tech.objectmodel.*;
+import com.l7tech.policy.assertion.JmsMessagePropertyRule;
 
 import java.util.*;
 
@@ -132,5 +133,10 @@ public class JmsAdminStub implements JmsAdmin {
     @Override
     public long getDefaultJmsMessageMaxBytes() {
         return 0;
+    }
+
+    @Override
+    public boolean isValidProperty(JmsMessagePropertyRule rule) {
+        return true;
     }
 }

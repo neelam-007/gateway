@@ -3,6 +3,8 @@ package com.l7tech.server.transport.jms;
 import com.l7tech.gateway.common.audit.LoggingAudit;
 import com.l7tech.gateway.common.transport.jms.*;
 import com.l7tech.objectmodel.*;
+import com.l7tech.policy.assertion.JmsMessagePropertyRule;
+import com.l7tech.policy.variable.Syntax;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.policy.variable.GatewaySecurePasswordReferenceExpander;
 import com.l7tech.util.Config;
@@ -354,6 +356,25 @@ public class JmsAdminImpl implements JmsAdmin {
     @Override
     public void deleteConnection(long connectionOid) throws FindException, DeleteException {
         jmsConnectionManager.delete(connectionOid);
+    }
+
+    @Override
+    public boolean isValidProperty(JmsMessagePropertyRule rule) {
+        if (rule != null) {
+            if (!rule.isPassThru()) {
+                try {
+                    JmsDefinedProperties.fromName(rule.getName());
+                    String[] result = Syntax.getReferencedNames(rule.getCustomPattern());
+                    if (result.length == 0) {
+                        //No context variable defined
+                        return JmsDefinedProperties.isValid(rule.getName(), rule.getCustomPattern());
+                    }
+                } catch (IllegalArgumentException e) {
+                    //It is not a pre-defined jms variable.
+                }
+            }
+        }
+        return true;
     }
 
     protected void initDao() throws Exception {

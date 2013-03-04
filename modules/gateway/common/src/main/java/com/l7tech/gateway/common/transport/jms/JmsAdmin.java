@@ -7,6 +7,7 @@ import com.l7tech.gateway.common.admin.Administrative;
 import com.l7tech.gateway.common.security.rbac.MethodStereotype;
 import com.l7tech.gateway.common.security.rbac.Secured;
 import com.l7tech.objectmodel.*;
+import com.l7tech.policy.assertion.JmsMessagePropertyRule;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -208,4 +209,14 @@ public interface JmsAdmin {
      */
     @Transactional(readOnly=true)
     long getDefaultJmsMessageMaxBytes();
+
+
+    /**
+     * Validate the Jms Message Property Rule.
+     *
+     * @param rule The Jms Message Property rule
+     * @return True if the message property is valid, False if the message property is not valid
+     */
+    boolean isValidProperty(JmsMessagePropertyRule rule);
+
 }
