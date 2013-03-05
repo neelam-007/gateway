@@ -16,7 +16,7 @@ import java.util.List;
  *
  * @author Victor Kazakov
  */
-public class JdbcCallHelperIntegrationTest extends JdbcCallHelperIntegrationAbstractBaseTestClass {
+public class JdbcCallHelperIntegrationTests extends JdbcCallHelperIntegrationAbstractBaseTestClass {
 
     /**
      * Tests retrieving a clob from a procedure.
