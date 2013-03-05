@@ -11,6 +11,8 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.TestLicenseManager;
+import com.l7tech.server.audit.AuditLookupPolicyEnforcementContext;
+import com.l7tech.server.audit.AuditSinkPolicyEnforcementContext;
 import com.l7tech.server.jdbc.*;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
@@ -23,6 +25,7 @@ import com.l7tech.util.*;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentMatcher;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -765,6 +768,125 @@ public class ServerJdbcQueryAssertionTest {
         }
 
         assertTrue(testAudit.isAuditPresentContaining("\"Perform JDBC Query\" assertion failed due to: Invalid resolved value for query timeout: invalid"));
+    }
+
+    /**
+     * Validate that the resolveAsObject property is ignored for normal message traffic processing usages of the JDBC Query
+     * assertion. The distinction on the type of usage is made based on the subclass of PolicyEnforcementContext used.
+     *
+     */
+    @Test
+    public void testResolveAsObjectIgnoredForMessageTraffic() throws Exception {
+
+        final PolicyEnforcementContext context = makeContext("<xml />", "<xml />");
+        verifyParameterProcessedForAudits(context, true);
+   }
+
+    /**
+     * Validate that the hidden resolveAsObject property applies when running a look up policy
+     */
+    @Test
+    public void testResolveAsObjectNotIgnoredForLookupExternalAudits() throws Exception {
+        final PolicyEnforcementContext context = makeContext("<xml />", "<xml />");
+        // This allows the processing of resolveAsObject property
+        final AuditLookupPolicyEnforcementContext actualContext = new AuditLookupPolicyEnforcementContext(null, context);
+        verifyParameterProcessedForAudits(actualContext, false);
+    }
+
+    /**
+     * Validate that the hidden resolveAsObject property applies when running the audit sink policy
+     */
+    @Test
+    public void testResolveAsObjectNotIgnoredForPutExternalAudits() throws Exception {
+        final PolicyEnforcementContext context = makeContext("<xml />", "<xml />");
+        // This allows the processing of resolveAsObject property
+        final AuditSinkPolicyEnforcementContext actualContext = new AuditSinkPolicyEnforcementContext(null, context, context);
+        verifyParameterProcessedForAudits(actualContext, false);
+    }
+
+    /**
+     * Validate that the resolveAsObject property is used when given the correct PolicyEnforcementContext subclass.
+     *
+     * This is done by setting the resolveAsObject on the assertion bean and ensuring that the relevant variables
+     * were not stringified. This behaviour is required for the current external audit feature to work.
+     *
+     * @param context The PolicyEnforcementContext to use with the server assertion. If the correct Audit subclass is
+     *                used then the resolveAsObject property is not ignored.
+     * @param ignoreResolveAsObject true if resolveAsObject should be ignored e.g. all parameters should have been
+     *                              converted to a string. False if the raw object type should have been preserved.
+     */
+    private void verifyParameterProcessedForAudits(final PolicyEnforcementContext context,
+                                                   final boolean ignoreResolveAsObject) throws Exception {
+        MockitoAnnotations.initMocks(this);
+
+        final Date time = new GregorianCalendar(2013, 3, 5, 11, 46, 0).getTime();
+        assertion.setSqlQuery("select * from mytable where one = ${one} and two = ${two} and three = ${three}");
+        final String one = "one";
+        context.setVariable("one", one);
+        context.setVariable("two", time);
+        final Message msgVar = new Message(XmlUtil.parse("<xml />"));
+        context.setVariable("three", msgVar);
+
+        //Tell the assertion to resolve both non string variables as strings
+        assertion.setResolveAsObjectList(Arrays.asList("two", "three"));
+
+        when(jdbcQueryingManager.performJdbcQuery(anyString(), anyString(), anyString(), anyInt(), anyInt(), anyList())).thenReturn(getMockWithNullResults());
+
+        GenericApplicationContext applicationContext = new GenericApplicationContext(new SimpleSingletonBeanFactory(new HashMap<String, Object>() {{
+            put("jdbcQueryingManager", jdbcQueryingManager);
+            put("jdbcConnectionManager", connectionManager);
+            put("serverConfig", ConfigFactory.getCachedConfig());
+        }}));
+
+        ServerJdbcQueryAssertion serverAssertion = new ServerJdbcQueryAssertion(assertion, applicationContext);
+        final TestAudit testAudit = new TestAudit();
+        ApplicationContexts.inject(serverAssertion, Collections.singletonMap("auditFactory", testAudit.factory()));
+
+        final AssertionStatus assertionStatus = serverAssertion.checkRequest(context);
+        assertEquals(AssertionStatus.NONE, assertionStatus);
+
+        // This fails if all objects were not stringified
+        verify(jdbcQueryingManager).performJdbcQuery(anyString(), anyString(), anyString(), anyInt(), anyInt(),
+                argThat(new IsListOfVariousTypes(new Functions.Binary<Boolean, Integer, Object>() {
+                    @Override
+                    public Boolean call(Integer i, Object o) {
+                        if (!ignoreResolveAsObject) {
+                            switch (i) {
+                                case 0:
+                                    return o instanceof String;
+                                case 1:
+                                    return o instanceof Date;
+                                case 2:
+                                    return o instanceof Message;
+                                default:
+                                    throw new RuntimeException("Invalid test construction");
+                            }
+                        } else {
+                            return o instanceof String;
+                        }
+                    }
+                })));
+    }
+
+    private static class IsListOfVariousTypes extends ArgumentMatcher<List<Object>> {
+
+        private final Functions.Binary<Boolean, Integer, Object> matchFunction;
+
+        IsListOfVariousTypes(Functions.Binary<Boolean, Integer, Object> matchFunction) {
+            this.matchFunction = matchFunction;
+        }
+
+        @Override
+        public boolean matches(Object inObj) {
+            List list = (List) inObj;
+            for (int i = 0, listSize = list.size(); i < listSize; i++) {
+                Object o = list.get(i);
+                if (!matchFunction.call(i, o)) {
+                    return false;
+                }
+            }
+            return true;
+        }
     }
 
 }

@@ -38,6 +38,7 @@ public class JdbcQueryAssertion extends Assertion implements JdbcConnectionable,
     private int maxRecords = JdbcAdmin.ORIGINAL_MAX_RECORDS;
     private boolean assertionFailureEnabled = true;
     private Map<String, String> namingMap = new TreeMap<String, String>();
+    private List<String> resolveAsObjectList = new ArrayList<String>();
     private boolean generateXmlResult;
     private String nullPattern;
     private String schema;
@@ -183,6 +184,19 @@ public class JdbcQueryAssertion extends Assertion implements JdbcConnectionable,
 
     public boolean isUseNullPattern() {
         return this.nullPattern != null;
+    }
+
+    /**
+     * Warning: Hidden property which was added for external audits in Fangtooth.
+     *
+     * Do not expose via the UI. This property is ignored unless it originated via the External audit system.
+     */
+    public List<String> getResolveAsObjectList() {
+        return resolveAsObjectList;
+    }
+
+    public void setResolveAsObjectList(List<String> resolveAsObjectList) {
+        this.resolveAsObjectList = resolveAsObjectList;
     }
 
     @Override

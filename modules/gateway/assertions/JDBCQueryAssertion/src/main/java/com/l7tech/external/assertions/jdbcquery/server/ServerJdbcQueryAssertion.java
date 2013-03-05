@@ -7,6 +7,8 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableNameSyntaxException;
 import com.l7tech.server.ServerConfigParams;
+import com.l7tech.server.audit.AuditLookupPolicyEnforcementContext;
+import com.l7tech.server.audit.AuditSinkPolicyEnforcementContext;
 import com.l7tech.server.jdbc.JdbcQueryingManager;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
@@ -74,8 +76,14 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
 
         final StringBuilder xmlResult = new StringBuilder(XML_RESULT_TAG_OPEN);
         try {
-            final Pair<String, List<Object>> pair = getQueryStatementWithoutContextVariables(assertion.getSqlQuery(),
-                    context, assertion.getVariablesUsed(), assertion.isAllowMultiValuedVariables(), getAudit());
+            final Pair<String, List<Object>> pair;
+            if (context instanceof AuditLookupPolicyEnforcementContext || context instanceof AuditSinkPolicyEnforcementContext) {
+                pair = getQueryStatementWithoutContextVariables(assertion.getSqlQuery(),
+                        context, assertion.getVariablesUsed(), assertion.isAllowMultiValuedVariables(), assertion.getResolveAsObjectList(), getAudit());
+            } else {
+                pair = getQueryStatementWithoutContextVariables(assertion.getSqlQuery(),
+                        context, assertion.getVariablesUsed(), assertion.isAllowMultiValuedVariables(), getAudit());
+            }
             final String plainQuery = pair.left;
             final List<Object> preparedStmtParams = pair.right;
 
