@@ -415,17 +415,22 @@ public class SsgFirewallPropertiesDialog extends JDialog {
             @Override
             public String getValidationError() {
                 String src = source.getText().trim();
-                if(!src.isEmpty()){
-                    String dst = destination.getText().trim();
-                    if(!dst.isEmpty()){
-                        if(InetAddressUtil.isValidIpv4Address(src) && InetAddressUtil.isValidIpv4Address(dst)){
-                            return null;
-                        }
-                        if(InetAddressUtil.isValidIpv6Address(src) && InetAddressUtil.isValidIpv6Address(dst)){
-                            return null;
-                        }
-                        return "A rule can not contain both IPv4 and IPv6 addresses.";
+                if(src.isEmpty()) return null;
+                int srcStart = src.indexOf("!") + 1;
+                int srcEnd = src.indexOf("/");
+                String srcAddress = src.substring(srcStart, srcEnd < 0 ? src.length() : srcEnd).trim();
+                String dst = destination.getText().trim();
+                if(!dst.isEmpty()){
+                    int destStart = dst.indexOf("!") + 1;
+                    int destEnd = dst.indexOf("/");
+                    String dstAddress = dst.substring(destStart, destEnd < 0 ? dst.length() : destEnd).trim();
+                    if(InetAddressUtil.isValidIpv4Address(srcAddress) && InetAddressUtil.isValidIpv4Address(dstAddress)){
+                        return null;
                     }
+                    if(InetAddressUtil.isValidIpv6Address(srcAddress) && InetAddressUtil.isValidIpv6Address(dstAddress)){
+                        return null;
+                    }
+                    return "A rule can not contain both IPv4 and IPv6 addresses.";
                 }
                 return null;
             }
