@@ -98,6 +98,49 @@ public class SsgFirewallPropertiesDialog extends JDialog {
         CHAIN_FILTER = Collections.unmodifiableMap(m);
     }
 
+    private static final Set<String> VALID_ICMP_NAMES;
+    static {
+        Set<String> s = new HashSet<String>();
+        s.add("any");
+        s.add("echo-reply");
+        s.add("destination-unreachable");
+        s.add("network-unreachable");
+        s.add("host-unreachable");
+        s.add("protocol-unreachable");
+        s.add("port-unreachable");
+        s.add("fragmentation-needed");
+        s.add("source-route-failed");
+        s.add("network-unknown");
+        s.add("host-unknown");
+        s.add("network-prohibited");
+        s.add("host-prohibited");
+        s.add("TOS-network-unreachable");
+        s.add("TOS-host-unreachable");
+        s.add("communication-prohibited");
+        s.add("host-precedence-violation");
+        s.add("precedence-cutoff");
+        s.add("source-quench");
+        s.add("redirect");
+        s.add("network-redirect");
+        s.add("host-redirect");
+        s.add("TOS-network-redirect");
+        s.add("TOS-host-redirect");
+        s.add("echo-request");
+        s.add("router-advertisement");
+        s.add("router-solicitation");
+        s.add("time-exceeded");
+        s.add("ttl-zero-during-transit");
+        s.add("ttl-zero-during-reassembly");
+        s.add("parameter-problem");
+        s.add("ip-header-bad");
+        s.add("required-option-missing");
+        s.add("timestamp-request");
+        s.add("timestamp-reply");
+        s.add("address-mask-request");
+        s.add("address-mask-reply");
+        VALID_ICMP_NAMES = Collections.unmodifiableSet(s);
+    }
+
     private InputValidator inputValidator;
     private boolean confirmed;
 
@@ -387,7 +430,35 @@ public class SsgFirewallPropertiesDialog extends JDialog {
                 return null;
             }
         });
-        inputValidator.addRule(inputValidator.constrainTextFieldToBeNonEmpty("ICMP Type", icmpType, null));
+        inputValidator.addRule(new InputValidator.ComponentValidationRule(icmpType) {
+            @Override
+            public String getValidationError() {
+                String icmp = icmpType.getText().trim();
+                if(!icmp.isEmpty()){
+                    Pattern pattern = Pattern.compile("(?:!\\s+)?(.+)");
+                    Matcher matcher = pattern.matcher(icmp);
+                    if(!matcher.matches()) return "Invalid ICMP type code/name.";
+                    String type = matcher.group(1).trim();
+                    if(Pattern.matches("\\d+", type)){
+                        try{
+                            int code = Integer.parseInt(type);
+                            if(code < 0 || code > 255){
+                                return "ICMP code must be between 0 and 255.";
+                            }
+                            return null;
+                        }
+                        catch(NumberFormatException e){
+                            return "ICMP code must be between 0 and 255.";
+                        }
+                    }
+                    if(!VALID_ICMP_NAMES.contains(type)){
+                        return "Invalid ICMP type name '" + type + "'.";
+                    }
+                }
+                return null;
+            }
+        });
+
         inputValidator.addRule(new InputValidator.ComponentValidationRule(tcpFlags) {
             @Override
             public String getValidationError() {
