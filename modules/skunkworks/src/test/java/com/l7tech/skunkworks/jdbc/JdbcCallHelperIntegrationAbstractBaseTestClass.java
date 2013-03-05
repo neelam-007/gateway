@@ -2,11 +2,11 @@ package com.l7tech.skunkworks.jdbc;
 
 import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.jdbc.oracle.OracleDriver;
-import com.l7tech.server.ServerConfig;
 import com.l7tech.server.jdbc.JdbcConnectionManagerImpl;
 import com.l7tech.server.jdbc.JdbcConnectionPoolManager;
 import com.l7tech.server.jdbc.JdbcQueryingManager;
 import com.l7tech.server.jdbc.JdbcQueryingManagerImpl;
+import com.l7tech.util.MockConfig;
 import com.l7tech.util.TimeSource;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -17,6 +17,8 @@ import javax.sql.DataSource;
 import java.sql.DriverManager;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * This class should be extended to allow subclassed to make jdbc calls to oracle through the gateway.
@@ -30,6 +32,8 @@ public abstract class JdbcCallHelperIntegrationAbstractBaseTestClass {
     protected static final String ConnectionName = "OracleConnection";
     private static JdbcQueryingManagerImpl jdbcQueryingManager;
     private static DataSource dataSource;
+    private static Map<String, String> configProperties = new HashMap<>();
+    private static MockConfig mockConfig = new MockConfig(getConfigProperties());
 
     /**
      * Sets up mocks and jdbc objects
@@ -46,12 +50,20 @@ public abstract class JdbcCallHelperIntegrationAbstractBaseTestClass {
 
         jdbcConnectionPoolManager.afterPropertiesSet();
 
-        jdbcQueryingManager = new JdbcQueryingManagerImpl(jdbcConnectionPoolManager, jdbcConnectionManager, ServerConfig.getInstance(), new TimeSource());
+        jdbcQueryingManager = new JdbcQueryingManagerImpl(jdbcConnectionPoolManager, jdbcConnectionManager, getMockConfig(), new TimeSource());
 
         //This is needed to allow the drive to be found and loaded.
         DriverManager.registerDriver((OracleDriver) Class.forName("com.l7tech.jdbc.oracle.OracleDriver").newInstance());
 
         dataSource = jdbcConnectionPoolManager.getDataSource(ConnectionName);
+    }
+
+    public static Map<String, String> getConfigProperties() {
+        return configProperties;
+    }
+
+    public static MockConfig getMockConfig() {
+        return mockConfig;
     }
 
     @Before
