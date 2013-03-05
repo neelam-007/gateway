@@ -430,8 +430,8 @@ public class SsgFirewallPropertiesDialog extends JDialog {
                     }
                     try{
                         Integer num = Integer.parseInt(matcher.group(1));
-                        if(num.intValue() < 0 || num.intValue() > 255){
-                            return "TCP Option must be between 0 and 255";
+                        if(num.intValue() < 1 || num.intValue() > 255){
+                            return "TCP Option must be between 1 and 255";
                         }
                     }
                     catch(NumberFormatException e){
