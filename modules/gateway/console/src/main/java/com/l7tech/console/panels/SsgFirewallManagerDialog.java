@@ -195,6 +195,15 @@ public class SsgFirewallManagerDialog extends JDialog {
             @Override
             public void actionPerformed(final ActionEvent e) {
                 final SsgFirewallRule rule = getSelectedInput();
+                int result = JOptionPane.showConfirmDialog(SsgFirewallManagerDialog.this,
+                        "Are you sure you want to remove the firewall rule \"" + rule.getName() + "\"?",
+                        "Confirm Removal",
+                        JOptionPane.YES_NO_CANCEL_OPTION,
+                        JOptionPane.QUESTION_MESSAGE);
+                if (result != JOptionPane.YES_OPTION)
+                    return;
+
+
                 int rowIndex = firewallRulesTable.getSelectedRow();
                 try {
                     Registry.getDefault().getTransportAdmin().deleteFirewallRule(rule.getOid());
