@@ -127,6 +127,8 @@ public class CreateRoutingStrategyRoutingPropertiesDialog extends JDialog {
             }
         });
 
+        Utilities.setDoubleClickAction(propertyTable, editPropertyButton);
+
         deletePropertyButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
