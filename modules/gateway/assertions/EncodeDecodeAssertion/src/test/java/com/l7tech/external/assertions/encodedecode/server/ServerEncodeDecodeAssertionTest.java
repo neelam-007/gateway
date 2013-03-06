@@ -14,6 +14,7 @@ import com.l7tech.policy.variable.DataType;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.assertion.AssertionStatusException;
+import com.l7tech.test.BugId;
 import com.l7tech.util.Functions;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.IOUtils;
@@ -101,6 +102,27 @@ public class ServerEncodeDecodeAssertionTest{
     public void testBase64Strict() throws Exception {
         oneWayTest( EncodeDecodeAssertion.TransformType.BASE64_DECODE, AssertionStatus.NONE, true, 0, "L 3 R l e H\tQvI\rHdpd\nGg    gc3BhY2VzIGFuZCA8Ij5z" );
         oneWayTest( EncodeDecodeAssertion.TransformType.BASE64_DECODE, AssertionStatus.FALSIFIED, true, 0, "L3 [ RleHQvIHdpdGggc3BhY2VzIGFuZCA8Ij5z" );
+    }
+
+    @Test
+    @BugId("SSG-6087")
+    public void testBase64TrailingCharsAfterPadding() throws Exception {
+        // strict
+        assertEquals("test", oneWayTest(EncodeDecodeAssertion.TransformType.BASE64_DECODE, AssertionStatus.NONE, true, 0, "dGVzdA=="));
+        assertEquals("test", oneWayTest(EncodeDecodeAssertion.TransformType.BASE64_DECODE, AssertionStatus.NONE, true, 0, "dGVzdA="));
+        assertEquals("test", oneWayTest(EncodeDecodeAssertion.TransformType.BASE64_DECODE, AssertionStatus.NONE, true, 0, "dGVzdA"));
+        // whitespace should be trimmed before padding is validated
+        assertEquals("test", oneWayTest(EncodeDecodeAssertion.TransformType.BASE64_DECODE, AssertionStatus.NONE, true, 0, " dGVzdA "));
+        assertEquals("test", oneWayTest(EncodeDecodeAssertion.TransformType.BASE64_DECODE, AssertionStatus.NONE, true, 0, " dGVzdA= "));
+        assertEquals("test", oneWayTest(EncodeDecodeAssertion.TransformType.BASE64_DECODE, AssertionStatus.NONE, true, 0, " dGVzdA== "));
+        assertNull(oneWayTest(EncodeDecodeAssertion.TransformType.BASE64_DECODE, AssertionStatus.FALSIFIED, true, 0, "dGVzdA==x"));
+        assertNull(oneWayTest(EncodeDecodeAssertion.TransformType.BASE64_DECODE, AssertionStatus.FALSIFIED, true, 0, "dGVzdA=x"));
+        assertNull(oneWayTest(EncodeDecodeAssertion.TransformType.BASE64_DECODE, AssertionStatus.FALSIFIED, true, 0, " dGVzdA==x "));
+        assertNull(oneWayTest(EncodeDecodeAssertion.TransformType.BASE64_DECODE, AssertionStatus.FALSIFIED, true, 0, "dGVzdA= x"));
+
+        // non-strict
+        assertEquals("test", oneWayTest(EncodeDecodeAssertion.TransformType.BASE64_DECODE, AssertionStatus.NONE, false, 0, "dGVzdA==x"));
+        assertEquals("test", oneWayTest(EncodeDecodeAssertion.TransformType.BASE64_DECODE, AssertionStatus.NONE, false, 0, "dGVzdA=x"));
     }
 
     @Test

@@ -365,8 +365,10 @@ public class ServerEncodeDecodeAssertion extends AbstractServerAssertion<EncodeD
 
         @Override
         Object transform( final Object source ) {
-            final String data = getTextInput( source );
-            if ( isStrict() && !ValidationUtils.isValidCharacters( data, BASE64_CHARACTERS ) ) {
+            final String data = getTextInput( source ).trim();
+            // if there is padding nothing must be trailing it
+            if ( isStrict() && (!ValidationUtils.isValidCharacters( data, BASE64_CHARACTERS )
+                    || (data.contains("=") && data.lastIndexOf("=") != data.length() - 1)))  {
                 audit( AssertionMessages.ENCODE_DECODE_STRICT, null );
                 throw new AssertionStatusException( AssertionStatus.FALSIFIED );
             }
