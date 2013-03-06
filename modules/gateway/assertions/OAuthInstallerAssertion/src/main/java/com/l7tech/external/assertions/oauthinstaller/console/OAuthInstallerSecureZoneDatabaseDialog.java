@@ -236,7 +236,8 @@ public class OAuthInstallerSecureZoneDatabaseDialog extends JDialog {
         }
 
         final String otkDbName = otkDbNameTextField.getText().trim();
-        if(!validateStringWithDialog(otkDbName, "newOtkDbSchemaName")){
+        // Maximum db name length is 64 characters http://dev.mysql.com/doc/refman/5.0/en/identifiers.html
+        if (!validateStringWithDialog(otkDbName, "newOtkDbSchemaName") || !validateStringMaxLengthWithDialog(otkDbName, "newOtkDbSchemaName", 64)) {
             return;
         }
 
@@ -257,7 +258,7 @@ public class OAuthInstallerSecureZoneDatabaseDialog extends JDialog {
         }
 
         final String newJdbcConnName = jdbcConnNewTextField.getText().trim();
-        if(!validateStringWithDialog(newJdbcConnName, "newJdbcConnectionName")){
+        if (!validateStringWithDialog(newJdbcConnName, "newJdbcConnectionName") || !validateStringMaxLengthWithDialog(newJdbcConnName, "newOtkDbSchemaName", 128)) {
             return;
         }
 
@@ -311,6 +312,21 @@ public class OAuthInstallerSecureZoneDatabaseDialog extends JDialog {
                 resourceValue = resourceValue.substring(0, resourceValue.length() - 1);
             }
             DialogDisplayer.showMessageDialog(this, "Value for '" + resourceValue + "' is required", "Invalid value", JOptionPane.WARNING_MESSAGE, null);
+            return false;
+        }
+
+        return true;
+    }
+
+    private boolean validateStringMaxLengthWithDialog(final String toValidate, final String resourceKey, final int maxLength) {
+        if (toValidate.length() > maxLength) {
+            // never include the value in the message as it may be a password
+
+            String resourceValue = resourceBundle.getString(resourceKey);
+            if (resourceValue.endsWith(":")) {
+                resourceValue = resourceValue.substring(0, resourceValue.length() - 1);
+            }
+            DialogDisplayer.showMessageDialog(this, "Value for '" + resourceValue + "' is too long, max length is " + maxLength + " characters", "Invalid value", JOptionPane.WARNING_MESSAGE, null);
             return false;
         }
 
