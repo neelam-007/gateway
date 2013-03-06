@@ -58,9 +58,6 @@ public class OAuthInstallerSecureZoneDatabaseDialog extends JDialog {
         setContentPane(contentPane);
         getRootPane().setDefaultButton(buttonCancel);
 
-        //noinspection BoundFieldAssignment
-        securePasswordComboBox = new SecurePasswordComboBox(SecurePassword.SecurePasswordType.PASSWORD);
-
         buttonOK.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
