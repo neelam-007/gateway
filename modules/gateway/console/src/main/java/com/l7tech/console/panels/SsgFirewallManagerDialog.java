@@ -222,7 +222,7 @@ public class SsgFirewallManagerDialog extends JDialog {
     }
 
     private boolean canDisplaySimpleDialog(final SsgFirewallRule rule) {
-        boolean isSimpleAccept = "filter".equals(rule.getProperty("table")) && "INPUT".equals(rule.getProperty("chain")) && "ACCEPT".equals(rule.getProperty("jump"));
+        boolean isSimpleAccept = "filter".equals(rule.getProperty("table")) && "INPUT".equals(rule.getProperty("chain")) && "ACCEPT".equals(rule.getProperty("jump")) && !"icmp".equals(rule.getProtocol());
         boolean isSimpleRedirect = "NAT".equals(rule.getProperty("table")) && "PREROUTING".equals(rule.getProperty("chain")) && "REDIRECT".equals(rule.getProperty("jump"));
 
         boolean containOtherSettings = false;
@@ -266,7 +266,7 @@ public class SsgFirewallManagerDialog extends JDialog {
     }
 
     private void toggleButtonState(){
-        editButton.setEnabled((permissionFlags.canUpdateSome() || permissionFlags.canUpdateAll()) && firewallRulesTable.getSelectedRow() > -1 && !(canDisplaySimpleDialog(getSelectedInput())));
+        editButton.setEnabled((permissionFlags.canUpdateSome() || permissionFlags.canUpdateAll()) && firewallRulesTable.getSelectedRow() > -1 && canDisplaySimpleDialog(getSelectedInput()));
 
         deleteButton.setEnabled((permissionFlags.canDeleteSome() || permissionFlags.canDeleteAll()) && firewallRulesTable.getSelectedRow() > -1);
         cloneButton.setEnabled((permissionFlags.canCreateAll() || permissionFlags.canCreateSome()) && firewallRulesTable.getSelectedRow() > -1);
