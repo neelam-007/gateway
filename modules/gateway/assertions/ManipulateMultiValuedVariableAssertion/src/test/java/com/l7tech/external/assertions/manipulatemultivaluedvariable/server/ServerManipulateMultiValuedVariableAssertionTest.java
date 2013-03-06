@@ -69,7 +69,7 @@ public class ServerManipulateMultiValuedVariableAssertionTest {
 
         ManipulateMultiValuedVariableAssertion ass = new ManipulateMultiValuedVariableAssertion();
         ass.setTargetVariableName("myMultiVar");
-        final ArrayList<Object> myList = new ArrayList<>();
+        final ArrayList<Object> myList = new ArrayList<Object>();
         final Date myDate = new Date();
         myList.add(myDate);
         ctx.setVariable("myMultiVar", myList);
