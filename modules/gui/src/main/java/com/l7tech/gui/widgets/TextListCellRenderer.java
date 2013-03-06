@@ -80,6 +80,23 @@ public class TextListCellRenderer<SO> extends JLabel implements ListCellRenderer
         return size;
     }
 
+    /**
+     * @return true if the background is completely opaque and differs from the JList's background; false otherwise
+     */
+    @Override
+    public boolean isOpaque() {
+        final Color back = getBackground();
+        Component p = getParent();
+        if (p != null) {
+            p = p.getParent();
+        }
+        // p should now be the JList.
+        boolean colorMatch = (back != null) && (p != null) &&
+            back.equals(p.getBackground()) &&
+                        p.isOpaque();
+        return !colorMatch && super.isOpaque();
+    }
+
     public TableCellRenderer asTableCellRenderer(){
         return new DefaultTableCellRenderer(){
             @SuppressWarnings({ "unchecked" })
