@@ -258,7 +258,7 @@ public class OAuthInstallerSecureZoneDatabaseDialog extends JDialog {
         }
 
         final String newJdbcConnName = jdbcConnNewTextField.getText().trim();
-        if (!validateStringWithDialog(newJdbcConnName, "newJdbcConnectionName") || !validateStringMaxLengthWithDialog(newJdbcConnName, "newOtkDbSchemaName", 128)) {
+        if (!validateStringWithDialog(newJdbcConnName, "newJdbcConnectionName") || !validateStringMaxLengthWithDialog(newJdbcConnName, "newJdbcConnectionName", 128)) {
             return;
         }
 
