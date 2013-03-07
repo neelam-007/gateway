@@ -35,7 +35,7 @@ public class MockResultSet implements ResultSet {
 
     @Override
     public boolean next() throws SQLException {
-        if (results.size() < index + 1) {
+        if (results.size() > index + 1) {
             index++;
             return true;
         } else {
@@ -45,6 +45,7 @@ public class MockResultSet implements ResultSet {
 
     @Override
     public void close() throws SQLException {
+        index = -1;
     }
 
     @Override
