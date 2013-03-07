@@ -69,6 +69,7 @@ public class ServerManipulateMultiValuedVariableAssertion extends AbstractServer
 
         boolean firstIteration = true;
         boolean createWasLogged = false;
+        final String createMessage = "Created Target Multivalued variable '" + varName + "'.";
         // if it's multi valued - support it. If a value is null, that is ok, keep it null
         for (Object o : value) {
             final Class valuesClass = o.getClass();
@@ -87,16 +88,16 @@ public class ServerManipulateMultiValuedVariableAssertion extends AbstractServer
             }
             if (firstIteration) {
                 if (created) {
-                    logAndAudit(AssertionMessages.USERDETAIL_FINEST, "Created Target Multivalued variable " + varName);
+                    logAndAudit(AssertionMessages.USERDETAIL_FINEST, createMessage);
                     createWasLogged = true;
                 }
                 firstIteration = false;
             }
-            logAndAudit(AssertionMessages.USERDETAIL_FINEST, "Appended to Target Multivalued variable '" + varName + "' value '" + o + "'");
+            logAndAudit(AssertionMessages.USERDETAIL_FINEST, "Appended to Target Multivalued variable '" + varName + "' value '" + o + "'.");
         }
 
         if (created && !createWasLogged) {
-            logAndAudit(AssertionMessages.USERDETAIL_FINEST, "Created Target Multivalued variable " + varName);
+            logAndAudit(AssertionMessages.USERDETAIL_FINEST, createMessage);
         }
 
         context.setVariable(varName, multiVar);

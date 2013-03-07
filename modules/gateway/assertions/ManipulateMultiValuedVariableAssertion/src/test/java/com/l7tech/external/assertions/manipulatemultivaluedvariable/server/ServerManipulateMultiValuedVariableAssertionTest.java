@@ -141,7 +141,7 @@ public class ServerManipulateMultiValuedVariableAssertionTest {
             System.out.println(s);
         }
         assertTrue(testAudit.isAuditPresent(USERDETAIL_FINEST));
-        assertTrue(testAudit.isAuditPresentContaining("Created Target Multivalued variable myMultiVar"));
+        assertTrue(testAudit.isAuditPresentContaining("Created Target Multivalued variable 'myMultiVar'"));
         validateAuditLevels(testAudit, USERDETAIL_FINEST);
     }
 
@@ -180,8 +180,8 @@ public class ServerManipulateMultiValuedVariableAssertionTest {
             System.out.println(s);
         }
         assertTrue(testAudit.isAuditPresent(USERDETAIL_FINEST));
-        assertTrue(testAudit.isAuditPresentContaining("Created Target Multivalued variable myMultiVar"));
-        assertTrue(testAudit.isAuditPresentContaining("Appended to Target Multivalued variable 'myMultiVar' value 'First value'"));
+        assertTrue(testAudit.isAuditPresentContaining("Created Target Multivalued variable 'myMultiVar'"));
+        assertTrue(testAudit.isAuditPresentContaining("Appended to Target Multivalued variable 'myMultiVar' value 'First value'."));
         validateAuditLevels(testAudit, USERDETAIL_FINEST);
 
     }

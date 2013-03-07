@@ -18,16 +18,6 @@ public class ManipulateMultiValuedVariableAssertion extends Assertion implements
         return targetVariableName;
     }
 
-    /**
-     * //TODO Delete for Goatfish. Only in place to support any dev builds which created assertions while this assertion was a prototype.
-     *
-     * @param variableName
-     */
-    @Deprecated
-    public void setVariableName(String variableName) {
-        setTargetVariableName(variableName);
-    }
-
     public void setTargetVariableName(String targetVariableName) {
         this.targetVariableName = targetVariableName;
     }
@@ -38,14 +28,6 @@ public class ManipulateMultiValuedVariableAssertion extends Assertion implements
 
     public void setSourceVariableName(String sourceVariableName) {
         this.sourceVariableName = sourceVariableName;
-    }
-
-    /**
-     * //TODO Delete for Goatfish. Only in place to support any dev builds which created assertions while this assertion was a prototype.
-     * @param variableValue
-     */
-    public void setVariableValue(String variableValue){
-        this.sourceVariableName = variableValue;
     }
 
     @Override
@@ -73,7 +55,7 @@ public class ManipulateMultiValuedVariableAssertion extends Assertion implements
             return meta;
 
         meta.put(AssertionMetadata.SHORT_NAME, baseName);
-        meta.put(AssertionMetadata.LONG_NAME, "Allows for Multivalued variables to be both created and manipulated. Appending a variable (single or multivalued) is currently supported.");
+        meta.put(AssertionMetadata.LONG_NAME, "Used to create a multivalued context variable that can contain a variety of data types. Do this by appending a variable (either single or multivalued) to a new or existing multivalued variable.");
         meta.put(POLICY_NODE_NAME_FACTORY, policyNameFactory);
 
         meta.put(PALETTE_FOLDERS, new String[]{"policyLogic"});
