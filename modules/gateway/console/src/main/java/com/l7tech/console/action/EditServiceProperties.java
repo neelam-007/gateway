@@ -98,6 +98,7 @@ public class EditServiceProperties extends EntityWithPolicyNodeAction<ServiceNod
 
                     serviceNode.clearCachedEntities();
                     serviceNode.reloadChildren();
+                    serviceNode.clearIcons();
 
                     final ServicesAndPoliciesTree tree = (ServicesAndPoliciesTree) TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME);
                     if (tree != null) {
