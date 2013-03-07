@@ -50,11 +50,11 @@ public class CounterManagerImpl extends HibernateDaoSupport implements CounterMa
 
     private static final int batchLimit = SyspropUtil.getInteger("com.l7tech.hacounter.batchLimit", 4096);
     private static final int coreThreads = SyspropUtil.getInteger("com.l7tech.hacounter.coreThreads", 16);
-    private static final int maxThreads = SyspropUtil.getInteger("com.l7tech.hacounter.maxThreads", 64);
+    private static final int maxThreads = SyspropUtil.getInteger("com.l7tech.hacounter.maxThreads", 128);
     private static final int keepAliveSec = SyspropUtil.getInteger("com.l7tech.hacounter.keepAliveSec", 10);
-    private static final int supervisorQueueSize = SyspropUtil.getInteger("com.l7tech.hacounter.supervisorQueueSize", 1024);
-    private static final int counterQueueSize = SyspropUtil.getInteger("com.l7tech.hacounter.counterQueueSize", 10240);
-    private static final ExecutorService updateThreads = new ThreadPoolExecutor(coreThreads, maxThreads, keepAliveSec, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(supervisorQueueSize));
+    private static final int supervisorQueueSize = SyspropUtil.getInteger("com.l7tech.hacounter.supervisorQueueSize", 4096);
+    private static final int counterQueueSize = SyspropUtil.getInteger("com.l7tech.hacounter.counterQueueSize", 2048);
+    private static final ExecutorService updateThreads = new ThreadPoolExecutor(coreThreads, maxThreads, keepAliveSec, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(supervisorQueueSize), new ThreadPoolExecutor.CallerRunsPolicy());
     private final ConcurrentMap<String,WorkQueue> counters = new ConcurrentHashMap<String,WorkQueue>();
 
     private final PlatformTransactionManager transactionManager;
@@ -542,7 +542,7 @@ public class CounterManagerImpl extends HibernateDaoSupport implements CounterMa
         updateThreads.submit(new Callable<Object>() {
             @Override
             public Object call() throws Exception {
-                while (!workQueue.queue.isEmpty() && workQueue.workMutex.tryLock()) {
+                if (!workQueue.queue.isEmpty() && workQueue.workMutex.tryLock()) {
                     try {
                         serviceCounterUpdateQueue(workQueue);
                     } finally {
