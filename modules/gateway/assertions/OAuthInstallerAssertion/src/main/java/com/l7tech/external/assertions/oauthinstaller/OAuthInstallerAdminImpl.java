@@ -310,7 +310,7 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
                             if (result instanceof String) {
                                 //This happens if the database already exists
                                 //We don't want to rollback here since nothing has changed yet.
-                                return (String) result;
+                                return "Error creating OTK database: " + result;
                             }
 
                             // we are pessimistic, assuming it will fail.
@@ -339,7 +339,7 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
                                     index++;
                                     result = jdbcQueryingManager.performJdbcQuery(dataSource, query, null, 2, Collections.emptyList());
                                     if (result instanceof String) {
-                                        return (String) result;
+                                        return "Error creating OTK database: " + result;
                                     }
 
                                     msg = checkCreateDbInterrupted();
@@ -361,7 +361,7 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
                                         if (result instanceof String) {
                                             //We are here if the user already exists.
                                             if (failIfUserExists) {
-                                                return "User already Exists: " + result;
+                                                return "User '" + otkDbUsername + "'@'" + grantHost + "' already exists: " + result;
                                             } else {
                                                 // Update the users password toString() the one given.
 
@@ -369,7 +369,7 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
                                                 query = "SELECT password from mysql.user where user = '" + otkDbUsername + "' AND host = '" + grantHost + "'";
                                                 result = jdbcQueryingManager.performJdbcQuery(dataSource, query, null, 10, Collections.emptyList());
                                                 if (result instanceof String) {
-                                                    return (String) result;
+                                                    return "Error retrieving existing '" + otkDbUsername + "'@'" + grantHost + "' user password: " + result;
                                                 }
                                                 //noinspection unchecked
                                                 Map<String, List<Object>> selectResult = (Map<String, List<Object>>) result;
@@ -380,7 +380,7 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
                                                 query = "SET PASSWORD FOR '" + otkDbUsername + "'@'" + grantHost + "' = PASSWORD('" + otkUserPassword + "')";
                                                 result = jdbcQueryingManager.performJdbcQuery(dataSource, query, null, 10, Collections.emptyList());
                                                 if (result instanceof String) {
-                                                    return (String) result;
+                                                    return "Error updating '" + otkDbUsername + "'@'" + grantHost + "' user password: " + result;
                                                 }
                                             }
                                         } else {
@@ -392,7 +392,7 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
                                         query = "SELECT user from mysql.user where user = '" + otkDbUsername + "' AND host = '" + grantHost + "' AND password = PASSWORD('" + otkUserPassword + "')";
                                         result = jdbcQueryingManager.performJdbcQuery(dataSource, query, null, 10, Collections.emptyList());
                                         if (result instanceof String) {
-                                            return (String) result;
+                                            return "Error checking if user '" + otkDbUsername + "'@'" + grantHost + "' exists: " + result;
                                         }
                                         //noinspection unchecked
                                         Map<String, List<Object>> selectResult = (Map<String, List<Object>>) result;
@@ -405,7 +405,7 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
                                     query = "GRANT ALL ON " + otkDbName + ".* TO '" + otkDbUsername + "'@'" + grantHost + "'";
                                     result = jdbcQueryingManager.performJdbcQuery(dataSource, query, null, 100, Collections.emptyList());
                                     if (result instanceof String) {
-                                        return (String) result;
+                                        return "Error granting privileges for OTK database to user '" + otkDbUsername + "'@'" + grantHost + "': " + result;
                                     }
 
                                     msg = checkCreateDbInterrupted();

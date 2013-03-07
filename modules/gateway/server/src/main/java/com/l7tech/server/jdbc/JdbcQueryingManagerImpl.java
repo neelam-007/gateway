@@ -212,7 +212,7 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager, PropertyCha
             if (ExceptionUtils.causedBy(e, CannotGetJdbcConnectionException.class)) {
                 return "Could not get JDBC Connection.";
             } else if (ExceptionUtils.causedBy(e, BadSqlGrammarException.class)) {
-                return "Bad SQL Grammar.";
+                return "Bad SQL Grammar: " + ExceptionUtils.getMessage(ExceptionUtils.unnestToRoot(e));
             } else {
                 return ExceptionUtils.getMessage(ExceptionUtils.unnestToRoot(e));
             }
