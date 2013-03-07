@@ -1,5 +1,7 @@
 package com.l7tech.server.jdbc;
 
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityHeaderSet;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.MockConfig;
@@ -14,6 +16,7 @@ import org.mockito.Mockito;
 import org.springframework.jdbc.support.rowset.SqlRowSet;
 
 import javax.sql.DataSource;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -30,7 +33,7 @@ import java.util.*;
  */
 public class JdbcQueryManagerImplCacheTest {
     //The connection name
-    protected final String ConnectionName = "OracleConnection";
+    protected final String ConnectionName = "MySQLConnection";
     private JdbcQueryingManager jdbcQueryingManager;
     private Map<String, String> configProperties = new HashMap<>();
     private MockConfig mockConfig = new MockConfig(configProperties);
@@ -47,9 +50,10 @@ public class JdbcQueryManagerImplCacheTest {
     public void before() throws Exception {
         DataSource dataSource = Mockito.mock(DataSource.class);
 
-        JdbcConnectionManagerImpl jdbcConnectionManager = Mockito.spy(new JdbcConnectionManagerImpl());
+        JdbcConnectionManager jdbcConnectionManager = Mockito.spy(new JdbcConnectionManagerImpl());
 
         Mockito.doReturn(Collections.emptyList()).when(jdbcConnectionManager).findAll();
+        Mockito.doReturn(new EntityHeaderSet<>((new EntityHeader(null, null, ConnectionName, null)))).when(jdbcConnectionManager).findAllHeaders();
 
         JdbcConnectionPoolManager jdbcConnectionPoolManager = Mockito.spy(new JdbcConnectionPoolManager(jdbcConnectionManager));
 
@@ -79,7 +83,7 @@ public class JdbcQueryManagerImplCacheTest {
         Object rtn = jdbcQueryingManager.performJdbcQuery(ConnectionName, query, null, 1, Collections.emptyList());
         validateFunctionReturn(null, rtn);
 
-        validateFunctionCached(query);
+        validateCached(query);
 
         //Test cache retrieval
         rtn = jdbcQueryingManager.performJdbcQuery(ConnectionName, query, null, 1, Collections.emptyList());
@@ -100,11 +104,11 @@ public class JdbcQueryManagerImplCacheTest {
         String functionName = "myFunction";
         String myReturnValue = "myReturnValue";
         String query = "func myFunction";
-        mockFunction(functionName, Arrays.asList(new Parameter(returnValueParameterName, DatabaseMetaData.procedureColumnReturn, 12, "VARCHAR", true)), Arrays.<Object>asList(myReturnValue));
+        mockFunction(functionName, Arrays.asList(new Parameter(returnValueParameterName, DatabaseMetaData.procedureColumnReturn, 12, "VARCHAR", true)), CollectionUtils.<Integer, Object>mapBuilder().put(1, myReturnValue).map());
         Object rtn = jdbcQueryingManager.performJdbcQuery(ConnectionName, query, null, 1, Collections.emptyList());
         validateFunctionReturn(myReturnValue, rtn);
 
-        validateFunctionCached(query);
+        validateCached(query);
 
         //Test cache retrieval
         rtn = jdbcQueryingManager.performJdbcQuery(ConnectionName, query, null, 1, Collections.emptyList());
@@ -124,11 +128,11 @@ public class JdbcQueryManagerImplCacheTest {
         String functionName = "myFunction";
         String myReturnValue = "myReturnValue";
         String query = "func myFunction ?";
-        mockFunction(functionName, Arrays.asList(new Parameter(returnValueParameterName, DatabaseMetaData.procedureColumnReturn, 12, "VARCHAR", true), new Parameter("ParamIn", DatabaseMetaData.procedureColumnIn, 12, "VARCHAR", false)), Arrays.<Object>asList(myReturnValue));
+        mockFunction(functionName, Arrays.asList(new Parameter(returnValueParameterName, DatabaseMetaData.procedureColumnReturn, 12, "VARCHAR", true), new Parameter("ParamIn", DatabaseMetaData.procedureColumnIn, 12, "VARCHAR", false)), CollectionUtils.<Integer, Object>mapBuilder().put(1, myReturnValue).map());
         Object rtn = jdbcQueryingManager.performJdbcQuery(ConnectionName, query, null, 1, Arrays.<Object>asList("param1"));
         validateFunctionReturn(myReturnValue, rtn);
 
-        validateFunctionCached(query);
+        validateCached(query);
 
         //Test cache retrieval
         rtn = jdbcQueryingManager.performJdbcQuery(ConnectionName, query, null, 1, Arrays.<Object>asList("param1"));
@@ -148,11 +152,11 @@ public class JdbcQueryManagerImplCacheTest {
         String functionName = "myFunction";
         String myReturnValue = "myReturnValue";
         String query = "func myFunction(?, ?)";
-        mockFunction(functionName, Arrays.asList(new Parameter(returnValueParameterName, DatabaseMetaData.procedureColumnReturn, 12, "VARCHAR", true), new Parameter("ParamIn1", DatabaseMetaData.procedureColumnIn, 12, "VARCHAR", false), new Parameter("ParamIn2", DatabaseMetaData.procedureColumnIn, 12, "VARCHAR", false)), Arrays.<Object>asList(myReturnValue));
+        mockFunction(functionName, Arrays.asList(new Parameter(returnValueParameterName, DatabaseMetaData.procedureColumnReturn, 12, "VARCHAR", true), new Parameter("ParamIn1", DatabaseMetaData.procedureColumnIn, 12, "VARCHAR", false), new Parameter("ParamIn2", DatabaseMetaData.procedureColumnIn, 12, "VARCHAR", false)), CollectionUtils.<Integer, Object>mapBuilder().put(1, myReturnValue).map());
         Object rtn = jdbcQueryingManager.performJdbcQuery(ConnectionName, query, null, 1, Arrays.<Object>asList("param1", "param2"));
         validateFunctionReturn(myReturnValue, rtn);
 
-        validateFunctionCached(query);
+        validateCached(query);
 
         //Test cache retrieval
         rtn = jdbcQueryingManager.performJdbcQuery(ConnectionName, query, null, 1, Arrays.<Object>asList("param1", "param2"));
@@ -168,24 +172,24 @@ public class JdbcQueryManagerImplCacheTest {
     }
 
     @Test
-    public void testCallingMultipleFunctionsFunction() throws SQLException, NoSuchFieldException, InvocationTargetException, NoSuchMethodException, IllegalAccessException {
+    public void testCallingMultipleFunctions() throws SQLException, NoSuchFieldException, InvocationTargetException, NoSuchMethodException, IllegalAccessException {
 
         String functionName1 = "myFunction1";
         String query1 = "func myFunction1(?, ?)";
         String myReturnValue1 = "myReturnValue1";
-        mockFunction(functionName1, Arrays.asList(new Parameter(returnValueParameterName, DatabaseMetaData.procedureColumnReturn, 12, "VARCHAR", true), new Parameter("ParamIn1", DatabaseMetaData.procedureColumnIn, 12, "VARCHAR", false), new Parameter("ParamIn2", DatabaseMetaData.procedureColumnIn, 12, "VARCHAR", false)), Arrays.<Object>asList(myReturnValue1));
+        mockFunction(functionName1, Arrays.asList(new Parameter(returnValueParameterName, DatabaseMetaData.procedureColumnReturn, 12, "VARCHAR", true), new Parameter("ParamIn1", DatabaseMetaData.procedureColumnIn, 12, "VARCHAR", false), new Parameter("ParamIn2", DatabaseMetaData.procedureColumnIn, 12, "VARCHAR", false)), CollectionUtils.<Integer, Object>mapBuilder().put(1, myReturnValue1).map());
         Object rtn = jdbcQueryingManager.performJdbcQuery(ConnectionName, query1, null, 1, Arrays.<Object>asList("param1", "param2"));
         validateFunctionReturn(myReturnValue1, rtn);
 
         String functionName2 = "myFunction2";
         String query2 = "func myFunction2(?, ?)";
         String myReturnValue2 = "myReturnValue2";
-        mockFunction(functionName2, Arrays.asList(new Parameter(returnValueParameterName, DatabaseMetaData.procedureColumnReturn, 12, "VARCHAR", true), new Parameter("ParamIn1", DatabaseMetaData.procedureColumnIn, 12, "VARCHAR", false), new Parameter("ParamIn2", DatabaseMetaData.procedureColumnIn, 12, "VARCHAR", false)), Arrays.<Object>asList(myReturnValue2));
+        mockFunction(functionName2, Arrays.asList(new Parameter(returnValueParameterName, DatabaseMetaData.procedureColumnReturn, 12, "VARCHAR", true), new Parameter("ParamIn1", DatabaseMetaData.procedureColumnIn, 12, "VARCHAR", false), new Parameter("ParamIn2", DatabaseMetaData.procedureColumnIn, 12, "VARCHAR", false)), CollectionUtils.<Integer, Object>mapBuilder().put(1, myReturnValue2).map());
         rtn = jdbcQueryingManager.performJdbcQuery(ConnectionName, query2, null, 1, Arrays.<Object>asList("param1", "param2"));
         validateFunctionReturn(myReturnValue2, rtn);
 
-        validateFunctionCached(query1);
-        validateFunctionCached(query2);
+        validateCached(query1);
+        validateCached(query2);
 
         //Test cache retrieval
         rtn = jdbcQueryingManager.performJdbcQuery(ConnectionName, query1, null, 1, Arrays.<Object>asList("param1", "param2"));
@@ -209,25 +213,25 @@ public class JdbcQueryManagerImplCacheTest {
     }
 
     @Test
-    public void testCallingMultipleFunctionsFunctionNoCache() throws SQLException, NoSuchFieldException, InvocationTargetException, NoSuchMethodException, IllegalAccessException {
+    public void testCallingMultipleFunctionsNoCache() throws SQLException, NoSuchFieldException, InvocationTargetException, NoSuchMethodException, IllegalAccessException {
         configProperties.put(ServerConfigParams.PARAM_JDBC_QUERY_CACHE_METADATA_ENABLED, "false");
 
         String functionName1 = "myFunction1";
         String query1 = "func myFunction1(?, ?)";
         String myReturnValue1 = "myReturnValue1";
-        mockFunction(functionName1, Arrays.asList(new Parameter(returnValueParameterName, DatabaseMetaData.procedureColumnReturn, 12, "VARCHAR", true), new Parameter("ParamIn1", DatabaseMetaData.procedureColumnIn, 12, "VARCHAR", false), new Parameter("ParamIn2", DatabaseMetaData.procedureColumnIn, 12, "VARCHAR", false)), Arrays.<Object>asList(myReturnValue1));
+        mockFunction(functionName1, Arrays.asList(new Parameter(returnValueParameterName, DatabaseMetaData.procedureColumnReturn, 12, "VARCHAR", true), new Parameter("ParamIn1", DatabaseMetaData.procedureColumnIn, 12, "VARCHAR", false), new Parameter("ParamIn2", DatabaseMetaData.procedureColumnIn, 12, "VARCHAR", false)), CollectionUtils.<Integer, Object>mapBuilder().put(1, myReturnValue1).map());
         Object rtn = jdbcQueryingManager.performJdbcQuery(ConnectionName, query1, null, 1, Arrays.<Object>asList("param1", "param2"));
         validateFunctionReturn(myReturnValue1, rtn);
 
         String functionName2 = "myFunction2";
         String query2 = "func myFunction2(?, ?)";
         String myReturnValue2 = "myReturnValue2";
-        mockFunction(functionName2, Arrays.asList(new Parameter(returnValueParameterName, DatabaseMetaData.procedureColumnReturn, 12, "VARCHAR", true), new Parameter("ParamIn1", DatabaseMetaData.procedureColumnIn, 12, "VARCHAR", false), new Parameter("ParamIn2", DatabaseMetaData.procedureColumnIn, 12, "VARCHAR", false)), Arrays.<Object>asList(myReturnValue2));
+        mockFunction(functionName2, Arrays.asList(new Parameter(returnValueParameterName, DatabaseMetaData.procedureColumnReturn, 12, "VARCHAR", true), new Parameter("ParamIn1", DatabaseMetaData.procedureColumnIn, 12, "VARCHAR", false), new Parameter("ParamIn2", DatabaseMetaData.procedureColumnIn, 12, "VARCHAR", false)), CollectionUtils.<Integer, Object>mapBuilder().put(1, myReturnValue2).map());
         rtn = jdbcQueryingManager.performJdbcQuery(ConnectionName, query2, null, 1, Arrays.<Object>asList("param1", "param2"));
         validateFunctionReturn(myReturnValue2, rtn);
 
-        validateFunctionCached(query1, false);
-        validateFunctionCached(query2, false);
+        validateCached(query1, false);
+        validateCached(query2, false);
 
         //Test cache retrieval
         rtn = jdbcQueryingManager.performJdbcQuery(ConnectionName, query1, null, 1, Arrays.<Object>asList("param1", "param2"));
@@ -258,7 +262,7 @@ public class JdbcQueryManagerImplCacheTest {
         Object rtn = jdbcQueryingManager.performJdbcQuery(ConnectionName, query, null, 1, Collections.emptyList());
         Assert.assertEquals(errorString, rtn);
 
-        validateFunctionCached(query);
+        validateCached(query);
 
         rtn = jdbcQueryingManager.performJdbcQuery(ConnectionName, query, null, 1, Collections.emptyList());
         Assert.assertEquals(errorString, rtn);
@@ -277,14 +281,14 @@ public class JdbcQueryManagerImplCacheTest {
         Object rtn = jdbcQueryingManager.performJdbcQuery(ConnectionName, query, null, 1, Collections.emptyList());
         validateFunctionReturn(null, rtn);
 
-        validateFunctionCached(query);
+        validateCached(query);
 
         String errorString = "My Test Error";
         mockMetadataError(errorString);
         rtn = jdbcQueryingManager.performJdbcQuery(ConnectionName, query, null, 1, Collections.emptyList());
         validateFunctionReturn(null, rtn);
 
-        validateFunctionCached(query);
+        validateCached(query);
 
         rtn = jdbcQueryingManager.performJdbcQuery(ConnectionName, query, null, 1, Collections.emptyList());
         validateFunctionReturn(null, rtn);
@@ -300,6 +304,270 @@ public class JdbcQueryManagerImplCacheTest {
 
     }
 
+    @Test
+    public void testErrorGettingFunctionMetadataCacheRemoval() throws SQLException, InvocationTargetException, NoSuchMethodException, NoSuchFieldException, IllegalAccessException, InstantiationException {
+        configProperties.put(ServerConfigParams.PARAM_JDBC_QUERY_CACHE_CLEANUP_REFRESH_INTERVAL, "0");
+
+        String errorString = "My Test Error";
+        String functionName = "myFunction";
+        String query = "func myFunction";
+        mockMetadataError(errorString);
+        Object rtn = jdbcQueryingManager.performJdbcQuery(ConnectionName, query, null, 1, Collections.emptyList());
+        Assert.assertEquals(errorString, rtn);
+
+        validateCached(query);
+
+        rtn = jdbcQueryingManager.performJdbcQuery(ConnectionName, query, null, 1, Collections.emptyList());
+        Assert.assertEquals(errorString, rtn);
+
+        runMetaDataCleanUpExceptionsTask();
+
+        validateCached(query, false);
+
+        fixMockMetadataError();
+        mockFunction(functionName, Collections.<Parameter>emptyList(), null);
+
+        rtn = jdbcQueryingManager.performJdbcQuery(ConnectionName, query, null, 1, Collections.emptyList());
+        validateFunctionReturn(null, rtn);
+
+        validateCached(query);
+
+        runMetaDataCleanUpExceptionsTask();
+
+        validateCached(query);
+
+        rtn = jdbcQueryingManager.performJdbcQuery(ConnectionName, query, null, 1, Collections.emptyList());
+        validateFunctionReturn(null, rtn);
+
+        //These actually get called twice each the first time it caches
+        Mockito.verify(databaseMetaData, Mockito.times(2)).getProcedures(Matchers.<String>any(), Matchers.<String>any(), Matchers.<String>any());
+        Mockito.verify(databaseMetaData, Mockito.times(2)).getProcedureColumns(Matchers.<String>any(), Matchers.<String>any(), Matchers.<String>any(), Matchers.<String>any());
+
+    }
+
+    @Test
+    public void testVoidProcedure() throws SQLException, NoSuchFieldException, InvocationTargetException, NoSuchMethodException, IllegalAccessException {
+        String procedureName = "myProcedure";
+        String query = "call myProcedure";
+        mockFunction(procedureName, Collections.<Parameter>emptyList(), null);
+        Object rtn = jdbcQueryingManager.performJdbcQuery(ConnectionName, query, null, 1, Collections.emptyList());
+        validateProcedureReturn(null, rtn);
+
+        validateCached(query);
+
+        //Test cache retrieval
+        rtn = jdbcQueryingManager.performJdbcQuery(ConnectionName, query, null, 1, Collections.emptyList());
+        validateProcedureReturn(null, rtn);
+
+        //Test cache retrieval
+        rtn = jdbcQueryingManager.performJdbcQuery(ConnectionName, query, null, 1, Collections.emptyList());
+        validateProcedureReturn(null, rtn);
+
+        //These actually get called twice each the first time it caches
+        Mockito.verify(databaseMetaData, Mockito.times(2)).getProcedures(Matchers.<String>any(), Matchers.<String>any(), Matchers.<String>any());
+        Mockito.verify(databaseMetaData, Mockito.times(2)).getProcedureColumns(Matchers.<String>any(), Matchers.<String>any(), Matchers.<String>any(), Matchers.<String>any());
+    }
+
+    @Test
+    public void testStringReturnVoidProcedure() throws SQLException, NoSuchFieldException, InvocationTargetException, NoSuchMethodException, IllegalAccessException {
+        String procedureName = "myProcedure";
+        Map<String, Object> myReturnValues = CollectionUtils.<String, Object>mapBuilder().put("paramOut", "myReturnValue").map();
+        String query = "call myProcedure";
+        mockFunction(procedureName, Arrays.asList(new Parameter("paramOut", DatabaseMetaData.procedureColumnOut, 12, "VARCHAR", true)), CollectionUtils.<Integer, Object>mapBuilder().put(1, myReturnValues.get("paramOut")).map());
+        Object rtn = jdbcQueryingManager.performJdbcQuery(ConnectionName, query, null, 1, Collections.emptyList());
+        validateProcedureReturn(myReturnValues, rtn);
+
+        validateCached(query);
+
+        //Test cache retrieval
+        rtn = jdbcQueryingManager.performJdbcQuery(ConnectionName, query, null, 1, Collections.emptyList());
+        validateProcedureReturn(myReturnValues, rtn);
+
+        //Test cache retrieval
+        rtn = jdbcQueryingManager.performJdbcQuery(ConnectionName, query, null, 1, Collections.emptyList());
+        validateProcedureReturn(myReturnValues, rtn);
+
+        //These actually get called twice each the first time it caches
+        Mockito.verify(databaseMetaData, Mockito.times(2)).getProcedures(Matchers.<String>any(), Matchers.<String>any(), Matchers.<String>any());
+        Mockito.verify(databaseMetaData, Mockito.times(2)).getProcedureColumns(Matchers.<String>any(), Matchers.<String>any(), Matchers.<String>any(), Matchers.<String>any());
+    }
+
+    @Test
+    public void testStringReturnSingleParameterProcedure() throws SQLException, NoSuchFieldException, InvocationTargetException, NoSuchMethodException, IllegalAccessException {
+        String procedureName = "myProcedure";
+        Map<String, Object> myReturnValues = CollectionUtils.<String, Object>mapBuilder().put("paramOut", "myReturnValue").map();
+        String query = "call myProcedure ?";
+        mockFunction(procedureName, Arrays.asList(new Parameter("paramOut", DatabaseMetaData.procedureColumnOut, 12, "VARCHAR", true), new Parameter("ParamIn", DatabaseMetaData.procedureColumnIn, 12, "VARCHAR", false)), CollectionUtils.<Integer, Object>mapBuilder().put(1, myReturnValues.get("paramOut")).map());
+        Object rtn = jdbcQueryingManager.performJdbcQuery(ConnectionName, query, null, 1, Arrays.<Object>asList("param1"));
+        validateProcedureReturn(myReturnValues, rtn);
+
+        validateCached(query);
+
+        //Test cache retrieval
+        rtn = jdbcQueryingManager.performJdbcQuery(ConnectionName, query, null, 1, Arrays.<Object>asList("param1"));
+        validateProcedureReturn(myReturnValues, rtn);
+
+        //Test cache retrieval
+        rtn = jdbcQueryingManager.performJdbcQuery(ConnectionName, query, null, 1, Arrays.<Object>asList("param1"));
+        validateProcedureReturn(myReturnValues, rtn);
+
+        //These actually get called twice each the first time it caches
+        Mockito.verify(databaseMetaData, Mockito.times(2)).getProcedures(Matchers.<String>any(), Matchers.<String>any(), Matchers.<String>any());
+        Mockito.verify(databaseMetaData, Mockito.times(2)).getProcedureColumns(Matchers.<String>any(), Matchers.<String>any(), Matchers.<String>any(), Matchers.<String>any());
+    }
+
+    @Test
+    public void testStringReturnMultiParameterProcedure() throws SQLException, NoSuchFieldException, InvocationTargetException, NoSuchMethodException, IllegalAccessException {
+        String procedureName = "myProcedure";
+        Map<String, Object> myReturnValues = CollectionUtils.<String, Object>mapBuilder().put("paramOut", "myReturnValue").map();
+        String query = "call myProcedure(?, ?)";
+        mockFunction(procedureName, Arrays.asList(new Parameter("paramOut", DatabaseMetaData.procedureColumnOut, 12, "VARCHAR", true), new Parameter("ParamIn1", DatabaseMetaData.procedureColumnIn, 12, "VARCHAR", false), new Parameter("ParamIn2", DatabaseMetaData.procedureColumnIn, 12, "VARCHAR", false)), CollectionUtils.<Integer, Object>mapBuilder().put(1, myReturnValues.get("paramOut")).map());
+        Object rtn = jdbcQueryingManager.performJdbcQuery(ConnectionName, query, null, 1, Arrays.<Object>asList("param1", "param2"));
+        validateProcedureReturn(myReturnValues, rtn);
+
+        validateCached(query);
+
+        //Test cache retrieval
+        rtn = jdbcQueryingManager.performJdbcQuery(ConnectionName, query, null, 1, Arrays.<Object>asList("param1", "param2"));
+        validateProcedureReturn(myReturnValues, rtn);
+
+        //Test cache retrieval
+        rtn = jdbcQueryingManager.performJdbcQuery(ConnectionName, query, null, 1, Arrays.<Object>asList("param1", "param2"));
+        validateProcedureReturn(myReturnValues, rtn);
+
+        //These actually get called twice each the first time it caches
+        Mockito.verify(databaseMetaData, Mockito.times(2)).getProcedures(Matchers.<String>any(), Matchers.<String>any(), Matchers.<String>any());
+        Mockito.verify(databaseMetaData, Mockito.times(2)).getProcedureColumns(Matchers.<String>any(), Matchers.<String>any(), Matchers.<String>any(), Matchers.<String>any());
+    }
+
+    @Test
+    public void testMultiReturnMultiParameterProcedure() throws SQLException, NoSuchFieldException, InvocationTargetException, NoSuchMethodException, IllegalAccessException {
+        String procedureName = "myProcedure";
+        Map<String, Object> myReturnValues = CollectionUtils.<String, Object>mapBuilder().put("paramOut1", "myReturnValue1").put("paramOut2", "myReturnValue2").put("paramOut3", "myReturnValue3").map();
+        String query = "call myProcedure(?, ?)";
+        mockFunction(procedureName, Arrays.asList(new Parameter("paramOut1", DatabaseMetaData.procedureColumnOut, 12, "VARCHAR", true), new Parameter("ParamIn1", DatabaseMetaData.procedureColumnIn, 12, "VARCHAR", false), new Parameter("paramOut2", DatabaseMetaData.procedureColumnOut, 12, "VARCHAR", true), new Parameter("ParamIn2", DatabaseMetaData.procedureColumnIn, 12, "VARCHAR", false), new Parameter("paramOut3", DatabaseMetaData.procedureColumnOut, 12, "VARCHAR", true)), CollectionUtils.<Integer, Object>mapBuilder().put(1, myReturnValues.get("paramOut1")).put(3, myReturnValues.get("paramOut2")).put(5, myReturnValues.get("paramOut3")).map());
+        Object rtn = jdbcQueryingManager.performJdbcQuery(ConnectionName, query, null, 1, Arrays.<Object>asList("param1", "param2"));
+        validateProcedureReturn(myReturnValues, rtn);
+
+        validateCached(query);
+
+        //Test cache retrieval
+        rtn = jdbcQueryingManager.performJdbcQuery(ConnectionName, query, null, 1, Arrays.<Object>asList("param1", "param2"));
+        validateProcedureReturn(myReturnValues, rtn);
+
+        //Test cache retrieval
+        rtn = jdbcQueryingManager.performJdbcQuery(ConnectionName, query, null, 1, Arrays.<Object>asList("param1", "param2"));
+        validateProcedureReturn(myReturnValues, rtn);
+
+        //These actually get called twice each the first time it caches
+        Mockito.verify(databaseMetaData, Mockito.times(2)).getProcedures(Matchers.<String>any(), Matchers.<String>any(), Matchers.<String>any());
+        Mockito.verify(databaseMetaData, Mockito.times(2)).getProcedureColumns(Matchers.<String>any(), Matchers.<String>any(), Matchers.<String>any(), Matchers.<String>any());
+    }
+
+    @Test
+    public void testCallingMultipleProcedures() throws SQLException, NoSuchFieldException, InvocationTargetException, NoSuchMethodException, IllegalAccessException {
+
+        String procedureName1 = "myProcedure1";
+        String query1 = "call myProcedure1(?, ?)";
+        Map<String, Object> myReturnValues1 = CollectionUtils.<String, Object>mapBuilder().put("paramOut", "myReturnValue1").map();
+        mockFunction(procedureName1, Arrays.asList(new Parameter("paramOut", DatabaseMetaData.procedureColumnOut, 12, "VARCHAR", true), new Parameter("ParamIn1", DatabaseMetaData.procedureColumnIn, 12, "VARCHAR", false), new Parameter("ParamIn2", DatabaseMetaData.procedureColumnIn, 12, "VARCHAR", false)), CollectionUtils.<Integer, Object>mapBuilder().put(1, myReturnValues1.get("paramOut")).map());
+        Object rtn = jdbcQueryingManager.performJdbcQuery(ConnectionName, query1, null, 1, Arrays.<Object>asList("param1", "param2"));
+        validateProcedureReturn(myReturnValues1, rtn);
+
+        String procedureName2 = "myProcedure2";
+        String query2 = "call myProcedure2(?, ?)";
+        Map<String, Object> myReturnValues2 = CollectionUtils.<String, Object>mapBuilder().put("paramOut", "myReturnValue2").map();
+        mockFunction(procedureName2, Arrays.asList(new Parameter("paramOut", DatabaseMetaData.procedureColumnOut, 12, "VARCHAR", true), new Parameter("ParamIn1", DatabaseMetaData.procedureColumnIn, 12, "VARCHAR", false), new Parameter("ParamIn2", DatabaseMetaData.procedureColumnIn, 12, "VARCHAR", false)), CollectionUtils.<Integer, Object>mapBuilder().put(1, myReturnValues2.get("paramOut")).map());
+        rtn = jdbcQueryingManager.performJdbcQuery(ConnectionName, query2, null, 1, Arrays.<Object>asList("param1", "param2"));
+        validateProcedureReturn(myReturnValues2, rtn);
+
+        validateCached(query1);
+        validateCached(query2);
+
+        //Test cache retrieval
+        rtn = jdbcQueryingManager.performJdbcQuery(ConnectionName, query1, null, 1, Arrays.<Object>asList("param1", "param2"));
+        validateProcedureReturn(myReturnValues1, rtn);
+
+        //Test cache retrieval
+        rtn = jdbcQueryingManager.performJdbcQuery(ConnectionName, query2, null, 1, Arrays.<Object>asList("param1", "param2"));
+        validateProcedureReturn(myReturnValues2, rtn);
+
+        //Test cache retrieval
+        rtn = jdbcQueryingManager.performJdbcQuery(ConnectionName, query1, null, 1, Arrays.<Object>asList("param1", "param2"));
+        validateProcedureReturn(myReturnValues1, rtn);
+
+        //Test cache retrieval
+        rtn = jdbcQueryingManager.performJdbcQuery(ConnectionName, query2, null, 1, Arrays.<Object>asList("param1", "param2"));
+        validateProcedureReturn(myReturnValues2, rtn);
+
+        //These actually get called twice each the first time it caches
+        Mockito.verify(databaseMetaData, Mockito.times(4)).getProcedures(Matchers.<String>any(), Matchers.<String>any(), Matchers.<String>any());
+        Mockito.verify(databaseMetaData, Mockito.times(4)).getProcedureColumns(Matchers.<String>any(), Matchers.<String>any(), Matchers.<String>any(), Matchers.<String>any());
+    }
+
+    @Test
+    public void testCallingMultipleProceduresNoCache() throws SQLException, NoSuchFieldException, InvocationTargetException, NoSuchMethodException, IllegalAccessException {
+        configProperties.put(ServerConfigParams.PARAM_JDBC_QUERY_CACHE_METADATA_ENABLED, "false");
+
+        String procedureName1 = "myProcedure1";
+        String query1 = "call myProcedure1(?, ?)";
+        Map<String, Object> myReturnValues1 = CollectionUtils.<String, Object>mapBuilder().put("paramOut", "myReturnValue1").map();
+        mockFunction(procedureName1, Arrays.asList(new Parameter("paramOut", DatabaseMetaData.procedureColumnOut, 12, "VARCHAR", true), new Parameter("ParamIn1", DatabaseMetaData.procedureColumnIn, 12, "VARCHAR", false), new Parameter("ParamIn2", DatabaseMetaData.procedureColumnIn, 12, "VARCHAR", false)), CollectionUtils.<Integer, Object>mapBuilder().put(1, myReturnValues1.get("paramOut")).map());
+        Object rtn = jdbcQueryingManager.performJdbcQuery(ConnectionName, query1, null, 1, Arrays.<Object>asList("param1", "param2"));
+        validateProcedureReturn(myReturnValues1, rtn);
+
+        String procedureName2 = "myProcedure2";
+        String query2 = "call myProcedure2(?, ?)";
+        Map<String, Object> myReturnValues2 = CollectionUtils.<String, Object>mapBuilder().put("paramOut", "myReturnValue2").map();
+        mockFunction(procedureName2, Arrays.asList(new Parameter("paramOut", DatabaseMetaData.procedureColumnOut, 12, "VARCHAR", true), new Parameter("ParamIn1", DatabaseMetaData.procedureColumnIn, 12, "VARCHAR", false), new Parameter("ParamIn2", DatabaseMetaData.procedureColumnIn, 12, "VARCHAR", false)), CollectionUtils.<Integer, Object>mapBuilder().put(1, myReturnValues2.get("paramOut")).map());
+        rtn = jdbcQueryingManager.performJdbcQuery(ConnectionName, query2, null, 1, Arrays.<Object>asList("param1", "param2"));
+        validateProcedureReturn(myReturnValues2, rtn);
+
+        validateCached(query1, false);
+        validateCached(query2, false);
+
+        //Test cache retrieval
+        rtn = jdbcQueryingManager.performJdbcQuery(ConnectionName, query1, null, 1, Arrays.<Object>asList("param1", "param2"));
+        validateProcedureReturn(myReturnValues1, rtn);
+
+        //Test cache retrieval
+        rtn = jdbcQueryingManager.performJdbcQuery(ConnectionName, query2, null, 1, Arrays.<Object>asList("param1", "param2"));
+        validateProcedureReturn(myReturnValues2, rtn);
+
+        //Test cache retrieval
+        rtn = jdbcQueryingManager.performJdbcQuery(ConnectionName, query1, null, 1, Arrays.<Object>asList("param1", "param2"));
+        validateProcedureReturn(myReturnValues1, rtn);
+
+        //Test cache retrieval
+        rtn = jdbcQueryingManager.performJdbcQuery(ConnectionName, query2, null, 1, Arrays.<Object>asList("param1", "param2"));
+        validateProcedureReturn(myReturnValues2, rtn);
+
+        //These actually get called twice each the first time it caches
+        Mockito.verify(databaseMetaData, Mockito.times(12)).getProcedures(Matchers.<String>any(), Matchers.<String>any(), Matchers.<String>any());
+        Mockito.verify(databaseMetaData, Mockito.times(12)).getProcedureColumns(Matchers.<String>any(), Matchers.<String>any(), Matchers.<String>any(), Matchers.<String>any());
+    }
+
+    private void runMetaDataCleanUpExceptionsTask() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException, InstantiationException {
+        Class<?>[] innerClazzes = JdbcQueryingManagerImpl.class.getDeclaredClasses();
+        Class<?> metaDataCleanUpExceptionsTaskClazz = null;
+        for (Class<?> innerClazz : innerClazzes) {
+            if (innerClazz.getSimpleName().equals("MetaDataCleanUpExceptionsTask")) {
+                metaDataCleanUpExceptionsTaskClazz = innerClazz;
+                break;
+            }
+        }
+
+        Assert.assertNotNull(metaDataCleanUpExceptionsTaskClazz);
+        Constructor<?> constructor = metaDataCleanUpExceptionsTaskClazz.getDeclaredConstructor(JdbcQueryingManagerImpl.class);
+        constructor.setAccessible(true);
+
+        Object metaDataCleanUpExceptionsTask = constructor.newInstance(jdbcQueryingManager);
+
+        Method m = metaDataCleanUpExceptionsTask.getClass().getDeclaredMethod("doRun");
+        m.setAccessible(true);
+        m.invoke(metaDataCleanUpExceptionsTask);
+    }
+
     private void validateFunctionReturn(@Nullable Object expectedValue, Object returnedValue) {
         Assert.assertTrue(returnedValue instanceof List);
         if (expectedValue == null) {
@@ -313,11 +581,26 @@ public class JdbcQueryManagerImplCacheTest {
         }
     }
 
-    private void validateFunctionCached(String query) throws InvocationTargetException, NoSuchMethodException, NoSuchFieldException, IllegalAccessException {
-        validateFunctionCached(query, true);
+    private void validateProcedureReturn(@Nullable Map<String, Object> expectedValues, Object returnedValue) {
+        Assert.assertTrue(returnedValue instanceof List);
+        if (expectedValues == null) {
+            Assert.assertTrue(((List) returnedValue).isEmpty());
+        } else {
+            Assert.assertTrue(((List) returnedValue).size() == 1);
+            Assert.assertTrue(((List) returnedValue).get(0) instanceof SqlRowSet);
+            SqlRowSet result = (SqlRowSet) ((List) returnedValue).get(0);
+            Assert.assertTrue(result.next());
+            for (String paramName : expectedValues.keySet()) {
+                Assert.assertEquals(expectedValues.get(paramName), result.getObject(paramName));
+            }
+        }
     }
 
-    private void validateFunctionCached(String query, boolean checkCached) throws NoSuchFieldException, IllegalAccessException, NoSuchMethodException, InvocationTargetException {
+    private void validateCached(String query) throws InvocationTargetException, NoSuchMethodException, NoSuchFieldException, IllegalAccessException {
+        validateCached(query, true);
+    }
+
+    private void validateCached(String query, boolean checkCached) throws NoSuchFieldException, IllegalAccessException, NoSuchMethodException, InvocationTargetException {
         Method m = JdbcQueryingManagerImpl.class.getDeclaredMethod("getCacheKey", String.class, String.class, Option.class);
         m.setAccessible(true);
         Object cacheKey = m.invoke(null, ConnectionName, query, new Option<String>(null));
@@ -341,7 +624,7 @@ public class JdbcQueryManagerImplCacheTest {
         Mockito.doThrow(new SQLException(errorMessage)).when(connection).getMetaData();
     }
 
-    private void mockFunction(String procedureName, List<Parameter> parameters, @Nullable List<Object> rtn) throws SQLException {
+    private void mockFunction(String procedureName, List<Parameter> parameters, @Nullable final Map<Integer, Object> rtn) throws SQLException {
         Mockito.doReturn(new MockResultSet(Collections.<Map<String, Object>>emptyList())).when(databaseMetaData).getProcedures(Matchers.<String>any(), Matchers.<String>any(), Matchers.eq(procedureName));
 
         ArrayList<Map<String, Object>> parametersList = new ArrayList<>();
@@ -362,9 +645,9 @@ public class JdbcQueryManagerImplCacheTest {
         Mockito.doReturn(false).when(callableStatement).execute();
         Mockito.doReturn(rtn == null ? 0 : 1).doReturn(-1).when(callableStatement).getUpdateCount();
         Mockito.doReturn(false).when(callableStatement).getMoreResults();
-        if (rtn != null) {
-            for (int i = 0; i < rtn.size(); i++) {
-                Mockito.doReturn(rtn.get(i)).when(callableStatement).getObject(i + 1);
+        if (rtn != null && !rtn.isEmpty()) {
+            for (int index : rtn.keySet()) {
+                Mockito.doReturn(rtn.get(index)).when(callableStatement).getObject(Matchers.eq(index));
             }
         }
 
