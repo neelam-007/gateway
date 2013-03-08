@@ -62,7 +62,7 @@ public class BouncyCastleCertUtils  {
 
         String sigAlg = certGenParams.getSignatureAlgorithm();
         if (sigAlg == null)
-            sigAlg = ParamsCertificateGenerator.getSigAlg(publicKey, null, sigProvider);
+            sigAlg = ParamsCertificateGenerator.getSigAlg(publicKey, certGenParams.getHashAlgorithm(), sigProvider);
 
         // Generate request
         final PKCS10CertificationRequest certReq = sigProvider == null

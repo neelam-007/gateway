@@ -322,7 +322,7 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
     }
 
     @Override
-    public byte[] generateCSR(long keystoreId, String alias, X500Principal dn, String sigAlg) throws FindException {
+    public byte[] generateCSR(long keystoreId, String alias, X500Principal dn, String sigAlg, String sigHash) throws FindException {
         checkLicenseKeyStore();
         SsgKeyFinder keyFinder;
         try {
@@ -341,7 +341,9 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
             throw new FindException("cannot find keystore");
         }
         try {
-            CertificateRequest res = keystore.makeCertificateSigningRequest(alias, new CertGenParams(dn, 365 * 2, false, sigAlg));
+            CertGenParams params = new CertGenParams(dn, 365 * 2, false, sigAlg);
+            params.setHashAlgorithm(sigHash);
+            CertificateRequest res = keystore.makeCertificateSigningRequest(alias, params);
             return res.getEncoded();
         } catch (Exception e) {
             logger.log(Level.WARNING, "error getting keystore", e);

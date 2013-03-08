@@ -126,7 +126,7 @@ public class TrustedCertAdminStub implements TrustedCertAdmin {
     }
 
     @Override
-    public byte[] generateCSR(long keystoreId, String alias, X500Principal dn, String sigAlg) throws FindException {
+    public byte[] generateCSR(long keystoreId, String alias, X500Principal dn, String sigAlg, String sigHash) throws FindException {
         return new byte[0];
     }
 

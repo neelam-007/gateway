@@ -545,28 +545,23 @@ public class PrivateKeyPropertiesDialog extends JDialog {
 
     private void getCSR() {
         final TrustedCertAdmin admin = getTrustedCertAdmin();
-        DialogDisplayer.InputListener listener = new DialogDisplayer.InputListener() {
+        final GenerateCSRDialog dlg = new GenerateCSRDialog(this, subject.getSubjectDN());
+        dlg.pack();
+        Utilities.centerOnScreen(dlg);
+        DialogDisplayer.display(dlg, new Runnable() {
             @Override
-            public void reportResult(Object option) {
-                if (option == null)
-                    return;
-                String dnres = option.toString();
-                X500Principal dn;
-                try {
-                    dn = new X500Principal(dnres);
-                } catch (IllegalArgumentException e) {
-                    logger.log(Level.INFO, "not a valid ldap name", e);
-                    DialogDisplayer.showMessageDialog(generateCSRButton, dnres + " is not a valid DN",
-                                                      "Invalid Subject", JOptionPane.ERROR_MESSAGE, null);
+            public void run() {
+                if(dlg.isCancelled()){
                     return;
                 }
+
                 final byte[] csr;
                 try {
-                    csr = admin.generateCSR(subject.getKeystore().getOid(), subject.getAlias(), dn, null);
+                    csr = admin.generateCSR(subject.getKeystore().getOid(), subject.getAlias(), new X500Principal(dlg.getCsrSubjectDN()), null, dlg.getSelectedHash());
                 } catch (FindException e) {
                     logger.log(Level.WARNING, "cannot get csr from ssg", e);
                     DialogDisplayer.showMessageDialog(generateCSRButton, "Error getting CSR " + e.getMessage(),
-                                                      "CSR Error", JOptionPane.ERROR_MESSAGE, null);
+                            "CSR Error", JOptionPane.ERROR_MESSAGE, null);
                     return;
                 }
                 // save CSR to file
@@ -585,7 +580,7 @@ public class PrivateKeyPropertiesDialog extends JDialog {
                             String name = chooser.getSelectedFile().getPath();
                             // add an extension if not presented.
                             if (name.indexOf('.') < 0 ||
-                                (!name.endsWith(".p10") && !name.endsWith(".pem"))) {
+                                    (!name.endsWith(".p10") && !name.endsWith(".pem"))) {
                                 if (chooser.getFileFilter() == pemFilter) {
                                     name = name + ".pem";
                                 } else {
@@ -600,7 +595,7 @@ public class PrivateKeyPropertiesDialog extends JDialog {
                                 } catch (IOException e) {
                                     logger.log(Level.WARNING, "error encoding as PEM", e);
                                     DialogDisplayer.showMessageDialog(generateCSRButton, "Error Encoding As PEM " + e.getMessage(),
-                                                              "Error", JOptionPane.ERROR_MESSAGE, null);
+                                            "Error", JOptionPane.ERROR_MESSAGE, null);
                                     return;
                                 }
                             } else {
@@ -613,7 +608,7 @@ public class PrivateKeyPropertiesDialog extends JDialog {
                                 //if file already exists, we need to ask for confirmation to overwrite. (Bug 6026)
                                 if (newFile.exists()) {
                                     int result = JOptionPane.showOptionDialog(chooser, "The file '" + newFile.getName() + "' already exists.  Overwrite?",
-                                                        "Warning",JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, null, null);
+                                            "Warning",JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, null, null);
                                     if (result != JOptionPane.YES_OPTION)
                                         return;
                                 }
@@ -621,16 +616,13 @@ public class PrivateKeyPropertiesDialog extends JDialog {
                             } catch (IOException e) {
                                 logger.log(Level.WARNING, "error saving CSR", e);
                                 DialogDisplayer.showMessageDialog(generateCSRButton, "Error Saving CSR " + e.getMessage(),
-                                                              "Error", JOptionPane.ERROR_MESSAGE, null);
+                                        "Error", JOptionPane.ERROR_MESSAGE, null);
                             }
                         }
                     }
                 });
             }
-        };
-        DialogDisplayer.showInputDialog(generateCSRButton, "CSR Subject (DN):",
-                                        "Please provide subject DN for CSR", JOptionPane.QUESTION_MESSAGE,
-                                        null, null, subject.getSubjectDN(), listener);
+        });
     }
 
     private void assignCert() {
