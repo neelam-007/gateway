@@ -45,6 +45,8 @@ public class JmsUtil {
     public static final boolean detectTypes = ConfigFactory.getBooleanProperty( "com.l7tech.server.transport.jms.detectJmsTypes", true );
     public static final boolean useTopicTypes = ConfigFactory.getBooleanProperty( "com.l7tech.server.transport.jms.useTopicTypes", false );
 
+    private static enum TYPE {QUEUE, TOPIC, UNKNOWN};
+
     private static ClassLoader contextClassLoader;
 
     public static void setContextClassLoader( final ClassLoader contextClassLoader ) {
@@ -186,18 +188,19 @@ public class JmsUtil {
                 }
             }
 
+            TYPE type = getType(connFactory);
             if ( username != null && password != null ) {
-                if ( preferQueue && detectTypes && connFactory instanceof QueueConnectionFactory ) {
+                if ( preferQueue && detectTypes && type == TYPE.QUEUE) {
                     conn = ((QueueConnectionFactory)connFactory).createQueueConnection(username, password);
-                } else if ( !preferQueue && detectTypes && useTopicTypes && connFactory instanceof TopicConnectionFactory ) {
+                } else if ( !preferQueue && detectTypes && useTopicTypes && type == TYPE.TOPIC ) {
                     conn = ((TopicConnectionFactory)connFactory).createTopicConnection(username, password);
                 } else {
                     conn = connFactory.createConnection( username, password );
                 }
             } else {
-                if ( preferQueue && detectTypes && connFactory instanceof QueueConnectionFactory ) {
+                if ( preferQueue && detectTypes && type == TYPE.QUEUE ) {
                     conn = ((QueueConnectionFactory)connFactory).createQueueConnection();
-                } else if ( !preferQueue && detectTypes && useTopicTypes && connFactory instanceof TopicConnectionFactory ) {
+                } else if ( !preferQueue && detectTypes && useTopicTypes && type == TYPE.TOPIC ) {
                     conn = ((TopicConnectionFactory)connFactory).createTopicConnection();
                 } else {
                     conn = connFactory.createConnection( username, password );
@@ -205,9 +208,9 @@ public class JmsUtil {
             }
 
             if ( createSession ) {
-                if ( preferQueue && detectTypes && connFactory instanceof QueueConnectionFactory ) {
+                if ( preferQueue && detectTypes && type == TYPE.QUEUE ) {
                     session = ((QueueConnection)conn).createQueueSession( transactional, acknowledgeMode );
-                } else if ( !preferQueue && detectTypes && useTopicTypes && connFactory instanceof TopicConnectionFactory ) {
+                } else if ( !preferQueue && detectTypes && useTopicTypes && type == TYPE.TOPIC ) {
                     session = ((TopicConnection)conn).createTopicSession( transactional, acknowledgeMode );
                 } else {
                     session = conn.createSession( transactional, acknowledgeMode );
@@ -294,37 +297,15 @@ public class JmsUtil {
         return connect(connection, null, null, true, true, false, Session.AUTO_ACKNOWLEDGE);
     }
 
-
-    public static JmsBag connect(Context jndiContext,
-                                 Connection conn,
-                                 ConnectionFactory factory,
-                                 boolean preferQueue,
-                                 boolean transactional,
-                                 int acknowledgementMode) throws JMSException
-    {
-        // check to see whether we need to create a QueueSession or TopicSession
-        Session session;
-
-        if ( preferQueue && detectTypes && factory instanceof QueueConnectionFactory ) {
-            session = ((QueueConnection)conn).createQueueSession(transactional, acknowledgementMode);
-
-        } else if ( !preferQueue && detectTypes && useTopicTypes && factory instanceof TopicConnectionFactory ) {
-            session = ((TopicConnection)conn).createTopicSession(transactional, acknowledgementMode);
-
-        } else {
-            session = conn.createSession(transactional, acknowledgementMode);
-        }
-
-        return new JmsBag(jndiContext, factory, conn, session);
-    }
-
     public static MessageConsumer createMessageConsumer( final Session session,
                                                          final Destination destination ) throws JMSException {
         MessageConsumer consumer;
 
-        if ( detectTypes && session instanceof QueueSession && destination instanceof Queue ) {
+        TYPE type = getType(session, destination);
+
+        if ( detectTypes && type == TYPE.QUEUE ) {
             consumer = ((QueueSession)session).createReceiver( (Queue)destination );
-        } else if ( detectTypes && useTopicTypes && session instanceof TopicSession && destination instanceof Topic ) {
+        } else if ( detectTypes && useTopicTypes && type == TYPE.TOPIC ) {
             consumer = ((TopicSession)session).createSubscriber( (Topic)destination );
         } else {
             consumer = session.createConsumer( destination );
@@ -337,10 +318,11 @@ public class JmsUtil {
                                                          final Destination destination,
                                                          final String selector ) throws JMSException {
         MessageConsumer consumer;
+        TYPE type = getType(session, destination);
 
-        if ( detectTypes && session instanceof QueueSession && destination instanceof Queue ) {
+        if ( detectTypes && type == TYPE.QUEUE ) {
             consumer = ((QueueSession)session).createReceiver( (Queue)destination, selector );
-        } else if ( detectTypes && useTopicTypes && session instanceof TopicSession && destination instanceof Topic ) {
+        } else if ( detectTypes && useTopicTypes && type == TYPE.TOPIC ) {
             consumer = ((TopicSession)session).createSubscriber( (Topic)destination, selector, false );
         } else {
             consumer = session.createConsumer( destination, selector );
@@ -352,12 +334,13 @@ public class JmsUtil {
     public static MessageProducer createMessageProducer( final Session session,
                                                          final Destination destination ) throws JMSException {
         MessageProducer producer;
+        TYPE type = getType(session, destination);
 
-        if ( detectTypes && session instanceof QueueSession && destination instanceof Queue ) {
+        if ( detectTypes && type == TYPE.QUEUE ) {
             // the reason for this distinction is that IBM throws java.lang.AbstractMethodError:
             // com.ibm.mq.jms.MQQueueSession.createProducer(Ljavax/jms/Destination;)Ljavax/jms/MessageProducer;
             producer = ((QueueSession)session).createSender( (Queue)destination );
-        } else if ( detectTypes && useTopicTypes && session instanceof TopicSession && destination instanceof Topic ) {
+        } else if ( detectTypes && useTopicTypes && type == TYPE.TOPIC ) {
             producer = ((TopicSession)session).createPublisher( (Topic)destination );
         } else {
             producer = session.createProducer( destination );
@@ -365,6 +348,52 @@ public class JmsUtil {
 
         return producer;
     }
+
+    /**
+     * Retrieve the destination type, the destination type can be Queue, Topic or Unknown.
+     * If we cannot determine the destination type, return as Unknown
+     *
+     * @param session The JMS session
+     * @param destination The JMS Destination
+     * @return The destination type
+     */
+    private static TYPE getType(final Session session, final Destination destination) {
+        TYPE type = TYPE.UNKNOWN;
+        if (session instanceof QueueSession && destination instanceof Queue) {
+            type = TYPE.QUEUE;
+        }
+        if (session instanceof TopicSession && destination instanceof Topic) {
+            if (type == TYPE.UNKNOWN) {
+                type = TYPE.TOPIC;
+            } else {
+                type = TYPE.UNKNOWN;
+            }
+        }
+        return type;
+    }
+
+    /**
+     * Retrieve the Connection Factory type, the Connection Factory type can be Queue, Topic or Unknown.
+     * If we cannot determine the destination type, return as Unknown
+     *
+     * @param connectionFactory The JMS connection factory
+     * @return  The Connection Factory Type
+     */
+    private static TYPE getType(final ConnectionFactory connectionFactory) {
+        TYPE type = TYPE.UNKNOWN;
+        if (connectionFactory instanceof QueueConnectionFactory) {
+            type = TYPE.QUEUE;
+        }
+        if (connectionFactory instanceof TopicConnectionFactory) {
+            if (type == TYPE.UNKNOWN) {
+                type = TYPE.TOPIC;
+            } else {
+                type = TYPE.UNKNOWN;
+            }
+        }
+        return type;
+    }
+
 
     /**
      * Cast the given (possibly remote) object to the given class.
