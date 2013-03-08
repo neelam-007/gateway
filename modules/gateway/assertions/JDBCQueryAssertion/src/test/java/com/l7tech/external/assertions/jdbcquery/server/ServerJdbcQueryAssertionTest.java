@@ -779,7 +779,7 @@ public class ServerJdbcQueryAssertionTest {
     public void testResolveAsObjectIgnoredForMessageTraffic() throws Exception {
 
         final PolicyEnforcementContext context = makeContext("<xml />", "<xml />");
-        verifyParameterProcessedForAudits(context, true);
+        verifyResolveAsObjectPropUsage(context, true);
    }
 
     /**
@@ -790,7 +790,7 @@ public class ServerJdbcQueryAssertionTest {
         final PolicyEnforcementContext context = makeContext("<xml />", "<xml />");
         // This allows the processing of resolveAsObject property
         final AuditLookupPolicyEnforcementContext actualContext = new AuditLookupPolicyEnforcementContext(null, context);
-        verifyParameterProcessedForAudits(actualContext, false);
+        verifyResolveAsObjectPropUsage(actualContext, false);
     }
 
     /**
@@ -801,22 +801,26 @@ public class ServerJdbcQueryAssertionTest {
         final PolicyEnforcementContext context = makeContext("<xml />", "<xml />");
         // This allows the processing of resolveAsObject property
         final AuditSinkPolicyEnforcementContext actualContext = new AuditSinkPolicyEnforcementContext(null, context, context);
-        verifyParameterProcessedForAudits(actualContext, false);
+        verifyResolveAsObjectPropUsage(actualContext, false);
     }
 
     /**
-     * Validate that the resolveAsObject property is used when given the correct PolicyEnforcementContext subclass.
+     * Validate that the resolveAsObject property is used and ignored when appropriate given the correct PolicyEnforcementContext subclass.
      *
-     * This is done by setting the resolveAsObject on the assertion bean and ensuring that the relevant variables
-     * were not stringified. This behaviour is required for the current external audit feature to work.
+     * External audits work by setting the resolveAsObject on the assertion bean to force some objects to not be converted
+     * to Strings. External audits as-is presently will not work without this.
+     *
+     * If the usage of the JDBC Query assertion is not related to external audits then the 'resolveAsObject' property must
+     * always be ignored to avoid a situation where a policy author discovers it and starts to write policies which depend
+     * on it.
      *
      * @param context The PolicyEnforcementContext to use with the server assertion. If the correct Audit subclass is
      *                used then the resolveAsObject property is not ignored.
      * @param ignoreResolveAsObject true if resolveAsObject should be ignored e.g. all parameters should have been
      *                              converted to a string. False if the raw object type should have been preserved.
      */
-    private void verifyParameterProcessedForAudits(final PolicyEnforcementContext context,
-                                                   final boolean ignoreResolveAsObject) throws Exception {
+    private void verifyResolveAsObjectPropUsage(final PolicyEnforcementContext context,
+                                                final boolean ignoreResolveAsObject) throws Exception {
         MockitoAnnotations.initMocks(this);
 
         final Date time = new GregorianCalendar(2013, 3, 5, 11, 46, 0).getTime();
@@ -839,8 +843,6 @@ public class ServerJdbcQueryAssertionTest {
         }}));
 
         ServerJdbcQueryAssertion serverAssertion = new ServerJdbcQueryAssertion(assertion, applicationContext);
-        final TestAudit testAudit = new TestAudit();
-        ApplicationContexts.inject(serverAssertion, Collections.singletonMap("auditFactory", testAudit.factory()));
 
         final AssertionStatus assertionStatus = serverAssertion.checkRequest(context);
         assertEquals(AssertionStatus.NONE, assertionStatus);
