@@ -161,7 +161,9 @@
                                 <constraints>
                                   <grid row="0" column="0" row-span="3" col-span="1" vsize-policy="6" hsize-policy="6" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
                                 </constraints>
-                                <properties/>
+                                <properties>
+                                  <selectionMode value="0"/>
+                                </properties>
                               </component>
                               <component id="e52f6" class="javax.swing.JButton" binding="addHostButton">
                                 <constraints>
