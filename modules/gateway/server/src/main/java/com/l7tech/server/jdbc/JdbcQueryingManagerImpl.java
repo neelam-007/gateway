@@ -61,7 +61,7 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager, PropertyCha
     /**
      * Set of unique procedures / functions to manage meta data for.
      */
-    private final static Set<CachedMetaDataKey> dbObjectsToCacheMetaDataFor = new ConcurrentHashSet<CachedMetaDataKey>();
+    private final Set<CachedMetaDataKey> dbObjectsToCacheMetaDataFor = new ConcurrentHashSet<CachedMetaDataKey>();
 
     public JdbcQueryingManagerImpl(final JdbcConnectionPoolManager jdbcConnectionPoolManager,
                                    final JdbcConnectionManager jdbcConnectionManager,
@@ -230,7 +230,17 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager, PropertyCha
         final CachedMetaDataKey uniqueKey = getCacheKey(connectionName, query, schemaName);
         final SimpleJdbcCall simpleJdbcCall;
         if (simpleJdbcCallCache.containsKey(uniqueKey)) {
-            final CachedMetaDataValue cachedMetaDataValue = simpleJdbcCallCache.get(uniqueKey);
+            CachedMetaDataValue cachedMetaDataValue = simpleJdbcCallCache.get(uniqueKey);
+
+            // Check to see if the cache has expired.
+            final long maxStaleAge = config.getLongProperty(ServerConfigParams.PARAM_JDBC_QUERY_CACHE_STALE_TIMEOUT, 1800);
+            final Long age = timeSource.currentTimeMillis() - cachedMetaDataValue.cachedTime.get();
+            if (age > maxStaleAge * 1000) {
+                // if it has then re-cache it.
+                updateCache(connectionName, query, jdbcTemplate, schemaName);
+                cachedMetaDataValue = simpleJdbcCallCache.get(uniqueKey);
+            }
+
             final Either<DataAccessException, SimpleJdbcCall> either = cachedMetaDataValue.cachedData;
             if (either.isLeft()) {
                 throw either.left();
@@ -280,6 +290,17 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager, PropertyCha
                              @NotNull final String query,
                              @NotNull final JdbcTemplate jdbcTemplate,
                              @NotNull final Option<String> schemaName) {
+        updateCache(connectionName, query, jdbcTemplate, schemaName, null);
+    }
+
+    /**
+     * Does not throw DataAccessException. Any exceptions are cached and are managed by a separate clean up task.
+     */
+    private void updateCache(@NotNull final String connectionName,
+                             @NotNull final String query,
+                             @NotNull final JdbcTemplate jdbcTemplate,
+                             @NotNull final Option<String> schemaName,
+                             @Nullable final Long lastUsedTime) {
 
         final CachedMetaDataKey cacheKey = getCacheKey(connectionName, query, schemaName);
         try {
@@ -294,7 +315,8 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager, PropertyCha
             inParameters = getInParameters(schemaName, cacheKey.procName, simpleJdbcCall);
             final Either<DataAccessException, SimpleJdbcCall> rightEither = Either.<DataAccessException, SimpleJdbcCall>right(simpleJdbcCall);
 
-            final CachedMetaDataValue cacheValue = new CachedMetaDataValue(rightEither, inParameters, timeSource.currentTimeMillis());
+            long currentTime = timeSource.currentTimeMillis();
+            final CachedMetaDataValue cacheValue = new CachedMetaDataValue(rightEither, inParameters, lastUsedTime != null ? lastUsedTime : currentTime, currentTime);
             simpleJdbcCallCache.put(cacheKey, cacheValue);
 
             if (logger.isLoggable(Level.FINE)) {
@@ -311,7 +333,8 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager, PropertyCha
             // Due to the 'stress' on the database we will not allow all requests to simply proceed
 
             final Either<DataAccessException, SimpleJdbcCall> leftEither = Either.left(e);
-            final CachedMetaDataValue cacheValue = new CachedMetaDataValue(leftEither, timeSource.currentTimeMillis());
+            long currentTime = timeSource.currentTimeMillis();
+            final CachedMetaDataValue cacheValue = new CachedMetaDataValue(leftEither, lastUsedTime != null ? lastUsedTime : currentTime, currentTime);
             simpleJdbcCallCache.put(cacheKey, cacheValue);
 
             if (logger.isLoggable(Level.FINE)) {
@@ -704,17 +727,20 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager, PropertyCha
          * //todo - make use of this for expiring items from the cache
          */
         private final AtomicLong lastUseTime;
+        private AtomicLong cachedTime;
 
-        private CachedMetaDataValue(@NotNull Either<DataAccessException, SimpleJdbcCall> cachedData, @NotNull List<String> inParameters, @NotNull Long lastUseTime) {
+        private CachedMetaDataValue(@NotNull Either<DataAccessException, SimpleJdbcCall> cachedData, @NotNull List<String> inParameters, @NotNull Long lastUseTime, @NotNull Long cachedTime) {
             this.cachedData = cachedData;
             this.inParameters = Option.optional(inParameters);
             this.lastUseTime = new AtomicLong(lastUseTime);
+            this.cachedTime = new AtomicLong(cachedTime);
         }
 
-        private CachedMetaDataValue(@NotNull Either<DataAccessException, SimpleJdbcCall> cachedData, @NotNull Long lastUseTime) {
+        private CachedMetaDataValue(@NotNull Either<DataAccessException, SimpleJdbcCall> cachedData, @NotNull Long lastUseTime, @NotNull Long cachedTime) {
             this.cachedData = cachedData;
             this.lastUseTime = new AtomicLong(lastUseTime);
             inParameters = Option.optional(null);
+            this.cachedTime = new AtomicLong(cachedTime);
         }
 
     }
@@ -750,7 +776,12 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager, PropertyCha
 
                     final DataSource dataSource = jdbcConnectionPoolManager.getDataSource(connectionName);
                     final int timeoutSeconds = config.getIntProperty(ServerConfigParams.PARAM_JDBC_QUERY_CACHE_MAX_TIME_OUT, 120);
-                    updateCache(connectionName, key.query, buildJdbcTemplate(dataSource, 0, timeoutSeconds), key.schemaNameOption);
+                    //need to preserve the last access time if the item is already in cache.
+                    Long lastUseTime = null;
+                    if(simpleJdbcCallCache.containsKey(key)){
+                        lastUseTime = simpleJdbcCallCache.get(key).lastUseTime.get();
+                    }
+                    updateCache(connectionName, key.query, buildJdbcTemplate(dataSource, 0, timeoutSeconds), key.schemaNameOption, lastUseTime);
                     if (isCancelled) {
                         // eagerly cancel
                         logger.info("JDBC Query meta data cache task has been cancelled.");

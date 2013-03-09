@@ -168,6 +168,7 @@ public interface ServerConfigParams {
     String PARAM_JDBC_QUERY_CACHE_CLEANUP_REFRESH_INTERVAL= "jdbcQuery.cacheCleanUpInterval";
     String PARAM_JDBC_QUERY_MAX_TIME_OUT= "queryManager.defaultStatementTimeout";
     String PARAM_JDBC_QUERY_CACHE_MAX_TIME_OUT= "queryManager.cacheStatementTimeout";
+    String PARAM_JDBC_QUERY_CACHE_STALE_TIMEOUT= "jdbcQueryManager.cacheStaleTimeout";
 
     String PARAM_JDBC_CONNECTION_POOLING_DEFAULT_MINPOOLSIZE = "jdbcConnection.pooling.minPoolSize.defaultValue";
     String PARAM_JDBC_CONNECTION_POOLING_DEFAULT_MAXPOOLSIZE = "jdbcConnection.pooling.maxPoolSize.defaultValue";

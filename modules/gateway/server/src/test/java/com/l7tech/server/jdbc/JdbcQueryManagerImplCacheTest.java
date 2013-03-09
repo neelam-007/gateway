@@ -40,6 +40,7 @@ public class JdbcQueryManagerImplCacheTest {
     private DatabaseMetaData databaseMetaData;
     private String returnValueParameterName = "RETURN_VALUE";
     private Connection connection;
+    private JdbcConnectionPoolManager jdbcConnectionPoolManager;
 
     /**
      * Sets up mocks and jdbc objects
@@ -55,7 +56,7 @@ public class JdbcQueryManagerImplCacheTest {
         Mockito.doReturn(Collections.emptyList()).when(jdbcConnectionManager).findAll();
         Mockito.doReturn(new EntityHeaderSet<>((new EntityHeader(null, null, ConnectionName, null)))).when(jdbcConnectionManager).findAllHeaders();
 
-        JdbcConnectionPoolManager jdbcConnectionPoolManager = Mockito.spy(new JdbcConnectionPoolManager(jdbcConnectionManager));
+        jdbcConnectionPoolManager = Mockito.spy(new JdbcConnectionPoolManager(jdbcConnectionManager));
 
         jdbcConnectionPoolManager.afterPropertiesSet();
 
@@ -93,9 +94,7 @@ public class JdbcQueryManagerImplCacheTest {
         rtn = jdbcQueryingManager.performJdbcQuery(ConnectionName, query, null, 1, Collections.emptyList());
         validateFunctionReturn(null, rtn);
 
-        //These actually get called twice each the first time it caches
-        Mockito.verify(databaseMetaData, Mockito.times(2)).getProcedures(Matchers.<String>any(), Matchers.<String>any(), Matchers.<String>any());
-        Mockito.verify(databaseMetaData, Mockito.times(2)).getProcedureColumns(Matchers.<String>any(), Matchers.<String>any(), Matchers.<String>any(), Matchers.<String>any());
+        verifyNumberGetProcedureCalls(1);
 
     }
 
@@ -118,9 +117,7 @@ public class JdbcQueryManagerImplCacheTest {
         rtn = jdbcQueryingManager.performJdbcQuery(ConnectionName, query, null, 1, Collections.emptyList());
         validateFunctionReturn(myReturnValue, rtn);
 
-        //These actually get called twice each the first time it caches
-        Mockito.verify(databaseMetaData, Mockito.times(2)).getProcedures(Matchers.<String>any(), Matchers.<String>any(), Matchers.<String>any());
-        Mockito.verify(databaseMetaData, Mockito.times(2)).getProcedureColumns(Matchers.<String>any(), Matchers.<String>any(), Matchers.<String>any(), Matchers.<String>any());
+        verifyNumberGetProcedureCalls(1);
     }
 
     @Test
@@ -142,9 +139,7 @@ public class JdbcQueryManagerImplCacheTest {
         rtn = jdbcQueryingManager.performJdbcQuery(ConnectionName, query, null, 1, Arrays.<Object>asList("param1"));
         validateFunctionReturn(myReturnValue, rtn);
 
-        //These actually get called twice each the first time it caches
-        Mockito.verify(databaseMetaData, Mockito.times(2)).getProcedures(Matchers.<String>any(), Matchers.<String>any(), Matchers.<String>any());
-        Mockito.verify(databaseMetaData, Mockito.times(2)).getProcedureColumns(Matchers.<String>any(), Matchers.<String>any(), Matchers.<String>any(), Matchers.<String>any());
+        verifyNumberGetProcedureCalls(1);
     }
 
     @Test
@@ -166,9 +161,7 @@ public class JdbcQueryManagerImplCacheTest {
         rtn = jdbcQueryingManager.performJdbcQuery(ConnectionName, query, null, 1, Arrays.<Object>asList("param1", "param2"));
         validateFunctionReturn(myReturnValue, rtn);
 
-        //These actually get called twice each the first time it caches
-        Mockito.verify(databaseMetaData, Mockito.times(2)).getProcedures(Matchers.<String>any(), Matchers.<String>any(), Matchers.<String>any());
-        Mockito.verify(databaseMetaData, Mockito.times(2)).getProcedureColumns(Matchers.<String>any(), Matchers.<String>any(), Matchers.<String>any(), Matchers.<String>any());
+        verifyNumberGetProcedureCalls(1);
     }
 
     @Test
@@ -207,9 +200,7 @@ public class JdbcQueryManagerImplCacheTest {
         rtn = jdbcQueryingManager.performJdbcQuery(ConnectionName, query2, null, 1, Arrays.<Object>asList("param1", "param2"));
         validateFunctionReturn(myReturnValue2, rtn);
 
-        //These actually get called twice each the first time it caches
-        Mockito.verify(databaseMetaData, Mockito.times(4)).getProcedures(Matchers.<String>any(), Matchers.<String>any(), Matchers.<String>any());
-        Mockito.verify(databaseMetaData, Mockito.times(4)).getProcedureColumns(Matchers.<String>any(), Matchers.<String>any(), Matchers.<String>any(), Matchers.<String>any());
+        verifyNumberGetProcedureCalls(2);
     }
 
     @Test
@@ -249,9 +240,7 @@ public class JdbcQueryManagerImplCacheTest {
         rtn = jdbcQueryingManager.performJdbcQuery(ConnectionName, query2, null, 1, Arrays.<Object>asList("param1", "param2"));
         validateFunctionReturn(myReturnValue2, rtn);
 
-        //These actually get called twice each the first time it caches
-        Mockito.verify(databaseMetaData, Mockito.times(12)).getProcedures(Matchers.<String>any(), Matchers.<String>any(), Matchers.<String>any());
-        Mockito.verify(databaseMetaData, Mockito.times(12)).getProcedureColumns(Matchers.<String>any(), Matchers.<String>any(), Matchers.<String>any(), Matchers.<String>any());
+        verifyNumberGetProcedureCalls(6);
     }
 
     @Test
@@ -298,9 +287,7 @@ public class JdbcQueryManagerImplCacheTest {
         rtn = jdbcQueryingManager.performJdbcQuery(ConnectionName, query, null, 1, Collections.emptyList());
         validateFunctionReturn(null, rtn);
 
-        //These actually get called twice each the first time it caches
-        Mockito.verify(databaseMetaData, Mockito.times(2)).getProcedures(Matchers.<String>any(), Matchers.<String>any(), Matchers.<String>any());
-        Mockito.verify(databaseMetaData, Mockito.times(2)).getProcedureColumns(Matchers.<String>any(), Matchers.<String>any(), Matchers.<String>any(), Matchers.<String>any());
+        verifyNumberGetProcedureCalls(1);
 
     }
 
@@ -339,9 +326,7 @@ public class JdbcQueryManagerImplCacheTest {
         rtn = jdbcQueryingManager.performJdbcQuery(ConnectionName, query, null, 1, Collections.emptyList());
         validateFunctionReturn(null, rtn);
 
-        //These actually get called twice each the first time it caches
-        Mockito.verify(databaseMetaData, Mockito.times(2)).getProcedures(Matchers.<String>any(), Matchers.<String>any(), Matchers.<String>any());
-        Mockito.verify(databaseMetaData, Mockito.times(2)).getProcedureColumns(Matchers.<String>any(), Matchers.<String>any(), Matchers.<String>any(), Matchers.<String>any());
+        verifyNumberGetProcedureCalls(1);
 
     }
 
@@ -363,9 +348,7 @@ public class JdbcQueryManagerImplCacheTest {
         rtn = jdbcQueryingManager.performJdbcQuery(ConnectionName, query, null, 1, Collections.emptyList());
         validateProcedureReturn(null, rtn);
 
-        //These actually get called twice each the first time it caches
-        Mockito.verify(databaseMetaData, Mockito.times(2)).getProcedures(Matchers.<String>any(), Matchers.<String>any(), Matchers.<String>any());
-        Mockito.verify(databaseMetaData, Mockito.times(2)).getProcedureColumns(Matchers.<String>any(), Matchers.<String>any(), Matchers.<String>any(), Matchers.<String>any());
+        verifyNumberGetProcedureCalls(1);
     }
 
     @Test
@@ -387,9 +370,7 @@ public class JdbcQueryManagerImplCacheTest {
         rtn = jdbcQueryingManager.performJdbcQuery(ConnectionName, query, null, 1, Collections.emptyList());
         validateProcedureReturn(myReturnValues, rtn);
 
-        //These actually get called twice each the first time it caches
-        Mockito.verify(databaseMetaData, Mockito.times(2)).getProcedures(Matchers.<String>any(), Matchers.<String>any(), Matchers.<String>any());
-        Mockito.verify(databaseMetaData, Mockito.times(2)).getProcedureColumns(Matchers.<String>any(), Matchers.<String>any(), Matchers.<String>any(), Matchers.<String>any());
+        verifyNumberGetProcedureCalls(1);
     }
 
     @Test
@@ -411,9 +392,7 @@ public class JdbcQueryManagerImplCacheTest {
         rtn = jdbcQueryingManager.performJdbcQuery(ConnectionName, query, null, 1, Arrays.<Object>asList("param1"));
         validateProcedureReturn(myReturnValues, rtn);
 
-        //These actually get called twice each the first time it caches
-        Mockito.verify(databaseMetaData, Mockito.times(2)).getProcedures(Matchers.<String>any(), Matchers.<String>any(), Matchers.<String>any());
-        Mockito.verify(databaseMetaData, Mockito.times(2)).getProcedureColumns(Matchers.<String>any(), Matchers.<String>any(), Matchers.<String>any(), Matchers.<String>any());
+        verifyNumberGetProcedureCalls(1);
     }
 
     @Test
@@ -435,9 +414,7 @@ public class JdbcQueryManagerImplCacheTest {
         rtn = jdbcQueryingManager.performJdbcQuery(ConnectionName, query, null, 1, Arrays.<Object>asList("param1", "param2"));
         validateProcedureReturn(myReturnValues, rtn);
 
-        //These actually get called twice each the first time it caches
-        Mockito.verify(databaseMetaData, Mockito.times(2)).getProcedures(Matchers.<String>any(), Matchers.<String>any(), Matchers.<String>any());
-        Mockito.verify(databaseMetaData, Mockito.times(2)).getProcedureColumns(Matchers.<String>any(), Matchers.<String>any(), Matchers.<String>any(), Matchers.<String>any());
+        verifyNumberGetProcedureCalls(1);
     }
 
     @Test
@@ -459,9 +436,7 @@ public class JdbcQueryManagerImplCacheTest {
         rtn = jdbcQueryingManager.performJdbcQuery(ConnectionName, query, null, 1, Arrays.<Object>asList("param1", "param2"));
         validateProcedureReturn(myReturnValues, rtn);
 
-        //These actually get called twice each the first time it caches
-        Mockito.verify(databaseMetaData, Mockito.times(2)).getProcedures(Matchers.<String>any(), Matchers.<String>any(), Matchers.<String>any());
-        Mockito.verify(databaseMetaData, Mockito.times(2)).getProcedureColumns(Matchers.<String>any(), Matchers.<String>any(), Matchers.<String>any(), Matchers.<String>any());
+        verifyNumberGetProcedureCalls(1);
     }
 
     @Test
@@ -500,9 +475,7 @@ public class JdbcQueryManagerImplCacheTest {
         rtn = jdbcQueryingManager.performJdbcQuery(ConnectionName, query2, null, 1, Arrays.<Object>asList("param1", "param2"));
         validateProcedureReturn(myReturnValues2, rtn);
 
-        //These actually get called twice each the first time it caches
-        Mockito.verify(databaseMetaData, Mockito.times(4)).getProcedures(Matchers.<String>any(), Matchers.<String>any(), Matchers.<String>any());
-        Mockito.verify(databaseMetaData, Mockito.times(4)).getProcedureColumns(Matchers.<String>any(), Matchers.<String>any(), Matchers.<String>any(), Matchers.<String>any());
+        verifyNumberGetProcedureCalls(2);
     }
 
     @Test
@@ -542,9 +515,131 @@ public class JdbcQueryManagerImplCacheTest {
         rtn = jdbcQueryingManager.performJdbcQuery(ConnectionName, query2, null, 1, Arrays.<Object>asList("param1", "param2"));
         validateProcedureReturn(myReturnValues2, rtn);
 
+        verifyNumberGetProcedureCalls(6);
+    }
+
+    @Test
+    public void testMetaDataCacheTaskNoCacheItems() throws InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException, NoSuchFieldException, SQLException {
+        runMetaDataCacheTask();
+
+        String functionName = "myFunction";
+        String query = "func myFunction";
+
+        validateCached(query, false);
+
+        mockFunction(functionName, Collections.<Parameter>emptyList(), null);
+
+        Object rtn = jdbcQueryingManager.performJdbcQuery(ConnectionName, query, null, 1, Collections.emptyList());
+        validateFunctionReturn(null, rtn);
+
+        validateCached(query);
+
+        verifyNumberGetProcedureCalls(1);
+    }
+
+    @Test
+    public void testMetaDataCacheTaskCacheItemsLazyAdded() throws SQLException, InvocationTargetException, NoSuchMethodException, NoSuchFieldException, IllegalAccessException, InstantiationException {
+        String functionName = "myFunction";
+        String query = "func myFunction";
+        mockFunction(functionName, Collections.<Parameter>emptyList(), null);
+
+        Object rtn = jdbcQueryingManager.performJdbcQuery(ConnectionName, query, null, 1, Collections.emptyList());
+        validateFunctionReturn(null, rtn);
+
+        validateCached(query);
+        verifyNumberGetProcedureCalls(1);
+
+        runMetaDataCacheTask();
+
+        validateCached(query);
+
+        rtn = jdbcQueryingManager.performJdbcQuery(ConnectionName, query, null, 1, Collections.emptyList());
+        validateFunctionReturn(null, rtn);
+
+        verifyNumberGetProcedureCalls(2);
+    }
+
+    @Test
+    public void testMetaDataCacheTaskCacheItemsManuallyAdded() throws SQLException, InvocationTargetException, NoSuchMethodException, NoSuchFieldException, IllegalAccessException, InstantiationException {
+        configProperties.put(ServerConfigParams.PARAM_JDBC_QUERY_CACHE_CLEANUP_REFRESH_INTERVAL, "0");
+
+        String functionName = "myFunction";
+        String query = "func myFunction";
+        mockFunction(functionName, Collections.<Parameter>emptyList(), null);
+        jdbcQueryingManager.registerQueryForPossibleCaching(ConnectionName, query, null);
+        runMetaDataCacheTask();
+
+        validateCached(query);
+        verifyNumberGetProcedureCalls(1);
+
+        Object rtn = jdbcQueryingManager.performJdbcQuery(ConnectionName, query, null, 1, Collections.emptyList());
+        validateFunctionReturn(null, rtn);
+        validateCached(query);
+
+        verifyNumberGetProcedureCalls(1);
+        runMetaDataCacheTask();
+
+        validateCached(query);
+
+        rtn = jdbcQueryingManager.performJdbcQuery(ConnectionName, query, null, 1, Collections.emptyList());
+        validateFunctionReturn(null, rtn);
+
+        verifyNumberGetProcedureCalls(2);
+    }
+
+    @Test
+    public void testMetaDataCacheTaskCacheItemsExpiredStale() throws SQLException, InvocationTargetException, NoSuchMethodException, NoSuchFieldException, IllegalAccessException, InstantiationException {
+        configProperties.put(ServerConfigParams.PARAM_JDBC_QUERY_CACHE_STALE_TIMEOUT, "-1");
+
+        String functionName = "myFunction";
+        String query = "func myFunction";
+        mockFunction(functionName, Collections.<Parameter>emptyList(), null);
+        jdbcQueryingManager.registerQueryForPossibleCaching(ConnectionName, query, null);
+        runMetaDataCacheTask();
+
+        validateCached(query);
+        verifyNumberGetProcedureCalls(1);
+
+        Object rtn = jdbcQueryingManager.performJdbcQuery(ConnectionName, query, null, 1, Collections.emptyList());
+        validateFunctionReturn(null, rtn);
+        validateCached(query);
+        verifyNumberGetProcedureCalls(2);
+
+        runMetaDataCacheTask();
+
+        validateCached(query);
+
+        rtn = jdbcQueryingManager.performJdbcQuery(ConnectionName, query, null, 1, Collections.emptyList());
+        validateFunctionReturn(null, rtn);
+
+        verifyNumberGetProcedureCalls(4);
+    }
+
+    private void verifyNumberGetProcedureCalls(int numberExpectedCalls) throws SQLException {
         //These actually get called twice each the first time it caches
-        Mockito.verify(databaseMetaData, Mockito.times(12)).getProcedures(Matchers.<String>any(), Matchers.<String>any(), Matchers.<String>any());
-        Mockito.verify(databaseMetaData, Mockito.times(12)).getProcedureColumns(Matchers.<String>any(), Matchers.<String>any(), Matchers.<String>any(), Matchers.<String>any());
+        Mockito.verify(databaseMetaData, Mockito.times(numberExpectedCalls * 2)).getProcedures(Matchers.<String>any(), Matchers.<String>any(), Matchers.<String>any());
+        Mockito.verify(databaseMetaData, Mockito.times(numberExpectedCalls * 2)).getProcedureColumns(Matchers.<String>any(), Matchers.<String>any(), Matchers.<String>any(), Matchers.<String>any());
+    }
+
+    private void runMetaDataCacheTask() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException, InstantiationException {
+        Class<?>[] innerClazzes = JdbcQueryingManagerImpl.class.getDeclaredClasses();
+        Class<?> MetaDataCacheTaskTaskClazz = null;
+        for (Class<?> innerClazz : innerClazzes) {
+            if (innerClazz.getSimpleName().equals("MetaDataCacheTask")) {
+                MetaDataCacheTaskTaskClazz = innerClazz;
+                break;
+            }
+        }
+
+        Assert.assertNotNull(MetaDataCacheTaskTaskClazz);
+        Constructor<?> constructor = MetaDataCacheTaskTaskClazz.getDeclaredConstructor(JdbcQueryingManagerImpl.class, JdbcConnectionPoolManager.class);
+        constructor.setAccessible(true);
+
+        Object metaDataCacheTask = constructor.newInstance(jdbcQueryingManager, jdbcConnectionPoolManager);
+
+        Method m = metaDataCacheTask.getClass().getDeclaredMethod("doRun");
+        m.setAccessible(true);
+        m.invoke(metaDataCacheTask);
     }
 
     private void runMetaDataCleanUpExceptionsTask() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException, InstantiationException {
