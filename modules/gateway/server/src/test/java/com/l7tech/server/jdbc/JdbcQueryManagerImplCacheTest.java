@@ -307,7 +307,7 @@ public class JdbcQueryManagerImplCacheTest {
         rtn = jdbcQueryingManager.performJdbcQuery(ConnectionName, query, null, 1, Collections.emptyList());
         Assert.assertEquals(errorString, rtn);
 
-        runMetaDataCleanUpExceptionsTask();
+        runMetaDataCacheCleanUpTask();
 
         validateCached(query, false);
 
@@ -319,7 +319,7 @@ public class JdbcQueryManagerImplCacheTest {
 
         validateCached(query);
 
-        runMetaDataCleanUpExceptionsTask();
+        runMetaDataCacheCleanUpTask();
 
         validateCached(query);
 
@@ -615,6 +615,45 @@ public class JdbcQueryManagerImplCacheTest {
         verifyNumberGetProcedureCalls(4);
     }
 
+    @Test
+    public void testMetaDataCacheTaskCacheItemsExpiredUnused() throws SQLException, InvocationTargetException, NoSuchMethodException, NoSuchFieldException, IllegalAccessException, InstantiationException {
+        configProperties.put(ServerConfigParams.PARAM_JDBC_QUERY_CACHE_NO_USAGE_EXPIRATION, "-1");
+
+        String functionName = "myFunction";
+        String query = "func myFunction";
+        mockFunction(functionName, Collections.<Parameter>emptyList(), null);
+        jdbcQueryingManager.registerQueryForPossibleCaching(ConnectionName, query, null);
+        runMetaDataCacheTask();
+        validateCached(query);
+        runMetaDataCacheCleanUpTask();
+
+        validateCached(query, false);
+        verifyNumberGetProcedureCalls(1);
+
+        runMetaDataCacheTask();
+        validateCached(query, false);
+        verifyNumberGetProcedureCalls(1);
+
+        Object rtn = jdbcQueryingManager.performJdbcQuery(ConnectionName, query, null, 1, Collections.emptyList());
+        validateFunctionReturn(null, rtn);
+        validateCached(query);
+        verifyNumberGetProcedureCalls(2);
+
+        runMetaDataCacheCleanUpTask();
+
+        validateCached(query, false);
+
+        rtn = jdbcQueryingManager.performJdbcQuery(ConnectionName, query, null, 1, Collections.emptyList());
+        validateFunctionReturn(null, rtn);
+
+        validateCached(query);
+
+        rtn = jdbcQueryingManager.performJdbcQuery(ConnectionName, query, null, 1, Collections.emptyList());
+        validateFunctionReturn(null, rtn);
+
+        verifyNumberGetProcedureCalls(3);
+    }
+
     private void verifyNumberGetProcedureCalls(int numberExpectedCalls) throws SQLException {
         //These actually get called twice each the first time it caches
         Mockito.verify(databaseMetaData, Mockito.times(numberExpectedCalls * 2)).getProcedures(Matchers.<String>any(), Matchers.<String>any(), Matchers.<String>any());
@@ -642,25 +681,25 @@ public class JdbcQueryManagerImplCacheTest {
         m.invoke(metaDataCacheTask);
     }
 
-    private void runMetaDataCleanUpExceptionsTask() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException, InstantiationException {
+    private void runMetaDataCacheCleanUpTask() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException, InstantiationException {
         Class<?>[] innerClazzes = JdbcQueryingManagerImpl.class.getDeclaredClasses();
-        Class<?> metaDataCleanUpExceptionsTaskClazz = null;
+        Class<?> metaDataCacheCleanUpTaskClazz = null;
         for (Class<?> innerClazz : innerClazzes) {
-            if (innerClazz.getSimpleName().equals("MetaDataCleanUpExceptionsTask")) {
-                metaDataCleanUpExceptionsTaskClazz = innerClazz;
+            if (innerClazz.getSimpleName().equals("MetaDataCacheCleanUpTask")) {
+                metaDataCacheCleanUpTaskClazz = innerClazz;
                 break;
             }
         }
 
-        Assert.assertNotNull(metaDataCleanUpExceptionsTaskClazz);
-        Constructor<?> constructor = metaDataCleanUpExceptionsTaskClazz.getDeclaredConstructor(JdbcQueryingManagerImpl.class);
+        Assert.assertNotNull(metaDataCacheCleanUpTaskClazz);
+        Constructor<?> constructor = metaDataCacheCleanUpTaskClazz.getDeclaredConstructor(JdbcQueryingManagerImpl.class);
         constructor.setAccessible(true);
 
-        Object metaDataCleanUpExceptionsTask = constructor.newInstance(jdbcQueryingManager);
+        Object metaDataCacheCleanUpTask = constructor.newInstance(jdbcQueryingManager);
 
-        Method m = metaDataCleanUpExceptionsTask.getClass().getDeclaredMethod("doRun");
+        Method m = metaDataCacheCleanUpTask.getClass().getDeclaredMethod("doRun");
         m.setAccessible(true);
-        m.invoke(metaDataCleanUpExceptionsTask);
+        m.invoke(metaDataCacheCleanUpTask);
     }
 
     private void validateFunctionReturn(@Nullable Object expectedValue, Object returnedValue) {

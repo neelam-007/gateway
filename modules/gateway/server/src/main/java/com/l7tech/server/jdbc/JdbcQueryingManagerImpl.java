@@ -54,7 +54,7 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager, PropertyCha
     private final ManagedTimer cleanUpTimer = new ManagedTimer("JDBC Query Manager meta data clean up timer");
 
     private final AtomicReference<MetaDataCacheTask> currentCacheTask = new AtomicReference<MetaDataCacheTask>();
-    private final AtomicReference<MetaDataCleanUpExceptionsTask> currentCleanUpTask = new AtomicReference<MetaDataCleanUpExceptionsTask>();
+    private final AtomicReference<MetaDataCacheCleanUpTask> currentCleanUpTask = new AtomicReference<MetaDataCacheCleanUpTask>();
 
     private final Map<CachedMetaDataKey, CachedMetaDataValue> simpleJdbcCallCache = new ConcurrentHashMap<CachedMetaDataKey, CachedMetaDataValue>();
 
@@ -551,14 +551,14 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager, PropertyCha
         stopCleanUpTaskIfRunning();
         assert currentCleanUpTask.get() == null;
         final long refreshInterval = config.getLongProperty(ServerConfigParams.PARAM_JDBC_QUERY_CACHE_CLEANUP_REFRESH_INTERVAL, 60000L);
-        final MetaDataCleanUpExceptionsTask newTask = new MetaDataCleanUpExceptionsTask();
+        final MetaDataCacheCleanUpTask newTask = new MetaDataCacheCleanUpTask();
         currentCleanUpTask.set(newTask);
         cleanUpTimer.schedule(currentCleanUpTask.get(), 1000L, refreshInterval);
         logger.info("Starting the JDBC Query meta data cache clean up task with refresh interval of " + refreshInterval + " milliseconds");
     }
 
     private void stopCleanUpTaskIfRunning() {
-        final MetaDataCleanUpExceptionsTask currentTask = currentCleanUpTask.get();
+        final MetaDataCacheCleanUpTask currentTask = currentCleanUpTask.get();
         if (currentTask != null) {
             currentTask.cancel();
             currentCleanUpTask.set(null);
@@ -799,11 +799,11 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager, PropertyCha
 
     /**
      * Allowed failed meta data calls to be retried sooner than the manage meta data task by clearing them from
-     * the cache faster.
+     * the cache faster. This is also remove all metadata from the cache that have not been used for a long time (default is 31 days)
      *
      * If a JDBC Connection entity name is removed or modified then any cached entries will be cleared
      */
-    private class MetaDataCleanUpExceptionsTask extends ManagedTimerTask {
+    private class MetaDataCacheCleanUpTask extends ManagedTimerTask {
         @Override
         protected void doRun() {
             final Set<String> validEntityNames = new HashSet<String>();
@@ -818,16 +818,19 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager, PropertyCha
             }
 
             final Set<CachedMetaDataKey> keysToRemove = new HashSet<CachedMetaDataKey>();
+            final Set<CachedMetaDataKey> keysToRemoveFromDBObjectsToCacheMetaDataFor = new HashSet<CachedMetaDataKey>();
 
             final long maxExceptionAge = config.getLongProperty(ServerConfigParams.PARAM_JDBC_QUERY_CACHE_CLEANUP_REFRESH_INTERVAL, 60000L);
+            final long cacheKeyNoUsageExpiration = config.getLongProperty(ServerConfigParams.PARAM_JDBC_QUERY_CACHE_NO_USAGE_EXPIRATION, 2678400L) * 1000L;
             for (Map.Entry<CachedMetaDataKey, CachedMetaDataValue> entry : simpleJdbcCallCache.entrySet()) {
 
                 final CachedMetaDataValue value = entry.getValue();
                 final CachedMetaDataKey key = entry.getKey();
                 final Either<DataAccessException, SimpleJdbcCall> either = value.cachedData;
+                final Long age = timeSource.currentTimeMillis() - value.lastUseTime.get();
+
                 if (either.isLeft()) {
                     // it's an exception, see hold old it is
-                    final Long age = timeSource.currentTimeMillis() - value.lastUseTime.get();
                     if (age > maxExceptionAge) {
                         keysToRemove.add(key);
                     }
@@ -837,6 +840,16 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager, PropertyCha
                 if (!validEntityNames.contains(key.connectionName)) {
                     keysToRemove.add(key);
                 }
+
+                //remove items not used for a long time.
+                if(age > cacheKeyNoUsageExpiration) {
+                    keysToRemoveFromDBObjectsToCacheMetaDataFor.add(key);
+                    keysToRemove.add(key);
+                }
+            }
+
+            for (CachedMetaDataKey key : keysToRemoveFromDBObjectsToCacheMetaDataFor) {
+                dbObjectsToCacheMetaDataFor.remove(key);
             }
 
             for (CachedMetaDataKey key : keysToRemove) {
