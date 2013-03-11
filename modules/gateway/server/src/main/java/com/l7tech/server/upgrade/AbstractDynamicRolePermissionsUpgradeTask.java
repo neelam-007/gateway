@@ -7,13 +7,17 @@ import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.ObjectModelException;
+import com.l7tech.objectmodel.folder.Folder;
+import com.l7tech.objectmodel.folder.FolderHeader;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyHeader;
 import com.l7tech.policy.PolicyType;
+import com.l7tech.server.folder.FolderManager;
 import com.l7tech.server.policy.PolicyManager;
 import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.server.service.ServiceManager;
 import com.l7tech.util.Pair;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 
@@ -41,10 +45,18 @@ public abstract class AbstractDynamicRolePermissionsUpgradeTask implements Upgra
         final PolicyManager policyManager = getBean("policyManager", PolicyManager.class);
         final ServiceManager serviceManager = getBean("serviceManager", ServiceManager.class);
         final RoleManager roleManager = getBean("roleManager", RoleManager.class);
+        final FolderManager folderManager = getBean("folderManager", FolderManager.class);
 
         try {
-            updateRolesForPolicies(policyManager, roleManager);
-            updateRolesForServices(serviceManager, roleManager);
+            if (getEntityTypesToUpgrade().contains(EntityType.POLICY)) {
+                updateRolesForPolicies(policyManager, roleManager);
+            }
+            if (getEntityTypesToUpgrade().contains(EntityType.SERVICE)) {
+                updateRolesForServices(serviceManager, roleManager);
+            }
+            if (getEntityTypesToUpgrade().contains(EntityType.FOLDER)) {
+                updateRolesForFolders(folderManager, roleManager);
+            }
         } catch ( ObjectModelException e) {
             throw new NonfatalUpgradeException(e); // rollback, but continue boot, and try again another day
         }
@@ -145,39 +157,87 @@ public abstract class AbstractDynamicRolePermissionsUpgradeTask implements Upgra
         }
     }
 
+    private void updateRolesForFolders( final FolderManager folderManager,
+                                         final RoleManager roleManager ) throws ObjectModelException {
+        final List<Pair<OperationType, EntityType>> perms = permissionsToAdd();
+        final Collection<FolderHeader> folders = folderManager.findAllHeaders();
+
+        for ( final FolderHeader folder : folders ) {
+            final long folderOid = folder.getOid();
+            boolean createRole = false;
+            for ( Pair<OperationType, EntityType> perm : perms ) {
+                // expect both Manage X Folder and View X Folder roles
+                createRole = addPermissionToRoles(
+                        roleManager,
+                        EntityType.FOLDER,
+                        folderOid,
+                        perm.left,
+                        perm.right,
+                        2);
+                if ( createRole )
+                    break;
+            }
+            if ( createRole && shouldCreateMissingRoles() ) {
+                final Folder f = folderManager.findByPrimaryKey(folderOid);
+                if ( f != null ) {
+                    logger.warning( "Missing role for folder '" + folderOid + "', creating new role." );
+                    folderManager.createRoles( f );
+                } else {
+                    logger.warning( "Missing role for folder '" + folderOid + "', not creating new role (unable to access folder)." );
+                }
+            }
+        }
+    }
+
     protected abstract List<Pair<OperationType, EntityType>> permissionsToAdd();
 
     protected abstract boolean shouldCreateMissingRoles();
 
     protected abstract boolean shouldIgnorePolicyType( PolicyType policyType );
 
+    /**
+     * @return a collection of EntityTypes for which roles will should be upgraded.
+     */
+    @NotNull
+    protected abstract Collection<EntityType> getEntityTypesToUpgrade();
+
     private boolean addPermissionToRole( final RoleManager roleManager,
                                          final EntityType entityType,
                                          final long entityOid,
                                          final OperationType permissionOp,
                                          final EntityType permissionEntity ) throws ObjectModelException {
-        boolean createRole = false;
-
-        final Collection<Role> roles = roleManager.findEntitySpecificRoles(entityType, entityOid);
-
-        if ( roles.isEmpty() ) {
-            createRole = true;
-        } else if ( roles.size() == 1 ) {
-            final Role role = roles.iterator().next();
-            addEntityPermission( role, permissionOp, permissionEntity );
-
-            roleManager.update( role );
-        } else {
-            logger.warning( "Not upgrading roles for "+entityType.getName()+" '" + entityOid + "', expected one role but found " +roles.size()+ "." );
-        }
-
-        return createRole;
+        return addPermissionToRoles(roleManager, entityType, entityOid, permissionOp, permissionEntity, 1);
     }
+
+    private boolean addPermissionToRoles(final RoleManager roleManager,
+                                         final EntityType entityType,
+                                         final long entityOid,
+                                         final OperationType permissionOp,
+                                         final EntityType permissionEntity,
+                                         final int numExpectedRoles) throws ObjectModelException {
+    boolean createRole = false;
+
+    final Collection<Role> roles = roleManager.findEntitySpecificRoles(entityType, entityOid);
+
+    if ( roles.isEmpty() ) {
+        createRole = true;
+    } else if ( roles.size() == numExpectedRoles ) {
+        for (final Role role : roles) {
+            if (addEntityPermission( role, permissionOp, permissionEntity )) {
+                roleManager.update( role );
+            }
+        }
+    } else {
+        logger.warning( "Not upgrading roles for "+entityType.getName()+" '" + entityOid + "', expected " + numExpectedRoles + " role(s) but found " +roles.size()+ "." );
+    }
+
+    return createRole;
+}
 
     /**
      * Add entity permission if not present
      */
-    private void addEntityPermission( final Role role,
+    private boolean addEntityPermission( final Role role,
                                       final OperationType operationType,
                                       final EntityType entityType ) {
         boolean hasPermission = false;
@@ -194,5 +254,7 @@ public abstract class AbstractDynamicRolePermissionsUpgradeTask implements Upgra
         if ( !hasPermission ) {
             role.addEntityPermission( operationType, entityType, null );
         }
+
+        return !hasPermission;
     }
 }

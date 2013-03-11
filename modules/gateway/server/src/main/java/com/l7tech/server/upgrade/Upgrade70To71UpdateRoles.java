@@ -6,6 +6,7 @@ import com.l7tech.policy.PolicyType;
 import com.l7tech.util.Pair;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 
 import static com.l7tech.gateway.common.security.rbac.OperationType.READ;
@@ -16,6 +17,7 @@ import static com.l7tech.objectmodel.EntityType.ENCAPSULATED_ASSERTION;
  *
  * - Add READ permission for Encapsulated Assertion Configurations to Manage X Policy roles
  * - Add READ permission for Encapsulated Assertion Configurations to Manage X Service roles
+ * - Add READ permission for Encapsulated Assertion Configurations to Manage/View X Folder roles
  *
  */
 public class Upgrade70To71UpdateRoles extends AbstractDynamicRolePermissionsUpgradeTask {
@@ -35,5 +37,10 @@ public class Upgrade70To71UpdateRoles extends AbstractDynamicRolePermissionsUpgr
     @Override
     protected boolean shouldIgnorePolicyType(PolicyType policyType) {
         return !PolicyType.INCLUDE_FRAGMENT.equals(policyType);
+    }
+
+    @Override
+    protected Collection<EntityType> getEntityTypesToUpgrade() {
+        return Arrays.asList(EntityType.SERVICE, EntityType.POLICY, EntityType.FOLDER);
     }
 }

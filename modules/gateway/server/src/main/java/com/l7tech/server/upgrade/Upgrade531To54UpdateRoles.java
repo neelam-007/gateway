@@ -6,6 +6,7 @@ import com.l7tech.policy.PolicyType;
 import com.l7tech.util.Pair;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 
 import static com.l7tech.gateway.common.security.rbac.OperationType.READ;
@@ -35,5 +36,10 @@ public class Upgrade531To54UpdateRoles extends AbstractDynamicRolePermissionsUpg
     @Override
     protected boolean shouldIgnorePolicyType(PolicyType policyType) {
         return false;
+    }
+
+    @Override
+    protected Collection<EntityType> getEntityTypesToUpgrade() {
+        return Arrays.asList(EntityType.SERVICE, EntityType.POLICY);
     }
 }

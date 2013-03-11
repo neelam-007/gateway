@@ -13,6 +13,7 @@ import com.l7tech.console.util.Cookie;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
+import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
@@ -85,6 +86,8 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
                     PolicyUtil.provideNeededEntities((UsesEntitiesAtDesignTime) assertion, Registry.getDefault().getEntityFinder(), null);
                 } catch (FindException e) {
                     logger.log(Level.WARNING, "Error looking up entities for assertion: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                } catch (final PermissionDeniedException e) {
+                    logger.log(Level.WARNING, "Permission denied when looking up entities for assertion: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
                 }
             }
         }

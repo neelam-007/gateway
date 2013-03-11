@@ -241,6 +241,9 @@ public class FolderManagerImpl extends FolderSupportHibernateEntityManager<Folde
         // Read all SSG active connectors (e.g. MQ, SFTP polling)
         role.addEntityPermission(READ, SSG_ACTIVE_CONNECTOR, null);
 
+        // Read all Encapsulated Assertion configs
+        role.addEntityPermission(READ, ENCAPSULATED_ASSERTION, null);
+
         // Set role as entity-specific
         role.setEntityType(FOLDER);
         role.setEntityOid(folder.getOid());
@@ -288,6 +291,9 @@ public class FolderManagerImpl extends FolderSupportHibernateEntityManager<Folde
 
         // Read all service templates
         role.addEntityPermission(READ, SERVICE_TEMPLATE, null);
+
+        // Read all Encapsulated Assertion configs
+        role.addEntityPermission(READ, ENCAPSULATED_ASSERTION, null);
 
         // Set role as entity-specific
         role.setEntityType(FOLDER);
