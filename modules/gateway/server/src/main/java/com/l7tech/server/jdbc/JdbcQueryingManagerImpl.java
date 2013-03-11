@@ -233,12 +233,17 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager, PropertyCha
             CachedMetaDataValue cachedMetaDataValue = simpleJdbcCallCache.get(uniqueKey);
 
             // Check to see if the cache has expired.
-            final long maxStaleAge = config.getLongProperty(ServerConfigParams.PARAM_JDBC_QUERY_CACHE_STALE_TIMEOUT, 1800);
+            final long maxStaleAgeMillis = config.getLongProperty(ServerConfigParams.PARAM_JDBC_QUERY_CACHE_STALE_TIMEOUT, 1800) * 1000;
             final Long age = timeSource.currentTimeMillis() - cachedMetaDataValue.cachedTime.get();
-            if (age > maxStaleAge * 1000) {
+            if (age > maxStaleAgeMillis) {
                 // if it has then re-cache it.
-                updateCache(connectionName, query, jdbcTemplate, schemaName);
-                cachedMetaDataValue = simpleJdbcCallCache.get(uniqueKey);
+                synchronized (uniqueKey.toString().intern()) {
+                    // Synchronization required for updateCache when cached item has expired.
+                    // This is needed to avoid all message processing threads for the unique cache key attempting to
+                    // download the same meta during the time it takes for this task to complete.
+                    updateCache(connectionName, query, jdbcTemplate, schemaName);
+                    cachedMetaDataValue = simpleJdbcCallCache.get(uniqueKey);
+                }
             }
 
             final Either<DataAccessException, SimpleJdbcCall> either = cachedMetaDataValue.cachedData;
