@@ -4,6 +4,7 @@
 package com.l7tech.gateway.common.security;
 
 import com.l7tech.common.io.AliasNotFoundException;
+import com.l7tech.common.io.CertGenParams;
 import com.l7tech.gateway.common.AsyncAdminMethods;
 import com.l7tech.gateway.common.admin.Administrative;
 import com.l7tech.gateway.common.security.keystore.KeystoreFileEntityHeader;
@@ -315,16 +316,14 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
      *
      * @param keystoreId the ID of the key store in which the private key can be found.  Required.
      * @param alias the alias of the private key with which to sign the CSR.  Required.
-     * @param dn the DN to include in the new CSR, ie "CN=mymachine.example.com".  Required.
-     * @param sigAlg signature algorithm for the CSR, ie "SHA1withRSA", or null to select one automatically based on the private key type.
-     * @param sigHash signature hash for the CSR, ie "SHA384", or null to select one automatically. If both the sigAlg and sigHash is specified the sigHash is ignored.
+     * @param params the CertGenParams params to use to create the csr. Required
      * @return the bytes of the encoded form of this certificate request, in PKCS#10 format.
      * @throws FindException if there is a problem getting info from the database
      */
     @Transactional(readOnly=true)
     @Secured(customInterceptor="com.l7tech.server.admin.PrivateKeyRbacInterceptor")
     @PrivateKeySecured(preChecks={CHECK_ARG_OPERATION}, argOp=OperationType.READ)
-    byte[] generateCSR(long keystoreId, String alias, X500Principal dn, @Nullable String sigAlg, String sigHash) throws FindException;
+    byte[] generateCSR(long keystoreId, String alias, CertGenParams params) throws FindException;
 
     /**
      * Process a PKCS#10 Certificate Signing Request, producing a new signed certificate from it

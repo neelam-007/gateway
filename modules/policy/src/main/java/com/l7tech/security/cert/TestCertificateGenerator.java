@@ -210,7 +210,7 @@ public class TestCertificateGenerator {
     public TestCertificateGenerator basicConstraintsCa(int pathlen) {
         c.setIncludeBasicConstraints(true);
         c.setBasicConstraintsCa(true);
-        c.setBasicConstratinsPathLength(pathlen);
+        c.setBasicConstraintsPathLength(pathlen);
         return this;
     }
 

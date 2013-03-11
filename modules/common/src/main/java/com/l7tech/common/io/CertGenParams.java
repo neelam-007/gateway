@@ -30,7 +30,7 @@ public class CertGenParams implements Serializable {
     // Basic constraints extension.  Always critical, if included.
     private boolean includeBasicConstraints;
     private boolean basicConstraintsCa;
-    private Integer basicConstratinsPathLength;
+    private Integer basicConstraintsPathLength;
 
     // Key usage extension
     private boolean includeKeyUsage;
@@ -98,7 +98,7 @@ public class CertGenParams implements Serializable {
         if (ca) {
             setIncludeBasicConstraints(true);
             setBasicConstraintsCa(true);
-            setBasicConstratinsPathLength(1);
+            setBasicConstraintsPathLength(1);
             setIncludeKeyUsage(true);
             setKeyUsageCritical(true);
             setKeyUsageBits(CertUtils.KU_cRLSign | CertUtils.KU_keyCertSign);
@@ -194,12 +194,12 @@ public class CertGenParams implements Serializable {
         this.basicConstraintsCa = basicConstraintsCa;
     }
 
-    public Integer getBasicConstratinsPathLength() {
-        return basicConstratinsPathLength;
+    public Integer getBasicConstraintsPathLength() {
+        return basicConstraintsPathLength;
     }
 
-    public void setBasicConstratinsPathLength(Integer basicConstratinsPathLength) {
-        this.basicConstratinsPathLength = basicConstratinsPathLength;
+    public void setBasicConstraintsPathLength(Integer basicConstraintsPathLength) {
+        this.basicConstraintsPathLength = basicConstraintsPathLength;
     }
 
     public boolean isIncludeKeyUsage() {

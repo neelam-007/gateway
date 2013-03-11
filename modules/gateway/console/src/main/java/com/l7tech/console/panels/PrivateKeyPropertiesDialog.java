@@ -1,5 +1,6 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.common.io.CertGenParams;
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.console.SsmApplication;
 import com.l7tech.console.action.SecureAction;
@@ -557,7 +558,9 @@ public class PrivateKeyPropertiesDialog extends JDialog {
 
                 final byte[] csr;
                 try {
-                    csr = admin.generateCSR(subject.getKeystore().getOid(), subject.getAlias(), new X500Principal(dlg.getCsrSubjectDN()), null, dlg.getSelectedHash());
+                    CertGenParams params = new CertGenParams(new X500Principal(dlg.getCsrSubjectDN()), 365 * 2, false, null);
+                    params.setHashAlgorithm(dlg.getSelectedHash());
+                    csr = admin.generateCSR(subject.getKeystore().getOid(), subject.getAlias(), params);
                 } catch (FindException e) {
                     logger.log(Level.WARNING, "cannot get csr from ssg", e);
                     DialogDisplayer.showMessageDialog(generateCSRButton, "Error getting CSR " + e.getMessage(),

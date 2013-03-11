@@ -1,6 +1,7 @@
 package com.l7tech.console;
 
 import com.l7tech.common.io.AliasNotFoundException;
+import com.l7tech.common.io.CertGenParams;
 import com.l7tech.gateway.common.security.MultipleAliasesException;
 import com.l7tech.gateway.common.security.RevocationCheckPolicy;
 import com.l7tech.gateway.common.security.SpecialKeyType;
@@ -126,7 +127,7 @@ public class TrustedCertAdminStub implements TrustedCertAdmin {
     }
 
     @Override
-    public byte[] generateCSR(long keystoreId, String alias, X500Principal dn, String sigAlg, String sigHash) throws FindException {
+    public byte[] generateCSR(long keystoreId, String alias, CertGenParams params) throws FindException {
         return new byte[0];
     }
 

@@ -152,7 +152,7 @@ public class ParamsCertificateGenerator {
     protected BasicConstraints createBasicConstraints() {
         final BasicConstraints bc;
         if (c.isBasicConstraintsCa()) {
-            Integer pathLen = c.getBasicConstratinsPathLength();
+            Integer pathLen = c.getBasicConstraintsPathLength();
             if (pathLen == null) pathLen = 0;
             bc = new BasicConstraints(pathLen);
         } else {
