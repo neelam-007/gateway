@@ -112,7 +112,6 @@ public class ServerManipulateMultiValuedVariableAssertionTest {
     /**
      * Test creating a multi valued variable. This supports users who think they need to 'declare' the variable first.
      *
-     * Nothing is set in the PEC, this also tests the case when the source variable value does not exist.
      */
     @Test
     public void testSuccess_CreateVariable_NoValueExists() throws Exception {
@@ -122,6 +121,7 @@ public class ServerManipulateMultiValuedVariableAssertionTest {
         ManipulateMultiValuedVariableAssertion ass = new ManipulateMultiValuedVariableAssertion();
         ass.setTargetVariableName("myMultiVar");
         ass.setSourceVariableName("myVar");
+        ctx.setVariable("myVar", "");
 
         ServerManipulateMultiValuedVariableAssertion serverAssertion = new ServerManipulateMultiValuedVariableAssertion(ass);
         final TestAudit testAudit = new TestAudit();
@@ -135,7 +135,8 @@ public class ServerManipulateMultiValuedVariableAssertionTest {
         assertNotNull(myMultiVar);
         assertTrue(myMultiVar instanceof List);
         List<Object> myList = (List<Object>) myMultiVar;
-        assertTrue(myList.isEmpty());
+        assertEquals(1, myList.size());
+        assertEquals("", myList.get(0));
 
         for (String s : testAudit) {
             System.out.println(s);
@@ -371,6 +372,98 @@ public class ServerManipulateMultiValuedVariableAssertionTest {
         assertTrue(testAudit.isAuditPresent(USERDETAIL_WARNING));
         assertTrue(testAudit.isAuditPresentContaining("Type class sun.security.x509.X509CertImpl is not supported. Cannot add it to target Multivalued variable."));
         validateAuditLevels(testAudit, USERDETAIL_WARNING, USERDETAIL_FINEST);
+    }
+
+    @Test
+    public void testSourceVariableMayBeNull() throws Exception {
+        PolicyEnforcementContext ctx = getCtx();
+
+        ManipulateMultiValuedVariableAssertion ass = new ManipulateMultiValuedVariableAssertion();
+        ass.setTargetVariableName("myMultiVar");
+        ctx.setVariable("myMultiVar", new ArrayList());
+        ass.setSourceVariableName("myVar");
+        ctx.setVariable("myVar", null);
+
+        ServerManipulateMultiValuedVariableAssertion serverAssertion = new ServerManipulateMultiValuedVariableAssertion(ass);
+        final TestAudit testAudit = new TestAudit();
+        ApplicationContexts.inject(serverAssertion, Collections.singletonMap("auditFactory", testAudit.factory()));
+
+        final AssertionStatus status = serverAssertion.checkRequest(ctx);
+        for (String s : testAudit) {
+            System.out.println(s);
+        }
+
+        assertEquals(AssertionStatus.NONE, status);
+
+        final Object targetVar = ctx.getVariable("myMultiVar");
+        assertTrue(targetVar instanceof List);
+        List list = (List) targetVar;
+        assertEquals(1, list.size());
+        assertNull(list.get(0));
+
+        assertTrue(testAudit.isAuditPresent(USERDETAIL_FINEST));
+        assertTrue(testAudit.isAuditPresentContaining("Appended to Target Multivalued variable 'myMultiVar' value 'null'."));
+        validateAuditLevels(testAudit, USERDETAIL_FINEST);
+    }
+
+    @Test
+    public void testSourceVariableMayBeMultiValuedWithNull() throws Exception {
+        PolicyEnforcementContext ctx = getCtx();
+
+        ManipulateMultiValuedVariableAssertion ass = new ManipulateMultiValuedVariableAssertion();
+        ass.setTargetVariableName("myMultiVar");
+        ctx.setVariable("myMultiVar", new ArrayList());
+        ass.setSourceVariableName("myVar");
+        final ArrayList<Object> objects = new ArrayList<>();
+        objects.add("one");
+        objects.add(null);
+        ctx.setVariable("myVar", objects);
+
+        ServerManipulateMultiValuedVariableAssertion serverAssertion = new ServerManipulateMultiValuedVariableAssertion(ass);
+        final TestAudit testAudit = new TestAudit();
+        ApplicationContexts.inject(serverAssertion, Collections.singletonMap("auditFactory", testAudit.factory()));
+
+        final AssertionStatus status = serverAssertion.checkRequest(ctx);
+        for (String s : testAudit) {
+            System.out.println(s);
+        }
+
+        assertEquals(AssertionStatus.NONE, status);
+
+        final Object targetVar = ctx.getVariable("myMultiVar");
+        assertTrue(targetVar instanceof List);
+        List list = (List) targetVar;
+        assertEquals(2, list.size());
+        assertEquals("one", list.get(0));
+        assertNull(list.get(1));
+
+        assertTrue(testAudit.isAuditPresentContaining("Appended to Target Multivalued variable 'myMultiVar' value 'one'."));
+        assertTrue(testAudit.isAuditPresentContaining("Appended to Target Multivalued variable 'myMultiVar' value 'null'."));
+        validateAuditLevels(testAudit, USERDETAIL_FINEST);
+    }
+
+    @Test
+    public void testSourceVariableDoesNotExist() throws Exception {
+        PolicyEnforcementContext ctx = getCtx();
+
+        ManipulateMultiValuedVariableAssertion ass = new ManipulateMultiValuedVariableAssertion();
+        ass.setTargetVariableName("myMultiVar");
+        ass.setSourceVariableName("myVar");
+
+        ServerManipulateMultiValuedVariableAssertion serverAssertion = new ServerManipulateMultiValuedVariableAssertion(ass);
+        final TestAudit testAudit = new TestAudit();
+        ApplicationContexts.inject(serverAssertion, Collections.singletonMap("auditFactory", testAudit.factory()));
+
+        final AssertionStatus status = serverAssertion.checkRequest(ctx);
+        for (String s : testAudit) {
+            System.out.println(s);
+        }
+
+        assertEquals(AssertionStatus.FAILED, status);
+
+        assertTrue(testAudit.isAuditPresent(USERDETAIL_WARNING));
+        assertTrue(testAudit.isAuditPresentContaining("Source variable 'myVar' does not exist"));
+        validateAuditLevels(testAudit, USERDETAIL_WARNING);
     }
 
     //- PRIVATE

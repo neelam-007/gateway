@@ -5,6 +5,7 @@ import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.variable.Syntax;
+import com.l7tech.policy.variable.VariableNameSyntaxException;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.variable.ExpandVariables;
@@ -65,21 +66,29 @@ public class ServerManipulateMultiValuedVariableAssertion extends AbstractServer
             created = true;
         }
 
-        final List<Object> value = ExpandVariables.processNoFormat(Syntax.getVariableExpression(assertion.getSourceVariableName()), variableMap, getAudit());
+        final List<Object> value;
+        try {
+            value = ExpandVariables.processNoFormat(Syntax.getVariableExpression(assertion.getSourceVariableName()), variableMap, getAudit(), true);
+        } catch (VariableNameSyntaxException e) {
+            logAndAudit(AssertionMessages.USERDETAIL_WARNING, "Source variable '" + assertion.getSourceVariableName() + "' does not exist");
+            return AssertionStatus.FAILED;
+        }
 
         boolean firstIteration = true;
         boolean createWasLogged = false;
         final String createMessage = "Created Target Multivalued variable '" + varName + "'.";
         // if it's multi valued - support it. If a value is null, that is ok, keep it null
         for (Object o : value) {
-            final Class valuesClass = o.getClass();
-            if (!isTypeValid(valuesClass)){
-                logAndAudit(AssertionMessages.USERDETAIL_WARNING, "Type "+ o.getClass()+" is not supported. Cannot add it to target Multivalued variable.");
-                return AssertionStatus.FALSIFIED;
+            if (o != null) {
+                final Class valuesClass = o.getClass();
+                if (!isTypeValid(valuesClass)) {
+                    logAndAudit(AssertionMessages.USERDETAIL_WARNING, "Type " + o.getClass() + " is not supported. Cannot add it to target Multivalued variable.");
+                    return AssertionStatus.FALSIFIED;
+                }
             }
 
             try {
-                multiVar.add(copyObject(o));
+                multiVar.add((o == null) ? null : copyObject(o));
             } catch (RuntimeException e) {
                 logAndAudit(AssertionMessages.USERDETAIL_WARNING,
                         new String[]{"Could not append value to Target Multivalued variable '" + varName + "' due to : " +
@@ -123,7 +132,7 @@ public class ServerManipulateMultiValuedVariableAssertion extends AbstractServer
     }
 
     @NotNull
-    private Object copyObject(Object copyMe) {
+    private Object copyObject(@NotNull Object copyMe) {
         Object retVal = null;
         if (copyMe instanceof String) {
             retVal =  new String((String) copyMe);
