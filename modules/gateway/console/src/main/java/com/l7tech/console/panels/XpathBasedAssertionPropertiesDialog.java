@@ -1673,31 +1673,34 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
             if ( element.getSimpleParent() != null ) {
                 buildPath( builder, namespaces, element.getSimpleParent() );
             }
+            // currently we only support building a path to an element
+            // but in the future we could support element values as well
+            if (element.getType() == SimpleNode.TAG_NODE) {
+                builder.append( '/' );
 
-            builder.append( '/' );
+                String prefix = element.getNameSpacePrefix();
+                String namespace = element.getNameSpaceURI();
 
-            String prefix = element.getNameSpacePrefix();
-            String namespace = element.getNameSpaceURI();
+                String nodeName = element.getNodeContent();
+                String nodeQname = element.getQualifiedContent();
 
-            String nodeName = element.getNodeContent();
-            String nodeQname = element.getQualifiedContent();
-
-            if ( namespace == null ) {
-                builder.append( nodeName );
-            } else if ( prefix == null || !namespace.equals(namespaces.get(prefix)) ) {
-                if ( namespaces.containsValue( namespace )) {
-                    builder.append( findPrefix(namespaces, namespace) );
-                    builder.append( ':' );
+                if ( namespace == null ) {
                     builder.append( nodeName );
+                } else if ( prefix == null || !namespace.equals(namespaces.get(prefix)) ) {
+                    if ( namespaces.containsValue( namespace )) {
+                        builder.append( findPrefix(namespaces, namespace) );
+                        builder.append( ':' );
+                        builder.append( nodeName );
+                    } else {
+                        builder.append( "*[local-name()='" );
+                        builder.append( nodeName ); // name cannot contain "'"
+                        builder.append( "' and namespace-uri()=" );
+                        builder.append( XpathUtil.literalExpression(namespace) );
+                        builder.append( ']' );
+                    }
                 } else {
-                    builder.append( "*[local-name()='" );
-                    builder.append( nodeName ); // name cannot contain "'"
-                    builder.append( "' and namespace-uri()=" );
-                    builder.append( XpathUtil.literalExpression(namespace) );
-                    builder.append( ']' );
+                    builder.append( nodeQname );
                 }
-            } else {
-                builder.append( nodeQname );
             }
         }
 
