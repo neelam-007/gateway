@@ -18,8 +18,13 @@ public class ExternalAuditsCommonUtils {
                 "        <L7p:UUIDGenerator>\n" +
                 "            <L7p:TargetVariable stringValue=\"record.guid\"/>\n" +
                 "        </L7p:UUIDGenerator>\n" +
+                "        <L7p:SetVariable>\n" +
+                "            <L7p:Expression stringValue=\"300\"/>\n" +
+                "            <L7p:VariableToSet stringValue=\"queryTimeout\"/>\n" +
+                "        </L7p:SetVariable>\n" +
                 "        <L7p:JdbcQuery>\n" +
                 "            <L7p:AssertionFailureEnabled booleanValue=\"false\"/>\n" +
+                "            <L7p:QueryTimeout stringValue=\"${queryTimeout}\"/>\n" +
                 "            <L7p:ConnectionName stringValue=\""+connection+"\"/>\n" +
                 "            <L7p:SqlQuery stringValue=\""+saveRecordQuery(recordTable)+"\"/>\n" +
                 "            <L7p:ResolveAsObjectList stringListValue=\"included\">\n" +
@@ -41,6 +46,7 @@ public class ExternalAuditsCommonUtils {
                 "            </L7p:UUIDGenerator>\n" +
                 "            <L7p:JdbcQuery>\n" +
                 "                <L7p:AssertionFailureEnabled booleanValue=\"false\"/>\n" +
+                "                <L7p:QueryTimeout stringValue=\"${queryTimeout}\"/>\n" +
                 "                <L7p:ConnectionName stringValue=\""+connection+"\"/>\n" +
                 "                <L7p:SqlQuery stringValue=\""+saveDetailQuery(detailTable)+"\"/>\n" +
                 "            </L7p:JdbcQuery>\n" +
@@ -194,6 +200,10 @@ public class ExternalAuditsCommonUtils {
                 "                <L7p:Comment stringValue=\"*** DO NOT MODIFY THE AUTO-GENERATED PORTION OF THIS POLICY ***\"/>\n" +
                 "            </L7p:CommentAssertion>\n" +
                 "            <L7p:SetVariable>\n" +
+                "                <L7p:Expression stringValue=\"300\"/>\n" +
+                "                <L7p:VariableToSet stringValue=\"queryTimeout\"/>\n" +
+                "            </L7p:SetVariable>\n" +
+                "            <L7p:SetVariable>\n" +
                 "                <L7p:Base64Expression stringValue=\"MTAw\"/>\n" +
                 "                <L7p:DataType variableDataType=\"int\"/>\n" +
                 "                <L7p:VariableToSet stringValue=\"recordQueryRetrieveLimit\"/>\n" +
@@ -240,6 +250,7 @@ public class ExternalAuditsCommonUtils {
                 "                                <L7p:AllowMultiValuedVariables booleanValue=\"true\"/>\n" +
                 "                                <L7p:AssertionFailureEnabled booleanValue=\"false\"/>\n" +
                 "                                <L7p:ConnectionName stringValue=\""+connection+"\"/>\n" +
+                "                                <L7p:QueryTimeout stringValue=\"${queryTimeout}\"/>\n"+
                 "                                <L7p:MaxRecords intValue=\"1000\"/>\n" +
                 "                                <L7p:NamingMap mapValue=\"included\">\n" +
                 "                                    <L7p:entry>\n" +
@@ -255,6 +266,7 @@ public class ExternalAuditsCommonUtils {
                 "                            <L7p:AllowMultiValuedVariables booleanValue=\"true\"/>\n" +
                 "                            <L7p:AssertionFailureEnabled booleanValue=\"false\"/>\n" +
                 "                            <L7p:ConnectionName stringValue=\""+connection+"\"/>\n" +
+                "                            <L7p:QueryTimeout stringValue=\"${queryTimeout}\"/>\n"+
                 "                            <L7p:MaxRecords intValue=\"1000\"/>\n" +
                 "                            <L7p:NamingMap mapValue=\"included\">\n" +
                 "                                <L7p:entry>\n" +
@@ -285,6 +297,7 @@ public class ExternalAuditsCommonUtils {
                 "                            <L7p:AllowMultiValuedVariables booleanValue=\"true\"/>\n" +
                 "                            <L7p:AssertionFailureEnabled booleanValue=\"false\"/>\n" +
                 "                            <L7p:ConnectionName stringValue=\""+connection+"\"/>\n" +
+                "                            <L7p:QueryTimeout stringValue=\"${queryTimeout}\"/>\n"+
                 "                            <L7p:MaxRecords intValue=\"10000\"/>\n" +
                 "                            <L7p:SqlQuery stringValue=\""+detailLookupQuery(detailTable)+"\"/>\n" +
                 "                            <L7p:VariablePrefix stringValue=\"detailQuery\"/>\n" +
@@ -343,6 +356,7 @@ public class ExternalAuditsCommonUtils {
                 "                                <L7p:AllowMultiValuedVariables booleanValue=\"true\"/>\n" +
                 "                                <L7p:AssertionFailureEnabled booleanValue=\"false\"/>\n" +
                 "                                <L7p:ConnectionName stringValue=\""+connection+"\"/>\n" +
+                "                                <L7p:QueryTimeout stringValue=\"${queryTimeout}\"/>\n"+
                 "                                <L7p:MaxRecords intValue=\"10000\"/>\n" +
                 "                                <L7p:NamingMap mapValue=\"included\">\n" +
                 "                                    <L7p:entry>\n" +
@@ -367,6 +381,7 @@ public class ExternalAuditsCommonUtils {
                 "                                <L7p:AllowMultiValuedVariables booleanValue=\"true\"/>\n" +
                 "                                <L7p:AssertionFailureEnabled booleanValue=\"false\"/>\n" +
                 "                                <L7p:ConnectionName stringValue=\""+connection+"\"/>\n" +
+                "                                <L7p:QueryTimeout stringValue=\"${queryTimeout}\"/>\n"+
                 "                                <L7p:MaxRecords intValue=\"10000\"/>\n" +
                 "                                <L7p:NamingMap mapValue=\"included\">\n" +
                 "                                    <L7p:entry>\n" +
@@ -400,6 +415,7 @@ public class ExternalAuditsCommonUtils {
                 "                                    <L7p:AllowMultiValuedVariables booleanValue=\"true\"/>\n" +
                 "                                    <L7p:AssertionFailureEnabled booleanValue=\"false\"/>\n" +
                 "                                    <L7p:ConnectionName stringValue=\""+connection+"\"/>\n" +
+                "                                    <L7p:QueryTimeout stringValue=\"${queryTimeout}\"/>\n"+
                 "                                    <L7p:MaxRecords intValue=\"10000\"/>\n" +
                 "                                    <L7p:NamingMap mapValue=\"included\">\n" +
                 "                                        <L7p:entry>\n" +
