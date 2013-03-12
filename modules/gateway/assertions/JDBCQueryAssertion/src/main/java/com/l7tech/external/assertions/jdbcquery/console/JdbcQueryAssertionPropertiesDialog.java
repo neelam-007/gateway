@@ -61,7 +61,7 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
     private JCheckBox failAssertionCheckBox;
     private JSpinner maxRecordsSpinner;
     private JTextField queryNameTextField;
-    private JCheckBox allowMutiValuedVariablesCheckBox;
+    private JCheckBox convertVariablesToStringsCheckBox;
     private JCheckBox generateResultsAsXMLCheckBox;
     private JCheckBox enableNullValuesCheckBox;
     private JTextField nullPatternTextBox;
@@ -247,7 +247,7 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
         failAssertionCheckBox.setSelected(assertion.isAssertionFailureEnabled());
         generateResultsAsXMLCheckBox.setSelected(assertion.isGenerateXmlResult());
         queryNameTextField.setText(assertion.getQueryName());
-        allowMutiValuedVariablesCheckBox.setSelected(assertion.isAllowMultiValuedVariables());
+        convertVariablesToStringsCheckBox.setSelected(assertion.isConvertVariablesToStrings());
         enableNullValuesCheckBox.setSelected(assertion.isUseNullPattern());
         nullPatternTextBox.setText(assertion.isUseNullPattern()?assertion.getNullPattern():"null");
 
@@ -296,7 +296,7 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
         assertion.setAssertionFailureEnabled(failAssertionCheckBox.isSelected());
         assertion.setGenerateXmlResult(generateResultsAsXMLCheckBox.isSelected());
         assertion.setQueryName(queryNameTextField.getText());
-        assertion.setAllowMultiValuedVariables(allowMutiValuedVariablesCheckBox.isSelected());
+        assertion.setConvertVariablesToStrings(convertVariablesToStringsCheckBox.isSelected());
         assertion.setNullPattern(enableNullValuesCheckBox.isSelected()?nullPatternTextBox.getText():null);
         final String schemaValue = schemaTextField.getText().trim();
         assertion.setSchema((schemaTextField.isEnabled() && !schemaValue.isEmpty())? schemaValue: null);
@@ -351,6 +351,10 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
         });
 
         enableOrDisableTableButtons();
+    }
+
+    private void createUIComponents() {
+        // TODO: place custom component creation code here
     }
 
     private class NamingTableModel extends AbstractTableModel {

@@ -237,12 +237,12 @@
                           <text resource-bundle="com/l7tech/external/assertions/jdbcquery/console/resources/JdbcQueryAssertionPropertiesDialog" key="label.query.warning.message"/>
                         </properties>
                       </component>
-                      <component id="8bf7e" class="javax.swing.JCheckBox" binding="allowMutiValuedVariablesCheckBox">
+                      <component id="8bf7e" class="javax.swing.JCheckBox" binding="convertVariablesToStringsCheckBox">
                         <constraints>
                           <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                         </constraints>
                         <properties>
-                          <text value="Allow Multivalued Context Variables"/>
+                          <text value="Convert Variables to Strings"/>
                         </properties>
                       </component>
                       <grid id="91ca" layout-manager="GridLayoutManager" row-count="2" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">

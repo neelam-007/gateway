@@ -44,7 +44,8 @@ public class JdbcQueryAssertion extends Assertion implements JdbcConnectionable,
     private String schema;
     private String queryTimeout;
 
-    private boolean allowMultiValuedVariables;
+    //default to true to support pre-fangtooth assertions
+    private boolean convertVariablesToStrings = true;
 
     public JdbcQueryAssertion() {
     }
@@ -147,12 +148,17 @@ public class JdbcQueryAssertion extends Assertion implements JdbcConnectionable,
         this.namingMap = namingMap;
     }
 
-    public boolean isAllowMultiValuedVariables() {
-        return allowMultiValuedVariables;
+    public boolean isConvertVariablesToStrings() {
+        return convertVariablesToStrings;
     }
 
+    public void setConvertVariablesToStrings(boolean convertVariablesToStrings) {
+        this.convertVariablesToStrings = convertVariablesToStrings;
+    }
+
+    @Deprecated
     public void setAllowMultiValuedVariables(boolean allowMultiValuedVariables) {
-        this.allowMultiValuedVariables = allowMultiValuedVariables;
+        this.convertVariablesToStrings = !allowMultiValuedVariables;
     }
 
     public boolean isGenerateXmlResult() {
@@ -238,7 +244,7 @@ public class JdbcQueryAssertion extends Assertion implements JdbcConnectionable,
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/PerformJdbcQuery16x16.gif");
 
         // Enable automatic policy advice (default is no advice unless a matching Advice subclass exists)
-        meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
+        meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "com.l7tech.external.assertions.jdbcquery.JdbcQueryAssertionAdvice");
 
         // Set up smart Getter for nice, informative policy node name, for GUI
         meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, new AssertionNodeNameFactory<JdbcQueryAssertion>() {
