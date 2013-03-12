@@ -414,7 +414,7 @@ public class ServerManipulateMultiValuedVariableAssertionTest {
         ass.setTargetVariableName("myMultiVar");
         ctx.setVariable("myMultiVar", new ArrayList());
         ass.setSourceVariableName("myVar");
-        final ArrayList<Object> objects = new ArrayList<>();
+        final ArrayList<Object> objects = new ArrayList<Object>();
         objects.add("one");
         objects.add(null);
         ctx.setVariable("myVar", objects);
