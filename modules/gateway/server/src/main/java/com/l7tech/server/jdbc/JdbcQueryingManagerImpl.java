@@ -4,7 +4,7 @@ import com.l7tech.gateway.common.jdbc.JdbcUtil;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.variable.Syntax;
-import com.l7tech.server.*;
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.event.system.ReadyForMessages;
 import com.l7tech.server.event.system.Stopped;
 import com.l7tech.server.util.ManagedTimer;
@@ -18,7 +18,8 @@ import org.springframework.context.ApplicationListener;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.BadSqlGrammarException;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
-import org.springframework.jdbc.core.*;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.ResultSetExtractor;
 import org.springframework.jdbc.core.metadata.*;
 import org.springframework.jdbc.core.simple.AbstractJdbcCall;
 import org.springframework.jdbc.core.simple.SimpleJdbcCall;
@@ -31,7 +32,7 @@ import java.beans.PropertyChangeListener;
 import java.lang.reflect.Field;
 import java.sql.*;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
@@ -63,6 +64,11 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager, PropertyCha
      */
     private final Set<CachedMetaDataKey> dbObjectsToCacheMetaDataFor = new ConcurrentHashSet<CachedMetaDataKey>();
 
+    //The thread pool used to execute metadata retrieval tasks. This must be dynamically created because it's running depends on the PARAM_JDBC_QUERY_CACHE_METADATA_TASK_ENABLED cluster property
+    private ThreadPool jdbcMetadataRetrievalThreadPool;
+    //This is the set of currently running metadata retrieval tasks. It is used to make sure the same task is not run at the same time.
+    private final Set<CachedMetaDataKey> runningJdbcMetadataRetrievalTasks = new ConcurrentHashSet<CachedMetaDataKey>();
+
     public JdbcQueryingManagerImpl(final JdbcConnectionPoolManager jdbcConnectionPoolManager,
                                    final JdbcConnectionManager jdbcConnectionManager,
                                    final Config config,
@@ -86,8 +92,8 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager, PropertyCha
     @Override
     public void propertyChange(PropertyChangeEvent evt) {
         final boolean cachingAllowed = isCachingAllowed();
+        final String propertyName = evt.getPropertyName();
         synchronized (currentCacheTask) {
-            final String propertyName = evt.getPropertyName();
             final boolean enableCache = config.getBooleanProperty(ServerConfigParams.PARAM_JDBC_QUERY_CACHE_METADATA_TASK_ENABLED, true) && cachingAllowed;
             if (propertyName.equals(ServerConfigParams.PARAM_JDBC_QUERY_CACHE_METADATA_TASK_ENABLED) || propertyName.equals(ServerConfigParams.PARAM_JDBC_QUERY_CACHE_METADATA_ENABLED)) {
                 if (enableCache) {
@@ -100,13 +106,21 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager, PropertyCha
                     // only reconfigure the task if the cache is actually enabled.
                     createAndStartMetaDataTask();
                 }
-            }else if (propertyName.equals(ServerConfigParams.PARAM_JDBC_QUERY_CACHE_CLEANUP_REFRESH_INTERVAL)) {
+            } else if (propertyName.equals(ServerConfigParams.PARAM_JDBC_QUERY_CACHE_CLEANUP_REFRESH_INTERVAL)) {
                 createAndStartCleanUpTask();
             }
 
             if (!cachingAllowed) {
                 // clear the cache
                 simpleJdbcCallCache.clear();
+            }
+        }
+        //update the jdbcMetadataRetrievalThreadPool number of threads
+        if (propertyName.equals(ServerConfigParams.PARAM_JDBC_QUERY_CACHE_MIN_CACHE_CONCURRENCY) && jdbcMetadataRetrievalThreadPool != null) {
+            synchronized (jdbcMetadataRetrievalThreadPool){
+                int numberCacheConcurrencyThreads = getNumberCacheConcurrencyThreads();
+                jdbcMetadataRetrievalThreadPool.setCorePoolSize(numberCacheConcurrencyThreads);
+                jdbcMetadataRetrievalThreadPool.setMaxPoolSize(numberCacheConcurrencyThreads);
             }
         }
     }
@@ -234,15 +248,19 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager, PropertyCha
 
             // Check to see if the cache has expired.
             final long maxStaleAgeMillis = config.getLongProperty(ServerConfigParams.PARAM_JDBC_QUERY_CACHE_STALE_TIMEOUT, 1800) * 1000;
-            final Long age = timeSource.currentTimeMillis() - cachedMetaDataValue.cachedTime.get();
+            Long age = timeSource.currentTimeMillis() - cachedMetaDataValue.cachedTime.get();
             if (age > maxStaleAgeMillis) {
                 // if it has then re-cache it.
                 synchronized (uniqueKey.toString().intern()) {
                     // Synchronization required for updateCache when cached item has expired.
                     // This is needed to avoid all message processing threads for the unique cache key attempting to
                     // download the same meta during the time it takes for this task to complete.
-                    updateCache(connectionName, query, jdbcTemplate, schemaName);
-                    cachedMetaDataValue = simpleJdbcCallCache.get(uniqueKey);
+                    // double check locking
+                    age = timeSource.currentTimeMillis() - cachedMetaDataValue.cachedTime.get();
+                    if (age > maxStaleAgeMillis) {
+                        updateCache(connectionName, query, jdbcTemplate, schemaName);
+                        cachedMetaDataValue = simpleJdbcCallCache.get(uniqueKey);
+                    }
                 }
             }
 
@@ -535,6 +553,7 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager, PropertyCha
      */
     private void createAndStartMetaDataTask() {
         stopCurrentTaskIfRunning();
+        createAndStartJDBCMetadataRetrievalThreadPool();
         assert currentCacheTask.get() == null;
         final long refreshInterval = config.getLongProperty(ServerConfigParams.PARAM_JDBC_QUERY_CACHE_REFRESH_INTERVAL, 600000L);
         final MetaDataCacheTask newTask = new MetaDataCacheTask(jdbcConnectionPoolManager);
@@ -549,6 +568,31 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager, PropertyCha
             currentTask.cancel();
             currentCacheTask.set(null);
             logger.info("Cancelled JDBC Query meta data cache task");
+        }
+        stopJDBCMetadataRetrievalThreadPoolIfRunning();
+    }
+
+    private void createAndStartJDBCMetadataRetrievalThreadPool() {
+        int numThreads = getNumberCacheConcurrencyThreads();
+        jdbcMetadataRetrievalThreadPool = new ThreadPool(
+                "JDBC Metadata Retrieval Thread Pool", //poolName
+                numThreads, //corePoolSize core size of the thread pool. Always <= of the maximum pool size.
+                numThreads, //maxPoolSize maximum size the pool may reach. Must be >= corePoolSize.
+                Integer.MAX_VALUE, //maxQueuedTasks maximum number of tasks which can be queued before a new thread is created.
+                30000l, //keepAliveTime how long threads above the core size can idle before being terminating.
+                java.util.concurrent.TimeUnit.MILLISECONDS, //timeUnit time unit which applies to keep alive times.
+                true, //allowCoreThreadTimeOuts if true, then core threads are allowed to terminate when idle.
+                null, //rejectedExecutionHandler if null the default ThreadPoolExecutor.AbortPolicy is used, which will throw when maximum threads have been created and the bound queue is full.
+                null, //beforeExecute hook to run before a task is executed, can be null.
+                null); //afterExecute hook to run after a task is executed, can be null.
+        jdbcMetadataRetrievalThreadPool.start();
+    }
+
+    private void stopJDBCMetadataRetrievalThreadPoolIfRunning() {
+        if(jdbcMetadataRetrievalThreadPool != null) {
+            jdbcMetadataRetrievalThreadPool.shutdown();
+            // Thread pools cannot be stopped and started so we set it to null.
+            jdbcMetadataRetrievalThreadPool = null;
         }
     }
 
@@ -573,6 +617,10 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager, PropertyCha
 
     private boolean isCachingAllowed() {
         return config.getBooleanProperty(ServerConfigParams.PARAM_JDBC_QUERY_CACHE_METADATA_ENABLED, true);
+    }
+
+    private int getNumberCacheConcurrencyThreads() {
+        return config.getIntProperty(ServerConfigParams.PARAM_JDBC_QUERY_CACHE_MIN_CACHE_CONCURRENCY, 10);
     }
 
     private void doStart() {
@@ -729,7 +777,6 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager, PropertyCha
         private final Option<List<String>> inParameters;
         /**
          * Either last access time for a right either or time of exception for a left either.
-         * //todo - make use of this for expiring items from the cache
          */
         private final AtomicLong lastUseTime;
         private AtomicLong cachedTime;
@@ -773,32 +820,78 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager, PropertyCha
             final Set<CachedMetaDataKey> keysToMaintain = new HashSet<CachedMetaDataKey>(dbObjectsToCacheMetaDataFor);
             logger.fine("Task to cache JDBC function / procedure meta data is starting. There are " + keysToMaintain.size() + " unique items to update.");
 
+            //This will be a list of all the tasks being run in this process
+            final ArrayList<Future<Void>> metadataRetrievalTasks = new ArrayList<>(keysToMaintain.size());
             // record time as it may take a long time to run.
             final long startTime = System.currentTimeMillis();
-            for (CachedMetaDataKey key : keysToMaintain) {
+            for (final CachedMetaDataKey key : keysToMaintain) {
+                if (isCancelled) {
+                    // eagerly cancel
+                    logger.info("JDBC Query meta data cache task has been cancelled.");
+                    break;
+                }
                 final String connectionName = key.connectionName;
-                try {
+                //add the key to the currently running jdbcMetadataRetrievalTask set. This will return false if the key is already in the set.
+                boolean shouldSubmitTask = runningJdbcMetadataRetrievalTasks.add(key);
+                //only submit tasks not already being processed
+                if (shouldSubmitTask) {
+                    try {
+                        Future<Void> future = jdbcMetadataRetrievalThreadPool.submitTask(new Callable<Void>() {
+                            @Override
+                            public Void call() throws Exception {
+                                try {
 
-                    final DataSource dataSource = jdbcConnectionPoolManager.getDataSource(connectionName);
-                    final int timeoutSeconds = config.getIntProperty(ServerConfigParams.PARAM_JDBC_QUERY_CACHE_MAX_TIME_OUT, 120);
-                    //need to preserve the last access time if the item is already in cache.
-                    Long lastUseTime = null;
-                    if(simpleJdbcCallCache.containsKey(key)){
-                        lastUseTime = simpleJdbcCallCache.get(key).lastUseTime.get();
+                                    final DataSource dataSource = jdbcConnectionPoolManager.getDataSource(connectionName);
+                                    final int timeoutSeconds = config.getIntProperty(ServerConfigParams.PARAM_JDBC_QUERY_CACHE_MAX_TIME_OUT, 120);
+                                    //need to preserve the last access time if the item is already in cache.
+                                    Long lastUseTime = null;
+                                    if (simpleJdbcCallCache.containsKey(key)) {
+                                        lastUseTime = simpleJdbcCallCache.get(key).lastUseTime.get();
+                                    }
+                                    synchronized (key.toString().intern()) {
+                                        // Synchronization required for updateCache.
+                                        // This is needed to avoid all message processing threads for the unique cache key attempting to
+                                        // download the same meta during the time it takes for this task to complete.
+                                        //TODO: investigate the use of a minimum refresh age based on the CachedMetaDataValue.cachedTime, this should prevent re-caching metadata if it was just cached.
+                                        updateCache(connectionName, key.query, buildJdbcTemplate(dataSource, 0, timeoutSeconds), key.schemaNameOption, lastUseTime);
+                                    }
+                                } catch (NamingException | SQLException e) {
+                                    logger.warning("Could not get data source for connection: '" + connectionName + "' due to: " + ExceptionUtils.getMessage(e));
+                                } finally {
+                                    //remove the key for the running set of tasks
+                                    runningJdbcMetadataRetrievalTasks.remove(key);
+                                }
+                                return null;
+                            }
+                        });
+                        // Add the metadata retrieval task to the list of tasks run in this process
+                        metadataRetrievalTasks.add(future);
+                    } catch (ThreadPool.ThreadPoolShutDownException e) {
+                        logger.warning("JDBC metadata retrieval thread pool was shutdown: " + ExceptionUtils.getMessage(e));
+                    } catch (Exception e) {
+                        // This will catch any other exceptions that may have occurred.
+                        logger.warning("JDBC metadata retrieval thread pool exception occurred submitting a task: " + ExceptionUtils.getMessage(e));
                     }
-                    updateCache(connectionName, key.query, buildJdbcTemplate(dataSource, 0, timeoutSeconds), key.schemaNameOption, lastUseTime);
-                    if (isCancelled) {
-                        // eagerly cancel
-                        logger.info("JDBC Query meta data cache task has been cancelled.");
-                        break;
-                    }
-                } catch (NamingException e) {
-                    logger.warning("Could not get data source for connection: '" + connectionName+"' due to: " + ExceptionUtils.getMessage(e));
-                } catch (SQLException e) {
-                    logger.warning("Could not get data source for connection: '" + connectionName + "' due to: " + ExceptionUtils.getMessage(e));
                 }
             }
-            logger.fine("Task to cache JDBC function / procedure meta data has finished. Task took " + (System.currentTimeMillis() - startTime) +" milliseconds to complete.");
+            //Wait till all tasks complete
+            for (Future<Void> task : metadataRetrievalTasks) {
+                try {
+                    if (!isCancelled) {
+                        //A timeout here should not be needed. JDBC calls should automatically fail if they take linger then ServerConfigParams.PARAM_JDBC_QUERY_CACHE_MAX_TIME_OUT
+                        task.get();
+                    } else {
+                        //Do not want to interrupt here, may cause unexpected side effects
+                        task.cancel(false);
+                    }
+                } catch (InterruptedException e) {
+                    logger.warning("JDBC metadata retrieval task was interrupted while processing: " + ExceptionUtils.getMessage(e));
+                } catch (ExecutionException e) {
+                    logger.warning("JDBC metadata retrieval task threw an exception: " + ExceptionUtils.getMessage(e));
+                }
+            }
+
+            logger.fine("Task to cache JDBC function / procedure meta data has finished. Task took " + (System.currentTimeMillis() - startTime) + " milliseconds to complete.");
         }
     }
 

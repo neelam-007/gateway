@@ -79,10 +79,10 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
             final Pair<String, List<Object>> pair;
             if (context instanceof AuditLookupPolicyEnforcementContext || context instanceof AuditSinkPolicyEnforcementContext) {
                 pair = getQueryStatementWithoutContextVariables(assertion.getSqlQuery(),
-                        context, assertion.getVariablesUsed(), !assertion.isConvertVariablesToStrings(), assertion.getResolveAsObjectList(), getAudit());
+                        context, assertion.getVariablesUsed(), assertion.isConvertVariablesToStrings(), assertion.getResolveAsObjectList(), getAudit());
             } else {
                 pair = getQueryStatementWithoutContextVariables(assertion.getSqlQuery(),
-                        context, assertion.getVariablesUsed(), !assertion.isConvertVariablesToStrings(), getAudit());
+                        context, assertion.getVariablesUsed(), assertion.isConvertVariablesToStrings(), getAudit());
             }
             final String plainQuery = pair.left;
             final List<Object> preparedStmtParams = pair.right;

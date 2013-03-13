@@ -25,7 +25,7 @@ public class JdbcQueryUtilsTest {
 
         String expectedQuery = "select * from employees where id=${var} and department = ${var1}";
         final Pair<String, List<Object>> pair = JdbcQueryUtils.getQueryStatementWithoutContextVariables(
-                expectedQuery, peCtx, new String[]{"var", "var1"}, false, CollectionUtils.list("var"), new TestAudit());
+                expectedQuery, peCtx, new String[]{"var", "var1"}, true, CollectionUtils.list("var"), new TestAudit());
         final String query = pair.left;
         final List<Object> params = pair.right;
         System.out.println(query);
@@ -47,7 +47,7 @@ public class JdbcQueryUtilsTest {
 
         String expectedQuery = "select * from employees where id in (${var}) where time>${intVal}";
         final Pair<String, List<Object>> pair = JdbcQueryUtils.getQueryStatementWithoutContextVariables(
-                expectedQuery, peCtx, new String[]{"var", "intVal"}, true, new TestAudit());
+                expectedQuery, peCtx, new String[]{"var", "intVal"}, false, new TestAudit());
         final String query = pair.left;
         final List<Object> params = pair.right;
 
@@ -69,7 +69,7 @@ public class JdbcQueryUtilsTest {
 
         String expectedQuery = "select * from employees where first=${var} where last=${var}";
         final Pair<String, List<Object>> pair = JdbcQueryUtils.getQueryStatementWithoutContextVariables(
-                expectedQuery, peCtx, new String[]{"var", "intVal"}, true, new TestAudit());
+                expectedQuery, peCtx, new String[]{"var", "intVal"}, false, new TestAudit());
         final String query = pair.left;
         final List<Object> params = pair.right;
 
@@ -99,7 +99,7 @@ public class JdbcQueryUtilsTest {
 
         String expectedQuery = "select * from employees where id=${intVar} and floor=${longVar} and active=${boolVar} and stuff=${vars}";
         final Pair<String, List<Object>> pair = JdbcQueryUtils.getQueryStatementWithoutContextVariables(
-                expectedQuery, peCtx, new String[]{"intVar", "longVar", "boolVar", "vars"}, false, new TestAudit());
+                expectedQuery, peCtx, new String[]{"intVar", "longVar", "boolVar", "vars"}, true, new TestAudit());
         final String query = pair.left;
         final List<Object> params = pair.right;
 
@@ -127,7 +127,7 @@ public class JdbcQueryUtilsTest {
 
         String expectedQuery = "select * from employees where id in (${intVars}) and floor in (${longVars}) and something in (${boolVars}) ";
         final Pair<String, List<Object>> pair = JdbcQueryUtils.getQueryStatementWithoutContextVariables(
-                expectedQuery, peCtx, new String[]{"intVars", "longVars", "boolVars"}, true, new TestAudit());
+                expectedQuery, peCtx, new String[]{"intVars", "longVars", "boolVars"}, false, new TestAudit());
         final String query = pair.left;
         final List<Object> params = pair.right;
 
@@ -142,7 +142,7 @@ public class JdbcQueryUtilsTest {
 
         // resolve as objects list redundant here
         final Pair<String, List<Object>> noObjectList = JdbcQueryUtils.getQueryStatementWithoutContextVariables(
-                expectedQuery, peCtx, new String[]{"intVars", "longVars", "boolVars"}, true, CollectionUtils.list("longVars"), new TestAudit());
+                expectedQuery, peCtx, new String[]{"intVars", "longVars", "boolVars"}, false, CollectionUtils.list("longVars"), new TestAudit());
         assertEquals("Everything should be resolved as objects by default", noObjectList.right, params);
     }
 
@@ -153,7 +153,7 @@ public class JdbcQueryUtilsTest {
 
         String expectedQuery = "select * from employees where id='1234' ";
         final Pair<String, List<Object>> pair = JdbcQueryUtils.getQueryStatementWithoutContextVariables(
-                expectedQuery, peCtx, new String[0], false, new TestAudit());
+                expectedQuery, peCtx, new String[0], true, new TestAudit());
         final String query = pair.left;
         final List<Object> params = pair.right;
 
@@ -170,7 +170,7 @@ public class JdbcQueryUtilsTest {
         String expectedQuery = "select * from employees where id='${fake} ";
 
         try{
-            JdbcQueryUtils.getQueryStatementWithoutContextVariables( expectedQuery, peCtx, new String[0], true, new TestAudit());
+            JdbcQueryUtils.getQueryStatementWithoutContextVariables( expectedQuery, peCtx, new String[0], false, new TestAudit());
         } catch (VariableNameSyntaxException e){
             // expected
             return;

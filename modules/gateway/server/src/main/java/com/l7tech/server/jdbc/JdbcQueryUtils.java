@@ -21,7 +21,7 @@ public class JdbcQueryUtils {
     static public Object performJdbcQuery(JdbcQueryingManager jdbcQueryingManager, String connectionName, String query, List<String> resolveAsObjectList, AuditSinkPolicyEnforcementContext context, Audit audit) throws Exception {
         String[] vars = Syntax.getReferencedNames(query);
         try {
-            final Pair<String, List<Object>> pair = JdbcQueryUtils.getQueryStatementWithoutContextVariables(query, context, vars, false, resolveAsObjectList, audit);
+            final Pair<String, List<Object>> pair = JdbcQueryUtils.getQueryStatementWithoutContextVariables(query, context, vars, true, resolveAsObjectList, audit);
             String plainQuery = context == null ? query : pair.left;
             // todo add support for schema name
             return jdbcQueryingManager.performJdbcQuery(connectionName, plainQuery, null, 1, pair.right);
@@ -46,7 +46,7 @@ public class JdbcQueryUtils {
      * @param query            string query which references context variables
      * @param context          The Policy Enforcement Context with all available variables
      * @param varsWithoutIndex get the variables used by the query with no indexes
-     * @param allowMultiValued true if multi valued variables are supported
+     * @param convertVariablesToStrings true if variables should be converted into strings
      * @param audit            Audit for audits related to looking up variables.
      * @return pair of the String query with variables replaced with '?' and the list of parameters. The right side
      *         of parameters may be empty but never null.
@@ -55,7 +55,7 @@ public class JdbcQueryUtils {
     static public Pair<String, List<Object>> getQueryStatementWithoutContextVariables(String query,
                                                                                       final PolicyEnforcementContext context,
                                                                                       final String[] varsWithoutIndex,
-                                                                                      final boolean allowMultiValued,
+                                                                                      final boolean convertVariablesToStrings,
                                                                                       final List<String> resolveAsObjectList,
                                                                                       final Audit audit) {
         final List<Object> paramValues = new ArrayList<Object>();
@@ -69,7 +69,7 @@ public class JdbcQueryUtils {
         final String[] varsWithIndex = Syntax.getReferencedNamesIndexedVarsNotOmitted(query);
         final Map<String, Pattern> varPatternMap = new HashMap<String, Pattern>();
         for (final String varWithIndex : varsWithIndex) {
-            if (allowMultiValued) {
+            if (!convertVariablesToStrings) {
                 List<Object> varValues = ExpandVariables.processNoFormat("${" + varWithIndex + "}", context.getVariableMap(varsWithoutIndex, audit), audit, true);
                 //when parameters are multi-value, make each value as a separate parameter of the parametrized query separated by comma.
                 StringBuilder sb = new StringBuilder();
@@ -93,7 +93,7 @@ public class JdbcQueryUtils {
             }
         }
 
-        if (!allowMultiValued) {
+        if (convertVariablesToStrings) {
             // Replace all context variables with a question mark, ?
             Matcher matcher = Syntax.regexPattern.matcher(query);
             query = matcher.replaceAll("?");
@@ -105,9 +105,9 @@ public class JdbcQueryUtils {
     static public Pair<String, List<Object>> getQueryStatementWithoutContextVariables(final String query,
                                                                                       final PolicyEnforcementContext context,
                                                                                       final String[] varsWithoutIndex,
-                                                                                      final boolean allowMultiValued,
+                                                                                      final boolean convertVariablesToStrings,
                                                                                       final Audit audit) {
-        return getQueryStatementWithoutContextVariables(query, context, varsWithoutIndex, allowMultiValued, Collections.<String>emptyList(), audit);
+        return getQueryStatementWithoutContextVariables(query, context, varsWithoutIndex, convertVariablesToStrings, Collections.<String>emptyList(), audit);
     }
 
      static private Pattern getSearchPattern(String varWithIndex, Map<String, Pattern> varPatternMap) {

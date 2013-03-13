@@ -170,6 +170,7 @@ public interface ServerConfigParams {
     String PARAM_JDBC_QUERY_CACHE_MAX_TIME_OUT= "queryManager.cacheStatementTimeout";
     String PARAM_JDBC_QUERY_CACHE_STALE_TIMEOUT= "jdbcQueryManager.cacheStaleTimeout";
     String PARAM_JDBC_QUERY_CACHE_NO_USAGE_EXPIRATION= "jdbcQueryManager.cacheKeyNoUsageExpiration";
+    String PARAM_JDBC_QUERY_CACHE_MIN_CACHE_CONCURRENCY= "jdbcQueryManager.minCacheConcurrency";
 
     String PARAM_JDBC_CONNECTION_POOLING_DEFAULT_MINPOOLSIZE = "jdbcConnection.pooling.minPoolSize.defaultValue";
     String PARAM_JDBC_CONNECTION_POOLING_DEFAULT_MAXPOOLSIZE = "jdbcConnection.pooling.maxPoolSize.defaultValue";
