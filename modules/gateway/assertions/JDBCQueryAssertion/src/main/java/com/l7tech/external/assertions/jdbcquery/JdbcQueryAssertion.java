@@ -40,7 +40,6 @@ public class JdbcQueryAssertion extends Assertion implements JdbcConnectionable,
     private Map<String, String> namingMap = new TreeMap<String, String>();
     private List<String> resolveAsObjectList = new ArrayList<String>();
     private boolean generateXmlResult;
-    private String nullPattern;
     private String schema;
     private String queryTimeout;
 
@@ -62,7 +61,6 @@ public class JdbcQueryAssertion extends Assertion implements JdbcConnectionable,
         copy.setAssertionFailureEnabled(assertionFailureEnabled);
         copy.setQueryName(queryName);
         copy.setNamingMap(copyMap(namingMap));
-        copy.setNullPattern(nullPattern);
         copy.setSchema(schema);
         return copy;
     }
@@ -77,7 +75,6 @@ public class JdbcQueryAssertion extends Assertion implements JdbcConnectionable,
         setQueryName(source.getQueryName());
         setNamingMap(copyMap(source.getNamingMap()));
         setEnabled(source.isEnabled());
-        setNullPattern(source.getNullPattern());
         setSchema(source.getSchema());
     }
 
@@ -169,16 +166,6 @@ public class JdbcQueryAssertion extends Assertion implements JdbcConnectionable,
         this.generateXmlResult = generateXmlResult;
     }
 
-    // Null if null patter not used
-    public String getNullPattern() {
-        return nullPattern;
-    }
-
-    // Null if null patter not used, not support context variable
-    public void setNullPattern(String nullPattern) {
-        this.nullPattern = nullPattern;
-    }
-
     public String getSchema() {
         return schema;
     }
@@ -186,10 +173,6 @@ public class JdbcQueryAssertion extends Assertion implements JdbcConnectionable,
     // only used for oracle databases ( ie: driver class contains "oracle")
     public void setSchema(String schema) {
         this.schema = schema;
-    }
-
-    public boolean isUseNullPattern() {
-        return this.nullPattern != null;
     }
 
     /**
@@ -226,7 +209,7 @@ public class JdbcQueryAssertion extends Assertion implements JdbcConnectionable,
     @Override
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {
-        return Syntax.getReferencedNames(connectionName, sqlQuery, variablePrefix, nullPattern, queryTimeout);
+        return Syntax.getReferencedNames(connectionName, sqlQuery, variablePrefix, queryTimeout);
     }
 
     @Override

@@ -87,8 +87,6 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
             final String plainQuery = pair.left;
             final List<Object> preparedStmtParams = pair.right;
 
-            applyNullValue(assertion.getNullPattern(), preparedStmtParams);
-
             final Map<String, Object> variableMap = context.getVariableMap(variablesUsed, getAudit());
             final String connName = ExpandVariables.process(assertion.getConnectionName(), variableMap, getAudit());
             // Get result by querying.  The result could be a ResultSet object, an integer (updated rows), or a string (a warning message).
@@ -165,17 +163,6 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
             context.setVariable(getVariablePrefix(context) + assertion.VARIABLE_XML_RESULT, xmlResult.toString());
         }
         return AssertionStatus.NONE;
-    }
-
-    static protected void applyNullValue(final String nullPattern, List<Object> preparedStmtParams) {
-        if(nullPattern == null)
-            return;
-
-        for (int i = 0; i < preparedStmtParams.size(); i++) {
-            Object o = preparedStmtParams.get(i);
-            if(o.equals(nullPattern))
-                preparedStmtParams.set(i,null);
-        }
     }
 
     /**

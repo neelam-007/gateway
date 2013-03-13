@@ -247,6 +247,8 @@ public class BuiltinVariables {
 
             new VariableMetadata(PREFIX_TRACE, true, false, null, false),
             new VariableMetadata(TRACE_OUT, false, false, TRACE_OUT, true),
+
+            new VariableMetadata("policy.nullvalue", false, false, null, false),
     };
 
     static {

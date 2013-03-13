@@ -63,8 +63,6 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
     private JTextField queryNameTextField;
     private JCheckBox convertVariablesToStringsCheckBox;
     private JCheckBox generateResultsAsXMLCheckBox;
-    private JCheckBox enableNullValuesCheckBox;
-    private JTextField nullPatternTextBox;
     private JTextField schemaTextField;
     private JCheckBox schemaCheckBox;
     private JTextField queryTimeoutTextField;
@@ -164,8 +162,6 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
                 300);
 
         variablePrefixTextField.addChangeListener(changeListener);
-        nullPatternTextBox.getDocument().addDocumentListener(changeListener);
-
 
         final RunOnChangeListener queryPanelChangeListener = new RunOnChangeListener(new Runnable() {
             @Override
@@ -174,7 +170,6 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
                 enableOrDisableOkButton();
             }
         });
-        enableNullValuesCheckBox.addChangeListener(queryPanelChangeListener);
 
         initNamingTable();
 
@@ -248,8 +243,6 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
         generateResultsAsXMLCheckBox.setSelected(assertion.isGenerateXmlResult());
         queryNameTextField.setText(assertion.getQueryName());
         convertVariablesToStringsCheckBox.setSelected(assertion.isConvertVariablesToStrings());
-        enableNullValuesCheckBox.setSelected(assertion.isUseNullPattern());
-        nullPatternTextBox.setText(assertion.isUseNullPattern()?assertion.getNullPattern():"null");
 
         final String connName = assertion.getConnectionName();
         if (connName != null) {
@@ -297,7 +290,6 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
         assertion.setGenerateXmlResult(generateResultsAsXMLCheckBox.isSelected());
         assertion.setQueryName(queryNameTextField.getText());
         assertion.setConvertVariablesToStrings(convertVariablesToStringsCheckBox.isSelected());
-        assertion.setNullPattern(enableNullValuesCheckBox.isSelected()?nullPatternTextBox.getText():null);
         final String schemaValue = schemaTextField.getText().trim();
         assertion.setSchema((schemaTextField.isEnabled() && !schemaValue.isEmpty())? schemaValue: null);
     }
@@ -407,7 +399,6 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
     }
 
     private void enableOrDisableQueryControls(){
-        nullPatternTextBox.setEnabled(enableNullValuesCheckBox.isSelected());
         testButton.setEnabled(!sqlQueryTextArea.getText().trim().isEmpty());
         enableOrDisableSchemaControls();
     }
@@ -428,8 +419,7 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
         boolean enabled = !isReadOnly() &&
             isNonEmptyRequiredTextField(((JTextField)connectionComboBox.getEditor().getEditorComponent()).getText()) &&
             isNonEmptyRequiredTextField(sqlQueryTextArea.getText()) &&
-            variablePrefixTextField.isEntryValid() &&
-            (!nullPatternTextBox.isEnabled() || !nullPatternTextBox.getText().isEmpty());
+            variablePrefixTextField.isEntryValid();
 
         okButton.setEnabled(enabled);
     }

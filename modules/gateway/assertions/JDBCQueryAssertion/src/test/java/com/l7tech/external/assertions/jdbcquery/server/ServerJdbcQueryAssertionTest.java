@@ -618,46 +618,32 @@ public class ServerJdbcQueryAssertionTest {
 
         // single value variable NO null value substitution
         {
-            peCtx.setVariable("nullval", "NULL");
-            assertion.setSqlQuery("SELECT FUNC('a',${nullval},'b') as output");
+            assertion.setConvertVariablesToStrings(true);
+            assertion.setSqlQuery("SELECT FUNC('a',${policy.nullvalue},'b') as output");
             final Pair<String, List<Object>> pair = JdbcQueryUtils.getQueryStatementWithoutContextVariables(assertion.getSqlQuery(), peCtx, assertion.getVariablesUsed(), assertion.isConvertVariablesToStrings(), new TestAudit());
             final List<Object> params = pair.right;
 
-            ServerJdbcQueryAssertion.applyNullValue(assertion.getNullPattern(),params);
-            assertEquals("NULL", params.get(0));
+            assertEquals("", params.get(0));
         }
 
         // single value variable WITH null value substitution
         {
-            assertion.setNullPattern("NULL");
+            assertion.setConvertVariablesToStrings(false);
             final Pair<String, List<Object>> pair = JdbcQueryUtils.getQueryStatementWithoutContextVariables(assertion.getSqlQuery(), peCtx, assertion.getVariablesUsed(), assertion.isConvertVariablesToStrings(), new TestAudit());
             final List<Object> params = pair.right;
-            ServerJdbcQueryAssertion.applyNullValue(assertion.getNullPattern(),params);
             assertEquals(null, params.get(0));
         }
 
         // multi-value variable WITH null value substitution
         {
-            peCtx.setVariable("args", new String[]{"one","two","NULL"});
+            peCtx.setVariable("args", new Object[]{"one","two",null});
             assertion.setSqlQuery("SELECT FUNC(${args}) as output");
-            assertion.setAllowMultiValuedVariables(true);
+            assertion.setConvertVariablesToStrings(false);
             final Pair<String, List<Object>> pair = JdbcQueryUtils.getQueryStatementWithoutContextVariables(assertion.getSqlQuery(), peCtx, assertion.getVariablesUsed(), assertion.isConvertVariablesToStrings(), new TestAudit());
             final List<Object> params = pair.right;
-            ServerJdbcQueryAssertion.applyNullValue(assertion.getNullPattern(),params);
             assertEquals("one", params.get(0));
             assertEquals("two", params.get(1));
             assertEquals(null, params.get(2));
-        }
-
-        // multi-value variable NO null value substitution
-        {
-            assertion.setNullPattern("null");
-            final Pair<String, List<Object>> pair = JdbcQueryUtils.getQueryStatementWithoutContextVariables(assertion.getSqlQuery(), peCtx, assertion.getVariablesUsed(), assertion.isConvertVariablesToStrings(), new TestAudit());
-            final List<Object> params = pair.right;
-            ServerJdbcQueryAssertion.applyNullValue(assertion.getNullPattern(),params);
-            assertEquals("one", params.get(0));
-            assertEquals("two", params.get(1));
-            assertEquals("NULL", params.get(2));
         }
     }
 

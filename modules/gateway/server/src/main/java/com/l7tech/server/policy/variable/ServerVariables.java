@@ -723,6 +723,12 @@ public class ServerVariables {
                     return new SecurePasswordLocatorContext();
                 }
             }),
+            new Variable("policy.nullvalue", new Getter() {
+                @Override
+                public Object get(String name, PolicyEnforcementContext context) {
+                    return null;
+                }
+            }),
     };
 
     private static Object getJdbcAllConnections() {
