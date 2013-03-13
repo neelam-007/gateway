@@ -1,5 +1,5 @@
 -- Layer7 Technologies Inc.
--- OTK version otk1.0
+-- OTK schema version otk1.0
 --
 
 --
