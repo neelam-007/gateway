@@ -290,14 +290,23 @@ public class SsgFirewallManagerDialog extends JDialog {
             @Override
             public void run() {
                 if(dlg.isConfirmed()){
+                    final SsgFirewallRule r = dlg.getRule();
+                    Runnable reedit = new Runnable() {
+                        @Override
+                        public void run() {
+                            loadFirewallRules();
+                            displaySimplePropertiesDialog(r);
+                        }
+                    };
                     try {
-                        final SsgFirewallRule r = dlg.getRule();
                         if(rule == null){
                             r.setOrdinal(firewallRulesTable.getRowCount() + 1);
                         }
                         Registry.getDefault().getTransportAdmin().saveFirewallRule(r);
                     } catch (Exception e) {
-                        logger.warning("Unable to save firewall rule: " + ExceptionUtils.getDebugException(e));
+                        logger.warning("Unable to save firewall rule: " +  ExceptionUtils.getMessage(e));
+                        DialogDisplayer.showMessageDialog(SsgFirewallManagerDialog.this, "Error saving rule: " + ExceptionUtils.getMessage(e)
+                                , "Save Failed", JOptionPane.ERROR_MESSAGE, reedit);
                     }
                 }
                 loadFirewallRules();
@@ -312,15 +321,24 @@ public class SsgFirewallManagerDialog extends JDialog {
         DialogDisplayer.display(dlg, new Runnable(){
             @Override
             public void run() {
+                final SsgFirewallRule r = dlg.getRule();
+                Runnable reedit = new Runnable() {
+                    @Override
+                    public void run() {
+                        loadFirewallRules();
+                        displayAdvancedPropertiesDialog(r);
+                    }
+                };
                 if(dlg.isConfirmed()){
                     try {
-                        final SsgFirewallRule r = dlg.getRule();
                         if(rule == null){
                             r.setOrdinal(firewallRulesTable.getRowCount() + 1);
                         }
                         Registry.getDefault().getTransportAdmin().saveFirewallRule(r);
                     } catch (Exception e) {
-                        logger.warning("Unable to save firewall rule: " + ExceptionUtils.getDebugException(e));
+                        logger.warning("Unable to save firewall rule: " +  ExceptionUtils.getMessage(e));
+                        DialogDisplayer.showMessageDialog(SsgFirewallManagerDialog.this, "Error saving rule: " + ExceptionUtils.getMessage(e)
+                                , "Save Failed", JOptionPane.ERROR_MESSAGE, reedit);
                     }
                 }
                 loadFirewallRules();
