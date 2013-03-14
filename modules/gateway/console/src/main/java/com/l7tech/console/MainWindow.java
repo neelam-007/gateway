@@ -47,6 +47,7 @@ import javax.swing.text.html.HTMLEditorKit;
 import javax.swing.text.html.StyleSheet;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 import java.awt.*;
 import java.awt.Component;
@@ -265,6 +266,9 @@ public class MainWindow extends JFrame implements SheetHolder {
     public static final String L7_F3 = "l7f3";
     public static final String L7_SHIFT_F3 = "l7shiftf3";
     private final ActiveKeypairJob activeKeypairJob = new ActiveKeypairJob();
+
+    private static final String PATH_SEPARATOR = "/";
+    private static final String ELLIPSIS = "...";
 
     /**
      * MainWindow constructor comment.
@@ -2854,8 +2858,26 @@ public class MainWindow extends JFrame implements SheetHolder {
             final Functions.Unary<String, AbstractTreeNode> accessorFunction = new Functions.Unary<String, AbstractTreeNode>() {
                 @Override
                 public String call(AbstractTreeNode abstractTreeNode) {
-                    return abstractTreeNode.getName();
+                    StringBuilder pathPrefix = new StringBuilder();
 
+                    TreeNode nodePath[] = abstractTreeNode.getPath();
+
+                    if (nodePath.length <= 4) {
+                        for (int i = 1; i < nodePath.length - 1 ; i++) {
+                            AbstractTreeNode n = (AbstractTreeNode) nodePath[i];
+                            pathPrefix.append(n.getName());
+                            pathPrefix.append(PATH_SEPARATOR);
+                        }
+                    } else if(nodePath.length > 4) {
+                        AbstractTreeNode n = (AbstractTreeNode) nodePath[1];
+                        pathPrefix.append(n.getName());
+                        pathPrefix.append(PATH_SEPARATOR).append(ELLIPSIS).append(PATH_SEPARATOR);
+                        n = (AbstractTreeNode) nodePath[nodePath.length - 2];
+                        pathPrefix.append(n.getName());
+                        pathPrefix.append(PATH_SEPARATOR);
+                    }
+
+                    return pathPrefix + abstractTreeNode.getName();
                 }
             };
 
