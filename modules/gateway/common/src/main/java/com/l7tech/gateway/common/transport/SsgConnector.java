@@ -546,7 +546,11 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
      * @return  true if this connector grants access to the specified endpoint.
      */
     public boolean offersEndpoint(Endpoint endpoint) {
-        return endpointSet().contains(endpoint);
+        if (Endpoint.ADMIN_REMOTE.name().equals(endpoint.name())) {
+            return endpointSet().contains(endpoint) || endpointSet().contains(Endpoint.ADMIN_REMOTE_SSM) || endpointSet().contains(Endpoint.ADMIN_REMOTE_ESM);
+        } else {
+            return endpointSet().contains(endpoint);
+        }
     }
 
     /**

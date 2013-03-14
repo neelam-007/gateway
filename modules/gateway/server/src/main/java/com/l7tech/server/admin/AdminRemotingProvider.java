@@ -129,7 +129,7 @@ public class AdminRemotingProvider implements RemotingProvider<Administrative>, 
             throw new AccessControlException("Admin request disallowed: Unable to determine which connector this request came in on");
 
         if (!connector.offersEndpoint(SsgConnector.Endpoint.ADMIN_APPLET) && !connector.offersEndpoint( SsgConnector.Endpoint.ADMIN_REMOTE_SSM))
-            throw new AccessControlException("Request not permitted on this port");
+            throw new AccessControlException("Admin request not permitted on this port, " + connector.getPort());
 
         if ( checkAuthenticated ) {
             ensureAuthenticated();

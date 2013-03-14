@@ -75,7 +75,11 @@ public class RmiErrorHandler implements ErrorHandler {
             e.getLogger().log(Level.SEVERE, message, ExceptionUtils.getDebugException(t));
             if (rex instanceof NoSuchObjectException ||
                 throwable instanceof AccessControlException) {
-                message = "Gateway Inactivity Session Timeout has been reached.";
+                if (throwable instanceof AccessControlException && throwable.getMessage().startsWith("Admin request not permitted on this port")) {
+                    message = throwable.getMessage();
+                } else {
+                    message = "Gateway Inactivity Session Timeout has been reached.";
+                }
                 t = null;
             }
             else if ((rex instanceof ConnectException) ||
