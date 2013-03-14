@@ -163,13 +163,15 @@ public class OAuthInstallerSecureZoneDatabaseDialog extends JDialog {
         dialog.pack();
         Utilities.centerOnParentWindow(dialog);
         // save selection
-        final long selectedPasswordOid = securePasswordComboBox.getSelectedSecurePassword().getOid();
+        final SecurePassword password = securePasswordComboBox.getSelectedSecurePassword();
         DialogDisplayer.display(dialog, new Runnable() {
             @Override
             public void run() {
                 securePasswordComboBox.reloadPasswordList(SecurePassword.SecurePasswordType.PASSWORD);
                 // load selection
-                securePasswordComboBox.setSelectedSecurePassword(selectedPasswordOid);
+                if(password != null) {
+                    securePasswordComboBox.setSelectedSecurePassword(password.getOid());
+                }
                 pack();
             }
         });
