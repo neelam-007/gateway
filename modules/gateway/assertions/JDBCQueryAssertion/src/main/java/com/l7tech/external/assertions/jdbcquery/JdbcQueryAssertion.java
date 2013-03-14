@@ -209,7 +209,7 @@ public class JdbcQueryAssertion extends Assertion implements JdbcConnectionable,
     @Override
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {
-        return Syntax.getReferencedNames(connectionName, sqlQuery, variablePrefix, queryTimeout);
+        return Syntax.getReferencedNames(connectionName, sqlQuery, variablePrefix, queryTimeout, schema);
     }
 
     @Override

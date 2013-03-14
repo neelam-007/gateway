@@ -135,6 +135,7 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
             @Override
             public void run() {
                 schemaTextField.setEnabled(schemaCheckBox.isEnabled() && schemaCheckBox.isSelected());
+                enableOrDisableOkButton();
             }
         }));
 
@@ -160,6 +161,8 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
                     }
                 },
                 300);
+
+        schemaTextField.getDocument().addDocumentListener(changeListener);
 
         variablePrefixTextField.addChangeListener(changeListener);
 
@@ -248,14 +251,11 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
         if (connName != null) {
             connectionComboBox.setSelectedItem(connName);
 
-            // oracle specific behaviour
-            if (isMaybeOracle(connName)) {
-                final String schema = assertion.getSchema();
-                final boolean hasSchema = schema != null && !schema.trim().isEmpty();
-                if (hasSchema) {
-                    schemaTextField.setText(schema);
-                    schemaCheckBox.setSelected(true);
-                }
+            final String schema = assertion.getSchema();
+            final boolean hasSchema = schema != null && !schema.trim().isEmpty();
+            if (hasSchema) {
+                schemaTextField.setText(schema);
+                schemaCheckBox.setSelected(true);
             }
         } else {
             // default selection is no selection
@@ -295,9 +295,7 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
     }
 
     private void enableOrDisableSchemaControls() {
-        final String connName = connectionComboBox.getSelectedItem().toString();
-        final boolean isOracle = isMaybeOracle(connName);
-        schemaCheckBox.setEnabled(isOracle && JdbcUtil.isStoredProcedure(sqlQueryTextArea.getText().toLowerCase()));
+        schemaCheckBox.setEnabled(JdbcUtil.isStoredProcedure(sqlQueryTextArea.getText().toLowerCase()));
     }
 
     private void populateConnectionCombobox() {
@@ -419,7 +417,7 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
         boolean enabled = !isReadOnly() &&
             isNonEmptyRequiredTextField(((JTextField)connectionComboBox.getEditor().getEditorComponent()).getText()) &&
             isNonEmptyRequiredTextField(sqlQueryTextArea.getText()) &&
-            variablePrefixTextField.isEntryValid();
+            variablePrefixTextField.isEntryValid() && !(schemaCheckBox.isSelected() && schemaTextField.getText().isEmpty());
 
         okButton.setEnabled(enabled);
     }
@@ -453,6 +451,12 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
                         return;
                     }
 
+                    final String schemaName = schemaCheckBox.isEnabled() && schemaCheckBox.isSelected() ? schemaTextField.getText().trim() : "";
+                    if (Syntax.getReferencedNames(schemaName).length > 0) {
+                        displayQueryTestingResult("Cannot process testing due to JDBC Schema name containing context variable(s).");
+                        return;
+                    }
+
                     if (Syntax.getReferencedNames(connName).length > 0) {
                         displayQueryTestingResult("Cannot process testing due to JDBC Connection name containing context variable(s).");
                         return;
@@ -475,8 +479,6 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
                         return;
                     }
                     final int queryTimeout = Integer.parseInt(queryTimeoutTextField.getText());
-
-                    final String schemaName = schemaCheckBox.isEnabled() && schemaCheckBox.isSelected() ? schemaTextField.getText().trim() : "";
 
                     final JdbcAdmin admin = getJdbcConnectionAdmin();
                     try {

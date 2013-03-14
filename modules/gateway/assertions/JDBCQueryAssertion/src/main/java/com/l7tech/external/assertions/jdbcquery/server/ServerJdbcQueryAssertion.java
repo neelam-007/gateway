@@ -65,7 +65,7 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
             throw new PolicyAssertionException(assertion, "Assertion must supply a sql statement");
         }
 
-        if (!Syntax.isAnyVariableReferenced(assertion.getConnectionName())) {
+        if (!Syntax.isAnyVariableReferenced(assertion.getConnectionName()) && (assertion.getSchema() == null || !Syntax.isAnyVariableReferenced(assertion.getSchema()))) {
             jdbcQueryingManager.registerQueryForPossibleCaching(assertion.getConnectionName(), assertion.getSqlQuery(), assertion.getSchema());
         }
     }
@@ -89,6 +89,7 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
 
             final Map<String, Object> variableMap = context.getVariableMap(variablesUsed, getAudit());
             final String connName = ExpandVariables.process(assertion.getConnectionName(), variableMap, getAudit());
+            final String schema = assertion.getSchema() != null ? ExpandVariables.process(assertion.getSchema(), variableMap, getAudit()) : null;
             // Get result by querying.  The result could be a ResultSet object, an integer (updated rows), or a string (a warning message).
             final String queryTimeoutString = (assertion.getQueryTimeout() != null) ? assertion.getQueryTimeout() : "0";
             final String resolvedQueryTimeout = ExpandVariables.process(queryTimeoutString, variableMap, getAudit());
@@ -98,7 +99,7 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
             }
             final int queryTimeout = Integer.parseInt(resolvedQueryTimeout);
 
-            final Object result = jdbcQueryingManager.performJdbcQuery(connName, plainQuery, assertion.getSchema(), assertion.getMaxRecords(), queryTimeout, preparedStmtParams);
+            final Object result = jdbcQueryingManager.performJdbcQuery(connName, plainQuery, schema, assertion.getMaxRecords(), queryTimeout, preparedStmtParams);
 
             // Analyze the result type and perform a corresponding action.
             if (result instanceof String) {

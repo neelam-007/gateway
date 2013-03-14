@@ -127,7 +127,7 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager, PropertyCha
 
     @Override
     public void registerQueryForPossibleCaching(@NotNull String connectionName, @NotNull String query, @Nullable String schemaName) {
-        if (JdbcUtil.isStoredProcedure(query) && !Syntax.isAnyVariableReferenced(connectionName)) {
+        if (JdbcUtil.isStoredProcedure(query) && !Syntax.isAnyVariableReferenced(connectionName) && (schemaName == null || !Syntax.isAnyVariableReferenced(schemaName))) {
             dbObjectsToCacheMetaDataFor.add(getCacheKey(connectionName, query, Option.optional(schemaName)));
         }
     }
