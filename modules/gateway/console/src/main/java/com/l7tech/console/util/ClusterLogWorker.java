@@ -1,5 +1,6 @@
 package com.l7tech.console.util;
 
+import com.l7tech.gateway.common.AsyncAdminMethods;
 import com.l7tech.gateway.common.cluster.LogRequest;
 import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
 import com.l7tech.gateway.common.cluster.GatewayStatus;
@@ -10,7 +11,9 @@ import com.l7tech.gateway.common.audit.AuditSearchCriteria;
 import com.l7tech.gateway.common.audit.AuditRecordHeader;
 import com.l7tech.console.table.AuditLogTableSorterModel;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.SyspropUtil;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -26,6 +29,11 @@ import java.util.logging.Logger;
 public class ClusterLogWorker extends SwingWorker {
 
     private final static Logger logger = Logger.getLogger(ClusterLogWorker.class.getName());
+
+    private static final String PROP_PREFIX = "com.l7tech.console";
+    private static final long DELAY_INITIAL = ConfigFactory.getLongProperty( PROP_PREFIX + ".auditSearch.serverSideDelay.initial", 50L );
+    private static final long DELAY_CAP = ConfigFactory.getLongProperty(PROP_PREFIX + ".auditSearch.serverSideDelay.maximum", 5000L);
+    private static final double DELAY_MULTIPLIER = SyspropUtil.getDouble(PROP_PREFIX + ".auditSearch.serverSideDelay.multiplier", 1.6);
 
     private final ClusterStatusAdmin clusterStatusService;
     private final AuditAdmin logService;
@@ -131,7 +139,7 @@ public class ClusterLogWorker extends SwingWorker {
                 }
             }
 
-            List<AuditRecordHeader> rawHeaders;
+            AuditRecordHeader[] rawHeaders;
             if (logRequest != null) {
                 Map<Long, AuditHeaderMessage> newLogs = new HashMap<Long, AuditHeaderMessage>();
 
@@ -143,9 +151,9 @@ public class ClusterLogWorker extends SwingWorker {
                         maxRecords(AuditLogTableSorterModel.MAX_MESSAGE_BLOCK_SIZE).build();
 
                     logger.finer("Start time to grab data:: " + new Date(System.currentTimeMillis()));
-                    rawHeaders = logService.findHeaders(asc);
+                    rawHeaders = getLogs(asc);
                     logger.finer("End time of grab data:: " + new Date(System.currentTimeMillis()));
-                    if (!isCancelled() && rawHeaders.size() > 0) {
+                    if (!isCancelled() && rawHeaders.length > 0) {
                         long oldest = Long.MAX_VALUE;
 
                         Map<String, Long> nodeToLowestId = new HashMap<String, Long>();
@@ -153,8 +161,8 @@ public class ClusterLogWorker extends SwingWorker {
                             nodeToLowestId.put(nodeId, Long.MAX_VALUE);
                         }
 
-                        for (int j = 0; j < (rawHeaders.size()) && (retrievedLogs.size() < AuditLogTableSorterModel.MAX_NUMBER_OF_LOG_MESSAGES); j++) {
-                            AuditRecordHeader header = rawHeaders.get(j);
+                        for (int j = 0; j < (rawHeaders.length) && (retrievedLogs.size() < AuditLogTableSorterModel.MAX_NUMBER_OF_LOG_MESSAGES); j++) {
+                            AuditRecordHeader header = rawHeaders[j];
                             logMessage = new AuditHeaderMessage(header);
 
                             final GatewayStatus nodeStatus = newNodeList.get(header.getNodeId());
@@ -194,7 +202,16 @@ public class ClusterLogWorker extends SwingWorker {
                         logRequest = null;
                     }
                 } catch (FindException e) {
-                    logger.log(Level.SEVERE, "Unable to retrieve audits from server:"+e.getMessage(), ExceptionUtils.getDebugException(e));
+                    logger.log(Level.SEVERE, "Unable to retrieve audits from server:" + e.getMessage(), ExceptionUtils.getDebugException(e));
+                    logRequest = null;
+                } catch (InterruptedException e) {
+                    logger.log(Level.SEVERE, "Unable to retrieve audits from server:" + e.getMessage(), ExceptionUtils.getDebugException(e));
+                    logRequest = null;
+                } catch (AsyncAdminMethods.JobStillActiveException e) {
+                    logger.log(Level.SEVERE, "Unable to retrieve audits from server:" + e.getMessage(), ExceptionUtils.getDebugException(e));
+                    logRequest = null;
+                } catch (AsyncAdminMethods.UnknownJobException e) {
+                    logger.log(Level.SEVERE, "Unable to retrieve audits from server:" + e.getMessage(), ExceptionUtils.getDebugException(e));
                     logRequest = null;
                 }
 
@@ -219,6 +236,41 @@ public class ClusterLogWorker extends SwingWorker {
             } else {
                 throw re;
             }
+        }
+    }
+
+    /**
+     * Gets logs from gateway
+     *
+     * @param asc
+     * @return List of retrieved audits, returns empty list if job is cancelled
+     * @throws FindException
+     * @throws InterruptedException
+     * @throws AsyncAdminMethods.UnknownJobException
+     * @throws AsyncAdminMethods.JobStillActiveException
+     */
+    private AuditRecordHeader[] getLogs(AuditSearchCriteria asc) throws FindException, InterruptedException, AsyncAdminMethods.UnknownJobException, AsyncAdminMethods.JobStillActiveException {
+        AsyncAdminMethods.JobId<AuditRecordHeader[]> jobId = logService.findHeaders(asc);
+        double delay = DELAY_INITIAL;
+        Thread.sleep((long)delay);
+        while( true ) {
+            if(cancelled.get()) {
+                logService.cancelJob(jobId, true);
+                return new AuditRecordHeader[0];
+            }
+            final String status = logService.getJobStatus( jobId );
+            if ( status == null ) {
+                throw new  AsyncAdminMethods.UnknownJobException( "Unknown job" );
+            } else if ( !status.startsWith( "a" ) ) {
+                final AsyncAdminMethods.JobResult<AuditRecordHeader[]> jobResult = logService.getJobResult( jobId );
+                if ( jobResult.result != null ) {
+                    return  jobResult.result ;
+                } else {
+                    throw new FindException(jobResult.throwableMessage) ;
+                }
+            }
+            delay = delay >= DELAY_CAP ? DELAY_CAP : delay * DELAY_MULTIPLIER;
+            Thread.sleep((long)delay);
         }
     }
 

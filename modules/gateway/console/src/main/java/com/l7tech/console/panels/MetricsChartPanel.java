@@ -5,10 +5,8 @@ package com.l7tech.console.panels;
 
 import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
 import com.l7tech.gateway.common.audit.AuditAdmin;
-import com.l7tech.gateway.common.audit.AuditRecord;
 import com.l7tech.gateway.common.audit.AuditSearchCriteria;
 import com.l7tech.gateway.common.audit.AuditRecordHeader;
-import com.l7tech.gui.util.Utilities;
 import com.l7tech.console.GatewayAuditWindow;
 import com.l7tech.console.panels.dashboard.ServiceMetricsPanel;
 import com.l7tech.console.util.Registry;
@@ -17,6 +15,8 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.gateway.common.service.MetricsBin;
 import com.l7tech.gateway.common.service.MetricsSummaryBin;
+import com.l7tech.util.CollectionUtils;
+import com.l7tech.util.Either;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.axis.DateAxis;
@@ -41,12 +41,15 @@ import java.awt.event.MouseEvent;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.io.InvalidObjectException;
+import java.lang.reflect.InvocationTargetException;
 import java.text.MessageFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static com.l7tech.console.util.AdminGuiUtils.doAsyncAdmin;
 
 /**
  * Chart panel containing plots of metrics bins data. The chart contains 3 plots
@@ -1060,7 +1063,12 @@ public class MetricsChartPanel extends ChartPanel {
                     nodeId(nodeSelected == null ? null : nodeSelected.getId()).
                     serviceName(serviceSelected == null ? null : serviceSelected.getName()).build();
             try {
-                final Collection<AuditRecordHeader> records = auditAdmin.findHeaders(criteria);
+                final Either<String, AuditRecordHeader[]> recordsEither = doAsyncAdmin(auditAdmin,
+                        SwingUtilities.getWindowAncestor(MetricsChartPanel.this),
+                        "Show Audits",
+                        "Retrieving Audits",
+                        auditAdmin.findHeaders(criteria));
+                AuditRecordHeader[] records = recordsEither.right();
 
                 if (_gatewayAuditWindow == null) {
                     _gatewayAuditWindow = new GatewayAuditWindow(false);
@@ -1073,8 +1081,13 @@ public class MetricsChartPanel extends ChartPanel {
                 _gatewayAuditWindow.setTitle(GATEWAY_AUDIT_WINDOW_TITLE + " (" +
                         timeRangeAsString(startDate, endDate, _timeZone) + ")");
 
-                _gatewayAuditWindow.displayAuditHeaders(records);
+                _gatewayAuditWindow.displayAuditHeaders(CollectionUtils.list(records));
             } catch (FindException e) {
+                _logger.warning("Failed to query for audit events: " + e.getMessage());
+                errDialogMsg = e.getMessage();
+            } catch (InterruptedException e) {
+                // action cancelled, do nothing
+            } catch (InvocationTargetException e) {
                 _logger.warning("Failed to query for audit events: " + e.getMessage());
                 errDialogMsg = e.getMessage();
             }

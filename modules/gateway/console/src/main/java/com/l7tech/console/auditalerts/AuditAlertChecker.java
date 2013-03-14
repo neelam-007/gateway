@@ -1,5 +1,6 @@
 package com.l7tech.console.auditalerts;
 
+import com.l7tech.gateway.common.AsyncAdminMethods;
 import com.l7tech.gateway.common.audit.AuditAdmin;
 import com.l7tech.console.logging.ErrorManager;
 
@@ -8,7 +9,9 @@ import java.util.Timer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.SyspropUtil;
 import org.springframework.remoting.RemoteAccessException;
 
 import javax.swing.*;
@@ -63,6 +66,11 @@ public class AuditAlertChecker {
     //- PRIVATE
 
     private static final Logger logger = Logger.getLogger(AuditAlertChecker.class.getName());
+
+    private static final String PROP_PREFIX = "com.l7tech.console";
+    private static final long DELAY_INITIAL = ConfigFactory.getLongProperty(PROP_PREFIX + ".auditAlertChecker.serverSideDelay.initial", 50L);
+    private static final long DELAY_CAP = ConfigFactory.getLongProperty(PROP_PREFIX + ".auditAlertChecker.serverSideDelay.maximum", 5000L);
+    private static final double DELAY_MULTIPLIER = SyspropUtil.getDouble(PROP_PREFIX + ".auditAlertChecker.serverSideDelay.multiplier", 1.6);
 
     private final AuditAlertConfigBean configBean;
     private final List<AuditWatcher> auditWatchers;
@@ -148,7 +156,7 @@ public class AuditAlertChecker {
             }
 
             //check if there are new audits to grab
-            final long alertTime = admin.hasNewAudits(lastAcknowledged, configBean.getAuditAlertLevel());
+            final long alertTime = getHasNewAudits(admin);
             if ( alertTime > 0L ) {
                 SwingUtilities.invokeLater( new Runnable(){
                     @Override
@@ -169,5 +177,40 @@ public class AuditAlertChecker {
             //bug 9648 - allow handler chain to correctly manage this remote exception
             throw e;
         }
+    }
+
+    /**
+     * @param admin  the audit API
+     * @return  date of the first available audit or 0 if none are available or query error occurs
+     */
+    private long getHasNewAudits(AuditAdmin admin) {
+        AsyncAdminMethods.JobId<Long> jobId = admin.hasNewAudits(lastAcknowledged,configBean.getAuditAlertLevel());
+        double delay = DELAY_INITIAL;
+        try{
+            Thread.sleep((long)delay);
+            while( true ) {
+                final String status = admin.getJobStatus( jobId );
+                if ( status == null ) {
+                    logger.warning("Server could not find our new audits query job ID");
+                    break;
+                } else if ( !status.startsWith( "a" ) ) {
+                    final AsyncAdminMethods.JobResult<Long> jobResult = admin.getJobResult( jobId );
+                    if ( jobResult.result != null ) {
+                        return  jobResult.result ;
+                    } else {
+                        logger.warning("Server returned a null job result");
+                    }
+                }
+                delay = delay >= DELAY_CAP ? DELAY_CAP : delay * DELAY_MULTIPLIER;
+                Thread.sleep((long)delay);
+            }
+        } catch (InterruptedException e) {
+            // expected do nothing
+        } catch (AsyncAdminMethods.JobStillActiveException e) {
+            logger.warning("Server could not find our new audits query job ID");
+        } catch (AsyncAdminMethods.UnknownJobException e) {
+            logger.warning("Server could not find our new audits query job ID");
+        }
+        return 0;
     }
 }

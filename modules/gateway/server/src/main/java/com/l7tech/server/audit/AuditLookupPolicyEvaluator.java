@@ -14,6 +14,7 @@ import com.l7tech.server.policy.PolicyCache;
 import com.l7tech.server.policy.ServerPolicyHandle;
 import com.l7tech.util.*;
 import com.whirlycott.cache.Cache;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -73,7 +74,14 @@ public class AuditLookupPolicyEvaluator implements PropertyChangeListener {
         return config.getProperty( ServerConfigParams.PARAM_AUDIT_LOOKUP_POLICY_GUID );
     }
 
-    public List<AuditRecordHeader> findHeaders(final AuditSearchCriteria criteria) throws FindException{
+    /**
+     * Find {@link com.l7tech.gateway.common.audit.AuditRecordHeader}s that match the given criteria.
+     * @param criteria criteria The search settings (must not be null)
+     * @return The collection of audit records (not null)
+     * @throws FindException If an error occurs
+     */
+    @NotNull
+    public List<AuditRecordHeader> findHeaders(@NotNull final AuditSearchCriteria criteria) throws FindException{
         try {
             // Make sure a logging-only audit context is active while running the audit sink policy, so we don't
             // try to add details to the record that is currently being flushed via this very policy

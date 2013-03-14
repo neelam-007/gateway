@@ -44,15 +44,18 @@ public interface AuditAdmin extends AsyncAdminMethods{
     AuditRecord findByPrimaryKey(String id, boolean fromInternal) throws FindException;
 
     /**
-     * Retrieves a collection of {@link AuditRecordHeader}s matching the provided criteria.  May be empty, but never null.
+     * Asynchronously retrieves a collection of {@link AuditRecordHeader}s matching the provided criteria.  May be empty, but never null.
      * (This is the same as the above method except it retrives AuditRecordHeaders instead of entire AuditRecords.)
-     * @param criteria
-     * @return criteria an {@link AuditSearchCriteria} describing the search criteria.  Must not be null.
+     *
+     * @param criteria  an {@link AuditSearchCriteria} describing the search criteria.  Must not be null.
+     * @return the job identifier for the find headers by criteria job.
+     *          Call {@link #getJobStatus(com.l7tech.gateway.common.AsyncAdminMethods.JobId) getJobStatus} to poll for job completion
+     *         and {@link #getJobResult(JobId)} to pick up the result in the form of an array of AuditRecordHeader matching the criteria
      * @throws FindException if there was a problem retrieving Audit records from the database
      */
     @Secured(stereotype=FIND_ENTITIES)
     @Administrative(licensed=false, background = true)
-    List<AuditRecordHeader> findHeaders(AuditSearchCriteria criteria) throws FindException;
+    AsyncAdminMethods.JobId<AuditRecordHeader[]> findHeaders(AuditSearchCriteria criteria) throws FindException;
 
     /**
      * Get digests for audit records.
@@ -68,14 +71,16 @@ public interface AuditAdmin extends AsyncAdminMethods{
     Map<String, byte[]> getDigestsForAuditRecords(Collection<String> auditRecordIds, boolean fromPolicy) throws FindException;
 
     /**
-     * Checks if there are any audits found given the date and level to search for.
+     * Asynchronously checks if there are any audits found given the date and level to search for.
      * @param date  Starting date consider to be new audits
      * @param level The auditing level to be queried for
-     * @return The date of the first available audit or 0 if none are available.
+     * @return the job identifier for the date of the first available audit or 0 if none are available.
+     *          Call {@link #getJobStatus(com.l7tech.gateway.common.AsyncAdminMethods.JobId) getJobStatus} to poll for job completion
+     *         and {@link #getJobResult(JobId)} to pick up the result
      */
     @Transactional(readOnly=true)
     @Administrative(licensed=false, background = true)
-    long hasNewAudits(Date date, Level level);
+    AsyncAdminMethods.JobId<Long> hasNewAudits(Date date, Level level);
 
     /**
      * Get the level below which the server will not record audit events of type {@link MessageSummaryAuditRecord}.

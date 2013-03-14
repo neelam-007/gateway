@@ -198,12 +198,29 @@ public class AuditAdminImpl extends AsyncAdminMethodsImpl implements AuditAdmin,
     }
 
     @Override
-    public List<AuditRecordHeader> findHeaders(AuditSearchCriteria criteria) throws FindException{
-        notifyAuditSearch(criteria);
-        if(criteria.getFromPolicy)
-            return auditLookupPolicyEvaluator.findHeaders(criteria);
-        else
-            return auditRecordManager.findHeaders(criteria);
+    public AsyncAdminMethods.JobId<AuditRecordHeader[]> findHeaders(final AuditSearchCriteria criteria) throws FindException{
+        final FutureTask<AuditRecordHeader[]> queryTask = new FutureTask<AuditRecordHeader[]>( find( false ).wrapCallable( new Callable<AuditRecordHeader[]>(){
+            @Override
+            public AuditRecordHeader[] call() throws Exception {
+                notifyAuditSearch(criteria);
+                List<AuditRecordHeader> headers;
+                if(criteria.getFromPolicy)
+                    headers = auditLookupPolicyEvaluator.findHeaders(criteria);
+                else
+                    headers = auditRecordManager.findHeaders(criteria);
+                return headers.toArray(new AuditRecordHeader[headers.size()]);
+            }
+
+        }));
+
+        Background.scheduleOneShot(new TimerTask() {
+            @Override
+            public void run() {
+                queryTask.run();
+            }
+        }, 0L);
+
+        return registerJob( queryTask, AuditRecordHeader[].class);
     }
 
     @Override
@@ -217,34 +234,46 @@ public class AuditAdminImpl extends AsyncAdminMethodsImpl implements AuditAdmin,
     }
 
     @Override
-    public long hasNewAudits( final Date date, final Level level) {
-        AuditSearchCriteria criteria = new AuditSearchCriteria.Builder().fromTime(date).fromLevel(level).maxRecords(1).build();
-        long newAuditTime = 0;
-        User user = JaasUtils.getCurrentUser();
-        if ( user != null ) {
-            try {
-                Collection<AuditRecordHeader> newAudits = auditRecordManager.findHeaders(criteria);
-                newAudits = filter.filter(newAudits, user, OperationType.READ, null );
-                if ( newAudits.size() > 0 ) {
-                    newAuditTime = newAudits.iterator().next().getTimestamp();
-                }
-                else {
-                    // try external audits
-                    newAudits = auditLookupPolicyEvaluator.findHeaders(criteria);
-                    newAudits = filter.filter(newAudits, user, OperationType.READ, null );
-                    if ( newAudits.size() > 0 ) {
-                        newAuditTime = newAudits.iterator().next().getTimestamp();
+    public AsyncAdminMethods.JobId<Long> hasNewAudits( final Date date, final Level level) {
+        final FutureTask<Long> queryTask = new FutureTask<Long>( find( false ).wrapCallable( new Callable<Long>(){
+            @Override
+            public Long call() throws Exception {
+                AuditSearchCriteria criteria = new AuditSearchCriteria.Builder().fromTime(date).fromLevel(level).maxRecords(1).build();
+                long newAuditTime = 0;
+                User user = JaasUtils.getCurrentUser();
+                if ( user != null ) {
+                    try {
+                        Collection<AuditRecordHeader> newAudits = auditRecordManager.findHeaders(criteria);
+                        newAudits = filter.filter(newAudits, user, OperationType.READ, null );
+                        if ( newAudits.size() > 0 ) {
+                            newAuditTime = newAudits.iterator().next().getTimestamp();
+                        }
+                        else {
+                            // try external audits
+                            newAudits = auditLookupPolicyEvaluator.findHeaders(criteria);
+                            newAudits = filter.filter(newAudits, user, OperationType.READ, null );
+                            if ( newAudits.size() > 0 ) {
+                                newAuditTime = newAudits.iterator().next().getTimestamp();
+                            }
+                        }
+                    } catch (FindException fe) {
+                        logger.fine("Failed to find new audits for date " + date.toString() + " with level " + level.toString());
                     }
+                } else {
+                    logger.fine("User not found when checking for new audits.");
                 }
-
-
-            } catch (FindException fe) {
-                logger.fine("Failed to find new audits for date " + date.toString() + " with level " + level.toString());
+                return newAuditTime;
             }
-        } else {
-            logger.fine("User not found when checking for new audits.");
-        }
-        return newAuditTime;
+        }));
+
+        Background.scheduleOneShot(new TimerTask() {
+            @Override
+            public void run() {
+                queryTask.run();
+            }
+        }, 0L);
+
+        return registerJob( queryTask,Long.class);
     }
 
     @Override

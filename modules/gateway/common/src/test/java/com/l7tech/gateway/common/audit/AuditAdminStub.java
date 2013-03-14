@@ -27,7 +27,7 @@ public class AuditAdminStub implements AuditAdmin {
     }
 
     @Override
-    public List<AuditRecordHeader> findHeaders( AuditSearchCriteria criteria) throws FindException {
+    public AsyncAdminMethods.JobId<AuditRecordHeader[]> findHeaders( AuditSearchCriteria criteria) throws FindException {
         throw new UnsupportedOperationException("Not supported in stub mode");
     }
 
@@ -112,8 +112,8 @@ public class AuditAdminStub implements AuditAdmin {
     }
 
     @Override
-    public long hasNewAudits(Date date, Level level) {
-        return 0;
+    public AsyncAdminMethods.JobId<Long> hasNewAudits(Date date, Level level) {
+        throw new UnsupportedOperationException("Not supoprted in stub mode");
     }
 
     @Override
