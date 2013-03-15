@@ -401,8 +401,12 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
             try {
                JmsBag jmsBag = pool.poll();
                if (jmsBag == null) {
-
-                    Session session = bag.getConnection().createSession(false, Session.CLIENT_ACKNOWLEDGE);
+                   Session session;
+                    if (endpointConfig.getEndpoint().isMessageSource()) {
+                        session = bag.getConnection().createSession(endpointConfig.isTransactional(), Session.CLIENT_ACKNOWLEDGE);
+                    } else {
+                        session = bag.getConnection().createSession(false, Session.CLIENT_ACKNOWLEDGE);
+                    }
                     jmsBag = new JmsBag(bag.getJndiContext(), bag.getConnectionFactory(),
                         bag.getConnection(), session );
                 }
