@@ -50,7 +50,7 @@ deleted and can only be restored if a backup is available.</prompt>
         <configName>derby.delete</configName>
         <configValue>false</configValue>
         <description>Delete Embedded Database</description>
-        <prompt>Delete the embedded database.</prompt>
+        <prompt>Found an embedded database.</prompt>
     </option>
 
 </optionSet>
