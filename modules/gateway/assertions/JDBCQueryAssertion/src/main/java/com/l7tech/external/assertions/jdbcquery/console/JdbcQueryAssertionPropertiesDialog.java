@@ -66,6 +66,7 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
     private JTextField schemaTextField;
     private JCheckBox schemaCheckBox;
     private JTextField queryTimeoutTextField;
+    private JLabel queryWarningLabel;
 
     private NamingTableModel namingTableModel;
     private Map<String, String> namingMap;
@@ -73,6 +74,8 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
     private boolean confirmed;
     private PermissionFlags jdbcConnPermFlags;
     private final Map<String,String> connToDriverMap = new HashMap<String, String>();
+
+    private final ImageIcon WARNING_ICON = new ImageIcon(ImageCache.getInstance().getIcon("com/l7tech/console/resources/Warning16.png"));
 
     public JdbcQueryAssertionPropertiesDialog(Window owner, JdbcQueryAssertion assertion) {
         super(owner, assertion);
@@ -397,8 +400,24 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
     }
 
     private void enableOrDisableQueryControls(){
-        testButton.setEnabled(!sqlQueryTextArea.getText().trim().isEmpty());
+        String query = sqlQueryTextArea.getText();
+        testButton.setEnabled(!query.trim().isEmpty());
         enableOrDisableSchemaControls();
+
+        if (JdbcUtil.isStoredProcedure(query)) {
+            String procedureName = JdbcUtil.getName(query);
+            if (!procedureName.isEmpty()) {
+
+                boolean isValidQuery = procedureName.indexOf('.') == procedureName.lastIndexOf('.');
+                if (!isValidQuery) {
+                    queryWarningLabel.setIcon(WARNING_ICON);
+                    queryWarningLabel.setText("Query may not reference schema from query, specify schema below instead.");
+                } else {
+                    queryWarningLabel.setIcon(null);
+                    queryWarningLabel.setText("");
+                }
+            }
+        }
     }
 
     private void enableOrDisableTableButtons() {
