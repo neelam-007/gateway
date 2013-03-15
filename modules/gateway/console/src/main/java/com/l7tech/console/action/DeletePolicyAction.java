@@ -16,6 +16,7 @@ import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.policy.PolicyDeletionForbiddenException;
 import com.l7tech.policy.PolicyHeader;
 import com.l7tech.util.ExceptionUtils;
+import org.apache.commons.lang.WordUtils;
 
 import javax.swing.*;
 import java.util.logging.Level;
@@ -112,16 +113,18 @@ public final class DeletePolicyAction extends DeleteEntityNodeAction<PolicyEntit
     }
 
     private String pdfeMessage(PolicyDeletionForbiddenException pdfe) {
-        if (EntityType.POLICY.equals(pdfe.getReferringEntityType()))
-            return node.getName() + " cannot be deleted at this time; it is still in use by another policy";
-        if (EntityType.ENCAPSULATED_ASSERTION.equals(pdfe.getReferringEntityType())) {
-            String encassMsg = node.getName() + " cannot be deleted at this time; it is still in use as the underlying policy fragment for an encapsulated assertion";
+        if (EntityType.POLICY.equals(pdfe.getReferringEntityType())) {
+            return WordUtils.wrap(node.getName() + "  cannot be deleted at this time; it is still in use by another policy", LINE_CHAR_LIMIT, null, true);
+        } else if (EntityType.ENCAPSULATED_ASSERTION.equals(pdfe.getReferringEntityType())) {
+            final StringBuilder stringBuilder = new StringBuilder();
+            stringBuilder.append(node.getName());
+            stringBuilder.append(" cannot be deleted at this time; it is still in use as the underlying policy fragment for an encapsulated assertion");
             final Entity referringEntity = pdfe.getReferringEntity();
             if (referringEntity != null && referringEntity instanceof NamedEntity) {
                 final NamedEntity named = (NamedEntity) referringEntity;
-                encassMsg = encassMsg + " (" + named.getName() + ")";
+                stringBuilder.append(" (" + named.getName() + ")");
             }
-            return encassMsg;
+            return WordUtils.wrap(stringBuilder.toString(), LINE_CHAR_LIMIT, null, true);
         }
         return pdfe.getMessage() != null && pdfe.getMessage().contains(" trace ") ?
                 node.getName() + " cannot be deleted at this time: debug tracing is still enabled on at least one service" :

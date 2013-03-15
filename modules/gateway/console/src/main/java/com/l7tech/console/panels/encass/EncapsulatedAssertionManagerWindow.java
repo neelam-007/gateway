@@ -1,10 +1,7 @@
 package com.l7tech.console.panels.encass;
 
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.console.action.AbstractEncapsulatedAssertionAction;
-import com.l7tech.console.action.CreateEncapsulatedAssertionAction;
-import com.l7tech.console.action.EditEncapsulatedAssertionAction;
-import com.l7tech.console.action.ViewEncapsulatedAssertionAction;
+import com.l7tech.console.action.*;
 import com.l7tech.console.panels.PermissionFlags;
 import com.l7tech.console.policy.EncapsulatedAssertionRegistry;
 import com.l7tech.console.policy.exporter.ConsoleExternalReferenceFinder;
@@ -37,6 +34,7 @@ import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.util.*;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.WordUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.*;
@@ -131,10 +129,11 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
                 if (config == null)
                     return;
 
+                final String msg = "Are you sure you wish to delete the encapsulated assertion configuration " + config.getName() + "?" +
+                        " Any existing policies that make use of this assertion will become invalid.";
                 DialogDisplayer.showSafeConfirmDialog(
                     EncapsulatedAssertionManagerWindow.this,
-                    "<html>Are you sure you wish to delete the encapsulated assertion configuration " + config.getName() + "?<br>" +
-                        "Any existing policies that make use of this assertion will become invalid.",
+                        WordUtils.wrap(msg, DeleteEntityNodeAction.LINE_CHAR_LIMIT, null, true),
                     "Confirm Remove Encapsulated Assertion",
                     JOptionPane.YES_NO_OPTION,
                     JOptionPane.WARNING_MESSAGE,

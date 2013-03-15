@@ -14,6 +14,9 @@ import com.l7tech.objectmodel.OrganizationHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.util.Functions;
 import com.l7tech.gui.util.DialogDisplayer;
+import org.apache.commons.lang.WordUtils;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
@@ -27,6 +30,7 @@ import java.util.logging.Level;
  * either.
  */
 public abstract class DeleteEntityNodeAction <HT extends EntityWithPolicyNode> extends EntityWithPolicyNodeAction<HT>  {
+    public static final int LINE_CHAR_LIMIT = 80;
     private boolean confirmationEnabled;  // Check if a deletion confirmation is needed or not.
 
     public DeleteEntityNodeAction(HT node) {
@@ -78,17 +82,10 @@ public abstract class DeleteEntityNodeAction <HT extends EntityWithPolicyNode> e
         else nodeEntityType = node.getClass().getSimpleName();
 
         StringBuilder sb = new StringBuilder("Are you sure you want to delete the '").append(node.getName()).append("' ").append(nodeEntityType).append("?");
-        if (sb.length() <= 80) return sb.toString();
+        if (sb.length() <= LINE_CHAR_LIMIT) return sb.toString();
 
-        sb = new StringBuilder("Are you sure you want to delete the " + nodeEntityType + ",\n");
-        String nodeName = "'" + node.getName() + "'";
-        while (nodeName.length() > 80) {
-            sb.append(nodeName.substring(0, 80)).append("\n");
-            nodeName = nodeName.substring(80);
-        }
-        sb.append(nodeName).append("?");
-
-        return sb.toString();
+        sb = new StringBuilder("Are you sure you want to delete the " + nodeEntityType + ", ").append("'" + node.getName() + "'").append("?");
+        return WordUtils.wrap(sb.toString(), LINE_CHAR_LIMIT, null, true);
     }
 
     /**
