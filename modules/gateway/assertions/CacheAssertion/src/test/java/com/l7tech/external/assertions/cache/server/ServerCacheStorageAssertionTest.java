@@ -60,7 +60,7 @@ public class ServerCacheStorageAssertionTest extends CacheAssertionTest {
         final ServerCacheStorageAssertion serverAssertion = initServerCacheStorageAssertion("-1", "2", "3");
         AssertionStatus status = serverAssertion.checkRequest(policyContext);
         assertTrue(testAudit.isAuditPresent(AssertionMessages.CACHE_STORAGE_INVALID_VALUE));
-        assertEquals(AssertionStatus.NONE, status);
+        assertEquals(AssertionStatus.FAILED, status);
     }
 
     @Test
@@ -71,7 +71,7 @@ public class ServerCacheStorageAssertionTest extends CacheAssertionTest {
         final ServerCacheStorageAssertion serverAssertion = initServerCacheStorageAssertion("${xyz}", "2", "3");
         AssertionStatus status = serverAssertion.checkRequest(policyContext);
         assertTrue(testAudit.isAuditPresent(AssertionMessages.CACHE_STORAGE_INVALID_VALUE));
-        assertEquals(AssertionStatus.NONE, status);
+        assertEquals(AssertionStatus.FAILED, status);
     }
 
     @Test
@@ -90,7 +90,7 @@ public class ServerCacheStorageAssertionTest extends CacheAssertionTest {
         System.out.println(format);
         assertTrue(testAudit.isAuditPresentContaining(format));
 
-        assertEquals(AssertionStatus.NONE, status);
+        assertEquals(AssertionStatus.FAILED, status);
     }
 
     @Test
@@ -109,7 +109,7 @@ public class ServerCacheStorageAssertionTest extends CacheAssertionTest {
         System.out.println(format);
         assertTrue(testAudit.isAuditPresentContaining(format));
 
-        assertEquals(AssertionStatus.NONE, status);
+        assertEquals(AssertionStatus.FAILED, status);
     }
 
     @Test
@@ -127,7 +127,7 @@ public class ServerCacheStorageAssertionTest extends CacheAssertionTest {
         final String format = MessageFormat.format(CACHE_STORAGE_INVALID_VALUE.getMessage(), "Resolved maximum entry age value is invalid '" + Long.toString(kMAX_ENTRY_AGE_SECONDS + 1) + "'. Value must be seconds between '0' and '" + String.valueOf(kMAX_ENTRY_AGE_SECONDS) + "' inclusive.");
         System.out.println(format);
         assertTrue(testAudit.isAuditPresentContaining(format));
-        assertEquals(AssertionStatus.NONE, status);
+        assertEquals(AssertionStatus.FAILED, status);
     }
 
     @Test
@@ -137,7 +137,7 @@ public class ServerCacheStorageAssertionTest extends CacheAssertionTest {
         final ServerCacheStorageAssertion serverAssertion = initServerCacheStorageAssertion("2", "3", "-1");
         AssertionStatus status = serverAssertion.checkRequest(policyContext);
         assertTrue(testAudit.isAuditPresent(AssertionMessages.CACHE_STORAGE_INVALID_VALUE));
-        assertEquals(AssertionStatus.NONE, status);
+        assertEquals(AssertionStatus.FAILED, status);
     }
 
     @Test
@@ -148,7 +148,7 @@ public class ServerCacheStorageAssertionTest extends CacheAssertionTest {
         final ServerCacheStorageAssertion serverAssertion = initServerCacheStorageAssertion("2", "3", "${xyz}");
         AssertionStatus status = serverAssertion.checkRequest(policyContext);
         assertTrue(testAudit.isAuditPresent(AssertionMessages.CACHE_STORAGE_INVALID_VALUE));
-        assertEquals(AssertionStatus.NONE, status);
+        assertEquals(AssertionStatus.FAILED, status);
     }
 
     @Test
@@ -161,7 +161,7 @@ public class ServerCacheStorageAssertionTest extends CacheAssertionTest {
 
         AssertionStatus status = serverAssertion.checkRequest(policyContext);
         assertTrue(testAudit.isAuditPresent(AssertionMessages.CACHE_STORAGE_INVALID_VALUE));
-        assertEquals(AssertionStatus.NONE, status);
+        assertEquals(AssertionStatus.FAILED, status);
     }
 
     /**
@@ -197,7 +197,7 @@ public class ServerCacheStorageAssertionTest extends CacheAssertionTest {
         System.out.println(format);
         assertTrue(testAudit.isAuditPresentContaining(format));
 
-        assertEquals(AssertionStatus.NONE, status);
+        assertEquals(AssertionStatus.FAILED, status);
     }
 
     @Test(expected = PolicyAssertionException.class)

@@ -57,14 +57,14 @@ public class ServerCacheStorageAssertion extends AbstractMessageTargetableServer
             } else {
                 final String format = MessageFormat.format("Resolved maximum entries value is invalid ''{0}''. Value must be between ''{1}'' and ''{2}'' inclusive.  Cached value not stored.", processedCacheMaxEntries, zeroString, Integer.toString(CacheStorageAssertion.kMAX_ENTRIES));
                 logAndAudit(AssertionMessages.CACHE_STORAGE_INVALID_VALUE, format);
-                return AssertionStatus.NONE; //assertion should not fail
+                return AssertionStatus.FAILED;
             }
 
             final String maxEntryAgeSeconds = ExpandVariables.process(assertion.getMaxEntryAgeSeconds(), vars, getAudit());
             if (!isValidLong(maxEntryAgeSeconds, false, 0, kMAX_ENTRY_AGE_SECONDS)) {
                 final String format = MessageFormat.format("Resolved maximum entry age value is invalid ''{0}''. Value must be seconds between ''{1}'' and ''{2}'' inclusive.  Cached value not stored.", maxEntryAgeSeconds, zeroString, String.valueOf(kMAX_ENTRY_AGE_SECONDS));
                 logAndAudit(AssertionMessages.CACHE_STORAGE_INVALID_VALUE, format);
-                return AssertionStatus.NONE;//assertion should not fail
+                return AssertionStatus.FAILED;
             }
 
             final long cacheMaxEntryAgeMillis = Long.valueOf(maxEntryAgeSeconds) * 1000L;
@@ -76,7 +76,7 @@ public class ServerCacheStorageAssertion extends AbstractMessageTargetableServer
             } else {
                 final String format = MessageFormat.format("Resolved maximum entry size value is invalid ''{0}''. Value must be between ''{1}'' and ''{2}'' inclusive.  Cached value not stored.", processedCacheMaxEntrySizeBytes, zeroString, Long.toString(CacheStorageAssertion.kMAX_ENTRY_SIZE));
                 logAndAudit(AssertionMessages.CACHE_STORAGE_INVALID_VALUE, format);
-                return AssertionStatus.NONE;//assertion should not fail
+                return AssertionStatus.FAILED;
             }
 
             final Message messageToCache = context.getTargetMessage(assertion, true);
