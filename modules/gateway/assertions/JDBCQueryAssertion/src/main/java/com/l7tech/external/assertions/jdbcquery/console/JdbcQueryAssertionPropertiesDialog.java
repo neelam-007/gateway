@@ -645,7 +645,7 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
                 }
 
                 if (!isValidQuery) {
-                    DialogDisplayer.showMessageDialog(this,"Query cannot reference schema from query, use schema field instead",null);
+                    DialogDisplayer.showMessageDialog(this, "Query cannot reference schema from query, use schema field instead", "Invalid Query", JOptionPane.ERROR_MESSAGE, null);
                     return;
                 }
             }
