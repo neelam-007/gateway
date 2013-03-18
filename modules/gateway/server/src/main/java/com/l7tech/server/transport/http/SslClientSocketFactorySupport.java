@@ -1,25 +1,19 @@
 package com.l7tech.server.transport.http;
 
+import com.l7tech.common.io.SSLSocketWrapper;
 import com.l7tech.util.ConfigFactory;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.InetAddressUtil;
 import com.l7tech.util.ResourceUtils;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.common.io.SSLSocketWrapper;
 
-import javax.net.ssl.SSLSocketFactory;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.X509TrustManager;
-import javax.net.ssl.KeyManager;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.SSLSocket;
-import java.util.Comparator;
-import java.security.GeneralSecurityException;
-import java.net.Socket;
-import java.net.InetAddress;
-import java.net.SocketAddress;
-import java.net.InetSocketAddress;
+import javax.net.ssl.*;
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.Socket;
+import java.net.SocketAddress;
+import java.security.GeneralSecurityException;
+import java.util.Comparator;
 
 /**
  * This factor creates a GLOBAL instance of an SSL client socket factory.
@@ -145,7 +139,7 @@ public abstract class SslClientSocketFactorySupport extends SSLSocketFactory imp
      * @param localPort The local port (-1 if not available)
      * @throws IOException Throw if the socket creation should not be permitted.
      */
-    protected Socket notifyCreated( final Socket socket,
+    protected Socket notifyCreated( Socket socket,
                                     final String host,
                                     final InetAddress address,
                                     final int port,

@@ -3,15 +3,11 @@ package com.l7tech.server.identity.ldap;
 import com.l7tech.server.transport.http.SslClientSocketFactorySupport;
 import com.l7tech.util.NonObfuscatable;
 
-import javax.net.ssl.SSLSocketFactory;
-import javax.net.ssl.X509TrustManager;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.SSLSocket;
-import java.util.Comparator;
-import java.net.Socket;
-import java.net.InetAddress;
+import javax.net.ssl.*;
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.Socket;
+import java.util.Comparator;
 
 /**
  * SSLSocketFactory for use with LDAP connections.
@@ -45,18 +41,13 @@ public class LdapSSLSocketFactory extends SslClientSocketFactorySupport implemen
     }
 
     @Override
-    protected final Socket notifyCreated( final Socket socket,
+    protected final Socket notifyCreated( Socket socket,
                                           final String host,
                                           final InetAddress address,
                                           final int port,
                                           final InetAddress localAddress,
                                           final int localPort ) throws IOException {
-        final HostnameVerifier verifier = getHostnameVerifier();
-        if ( verifier != null && socket instanceof SSLSocket ) {
-            final SSLSocket sslSocket = (SSLSocket) socket;
-            return doVerifyHostname( verifier, sslSocket, host, address );
-        }
-
+        socket = wrapSocket(socket);
         return socket;
     }
 
@@ -76,5 +67,16 @@ public class LdapSSLSocketFactory extends SslClientSocketFactorySupport implemen
         }
 
         return verifier;
+    }
+
+    /**
+     * Wrap the socket in an ldap-specific SSL socket if possible.
+     */
+    private Socket wrapSocket(Socket socket) {
+        if (socket instanceof SSLSocket) {
+            final SSLSocket sslSocket = (SSLSocket) socket;
+            socket = new HostnameVerifyingSSLSocketWrapper(sslSocket,LdapSslCustomizerSupport.getHostnameVerifier());
+        }
+        return socket;
     }
 }

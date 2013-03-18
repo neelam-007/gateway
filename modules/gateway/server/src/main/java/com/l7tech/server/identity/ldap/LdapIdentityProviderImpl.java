@@ -697,10 +697,10 @@ public class LdapIdentityProviderImpl
                 // Create the initial directory context.
                 return new InitialDirContext(env);
             } catch (CommunicationException e) {
-                logger.log(Level.WARNING, "Could not establish context using LDAP URL " + ldapurl + ". " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                logger.log(Level.WARNING, "Could not establish context using LDAP URL " + ldapurl + ". " + ExceptionUtils.getMessageWithCause(e), ExceptionUtils.getDebugException(e));
                 ldapurl = markCurrentUrlFailureAndGetFirstAvailableOne(ldapurl);
             } catch (RuntimeException e) {
-                logger.log(Level.WARNING, "Could not establish context using LDAP URL " + ldapurl + ". " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                logger.log(Level.WARNING, "Could not establish context using LDAP URL " + ldapurl + ". " + ExceptionUtils.getMessageWithCause(e), ExceptionUtils.getDebugException(e));
                 ldapurl = markCurrentUrlFailureAndGetFirstAvailableOne(ldapurl);
             }
         }
