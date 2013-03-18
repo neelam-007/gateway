@@ -139,7 +139,7 @@ public class ConfigurableLogFormatter extends DebugExceptionLogFormatter {
             formattedString = String.format(selectedFormat, formatArgs);
         }
         catch(IllegalFormatException ife) {
-            ife.printStackTrace();
+            String errorString = "Logging format string \"" + selectedFormat + "\" caused an error.  Using the default format string: ";
 
             if(standardFormat) {
                 format = DEFAULT_FORMAT;
@@ -150,7 +150,7 @@ public class ConfigurableLogFormatter extends DebugExceptionLogFormatter {
                 selectedFormat = DEFAULT_FORMAT_THROWN;
             }
 
-            formattedString = String.format(selectedFormat, formatArgs);
+            formattedString = errorString + String.format(selectedFormat, formatArgs);
         }
 
         return formattedString;
