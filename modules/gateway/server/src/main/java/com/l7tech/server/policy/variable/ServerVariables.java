@@ -24,6 +24,7 @@ import com.l7tech.server.audit.AuditSinkPolicyEnforcementContext;
 import com.l7tech.server.cluster.ClusterInfoManager;
 import com.l7tech.server.cluster.ClusterPropertyCache;
 import com.l7tech.server.jdbc.JdbcConnectionManager;
+import com.l7tech.server.message.HasOriginalContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.PolicyMetadata;
 import com.l7tech.server.security.password.SecurePasswordManager;
@@ -207,6 +208,21 @@ public class ServerVariables {
                     }
                     final String fullUrl = hrk.getQueryString() == null ? hrk.getRequestUrl() : hrk.getRequestUrl() + "?" + hrk.getQueryString();
                     return getUrlValue(BuiltinVariables.PREFIX_REQUEST_URL, name, fullUrl);
+                }
+            }),
+            new SettableVariable(BuiltinVariables.PREFIX_REQUEST_SHARED, new Getter() { // TODO find a place to stash shared variables without using a hidden prefix
+                @Override
+                Object get(String name, PolicyEnforcementContext context) {
+                    try {
+                        return getRootContext(context).getVariable("%%SHARED%%." + name);
+                    } catch (NoSuchVariableException e) {
+                        return null;
+                    }
+                }
+            }, new Setter() {
+                @Override
+                public void set(String name, Object value, PolicyEnforcementContext context) {
+                    getRootContext(context).setVariable("%%SHARED%%." + name, value);
                 }
             }),
             new Variable("request.http.secure", new Getter() {
@@ -1420,5 +1436,14 @@ public class ServerVariables {
             logger.log(Level.WARNING, "Unable to get self node info: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             return null;
         }
+    }
+
+    static PolicyEnforcementContext getParentContext(PolicyEnforcementContext context) {
+        return context instanceof HasOriginalContext ? ((HasOriginalContext) context).getOriginalContext() : null;
+    }
+
+    static PolicyEnforcementContext getRootContext(PolicyEnforcementContext context) {
+        PolicyEnforcementContext parent = getParentContext(context);
+        return parent == null ? context : getRootContext(parent);
     }
 }

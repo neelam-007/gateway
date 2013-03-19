@@ -6,7 +6,6 @@ import com.l7tech.policy.assertion.ExportVariablesAssertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.policy.variable.VariableNotSettableException;
-import com.l7tech.server.message.HasOriginalContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.util.ExceptionUtils;
 import org.jetbrains.annotations.NotNull;
@@ -23,13 +22,10 @@ public class ServerExportVariablesAssertion extends AbstractServerAssertion<Expo
 
     @Override
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
-        PolicyEnforcementContext parent = getParentContext(context);
-        if (parent != null) {
-            String[] vars = assertion.getExportedVars();
-            if (vars != null) {
-                for (String var : vars) {
-                    copyVariable(var, context, parent);
-                }
+        String[] vars = assertion.getExportedVars();
+        if (vars != null) {
+            for (String var : vars) {
+                copyVariable(var, context, context);
             }
         }
 
@@ -49,15 +45,11 @@ public class ServerExportVariablesAssertion extends AbstractServerAssertion<Expo
         }
 
         try {
-            dest.setVariable(var, value);
+            dest.setVariable("request.shared." + var, value);
         } catch (VariableNotSettableException e) {
             getAudit().logAndAudit(AssertionMessages.VARIABLE_NOTSET, var);
         } catch (RuntimeException e) {
             getAudit().logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {"Unable to set variable: " + ExceptionUtils.getMessage(e) }, ExceptionUtils.getDebugException(e));
         }
-    }
-
-    private static PolicyEnforcementContext getParentContext(PolicyEnforcementContext context) {
-        return context instanceof HasOriginalContext ? ((HasOriginalContext) context).getOriginalContext() : null;
     }
 }

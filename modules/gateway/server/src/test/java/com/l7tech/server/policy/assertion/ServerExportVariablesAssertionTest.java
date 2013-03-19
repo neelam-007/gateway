@@ -63,7 +63,14 @@ public class ServerExportVariablesAssertionTest {
 
         // Post
         assertEquals("blah1", child.getVariable("blah"));
-        assertEquals("blah1", parent.getVariable("blah"));
+
+        // Value is visible via shared prefix in all descendants of the root context
+        assertEquals("blah1", child.getVariable("request.shared.blah"));
+        assertEquals("blah1", parent.getVariable("request.shared.blah"));
+        assertEquals("blah1", grandParent.getVariable("request.shared.blah"));
+
+        // Value not available without prefix in intermediate context or root context
+        assertNoSuchVariable(parent, "blah");
         assertNoSuchVariable(grandParent, "blah");
     }
 

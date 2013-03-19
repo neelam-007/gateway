@@ -23,6 +23,8 @@ public class BuiltinVariables {
     public static final String REQUEST_JMS_MSG_ALL_PROP_VALS = "request.jms.allpropertyvalues";
     public static final String RESPONSE_JMS_MSG_ALL_PROP_VALS = "response.jms.allpropertyvalues";
 
+    public static final String PREFIX_REQUEST_SHARED = "request.shared";
+
     public static final String SSGNODE_NAME = "ssgnode.name";
     public static final String SSGNODE_HOSTNAME = "ssgnode.hostname";
     public static final String SSGNODE_ID = "ssgnode.id";
@@ -137,6 +139,7 @@ public class BuiltinVariables {
             new VariableMetadata("request.http.method", false, false, null, false),
             new VariableMetadata("request.http.uri", false, false, null, false),
             new VariableMetadata(PREFIX_REQUEST_URL, true, false, null, false),
+            new VariableMetadata(PREFIX_REQUEST_SHARED, true, true, null, true),
             new VariableMetadata("request.http.secure", false, false, null, false, DataType.BOOLEAN),
             new VariableMetadata("request.http.queryString", false, false, null, false),
             new VariableMetadata("request.ftp.path", false, false, null, false),
