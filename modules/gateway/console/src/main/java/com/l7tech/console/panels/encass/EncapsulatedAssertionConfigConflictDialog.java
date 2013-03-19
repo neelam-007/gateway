@@ -30,6 +30,7 @@ public class EncapsulatedAssertionConfigConflictDialog extends JDialog {
     private JPanel contentPanel;
     private JLabel encassLabel;
     private JLabel policyLabel;
+    private JLabel conflictLabel;
     private boolean confirmed;
     private String encassName;
     private String policyName;
@@ -61,8 +62,24 @@ public class EncapsulatedAssertionConfigConflictDialog extends JDialog {
         encassNameTextField.setText(encassName);
         policyNameTextField.setText(policyName);
         cancelButton.addActionListener(Utilities.createDisposeAction(this));
+        setConflictLabel(conflictingConfig, conflictingPolicy);
         enableOrDisable();
         initValidators();
+    }
+
+    /**
+     * Set the conflict label with an appropriate description of the conflict.
+     */
+    private void setConflictLabel(final EncapsulatedAssertionConfig conflictingConfig, final Policy conflictingPolicy) {
+        String conflictText = "";
+        if (conflictingConfig != null && conflictingPolicy != null) {
+            conflictText = "Found name conflicts. Please provide different names for the Encapsulated Assertion and its underlying policy fragment.";
+        } else if (conflictingConfig != null) {
+            conflictText = "Found a name conflict. Please provide a different name for the Encapsulated Assertion.";
+        } else if (conflictingPolicy != null) {
+            conflictText = "Found a name conflict. Please provide a different name for the underlying policy fragment.";
+        }
+        conflictLabel.setText(conflictText);
     }
 
     private void initValidators() {
