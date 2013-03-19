@@ -22,10 +22,8 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.sql.Timestamp;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
+import java.util.concurrent.*;
 
 /**
  * Tests the server jdbc query assertion.
@@ -38,6 +36,7 @@ public class ServerJdbcQueryAssertionIntegrationTests extends JdbcCallHelperInte
 
     private static PolicyEnforcementContext policyEnforcementContext;
     private static Map<String, Object> contextVariables = new HashMap<>();
+    private static ExecutorService executor = Executors.newFixedThreadPool(200);
 
     /**
      * Sets up the mock objects
@@ -104,6 +103,35 @@ public class ServerJdbcQueryAssertionIntegrationTests extends JdbcCallHelperInte
         Assert.assertEquals(AssertionStatus.NONE, assertionStatus);
     }
 
+    @Test(timeout = 60 * 1000)
+    public void testWithLoop() throws PolicyAssertionException, IOException, InterruptedException, ExecutionException {
+        final int threads = 200;
+        ArrayList<Future<Void>> futures = new ArrayList<>(threads);
+        for (int i = 0; i < threads; i++) {
+            final int index = i;
+            futures.add(executor.submit(new Callable<Void>() {
+                public Void call() throws PolicyAssertionException, IOException {
+                    JdbcQueryAssertion assertion = createJdbcQueryAssertion();
+                    assertion.setSqlQuery("select 123" + index + " as returnvalue from dual");
+                    String variablePrefix = "jdbcquery" + index;
+                    assertion.setVariablePrefix(variablePrefix);
+                    ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, context);
+
+                    AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(policyEnforcementContext);
+
+                    Assert.assertEquals(AssertionStatus.NONE, assertionStatus);
+
+                    Assert.assertEquals("123" + index, String.valueOf(((Object[]) contextVariables.get(variablePrefix + ".returnvalue"))[0]));
+                    return null;
+                }
+            }));
+        }
+
+        for (int i = 0; i < threads; i++) {
+            futures.get(i).get();
+        }
+    }
+
     /**
      * Tests retrieving a timestamp for a select query.
      *
@@ -138,7 +166,7 @@ public class ServerJdbcQueryAssertionIntegrationTests extends JdbcCallHelperInte
             JdbcQueryAssertion assertion = createJdbcQueryAssertion();
             contextVariables.put("time", new Date());
             assertion.setSqlQuery("CALL " + CreateGetYEarFromTimestampProcedureName + " ${time}");
-            assertion.setAllowMultiValuedVariables(true);
+            assertion.setConvertVariablesToStrings(false);
             ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, context);
 
             AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(policyEnforcementContext);
@@ -164,7 +192,7 @@ public class ServerJdbcQueryAssertionIntegrationTests extends JdbcCallHelperInte
             JdbcQueryAssertion assertion = createJdbcQueryAssertion();
             contextVariables.put("time", new Date());
             assertion.setSqlQuery("CALL " + CreateGetCurrentTimestampProcedureName);
-            assertion.setAllowMultiValuedVariables(true);
+            assertion.setConvertVariablesToStrings(false);
             ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, context);
 
             AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(policyEnforcementContext);
@@ -196,7 +224,7 @@ public class ServerJdbcQueryAssertionIntegrationTests extends JdbcCallHelperInte
             JdbcQueryAssertion assertion = createJdbcQueryAssertion();
             contextVariables.put("time", new Date());
             assertion.setSqlQuery("FUNC " + CreateGetCurrentTimestampFunctionName + "()");
-            assertion.setAllowMultiValuedVariables(true);
+            assertion.setConvertVariablesToStrings(false);
             ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, context);
 
             AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(policyEnforcementContext);
@@ -228,7 +256,7 @@ public class ServerJdbcQueryAssertionIntegrationTests extends JdbcCallHelperInte
             JdbcQueryAssertion assertion = createJdbcQueryAssertion();
             contextVariables.put("time", new Date());
             assertion.setSqlQuery("func GetStringFunc(3)");
-            assertion.setAllowMultiValuedVariables(true);
+            assertion.setConvertVariablesToStrings(false);
             ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, context);
 
             AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(policyEnforcementContext);
@@ -260,7 +288,7 @@ public class ServerJdbcQueryAssertionIntegrationTests extends JdbcCallHelperInte
             JdbcQueryAssertion assertion = createJdbcQueryAssertion();
             contextVariables.put("boolean_in", true);
             assertion.setSqlQuery("func " + SendRetrieveBooleanFunctionName + " ${boolean_in}");
-            assertion.setAllowMultiValuedVariables(true);
+            assertion.setConvertVariablesToStrings(false);
             ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, context);
 
             AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(policyEnforcementContext);
@@ -292,7 +320,7 @@ public class ServerJdbcQueryAssertionIntegrationTests extends JdbcCallHelperInte
             JdbcQueryAssertion assertion = createJdbcQueryAssertion();
             contextVariables.put("int_in", 1);
             assertion.setSqlQuery("func " + RetrieveBooleanFunctionName + " ${int_in}");
-            assertion.setAllowMultiValuedVariables(true);
+            assertion.setConvertVariablesToStrings(false);
             ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, context);
 
             AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(policyEnforcementContext);
@@ -317,7 +345,7 @@ public class ServerJdbcQueryAssertionIntegrationTests extends JdbcCallHelperInte
             JdbcQueryAssertion assertion = createJdbcQueryAssertion();
             contextVariables.put("var_in", "abc");
             assertion.setSqlQuery("func " + SendRetrieveVarchar2FunctionName + " ${var_in}");
-            assertion.setAllowMultiValuedVariables(true);
+            assertion.setConvertVariablesToStrings(false);
             ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, context);
 
             AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(policyEnforcementContext);
@@ -342,7 +370,7 @@ public class ServerJdbcQueryAssertionIntegrationTests extends JdbcCallHelperInte
             JdbcQueryAssertion assertion = createJdbcQueryAssertion();
             contextVariables.put("var_in", "abc");
             assertion.setSqlQuery("func " + SendRetrieveVarcharFunctionName + " ${var_in}");
-            assertion.setAllowMultiValuedVariables(true);
+            assertion.setConvertVariablesToStrings(false);
             ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, context);
 
             AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(policyEnforcementContext);
@@ -367,7 +395,7 @@ public class ServerJdbcQueryAssertionIntegrationTests extends JdbcCallHelperInte
             JdbcQueryAssertion assertion = createJdbcQueryAssertion();
             contextVariables.put("var_in", "abc");
             assertion.setSqlQuery("func " + SendRetrieveNVarchar2FunctionName + " ${var_in}");
-            assertion.setAllowMultiValuedVariables(true);
+            assertion.setConvertVariablesToStrings(false);
             ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, context);
 
             AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(policyEnforcementContext);
@@ -392,7 +420,7 @@ public class ServerJdbcQueryAssertionIntegrationTests extends JdbcCallHelperInte
             JdbcQueryAssertion assertion = createJdbcQueryAssertion();
             contextVariables.put("var_in", "abc");
             assertion.setSqlQuery("func " + SendRetrieveCharFunctionName + " ${var_in}");
-            assertion.setAllowMultiValuedVariables(true);
+            assertion.setConvertVariablesToStrings(false);
             ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, context);
 
             AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(policyEnforcementContext);
@@ -417,7 +445,7 @@ public class ServerJdbcQueryAssertionIntegrationTests extends JdbcCallHelperInte
             JdbcQueryAssertion assertion = createJdbcQueryAssertion();
             contextVariables.put("var_in", "abc");
             assertion.setSqlQuery("func " + SendRetrieveNCharFunctionName + " ${var_in}");
-            assertion.setAllowMultiValuedVariables(true);
+            assertion.setConvertVariablesToStrings(false);
             ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, context);
 
             AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(policyEnforcementContext);
@@ -443,7 +471,7 @@ public class ServerJdbcQueryAssertionIntegrationTests extends JdbcCallHelperInte
             double varIn = 126312.15;
             contextVariables.put("var_in", varIn);
             assertion.setSqlQuery("func " + SendRetrieveNumberFunctionName + " ${var_in}");
-            assertion.setAllowMultiValuedVariables(true);
+            assertion.setConvertVariablesToStrings(false);
             ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, context);
 
             AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(policyEnforcementContext);
@@ -469,7 +497,7 @@ public class ServerJdbcQueryAssertionIntegrationTests extends JdbcCallHelperInte
             double varIn = 126312.15;
             contextVariables.put("var_in", String.valueOf(varIn));
             assertion.setSqlQuery("func " + SendRetrieveNumberFunctionName + " ${var_in}");
-            assertion.setAllowMultiValuedVariables(true);
+            assertion.setConvertVariablesToStrings(false);
             ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, context);
 
             AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(policyEnforcementContext);
@@ -495,7 +523,7 @@ public class ServerJdbcQueryAssertionIntegrationTests extends JdbcCallHelperInte
             float varIn = 126387.123123f;
             contextVariables.put("var_in", varIn);
             assertion.setSqlQuery("func " + SendRetrieveBinaryFloatFunctionName + " ${var_in}");
-            assertion.setAllowMultiValuedVariables(true);
+            assertion.setConvertVariablesToStrings(false);
             ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, context);
 
             AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(policyEnforcementContext);
@@ -521,7 +549,7 @@ public class ServerJdbcQueryAssertionIntegrationTests extends JdbcCallHelperInte
             float varIn = 126387.123123f;
             contextVariables.put("var_in", String.valueOf(varIn));
             assertion.setSqlQuery("func " + SendRetrieveBinaryFloatFunctionName + " ${var_in}");
-            assertion.setAllowMultiValuedVariables(true);
+            assertion.setConvertVariablesToStrings(false);
             ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, context);
 
             AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(policyEnforcementContext);
@@ -547,7 +575,7 @@ public class ServerJdbcQueryAssertionIntegrationTests extends JdbcCallHelperInte
             double varIn = 126312.15;
             contextVariables.put("var_in", varIn);
             assertion.setSqlQuery("func " + SendRetrieveBinaryDoubleFunctionName + " ${var_in}");
-            assertion.setAllowMultiValuedVariables(true);
+            assertion.setConvertVariablesToStrings(false);
             ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, context);
 
             AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(policyEnforcementContext);
@@ -573,7 +601,7 @@ public class ServerJdbcQueryAssertionIntegrationTests extends JdbcCallHelperInte
             double varIn = 126312.15;
             contextVariables.put("var_in", String.valueOf(varIn));
             assertion.setSqlQuery("func " + SendRetrieveBinaryDoubleFunctionName + " ${var_in}");
-            assertion.setAllowMultiValuedVariables(true);
+            assertion.setConvertVariablesToStrings(false);
             ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, context);
 
             AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(policyEnforcementContext);
@@ -599,7 +627,7 @@ public class ServerJdbcQueryAssertionIntegrationTests extends JdbcCallHelperInte
             int varIn = -98782346;
             contextVariables.put("var_in", varIn);
             assertion.setSqlQuery("func " + SendRetrieveBinaryIntegerFunctionName + " ${var_in}");
-            assertion.setAllowMultiValuedVariables(true);
+            assertion.setConvertVariablesToStrings(false);
             ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, context);
 
             AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(policyEnforcementContext);
@@ -625,7 +653,7 @@ public class ServerJdbcQueryAssertionIntegrationTests extends JdbcCallHelperInte
             int varIn = -98782346;
             contextVariables.put("var_in", String.valueOf(varIn));
             assertion.setSqlQuery("func " + SendRetrieveBinaryIntegerFunctionName + " ${var_in}");
-            assertion.setAllowMultiValuedVariables(true);
+            assertion.setConvertVariablesToStrings(false);
             ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, context);
 
             AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(policyEnforcementContext);
@@ -651,7 +679,7 @@ public class ServerJdbcQueryAssertionIntegrationTests extends JdbcCallHelperInte
             int varIn = -98782346;
             contextVariables.put("var_in", varIn);
             assertion.setSqlQuery("func " + SendRetrievePlsIntegerFunctionName + " ${var_in}");
-            assertion.setAllowMultiValuedVariables(true);
+            assertion.setConvertVariablesToStrings(false);
             ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, context);
 
             AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(policyEnforcementContext);
@@ -677,7 +705,7 @@ public class ServerJdbcQueryAssertionIntegrationTests extends JdbcCallHelperInte
             int varIn = -98782346;
             contextVariables.put("var_in", String.valueOf(varIn));
             assertion.setSqlQuery("func " + SendRetrievePlsIntegerFunctionName + " ${var_in}");
-            assertion.setAllowMultiValuedVariables(true);
+            assertion.setConvertVariablesToStrings(false);
             ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, context);
 
             AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(policyEnforcementContext);
@@ -702,7 +730,7 @@ public class ServerJdbcQueryAssertionIntegrationTests extends JdbcCallHelperInte
             JdbcQueryAssertion assertion = createJdbcQueryAssertion();
             contextVariables.put("var_in", "abc");
             assertion.setSqlQuery("func " + SendRetrieveLongFunctionName + " ${var_in}");
-            assertion.setAllowMultiValuedVariables(true);
+            assertion.setConvertVariablesToStrings(false);
             ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, context);
 
             AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(policyEnforcementContext);
@@ -728,7 +756,7 @@ public class ServerJdbcQueryAssertionIntegrationTests extends JdbcCallHelperInte
             @SuppressWarnings("deprecation") Date date = new Date(2013 - 1900, 2, 23);
             contextVariables.put("var_in", date);
             assertion.setSqlQuery("func " + SendRetrieveDateFunctionName + " ${var_in}");
-            assertion.setAllowMultiValuedVariables(true);
+            assertion.setConvertVariablesToStrings(false);
             ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, context);
 
             AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(policyEnforcementContext);
@@ -754,7 +782,7 @@ public class ServerJdbcQueryAssertionIntegrationTests extends JdbcCallHelperInte
             JdbcQueryAssertion assertion = createJdbcQueryAssertion();
             contextVariables.put("var_in", "2013-02-23");
             assertion.setSqlQuery("func " + SendRetrieveDateFunctionName + " ${var_in}");
-            assertion.setAllowMultiValuedVariables(true);
+            assertion.setConvertVariablesToStrings(false);
             ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, context);
 
             AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(policyEnforcementContext);
@@ -781,7 +809,7 @@ public class ServerJdbcQueryAssertionIntegrationTests extends JdbcCallHelperInte
             @SuppressWarnings("deprecation") Date date = new Date(2013 - 1900, 2, 23);
             contextVariables.put("var_in", date);
             assertion.setSqlQuery("func " + SendRetrieveTimeStampFunctionName + " ${var_in}");
-            assertion.setAllowMultiValuedVariables(true);
+            assertion.setConvertVariablesToStrings(false);
             ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, context);
 
             AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(policyEnforcementContext);
@@ -807,7 +835,7 @@ public class ServerJdbcQueryAssertionIntegrationTests extends JdbcCallHelperInte
             JdbcQueryAssertion assertion = createJdbcQueryAssertion();
             contextVariables.put("var_in", "2013-02-23 12:10:10.987000");
             assertion.setSqlQuery("func " + SendRetrieveTimeStampFunctionName + " ${var_in}");
-            assertion.setAllowMultiValuedVariables(true);
+            assertion.setConvertVariablesToStrings(false);
             ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, context);
 
             AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(policyEnforcementContext);
@@ -832,7 +860,7 @@ public class ServerJdbcQueryAssertionIntegrationTests extends JdbcCallHelperInte
             JdbcQueryAssertion assertion = createJdbcQueryAssertion();
             contextVariables.put("var_in", "abc".getBytes());
             assertion.setSqlQuery("func " + SendRetrieveRawFunctionName + " ${var_in}");
-            assertion.setAllowMultiValuedVariables(true);
+            assertion.setConvertVariablesToStrings(false);
             ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, context);
 
             AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(policyEnforcementContext);
@@ -857,7 +885,7 @@ public class ServerJdbcQueryAssertionIntegrationTests extends JdbcCallHelperInte
             JdbcQueryAssertion assertion = createJdbcQueryAssertion();
             contextVariables.put("var_in", "abc");
             assertion.setSqlQuery("func " + SendRetrieveCLOBFunctionName + " ${var_in}");
-            assertion.setAllowMultiValuedVariables(true);
+            assertion.setConvertVariablesToStrings(false);
             ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, context);
 
             AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(policyEnforcementContext);
@@ -883,7 +911,7 @@ public class ServerJdbcQueryAssertionIntegrationTests extends JdbcCallHelperInte
             String stringIn = randomString(128 * 1024);
             contextVariables.put("var_in", stringIn);
             assertion.setSqlQuery("func " + SendRetrieveCLOBFunctionName + " ${var_in}");
-            assertion.setAllowMultiValuedVariables(true);
+            assertion.setConvertVariablesToStrings(false);
             ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, context);
 
             AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(policyEnforcementContext);
@@ -909,7 +937,7 @@ public class ServerJdbcQueryAssertionIntegrationTests extends JdbcCallHelperInte
             String stringIn = randomString(5 * 1024 * 1024);
             contextVariables.put("var_in", stringIn);
             assertion.setSqlQuery("func " + SendRetrieveCLOBFunctionName + " ${var_in}");
-            assertion.setAllowMultiValuedVariables(true);
+            assertion.setConvertVariablesToStrings(false);
             ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, context);
 
             AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(policyEnforcementContext);
@@ -946,7 +974,7 @@ public class ServerJdbcQueryAssertionIntegrationTests extends JdbcCallHelperInte
             JdbcQueryAssertion assertion = createJdbcQueryAssertion();
             contextVariables.put("var_in", "abc");
             assertion.setSqlQuery("func " + SendRetrieveNCLOBFunctionName + " ${var_in}");
-            assertion.setAllowMultiValuedVariables(true);
+            assertion.setConvertVariablesToStrings(false);
             ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, context);
 
             AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(policyEnforcementContext);
@@ -973,7 +1001,7 @@ public class ServerJdbcQueryAssertionIntegrationTests extends JdbcCallHelperInte
             String stringIn = randomString(1024);
             contextVariables.put("var_in", stringIn);
             assertion.setSqlQuery("func " + SendRetrieveNCLOBFunctionName + " ${var_in}");
-            assertion.setAllowMultiValuedVariables(true);
+            assertion.setConvertVariablesToStrings(false);
             ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, context);
 
             AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(policyEnforcementContext);
@@ -1007,7 +1035,7 @@ public class ServerJdbcQueryAssertionIntegrationTests extends JdbcCallHelperInte
             String stringIn = randomString(128 * 1024);
             contextVariables.put("var_in", stringIn);
             assertion.setSqlQuery("func " + SendRetrieveNCLOBFunctionName + " ${var_in}");
-            assertion.setAllowMultiValuedVariables(true);
+            assertion.setConvertVariablesToStrings(false);
             ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, context);
 
             AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(policyEnforcementContext);
@@ -1041,7 +1069,7 @@ public class ServerJdbcQueryAssertionIntegrationTests extends JdbcCallHelperInte
             String stringIn = randomString(5 * 1024 * 1024);
             contextVariables.put("var_in", stringIn);
             assertion.setSqlQuery("func " + SendRetrieveNCLOBFunctionName + " ${var_in}");
-            assertion.setAllowMultiValuedVariables(true);
+            assertion.setConvertVariablesToStrings(false);
             ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, context);
 
             AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(policyEnforcementContext);
@@ -1067,7 +1095,7 @@ public class ServerJdbcQueryAssertionIntegrationTests extends JdbcCallHelperInte
             JdbcQueryAssertion assertion = createJdbcQueryAssertion();
             contextVariables.put("var_in", "abc".getBytes());
             assertion.setSqlQuery("func " + SendRetrieveBLOBFunctionName + " ${var_in}");
-            assertion.setAllowMultiValuedVariables(true);
+            assertion.setConvertVariablesToStrings(false);
             ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, context);
 
             AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(policyEnforcementContext);
@@ -1099,7 +1127,7 @@ public class ServerJdbcQueryAssertionIntegrationTests extends JdbcCallHelperInte
             JdbcQueryAssertion assertion = createJdbcQueryAssertion();
             contextVariables.put("var_in", "abc");
             assertion.setSqlQuery("func " + SendRetrieveBLOBFunctionName + " ${var_in}");
-            assertion.setAllowMultiValuedVariables(true);
+            assertion.setConvertVariablesToStrings(false);
             ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, context);
 
             AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(policyEnforcementContext);
@@ -1126,7 +1154,7 @@ public class ServerJdbcQueryAssertionIntegrationTests extends JdbcCallHelperInte
             new Random().nextBytes(bytesIn);
             contextVariables.put("var_in", bytesIn);
             assertion.setSqlQuery("func " + SendRetrieveBLOBFunctionName + " ${var_in}");
-            assertion.setAllowMultiValuedVariables(true);
+            assertion.setConvertVariablesToStrings(false);
             ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, context);
 
             AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(policyEnforcementContext);
@@ -1160,7 +1188,7 @@ public class ServerJdbcQueryAssertionIntegrationTests extends JdbcCallHelperInte
             new Random().nextBytes(bytesIn);
             contextVariables.put("var_in", bytesIn);
             assertion.setSqlQuery("func " + SendRetrieveBLOBFunctionName + " ${var_in}");
-            assertion.setAllowMultiValuedVariables(true);
+            assertion.setConvertVariablesToStrings(false);
             ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, context);
 
             AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(policyEnforcementContext);
@@ -1194,7 +1222,7 @@ public class ServerJdbcQueryAssertionIntegrationTests extends JdbcCallHelperInte
             new Random().nextBytes(bytesIn);
             contextVariables.put("var_in", bytesIn);
             assertion.setSqlQuery("func " + SendRetrieveBLOBFunctionName + " ${var_in}");
-            assertion.setAllowMultiValuedVariables(true);
+            assertion.setConvertVariablesToStrings(false);
             ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, context);
 
             AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(policyEnforcementContext);

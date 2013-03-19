@@ -6,6 +6,7 @@ import com.l7tech.server.jdbc.JdbcConnectionManagerImpl;
 import com.l7tech.server.jdbc.JdbcConnectionPoolManager;
 import com.l7tech.server.jdbc.JdbcQueryingManager;
 import com.l7tech.server.jdbc.JdbcQueryingManagerImpl;
+import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.MockConfig;
 import com.l7tech.util.TimeSource;
 import org.junit.Before;
@@ -94,6 +95,14 @@ public abstract class JdbcCallHelperIntegrationAbstractBaseTestClass {
         jdbcConn.setDriverClass(driverClass);
         jdbcConn.setMinPoolSize(1);
         jdbcConn.setMaxPoolSize(1);
+        jdbcConn.setAdditionalProperties(CollectionUtils.MapBuilder.<String, Object>builder()
+                .put("c3p0.preferredTestQuery", "select 1 from dual")
+                .put("c3p0.idleConnectionTestPeriod", "60") // This must be less then the connection drop time (databases, firewalls, routers, etc may drop inactive connection)
+                .put("c3p0.maxIdleTime", "0") // We do not need to discard connections that are idle unless there are more connections then the minPoolSize
+                .put("c3p0.maxIdleTimeExcessConnections", "30") // For efficiency this should be less then idleConnectionTestPeriod
+                .put("EnableCancelTimeout", "true")
+//                .put("SpyAttributes", "(log=(file)D:\\\\datadirect.log;logTName=yes;)")
+                .map());
         return jdbcConn;
     }
 
