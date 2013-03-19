@@ -10,6 +10,7 @@ import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.jdbc.JdbcQueryingManager;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.variable.ExpandVariables;
+import com.l7tech.test.BugId;
 import com.l7tech.util.Config;
 import org.junit.*;
 import org.mockito.Matchers;
@@ -1237,6 +1238,27 @@ public class ServerJdbcQueryAssertionIntegrationTests extends JdbcCallHelperInte
 
         } finally {
             createDropItem(DropSendRetrieveBLOBFunction);
+        }
+    }
+
+    @Test
+    @BugId("SSG-6687")
+    public void testIncorrectSchemaFunction() throws PolicyAssertionException, IOException {
+        try {
+            createDropItem(CreateSendRetrieveVarchar2Function);
+            JdbcQueryAssertion assertion = createJdbcQueryAssertion();
+            contextVariables.put("var_in", "abc");
+            assertion.setSqlQuery("func " + SendRetrieveVarchar2FunctionName + " ${var_in}");
+            assertion.setSchema("qatest2");
+            assertion.setConvertVariablesToStrings(false);
+            ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, context);
+
+            AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(policyEnforcementContext);
+
+            Assert.assertEquals(AssertionStatus.FAILED, assertionStatus);
+
+        } finally {
+            createDropItem(DropSendRetrieveVarchar2Function);
         }
     }
 

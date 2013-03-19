@@ -83,7 +83,7 @@ public class JdbcCallHelper {
         List<String> queryParametersRaw = getParametersFromQuery(query, false);
 
         if ((inParameterNames.size() != queryParameters.size())) {
-            throw new BadSqlGrammarException("", query, new SQLException("Incorrect number of arguments for " + procName + "; expected " + inParameterNames.size() + ", got " + queryParameters.size() + "; query generated was " + query));
+            throw new BadSqlGrammarException("", query, new SQLException((inParameterNames.size() == 0 ? "Function/Procedure does not exist or incorrect" : "Incorrect") + " number of arguments for " + procName + "; expected " + inParameterNames.size() + ", got " + queryParameters.size() + "; query generated was " + query));
         }
         if (inParameterNames.size() > 0) {//input parameters needed
             int paramIndex = 0;
