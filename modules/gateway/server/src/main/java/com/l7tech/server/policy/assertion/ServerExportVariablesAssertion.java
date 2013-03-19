@@ -7,6 +7,7 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.policy.variable.VariableNotSettableException;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.policy.variable.ServerVariables;
 import com.l7tech.util.ExceptionUtils;
 import org.jetbrains.annotations.NotNull;
 
@@ -22,17 +23,19 @@ public class ServerExportVariablesAssertion extends AbstractServerAssertion<Expo
 
     @Override
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
+        final PolicyEnforcementContext rootContext = ServerVariables.getRootContext(context);
+
         String[] vars = assertion.getExportedVars();
         if (vars != null) {
             for (String var : vars) {
-                copyVariable(var, context, context);
+                copyToRootContextSharedBucket(var, context, rootContext);
             }
         }
 
         return AssertionStatus.NONE;
     }
 
-    private void copyVariable(String var, PolicyEnforcementContext source, PolicyEnforcementContext dest) {
+    private void copyToRootContextSharedBucket(String var, PolicyEnforcementContext source, PolicyEnforcementContext rootContext) {
         Object value;
         try {
             value = source.getVariable(var);
@@ -45,7 +48,7 @@ public class ServerExportVariablesAssertion extends AbstractServerAssertion<Expo
         }
 
         try {
-            dest.setVariable("request.shared." + var, value);
+            rootContext.setVariable(ServerVariables.PREFIX_SHARED_BUCKET + "request.shared." + var, value);
         } catch (VariableNotSettableException e) {
             getAudit().logAndAudit(AssertionMessages.VARIABLE_NOTSET, var);
         } catch (RuntimeException e) {

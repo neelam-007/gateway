@@ -58,6 +58,9 @@ public class ServerVariables {
     private static final Logger logger = Logger.getLogger(ServerVariables.class.getName());
     private static final String CLIENT_ID_UNKNOWN = "ClientId:Unknown";
 
+    // TODO find a place to stash shared variables without using a hidden prefix
+    public static final String PREFIX_SHARED_BUCKET = "%%SHARED%%.";
+
     private static final RemoteIpGetter remoteIpGetter = new RemoteIpGetter();
     private static final OperationGetter soapOperationGetter = new OperationGetter();
     private static final SoapNamespaceGetter soapNamespaceGetter = new SoapNamespaceGetter();
@@ -210,19 +213,14 @@ public class ServerVariables {
                     return getUrlValue(BuiltinVariables.PREFIX_REQUEST_URL, name, fullUrl);
                 }
             }),
-            new SettableVariable(BuiltinVariables.PREFIX_REQUEST_SHARED, new Getter() { // TODO find a place to stash shared variables without using a hidden prefix
+            new Variable(BuiltinVariables.PREFIX_REQUEST_SHARED, new Getter() {
                 @Override
                 Object get(String name, PolicyEnforcementContext context) {
                     try {
-                        return getRootContext(context).getVariable("%%SHARED%%." + name);
+                        return getRootContext(context).getVariable(PREFIX_SHARED_BUCKET + name);
                     } catch (NoSuchVariableException e) {
                         return null;
                     }
-                }
-            }, new Setter() {
-                @Override
-                public void set(String name, Object value, PolicyEnforcementContext context) {
-                    getRootContext(context).setVariable("%%SHARED%%." + name, value);
                 }
             }),
             new Variable("request.http.secure", new Getter() {
@@ -1442,7 +1440,7 @@ public class ServerVariables {
         return context instanceof HasOriginalContext ? ((HasOriginalContext) context).getOriginalContext() : null;
     }
 
-    static PolicyEnforcementContext getRootContext(PolicyEnforcementContext context) {
+    public static PolicyEnforcementContext getRootContext(PolicyEnforcementContext context) {
         PolicyEnforcementContext parent = getParentContext(context);
         return parent == null ? context : getRootContext(parent);
     }
