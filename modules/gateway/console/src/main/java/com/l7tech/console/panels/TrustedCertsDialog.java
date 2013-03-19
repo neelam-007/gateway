@@ -2,6 +2,8 @@ package com.l7tech.console.panels;
 
 import com.l7tech.console.event.CertEvent;
 import com.l7tech.console.event.CertListener;
+import com.l7tech.console.util.Registry;
+import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gui.SimpleTableModel;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.RunOnChangeListener;
@@ -9,23 +11,27 @@ import com.l7tech.gui.util.TableUtil;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.util.Functions;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
+import javax.swing.table.DefaultTableCellRenderer;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
+import java.util.*;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Simple dialog that can be used to designate a subset of zero or more TrustedCert instances to work with in a particular context.
  */
 public class TrustedCertsDialog extends JDialog {
+    private static final Logger logger = Logger.getLogger(TrustedCertsDialog.class.getName());
+    private static final String MISSING_INDICATOR = " (missing)";
     private JPanel contentPane;
     private JButton okButton;
     private JButton cancelButton;
@@ -37,6 +43,7 @@ public class TrustedCertsDialog extends JDialog {
 
     private SimpleTableModel<EntityHeader> certsTableModel;
     private List<EntityHeader> trustedCerts;
+    private Map<Long, String> missingCerts = new HashMap<Long, String>();
     private boolean confirmed = false;
     
     public TrustedCertsDialog(Window owner, String title, ModalityType modalityType, @Nullable Collection<EntityHeader> trustedCerts, boolean readOnly) {
@@ -46,6 +53,19 @@ public class TrustedCertsDialog extends JDialog {
         getRootPane().setDefaultButton(okButton);
         
         this.trustedCerts = trustedCerts == null ? null : new ArrayList<EntityHeader>(trustedCerts);
+
+        // determine if any of the configured trusted certs are missing from the database
+        final TrustedCertAdmin trustedCertManager = Registry.getDefault().getTrustedCertManager();
+        for (final EntityHeader trustedCert : trustedCerts) {
+            try {
+                final TrustedCert found = trustedCertManager.findCertByPrimaryKey(trustedCert.getOid());
+                if (found == null) {
+                    missingCerts.put(trustedCert.getOid(), trustedCert.getName());
+                }
+            } catch (final FindException e) {
+                logger.log(Level.WARNING, "Unable to determine if trusted cert exists: " + trustedCert.getName());
+            }
+        }
 
         okButton.addActionListener(new ActionListener() {
             @Override
@@ -105,8 +125,41 @@ public class TrustedCertsDialog extends JDialog {
         trustAllTrustedCertificatesRadioButton.addActionListener(enableDisableListener);
         trustOnlyTheSpecifiedRadioButton.addActionListener(enableDisableListener);
 
-        certsTableModel = TableUtil.configureTable(certsTable, 
-                TableUtil.column("Name", 10, 400, 99999, Functions.propertyTransform(EntityHeader.class, "name")));
+        certsTableModel = TableUtil.configureTable(certsTable,
+                        TableUtil.column("Name", 10, 400, 99999, new Functions.Unary<String, EntityHeader>() {
+                            @Override
+                            public String call(final EntityHeader entityHeader) {
+                                String name = entityHeader.getName();
+                                if (missingCerts.containsKey(entityHeader.getOid())) {
+                                    name = name + MISSING_INDICATOR;
+                                }
+                                return name;
+                            }
+                        }));
+
+        certsTable.getColumnModel().getColumn(0).setCellRenderer(new DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+                final Component component = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+                boolean isMissing = false;
+                if (value instanceof String) {
+                    final String displayedName = (String) value;
+                    if (displayedName.endsWith(MISSING_INDICATOR)) {
+                        // just in case the name happens to have the missing indicator
+                        final String actualName = displayedName.substring(0, displayedName.length() - MISSING_INDICATOR.length());
+                        if (missingCerts.containsValue(actualName)) {
+                            isMissing = true;
+                        }
+                    }
+                }
+                if (isMissing) {
+                    component.setForeground(Color.RED);
+                } else {
+                    component.setForeground(Color.BLACK);
+                }
+                return component;
+            }
+        });
         if (this.trustedCerts == null) {
             certsTableModel.setRows(Collections.<EntityHeader>emptyList());
             trustAllTrustedCertificatesRadioButton.setSelected(true);
