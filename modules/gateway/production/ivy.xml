@@ -54,7 +54,6 @@
         <dependency name="XmlSecurityAssertion" rev="latest.integration" conf="module"/>
         <dependency name="UDDINotificationAssertion" rev="latest.integration" conf="module"/>
         <dependency name="MTOMAssertion" rev="latest.integration" conf="module"/>
-        <dependency name="ActionalAssertion" rev="latest.integration" conf="module"/>
         <dependency name="ConcurrentAllAssertion" rev="latest.integration" conf="module"/>
         <dependency name="GatewayManagementAssertion" rev="latest.integration" conf="module"/>
         <dependency name="CacheAssertion" rev="latest.integration" conf="module"/>
