@@ -28,7 +28,7 @@ public class UsesEntitiesAtDesignTimeAssertionTranslator implements AssertionTra
             try {
                 PolicyUtil.provideNeededEntities(usesEntities, entityFinder, null);
             } catch (final FindException e) {
-                throw new PolicyAssertionException(sourceAssertion, "Unable to load UsesEntitiesAtDesignTime: " +
+                throw new PolicyAssertionException(sourceAssertion, "Unable to load entity: " +
                         ExceptionUtils.getMessage(e), e);
 
             }
