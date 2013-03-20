@@ -307,7 +307,7 @@
                         <properties>
                           <background color="-986896"/>
                           <editable value="false"/>
-                          <text value="If STAT is not selected file stats will be retrieved by calling LIST and finding the correct file. If LIST is also not selected dummy file stats are returned to the SFTP client."/>
+                          <text value="Note: If STAT is not selected file stats will be retrieved by calling LIST and finding the correct file. If LIST is also not selected dummy file stats are returned to the SFTP client."/>
                         </properties>
                       </component>
                       <component id="86397" class="javax.swing.JCheckBox" binding="sftpDELETECheckBox">
