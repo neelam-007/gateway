@@ -1,6 +1,6 @@
 package com.l7tech.gateway.common;
 
-import com.l7tech.gateway.common.security.TrustedCertAdmin;
+import com.l7tech.gateway.common.admin.Administrative;
 import com.l7tech.util.HexUtils;
 
 import java.io.Serializable;
@@ -37,9 +37,12 @@ public interface AsyncAdminMethods {
      * <p/>
      * Most callers can just test if the status string is null, starts with "i", or starts with "a".
      *
+     * This function does not require a license, that check would have occurred already to get the JobId
+     *
      * @param jobId the JobId of the job whose status to check.  Required.
      * @return a job status string in the above format, or null if the specified jobId is not recognized.
      */
+    @Administrative(licensed = false)
     <OUT extends Serializable> String getJobStatus(JobId<OUT> jobId);
 
     /**
@@ -68,11 +71,14 @@ public interface AsyncAdminMethods {
      * Pick up the result of an asynchronous job.  As soon as a job's results are picked up the job's information
      * is discarded.
      *
+     * This function does not require a license, that check would have occurred already to get the JobId
+     *
      * @param jobId the ID of the job whose result to pick up.  Required.
      * @return the result of this inactive job.  Never null.
      * @throws UnknownJobException if the specified jobId is unknown or has already been picked up.
      * @throws JobStillActiveException if the specified job is not inactive.
      */
+    @Administrative(licensed = false)
     <OUT extends Serializable> JobResult<OUT> getJobResult(JobId<OUT> jobId) throws UnknownJobException, JobStillActiveException;
 
     /**
@@ -81,10 +87,13 @@ public interface AsyncAdminMethods {
      * Once this method has been called, subsequent calls will have no affect. In particular if the first call
      * specified false for interruptIfRunning and then subsequently called with interruptIfRunning is true for the
      * same job id, the job will never be cancelled again.
-n     *
+     *
+     * This function does not require a license, that check would have occurred already to get the JobId
+     *
      * @param jobId the ID of the job to cancel. Required. Invalid job ids are ignored
      * @param interruptIfRunning if true the job will be interrupted if it is running
      */
+    @Administrative(licensed = false)
     <OUT extends Serializable> void cancelJob(JobId<OUT> jobId, boolean interruptIfRunning);
 
     /**
