@@ -7,7 +7,7 @@ import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.EncapsulatedAssertion;
 import com.l7tech.policy.assertion.Include;
-import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.test.BugId;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -53,9 +53,11 @@ public class UsesEntitiesAtDesignTimeAssertionTranslatorTest {
         verify(entityFinder, never()).find(any(EntityHeader.class));
     }
 
-    @Test(expected = PolicyAssertionException.class)
+    @BugId("SSM-4278")
+    @Test
     public void translateFindException() throws Exception {
         when(entityFinder.find(any(EntityHeader.class))).thenThrow(new FindException("mocking exception"));
-        translator.translate(assertion);
+        final EncapsulatedAssertion translated = (EncapsulatedAssertion) translator.translate(assertion);
+        assertNull(translated.config());
     }
 }
