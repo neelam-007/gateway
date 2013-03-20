@@ -5,6 +5,7 @@ import com.l7tech.external.assertions.jdbcquery.server.ServerJdbcQueryAssertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -20,6 +21,10 @@ import java.util.logging.Logger;
 public class JDBCQueryAssertionSSG6678IntegrationTests extends ServerJdbcQueryAssertionIntegrationAbstractTestClass {
     private static final Logger logger = Logger.getLogger(JDBCQueryAssertionSSG6678IntegrationTests.class.getName());
 
+    @BeforeClass
+    public static void beforeClass() throws Exception {
+        ServerJdbcQueryAssertionIntegrationAbstractTestClass.beforeClass(null);
+    }
 
     @Test(timeout = 30 * 1000)
     public void testRetrieveTimeStampFromProcedure() throws PolicyAssertionException, IOException {

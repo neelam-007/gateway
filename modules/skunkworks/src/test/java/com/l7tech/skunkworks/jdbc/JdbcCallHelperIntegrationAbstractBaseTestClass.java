@@ -9,8 +9,8 @@ import com.l7tech.server.jdbc.JdbcQueryingManagerImpl;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.MockConfig;
 import com.l7tech.util.TimeSource;
+import org.jetbrains.annotations.Nullable;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.mockito.Mockito;
 
@@ -41,11 +41,10 @@ public abstract class JdbcCallHelperIntegrationAbstractBaseTestClass {
      *
      * @throws Exception
      */
-    @BeforeClass
-    public static void beforeClass() throws Exception {
+    public static void beforeClass(@Nullable JdbcConnection jdbcConnection) throws Exception {
         JdbcConnectionManagerImpl jdbcConnectionManager = Mockito.spy(new JdbcConnectionManagerImpl());
 
-        Mockito.doReturn(Arrays.asList(getJdbcConnection())).when(jdbcConnectionManager).findAll();
+        Mockito.doReturn(Arrays.asList(jdbcConnection == null ? getJdbcConnection() : jdbcConnection)).when(jdbcConnectionManager).findAll();
 
         JdbcConnectionPoolManager jdbcConnectionPoolManager = Mockito.spy(new JdbcConnectionPoolManager(jdbcConnectionManager));
 

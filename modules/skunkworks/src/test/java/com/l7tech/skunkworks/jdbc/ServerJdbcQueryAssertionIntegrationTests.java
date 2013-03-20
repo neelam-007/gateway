@@ -46,7 +46,7 @@ public class ServerJdbcQueryAssertionIntegrationTests extends JdbcCallHelperInte
      */
     @BeforeClass
     public static void beforeClass() throws Exception {
-        JdbcCallHelperIntegrationAbstractBaseTestClass.beforeClass();
+        JdbcCallHelperIntegrationAbstractBaseTestClass.beforeClass(null);
 
         context = Mockito.mock(ApplicationContext.class);
 

@@ -2,6 +2,7 @@ package com.l7tech.skunkworks.jdbc;
 
 import com.l7tech.util.IOUtils;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.springframework.jdbc.support.rowset.SqlRowSet;
 
@@ -17,6 +18,11 @@ import java.util.List;
  * @author Victor Kazakov
  */
 public class JdbcCallHelperIntegrationTests extends JdbcCallHelperIntegrationAbstractBaseTestClass {
+
+    @BeforeClass
+    public static void beforeClass() throws Exception {
+        JdbcCallHelperIntegrationAbstractBaseTestClass.beforeClass(null);
+    }
 
     /**
      * Tests retrieving a clob from a procedure.

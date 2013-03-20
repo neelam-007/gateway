@@ -2,12 +2,13 @@ package com.l7tech.skunkworks.jdbc;
 
 import com.l7tech.external.assertions.jdbcquery.JdbcQueryAssertion;
 import com.l7tech.gateway.common.audit.Audit;
+import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.jdbc.JdbcQueryingManager;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.util.Config;
+import org.jetbrains.annotations.Nullable;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.mockito.Matchers;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
@@ -47,9 +48,8 @@ public abstract class ServerJdbcQueryAssertionIntegrationAbstractTestClass exten
      *
      * @throws Exception
      */
-    @BeforeClass
-    public static void beforeClass() throws Exception {
-        JdbcCallHelperIntegrationAbstractBaseTestClass.beforeClass();
+    public static void beforeClass(@Nullable JdbcConnection jdbcConnection) throws Exception {
+        JdbcCallHelperIntegrationAbstractBaseTestClass.beforeClass(jdbcConnection);
 
         context = Mockito.mock(ApplicationContext.class);
 
