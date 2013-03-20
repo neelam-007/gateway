@@ -552,7 +552,7 @@ public class PrivateKeyPropertiesDialog extends JDialog {
         DialogDisplayer.display(dlg, new Runnable() {
             @Override
             public void run() {
-                if(dlg.isCancelled()){
+                if(!dlg.isOkD()){
                     return;
                 }
 

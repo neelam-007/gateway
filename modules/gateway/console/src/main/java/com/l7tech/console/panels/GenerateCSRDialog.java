@@ -19,7 +19,7 @@ public class GenerateCSRDialog extends JDialog {
     private JButton buttonCancel;
     private JTextField dnTextField;
     private JComboBox<SigHash> signatureHashComboBox;
-    private boolean cancelled = false;
+    private boolean okD = false;
     private String selectedHash;
     private String csrSubjectDN;
 
@@ -81,21 +81,23 @@ public class GenerateCSRDialog extends JDialog {
 
         selectedHash = ((SigHash) signatureHashComboBox.getSelectedItem()).algorithm;
         csrSubjectDN = dnres;
+        okD = true;
+
         dispose();
     }
 
     private void onCancel() {
-        cancelled = true;
+        okD = false;
         dispose();
     }
 
     /**
-     * Returned true if the opertation was cancelled.
+     * Returned true if the operation was ok'd.
      *
-     * @return true if the operation was cancelled.
+     * @return true if the operation was ok'd.
      */
-    public boolean isCancelled() {
-        return cancelled;
+    public boolean isOkD() {
+        return okD;
     }
 
     /**
