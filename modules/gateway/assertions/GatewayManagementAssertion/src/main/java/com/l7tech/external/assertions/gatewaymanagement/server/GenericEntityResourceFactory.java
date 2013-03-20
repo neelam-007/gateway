@@ -64,7 +64,8 @@ public class GenericEntityResourceFactory extends EntityManagerResourceFactory<G
 
     @Override
     protected void updateEntity(GenericEntity oldEntity, GenericEntity newEntity) throws InvalidResourceException {
-        // name, id, entity class name are read only, do not update them
+        // id and entity class name are read only, do not update them
+        oldEntity.setName(newEntity.getName());
         oldEntity.setDescription(newEntity.getDescription());
         oldEntity.setEnabled(newEntity.isEnabled());
         oldEntity.setValueXml(newEntity.getValueXml());

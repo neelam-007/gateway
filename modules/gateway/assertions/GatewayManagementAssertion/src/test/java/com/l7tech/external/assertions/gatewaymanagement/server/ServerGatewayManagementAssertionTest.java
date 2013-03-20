@@ -1142,11 +1142,11 @@ public class ServerGatewayManagementAssertionTest {
                 final Element enabledElm = XmlUtil.findExactlyOneChildElementByName(genericEntityElm, NS_GATEWAY_MANAGEMENT, "Enabled");
                 final Element valueXmlElm = XmlUtil.findExactlyOneChildElementByName(genericEntityElm, NS_GATEWAY_MANAGEMENT, "ValueXml");
 
-                // Verify attempted changes to and entity class name were ignored
-                assertEquals("Name", "My Test Entity", XmlUtil.getTextValue(nameElm));
+                // Verify attempted changes entity class were ignored
                 assertEquals("EntityClassName", ServerGatewayManagementAssertionTest.this.getClass().getName(), XmlUtil.getTextValue(entityClassNameElm));
 
                 // Verify other changes were persisted
+                assertEquals("Name", "My Test Entity UPDATED", XmlUtil.getTextValue(nameElm));
                 assertEquals("Description", "My test entity description UPDATED", XmlUtil.getTextValue(descriptionElm));
                 assertFalse("Enabled", Boolean.parseBoolean(XmlUtil.getTextValue(enabledElm)));
                 assertEquals("ValueXml", "<xml>xml valueUPDATED</xml>", XmlUtil.getTextValue(valueXmlElm));
