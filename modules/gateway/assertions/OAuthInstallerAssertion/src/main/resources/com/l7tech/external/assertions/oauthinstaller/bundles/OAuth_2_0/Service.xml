@@ -5204,7 +5204,7 @@
                     &lt;/wsp:All&gt;
                     &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression
-                    stringValue="JHthdXRob3JpemVSZWRpcmVjdFVSSURlY29kZWR9I2FjY2Vzc190b2tlbj0ke2FjY2Vzc190b2tlbn0mZXhwaXJlc19pbj0ke2dhdGV3YXkub2F1dGgyX2FjY2Vzc190b2tlbl9saWZldGltZV9zZWN9"/&gt;
+                    stringValue="JHthdXRob3JpemVSZWRpcmVjdFVSSURlY29kZWR9I2FjY2Vzc190b2tlbj0ke2FjY2Vzc190b2tlbn0mZXhwaXJlc19pbj0ke29hdXRoMl9hY2Nlc3NfdG9rZW5fbGlmZXRpbWVfc2VjfQ=="/&gt;
                     &lt;L7p:VariableToSet stringValue="location"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:SetVariable&gt;

@@ -2,6 +2,7 @@ package com.l7tech.skunkworks.oauth.toolkit;
 
 import com.l7tech.common.http.*;
 import com.l7tech.common.http.prov.apache.CommonsHttpClient;
+import com.l7tech.test.BugId;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.HexUtils;
@@ -464,6 +465,16 @@ public class OAuthToolkit2_0IntegrationTest extends OAuthToolkitSupport {
         delete(CLIENT_IDENT, clientIdentity, "client");
     }
 
+    @BugId("SK-24")
+    @Test
+    public void implicitExpiresInParamSet() throws Exception {
+        final GenericHttpResponse response = new Layer720Api(BASE_URL).authorize("token", CONSUMER_KEY, CALLBACK,
+                PASSWORD_AUTHENTICATION, null, false, "Grant", "scope_test", "state_test");
+        assertEquals(302, response.getStatus());
+        final String locationHeader = response.getHeaders().getFirstValue("Location");
+        // 3600s is the default access token lifetime
+        assertTrue(locationHeader.contains("expires_in=3600"));
+    }
 
     private GenericHttpResponse getAccessToken(final Map<String, String> params) throws Exception {
         final GenericHttpRequestParams tokenParams = new GenericHttpRequestParams(new URL("https://" + BASE_URL + ":8443/auth/oauth/v2/token"));
