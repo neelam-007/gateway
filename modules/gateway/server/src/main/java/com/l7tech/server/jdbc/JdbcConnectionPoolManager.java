@@ -8,14 +8,12 @@ import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.policy.variable.ServerVariables;
 import com.l7tech.util.ConfigFactory;
-import com.l7tech.util.Functions;
 import com.l7tech.util.Functions.Unary;
 import com.l7tech.util.Pair;
 import com.mchange.v2.c3p0.ComboPooledDataSource;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.InitializingBean;
 
-import javax.inject.Inject;
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NameNotFoundException;
@@ -123,6 +121,8 @@ public class JdbcConnectionPoolManager implements InitializingBean {
     public Pair<ComboPooledDataSource, String> updateConnectionPool(JdbcConnection connection, boolean isForTesting) {
         // Check if the JDBC connection is disabled or not.  This checking will be ignored if this method is called for testing JDBC connection.
         if (!connection.isEnabled() && !isForTesting) {
+            //remove the disabled connection from the connection pool.
+            deleteConnectionPool(connection.getName(), false);
             auditor.logAndAudit(AssertionMessages.JDBC_CONNECTION_DISABLED, connection.getName());
             return new Pair<ComboPooledDataSource, String>(null, null);
         }
@@ -236,18 +236,32 @@ public class JdbcConnectionPoolManager implements InitializingBean {
      * Delete a connection pool associated with a JDBC Connection entity name.
      *
      * @param connectionName: a JDBC Connection name.
+     * @return This will return true if the connection pool was removed. It returns false otherwise.
      */
-    public void deleteConnectionPool(String connectionName) {
+    public boolean deleteConnectionPool(String connectionName) {
+        return deleteConnectionPool(connectionName, true);
+    }
+
+    /**
+     * Delete a connection pool associated with a JDBC Connection entity name.
+     *
+     * @param connectionName: a JDBC Connection name.
+     * @param logErrorIfNotFound if true an error will be logged if the connection cannot be found, otherwise no error will be logged.
+     * @return This will return true if the connection pool was removed. It returns false otherwise.
+     */
+    public boolean deleteConnectionPool(String connectionName, boolean logErrorIfNotFound) {
         ComboPooledDataSource cpds;
         try {
             cpds = (ComboPooledDataSource)context.lookup(connectionName);
         } catch (NamingException e) {
-            String errMsg = "Error lookup a data source by a JDBC connection name, " + connectionName;
-            auditor.logAndAudit(AssertionMessages.JDBC_CANNOT_DELETE_CONNECTION_POOL, connectionName, errMsg);
-            return;
+            if (logErrorIfNotFound) {
+                String errMsg = "Error lookup a data source by a JDBC connection name, " + connectionName;
+                auditor.logAndAudit(AssertionMessages.JDBC_CANNOT_DELETE_CONNECTION_POOL, connectionName, errMsg);
+            }
+            return false;
         }
 
-        if (cpds == null) return;
+        if (cpds == null) return false;
         else cpds.close();
 
         try {
@@ -256,7 +270,10 @@ public class JdbcConnectionPoolManager implements InitializingBean {
         } catch (NamingException e) {
             String errMsg = "Error unbind a data source with a JDBC connection name, " + connectionName;
             auditor.logAndAudit(AssertionMessages.JDBC_CANNOT_DELETE_CONNECTION_POOL, connectionName, errMsg);
+            return false;
         }
+        auditor.logAndAudit(AssertionMessages.JDBC_DELETED_CONNECTION_POOL, connectionName);
+        return true;
     }
 
     /**

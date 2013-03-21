@@ -1009,9 +1009,10 @@ public class AssertionMessages extends Messages {
     public static final M JDBC_CANNOT_START_POOLING = m(9100, Level.WARNING, "JDBC Connection Pooling cannot start due to: {0}");
     public static final M JDBC_CANNOT_CONFIG_CONNECTION_POOL = m(9101, Level.WARNING, "Cannot configure a pool associated with a JDBC connection {0} due to: {1}");
     public static final M JDBC_CANNOT_DELETE_CONNECTION_POOL = m(9102, Level.WARNING, "Cannot delete a pool associated with a JDBC connection {0} due to: {1}");
-    public static final M JDBC_CONNECTION_DISABLED = m(9103, Level.WARNING, "The Gateway would not configure a disabled JDBC connection {0}");
+    public static final M JDBC_CONNECTION_DISABLED = m(9103, Level.INFO, "The Gateway would not configure a disabled JDBC connection {0}");
     public static final M JDBC_QUERYING_FAILURE_ASSERTION_FAILED = m(9104, Level.WARNING, "\"Perform JDBC Query\" assertion failed due to: {0}");
     public static final M JDBC_NO_QUERY_RESULT_ASSERTION_FAILED = m(9105, Level.INFO, "\"Perform JDBC Query\" assertion failed due to no query results via a connection {0}");
+    public static final M JDBC_DELETED_CONNECTION_POOL = m(9106, Level.FINE, "Removed connection pool associated with a JDBC connection {0}");
 
     public static final M JSON_SCHEMA_VALIDATION_FAILED = m(9130, Level.INFO, "JSON Schema validation failure. {0}");
     public static final M JSON_INVALID_JSON = m(9131, Level.INFO, "{0} is not well-formed JSON.");
