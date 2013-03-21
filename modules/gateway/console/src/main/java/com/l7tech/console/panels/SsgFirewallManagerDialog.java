@@ -72,7 +72,7 @@ public class SsgFirewallManagerDialog extends JDialog {
                     return;
 
                 final SsgFirewallRule newRule = rule.getCopy();
-                newRule.setOrdinal(rule.getOrdinal() + 1);
+                newRule.setOrdinal(firewallRulesTable.getRowCount() + 1);
                 EntityUtils.updateCopy(newRule);
                 if(canDisplaySimpleDialog(newRule)){
                     displaySimplePropertiesDialog(newRule);
