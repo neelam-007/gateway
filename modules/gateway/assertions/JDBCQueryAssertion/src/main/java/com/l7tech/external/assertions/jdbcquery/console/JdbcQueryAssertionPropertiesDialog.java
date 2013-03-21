@@ -294,11 +294,22 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
         assertion.setQueryName(queryNameTextField.getText());
         assertion.setConvertVariablesToStrings(convertVariablesToStringsCheckBox.isSelected());
         final String schemaValue = schemaTextField.getText().trim();
-        assertion.setSchema((schemaTextField.isEnabled() && !schemaValue.isEmpty())? schemaValue: null);
+        assertion.setSchema((schemaCheckBox.isSelected() && isSchemaCapable(connectionComboBox.getSelectedItem().toString()) && schemaTextField.isEnabled() && !schemaValue.isEmpty())? schemaValue: null);
     }
 
     private void enableOrDisableSchemaControls() {
-        schemaCheckBox.setEnabled(JdbcUtil.isStoredProcedure(sqlQueryTextArea.getText().toLowerCase()));
+        final String connName = connectionComboBox.getSelectedItem().toString();
+        schemaCheckBox.setEnabled(isSchemaCapable(connName) && JdbcUtil.isStoredProcedure(sqlQueryTextArea.getText().toLowerCase()));
+    }
+
+    private boolean isSchemaCapable(final String connName) {
+        if (connToDriverMap.containsKey(connName)) {
+            final String driverClass = connToDriverMap.get(connName);
+            return driverClass.contains("oracle") || driverClass.contains("sqlserver");
+        }
+
+        // if we don't know about the connection and a variable is entered, then we need to allow it
+        return Syntax.isAnyVariableReferenced(connName);
     }
 
     private void populateConnectionCombobox() {
