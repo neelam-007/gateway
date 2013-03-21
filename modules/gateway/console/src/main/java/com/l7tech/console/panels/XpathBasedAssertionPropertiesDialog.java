@@ -1,10 +1,5 @@
 package com.l7tech.console.panels;
 
-import com.japisoft.fastparser.node.SimpleNode;
-import com.japisoft.xmlpad.LocationEvent;
-import com.japisoft.xmlpad.LocationListener;
-import com.japisoft.xmlpad.XMLContainer;
-import com.japisoft.xmlpad.editor.renderer.LineRenderer;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.policy.SsmPolicyVariableUtils;
@@ -16,7 +11,7 @@ import com.l7tech.console.tree.wsdl.BindingTreeNode;
 import com.l7tech.console.tree.wsdl.WsdlTreeNode;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.console.util.XMLContainerFactory;
+import com.l7tech.console.util.XmlViewer;
 import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
 import com.l7tech.gateway.common.service.SampleMessage;
 import com.l7tech.gateway.common.service.ServiceAdmin;
@@ -77,7 +72,6 @@ import javax.xml.soap.SOAPMessage;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.text.ParseException;
@@ -114,7 +108,7 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
     private String blankMessage = "<empty />";
     private Map<String, String> namespaces = new HashMap<String, String>();
     private Map<String, String> allOperationNamespaces = new HashMap<String, String>();
-    private XMLContainer messageViewer;
+    private XmlViewer messageViewer;
     private XpathToolBar messageViewerToolBar;
     private ActionListener okActionListener;
     private boolean isEncryption;
@@ -401,9 +395,9 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
             public void actionPerformed(ActionEvent e) {
                 final SampleMessage sm;
                 try {
-                    String xml = messageViewer.getUIAccessibility().getEditor().getText();
+                    String xml = "";
                     try {
-                        org.w3c.dom.Document doc = XmlUtil.parse(new ByteArrayInputStream(xml.getBytes(Charsets.UTF8)));
+                        org.w3c.dom.Document doc = messageViewer.getDocument();
                         xml = XmlUtil.nodeToFormattedString(doc);
                     } catch (Exception e1) {
                         log.log(Level.WARNING, "Invalid XML", e1);
@@ -1103,21 +1097,9 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
     }
 
     private void initializeSoapMessageViewer(String msg)
-      throws IOException, SAXParseException, DocumentException {
-        messageViewer = XMLContainerFactory.createXmlContainer(true);
+        throws IOException, SAXParseException, DocumentException {
+        messageViewer = new XmlViewer();
         setMessageViewerText(msg);
-        messageViewer.setEditableDocumentMode(false);
-        messageViewer.getUIAccessibility().setPopupAvailable(false);
-        messageViewer.getUIAccessibility().setTreePopupAvailable(false);
-        messageViewer.getUIAccessibility().getEditor().setSelectionLineRenderer(new LineRenderer() {
-            public void renderer(Graphics gc, Color color, int x, int y, int width, int height) {
-                gc.setColor(Color.BLACK);
-                gc.setXORMode(Color.WHITE);
-                gc.fillRect(x, y, width, height);
-            }
-        });
-
-        messageViewer.setEditable(false);
         messageViewerToolBar = new XpathToolBar(messageViewer, new Functions.Nullary<Map<String, String>>() {
             @Override
             public Map<String, String> call() {
@@ -1143,11 +1125,16 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
         messageViewerToolbarPanel.setLayout(new BorderLayout());
         messageViewerToolbarPanel.add(messageViewerToolBar, BorderLayout.CENTER);
         com.intellij.uiDesigner.core.GridConstraints gridConstraints2 = new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 0, 3, 7, 7, null, null, null);
-        messageViewerPanel.add(messageViewer.getView(), gridConstraints2);
+        messageViewerPanel.add(messageViewer, gridConstraints2);
     }
 
     private void setMessageViewerText(String xml) {
-        messageViewer.getAccessibility().setText(XmlUtil.reformatXml(xml));
+        try {
+            messageViewer.setDocument(XmlUtil.stringToDocument(xml));
+        } catch (SAXException e) {
+            log.log(Level.WARNING, "Unable to parse XML for message viewer: " + ExceptionUtils.getMessage(e), e);
+            messageViewer.setDocument(XmlUtil.createEmptyDocument());
+        }
     }
 
     private XpathVersion getXpathVersion() {
@@ -1292,7 +1279,7 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
     /**
      * display the string soap message onto the viewer
      *
-     * @throws RuntimeException wrapping the originasl exception
+     * @throws RuntimeException wrapping the original exception
      */
     private void displayMessage(String soapMessage)
       throws RuntimeException {
@@ -1596,7 +1583,7 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
         private JTextField xpathField = null;
         private Functions.UnaryVoid<String> xpathBuiltListener = null;
 
-        public XpathToolBar(final XMLContainer v, final Functions.Nullary<Map<String, String>> namespaceMapFactory) {
+        public XpathToolBar(final XmlViewer v, final Functions.Nullary<Map<String, String>> namespaceMapFactory) {
             setFloatable(false);
 
             xpathField = new SquigglyTextField();
@@ -1619,13 +1606,11 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
 
             add(xpathPanel, BorderLayout.CENTER);
 
-            v.setLocationListener(new LocationListener() {
+            v.setSelectionListener(new XmlViewer.NodeSelectionListener() {
                 @Override
-                public void locationChanged(LocationEvent locationEvent) {
-                    SimpleNode node = locationEvent.getDocumentLocation();
+                public void nodeSelected(@Nullable Node node) {
                     if (node != null) {
-                        v.getUIAccessibility().getEditor().highlightLine(node.getStartingLine());
-                        final StringBuilder builder = new StringBuilder();
+                        StringBuilder builder = new StringBuilder();
                         buildPath(builder, namespaceMapFactory == null ? new HashMap<String, String>() : namespaceMapFactory.call(), node);
                         xpathField.setText(builder.toString());
                         if (xpathBuiltListener != null)
@@ -1668,21 +1653,21 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
 
         private void buildPath( final StringBuilder builder,
                                 final Map<String, String> namespaces,
-                                final SimpleNode element ) {
+                                final Node element ) {
 
-            if ( element.getSimpleParent() != null ) {
-                buildPath( builder, namespaces, element.getSimpleParent() );
+            if ( element.getParentNode() != null ) {
+                buildPath( builder, namespaces, element.getParentNode() );
             }
             // currently we only support building a path to an element
             // but in the future we could support element values as well
-            if (element.getType() == SimpleNode.TAG_NODE) {
+            if (element.getNodeType() == Node.ELEMENT_NODE) {
                 builder.append( '/' );
 
-                String prefix = element.getNameSpacePrefix();
-                String namespace = element.getNameSpaceURI();
+                String prefix = element.getPrefix();
+                String namespace = element.getNamespaceURI();
 
-                String nodeName = element.getNodeContent();
-                String nodeQname = element.getQualifiedContent();
+                String nodeName = element.getLocalName();
+                String nodeQname = element.getNodeName();
 
                 if ( namespace == null ) {
                     builder.append( nodeName );

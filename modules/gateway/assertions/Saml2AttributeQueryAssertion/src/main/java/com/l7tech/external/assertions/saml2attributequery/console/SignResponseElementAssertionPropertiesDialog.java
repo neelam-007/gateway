@@ -1,6 +1,5 @@
 package com.l7tech.external.assertions.saml2attributequery.console;
 
-import com.japisoft.xmlpad.XMLContainer;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.panels.NamespaceMapEditor;
@@ -15,7 +14,7 @@ import com.l7tech.console.tree.wsdl.BindingTreeNode;
 import com.l7tech.console.tree.wsdl.WsdlTreeNode;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.console.util.XMLContainerFactory;
+import com.l7tech.console.util.XmlViewer;
 import com.l7tech.external.assertions.saml2attributequery.SignResponseElementAssertion;
 import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
 import com.l7tech.gateway.common.service.SampleMessage;
@@ -63,7 +62,6 @@ import javax.xml.soap.SOAPMessage;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.text.ParseException;
@@ -96,7 +94,7 @@ public class SignResponseElementAssertionPropertiesDialog extends JDialog {
     private String blankMessage = "<empty />";
     private Map<String, String> namespaces = new HashMap<String, String>();
     private Map<String, String> requiredNamespaces = new HashMap<String, String>();
-    private XMLContainer messageViewer;
+    private XmlViewer messageViewer;
     private XpathBasedAssertionPropertiesDialog.XpathToolBar messageViewerToolBar;
     private ActionListener okActionListener;
     private boolean haveTarari;
@@ -315,9 +313,9 @@ public class SignResponseElementAssertionPropertiesDialog extends JDialog {
             public void actionPerformed(ActionEvent e) {
                 final SampleMessage sm;
                 try {
-                    String xml = messageViewer.getAccessibility().getText();
+                    String xml = "";
                     try {
-                        org.w3c.dom.Document doc = XmlUtil.parse(new ByteArrayInputStream(xml.getBytes("UTF-8")));
+                        org.w3c.dom.Document doc = messageViewer.getDocument();
                         xml = XmlUtil.nodeToFormattedString(doc);
                     } catch (Exception e1) {
                         log.log(Level.WARNING, "Invalid XML", e1);
@@ -729,12 +727,8 @@ public class SignResponseElementAssertionPropertiesDialog extends JDialog {
 
     private void initializeSoapMessageViewer(String msg)
         throws IOException, SAXParseException, DocumentException {
-        messageViewer = XMLContainerFactory.createXmlContainer(true);
+        messageViewer = new XmlViewer();
         setMessageViewerText(msg);
-        messageViewer.setEditableDocumentMode(false);
-        messageViewer.getUIAccessibility().setPopupAvailable(false);
-        messageViewer.getUIAccessibility().setTreePopupAvailable(false);
-        messageViewer.setEditable(false);
         messageViewerToolBar = new XpathBasedAssertionPropertiesDialog.XpathToolBar(messageViewer, new Functions.Nullary<Map<String, String>>() {
             @Override
             public Map<String, String> call() {
@@ -744,11 +738,15 @@ public class SignResponseElementAssertionPropertiesDialog extends JDialog {
         messageViewerToolbarPanel.setLayout(new BorderLayout());
         messageViewerToolbarPanel.add(messageViewerToolBar, BorderLayout.CENTER);
         com.intellij.uiDesigner.core.GridConstraints gridConstraints2 = new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 0, 3, 7, 7, null, null, null);
-        messageViewerPanel.add(messageViewer.getView(), gridConstraints2);
+        messageViewerPanel.add(messageViewer, gridConstraints2);
     }
 
     private void setMessageViewerText(String xml) {
-        messageViewer.getAccessibility().setText(XmlUtil.reformatXml(xml));
+        try {
+            messageViewer.setDocument(XmlUtil.stringToDocument(xml));
+        } catch (SAXException e) {
+            log.warning("unable to parse message XML: " + ExceptionUtils.getMessage(e));
+        }
     }
 
     /**
