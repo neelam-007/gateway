@@ -45,8 +45,10 @@ public class XmlViewer extends JTree {
                         Node node = (Node) obj;
                         StringBuilder sb = new StringBuilder("<HTML>");
 
-                        sb.append("<HTML><font color='blue'>&lt;</font>");
+                        sb.append("<HTML><font color='grey'>&lt;</font>");
+                        sb.append("<font color='purple'>");
                         sb.append(node.getNodeName());
+                        sb.append("</font>");
 
                         NamedNodeMap attrs = node.getAttributes();
                         if (attrs != null && attrs.getLength() > 0) {
@@ -54,13 +56,13 @@ public class XmlViewer extends JTree {
                                 Attr attr = (Attr) attrs.item(i);
                                 sb.append(' ');
                                 sb.append(attr.getName());
-                                sb.append("<font color='blue'>=\"</font>");
+                                sb.append("=<font color='blue'>\"");
                                 sb.append(attr.getValue());
-                                sb.append("<font color='blue'>\"</font>");
+                                sb.append("\"</font>");
                             }
                         }
 
-                        sb.append("<font color='blue'>&gt;</font>");
+                        sb.append("<font color='grey'>&gt;</font>");
 
                         value = sb.toString();
                     }
