@@ -48,7 +48,7 @@ public class OAuthToolkit1_0IntegrationTest {
 //    private static final String SIGNATURE_GET = ""; // method = GET
 //    private static final String SIGNATURE_EMPTY_TOKEN = "zMX7NBnryxDm+x3MJTJx2KP/eQw=";
 
-    private static final String CLIENT_REQUEST_TOKEN = "http://" + BASE_URL + ":8080/oauth/v1/client?state=request_token";
+    private static final String CLIENT_REQUEST_TOKEN = "https://" + BASE_URL + ":8443/oauth/v1/client?state=request_token";
     private static final String REQUEST_TOKEN_ENDPOINT = "https://" + BASE_URL + ":8443/auth/oauth/v1/request";
     private static final String AUTHORIZE_ENDPOINT = "https://" + BASE_URL + ":8443/auth/oauth/v1/authorize";
     private static final String ACCESS_TOKEN_ENDPOINT = "https://" + BASE_URL + ":8443/auth/oauth/v1/token";

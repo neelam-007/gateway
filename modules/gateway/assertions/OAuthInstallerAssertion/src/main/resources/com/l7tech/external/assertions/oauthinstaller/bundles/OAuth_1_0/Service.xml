@@ -2969,15 +2969,11 @@
                     &lt;L7p:Comment stringValue=" ============== CONFIGURE VALUES HERE START ============== "/&gt;
                     &lt;/L7p:CommentAssertion&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression stringValue="JHtyZXF1ZXN0LnVybC5ob3N0fTo4NDQz"/&gt;
-                    &lt;L7p:VariableToSet stringValue="host_target"/&gt;
-                    &lt;/L7p:SetVariable&gt;
-                    &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression stringValue="T0F1dGhWMUNsaWVudA=="/&gt;
                     &lt;L7p:VariableToSet stringValue="this.app.name"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression stringValue="aHR0cHM6Ly8ke3JlcXVlc3QudXJsLmhvc3R9Ojg0NDMke3JlcXVlc3QudXJsLnBhdGh9"/&gt;
+                    &lt;L7p:Base64Expression stringValue="JHtyZXF1ZXN0LnVybC5wcm90b2NvbH06Ly8ke3JlcXVlc3QudXJsLmhvc3R9OiR7cmVxdWVzdC51cmwucG9ydH0ke3JlcXVlc3QudXJsLnBhdGh9"/&gt;
                     &lt;L7p:VariableToSet stringValue="this.app.url"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:SetVariable&gt;
@@ -3029,11 +3025,11 @@
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression
-                    stringValue="aHR0cHM6Ly8ke2hvc3RfdGFyZ2V0fS9hdXRoL29hdXRoL3YxL2F1dGhvcml6ZQ=="/&gt;
+                    stringValue="JHtob3N0X29hdXRoX2VuZHBvaW50fS9hdXRoL29hdXRoL3YxL2F1dGhvcml6ZQ=="/&gt;
                     &lt;L7p:VariableToSet stringValue="oauth.endpoint.authorize"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression stringValue="aHR0cHM6Ly8ke2hvc3RfdGFyZ2V0fS9hdXRoL29hdXRoL3YxL3Rva2Vu"/&gt;
+                    &lt;L7p:Base64Expression stringValue="JHtob3N0X29hdXRoX2VuZHBvaW50fS9hdXRoL29hdXRoL3YxL3Rva2Vu"/&gt;
                     &lt;L7p:VariableToSet stringValue="oauth.endpoint.token"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:CommentAssertion&gt;
