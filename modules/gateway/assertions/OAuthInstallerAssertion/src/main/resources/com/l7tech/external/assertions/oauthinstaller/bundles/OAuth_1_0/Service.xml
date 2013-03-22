@@ -2933,6 +2933,7 @@
                     &lt;L7p:CommentAssertion&gt;
                     &lt;L7p:Comment stringValue=" ======= THIS CLIENT NEEDS TO ACCESS ITS OWN DATABASE TABLE ======= "/&gt;
                     &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:SslAssertion/&gt;
                     &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression stringValue="JHtyZXF1ZXN0Lmh0dHAucGFyYW1ldGVyLnN0YXRlfQ=="/&gt;
                     &lt;L7p:VariableToSet stringValue="state"/&gt;

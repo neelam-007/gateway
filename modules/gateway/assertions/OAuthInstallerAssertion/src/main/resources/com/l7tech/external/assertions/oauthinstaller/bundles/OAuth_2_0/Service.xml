@@ -39,6 +39,7 @@
                     &lt;L7p:CommentAssertion&gt;
                     &lt;L7p:Comment stringValue="This is a test client for an OAuth 2 implementation using the implicit grant type"/&gt;
                     &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:SslAssertion/&gt;
                     &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression stringValue="aW1wbGljaXQ="/&gt;
                     &lt;L7p:VariableToSet stringValue="client_page"/&gt;
@@ -718,6 +719,7 @@
                     &lt;L7p:CommentAssertion&gt;
                     &lt;L7p:Comment stringValue="This is a test client for an OAuth 2 implementation using the resource owner password credentials grant type"/&gt;
                     &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:SslAssertion/&gt;
                     &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression stringValue="cm9wYw=="/&gt;
                     &lt;L7p:VariableToSet stringValue="client_page"/&gt;
@@ -1385,6 +1387,7 @@
                     &lt;L7p:CommentAssertion&gt;
                     &lt;L7p:Comment stringValue="This is a test client for an OAuth 2 implementation using the authorization code grant type"/&gt;
                     &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:SslAssertion/&gt;
                     &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression stringValue="YXV0aGNvZGU="/&gt;
                     &lt;L7p:VariableToSet stringValue="client_page"/&gt;
@@ -6854,6 +6857,7 @@
                     &lt;L7p:CommentAssertion&gt;
                     &lt;L7p:Comment stringValue="This is a test client for an OAuth 2 implementation using the saml grant type"/&gt;
                     &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:SslAssertion/&gt;
                     &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression stringValue="c2FtbA=="/&gt;
                     &lt;L7p:VariableToSet stringValue="client_page"/&gt;
@@ -7712,6 +7716,7 @@
                     &lt;L7p:CommentAssertion&gt;
                     &lt;L7p:Comment stringValue="This is a test client for an OAuth 2 implementation using the client credentials grant type"/&gt;
                     &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:SslAssertion/&gt;
                     &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression stringValue="Y2xpZW50Y3JlZHM="/&gt;
                     &lt;L7p:VariableToSet stringValue="client_page"/&gt;
