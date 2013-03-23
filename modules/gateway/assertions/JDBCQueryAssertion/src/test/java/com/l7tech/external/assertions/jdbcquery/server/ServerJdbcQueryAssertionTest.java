@@ -25,9 +25,7 @@ import com.l7tech.util.*;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.ArgumentMatcher;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.GenericApplicationContext;
@@ -61,8 +59,15 @@ public class ServerJdbcQueryAssertionTest {
 
     private Config config;
 
+    @Mock
+    private JdbcConnectionManager jdbcConnectionManager;
+    @Mock
+    private JdbcConnection jdbcConnection;
+
     @Before
     public void setUp() throws Exception {
+        MockitoAnnotations.initMocks(this);
+
         // Get the policy enforcement context
         peCtx = makeContext("<myrequest/>", "<myresponse/>");
         final String connectionName = "mockDb";
@@ -79,6 +84,11 @@ public class ServerJdbcQueryAssertionTest {
 
         connectionManager = new JdbcConnectionManagerStub(connection);
         config = (Config) appCtx.getBean("serverConfig");
+
+        appCtx = Mockito.spy(appCtx);
+        Mockito.doReturn(jdbcConnectionManager).when(appCtx).getBean(Matchers.eq("jdbcConnectionManager"), Matchers.eq(JdbcConnectionManager.class));
+        when(jdbcConnectionManager.getJdbcConnection(Matchers.eq(connectionName))).thenReturn(jdbcConnection);
+        when(jdbcConnection.getDriverClass()).thenReturn("com.mysql.jdbc.Driver");
     }
 
     /**
@@ -788,6 +798,42 @@ public class ServerJdbcQueryAssertionTest {
         // This allows the processing of resolveAsObject property
         final AuditSinkPolicyEnforcementContext actualContext = new AuditSinkPolicyEnforcementContext(null, context, context);
         verifyResolveAsObjectPropUsage(actualContext, false);
+    }
+
+    @BugId("SSG-6716")
+    @Test
+    public void testInvalidConnectionName() throws Exception {
+        JdbcQueryAssertion assertionToUse = assertion.clone();
+        assertionToUse.setConnectionName("invalid");
+        ServerJdbcQueryAssertion serverAssertion = new ServerJdbcQueryAssertion(assertionToUse, appCtx);
+        final TestAudit testAudit = new TestAudit();
+        ApplicationContexts.inject(serverAssertion, Collections.singletonMap("auditFactory", testAudit.factory()));
+        final AssertionStatus assertionStatus = serverAssertion.checkRequest(makeContext("<xml />", "<xml />"));
+        assertEquals(AssertionStatus.FAILED, assertionStatus);
+
+        for (String s : testAudit) {
+            System.out.println(s);
+        }
+
+        assertTrue(testAudit.isAuditPresentContaining("\"Perform JDBC Query\" assertion failed due to: Could not find JDBC connection: invalid"));
+    }
+
+    @BugId("SSG-6716")
+    @Test
+    public void testNotSchemaApplicableConnectionName() throws Exception {
+        JdbcQueryAssertion assertionToUse = assertion.clone();
+        assertionToUse.setSchema("mySchema");
+        ServerJdbcQueryAssertion serverAssertion = new ServerJdbcQueryAssertion(assertionToUse, appCtx);
+        final TestAudit testAudit = new TestAudit();
+        ApplicationContexts.inject(serverAssertion, Collections.singletonMap("auditFactory", testAudit.factory()));
+        final AssertionStatus assertionStatus = serverAssertion.checkRequest(makeContext("<xml />", "<xml />"));
+        assertEquals(AssertionStatus.FAILED, assertionStatus);
+
+        for (String s : testAudit) {
+            System.out.println(s);
+        }
+
+        assertTrue(testAudit.isAuditPresentContaining("\"Perform JDBC Query\" assertion failed due to: Schema value given but JDBC connection does not support it. Connection name: mockDb"));
     }
 
     /**

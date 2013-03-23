@@ -2,6 +2,8 @@ package com.l7tech.external.assertions.jdbcquery.server;
 
 import com.l7tech.external.assertions.jdbcquery.JdbcQueryAssertion;
 import com.l7tech.gateway.common.audit.AssertionMessages;
+import com.l7tech.gateway.common.jdbc.JdbcConnection;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.variable.Syntax;
@@ -9,6 +11,7 @@ import com.l7tech.policy.variable.VariableNameSyntaxException;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.audit.AuditLookupPolicyEnforcementContext;
 import com.l7tech.server.audit.AuditSinkPolicyEnforcementContext;
+import com.l7tech.server.jdbc.JdbcConnectionManager;
 import com.l7tech.server.jdbc.JdbcQueryingManager;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
@@ -37,6 +40,7 @@ import static com.l7tech.server.jdbc.JdbcQueryUtils.getQueryStatementWithoutCont
 public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryAssertion> {
     private final String[] variablesUsed;
     private final JdbcQueryingManager jdbcQueryingManager;
+    private final JdbcConnectionManager jdbcConnectionManager;
     private final Config config;
     private final static String EMPTY_STRING = "";
     private final static String XML_RESULT_TAG_OPEN = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><L7j:jdbcQueryResult xmlns:L7j=\"http://ns.l7tech.com/2012/08/jdbc-query-result\">";
@@ -56,6 +60,7 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
 
         variablesUsed = assertion.getVariablesUsed();
         jdbcQueryingManager = context.getBean("jdbcQueryingManager", JdbcQueryingManager.class);
+        jdbcConnectionManager = context.getBean("jdbcConnectionManager", JdbcConnectionManager.class);
         config = context.getBean("serverConfig", Config.class);
 
         if (assertion.getConnectionName() == null) {
@@ -98,6 +103,22 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
                 return AssertionStatus.FAILED;
             }
             final int queryTimeout = Integer.parseInt(resolvedQueryTimeout);
+
+            //validate that the connection exists.
+            final JdbcConnection connection;
+            try {
+                connection = jdbcConnectionManager.getJdbcConnection(connName);
+                if (connection == null) throw new FindException();
+            } catch (FindException e) {
+                logAndAudit(AssertionMessages.JDBC_QUERYING_FAILURE_ASSERTION_FAILED, "Could not find JDBC connection: " + connName);
+                return AssertionStatus.FAILED;
+            }
+            //Validate the if the schema is not null then the connection is able to use that schema.
+            final String driverClass = connection.getDriverClass();
+            if (schema != null && !(driverClass.contains("oracle") || driverClass.contains("sqlserver"))) {
+                logAndAudit(AssertionMessages.JDBC_QUERYING_FAILURE_ASSERTION_FAILED, "Schema value given but JDBC connection does not support it. Connection name: " + connName);
+                return AssertionStatus.FAILED;
+            }
 
             final Object result = jdbcQueryingManager.performJdbcQuery(connName, plainQuery, schema, assertion.getMaxRecords(), queryTimeout, preparedStmtParams);
 

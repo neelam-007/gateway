@@ -2,9 +2,11 @@ package com.l7tech.external.assertions.jdbcquery.server;
 
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.external.assertions.jdbcquery.JdbcQueryAssertion;
+import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.gateway.common.jdbc.JdbcUtil;
 import com.l7tech.message.Message;
 import com.l7tech.server.jdbc.JdbcCallHelper;
+import com.l7tech.server.jdbc.JdbcConnectionManager;
 import com.l7tech.server.jdbc.JdbcQueryingManagerStub;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
@@ -12,7 +14,9 @@ import com.l7tech.test.BugNumber;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Matchers;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
@@ -29,7 +33,6 @@ import java.sql.DatabaseMetaData;
 import java.util.*;
 
 import static org.junit.Assert.*;
-import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.when;
 
@@ -50,6 +53,10 @@ public class JdbcCallHelperTest {
     private DatabaseMetaData databaseMetaData;
     @Mock
     private SimpleJdbcCall simpleJdbcCall;
+    @Mock
+    private JdbcConnectionManager jdbcConnectionManager;
+    @Mock
+    private JdbcConnection jdbcConnection;
     @Autowired
     private ApplicationContext appCtx;
 
@@ -66,6 +73,11 @@ public class JdbcCallHelperTest {
 
         when(simpleJdbcCall.execute(any(SqlParameterSource.class))).thenReturn(getDummyResults());
         when(simpleJdbcCall.getJdbcTemplate()).thenReturn(new JdbcTemplate(dataSource));
+
+        appCtx = Mockito.spy(appCtx);
+        Mockito.doReturn(jdbcConnectionManager).when(appCtx).getBean(Matchers.eq("jdbcConnectionManager"), Matchers.eq(JdbcConnectionManager.class));
+        when(jdbcConnectionManager.getJdbcConnection(Matchers.eq("MySQL"))).thenReturn(jdbcConnection);
+        when(jdbcConnection.getDriverClass()).thenReturn("my.driver.class");
     }
 
     private Map<String, Object> getDummyResults() {
