@@ -244,6 +244,7 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager, PropertyCha
         final CachedMetaDataKey uniqueKey = getCacheKey(connectionName, query, schemaName);
         final SimpleJdbcCall simpleJdbcCall;
         if (simpleJdbcCallCache.containsKey(uniqueKey)) {
+            logger.log(Level.FINEST, "Cache hit for key: {0}", uniqueKey);
             CachedMetaDataValue cachedMetaDataValue = simpleJdbcCallCache.get(uniqueKey);
 
             // Check to see if the cache has expired.
@@ -258,6 +259,7 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager, PropertyCha
                     // double check locking
                     age = timeSource.currentTimeMillis() - cachedMetaDataValue.cachedTime.get();
                     if (age > maxStaleAgeMillis) {
+                        logger.log(Level.FINEST, "Cache expired - too old - for key: {0}", uniqueKey);
                         updateCache(connectionName, query, jdbcTemplate, schemaName);
                         cachedMetaDataValue = simpleJdbcCallCache.get(uniqueKey);
                     }
@@ -278,18 +280,20 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager, PropertyCha
             accessTime.set(timeSource.currentTimeMillis());
 
         } else {
+            final CachedMetaDataValue cachedMetaDataValue;
             // cache miss, most likely because the connection name references a context variable
             synchronized (uniqueKey.toString().intern()) {
                 // Any concurrent requests for the same key must wait to avoid the database being bombarded for meta data.
                 // double check locking
                 if (!simpleJdbcCallCache.containsKey(uniqueKey)) {
+                    logger.log(Level.FINEST, "Cache miss for key: {0}", uniqueKey);
                     updateCache(connectionName, query, jdbcTemplate, schemaName);
                     // record this key for maintenance by the background cache task
                     registerQueryForPossibleCaching(connectionName, query, schemaName.isSome() ? schemaName.some() : null);
                 }
+                // There is now guaranteed to be a cache hit for the uniqueKey
+                cachedMetaDataValue = simpleJdbcCallCache.get(uniqueKey);
             }
-            // There is now guaranteed to be a cache hit for the uniqueKey
-            final CachedMetaDataValue cachedMetaDataValue = simpleJdbcCallCache.get(uniqueKey);
             final Either<DataAccessException, SimpleJdbcCall> either = cachedMetaDataValue.cachedData;
             if (either.isLeft()) {
                 // now throw the exception.... and again and again until the cache is updated
@@ -948,10 +952,12 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager, PropertyCha
 
             for (CachedMetaDataKey key : keysToRemoveFromDBObjectsToCacheMetaDataFor) {
                 dbObjectsToCacheMetaDataFor.remove(key);
+                logger.log(Level.FINEST, "Cache removed from managed keys - unused - for key: {0}", key);
             }
 
             for (CachedMetaDataKey key : keysToRemove) {
                 simpleJdbcCallCache.remove(key);
+                logger.log(Level.FINEST, "Cache expired - unused, errored, exception, or connection no longer exists - for key: {0}", key);
             }
         }
     }
