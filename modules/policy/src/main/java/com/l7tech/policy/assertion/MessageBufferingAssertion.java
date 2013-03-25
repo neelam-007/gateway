@@ -43,7 +43,7 @@ public class MessageBufferingAssertion extends MessageTargetableAssertion {
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();
 
-        meta.put(PALETTE_FOLDERS, new String[]{"misc"});
+        meta.put(PALETTE_FOLDERS, new String[]{"routing"});
         meta.put(DESCRIPTION, "Change message streaming status.");
         meta.put(SHORT_NAME, "Configure Message Streaming");
         meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/MessageBuffering-16x16.gif");
