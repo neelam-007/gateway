@@ -299,7 +299,9 @@
                             <preferred-size width="150" height="-1"/>
                           </grid>
                         </constraints>
-                        <properties/>
+                        <properties>
+                          <toolTipText value="The schema containing the function or procedure. Only available for Oracle or SQL Server connections."/>
+                        </properties>
                       </component>
                       <component id="b5ef" class="javax.swing.JCheckBox" binding="schemaCheckBox" default-binding="true">
                         <constraints>
