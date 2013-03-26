@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Service xmlns="http://ns.l7tech.com/2010/04/gateway-management" version="5" id="17268736" extendedAttribute="extension">
+    <ServiceDetail version="5" id="17268736" folderId="21312" extendedAttribute="extension">
+        <Name>Warehouse</Name>
+        <Enabled>true</Enabled>
+        <ServiceMappings>
+            <HttpMapping extendedAttribute="extension">
+                <UrlPattern>/waremulti</UrlPattern>
+                <Verbs />
+            </HttpMapping>
+            <SoapMapping>
+                <Lax>true</Lax>
+            </SoapMapping>
+        </ServiceMappings>
+        <Properties>
+            <Property key="policyRevision">
+                <LongValue>15</LongValue>
+            </Property>
+            <Property key="wssProcessingEnabled">
+                <BooleanValue>true</BooleanValue>
+            </Property>
+            <Property key="soap">
+                <BooleanValue>true</BooleanValue>
+            </Property>
+            <Property key="soapVersion">
+                <StringValue>unspecified</StringValue>
+            </Property>
+            <Property key="internal">
+                <BooleanValue>false</BooleanValue>
+            </Property>
+        </Properties>
+    </ServiceDetail>
+    <Resources>
+        <ResourceSet tag="policy" />
+    </Resources>
+</Service>

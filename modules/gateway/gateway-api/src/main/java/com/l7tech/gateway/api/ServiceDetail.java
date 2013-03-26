@@ -271,7 +271,7 @@ public class ServiceDetail extends ElementExtensionSupport {
         }
 
         @XmlElementWrapper(name="Verbs")
-        @XmlElement(name="Verb", required=true)
+        @XmlElement(name="Verb")
         protected List<AttributeExtensibleString> getVerbsValue() {
             return verbs;
         }

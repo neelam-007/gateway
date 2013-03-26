@@ -2,6 +2,7 @@ package com.l7tech.gateway.api;
 
 import com.l7tech.gateway.api.impl.*;
 import com.l7tech.gateway.api.impl.ValidationUtils;
+import com.l7tech.test.BugId;
 import com.l7tech.util.*;
 import org.junit.Before;
 import org.junit.Test;
@@ -1164,9 +1165,29 @@ public class ManagedObjectTest {
     }
 
     private void testUnmarshal( final String suffix ) throws Exception {
-        //todo update tests for encapsulated assertions and generic entities
+        // Test with schema deployed with customers via the /wsman interface
         testUnmarshal( suffix, getSchema( "gateway-management-6.1.xsd" ), MANAGED_OBJECTS_2 );
+        // Test with automatically generated schema
         testUnmarshal( suffix, ValidationUtils.getSchema() );
+
+        //All original MO's should continue to work with 7.1 schema.
+        //todo add tests for encapsulated assertions and generic entities
+        testUnmarshal( suffix, getSchema("gateway-management-7.1.xsd"), MANAGED_OBJECTS_2 );
+
+    }
+
+    /**
+     * Services are allowed to support no verbs. If this happens the layer7 api needs to be able to processes these
+     * services.
+     */
+    @BugId("SSG-6160")
+    @Test
+    public void testServiceNoVerbs() throws Exception {
+        final Unmarshaller unmarshaller = context.createUnmarshaller();
+        unmarshaller.setSchema(getSchema("gateway-management-7.1.xsd"));
+        unmarshaller.setSchema(ValidationUtils.getSchema());
+
+        unMarshallFileAndCheckType(unmarshaller, ServiceMO.class, "ServiceMO_HttpMapping_minimal.xml");
     }
 
     private void testUnmarshal( final String suffix,
@@ -1183,12 +1204,16 @@ public class ManagedObjectTest {
         for ( Class<? extends ManagedObject> managedObjectClass : MANAGED_OBJECTS ) {
             if ( skip.contains( managedObjectClass ) ) continue;
             final String resourceName = ClassUtils.getClassName(managedObjectClass) + "_" + suffix + ".xml";
-            System.out.println( "Processing resource '" + resourceName + "'" );
-            final URL resource = ManagedObjectTest.class.getResource( resourceName );
-            assertNotNull( "Missing test resource: " + resourceName, resource );
-            ManagedObject mo = (ManagedObject) unmarshaller.unmarshal( resource );
-            assertEquals( "Expected object type", managedObjectClass, mo.getClass() );
+            unMarshallFileAndCheckType(unmarshaller, managedObjectClass, resourceName);
         }
+    }
+
+    private void unMarshallFileAndCheckType(Unmarshaller unmarshaller, Class<? extends ManagedObject> managedObjectClass, String resourceName) throws JAXBException {
+        System.out.println( "Processing resource '" + resourceName + "'" );
+        final URL resource = ManagedObjectTest.class.getResource( resourceName );
+        assertNotNull( "Missing test resource: " + resourceName, resource );
+        ManagedObject mo = (ManagedObject) unmarshaller.unmarshal( resource );
+        assertEquals( "Expected object type", managedObjectClass, mo.getClass() );
     }
 
     private Schema getSchema( final String name ) {
