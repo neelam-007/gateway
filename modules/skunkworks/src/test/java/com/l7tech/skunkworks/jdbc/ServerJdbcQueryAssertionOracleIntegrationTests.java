@@ -2,28 +2,23 @@ package com.l7tech.skunkworks.jdbc;
 
 import com.l7tech.external.assertions.jdbcquery.JdbcQueryAssertion;
 import com.l7tech.external.assertions.jdbcquery.server.ServerJdbcQueryAssertion;
-import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.gateway.common.audit.TestAudit;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.server.ServerConfigParams;
-import com.l7tech.server.jdbc.JdbcQueryingManager;
-import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.test.BugId;
-import com.l7tech.util.Config;
-import org.junit.*;
-import org.mockito.Matchers;
-import org.mockito.Mockito;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
-import org.springframework.context.ApplicationContext;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Ignore;
+import org.junit.Test;
 
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.sql.Timestamp;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.Random;
 import java.util.concurrent.*;
 
 /**
@@ -31,12 +26,8 @@ import java.util.concurrent.*;
  *
  * @author Victor Kazakov
  */
-public class ServerJdbcQueryAssertionIntegrationTests extends JdbcCallHelperIntegrationAbstractBaseTestClass {
+public class ServerJdbcQueryAssertionOracleIntegrationTests extends ServerJdbcQueryAssertionIntegrationAbstractTestClass {
 
-    private static ApplicationContext context;
-
-    private static PolicyEnforcementContext policyEnforcementContext;
-    private static Map<String, Object> contextVariables = new HashMap<>();
     private static ExecutorService executor = Executors.newFixedThreadPool(200);
 
     /**
@@ -46,45 +37,7 @@ public class ServerJdbcQueryAssertionIntegrationTests extends JdbcCallHelperInte
      */
     @BeforeClass
     public static void beforeClass() throws Exception {
-        JdbcCallHelperIntegrationAbstractBaseTestClass.beforeClass(null);
-
-        context = Mockito.mock(ApplicationContext.class);
-
-        Mockito.doReturn(getJdbcQueryingManager()).when(context).getBean(Matchers.eq("jdbcQueryingManager"), Matchers.eq(JdbcQueryingManager.class));
-        Mockito.doReturn(getMockConfig()).when(context).getBean(Matchers.eq("serverConfig"), Matchers.eq(Config.class));
-
-        policyEnforcementContext = Mockito.mock(PolicyEnforcementContext.class);
-        Mockito.doAnswer(new Answer<Map<String, Object>>() {
-            @Override
-            public Map<String, Object> answer(InvocationOnMock invocationOnMock) throws Throwable {
-                String[] names = (String[]) invocationOnMock.getArguments()[0];
-                Map<String, Object> vars = new HashMap<>(names.length);
-                for (String name : names) {
-                    vars.put(name, contextVariables.get(name));
-                }
-                return vars;
-            }
-        }).when(policyEnforcementContext).getVariableMap(Matchers.any(String[].class), Matchers.any(Audit.class));
-        Mockito.doAnswer(new Answer<Void>() {
-            @Override
-            public Void answer(InvocationOnMock invocationOnMock) throws Throwable {
-                String name = (String) invocationOnMock.getArguments()[0];
-                Object value = invocationOnMock.getArguments()[1];
-                contextVariables.put(name.toLowerCase(), value);
-                return null;
-            }
-        }).when(policyEnforcementContext).setVariable(Matchers.any(String.class), Matchers.any());
-    }
-
-    /**
-     * Clears config and contexts variables before each test.
-     */
-    @Before
-    public void before() {
-        getConfigProperties().clear();
-        contextVariables.clear();
-
-        getConfigProperties().put(ServerConfigParams.PARAM_JDBC_QUERY_CACHE_METADATA_ENABLED, "false");
+        ServerJdbcQueryAssertionIntegrationAbstractTestClass.beforeClass(null);
     }
 
     /**
@@ -97,9 +50,9 @@ public class ServerJdbcQueryAssertionIntegrationTests extends JdbcCallHelperInte
     public void test() throws PolicyAssertionException, IOException {
         JdbcQueryAssertion assertion = createJdbcQueryAssertion();
         assertion.setSqlQuery("select 123 from dual");
-        ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, context);
+        ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, getContext());
 
-        AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(policyEnforcementContext);
+        AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(getPolicyEnforcementContext());
 
         Assert.assertEquals(AssertionStatus.NONE, assertionStatus);
     }
@@ -116,13 +69,13 @@ public class ServerJdbcQueryAssertionIntegrationTests extends JdbcCallHelperInte
                     assertion.setSqlQuery("select 123" + index + " as returnvalue from dual");
                     String variablePrefix = "jdbcquery" + index;
                     assertion.setVariablePrefix(variablePrefix);
-                    ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, context);
+                    ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, getContext());
 
-                    AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(policyEnforcementContext);
+                    AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(getPolicyEnforcementContext());
 
                     Assert.assertEquals(AssertionStatus.NONE, assertionStatus);
 
-                    Assert.assertEquals("123" + index, String.valueOf(((Object[]) contextVariables.get(variablePrefix + ".returnvalue"))[0]));
+                    Assert.assertEquals("123" + index, String.valueOf(((Object[]) getContextVariables().get(variablePrefix + ".returnvalue"))[0]));
                     return null;
                 }
             }));
@@ -143,13 +96,13 @@ public class ServerJdbcQueryAssertionIntegrationTests extends JdbcCallHelperInte
     public void testTimeStamp() throws PolicyAssertionException, IOException {
         JdbcQueryAssertion assertion = createJdbcQueryAssertion();
         assertion.setSqlQuery("SELECT TO_TIMESTAMP('24-March-13 12:10:10.987000', 'DD-Mon-RR HH24:MI:SS.FF') as myTimestamp FROM DUAL");
-        ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, context);
+        ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, getContext());
 
-        AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(policyEnforcementContext);
+        AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(getPolicyEnforcementContext());
 
         Assert.assertEquals(AssertionStatus.NONE, assertionStatus);
 
-        String expandedTimestamp = ExpandVariables.process("${jdbcQuery.myTimestamp}", contextVariables, new TestAudit());
+        String expandedTimestamp = ExpandVariables.process("${jdbcQuery.myTimestamp}", getContextVariables(), new TestAudit());
 
         Assert.assertEquals("2013-03-24T19:10:10.987Z", expandedTimestamp);
     }
@@ -165,16 +118,16 @@ public class ServerJdbcQueryAssertionIntegrationTests extends JdbcCallHelperInte
         try {
             createDropItem(CreateGetYEarFromTimestampProcedure);
             JdbcQueryAssertion assertion = createJdbcQueryAssertion();
-            contextVariables.put("time", new Date());
+            getContextVariables().put("time", new Date());
             assertion.setSqlQuery("CALL " + CreateGetYEarFromTimestampProcedureName + " ${time}");
             assertion.setConvertVariablesToStrings(false);
-            ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, context);
+            ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, getContext());
 
-            AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(policyEnforcementContext);
+            AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(getPolicyEnforcementContext());
 
             Assert.assertEquals(AssertionStatus.NONE, assertionStatus);
 
-            Assert.assertEquals("2013", ((Object[]) contextVariables.get("jdbcquery.yearout"))[0]);
+            Assert.assertEquals("2013", ((Object[]) getContextVariables().get("jdbcquery.yearout"))[0]);
         } finally {
             createDropItem(DropGetYEarFromTimestampProcedure);
         }
@@ -191,18 +144,18 @@ public class ServerJdbcQueryAssertionIntegrationTests extends JdbcCallHelperInte
         try {
             createDropItem(CreateGetCurrentTimestampProcedure);
             JdbcQueryAssertion assertion = createJdbcQueryAssertion();
-            contextVariables.put("time", new Date());
+            getContextVariables().put("time", new Date());
             assertion.setSqlQuery("CALL " + CreateGetCurrentTimestampProcedureName);
             assertion.setConvertVariablesToStrings(false);
-            ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, context);
+            ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, getContext());
 
-            AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(policyEnforcementContext);
+            AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(getPolicyEnforcementContext());
 
             Assert.assertEquals(AssertionStatus.NONE, assertionStatus);
 
-            Assert.assertEquals(Timestamp.class, ((Object[]) contextVariables.get("jdbcquery.currenttime"))[0].getClass());
+            Assert.assertEquals(Timestamp.class, ((Object[]) getContextVariables().get("jdbcquery.currenttime"))[0].getClass());
 
-            Timestamp currentServerTime = (Timestamp) ((Object[]) contextVariables.get("jdbcquery.currenttime"))[0];
+            Timestamp currentServerTime = (Timestamp) ((Object[]) getContextVariables().get("jdbcquery.currenttime"))[0];
 
             //assert that the times are within a minute of eachother.
             Assert.assertTrue(Math.abs(new Date().getTime() - currentServerTime.getTime()) < 1 * 60 * 1000);
@@ -223,18 +176,18 @@ public class ServerJdbcQueryAssertionIntegrationTests extends JdbcCallHelperInte
         try {
             createDropItem(CreateGetCurrentTimestampFunction);
             JdbcQueryAssertion assertion = createJdbcQueryAssertion();
-            contextVariables.put("time", new Date());
+            getContextVariables().put("time", new Date());
             assertion.setSqlQuery("FUNC " + CreateGetCurrentTimestampFunctionName + "()");
             assertion.setConvertVariablesToStrings(false);
-            ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, context);
+            ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, getContext());
 
-            AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(policyEnforcementContext);
+            AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(getPolicyEnforcementContext());
 
             Assert.assertEquals(AssertionStatus.NONE, assertionStatus);
 
-            Assert.assertEquals(Timestamp.class, ((Object[]) contextVariables.get("jdbcquery.return_value"))[0].getClass());
+            Assert.assertEquals(Timestamp.class, ((Object[]) getContextVariables().get("jdbcquery.return_value"))[0].getClass());
 
-            Timestamp currentServerTime = (Timestamp) ((Object[]) contextVariables.get("jdbcquery.return_value"))[0];
+            Timestamp currentServerTime = (Timestamp) ((Object[]) getContextVariables().get("jdbcquery.return_value"))[0];
 
             //assert that the times are within a minute of eachother.
             Assert.assertTrue(Math.abs(new Date().getTime() - currentServerTime.getTime()) < 1 * 60 * 1000);
@@ -255,18 +208,18 @@ public class ServerJdbcQueryAssertionIntegrationTests extends JdbcCallHelperInte
         try {
             createDropItem(CreateGetStringFunction);
             JdbcQueryAssertion assertion = createJdbcQueryAssertion();
-            contextVariables.put("time", new Date());
+            getContextVariables().put("time", new Date());
             assertion.setSqlQuery("func GetStringFunc(3)");
             assertion.setConvertVariablesToStrings(false);
-            ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, context);
+            ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, getContext());
 
-            AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(policyEnforcementContext);
+            AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(getPolicyEnforcementContext());
 
             Assert.assertEquals(AssertionStatus.NONE, assertionStatus);
 
-            Assert.assertEquals(String.class, ((Object[]) contextVariables.get("jdbcquery.return_value"))[0].getClass());
+            Assert.assertEquals(String.class, ((Object[]) getContextVariables().get("jdbcquery.return_value"))[0].getClass());
 
-            String returnString = (String) ((Object[]) contextVariables.get("jdbcquery.return_value"))[0];
+            String returnString = (String) ((Object[]) getContextVariables().get("jdbcquery.return_value"))[0];
 
             Assert.assertEquals("123abc", returnString);
 
@@ -287,18 +240,18 @@ public class ServerJdbcQueryAssertionIntegrationTests extends JdbcCallHelperInte
         try {
             createDropItem(CreateSendRetrieveBooleanFunction);
             JdbcQueryAssertion assertion = createJdbcQueryAssertion();
-            contextVariables.put("boolean_in", true);
+            getContextVariables().put("boolean_in", true);
             assertion.setSqlQuery("func " + SendRetrieveBooleanFunctionName + " ${boolean_in}");
             assertion.setConvertVariablesToStrings(false);
-            ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, context);
+            ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, getContext());
 
-            AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(policyEnforcementContext);
+            AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(getPolicyEnforcementContext());
 
             Assert.assertEquals(AssertionStatus.NONE, assertionStatus);
 
-            Assert.assertEquals(String.class, ((Object[]) contextVariables.get("jdbcquery.return_value"))[0].getClass());
+            Assert.assertEquals(String.class, ((Object[]) getContextVariables().get("jdbcquery.return_value"))[0].getClass());
 
-            String returnString = (String) ((Object[]) contextVariables.get("jdbcquery.return_value"))[0];
+            String returnString = (String) ((Object[]) getContextVariables().get("jdbcquery.return_value"))[0];
 
             Assert.assertEquals("false", returnString);
 
@@ -319,18 +272,18 @@ public class ServerJdbcQueryAssertionIntegrationTests extends JdbcCallHelperInte
         try {
             createDropItem(CreateRetrieveBooleanFunction);
             JdbcQueryAssertion assertion = createJdbcQueryAssertion();
-            contextVariables.put("int_in", 1);
+            getContextVariables().put("int_in", 1);
             assertion.setSqlQuery("func " + RetrieveBooleanFunctionName + " ${int_in}");
             assertion.setConvertVariablesToStrings(false);
-            ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, context);
+            ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, getContext());
 
-            AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(policyEnforcementContext);
+            AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(getPolicyEnforcementContext());
 
             Assert.assertEquals(AssertionStatus.NONE, assertionStatus);
 
-            Assert.assertEquals(String.class, ((Object[]) contextVariables.get("jdbcquery.return_value"))[0].getClass());
+            Assert.assertEquals(String.class, ((Object[]) getContextVariables().get("jdbcquery.return_value"))[0].getClass());
 
-            String returnString = (String) ((Object[]) contextVariables.get("jdbcquery.return_value"))[0];
+            String returnString = (String) ((Object[]) getContextVariables().get("jdbcquery.return_value"))[0];
 
             Assert.assertEquals("true", returnString);
 
@@ -344,18 +297,18 @@ public class ServerJdbcQueryAssertionIntegrationTests extends JdbcCallHelperInte
         try {
             createDropItem(CreateSendRetrieveVarchar2Function);
             JdbcQueryAssertion assertion = createJdbcQueryAssertion();
-            contextVariables.put("var_in", "abc");
+            getContextVariables().put("var_in", "abc");
             assertion.setSqlQuery("func " + SendRetrieveVarchar2FunctionName + " ${var_in}");
             assertion.setConvertVariablesToStrings(false);
-            ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, context);
+            ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, getContext());
 
-            AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(policyEnforcementContext);
+            AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(getPolicyEnforcementContext());
 
             Assert.assertEquals(AssertionStatus.NONE, assertionStatus);
 
-            Assert.assertEquals(String.class, ((Object[]) contextVariables.get("jdbcquery.return_value"))[0].getClass());
+            Assert.assertEquals(String.class, ((Object[]) getContextVariables().get("jdbcquery.return_value"))[0].getClass());
 
-            String returnString = (String) ((Object[]) contextVariables.get("jdbcquery.return_value"))[0];
+            String returnString = (String) ((Object[]) getContextVariables().get("jdbcquery.return_value"))[0];
 
             Assert.assertEquals("abcabc", returnString);
 
@@ -369,18 +322,18 @@ public class ServerJdbcQueryAssertionIntegrationTests extends JdbcCallHelperInte
         try {
             createDropItem(CreateSendRetrieveVarcharFunction);
             JdbcQueryAssertion assertion = createJdbcQueryAssertion();
-            contextVariables.put("var_in", "abc");
+            getContextVariables().put("var_in", "abc");
             assertion.setSqlQuery("func " + SendRetrieveVarcharFunctionName + " ${var_in}");
             assertion.setConvertVariablesToStrings(false);
-            ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, context);
+            ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, getContext());
 
-            AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(policyEnforcementContext);
+            AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(getPolicyEnforcementContext());
 
             Assert.assertEquals(AssertionStatus.NONE, assertionStatus);
 
-            Assert.assertEquals(String.class, ((Object[]) contextVariables.get("jdbcquery.return_value"))[0].getClass());
+            Assert.assertEquals(String.class, ((Object[]) getContextVariables().get("jdbcquery.return_value"))[0].getClass());
 
-            String returnString = (String) ((Object[]) contextVariables.get("jdbcquery.return_value"))[0];
+            String returnString = (String) ((Object[]) getContextVariables().get("jdbcquery.return_value"))[0];
 
             Assert.assertEquals("abcabc", returnString);
 
@@ -394,18 +347,18 @@ public class ServerJdbcQueryAssertionIntegrationTests extends JdbcCallHelperInte
         try {
             createDropItem(CreateSendRetrieveNVarchar2Function);
             JdbcQueryAssertion assertion = createJdbcQueryAssertion();
-            contextVariables.put("var_in", "abc");
+            getContextVariables().put("var_in", "abc");
             assertion.setSqlQuery("func " + SendRetrieveNVarchar2FunctionName + " ${var_in}");
             assertion.setConvertVariablesToStrings(false);
-            ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, context);
+            ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, getContext());
 
-            AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(policyEnforcementContext);
+            AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(getPolicyEnforcementContext());
 
             Assert.assertEquals(AssertionStatus.NONE, assertionStatus);
 
-            Assert.assertEquals(String.class, ((Object[]) contextVariables.get("jdbcquery.return_value"))[0].getClass());
+            Assert.assertEquals(String.class, ((Object[]) getContextVariables().get("jdbcquery.return_value"))[0].getClass());
 
-            String returnString = (String) ((Object[]) contextVariables.get("jdbcquery.return_value"))[0];
+            String returnString = (String) ((Object[]) getContextVariables().get("jdbcquery.return_value"))[0];
 
             Assert.assertEquals("abcabc", returnString);
 
@@ -419,18 +372,18 @@ public class ServerJdbcQueryAssertionIntegrationTests extends JdbcCallHelperInte
         try {
             createDropItem(CreateSendRetrieveCharFunction);
             JdbcQueryAssertion assertion = createJdbcQueryAssertion();
-            contextVariables.put("var_in", "abc");
+            getContextVariables().put("var_in", "abc");
             assertion.setSqlQuery("func " + SendRetrieveCharFunctionName + " ${var_in}");
             assertion.setConvertVariablesToStrings(false);
-            ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, context);
+            ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, getContext());
 
-            AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(policyEnforcementContext);
+            AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(getPolicyEnforcementContext());
 
             Assert.assertEquals(AssertionStatus.NONE, assertionStatus);
 
-            Assert.assertEquals(String.class, ((Object[]) contextVariables.get("jdbcquery.return_value"))[0].getClass());
+            Assert.assertEquals(String.class, ((Object[]) getContextVariables().get("jdbcquery.return_value"))[0].getClass());
 
-            String returnString = (String) ((Object[]) contextVariables.get("jdbcquery.return_value"))[0];
+            String returnString = (String) ((Object[]) getContextVariables().get("jdbcquery.return_value"))[0];
 
             Assert.assertEquals("abcabc", returnString);
 
@@ -444,18 +397,18 @@ public class ServerJdbcQueryAssertionIntegrationTests extends JdbcCallHelperInte
         try {
             createDropItem(CreateSendRetrieveNCharFunction);
             JdbcQueryAssertion assertion = createJdbcQueryAssertion();
-            contextVariables.put("var_in", "abc");
+            getContextVariables().put("var_in", "abc");
             assertion.setSqlQuery("func " + SendRetrieveNCharFunctionName + " ${var_in}");
             assertion.setConvertVariablesToStrings(false);
-            ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, context);
+            ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, getContext());
 
-            AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(policyEnforcementContext);
+            AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(getPolicyEnforcementContext());
 
             Assert.assertEquals(AssertionStatus.NONE, assertionStatus);
 
-            Assert.assertEquals(String.class, ((Object[]) contextVariables.get("jdbcquery.return_value"))[0].getClass());
+            Assert.assertEquals(String.class, ((Object[]) getContextVariables().get("jdbcquery.return_value"))[0].getClass());
 
-            String returnString = (String) ((Object[]) contextVariables.get("jdbcquery.return_value"))[0];
+            String returnString = (String) ((Object[]) getContextVariables().get("jdbcquery.return_value"))[0];
 
             Assert.assertEquals("abcabc", returnString);
 
@@ -470,18 +423,18 @@ public class ServerJdbcQueryAssertionIntegrationTests extends JdbcCallHelperInte
             createDropItem(CreateSendRetrieveNumberFunction);
             JdbcQueryAssertion assertion = createJdbcQueryAssertion();
             double varIn = 126312.15;
-            contextVariables.put("var_in", varIn);
+            getContextVariables().put("var_in", varIn);
             assertion.setSqlQuery("func " + SendRetrieveNumberFunctionName + " ${var_in}");
             assertion.setConvertVariablesToStrings(false);
-            ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, context);
+            ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, getContext());
 
-            AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(policyEnforcementContext);
+            AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(getPolicyEnforcementContext());
 
             Assert.assertEquals(AssertionStatus.NONE, assertionStatus);
 
-            Assert.assertEquals(BigDecimal.class, ((Object[]) contextVariables.get("jdbcquery.return_value"))[0].getClass());
+            Assert.assertEquals(BigDecimal.class, ((Object[]) getContextVariables().get("jdbcquery.return_value"))[0].getClass());
 
-            BigDecimal returnValue = (BigDecimal) ((Object[]) contextVariables.get("jdbcquery.return_value"))[0];
+            BigDecimal returnValue = (BigDecimal) ((Object[]) getContextVariables().get("jdbcquery.return_value"))[0];
 
             Assert.assertEquals(new BigDecimal(varIn * 2).setScale(1, RoundingMode.HALF_UP), returnValue);
 
@@ -496,18 +449,18 @@ public class ServerJdbcQueryAssertionIntegrationTests extends JdbcCallHelperInte
             createDropItem(CreateSendRetrieveNumberFunction);
             JdbcQueryAssertion assertion = createJdbcQueryAssertion();
             double varIn = 126312.15;
-            contextVariables.put("var_in", String.valueOf(varIn));
+            getContextVariables().put("var_in", String.valueOf(varIn));
             assertion.setSqlQuery("func " + SendRetrieveNumberFunctionName + " ${var_in}");
             assertion.setConvertVariablesToStrings(false);
-            ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, context);
+            ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, getContext());
 
-            AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(policyEnforcementContext);
+            AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(getPolicyEnforcementContext());
 
             Assert.assertEquals(AssertionStatus.NONE, assertionStatus);
 
-            Assert.assertEquals(BigDecimal.class, ((Object[]) contextVariables.get("jdbcquery.return_value"))[0].getClass());
+            Assert.assertEquals(BigDecimal.class, ((Object[]) getContextVariables().get("jdbcquery.return_value"))[0].getClass());
 
-            BigDecimal returnValue = (BigDecimal) ((Object[]) contextVariables.get("jdbcquery.return_value"))[0];
+            BigDecimal returnValue = (BigDecimal) ((Object[]) getContextVariables().get("jdbcquery.return_value"))[0];
 
             Assert.assertEquals(new BigDecimal(varIn * 2).setScale(1, RoundingMode.HALF_UP), returnValue);
 
@@ -522,18 +475,18 @@ public class ServerJdbcQueryAssertionIntegrationTests extends JdbcCallHelperInte
             createDropItem(CreateSendRetrieveBinaryFloatFunction);
             JdbcQueryAssertion assertion = createJdbcQueryAssertion();
             float varIn = 126387.123123f;
-            contextVariables.put("var_in", varIn);
+            getContextVariables().put("var_in", varIn);
             assertion.setSqlQuery("func " + SendRetrieveBinaryFloatFunctionName + " ${var_in}");
             assertion.setConvertVariablesToStrings(false);
-            ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, context);
+            ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, getContext());
 
-            AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(policyEnforcementContext);
+            AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(getPolicyEnforcementContext());
 
             Assert.assertEquals(AssertionStatus.NONE, assertionStatus);
 
-            Assert.assertEquals(String.class, ((Object[]) contextVariables.get("jdbcquery.return_value"))[0].getClass());
+            Assert.assertEquals(String.class, ((Object[]) getContextVariables().get("jdbcquery.return_value"))[0].getClass());
 
-            String returnValue = (String) ((Object[]) contextVariables.get("jdbcquery.return_value"))[0];
+            String returnValue = (String) ((Object[]) getContextVariables().get("jdbcquery.return_value"))[0];
 
             Assert.assertEquals("2.5277425E+005", returnValue);
 
@@ -548,18 +501,18 @@ public class ServerJdbcQueryAssertionIntegrationTests extends JdbcCallHelperInte
             createDropItem(CreateSendRetrieveBinaryFloatFunction);
             JdbcQueryAssertion assertion = createJdbcQueryAssertion();
             float varIn = 126387.123123f;
-            contextVariables.put("var_in", String.valueOf(varIn));
+            getContextVariables().put("var_in", String.valueOf(varIn));
             assertion.setSqlQuery("func " + SendRetrieveBinaryFloatFunctionName + " ${var_in}");
             assertion.setConvertVariablesToStrings(false);
-            ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, context);
+            ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, getContext());
 
-            AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(policyEnforcementContext);
+            AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(getPolicyEnforcementContext());
 
             Assert.assertEquals(AssertionStatus.NONE, assertionStatus);
 
-            Assert.assertEquals(String.class, ((Object[]) contextVariables.get("jdbcquery.return_value"))[0].getClass());
+            Assert.assertEquals(String.class, ((Object[]) getContextVariables().get("jdbcquery.return_value"))[0].getClass());
 
-            String returnValue = (String) ((Object[]) contextVariables.get("jdbcquery.return_value"))[0];
+            String returnValue = (String) ((Object[]) getContextVariables().get("jdbcquery.return_value"))[0];
 
             Assert.assertEquals("2.5277425E+005", returnValue);
 
@@ -574,18 +527,18 @@ public class ServerJdbcQueryAssertionIntegrationTests extends JdbcCallHelperInte
             createDropItem(CreateSendRetrieveBinaryDoubleFunction);
             JdbcQueryAssertion assertion = createJdbcQueryAssertion();
             double varIn = 126312.15;
-            contextVariables.put("var_in", varIn);
+            getContextVariables().put("var_in", varIn);
             assertion.setSqlQuery("func " + SendRetrieveBinaryDoubleFunctionName + " ${var_in}");
             assertion.setConvertVariablesToStrings(false);
-            ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, context);
+            ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, getContext());
 
-            AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(policyEnforcementContext);
+            AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(getPolicyEnforcementContext());
 
             Assert.assertEquals(AssertionStatus.NONE, assertionStatus);
 
-            Assert.assertEquals(String.class, ((Object[]) contextVariables.get("jdbcquery.return_value"))[0].getClass());
+            Assert.assertEquals(String.class, ((Object[]) getContextVariables().get("jdbcquery.return_value"))[0].getClass());
 
-            String returnValue = (String) ((Object[]) contextVariables.get("jdbcquery.return_value"))[0];
+            String returnValue = (String) ((Object[]) getContextVariables().get("jdbcquery.return_value"))[0];
 
             Assert.assertEquals("2.5262429999999999E+005", returnValue);
 
@@ -600,18 +553,18 @@ public class ServerJdbcQueryAssertionIntegrationTests extends JdbcCallHelperInte
             createDropItem(CreateSendRetrieveBinaryDoubleFunction);
             JdbcQueryAssertion assertion = createJdbcQueryAssertion();
             double varIn = 126312.15;
-            contextVariables.put("var_in", String.valueOf(varIn));
+            getContextVariables().put("var_in", String.valueOf(varIn));
             assertion.setSqlQuery("func " + SendRetrieveBinaryDoubleFunctionName + " ${var_in}");
             assertion.setConvertVariablesToStrings(false);
-            ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, context);
+            ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, getContext());
 
-            AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(policyEnforcementContext);
+            AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(getPolicyEnforcementContext());
 
             Assert.assertEquals(AssertionStatus.NONE, assertionStatus);
 
-            Assert.assertEquals(String.class, ((Object[]) contextVariables.get("jdbcquery.return_value"))[0].getClass());
+            Assert.assertEquals(String.class, ((Object[]) getContextVariables().get("jdbcquery.return_value"))[0].getClass());
 
-            String returnValue = (String) ((Object[]) contextVariables.get("jdbcquery.return_value"))[0];
+            String returnValue = (String) ((Object[]) getContextVariables().get("jdbcquery.return_value"))[0];
 
             Assert.assertEquals("2.5262429999999999E+005", returnValue);
 
@@ -626,18 +579,18 @@ public class ServerJdbcQueryAssertionIntegrationTests extends JdbcCallHelperInte
             createDropItem(CreateSendRetrieveBinaryIntegerFunction);
             JdbcQueryAssertion assertion = createJdbcQueryAssertion();
             int varIn = -98782346;
-            contextVariables.put("var_in", varIn);
+            getContextVariables().put("var_in", varIn);
             assertion.setSqlQuery("func " + SendRetrieveBinaryIntegerFunctionName + " ${var_in}");
             assertion.setConvertVariablesToStrings(false);
-            ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, context);
+            ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, getContext());
 
-            AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(policyEnforcementContext);
+            AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(getPolicyEnforcementContext());
 
             Assert.assertEquals(AssertionStatus.NONE, assertionStatus);
 
-            Assert.assertEquals(String.class, ((Object[]) contextVariables.get("jdbcquery.return_value"))[0].getClass());
+            Assert.assertEquals(String.class, ((Object[]) getContextVariables().get("jdbcquery.return_value"))[0].getClass());
 
-            String returnValue = (String) ((Object[]) contextVariables.get("jdbcquery.return_value"))[0];
+            String returnValue = (String) ((Object[]) getContextVariables().get("jdbcquery.return_value"))[0];
 
             Assert.assertEquals(String.valueOf(varIn * 2), returnValue);
 
@@ -652,18 +605,18 @@ public class ServerJdbcQueryAssertionIntegrationTests extends JdbcCallHelperInte
             createDropItem(CreateSendRetrieveBinaryIntegerFunction);
             JdbcQueryAssertion assertion = createJdbcQueryAssertion();
             int varIn = -98782346;
-            contextVariables.put("var_in", String.valueOf(varIn));
+            getContextVariables().put("var_in", String.valueOf(varIn));
             assertion.setSqlQuery("func " + SendRetrieveBinaryIntegerFunctionName + " ${var_in}");
             assertion.setConvertVariablesToStrings(false);
-            ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, context);
+            ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, getContext());
 
-            AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(policyEnforcementContext);
+            AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(getPolicyEnforcementContext());
 
             Assert.assertEquals(AssertionStatus.NONE, assertionStatus);
 
-            Assert.assertEquals(String.class, ((Object[]) contextVariables.get("jdbcquery.return_value"))[0].getClass());
+            Assert.assertEquals(String.class, ((Object[]) getContextVariables().get("jdbcquery.return_value"))[0].getClass());
 
-            String returnValue = (String) ((Object[]) contextVariables.get("jdbcquery.return_value"))[0];
+            String returnValue = (String) ((Object[]) getContextVariables().get("jdbcquery.return_value"))[0];
 
             Assert.assertEquals(String.valueOf(varIn * 2), returnValue);
 
@@ -678,18 +631,18 @@ public class ServerJdbcQueryAssertionIntegrationTests extends JdbcCallHelperInte
             createDropItem(CreateSendRetrievePlsIntegerFunction);
             JdbcQueryAssertion assertion = createJdbcQueryAssertion();
             int varIn = -98782346;
-            contextVariables.put("var_in", varIn);
+            getContextVariables().put("var_in", varIn);
             assertion.setSqlQuery("func " + SendRetrievePlsIntegerFunctionName + " ${var_in}");
             assertion.setConvertVariablesToStrings(false);
-            ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, context);
+            ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, getContext());
 
-            AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(policyEnforcementContext);
+            AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(getPolicyEnforcementContext());
 
             Assert.assertEquals(AssertionStatus.NONE, assertionStatus);
 
-            Assert.assertEquals(String.class, ((Object[]) contextVariables.get("jdbcquery.return_value"))[0].getClass());
+            Assert.assertEquals(String.class, ((Object[]) getContextVariables().get("jdbcquery.return_value"))[0].getClass());
 
-            String returnValue = (String) ((Object[]) contextVariables.get("jdbcquery.return_value"))[0];
+            String returnValue = (String) ((Object[]) getContextVariables().get("jdbcquery.return_value"))[0];
 
             Assert.assertEquals(String.valueOf(varIn * 2), returnValue);
 
@@ -704,18 +657,18 @@ public class ServerJdbcQueryAssertionIntegrationTests extends JdbcCallHelperInte
             createDropItem(CreateSendRetrievePlsIntegerFunction);
             JdbcQueryAssertion assertion = createJdbcQueryAssertion();
             int varIn = -98782346;
-            contextVariables.put("var_in", String.valueOf(varIn));
+            getContextVariables().put("var_in", String.valueOf(varIn));
             assertion.setSqlQuery("func " + SendRetrievePlsIntegerFunctionName + " ${var_in}");
             assertion.setConvertVariablesToStrings(false);
-            ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, context);
+            ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, getContext());
 
-            AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(policyEnforcementContext);
+            AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(getPolicyEnforcementContext());
 
             Assert.assertEquals(AssertionStatus.NONE, assertionStatus);
 
-            Assert.assertEquals(String.class, ((Object[]) contextVariables.get("jdbcquery.return_value"))[0].getClass());
+            Assert.assertEquals(String.class, ((Object[]) getContextVariables().get("jdbcquery.return_value"))[0].getClass());
 
-            String returnValue = (String) ((Object[]) contextVariables.get("jdbcquery.return_value"))[0];
+            String returnValue = (String) ((Object[]) getContextVariables().get("jdbcquery.return_value"))[0];
 
             Assert.assertEquals(String.valueOf(varIn * 2), returnValue);
 
@@ -729,18 +682,18 @@ public class ServerJdbcQueryAssertionIntegrationTests extends JdbcCallHelperInte
         try {
             createDropItem(CreateSendRetrieveLongFunction);
             JdbcQueryAssertion assertion = createJdbcQueryAssertion();
-            contextVariables.put("var_in", "abc");
+            getContextVariables().put("var_in", "abc");
             assertion.setSqlQuery("func " + SendRetrieveLongFunctionName + " ${var_in}");
             assertion.setConvertVariablesToStrings(false);
-            ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, context);
+            ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, getContext());
 
-            AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(policyEnforcementContext);
+            AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(getPolicyEnforcementContext());
 
             Assert.assertEquals(AssertionStatus.NONE, assertionStatus);
 
-            Assert.assertEquals(String.class, ((Object[]) contextVariables.get("jdbcquery.return_value"))[0].getClass());
+            Assert.assertEquals(String.class, ((Object[]) getContextVariables().get("jdbcquery.return_value"))[0].getClass());
 
-            String returnString = (String) ((Object[]) contextVariables.get("jdbcquery.return_value"))[0];
+            String returnString = (String) ((Object[]) getContextVariables().get("jdbcquery.return_value"))[0];
 
             Assert.assertEquals("abcabc", returnString);
 
@@ -755,18 +708,18 @@ public class ServerJdbcQueryAssertionIntegrationTests extends JdbcCallHelperInte
             createDropItem(CreateSendRetrieveDateFunction);
             JdbcQueryAssertion assertion = createJdbcQueryAssertion();
             @SuppressWarnings("deprecation") Date date = new Date(2013 - 1900, 2, 23);
-            contextVariables.put("var_in", date);
+            getContextVariables().put("var_in", date);
             assertion.setSqlQuery("func " + SendRetrieveDateFunctionName + " ${var_in}");
             assertion.setConvertVariablesToStrings(false);
-            ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, context);
+            ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, getContext());
 
-            AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(policyEnforcementContext);
+            AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(getPolicyEnforcementContext());
 
             Assert.assertEquals(AssertionStatus.NONE, assertionStatus);
 
-            Assert.assertEquals(Timestamp.class, ((Object[]) contextVariables.get("jdbcquery.return_value"))[0].getClass());
+            Assert.assertEquals(Timestamp.class, ((Object[]) getContextVariables().get("jdbcquery.return_value"))[0].getClass());
 
-            Timestamp returnString = (Timestamp) ((Object[]) contextVariables.get("jdbcquery.return_value"))[0];
+            Timestamp returnString = (Timestamp) ((Object[]) getContextVariables().get("jdbcquery.return_value"))[0];
 
             //noinspection deprecation
             Assert.assertEquals(new Date(2013 - 1900, 2, 24), returnString);
@@ -781,18 +734,18 @@ public class ServerJdbcQueryAssertionIntegrationTests extends JdbcCallHelperInte
         try {
             createDropItem(CreateSendRetrieveDateFunction);
             JdbcQueryAssertion assertion = createJdbcQueryAssertion();
-            contextVariables.put("var_in", "2013-02-23");
+            getContextVariables().put("var_in", "2013-02-23");
             assertion.setSqlQuery("func " + SendRetrieveDateFunctionName + " ${var_in}");
             assertion.setConvertVariablesToStrings(false);
-            ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, context);
+            ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, getContext());
 
-            AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(policyEnforcementContext);
+            AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(getPolicyEnforcementContext());
 
             Assert.assertEquals(AssertionStatus.NONE, assertionStatus);
 
-            Assert.assertEquals(Timestamp.class, ((Object[]) contextVariables.get("jdbcquery.return_value"))[0].getClass());
+            Assert.assertEquals(Timestamp.class, ((Object[]) getContextVariables().get("jdbcquery.return_value"))[0].getClass());
 
-            Timestamp returnString = (Timestamp) ((Object[]) contextVariables.get("jdbcquery.return_value"))[0];
+            Timestamp returnString = (Timestamp) ((Object[]) getContextVariables().get("jdbcquery.return_value"))[0];
 
             //noinspection deprecation
             Assert.assertEquals(new Timestamp(2013 - 1900, 1, 24, 0, 0, 0, 0), returnString);
@@ -808,18 +761,18 @@ public class ServerJdbcQueryAssertionIntegrationTests extends JdbcCallHelperInte
             createDropItem(CreateSendRetrieveTimeStampFunction);
             JdbcQueryAssertion assertion = createJdbcQueryAssertion();
             @SuppressWarnings("deprecation") Date date = new Date(2013 - 1900, 2, 23);
-            contextVariables.put("var_in", date);
+            getContextVariables().put("var_in", date);
             assertion.setSqlQuery("func " + SendRetrieveTimeStampFunctionName + " ${var_in}");
             assertion.setConvertVariablesToStrings(false);
-            ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, context);
+            ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, getContext());
 
-            AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(policyEnforcementContext);
+            AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(getPolicyEnforcementContext());
 
             Assert.assertEquals(AssertionStatus.NONE, assertionStatus);
 
-            Assert.assertEquals(Timestamp.class, ((Object[]) contextVariables.get("jdbcquery.return_value"))[0].getClass());
+            Assert.assertEquals(Timestamp.class, ((Object[]) getContextVariables().get("jdbcquery.return_value"))[0].getClass());
 
-            Timestamp returnString = (Timestamp) ((Object[]) contextVariables.get("jdbcquery.return_value"))[0];
+            Timestamp returnString = (Timestamp) ((Object[]) getContextVariables().get("jdbcquery.return_value"))[0];
 
             //noinspection deprecation
             Assert.assertEquals(new Date(2013 - 1900, 2, 24), returnString);
@@ -834,18 +787,18 @@ public class ServerJdbcQueryAssertionIntegrationTests extends JdbcCallHelperInte
         try {
             createDropItem(CreateSendRetrieveTimeStampFunction);
             JdbcQueryAssertion assertion = createJdbcQueryAssertion();
-            contextVariables.put("var_in", "2013-02-23 12:10:10.987000");
+            getContextVariables().put("var_in", "2013-02-23 12:10:10.987000");
             assertion.setSqlQuery("func " + SendRetrieveTimeStampFunctionName + " ${var_in}");
             assertion.setConvertVariablesToStrings(false);
-            ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, context);
+            ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, getContext());
 
-            AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(policyEnforcementContext);
+            AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(getPolicyEnforcementContext());
 
             Assert.assertEquals(AssertionStatus.NONE, assertionStatus);
 
-            Assert.assertEquals(Timestamp.class, ((Object[]) contextVariables.get("jdbcquery.return_value"))[0].getClass());
+            Assert.assertEquals(Timestamp.class, ((Object[]) getContextVariables().get("jdbcquery.return_value"))[0].getClass());
 
-            Timestamp returnString = (Timestamp) ((Object[]) contextVariables.get("jdbcquery.return_value"))[0];
+            Timestamp returnString = (Timestamp) ((Object[]) getContextVariables().get("jdbcquery.return_value"))[0];
 
             //noinspection deprecation
             Assert.assertEquals(new Timestamp(2013 - 1900, 1, 24, 12, 10, 10, 0), returnString);
@@ -859,18 +812,18 @@ public class ServerJdbcQueryAssertionIntegrationTests extends JdbcCallHelperInte
         try {
             createDropItem(CreateSendRetrieveRawFunction);
             JdbcQueryAssertion assertion = createJdbcQueryAssertion();
-            contextVariables.put("var_in", "abc".getBytes());
+            getContextVariables().put("var_in", "abc".getBytes());
             assertion.setSqlQuery("func " + SendRetrieveRawFunctionName + " ${var_in}");
             assertion.setConvertVariablesToStrings(false);
-            ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, context);
+            ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, getContext());
 
-            AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(policyEnforcementContext);
+            AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(getPolicyEnforcementContext());
 
             Assert.assertEquals(AssertionStatus.NONE, assertionStatus);
 
-            Assert.assertEquals(byte[].class, ((Object[]) contextVariables.get("jdbcquery.return_value"))[0].getClass());
+            Assert.assertEquals(byte[].class, ((Object[]) getContextVariables().get("jdbcquery.return_value"))[0].getClass());
 
-            byte[] returnString = (byte[]) ((Object[]) contextVariables.get("jdbcquery.return_value"))[0];
+            byte[] returnString = (byte[]) ((Object[]) getContextVariables().get("jdbcquery.return_value"))[0];
 
             Assert.assertArrayEquals("abc".getBytes(), returnString);
 
@@ -884,18 +837,18 @@ public class ServerJdbcQueryAssertionIntegrationTests extends JdbcCallHelperInte
         try {
             createDropItem(CreateSendRetrieveCLOBFunction);
             JdbcQueryAssertion assertion = createJdbcQueryAssertion();
-            contextVariables.put("var_in", "abc");
+            getContextVariables().put("var_in", "abc");
             assertion.setSqlQuery("func " + SendRetrieveCLOBFunctionName + " ${var_in}");
             assertion.setConvertVariablesToStrings(false);
-            ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, context);
+            ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, getContext());
 
-            AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(policyEnforcementContext);
+            AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(getPolicyEnforcementContext());
 
             Assert.assertEquals(AssertionStatus.NONE, assertionStatus);
 
-            Assert.assertEquals(String.class, ((Object[]) contextVariables.get("jdbcquery.return_value"))[0].getClass());
+            Assert.assertEquals(String.class, ((Object[]) getContextVariables().get("jdbcquery.return_value"))[0].getClass());
 
-            String returnString = (String) ((Object[]) contextVariables.get("jdbcquery.return_value"))[0];
+            String returnString = (String) ((Object[]) getContextVariables().get("jdbcquery.return_value"))[0];
 
             Assert.assertEquals("abcabc", returnString);
 
@@ -910,18 +863,18 @@ public class ServerJdbcQueryAssertionIntegrationTests extends JdbcCallHelperInte
             createDropItem(CreateSendRetrieveCLOBFunction);
             JdbcQueryAssertion assertion = createJdbcQueryAssertion();
             String stringIn = randomString(128 * 1024);
-            contextVariables.put("var_in", stringIn);
+            getContextVariables().put("var_in", stringIn);
             assertion.setSqlQuery("func " + SendRetrieveCLOBFunctionName + " ${var_in}");
             assertion.setConvertVariablesToStrings(false);
-            ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, context);
+            ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, getContext());
 
-            AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(policyEnforcementContext);
+            AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(getPolicyEnforcementContext());
 
             Assert.assertEquals(AssertionStatus.NONE, assertionStatus);
 
-            Assert.assertEquals(String.class, ((Object[]) contextVariables.get("jdbcquery.return_value"))[0].getClass());
+            Assert.assertEquals(String.class, ((Object[]) getContextVariables().get("jdbcquery.return_value"))[0].getClass());
 
-            String returnString = (String) ((Object[]) contextVariables.get("jdbcquery.return_value"))[0];
+            String returnString = (String) ((Object[]) getContextVariables().get("jdbcquery.return_value"))[0];
 
             Assert.assertEquals(stringIn + stringIn, returnString);
 
@@ -936,18 +889,18 @@ public class ServerJdbcQueryAssertionIntegrationTests extends JdbcCallHelperInte
             createDropItem(CreateSendRetrieveCLOBFunction);
             JdbcQueryAssertion assertion = createJdbcQueryAssertion();
             String stringIn = randomString(5 * 1024 * 1024);
-            contextVariables.put("var_in", stringIn);
+            getContextVariables().put("var_in", stringIn);
             assertion.setSqlQuery("func " + SendRetrieveCLOBFunctionName + " ${var_in}");
             assertion.setConvertVariablesToStrings(false);
-            ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, context);
+            ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, getContext());
 
-            AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(policyEnforcementContext);
+            AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(getPolicyEnforcementContext());
 
             Assert.assertEquals(AssertionStatus.NONE, assertionStatus);
 
-            Assert.assertEquals(String.class, ((Object[]) contextVariables.get("jdbcquery.return_value"))[0].getClass());
+            Assert.assertEquals(String.class, ((Object[]) getContextVariables().get("jdbcquery.return_value"))[0].getClass());
 
-            String returnString = (String) ((Object[]) contextVariables.get("jdbcquery.return_value"))[0];
+            String returnString = (String) ((Object[]) getContextVariables().get("jdbcquery.return_value"))[0];
 
             Assert.assertEquals(stringIn + stringIn, returnString);
 
@@ -973,18 +926,18 @@ public class ServerJdbcQueryAssertionIntegrationTests extends JdbcCallHelperInte
         try {
             createDropItem(CreateSendRetrieveNCLOBFunction);
             JdbcQueryAssertion assertion = createJdbcQueryAssertion();
-            contextVariables.put("var_in", "abc");
+            getContextVariables().put("var_in", "abc");
             assertion.setSqlQuery("func " + SendRetrieveNCLOBFunctionName + " ${var_in}");
             assertion.setConvertVariablesToStrings(false);
-            ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, context);
+            ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, getContext());
 
-            AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(policyEnforcementContext);
+            AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(getPolicyEnforcementContext());
 
             Assert.assertEquals(AssertionStatus.NONE, assertionStatus);
 
-            Assert.assertEquals(String.class, ((Object[]) contextVariables.get("jdbcquery.return_value"))[0].getClass());
+            Assert.assertEquals(String.class, ((Object[]) getContextVariables().get("jdbcquery.return_value"))[0].getClass());
 
-            String returnString = (String) ((Object[]) contextVariables.get("jdbcquery.return_value"))[0];
+            String returnString = (String) ((Object[]) getContextVariables().get("jdbcquery.return_value"))[0];
 
             //noinspection deprecation
             Assert.assertEquals("abcabc", returnString);
@@ -1000,18 +953,18 @@ public class ServerJdbcQueryAssertionIntegrationTests extends JdbcCallHelperInte
             createDropItem(CreateSendRetrieveNCLOBFunction);
             JdbcQueryAssertion assertion = createJdbcQueryAssertion();
             String stringIn = randomString(1024);
-            contextVariables.put("var_in", stringIn);
+            getContextVariables().put("var_in", stringIn);
             assertion.setSqlQuery("func " + SendRetrieveNCLOBFunctionName + " ${var_in}");
             assertion.setConvertVariablesToStrings(false);
-            ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, context);
+            ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, getContext());
 
-            AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(policyEnforcementContext);
+            AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(getPolicyEnforcementContext());
 
             Assert.assertEquals(AssertionStatus.NONE, assertionStatus);
 
-            Assert.assertEquals(String.class, ((Object[]) contextVariables.get("jdbcquery.return_value"))[0].getClass());
+            Assert.assertEquals(String.class, ((Object[]) getContextVariables().get("jdbcquery.return_value"))[0].getClass());
 
-            String returnString = (String) ((Object[]) contextVariables.get("jdbcquery.return_value"))[0];
+            String returnString = (String) ((Object[]) getContextVariables().get("jdbcquery.return_value"))[0];
 
             //noinspection deprecation
             Assert.assertEquals(stringIn + stringIn, returnString);
@@ -1034,18 +987,18 @@ public class ServerJdbcQueryAssertionIntegrationTests extends JdbcCallHelperInte
             createDropItem(CreateSendRetrieveNCLOBFunction);
             JdbcQueryAssertion assertion = createJdbcQueryAssertion();
             String stringIn = randomString(128 * 1024);
-            contextVariables.put("var_in", stringIn);
+            getContextVariables().put("var_in", stringIn);
             assertion.setSqlQuery("func " + SendRetrieveNCLOBFunctionName + " ${var_in}");
             assertion.setConvertVariablesToStrings(false);
-            ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, context);
+            ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, getContext());
 
-            AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(policyEnforcementContext);
+            AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(getPolicyEnforcementContext());
 
             Assert.assertEquals(AssertionStatus.NONE, assertionStatus);
 
-            Assert.assertEquals(String.class, ((Object[]) contextVariables.get("jdbcquery.return_value"))[0].getClass());
+            Assert.assertEquals(String.class, ((Object[]) getContextVariables().get("jdbcquery.return_value"))[0].getClass());
 
-            String returnString = (String) ((Object[]) contextVariables.get("jdbcquery.return_value"))[0];
+            String returnString = (String) ((Object[]) getContextVariables().get("jdbcquery.return_value"))[0];
 
             //noinspection deprecation
             Assert.assertEquals(stringIn + stringIn, returnString);
@@ -1068,18 +1021,18 @@ public class ServerJdbcQueryAssertionIntegrationTests extends JdbcCallHelperInte
             createDropItem(CreateSendRetrieveNCLOBFunction);
             JdbcQueryAssertion assertion = createJdbcQueryAssertion();
             String stringIn = randomString(5 * 1024 * 1024);
-            contextVariables.put("var_in", stringIn);
+            getContextVariables().put("var_in", stringIn);
             assertion.setSqlQuery("func " + SendRetrieveNCLOBFunctionName + " ${var_in}");
             assertion.setConvertVariablesToStrings(false);
-            ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, context);
+            ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, getContext());
 
-            AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(policyEnforcementContext);
+            AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(getPolicyEnforcementContext());
 
             Assert.assertEquals(AssertionStatus.NONE, assertionStatus);
 
-            Assert.assertEquals(String.class, ((Object[]) contextVariables.get("jdbcquery.return_value"))[0].getClass());
+            Assert.assertEquals(String.class, ((Object[]) getContextVariables().get("jdbcquery.return_value"))[0].getClass());
 
-            String returnString = (String) ((Object[]) contextVariables.get("jdbcquery.return_value"))[0];
+            String returnString = (String) ((Object[]) getContextVariables().get("jdbcquery.return_value"))[0];
 
             //noinspection deprecation
             Assert.assertEquals(stringIn + stringIn, returnString);
@@ -1094,18 +1047,18 @@ public class ServerJdbcQueryAssertionIntegrationTests extends JdbcCallHelperInte
         try {
             createDropItem(CreateSendRetrieveBLOBFunction);
             JdbcQueryAssertion assertion = createJdbcQueryAssertion();
-            contextVariables.put("var_in", "abc".getBytes());
+            getContextVariables().put("var_in", "abc".getBytes());
             assertion.setSqlQuery("func " + SendRetrieveBLOBFunctionName + " ${var_in}");
             assertion.setConvertVariablesToStrings(false);
-            ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, context);
+            ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, getContext());
 
-            AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(policyEnforcementContext);
+            AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(getPolicyEnforcementContext());
 
             Assert.assertEquals(AssertionStatus.NONE, assertionStatus);
 
-            Assert.assertEquals(byte[].class, ((Object[]) contextVariables.get("jdbcquery.return_value"))[0].getClass());
+            Assert.assertEquals(byte[].class, ((Object[]) getContextVariables().get("jdbcquery.return_value"))[0].getClass());
 
-            byte[] returnString = (byte[]) ((Object[]) contextVariables.get("jdbcquery.return_value"))[0];
+            byte[] returnString = (byte[]) ((Object[]) getContextVariables().get("jdbcquery.return_value"))[0];
 
             Assert.assertArrayEquals("abc".getBytes(), returnString);
 
@@ -1126,18 +1079,18 @@ public class ServerJdbcQueryAssertionIntegrationTests extends JdbcCallHelperInte
         try {
             createDropItem(CreateSendRetrieveBLOBFunction);
             JdbcQueryAssertion assertion = createJdbcQueryAssertion();
-            contextVariables.put("var_in", "abc");
+            getContextVariables().put("var_in", "abc");
             assertion.setSqlQuery("func " + SendRetrieveBLOBFunctionName + " ${var_in}");
             assertion.setConvertVariablesToStrings(false);
-            ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, context);
+            ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, getContext());
 
-            AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(policyEnforcementContext);
+            AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(getPolicyEnforcementContext());
 
             Assert.assertEquals(AssertionStatus.NONE, assertionStatus);
 
-            Assert.assertEquals(byte[].class, ((Object[]) contextVariables.get("jdbcquery.return_value"))[0].getClass());
+            Assert.assertEquals(byte[].class, ((Object[]) getContextVariables().get("jdbcquery.return_value"))[0].getClass());
 
-            byte[] returnString = (byte[]) ((Object[]) contextVariables.get("jdbcquery.return_value"))[0];
+            byte[] returnString = (byte[]) ((Object[]) getContextVariables().get("jdbcquery.return_value"))[0];
 
             Assert.assertArrayEquals("abc".getBytes(), returnString);
 
@@ -1153,18 +1106,18 @@ public class ServerJdbcQueryAssertionIntegrationTests extends JdbcCallHelperInte
             JdbcQueryAssertion assertion = createJdbcQueryAssertion();
             byte[] bytesIn = new byte[24 * 1024];
             new Random().nextBytes(bytesIn);
-            contextVariables.put("var_in", bytesIn);
+            getContextVariables().put("var_in", bytesIn);
             assertion.setSqlQuery("func " + SendRetrieveBLOBFunctionName + " ${var_in}");
             assertion.setConvertVariablesToStrings(false);
-            ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, context);
+            ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, getContext());
 
-            AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(policyEnforcementContext);
+            AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(getPolicyEnforcementContext());
 
             Assert.assertEquals(AssertionStatus.NONE, assertionStatus);
 
-            Assert.assertEquals(byte[].class, ((Object[]) contextVariables.get("jdbcquery.return_value"))[0].getClass());
+            Assert.assertEquals(byte[].class, ((Object[]) getContextVariables().get("jdbcquery.return_value"))[0].getClass());
 
-            byte[] returnString = (byte[]) ((Object[]) contextVariables.get("jdbcquery.return_value"))[0];
+            byte[] returnString = (byte[]) ((Object[]) getContextVariables().get("jdbcquery.return_value"))[0];
 
             Assert.assertArrayEquals(bytesIn, returnString);
 
@@ -1187,18 +1140,18 @@ public class ServerJdbcQueryAssertionIntegrationTests extends JdbcCallHelperInte
             JdbcQueryAssertion assertion = createJdbcQueryAssertion();
             byte[] bytesIn = new byte[128 * 1024];
             new Random().nextBytes(bytesIn);
-            contextVariables.put("var_in", bytesIn);
+            getContextVariables().put("var_in", bytesIn);
             assertion.setSqlQuery("func " + SendRetrieveBLOBFunctionName + " ${var_in}");
             assertion.setConvertVariablesToStrings(false);
-            ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, context);
+            ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, getContext());
 
-            AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(policyEnforcementContext);
+            AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(getPolicyEnforcementContext());
 
             Assert.assertEquals(AssertionStatus.NONE, assertionStatus);
 
-            Assert.assertEquals(byte[].class, ((Object[]) contextVariables.get("jdbcquery.return_value"))[0].getClass());
+            Assert.assertEquals(byte[].class, ((Object[]) getContextVariables().get("jdbcquery.return_value"))[0].getClass());
 
-            byte[] returnString = (byte[]) ((Object[]) contextVariables.get("jdbcquery.return_value"))[0];
+            byte[] returnString = (byte[]) ((Object[]) getContextVariables().get("jdbcquery.return_value"))[0];
 
             Assert.assertArrayEquals(bytesIn, returnString);
 
@@ -1221,18 +1174,18 @@ public class ServerJdbcQueryAssertionIntegrationTests extends JdbcCallHelperInte
             JdbcQueryAssertion assertion = createJdbcQueryAssertion();
             byte[] bytesIn = new byte[5 * 1024 * 1024];
             new Random().nextBytes(bytesIn);
-            contextVariables.put("var_in", bytesIn);
+            getContextVariables().put("var_in", bytesIn);
             assertion.setSqlQuery("func " + SendRetrieveBLOBFunctionName + " ${var_in}");
             assertion.setConvertVariablesToStrings(false);
-            ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, context);
+            ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, getContext());
 
-            AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(policyEnforcementContext);
+            AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(getPolicyEnforcementContext());
 
             Assert.assertEquals(AssertionStatus.NONE, assertionStatus);
 
-            Assert.assertEquals(byte[].class, ((Object[]) contextVariables.get("jdbcquery.return_value"))[0].getClass());
+            Assert.assertEquals(byte[].class, ((Object[]) getContextVariables().get("jdbcquery.return_value"))[0].getClass());
 
-            byte[] returnString = (byte[]) ((Object[]) contextVariables.get("jdbcquery.return_value"))[0];
+            byte[] returnString = (byte[]) ((Object[]) getContextVariables().get("jdbcquery.return_value"))[0];
 
             Assert.assertArrayEquals(bytesIn, returnString);
 
@@ -1247,26 +1200,19 @@ public class ServerJdbcQueryAssertionIntegrationTests extends JdbcCallHelperInte
         try {
             createDropItem(CreateSendRetrieveVarchar2Function);
             JdbcQueryAssertion assertion = createJdbcQueryAssertion();
-            contextVariables.put("var_in", "abc");
+            getContextVariables().put("var_in", "abc");
             assertion.setSqlQuery("func " + SendRetrieveVarchar2FunctionName + " ${var_in}");
             assertion.setSchema("qatest2");
             assertion.setConvertVariablesToStrings(false);
-            ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, context);
+            ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, getContext());
 
-            AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(policyEnforcementContext);
+            AssertionStatus assertionStatus = serverJdbcQueryAssertion.checkRequest(getPolicyEnforcementContext());
 
             Assert.assertEquals(AssertionStatus.FAILED, assertionStatus);
 
         } finally {
             createDropItem(DropSendRetrieveVarchar2Function);
         }
-    }
-
-    private static JdbcQueryAssertion createJdbcQueryAssertion() {
-        JdbcQueryAssertion jdbcQueryAssertion = new JdbcQueryAssertion();
-        jdbcQueryAssertion.setConnectionName(ConnectionName);
-        jdbcQueryAssertion.setVariablePrefix("jdbcQuery");
-        return jdbcQueryAssertion;
     }
 
     private static final String SendRetrieveBLOBFunctionName = "SendRetrieveBLOB";

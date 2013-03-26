@@ -91,32 +91,31 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager, PropertyCha
 
     @Override
     public void propertyChange(PropertyChangeEvent evt) {
-        final boolean cachingAllowed = isCachingAllowed();
         final String propertyName = evt.getPropertyName();
         synchronized (currentCacheTask) {
-            final boolean enableCache = config.getBooleanProperty(ServerConfigParams.PARAM_JDBC_QUERY_CACHE_METADATA_TASK_ENABLED, true) && cachingAllowed;
-            if (propertyName.equals(ServerConfigParams.PARAM_JDBC_QUERY_CACHE_METADATA_TASK_ENABLED) || propertyName.equals(ServerConfigParams.PARAM_JDBC_QUERY_CACHE_METADATA_ENABLED)) {
-                if (enableCache) {
-                    createAndStartMetaDataTask();
-                } else {
-                    stopCurrentTaskIfRunning();
-                }
-            } else if (propertyName.equals(ServerConfigParams.PARAM_JDBC_QUERY_CACHE_REFRESH_INTERVAL)) {
-                if (enableCache) {
-                    // only reconfigure the task if the cache is actually enabled.
-                    createAndStartMetaDataTask();
-                }
-            } else if (propertyName.equals(ServerConfigParams.PARAM_JDBC_QUERY_CACHE_CLEANUP_REFRESH_INTERVAL)) {
-                createAndStartCleanUpTask();
-            }
-
-            if (!cachingAllowed) {
-                // clear the cache
-                simpleJdbcCallCache.clear();
+            final boolean cacheMetadataTaskEnabled = config.getBooleanProperty(ServerConfigParams.PARAM_JDBC_QUERY_CACHE_METADATA_TASK_ENABLED, true);
+            switch (propertyName) {
+                case ServerConfigParams.PARAM_JDBC_QUERY_CACHE_METADATA_TASK_ENABLED:
+                    if (cacheMetadataTaskEnabled) {
+                        createAndStartMetaDataTask();
+                    } else {
+                        stopCurrentTaskIfRunning();
+                    }
+                    break;
+                case ServerConfigParams.PARAM_JDBC_QUERY_CACHE_REFRESH_INTERVAL:
+                    if (cacheMetadataTaskEnabled) {
+                        // only reconfigure the task if the cache is actually enabled.
+                        createAndStartMetaDataTask();
+                    }
+                    break;
+                case ServerConfigParams.PARAM_JDBC_QUERY_CACHE_CLEANUP_REFRESH_INTERVAL:
+                    createAndStartCleanUpTask();
+                    break;
             }
         }
         //update the jdbcMetadataRetrievalThreadPool number of threads
         if (propertyName.equals(ServerConfigParams.PARAM_JDBC_QUERY_CACHE_MIN_CACHE_CONCURRENCY) && jdbcMetadataRetrievalThreadPool != null) {
+            //noinspection SynchronizeOnNonFinalField
             synchronized (jdbcMetadataRetrievalThreadPool){
                 int numberCacheConcurrencyThreads = getNumberCacheConcurrencyThreads();
                 jdbcMetadataRetrievalThreadPool.setCorePoolSize(numberCacheConcurrencyThreads);
@@ -275,7 +274,7 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager, PropertyCha
             simpleJdbcCall.getJdbcTemplate().setQueryTimeout(jdbcTemplate.getQueryTimeout());
             jdbcCallUtil = new JdbcCallHelper(simpleJdbcCall, cachedMetaDataValue.inParameters.some());
 
-            // record time of cache hit - not used anywhere yet.
+            // record time of cache hit
             final AtomicLong accessTime = cachedMetaDataValue.lastUseTime;
             accessTime.set(timeSource.currentTimeMillis());
 
@@ -631,10 +630,9 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager, PropertyCha
         final boolean enableCacheTask = config.getBooleanProperty(ServerConfigParams.PARAM_JDBC_QUERY_CACHE_METADATA_TASK_ENABLED, true);
         if (enableCacheTask) {
             createAndStartMetaDataTask();
-            createAndStartCleanUpTask();
         }
-
-    }
+        createAndStartCleanUpTask();
+   }
 
     private void doStop() {
         stopCurrentTaskIfRunning();
@@ -779,9 +777,6 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager, PropertyCha
 
         private final Either<DataAccessException, SimpleJdbcCall> cachedData;
         private final Option<List<String>> inParameters;
-        /**
-         * Either last access time for a right either or time of exception for a left either.
-         */
         private final AtomicLong lastUseTime;
         private AtomicLong cachedTime;
 
@@ -908,7 +903,7 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager, PropertyCha
     private class MetaDataCacheCleanUpTask extends ManagedTimerTask {
         @Override
         protected void doRun() {
-            final Set<String> validEntityNames = new HashSet<String>();
+            final Set<String> validEntityNames = new HashSet<>();
             try {
                 final Collection<EntityHeader> allHeaders = jdbcConnectionManager.findAllHeaders();
                 for (EntityHeader header : allHeaders) {
@@ -919,8 +914,8 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager, PropertyCha
                 logger.warning("Could not check list of JDBC Connections for cache maintenance: " + ExceptionUtils.getMessage(e));
             }
 
-            final Set<CachedMetaDataKey> keysToRemove = new HashSet<CachedMetaDataKey>();
-            final Set<CachedMetaDataKey> keysToRemoveFromDBObjectsToCacheMetaDataFor = new HashSet<CachedMetaDataKey>();
+            final Map<CachedMetaDataKey, String> keysToRemove = new HashMap<>();
+            final Set<CachedMetaDataKey> keysToRemoveFromDBObjectsToCacheMetaDataFor = new HashSet<>();
 
             final long maxExceptionAge = config.getLongProperty(ServerConfigParams.PARAM_JDBC_QUERY_CACHE_CLEANUP_REFRESH_INTERVAL, 60000L);
             final long cacheKeyNoUsageExpiration = config.getLongProperty(ServerConfigParams.PARAM_JDBC_QUERY_CACHE_NO_USAGE_EXPIRATION, 2678400L) * 1000L;
@@ -934,30 +929,30 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager, PropertyCha
                 if (either.isLeft()) {
                     // it's an exception, see hold old it is
                     if (age > maxExceptionAge) {
-                        keysToRemove.add(key);
+                        keysToRemove.put(key, "errored");
                     }
                 }
 
                 // if the jdbc connection entity no longer exists then remove items from the cache
                 if (!validEntityNames.contains(key.connectionName)) {
-                    keysToRemove.add(key);
+                    keysToRemove.put(key, "connection no longer exists");
                 }
 
                 //remove items not used for a long time.
                 if(age > cacheKeyNoUsageExpiration) {
                     keysToRemoveFromDBObjectsToCacheMetaDataFor.add(key);
-                    keysToRemove.add(key);
+                    keysToRemove.put(key, "unused");
                 }
             }
 
             for (CachedMetaDataKey key : keysToRemoveFromDBObjectsToCacheMetaDataFor) {
                 dbObjectsToCacheMetaDataFor.remove(key);
-                logger.log(Level.FINEST, "Cache removed from managed keys - unused - for key: {0}", key);
+                logger.log(Level.FINE, "Cache removed from managed keys - unused - for key: {0}", key);
             }
 
-            for (CachedMetaDataKey key : keysToRemove) {
+            for (CachedMetaDataKey key : keysToRemove.keySet()) {
                 simpleJdbcCallCache.remove(key);
-                logger.log(Level.FINEST, "Cache expired - unused, errored, exception, or connection no longer exists - for key: {0}", key);
+                logger.log(Level.FINE, "Cache expired - {0} - for key: {1}", new Object[]{keysToRemove.get(key), key});
             }
         }
     }

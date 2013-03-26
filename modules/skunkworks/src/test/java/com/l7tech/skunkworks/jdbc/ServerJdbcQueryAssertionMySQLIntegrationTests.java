@@ -35,7 +35,6 @@ public class ServerJdbcQueryAssertionMySQLIntegrationTests extends ServerJdbcQue
     }
 
     @Test
-    @Ignore("This test will currently fail. Mysql is not working properly for functions")
     public void testSendRetrieveVarchar2FromFunction() throws PolicyAssertionException, IOException {
         try {
             createDropItem(DropSendRetrieveVarchar2Function);
@@ -43,7 +42,6 @@ public class ServerJdbcQueryAssertionMySQLIntegrationTests extends ServerJdbcQue
             JdbcQueryAssertion assertion = createJdbcQueryAssertion();
             getContextVariables().put("var_in", "abc");
             assertion.setSqlQuery("func " + SendRetrieveVarchar2FunctionName + " ${var_in}");
-            assertion.setSchema("test");
             assertion.setConvertVariablesToStrings(false);
             ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, getContext());
 
@@ -51,9 +49,9 @@ public class ServerJdbcQueryAssertionMySQLIntegrationTests extends ServerJdbcQue
 
             Assert.assertEquals(AssertionStatus.NONE, assertionStatus);
 
-            Assert.assertEquals(String.class, ((Object[]) getContextVariables().get("jdbcquery.return_value"))[0].getClass());
+            Assert.assertEquals(String.class, ((Object[]) getContextVariables().get("jdbcquery.return"))[0].getClass());
 
-            String returnString = (String) ((Object[]) getContextVariables().get("jdbcquery.return_value"))[0];
+            String returnString = (String) ((Object[]) getContextVariables().get("jdbcquery.return"))[0];
 
             Assert.assertEquals("abcabc", returnString);
 
@@ -114,7 +112,7 @@ public class ServerJdbcQueryAssertionMySQLIntegrationTests extends ServerJdbcQue
 
     protected static JdbcConnection getJdbcConnection() {
         final JdbcConnection jdbcConn = new JdbcConnection();
-        final String jdbcUrl = "jdbc:mysql://localhost:3306/test";//?useInformationSchema=true";
+        final String jdbcUrl = "jdbc:mysql://localhost:3306/test";
 
         jdbcConn.setJdbcUrl(jdbcUrl);
         jdbcConn.setName(ConnectionName);

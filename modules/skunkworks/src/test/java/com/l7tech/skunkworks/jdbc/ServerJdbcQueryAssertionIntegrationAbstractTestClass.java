@@ -4,6 +4,7 @@ import com.l7tech.external.assertions.jdbcquery.JdbcQueryAssertion;
 import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.server.ServerConfigParams;
+import com.l7tech.server.jdbc.JdbcConnectionManager;
 import com.l7tech.server.jdbc.JdbcQueryingManager;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.util.Config;
@@ -29,6 +30,8 @@ public abstract class ServerJdbcQueryAssertionIntegrationAbstractTestClass exten
 
     private static PolicyEnforcementContext policyEnforcementContext;
 
+    private static JdbcConnectionManager jdbcConnectionManager;
+
     public static Map<String, Object> getContextVariables() {
         return contextVariables;
     }
@@ -52,6 +55,8 @@ public abstract class ServerJdbcQueryAssertionIntegrationAbstractTestClass exten
         JdbcCallHelperIntegrationAbstractBaseTestClass.beforeClass(jdbcConnection);
 
         context = Mockito.mock(ApplicationContext.class);
+
+        jdbcConnectionManager = Mockito.mock(JdbcConnectionManager.class);
 
         Mockito.doReturn(getJdbcQueryingManager()).when(context).getBean(Matchers.eq("jdbcQueryingManager"), Matchers.eq(JdbcQueryingManager.class));
         Mockito.doReturn(getMockConfig()).when(context).getBean(Matchers.eq("serverConfig"), Matchers.eq(Config.class));
@@ -77,6 +82,9 @@ public abstract class ServerJdbcQueryAssertionIntegrationAbstractTestClass exten
                 return null;
             }
         }).when(policyEnforcementContext).setVariable(Matchers.any(String.class), Matchers.any());
+
+        Mockito.doReturn(jdbcConnectionManager).when(context).getBean(Matchers.eq("jdbcConnectionManager"), Matchers.eq(JdbcConnectionManager.class));
+        Mockito.when(jdbcConnectionManager.getJdbcConnection(Matchers.eq(ConnectionName))).thenReturn(jdbcConnection == null ? getJdbcConnection() : jdbcConnection);
     }
 
     /**

@@ -30,7 +30,7 @@ import java.util.Map;
 public abstract class JdbcCallHelperIntegrationAbstractBaseTestClass {
 
     //The connection name
-    protected static final String ConnectionName = "OracleConnection";
+    protected static final String ConnectionName = "MyConnection";
     private static JdbcQueryingManagerImpl jdbcQueryingManager;
     private static DataSource dataSource;
     private static Map<String, String> configProperties = new HashMap<>();
@@ -79,7 +79,7 @@ public abstract class JdbcCallHelperIntegrationAbstractBaseTestClass {
         jdbcQueryingManager.performJdbcQuery(dataSource, createQuery, "qatest", 1, Collections.emptyList());
     }
 
-    private static JdbcConnection getJdbcConnection() {
+    protected static JdbcConnection getJdbcConnection() {
         final JdbcConnection jdbcConn = new JdbcConnection();
         String host = "qaoracledb.l7tech.com";
         String port = "1521";
