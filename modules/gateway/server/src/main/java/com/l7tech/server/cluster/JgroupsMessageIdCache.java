@@ -1,10 +1,15 @@
 package com.l7tech.server.cluster;
 
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.SyspropUtil;
 import org.jboss.cache.Cache;
 import org.jboss.cache.CacheFactory;
 import org.jboss.cache.DefaultCacheFactory;
+import org.jboss.cache.Fqn;
 import org.jboss.cache.config.Configuration;
+import org.jboss.cache.config.EvictionConfig;
+import org.jboss.cache.config.EvictionRegionConfig;
+import org.jboss.cache.eviction.ExpirationAlgorithmConfig;
 import org.jboss.cache.lock.TimeoutException;
 import org.jgroups.stack.IpAddress;
 
@@ -15,6 +20,8 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 /**
  *
  */
@@ -23,6 +30,7 @@ class JgroupsMessageIdCache implements MessageIdCache {
 
     private static final String MESSAGEID_PARENT_NODE = DistributedMessageIdManager.class.getName() + "/messageId";
     private static final String EXPIRES_ATTR = "expires";
+    private static final long GC_PERIOD = ConfigFactory.getTimeUnitProperty("com.l7tech.server.cluster.cacheGcPeriod", SECONDS.toMillis(5L));
 
     private final Cache<String,Long> cache;
 
@@ -44,10 +52,36 @@ class JgroupsMessageIdCache implements MessageIdCache {
             config.setClusterConfig( props );
         }
 
+        setEvictConfig(config);
         cache.create();
         cache.start();
 
         logger.log(Level.INFO, "Using multicast replay protection with GMS address {0}", cache.getLocalAddress());
+    }
+
+    /**
+     * Construct a local cache, no clustering support
+     */
+    protected JgroupsMessageIdCache() {
+        Configuration config = new Configuration();
+        setEvictConfig(config);
+        config.setCacheMode(Configuration.CacheMode.LOCAL);
+        CacheFactory<String,Long> factory = new DefaultCacheFactory<String,Long>();
+        cache = factory.createCache(config, true);
+    }
+
+    /**
+     * Set the cache eviction policy to the configuration object.
+     * The cache in memmory will evict once the cache is expired.
+     *
+     * @param config The Cache configuration
+     */
+    private void setEvictConfig(Configuration config) {
+        ExpirationAlgorithmConfig eac = new ExpirationAlgorithmConfig();
+        EvictionRegionConfig erc = new EvictionRegionConfig(Fqn.fromString(MESSAGEID_PARENT_NODE), eac);
+        EvictionConfig ec = new EvictionConfig(erc);
+        ec.setWakeupInterval(GC_PERIOD);
+        config.setEvictionConfig(ec);
     }
 
     @Override
@@ -57,7 +91,9 @@ class JgroupsMessageIdCache implements MessageIdCache {
 
     @Override
     public void put(String id, Long expiry) {
-        cache.put(MESSAGEID_PARENT_NODE + "/" + id, EXPIRES_ATTR, expiry);
+        Fqn fqn = Fqn.fromString(MESSAGEID_PARENT_NODE + "/" + id);
+        cache.getRoot().addChild(fqn).put(ExpirationAlgorithmConfig.EXPIRATION_KEY, Math.abs(expiry));
+        cache.put(fqn, EXPIRES_ATTR, expiry);
     }
 
     @Override

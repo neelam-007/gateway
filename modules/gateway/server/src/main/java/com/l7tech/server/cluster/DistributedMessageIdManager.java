@@ -4,12 +4,10 @@ import com.l7tech.server.ServerConfig;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.util.MessageId;
 import com.l7tech.server.util.MessageIdManager;
-import com.l7tech.util.Background;
 import com.l7tech.util.Config;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.ResourceUtils;
-import static java.util.concurrent.TimeUnit.MINUTES;
 import org.hibernate.Session;
 import org.hibernate.jdbc.Work;
 import org.springframework.jmx.export.annotation.ManagedAttribute;
@@ -79,9 +77,8 @@ public class DistributedMessageIdManager extends HibernateDaoSupport implements 
                     ? new JgroupsMessageIdCache(address, port, interfaceAddress, this.jgroupsConfigFile)
                     : new SingleNodeMessageIdCache(clusterNodeId);
 
-            // Perturb delay to avoid synchronization with other cluster nodes
-            long when = GC_PERIOD * 2 + new Random().nextInt(1 + (int)GC_PERIOD / 4);
-            Background.scheduleRepeated(new GarbageCollectionTask(), when, GC_PERIOD);
+            //Clean up the expired data before putting the message to cache.
+            (new GarbageCollectionTask()).run();
 
             populateCacheIfRequired();
         } finally {
@@ -178,8 +175,6 @@ public class DistributedMessageIdManager extends HibernateDaoSupport implements 
     boolean initialized = false;
     private final String jgroupsConfigFile;
 
-    private static final long GC_PERIOD = ConfigFactory.getTimeUnitProperty( "com.l7tech.server.cluster.cacheGcPeriod", MINUTES.toMillis( 5L ) );
-    private static final int BATCH_SIZE = ConfigFactory.getIntProperty( "com.l7tech.server.cluster.cacheCleanupBatchSize", 1000 );
 
     /**
      * The cache is thread safe, the lock is to ensure we don't restart the underlying
@@ -227,7 +222,8 @@ public class DistributedMessageIdManager extends HibernateDaoSupport implements 
     private void populateCache( final Connection conn ) throws SQLException {
         PreparedStatement ps = null;
         ResultSet rs = null;
-        cache.startBatch();
+        //Do not do cache.startBatch() and endBatch, with Batch, the data purge may not work properly,
+        //the node is not adding to the ExpirationAlgorithm
         try {
             ps = conn.prepareStatement("SELECT messageid, expires FROM message_id");
             rs = ps.executeQuery();
@@ -245,7 +241,6 @@ public class DistributedMessageIdManager extends HibernateDaoSupport implements 
         } finally {
             ResourceUtils.closeQuietly( rs );
             ResourceUtils.closeQuietly( ps );
-            cache.endBatch(true);
         }
     }
 
@@ -401,42 +396,6 @@ public class DistributedMessageIdManager extends HibernateDaoSupport implements 
         private void doRun( final Session session ) {
             final long now = System.currentTimeMillis();
             try {
-                Set names = cache.getAll();
-                if (names != null) {
-                    List<String> toBeRemoved = new ArrayList<String>(names.size()/2);
-                    for ( final Object name : names ) {
-                        String id = (String) name;
-                        Long expires = cache.get(id);
-                        if ( expires != null && isExpired( expires, now ) ) {
-                            // Expired
-                            toBeRemoved.add( id );
-                        }
-                    }
-
-                    int batchCount = 0;
-                    boolean batchSuccess = false;
-                    cache.startBatch();
-                    try {
-                        for ( final String id : toBeRemoved ) {
-                            if ( batchCount >= BATCH_SIZE ) {
-                                batchCount = 0;
-                                cache.endBatch( true );
-                                cache.startBatch();
-                            }
-                            cache.remove( id );
-                            batchCount++;
-                            if ( logger.isLoggable( Level.FINE ) )
-                                logger.fine( "Removing expired message ID " + id + " from replay cache" );
-                        }
-
-                        batchSuccess = true;
-                    } finally {
-                        cache.endBatch(batchSuccess);
-                    }
-                }
-
-                flush(session);
-
                 session.doWork( new Work(){
                     @Override
                     public void execute( final Connection conn ) throws SQLException {
