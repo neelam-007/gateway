@@ -411,7 +411,7 @@ public class ListenPortMO extends ElementExtendableAccessibleObject {
             this.enabledVersions = enabledVersions;
         }
 
-        @XmlElement(name="EnabledCipherSuites", required=true)
+        @XmlElement(name="EnabledCipherSuites")
         protected AttributeExtensibleStringList getEnabledCipherSuiteValues() {
             return enabledCipherSuites;
         }

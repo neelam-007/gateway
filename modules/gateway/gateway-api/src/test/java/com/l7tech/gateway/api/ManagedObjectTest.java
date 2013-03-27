@@ -274,6 +274,36 @@ public class ManagedObjectTest {
         assertEquals( "tls enabled cipher suites", Arrays.asList( "TLS_RSA_WITH_AES_256_CBC_SHA" ), roundTripped.getTlsSettings().getEnabledCipherSuites()  );
     }
 
+    /**
+     * Test that an empty list of cipher suites is supported. This happens when 'Use Default List' is chosen in 'SSL/TLS Settings' tab.
+     */
+    @BugId("SSG-6159")
+    @Test
+    public void testListenPortSerialization_DefaultCipherSuites() throws Exception {
+        final ListenPortMO listenPortMO = ManagedObjectFactory.createListenPort();
+        listenPortMO.setId( "3" );
+        listenPortMO.setVersion( 22 );
+        listenPortMO.setName( "Test" );
+        listenPortMO.setEnabled( true );
+        listenPortMO.setProtocol( "http" );
+        listenPortMO.setInterface( "127.0.0.1" );
+        listenPortMO.setPort( 8080 );
+        listenPortMO.setEnabledFeatures( list( "Feature1", "Feature2" ) );
+        listenPortMO.setTargetServiceId( Long.toString(Long.MAX_VALUE) );
+        listenPortMO.setProperties( Collections.<String,Object>singletonMap( "a", "b" ) );
+
+        final ListenPortMO.TlsSettings tlsSettings = ManagedObjectFactory.createTlsSettings();
+        tlsSettings.setClientAuthentication( ListenPortMO.TlsSettings.ClientAuthentication.REQUIRED );
+        tlsSettings.setPrivateKeyId( "-1:ssl" );
+        tlsSettings.setEnabledVersions( Arrays.asList( "TLSv1", "TLSv1.1", "TLSv1.2" ) );
+        // do not set cipher suites!
+        listenPortMO.setTlsSettings( tlsSettings );
+
+        final ListenPortMO roundTripped = roundTrip( listenPortMO );
+        assertNotNull( "tls settings", roundTripped.getTlsSettings() );
+        assertTrue( "tls enabled cipher suites", roundTripped.getTlsSettings().getEnabledCipherSuites().isEmpty()  );
+    }
+
     @Test
     public void testPolicySerialization() throws Exception {
         final String policyXml =
@@ -1188,6 +1218,19 @@ public class ManagedObjectTest {
         unmarshaller.setSchema(ValidationUtils.getSchema());
 
         unMarshallFileAndCheckType(unmarshaller, ServiceMO.class, "ServiceMO_HttpMapping_minimal.xml");
+    }
+
+    /**
+     * Test that all TlsSettings in a ListenPort which are optional are allowed to be missing.
+     */
+    @BugId("SSG-6159")
+    @Test
+    public void testListenPort_TlsSettings_Minimal() throws Exception {
+        final Unmarshaller unmarshaller = context.createUnmarshaller();
+        unmarshaller.setSchema(getSchema("gateway-management-7.1.xsd"));
+        unmarshaller.setSchema(ValidationUtils.getSchema());
+
+        unMarshallFileAndCheckType(unmarshaller, ListenPortMO.class, "ListenPortMO_TLS_minimal.xml");
     }
 
     private void testUnmarshal( final String suffix,

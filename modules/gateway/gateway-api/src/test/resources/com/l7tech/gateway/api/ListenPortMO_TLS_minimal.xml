@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ListenPort xmlns="http://ns.l7tech.com/2010/04/gateway-management">
+    <Name>My Listen Port</Name>
+    <Enabled>true</Enabled>
+    <Protocol>http</Protocol>
+    <Port>8080</Port>
+    <EnabledFeatures/>
+    <TlsSettings extendedAttribute="value" other:extendedAttribute="extension" xmlns:other="urn:othernamespace">
+        <EnabledVersions >
+            <StringValue >TLSv1.2</StringValue>
+        </EnabledVersions>
+    </TlsSettings>
+</ListenPort>
