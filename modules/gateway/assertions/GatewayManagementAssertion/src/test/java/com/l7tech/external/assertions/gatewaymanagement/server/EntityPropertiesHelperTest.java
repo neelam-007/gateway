@@ -114,7 +114,8 @@ public class EntityPropertiesHelperTest {
         testXmlEnumValueAnnotations( JMSProviderType.class,
                 "TIBCO EMS",
                 "WebSphere MQ over LDAP",
-                "FioranoMQ" );
+                "FioranoMQ",
+                "WebLogic JMS");
 
         //NOTE : Do not change values, read javadoc above
         testXmlEnumValueAnnotations( ClientAuthentication.class,

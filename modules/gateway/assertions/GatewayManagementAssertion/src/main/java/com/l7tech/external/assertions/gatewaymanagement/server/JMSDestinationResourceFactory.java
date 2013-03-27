@@ -263,6 +263,9 @@ public class JMSDestinationResourceFactory extends EntityManagerResourceFactory<
                 case FioranoMQ:
                     type = JmsProviderType.Fiorano;
                     break;
+                case Weblogic:
+                    type = JmsProviderType.Weblogic;
+                    break;
                 default:
                     throw new InvalidResourceException( InvalidResourceException.ExceptionType.INVALID_VALUES, "Invalid provider type '"+providerType+"'" );
             }
@@ -284,6 +287,9 @@ public class JMSDestinationResourceFactory extends EntityManagerResourceFactory<
                     break;
                 case Fiorano:
                     type = JMSConnection.JMSProviderType.FioranoMQ;
+                    break;
+                case Weblogic:
+                    type = JMSConnection.JMSProviderType.Weblogic;
                     break;
                 default:
                     throw new ResourceAccessException( "Invalid provider type '"+providerType+"'" );

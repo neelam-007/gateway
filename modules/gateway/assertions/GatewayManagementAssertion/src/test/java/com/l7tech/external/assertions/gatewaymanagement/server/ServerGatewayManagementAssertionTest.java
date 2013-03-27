@@ -15,6 +15,7 @@ import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.gateway.common.service.ServiceTemplate;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
+import com.l7tech.gateway.common.transport.jms.JmsProviderType;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderType;
 import com.l7tech.identity.UserBean;
@@ -69,7 +70,6 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.springframework.beans.factory.support.StaticListableBeanFactory;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -861,6 +861,26 @@ public class ServerGatewayManagementAssertionTest {
                 "    </JMSDestinationDetail>\n" +
                 "    <JMSConnection>\n" +
                 "        <ProviderType>TIBCO EMS</ProviderType>" +
+                "        <Template>true</Template>\n" +
+                "    </JMSConnection>\n" +
+                "</JMSDestination>";
+        doCreate( resourceUri, payload, "2", "3", "4"  );
+    }
+
+    @BugId("SSG-6372")
+    @Test
+    public void testCreateTemplateJMSWeblogicDestination() throws Exception {
+        String resourceUri = "http://ns.l7tech.com/2010/04/gateway-management/jmsDestinations";
+        String payload =
+                "<JMSDestination xmlns=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
+                "    <JMSDestinationDetail version=\"0\" id=\"48037888\">\n" +
+                "        <Name>QueueName</Name>\n" +
+                "        <Inbound>false</Inbound>\n" +
+                "        <Enabled>true</Enabled>\n" +
+                "        <Template>true</Template>\n" +
+                "    </JMSDestinationDetail>\n" +
+                "    <JMSConnection>\n" +
+                "        <ProviderType>WebLogic JMS</ProviderType>" +
                 "        <Template>true</Template>\n" +
                 "    </JMSConnection>\n" +
                 "</JMSDestination>";
@@ -2476,9 +2496,11 @@ public class ServerGatewayManagementAssertionTest {
                 provider( -2L, IdentityProviderType.INTERNAL, "Internal Identity Provider"),
                 provider( -3L, IdentityProviderType.LDAP, "LDAP", "userLookupByCertMode", "CERT")));
         beanFactory.addBean( "jmsConnectionManager",  new JmsConnectionManagerStub(
-                jmsConnection( 1L, "Test Endpoint", "com.context.Classname", "qcf", "ldap://jndi") ));
+                jmsConnection( 1L, "Test Endpoint", "com.context.Classname", "qcf", "ldap://jndi", null),
+                jmsConnection( 2L, "Test Endpoint 2", "com.context.Classname", "qcf 2", "ldap://jndi2", JmsProviderType.Weblogic)));
         beanFactory.addBean( "jmsEndpointManager",  new JmsEndpointManagerStub(
-                jmsEndpoint( 1L, 1L, "Test Endpoint") ));
+                jmsEndpoint( 1L, 1L, "Test Endpoint"),
+                jmsEndpoint( 2L, 2L, "Test Endpoint 2")));
         beanFactory.addBean( "jdbcConnectionManager", new JdbcConnectionManagerStub(
                 connection( 1L, "A Test Connection"),
                 connection( 2L, "Test Connection") ) );
@@ -2613,13 +2635,15 @@ public class ServerGatewayManagementAssertionTest {
         return connection;
     }
 
-    private static JmsConnection jmsConnection( final long oid, final String name, final String contextClassname, final String queueFactory, final String jndiUrl) {
+    private static JmsConnection jmsConnection(final long oid, final String name, final String contextClassname, final String queueFactory, final String jndiUrl, JmsProviderType providerType) {
         final JmsConnection connection = new JmsConnection();
         connection.setOid( oid );
         connection.setName( name );
         connection.setQueueFactoryUrl( queueFactory );
         connection.setInitialContextFactoryClassname( contextClassname );
         connection.setJndiUrl( jndiUrl );
+        // Added for SSG-6372
+        connection.setProviderType(providerType);
         return connection;
     }
 

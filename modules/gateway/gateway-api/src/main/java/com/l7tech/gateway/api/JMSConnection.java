@@ -185,7 +185,12 @@ public class JMSConnection extends ElementExtensionSupport {
         /**
          * Type for FioranoMQ.
          */
-        @XmlEnumValue("FioranoMQ") FioranoMQ
+        @XmlEnumValue("FioranoMQ") FioranoMQ,
+
+        /**
+         * Type for Weblogic
+         */
+        @XmlEnumValue("WebLogic JMS") Weblogic
     }
 
     //- PROTECTED
