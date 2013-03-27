@@ -20,7 +20,7 @@ fi
 alias startssg='/etc/rc.d/init.d/ssg start'
 alias stopssg='/etc/rc.d/init.d/ssg stop'
 
-system_ram=`grep MemTotal /proc/meminfo |cut -c 15-23`
+system_ram=`grep MemTotal /proc/meminfo | awk '{print $2}'`
 # Maximum amount of RAM to use
 multiplier="2/3"
 #
