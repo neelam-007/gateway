@@ -247,13 +247,14 @@ public class VirtualSshFile implements SshFile {
     }
 
     /**
-     * Check file exec permission. Virtual ssh files are never executable
+     * Check file exec permission. Virtual ssh files are never executable.
+     * Virtual directories need to be executable. SSG-6737
      *
      * @return true if the file is executable
      */
     @Override
     public boolean isExecutable() {
-        return false;
+        return isDirectory();
     }
 
     /**
