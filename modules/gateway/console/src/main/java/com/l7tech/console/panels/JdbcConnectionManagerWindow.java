@@ -10,7 +10,9 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.DeleteException;
+import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.SyspropUtil;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionListener;
@@ -209,6 +211,11 @@ public class JdbcConnectionManagerWindow extends JDialog {
         if (admin != null) {
             connection.setMinPoolSize(admin.getPropertyDefaultMinPoolSize());
             connection.setMaxPoolSize(admin.getPropertyDefaultMaxPoolSize());
+        }
+
+        boolean addEnableCancelTimeoutProperty = SyspropUtil.getBoolean("com.l7tech.console.panels.JdbcConnectionPropertiesDialog.addEnableCancelTimeoutProperty", true);
+        if(addEnableCancelTimeoutProperty) {
+            connection.setAdditionalProperties(CollectionUtils.MapBuilder.<String, Object>builder().put("EnableCancelTimeout", "true").map());
         }
 
         editAndSave(connection,true);
