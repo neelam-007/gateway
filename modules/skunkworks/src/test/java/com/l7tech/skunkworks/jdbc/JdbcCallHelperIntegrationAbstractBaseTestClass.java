@@ -2,10 +2,7 @@ package com.l7tech.skunkworks.jdbc;
 
 import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.jdbc.oracle.OracleDriver;
-import com.l7tech.server.jdbc.JdbcConnectionManagerImpl;
-import com.l7tech.server.jdbc.JdbcConnectionPoolManager;
-import com.l7tech.server.jdbc.JdbcQueryingManager;
-import com.l7tech.server.jdbc.JdbcQueryingManagerImpl;
+import com.l7tech.server.jdbc.*;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.MockConfig;
 import com.l7tech.util.TimeSource;
@@ -32,6 +29,7 @@ public abstract class JdbcCallHelperIntegrationAbstractBaseTestClass {
     //The connection name
     protected static final String ConnectionName = "MyConnection";
     private static JdbcQueryingManagerImpl jdbcQueryingManager;
+    private static JdbcConnectionManagerImpl jdbcConnectionManager;
     private static DataSource dataSource;
     private static Map<String, String> configProperties = new HashMap<>();
     private static MockConfig mockConfig = new MockConfig(getConfigProperties());
@@ -42,9 +40,10 @@ public abstract class JdbcCallHelperIntegrationAbstractBaseTestClass {
      * @throws Exception
      */
     public static void beforeClass(@Nullable JdbcConnection jdbcConnection) throws Exception {
-        JdbcConnectionManagerImpl jdbcConnectionManager = Mockito.spy(new JdbcConnectionManagerImpl());
+        jdbcConnectionManager = Mockito.spy(new JdbcConnectionManagerImpl());
 
         Mockito.doReturn(Arrays.asList(jdbcConnection == null ? getJdbcConnection() : jdbcConnection)).when(jdbcConnectionManager).findAll();
+        Mockito.doReturn(getConnection(jdbcConnection)).when(jdbcConnectionManager).findByUniqueName(getConnection(jdbcConnection).getName());
 
         JdbcConnectionPoolManager jdbcConnectionPoolManager = Mockito.spy(new JdbcConnectionPoolManager(jdbcConnectionManager));
 
@@ -56,6 +55,10 @@ public abstract class JdbcCallHelperIntegrationAbstractBaseTestClass {
         DriverManager.registerDriver((OracleDriver) Class.forName("com.l7tech.jdbc.oracle.OracleDriver").newInstance());
 
         dataSource = jdbcConnectionPoolManager.getDataSource(ConnectionName);
+    }
+
+    public static JdbcConnection getConnection(JdbcConnection jdbcConnection) {
+        return jdbcConnection == null ? getJdbcConnection() : jdbcConnection;
     }
 
     public static Map<String, String> getConfigProperties() {
@@ -112,4 +115,9 @@ public abstract class JdbcCallHelperIntegrationAbstractBaseTestClass {
     public static JdbcQueryingManager getJdbcQueryingManager() {
         return jdbcQueryingManager;
     }
+
+    public static JdbcConnectionManager getJdbcConnectionManager() {
+        return jdbcConnectionManager;
+    }
+
 }

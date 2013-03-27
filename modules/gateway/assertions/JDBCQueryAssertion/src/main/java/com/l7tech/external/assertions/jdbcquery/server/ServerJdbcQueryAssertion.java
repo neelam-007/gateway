@@ -22,9 +22,8 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.jdbc.support.rowset.SqlRowSet;
 import org.springframework.jdbc.support.rowset.SqlRowSetMetaData;
 
-import java.io.IOException;
-import java.io.Reader;
-import java.io.StringWriter;
+import java.io.*;
+import java.sql.Blob;
 import java.sql.Clob;
 import java.sql.SQLException;
 import java.util.*;
@@ -212,6 +211,8 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
                         value = sb.toString();
                     } else if (value instanceof Clob) {
                         value = getClobStringValue((Clob) value);
+                    } else if (value instanceof Blob) {
+                        value = getBlobValue((Blob) value);
                     } else {
                         colType = "type=\"" + value.getClass().getName() + "\"";
                     }
@@ -355,7 +356,7 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
     /**
      * To make sure we don't break any calls to the old signature
      */
-    int setContextVariables(Map<String,List<Object>> resultSet, PolicyEnforcementContext context) throws SQLException {
+    int setContextVariables(Map<String, List<Object>> resultSet, PolicyEnforcementContext context) throws SQLException {
         if (context == null) throw new IllegalStateException("Policy Enforcement Context cannot be null.");
 
         Map<String, String> newNamingMap = getNewMapping(resultSet);
@@ -365,7 +366,7 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
         int row = 0;
         for (String columnName : resultSet.keySet()) {
             if (logger.isLoggable(Level.FINER)) {
-                logger.log(Level.FINER, varPrefix  + "." + newNamingMap.get(columnName.toLowerCase()) + resultSet.get(columnName).toArray());
+                logger.log(Level.FINER, varPrefix + "." + newNamingMap.get(columnName.toLowerCase()) + resultSet.get(columnName).toArray());
             }
             if (resultSet.get(columnName) != null) {
                 row = resultSet.get(columnName).size();
@@ -396,6 +397,8 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
                 //TODO - what other types may not be directly applicable as-is?
                 if (value instanceof Clob) {
                     rows.add(getClobStringValue((Clob) value));
+                } else if (value instanceof Blob) {
+                    rows.add(getBlobValue((Blob) value));
                 } else {
                     rows.add(value);
                 }
@@ -434,6 +437,7 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
     /**
      * This may be called twice during a single call to checkRequest for the same clob value if xml output is configured.
      * //todo caching based on some object identity
+     *
      * @throws SQLException any problems reading the clob's stream or if the stream limit is exceeded
      */
     @NotNull
@@ -443,7 +447,7 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
         final long maxClobSize = config.getLongProperty(ServerConfigParams.PARAM_JDBC_QUERY_MAX_CLOB_SIZE_OUT, 10485760L);
         try {
             reader = clob.getCharacterStream();
-            writer = new StringWriter( 8192 );
+            writer = new StringWriter(8192);
             IOUtils.copyStream(reader, writer, new Functions.UnaryVoidThrows<Long, IOException>() {
                 @Override
                 public void call(Long totalRead) throws IOException {
@@ -454,15 +458,51 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
             });
             // todo intern to help against duplicate calls? decide when caching is implemented.
             return writer.toString();
-        } catch( IOException ioe ) {
-            logger.log( Level.WARNING, "Error reading CLOB: '" + ExceptionUtils.getMessage(ioe) + "'.", ioe );
+        } catch (IOException ioe) {
+            logger.log(Level.WARNING, "Error reading CLOB: '" + ExceptionUtils.getMessage(ioe) + "'.", ExceptionUtils.getDebugException(ioe));
             throw new SQLException(ExceptionUtils.getMessage(ioe));
         } catch (SQLException e) {
-            logger.log(Level.WARNING, "Error reading CLOB: '" + ExceptionUtils.getMessage(e) + "'.", e);
+            logger.log(Level.WARNING, "Error reading CLOB: '" + ExceptionUtils.getMessage(e) + "'.", ExceptionUtils.getDebugException(e));
             throw e;
         } finally {
             ResourceUtils.closeQuietly(reader);
             ResourceUtils.closeQuietly(writer);
         }
     }
+
+    /**
+     * This may be called twice during a single call to checkRequest for the same clob value if xml output is configured.
+     * //todo caching based on some object identity
+     *
+     * @throws SQLException any problems reading the blob's stream or if the stream limit is exceeded
+     */
+    @NotNull
+    private byte[] getBlobValue(final Blob blob) throws SQLException {
+        InputStream inputStream = null;
+        ByteArrayOutputStream byteOutput = null;
+        final long maxBlobSize = config.getLongProperty(ServerConfigParams.PARAM_JDBC_QUERY_MAX_BLOB_SIZE_OUT, 10485760L);
+        try {
+            inputStream = blob.getBinaryStream();
+            byteOutput = new ByteArrayOutputStream();
+            IOUtils.copyStream(inputStream, byteOutput, new Functions.UnaryVoidThrows<Long, IOException>() {
+                @Override
+                public void call(Long totalRead) throws IOException {
+                    if (totalRead > maxBlobSize) {
+                        throw new IOException("BLOB value has exceeded maximum allowed size of " + maxBlobSize + " bytes");
+                    }
+                }
+            });
+            return byteOutput.toByteArray();
+        } catch (IOException ioe) {
+            logger.log(Level.WARNING, "Error reading BLOB: '" + ExceptionUtils.getMessage(ioe) + "'.", ExceptionUtils.getDebugException(ioe));
+            throw new SQLException(ExceptionUtils.getMessage(ioe));
+        } catch (SQLException e) {
+            logger.log(Level.WARNING, "Error reading BLOB: '" + ExceptionUtils.getMessage(e) + "'.", ExceptionUtils.getDebugException(e));
+            throw e;
+        } finally {
+            ResourceUtils.closeQuietly(inputStream);
+            ResourceUtils.closeQuietly(byteOutput);
+        }
+    }
+
 }

@@ -2,9 +2,9 @@
 <ivy-module version="2.0">
 	<info organisation="com.l7tech.ddtek"
 		module="L7db2"
-		revision="5.0.1"
-		status="release"
-		publication="201208071510606"
+		revision="5.0.1.patch"
+        status="release"
+        publication="201303221652606"
 		default="true"
 	/>
 	<configurations>

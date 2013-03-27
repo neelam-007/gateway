@@ -162,7 +162,6 @@ public class IOUtils {
     public static void spewStream(byte[] output, OutputStream stream) throws IOException {
         copyStream(new ByteArrayInputStream(output), stream);
     }
-
     /**
      * Copy all of the in, right up to EOF, into out.  Does not flush or close either stream.
      *
@@ -172,6 +171,19 @@ public class IOUtils {
      * @throws java.io.IOException if in could not be read, or out could not be written
      */
     public static long copyStream(InputStream in, OutputStream out) throws IOException {
+        return copyStream(in, out, null);
+    }
+
+    /**
+     * Copy all of the in, right up to EOF, into out.  Does not flush or close either stream.
+     *
+     * @param in  the InputStream to read.  Must not be null.
+     * @param out the OutputStream to write.  Must not be null.
+     * @param limitCallback function to enforce copy limit. Null for no copy limit.
+     * @return the number bytes copied
+     * @throws java.io.IOException if in could not be read, or out could not be written
+     */
+    public static long copyStream(InputStream in, OutputStream out, @Nullable final Functions.UnaryVoidThrows<Long, IOException> limitCallback ) throws IOException {
         if (in == null || out == null) throw new NullPointerException("in and out must both be non-null");
         byte[] buf = BufferPool.getBuffer(16384);
         try {
@@ -180,6 +192,9 @@ public class IOUtils {
             while ((got = in.read(buf)) > 0) {
                 out.write(buf, 0, got);
                 total += got;
+                if (limitCallback != null) {
+                    limitCallback.call(total);
+                }
             }
             return total;
         } finally {
@@ -196,6 +211,7 @@ public class IOUtils {
      *
      * @param in  the Reader to read.  Must not be null.
      * @param out the Writer to write.  Must not be null.
+     * @param limitCallback function to enforce copy limit. Null for no copy limit.
      * @return the number characters copied
      * @throws java.io.IOException if in could not be read, or out could not be written
      */

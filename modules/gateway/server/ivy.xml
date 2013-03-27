@@ -90,10 +90,10 @@
         <dependency org="org.apache.tomcat" name="coyote" rev="6.0.35" force="true" conf="core"/>
 
         <!-- Progress Data Direct JDBC Drivers -->
-        <dependency org="com.l7tech.ddtek" name="L7db2" rev="5.0.1" force="true" conf="core"/>
-        <dependency org="com.l7tech.ddtek" name="L7mysql" rev="5.0.1" force="true" conf="core"/>
-        <dependency org="com.l7tech.ddtek" name="L7oracle" rev="5.0.1" force="true" conf="core"/>
-        <dependency org="com.l7tech.ddtek" name="L7sqlserver" rev="5.0.1" force="true" conf="core"/>
+        <dependency org="com.l7tech.ddtek" name="L7db2" rev="5.0.1.patch" force="true" conf="core"/>
+        <dependency org="com.l7tech.ddtek" name="L7mysql" rev="5.0.1.patch" force="true" conf="core"/>
+        <dependency org="com.l7tech.ddtek" name="L7oracle" rev="5.0.1.patch" force="true" conf="core"/>
+        <dependency org="com.l7tech.ddtek" name="L7sqlserver" rev="5.0.1.patch" force="true" conf="core"/>
 
         <!-- Optional dependencies -->
         <dependency org="com.ibm.mq" name="mq" rev="7.1.0.1" force="true" conf="optional"/>

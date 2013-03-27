@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ivy-module version="2.0">
 	<info organisation="com.l7tech.ddtek"
-		module="L7sqlserver"
-		revision="5.0.1"
+		module="L7oracle"
+		revision="5.0.1.patch"
 		status="release"
-		publication="201208071510606"
+		publication="201303221652606"
 		default="true"
 	/>
 	<configurations>
 		<conf name="default" visibility="public"/>
 	</configurations>
 	<publications>
-		<artifact name="L7sqlserver" type="jar" ext="jar" conf="default"/>
+		<artifact name="L7oracle" type="jar" ext="jar" conf="default"/>
 	</publications>
 </ivy-module>

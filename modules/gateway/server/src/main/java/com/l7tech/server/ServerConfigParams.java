@@ -160,6 +160,7 @@ public interface ServerConfigParams {
     //todo remove these two from here and move into the modular assertion meta()
     String PARAM_JDBC_QUERY_MAXRECORDS_DEFAULT = "jdbcQuery.maxRecords.defaultValue";
     String PARAM_JDBC_QUERY_MAX_CLOB_SIZE_OUT = "jdbcQuery.maxClobSizeOut";
+    String PARAM_JDBC_QUERY_MAX_BLOB_SIZE_OUT = "jdbcQuery.maxBlobSizeOut";
 
     //todo rename as these are for the JDBC Query Manager and not the assertion.
     String PARAM_JDBC_QUERY_CACHE_METADATA_ENABLED = "jdbcQuery.cacheMetaData.enable";
