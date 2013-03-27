@@ -127,7 +127,7 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
 
         final RunOnChangeListener connectionListener = new RunOnChangeListener(new Runnable() {
             public void run() {
-                enableOrDisableSchemaControls();
+                enableOrDisableQueryControls();
                 enableOrDisableOkButton();
             }
         });
@@ -420,7 +420,7 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
             if (!procedureName.isEmpty()) {
 
                 boolean isValidQuery = procedureName.indexOf('.') == procedureName.lastIndexOf('.');
-                if (!isValidQuery) {
+                if (!isValidQuery && isSchemaCapable(connectionComboBox.getSelectedItem().toString())) {
                     queryWarningLabel.setIcon(WARNING_ICON);
                     queryWarningLabel.setText("Query may not reference schema from query, specify schema below instead.");
                 } else {
