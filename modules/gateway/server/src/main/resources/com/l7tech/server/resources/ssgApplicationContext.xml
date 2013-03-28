@@ -527,10 +527,10 @@
                         </entry>
                         <entry key="jdbcQueryingManager">
                             <list>
-                                <value>jdbcQuery.cacheMetaData.enable</value>
-                                <value>jdbcQuery.cacheMetaDataTask.enable</value>
-                                <value>jdbcQuery.cacheRefreshInterval</value>
-                                <value>jdbcQuery.cacheCleanUpInterval</value>
+                                <value>jdbcQueryManager.cacheMetaData.enable</value>
+                                <value>jdbcQueryManager.cacheMetaDataTask.enable</value>
+                                <value>jdbcQueryManager.cacheRefreshInterval</value>
+                                <value>jdbcQueryManager.cacheCleanUpInterval</value>
                             </list>
                         </entry>
                     </map>

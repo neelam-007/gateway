@@ -242,7 +242,7 @@ public class JdbcQueryManagerImplCacheTest {
 
     @Test
     public void testCallingMultipleFunctionsNoCache() throws SQLException, NoSuchFieldException, InvocationTargetException, NoSuchMethodException, IllegalAccessException {
-        configProperties.put(ServerConfigParams.PARAM_JDBC_QUERY_CACHE_METADATA_ENABLED, "false");
+        configProperties.put(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_METADATA_ENABLED, "false");
 
         String functionName1 = "myFunction1";
         String query1 = "func myFunction1(?, ?)";
@@ -330,7 +330,7 @@ public class JdbcQueryManagerImplCacheTest {
 
     @Test
     public void testErrorGettingFunctionMetadataCacheRemoval() throws SQLException, InvocationTargetException, NoSuchMethodException, NoSuchFieldException, IllegalAccessException, InstantiationException {
-        configProperties.put(ServerConfigParams.PARAM_JDBC_QUERY_CACHE_CLEANUP_REFRESH_INTERVAL, "-1");
+        configProperties.put(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_CLEANUP_REFRESH_INTERVAL, "-1");
 
         String errorString = "My Test Error";
         String functionName = "myFunction";
@@ -517,7 +517,7 @@ public class JdbcQueryManagerImplCacheTest {
 
     @Test
     public void testCallingMultipleProceduresNoCache() throws SQLException, NoSuchFieldException, InvocationTargetException, NoSuchMethodException, IllegalAccessException {
-        configProperties.put(ServerConfigParams.PARAM_JDBC_QUERY_CACHE_METADATA_ENABLED, "false");
+        configProperties.put(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_METADATA_ENABLED, "false");
 
         String procedureName1 = "myProcedure1";
         String query1 = "call myProcedure1(?, ?)";
@@ -598,7 +598,7 @@ public class JdbcQueryManagerImplCacheTest {
 
     @Test
     public void testMetaDataCacheTaskCacheItemsManuallyAdded() throws SQLException, InvocationTargetException, NoSuchMethodException, NoSuchFieldException, IllegalAccessException, InstantiationException {
-        configProperties.put(ServerConfigParams.PARAM_JDBC_QUERY_CACHE_CLEANUP_REFRESH_INTERVAL, "-1");
+        configProperties.put(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_CLEANUP_REFRESH_INTERVAL, "-1");
 
         String functionName = "myFunction";
         String query = "func myFunction";
@@ -626,7 +626,7 @@ public class JdbcQueryManagerImplCacheTest {
 
     @Test
     public void testMetaDataCacheTaskCacheItemsExpiredStale() throws SQLException, InvocationTargetException, NoSuchMethodException, NoSuchFieldException, IllegalAccessException, InstantiationException {
-        configProperties.put(ServerConfigParams.PARAM_JDBC_QUERY_CACHE_STALE_TIMEOUT, "-1");
+        configProperties.put(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_STALE_TIMEOUT, "-1");
 
         String functionName = "myFunction";
         String query = "func myFunction";
@@ -654,7 +654,7 @@ public class JdbcQueryManagerImplCacheTest {
 
     @Test
     public void testMetaDataCacheTaskCacheItemsExpiredUnused() throws SQLException, InvocationTargetException, NoSuchMethodException, NoSuchFieldException, IllegalAccessException, InstantiationException {
-        configProperties.put(ServerConfigParams.PARAM_JDBC_QUERY_CACHE_NO_USAGE_EXPIRATION, "-1");
+        configProperties.put(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_NO_USAGE_EXPIRATION, "-1");
 
         String functionName = "myFunction";
         String query = "func myFunction";

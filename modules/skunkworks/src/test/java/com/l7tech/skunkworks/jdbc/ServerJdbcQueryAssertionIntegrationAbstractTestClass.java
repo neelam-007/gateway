@@ -95,7 +95,7 @@ public abstract class ServerJdbcQueryAssertionIntegrationAbstractTestClass exten
         getConfigProperties().clear();
         contextVariables.clear();
 
-        getConfigProperties().put(ServerConfigParams.PARAM_JDBC_QUERY_CACHE_METADATA_ENABLED, "false");
+        getConfigProperties().put(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_METADATA_ENABLED, "false");
     }
 
     protected static JdbcQueryAssertion createJdbcQueryAssertion() {

@@ -58,9 +58,9 @@ public class JdbcQueryManagerImplTasksTest {
     @Test
     public void testDoStart() throws NoSuchFieldException, IllegalAccessException {
         MockConfig mockConfig = new MockConfig(CollectionUtils.MapBuilder.<String, String>builder()
-                .put(ServerConfigParams.PARAM_JDBC_QUERY_CACHE_METADATA_TASK_ENABLED, "true")
-                .put(ServerConfigParams.PARAM_JDBC_QUERY_CACHE_REFRESH_INTERVAL, "123")
-                .put(ServerConfigParams.PARAM_JDBC_QUERY_CACHE_CLEANUP_REFRESH_INTERVAL, "456").map());
+                .put(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_METADATA_TASK_ENABLED, "true")
+                .put(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_REFRESH_INTERVAL, "123")
+                .put(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_CLEANUP_REFRESH_INTERVAL, "456").map());
         jdbcQueryingManagerImpl = createJdbcQueryingManagerImpl(mockConfig);
 
         jdbcQueryingManagerImpl.onApplicationEvent(new ReadyForMessages(this, null, null));
@@ -83,9 +83,9 @@ public class JdbcQueryManagerImplTasksTest {
     @Test
     public void testDoStartMetadataCacheTaskDisabled() throws NoSuchFieldException, IllegalAccessException {
         MockConfig mockConfig = new MockConfig(CollectionUtils.MapBuilder.<String, String>builder()
-                .put(ServerConfigParams.PARAM_JDBC_QUERY_CACHE_METADATA_TASK_ENABLED, "false")
-                .put(ServerConfigParams.PARAM_JDBC_QUERY_CACHE_REFRESH_INTERVAL, "123")
-                .put(ServerConfigParams.PARAM_JDBC_QUERY_CACHE_CLEANUP_REFRESH_INTERVAL, "456").map());
+                .put(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_METADATA_TASK_ENABLED, "false")
+                .put(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_REFRESH_INTERVAL, "123")
+                .put(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_CLEANUP_REFRESH_INTERVAL, "456").map());
         jdbcQueryingManagerImpl = createJdbcQueryingManagerImpl(mockConfig);
 
         jdbcQueryingManagerImpl.onApplicationEvent(new ReadyForMessages(this, null, null));
@@ -103,9 +103,9 @@ public class JdbcQueryManagerImplTasksTest {
     @Test
     public void testDoStop() throws NoSuchFieldException, IllegalAccessException {
         MockConfig mockConfig = new MockConfig(CollectionUtils.MapBuilder.<String, String>builder()
-                .put(ServerConfigParams.PARAM_JDBC_QUERY_CACHE_METADATA_TASK_ENABLED, "true")
-                .put(ServerConfigParams.PARAM_JDBC_QUERY_CACHE_REFRESH_INTERVAL, "123")
-                .put(ServerConfigParams.PARAM_JDBC_QUERY_CACHE_CLEANUP_REFRESH_INTERVAL, "456").map());
+                .put(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_METADATA_TASK_ENABLED, "true")
+                .put(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_REFRESH_INTERVAL, "123")
+                .put(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_CLEANUP_REFRESH_INTERVAL, "456").map());
         jdbcQueryingManagerImpl = createJdbcQueryingManagerImpl(mockConfig);
 
         Assert.assertNull(((AtomicReference) currentCacheTaskField.get(jdbcQueryingManagerImpl)).get());
@@ -133,14 +133,14 @@ public class JdbcQueryManagerImplTasksTest {
     @Test
     public void propertyChangeTestCacheRefreshInterval() throws NoSuchFieldException, IllegalAccessException {
         Map<String, String> properties = CollectionUtils.MapBuilder.<String, String>builder()
-                .put(ServerConfigParams.PARAM_JDBC_QUERY_CACHE_METADATA_TASK_ENABLED, "true")
-                .put(ServerConfigParams.PARAM_JDBC_QUERY_CACHE_REFRESH_INTERVAL, "123")
-                .put(ServerConfigParams.PARAM_JDBC_QUERY_CACHE_CLEANUP_REFRESH_INTERVAL, "456")
-                .put(ServerConfigParams.PARAM_JDBC_QUERY_CACHE_MIN_CACHE_CONCURRENCY, "789").map();
+                .put(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_METADATA_TASK_ENABLED, "true")
+                .put(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_REFRESH_INTERVAL, "123")
+                .put(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_CLEANUP_REFRESH_INTERVAL, "456")
+                .put(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_MIN_CACHE_CONCURRENCY, "789").map();
         MockConfig mockConfig = new MockConfig(properties);
         jdbcQueryingManagerImpl = createJdbcQueryingManagerImpl(mockConfig);
 
-        jdbcQueryingManagerImpl.propertyChange(new PropertyChangeEvent(this, ServerConfigParams.PARAM_JDBC_QUERY_CACHE_REFRESH_INTERVAL, null, null));
+        jdbcQueryingManagerImpl.propertyChange(new PropertyChangeEvent(this, ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_REFRESH_INTERVAL, null, null));
 
         //verify that the download task was started
         Mockito.verify(downloadMetaDataTimer).schedule(Matchers.argThat(new Matcher<TimerTask>() {
@@ -155,9 +155,9 @@ public class JdbcQueryManagerImplTasksTest {
 
         spyCacheTasks(jdbcQueryingManagerImpl);
 
-        properties.put(ServerConfigParams.PARAM_JDBC_QUERY_CACHE_REFRESH_INTERVAL, "999");
+        properties.put(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_REFRESH_INTERVAL, "999");
         //trigger a cache refresh interval event
-        jdbcQueryingManagerImpl.propertyChange(new PropertyChangeEvent(this, ServerConfigParams.PARAM_JDBC_QUERY_CACHE_REFRESH_INTERVAL, null, null));
+        jdbcQueryingManagerImpl.propertyChange(new PropertyChangeEvent(this, ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_REFRESH_INTERVAL, null, null));
 
         //the cache task should have been started 1 times
         Mockito.verify(downloadMetaDataTimer, Mockito.times(1)).schedule(Matchers.argThat(new Matcher<TimerTask>() {
@@ -181,14 +181,14 @@ public class JdbcQueryManagerImplTasksTest {
     @Test
     public void propertyChangeTestCacheMetaDataTaskEnableFalse() throws NoSuchFieldException, IllegalAccessException {
         Map<String, String> properties = CollectionUtils.MapBuilder.<String, String>builder()
-                .put(ServerConfigParams.PARAM_JDBC_QUERY_CACHE_METADATA_TASK_ENABLED, "false")
-                .put(ServerConfigParams.PARAM_JDBC_QUERY_CACHE_REFRESH_INTERVAL, "123")
-                .put(ServerConfigParams.PARAM_JDBC_QUERY_CACHE_CLEANUP_REFRESH_INTERVAL, "456")
-                .put(ServerConfigParams.PARAM_JDBC_QUERY_CACHE_MIN_CACHE_CONCURRENCY, "789").map();
+                .put(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_METADATA_TASK_ENABLED, "false")
+                .put(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_REFRESH_INTERVAL, "123")
+                .put(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_CLEANUP_REFRESH_INTERVAL, "456")
+                .put(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_MIN_CACHE_CONCURRENCY, "789").map();
         MockConfig mockConfig = new MockConfig(properties);
         jdbcQueryingManagerImpl = createJdbcQueryingManagerImpl(mockConfig);
 
-        jdbcQueryingManagerImpl.propertyChange(new PropertyChangeEvent(this, ServerConfigParams.PARAM_JDBC_QUERY_CACHE_METADATA_TASK_ENABLED, null, null));
+        jdbcQueryingManagerImpl.propertyChange(new PropertyChangeEvent(this, ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_METADATA_TASK_ENABLED, null, null));
 
         //nothing should happen here since it is not currently running.
 
@@ -198,14 +198,14 @@ public class JdbcQueryManagerImplTasksTest {
         Mockito.verify(cleanUpTimer, Mockito.times(0)).schedule(Matchers.any(TimerTask.class), Matchers.anyLong(), Matchers.anyLong());
 
         //start both the download and clean up tasks.
-        properties.put(ServerConfigParams.PARAM_JDBC_QUERY_CACHE_METADATA_TASK_ENABLED, "true");
+        properties.put(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_METADATA_TASK_ENABLED, "true");
         jdbcQueryingManagerImpl.onApplicationEvent(new ReadyForMessages(this, null, null));
-        properties.put(ServerConfigParams.PARAM_JDBC_QUERY_CACHE_METADATA_TASK_ENABLED, "false");
+        properties.put(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_METADATA_TASK_ENABLED, "false");
 
         spyCacheTasks(jdbcQueryingManagerImpl);
 
         //stop the cache task
-        jdbcQueryingManagerImpl.propertyChange(new PropertyChangeEvent(this, ServerConfigParams.PARAM_JDBC_QUERY_CACHE_METADATA_TASK_ENABLED, null, null));
+        jdbcQueryingManagerImpl.propertyChange(new PropertyChangeEvent(this, ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_METADATA_TASK_ENABLED, null, null));
 
         //the cache task should have been started 1 times
         Mockito.verify(downloadMetaDataTimer, Mockito.times(1)).schedule(Matchers.argThat(new Matcher<TimerTask>() {
@@ -236,13 +236,13 @@ public class JdbcQueryManagerImplTasksTest {
     @Test
     public void propertyChangeTestCacheMetaDataTaskEnableTrue() throws NoSuchFieldException, IllegalAccessException {
         MockConfig mockConfig = new MockConfig(CollectionUtils.MapBuilder.<String, String>builder()
-                .put(ServerConfigParams.PARAM_JDBC_QUERY_CACHE_METADATA_TASK_ENABLED, "true")
-                .put(ServerConfigParams.PARAM_JDBC_QUERY_CACHE_REFRESH_INTERVAL, "123")
-                .put(ServerConfigParams.PARAM_JDBC_QUERY_CACHE_CLEANUP_REFRESH_INTERVAL, "456")
-                .put(ServerConfigParams.PARAM_JDBC_QUERY_CACHE_MIN_CACHE_CONCURRENCY, "789").map());
+                .put(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_METADATA_TASK_ENABLED, "true")
+                .put(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_REFRESH_INTERVAL, "123")
+                .put(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_CLEANUP_REFRESH_INTERVAL, "456")
+                .put(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_MIN_CACHE_CONCURRENCY, "789").map());
         jdbcQueryingManagerImpl = createJdbcQueryingManagerImpl(mockConfig);
 
-        jdbcQueryingManagerImpl.propertyChange(new PropertyChangeEvent(this, ServerConfigParams.PARAM_JDBC_QUERY_CACHE_METADATA_TASK_ENABLED, null, null));
+        jdbcQueryingManagerImpl.propertyChange(new PropertyChangeEvent(this, ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_METADATA_TASK_ENABLED, null, null));
 
         //verify that the download task was started
         Mockito.verify(downloadMetaDataTimer).schedule(Matchers.argThat(new Matcher<TimerTask>() {
@@ -261,7 +261,7 @@ public class JdbcQueryManagerImplTasksTest {
         spyCacheTasks(jdbcQueryingManagerImpl);
 
         //start the cache task
-        jdbcQueryingManagerImpl.propertyChange(new PropertyChangeEvent(this, ServerConfigParams.PARAM_JDBC_QUERY_CACHE_METADATA_TASK_ENABLED, null, null));
+        jdbcQueryingManagerImpl.propertyChange(new PropertyChangeEvent(this, ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_METADATA_TASK_ENABLED, null, null));
 
         //the cache task should have been started 3 times
         Mockito.verify(downloadMetaDataTimer, Mockito.times(3)).schedule(Matchers.argThat(new Matcher<TimerTask>() {
@@ -292,14 +292,14 @@ public class JdbcQueryManagerImplTasksTest {
     @Test
     public void propertyChangeTestCacheCleanUpInterval() throws NoSuchFieldException, IllegalAccessException {
         Map<String, String> properties = CollectionUtils.MapBuilder.<String, String>builder()
-                .put(ServerConfigParams.PARAM_JDBC_QUERY_CACHE_METADATA_TASK_ENABLED, "true")
-                .put(ServerConfigParams.PARAM_JDBC_QUERY_CACHE_REFRESH_INTERVAL, "123")
-                .put(ServerConfigParams.PARAM_JDBC_QUERY_CACHE_CLEANUP_REFRESH_INTERVAL, "456")
-                .put(ServerConfigParams.PARAM_JDBC_QUERY_CACHE_MIN_CACHE_CONCURRENCY, "789").map();
+                .put(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_METADATA_TASK_ENABLED, "true")
+                .put(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_REFRESH_INTERVAL, "123")
+                .put(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_CLEANUP_REFRESH_INTERVAL, "456")
+                .put(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_MIN_CACHE_CONCURRENCY, "789").map();
         MockConfig mockConfig = new MockConfig(properties);
         jdbcQueryingManagerImpl = createJdbcQueryingManagerImpl(mockConfig);
 
-        jdbcQueryingManagerImpl.propertyChange(new PropertyChangeEvent(this, ServerConfigParams.PARAM_JDBC_QUERY_CACHE_CLEANUP_REFRESH_INTERVAL, null, null));
+        jdbcQueryingManagerImpl.propertyChange(new PropertyChangeEvent(this, ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_CLEANUP_REFRESH_INTERVAL, null, null));
 
         //verify that the cleanup task was started
         Mockito.verify(cleanUpTimer).schedule(Matchers.argThat(new Matcher<TimerTask>() {
@@ -314,9 +314,9 @@ public class JdbcQueryManagerImplTasksTest {
 
         spyCacheTasks(jdbcQueryingManagerImpl);
 
-        properties.put(ServerConfigParams.PARAM_JDBC_QUERY_CACHE_CLEANUP_REFRESH_INTERVAL, "888");
+        properties.put(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_CLEANUP_REFRESH_INTERVAL, "888");
         //trigger a cache cleanup refresh interval event
-        jdbcQueryingManagerImpl.propertyChange(new PropertyChangeEvent(this, ServerConfigParams.PARAM_JDBC_QUERY_CACHE_CLEANUP_REFRESH_INTERVAL, null, null));
+        jdbcQueryingManagerImpl.propertyChange(new PropertyChangeEvent(this, ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_CLEANUP_REFRESH_INTERVAL, null, null));
 
         //the cache task should have been started 1 times
         Mockito.verify(cleanUpTimer, Mockito.times(1)).schedule(Matchers.argThat(new Matcher<TimerTask>() {
