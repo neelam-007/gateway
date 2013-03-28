@@ -7,6 +7,7 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.test.BugId;
+import com.l7tech.util.HexUtils;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
@@ -1068,18 +1069,15 @@ public class ServerJdbcQueryAssertionOracleIntegrationTests extends ServerJdbcQu
     }
 
     /**
-     * Cannot pass a string to a function that takes in a blob
-     *
-     * @throws PolicyAssertionException
-     * @throws IOException
+     * blob parameter takes hex format string
      */
     @Test
-    @Ignore
     public void testSendRetrieveBLOBFunctionPassString() throws PolicyAssertionException, IOException {
         try {
             createDropItem(CreateSendRetrieveBLOBFunction);
             JdbcQueryAssertion assertion = createJdbcQueryAssertion();
-            getContextVariables().put("var_in", "abc");
+            String hexString = "0123456789abcdef";
+            getContextVariables().put("var_in", hexString);
             assertion.setSqlQuery("func " + SendRetrieveBLOBFunctionName + " ${var_in}");
             assertion.setConvertVariablesToStrings(false);
             ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, getContext());
@@ -1092,7 +1090,7 @@ public class ServerJdbcQueryAssertionOracleIntegrationTests extends ServerJdbcQu
 
             byte[] returnString = (byte[]) ((Object[]) getContextVariables().get("jdbcquery.return_value"))[0];
 
-            Assert.assertArrayEquals("abc".getBytes(), returnString);
+            Assert.assertArrayEquals(HexUtils.unHexDump(hexString), returnString);
 
         } finally {
             createDropItem(DropSendRetrieveBLOBFunction);
@@ -1126,14 +1124,7 @@ public class ServerJdbcQueryAssertionOracleIntegrationTests extends ServerJdbcQu
         }
     }
 
-    /**
-     * Oracle is not able to return blobs greater then 32kB
-     *
-     * @throws PolicyAssertionException
-     * @throws IOException
-     */
     @Test
-    @Ignore
     public void testSendRetrieveBLOBFunctionLargeBlob() throws PolicyAssertionException, IOException {
         try {
             createDropItem(CreateSendRetrieveBLOBFunction);
@@ -1160,14 +1151,7 @@ public class ServerJdbcQueryAssertionOracleIntegrationTests extends ServerJdbcQu
         }
     }
 
-    /**
-     * Oracle is not able to return blobs greater then 32kB
-     *
-     * @throws PolicyAssertionException
-     * @throws IOException
-     */
     @Test
-    @Ignore
     public void testSendRetrieveBLOBFunctionLargeBlob5MB() throws PolicyAssertionException, IOException {
         try {
             createDropItem(CreateSendRetrieveBLOBFunction);
@@ -1221,8 +1205,11 @@ public class ServerJdbcQueryAssertionOracleIntegrationTests extends ServerJdbcQu
                     "function " + SendRetrieveBLOBFunctionName + "(var_in in BLOB) \n" +
                     "return BLOB\n" +
                     "is\n" +
+                    "var_out BLOB;\n"+
                     "BEGIN\n" +
-                    "    return var_in;\n" +
+                    "    DBMS_LOB.CREATETEMPORARY(var_out, TRUE);\n" +
+                    "    DBMS_LOB.COPY (var_out,var_in,dbms_lob.lobmaxsize);\n" +
+                    "    return var_out;\n" +
                     "END;";
     public static final String DropSendRetrieveBLOBFunction = "DROP FUNCTION \"" + SendRetrieveBLOBFunctionName.toUpperCase() + "\"";
 

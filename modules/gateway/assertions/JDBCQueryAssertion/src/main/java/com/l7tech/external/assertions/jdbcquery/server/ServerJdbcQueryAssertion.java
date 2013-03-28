@@ -204,15 +204,12 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
                 if (value != null) {
                     if (value instanceof byte[]) {
                         colType = "type=\"java.lang.byte[]\"";
-                        StringBuilder sb = new StringBuilder();
-                        for (byte b : (byte[]) value) {
-                            sb.append(String.format("%02X ", b));
-                        }
-                        value = sb.toString();
+                        value = getReadableHexString((byte[]) value);
                     } else if (value instanceof Clob) {
                         value = getClobStringValue((Clob) value);
                     } else if (value instanceof Blob) {
-                        value = getBlobValue((Blob) value);
+                        colType = "type=\"java.lang.byte[]\"";
+                        value = getReadableHexString(getBlobValue((Blob) value));
                     } else {
                         colType = "type=\"" + value.getClass().getName() + "\"";
                     }
@@ -234,6 +231,19 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
         } else {
             xmlResult.append(records);
         }
+    }
+
+    /**
+     * Converts byte array to readable hexidecimal string. Ie: "12 34 56 78 9A BC DE F0"
+     * @param byteArray
+     * @return
+     */
+    static String getReadableHexString(byte[] byteArray) {
+        StringBuilder sb = new StringBuilder();
+        for (byte b : byteArray) {
+            sb.append(String.format("%02X ", b));
+        }
+        return  sb.toString();
     }
 
     /**
