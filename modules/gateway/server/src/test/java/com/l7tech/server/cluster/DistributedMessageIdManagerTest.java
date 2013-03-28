@@ -16,7 +16,6 @@ import org.springframework.orm.hibernate3.HibernateTemplate;
 public class DistributedMessageIdManagerTest {
 
     private DistributedMessageIdManager distributedMessageIdManager;
-    private TestTimeSource timeSource = new TestTimeSource();
 
     @Before
     public void setUp() throws Exception {
@@ -42,6 +41,7 @@ public class DistributedMessageIdManagerTest {
     @Test(expected = MessageIdManager.DuplicateMessageIdException.class)
     public void testMessageIdDuplicate() throws MessageIdManager.MessageIdCheckException {
         String key = "key1";
+        TestTimeSource timeSource = new TestTimeSource();
         timeSource.advanceByMillis(1000);
         distributedMessageIdManager.assertMessageIdIsUnique(new MessageId(key, timeSource.getCurrentTimeMillis()));
         distributedMessageIdManager.assertMessageIdIsUnique(new MessageId(key,timeSource.getCurrentTimeMillis()));
@@ -50,6 +50,7 @@ public class DistributedMessageIdManagerTest {
     @Test
     public void testMessageIdExpired() throws MessageIdManager.MessageIdCheckException {
         String key = "key1";
+        TestTimeSource timeSource = new TestTimeSource();
         timeSource.advanceByMillis(-1000);
         distributedMessageIdManager.assertMessageIdIsUnique(new MessageId(key, timeSource.getCurrentTimeMillis()));
         distributedMessageIdManager.assertMessageIdIsUnique(new MessageId(key,timeSource.getCurrentTimeMillis()));
