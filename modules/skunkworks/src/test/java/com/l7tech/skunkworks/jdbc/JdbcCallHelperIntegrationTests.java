@@ -80,9 +80,9 @@ public class JdbcCallHelperIntegrationTests extends JdbcCallHelperIntegrationAbs
 
             SqlRowSet rtn = resultList.get(0);
             rtn.next();
-            byte[] value = (byte[]) rtn.getObject("OUTBLOB");
+            Blob value = (Blob) rtn.getObject("OUTBLOB");
 
-            Assert.assertTrue(value.length == length * 1024);
+            Assert.assertTrue(value.length() == length * 1024);
         } finally {
             createDropItem(DropBlobOutProcedure);
         }
@@ -261,8 +261,8 @@ public class JdbcCallHelperIntegrationTests extends JdbcCallHelperIntegrationAbs
                     "end ;";
     public static final int[] metadataTypes = new int[]{-99, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.CHAR, Types.CHAR, Types.DECIMAL
             , Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.LONGVARCHAR
-            , Types.TIMESTAMP, Types.TIMESTAMP, Types.VARBINARY, Types.LONGVARCHAR
-            , Types.CLOB, Types.LONGVARBINARY, Types.LONGVARBINARY, Types.VARCHAR, Types.VARCHAR};
+            , Types.TIMESTAMP, Types.TIMESTAMP, Types.VARBINARY, Types.CLOB
+            , Types.CLOB, Types.BLOB, Types.LONGVARBINARY, Types.VARCHAR, Types.VARCHAR};
     public static final int[] parameterTypes = new int[]{DatabaseMetaData.procedureColumnUnknown,
             DatabaseMetaData.procedureColumnIn, DatabaseMetaData.procedureColumnOut, DatabaseMetaData.procedureColumnInOut,
             DatabaseMetaData.procedureColumnIn, DatabaseMetaData.procedureColumnIn, DatabaseMetaData.procedureColumnIn,
