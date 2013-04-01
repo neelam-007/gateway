@@ -492,7 +492,7 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager, PropertyCha
         if (currentTask != null) {
             currentTask.cancel();
             currentCacheTask.set(null);
-            logger.info("Cancelled JDBC Query meta data cache task");
+            logger.info("Stopped JDBC Query meta data cache task");
         }
         stopJDBCMetadataRetrievalThreadPoolIfRunning();
     }
@@ -536,7 +536,7 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager, PropertyCha
         if (currentTask != null) {
             currentTask.cancel();
             currentCleanUpTask.set(null);
-            logger.info("Cancelled JDBC Query meta data cache clean up task");
+            logger.info("Stopped JDBC Query meta data cache clean up task");
         }
     }
 
@@ -748,7 +748,7 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager, PropertyCha
             for (final CachedMetaDataKey key : keysToMaintain) {
                 if (isCancelled) {
                     // eagerly cancel
-                    logger.info("JDBC Query meta data cache task has been cancelled.");
+                    logger.info("JDBC Query meta data cache task has been stopped.");
                     break;
                 }
                 final String connectionName = key.connectionName;
