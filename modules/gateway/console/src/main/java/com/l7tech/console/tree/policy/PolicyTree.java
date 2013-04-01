@@ -950,9 +950,14 @@ public class PolicyTree extends JTree implements DragSourceListener,
     @Override
     public void dragGestureRecognized(DragGestureEvent dge) {
         Point ptDragOrigin = dge.getDragOrigin();
-        //TreePath path = getPathForLocation(ptDragOrigin.x, ptDragOrigin.y);
         TreePath[] paths = trimTreePaths(getSelectionPaths());
         if (!canStartDrag(paths)) {
+            return;
+        }
+        //Make sure that the drag origin is a valid tree path. We do not want to allow dragging from the expand collapse +-
+        //This fixes [SSM-4150]
+        TreePath path = getPathForLocation(ptDragOrigin.x, ptDragOrigin.y);
+        if (path == null) {
             return;
         }
 
