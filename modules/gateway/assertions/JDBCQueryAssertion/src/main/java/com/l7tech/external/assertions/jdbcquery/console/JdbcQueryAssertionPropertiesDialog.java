@@ -271,16 +271,6 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
 
     }
 
-    private boolean isMaybeOracle(final String connName) {
-        if (connToDriverMap.containsKey(connName)) {
-            final String driverClass = connToDriverMap.get(connName);
-            return driverClass.contains("oracle");
-        }
-
-        // if we don't know about the connection and a variable is entered, then we need to allow it
-        return Syntax.isAnyVariableReferenced(connName);
-    }
-
     private void viewToModel(final JdbcQueryAssertion assertion) {
         assertion.setConnectionName(( connectionComboBox.getSelectedItem()).toString());
         assertion.setSqlQuery(sqlQueryTextArea.getText());
@@ -660,7 +650,7 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
         final String connName = connectionComboBox.getSelectedItem().toString();
         final String query = sqlQueryTextArea.getText().trim();
 
-        if (isMaybeOracle(connName) && JdbcUtil.isStoredProcedure(query)) {
+        if (isSchemaCapable(connName) && JdbcUtil.isStoredProcedure(query)) {
             String procedureName = JdbcUtil.getName(query);
             if (!procedureName.isEmpty()) {
                 // if there are no dots e.g. -1 or a single dot, then query is valid. If there are 2 dots then it's invalid.
