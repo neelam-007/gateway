@@ -280,6 +280,10 @@ public class SshRouteAssertion extends RoutingAssertion implements UsesVariables
         isCredentialsSourceSpecified = credentialsSourceSpecified;
     }
 
+    /**
+     * @deprecated Previous versions of this assertion only allowed either upload or download. The Goatfish version
+     * allows many different operations so this is deprecated.
+     */
     @Deprecated
     public void setDownloadCopyMethod(boolean downloadCopyMethod) {
         commandType = downloadCopyMethod ? CommandKnob.CommandType.GET : CommandKnob.CommandType.PUT;

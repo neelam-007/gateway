@@ -203,11 +203,8 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
         validators.addRule(new InputValidator.ComponentValidationRule(passwordField) {
             @Override
             public String getValidationError() {
-                if(specifyUserCredentialsRadioButton.isSelected() && passwordRadioButton.isSelected()) {
-                    if (passwordField == null || passwordField.getItemCount() == 0)
-                    {
-                        return getResourceString("passwordEmptyError");
-                    }
+                if(specifyUserCredentialsRadioButton.isSelected() && passwordRadioButton.isSelected() && (passwordField == null || passwordField.getItemCount() == 0)) {
+                    return getResourceString("passwordEmptyError");
                 }
                 return null;
             }
@@ -216,11 +213,8 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
         validators.addRule(new InputValidator.ComponentValidationRule(privateKeyField) {
             @Override
             public String getValidationError() {
-                if(specifyUserCredentialsRadioButton.isSelected() && privateKeyRadioButton.isSelected()) {
-                    if (privateKeyField == null || privateKeyField.getItemCount() == 0)
-                    {
-                        return getResourceString("privateKeyEmptyError");
-                    }
+                if(specifyUserCredentialsRadioButton.isSelected() && privateKeyRadioButton.isSelected() && (privateKeyField == null || privateKeyField.getItemCount() == 0)) {
+                    return getResourceString("privateKeyEmptyError");
                 }
                 return null;
             }
@@ -230,11 +224,8 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
             @Override
             public String getValidationError() {
 
-                if(validateServerSHostCheckBox.isSelected()) {
-                    if (hostKey == null || hostKey.equalsIgnoreCase(""))
-                    {
-                        return getResourceString("hostKeyEmptyError");
-                    }
+                if(validateServerSHostCheckBox.isSelected() && (hostKey == null || hostKey.equalsIgnoreCase(""))) {
+                    return getResourceString("hostKeyEmptyError");
                 }
                 return null;
             }
@@ -245,11 +236,8 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
             @Override
             public String getValidationError() {
 
-                if(isCommandTypeFromVariable()) {
-                    if (!commandVariableNameTargetVariablePanel.isEntryValid())
-                    {
-                        return getResourceString("commandVariableNameError");
-                    }
+                if(isCommandTypeFromVariable() && (!commandVariableNameTargetVariablePanel.isEntryValid())) {
+                    return getResourceString("commandVariableNameError");
                 }
                 return null;
             }
@@ -260,11 +248,8 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
             @Override
             public String getValidationError() {
 
-                if(CommandKnob.CommandType.PUT.equals(getSelectedCommandType()) || CommandKnob.CommandType.GET.equals(getSelectedCommandType()) || isCommandTypeFromVariable()) {
-                    if (fileOffsetTextField.getText() == null || fileOffsetTextField.getText().isEmpty())
-                    {
-                        return getResourceString("fileOffsetError");
-                    }
+                if((CommandKnob.CommandType.PUT.equals(getSelectedCommandType()) || CommandKnob.CommandType.GET.equals(getSelectedCommandType()) || isCommandTypeFromVariable()) && (fileOffsetTextField.getText() == null || fileOffsetTextField.getText().isEmpty())) {
+                    return getResourceString("fileOffsetError");
                 }
                 return null;
             }
@@ -275,11 +260,8 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
             @Override
             public String getValidationError() {
 
-                if(CommandKnob.CommandType.GET.equals(getSelectedCommandType()) || isCommandTypeFromVariable()) {
-                    if (fileLengthTextField.getText() == null || fileLengthTextField.getText().isEmpty())
-                    {
-                        return getResourceString("fileLengthError");
-                    }
+                if((CommandKnob.CommandType.GET.equals(getSelectedCommandType()) || isCommandTypeFromVariable()) && (fileLengthTextField.getText() == null || fileLengthTextField.getText().isEmpty())) {
+                    return getResourceString("fileLengthError");
                 }
                 return null;
             }
@@ -290,11 +272,8 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
             @Override
             public String getValidationError() {
 
-                if(CommandKnob.CommandType.MOVE.equals(getSelectedCommandType()) || isCommandTypeFromVariable()) {
-                    if (newFileNameTextField.getText() == null || newFileNameTextField.getText().isEmpty())
-                    {
-                        return getResourceString("newFileNameError");
-                    }
+                if((CommandKnob.CommandType.MOVE.equals(getSelectedCommandType()) || isCommandTypeFromVariable()) && (newFileNameTextField.getText() == null || newFileNameTextField.getText().isEmpty())) {
+                    return getResourceString("newFileNameError");
                 }
                 return null;
             }
@@ -305,11 +284,8 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
             @Override
             public String getValidationError() {
 
-                if(setFileSizeToCheckBox.isSelected()) {
-                    if (!saveFileSizeContextVariable.isEntryValid())
-                    {
-                        return getResourceString("saveFileSizeContextVariableNameError");
-                    }
+                if(setFileSizeToCheckBox.isSelected() && !saveFileSizeContextVariable.isEntryValid()) {
+                    return getResourceString("saveFileSizeContextVariableNameError");
                 }
                 return null;
             }
