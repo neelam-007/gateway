@@ -177,7 +177,7 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
         selectIconButton.addActionListener(new IconActionListener());
 
         inputsTableModel = TableUtil.configureTable(inputsTable,
-                column("GUI", 30, 30, 50, argumentGuiPromptExtractor, Boolean.class),
+                column("GUI", 30, 30, 50, argumentGuiPromptExtractor, String.class),
                 column("Name", 30, 140, 99999, argumentNameExtractor),
                 column("Type", 30, 140, 99999, argumentTypeExtractor, DataType.class),
                 column("Label", 30, 140, 99999, argumentGuiLabelExtractor));
@@ -670,7 +670,12 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
         }
     }
 
-    private static final Functions.Unary<Boolean, EncapsulatedAssertionArgumentDescriptor> argumentGuiPromptExtractor = Functions.<Boolean, EncapsulatedAssertionArgumentDescriptor>propertyTransform(EncapsulatedAssertionArgumentDescriptor.class, "guiPrompt");
+    private static final Functions.Unary<String, EncapsulatedAssertionArgumentDescriptor> argumentGuiPromptExtractor = new Functions.Unary<String, EncapsulatedAssertionArgumentDescriptor>() {
+        @Override
+        public String call(EncapsulatedAssertionArgumentDescriptor conf) {
+            return conf.isGuiPrompt() ? "   \u2713" : ""; // U+2713 'CHECK MARK'
+        }
+    };
     private static final Functions.Unary<String, EncapsulatedAssertionArgumentDescriptor> argumentNameExtractor = propertyTransform(EncapsulatedAssertionArgumentDescriptor.class, "argumentName");
     private static final Functions.Unary<DataType, EncapsulatedAssertionArgumentDescriptor> argumentTypeExtractor = Functions.<DataType, EncapsulatedAssertionArgumentDescriptor>propertyTransform(EncapsulatedAssertionArgumentDescriptor.class, "argumentType");
     private static final Functions.Unary<Object, EncapsulatedAssertionArgumentDescriptor> argumentGuiLabelExtractor = propertyTransform(EncapsulatedAssertionArgumentDescriptor.class, "guiLabel");
