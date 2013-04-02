@@ -18,6 +18,7 @@ import com.l7tech.gui.TrustCertificateDialog;
 import com.l7tech.console.util.*;
 import com.l7tech.objectmodel.InvalidPasswordException;
 
+import javax.net.ssl.SSLHandshakeException;
 import javax.security.auth.login.LoginException;
 import javax.security.auth.login.AccountLockedException;
 import javax.swing.*;
@@ -1020,6 +1021,9 @@ public class LogonDialog extends JDialog {
         } else if (ExceptionUtils.causedBy(cause, MalformedURLException.class) || ExceptionUtils.causedBy(cause, NumberFormatException.class)) {
             String msg = resources.getString("logon.invalid.service.url");
             JOptionPane.showMessageDialog(parentFrame, msg, "Warning", JOptionPane.WARNING_MESSAGE);
+        } else if (cause instanceof SSLHandshakeException) {
+            log.log(Level.WARNING, "Handshake failure: " + cause.getMessage(), ExceptionUtils.getDebugException(e));
+            JOptionPane.showMessageDialog(parentFrame, resources.getString("logon.handshake.error"), "Error", JOptionPane.ERROR_MESSAGE);
         } else if (cause instanceof IOException) {
             log.log(Level.WARNING, "Could not connect to admin service server", e);
             String msg = MessageFormat.format(resources.getString("service.unavailable.error"), host);
