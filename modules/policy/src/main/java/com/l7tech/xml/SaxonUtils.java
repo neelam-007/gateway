@@ -28,6 +28,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
 
 /**
@@ -58,6 +59,7 @@ public class SaxonUtils {
 
     private static final Configuration configuration;
     private static final Processor processor;
+    private static final AtomicBoolean enableBytecode = new AtomicBoolean(true);
 
     static {
         // Activate licensed configuration and s9api processor
@@ -88,12 +90,25 @@ public class SaxonUtils {
     }
 
     /**
+     * Create a new Saxon Configuration instance that is licensed.
+     *
+     * @return the new configuration.  Never null.
+     */
+    public static Configuration newConfiguration() {
+        EnterpriseConfiguration conf = new EnterpriseConfiguration();
+        activate(conf);
+        conf.setConfigurationProperty(FeatureKeys.GENERATE_BYTE_CODE, enableBytecode.get());
+        return conf;
+    }
+
+    /**
      * Can be used to disable bytecode generation in an environment where it would not be safe to attempt to do so
      * (such as on the applet).
      *
      * @param enable false to disable bytecode generation in the shared Saxon configuration.
      */
     public static void setEnableByteCodeGeneration(boolean enable) {
+        enableBytecode.set(enable);
         getConfiguration().setConfigurationProperty(FeatureKeys.GENERATE_BYTE_CODE, enable);
     }
 
@@ -110,7 +125,7 @@ public class SaxonUtils {
         // Share global configuration for now
         final Configuration config = useSharedConfiguration
                 ? getConfiguration()
-                : Configuration.newConfiguration();
+                : newConfiguration();
         transfactory.setAttribute(FeatureKeys.CONFIGURATION, config);
 
         // disable calls to reflexive Java extension functions, system property access, relative result-document URIs, and XSLT extension instructions
