@@ -80,7 +80,7 @@ public class SsgFirewallManagerDialog extends JDialog {
                 else {
                     DialogDisplayer.showSafeConfirmDialog(
                             contentPane,
-                            "<html><center><p>Warning: You are about to clone a rule with advanced configurations.  Mis-configurations may prevent access to the Gateway.</p>" +
+                            "<html><center><p>WARNING: You are about to clone a rule with advanced configurations.  Misconfigurations may prevent access to the Gateway.</p>" +
                                     "<p>Do you wish to continue?</p></center></html>",
                             "Confirm Action",
                             JOptionPane.OK_CANCEL_OPTION,
@@ -239,7 +239,7 @@ public class SsgFirewallManagerDialog extends JDialog {
     private void confirmAdvanceConfiguration(final SsgFirewallRule rule){
         DialogDisplayer.showSafeConfirmDialog(
                 contentPane,
-                "<html><center><p>Warning: You are about to access the advance settings.  Mis-configurations may prevent access to the Gateway</p>" +
+                "<html><center><p>WARNING: You are about to access the advanced settings. Misconfigurations may prevent access to the Gateway.</p>" +
                         "<p>Do you wish to continue?</p></center></html>",
                 "Confirm Action",
                 JOptionPane.OK_CANCEL_OPTION,
@@ -359,7 +359,7 @@ public class SsgFirewallManagerDialog extends JDialog {
             public void actionPerformed(final ActionEvent e) {
                 DialogDisplayer.showSafeConfirmDialog(
                         contentPane,
-                        "<html><center><p>Warning: You are about to remove all existing firewall rules.</p>" +
+                        "<html><center><p>WARNING: You are about to remove all existing firewall rules.</p>" +
                                 "<p>Do you wish to continue?</p></center></html>",
                         "Confirm Firewall Deletion",
                         JOptionPane.OK_CANCEL_OPTION,
