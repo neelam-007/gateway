@@ -130,6 +130,9 @@ public class ServerHardcodedResponseAssertion extends AbstractServerAssertion<Ha
                 final HttpServletResponse hresponse = hsrk.getHttpServletResponse();
 
                 try {
+                    //SSG-6506: ensure the request message body is made available for auditing
+                    request.getMimeKnob().getEntireMessageBodyAsInputStream();
+
                     hresponse.setStatus(status);
                     if (status != HttpConstants.STATUS_NO_CONTENT) {
                         hresponse.setContentType(contentType.getFullValue());
