@@ -2,13 +2,18 @@ package com.l7tech.console;
 
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gui.util.HelpUtil;
+import com.l7tech.security.prov.ProviderUtil;
 import com.l7tech.util.ConfigFactory;
+import com.l7tech.util.Pair;
 import com.l7tech.util.SyspropUtil;
 
 import javax.swing.*;
 import java.io.File;
 import java.security.Provider;
 import java.security.Security;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.logging.Logger;
 
 /**
@@ -16,6 +21,11 @@ import java.util.logging.Logger;
  */
 public class SsmApplicationHeavy extends SsmApplication  {
     private final Logger log = Logger.getLogger(getClass().getName());
+    private static final String PROP_DISABLE_BLACKLISTED_SERVICES = "com.l7tech.security.prov.rsa.disableServices";
+    private static final boolean DISABLE_BLACKLISTED_SERVICES = ConfigFactory.getBooleanProperty( PROP_DISABLE_BLACKLISTED_SERVICES, true );
+    private static final Collection<Pair<String,String>> SERVICE_BLACKLIST = Collections.unmodifiableCollection(Arrays.asList(
+            new Pair<String, String>("CertificateFactory", "X.509")
+    ));
 
     //the property name for the current applications home directory. If not set, this is defaulted to null by code
     // that uses it
@@ -115,12 +125,16 @@ public class SsmApplicationHeavy extends SsmApplication  {
     private void installAdditionalSecurityProviders() {
 
         String cj = SyspropUtil.getString("com.l7tech.console.security.cryptoj.install", "first").trim().toLowerCase();
+        final Provider jsafeProvider = getJsafeProvider();
+        if (DISABLE_BLACKLISTED_SERVICES) {
+            ProviderUtil.configureProvider(SERVICE_BLACKLIST, jsafeProvider);
+        }
         if ("first".equals(cj)) {
             log.info("Registering Crypto-J as most-preferred crypto provider");
-            Security.insertProviderAt(getJsafeProvider(), 1);
+            Security.insertProviderAt(jsafeProvider, 1);
         } else if ("last".equals(cj) || Boolean.valueOf(cj)) {
             log.info("Registering Crypto-J as additional crypto provider");
-            Security.addProvider(getJsafeProvider());
+            Security.addProvider(jsafeProvider);
         }
     }
 

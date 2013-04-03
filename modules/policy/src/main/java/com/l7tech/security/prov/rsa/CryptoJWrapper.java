@@ -1,5 +1,6 @@
 package com.l7tech.security.prov.rsa;
 
+import com.l7tech.security.prov.ProviderUtil;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions.Unary;
@@ -80,7 +81,7 @@ class CryptoJWrapper {
                 : makeJarClassLoader(libPath);
         this.provider = (Provider)cl.loadClass(CLASSNAME_PROVIDER).newInstance();
         if ( DISABLE_BLACKLISTED_SERVICES ) {
-            configureProvider(provider);
+            ProviderUtil.configureProvider(SERVICE_BLACKLIST, provider);
         }
         this.cryptoj = cl.loadClass(CLASSNAME_CRYPTOJ);
         this.debugReset = findDebugResetMethod();
@@ -180,29 +181,6 @@ class CryptoJWrapper {
             throw new NoSuchAlgorithmException("Galous/Counter Mode is not available: " + ExceptionUtils.getMessage(e), e);
         } catch (InvocationTargetException e) {
             throw new NoSuchAlgorithmException("Galous/Counter Mode is not available: " + ExceptionUtils.getMessage(e), e);
-        }
-    }
-
-    private void configureProvider( final Provider provider ) {
-        try {
-            final Method method = Provider.class.getDeclaredMethod( "removeService", Provider.Service.class );
-            method.setAccessible( true );
-
-            for ( Pair<String,String> serviceDesc : SERVICE_BLACKLIST ) {
-                final String type = serviceDesc.left;
-                final String algorithm = serviceDesc.right;
-                final Provider.Service service = provider.getService( type, algorithm );
-                if ( service != null ) { // may be null in some modes
-                    logger.fine( "Removing service '"+type+"."+algorithm+"'." );
-                    method.invoke( provider, service );
-                } 
-            }
-        } catch (InvocationTargetException e) {
-            logger.log( Level.WARNING, "Error configuring services '"+ ExceptionUtils.getMessage(e) +"'.", ExceptionUtils.getDebugException(e) );
-        } catch (NoSuchMethodException e) {
-            logger.log( Level.WARNING, "Error configuring services '"+ ExceptionUtils.getMessage(e) +"'.", ExceptionUtils.getDebugException(e) );
-        } catch (IllegalAccessException e) {
-            logger.log( Level.WARNING, "Error configuring services '"+ ExceptionUtils.getMessage(e) +"'.", ExceptionUtils.getDebugException(e) );  
         }
     }
 
