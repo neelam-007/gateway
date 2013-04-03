@@ -5,10 +5,7 @@ import com.l7tech.util.ExceptionUtils;
 
 import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -47,11 +44,20 @@ public class KeyUsageUtils {
     private static final Logger logger = Logger.getLogger( KeyUsageUtils.class.getName() );
 
     private static KeyUsagePolicy makeRsaSslServerKeyUsagePolicy() {
+        // Key usage permits
         final Map<KeyUsageActivity, List<KeyUsagePermitRule>> kuPermits = new HashMap<KeyUsageActivity, List<KeyUsagePermitRule>>();
         final KeyUsagePermitRule permitRule = new KeyUsagePermitRule(
                 KeyUsageActivity.sslServerRemote,
                 CertUtils.KEY_USAGE_BITS_BY_NAME.get("keyEncipherment"));
         kuPermits.put(KeyUsageActivity.sslServerRemote, Collections.singletonList( permitRule ));
-        return KeyUsagePolicy.fromRules(null, kuPermits, null);
+
+        // Extended key usage permits
+        Map<KeyUsageActivity, List<KeyUsagePermitRule>> ekuPermits = new HashMap<KeyUsageActivity, List<KeyUsagePermitRule>>();
+        ekuPermits.put(KeyUsageActivity.sslServerRemote, Arrays.asList(
+            new KeyUsagePermitRule(KeyUsageActivity.sslServerRemote, Collections.singletonList(CertUtils.KEY_PURPOSE_IDS_BY_NAME.get("anyExtendedKeyUsage"))),
+            new KeyUsagePermitRule(KeyUsageActivity.sslServerRemote, Collections.singletonList(CertUtils.KEY_PURPOSE_IDS_BY_NAME.get("id-kp-serverAuth")))
+        ));
+
+        return KeyUsagePolicy.fromRules(null, kuPermits, ekuPermits);
     }
 }
