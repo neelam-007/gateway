@@ -17,6 +17,7 @@ import com.l7tech.identity.*;
 import com.l7tech.identity.fed.FederatedUser;
 import com.l7tech.objectmodel.*;
 import static com.l7tech.objectmodel.EntityType.*;
+import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.FolderHeader;
 import com.l7tech.policy.Policy;
@@ -97,6 +98,11 @@ public final class EntityHeaderUtils {
             return new JmsEndpointHeader(endpoint.getId(), endpoint.getName(), endpoint.getDestinationName(), endpoint.getVersion(), endpoint.isMessageSource());
         } else if (e instanceof SsgActiveConnector ) {
             return new SsgActiveConnectorHeader( (SsgActiveConnector) e );
+        } else if (e instanceof EncapsulatedAssertionConfig) {
+            final EncapsulatedAssertionConfig config = (EncapsulatedAssertionConfig) e;
+            final GuidEntityHeader guidEntityHeader = new GuidEntityHeader(config.getGuid(), ENCAPSULATED_ASSERTION, config.getName(), null, config.getVersion());
+            guidEntityHeader.setGuid(config.getGuid());
+            return guidEntityHeader;
         } else if (e instanceof PersistentEntity) {
             PersistentEntity entity = (PersistentEntity) e;
             return new EntityHeader(entity.getOid(),
@@ -174,6 +180,9 @@ public final class EntityHeaderUtils {
             if (resourceEntryHeader.getResourceKey1()!=null) externalEntityHeader.setProperty("resourceKey1", resourceEntryHeader.getResourceKey1());
             if (resourceEntryHeader.getResourceKey2()!=null) externalEntityHeader.setProperty("resourceKey2", resourceEntryHeader.getResourceKey2());
             if (resourceEntryHeader.getResourceKey3()!=null) externalEntityHeader.setProperty("resourceKey3", resourceEntryHeader.getResourceKey3());
+        } else if(header instanceof GuidEntityHeader) {
+            final GuidEntityHeader guidEntityHeader = (GuidEntityHeader) header;
+            externalEntityHeader = new ExternalEntityHeader(guidEntityHeader.getGuid(), header.getType(), guidEntityHeader.getGuid(), header.getName(), header.getDescription(), header.getVersion());
         } else {
             externalEntityHeader = new ExternalEntityHeader(header.getStrId(), header);
         }
@@ -241,6 +250,11 @@ public final class EntityHeaderUtils {
 
             case VALUE_REFERENCE:
                 header = new ValueReferenceEntityHeader(eh);
+                break;
+
+            case ENCAPSULATED_ASSERTION:
+                header = new GuidEntityHeader(eh.getStrId(), eh.getType(), eh.getName(), eh.getDescription(), eh.getVersion());
+                ((GuidEntityHeader) header).setGuid(eh.getStrId());
                 break;
 
             default:

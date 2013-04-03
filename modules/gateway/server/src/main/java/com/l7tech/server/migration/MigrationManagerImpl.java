@@ -508,7 +508,11 @@ public class MigrationManagerImpl implements MigrationManager {
         for (ExternalEntityHeader header : metadata.getAllHeaders()) {
             if ( ! bundle.hasValueForHeader(header) && ! entitiesFromTarget.containsKey(header) &&
                  ! entitiesFromTarget.containsKey(metadata.getCopiedOrMapped(header)) ) {
-                errors.add("Entity not found for header: " + header);
+                if (header.getType() == EntityType.ENCAPSULATED_ASSERTION) {
+                    errors.add("Encapsulated Assertion not found for header: " + header + ". Please import the Encapsulated Assertion on the target prior to migrating.");
+                } else {
+                    errors.add("Entity not found for header: " + header);
+                }
             }
         }
 

@@ -2189,6 +2189,7 @@
                 <ref bean="sinkManager"/>
                 <ref bean="ssgActiveConnectorManager"/>
                 <ref bean="ssgFirewallRuleManager"/>
+                <ref bean="encapsulatedAssertionConfigManager"/>
             </list>
         </constructor-arg>
     </bean>

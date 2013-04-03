@@ -67,6 +67,7 @@ public class EncapsulatedAssertion extends Assertion implements UsesEntitiesAtDe
      * @return the EncapsulatedAssertionConfig that provides metadata and behavior for this assertion, or null if not currently available.
      */
     @Nullable
+    @Migration(dependency = false)
     public EncapsulatedAssertionConfig config() {
         return encapsulatedAssertionConfig;
     }
@@ -203,7 +204,11 @@ public class EncapsulatedAssertion extends Assertion implements UsesEntitiesAtDe
             this.parameters.putAll(parameters);
     }
 
+    /**
+     * Migration mapping not supported for EncapsulatedAssertionConfig (it should already exist on the target SSG).
+     */
     @Override
+    @Migration(export = false, mapName = MigrationMappingSelection.NONE)
     public EntityHeader[] getEntitiesUsed() {
         return configHeader.getGuid() == null
             ? new EntityHeader[0]
@@ -353,6 +358,7 @@ public class EncapsulatedAssertion extends Assertion implements UsesEntitiesAtDe
 
 
     @Override
+    @Migration(dependency = false)
     public EntityHeader[] getEntitiesUsedAtDesignTime() {
         return getEntitiesUsed();
     }

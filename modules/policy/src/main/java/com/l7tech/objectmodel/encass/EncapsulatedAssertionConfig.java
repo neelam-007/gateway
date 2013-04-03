@@ -91,10 +91,13 @@ public class EncapsulatedAssertionConfig extends NamedEntityImp {
 
     /**
      * Get the associated Policy entity that provides the runtime implementation for this encapsulated assertion.
+     *
+     * Migration of backing policy not supported. EncapsulatedAssertionConfigs and backing policies must be manually imported and exported via SSM.
+     *
      * @return the policy, or null if not set.
      */
     @Valid
-    @Migration(mapName = NONE, mapValue = NONE, resolver = PropertyResolver.Type.POLICY)
+    @Migration(dependency = false)
     @ManyToOne
     @JoinColumn(name = "policy_oid")
     @XmlElement (name = "Policy")
@@ -136,6 +139,7 @@ public class EncapsulatedAssertionConfig extends NamedEntityImp {
     @OneToMany(cascade=CascadeType.ALL, fetch=FetchType.EAGER, mappedBy="encapsulatedAssertionConfig", orphanRemoval=true)
     @XmlElementWrapper(name = "EncapsulatedAssertionArguments")
     @XmlElement(name = "EncapsulatedAssertionArgument")
+    @Migration(dependency = false)
     public Set<EncapsulatedAssertionArgumentDescriptor> getArgumentDescriptors() {
         return argumentDescriptors;
     }
@@ -154,6 +158,7 @@ public class EncapsulatedAssertionConfig extends NamedEntityImp {
     @OneToMany(cascade=CascadeType.ALL, fetch=FetchType.EAGER, mappedBy="encapsulatedAssertionConfig", orphanRemoval=true)
     @XmlElementWrapper(name = "EncapsulatedAssertionResults")
     @XmlElement(name = "EncapsulatedAssertionResult")
+    @Migration(dependency = false)
     public Set<EncapsulatedAssertionResultDescriptor> getResultDescriptors() {
         return resultDescriptors;
     }
@@ -257,6 +262,7 @@ public class EncapsulatedAssertionConfig extends NamedEntityImp {
      *
      * @return a List of argument descriptors, sorted by ordinal, with the variable name used as a tie-breaker.
      */
+    @Migration(dependency = false)
     public List<EncapsulatedAssertionArgumentDescriptor> sortedArguments() {
         return Functions.sort(getArgumentDescriptors(), new Comparator<EncapsulatedAssertionArgumentDescriptor>() {
             @Override
@@ -270,11 +276,13 @@ public class EncapsulatedAssertionConfig extends NamedEntityImp {
     }
 
     @Transient
+    @Migration(dependency = false)
     public EncapsulatedAssertionConfig getCopy() {
         return getCopy(false);
     }
 
     @Transient
+    @Migration(dependency = false)
     private EncapsulatedAssertionConfig getCopy(boolean readOnly) {
         //noinspection TryWithIdenticalCatches
         try {
@@ -314,6 +322,7 @@ public class EncapsulatedAssertionConfig extends NamedEntityImp {
     }
 
     @Transient
+    @Migration(dependency = false)
     public EncapsulatedAssertionConfig getReadOnlyCopy() {
         EncapsulatedAssertionConfig copy = getCopy(true);
         copy.setReadOnly();
