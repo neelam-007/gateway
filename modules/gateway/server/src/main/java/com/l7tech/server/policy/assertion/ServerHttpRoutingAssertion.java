@@ -506,8 +506,15 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
 
             final long contentLength;
             if (streamingMode) {
-                // Avoiding using reqMime.getContentLength() since this may require stashing
-                Long cl = getContentLengthFromHeaders(requestMessage);
+                final Long cl;
+                // SSG-6682 - We were incorrectly reporting the content length when the original request message was edited.
+                // cannot trust getContentLengthFromHeaders so use chunked encoding when we can. We have no choice but to trust it for http 1.0
+                if(GenericHttpRequestParams.HttpVersion.HTTP_VERSION_1_0.equals(getHttpVersion())){
+                    // Avoiding using reqMime.getContentLength() since this may require stashing
+                    cl = getContentLengthFromHeaders(requestMessage);
+                } else {
+                    cl = -1L;
+                }
                 // Use chunked encoding if declared length unavailable
                 contentLength = cl == null ? -1L : cl;
             } else {
@@ -571,12 +578,9 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             if ( !assertion.isUseKeepAlives()) {
                 routedRequestParams.setUseKeepAlives(false); // note that server config property is for NO Keep-Alives
             }
-            if (assertion.getHttpVersion() == null) {
-                if ( "1.0".equals( ConfigFactory.getProperty( "ioHttpVersion", null ) ) ) {
-                    routedRequestParams.setHttpVersion(GenericHttpRequestParams.HttpVersion.HTTP_VERSION_1_0);
-                }
-            } else {
-                routedRequestParams.setHttpVersion(assertion.getHttpVersion());
+            GenericHttpRequestParams.HttpVersion httpVersion = getHttpVersion();
+            if(httpVersion != null) {
+                routedRequestParams.setHttpVersion(httpVersion);
             }
 
             if ( assertion.isGzipEncodeDownstream() ) {
@@ -800,6 +804,15 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
         }
 
         return AssertionStatus.FAILED;
+    }
+
+    private GenericHttpRequestParams.HttpVersion getHttpVersion(){
+        if (assertion.getHttpVersion() == null) {
+            if ( "1.0".equals( ConfigFactory.getProperty( "ioHttpVersion", null ) ) ) {
+                return GenericHttpRequestParams.HttpVersion.HTTP_VERSION_1_0;
+            }
+        }
+        return assertion.getHttpVersion();
     }
 
     private static Long getContentLengthFromHeaders(Message message) {
