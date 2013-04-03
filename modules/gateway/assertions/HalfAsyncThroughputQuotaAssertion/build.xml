@@ -1,3 +1,0 @@
-<project name="HalfAsyncThroughputQuotaAssertion" default="compile">
-    <import file="../assertion-build.xml"/>
-</project>
