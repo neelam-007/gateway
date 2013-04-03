@@ -10,6 +10,7 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.server.ApplicationContexts;
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.TestLicenseManager;
 import com.l7tech.server.audit.AuditLookupPolicyEnforcementContext;
 import com.l7tech.server.audit.AuditSinkPolicyEnforcementContext;
@@ -22,6 +23,8 @@ import com.l7tech.server.util.SimpleSingletonBeanFactory;
 import com.l7tech.test.BugId;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.*;
+import org.apache.commons.lang.RandomStringUtils;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -29,12 +32,16 @@ import org.mockito.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.GenericApplicationContext;
+import org.springframework.jdbc.support.rowset.ResultSetWrappingSqlRowSet;
 import org.springframework.jdbc.support.rowset.SqlRowSet;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import java.sql.SQLException;
+import javax.sql.rowset.serial.SerialBlob;
+import javax.sql.rowset.serial.SerialClob;
+import java.sql.*;
 import java.util.*;
+import java.util.Date;
 
 import static org.junit.Assert.*;
 import static org.mockito.Matchers.*;
@@ -921,6 +928,190 @@ public class ServerJdbcQueryAssertionTest {
             }
             return true;
         }
+    }
+
+    /**
+     * Tests blob results from a function or a stored procedure.
+     * @throws Exception
+     */
+    @Test
+    public void testBlobResults() throws Exception {
+        final byte[] blobBytes = new byte[40 * 1024];
+        RandomUtil.nextBytes(blobBytes);
+
+        MockitoAnnotations.initMocks(this);
+        final AssertionRegistry assertionRegistry = new AssertionRegistry();
+        assertionRegistry.afterPropertiesSet();
+        serverPolicyFactory = new ServerPolicyFactory(new TestLicenseManager(), new MockInjector());
+        final Map propertiesMap = new HashMap<String, String>();
+        final MockConfig mockConfig = new MockConfig(propertiesMap);
+        GenericApplicationContext applicationContext = new GenericApplicationContext(new SimpleSingletonBeanFactory(new HashMap<String, Object>() {{
+            put("assertionRegistry", assertionRegistry);
+            put("policyFactory", serverPolicyFactory);
+            put("jdbcQueryingManager", jdbcQueryingManager);
+            put("jdbcConnectionManager", connectionManager);
+            put("serverConfig", mockConfig);
+        }}));
+        serverPolicyFactory.setApplicationContext(applicationContext);
+        assertion.setGenerateXmlResult(true);
+        assertion.setConnectionName("mockDb");
+
+        //test blob result
+        when(jdbcQueryingManager.performJdbcQuery(anyString(), anyString(), anyString(), anyInt(), anyInt(), anyList())).thenReturn(getMockStoredProcedureBlobResults(blobBytes));
+        assertion.setSqlQuery("func myTest");
+        ServerJdbcQueryAssertion sass = (ServerJdbcQueryAssertion) serverPolicyFactory.compilePolicy(assertion, false);
+        AssertionStatus status = sass.checkRequest(peCtx);
+        assertEquals(status, AssertionStatus.NONE);
+        Object[] bytesObj = (Object[]) peCtx.getVariable("jdbcQuery.bytes");
+        Assert.assertEquals(byte[].class, ((Object[]) peCtx.getVariable("jdbcQuery.bytes"))[0].getClass());
+        assertArrayEquals(blobBytes, (byte[]) bytesObj[0]);
+
+        // set blob size limit
+        propertiesMap.put(ServerConfigParams.PARAM_JDBC_QUERY_MAX_BLOB_SIZE_OUT, Long.toString(blobBytes.length-2));
+        assertion.setSqlQuery("func myTest");
+        sass = (ServerJdbcQueryAssertion) serverPolicyFactory.compilePolicy(assertion, false);
+        status = sass.checkRequest(peCtx);
+        assertEquals(status, AssertionStatus.FAILED);
+    }
+
+    private Object getMockStoredProcedureBlobResults(byte[] blobBytes) throws SQLException {
+
+        List<Map<String, Object>> row = new ArrayList<Map<String, Object>>();
+        Map<String, Object> column = new HashMap<String, Object>();
+        Blob blob = new SerialBlob(blobBytes);
+        column.put("bytes", blob);
+        row.add(column);
+
+        List<SqlRowSet> results = new ArrayList<>();
+        results.add(new ResultSetWrappingSqlRowSet(new MockResultSet(row)));
+        return results;
+    }
+
+    private Object getMockStoredProcedureByteArrayResults(byte[] blobBytes) throws SQLException {
+
+        List<Map<String, Object>> row = new ArrayList<Map<String, Object>>();
+        Map<String, Object> column = new HashMap<String, Object>();
+        column.put("bytes", blobBytes);
+        row.add(column);
+
+        List<SqlRowSet> results = new ArrayList<>();
+        results.add(new ResultSetWrappingSqlRowSet(new MockResultSet(row)));
+        return results;
+    }
+
+    /**
+     * Test that the generated XML result is the same for byte[] or Blob results from a function / stored procedure
+     * @throws Exception
+     */
+    @Test
+    public void testBlobByteArrayResults() throws Exception {
+        final byte[] blobBytes = new byte[]{0x63, 0x68, 0x61, 0x72, 0x64};
+
+        MockitoAnnotations.initMocks(this);
+        final AssertionRegistry assertionRegistry = new AssertionRegistry();
+        assertionRegistry.afterPropertiesSet();
+        serverPolicyFactory = new ServerPolicyFactory(new TestLicenseManager(), new MockInjector());
+        final Map propertiesMap = new HashMap<String, String>();
+        final MockConfig mockConfig = new MockConfig(propertiesMap);
+        GenericApplicationContext applicationContext = new GenericApplicationContext(new SimpleSingletonBeanFactory(new HashMap<String, Object>() {{
+            put("assertionRegistry", assertionRegistry);
+            put("policyFactory", serverPolicyFactory);
+            put("jdbcQueryingManager", jdbcQueryingManager);
+            put("jdbcConnectionManager", connectionManager);
+            put("serverConfig", mockConfig);
+        }}));
+        serverPolicyFactory.setApplicationContext(applicationContext);
+        assertion.setGenerateXmlResult(true);
+        assertion.setConnectionName("mockDb");
+
+        //get blob result
+        when(jdbcQueryingManager.performJdbcQuery(anyString(), anyString(), anyString(), anyInt(), anyInt(), anyList())).thenReturn(getMockStoredProcedureBlobResults(blobBytes));
+        assertion.setSqlQuery("func myTest");
+        ServerJdbcQueryAssertion sass = (ServerJdbcQueryAssertion) serverPolicyFactory.compilePolicy(assertion, false);
+        AssertionStatus status = sass.checkRequest(peCtx);
+        assertEquals(status, AssertionStatus.NONE);
+        String blobXmlResult = peCtx.getVariable("jdbcQuery.xmlResult").toString();
+        assertNotNull(blobXmlResult);
+        Object[] bytesObj = (Object[]) peCtx.getVariable("jdbcQuery.bytes");
+        Assert.assertEquals(byte[].class, ((Object[]) peCtx.getVariable("jdbcQuery.bytes"))[0].getClass());
+        assertArrayEquals(blobBytes, (byte[]) bytesObj[0]);
+
+        // get byte array result
+        when(jdbcQueryingManager.performJdbcQuery(anyString(), anyString(), anyString(), anyInt(), anyInt(), anyList())).thenReturn(getMockStoredProcedureByteArrayResults(blobBytes));
+        assertion.setSqlQuery("func myTest");
+        assertion.setVariablePrefix("jdbcQuery1");
+        sass = (ServerJdbcQueryAssertion) serverPolicyFactory.compilePolicy(assertion, false);
+        status = sass.checkRequest(peCtx);
+        assertEquals(status, AssertionStatus.NONE);
+        String byteArrayXmlResult = peCtx.getVariable("jdbcQuery1.xmlResult").toString();
+        assertNotNull(byteArrayXmlResult);
+        bytesObj = (Object[]) peCtx.getVariable("jdbcQuery1.bytes");
+        Assert.assertEquals(byte[].class, ((Object[]) peCtx.getVariable("jdbcQuery1.bytes"))[0].getClass());
+        assertArrayEquals(blobBytes, (byte[]) bytesObj[0]);
+
+        // xml should look the same
+        assertEquals(blobXmlResult, byteArrayXmlResult);
+    }
+
+    /**
+     * Tests blob results from a function or a stored procedure.
+     * @throws Exception
+     */
+    @Test
+    public void testClobResults() throws Exception {
+        final String clobString = RandomStringUtils.randomAlphanumeric(40 * 1024);
+
+        MockitoAnnotations.initMocks(this);
+        final AssertionRegistry assertionRegistry = new AssertionRegistry();
+        assertionRegistry.afterPropertiesSet();
+        serverPolicyFactory = new ServerPolicyFactory(new TestLicenseManager(), new MockInjector());
+        when(jdbcQueryingManager.performJdbcQuery(anyString(), anyString(), anyString(), anyInt(), anyInt(), anyList())).thenReturn(getMockWithClobResults(clobString));
+        final Map propertiesMap = new HashMap<String, String>();
+        final MockConfig mockConfig = new MockConfig(propertiesMap);
+        GenericApplicationContext applicationContext = new GenericApplicationContext(new SimpleSingletonBeanFactory(new HashMap<String, Object>() {{
+            put("assertionRegistry", assertionRegistry);
+            put("policyFactory", serverPolicyFactory);
+            put("jdbcQueryingManager", jdbcQueryingManager);
+            put("jdbcConnectionManager", connectionManager);
+            put("serverConfig", mockConfig);
+        }}));
+        serverPolicyFactory.setApplicationContext(applicationContext);
+        assertion.setSqlQuery("SELECT * FROM myTest");
+        assertion.setGenerateXmlResult(true);
+        assertion.setConnectionName("mockDb");
+
+        // get clob result
+        ServerJdbcQueryAssertion sass = (ServerJdbcQueryAssertion) serverPolicyFactory.compilePolicy(assertion, false);
+        AssertionStatus status = sass.checkRequest(peCtx);
+        assertEquals(status, AssertionStatus.NONE);
+        String xmlResult = peCtx.getVariable("jdbcQuery.xmlResult").toString();
+        assertNotNull(xmlResult);
+        String expected = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><L7j:jdbcQueryResult xmlns:L7j=\"http://ns.l7tech.com/2012/08/jdbc-query-result\"><L7j:row><L7j:col  name=\"clob\" >" + clobString + "</L7j:col></L7j:row></L7j:jdbcQueryResult>";
+        assertEquals(expected, xmlResult);
+        Object[] bytesObj = (Object[]) peCtx.getVariable("jdbcQuery.clob");
+        Assert.assertEquals(String.class, ((Object[]) peCtx.getVariable("jdbcQuery.clob"))[0].getClass());
+        assertEquals(clobString, bytesObj[0]);
+
+        //limit clob size
+        propertiesMap.put(ServerConfigParams.PARAM_JDBC_QUERY_MAX_CLOB_SIZE_OUT, Long.toString(clobString.length()-2));
+        assertion.setSqlQuery("func myTest");
+        sass = (ServerJdbcQueryAssertion) serverPolicyFactory.compilePolicy(assertion, false);
+        status = sass.checkRequest(peCtx);
+        assertEquals(status, AssertionStatus.FAILED);
+
+    }
+
+    private Object getMockWithClobResults(String clobString) throws SQLException {
+
+        List<Map<String, Object>> row = new ArrayList<Map<String, Object>>();
+        Map<String, Object> column = new HashMap<String, Object>();
+        Clob clob = new SerialClob(clobString.toCharArray());
+        column.put("clob", clob);
+        row.add(column);
+
+        List<SqlRowSet> results = new ArrayList<>();
+        results.add(new ResultSetWrappingSqlRowSet(new MockResultSet(row)));
+        return results;
     }
 
 }

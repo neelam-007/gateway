@@ -1,11 +1,14 @@
 package com.l7tech.server.jdbc;
 
+import com.l7tech.util.CollectionUtils;
+
 import java.io.InputStream;
 import java.io.Reader;
 import java.math.BigDecimal;
 import java.net.URL;
 import java.sql.*;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -17,6 +20,7 @@ import java.util.Map;
 public class MockResultSet implements ResultSet {
 
     private List<Map<String, Object>> results;
+    private List<String> columns;
     private int index = -1;
     private boolean throwExceptionOnNull;
 
@@ -30,6 +34,7 @@ public class MockResultSet implements ResultSet {
      */
     public MockResultSet(List<Map<String, Object>> results, boolean throwExceptionOnNull) {
         this.results = results;
+        this.columns = results.isEmpty()? Collections.<String>emptyList(): CollectionUtils.toList(results.get(0).keySet());
         this.throwExceptionOnNull = throwExceptionOnNull;
     }
 
@@ -325,12 +330,16 @@ public class MockResultSet implements ResultSet {
 
     @Override
     public ResultSetMetaData getMetaData() throws SQLException {
-        throw new UnsupportedOperationException();
+        return new MockResultSetMetaData();
+    }
+
+    private String getColumnName(int columnIndex){
+        return columns.get(columnIndex-1);
     }
 
     @Override
     public Object getObject(int columnIndex) throws SQLException {
-        throw new UnsupportedOperationException();
+        return results.get(index).get(getColumnName(columnIndex));
     }
 
     @Override
@@ -407,17 +416,19 @@ public class MockResultSet implements ResultSet {
 
     @Override
     public boolean first() throws SQLException {
-        throw new UnsupportedOperationException();
+        index = -1;
+        return true;
     }
 
     @Override
     public boolean last() throws SQLException {
-        throw new UnsupportedOperationException();
+        index = results.size()-1;
+        return true;
     }
 
     @Override
     public int getRow() throws SQLException {
-        throw new UnsupportedOperationException();
+        return index +1;
     }
 
     @Override
@@ -1098,5 +1109,124 @@ public class MockResultSet implements ResultSet {
     @Override
     public boolean isWrapperFor(Class<?> iface) throws SQLException {
         throw new UnsupportedOperationException();
+    }
+
+
+    public class MockResultSetMetaData implements ResultSetMetaData{
+
+        @Override
+        public int getColumnCount() throws SQLException {
+            return columns.size();
+        }
+
+        @Override
+        public boolean isAutoIncrement(int column) throws SQLException {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean isCaseSensitive(int column) throws SQLException {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean isSearchable(int column) throws SQLException {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean isCurrency(int column) throws SQLException {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public int isNullable(int column) throws SQLException {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean isSigned(int column) throws SQLException {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public int getColumnDisplaySize(int column) throws SQLException {
+            return columns.get(column-1).length();
+        }
+
+        @Override
+        public String getColumnLabel(int column) throws SQLException {
+            return columns.get(column-1);
+        }
+
+        @Override
+        public String getColumnName(int column) throws SQLException {
+            return columns.get(column-1);
+        }
+
+        @Override
+        public String getSchemaName(int column) throws SQLException {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public int getPrecision(int column) throws SQLException {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public int getScale(int column) throws SQLException {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public String getTableName(int column) throws SQLException {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public String getCatalogName(int column) throws SQLException {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public int getColumnType(int column) throws SQLException {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public String getColumnTypeName(int column) throws SQLException {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean isReadOnly(int column) throws SQLException {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean isWritable(int column) throws SQLException {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean isDefinitelyWritable(int column) throws SQLException {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public String getColumnClassName(int column) throws SQLException {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public <T> T unwrap(Class<T> iface) throws SQLException {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean isWrapperFor(Class<?> iface) throws SQLException {
+            throw new UnsupportedOperationException();
+        }
     }
 }
