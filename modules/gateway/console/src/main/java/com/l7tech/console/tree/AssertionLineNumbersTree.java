@@ -36,7 +36,13 @@ public class AssertionLineNumbersTree extends JTree {
         setShowsRootHandles(false);
         setAlignmentX(Component.LEFT_ALIGNMENT);
         setAlignmentY(Component.TOP_ALIGNMENT);
-        DefaultTreeCellRenderer renderer = new DefaultTreeCellRenderer();
+        DefaultTreeCellRenderer renderer = new DefaultTreeCellRenderer() {
+            @Override
+            public Component getTreeCellRendererComponent(JTree tree, Object value, boolean sel, boolean expanded, boolean leaf, int row, boolean hasFocus) {
+                tree.setRowHeight(policyTree.getRowHeight());
+                return super.getTreeCellRendererComponent(tree, value, sel, expanded, leaf, row, hasFocus);
+            }
+        };
         renderer.setLeafIcon( new ImageIcon(ImageCache.getInstance().getIcon(BLANK_ICON_FILE_NAME)) );
         renderer.setFont( new JLabel().getFont().deriveFont( Font.PLAIN ) );
         setCellRenderer(renderer);

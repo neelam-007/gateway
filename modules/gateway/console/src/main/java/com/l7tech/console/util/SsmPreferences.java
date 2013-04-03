@@ -60,6 +60,11 @@ public interface SsmPreferences {
     String NUM_SSG_MAX_RIGHT_COMMENT = "num.ssg.max.right.comment";
 
     /**
+     * key for the property "Policy Manager UI Font Size Scale"
+     */
+    String POLICY_MANAGER_UI_FONT_SIZE_SCALE = "policy.manager.ui.font.size.scale";
+
+    /**
      * toolbars property (icons, text, icons and text)
      */
     String STATUS_BAR_VISIBLE = "status.bar.enable";
@@ -101,6 +106,8 @@ public interface SsmPreferences {
     int MAX_LEFT_COMMENT_SIZE = 100;
     int DEFAULT_MAX_LEFT_COMMENT = 30;
     int DEFAULT_MAX_RIGHT_COMMENT = 100;
+
+    float DEFAULT_POLICY_MANAGER_FONT_SIZE_SCALE = 1.0f;
 
     /**
      * Update preferences from given properties, optionally

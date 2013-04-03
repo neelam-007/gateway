@@ -41,7 +41,7 @@ public class EntityTreeCellRenderer
                                            sel, expanded, leaf, row, hasFocus);
 
         this.setBackgroundNonSelectionColor(tree.getBackground());
-        Icon icon = null;
+        Icon icon;
         if (!(value instanceof AbstractTreeNode)) return this;
 
         AbstractTreeNode node = ((AbstractTreeNode)value);
@@ -63,7 +63,11 @@ public class EntityTreeCellRenderer
         if (node instanceof HttpRoutingAssertionTreeNode || node instanceof JmsRoutingAssertionTreeNode) {
             setFont(boldFont);
         }
+
+        int labelHeight = this.getPreferredSize().height;
+        int treeRowHeight = tree.getRowHeight();
+        if (labelHeight > treeRowHeight) tree.setRowHeight(labelHeight);
+
         return this;
     }
-
 }
