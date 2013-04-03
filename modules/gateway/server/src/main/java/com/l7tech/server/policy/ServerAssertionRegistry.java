@@ -235,19 +235,22 @@ public class ServerAssertionRegistry extends AssertionRegistry implements Dispos
             return false;
         }
         final Set<String> jarnames = new HashSet<String>();
-        for (File jar : jars) jarnames.add(jar.getName());
+        for (File jar : jars)
+            jarnames.add(jar.getName());
 
         // Check for disabled modules
         final Set<String> disabled = findDisabledModules(jars, jarnames);
 
         // Check for removed modules
-        if (unregisterRemovedModules(jarnames)) changesMade = true;
+        if (unregisterRemovedModules(jarnames))
+            changesMade = true;
 
         // check for removed failed modules
         cleanRemovedFailedModules(jarnames);
 
         // Check for new or changed modules
-        if (registerNewOrChangedModules(jars, disabled)) changesMade = true;
+        if (registerNewOrChangedModules(jars, disabled))
+            changesMade = true;
 
         scanNeeded = false;
         return changesMade;
@@ -342,8 +345,10 @@ public class ServerAssertionRegistry extends AssertionRegistry implements Dispos
         synchronized (this) {
             if (!scanNeeded)
                 return;
-            scanModularAssertions();
-            scanForNewClusterProperties();
+            final boolean changesMade = scanModularAssertions();
+            if (changesMade) {
+                scanForNewClusterProperties();
+            }
         }
     }
 

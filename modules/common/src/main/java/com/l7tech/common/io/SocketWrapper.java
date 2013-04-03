@@ -116,32 +116,32 @@ public class SocketWrapper extends Socket {
     }
 
     @Override
-    public synchronized void setSoTimeout(int timeout) throws SocketException {
+    public void setSoTimeout(int timeout) throws SocketException {
         delegate.setSoTimeout(timeout);
     }
 
     @Override
-    public synchronized int getSoTimeout() throws SocketException {
+    public int getSoTimeout() throws SocketException {
         return delegate.getSoTimeout();
     }
 
     @Override
-    public synchronized void setSendBufferSize(int size) throws SocketException {
+    public void setSendBufferSize(int size) throws SocketException {
         delegate.setSendBufferSize(size);
     }
 
     @Override
-    public synchronized int getSendBufferSize() throws SocketException {
+    public int getSendBufferSize() throws SocketException {
         return delegate.getSendBufferSize();
     }
 
     @Override
-    public synchronized void setReceiveBufferSize(int size) throws SocketException {
+    public void setReceiveBufferSize(int size) throws SocketException {
         delegate.setReceiveBufferSize(size);
     }
 
     @Override
-    public synchronized int getReceiveBufferSize() throws SocketException {
+    public int getReceiveBufferSize() throws SocketException {
         return delegate.getReceiveBufferSize();
     }
 
@@ -176,7 +176,7 @@ public class SocketWrapper extends Socket {
     }
 
     @Override
-    public synchronized void close() throws IOException {
+    public void close() throws IOException {
         delegate.close();
     }
 

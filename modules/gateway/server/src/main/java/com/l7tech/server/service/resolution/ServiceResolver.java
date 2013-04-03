@@ -31,9 +31,18 @@ public abstract class ServiceResolver<T> {
 
     protected final String PROP_BASE = getClass().getName();
     protected final String PROP_VALUE = PROP_BASE + SUFFIX_VALUE;
+    private final String simpleName;
 
     public ServiceResolver( final AuditFactory auditorFactory ) {
         auditor = auditorFactory.newInstance( this, logger );
+        simpleName = getClass().getSimpleName();
+    }
+
+    /**
+     * @return the simple classname of this resolver, for logging purposes.
+     */
+    public String getSimpleName() {
+        return simpleName;
     }
 
     /**

@@ -349,7 +349,7 @@ public class ServiceResolutionManager implements PostStartupApplicationListener,
                 continue;
             } else if (result == Result.NO_MATCH) {
                 // Early failure
-                auditor.logAndAudit(MessageProcessingMessages.SERVICE_CACHE_FAILED_EARLY, resolver.getClass().getSimpleName());
+                auditor.logAndAudit(MessageProcessingMessages.SERVICE_CACHE_FAILED_EARLY, resolver.getSimpleName());
                 return null;
             } else {
                 // Matched at least one... Next resolver can narrow it down
@@ -359,11 +359,11 @@ public class ServiceResolutionManager implements PostStartupApplicationListener,
             int size = resolvedServices.size();
             // if remaining services are 0 or 1, we are done
             if ( takeShortcut && size == 1) {
-                auditor.logAndAudit(MessageProcessingMessages.SERVICE_CACHE_RESOLVED_EARLY, resolver.getClass().getSimpleName());
+                auditor.logAndAudit(MessageProcessingMessages.SERVICE_CACHE_RESOLVED_EARLY, resolver.getSimpleName());
                 serviceSet = resolvedServices;
                 break;
             } else if (size == 0) {
-                auditor.logAndAudit(MessageProcessingMessages.SERVICE_CACHE_FAILED_EARLY, resolver.getClass().getSimpleName());
+                auditor.logAndAudit(MessageProcessingMessages.SERVICE_CACHE_FAILED_EARLY, resolver.getSimpleName());
                 return null;
             }
 

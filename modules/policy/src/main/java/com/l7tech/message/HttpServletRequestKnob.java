@@ -44,7 +44,7 @@ public class HttpServletRequestKnob implements HttpRequestKnob {
         }
     }});
 
-    private final URL url;
+    private URL url;
     private static final String SERVLET_REQUEST_ATTR_X509CERTIFICATE = "javax.servlet.request.X509Certificate";
     private static final String SERVLET_REQUEST_ATTR_CONNECTION_ID = "com.l7tech.server.connectionIdentifierObject";
     private static final int MAX_FORM_POST = ConfigFactory.getIntProperty( "com.l7tech.message.httpParamsMaxFormPost", 512 * 1024 );
@@ -55,11 +55,6 @@ public class HttpServletRequestKnob implements HttpRequestKnob {
         HttpMethod method = nameMap.get(request.getMethod());
         if (method == null) method = HttpMethod.OTHER;
         this.method = method;
-        try {
-            this.url = new URL(request.getRequestURL().toString());
-        } catch (MalformedURLException e) {
-            throw new RuntimeException("HttpServletRequest had invalid URL", e);
-        }
     }
 
     @Override
@@ -227,7 +222,13 @@ public class HttpServletRequestKnob implements HttpRequestKnob {
 
     @Override
     public URL getRequestURL() {
-        return url;
+        if (url != null)
+            return url;
+        try {
+            return url = new URL(request.getRequestURL().toString());
+        } catch (MalformedURLException e) {
+            throw new RuntimeException("HttpServletRequest had invalid URL: " + ExceptionUtils.getMessage(e), e);
+        }
     }
 
     @Override
