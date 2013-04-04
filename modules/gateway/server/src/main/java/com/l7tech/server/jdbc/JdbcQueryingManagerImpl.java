@@ -839,7 +839,6 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager, PropertyCha
             final Map<CachedMetaDataKey, String> keysToRemove = new HashMap<>();
             final Set<CachedMetaDataKey> keysToRemoveFromDBObjectsToCacheMetaDataFor = new HashSet<>();
 
-            final long maxExceptionAge = config.getLongProperty(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_CLEANUP_REFRESH_INTERVAL, 60000L);
             final long cacheKeyNoUsageExpiration = config.getLongProperty(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_NO_USAGE_EXPIRATION, 2678400L) * 1000L;
             for (Map.Entry<CachedMetaDataKey, CachedMetaDataValue> entry : simpleJdbcCallCache.entrySet()) {
 
@@ -849,10 +848,7 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager, PropertyCha
                 final Long age = timeSource.currentTimeMillis() - value.lastUseTime.get();
 
                 if (either.isLeft()) {
-                    // it's an exception, see hold old it is
-                    if (age > maxExceptionAge) {
-                        keysToRemove.put(key, "errored");
-                    }
+                    keysToRemove.put(key, "errored");
                 }
 
                 // if the jdbc connection entity no longer exists then remove items from the cache

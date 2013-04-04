@@ -330,7 +330,6 @@ public class JdbcQueryManagerImplCacheTest {
 
     @Test
     public void testErrorGettingFunctionMetadataCacheRemoval() throws SQLException, InvocationTargetException, NoSuchMethodException, NoSuchFieldException, IllegalAccessException, InstantiationException {
-        configProperties.put(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_CLEANUP_REFRESH_INTERVAL, "-1");
 
         String errorString = "My Test Error";
         String functionName = "myFunction";
@@ -598,7 +597,6 @@ public class JdbcQueryManagerImplCacheTest {
 
     @Test
     public void testMetaDataCacheTaskCacheItemsManuallyAdded() throws SQLException, InvocationTargetException, NoSuchMethodException, NoSuchFieldException, IllegalAccessException, InstantiationException {
-        configProperties.put(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_CLEANUP_REFRESH_INTERVAL, "-1");
 
         String functionName = "myFunction";
         String query = "func myFunction";
