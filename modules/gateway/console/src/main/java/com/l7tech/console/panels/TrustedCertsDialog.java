@@ -54,16 +54,18 @@ public class TrustedCertsDialog extends JDialog {
         
         this.trustedCerts = trustedCerts == null ? null : new ArrayList<EntityHeader>(trustedCerts);
 
-        // determine if any of the configured trusted certs are missing from the database
-        final TrustedCertAdmin trustedCertManager = Registry.getDefault().getTrustedCertManager();
-        for (final EntityHeader trustedCert : trustedCerts) {
-            try {
-                final TrustedCert found = trustedCertManager.findCertByPrimaryKey(trustedCert.getOid());
-                if (found == null) {
-                    missingCerts.put(trustedCert.getOid(), trustedCert.getName());
+        if (trustedCerts != null) {
+            // determine if any of the configured trusted certs are missing from the database
+            final TrustedCertAdmin trustedCertManager = Registry.getDefault().getTrustedCertManager();
+            for (final EntityHeader trustedCert : trustedCerts) {
+                try {
+                    final TrustedCert found = trustedCertManager.findCertByPrimaryKey(trustedCert.getOid());
+                    if (found == null) {
+                        missingCerts.put(trustedCert.getOid(), trustedCert.getName());
+                    }
+                } catch (final FindException e) {
+                    logger.log(Level.WARNING, "Unable to determine if trusted cert exists: " + trustedCert.getName());
                 }
-            } catch (final FindException e) {
-                logger.log(Level.WARNING, "Unable to determine if trusted cert exists: " + trustedCert.getName());
             }
         }
 
