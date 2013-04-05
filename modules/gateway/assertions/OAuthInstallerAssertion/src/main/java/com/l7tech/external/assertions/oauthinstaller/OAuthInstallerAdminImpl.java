@@ -273,6 +273,14 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
                     }
                 }
 
+                // SK-17 and SK-30 validate the length of the otk database name and user name.
+                if(otkDbName.length() > 64){
+                    return "OTK Database name is too long. Max length is 64 characters.";
+                }
+                if(otkDbUsername.length() > 16){
+                    return "OTK user name is too long. Max length is 16 characters.";
+                }
+
                 final String otkSchema = getOAuthDatabaseSchema();
 
                 final JdbcConnection jdbcConn = new JdbcConnection();
@@ -373,8 +381,11 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
                                                 }
                                                 //noinspection unchecked
                                                 Map<String, List<Object>> selectResult = (Map<String, List<Object>>) result;
-                                                String password = (String) selectResult.get("password").get(0);
-                                                savedUserPasswords.put(grantHost, password);
+                                                List<Object> passwordResult = selectResult.get("password");
+                                                if(passwordResult != null && !passwordResult.isEmpty() && passwordResult.get(0) != null) {
+                                                    String password = (String) selectResult.get("password").get(0);
+                                                    savedUserPasswords.put(grantHost, password);
+                                                }
 
                                                 //need to set user password;
                                                 query = "SET PASSWORD FOR '" + otkDbUsername + "'@'" + grantHost + "' = PASSWORD('" + otkUserPassword + "')";

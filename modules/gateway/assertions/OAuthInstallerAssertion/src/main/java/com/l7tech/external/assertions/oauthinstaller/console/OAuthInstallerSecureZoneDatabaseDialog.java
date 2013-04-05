@@ -238,13 +238,14 @@ public class OAuthInstallerSecureZoneDatabaseDialog extends JDialog {
         }
 
         final String otkDbName = otkDbNameTextField.getText().trim();
-        // Maximum db name length is 64 characters http://dev.mysql.com/doc/refman/5.0/en/identifiers.html
+        // SK-17 Maximum db name length is 64 characters http://dev.mysql.com/doc/refman/5.0/en/identifiers.html
         if (!validateStringWithDialog(otkDbName, "newOtkDbSchemaName") || !validateStringMaxLengthWithDialog(otkDbName, "newOtkDbSchemaName", 64)) {
             return;
         }
 
         final String otkDbUsername = otkDbUserNameTextField.getText().trim();
-        if (!validateStringWithDialog(otkDbUsername, "otkDatabaseUser")) {
+        // SK-30 Maximum user name length is 16 characters http://dev.mysql.com/doc/refman/5.5/en/user-names.html
+        if (!validateStringWithDialog(otkDbUsername, "otkDatabaseUser") || !validateStringMaxLengthWithDialog(otkDbUsername, "otkDatabaseUser", 16)) {
             return;
         }
 
