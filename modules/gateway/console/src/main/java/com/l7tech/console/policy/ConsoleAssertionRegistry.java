@@ -15,12 +15,14 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.LicenseException;
 import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
+import com.l7tech.policy.AssertionAccess;
 import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.MetadataFinder;
 import com.l7tech.policy.wsp.ClassLoaderUtil;
 import com.l7tech.util.*;
+import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import java.awt.*;
@@ -51,6 +53,9 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
 
     /** Base packages of every modular assertion, for recognizing NoClassDefFoundErrors due to module unload. */
     private final Map<String, String> moduleNameByBasePackage = new ConcurrentHashMap<String, String>();
+
+    /** Set of assertion classnames enabled for the current admin user. */
+    private final Map<String, AssertionAccess> permittedAssertionClasses = new ConcurrentHashMap<String, AssertionAccess>();
 
     @Override
     public void afterPropertiesSet() throws Exception {
@@ -114,8 +119,14 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
         if (!TopComponents.getInstance().isApplet())
             CustomAssertionRMIClassLoaderSpi.resetRemoteClassLoader();
         moduleNameByBasePackage.clear();
+        permittedAssertionClasses.clear();
 
         try {
+            Collection<AssertionAccess> aas = Registry.getDefault().getRbacAdmin().findAccessibleAssertions();
+            for (AssertionAccess aa : aas) {
+                permittedAssertionClasses.put(aa.getId(), aa);
+            }
+
             ClusterStatusAdmin cluster = Registry.getDefault().getClusterStatusAdmin();
             Collection<ClusterStatusAdmin.ModuleInfo> modules = cluster.getAssertionModuleInfo();
             for (ClusterStatusAdmin.ModuleInfo module : modules) {
@@ -333,6 +344,19 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
         if (ass == null)
             throw new IllegalArgumentException("Unknown assertion classname: " + assertionClassname);
         return ass.getClass().getClassLoader();
+    }
+
+    /**
+     * Check if the current admin user is permitted to see the specified assertion in the palette.
+     * <p/>
+     * The admin will be considered to have permission to see the assertion on the palette if the
+     * assertion classname is on the list returned from RbacAdmin.findAccessibleAssertions().
+     *
+     * @param ass assertion to check.  Required.
+     * @return true if this assertion is on the list of permitted assertion types for the current admin user.
+     */
+    public boolean isAssertionAccessPermitted(@NotNull Assertion ass) {
+        return permittedAssertionClasses.containsKey(ass.getClass().getName());
     }
 
     private static class PaletteNodeFactoryMetadataFinder<AT extends Assertion> implements MetadataFinder {

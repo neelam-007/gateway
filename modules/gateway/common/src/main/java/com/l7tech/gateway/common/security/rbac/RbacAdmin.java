@@ -6,6 +6,7 @@ package com.l7tech.gateway.common.security.rbac;
 import com.l7tech.gateway.common.admin.Administrative;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
+import com.l7tech.policy.AssertionAccess;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -69,4 +70,14 @@ public interface RbacAdmin {
     @Transactional(readOnly=true)
     @Secured(types=EntityType.ANY, stereotype=FIND_HEADERS)
     EntityHeaderSet<EntityHeader> findEntities(EntityType entityType) throws FindException;
+
+    /**
+     * Obtain information about the list of assertions classnames that the current admin user is permitted to make use of.
+     * Assertions whose classnames do not appear on this list should not be offered in the SSM palette,
+     * and will not be permitted to be referenced by policy XML saved using the PolicyAdmin interface.
+     * @return a collection of permitted assertions.  Never null.
+     */
+    @Transactional(readOnly=true)
+    @Secured(types=EntityType.ASSERTION_ACCESS, stereotype=FIND_ENTITIES)
+    Collection<AssertionAccess> findAccessibleAssertions();
 }

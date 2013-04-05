@@ -16,6 +16,7 @@ import com.l7tech.server.ServerConfig;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.admin.AsyncAdminMethodsImpl;
 import com.l7tech.server.event.AdminInfo;
+import com.l7tech.server.policy.PolicyAssertionRbacChecker;
 import com.l7tech.server.policy.PolicyVersionManager;
 import com.l7tech.server.service.resolution.NonUniqueServiceResolutionException;
 import com.l7tech.server.service.resolution.ServiceResolutionException;
@@ -29,6 +30,7 @@ import com.l7tech.util.*;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.beans.factory.DisposableBean;
 
+import javax.inject.Inject;
 import java.io.IOException;
 import java.io.Serializable;
 import java.net.*;
@@ -70,6 +72,9 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
 
     private final UDDIRegistryAdmin uddiRegistryAdmin;
     private final ServiceWsdlUpdateChecker uddiServiceWsdlUpdateChecker;
+
+    @Inject
+    private PolicyAssertionRbacChecker policyChecker;
 
     private CollectionUpdateProducer<ServiceHeader, FindException> publishedServicesUpdateProducer =
             new CollectionUpdateProducer<ServiceHeader, FindException>(5 * 60 * 1000, 100, new ServiceHeaderDifferentiator()) {
@@ -304,15 +309,12 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
 
                 oid = serviceManager.save(service);
                 if (policy != null) {
+                    policyChecker.checkPolicy(policy);
                     policyVersionManager.checkpointPolicy(policy, true, true);
                 }
                 serviceManager.addManageServiceRole(service);
             }
-        } catch (UpdateException e) {
-            throw e;
-        } catch (SaveException e) {
-            throw e;
-        } catch (ObjectModelException e) {
+        } catch (ObjectModelException | IOException e) {
             throw new SaveException(e);
         }
         return oid;

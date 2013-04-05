@@ -1,19 +1,13 @@
 package com.l7tech.external.assertions.gatewaymanagement.server;
 
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory.InvalidResourceException.ExceptionType;
-import com.l7tech.gateway.api.ManagedObjectFactory;
-import com.l7tech.gateway.api.PolicyDetail;
-import com.l7tech.gateway.api.PolicyExportResult;
-import com.l7tech.gateway.api.PolicyImportResult;
-import com.l7tech.gateway.api.PolicyMO;
-import com.l7tech.gateway.api.impl.PolicyValidationContext;
-import com.l7tech.gateway.api.PolicyValidationResult;
-import com.l7tech.gateway.api.Resource;
-import com.l7tech.gateway.api.ResourceSet;
+import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.api.impl.PolicyImportContext;
+import com.l7tech.gateway.api.impl.PolicyValidationContext;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.ObjectModelException;
+import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyHeader;
@@ -22,26 +16,18 @@ import com.l7tech.server.policy.PolicyManager;
 import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.security.rbac.SecurityFilter;
 import com.l7tech.util.Either;
-import com.l7tech.util.Eithers.E2;
-import static com.l7tech.util.Eithers.extract;
-import static com.l7tech.util.Eithers.extract2;
-import static com.l7tech.util.Either.left;
-import static com.l7tech.util.Eithers.right2;
-import static com.l7tech.util.Either.right;
-import static com.l7tech.util.Eithers.left2_1;
-import static com.l7tech.util.Eithers.left2_2;
+import com.l7tech.util.Eithers.*;
 import com.l7tech.util.Option;
-import static com.l7tech.util.Option.optional;
 import com.l7tech.wsdl.Wsdl;
 import com.l7tech.xml.soap.SoapVersion;
 import org.springframework.transaction.PlatformTransactionManager;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
+
+import static com.l7tech.util.Eithers.*;
+import static com.l7tech.util.Either.left;
+import static com.l7tech.util.Either.right;
+import static com.l7tech.util.Option.optional;
 
 /**
  *
@@ -71,7 +57,8 @@ public class PolicyResourceFactory extends EntityManagerResourceFactory<PolicyMO
             public E2<ResourceNotFoundException, InvalidResourceException, PolicyImportResult> execute() throws ObjectModelException {
                 try {
                     final Policy policy = selectEntity( selectorMap );
-                    checkPermitted( OperationType.UPDATE, null, policy );
+                    policyHelper.checkPolicyAssertionAccess( policy );
+                    checkPermitted(OperationType.UPDATE, null, policy);
                     PolicyImportResult result = policyHelper.importPolicy( policy, resource );
                     policyManager.update( policy );
                     return right2( result );
@@ -235,6 +222,11 @@ public class PolicyResourceFactory extends EntityManagerResourceFactory<PolicyMO
     protected void beforeCreateEntity( final EntityBag<Policy> policyEntityBag ) throws ObjectModelException {
         UUID guid = UUID.randomUUID();
         policyEntityBag.getEntity().setGuid(guid.toString());
+        try {
+            policyHelper.checkPolicyAssertionAccess( policyEntityBag.getEntity() );
+        } catch (InvalidResourceException e) {
+            throw new SaveException(e);
+        }
     }
 
     @Override

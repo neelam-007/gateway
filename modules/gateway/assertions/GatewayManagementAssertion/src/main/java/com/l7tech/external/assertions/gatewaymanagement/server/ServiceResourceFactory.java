@@ -2,25 +2,15 @@ package com.l7tech.external.assertions.gatewaymanagement.server;
 
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory.InvalidResourceException.ExceptionType;
-import com.l7tech.gateway.api.ManagedObjectFactory;
-import com.l7tech.gateway.api.PolicyExportResult;
-import com.l7tech.gateway.api.PolicyImportResult;
-import com.l7tech.gateway.api.impl.PolicyValidationContext;
-import com.l7tech.gateway.api.PolicyValidationResult;
-import com.l7tech.gateway.api.Resource;
-import com.l7tech.gateway.api.ResourceSet;
-import com.l7tech.gateway.api.ServiceDetail;
-import com.l7tech.gateway.api.ServiceMO;
+import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.api.impl.PolicyImportContext;
+import com.l7tech.gateway.api.impl.PolicyValidationContext;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceDocument;
 import com.l7tech.gateway.common.service.ServiceDocumentWsdlStrategy;
 import com.l7tech.gateway.common.service.ServiceHeader;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.ObjectModelException;
-import com.l7tech.objectmodel.PersistentEntity;
-import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.policy.Policy;
 import com.l7tech.server.security.rbac.RbacServices;
@@ -30,17 +20,9 @@ import com.l7tech.server.service.ServiceDocumentResolver;
 import com.l7tech.server.service.ServiceManager;
 import com.l7tech.server.uddi.ServiceWsdlUpdateChecker;
 import com.l7tech.util.Either;
-import com.l7tech.util.Eithers.E2;
-import static com.l7tech.util.Eithers.extract;
-import static com.l7tech.util.Eithers.extract2;
-import static com.l7tech.util.Either.left;
-import static com.l7tech.util.Eithers.right2;
-import static com.l7tech.util.Either.right;
-import static com.l7tech.util.Eithers.left2_1;
-import static com.l7tech.util.Eithers.left2_2;
+import com.l7tech.util.Eithers.*;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Option;
-import static com.l7tech.util.Option.optional;
 import com.l7tech.util.TextUtils;
 import com.l7tech.wsdl.Wsdl;
 import com.l7tech.xml.soap.SoapVersion;
@@ -49,16 +31,12 @@ import org.springframework.transaction.PlatformTransactionManager;
 import javax.wsdl.WSDLException;
 import java.io.IOException;
 import java.net.MalformedURLException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
+
+import static com.l7tech.util.Eithers.*;
+import static com.l7tech.util.Either.left;
+import static com.l7tech.util.Either.right;
+import static com.l7tech.util.Option.optional;
 
 /**
  * 
@@ -97,6 +75,7 @@ public class ServiceResourceFactory extends EntityManagerResourceFactory<Service
                 try {
                     final PublishedService service = selectEntity( selectorMap );
                     checkPermitted( OperationType.UPDATE, null, service );
+                    policyHelper.checkPolicyAssertionAccess( service.getPolicy() );
                     PolicyImportResult result = policyHelper.importPolicy( service.getPolicy(), resource );
                     serviceManager.update( service );
                     return right2( result );
@@ -116,7 +95,7 @@ public class ServiceResourceFactory extends EntityManagerResourceFactory<Service
             public Either<ResourceNotFoundException,PolicyExportResult> execute() throws ObjectModelException {
                 try {
                     final PublishedService service = selectEntity( selectorMap );
-                    checkPermitted( OperationType.READ, null, service );
+                    checkPermitted(OperationType.READ, null, service);
                     return right( policyHelper.exportPolicy( service.getPolicy() ) );
                 } catch ( ResourceNotFoundException e ) {
                     return left( e );
@@ -308,6 +287,12 @@ public class ServiceResourceFactory extends EntityManagerResourceFactory<Service
         final ServiceEntityBag serviceEntityBag = cast( entityBag, ServiceEntityBag.class );
         final PublishedService service = serviceEntityBag.getPublishedService();
         final Policy policy = service.getPolicy();
+
+        try {
+            policyHelper.checkPolicyAssertionAccess( policy );
+        } catch (InvalidResourceException e) {
+            throw new SaveException(e);
+        }
 
         service.setInternal( false );
 

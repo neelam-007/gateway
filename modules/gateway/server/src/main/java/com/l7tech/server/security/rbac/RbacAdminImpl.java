@@ -8,11 +8,15 @@ import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.folder.Folder;
+import com.l7tech.policy.AssertionAccess;
+import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.Policy;
 import com.l7tech.server.EntityFinder;
 import com.l7tech.server.util.JaasUtils;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Functions;
 
+import javax.inject.Inject;
 import java.text.MessageFormat;
 import java.util.Collection;
 import java.util.HashSet;
@@ -28,6 +32,9 @@ public class RbacAdminImpl implements RbacAdmin {
 
     private final RoleManager roleManager;
     private final EntityFinder entityFinder;
+
+    @Inject
+    private AssertionRegistry assertionRegistry;
 
     public RbacAdminImpl(RoleManager roleManager, EntityFinder entityFinder) {
         this.roleManager = roleManager;
@@ -142,5 +149,11 @@ public class RbacAdminImpl implements RbacAdmin {
 
     public EntityHeaderSet<EntityHeader> findEntities(EntityType entityType) throws FindException {
         return entityFinder.findAll(entityType.getEntityClass());
+    }
+
+    @Override
+    public Collection<AssertionAccess> findAccessibleAssertions() {
+        // Return them all, and allow the RBAC interceptor to filter out any the current admin can't see
+        return Functions.map(assertionRegistry.getAssertions(), AssertionAccess.builderFromAssertion());
     }
 }

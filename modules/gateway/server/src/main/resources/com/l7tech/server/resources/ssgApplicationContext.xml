@@ -600,6 +600,8 @@
         </constructor-arg>
     </bean>
 
+    <bean id="policyAssertionRbacChecker" class="com.l7tech.server.policy.PolicyAssertionRbacCheckerImpl"/>
+
     <!-- server side identity provider factory -->
     <bean id="identityProviderFactory" class="com.l7tech.server.identity.IdentityProviderFactory">
         <constructor-arg ref="identityProviderConfigManager"/>

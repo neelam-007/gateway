@@ -154,7 +154,7 @@ create table ssg_version (
     current_version varchar(10) not null
 );
 
-insert into ssg_version (current_version) VALUES ('7.1.0');
+insert into ssg_version (current_version) VALUES ('8.0.0');
 
 -- --------------------------------------------------------------------------
 -- Schema for hibernate support
@@ -1212,6 +1212,8 @@ INSERT INTO rbac_permission VALUES (-356,0,-350,'READ',NULL,'UDDI_REGISTRY');
 INSERT INTO rbac_permission VALUES (-357,0,-350,'READ',NULL,'JDBC_CONNECTION');
 INSERT INTO rbac_permission VALUES (-358,0,-350,'READ',NULL,'HTTP_CONFIGURATION');
 INSERT INTO rbac_permission VALUES (-359,0,-350,'READ',NULL,'ENCAPSULATED_ASSERTION');
+INSERT INTO rbac_permission VALUES (-360,0,-350,'READ',NULL,'ASSERTION_ACCESS');
+INSERT INTO rbac_permission VALUES (-361,0,-350,'CREATE',NULL,'ASSERTION_ACCESS');
 
 INSERT INTO rbac_role VALUES (-400,1,'Manage Webservices', null,null,null, 'Users assigned to the {0} role have the ability to publish new services and edit existing ones.',0);
 INSERT INTO rbac_permission VALUES (-401,0,-400,'READ',NULL,'ID_PROVIDER_CONFIG');
@@ -1254,6 +1256,9 @@ INSERT INTO rbac_permission VALUES (-437,0,-400,'CREATE',NULL,'UDDI_SERVICE_CONT
 INSERT INTO rbac_permission VALUES (-438,0,-400,'READ',NULL,'JDBC_CONNECTION');
 INSERT INTO rbac_permission VALUES (-439,0,-400,'READ',NULL,'HTTP_CONFIGURATION');
 INSERT INTO rbac_permission VALUES (-440,0,-400,'READ',NULL,'ENCAPSULATED_ASSERTION');
+-- TODO Leaving hole here for fix to FR-473 mess-up (missing CREATE POLICY permission that is in the MySQL ssg.sql)
+INSERT INTO rbac_permission VALUES (-442,0,-400,'CREATE',NULL,'ASSERTION_ACCESS');
+INSERT INTO rbac_permission VALUES (-443,0,-400,'READ',NULL,'ASSERTION_ACCESS');
 
 INSERT INTO rbac_role VALUES (-450,0,'View Audit Records', null,null,null, 'Users assigned to the {0} role have the ability to view audits in the manager.',0);
 INSERT INTO rbac_permission VALUES (-451,0,-450,'READ',NULL,'CLUSTER_INFO');

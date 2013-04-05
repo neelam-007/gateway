@@ -34,6 +34,7 @@ import com.l7tech.server.entity.GenericEntityManager;
 import com.l7tech.server.globalresources.ResourceEntryManager;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.jdbc.JdbcConnectionManager;
+import com.l7tech.server.policy.PolicyAssertionRbacChecker;
 import com.l7tech.server.policy.PolicyManager;
 import com.l7tech.server.policy.export.PolicyExporterImporterManager;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
@@ -73,12 +74,14 @@ public class PolicyHelper {
                          final PolicyValidator policyValidator,
                          final WspReader wspReader,
                          final GatewayExternalReferenceFinder referenceFinder,
-                         final EntityResolver entityResolver ) {
+                         final EntityResolver entityResolver,
+                         final PolicyAssertionRbacChecker policyAssertionRbacChecker) {
         this.licenseManager = licenseManager;
         this.policyValidator = policyValidator;
         this.wspReader = wspReader;
         this.referenceFinder = referenceFinder;
         this.entityResolver = entityResolver;
+        this.policyAssertionRbacChecker = policyAssertionRbacChecker;
     }
 
     /**
@@ -318,6 +321,26 @@ public class PolicyHelper {
         }
 
         return policyXml;
+    }
+
+    /**
+     * Check that the current admin user (if any) has appropriate AssertionAccess RBAC permission for all assertions
+     * used within the specified policy.
+     *
+     * @param policy the policy to examine.  If null, this method takes no action.
+     * @throws PermissionDeniedException if a contextual admin user is present and the policy contains at least one assertion
+     *                                   for which the current admin user does not have permission to save a policy that uses that assertion.
+     * @throws ResourceFactory.InvalidResourceException if the policy contains invalid policy XML.
+     */
+    public void checkPolicyAssertionAccess( final Policy policy ) throws PermissionDeniedException, ResourceFactory.InvalidResourceException {
+        try {
+            if ( policyAssertionRbacChecker != null )
+                policyAssertionRbacChecker.checkPolicy( policy );
+        } catch (IOException e) {
+            throw new ResourceFactory.InvalidResourceException( ResourceFactory.InvalidResourceException.ExceptionType.INVALID_VALUES, "invalid policy");
+        } catch (FindException e) {
+            throw (PermissionDeniedException) new PermissionDeniedException( OperationType.CREATE, EntityType.ASSERTION_ACCESS, "Error in permission check.").initCause(e);
+        }
     }
 
     public static class GatewayExternalReferenceFinder implements ExternalReferenceFinder {
@@ -601,6 +624,7 @@ public class PolicyHelper {
     private final WspReader wspReader;
     private final GatewayExternalReferenceFinder referenceFinder;
     private final EntityResolver entityResolver;
+    private final PolicyAssertionRbacChecker policyAssertionRbacChecker;
     private final ResourceHelper resourceHelper = new ResourceHelper();
 
     private boolean isSoap( final Map<String,Object> properties ) {

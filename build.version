@@ -2,8 +2,8 @@
 # Must be edited by hand whenever a new branch is created:
 #   - tag the branch
 #   - in HEAD, edit this file (build.version) to bump up the major and minor versions
-build.version.major=7
-build.version.minor=1
+build.version.major=8
+build.version.minor=0
 build.version.subminor=0
 build.version.revision=1
 

@@ -30,7 +30,6 @@ import com.l7tech.util.Functions.Unary;
 import org.jetbrains.annotations.Nullable;
 
 import javax.inject.Inject;
-import javax.inject.Named;
 import java.beans.PropertyDescriptor;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -58,6 +57,9 @@ public class PolicyAdminImpl implements PolicyAdmin {
 
     @Inject
     private EncapsulatedAssertionConfigManager encapsulatedAssertionConfigManager;
+
+    @Inject
+    private PolicyAssertionRbacChecker policyChecker;
 
     private static final Set<PropertyDescriptor> OMIT_VERSION_AND_XML = BeanUtils.omitProperties(BeanUtils.getProperties(Policy.class), "version", "xml");
     private static final Set<PropertyDescriptor> OMIT_XML = BeanUtils.omitProperties(BeanUtils.getProperties(Policy.class), "xml");
@@ -269,17 +271,20 @@ public class PolicyAdminImpl implements PolicyAdmin {
 
             if (policy.getOid() == Policy.DEFAULT_OID) {
                 ensureGuid( policy );
+                policyChecker.checkPolicy(policy);
                 final long oid = policyManager.save(policy);
                 final PolicyVersion checkpoint = policyVersionManager.checkpointPolicy(policy, activateAsWell, true);
                 policyManager.addManagePolicyRole(policy);
                 return new PolicyCheckpointState(oid, policy.getGuid(), checkpoint.getOrdinal(), checkpoint.isActive());
             } else {
+                policyChecker.checkPolicy(policy);
                 policyManager.update(policy);
                 final PolicyVersion checkpoint = policyVersionManager.checkpointPolicy(policy, true, false);
                 long versionOrdinal = checkpoint.getOrdinal();
                 return new PolicyCheckpointState(policy.getOid(), policy.getGuid(), versionOrdinal, checkpoint.isActive());
             }
         } catch (SaveException e) {
+            /* RETHROW to screen of ObjectModelException catch block below */
             throw e;
         } catch (UpdateException ue) {
             DuplicateObjectException doe = ExceptionUtils.getCauseIfCausedBy( ue, DuplicateObjectException.class );
@@ -288,7 +293,7 @@ public class PolicyAdminImpl implements PolicyAdmin {
             } else {
                 throw new SaveException("Couldn't update policy", ue);                
             }
-        } catch (ObjectModelException e) {
+        } catch (ObjectModelException | IOException e) {
             throw new SaveException("Couldn't update policy", e);
         }
     }
@@ -383,6 +388,7 @@ public class PolicyAdminImpl implements PolicyAdmin {
                     checkPermitted( OperationType.CREATE, EntityType.POLICY );
 
                     dependencyNode.policy.setOid(Policy.DEFAULT_OID);
+                    policyChecker.checkPolicy(dependencyNode.policy);
                     policyManager.save(dependencyNode.policy);
                     policyVersionManager.checkpointPolicy(dependencyNode.policy, activateAsWell, true);
                     policyManager.addManagePolicyRole(dependencyNode.policy);
@@ -475,6 +481,11 @@ public class PolicyAdminImpl implements PolicyAdmin {
             ensureGuid( policy );
             long oid = policyManager.save(policy);
             policyManager.addManagePolicyRole(policy);
+            try {
+                policyChecker.checkPolicy(policy);
+            } catch (IOException e) {
+                throw new SaveException(e);
+            }
             Policy toCheckpoint = makeCopyWithDifferentXml(policy, revisionXml);
             toCheckpoint.setVersion(toCheckpoint.getVersion() - 1);
             final PolicyVersion checkpoint = policyVersionManager.checkpointPolicy(toCheckpoint, false, true);
@@ -491,11 +502,10 @@ public class PolicyAdminImpl implements PolicyAdmin {
             BeanUtils.copyProperties(policy, curPolicy, OMIT_VERSION_AND_XML);
             curPolicy.setXml(curXml + ' '); // leave policy semantics unchanged but bump the version number
             policyManager.update(curPolicy);
+            policyChecker.checkPolicy(curPolicy);
             final PolicyVersion checkpoint = policyVersionManager.checkpointPolicy(makeCopyWithDifferentXml(curPolicy, revisionXml), false, false);
             return new PolicyCheckpointState(policyOid, policy.getGuid(), checkpoint.getOrdinal(), checkpoint.isActive());
-        } catch (InvocationTargetException e) {
-            throw new SaveException(e);
-        } catch (IllegalAccessException e) {
+        } catch (InvocationTargetException | IOException | IllegalAccessException e) {
             throw new SaveException(e);
         }
     }
@@ -505,9 +515,7 @@ public class PolicyAdminImpl implements PolicyAdmin {
             Policy toCheckpoint = new Policy(policy.getType(), policy.getName(), revisionXml, policy.isSoap());
             BeanUtils.copyProperties(policy, toCheckpoint, OMIT_XML);
             return toCheckpoint;
-        } catch (InvocationTargetException e) {
-            throw new SaveException("Unable to copy Policy properties", e); // can't happen
-        } catch (IllegalAccessException e) {
+        } catch (InvocationTargetException | IllegalAccessException e) {
             throw new SaveException("Unable to copy Policy properties", e); // can't happen
         }
     }

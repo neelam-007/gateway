@@ -161,7 +161,9 @@ public abstract class AbstractPaletteFolderNode extends AbstractAssertionPalette
             return;
         }
 
-        insert(paletteNode, getInsertPosition( paletteNode ));
+        if (TopComponents.getInstance().getAssertionRegistry().isAssertionAccessPermitted(ass)) {
+            insert(paletteNode, getInsertPosition( paletteNode ));
+        }
     }
 
     protected void insertMatchingCustomAssertions(Category category) {
@@ -170,7 +172,9 @@ public abstract class AbstractPaletteFolderNode extends AbstractAssertionPalette
             for (Object o : cr.getAssertions(category)) {
                 CustomAssertionHolder a = (CustomAssertionHolder) o;
                 final CustomAccessControlNode customNode =  new CustomAccessControlNode(a);
-                insert(customNode, getInsertPosition(customNode));
+                if (TopComponents.getInstance().getAssertionRegistry().isAssertionAccessPermitted(a)) {
+                    insert(customNode, getInsertPosition(customNode));
+                }
             }
         } catch (RuntimeException e1) {
             if (ExceptionUtils.causedBy(e1, LicenseException.class)) {

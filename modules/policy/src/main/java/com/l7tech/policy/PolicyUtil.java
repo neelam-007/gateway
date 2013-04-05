@@ -93,10 +93,10 @@ public class PolicyUtil {
      * If a CurrentAssertionTranslator is available, Include assertions may trigger an extra visit to the Include
      * assertion itself prior to its target subtree being visited.
      *
-     * @param assertion the root of the subtree of assertions to visit.  Required.
+     * @param assertion the root of the subtree of assertions to visit.  If null, this method takes no action.
      * @param visitor the visitor to invoke for each assertion.  Required.
      */
-    public static void visitDescendantsAndSelf(final Assertion assertion, Functions.UnaryVoid<Assertion> visitor) {
+    public static void visitDescendantsAndSelf(@Nullable final Assertion assertion, Functions.UnaryVoid<Assertion> visitor) {
         visitDescendantsAndSelf(assertion, visitor, CurrentAssertionTranslator.get());
     }
 

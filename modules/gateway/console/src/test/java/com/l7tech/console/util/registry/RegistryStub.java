@@ -33,10 +33,9 @@ import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
-import com.l7tech.policy.Policy;
-import com.l7tech.policy.PolicyPathBuilderFactory;
-import com.l7tech.policy.PolicyValidator;
+import com.l7tech.policy.*;
 import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
+import com.l7tech.util.Functions;
 import com.l7tech.util.InetAddressUtil;
 import com.l7tech.util.Option;
 import org.jetbrains.annotations.NotNull;
@@ -212,6 +211,11 @@ public class RegistryStub extends Registry {
             @Override
             public EntityHeaderSet<EntityHeader> findEntities(EntityType entityType) throws FindException {
                 return new EntityHeaderSet<EntityHeader>(new EntityHeader(role.getId(), com.l7tech.objectmodel.EntityType.RBAC_ROLE, role.getName(), role.getDescription()));
+            }
+
+            @Override
+            public Collection<AssertionAccess> findAccessibleAssertions() {
+                return Functions.map(Arrays.asList(AllAssertions.SERIALIZABLE_EVERYTHING), AssertionAccess.builderFromAssertion());
             }
         };
     }
