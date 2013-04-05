@@ -25,6 +25,7 @@ import java.util.logging.Logger;
 class PooledJmsEndpointListenerImpl extends AbstractJmsEndpointListener {
 
     private static final Logger _logger = Logger.getLogger(PooledJmsEndpointListenerImpl.class.getName());
+    private static final long CLOSE_CONNECTION_WAIT = 3000L; //3 secs
 
     private final ThreadPoolBean threadPoolBean;
 
@@ -52,6 +53,18 @@ class PooledJmsEndpointListenerImpl extends AbstractJmsEndpointListener {
             _jmsBag = resourceManager.borrowJmsBag(_endpointCfg);
 
             return handOff;
+        }
+    }
+
+    @Override
+    protected void beforeCleanup() {
+        if (threadPoolBean.getActiveCount() != 0) {
+            try {
+                //give a change for running task to complete
+                Thread.sleep(CLOSE_CONNECTION_WAIT);
+            } catch (InterruptedException e) {
+                _logger.info("Cleanup wait interrupted.");
+            }
         }
     }
 

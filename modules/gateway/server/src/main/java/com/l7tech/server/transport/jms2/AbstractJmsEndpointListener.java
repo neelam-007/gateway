@@ -308,6 +308,7 @@ public abstract class AbstractJmsEndpointListener implements JmsEndpointListener
      * Perform cleanup of resources and reset the listener status.
      */
     protected void cleanup() {
+        beforeCleanup();
         // close the consumer
         if ( _consumer != null ) {
             try {
@@ -325,11 +326,24 @@ public abstract class AbstractJmsEndpointListener implements JmsEndpointListener
         // close the Jms connection artifacts
         if ( _jmsBag != null ) {
             // this will close the session and cause rollback if transacted
-            _jmsBag.close();
+            try {
+                // return the jms bag
+                resourceManager.returnJmsBag(_endpointCfg, _jmsBag);
+            } catch (JmsRuntimeException e) {
+                handleCleanupError("Return Jms Session", e);
+            }
             _jmsBag = null;
         }
+        resourceManager.invalidate(_endpointCfg);
 
         _started = false;
+    }
+
+    private void handleCleanupError( final String detail, final Exception exception ) {
+        _logger.log(
+                Level.WARNING,
+                "Error during AbstractJmsEndpointListener cleanup ("+detail+"): " + ExceptionUtils.getMessage( exception ),
+                ExceptionUtils.getDebugException(exception) );
     }
 
     /**
@@ -373,6 +387,8 @@ public abstract class AbstractJmsEndpointListener implements JmsEndpointListener
      * @throws JmsRuntimeException error encountered while processing the jms message
      */
     protected abstract void handleMessage(Message dequeueMessage) throws JmsRuntimeException;
+
+    protected abstract void beforeCleanup();
 
 
     public JmsEndpointConfig getEndpointConfig() {

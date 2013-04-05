@@ -25,6 +25,7 @@ import java.util.TreeSet;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -357,6 +358,7 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
      * Cache entry
      */
     private class CachedConnection {
+        private static final long MAX_CLOSE_CONNECTION_WAIT = 30; //30 seconds
         private final AtomicInteger referenceCount = new AtomicInteger(0);
         private final long createdTime = System.currentTimeMillis();
         private final AtomicLong lastAccessTime = new AtomicLong(createdTime);
@@ -368,6 +370,7 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
         private final int connectionVersion;
         private final BlockingQueue<JmsBag> pool;
         private final JmsEndpointConfig endpointConfig;
+        private Semaphore inUse;
 
         CachedConnection( final JmsEndpointConfig cfg,
                           final JmsBag bag) {
@@ -377,6 +380,7 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
             this.connectionVersion = cfg.getConnection().getVersion();
             this.pool = new LinkedBlockingDeque<JmsBag>();
             this.endpointConfig = cfg;
+            this.inUse = new Semaphore(Short.MAX_VALUE);
 
         }
 
@@ -418,28 +422,28 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
 
         /**
          * Return a JmsBag to the Cached Connection, the JmsBag can be reuse by other Thread
-         * @param bag The bag return to the pool
+         * @param jmsBag The bag return to the pool
          */
-        public void returnJmsBag(JmsBag bag) {
-            touch();
-            pool.add(bag);
+        public void returnJmsBag(JmsBag jmsBag) {
+            if (jmsBag != null) {
+                pool.add(jmsBag);
+            }
         }
 
         /**
          * Caller must hold reference.
          */
         public void doWithJmsResources( final JmsResourceCallback callback ) throws JMSException, JmsRuntimeException {
-            touch();
-            final Connection connection = bag.getConnection();
             JmsBag jmsBag = null;
             try {
                 try {
+                    inUse.acquire();
                     jmsBag = borrowJmsBag();
                 } catch ( Throwable t ) {
                     throw new JmsRuntimeException(t);
                 }
 
-                callback.doWork( connection, jmsBag.getSession(), new JndiContextProvider(){
+                callback.doWork( bag.getConnection(), jmsBag.getSession(), new JndiContextProvider(){
                     @Override
                     public void doWithJndiContext( final JndiContextCallback contextCallback ) throws NamingException  {
                         synchronized( contextLock ) {
@@ -456,7 +460,11 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
                     }
                 });
             } finally {
-                returnJmsBag(jmsBag);
+                try {
+                    returnJmsBag(jmsBag);
+                } finally {
+                    inUse.release();
+                }
             }
         }
 
@@ -478,12 +486,19 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
                         new Object[]{
                                 name, connectionVersion, endpointVersion
                         });
-                bag.close();
+                try {
+                    if (!inUse.tryAcquire(Short.MAX_VALUE, MAX_CLOSE_CONNECTION_WAIT, java.util.concurrent.TimeUnit.SECONDS)) {
+                        logger.log( Level.WARNING, "Some JMS Sessions may not be released.");
+                    }
+                } catch (InterruptedException e) {
+                }
                 Iterator<JmsBag> itr = pool.iterator();
                 while (itr.hasNext()) {
                     itr.next().closeSession();
                 }
+                bag.close();
                 pool.clear();
+                inUse.release(Short.MAX_VALUE);
             }
         }
     }

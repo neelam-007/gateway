@@ -56,6 +56,10 @@ public class ThreadPoolBean implements PropertyChangeListener {
         return threadPool.isShutdown();
     }
 
+    public int getActiveCount() {
+        return threadPool.getActiveCount();
+    }
+
     /**
      * Submit a task for execution.
      *

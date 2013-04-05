@@ -218,6 +218,10 @@ public class ThreadPool {
         return maxPoolSize;
     }
 
+    public int getActiveCount() {
+        return this.workerPool.getActiveCount();
+    }
+
     public void setMaxPoolSize(int maxPoolSize) {
         if(maxPoolSize < corePoolSize){
             throw new IllegalArgumentException("maxPoolSize must be >= corePoolSize");
