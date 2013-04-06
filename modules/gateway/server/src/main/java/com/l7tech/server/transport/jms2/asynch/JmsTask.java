@@ -151,7 +151,7 @@ class JmsTask implements Runnable {
 
         try {
             // return the jms bag
-            resourceManager.returnJmsBag(this.endpointCfg, this.jmsBag);
+            resourceManager.returnJmsBag(this.jmsBag);
         } catch (JmsRuntimeException e) {
             handleCleanupError("Return Jms Session", e);
         }

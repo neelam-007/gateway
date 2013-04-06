@@ -69,10 +69,6 @@ class LegacyJmsEndpointListenerImpl extends AbstractJmsEndpointListener {
         }
     }
 
-    @Override
-    protected void beforeCleanup() {
-    }
-
     MessageProducer getFailureProducer() throws JMSException, NamingException, JmsConfigException, JmsRuntimeException {
         synchronized(sync) {
             if ( _failureProducer == null &&

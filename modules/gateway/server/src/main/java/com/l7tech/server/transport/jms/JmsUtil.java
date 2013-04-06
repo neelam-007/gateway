@@ -218,7 +218,7 @@ public class JmsUtil {
             }
 
             // Give ownership of our successfully-created objects to a new JmsBag
-            JmsBag result = new JmsBag( jndiContext, connFactory, conn, session );
+            JmsBag result = new JmsBag( jndiContext, connFactory, conn, session, null);
             conn = null;
             session = null;
             jndiContext = null;

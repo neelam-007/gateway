@@ -17,11 +17,12 @@ import java.util.logging.Logger;
  * Not thread-safe!
  */
 public class JmsBag implements Closeable {
-    public JmsBag( Context context, ConnectionFactory factory, Connection conn, Session sess ) {
+    public JmsBag( Context context, ConnectionFactory factory, Connection conn, Session sess, Object owner ) {
         connectionFactory = factory;
         connection = conn;
         session = sess;
         jndiContext = context;
+        bagOwner = owner;
     }
     
     public ConnectionFactory getConnectionFactory() {
@@ -42,6 +43,10 @@ public class JmsBag implements Closeable {
     public Context getJndiContext() {
         check();
         return jndiContext;
+    }
+
+    public Object getBagOwner() {
+        return bagOwner;
     }
 
     /**
@@ -115,6 +120,7 @@ public class JmsBag implements Closeable {
             connection = null;
             connectionFactory = null;
             jndiContext = null;
+            bagOwner = null;
         }
     }
 
@@ -123,6 +129,7 @@ public class JmsBag implements Closeable {
     private Connection connection;
     private Session session;
     private Context jndiContext;
+    private Object bagOwner;
     protected volatile boolean closed;
 
 }

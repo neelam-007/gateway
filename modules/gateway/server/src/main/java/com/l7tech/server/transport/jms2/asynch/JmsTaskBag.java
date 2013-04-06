@@ -13,27 +13,7 @@ import java.util.logging.Logger;
 class JmsTaskBag extends JmsBag {
     
     JmsTaskBag( final JmsBag jmsBag ) {
-        super(jmsBag.getJndiContext(), jmsBag.getConnectionFactory(), jmsBag.getConnection(), jmsBag.getSession() );
-    }
-
-    @Override
-    public ConnectionFactory getConnectionFactory() {
-        return super.getConnectionFactory();
-    }
-
-    @Override
-    public Connection getConnection() {
-        return super.getConnection();
-    }
-
-    @Override
-    public Session getSession() {
-        return super.getSession();
-    }
-
-    @Override
-    public Context getJndiContext() {
-        return super.getJndiContext();
+        super(jmsBag.getJndiContext(), jmsBag.getConnectionFactory(), jmsBag.getConnection(), jmsBag.getSession(), jmsBag.getBagOwner() );
     }
 
     public boolean isClosed() {

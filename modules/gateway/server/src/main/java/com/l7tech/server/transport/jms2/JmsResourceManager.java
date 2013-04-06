@@ -25,7 +25,6 @@ import java.util.TreeSet;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingDeque;
-import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -80,17 +79,21 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
                                     final JmsResourceCallback callback ) throws JMSException, JmsRuntimeException {
         if ( !active.get() ) throw new JmsRuntimeException("JMS resource manager is stopped.");
 
-        CachedConnection cachedConnection = getConnection(endpoint);
+        CachedConnection cachedConnection = null;
         try {
+            cachedConnection = getConnection(endpoint);
             cachedConnection.doWithJmsResources( callback );
         } catch ( JMSException e ) {
             evict( connectionHolder, endpoint.getJmsEndpointKey(), cachedConnection );
             throw e;
+        } finally {
+            if ( cachedConnection!= null ) cachedConnection.unRef();
         }
     }
 
     /**
      * Retrieve the JMS Connection, if the connection doesn't exist in the cache, create the connection and cache it.
+     * A connection reference will be incremented. Make sure to release the reference once finish the connection.
      *
      * @param endpoint The configuration to use
      * @return The Cached JMS Connection
@@ -100,21 +103,17 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
 
         final JmsEndpointConfig.JmsEndpointKey key = endpoint.getJmsEndpointKey();
         CachedConnection cachedConnection = null;
-        try {
-            cachedConnection = connectionHolder.get(key);
-            if ( cachedConnection == null || !cachedConnection.ref() ) {
-                cachedConnection = null;
+        cachedConnection = connectionHolder.get(key);
+        if ( cachedConnection == null || !cachedConnection.ref() ) {
+            cachedConnection = null;
 
-                synchronized( key.toString().intern() ){ // prevent concurrent creation for a key
-                    cachedConnection = connectionHolder.get(key); // see if someone else created it
-                    if ( cachedConnection == null || !cachedConnection.ref() ) {
-                        cachedConnection = null;
-                        cachedConnection = newConnection(endpoint);
-                    }
+            synchronized( key.toString().intern() ){ // prevent concurrent creation for a key
+                cachedConnection = connectionHolder.get(key); // see if someone else created it
+                if ( cachedConnection == null || !cachedConnection.ref() ) {
+                    cachedConnection = null;
+                    cachedConnection = newConnection(endpoint);
                 }
             }
-        } finally {
-            if ( cachedConnection != null ) cachedConnection.unRef();
         }
         return cachedConnection;
     }
@@ -135,13 +134,15 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
 
     /**
      * Return a JmsBag to the Cached Connection, the JmsBag can be reuse by other thread.
-     * @param endpointConfig The configuration endpoint to lookup the Cached Connection
      * @param bag The bag return to the JmsSession, Caller should not change any state of JmsBag.
      * @throws JmsRuntimeException If error occur when returning the JmsBag
      */
-    public void returnJmsBag(final JmsEndpointConfig endpointConfig, JmsBag bag) throws JmsRuntimeException {
-        CachedConnection connection = getConnection(endpointConfig);
-        connection.returnJmsBag(bag);
+    public void returnJmsBag(JmsBag bag) throws JmsRuntimeException {
+        CachedConnection cachedConnection = (CachedConnection) bag.getBagOwner();
+        if (cachedConnection != null) {
+            cachedConnection.returnJmsBag(bag);
+            cachedConnection.unRef();
+        }
     }
 
     /**
@@ -150,9 +151,12 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
      * @param endpointConfig The configuration endpoint to loopup the Cached Connection
      * @throws JmsRuntimeException If error when touching the Cached Connection.
      */
-    public void touch(final JmsEndpointConfig endpointConfig) throws JmsRuntimeException {
-        CachedConnection connection = getConnection(endpointConfig);
-        connection.touch();
+    public void touch(final JmsBag bag) throws JmsRuntimeException {
+        CachedConnection cachedConnection = (CachedConnection) bag.getBagOwner();
+        if (cachedConnection != null) {
+            cachedConnection.touch();
+        }
+
     }
 
     /**
@@ -370,7 +374,6 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
         private final int connectionVersion;
         private final BlockingQueue<JmsBag> pool;
         private final JmsEndpointConfig endpointConfig;
-        private Semaphore inUse;
 
         CachedConnection( final JmsEndpointConfig cfg,
                           final JmsBag bag) {
@@ -380,7 +383,6 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
             this.connectionVersion = cfg.getConnection().getVersion();
             this.pool = new LinkedBlockingDeque<JmsBag>();
             this.endpointConfig = cfg;
-            this.inUse = new Semaphore(Short.MAX_VALUE);
 
         }
 
@@ -412,7 +414,7 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
                         session = bag.getConnection().createSession(false, Session.CLIENT_ACKNOWLEDGE);
                     }
                     jmsBag = new JmsBag(bag.getJndiContext(), bag.getConnectionFactory(),
-                        bag.getConnection(), session );
+                        bag.getConnection(), session, this );
                 }
                 return jmsBag;
             } catch (JMSException e) {
@@ -437,7 +439,6 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
             JmsBag jmsBag = null;
             try {
                 try {
-                    inUse.acquire();
                     jmsBag = borrowJmsBag();
                 } catch ( Throwable t ) {
                     throw new JmsRuntimeException(t);
@@ -460,11 +461,7 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
                     }
                 });
             } finally {
-                try {
-                    returnJmsBag(jmsBag);
-                } finally {
-                    inUse.release();
-                }
+                returnJmsBag(jmsBag);
             }
         }
 
@@ -486,19 +483,12 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
                         new Object[]{
                                 name, connectionVersion, endpointVersion
                         });
-                try {
-                    if (!inUse.tryAcquire(Short.MAX_VALUE, MAX_CLOSE_CONNECTION_WAIT, java.util.concurrent.TimeUnit.SECONDS)) {
-                        logger.log( Level.WARNING, "Some JMS Sessions may not be released.");
-                    }
-                } catch (InterruptedException e) {
-                }
                 Iterator<JmsBag> itr = pool.iterator();
                 while (itr.hasNext()) {
                     itr.next().closeSession();
                 }
                 bag.close();
                 pool.clear();
-                inUse.release(Short.MAX_VALUE);
             }
         }
     }
