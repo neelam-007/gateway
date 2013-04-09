@@ -9,6 +9,17 @@ UPDATE ssg_version SET current_version = '8.0.0';
 -- TODO fix FR-473 by renumbering rbac_permission -440 to -441 and inserting CREATE ANY POLICY as new -440
 
 --
+-- Security Zones
+--
+create table security_zone (
+  objectid bigint not null,
+  version integer not null,
+  name varchar(128) not null unique,
+  description varchar(255) not null,
+  PRIMARY KEY (objectid)
+);
+
+--
 -- RBAC for Assertions: Update "Publish Webservices" and "Manage Webservices" canned roles so they can still use policy assertions in 8.0
 --
 INSERT INTO rbac_permission VALUES (-360,0,-350,'READ',NULL,'ASSERTION_ACCESS');

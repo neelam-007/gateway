@@ -120,6 +120,7 @@
                 <value>com.l7tech.gateway.common.security.rbac.ObjectIdentityPredicate</value>
                 <value>com.l7tech.gateway.common.security.rbac.FolderPredicate</value>
                 <value>com.l7tech.gateway.common.security.rbac.EntityFolderAncestryPredicate</value>
+                <value>com.l7tech.objectmodel.SecurityZone</value>
 
                 <!-- Customer Mapping -->
                 <value>com.l7tech.gateway.common.mapping.MessageContextMappingKeys</value>

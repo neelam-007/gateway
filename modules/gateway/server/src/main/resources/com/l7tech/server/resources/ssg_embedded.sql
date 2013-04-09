@@ -7,6 +7,8 @@
 --
 -- http://opensource.atlassian.com/projects/hibernate/browse/ANN-747
 --
+-- See Core_Dev_Useful_Info#Database_Changes on Layer 7 wiki
+--
 
 create table audit_admin (
     action char(1),
@@ -1624,6 +1626,14 @@ CREATE TABLE firewall_rule_property (
   firewall_rule_oid bigint not null references firewall_rule(objectid) on delete cascade,
   name varchar(128) NOT NULL,
   value clob(2147483647) NOT NULL
+);
+
+create table security_zone (
+  objectid bigint not null,
+  version integer not null,
+  name varchar(128) not null unique,
+  description varchar(255) not null,
+  PRIMARY KEY (objectid)
 );
 
 -- create new RBAC role for Manage Firewall Rules --

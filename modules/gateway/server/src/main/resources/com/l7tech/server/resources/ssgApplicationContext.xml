@@ -577,6 +577,8 @@
         </property>
     </bean>
 
+    <bean id="securityZoneManager" class="com.l7tech.server.security.rbac.SecurityZoneManagerImpl" parent="hibernateBean"/>
+
     <!-- TODO cachingRoleManager? -->
     <bean id="roleManager" class="com.l7tech.server.security.rbac.RoleManagerImpl" parent="hibernateBean">
         <property name="rbacServices">

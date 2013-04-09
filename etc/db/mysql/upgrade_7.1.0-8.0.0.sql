@@ -15,6 +15,17 @@ SET FOREIGN_KEY_CHECKS=0;
 UPDATE ssg_version SET current_version = '8.0.0';
 
 --
+-- Security Zones
+--
+CREATE TABLE security_zone (
+  objectid bigint(20) NOT NULL,
+  version integer NOT NULL,
+  name varchar(128) NOT NULL,
+  description varchar(255) NOT NULL,
+  PRIMARY KEY (objectid)
+) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
+
+--
 -- RBAC for Assertions: Update "Publish Webservices" and "Manage Webservices" canned roles so they can still use policy assertions in 8.0
 --
 INSERT INTO rbac_permission VALUES (-360,0,-350,'READ',NULL,'ASSERTION_ACCESS');

@@ -49,6 +49,7 @@ public abstract class SecureAction extends BaseAction implements LogonListener, 
     public static final String UI_MANAGE_AUDIT_SINK = "ui:ManageAuditSink";
     public static final String UI_MANAGE_EMAIL_LISTENERS = "ui:ManageEmailListeners";
     public static final String UI_MANAGE_ENCAPSULATED_ASSERTIONS = "ui:ManageEncapsulatedAssertions";
+    public static final String UI_MANAGE_SECURITY_ZONES = "ui:ManageSecurityZones";
 
     /** Specify that an action requires at least one authentication assertion to be licensed. */
     public static final Collection<Class> LIC_AUTH_ASSERTIONS =

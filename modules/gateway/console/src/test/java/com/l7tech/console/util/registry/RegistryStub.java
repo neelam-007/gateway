@@ -214,6 +214,26 @@ public class RegistryStub extends Registry {
             }
 
             @Override
+            public Collection<SecurityZone> findAllSecurityZones() throws FindException {
+                throw new FindException("not impl in stub");
+            }
+
+            @Override
+            public SecurityZone findSecurityZoneByPrimaryKey(long oid) throws FindException {
+                throw new FindException("not impl in stub");
+            }
+
+            @Override
+            public long saveSecurityZone(SecurityZone securityZone) throws SaveException {
+                throw new SaveException("not impl in stub");
+            }
+
+            @Override
+            public void deleteSecurityZone(SecurityZone securityZone) throws DeleteException {
+                throw new DeleteException("not impl in stub");
+            }
+
+            @Override
             public Collection<AssertionAccess> findAccessibleAssertions() {
                 return Functions.map(Arrays.asList(AllAssertions.SERIALIZABLE_EVERYTHING), AssertionAccess.builderFromAssertion());
             }

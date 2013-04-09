@@ -195,6 +195,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     private ManageUDDIRegistriesAction manageUDDIRegistriesAction = null;
     private ManageHttpConfigurationAction manageHttpConfigurationAction = null;
     private ManageEncapsulatedAssertionsAction manageEncapsulatedAssertionsAction = null;
+    private ManageSecurityZonesAction manageSecurityZonesAction = null;
 
     private JPanel frameContentPane = null;
     private JPanel mainPane = null;
@@ -1025,6 +1026,7 @@ public class MainWindow extends JFrame implements SheetHolder {
             menu.add(getManageJmsEndpointsMenuItem());
             menu.add(getManageKerberosMenuItem());
             menu.add(getManageRolesMenuItem());
+            menu.add(getManageSecurityZonesAction());
             menu.add(getManageAuditAlertOptionsMenuItem());
             menu.add(getManageLogSinksAction());
             menu.add(getManageEmailListenersAction());
@@ -2178,6 +2180,14 @@ public class MainWindow extends JFrame implements SheetHolder {
         return manageEncapsulatedAssertionsAction;
     }
 
+    private Action getManageSecurityZonesAction() {
+        if (manageSecurityZonesAction == null) {
+            manageSecurityZonesAction = new ManageSecurityZonesAction();
+            disableUntilLogin(manageSecurityZonesAction);
+        }
+        return manageSecurityZonesAction;
+    }
+
     private Action getManageUDDIRegistriesAction() {
         if (manageUDDIRegistriesAction != null) return manageUDDIRegistriesAction;
 
@@ -2547,6 +2557,7 @@ public class MainWindow extends JFrame implements SheetHolder {
                 manageMenu.add(getManageJmsEndpointsMenuItem());
                 manageMenu.add(getManageKerberosMenuItem());
                 manageMenu.add(getManageRolesMenuItem());
+                manageMenu.add(getManageSecurityZonesAction());
                 manageMenu.add(getManageAuditAlertOptionsMenuItem());
                 manageMenu.add(getManageClusterLicensesMenuItem());
                 manageMenu.add(getChangePasswordMenuItem(false));

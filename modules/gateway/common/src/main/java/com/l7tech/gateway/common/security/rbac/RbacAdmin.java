@@ -71,6 +71,27 @@ public interface RbacAdmin {
     @Secured(types=EntityType.ANY, stereotype=FIND_HEADERS)
     EntityHeaderSet<EntityHeader> findEntities(EntityType entityType) throws FindException;
 
+    @Transactional(readOnly=true)
+    @Secured(types=EntityType.SECURITY_ZONE, stereotype=FIND_ENTITIES)
+    Collection<SecurityZone> findAllSecurityZones() throws FindException;
+
+    @Transactional(readOnly=true)
+    @Secured(types=EntityType.SECURITY_ZONE, stereotype=FIND_ENTITY)
+    SecurityZone findSecurityZoneByPrimaryKey(long oid) throws FindException;
+
+    /**
+     * Save a new or updated security zone.
+     *
+     * @param securityZone the zone to save.  Required.
+     * @return the OID assigned to the zone.
+     * @throws SaveException if the save fails.
+     */
+    @Secured(types=EntityType.SECURITY_ZONE, stereotype=SAVE_OR_UPDATE)
+    long saveSecurityZone(SecurityZone securityZone) throws SaveException;
+
+    @Secured(types=EntityType.SECURITY_ZONE, stereotype=DELETE_ENTITY)
+    void deleteSecurityZone(SecurityZone securityZone) throws DeleteException;
+
     /**
      * Obtain information about the list of assertions classnames that the current admin user is permitted to make use of.
      * Assertions whose classnames do not appear on this list should not be offered in the SSM palette,

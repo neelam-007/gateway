@@ -34,6 +34,9 @@ public class RbacAdminImpl implements RbacAdmin {
     private final EntityFinder entityFinder;
 
     @Inject
+    private SecurityZoneManager securityZoneManager;
+
+    @Inject
     private AssertionRegistry assertionRegistry;
 
     public RbacAdminImpl(RoleManager roleManager, EntityFinder entityFinder) {
@@ -149,6 +152,36 @@ public class RbacAdminImpl implements RbacAdmin {
 
     public EntityHeaderSet<EntityHeader> findEntities(EntityType entityType) throws FindException {
         return entityFinder.findAll(entityType.getEntityClass());
+    }
+
+    @Override
+    public Collection<SecurityZone> findAllSecurityZones() throws FindException {
+        return securityZoneManager.findAll();
+    }
+
+    @Override
+    public SecurityZone findSecurityZoneByPrimaryKey(long oid) throws FindException {
+        return securityZoneManager.findByPrimaryKey(oid);
+    }
+
+    @Override
+    public long saveSecurityZone(SecurityZone securityZone) throws SaveException {
+        if (SecurityZone.DEFAULT_OID == securityZone.getOid()) {
+            return securityZoneManager.save(securityZone);
+        } else {
+            long oid = securityZone.getOid();
+            try {
+                securityZoneManager.update(securityZone);
+            } catch (UpdateException e) {
+                throw new SaveException(ExceptionUtils.getMessage(e), e);
+            }
+            return oid;
+        }
+    }
+
+    @Override
+    public void deleteSecurityZone(SecurityZone securityZone) throws DeleteException {
+        securityZoneManager.delete(securityZone);
     }
 
     @Override
