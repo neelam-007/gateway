@@ -42,7 +42,7 @@ class PooledJmsEndpointListenerImpl extends AbstractJmsEndpointListener {
     /**
      *
      */
-    JmsTaskBag handOffJmsBag(JmsBag bag) throws JMSException, JmsRuntimeException {
+    JmsTaskBag handOffJmsBag(JmsBag bag) throws NamingException, JMSException, JmsRuntimeException {
 
         synchronized (sync) {
             JmsTaskBag handOff = new JmsTaskBag(bag);

@@ -76,7 +76,7 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
      * @throws JmsRuntimeException If an error occurs creating the resources
      */
     public void doWithJmsResources( final JmsEndpointConfig endpoint,
-                                    final JmsResourceCallback callback ) throws JMSException, JmsRuntimeException {
+                                    final JmsResourceCallback callback ) throws NamingException, JMSException, JmsRuntimeException {
         if ( !active.get() ) throw new JmsRuntimeException("JMS resource manager is stopped.");
 
         CachedConnection cachedConnection = null;
@@ -99,7 +99,7 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
      * @return The Cached JMS Connection
      * @throws JmsRuntimeException If an error occurs creating the resources
      */
-    private CachedConnection getConnection(JmsEndpointConfig endpoint) throws JmsRuntimeException {
+    private CachedConnection getConnection(JmsEndpointConfig endpoint) throws NamingException, JmsRuntimeException {
 
         final JmsEndpointConfig.JmsEndpointKey key = endpoint.getJmsEndpointKey();
         CachedConnection cachedConnection = null;
@@ -127,7 +127,7 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
      * @return A JmsBag with JmsSession
      * @throws JmsRuntimeException If error occur when getting the connection or getting the JmsBag
      */
-    public JmsBag borrowJmsBag(final JmsEndpointConfig endpointConfig) throws JmsRuntimeException {
+    public JmsBag borrowJmsBag(final JmsEndpointConfig endpointConfig) throws NamingException, JmsRuntimeException {
         CachedConnection connection = getConnection(endpointConfig);
         return connection.borrowJmsBag();
     }
@@ -148,7 +148,7 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
     /**
      * Touch the connection and keep the connection active.
      *
-     * @param endpointConfig The configuration endpoint to loopup the Cached Connection
+     * @param bag The configuration endpoint to loopup the Cached Connection
      * @throws JmsRuntimeException If error when touching the Cached Connection.
      */
     public void touch(final JmsBag bag) throws JmsRuntimeException {
@@ -280,7 +280,7 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
         connectionHolder.clear();
     }
 
-    private CachedConnection newConnection( final JmsEndpointConfig endpoint ) throws JmsRuntimeException {
+    private CachedConnection newConnection( final JmsEndpointConfig endpoint ) throws NamingException, JmsRuntimeException {
         final JmsEndpointConfig.JmsEndpointKey key = endpoint.getJmsEndpointKey();
 
         try {
@@ -307,6 +307,8 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
             });
 
             return newConn;
+        }catch (NamingException ne){
+            throw ne; //rethrow NamingException if it has been caught. Bug SSG-6792
         } catch ( Throwable t ) {
             throw new JmsRuntimeException(t);
         }
