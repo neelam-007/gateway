@@ -642,7 +642,8 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
     private boolean closeDestinationIfTemporaryQueue( final Destination destination ) {
         boolean closed = false;
 
-        if ( destination instanceof TemporaryQueue ) {
+        //SSG-5595 For Weblogic, it treats all queue type as temporary queue
+        if ( destination instanceof TemporaryQueue  && endpointConfig.getReplyType() == JmsReplyType.AUTOMATIC) {
             closed = true;
             logAndAudit( AssertionMessages.JMS_ROUTING_DELETE_TEMPORARY_QUEUE );
             try {
