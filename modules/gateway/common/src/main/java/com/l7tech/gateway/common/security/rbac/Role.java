@@ -9,6 +9,7 @@ import com.l7tech.identity.User;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.NamedEntity;
+import com.l7tech.objectmodel.SecurityZone;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.util.TextUtils;
@@ -168,6 +169,20 @@ public class Role extends NamedEntityImp implements Comparable<Role> {
     {
         Permission perm = new Permission(this, operation, etype);
         perm.getScope().add(new AttributePredicate(perm, attr, name));
+        permissions.add(perm);
+    }
+
+    /**
+     * Adds a new Permission granting the specified privilege with its scope set to
+     * a {@link SecurityZonePredicate} for the provided entity security zone.
+     *
+     * @param operation  the operation that the permission grants access to
+     * @param etype      the type of entity to which the permission applies
+     * @param securityZone the security zone entities must be in for the new permission to apply to them
+     */
+    public void addSecurityZonePermission(OperationType operation, EntityType etype, SecurityZone securityZone) {
+        Permission perm = new Permission(this, operation, etype);
+        perm.getScope().add(new SecurityZonePredicate(perm, securityZone));
         permissions.add(perm);
     }
 

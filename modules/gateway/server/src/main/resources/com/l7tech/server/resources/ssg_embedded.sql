@@ -10,6 +10,14 @@
 -- See Core_Dev_Useful_Info#Database_Changes on Layer 7 wiki
 --
 
+create table security_zone (
+  objectid bigint not null,
+  version integer not null,
+  name varchar(128) not null unique,
+  description varchar(255) not null,
+  PRIMARY KEY (objectid)
+);
+
 create table audit_admin (
     action char(1),
     entity_class varchar(1024),
@@ -528,6 +536,7 @@ create table policy (
     soap smallint,
     internal_tag varchar(64),
     folder_oid bigint,
+    security_zone_oid bigint references security_zone(objectid) on delete set null,
     primary key (objectid)
 );
 
@@ -628,6 +637,12 @@ create table rbac_predicate_folder (
     objectid bigint not null,
     folder_oid bigint not null,
     transitive smallint not null,
+    primary key (objectid)
+);
+
+create table rbac_predicate_security_zone (
+    objectid bigint not null references rbac_predicate(objectid) on delete cascade,
+    security_zone_oid bigint not null references security_zone(objectid) on delete cascade,
     primary key (objectid)
 );
 
@@ -1626,14 +1641,6 @@ CREATE TABLE firewall_rule_property (
   firewall_rule_oid bigint not null references firewall_rule(objectid) on delete cascade,
   name varchar(128) NOT NULL,
   value clob(2147483647) NOT NULL
-);
-
-create table security_zone (
-  objectid bigint not null,
-  version integer not null,
-  name varchar(128) not null unique,
-  description varchar(255) not null,
-  PRIMARY KEY (objectid)
 );
 
 -- create new RBAC role for Manage Firewall Rules --

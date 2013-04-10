@@ -74,6 +74,7 @@
         <property name="internalTag" column="internal_tag" type="string" length="64"/>
 
         <many-to-one name="folder" column="folder_oid"/>
+        <many-to-one name="securityZone" column="security_zone_oid"/>
     </class>
 
     <class name="com.l7tech.policy.PolicyVersion" table="policy_version" lazy="false">

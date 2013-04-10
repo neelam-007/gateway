@@ -401,7 +401,8 @@ class EntityPropertiesHelper {
             "type",
             "version",
             "name",
-            "visibility"
+            "visibility",
+            "securityZone"  // TODO this should probably be included in the XML
         ) )
         .put( PublishedService.class, list(
             "wsdlUrl",

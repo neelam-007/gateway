@@ -25,6 +25,18 @@ CREATE TABLE security_zone (
   PRIMARY KEY (objectid)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
+DROP TABLE IF EXISTS rbac_predicate_security_zone;
+CREATE TABLE rbac_predicate_security_zone (
+  objectid bigint(20) NOT NULL,
+  security_zone_oid bigint(20) NOT NULL,
+  PRIMARY KEY (objectid),
+  FOREIGN KEY (objectid) REFERENCES rbac_predicate (objectid) ON DELETE CASCADE,
+  FOREIGN KEY (security_zone_oid) REFERENCES security_zone (objectid) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
+
+alter table policy add column security_zone_oid bigint(20);
+alter table policy add FOREIGN KEY (security_zone_oid) REFERENCES security_zone (objectid) ON DELETE SET NULL;
+
 --
 -- RBAC for Assertions: Update "Publish Webservices" and "Manage Webservices" canned roles so they can still use policy assertions in 8.0
 --

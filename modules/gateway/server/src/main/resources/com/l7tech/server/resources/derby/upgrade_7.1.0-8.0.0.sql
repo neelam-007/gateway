@@ -16,8 +16,18 @@ create table security_zone (
   version integer not null,
   name varchar(128) not null unique,
   description varchar(255) not null,
-  PRIMARY KEY (objectid)
+  primary key (objectid)
 );
+
+create table rbac_predicate_security_zone (
+  objectid bigint not null references rbac_predicate(objectid) on delete cascade,
+  security_zone_oid bigint not null references security_zone(objectid) on delete cascade,
+  transitive smallint not null,
+  primary key (objectid)
+);
+
+alter table policy add column security_zone_oid bigint;
+alter table policy add foreign key (security_zone_oid) references security_zone (objectid) on delete set null;
 
 --
 -- RBAC for Assertions: Update "Publish Webservices" and "Manage Webservices" canned roles so they can still use policy assertions in 8.0

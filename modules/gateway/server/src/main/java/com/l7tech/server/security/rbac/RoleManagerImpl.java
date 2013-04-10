@@ -38,6 +38,11 @@ public class RoleManagerImpl extends HibernateEntityManager<Role, EntityHeader> 
 
     private RbacServices rbacServices;
 
+    private static final String HQL_FIND_ALL_SECURITY_ZONE_PREDICATES_REFERENCING_SECURITY_ZONE_OID =
+        "from rbac_predicate_security_zone" +
+            " in class " + SecurityZonePredicate.class.getName() +
+            " where rbac_predicate_security_zone.requiredZone.oid = ?";
+
     private static final String HQL_FIND_ALL_FOLDER_PREDICATES_REFERENCING_FOLDER_OID =
         "from rbac_predicate_folder" +
             " in class " + FolderPredicate.class.getName() +
@@ -362,6 +367,9 @@ public class RoleManagerImpl extends HibernateEntityManager<Role, EntityHeader> 
         if (EntityType.FOLDER.equals(etype)) {
             permissionsToDelete.addAll(findFolderPredicatePermissionsForFolder(entityOid));
         }
+        if (EntityType.SECURITY_ZONE.equals(etype)) {
+            permissionsToDelete.addAll(findSecurityZonePredicatePermissionsForSecurityZone(entityOid));
+        }
 
         Set<Role> rolesToUpdate = new HashSet<Role>();
         for (Permission permission : permissionsToDelete) {
@@ -424,6 +432,21 @@ public class RoleManagerImpl extends HibernateEntityManager<Role, EntityHeader> 
 
             FolderPredicate fp = (FolderPredicate) predicate;
             ret.add(fp.getPermission());
+        }
+
+        return ret;
+    }
+
+    private Set<Permission> findSecurityZonePredicatePermissionsForSecurityZone(long securtiyZoneOid) {
+        Set<Permission> ret = new HashSet<Permission>();
+
+        List predicates = getHibernateTemplate().find(HQL_FIND_ALL_SECURITY_ZONE_PREDICATES_REFERENCING_SECURITY_ZONE_OID, securtiyZoneOid);
+        for (Object predicate : predicates) {
+            if (!(predicate instanceof ScopePredicate))
+                throw new HibernateException("Got unexpected return value type of " + predicate.getClass() + " while finding folder predicates by security zone oid");
+
+            ScopePredicate sp = (ScopePredicate) predicate;
+            ret.add(sp.getPermission());
         }
 
         return ret;

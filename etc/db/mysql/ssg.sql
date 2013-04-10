@@ -36,6 +36,18 @@ END
 delimiter ;
 
 --
+-- Security zones
+--
+DROP TABLE IF EXISTS security_zone;
+CREATE TABLE security_zone (
+  objectid bigint(20) NOT NULL,
+  version integer NOT NULL,
+  name varchar(128) NOT NULL,
+  description varchar(255) NOT NULL,
+  PRIMARY KEY (objectid)
+) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
+
+--
 -- Table for replication monitoring
 --
 DROP TABLE IF EXISTS replication_status;
@@ -246,10 +258,12 @@ CREATE TABLE policy (
   guid char(36) NOT NULL,
   internal_tag VARCHAR(64),
   folder_oid bigint(20),
+  security_zone_oid bigint(20),
   PRIMARY KEY (objectid),
   UNIQUE KEY i_name (name),
   UNIQUE KEY i_guid (guid),
   CONSTRAINT policy_folder FOREIGN KEY (folder_oid) REFERENCES folder (objectid),
+  CONSTRAINT policy_security_zone FOREIGN KEY (security_zone_oid) REFERENCES security_zone (objectid) ON DELETE SET NULL,
   INDEX (policy_type)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
@@ -1272,6 +1286,18 @@ CREATE TABLE rbac_predicate_attribute (
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --
+-- Table structure for table rbac_predicate_security_zone
+--
+DROP TABLE IF EXISTS rbac_predicate_security_zone;
+CREATE TABLE rbac_predicate_security_zone (
+  objectid bigint(20) NOT NULL,
+  security_zone_oid bigint(20) NOT NULL,
+  PRIMARY KEY (objectid),
+  FOREIGN KEY (objectid) REFERENCES rbac_predicate (objectid) ON DELETE CASCADE,
+  FOREIGN KEY (security_zone_oid) REFERENCES security_zone (objectid) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
+
+--
 -- Table structure for table rbac_predicate_oid
 --
 
@@ -1878,15 +1904,6 @@ CREATE TABLE firewall_rule_property (
   name varchar(128) NOT NULL,
   value MEDIUMTEXT NOT NULL,
   FOREIGN KEY (firewall_rule_oid) REFERENCES firewall_rule (objectid) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
-
-DROP TABLE IF EXISTS security_zone;
-CREATE TABLE security_zone (
-  objectid bigint(20) NOT NULL,
-  version integer NOT NULL,
-  name varchar(128) NOT NULL,
-  description varchar(255) NOT NULL,
-  PRIMARY KEY (objectid)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
 DROP TABLE IF EXISTS ssg_version;

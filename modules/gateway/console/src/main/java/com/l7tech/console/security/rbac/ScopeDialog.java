@@ -54,23 +54,27 @@ class ScopeDialog extends JDialog {
     static final String OPTION_FOLDER = resources.getString("scopeDialog.scope.folder.option");
     static final String OPTION_FOLDER_ANCESTRY = resources.getString("scopeDialog.scope.folderAncestry.option");
     static final String OPTION_ATTRIBUTE = resources.getString("scopeDialog.scope.attribute.option");
+    static final String OPTION_SECURITY_ZONE = resources.getString("scopeDialog.scope.securityZone.option");
 
     // Scope predicates to offer for folderable entities
     private static final String[] SCOPE_OPTION_TYPES_FOLDER = {
         OPTION_FOLDER,
         OPTION_FOLDER_ANCESTRY,
-        OPTION_ATTRIBUTE
+        OPTION_ATTRIBUTE,
+        OPTION_SECURITY_ZONE
     };
 
     // Scope predicates to offer for EntityType.ANY
     private static final String[] SCOPE_OPTION_TYPES_ANY = {
         OPTION_FOLDER,   // Folder predicate will fail at runtime to grant permission for any non-folderable entity type
-        OPTION_ATTRIBUTE
+        OPTION_ATTRIBUTE,
+        OPTION_SECURITY_ZONE // Zone predicate will fail at runtime to grant permission for any non-ZoneableEntity type
     };
 
     // Scope predicates to offer for any other non-folderable entity type
     private static final String[] SCOPE_OPTION_TYPES_NO_FOLDER = {
-        OPTION_ATTRIBUTE
+        OPTION_ATTRIBUTE,
+        OPTION_SECURITY_ZONE  // Zone predicate will fail at runtime to grant permission for any non-ZeoneableEntity type
     };
 
     public ScopeDialog(Window owner, Permission perm, EntityType etype, boolean allowChanges) throws HeadlessException {
@@ -198,6 +202,8 @@ class ScopeDialog extends JDialog {
                                 scope = new FolderPredicate(permission, null, true);
                             } else if (OPTION_FOLDER_ANCESTRY.equals(optionStr)) {
                                 scope = new EntityFolderAncestryPredicate(permission, entityType, -1L);
+                            } else if (OPTION_SECURITY_ZONE.equals(optionStr)) {
+                                scope = new SecurityZonePredicate(permission, null);
                             } else {
                                 throw new IllegalStateException("Unknown option: " + optionStr + " index " + option);
                             }
@@ -276,6 +282,9 @@ class ScopeDialog extends JDialog {
         } else if (scope instanceof EntityFolderAncestryPredicate) {
             EntityFolderAncestryPredicate entityFolderAncestryPredicate = (EntityFolderAncestryPredicate) scope;
             dlg = new OkCancelDialog<EntityFolderAncestryPredicate>(this, "Restrict Permission to Folder Ancestors", true, new ScopeEntityFolderAncestryPanel(entityFolderAncestryPredicate, entityType));
+        } else if (scope instanceof SecurityZonePredicate) {
+            SecurityZonePredicate securityZonePredicate = (SecurityZonePredicate) scope;
+            dlg = new OkCancelDialog<SecurityZonePredicate>(this, "Restrict Permission to Security Zone", true, new ScopeSecurityZonePanel(securityZonePredicate, entityType));
         } else if (scope instanceof ObjectIdentityPredicate) {
             throw new UnsupportedOperationException("Unable to add ObjectIdentityPredicate as custom scope");
         } else {

@@ -80,6 +80,7 @@ public class PersistenceEventInterceptor extends ApplicationObjectSupport implem
         noAuditClassNames.add(AttributePredicate.class.getName());
         noAuditClassNames.add(FolderPredicate.class.getName());
         noAuditClassNames.add(EntityFolderAncestryPredicate.class.getName());
+        noAuditClassNames.add(SecurityZonePredicate.class.getName());
         noAuditClassNames.add(UDDIProxiedService.class.getName());
         noAuditClassNames.add("com.l7tech.server.ems.monitoring.SystemMonitoringNotificationRule");
         noAuditClassNames.add("com.l7tech.server.ems.monitoring.SsgClusterNotificationSetup");

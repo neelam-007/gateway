@@ -3,7 +3,7 @@ package com.l7tech.policy;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.HasFolder;
-import com.l7tech.objectmodel.imp.NamedEntityImp;
+import com.l7tech.objectmodel.imp.ZoneableNamedEntityImp;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.assertion.Assertion;
@@ -38,7 +38,7 @@ import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
  * @author alex
  */
 @XmlRootElement
-public class Policy extends NamedEntityImp implements Flushable, HasFolder {
+public class Policy extends ZoneableNamedEntityImp implements Flushable, HasFolder {
     private static final Logger logger = Logger.getLogger(Policy.class.getName());
 
     private static WspReader.Visibility defaultVisibility = WspReader.INCLUDE_DISABLED;

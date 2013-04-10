@@ -3,6 +3,7 @@ package com.l7tech.console.panels;
 import com.l7tech.console.action.EditServiceProperties;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.SecurityZoneWidget;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.gateway.common.service.ServiceTemplate;
@@ -40,6 +41,7 @@ public class PolicyPropertiesPanel extends ValidatedPanel {
     private JComboBox tagCombo;
     private JLabel unsavedWarningLabel;
     private JTextField oidField;
+    private SecurityZoneWidget zoneControl;
     // TODO include a policy panel
 
     private final Policy policy;
@@ -186,6 +188,8 @@ public class PolicyPropertiesPanel extends ValidatedPanel {
         tagCombo.addItemListener(syntaxListener);
         nameField.getDocument().addDocumentListener(syntaxListener);
 
+        zoneControl.setSelectedZone(policy.getSecurityZone());
+
         typeCombo.addItemListener(new ItemListener() {
             @Override
             public void itemStateChanged(ItemEvent e) {
@@ -243,6 +247,7 @@ public class PolicyPropertiesPanel extends ValidatedPanel {
         policy.setName(nameField.getText().trim());
         policy.setSoap(soapCheckbox.isSelected());
         policy.setType((PolicyType)typeCombo.getSelectedItem());
+        policy.setSecurityZone(zoneControl.getSelectedZone());
 
         if (policy.getType() == PolicyType.INTERNAL || policy.getType().getGuiTags() != null) {
             String tag = (String) tagCombo.getSelectedItem();
