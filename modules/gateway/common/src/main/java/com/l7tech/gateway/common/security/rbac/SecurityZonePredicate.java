@@ -3,7 +3,6 @@ package com.l7tech.gateway.common.security.rbac;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.SecurityZone;
 import com.l7tech.objectmodel.ZoneableEntity;
-import com.l7tech.objectmodel.folder.Folder;
 import org.hibernate.annotations.Proxy;
 
 import javax.persistence.JoinColumn;
@@ -44,11 +43,6 @@ public class SecurityZonePredicate extends ScopePredicate implements ScopeEvalua
         if (requiredZone != null && entity instanceof ZoneableEntity) {
             ZoneableEntity ze = (ZoneableEntity) entity;
             return requiredZone.equals(ze.getSecurityZone());
-        }
-        if (entity instanceof Folder) {
-            Folder folder = (Folder) entity;
-            if (folder.getFolder() == null)
-                return true; // Special -- the "Root Folder" is considered to exist in all possible security zones
         }
         return false;
     }
