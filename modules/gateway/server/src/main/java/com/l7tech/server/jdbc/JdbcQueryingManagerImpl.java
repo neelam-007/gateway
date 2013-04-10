@@ -16,6 +16,7 @@ import org.jetbrains.annotations.Nullable;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.dao.DataAccessException;
+import org.springframework.dao.InvalidDataAccessApiUsageException;
 import org.springframework.jdbc.BadSqlGrammarException;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -224,6 +225,10 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager, PropertyCha
                 return "Could not get JDBC Connection.";
             } else if (ExceptionUtils.causedBy(e, BadSqlGrammarException.class)) {
                 return "Bad SQL Grammar: " + ExceptionUtils.getMessage(ExceptionUtils.unnestToRoot(e));
+            } else if (ExceptionUtils.causedBy(e, InvalidDataAccessApiUsageException.class)
+                    && e.getMessage().contains("Unable to determine the correct call signature for")
+                    && e.getMessage().contains("package name should be specified separately using '.withCatalogName(")) {
+                return "The database object either does not exist or the SQL query contains the objects schema e.g. myschema.myobject";
             } else {
                 return ExceptionUtils.getMessage(ExceptionUtils.unnestToRoot(e));
             }
