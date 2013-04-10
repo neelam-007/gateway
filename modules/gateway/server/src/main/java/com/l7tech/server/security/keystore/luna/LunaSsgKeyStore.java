@@ -58,7 +58,7 @@ public class LunaSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore implements Ssg
             return;
 
         try {
-            keystore.load(new EmptyInputStream(), new char[0]);
+            keystore.load(null,null);
         } catch (IOException e) {
             throw new KeyStoreException(e);
         } catch (NoSuchAlgorithmException e) {
