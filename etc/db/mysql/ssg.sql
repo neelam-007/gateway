@@ -229,7 +229,7 @@ CREATE TABLE published_service (
   PRIMARY KEY (objectid),
   FOREIGN KEY (policy_oid) REFERENCES policy (objectid),
   CONSTRAINT published_service_folder FOREIGN KEY (folder_oid) REFERENCES folder (objectid),
-  CONSTRAINT policy_security_zone FOREIGN KEY (security_zone_oid) REFERENCES security_zone (objectid) ON DELETE SET NULL,
+  CONSTRAINT service_security_zone FOREIGN KEY (security_zone_oid) REFERENCES security_zone (objectid) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --
@@ -241,9 +241,11 @@ CREATE TABLE published_service_alias (
   `version` int(11) NOT NULL,
   `folder_oid` bigint(20) NOT NULL,
   `published_service_oid` bigint(20) NOT NULL,
+  security_zone_oid bigint(20),
   UNIQUE KEY (folder_oid, published_service_oid),
   FOREIGN KEY (published_service_oid) REFERENCES published_service (objectid) ON DELETE CASCADE,
-  FOREIGN KEY (folder_oid) REFERENCES folder (objectid) ON DELETE CASCADE
+  FOREIGN KEY (folder_oid) REFERENCES folder (objectid) ON DELETE CASCADE,
+  CONSTRAINT service_alias_security_zone FOREIGN KEY (security_zone_oid) REFERENCES security_zone (objectid) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -302,9 +304,11 @@ CREATE TABLE policy_alias (
   `version` int(11) NOT NULL,
   `folder_oid` bigint(20) NOT NULL,
   `policy_oid` bigint(20) NOT NULL,
+  security_zone_oid bigint(20),
   UNIQUE KEY (folder_oid, policy_oid),
   FOREIGN KEY (policy_oid) REFERENCES policy (objectid) ON DELETE CASCADE,
-  FOREIGN KEY (folder_oid) REFERENCES folder (objectid) ON DELETE CASCADE
+  FOREIGN KEY (folder_oid) REFERENCES folder (objectid) ON DELETE CASCADE,
+  CONSTRAINT policy_alias_security_zone FOREIGN KEY (security_zone_oid) REFERENCES security_zone (objectid) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 

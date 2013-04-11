@@ -1,7 +1,7 @@
 package com.l7tech.objectmodel;
 
 import com.l7tech.objectmodel.folder.Folder;
-import com.l7tech.objectmodel.imp.PersistentEntityImp;
+import com.l7tech.objectmodel.imp.ZoneablePersistentEntityImp;
 import com.l7tech.objectmodel.migration.Migration;
 import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
 
@@ -14,7 +14,7 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @author darmstrong
  */
 @XmlRootElement
-public abstract class Alias<ET extends PersistentEntity> extends PersistentEntityImp implements EntityAlias {
+public abstract class Alias<ET extends PersistentEntity> extends ZoneablePersistentEntityImp implements EntityAlias {
     protected long entityOid;
     private Folder folder;
 

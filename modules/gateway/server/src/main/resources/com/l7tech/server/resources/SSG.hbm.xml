@@ -64,6 +64,7 @@
         <property name="entityOid" column="published_service_oid" type="long"/>
 
         <many-to-one name="folder" column="folder_oid"/>
+        <many-to-one name="securityZone" column="security_zone_oid"/>
     </class>
 
     <class name="com.l7tech.policy.Policy" table="policy" lazy="false">
@@ -107,6 +108,7 @@
         <property name="entityOid" column="policy_oid" type="long"/>
 
         <many-to-one name="folder" column="folder_oid"/>
+        <many-to-one name="securityZone" column="security_zone_oid"/>
     </class>
 
     <class name="com.l7tech.objectmodel.folder.Folder" table="folder" lazy="false">

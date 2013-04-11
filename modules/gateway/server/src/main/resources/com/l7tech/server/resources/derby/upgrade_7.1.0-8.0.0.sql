@@ -30,8 +30,14 @@ create table rbac_predicate_security_zone (
 alter table policy add column security_zone_oid bigint;
 alter table policy add foreign key (security_zone_oid) references security_zone (objectid) on delete set null;
 
+alter table policy_alias add column security_zone_oid bigint;
+alter table policy_alias add foreign key (security_zone_oid) references security_zone (objectid) on delete set null;
+
 alter table published_service add column security_zone_oid bigint;
 alter table published_service add foreign key (security_zone_oid) references security_zone (objectid) on delete set null;
+
+alter table published_service_alias add column security_zone_oid bigint;
+alter table published_service_alias add foreign key (security_zone_oid) references security_zone (objectid) on delete set null;
 
 --
 -- RBAC for Assertions: Update "Publish Webservices" and "Manage Webservices" canned roles so they can still use policy assertions in 8.0

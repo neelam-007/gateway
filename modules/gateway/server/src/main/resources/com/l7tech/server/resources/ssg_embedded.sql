@@ -546,6 +546,7 @@ create table policy_alias (
     version integer not null,
     policy_oid bigint,
     folder_oid bigint,
+    security_zone_oid bigint references security_zone(objectid) on delete set null,
     primary key (objectid)
 );
 
@@ -590,6 +591,7 @@ create table published_service_alias (
     version integer not null,
     published_service_oid bigint,
     folder_oid bigint,
+    security_zone_oid bigint references security_zone(objectid) on delete set null,
     primary key (objectid)
 );
 
