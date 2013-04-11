@@ -43,7 +43,7 @@ public class RbacUtilities {
     }
 
     public static boolean isEnableRoleEditing() {
-        return ConfigFactory.getBooleanProperty( SYSTEM_PROP_ENABLEROLEEDIT, false );
+        return ConfigFactory.getBooleanProperty( SYSTEM_PROP_ENABLEROLEEDIT, true );
     }
 
     public static boolean isEnableBuiltInRoleEditing() {
