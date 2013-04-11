@@ -1,6 +1,7 @@
 package com.l7tech.gateway.common.security.rbac;
 
 import com.l7tech.objectmodel.Entity;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.SecurityZone;
 import com.l7tech.objectmodel.ZoneableEntity;
 import org.hibernate.annotations.Proxy;
@@ -8,6 +9,7 @@ import org.hibernate.annotations.Proxy;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
+import java.util.Set;
 
 /**
  * A scope predicate for restricting a permission to entities within a particular security zone.
@@ -40,11 +42,16 @@ public class SecurityZonePredicate extends ScopePredicate implements ScopeEvalua
 
     @Override
     public boolean matches(Entity entity) {
-        if (requiredZone != null && entity instanceof ZoneableEntity) {
+        if (requiredZone != null && entity instanceof ZoneableEntity && entityTypePermitted(requiredZone, entity)) {
             ZoneableEntity ze = (ZoneableEntity) entity;
             return requiredZone.equals(ze.getSecurityZone());
         }
         return false;
+    }
+
+    private static boolean entityTypePermitted(SecurityZone requiredZone, Entity entity) {
+        final Set<EntityType> entityTypes = requiredZone.getPermittedEntityTypes();
+        return entityTypes != null && entity != null && entityTypes.contains(EntityType.findTypeByEntity(entity.getClass()));
     }
 
     @Override

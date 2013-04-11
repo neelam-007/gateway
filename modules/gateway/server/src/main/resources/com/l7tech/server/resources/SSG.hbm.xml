@@ -19,6 +19,10 @@
         <param name="enumClass">com.l7tech.common.http.HttpMethod</param>
     </typedef>
 
+    <typedef class="com.l7tech.server.util.GenericEnumSetUserType" name="entity_types_type">
+        <param name="enumClass">com.l7tech.objectmodel.EntityType</param>
+    </typedef>
+
     <typedef class="com.l7tech.server.util.GenericEnumUserType" name="soap_version_type">
         <param name="enumClass">com.l7tech.xml.soap.SoapVersion</param>
     </typedef>

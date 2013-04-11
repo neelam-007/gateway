@@ -44,6 +44,7 @@ CREATE TABLE security_zone (
   version integer NOT NULL,
   name varchar(128) NOT NULL,
   description varchar(255) NOT NULL,
+  entity_types varchar(4096) NOT NULL,
   PRIMARY KEY (objectid)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 

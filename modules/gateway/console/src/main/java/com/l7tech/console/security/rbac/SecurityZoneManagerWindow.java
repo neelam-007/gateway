@@ -17,6 +17,7 @@ import com.l7tech.util.Functions;
 import javax.swing.*;
 import java.awt.*;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -65,7 +66,9 @@ public class SecurityZoneManagerWindow extends JDialog {
         ecc.setEntityCreator(new EntityCreator<SecurityZone>() {
             @Override
             public SecurityZone createNewEntity() {
-                return new SecurityZone();
+                final SecurityZone securityZone = new SecurityZone();
+                securityZone.getPermittedEntityTypes().addAll(EnumSet.allOf(EntityType.class));
+                return securityZone;
             }
         });
         ecc.setEntityDeleter(new EntityDeleter<SecurityZone>() {

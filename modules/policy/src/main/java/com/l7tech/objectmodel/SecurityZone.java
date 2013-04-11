@@ -2,6 +2,7 @@ package com.l7tech.objectmodel;
 
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 import org.hibernate.annotations.Proxy;
+import org.hibernate.annotations.Type;
 
 import javax.persistence.Column;
 import javax.persistence.Inheritance;
@@ -9,6 +10,8 @@ import javax.persistence.InheritanceType;
 import javax.persistence.Table;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlType;
+import java.util.EnumSet;
+import java.util.Set;
 
 /**
  * Represents a grouping of entity instances for RBAC permission checking purposes.
@@ -22,7 +25,8 @@ import javax.xml.bind.annotation.XmlType;
 @Inheritance(strategy=InheritanceType.SINGLE_TABLE)
 @Table(name="security_zone")
 public class SecurityZone extends NamedEntityImp {
-    private String description;
+    private String description = "";
+    private Set<EntityType> permittedEntityTypes = EnumSet.noneOf(EntityType.class);
 
     /**
      * @return description of security zone, or null.
@@ -36,6 +40,19 @@ public class SecurityZone extends NamedEntityImp {
         this.description = description;
     }
 
+    /**
+     * @return the entity types that are permitted to be placed into this security zone.
+     */
+    @Column(name = "entity_types", nullable=false, length=4096)
+    @Type(type = "entity_types_type")
+    public Set<EntityType> getPermittedEntityTypes() {
+        return permittedEntityTypes;
+    }
+
+    public void setPermittedEntityTypes(Set<EntityType> permittedEntityTypes) {
+        this.permittedEntityTypes = permittedEntityTypes;
+    }
+
     @SuppressWarnings("RedundantIfStatement")
     @Override
     public boolean equals(Object o) {
@@ -46,6 +63,8 @@ public class SecurityZone extends NamedEntityImp {
         SecurityZone that = (SecurityZone) o;
 
         if (description != null ? !description.equals(that.description) : that.description != null) return false;
+        if (permittedEntityTypes != null ? !permittedEntityTypes.equals(that.permittedEntityTypes) : that.permittedEntityTypes != null)
+            return false;
 
         return true;
     }
@@ -54,6 +73,7 @@ public class SecurityZone extends NamedEntityImp {
     public int hashCode() {
         int result = super.hashCode();
         result = 31 * result + (description != null ? description.hashCode() : 0);
+        result = 31 * result + (permittedEntityTypes != null ? permittedEntityTypes.hashCode() : 0);
         return result;
     }
 
@@ -63,6 +83,7 @@ public class SecurityZone extends NamedEntityImp {
             "oid=" + getOid() +
             ", name='" + getName() + "'" +
             ", description='" + description + '\'' +
+            ", permittedEntityTypes='" + permittedEntityTypes + '\'' +
             '}';
     }
 }

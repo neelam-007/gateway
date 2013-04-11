@@ -12,7 +12,7 @@ import java.util.List;
 /**
  * A ListModel that holds a number of JCheckBox elements as its list entries.
  */
-public class  JCheckBoxListModel extends AbstractListModel {
+public class  JCheckBoxListModel extends AbstractListModel<JCheckBox> {
     public static final String CLIENT_PROPERTY_ENTRY_CODE = "JCheckBoxListModel.entryCode";
 
     /** A predicate that will match checkboxes that are currently checked. */
@@ -39,7 +39,7 @@ public class  JCheckBoxListModel extends AbstractListModel {
     }
 
     @Override
-    public Object getElementAt(int index) {
+    public JCheckBox getElementAt(int index) {
         return getEntryAt(index);
     }
 

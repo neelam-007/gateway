@@ -15,6 +15,7 @@ create table security_zone (
   version integer not null,
   name varchar(128) not null unique,
   description varchar(255) not null,
+  entity_types varchar(4096) not null,
   PRIMARY KEY (objectid)
 );
 
