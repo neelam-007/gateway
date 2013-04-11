@@ -118,3 +118,8 @@ INSERT INTO cluster_properties
 INSERT INTO cluster_properties
     (objectid, version, propkey, propvalue, properties)
     values (-700101, 0, 'upgrade.task.700101', 'com.l7tech.server.upgrade.Upgrade70to71UpdateGatewayManagementWsdl', null);
+
+-- Increasing the length of the subject dn to allow for certificates with longer subject dn's
+-- See SSG-6774
+ALTER TABLE client_cert ALTER COLUMN subject_dn SET DATA TYPE VARCHAR(2048);
+ALTER TABLE trusted_cert ALTER COLUMN subject_dn SET DATA TYPE VARCHAR(2048);
