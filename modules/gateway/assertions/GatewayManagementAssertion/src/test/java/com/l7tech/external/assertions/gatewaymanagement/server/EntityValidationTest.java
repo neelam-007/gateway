@@ -353,7 +353,7 @@ public class EntityValidationTest {
 
         // test subject DN
         checkNull( trustedCert, "subjectDn", true );
-        checkSize( trustedCert, "subjectDn", 0, 500 );
+        checkSize( trustedCert, "subjectDn", 0, 2048 );
 
         // test cert b64
         checkNull( trustedCert, "certBase64", false );

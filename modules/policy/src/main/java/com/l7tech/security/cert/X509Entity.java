@@ -163,8 +163,8 @@ public abstract class X509Entity extends PersistentEntityImp {
      *
      * @return the subjectDn from the cert, or null.
      */
-    @Size(max=500)
-    @Column(name="subject_dn", length=500)
+    @Size(max=2048)
+    @Column(name="subject_dn", length=2048)
     public String getSubjectDn() {
         return subjectDn;
     }
