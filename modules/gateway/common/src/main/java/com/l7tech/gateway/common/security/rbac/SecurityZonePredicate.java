@@ -50,8 +50,8 @@ public class SecurityZonePredicate extends ScopePredicate implements ScopeEvalua
     }
 
     private static boolean entityTypePermitted(SecurityZone requiredZone, Entity entity) {
-        final Set<EntityType> entityTypes = requiredZone.getPermittedEntityTypes();
-        return entityTypes != null && entity != null && entityTypes.contains(EntityType.findTypeByEntity(entity.getClass()));
+        final Set<EntityType> permittedTypes = requiredZone.getPermittedEntityTypes();
+        return permittedTypes != null && entity != null && (permittedTypes.contains(EntityType.ANY) || permittedTypes.contains(EntityType.findTypeByEntity(entity.getClass())));
     }
 
     @Override

@@ -132,6 +132,14 @@ public enum EntityType implements Comparable<EntityType> {
         return displayedInGui;
     }
 
+    /**
+     * @return true if entities of this type can be placed into security zones (if the zone also allows it)
+     */
+    public boolean isSecurityZoneable() {
+        Class<? extends Entity> ec = getEntityClass();
+        return (ec != null && ZoneableEntity.class.isAssignableFrom(ec));
+    }
+
     public static final NameComparator NAME_COMPARATOR = new NameComparator();
 
     private static class NameComparator implements Comparator<EntityType> {
