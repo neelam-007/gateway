@@ -1,5 +1,8 @@
 package com.l7tech.server.transport.http;
 
+import com.l7tech.server.identity.ldap.HostnameVerifyingSSLSocketWrapper;
+import com.l7tech.server.identity.ldap.LdapSslCustomizerSupport;
+
 import javax.net.ssl.X509TrustManager;
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLSocketFactory;
@@ -50,19 +53,28 @@ public class SslClientHostnameAwareSocketFactory extends SslClientSocketFactoryS
         return defaultKeyManagers;
     }
 
+
+    // Changes to notifyCreated and addition of wrapSocket added to prevent SSL renegotiation
+    // These changes are the same changes required in LdapSSLSocketFactory to solve the same
+    // issue. Original issue SSG-6325
     @Override
-    protected final Socket notifyCreated( final Socket socket,
+    protected final Socket notifyCreated( Socket socket,
                                           final String host,
                                           final InetAddress address,
                                           final int port,
                                           final InetAddress localAddress,
                                           final int localPort ) throws IOException {
-        final HostnameVerifier verifier = hostnameVerifier;
-        if ( verifier != null && socket instanceof SSLSocket ) {
-            final SSLSocket sslSocket = (SSLSocket) socket;
-            return doVerifyHostname( verifier, sslSocket, host, address );
-        }
 
+        socket = wrapSocket(socket);
+
+        return socket;
+    }
+
+    private Socket wrapSocket(Socket socket) {
+        if ( socket instanceof SSLSocket ) {
+            final SSLSocket sslSocket = (SSLSocket) socket;
+            socket = new HostnameVerifyingSSLSocketWrapper(sslSocket, LdapSslCustomizerSupport.getHostnameVerifier());
+        }
         return socket;
     }
 
