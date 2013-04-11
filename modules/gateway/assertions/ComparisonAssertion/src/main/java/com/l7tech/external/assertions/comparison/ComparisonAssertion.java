@@ -189,14 +189,14 @@ public class ComparisonAssertion extends Assertion implements UsesVariables {
         if (check()) compat().setCaseSensitive(caseSensitive);
     }
 
-    private final static String baseName = "Compare ";
+    private final static String baseName = "Compare Expression or Variable";
 
     final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<ComparisonAssertion>() {
         @Override
         public String getAssertionName(final ComparisonAssertion assertion, final boolean decorate) {
             if (!decorate) return baseName;
 
-            StringBuilder name = new StringBuilder(baseName);
+            StringBuilder name = new StringBuilder("Compare ");
             // in the upgrade case from Escalor or fangtooth the isExpressionIsVariable might be set to true even if it is an expression. So we need to check to see if it is a single variable
             name.append(assertion.isExpressionIsVariable() && (assertion.getExpression1() == null || assertion.getExpression1().isEmpty() || Syntax.isOnlyASingleVariableReferenced(assertion.getExpression1()))
                     ? "Variable" : "Expression");
@@ -249,7 +249,7 @@ public class ComparisonAssertion extends Assertion implements UsesVariables {
         meta.put(POLICY_ADVICE_CLASSNAME, "com.l7tech.external.assertions.comparison.console.ComparisonAssertionAdvice");
 
         meta.put(PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.comparison.console.ComparisonPropertiesDialog");
-        meta.put(PROPERTIES_ACTION_NAME, "Compare Expression Properties");
+        meta.put(PROPERTIES_ACTION_NAME, "Compare Expression or Variable Properties");
         // request default feature set name for our class name, since we are a known optional module
         // that is, we want our required feature set to be "assertion:Comparison" rather than "set:modularAssertions"
         meta.put(FEATURE_SET_NAME, "(fromClass)");
