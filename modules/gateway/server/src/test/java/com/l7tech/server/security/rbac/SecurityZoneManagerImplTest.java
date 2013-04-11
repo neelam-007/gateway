@@ -13,6 +13,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 
 import java.util.Set;
 
+import static com.l7tech.server.security.rbac.SecurityZoneManagerImpl.MAX_CHAR_ZONE_NAME;
 import static com.l7tech.server.security.rbac.SecurityZoneManagerImpl.RENAME_ROLE_PATTERN;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.argThat;
@@ -65,6 +66,13 @@ public class SecurityZoneManagerImplTest {
         verify(roleManager).save(argThat(isReadZoneRole("Test")));
     }
 
+    @Test
+    public void addReadSecurityZoneRoleLongName() throws Exception {
+        zone.setName(createStringOverMaxChars());
+        manager.addReadSecurityZoneRole(zone);
+        verify(roleManager).save(argThat(isReadZoneRole("xxxxxxxxxxxxxxxxxxxxxx...xxxxxxxxxxxxxxxxxxxxxx")));
+    }
+
     @Test(expected = SaveException.class)
     public void addReadSecurityZoneRoleCannotFindRootFolder() throws Exception {
         when(folderManager.findRootFolder()).thenThrow(new FindException("mocking exception"));
@@ -81,6 +89,13 @@ public class SecurityZoneManagerImplTest {
     public void addManageSecurityZoneRole() throws Exception {
         manager.addManageSecurityZoneRole(zone);
         verify(roleManager).save(argThat((isManageZoneRole("Test"))));
+    }
+
+    @Test
+    public void addManageSecurityZoneRoleLongName() throws Exception {
+        zone.setName(createStringOverMaxChars());
+        manager.addManageSecurityZoneRole(zone);
+        verify(roleManager).save(argThat((isManageZoneRole("xxxxxxxxxxxxxxxxxxxxxx...xxxxxxxxxxxxxxxxxxxxxx"))));
     }
 
     @Test(expected = SaveException.class)
@@ -120,17 +135,19 @@ public class SecurityZoneManagerImplTest {
     }
 
     private ZoneRoleMatcher isReadZoneRole(final String zoneName) {
-        return new ZoneRoleMatcher(true);
+        return new ZoneRoleMatcher(zoneName, true);
     }
 
     private ZoneRoleMatcher isManageZoneRole(final String zoneName) {
-        return new ZoneRoleMatcher(false);
+        return new ZoneRoleMatcher(zoneName, false);
     }
 
     private class ZoneRoleMatcher extends ArgumentMatcher<Role> {
+        private String expectedZoneName;
         private boolean readOnly;
 
-        private ZoneRoleMatcher(final boolean readOnly) {
+        private ZoneRoleMatcher(final String expectedZoneName, final boolean readOnly) {
+            this.expectedZoneName = expectedZoneName;
             this.readOnly = readOnly;
         }
 
@@ -140,22 +157,20 @@ public class SecurityZoneManagerImplTest {
             String roleType = readOnly ? "View" : "Manage";
             if (o != null) {
                 final Role role = (Role) o;
-                final String zoneName = zone.getName();
-                if (role.getName().equals(roleType + " " + zoneName + " Zone (#1,234)")
+                if (role.getName().equals(roleType + " " + expectedZoneName + " Zone (#1,234)")
                         && role.getEntityType() == EntityType.SECURITY_ZONE
                         && role.getEntityOid() == zone.getOid()
                         // common permissions
                         && hasReadZoneEntityPermission(role)
-                        && hasSecurityZonePermission(role, OperationType.READ, zoneName)
+                        && hasSecurityZonePermission(role, OperationType.READ)
                         && hasRootFolderPermission(role, OperationType.READ)
-                        && hasPermission(role, OperationType.READ, EntityType.ASSERTION_ACCESS)
-                        && hasPermission(role, OperationType.CREATE, EntityType.ASSERTION_ACCESS)) {
+                        && hasPermission(role, OperationType.READ, EntityType.ASSERTION_ACCESS)) {
                     if (readOnly && role.getDescription().equals(SecurityZoneManagerImpl.READ_ZONE_ROLE_DESCRIPTION_FORMAT)) {
                         match = true;
                     } else if (!readOnly && role.getDescription().equals(SecurityZoneManagerImpl.MANAGE_ZONE_ROLE_DESCRIPTION_FORMAT)
-                            && hasSecurityZonePermission(role, OperationType.CREATE, zoneName)
-                            && hasSecurityZonePermission(role, OperationType.UPDATE, zoneName)
-                            && hasSecurityZonePermission(role, OperationType.DELETE, zoneName)) {
+                            && hasSecurityZonePermission(role, OperationType.CREATE)
+                            && hasSecurityZonePermission(role, OperationType.UPDATE)
+                            && hasSecurityZonePermission(role, OperationType.DELETE)) {
                         match = true;
                     }
                 }
@@ -175,7 +190,7 @@ public class SecurityZoneManagerImplTest {
         return false;
     }
 
-    private boolean hasSecurityZonePermission(final Role role, final OperationType expectedOperation, final String zoneName) {
+    private boolean hasSecurityZonePermission(final Role role, final OperationType expectedOperation) {
         final Set<Permission> permissions = role.getPermissions();
         for (final Permission permission : permissions) {
             final Set<ScopePredicate> predicates = permission.getScope();
@@ -183,7 +198,7 @@ public class SecurityZoneManagerImplTest {
                 final ScopePredicate predicate = predicates.iterator().next();
                 if (predicate instanceof SecurityZonePredicate) {
                     final SecurityZonePredicate zonePredicate = (SecurityZonePredicate) predicate;
-                    if (zonePredicate.getRequiredZone().getName().equals(zoneName)) {
+                    if (zonePredicate.getRequiredZone().equals(zone)) {
                         return true;
                     }
                 }
@@ -224,6 +239,14 @@ public class SecurityZoneManagerImplTest {
             }
         }
         return false;
+    }
+
+    private String createStringOverMaxChars() {
+        String overMax = "";
+        for (int i = 0; i < MAX_CHAR_ZONE_NAME + 1; i++) {
+            overMax = overMax + "x";
+        }
+        return overMax;
     }
 
 }

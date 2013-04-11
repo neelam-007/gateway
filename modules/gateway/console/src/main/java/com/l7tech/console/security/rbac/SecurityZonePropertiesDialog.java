@@ -1,5 +1,6 @@
 package com.l7tech.console.security.rbac;
 
+import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.JCheckBoxListModel;
 import com.l7tech.objectmodel.Entity;
@@ -17,13 +18,15 @@ import java.util.List;
 
 public class SecurityZonePropertiesDialog extends JDialog {
     private static final String CLIENT_PROP_ENTITY_TYPE = "com.l7tech.szpd.entityType";
-
+    private static final int MAX_CHARS_FOR_NAME = 128;
+    private static final int MAX_CHARS_FOR_DESCRIPTION = 255;
     private JPanel contentPane;
     private JButton okButton;
     private JButton cancelButton;
     private JTextField nameField;
     private JTextField descriptionField;
     private JList<JCheckBox> entityTypesList;
+    private final InputValidator inputValidator = new InputValidator(this, getTitle());
 
     private boolean confirmed = false;
 
@@ -31,19 +34,21 @@ public class SecurityZonePropertiesDialog extends JDialog {
         super(owner, "Security Zone Properties", DEFAULT_MODALITY_TYPE);
         setContentPane(contentPane);
         getRootPane().setDefaultButton(okButton);
-        cancelButton.addActionListener(Utilities.createDisposeAction(this));
         Utilities.setEscAction(this, cancelButton);
 
-        okButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
+        inputValidator.constrainTextFieldToBeNonEmpty("name", nameField, null);
+        inputValidator.constrainTextFieldToMaxChars("name", nameField, MAX_CHARS_FOR_NAME, null);
+        inputValidator.constrainTextFieldToBeNonEmpty("description", descriptionField, null);
+        inputValidator.constrainTextFieldToMaxChars("description", descriptionField, MAX_CHARS_FOR_DESCRIPTION, null);
+        inputValidator.attachToButton(okButton, new ActionListener() {
+            public void actionPerformed(final ActionEvent e) {
                 confirmed = true;
                 dispose();
             }
         });
 
-
+        cancelButton.addActionListener(Utilities.createDisposeAction(this));
         okButton.setEnabled(!readOnly);
-
         setData(securityZone);
     }
 
