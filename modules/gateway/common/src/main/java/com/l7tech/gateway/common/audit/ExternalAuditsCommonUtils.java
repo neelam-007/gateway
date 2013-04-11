@@ -82,14 +82,14 @@ public class ExternalAuditsCommonUtils {
 
     private static String defaultLookupGuidQuery(String recordTable,String dbType) {
         return
-                lookupPrefix(dbType,"recordQueryRetrieveLimit", false) + " * from "+recordTable+" where id in (${audit.recordQuery.guid}) order by time desc "+lookupPostfix(dbType,"recordQueryRetrieveLimit");
+                lookupPrefix(dbType,"recordQueryRetrieveLimit", false) + " * from "+recordTable+" where id in (${audit.recordQuery.guid})"+lookupPostfix(dbType,"recordQueryRetrieveLimit"," order by time desc ");
     }
     private static String defaultLookupGuidMaxMessageSizeQuery(String recordTable,String dbType) {
         return
                 lookupPrefix(dbType,"recordQueryRetrieveLimit", false) + " * from "+recordTable+" where id in (${audit.recordQuery.guid})" +
                         "and (request_xml is null or "+lengthFunction(dbType)+"(request_xml) &lt; ${audit.recordQuery.maxMessageSize}) " +
                         "and (response_xml is null or "+lengthFunction(dbType)+"(response_xml) &lt; ${audit.recordQuery.maxMessageSize})" +
-                        "order by time desc "+lookupPostfix(dbType,"recordQueryRetrieveLimit");
+                        lookupPostfix(dbType,"recordQueryRetrieveLimit", "order by time desc ");
     }
 
     private static String lengthFunction(String dbType){
@@ -117,7 +117,7 @@ public class ExternalAuditsCommonUtils {
                         "and lower("+ getColumnQuery("entity_class",dbType)+ ") like lower(${audit.recordQuery.entityClassName}) " +
                         "and "+ getColumnQuery("entity_id",dbType)+ " like ${audit.recordQuery.entityId} " +
                         "and lower("+ getColumnQuery("operation_name",dbType)+ ") like lower(${audit.recordQuery.operation}) " +
-                        "and lower("+ getColumnQuery("request_id",dbType)+ ") like lower(${audit.recordQuery.requestId}) order by time desc "+lookupPostfix(dbType,"recordQueryLimit");
+                        "and lower("+ getColumnQuery("request_id",dbType)+ ") like lower(${audit.recordQuery.requestId}) "+lookupPostfix(dbType,"recordQueryLimit"," order by time desc");
     }
 
 
@@ -136,7 +136,7 @@ public class ExternalAuditsCommonUtils {
                         "and lower("+ getColumnQuery("entity_class",dbType)+ ") like lower(${audit.recordQuery.entityClassName}) " +
                         "and "+ getColumnQuery("entity_id",dbType)+ " like ${audit.recordQuery.entityId}  " +
                         "and lower("+ getColumnQuery("operation_name",dbType)+ ") like lower(${audit.recordQuery.operation}) " +
-                        "and lower("+ getColumnQuery("request_id",dbType)+ ") like lower(${audit.recordQuery.requestId}) order by time desc "+lookupPostfix(dbType,"recordQueryLimit");
+                        "and lower("+ getColumnQuery("request_id",dbType)+ ") like lower(${audit.recordQuery.requestId}) "+lookupPostfix(dbType,"recordQueryLimit","order by time desc");
     }
 
     private static String getColumnQuery(String columnName, String dbType) {
@@ -158,21 +158,21 @@ public class ExternalAuditsCommonUtils {
         return null;
     }
 
-    private static String lookupPostfix(String dbType, String limit) {
+    private static String lookupPostfix(String dbType, String limit, String orderClause) {
         if(dbType.equals("mysql"))
-            return "limit ${"+limit+"}";
+            return orderClause+ " limit ${"+limit+"}";
         else if(dbType.equals("sqlserver"))
-            return "";
+            return orderClause ;
         else if(dbType.equals("oracle"))
-            return " ) temp WHERE rownum &lt;= ${"+limit+"}  ORDER BY rownum";
+            return orderClause+ " ) temp WHERE rownum &lt;= ${"+limit+"}  ORDER BY rownum";
         else if(dbType.equals("db2"))
-            return "limit ${"+limit+"}";
+            return " and row_number()over() &lt;=${"+limit+"} "+ orderClause ;
         return null;
     }
 
     private static String messaageIdLookupQuery ( String detailTable, String dbType){
         return
-                lookupPrefix(dbType,"recordQueryLimit", true)+ "  audit_oid,time from "+detailTable+" where message_id >=${messageIdMin}  and message_id &lt;=${messageIdMax} and time>=${audit.recordQuery.minTime} and time&lt;=${audit.recordQuery.maxTime}  order by time desc "+lookupPostfix(dbType,"recordQueryLimit");
+                lookupPrefix(dbType,"recordQueryLimit", true)+ "  audit_oid,time from "+detailTable+" where message_id >=${messageIdMin}  and message_id &lt;=${messageIdMax} and time>=${audit.recordQuery.minTime} and time&lt;=${audit.recordQuery.maxTime}   "+lookupPostfix(dbType,"recordQueryLimit","order by time desc");
     }
 
     private static String detailLookupQuery (String detailTable){
