@@ -38,6 +38,7 @@ public class SecurityZoneManagerImplTest {
         zone.setName("Test");
         zone.setOid(1234L);
         rootFolder = new Folder("RootFolder", null);
+        rootFolder.setOid(1111L);
         when(folderManager.findRootFolder()).thenReturn(rootFolder);
     }
 
@@ -161,9 +162,9 @@ public class SecurityZoneManagerImplTest {
                         && role.getEntityType() == EntityType.SECURITY_ZONE
                         && role.getEntityOid() == zone.getOid()
                         // common permissions
-                        && hasReadZoneEntityPermission(role)
+                        && hasEntitySpecificPermission(role, OperationType.READ, EntityType.SECURITY_ZONE, zone.getId())
                         && hasSecurityZonePermission(role, OperationType.READ)
-                        && hasRootFolderPermission(role, OperationType.READ)
+                        && hasEntitySpecificPermission(role, OperationType.READ, EntityType.FOLDER, rootFolder.getId())
                         && hasPermission(role, OperationType.READ, EntityType.ASSERTION_ACCESS)) {
                     if (readOnly && role.getDescription().equals(SecurityZoneManagerImpl.READ_ZONE_ROLE_DESCRIPTION_FORMAT)) {
                         match = true;
@@ -190,6 +191,23 @@ public class SecurityZoneManagerImplTest {
         return false;
     }
 
+    private boolean hasEntitySpecificPermission(final Role role, final OperationType expectedOperation, final EntityType expectedEntityType, final String expectedEntityId) {
+        final Set<Permission> permissions = role.getPermissions();
+        for (final Permission permission : permissions) {
+            final Set<ScopePredicate> predicates = permission.getScope();
+            if (expectedOperation == permission.getOperation() && expectedEntityType == permission.getEntityType() && predicates.size() == 1) {
+                final ScopePredicate predicate = predicates.iterator().next();
+                if (predicate instanceof ObjectIdentityPredicate) {
+                    final ObjectIdentityPredicate idPredicate = (ObjectIdentityPredicate) predicate;
+                    if (idPredicate.getTargetEntityId().equals(expectedEntityId)) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
     private boolean hasSecurityZonePermission(final Role role, final OperationType expectedOperation) {
         final Set<Permission> permissions = role.getPermissions();
         for (final Permission permission : permissions) {
@@ -199,40 +217,6 @@ public class SecurityZoneManagerImplTest {
                 if (predicate instanceof SecurityZonePredicate) {
                     final SecurityZonePredicate zonePredicate = (SecurityZonePredicate) predicate;
                     if (zonePredicate.getRequiredZone().equals(zone)) {
-                        return true;
-                    }
-                }
-            }
-        }
-        return false;
-    }
-
-    private boolean hasRootFolderPermission(final Role role, final OperationType expectedOperation) {
-        final Set<Permission> permissions = role.getPermissions();
-        for (final Permission permission : permissions) {
-            final Set<ScopePredicate> predicates = permission.getScope();
-            if (expectedOperation == permission.getOperation() && EntityType.FOLDER == permission.getEntityType() && predicates.size() == 1) {
-                final ScopePredicate predicate = predicates.iterator().next();
-                if (predicate instanceof FolderPredicate) {
-                    final FolderPredicate folderPredicate = (FolderPredicate) predicate;
-                    if (folderPredicate.getFolder().equals(rootFolder)) {
-                        return true;
-                    }
-                }
-            }
-        }
-        return false;
-    }
-
-    private boolean hasReadZoneEntityPermission(final Role role) {
-        final Set<Permission> permissions = role.getPermissions();
-        for (final Permission permission : permissions) {
-            final Set<ScopePredicate> predicates = permission.getScope();
-            if (OperationType.READ == permission.getOperation() && EntityType.SECURITY_ZONE == permission.getEntityType() && predicates.size() == 1) {
-                final ScopePredicate predicate = predicates.iterator().next();
-                if (predicate instanceof ObjectIdentityPredicate) {
-                    final ObjectIdentityPredicate objectPredicate = (ObjectIdentityPredicate) predicate;
-                    if (objectPredicate.getTargetEntityId().equals(zone.getId())) {
                         return true;
                     }
                 }

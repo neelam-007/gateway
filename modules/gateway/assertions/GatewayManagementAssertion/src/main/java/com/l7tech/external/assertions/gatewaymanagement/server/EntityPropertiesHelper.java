@@ -418,7 +418,8 @@ class EntityPropertiesHelper {
             "tracingEnabled",
             "oid",
             "disabled",
-            "soapVersion"
+            "soapVersion",
+            "securityZone"
         ) )
         .put( ResourceEntry.class, list(
             "content",

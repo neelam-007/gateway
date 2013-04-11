@@ -52,6 +52,7 @@
                      name="policy" lazy="false" column="policy_oid" unique="true" cascade="persist,merge,save-update,delete"/>
 
         <many-to-one name="folder" column="folder_oid"/>
+        <many-to-one name="securityZone" column="security_zone_oid"/>
     </class>
 
     <class name="com.l7tech.gateway.common.service.PublishedServiceAlias" table="published_service_alias" lazy="false">

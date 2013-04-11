@@ -117,8 +117,8 @@ public class SecurityZoneManagerImpl extends HibernateEntityManager<SecurityZone
 
     private void addReadPermissions(final SecurityZone zone, final Role role, final Folder rootFolder) throws SaveException {
         role.addEntityPermission(OperationType.READ, EntityType.ASSERTION_ACCESS, null);
-        role.addFolderPermission(OperationType.READ, EntityType.FOLDER, rootFolder, false);
-        role.addSecurityZonePermission(OperationType.READ, EntityType.ANY, zone);
+        role.addEntityPermission(OperationType.READ, EntityType.FOLDER, rootFolder.getId());
         role.addEntityPermission(OperationType.READ, EntityType.SECURITY_ZONE, zone.getId());
+        role.addSecurityZonePermission(OperationType.READ, EntityType.ANY, zone);
     }
 }

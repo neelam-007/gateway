@@ -225,9 +225,11 @@ CREATE TABLE published_service (
   tracing TINYINT(1) NOT NULL DEFAULT 0,
   folder_oid bigint(20),
   soap_version VARCHAR(20) DEFAULT 'UNKNOWN',
+  security_zone_oid bigint(20),
   PRIMARY KEY (objectid),
   FOREIGN KEY (policy_oid) REFERENCES policy (objectid),
-  CONSTRAINT published_service_folder FOREIGN KEY (folder_oid) REFERENCES folder (objectid)
+  CONSTRAINT published_service_folder FOREIGN KEY (folder_oid) REFERENCES folder (objectid),
+  CONSTRAINT policy_security_zone FOREIGN KEY (security_zone_oid) REFERENCES security_zone (objectid) ON DELETE SET NULL,
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --

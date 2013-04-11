@@ -111,6 +111,7 @@ public class ServicePropertiesDialog extends JDialog {
     private JButton checkForResolutionConflictsButton;
     private JLabel readOnlyWarningLabel;
     private JLabel resolutionConflictWarningLabel;
+    private SecurityZoneWidget zoneControl;
     private String ssgURL;
     private final boolean canUpdate;
     private final boolean canTrace;
@@ -480,6 +481,8 @@ public class ServicePropertiesDialog extends JDialog {
         } catch (FindException e) {
             uddiServiceControl = null;
         }
+
+        zoneControl.setSelectedZone(subject.getSecurityZone());
 
         updateURL();
 
@@ -958,6 +961,8 @@ public class ServicePropertiesDialog extends JDialog {
         } else {
             subject.setSoapVersion(SoapVersion.UNKNOWN);
         }
+
+        subject.setSecurityZone(zoneControl.getSelectedZone());
     }
 
     public PublishedService getService(){

@@ -581,6 +581,7 @@ create table published_service (
     soap_version varchar(255),
     policy_oid bigint,
     folder_oid bigint,
+    security_zone_oid bigint references security_zone(objectid) on delete set null,
     primary key (objectid)
 );
 
