@@ -167,11 +167,14 @@ public class RbacAdminImpl implements RbacAdmin {
     @Override
     public long saveSecurityZone(SecurityZone securityZone) throws SaveException {
         if (SecurityZone.DEFAULT_OID == securityZone.getOid()) {
-            return securityZoneManager.save(securityZone);
+            final long oid = securityZoneManager.save(securityZone);
+            securityZoneManager.createRoles(securityZone);
+            return oid;
         } else {
             long oid = securityZone.getOid();
             try {
                 securityZoneManager.update(securityZone);
+                securityZoneManager.updateRoles(securityZone);
             } catch (UpdateException e) {
                 throw new SaveException(ExceptionUtils.getMessage(e), e);
             }
@@ -181,6 +184,7 @@ public class RbacAdminImpl implements RbacAdmin {
 
     @Override
     public void deleteSecurityZone(SecurityZone securityZone) throws DeleteException {
+        securityZoneManager.deleteRoles(securityZone.getOid());
         securityZoneManager.delete(securityZone);
     }
 

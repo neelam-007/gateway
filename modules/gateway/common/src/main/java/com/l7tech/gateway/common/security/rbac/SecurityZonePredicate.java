@@ -28,7 +28,7 @@ public class SecurityZonePredicate extends ScopePredicate implements ScopeEvalua
     protected SecurityZonePredicate() {
     }
 
-    @ManyToOne
+    @ManyToOne(optional=false)
     @JoinColumn(name = "security_zone_oid")
     public SecurityZone getRequiredZone() {
         return requiredZone;
@@ -73,5 +73,13 @@ public class SecurityZonePredicate extends ScopePredicate implements ScopeEvalua
         int result = super.hashCode();
         result = 31 * result + (requiredZone != null ? requiredZone.hashCode() : 0);
         return result;
+    }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder();
+        sb.append(permission.getEntityType().getPluralName());
+        sb.append(" in security zone ").append(requiredZone.getName());
+        return sb.toString();
     }
 }

@@ -25,6 +25,7 @@ public interface RbacAdmin {
     String ROLE_NAME_PREFIX_READ = "View";
     String ROLE_NAME_OID_SUFFIX = " (#{1})";
     String RENAME_REGEX_PATTERN = "(?<=^\\w'{'1,128'}' ).*?(?= {0} \\(#\\d[\\d, ]*\\)$)";
+    String ZONE_ROLE_NAME_TYPE_SUFFIX = "Zone";
 
     /**
      * Finds a collection of EntityHeaders for all {@link Role}s known to the SSG.
