@@ -40,7 +40,6 @@ public class ServerJmsRoutingAssertionTest {
         // configure the stub connection manager for the test
         JmsConnectionManagerStub.setTestConfig(JmsConnectionManagerStub.TEST_CONFIG_AMQ_OUT); // apache activeMQ
 //        JmsConnectionManagerStub.setTestConfig(JmsConnectionManagerStub.TEST_CONFIG_MQS_OUT); // ibm MQSeries
-//        JmsConnectionManagerStub.setTestConfig(JmsConnectionManagerStub.TEST_CONFIG_FMQ_OUT); // fiorano MQ
     }
 
     private ApplicationContext appCtx;

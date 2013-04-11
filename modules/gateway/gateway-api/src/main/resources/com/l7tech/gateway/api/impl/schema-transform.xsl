@@ -90,6 +90,8 @@
         <xsl:apply-templates select="."/>
     </xsl:template>
 
+    <!--Remove FioranoMQ from schema in 7.1-->
+    <xsl:template match="xs:enumeration[@value = 'FioranoMQ']" />
 
     <!--
       Copy by default

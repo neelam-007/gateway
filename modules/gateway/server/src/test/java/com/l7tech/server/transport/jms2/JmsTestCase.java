@@ -250,7 +250,8 @@ public class JmsTestCase {
                 for (int i=0; i<count; i++) {
 //                    JmsConnection conn = provider.createConnection(AMQ_QUEUE_DEFAULT+testCase+"."+i, AMQ_JNDI_URL);
 //                    JmsConnection conn = provider.createConnection("vchan_in", FMQ_JNDI_URL);
-                    JmsConnection conn = provider.createConnection(FMQ_QUEUE_DEFAULT, FMQ_JNDI_URL);
+//                    JmsConnection conn = provider.createConnection(FMQ_QUEUE_DEFAULT, FMQ_JNDI_URL);
+                    JmsConnection conn = null;//TODO CONFIGURE FOR TEST
                     conn.setOid(OidRoot++);
                     conn.setVersion(1);
                     result.add(conn);

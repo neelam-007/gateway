@@ -2086,11 +2086,17 @@
         <property name="targetObject" ref="systemClassLoader"/>
         <property name="targetMethod" value="getParent"/>
     </bean>
-    <!--
-      Resource classloader that is configured to load Fiorano JMS and the associated
-      Gateway provider class(es) in a shared classloader.
 
-      Other JMS classes will be loaded as before from the extension classloader.
+    <!--
+      Resource classloader that is configured to allow JMS libraries loaded via the extension
+      classloader to access some Gateway classes (which are loaded via the app (system) class loader).
+      This was originally done to support Fiorano as it loaded a Gateway class which it would not have had visibility to.
+      Fiorano is no longer used so this class loader (which will be set as the context class loader) is no longer needed.
+
+      Any JMS libraries loaded (MQ / Tibco) should not have visibility into any Gateway files. As this code will not
+      be changed late in Goatfish (7.1) this will be left in for now. If any subsequent JMS provider required customization
+       via dynamic loading of gateway classes then this mechanism would be needed.
+      TODO Remove this classloader as it is not needed. FYI,TODO items below are not in favor of keeping this classloder, they are just for information.
     -->
     <bean id="jmsClassLoader" class="com.l7tech.server.util.ResourceClassLoader">
         <constructor-arg index="0">
@@ -2103,12 +2109,16 @@
                 <constructor-arg index="1" ref="systemClassLoader"/>
                 <constructor-arg index="2">
                     <list>
-                        <value>com.l7tech.server.transport.jms.prov.fiorano</value>
+                        <!--TODO Both JmsSslCustomizerSupport and JmsConfigException should no longer be needed as
+                        Fiorino SecurityManager has been removed which would have been loaded by Jars loaded via ext,
+                        which would make these two gateway classes not visible.-->
                         <value>com.l7tech.server.transport.jms.JmsSslCustomizerSupport</value>
                         <value>com.l7tech.server.transport.jms.JmsConfigException</value>
+                        <!--TODO org.apache may be needed indirectly by some class in MQSeriesCustomizer-->
                         <value>org.apache.xerces</value>
                         <value>org.apache.xml.serializer</value>
                         <value>org.apache.xalan</value>
+                        <!--TODo org.hibernate should not be needed and may not be due to code refactors since this was introduced-->
                         <value>org.hibernate</value>
                     </list>
                 </constructor-arg>
@@ -2117,9 +2127,6 @@
         </constructor-arg>
         <constructor-arg index="1">
             <list>
-                <value>fiorano</value>
-                <value>com.fiorano</value>
-                <value>com.l7tech.server.transport.jms.prov.fiorano</value>
             </list>
         </constructor-arg>
     </bean>

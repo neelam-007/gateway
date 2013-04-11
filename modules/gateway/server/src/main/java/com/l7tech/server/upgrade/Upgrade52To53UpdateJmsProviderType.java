@@ -31,9 +31,12 @@ public class Upgrade52To53UpdateJmsProviderType implements UpgradeTask {
                 if (connection.getProviderType() != null) continue;
 
                 String icfClassname = connection.getInitialContextFactoryClassname();
-                if ( "fiorano.jms.runtime.naming.FioranoInitialContextFactory".equals(icfClassname)) {
-                    connection.setProviderType(JmsProviderType.Fiorano);
-                } else if ("com.tibco.tibjms.naming.TibjmsInitialContextFactory".equals(icfClassname)) {
+                //Fiorano is no longer supported. Commented out to support compiler.
+                // This class will never be used again anyway for any release build from source post 5.3.
+//                if ( "fiorano.jms.runtime.naming.FioranoInitialContextFactory".equals(icfClassname)) {
+//                    connection.setProviderType(JmsProviderType.Fiorano);
+//                } else
+                if ("com.tibco.tibjms.naming.TibjmsInitialContextFactory".equals(icfClassname)) {
                     connection.setProviderType(JmsProviderType.Tibco);
                 } else if ("com.ibm.mq.jms.context.WMQInitialContextFactory".equals(icfClassname) ||
                            "com.sun.jndi.ldap.LdapCtxFactory".equals(icfClassname)) {

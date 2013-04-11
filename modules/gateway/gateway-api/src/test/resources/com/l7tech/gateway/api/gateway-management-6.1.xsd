@@ -286,6 +286,7 @@
     <xs:restriction base="xs:string">
       <xs:enumeration value="TIBCO EMS"/>
       <xs:enumeration value="WebSphere MQ over LDAP"/>
+        <!--Note FioranoMQ support was removed in Goatfish (7.1)-->
       <xs:enumeration value="FioranoMQ"/>
     </xs:restriction>
   </xs:simpleType>

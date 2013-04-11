@@ -99,8 +99,6 @@
         <dependency org="com.ibm.mq" name="mq" rev="7.1.0.1" force="true" conf="optional"/>
         <dependency org="com.tarari" name="tarari-raxj" rev="4.4.3.31" force="true" conf="optional"/>
         <dependency org="com.tibco" name="jms" rev="1.5" force="true" conf="optional"/>
-        <dependency org="fiorano" name="fmq-client" rev="1.0-4507" force="true" conf="optional"/>
-        <dependency org="fiorano" name="fiorano-framework" rev="1.0-4507" force="true" conf="optional"/>
         <dependency org="weblogic" name="wljmsclient" rev="10.3" force="true" conf="optional"/>
 
         <!-- Alternative dependencies -->

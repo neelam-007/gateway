@@ -260,9 +260,6 @@ public class JMSDestinationResourceFactory extends EntityManagerResourceFactory<
                 case WebSphere_MQ:
                     type = JmsProviderType.MQ;
                     break;
-                case FioranoMQ:
-                    type = JmsProviderType.Fiorano;
-                    break;
                 case Weblogic:
                     type = JmsProviderType.Weblogic;
                     break;
@@ -284,9 +281,6 @@ public class JMSDestinationResourceFactory extends EntityManagerResourceFactory<
                     break;
                 case MQ:
                     type = JMSConnection.JMSProviderType.WebSphere_MQ;
-                    break;
-                case Fiorano:
-                    type = JMSConnection.JMSProviderType.FioranoMQ;
                     break;
                 case Weblogic:
                     type = JMSConnection.JMSProviderType.Weblogic;

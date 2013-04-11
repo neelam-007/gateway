@@ -26,8 +26,6 @@ public class JmsConnectionManagerStub extends EntityManagerStub<JmsConnection, E
     public static final int TEST_CONFIG_AMQ_OUT = 1001;
     public static final int TEST_CONFIG_MQS_IN  = 1002;
     public static final int TEST_CONFIG_MQS_OUT = 1003;
-    public static final int TEST_CONFIG_FMQ_IN  = 1004;
-    public static final int TEST_CONFIG_FMQ_OUT = 1005;
 
     /*
      * new stuff for dynamic jms routing
@@ -45,7 +43,6 @@ public class JmsConnectionManagerStub extends EntityManagerStub<JmsConnection, E
      * Set this to the exected JMS Provider to be used
      * - ActiveMQ
      * - WebSphere MQ
-     * - Fiorano
      * - Tibco EMS
      * - Dynamic (new)
      */
@@ -76,24 +73,6 @@ public class JmsConnectionManagerStub extends EntityManagerStub<JmsConnection, E
             "<entry key=\"java.naming.security.credentials\"/>\n" +
             "<entry key=\"com.l7tech.server.jms.prop.queue.useClientAuth\">false</entry>\n" +
             "<entry key=\"com.l7tech.server.jms.prop.hardwired.service.bool\">false</entry>\n" +
-            "</properties>";
-
-    // Configuration for Fiorano MQ
-    protected static final String QPROVIDER_FMQ = "fioranoMQ";
-    protected static final String FMQ_INITIAL_CONTEXT_FACTORY_CLASS = "fiorano.jms.runtime.naming.FioranoInitialContextFactory";
-    protected static final String FMQ_DEFAULT_QUEUE_FACTORY_URL = "primaryJMXQCF";
-    protected static final String FMQ_QUEUE_DEFAULT = "vchan_in";
-    protected static final String FMQ_JNDI_URL = "http://fioranowindows:1856";
-    protected static final String FMQ_CONN_PROPERTIES = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-            "<!DOCTYPE properties SYSTEM \"http://java.sun.com/dtd/properties.dtd\">\n" +
-            "<properties>\n" +
-            "<entry key=\"com.l7tech.server.jms.prop.customizer.class\">com.l7tech.server.transport.jms.prov.FioranoConnectionFactoryCustomizer</entry>\n" +
-            "<entry key=\"com.l7tech.server.jms.prop.queue.ssgKeyAlias\">SSL</entry>\n" +
-            "<entry key=\"java.naming.security.protocol\">SUN_SSL</entry>\n" +
-            "<entry key=\"com.l7tech.server.jms.prop.queue.useClientAuth\">true</entry>\n" +
-            "<entry key=\"com.l7tech.server.jms.prop.hardwired.service.bool\">false</entry>\n" +
-            "<entry key=\"SecurityManager\">com.l7tech.server.transport.jms.prov.fiorano.proxy.FioranoProxySecurityManager</entry>\n" +
-            "<entry key=\"com.l7tech.server.jms.prop.queue.ssgKeystoreId\">0</entry>\n" +
             "</properties>";
 
     // Configuration for Dynamic JMS routing (using Tibco EMS - can be anything else)
@@ -136,8 +115,6 @@ public class JmsConnectionManagerStub extends EntityManagerStub<JmsConnection, E
                 result = QPROVIDER_AMQ;
             else if (TEST_CONFIG == TEST_CONFIG_MQS_IN || TEST_CONFIG == TEST_CONFIG_MQS_OUT)
                 result = QPROVIDER_MQS;
-            else if (TEST_CONFIG == TEST_CONFIG_FMQ_IN || TEST_CONFIG == TEST_CONFIG_FMQ_OUT)
-                result = QPROVIDER_FMQ;
             else if (TEST_CONFIG == TEST_CONFIG_DYNAMIC_IN || TEST_CONFIG == TEST_CONFIG_DYNAMIC_OUT)
                 result = QPROVIDER_DYNAMIC;
             else
@@ -177,9 +154,6 @@ public class JmsConnectionManagerStub extends EntityManagerStub<JmsConnection, E
         else if (provider == null && QPROVIDER_MQS.equals(qProv)) {
             provider = new JmsProvider("TestJmsProvider", MQS_INITIAL_CONTEXT_FACTORY_CLASS, MQS_DEFAULT_QUEUE_FACTORY_URL);
         }
-        else if (provider == null && QPROVIDER_FMQ.equals(qProv)) {
-            provider = new JmsProvider("TestJmsProvider", FMQ_INITIAL_CONTEXT_FACTORY_CLASS, FMQ_DEFAULT_QUEUE_FACTORY_URL);
-        }
         else if (provider == null && QPROVIDER_DYNAMIC.equals(qProv)) {
             provider = new JmsProvider("TestJmsProvider", DYNAMIC_INITIAL_CONTEXT_FACTORY_CLASS, DYNAMIC_DEFAULT_QUEUE_FACTORY_URL);
         }
@@ -213,18 +187,6 @@ public class JmsConnectionManagerStub extends EntityManagerStub<JmsConnection, E
                 conn = provider.createConnection("cn=VCTEST.Q.OUT", MQS_JNDI_URL);
                 conn.setOid(TEST_CONFIG_MQS_OUT);
 //                conn.setProperties(MQS_CONN_PROPERTIES);
-                break;
-            }
-            case TEST_CONFIG_FMQ_IN: {
-                conn = provider.createConnection("vchan_in", FMQ_JNDI_URL);
-                conn.setOid(TEST_CONFIG_FMQ_IN);
-//                conn.setProperties(FMQ_CONN_PROPERTIES); // for ssl
-                break;
-            }
-            case TEST_CONFIG_FMQ_OUT: {
-                conn = provider.createConnection("vchan_out", FMQ_JNDI_URL);
-                conn.setOid(TEST_CONFIG_FMQ_OUT);
-//                conn.setProperties(FMQ_CONN_PROPERTIES);
                 break;
             }
             case TEST_CONFIG_DYNAMIC_IN: {

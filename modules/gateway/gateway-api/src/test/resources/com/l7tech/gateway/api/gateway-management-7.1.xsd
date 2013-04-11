@@ -499,7 +499,7 @@
         <xs:restriction base="xs:string">
             <xs:enumeration value="TIBCO EMS"/>
             <xs:enumeration value="WebSphere MQ over LDAP"/>
-            <xs:enumeration value="FioranoMQ"/>
+            <xs:enumeration value="WebLogic JMS"/>
         </xs:restriction>
     </xs:simpleType>
 

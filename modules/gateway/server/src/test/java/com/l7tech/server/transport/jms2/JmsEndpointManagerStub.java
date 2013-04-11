@@ -49,10 +49,6 @@ public class JmsEndpointManagerStub extends EntityManagerStub<JmsEndpoint, JmsEn
             endpt = buildEndpoint(JmsConnectionManagerStub.TEST_CONFIG_MQS_IN);
         } else if (oid == 104L) {
             endpt = buildEndpoint(JmsConnectionManagerStub.TEST_CONFIG_MQS_OUT);
-        } else if (oid == 105L) {
-            endpt = buildEndpoint(JmsConnectionManagerStub.TEST_CONFIG_FMQ_IN);
-        } else if (oid == 106L) {
-            endpt = buildEndpoint(JmsConnectionManagerStub.TEST_CONFIG_FMQ_OUT);
         } else if (oid == 107L) {
             endpt = buildEndpoint(JmsConnectionManagerStub.TEST_CONFIG_DYNAMIC_IN);
         } else if (oid == 108L) {
@@ -113,30 +109,6 @@ public class JmsEndpointManagerStub extends EntityManagerStub<JmsEndpoint, JmsEn
                 endpt.setConnectionOid(which);
                 endpt.setName("cn=VCTEST.Q.OUT");
                 endpt.setDestinationName("cn=VCTEST.Q.OUT");
-                endpt.setReplyType(JmsReplyType.NO_REPLY);
-                endpt.setOutboundMessageType(JmsOutboundMessageType.AUTOMATIC);
-                endpt.setUseMessageIdForCorrelation(false);
-                break;
-            }
-            case JmsConnectionManagerStub.TEST_CONFIG_FMQ_IN: {
-                endpt.setOid(105);
-                endpt.setVersion(0);
-                endpt.setConnectionOid(which);
-                endpt.setName("vchan_in");
-                endpt.setDestinationName("vchan_in");
-                endpt.setReplyType(JmsReplyType.REPLY_TO_OTHER);
-                endpt.setReplyToQueueName("vchan_reply");
-                endpt.setAcknowledgementType(JmsAcknowledgementType.ON_COMPLETION);
-                endpt.setOutboundMessageType(JmsOutboundMessageType.AUTOMATIC);
-                endpt.setUseMessageIdForCorrelation(false);
-                break;
-            }
-            case JmsConnectionManagerStub.TEST_CONFIG_FMQ_OUT: {
-                endpt.setOid(106);
-                endpt.setVersion(0);
-                endpt.setConnectionOid(which);
-                endpt.setName("vchan_out");
-                endpt.setDestinationName("vchan_out");
                 endpt.setReplyType(JmsReplyType.NO_REPLY);
                 endpt.setOutboundMessageType(JmsOutboundMessageType.AUTOMATIC);
                 endpt.setUseMessageIdForCorrelation(false);

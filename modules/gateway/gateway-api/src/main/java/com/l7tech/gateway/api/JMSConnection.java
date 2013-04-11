@@ -184,7 +184,9 @@ public class JMSConnection extends ElementExtensionSupport {
 
         /**
          * Type for FioranoMQ.
+         * FioranoMQ is not supported.
          */
+        @Deprecated
         @XmlEnumValue("FioranoMQ") FioranoMQ,
 
         /**

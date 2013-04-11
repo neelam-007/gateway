@@ -1243,7 +1243,7 @@ No other rights are granted by implication, estoppel or otherwise.
     &lt;xs:restriction base="xs:string"&gt;
       &lt;xs:enumeration value="TIBCO EMS"/&gt;
       &lt;xs:enumeration value="WebSphere MQ over LDAP"/&gt;
-      &lt;xs:enumeration value="FioranoMQ"/&gt;
+      &lt;xs:enumeration value="WebLogic JMS"/&gt;
     &lt;/xs:restriction&gt;
   &lt;/xs:simpleType&gt;
             
