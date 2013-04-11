@@ -189,7 +189,7 @@ public class ComparisonAssertion extends Assertion implements UsesVariables {
         if (check()) compat().setCaseSensitive(caseSensitive);
     }
 
-    private final static String baseName = "Compare Expression or Variable";
+    private final static String baseName = "Compare Expression";
 
     final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<ComparisonAssertion>() {
         @Override
@@ -249,7 +249,7 @@ public class ComparisonAssertion extends Assertion implements UsesVariables {
         meta.put(POLICY_ADVICE_CLASSNAME, "com.l7tech.external.assertions.comparison.console.ComparisonAssertionAdvice");
 
         meta.put(PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.comparison.console.ComparisonPropertiesDialog");
-        meta.put(PROPERTIES_ACTION_NAME, "Compare Expression or Variable Properties");
+        meta.put(PROPERTIES_ACTION_NAME, "Compare Expression Properties");
         // request default feature set name for our class name, since we are a known optional module
         // that is, we want our required feature set to be "assertion:Comparison" rather than "set:modularAssertions"
         meta.put(FEATURE_SET_NAME, "(fromClass)");
