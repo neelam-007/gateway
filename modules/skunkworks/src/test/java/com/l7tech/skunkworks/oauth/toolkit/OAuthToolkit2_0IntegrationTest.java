@@ -34,7 +34,7 @@ import static org.junit.Assert.*;
  * Setup:
  * <ul>
  *     <li>Publish wsman on the gateway (Gateway Management Service internal service).</li>
- *     <li>Modify static Strings (CONSUMER_KEY, CONSUMER_SECRET) as needed
+ *     <li>Modify static Strings (CONSUMER_KEY, CONSUMER_SECRET) as needed. Also need to modify static strings in super class. (BASE_URL)
  *     <li>Publish a service which resolves to CALLBACK below, the contents of the service policy are located here: /com/l7tech/skunkworks/oauth/toolkit/OAuth_2_0_Callback_Policy.xml</li>
  *     <li>Modify the clients Callback URL configuration to match the value of CALLBACK below e.g. https://localhost:8443/oauth_callback</li>
  *     <li>Remove the class Ignore annotation in order to execute the tests individually</li>
