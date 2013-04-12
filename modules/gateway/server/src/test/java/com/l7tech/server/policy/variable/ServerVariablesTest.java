@@ -8,10 +8,8 @@ import com.l7tech.common.mime.StashManager;
 import com.l7tech.gateway.common.Component;
 import com.l7tech.gateway.common.RequestId;
 import com.l7tech.gateway.common.audit.*;
-import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.service.PublishedService;
-import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.identity.User;
 import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.identity.ldap.LdapUser;
@@ -47,8 +45,6 @@ import com.l7tech.server.policy.assertion.ServerHttpRoutingAssertion;
 import com.l7tech.server.policy.assertion.ServerTrueAssertion;
 import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.server.security.password.SecurePasswordManagerStub;
-import com.l7tech.server.transport.SsgConnectionManagerStub;
-import com.l7tech.server.transport.SsgConnectorManager;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.*;
 import org.junit.AfterClass;
@@ -70,7 +66,6 @@ import java.util.TimeZone;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static com.l7tech.gateway.common.transport.SsgConnector.CLIENT_AUTH_NEVER;
 import static org.junit.Assert.*;
 
 /**
@@ -1062,48 +1057,6 @@ public class ServerVariablesTest {
     public void testSystemVariables() throws Exception {
         final PolicyEnforcementContext context = context();
         expandAndCheck(context, "${ssgnode.hostname}", ServerConfig.getInstance().getHostname());
-    }
-
-    @Test
-    public void testSsgConnectorVariables() throws Exception {
-        final PolicyEnforcementContext context = context();
-        final SsgConnector connector = new SsgConnector(1, "foo bar", 8080, SsgConnector.SCHEME_HTTP , false, "MESSAGE_INPUT", CLIENT_AUTH_NEVER, null, null);
-        final SsgConnectorManager manager = new SsgConnectionManagerStub();
-        ServerVariables.setSsgConnectorManager(manager);
-        manager.save(connector);
-        expandAndCheck(context, "${gateway.listenports.1}", connector.toString());
-
-        context.setVariable("port.current",connector);
-        expandAndCheck(context, "${port.current.port}", Integer.toString(connector.getPort()));
-        expandAndCheck(context, "${port.current.protocol}", connector.getScheme());
-        expandAndCheck(context, "${port.current.enabled}", connector.isEnabled()?"Yes":"No");
-        expandAndCheck(context, "${port.current.name}", connector.getName());
-        String bindAddress = connector.getProperty(SsgConnector.PROP_BIND_ADDRESS);
-        expandAndCheck(context, "${port.current.interfaces}", bindAddress == null ? "(ALL)" : bindAddress);
-
-        //  clean up
-        manager.delete(connector);
-    }
-
-    @Test
-    public void testJdbcVariables() throws Exception {
-        final PolicyEnforcementContext context = context();
-        final JdbcConnection connection = new JdbcConnection();
-        connection.setName("TEST");
-        connection.setJdbcUrl("jdbc://url.l7tech.com:1234");
-        connection.setUserName("me");
-        ServerVariables.setJdbcConnectionManager(new JdbcConnectionManagerStub(connection));
-        expandAndCheck(context, "${gateway.jdbcconnection."+connection.getName()+".url}", connection.getJdbcUrl());
-        expandAndCheck(context, "${gateway.jdbcconnection." + connection.getName() + ".user}", connection.getUserName());
-
-        expandAndCheck(context, "${gateway.jdbcallconnections.1}", connection.toString());
-
-        context.setVariable("jdbc.current",connection);
-        expandAndCheck(context, "${jdbc.current.url}", connection.getJdbcUrl());
-        expandAndCheck(context, "${jdbc.current.user}", connection.getUserName());
-        expandAndCheck(context, "${jdbc.current.enabled}", connection.isEnabled()?"Yes":"No");
-        expandAndCheck(context, "${jdbc.current.name}", connection.getName());
-        expandAndCheck(context, "${jdbc.current.driverclass}", connection.getDriverClass());
     }
 
 

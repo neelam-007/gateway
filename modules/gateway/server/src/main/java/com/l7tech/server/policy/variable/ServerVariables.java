@@ -4,10 +4,8 @@ import com.l7tech.gateway.common.RequestId;
 import com.l7tech.gateway.common.audit.*;
 import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
-import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.service.PublishedService;
-import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.identity.User;
 import com.l7tech.message.*;
 import com.l7tech.objectmodel.FindException;
@@ -23,13 +21,11 @@ import com.l7tech.server.audit.AuditLookupPolicyEnforcementContext;
 import com.l7tech.server.audit.AuditSinkPolicyEnforcementContext;
 import com.l7tech.server.cluster.ClusterInfoManager;
 import com.l7tech.server.cluster.ClusterPropertyCache;
-import com.l7tech.server.jdbc.JdbcConnectionManager;
 import com.l7tech.server.message.HasOriginalContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.PolicyMetadata;
 import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.server.trace.TracePolicyEnforcementContext;
-import com.l7tech.server.transport.SsgConnectorManager;
 import com.l7tech.util.*;
 import org.jetbrains.annotations.NotNull;
 
@@ -70,8 +66,6 @@ public class ServerVariables {
     private static ClusterPropertyCache clusterPropertyCache;
     private static SecurePasswordManager securePasswordManager;
     private static ClusterInfoManager clusterInfoManager;
-    private static SsgConnectorManager ssgConnectorManager;
-    private static JdbcConnectionManager jdbcConnectionManager;
     // Take care before deciding to add new entity managers to this class: exposing entities via built in variables bypasses RBAC controls
 
     private static final long SELF_NODE_INF_CACHE_INTERVAL = SyspropUtil.getLong("com.l7tech.server.policy.variable.ssgnode.cacheMillis", 30000L);
@@ -557,24 +551,6 @@ public class ServerVariables {
                     return TimeUnit.NANOSECONDS.toMillis(context.getAssertionLatencyNanos());
                 }
             }),
-            new Variable(BuiltinVariables.PREFIX_LISTENPORTS, new Getter() {
-                @Override
-                Object get(String name, PolicyEnforcementContext context) {
-                    return getListenPorts();
-                }
-            }),
-            new Variable(BuiltinVariables.PREFIX_JDBC_CONNECTION, new Getter() {
-                @Override
-                Object get(String name, PolicyEnforcementContext context) {
-                    return getJdbcConnection(name, context);
-                }
-            }),
-            new Variable(BuiltinVariables.PREFIX_JDBC_ALL_CONNECTION, new Getter() {
-                @Override
-                Object get(String name, PolicyEnforcementContext context) {
-                    return getJdbcAllConnections();
-                }
-            }),
 
             new Variable(BuiltinVariables.SSGNODE_ID, new Getter() {
                 @Override
@@ -745,48 +721,6 @@ public class ServerVariables {
             }),
     };
 
-    private static Object getJdbcAllConnections() {
-        try {
-            Collection<JdbcConnection> connections = jdbcConnectionManager.findAll();
-            return  connections.toArray();
-        } catch (FindException e) {
-            logger.log(Level.WARNING, "Jdbc connections not found", ExceptionUtils.getDebugException(e));
-        }
-        return null;
-    }
-
-    private static Object getJdbcConnection(String name, PolicyEnforcementContext context) {
-        name = name.substring(BuiltinVariables.PREFIX_JDBC_CONNECTION.length() + 1);
-        int dotIndex = name.indexOf('.');
-        String connectionName = name.substring(0, dotIndex);
-        try {
-            JdbcConnection connection = jdbcConnectionManager.getJdbcConnection(connectionName);
-            if (connection != null) {
-                SelectingGetter getter = SelectingGetter.selectingGetter(connectionName, connection);
-                return getter.get(name, context);
-            }
-        } catch (FindException e) {
-            logger.log(Level.WARNING, "Jdbc connections not found", ExceptionUtils.getDebugException(e));
-        }
-        return null;
-    }
-
-
-    private static Object getListenPorts() {
-        try {
-            Collection<SsgConnector> connectors = ssgConnectorManager.findAll();
-            List<SsgConnector> listenPorts = new ArrayList<SsgConnector>();
-
-            for(SsgConnector port: connectors){
-                listenPorts.add(port);
-            }
-            return listenPorts.toArray();
-        } catch (FindException e) {
-            logger.log(Level.WARNING, "Listen ports not found",ExceptionUtils.getDebugException(e));
-        }
-        return null;
-    }
-
     private static X509Certificate getOnlyOneClientCertificateForSource(final List<LoginCredentials> credentials,
                                                                         final Class<? extends Assertion> assertionClass) {
         X509Certificate certificate = null;
@@ -888,19 +822,6 @@ public class ServerVariables {
     public static void setClusterInfoManager(ClusterInfoManager clusterInfoManager) {
         if (ServerVariables.clusterInfoManager == null) {
             ServerVariables.clusterInfoManager = clusterInfoManager;
-        }
-    }
-
-
-    public static void setSsgConnectorManager(final SsgConnectorManager scm) {
-        if (ssgConnectorManager == null) {
-            ssgConnectorManager = scm;
-        }
-    }
-
-    public static void setJdbcConnectionManager(JdbcConnectionManager jcm) {
-        if (ServerVariables.jdbcConnectionManager == null) {
-            ServerVariables.jdbcConnectionManager = jcm;
         }
     }
 

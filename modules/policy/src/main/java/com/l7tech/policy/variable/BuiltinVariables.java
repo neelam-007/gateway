@@ -36,9 +36,6 @@ public class BuiltinVariables {
     public static final String PREFIX_SERVICE = "service";
     public static final String PREFIX_POLICY = "policy";
     public static final String PREFIX_ASSERTION = "assertion";
-    public static final String PREFIX_LISTENPORTS = "gateway.listenports";
-    public static final String PREFIX_JDBC_CONNECTION = "gateway.jdbcconnection";
-    public static final String PREFIX_JDBC_ALL_CONNECTION = "gateway.jdbcallconnections";
 
     public static final String PREFIX_REQUEST_URL = "request.url";
     public static final String PREFIX_CLUSTER_PROPERTY = "gateway"; // value of a variable in the cluster property table
@@ -179,10 +176,6 @@ public class BuiltinVariables {
             new VariableMetadata(ASSERTION_LATENCY, true, false, null, false),
             new VariableMetadata(ASSERTION_LATENCY_MS, false, false, null, false, DataType.INTEGER),
             new VariableMetadata(ASSERTION_LATENCY_NS, false, false, null, false, DataType.INTEGER),
-
-            new VariableMetadata(PREFIX_LISTENPORTS, true, true, null, false),
-            new VariableMetadata(PREFIX_JDBC_CONNECTION, true, false, null, false),
-            new VariableMetadata(PREFIX_JDBC_ALL_CONNECTION, true, true, null, false),
 
             new VariableMetadata(SSGNODE_NAME, false, false, null, false),
             new VariableMetadata(SSGNODE_HOSTNAME, false, false, null, false),
