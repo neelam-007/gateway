@@ -117,6 +117,10 @@ INSERT INTO cluster_properties
 -- See SSG-6774
 ALTER TABLE client_cert MODIFY COLUMN subject_dn VARCHAR(2048);
 ALTER TABLE trusted_cert MODIFY COLUMN subject_dn VARCHAR(2048);
+-- updating the client_cert index to match the index in ssg.sql
+-- setting the length to 255 will use the first 255 characters of the subject_dn to create the index.
+ALTER TABLE client_cert DROP INDEX i_subject_dn;
+CREATE INDEX i_subject_dn ON client_cert (subject_dn(255));
 
 --
 -- Reenable FK at very end of script
