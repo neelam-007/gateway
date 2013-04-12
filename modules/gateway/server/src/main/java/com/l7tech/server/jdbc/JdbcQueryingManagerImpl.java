@@ -74,7 +74,7 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager, PropertyCha
                                    final TimeSource timeSource) {
         this.jdbcConnectionPoolManager = jdbcConnectionPoolManager;
         this.jdbcConnectionManager = jdbcConnectionManager;
-        this.config = config;
+        this.config = validated(config);
         this.timeSource = timeSource;
     }
 
@@ -252,7 +252,7 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager, PropertyCha
             // Check to see if the cache has expired.
             final long maxStaleAgeMillis = config.getLongProperty(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_STALE_TIMEOUT, 1800) * 1000;
             Long age = timeSource.currentTimeMillis() - cachedMetaDataValue.cachedTime.get();
-            if (age > maxStaleAgeMillis) {
+            if (maxStaleAgeMillis > 0 && age > maxStaleAgeMillis) {
                 // if it has then re-cache it.
                 synchronized (uniqueKey.toString().intern()) {
                     // Synchronization required for updateCache when cached item has expired.
@@ -415,7 +415,7 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager, PropertyCha
     private int getMaxQueryTimeout(int timeoutSeconds) {
         final int maxTimeOutToUse;
         {// do not accidentally let the wrong timeout leak out of scope
-            final int maxSystemTimeout = config.getIntProperty(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_MAX_TIME_OUT, 300);
+            final int maxSystemTimeout = config.getIntProperty(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_MAX_GATEWAY_STMT_TIME_OUT, 300);
             if (timeoutSeconds < maxSystemTimeout && timeoutSeconds > 0) {
                 maxTimeOutToUse = timeoutSeconds;
             } else {
@@ -486,10 +486,12 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager, PropertyCha
         createAndStartJDBCMetadataRetrievalThreadPool();
         assert currentCacheTask.get() == null;
         final long refreshInterval = config.getLongProperty(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_REFRESH_INTERVAL, 600000L);
-        final MetaDataCacheTask newTask = new MetaDataCacheTask(jdbcConnectionPoolManager);
-        currentCacheTask.set(newTask);
-        downloadMetaDataTimer.schedule(currentCacheTask.get(), 1000L, refreshInterval);
-        logger.info("Starting the JDBC Query meta data cache task with refresh interval of " + refreshInterval + " milliseconds");
+        if (refreshInterval > 0) {
+            final MetaDataCacheTask newTask = new MetaDataCacheTask(jdbcConnectionPoolManager);
+            currentCacheTask.set(newTask);
+            downloadMetaDataTimer.schedule(currentCacheTask.get(), 1000L, refreshInterval);
+            logger.info("Starting the JDBC Query meta data cache task with refresh interval of " + refreshInterval + " milliseconds");
+        }
     }
 
     private void stopCurrentTaskIfRunning() {
@@ -530,10 +532,12 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager, PropertyCha
         stopCleanUpTaskIfRunning();
         assert currentCleanUpTask.get() == null;
         final long refreshInterval = config.getLongProperty(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_CLEANUP_REFRESH_INTERVAL, 60000L);
-        final MetaDataCacheCleanUpTask newTask = new MetaDataCacheCleanUpTask();
-        currentCleanUpTask.set(newTask);
-        cleanUpTimer.schedule(currentCleanUpTask.get(), 1000L, refreshInterval);
-        logger.info("Starting the JDBC Query meta data cache clean up task with refresh interval of " + refreshInterval + " milliseconds");
+        if (refreshInterval > 0) {
+            final MetaDataCacheCleanUpTask newTask = new MetaDataCacheCleanUpTask();
+            currentCleanUpTask.set(newTask);
+            cleanUpTimer.schedule(currentCleanUpTask.get(), 1000L, refreshInterval);
+            logger.info("Starting the JDBC Query meta data cache clean up task with refresh interval of " + refreshInterval + " milliseconds");
+        }
     }
 
     private void stopCleanUpTaskIfRunning() {
@@ -564,6 +568,34 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager, PropertyCha
     private void doStop() {
         stopCurrentTaskIfRunning();
         stopCleanUpTaskIfRunning();
+    }
+
+    private static Config validated(final Config config) {
+        final ValidatedConfig vc = new ValidatedConfig(config, logger);
+
+        vc.setMinimumValue(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_REFRESH_INTERVAL, 0);
+        vc.setMaximumValue(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_REFRESH_INTERVAL, Long.MAX_VALUE);
+
+        vc.setMinimumValue(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_CLEANUP_REFRESH_INTERVAL, 0);
+        vc.setMaximumValue(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_CLEANUP_REFRESH_INTERVAL, Long.MAX_VALUE);
+
+        vc.setMinimumValue(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_MIN_CACHE_CONCURRENCY, 1);
+        vc.setMaximumValue(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_MIN_CACHE_CONCURRENCY, 200);
+
+        vc.setMinimumValue(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_NO_USAGE_EXPIRATION, 0);
+        vc.setMaximumValue(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_NO_USAGE_EXPIRATION, Long.MAX_VALUE);
+
+        vc.setMinimumValue(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_MAX_GATEWAY_STMT_TIME_OUT, 1);
+        vc.setMaximumValue(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_MAX_GATEWAY_STMT_TIME_OUT, Integer.MAX_VALUE);
+
+        vc.setMinimumValue(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_TASK_MAX_STMT_TIME_OUT, 0);
+        vc.setMaximumValue(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_TASK_MAX_STMT_TIME_OUT, Integer.MAX_VALUE);
+
+        vc.setMinimumValue(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_STALE_TIMEOUT, 0);
+        vc.setMaximumValue(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_STALE_TIMEOUT, Long.MAX_VALUE);
+
+
+        return vc;
     }
 
     /**
@@ -768,7 +800,7 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager, PropertyCha
                                 try {
 
                                     final DataSource dataSource = jdbcConnectionPoolManager.getDataSource(connectionName);
-                                    final int timeoutSeconds = config.getIntProperty(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_MAX_TIME_OUT, 120);
+                                    final int timeoutSeconds = config.getIntProperty(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_TASK_MAX_STMT_TIME_OUT, 120);
                                     //need to preserve the last access time if the item is already in cache.
                                     Long lastUseTime = null;
                                     if (simpleJdbcCallCache.containsKey(key)) {
@@ -862,7 +894,7 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager, PropertyCha
                 }
 
                 //remove items not used for a long time.
-                if(age > cacheKeyNoUsageExpiration) {
+                if(cacheKeyNoUsageExpiration > 0 && age > cacheKeyNoUsageExpiration) {
                     keysToRemoveFromDBObjectsToCacheMetaDataFor.add(key);
                     keysToRemove.put(key, "unused");
                 }

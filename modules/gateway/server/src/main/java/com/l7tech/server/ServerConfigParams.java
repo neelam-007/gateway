@@ -166,8 +166,8 @@ public interface ServerConfigParams {
     String PARAM_JDBC_QUERY_MANAGER_CACHE_METADATA_TASK_ENABLED = "jdbcQueryManager.cacheMetaDataTask.enable";
     String PARAM_JDBC_QUERY_MANAGER_CACHE_REFRESH_INTERVAL = "jdbcQueryManager.cacheRefreshInterval";
     String PARAM_JDBC_QUERY_MANAGER_CACHE_CLEANUP_REFRESH_INTERVAL = "jdbcQueryManager.cacheCleanUpInterval";
-    String PARAM_JDBC_QUERY_MANAGER_MAX_TIME_OUT = "jdbcQueryManager.defaultStatementTimeout";
-    String PARAM_JDBC_QUERY_MANAGER_CACHE_MAX_TIME_OUT = "jdbcQueryManager.cacheStatementTimeout";
+    String PARAM_JDBC_QUERY_MANAGER_MAX_GATEWAY_STMT_TIME_OUT = "jdbcQueryManager.maxGatewayStatementTimeout";
+    String PARAM_JDBC_QUERY_MANAGER_CACHE_TASK_MAX_STMT_TIME_OUT = "jdbcQueryManager.cacheTaskStatementTimeout";
     String PARAM_JDBC_QUERY_MANAGER_CACHE_STALE_TIMEOUT = "jdbcQueryManager.cacheStaleTimeout";
     String PARAM_JDBC_QUERY_MANAGER_CACHE_NO_USAGE_EXPIRATION = "jdbcQueryManager.cacheKeyNoUsageExpiration";
     String PARAM_JDBC_QUERY_MANAGER_CACHE_MIN_CACHE_CONCURRENCY = "jdbcQueryManager.minCacheConcurrency";

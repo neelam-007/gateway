@@ -8,10 +8,7 @@ import com.l7tech.util.MockConfig;
 import com.l7tech.util.Option;
 import com.l7tech.util.TimeSource;
 import org.jetbrains.annotations.Nullable;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 import org.mockito.Matchers;
 import org.mockito.Mockito;
 import org.springframework.jdbc.support.rowset.SqlRowSet;
@@ -45,6 +42,8 @@ public class JdbcQueryManagerImplCacheTest {
     private JdbcConnectionPoolManager jdbcConnectionPoolManager;
 
     ExecutorService executor = Executors.newCachedThreadPool();
+    private TimeSource timeSource;
+    private long timeInFutureMillis;
 
     /**
      * Sets up mocks and jdbc objects
@@ -66,7 +65,13 @@ public class JdbcQueryManagerImplCacheTest {
 
         Mockito.doReturn(dataSource).when(jdbcConnectionPoolManager).getDataSource(Matchers.eq(ConnectionName));
 
-        jdbcQueryingManager = Mockito.spy(new JdbcQueryingManagerImpl(jdbcConnectionPoolManager, jdbcConnectionManager, mockConfig, new TimeSource()));
+        timeSource = new TimeSource(){
+            @Override
+            public long currentTimeMillis() {
+                return super.currentTimeMillis() + timeInFutureMillis;
+            }
+        };
+        jdbcQueryingManager = Mockito.spy(new JdbcQueryingManagerImpl(jdbcConnectionPoolManager, jdbcConnectionManager, mockConfig, timeSource));
 
         connection = Mockito.mock(Connection.class);
 
@@ -624,7 +629,7 @@ public class JdbcQueryManagerImplCacheTest {
 
     @Test
     public void testMetaDataCacheTaskCacheItemsExpiredStale() throws SQLException, InvocationTargetException, NoSuchMethodException, NoSuchFieldException, IllegalAccessException, InstantiationException {
-        configProperties.put(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_STALE_TIMEOUT, "-1");
+        configProperties.put(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_STALE_TIMEOUT, "1");
 
         String functionName = "myFunction";
         String query = "func myFunction";
@@ -635,6 +640,8 @@ public class JdbcQueryManagerImplCacheTest {
         validateCached(query);
         verifyNumberGetProcedureCalls(1);
 
+        // Move time forward to make cached item stale
+        timeInFutureMillis = 1001L;
         Object rtn = jdbcQueryingManager.performJdbcQuery(ConnectionName, query, null, 1, Collections.emptyList());
         validateFunctionReturn(null, rtn);
         validateCached(query);
@@ -644,6 +651,8 @@ public class JdbcQueryManagerImplCacheTest {
 
         validateCached(query);
 
+        // Move time forward to make cached item stale
+        timeInFutureMillis = 3001L;
         rtn = jdbcQueryingManager.performJdbcQuery(ConnectionName, query, null, 1, Collections.emptyList());
         validateFunctionReturn(null, rtn);
 
@@ -652,7 +661,7 @@ public class JdbcQueryManagerImplCacheTest {
 
     @Test
     public void testMetaDataCacheTaskCacheItemsExpiredUnused() throws SQLException, InvocationTargetException, NoSuchMethodException, NoSuchFieldException, IllegalAccessException, InstantiationException {
-        configProperties.put(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_NO_USAGE_EXPIRATION, "-1");
+        configProperties.put(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_NO_USAGE_EXPIRATION, "1");
 
         String functionName = "myFunction";
         String query = "func myFunction";
@@ -660,6 +669,9 @@ public class JdbcQueryManagerImplCacheTest {
         jdbcQueryingManager.registerQueryForPossibleCaching(ConnectionName, query, null);
         runMetaDataCacheTask();
         validateCached(query);
+        // Move time forward to make cached item expire
+        timeInFutureMillis = 1001L;
+
         runMetaDataCacheCleanUpTask();
 
         validateCached(query, false);
@@ -673,6 +685,9 @@ public class JdbcQueryManagerImplCacheTest {
         validateFunctionReturn(null, rtn);
         validateCached(query);
         verifyNumberGetProcedureCalls(2);
+
+        // Move time forward to make cached item expire
+        timeInFutureMillis = 3001L;
 
         runMetaDataCacheCleanUpTask();
 
