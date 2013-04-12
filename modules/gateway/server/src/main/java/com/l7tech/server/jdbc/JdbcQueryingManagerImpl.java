@@ -483,10 +483,10 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager, PropertyCha
      */
     private void createAndStartMetaDataTask() {
         stopCurrentTaskIfRunning();
-        createAndStartJDBCMetadataRetrievalThreadPool();
         assert currentCacheTask.get() == null;
         final long refreshInterval = config.getLongProperty(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_REFRESH_INTERVAL, 600000L);
         if (refreshInterval > 0) {
+            createAndStartJDBCMetadataRetrievalThreadPool();
             final MetaDataCacheTask newTask = new MetaDataCacheTask(jdbcConnectionPoolManager);
             currentCacheTask.set(newTask);
             downloadMetaDataTimer.schedule(currentCacheTask.get(), 1000L, refreshInterval);
