@@ -121,6 +121,7 @@
         <property name="name" column="name" type="string"/>
 
         <many-to-one class="com.l7tech.objectmodel.folder.Folder" name="folder" lazy="false" column="parent_folder_oid"/>
+        <many-to-one name="securityZone" column="security_zone_oid"/>
     </class>
   
     <class name="com.l7tech.gateway.common.cluster.ServiceUsage" table="service_usage" lazy="false">

@@ -2,12 +2,13 @@ package com.l7tech.console.tree.servicesAndPolicies;
 
 import com.l7tech.console.action.*;
 import com.l7tech.console.tree.*;
+import com.l7tech.console.util.EntitySaver;
 import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.admin.FolderAdmin;
+import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.folder.FolderHeader;
 import com.l7tech.objectmodel.folder.Folder;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.FindException;
+import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import javax.swing.tree.TreeNode;
@@ -54,7 +55,19 @@ public class FolderNode extends AbstractTreeNode implements FolderNodeBase {
             new EditFolderAction(folder, folderHeader, this, folderAdmin),
             new CreateFolderAction(folder, this, folderAdmin),
             new DeleteFolderAction(this, folderAdmin),
-            new PasteAsAliasAction(this)
+            new PasteAsAliasAction(this),
+            new ConfigureSecurityZoneAction<Folder>(folder, new EntitySaver<Folder>() {
+                @Override
+                public Folder saveEntity(@NotNull final Folder entity) throws SaveException {
+                    try {
+                        final long oid = Registry.getDefault().getFolderAdmin().saveFolder(entity);
+                        entity.setOid(oid);
+                    } catch (final UpdateException | ConstraintViolationException e)  {
+                        throw new SaveException("Unable to save folder: " + e.getMessage(), e);
+                    }
+                    return entity;
+                }
+            })
         };
     }
 

@@ -1,6 +1,7 @@
 package com.l7tech.objectmodel.folder;
 
 import com.l7tech.objectmodel.imp.NamedEntityImp;
+import com.l7tech.objectmodel.imp.ZoneableNamedEntityImp;
 import com.l7tech.objectmodel.migration.Migration;
 import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
 
@@ -12,7 +13,7 @@ import javax.xml.bind.annotation.XmlRootElement;
  * Represents a service/policy folder.
  */
 @XmlRootElement
-public class Folder extends NamedEntityImp implements HasFolder {
+public class Folder extends ZoneableNamedEntityImp implements HasFolder {
     private Folder parentFolder;
     private static final int MAX_NESTING_CHECK_LEVEL = 1000;
 

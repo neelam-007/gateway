@@ -162,13 +162,15 @@ CREATE TABLE folder (
   version int(11) not null,
   name varchar(128) NOT NULL,
   parent_folder_oid bigint(20),
+  security_zone_oid bigint(20),
   PRIMARY KEY  (objectid),
   CONSTRAINT folder_parent_folder FOREIGN KEY (parent_folder_oid) REFERENCES folder (objectid),
+  CONSTRAINT folder_security_zone FOREIGN KEY (security_zone_oid) REFERENCES security_zone (objectid) ON DELETE SET NULL,
   UNIQUE KEY `i_name_parent` (`name`,`parent_folder_oid`)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
 
-INSERT INTO folder VALUES (-5002, 0, 'Root Node', NULL);
+INSERT INTO folder VALUES (-5002, 0, 'Root Node', NULL, NULL);
 
 --
 -- Table to record system logon activity

@@ -350,6 +350,7 @@ create table folder (
     version integer not null,
     name varchar(255),
     parent_folder_oid bigint,
+    security_zone_oid bigint references security_zone(objectid) on delete set null,
     primary key (objectid)
 );
 
@@ -1140,7 +1141,7 @@ INSERT INTO identity_provider (objectid,name,description,type,properties,version
 -- The same hash from resetAdmin.sh is used here. Digest property is set to NULL by default.
 INSERT INTO internal_user VALUES (3,0,'admin','admin','$6$S7Z3HcudYNsObgs8$SjwZ3xtCkSjXOK2vHfOVEg2dJES3cgvtIUdHbEN/KdCBXoI6uuPSbxTEwcH.av6lpcb1p6Lu.gFeIX04FBxiJ.',NULL,'','','','',-1,1577865600000,0,1,NULL);
 
-INSERT INTO folder VALUES (-5002, 0, 'Root Node', NULL);
+INSERT INTO folder VALUES (-5002, 0, 'Root Node', NULL, NULL);
 
 INSERT INTO resolution_configuration (objectid, version, name, path_case_sensitive, use_url_header, use_service_oid, use_soap_action, use_soap_namespace) VALUES (-2, 0, 'Default', 1, 1, 1, 1, 1);
 

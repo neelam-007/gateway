@@ -21,6 +21,7 @@ import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.Policy;
+import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.uddi.WsdlPortInfo;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
@@ -887,6 +888,7 @@ public class ServicePropertiesDialog extends JDialog {
                     Registry.getDefault().getUDDIRegistryAdmin().saveUDDIServiceControlOnly(uddiServiceControl, accessPointURL, lastModifiedTimeStamp);
                 }
             }
+            savePolicyIfSecurityZoneDiffers(subject);
 
             //we are good to close the dialog
             wasoked = true;
@@ -910,6 +912,25 @@ public class ServicePropertiesDialog extends JDialog {
             String errorMessage = e.getMessage();
             if (errorMessage != null) msg += ":\n" + errorMessage;
             JOptionPane.showMessageDialog(this, msg);
+        }
+    }
+
+    /**
+     * Service policy is hidden from the user so we assume the policy security zone should be the same as the service zone
+     */
+    private void savePolicyIfSecurityZoneDiffers(final PublishedService subject) {
+        final Policy policy = subject.getPolicy();
+        if (policy != null) {
+            final SecurityZone serviceZone = subject.getSecurityZone();
+            final SecurityZone policyZone = policy.getSecurityZone();
+            if ((serviceZone == null && policyZone != null) || !serviceZone.equals(policyZone)) {
+                policy.setSecurityZone(serviceZone);
+                try {
+                    Registry.getDefault().getPolicyAdmin().savePolicy(policy);
+                } catch (final PolicyAssertionException | SaveException e) {
+                    logger.log(Level.WARNING, "Unable to save security zone change for policy: " + e.getMessage(), ExceptionUtils.getDebugException(e));
+                }
+            }
         }
     }
 
