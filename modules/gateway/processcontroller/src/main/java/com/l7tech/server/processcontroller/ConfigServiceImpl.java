@@ -93,7 +93,7 @@ public class ConfigServiceImpl implements ConfigService {
         if (!varDirectory.exists() || !varDirectory.isDirectory())
             logger.log(Level.WARNING, varDirectory.getAbsolutePath() + " does not exist; monitoring configurations will not be saved");
         this.monitoringConfigFile = varDirectory == null ? null : new File(varDirectory, "currentMonitoringConfig.xml");
-        this.applianceLibexecDirectory = new File(processControllerHomeDirectory, ".." + SLASH + "libexec");
+        this.applianceLibexecDirectory = new File(processControllerHomeDirectory, ".." + SLASH + "Appliance" + SLASH + "libexec");
         this.masterPasswordManager = new MasterPasswordManager( new DefaultMasterPasswordFinder( new File(configDirectory, "omp.dat") ) );
 
         final Properties hostProps;
