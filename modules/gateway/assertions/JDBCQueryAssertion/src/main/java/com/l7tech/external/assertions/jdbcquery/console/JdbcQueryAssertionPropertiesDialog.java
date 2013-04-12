@@ -672,7 +672,7 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
         }
 
         if (!isQueryTimeoutValid()) {
-            DialogDisplayer.showMessageDialog(this, "Query Timeout must be a single variable reference or a valid Integer >= 0", null);
+            DialogDisplayer.showMessageDialog(this, "Query Timeout must be a single variable reference or a valid Integer >= 0", "Invalid Query Timeout", JOptionPane.INFORMATION_MESSAGE, null);
             return;
         }
 
