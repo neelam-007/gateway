@@ -1,13 +1,19 @@
 package com.l7tech.console.tree;
 
+import com.l7tech.console.util.EntitySaver;
+import com.l7tech.console.util.Registry;
+import com.l7tech.gateway.common.service.PublishedServiceAlias;
 import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.console.action.*;
-import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.*;
+import com.l7tech.util.ExceptionUtils;
+import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import java.util.Comparator;
 import java.util.Collection;
 import java.util.ArrayList;
+import java.util.logging.Level;
 
 public class ServiceNodeAlias extends ServiceNode{
     public ServiceNodeAlias(ServiceHeader e) throws IllegalArgumentException {
@@ -26,6 +32,21 @@ public class ServiceNodeAlias extends ServiceNode{
         if (getEntityHeader().isSoap()) actions.add(new EditServiceUDDISettingsAction(this));
         actions.add(new DeleteServiceAliasAction(this));
         actions.add(new PolicyRevisionsAction(this));
+        final PublishedServiceAlias alias = getAlias();
+        if (alias != null) {
+            actions.add(new ConfigureSecurityZoneAction<PublishedServiceAlias>(alias, new EntitySaver<PublishedServiceAlias>() {
+                @Override
+                public PublishedServiceAlias saveEntity(@NotNull final PublishedServiceAlias entity) throws SaveException {
+                    try {
+                        final long oid = Registry.getDefault().getServiceManager().saveAlias(entity);
+                        entity.setOid(oid);
+                    } catch (final UpdateException | VersionException e) {
+                        throw new SaveException("Could not save service alias: " + e.getMessage(), e);
+                    }
+                    return entity;
+                }
+            }));
+        }
         actions.add(new RefreshTreeNodeAction(this));
         Action secureCut = ServicesAndPoliciesTree.getSecuredAction(ServicesAndPoliciesTree.ClipboardActionType.CUT);
         Action secureCopy = ServicesAndPoliciesTree.getSecuredAction(ServicesAndPoliciesTree.ClipboardActionType.COPY, EntityType.SERVICE_ALIAS);
@@ -62,5 +83,16 @@ public class ServiceNodeAlias extends ServiceNode{
                 return "com/l7tech/console/resources/xmlObject16Alias.gif";
             }
         }
+    }
+
+    private PublishedServiceAlias getAlias() {
+        PublishedServiceAlias alias = null;
+        final ServiceHeader header = getEntityHeader();
+        try {
+            alias = Registry.getDefault().getServiceManager().findAliasByEntityAndFolder(header.getOid(), header.getFolderOid());
+        } catch (final FindException e) {
+            logger.log(Level.WARNING, "Unable to retrieve service alias: " + e.getMessage(), ExceptionUtils.getDebugException(e));
+        }
+        return alias;
     }
 }
