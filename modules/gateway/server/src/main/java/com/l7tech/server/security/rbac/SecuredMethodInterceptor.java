@@ -199,7 +199,7 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationC
                     checkEntityBefore(check, args, id == null || DEFAULT_ID.equals(id) ? CREATE : UPDATE);
                     break;
                 } else {
-                    // TODO this is incredibly ugly
+                    // this is incredibly ugly: Must have permission to update AND create ANY entity of all specified types; if so, we BYPASS any remaining checks
                     check.setBefore(CheckBefore.NONE);
                     check.setAfter(CheckAfter.NONE);
                     for (EntityType type : check.types) {
@@ -210,6 +210,26 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationC
                             throw new PermissionDeniedException(CREATE, type);
                         }
                     }
+                    /* BYPASS further checks */
+                    return methodInvocation.proceed();
+                }
+            case UPDATE:
+                // Like SAVE_OR_UPDATE, but CREATE permission will not help you here -- only UPDATE permission will do, even if an entity is located and its OID is -1
+                entity = getEntityArg(check, args);
+                if (entity != null) {
+                    // Must have permission to UPDATE this entity
+                    checkEntityBefore(check, args, UPDATE);
+                    break;
+                } else {
+                    // Must have permission to update ANY entity of all specified types; if so, we BYPASS any remaining checks
+                    check.setBefore(CheckBefore.NONE);
+                    check.setAfter(CheckAfter.NONE);
+                    for (EntityType type : check.types) {
+                        if (!rbacServices.isPermittedForAnyEntityOfType(user, UPDATE, type)) {
+                            throw new PermissionDeniedException(UPDATE, type);
+                        }
+                    }
+                    /* BYPASS further checks */
                     return methodInvocation.proceed();
                 }
             case FIND_ENTITIES:
@@ -301,6 +321,7 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationC
                             throw new PermissionDeniedException(CREATE, type);
                         }
                     }
+                    /* BYPASS further checks */
                     return methodInvocation.proceed();
                 }
             default:

@@ -27,6 +27,14 @@ create table rbac_predicate_security_zone (
   primary key (objectid)
 );
 
+create table assertion_access (
+  objectid bigint not null,
+  version integer,
+  name varchar(255) not null unique,
+  security_zone_oid bigint references security_zone(objectid) on delete set null,
+  primary key (objectid)
+);
+
 alter table policy add column security_zone_oid bigint;
 alter table policy add foreign key (security_zone_oid) references security_zone (objectid) on delete set null;
 

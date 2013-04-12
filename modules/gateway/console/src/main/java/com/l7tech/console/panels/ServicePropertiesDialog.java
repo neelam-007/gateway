@@ -1,10 +1,7 @@
 package com.l7tech.console.panels;
 
-import com.japisoft.xmlpad.PopupModel;
-import com.japisoft.xmlpad.UIAccessibility;
 import com.japisoft.xmlpad.XMLContainer;
 import com.japisoft.xmlpad.action.ActionModel;
-import com.japisoft.xmlpad.action.XMLActionForSelection;
 import com.japisoft.xmlpad.editor.XMLEditor;
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.io.XmlUtil;
@@ -19,7 +16,6 @@ import com.l7tech.gateway.common.uddi.UDDIProxiedServiceInfo;
 import com.l7tech.gateway.common.uddi.UDDIRegistry;
 import com.l7tech.gateway.common.uddi.UDDIServiceControl;
 import com.l7tech.gui.FilterDocument;
-import com.l7tech.gui.util.ClipboardActions;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
@@ -34,12 +30,9 @@ import org.w3c.dom.Document;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.datatransfer.Clipboard;
-import java.awt.datatransfer.StringSelection;
 import java.awt.event.*;
 import java.io.IOException;
 import java.io.StringReader;
-import java.lang.Exception;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.*;
@@ -482,6 +475,7 @@ public class ServicePropertiesDialog extends JDialog {
             uddiServiceControl = null;
         }
 
+        zoneControl.setEntityType(EntityType.SERVICE);
         zoneControl.setSelectedZone(subject.getSecurityZone());
 
         updateURL();

@@ -26,13 +26,22 @@ CREATE TABLE security_zone (
   PRIMARY KEY (objectid)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
-DROP TABLE IF EXISTS rbac_predicate_security_zone;
 CREATE TABLE rbac_predicate_security_zone (
   objectid bigint(20) NOT NULL,
   security_zone_oid bigint(20) NOT NULL,
   PRIMARY KEY (objectid),
   FOREIGN KEY (objectid) REFERENCES rbac_predicate (objectid) ON DELETE CASCADE,
   FOREIGN KEY (security_zone_oid) REFERENCES security_zone (objectid) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
+
+CREATE TABLE assertion_access (
+  objectid bigint(20) NOT NULL,
+  version int(11) NOT NULL,
+  name varchar(255) NOT NULL,
+  security_zone_oid bigint(20),
+  PRIMARY KEY (objectid),
+  UNIQUE KEY i_name (name),
+  CONSTRAINT assertion_access_security_zone FOREIGN KEY (security_zone_oid) REFERENCES security_zone (objectid) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
 alter table policy add column security_zone_oid bigint(20);

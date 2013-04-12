@@ -6,7 +6,7 @@ import org.jetbrains.annotations.NotNull;
 
 
 /**
- * This is used by the SecureMethodInterceptorTest. It needs to the here the JVM couldn't find it when it was a subclass of SecureMethodInterceptorTest
+ * This is used by the SecuredMethodInterceptorTest. It needs to the here the JVM couldn't find it when it was a subclass of SecuredMethodInterceptorTest
  */
 public class MockCustomRbacInterceptor implements CustomRbacInterceptor {
 
@@ -16,6 +16,6 @@ public class MockCustomRbacInterceptor implements CustomRbacInterceptor {
 
     @Override
     public Object invoke(@NotNull MethodInvocation invocation) throws Throwable {
-        return SecureMethodInterceptorTest.genericString;
+        return SecuredMethodInterceptorTest.genericString;
     }
 }

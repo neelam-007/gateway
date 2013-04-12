@@ -11,14 +11,12 @@ import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.TableUtil;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.*;
-import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 
 import javax.swing.*;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.EnumSet;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.l7tech.gui.util.TableUtil.column;
@@ -60,7 +58,7 @@ public class SecurityZoneManagerWindow extends JDialog {
 
         securityZonesTable.getSelectionModel().addListSelectionListener(enableOrDisableListener);
 
-        EntityCrudController<SecurityZone> ecc = new EntityCrudController<SecurityZone>();
+        EntityCrudController<SecurityZone> ecc = new EntityCrudController<>();
         ecc.setEntityTable(securityZonesTable);
         ecc.setEntityTableModel(securityZonesTableModel);
         ecc.setEntityCreator(new EntityCreator<SecurityZone>() {
@@ -75,15 +73,17 @@ public class SecurityZoneManagerWindow extends JDialog {
             @Override
             public void deleteEntity(SecurityZone entity) throws DeleteException {
                 Registry.getDefault().getRbacAdmin().deleteSecurityZone(entity);
+                flushCachedZones();
+                TopComponents.getInstance().getAssertionRegistry().updateAssertionAccess();
             }
         });
         ecc.setEntitySaver(new EntitySaver<SecurityZone>() {
             @Override
-            public void saveEntity(SecurityZone entity) throws SaveException {
+            public SecurityZone saveEntity(SecurityZone entity) throws SaveException {
                 long oid = Registry.getDefault().getRbacAdmin().saveSecurityZone(entity);
+                flushCachedZones();
                 try {
-                    SecurityZone updated = Registry.getDefault().getRbacAdmin().findSecurityZoneByPrimaryKey(oid);
-                    copy(updated, entity);
+                    return Registry.getDefault().getRbacAdmin().findSecurityZoneByPrimaryKey(oid);
                 } catch (FindException e) {
                     throw new SaveException(e);
                 }
@@ -122,6 +122,10 @@ public class SecurityZoneManagerWindow extends JDialog {
         enableOrDisable();
     }
 
+    private static void flushCachedZones() {
+        SecurityZoneUtil.flushCachedSecurityZones();
+    }
+
     private static void copy(SecurityZone src, SecurityZone dest) {
         dest.setOid(src.getOid());
         dest.setVersion(src.getVersion());
@@ -130,13 +134,8 @@ public class SecurityZoneManagerWindow extends JDialog {
     }
 
     private void loadSecurityZonesTable() {
-        try {
-            securityZonesTableModel.setRows(new ArrayList<SecurityZone>(Registry.getDefault().getRbacAdmin().findAllSecurityZones()));
-        } catch (FindException e) {
-            final String mess = "Unable to save: " + ExceptionUtils.getMessage(e);
-            logger.log(Level.WARNING, mess, e);
-            DialogDisplayer.showMessageDialog(securityZonesTable, mess, null);
-        }
+        flushCachedZones();
+        securityZonesTableModel.setRows(new ArrayList<SecurityZone>(SecurityZoneUtil.getSecurityZones()));
     }
 
     private void enableOrDisable() {

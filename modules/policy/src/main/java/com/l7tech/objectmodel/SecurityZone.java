@@ -3,6 +3,7 @@ package com.l7tech.objectmodel;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 import org.hibernate.annotations.Proxy;
 import org.hibernate.annotations.Type;
+import org.jetbrains.annotations.NotNull;
 
 import javax.persistence.Column;
 import javax.persistence.Inheritance;
@@ -19,7 +20,7 @@ import java.util.Set;
  * The intent is that most persistent entities will be placeable into security zones.
  */
 @XmlRootElement(name = "SecurityZone")
-@XmlType(propOrder = {"description"})
+@XmlType(propOrder = {"description", "permittedEntityTypes"})
 @javax.persistence.Entity
 @Proxy(lazy=false)
 @Inheritance(strategy=InheritanceType.SINGLE_TABLE)
@@ -51,6 +52,14 @@ public class SecurityZone extends NamedEntityImp {
 
     public void setPermittedEntityTypes(Set<EntityType> permittedEntityTypes) {
         this.permittedEntityTypes = permittedEntityTypes;
+    }
+
+    /**
+     * @param entityType entity type to check.  Required.
+     * @return true if entity type are not specified for this zone; or this zone permits EntityType.ANY; or this zone permits the specified entity type.
+     */
+    public boolean permitsEntityType(@NotNull EntityType entityType) {
+        return permittedEntityTypes == null || permittedEntityTypes.contains(EntityType.ANY) || permittedEntityTypes.contains(entityType);
     }
 
     @SuppressWarnings("RedundantIfStatement")

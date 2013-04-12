@@ -15,6 +15,7 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.LicenseException;
 import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.AssertionAccess;
 import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.Assertion;
@@ -112,6 +113,18 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
         return meta.getAssertionClass().getSimpleName();
     }
 
+    public void updateAssertionAccess() {
+        permittedAssertionClasses.clear();
+        try {
+            Collection<AssertionAccess> aas = Registry.getDefault().getRbacAdmin().findAccessibleAssertions();
+            for (AssertionAccess aa : aas) {
+                permittedAssertionClasses.put(aa.getName(), aa);
+            }
+        } catch (FindException e) {
+            throw new RuntimeException("Unexpected error getting assertion access info: " + ExceptionUtils.getMessage(e), e);
+        }
+    }
+
     public void updateModularAssertions() {
         long startTime = System.currentTimeMillis();
         for (Assertion prototype : modulePrototypes)
@@ -119,14 +132,9 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
         if (!TopComponents.getInstance().isApplet())
             CustomAssertionRMIClassLoaderSpi.resetRemoteClassLoader();
         moduleNameByBasePackage.clear();
-        permittedAssertionClasses.clear();
+        updateAssertionAccess();
 
         try {
-            Collection<AssertionAccess> aas = Registry.getDefault().getRbacAdmin().findAccessibleAssertions();
-            for (AssertionAccess aa : aas) {
-                permittedAssertionClasses.put(aa.getId(), aa);
-            }
-
             ClusterStatusAdmin cluster = Registry.getDefault().getClusterStatusAdmin();
             Collection<ClusterStatusAdmin.ModuleInfo> modules = cluster.getAssertionModuleInfo();
             for (ClusterStatusAdmin.ModuleInfo module : modules) {
@@ -356,7 +364,17 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
      * @return true if this assertion is on the list of permitted assertion types for the current admin user.
      */
     public boolean isAssertionAccessPermitted(@NotNull Assertion ass) {
-        return permittedAssertionClasses.containsKey(ass.getClass().getName());
+        return getAssertionAccess(ass) != null;
+    }
+
+    /**
+     * Get the AssertionAccess for the specified assertion, as cached when we logged into the Gateway.
+     *
+     * @param ass assertion to check.  Required.
+     * @return the assertion access for this assertion, or null if the current admin does not have permission to see this assertion in the palette.
+     */
+    public AssertionAccess getAssertionAccess(@NotNull Assertion ass) {
+        return permittedAssertionClasses.get(ass.getClass().getName());
     }
 
     private static class PaletteNodeFactoryMetadataFinder<AT extends Assertion> implements MetadataFinder {

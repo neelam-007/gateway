@@ -52,18 +52,6 @@ public class CustomAccessControlNode extends DefaultAssertionPaletteNode<CustomA
     }
 
     /**
-     * Get the set of actions associated with this node.
-     * This returns actions that are used buy entity nodes
-     * such .
-     *
-     * @return actions appropriate to the node
-     */
-    @Override
-    public Action[] getActions() {
-        return new Action[]{};
-    }
-
-    /**
      * Test if the node can be deleted. Default for entites
      * is <code>true</code>
      *

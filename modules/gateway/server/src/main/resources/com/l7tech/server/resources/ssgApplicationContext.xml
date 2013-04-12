@@ -1762,6 +1762,8 @@
         <constructor-arg ref="transactionManager"/>
     </bean>
 
+    <bean id="assertionAccessManager" class="com.l7tech.server.AssertionAccessManagerImpl" parent="hibernateBean"/>
+
     <bean id="assertionRegistry" class="com.l7tech.server.policy.ServerAssertionRegistry" depends-on="ssgBoot">
         <constructor-arg ref="serverConfig"/>
         <constructor-arg ref="licenseManager"/>

@@ -12,6 +12,7 @@ import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.OkCancelDialog;
 import com.l7tech.gui.widgets.ValidatedPanel;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
@@ -188,6 +189,7 @@ public class PolicyPropertiesPanel extends ValidatedPanel {
         tagCombo.addItemListener(syntaxListener);
         nameField.getDocument().addDocumentListener(syntaxListener);
 
+        zoneControl.setEntityType(EntityType.POLICY);
         zoneControl.setSelectedZone(policy.getSecurityZone());
 
         typeCombo.addItemListener(new ItemListener() {

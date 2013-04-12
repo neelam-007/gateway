@@ -164,8 +164,7 @@ public class SecurityZoneManagerImplTest {
                         // common permissions
                         && hasEntitySpecificPermission(role, OperationType.READ, EntityType.SECURITY_ZONE, zone.getId())
                         && hasSecurityZonePermission(role, OperationType.READ)
-                        && hasEntitySpecificPermission(role, OperationType.READ, EntityType.FOLDER, rootFolder.getId())
-                        && hasPermission(role, OperationType.READ, EntityType.ASSERTION_ACCESS)) {
+                        && hasEntitySpecificPermission(role, OperationType.READ, EntityType.FOLDER, rootFolder.getId())) {
                     if (readOnly && role.getDescription().equals(SecurityZoneManagerImpl.READ_ZONE_ROLE_DESCRIPTION_FORMAT)) {
                         match = true;
                     } else if (!readOnly && role.getDescription().equals(SecurityZoneManagerImpl.MANAGE_ZONE_ROLE_DESCRIPTION_FORMAT)

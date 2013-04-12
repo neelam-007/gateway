@@ -7,7 +7,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * This is used by the SecureMethodInterceptorTest.
+ * This is used by the SecuredMethodInterceptorTest.
  */
 public class MockCustomEntityTranslator implements CustomEntityTranslator {
 

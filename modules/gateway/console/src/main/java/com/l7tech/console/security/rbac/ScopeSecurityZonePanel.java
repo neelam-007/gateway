@@ -1,13 +1,11 @@
 package com.l7tech.console.security.rbac;
 
-import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.SecurityZoneUtil;
 import com.l7tech.gateway.common.security.rbac.Permission;
 import com.l7tech.gateway.common.security.rbac.SecurityZonePredicate;
 import com.l7tech.gui.widgets.ValidatedPanel;
 import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SecurityZone;
-import com.l7tech.util.ExceptionUtils;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
@@ -15,7 +13,6 @@ import java.awt.*;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -42,21 +39,15 @@ public class ScopeSecurityZonePanel extends ValidatedPanel<SecurityZonePredicate
     }
 
     private void loadZonesComboBox(SecurityZone requiredZone) {
-        try {
-            java.util.List<SecurityZone> zones = new ArrayList<SecurityZone>();
-            Collection<SecurityZone> serverZones = Registry.getDefault().getRbacAdmin().findAllSecurityZones();
-            if (serverZones != null)
-                zones.addAll(serverZones);
-            if (requiredZone != null && !zones.contains(requiredZone))
-                zones.add(requiredZone);
-            zoneComboBox.setModel(new DefaultComboBoxModel<SecurityZone>(zones.toArray(new SecurityZone[zones.size()])));
-            if (requiredZone != null)
-                zoneComboBox.setSelectedItem(requiredZone);
-        } catch (FindException e) {
-            final String msg = "Unable to load security zones: " + ExceptionUtils.getMessage(e);
-            logger.log(Level.WARNING, msg, e);
-            throw new RuntimeException(msg, e);
-        }
+        java.util.List<SecurityZone> zones = new ArrayList<SecurityZone>();
+        Collection<SecurityZone> serverZones = SecurityZoneUtil.getSecurityZones();
+        if (serverZones != null)
+            zones.addAll(serverZones);
+        if (requiredZone != null && !zones.contains(requiredZone))
+            zones.add(requiredZone);
+        zoneComboBox.setModel(new DefaultComboBoxModel<SecurityZone>(zones.toArray(new SecurityZone[zones.size()])));
+        if (requiredZone != null)
+            zoneComboBox.setSelectedItem(requiredZone);
     }
 
     @Override

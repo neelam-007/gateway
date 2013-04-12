@@ -95,11 +95,25 @@ public interface RbacAdmin {
 
     /**
      * Obtain information about the list of assertions classnames that the current admin user is permitted to make use of.
-     * Assertions whose classnames do not appear on this list should not be offered in the SSM palette,
-     * and will not be permitted to be referenced by policy XML saved using the PolicyAdmin interface.
+     * Assertions whose classnames do not appear on this list should not be offered in the SSM palette
+     * (and will very likely also not be permitted to be referenced by policy XML saved using the PolicyAdmin interface).
+     *
      * @return a collection of permitted assertions.  Never null.
+     * @throws FindException if there is a problem talking to the database.
      */
     @Transactional(readOnly=true)
     @Secured(types=EntityType.ASSERTION_ACCESS, stereotype=FIND_ENTITIES)
-    Collection<AssertionAccess> findAccessibleAssertions();
+    Collection<AssertionAccess> findAccessibleAssertions() throws FindException;
+
+    /**
+     * Update assertion access information (eg, the security zone).
+     * <p/>
+     * This method will not be permitted to change the assertion classname of an existing AssertionAccess instance.
+     *
+     * @param assertionAccess the assertion access to update.
+     * @return the up-to-date assertion access after saving.  Never null.
+     * @throws UpdateException
+     */
+    @Secured(types=EntityType.ASSERTION_ACCESS, stereotype=UPDATE)
+    long saveAssertionAccess(AssertionAccess assertionAccess) throws UpdateException;
 }

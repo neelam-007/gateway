@@ -41,7 +41,6 @@ public class SecurityZonePropertiesDialog extends JDialog {
 
         inputValidator.constrainTextFieldToBeNonEmpty("name", nameField, null);
         inputValidator.constrainTextFieldToMaxChars("name", nameField, MAX_CHARS_FOR_NAME, null);
-        inputValidator.constrainTextFieldToBeNonEmpty("description", descriptionField, null);
         inputValidator.constrainTextFieldToMaxChars("description", descriptionField, MAX_CHARS_FOR_DESCRIPTION, null);
         inputValidator.attachToButton(okButton, new ActionListener() {
             public void actionPerformed(final ActionEvent e) {
@@ -69,7 +68,7 @@ public class SecurityZonePropertiesDialog extends JDialog {
         entityTypesList.setEnabled(specifiedEntityTypesRadio.isSelected());
     }
 
-    void setData(SecurityZone zone) {
+    void setData(final SecurityZone zone) {
         nameField.setText(zone.getName());
         descriptionField.setText(zone.getDescription());
 
@@ -78,7 +77,7 @@ public class SecurityZonePropertiesDialog extends JDialog {
         entries.addAll(Functions.map(getAllZoneableEntityTypes(), new Functions.Unary<JCheckBox, EntityType>() {
             @Override
             public JCheckBox call(EntityType entityType) {
-                JCheckBox cb = new JCheckBox(entityType.getName(), permittedTypes.contains(entityType) || permittedTypes.contains(EntityType.ANY));
+                JCheckBox cb = new JCheckBox(entityType.getName(), zone.permitsEntityType(entityType));
                 cb.putClientProperty(CLIENT_PROP_ENTITY_TYPE, entityType);
                 return cb;
             }

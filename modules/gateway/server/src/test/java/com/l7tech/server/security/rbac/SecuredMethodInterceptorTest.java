@@ -35,7 +35,7 @@ import static org.mockito.Mockito.when;
  * Unit test for SecuredMethodInterceptor.
  */
 @RunWith(Parameterized.class)
-public class SecureMethodInterceptorTest {
+public class SecuredMethodInterceptorTest {
     private SecuredMethodInterceptor interceptor;
     @Mock
     private RbacServices rbacServices;
@@ -133,10 +133,9 @@ public class SecureMethodInterceptorTest {
                 {"save", privilegedUser, new Object[]{allowedEntityExisting}, null, null, PermissionDeniedException.class},
                 {"save", privilegedUser, new Object[0], null, null, null},
                 {"save", unprivilegedUser, new Object[0], null, null, PermissionDeniedException.class},
-                //Note that update throws an exception!
-                //TODO: Should this be throwing an UnsupportedOperationException?
-                {"update", privilegedUser, new Object[]{allowedEntityExisting}, null, null, UnsupportedOperationException.class},
-                {"update", privilegedUser, new Object[]{deniedEntityExisting}, null, null, UnsupportedOperationException.class},
+                //update
+                {"update", privilegedUser, new Object[]{allowedEntityExisting}, null, null, null},
+                {"update", privilegedUser, new Object[]{deniedEntityExisting}, null, null, PermissionDeniedException.class},
                 //saveOrUpdate
                 {"saveOrUpdate", privilegedUser, new Object[]{allowedEntityNew}, null, null, null},
                 {"saveOrUpdate", privilegedUser, new Object[]{deniedEntityNew}, null, null, PermissionDeniedException.class},
@@ -215,7 +214,7 @@ public class SecureMethodInterceptorTest {
      * @param expectedRtn       The expected return value from the SecuredMethodInterceptor
      * @param expectedException An expected exception if one should be thrown by the SecuredMethodInterceptor
      */
-    public SecureMethodInterceptorTest(String methodName, InternalUser user, Object[] args, Object rtn, Object expectedRtn, Class<? extends Throwable> expectedException) {
+    public SecuredMethodInterceptorTest(String methodName, InternalUser user, Object[] args, Object rtn, Object expectedRtn, Class<? extends Throwable> expectedException) {
         this.methodName = methodName;
         this.user = user;
         this.args = args;

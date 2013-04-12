@@ -122,6 +122,7 @@
                 <value>com.l7tech.gateway.common.security.rbac.EntityFolderAncestryPredicate</value>
                 <value>com.l7tech.gateway.common.security.rbac.SecurityZonePredicate</value>
                 <value>com.l7tech.objectmodel.SecurityZone</value>
+                <value>com.l7tech.policy.AssertionAccess</value>
 
                 <!-- Customer Mapping -->
                 <value>com.l7tech.gateway.common.mapping.MessageContextMappingKeys</value>

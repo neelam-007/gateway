@@ -102,13 +102,13 @@ public class EntityCrudController<ET> {
                             @Override
                             public void call(ET editedEntity) {
                                 if (editedEntity != null) {
-                                    if (doSave(editedEntity))
+                                    if (null != (editedEntity = doSave(editedEntity)))
                                         entityTableModel.addRow(editedEntity);
                                 }
                             }
                         });
                     } else if (entity != null) {
-                        if (doSave(entity))
+                        if (null != (entity = doSave(entity)))
                             entityTableModel.addRow(entity);
                     }
                 }
@@ -128,7 +128,7 @@ public class EntityCrudController<ET> {
                             @Override
                             public void call(ET editedEntity) {
                                 if (editedEntity != null) {
-                                    if (doSave(editedEntity))
+                                    if (null != (editedEntity = doSave(editedEntity)))
                                         entityTableModel.setRowObject(rowIndex, editedEntity);
                                 }
                             }
@@ -165,17 +165,17 @@ public class EntityCrudController<ET> {
     // Protected
     //
 
-    protected boolean doSave(ET entity) {
+    protected ET doSave(ET entity) {
         if (entitySaver != null) {
             try {
-                entitySaver.saveEntity(entity);
+                return entitySaver.saveEntity(entity);
             } catch (SaveException e) {
                 final String mess = "Unable to save: " + ExceptionUtils.getMessage(e);
                 logger.log(Level.WARNING, mess, e);
                 DialogDisplayer.showMessageDialog(entityTable, mess, null);
-                return false;
+                return null;
             }
         }
-        return true;
+        return null;
     }
 }

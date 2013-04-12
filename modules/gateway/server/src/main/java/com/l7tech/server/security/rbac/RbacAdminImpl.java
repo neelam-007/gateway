@@ -9,12 +9,11 @@ import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.policy.AssertionAccess;
-import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.Policy;
 import com.l7tech.server.EntityFinder;
+import com.l7tech.server.policy.AssertionAccessManager;
 import com.l7tech.server.util.JaasUtils;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.Functions;
 
 import javax.inject.Inject;
 import java.text.MessageFormat;
@@ -37,7 +36,7 @@ public class RbacAdminImpl implements RbacAdmin {
     private SecurityZoneManager securityZoneManager;
 
     @Inject
-    private AssertionRegistry assertionRegistry;
+    private AssertionAccessManager assertionAccessManager;
 
     public RbacAdminImpl(RoleManager roleManager, EntityFinder entityFinder) {
         this.roleManager = roleManager;
@@ -189,8 +188,33 @@ public class RbacAdminImpl implements RbacAdmin {
     }
 
     @Override
-    public Collection<AssertionAccess> findAccessibleAssertions() {
+    public Collection<AssertionAccess> findAccessibleAssertions() throws FindException {
         // Return them all, and allow the RBAC interceptor to filter out any the current admin can't see
-        return Functions.map(assertionRegistry.getAssertions(), AssertionAccess.builderFromAssertion());
+        return assertionAccessManager.findAllRegistered();
+    }
+
+    @Override
+    public long saveAssertionAccess(AssertionAccess assertionAccess) throws UpdateException {
+        String assname = assertionAccess.getName();
+        if (assname == null)
+            throw new IllegalArgumentException("AssertionAccess must have an assertion class name");
+
+        try {
+            long oid = assertionAccess.getOid();
+            if (AssertionAccess.DEFAULT_OID == oid) {
+                oid = assertionAccessManager.save(assertionAccess);
+                assertionAccess.setOid(oid);
+                return oid;
+            } else {
+                AssertionAccess existing = assertionAccessManager.findByPrimaryKey(oid);
+                if (existing != null && !assname.equals(existing.getName()))
+                    throw new UpdateException("Unable to change the assertion class name of an existing AssertionAccess");
+
+                assertionAccessManager.update(assertionAccess);
+                return oid;
+            }
+        } catch (FindException | SaveException e) {
+            throw new UpdateException("Unable to update assertion access: " + ExceptionUtils.getMessage(e), e);
+        }
     }
 }

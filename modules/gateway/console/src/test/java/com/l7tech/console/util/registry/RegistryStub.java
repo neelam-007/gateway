@@ -237,6 +237,11 @@ public class RegistryStub extends Registry {
             public Collection<AssertionAccess> findAccessibleAssertions() {
                 return Functions.map(Arrays.asList(AllAssertions.SERIALIZABLE_EVERYTHING), AssertionAccess.builderFromAssertion());
             }
+
+            @Override
+            public long saveAssertionAccess(AssertionAccess assertionAccess) throws UpdateException {
+                throw new UpdateException("not impl in stub");
+            }
         };
     }
 

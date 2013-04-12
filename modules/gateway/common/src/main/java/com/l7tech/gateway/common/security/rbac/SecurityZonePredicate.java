@@ -9,7 +9,6 @@ import org.hibernate.annotations.Proxy;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
-import java.util.Set;
 
 /**
  * A scope predicate for restricting a permission to entities within a particular security zone.
@@ -50,8 +49,7 @@ public class SecurityZonePredicate extends ScopePredicate implements ScopeEvalua
     }
 
     private static boolean entityTypePermitted(SecurityZone requiredZone, Entity entity) {
-        final Set<EntityType> permittedTypes = requiredZone.getPermittedEntityTypes();
-        return permittedTypes != null && entity != null && (permittedTypes.contains(EntityType.ANY) || permittedTypes.contains(EntityType.findTypeByEntity(entity.getClass())));
+        return entity != null && requiredZone.permitsEntityType(EntityType.findTypeByEntity(entity.getClass()));
     }
 
     @Override
