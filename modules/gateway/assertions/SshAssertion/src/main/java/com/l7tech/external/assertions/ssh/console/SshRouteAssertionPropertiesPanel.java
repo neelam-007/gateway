@@ -404,6 +404,7 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
             messageTargetVariablePanel.setVariable( "" );
         }
         messageTargetVariablePanel.setAssertion(assertion, getPreviousAssertion());
+        saveFileSizeContextVariable.setAssertion(assertion, getPreviousAssertion());
         RoutingDialogUtils.configSecurityHeaderRadioButtons(assertion, -1, null, secHdrButtons);
 
         SCPRadioButton.setSelected(assertion.isScpProtocol());
