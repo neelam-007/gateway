@@ -2,9 +2,14 @@ package com.l7tech.console.tree;
 
 import com.l7tech.console.action.*;
 import com.l7tech.console.panels.identity.finder.Options;
+import com.l7tech.console.util.EntitySaver;
+import com.l7tech.console.util.Registry;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderType;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.SaveException;
+import com.l7tech.objectmodel.UpdateException;
+import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import java.util.ArrayList;
@@ -107,6 +112,19 @@ public class IdentityProviderNode extends EntityHeaderNode<EntityHeader> {
             list.add(new ForceAdminPasswordResetAction());
             list.add(new IdentityProviderManagePasswordPolicyAction());
         }
+
+        list.add(new ConfigureSecurityZoneAction<IdentityProviderConfig>(config, new EntitySaver<IdentityProviderConfig>() {
+            @Override
+            public IdentityProviderConfig saveEntity(@NotNull final IdentityProviderConfig entity) throws SaveException {
+                try {
+                    final long oid = Registry.getDefault().getIdentityAdmin().saveIdentityProviderConfig(entity);
+                    entity.setOid(oid);
+                } catch (final UpdateException e) {
+                    throw new SaveException("Unable to save identity provider: " + e.getMessage(), e);
+                }
+                return entity;
+            }
+        }));
 
         return list.toArray(new Action[list.size()]);
     }

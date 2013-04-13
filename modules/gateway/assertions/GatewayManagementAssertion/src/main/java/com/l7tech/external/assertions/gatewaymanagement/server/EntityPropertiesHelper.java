@@ -304,7 +304,8 @@ class EntityPropertiesHelper {
             "serializedProps",
             "trustedCertOids",
             "typeVal",
-            "version"
+            "version",
+            "securityZone"
         ) )
         .put( LdapIdentityProviderConfig.class, list(
             "bindDN",
@@ -327,7 +328,8 @@ class EntityPropertiesHelper {
             "typeVal",
             "userMappings",
             "version",
-            "ntlmAuthenticationProviderProperties"
+            "ntlmAuthenticationProviderProperties",
+            "securityZone"
         ) )
         .put( BindOnlyLdapIdentityProviderConfig.class, list(
             "adminEnabled",
@@ -344,7 +346,8 @@ class EntityPropertiesHelper {
             "oid",
             "serializedProps",
             "typeVal",
-            "version"
+            "version",
+            "securityZone"
         ) )
         .put( IdentityProviderConfig.class, list(
             "certificateValidationType",
@@ -354,7 +357,8 @@ class EntityPropertiesHelper {
             "oid",
             "serializedProps",
             "typeVal",
-            "version"
+            "version",
+            "securityZone"
         ) )
         .put( JdbcConnection.class, list(
             "additionalProperties",

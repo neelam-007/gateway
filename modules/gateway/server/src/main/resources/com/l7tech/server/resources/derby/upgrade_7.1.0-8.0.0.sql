@@ -50,6 +50,9 @@ alter table published_service_alias add foreign key (security_zone_oid) referenc
 alter table folder add column security_zone_oid bigint;
 alter table folder add foreign key (security_zone_oid) references security_zone (objectid) on delete set null;
 
+alter table identity_provider add column security_zone_oid bigint;
+alter table identity_provider add foreign key (security_zone_oid) references security_zone (objectid) on delete set null;
+
 --
 -- RBAC for Assertions: Update "Publish Webservices" and "Manage Webservices" canned roles so they can still use policy assertions in 8.0
 --

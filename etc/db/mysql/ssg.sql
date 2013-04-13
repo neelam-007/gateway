@@ -75,15 +75,17 @@ CREATE TABLE identity_provider (
   description mediumtext,
   type bigint(20) NOT NULL,
   properties mediumtext,
+  security_zone_oid bigint(20),
   PRIMARY KEY  (objectid),
-  UNIQUE KEY ipnm_idx (name)
+  UNIQUE KEY ipnm_idx (name),
+  CONSTRAINT identity_provider_security_zone FOREIGN KEY (security_zone_oid) REFERENCES security_zone (objectid) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --
 -- Dumping data for table 'identity_provider'
 --
 
-INSERT INTO identity_provider (objectid,name,description,type,properties,version) VALUES (-2,'Internal Identity Provider','Internal Identity Provider',1,'<java version="1.6.0_01" class="java.beans.XMLDecoder"><object class="java.util.HashMap"><void method="put"><string>adminEnabled</string><boolean>true</boolean></void></object></java>',0);
+INSERT INTO identity_provider (objectid,name,description,type,properties,version) VALUES (-2,'Internal Identity Provider','Internal Identity Provider',1,'<java version="1.6.0_01" class="java.beans.XMLDecoder"><object class="java.util.HashMap"><void method="put"><string>adminEnabled</string><boolean>true</boolean></void></object></java>',0,NULL);
 
 --
 -- Table structure for table 'internal_group'

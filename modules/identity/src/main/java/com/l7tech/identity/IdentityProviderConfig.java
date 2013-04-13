@@ -1,7 +1,7 @@
 package com.l7tech.identity;
 
 import com.l7tech.common.io.NonCloseableOutputStream;
-import com.l7tech.objectmodel.imp.NamedEntityImp;
+import com.l7tech.objectmodel.imp.ZoneableNamedEntityImp;
 import com.l7tech.security.types.CertificateValidationType;
 import com.l7tech.util.*;
 import org.hibernate.annotations.Proxy;
@@ -40,7 +40,7 @@ import java.util.logging.Logger;
     discriminatorType=DiscriminatorType.INTEGER
 )
 @DiscriminatorValue("1")
-public class IdentityProviderConfig extends NamedEntityImp {
+public class IdentityProviderConfig extends ZoneableNamedEntityImp {
 
     public IdentityProviderConfig(IdentityProviderType type) {
         this.type = type;
@@ -259,6 +259,7 @@ public class IdentityProviderConfig extends NamedEntityImp {
     public final void copyFrom(IdentityProviderConfig objToCopy) {
         setDescription(objToCopy.getDescription());
         setName(objToCopy.getName());
+        setSecurityZone(objToCopy.getSecurityZone());
         type = objToCopy.type();
         props = objToCopy.props;
         propsXml = null;
