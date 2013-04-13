@@ -393,6 +393,7 @@ public class PublishedService extends ZoneableNamedEntityImp implements Flushabl
 
         if (_wsdlUrl != null ? !_wsdlUrl.equals(publishedService._wsdlUrl) : publishedService._wsdlUrl != null) return false;
         if (_oid != DEFAULT_OID ? _oid != publishedService._oid : publishedService._oid != DEFAULT_OID) return false;
+        if (securityZone != null ? !securityZone.equals(publishedService.securityZone) : publishedService.securityZone != null) return false;
 
         return true;
     }

@@ -338,6 +338,7 @@ public class Policy extends ZoneableNamedEntityImp implements Flushable, HasFold
         if (internalTag != null ? !internalTag.equals(policy.internalTag) : policy.internalTag != null) return false;
         if (type != policy.type) return false;
         if (xml != null ? !xml.equals(policy.xml) : policy.xml != null) return false;
+        if (securityZone != null ? !securityZone.equals(policy.securityZone) : policy.securityZone != null) return false;
 
         return true;
     }
