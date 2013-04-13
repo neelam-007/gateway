@@ -85,7 +85,7 @@ CREATE TABLE identity_provider (
 -- Dumping data for table 'identity_provider'
 --
 
-INSERT INTO identity_provider (objectid,name,description,type,properties,version) VALUES (-2,'Internal Identity Provider','Internal Identity Provider',1,'<java version="1.6.0_01" class="java.beans.XMLDecoder"><object class="java.util.HashMap"><void method="put"><string>adminEnabled</string><boolean>true</boolean></void></object></java>',0,NULL);
+INSERT INTO identity_provider (objectid,name,description,type,properties,version,security_zone_oid) VALUES (-2,'Internal Identity Provider','Internal Identity Provider',1,'<java version="1.6.0_01" class="java.beans.XMLDecoder"><object class="java.util.HashMap"><void method="put"><string>adminEnabled</string><boolean>true</boolean></void></object></java>',0,NULL);
 
 --
 -- Table structure for table 'internal_group'
