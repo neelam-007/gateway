@@ -322,7 +322,7 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
         manageHostKeyButton.setEnabled(validateServerSHostCheckBox.isSelected());
         contentTypeComboBox.setEnabled(CommandKnob.CommandType.GET.equals(selectedCommandType) ||  isCommandTypeFromVariable());
         messageSource.setEnabled(CommandKnob.CommandType.PUT.equals(selectedCommandType) ||  isCommandTypeFromVariable());
-        messageTarget.setEnabled( CommandKnob.CommandType.GET.equals(selectedCommandType) || (SFTPRadioButton.isSelected() && (CommandKnob.CommandType.LIST.equals(selectedCommandType) || CommandKnob.CommandType.STAT.equals(selectedCommandType) || isCommandTypeFromVariable())) );
+        messageTarget.setEnabled( CommandKnob.CommandType.GET.equals(selectedCommandType) || isCommandTypeFromVariable() || (SFTPRadioButton.isSelected() && (CommandKnob.CommandType.LIST.equals(selectedCommandType) || CommandKnob.CommandType.STAT.equals(selectedCommandType))) );
         messageTargetVariablePanel.setEnabled(
                 messageTarget.isEnabled() &&
                 messageTarget.getSelectedItem()!=null &&
