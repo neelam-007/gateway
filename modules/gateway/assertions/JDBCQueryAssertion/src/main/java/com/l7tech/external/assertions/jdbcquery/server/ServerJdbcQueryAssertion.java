@@ -60,7 +60,7 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
         variablesUsed = assertion.getVariablesUsed();
         jdbcQueryingManager = context.getBean("jdbcQueryingManager", JdbcQueryingManager.class);
         jdbcConnectionManager = context.getBean("jdbcConnectionManager", JdbcConnectionManager.class);
-        config = context.getBean("serverConfig", Config.class);
+        config = validated(context.getBean("serverConfig", Config.class));
 
         if (assertion.getConnectionName() == null) {
             throw new PolicyAssertionException(assertion, "Assertion must supply a connection name");
@@ -461,7 +461,7 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
             IOUtils.copyStream(reader, writer, new Functions.UnaryVoidThrows<Long, IOException>() {
                 @Override
                 public void call(Long totalRead) throws IOException {
-                    if (totalRead > maxClobSize) {
+                    if (maxClobSize > 0 && totalRead > maxClobSize) {
                         throw new IOException("CLOB value has exceeded maximum allowed size of " + maxClobSize + " bytes");
                     }
                 }
@@ -497,7 +497,7 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
             IOUtils.copyStream(inputStream, byteOutput, new Functions.UnaryVoidThrows<Long, IOException>() {
                 @Override
                 public void call(Long totalRead) throws IOException {
-                    if (totalRead > maxBlobSize) {
+                    if (maxBlobSize > 0 && totalRead > maxBlobSize) {
                         throw new IOException("BLOB value has exceeded maximum allowed size of " + maxBlobSize + " bytes");
                     }
                 }
@@ -515,4 +515,15 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
         }
     }
 
+    private Config validated(final Config config) {
+        final ValidatedConfig vc = new ValidatedConfig(config, logger);
+
+        vc.setMinimumValue(ServerConfigParams.PARAM_JDBC_QUERY_MAX_CLOB_SIZE_OUT, 0);
+        vc.setMaximumValue(ServerConfigParams.PARAM_JDBC_QUERY_MAX_CLOB_SIZE_OUT, Long.MAX_VALUE);
+
+        vc.setMinimumValue(ServerConfigParams.PARAM_JDBC_QUERY_MAX_BLOB_SIZE_OUT, 0);
+        vc.setMaximumValue(ServerConfigParams.PARAM_JDBC_QUERY_MAX_BLOB_SIZE_OUT, Long.MAX_VALUE);
+
+        return vc;
+    }
 }

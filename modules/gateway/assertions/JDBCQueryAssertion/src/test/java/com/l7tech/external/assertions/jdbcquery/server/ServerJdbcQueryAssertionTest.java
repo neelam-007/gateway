@@ -1023,6 +1023,43 @@ public class ServerJdbcQueryAssertionTest {
     }
 
     /**
+     * Tests that blobs are unlimited when cluster property controlling size is set to 0. This test simply validates that
+     * a value of 0 allows a blob with a size > 0 to be read.
+     */
+    @BugId("SSG-6808")
+    @Test
+    public void testBlob_NoLimitWhenClusterPropertyIsZero() throws Exception {
+        final byte[] blobBytes = new byte[1024];
+        RandomUtil.nextBytes(blobBytes);
+
+        MockitoAnnotations.initMocks(this);
+
+        final Map<String, String> propertiesMap = new HashMap<String, String>();
+        propertiesMap.put(ServerConfigParams.PARAM_JDBC_QUERY_MAX_BLOB_SIZE_OUT, Long.toString(0L));
+
+        final MockConfig mockConfig = new MockConfig(propertiesMap);
+        GenericApplicationContext applicationContext = new GenericApplicationContext(new SimpleSingletonBeanFactory(new HashMap<String, Object>() {{
+            put("jdbcQueryingManager", jdbcQueryingManager);
+            put("jdbcConnectionManager", connectionManager);
+            put("serverConfig", mockConfig);
+        }}));
+        assertion.setGenerateXmlResult(true);
+        assertion.setConnectionName("mockDb");
+
+        when(jdbcQueryingManager.performJdbcQuery(anyString(), anyString(), anyString(), anyInt(), anyInt(), anyList())).thenReturn(getMockStoredProcedureBlobResults(blobBytes));
+        assertion.setSqlQuery("func myTest");
+
+        ServerJdbcQueryAssertion sass = new ServerJdbcQueryAssertion(assertion, applicationContext);
+        final TestAudit testAudit = new TestAudit();
+        ApplicationContexts.inject(sass, Collections.singletonMap("auditFactory", testAudit.factory()));
+
+        AssertionStatus status = sass.checkRequest(peCtx);
+        assertEquals(status, AssertionStatus.NONE);
+
+        assertFalse("Incorrect BLOB size exceeded message", testAudit.isAuditPresentContaining("BLOB value has exceeded maximum allowed size"));
+    }
+
+    /**
      * Test that the generated XML result is the same for byte[] or Blob results from a function / stored procedure
      */
     @BugId("SSG-6751")
@@ -1114,6 +1151,47 @@ public class ServerJdbcQueryAssertionTest {
         assertEquals(status, AssertionStatus.FAILED);
         assertTrue(testAudit.isAuditPresent(JDBC_QUERYING_FAILURE_ASSERTION_FAILED));
         assertTrue("Incorrect CLOB size exceeded message", testAudit.isAuditPresentContaining("CLOB value has exceeded maximum allowed size"));
+    }
+
+    /**
+     * Tests that clobs are unlimited when cluster property controlling size is set to 0. This test simply validates that
+     * a value of 0 allows a clob with a size > 0 to be read.
+     */
+    @BugId("SSG-6808")
+    @Test
+    public void testClob_NoLimitWhenClusterPropertyIsZero() throws Exception {
+        final String clobString = RandomStringUtils.randomAlphanumeric(1024);
+
+        MockitoAnnotations.initMocks(this);
+        when(jdbcQueryingManager.performJdbcQuery(anyString(), anyString(), anyString(), anyInt(), anyInt(), anyList())).thenReturn(getMockWithClobResults(clobString));
+        final Map<String, String> propertiesMap = new HashMap<String, String>();
+        propertiesMap.put(ServerConfigParams.PARAM_JDBC_QUERY_MAX_CLOB_SIZE_OUT, Long.toString(0L));
+        final MockConfig mockConfig = new MockConfig(propertiesMap);
+        GenericApplicationContext applicationContext = new GenericApplicationContext(new SimpleSingletonBeanFactory(new HashMap<String, Object>() {{
+            put("jdbcQueryingManager", jdbcQueryingManager);
+            put("jdbcConnectionManager", connectionManager);
+            put("serverConfig", mockConfig);
+        }}));
+        assertion.setSqlQuery("func myTest");
+        assertion.setGenerateXmlResult(true);
+        assertion.setConnectionName("mockDb");
+
+        // get clob result
+        ServerJdbcQueryAssertion sass = new ServerJdbcQueryAssertion(assertion, applicationContext);
+        final TestAudit testAudit = new TestAudit();
+        ApplicationContexts.inject(sass, Collections.singletonMap("auditFactory", testAudit.factory()));
+        AssertionStatus status = sass.checkRequest(peCtx);
+        assertEquals(status, AssertionStatus.NONE);
+        String xmlResult = peCtx.getVariable("jdbcQuery.xmlResult").toString();
+        assertNotNull(xmlResult);
+        String expected = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><L7j:jdbcQueryResult xmlns:L7j=\"http://ns.l7tech.com/2012/08/jdbc-query-result\"><L7j:row><L7j:col  name=\"clob\" >" + clobString + "</L7j:col></L7j:row></L7j:jdbcQueryResult>";
+        assertEquals(expected, xmlResult);
+        Object[] clobObjs = (Object[]) peCtx.getVariable("jdbcQuery.clob");
+        Assert.assertEquals(String.class, clobObjs[0].getClass());
+        assertEquals(clobString, clobObjs[0]);
+
+        //limit clob size
+        assertFalse("Incorrect CLOB size exceeded message", testAudit.isAuditPresentContaining("CLOB value has exceeded maximum allowed size"));
     }
 
     // returns a stored procedure formatted result with 'bytes' column containing a blob
