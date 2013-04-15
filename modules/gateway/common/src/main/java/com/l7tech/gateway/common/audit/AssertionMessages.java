@@ -1013,6 +1013,7 @@ public class AssertionMessages extends Messages {
     public static final M JDBC_QUERYING_FAILURE_ASSERTION_FAILED = m(9104, Level.WARNING, "\"Perform JDBC Query\" assertion failed due to: {0}");
     public static final M JDBC_NO_QUERY_RESULT_ASSERTION_FAILED = m(9105, Level.INFO, "\"Perform JDBC Query\" assertion failed due to no query results via a connection {0}");
     public static final M JDBC_DELETED_CONNECTION_POOL = m(9106, Level.FINE, "Removed connection pool associated with a JDBC connection {0}");
+    public static final M JDBC_CONNECTION_POOL_NON_WHITE_LISTED_DRIVER = m(9107, Level.WARNING, "Using non white listed JDBC Driver Class ''{0}'' for JDBC Connection ''{1}''");
 
     public static final M JSON_SCHEMA_VALIDATION_FAILED = m(9130, Level.INFO, "JSON Schema validation failure. {0}");
     public static final M JSON_INVALID_JSON = m(9131, Level.INFO, "{0} is not well-formed JSON.");

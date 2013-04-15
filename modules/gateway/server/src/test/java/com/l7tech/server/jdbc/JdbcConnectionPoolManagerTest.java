@@ -25,14 +25,12 @@ public class JdbcConnectionPoolManagerTest {
 
     }
 
-    @Test(expected = NameNotFoundException.class)
+    @Test(expected = NullPointerException.class)
     public void testInvalidDriverClass() throws Exception {
         JdbcConnection jdbcConnection = new JdbcConnection();
         jdbcConnection.setName("TEST");
         jdbcConnection.setDriverClass("com.test.driver");
         jdbcConnectionPoolManager.updateConnectionPool(jdbcConnection, false);
-        assertNotNull(jdbcConnectionPoolManager.getDataSource("Mysql"));
-        jdbcConnectionPoolManager.getDataSource("TEST");
     }
 
 }

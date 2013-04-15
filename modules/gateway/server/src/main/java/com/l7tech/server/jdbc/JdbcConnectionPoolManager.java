@@ -6,7 +6,9 @@ import com.l7tech.gateway.common.audit.LoggingAudit;
 import com.l7tech.gateway.common.jdbc.InvalidPropertyException;
 import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.policy.variable.ServerVariables;
+import com.l7tech.util.Config;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.Functions.Unary;
 import com.l7tech.util.Pair;
@@ -14,6 +16,7 @@ import com.mchange.v2.c3p0.ComboPooledDataSource;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.InitializingBean;
 
+import javax.inject.Inject;
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NameNotFoundException;
@@ -22,6 +25,7 @@ import javax.sql.DataSource;
 import java.beans.PropertyDescriptor;
 import java.beans.PropertyVetoException;
 import java.lang.reflect.InvocationTargetException;
+import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Logger;
@@ -46,6 +50,8 @@ public class JdbcConnectionPoolManager implements InitializingBean {
     private final Audit auditor = new LoggingAudit(logger);
     private final JdbcConnectionManager jdbcConnectionManager;
     private Context context;
+    @Inject
+    private Config config;
 
     public JdbcConnectionPoolManager( @NotNull final JdbcConnectionManager jdbcConnectionManager ) {
         this.jdbcConnectionManager = jdbcConnectionManager;
@@ -127,10 +133,24 @@ public class JdbcConnectionPoolManager implements InitializingBean {
             return new Pair<ComboPooledDataSource, String>(null, null);
         }
 
-        if (!jdbcConnectionManager.isDriverClassSupported(connection.getDriverClass())) {
-            String errMsg = "Jdbc Driver class " + connection.getDriverClass() + " is not supported.";
-            auditor.logAndAudit(AssertionMessages.JDBC_CANNOT_CONFIG_CONNECTION_POOL,  connection.getName(), errMsg);
-            return new Pair<ComboPooledDataSource, String>(null, errMsg);
+        // Validate the Driver Class to use for the JDBC Connection
+        String driverClass;
+        boolean resolved = false;
+        try {
+            // If the DriverManager recgonizes the URL it means there is a Driver Class already loaded in the system
+            // If this is the case we will validate this value as it is the class used to create connections by C3PO.
+            driverClass = DriverManager.getDriver(connection.getJdbcUrl()).getClass().getName();
+            resolved = true;
+        } catch (SQLException e) {
+            driverClass = connection.getDriverClass();
+        }
+        if (!jdbcConnectionManager.isDriverClassSupported(driverClass)) {
+            final String errMsg = resolved ? "JDBC URL resolved to unsupported JDBC Driver class " + driverClass : "JDBC Driver class " + driverClass + " is not supported.";
+            if (config.getBooleanProperty(ServerConfigParams.PARAM_JDBC_CONNECTION_DRIVERCLASS_WHITE_LIST_VALIDATE, true)) {
+                auditor.logAndAudit(AssertionMessages.JDBC_CANNOT_CONFIG_CONNECTION_POOL, connection.getName(), errMsg);
+                return new Pair<ComboPooledDataSource, String>(null, errMsg);
+            }
+            auditor.logAndAudit(AssertionMessages.JDBC_CONNECTION_POOL_NON_WHITE_LISTED_DRIVER, driverClass, connection.getName());
         }
 
         // Check if a data source associated with such connection name already exists or not.

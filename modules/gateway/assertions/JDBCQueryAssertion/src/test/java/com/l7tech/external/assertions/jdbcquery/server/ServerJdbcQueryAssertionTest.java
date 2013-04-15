@@ -4,6 +4,7 @@ import com.l7tech.common.io.XmlUtil;
 import com.l7tech.external.assertions.jdbcquery.JdbcQueryAssertion;
 import com.l7tech.gateway.common.audit.TestAudit;
 import com.l7tech.gateway.common.jdbc.JdbcConnection;
+import com.l7tech.gateway.common.log.TestHandler;
 import com.l7tech.message.Message;
 import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -37,12 +38,17 @@ import org.springframework.jdbc.support.rowset.SqlRowSet;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+import javax.naming.NamingException;
+import javax.sql.DataSource;
 import javax.sql.rowset.serial.SerialBlob;
 import javax.sql.rowset.serial.SerialClob;
 import java.sql.*;
 import java.util.*;
 import java.util.Date;
+import java.util.logging.LogManager;
+import java.util.logging.Logger;
 
+import static com.l7tech.util.Functions.reduce;
 import static org.junit.Assert.*;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.*;
@@ -359,35 +365,76 @@ public class ServerJdbcQueryAssertionTest {
 
     @BugNumber(12457)
     @Test
-    public void testDriverClassNotFound() throws Exception {
+    public void testResolvedDriverClassNotFound() throws Exception {
         MockitoAnnotations.initMocks(this);
         final String connectionName = "TestConnection";
         final JdbcConnection connection = new JdbcConnection();
         connection.setName(connectionName);
-        connection.setDriverClass("test.driver.class");
+        connection.setDriverClass("com.mysql.jdbc.Driver");
+        connection.setJdbcUrl("jdbc:derby:c:/db/ssgdb");
 
         final JdbcConnectionManager cm = new JdbcConnectionManagerStub();
+        cm.save(connection);
         JdbcConnectionPoolManager cpm = new JdbcConnectionPoolManager(cm);
+        ApplicationContexts.inject(cpm, Collections.singletonMap("config", config));
+
+        Logger rootLogger = Logger.getLogger(JdbcConnectionPoolManager.class.getName());
+        rootLogger.addHandler(new TestHandler());
         cpm.afterPropertiesSet();
         final JdbcQueryingManager qm = new JdbcQueryingManagerImpl(cpm, cm, config, new TimeSource());
+        assertTrue("Unsupported driver log message", TestHandler.isAuditPresentContaining("URL resolved to unsupported JDBC Driver class org.apache.derby.jdbc.AutoloadedDriver"));
 
         final AssertionRegistry assertionRegistry = new AssertionRegistry();
         assertionRegistry.afterPropertiesSet();
-        serverPolicyFactory = new ServerPolicyFactory(new TestLicenseManager(), new MockInjector());
         final GenericApplicationContext applicationContext = new GenericApplicationContext(new SimpleSingletonBeanFactory(new HashMap<String, Object>() {{
             put("assertionRegistry", assertionRegistry);
-            put("policyFactory", serverPolicyFactory);
             put("jdbcQueryingManager", qm);
             put("jdbcConnectionManager", cm);
             put("serverConfig", ConfigFactory.getCachedConfig());
         }}));
-        serverPolicyFactory.setApplicationContext(applicationContext);
 
         assertion.setConnectionName(connectionName);
         assertion.setSqlQuery("select * from mytable");
-        ServerJdbcQueryAssertion sass = (ServerJdbcQueryAssertion) serverPolicyFactory.compilePolicy(assertion, false);
+        ServerJdbcQueryAssertion sass = new ServerJdbcQueryAssertion(assertion,applicationContext);
+        final TestAudit testAudit = new TestAudit();
+        ApplicationContexts.inject(sass, Collections.singletonMap("auditFactory", testAudit.factory()));
         AssertionStatus result = sass.checkRequest(peCtx);
         assertEquals(AssertionStatus.FAILED, result);
+
+        assertTrue(testAudit.isAuditPresent(JDBC_QUERYING_FAILURE_ASSERTION_FAILED));
+        assertTrue("Datasource not found", testAudit.isAuditPresentContaining("Cannot retrieve a C3P0 DataSource."));
+    }
+
+    @BugId("SSG-5763")
+    @Test
+    public void testResolvedDriverClassNotWhiteListedNotValidated() throws Exception {
+        MockitoAnnotations.initMocks(this);
+        final String connectionName = "TestConnection";
+        final JdbcConnection connection = new JdbcConnection();
+        connection.setName(connectionName);
+        connection.setDriverClass("com.mysql.jdbc.Driver");
+        connection.setJdbcUrl("jdbc:derby:c:/db/ssgdb");
+
+        final Map<String,String> configProperties = new HashMap<String,String>();
+        configProperties.put(ServerConfigParams.PARAM_JDBC_CONNECTION_DRIVERCLASS_WHITE_LIST_VALIDATE,"false");
+        final MockConfig mockConfig = new MockConfig(configProperties);
+
+        final JdbcConnectionManager cm = new JdbcConnectionManagerStub();
+        cm.save(connection);
+        JdbcConnectionPoolManager cpm = new JdbcConnectionPoolManager(cm);
+        ApplicationContexts.inject(cpm, Collections.singletonMap("config", mockConfig));
+
+        Logger rootLogger = Logger.getLogger(JdbcConnectionPoolManager.class.getName());
+        rootLogger.addHandler(new TestHandler());
+        cpm.afterPropertiesSet();
+        assertTrue("Unsupported driver log message", TestHandler.isAuditPresentContaining("Using non white listed JDBC Driver Class 'org.apache.derby.jdbc.AutoloadedDriver' for JDBC Connection 'TestConnection'"));
+
+        try{
+            DataSource ds = cpm.getDataSource(connection.getName());
+            assertTrue("Failed to retrieve connection data source", ds!=null);
+        }catch (NamingException e){
+            fail("Failed to retrieve connection data source");
+        }
 
     }
 

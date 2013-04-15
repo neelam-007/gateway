@@ -157,6 +157,7 @@ public interface ServerConfigParams {
     String PARAM_LOGON_WARNING_BANNER = "logon.warningBanner";
     String PARAM_JDBC_CONNECTION_DEFAULT_DRIVERCLASS_LIST = "jdbcConnection.driverClass.defaultList";
     String PARAM_JDBC_CONNECTION_DRIVERCLASS_WHITE_LIST = "jdbcConnection.driverClass.whiteList";
+    String PARAM_JDBC_CONNECTION_DRIVERCLASS_WHITE_LIST_VALIDATE = "jdbcConnection.driverClass.whiteListValidate";
     //todo remove these two from here and move into the modular assertion meta()
     String PARAM_JDBC_QUERY_MAXRECORDS_DEFAULT = "jdbcQuery.maxRecords.defaultValue";
     String PARAM_JDBC_QUERY_MAX_CLOB_SIZE_OUT = "jdbcQuery.maxClobSizeOut";
