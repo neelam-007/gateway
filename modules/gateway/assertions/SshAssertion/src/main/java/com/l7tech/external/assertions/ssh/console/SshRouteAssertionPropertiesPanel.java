@@ -336,7 +336,7 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
         } else {
             preserveFileMetadataCheckBox.setEnabled(false);
             fileOffsetTextField.setEnabled(false);
-            fileLengthTextField.setEnabled(CommandKnob.CommandType.PUT.equals(selectedCommandType));
+            fileLengthTextField.setEnabled(CommandKnob.CommandType.PUT.equals(selectedCommandType) || isCommandTypeFromVariable());
             newFileNameTextField.setEnabled(false);
             failIfFileExistsCheckBox.setEnabled(false);
         }
