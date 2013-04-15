@@ -1,6 +1,7 @@
 package com.l7tech.objectmodel;
 
 import com.l7tech.objectmodel.imp.NamedEntityImp;
+import org.hibernate.annotations.Parameter;
 import org.hibernate.annotations.Proxy;
 import org.hibernate.annotations.Type;
 import org.jetbrains.annotations.NotNull;
@@ -45,7 +46,7 @@ public class SecurityZone extends NamedEntityImp {
      * @return the entity types that are permitted to be placed into this security zone.
      */
     @Column(name = "entity_types", nullable=false, length=4096)
-    @Type(type = "entity_types_type")
+    @Type(type = "com.l7tech.server.util.GenericEnumSetUserType", parameters = {@Parameter(name = "enumClass", value = "com.l7tech.objectmodel.EntityType")})
     public Set<EntityType> getPermittedEntityTypes() {
         return permittedEntityTypes;
     }

@@ -1012,7 +1012,9 @@ CREATE TABLE jdbc_connection (
   min_pool_size integer NOT NULL DEFAULT 3,
   max_pool_size integer NOT NULL DEFAULT 15,
   additional_properties mediumtext,
+  security_zone_oid bigint(20),
   PRIMARY KEY (objectid),
+  CONSTRAINT jdbc_connection_security_zone FOREIGN KEY (security_zone_oid) REFERENCES security_zone (objectid) ON DELETE SET NULL,
   UNIQUE(name)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 

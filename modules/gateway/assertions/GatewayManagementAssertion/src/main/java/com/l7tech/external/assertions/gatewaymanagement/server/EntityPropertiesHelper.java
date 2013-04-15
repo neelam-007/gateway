@@ -371,7 +371,8 @@ class EntityPropertiesHelper {
             "password",
             "serializedProps",
             "userName",            
-            "version"
+            "version",
+            "securityZone"
         ) )
         .put( JmsConnection.class, list(
             "version",

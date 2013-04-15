@@ -2,6 +2,7 @@ package com.l7tech.gateway.common.jdbc;
 
 import com.l7tech.common.io.NonCloseableOutputStream;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
+import com.l7tech.objectmodel.imp.ZoneableNamedEntityImp;
 import com.l7tech.policy.wsp.WspSensitive;
 import com.l7tech.util.*;
 import org.hibernate.annotations.Proxy;
@@ -25,7 +26,7 @@ import java.util.TreeMap;
 @Entity
 @Proxy(lazy=false)
 @Table(name="jdbc_connection")
-public class JdbcConnection extends NamedEntityImp implements Comparable {
+public class JdbcConnection extends ZoneableNamedEntityImp implements Comparable {
     private String driverClass;
     private String jdbcUrl;
     private String userName;

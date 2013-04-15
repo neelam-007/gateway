@@ -442,6 +442,7 @@ create table jdbc_connection (
     password varchar(255) not null,
     additional_properties clob(2147483647),
     user_name varchar(255) not null,
+    security_zone_oid bigint references security_zone(objectid) on delete set null,
     primary key (objectid)
 );
 

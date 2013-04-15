@@ -2,6 +2,7 @@ package com.l7tech.console.panels;
 
 import static com.l7tech.console.util.AdminGuiUtils.doAsyncAdmin;
 
+import com.l7tech.console.util.SecurityZoneWidget;
 import com.l7tech.gui.widgets.SquigglyTextField;
 import com.l7tech.util.MutablePair;
 import com.l7tech.console.util.PasswordGuiUtils;
@@ -62,6 +63,7 @@ public class JdbcConnectionPropertiesDialog extends JDialog {
     private JButton okButton;
     private JButton cancelButton;
     private JLabel driverClassDescription;
+    private SecurityZoneWidget zoneControl;
 
     private JdbcConnection connection;
     private final Map<String, Object> additionalPropMap = new TreeMap<String,Object>();
@@ -185,6 +187,7 @@ public class JdbcConnectionPropertiesDialog extends JDialog {
         if (admin != null) {
             driverClassWhiteList = admin.getPropertySupportedDriverClass();
         }
+        zoneControl.setEntityType(EntityType.JDBC_CONNECTION);
 
         modelToView();
         enableOrDisableButtons();
@@ -194,6 +197,7 @@ public class JdbcConnectionPropertiesDialog extends JDialog {
     }
 
     private void modelToView() {
+        zoneControl.setSelectedZone(connection.getSecurityZone());
         connectionNameTextField.setText(connection.getName());
         populateDriverClassComboBox();
         jdbcUrlTextField.setText(connection.getJdbcUrl());
@@ -221,6 +225,7 @@ public class JdbcConnectionPropertiesDialog extends JDialog {
         connection.setMaxPoolSize((Integer) maxPoolSizeSpinner.getValue());
         connection.setEnabled(!disableConnectionCheckBox.isSelected());
         connection.setAdditionalProperties( additionalPropMap );
+        connection.setSecurityZone(zoneControl.getSelectedZone());
     }
 
     private void populateDriverClassComboBox() {

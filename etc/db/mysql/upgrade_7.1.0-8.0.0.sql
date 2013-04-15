@@ -62,6 +62,9 @@ alter table folder add FOREIGN KEY (security_zone_oid) REFERENCES security_zone 
 alter table identity_provider add column security_zone_oid bigint(20);
 alter table identity_provider add FOREIGN KEY (security_zone_oid) REFERENCES security_zone (objectid) ON DELETE SET NULL;
 
+alter table jdbc_connection add column security_zone_oid bigint(20);
+alter table jdbc_connection add FOREIGN KEY (security_zone_oid) REFERENCES security_zone (objectid) ON DELETE SET NULL;
+
 --
 -- RBAC for Assertions: Update "Publish Webservices" and "Manage Webservices" canned roles so they can still use policy assertions in 8.0
 --
