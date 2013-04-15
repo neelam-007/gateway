@@ -1,6 +1,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.SecurityZoneWidget;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.Authorizer;
 import com.l7tech.gateway.common.security.RevocationCheckPolicy;
@@ -72,6 +73,7 @@ public class CertPropertiesWindow extends JDialog {
     private JComboBox revocationCheckPolicyComboBox;
     private JCheckBox certificateIsATrustCheckBox;
     private JTextPane validationDescriptionText;
+    private SecurityZoneWidget zoneControl;
 
     private final TrustedCert trustedCert;
     private final Collection<RevocationCheckPolicy> revocationCheckPolicies; // null if not provided
@@ -198,6 +200,8 @@ public class CertPropertiesWindow extends JDialog {
             }
         });
         revocationCheckPolicyComboBox.setRenderer(new Renderers.RevocationCheckPolicyRenderer());
+
+        zoneControl.setEntityType(EntityType.TRUSTED_CERT);
 
         populateData();
         setRevocationCheckPolicyComboState(editable);
@@ -469,6 +473,8 @@ public class CertPropertiesWindow extends JDialog {
         if (trustedCert.getRevocationCheckPolicyOid() != null) {
             revocationCheckPolicyComboBox.setSelectedItem(findRevocationCheckPolicyByOid(trustedCert.getRevocationCheckPolicyOid()));
         }
+
+        zoneControl.setSelectedZone(trustedCert.getSecurityZone());
     }
 
     /**
@@ -533,6 +539,7 @@ public class CertPropertiesWindow extends JDialog {
                 tc.setRevocationCheckPolicyType(TrustedCert.PolicyUsageType.USE_DEFAULT);
                 tc.setRevocationCheckPolicyOid(null);
             }
+            tc.setSecurityZone(zoneControl.getSelectedZone());
         }
     }
 

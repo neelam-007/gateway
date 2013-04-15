@@ -403,6 +403,7 @@ public class PublishedService extends ZoneableNamedEntityImp implements Flushabl
         int result;
         result = (_wsdlUrl != null ? _wsdlUrl.hashCode() : 0);
         result = 29 * result + (int)_oid;
+        result = 29 * result + (securityZone != null ? securityZone.hashCode() : 0);
         return result;
     }
 

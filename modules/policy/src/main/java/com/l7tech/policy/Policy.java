@@ -349,6 +349,7 @@ public class Policy extends ZoneableNamedEntityImp implements Flushable, HasFold
         result = 31 * result + (xml != null ? xml.hashCode() : 0);
         result = 31 * result + (type != null ? type.hashCode() : 0);
         result = 31 * result + (internalTag != null ? internalTag.hashCode() : 0);
+        result = 31 * result + (securityZone != null ? securityZone.hashCode() : 0);
         return result;
     }
 

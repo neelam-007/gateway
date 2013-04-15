@@ -500,12 +500,14 @@ CREATE TABLE trusted_cert (
   revocation_policy_oid bigint(20),
   issuer_dn varchar(500),
   serial varchar(64),
+  security_zone_oid bigint(20),
   PRIMARY KEY (objectid),
   UNIQUE i_thumb (thumbprint_sha1),
   INDEX i_ski (ski),
   INDEX i_subject_dn (subject_dn(255)),
   INDEX i_issuer_dn (issuer_dn(255)),
-  FOREIGN KEY (revocation_policy_oid) REFERENCES revocation_check_policy (objectid)
+  FOREIGN KEY (revocation_policy_oid) REFERENCES revocation_check_policy (objectid),
+  CONSTRAINT trusted_cert_security_zone FOREIGN KEY (security_zone_oid) REFERENCES security_zone (objectid) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
 DROP TABLE IF EXISTS trusted_esm;

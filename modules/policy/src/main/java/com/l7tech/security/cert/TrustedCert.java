@@ -1,13 +1,17 @@
 package com.l7tech.security.cert;
 
 import com.l7tech.objectmodel.NamedEntity;
+import com.l7tech.objectmodel.SecurityZone;
+import com.l7tech.objectmodel.ZoneableEntity;
 import com.l7tech.util.Functions;
 import org.hibernate.annotations.Proxy;
+import org.jetbrains.annotations.Nullable;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.XmlTransient;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Date;
@@ -26,7 +30,7 @@ import java.util.Set;
 @Entity
 @Proxy(lazy=false)
 @Table(name="trusted_cert")
-public class TrustedCert extends X509Entity implements NamedEntity, Cloneable {
+public class TrustedCert extends X509Entity implements NamedEntity, Cloneable, ZoneableEntity {
     public void copyFrom(TrustedCert cert) {
         mutate();
         super.copyFrom(cert);
@@ -37,6 +41,7 @@ public class TrustedCert extends X509Entity implements NamedEntity, Cloneable {
         this.trustAnchor = cert.trustAnchor;
         this.revocationCheckPolicyType = cert.revocationCheckPolicyType;
         this.revocationCheckPolicyOid = cert.revocationCheckPolicyOid;
+        this.setSecurityZone(cert.getSecurityZone());
     }
 
     public static enum PolicyUsageType {
@@ -342,6 +347,20 @@ public class TrustedCert extends X509Entity implements NamedEntity, Cloneable {
         return super.getVersion();
     }
 
+    @Override
+    @ManyToOne
+    @JoinColumn(name = "security_zone_oid")
+    @XmlTransient
+    @Nullable
+    public SecurityZone getSecurityZone() {
+        return securityZone;
+    }
+
+    @Override
+    public void setSecurityZone(@Nullable final SecurityZone securityZone) {
+        this.securityZone = securityZone;
+    }
+
     @SuppressWarnings({"RedundantIfStatement"})
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -353,6 +372,7 @@ public class TrustedCert extends X509Entity implements NamedEntity, Cloneable {
         if (trustAnchor != that.trustAnchor) return false;
         if (verifyHostname != that.verifyHostname) return false;
         if (trustedFor != null ? !trustedFor.equals(that.trustedFor) : that.trustedFor != null) return false;
+        if (securityZone != null ? !securityZone.equals(that.securityZone) : that.securityZone != null) return false;
 
         return true;
     }
@@ -362,6 +382,7 @@ public class TrustedCert extends X509Entity implements NamedEntity, Cloneable {
         result = 31 * result + (trustedFor != null ? trustedFor.hashCode() : 0);
         result = 31 * result + (verifyHostname ? 1 : 0);
         result = 31 * result + (trustAnchor ? 1 : 0);
+        result = 31 * result + (securityZone != null ? securityZone.hashCode() : 0);
         return result;
     }
 
@@ -371,4 +392,5 @@ public class TrustedCert extends X509Entity implements NamedEntity, Cloneable {
     private boolean trustAnchor;
     private PolicyUsageType revocationCheckPolicyType;
     private Long revocationCheckPolicyOid;
+    private SecurityZone securityZone;
 }

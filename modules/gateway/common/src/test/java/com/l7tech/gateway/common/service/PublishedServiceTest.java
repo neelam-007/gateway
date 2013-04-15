@@ -14,6 +14,7 @@ public class PublishedServiceTest {
     @Before
     public void setup() {
         zone = new SecurityZone();
+        zone.setName("TestZone");
         s1 = new PublishedService();
         s2 = new PublishedService();
     }
@@ -32,5 +33,19 @@ public class PublishedServiceTest {
         s2.setSecurityZone(zone);
         assertTrue(s1.equals(s2));
         assertTrue(s2.equals(s1));
+    }
+
+    @Test
+    public void testHashCodeDifferentSecurityZone() {
+        s1.setSecurityZone(zone);
+        s2.setSecurityZone(null);
+        assertFalse(s1.hashCode() == s2.hashCode());
+    }
+
+    @Test
+    public void testHashCodeSameSecurityZone() {
+        s1.setSecurityZone(zone);
+        s2.setSecurityZone(zone);
+        assertEquals(s1.hashCode(), s2.hashCode());
     }
 }

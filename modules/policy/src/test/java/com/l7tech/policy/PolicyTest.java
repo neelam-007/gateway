@@ -14,6 +14,7 @@ public class PolicyTest {
     @Before
     public void setup() {
         zone = new SecurityZone();
+        zone.setName("TestZone");
         p1 = new Policy(PolicyType.INCLUDE_FRAGMENT, "test", "xml", false);
         p2 = new Policy(PolicyType.INCLUDE_FRAGMENT, "test", "xml", false);
     }
@@ -32,5 +33,19 @@ public class PolicyTest {
         p2.setSecurityZone(zone);
         assertTrue(p1.equals(p2));
         assertTrue(p2.equals(p1));
+    }
+
+    @Test
+    public void testHashCodeDifferentSecurityZone() {
+        p1.setSecurityZone(zone);
+        p2.setSecurityZone(null);
+        assertFalse(p1.hashCode() == p2.hashCode());
+    }
+
+    @Test
+    public void testHashCodeSameSecurityZone() {
+        p1.setSecurityZone(zone);
+        p2.setSecurityZone(zone);
+        assertEquals(p1.hashCode(), p2.hashCode());
     }
 }

@@ -834,6 +834,7 @@ create table trusted_cert (
     trusted_for_ssl smallint default 0,
     verify_hostname smallint default 0,
     version integer,
+    security_zone_oid bigint references security_zone(objectid) on delete set null,
     primary key (objectid)
 );
 

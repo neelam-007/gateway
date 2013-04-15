@@ -461,7 +461,8 @@ class EntityPropertiesHelper {
             "subjectDn",
             "revocationCheckPolicyOid",
             "revocationCheckPolicyType",
-            "certificate"
+            "certificate",
+            "securityZone"
         ) )
         .unmodifiableMap();
 }
