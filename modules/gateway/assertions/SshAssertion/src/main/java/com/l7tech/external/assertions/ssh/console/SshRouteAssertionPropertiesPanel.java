@@ -272,7 +272,7 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
             @Override
             public String getValidationError() {
 
-                if((CommandKnob.CommandType.MOVE.equals(getSelectedCommandType()) || isCommandTypeFromVariable()) && (newFileNameTextField.getText() == null || newFileNameTextField.getText().isEmpty())) {
+                if(SFTPRadioButton.isSelected() && (CommandKnob.CommandType.MOVE.equals(getSelectedCommandType()) || isCommandTypeFromVariable()) && (newFileNameTextField.getText() == null || newFileNameTextField.getText().isEmpty())) {
                     return getResourceString("newFileNameError");
                 }
                 return null;
