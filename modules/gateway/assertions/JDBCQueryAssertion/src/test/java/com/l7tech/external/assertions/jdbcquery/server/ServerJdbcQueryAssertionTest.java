@@ -38,6 +38,7 @@ import org.springframework.jdbc.support.rowset.SqlRowSet;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.sql.DataSource;
 import javax.sql.rowset.serial.SerialBlob;
@@ -358,9 +359,13 @@ public class ServerJdbcQueryAssertionTest {
         assertion.setConnectionName(connectionName);
         assertion.setSqlQuery("select * from mytable");
         ServerJdbcQueryAssertion sass = (ServerJdbcQueryAssertion) serverPolicyFactory.compilePolicy(assertion, false);
+        final TestAudit testAudit = new TestAudit();
+        ApplicationContexts.inject(sass, Collections.singletonMap("auditFactory", testAudit.factory()));
         AssertionStatus result = sass.checkRequest(peCtx);
         assertEquals(AssertionStatus.FAILED, result);
 
+        assertTrue(testAudit.isAuditPresent(JDBC_QUERYING_FAILURE_ASSERTION_FAILED));
+        assertTrue("Data source not found", testAudit.isAuditPresentContaining("Cannot retrieve a C3P0 DataSource."));
     }
 
     @BugNumber(12457)
@@ -432,10 +437,12 @@ public class ServerJdbcQueryAssertionTest {
         try{
             DataSource ds = cpm.getDataSource(connection.getName());
             assertTrue("Failed to retrieve connection data source", ds!=null);
+
+            // clean up
+            cpm.deleteConnectionPool(connection.getName());
         }catch (NamingException e){
             fail("Failed to retrieve connection data source");
         }
-
     }
 
     @BugNumber(12512)
