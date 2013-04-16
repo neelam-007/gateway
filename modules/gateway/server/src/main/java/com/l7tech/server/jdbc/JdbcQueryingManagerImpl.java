@@ -228,7 +228,7 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager, PropertyCha
             } else if (ExceptionUtils.causedBy(e, InvalidDataAccessApiUsageException.class)
                     && e.getMessage().contains("Unable to determine the correct call signature for")
                     && e.getMessage().contains("package name should be specified separately using '.withCatalogName(")) {
-                return "The database object either does not exist or the SQL query contains the objects schema e.g. myschema.myobject";
+                return "The database object either does not exist or the SQL query contains the object's schema e.g. myschema.myobject";
             } else {
                 return ExceptionUtils.getMessage(ExceptionUtils.unnestToRoot(e));
             }
