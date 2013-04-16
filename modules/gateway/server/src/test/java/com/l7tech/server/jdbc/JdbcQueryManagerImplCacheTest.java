@@ -3,6 +3,7 @@ package com.l7tech.server.jdbc;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityHeaderSet;
 import com.l7tech.server.ServerConfigParams;
+import com.l7tech.test.BugId;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.MockConfig;
 import com.l7tech.util.Option;
@@ -657,6 +658,174 @@ public class JdbcQueryManagerImplCacheTest {
         validateFunctionReturn(null, rtn);
 
         verifyNumberGetProcedureCalls(4);
+    }
+
+    @BugId("SSG-6812")
+    @Test
+    public void testMetaDataCacheTaskCacheItemsExpiredStaleMin() throws SQLException, InvocationTargetException, NoSuchMethodException, NoSuchFieldException, IllegalAccessException, InstantiationException {
+        configProperties.put(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_STALE_TIMEOUT, "0");
+
+        String functionName = "myFunction";
+        String query = "func myFunction";
+        mockFunction(functionName, Collections.<Parameter>emptyList(), null);
+        jdbcQueryingManager.registerQueryForPossibleCaching(ConnectionName, query, null);
+        runMetaDataCacheTask();
+
+        validateCached(query);
+        verifyNumberGetProcedureCalls(1);
+
+        // Move time forward to make cached item stale
+        timeInFutureMillis = 1001L;
+        Object rtn = jdbcQueryingManager.performJdbcQuery(ConnectionName, query, null, 1, Collections.emptyList());
+        validateFunctionReturn(null, rtn);
+        validateCached(query);
+        verifyNumberGetProcedureCalls(1);
+
+        validateCached(query);
+
+        // Move time forward to make cached item stale
+        timeInFutureMillis = Long.MAX_VALUE;
+        rtn = jdbcQueryingManager.performJdbcQuery(ConnectionName, query, null, 1, Collections.emptyList());
+        validateFunctionReturn(null, rtn);
+
+        verifyNumberGetProcedureCalls(1);
+    }
+
+    @BugId("SSG-6812")
+    @Test
+    public void testMetaDataCacheTaskCacheItemsExpiredStaleMax() throws SQLException, InvocationTargetException, NoSuchMethodException, NoSuchFieldException, IllegalAccessException, InstantiationException {
+        configProperties.put(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_STALE_TIMEOUT, String.valueOf(Long.MAX_VALUE));
+
+        String functionName = "myFunction";
+        String query = "func myFunction";
+        mockFunction(functionName, Collections.<Parameter>emptyList(), null);
+        jdbcQueryingManager.registerQueryForPossibleCaching(ConnectionName, query, null);
+        runMetaDataCacheTask();
+
+        validateCached(query);
+        verifyNumberGetProcedureCalls(1);
+
+        // Move time forward to make cached item stale
+        timeInFutureMillis = 1001L;
+        Object rtn = jdbcQueryingManager.performJdbcQuery(ConnectionName, query, null, 1, Collections.emptyList());
+        validateFunctionReturn(null, rtn);
+        validateCached(query);
+        verifyNumberGetProcedureCalls(1);
+
+        validateCached(query);
+
+        // Move time forward to make cached item stale
+        timeInFutureMillis = Long.MAX_VALUE;
+        rtn = jdbcQueryingManager.performJdbcQuery(ConnectionName, query, null, 1, Collections.emptyList());
+        validateFunctionReturn(null, rtn);
+
+        verifyNumberGetProcedureCalls(1);
+    }
+
+    @BugId("SSG-6812")
+    @Test
+    public void testMetaDataCacheTaskCacheItemsExpiredStaleDefault() throws SQLException, InvocationTargetException, NoSuchMethodException, NoSuchFieldException, IllegalAccessException, InstantiationException {
+        configProperties.put(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_STALE_TIMEOUT, "-1");
+
+        String functionName = "myFunction";
+        String query = "func myFunction";
+        mockFunction(functionName, Collections.<Parameter>emptyList(), null);
+        jdbcQueryingManager.registerQueryForPossibleCaching(ConnectionName, query, null);
+        runMetaDataCacheTask();
+
+        validateCached(query);
+        verifyNumberGetProcedureCalls(1);
+
+        // Move time forward to make cached item stale
+        timeInFutureMillis = 1001L;
+        Object rtn = jdbcQueryingManager.performJdbcQuery(ConnectionName, query, null, 1, Collections.emptyList());
+        validateFunctionReturn(null, rtn);
+        validateCached(query);
+        verifyNumberGetProcedureCalls(1);
+
+        validateCached(query);
+
+        // Move time forward to make cached item stale
+        timeInFutureMillis = 1800 * 1000 + 1;
+        rtn = jdbcQueryingManager.performJdbcQuery(ConnectionName, query, null, 1, Collections.emptyList());
+        validateFunctionReturn(null, rtn);
+
+        verifyNumberGetProcedureCalls(2);
+    }
+
+    @BugId("SSG-6812")
+    @Test
+    public void testCacheKeyNoUsageExpirationMin() throws SQLException, InvocationTargetException, NoSuchMethodException, NoSuchFieldException, IllegalAccessException, InstantiationException {
+        configProperties.put(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_NO_USAGE_EXPIRATION, "0");
+
+        String functionName = "myFunction";
+        String query = "func myFunction";
+        mockFunction(functionName, Collections.<Parameter>emptyList(), null);
+        jdbcQueryingManager.registerQueryForPossibleCaching(ConnectionName, query, null);
+        runMetaDataCacheTask();
+
+        validateCached(query);
+        verifyNumberGetProcedureCalls(1);
+
+        // Move time forward to make cached item stale
+        timeInFutureMillis = 1001L;
+        runMetaDataCacheCleanUpTask();
+        validateCached(query);
+
+        // Move time forward to make cached item stale
+        timeInFutureMillis = Long.MAX_VALUE;
+        runMetaDataCacheCleanUpTask();
+        validateCached(query);
+    }
+
+    @BugId("SSG-6812")
+    @Test
+    public void testCacheKeyNoUsageExpirationMax() throws SQLException, InvocationTargetException, NoSuchMethodException, NoSuchFieldException, IllegalAccessException, InstantiationException {
+        configProperties.put(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_NO_USAGE_EXPIRATION, String.valueOf(Long.MAX_VALUE));
+
+        String functionName = "myFunction";
+        String query = "func myFunction";
+        mockFunction(functionName, Collections.<Parameter>emptyList(), null);
+        jdbcQueryingManager.registerQueryForPossibleCaching(ConnectionName, query, null);
+        runMetaDataCacheTask();
+
+        validateCached(query);
+        verifyNumberGetProcedureCalls(1);
+
+        // Move time forward to make cached item stale
+        timeInFutureMillis = 1001L;
+        runMetaDataCacheCleanUpTask();
+        validateCached(query);
+
+        // Move time forward to make cached item stale
+        timeInFutureMillis = Long.MAX_VALUE;
+        runMetaDataCacheCleanUpTask();
+        validateCached(query);
+    }
+
+    @BugId("SSG-6812")
+    @Test
+    public void testCacheKeyNoUsageExpirationDefault() throws SQLException, InvocationTargetException, NoSuchMethodException, NoSuchFieldException, IllegalAccessException, InstantiationException {
+        configProperties.put(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_NO_USAGE_EXPIRATION, "-1");
+
+        String functionName = "myFunction";
+        String query = "func myFunction";
+        mockFunction(functionName, Collections.<Parameter>emptyList(), null);
+        jdbcQueryingManager.registerQueryForPossibleCaching(ConnectionName, query, null);
+        runMetaDataCacheTask();
+
+        validateCached(query);
+        verifyNumberGetProcedureCalls(1);
+
+        // Move time forward to make cached item stale
+        timeInFutureMillis = 1001L;
+        runMetaDataCacheCleanUpTask();
+        validateCached(query);
+
+        // Move time forward to make cached item stale
+        timeInFutureMillis = (2678400L * 1000L) + 10000L;
+        runMetaDataCacheCleanUpTask();
+        validateCached(query, false);
     }
 
     @Test

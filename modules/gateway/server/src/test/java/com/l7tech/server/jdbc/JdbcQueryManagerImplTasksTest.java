@@ -4,9 +4,8 @@ import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.event.system.ReadyForMessages;
 import com.l7tech.server.event.system.Stopped;
 import com.l7tech.server.util.ManagedTimer;
-import com.l7tech.util.CollectionUtils;
-import com.l7tech.util.MockConfig;
-import com.l7tech.util.TimeSource;
+import com.l7tech.test.BugId;
+import com.l7tech.util.*;
 import org.hamcrest.Description;
 import org.junit.Assert;
 import org.junit.Before;
@@ -50,6 +49,8 @@ public class JdbcQueryManagerImplTasksTest {
 
     private Field currentCacheTaskField;
     private Field currentCleanUpTaskField;
+    private Field jdbcMetadataRetrievalThreadPoolField;
+    private Field configField;
 
     @Before
     public void beforeTest() {
@@ -337,6 +338,139 @@ public class JdbcQueryManagerImplTasksTest {
         Assert.assertNull(((AtomicReference) currentCacheTaskField.get(jdbcQueryingManagerImpl)).get());
     }
 
+    @BugId("SSG-6812")
+    @Test
+    public void cacheRefreshIntervalMinMaxTest() throws NoSuchFieldException, IllegalAccessException {
+        Map<String, String> properties = CollectionUtils.MapBuilder.<String, String>builder().map();
+        MockConfig mockConfig = new MockConfig(properties);
+        jdbcQueryingManagerImpl = createJdbcQueryingManagerImpl(mockConfig);
+
+        properties.put(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_REFRESH_INTERVAL, "-1");
+        jdbcQueryingManagerImpl.propertyChange(new PropertyChangeEvent(this, ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_REFRESH_INTERVAL, null, null));
+        Mockito.verify(downloadMetaDataTimer, Mockito.times(1)).schedule(Matchers.<TimerTask>any(TimerTask.class), Matchers.anyLong(), Matchers.eq(600000L));
+
+        properties.put(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_REFRESH_INTERVAL, "0");
+        jdbcQueryingManagerImpl.propertyChange(new PropertyChangeEvent(this, ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_REFRESH_INTERVAL, null, null));
+        Mockito.verifyNoMoreInteractions(downloadMetaDataTimer);
+
+        properties.put(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_REFRESH_INTERVAL, "1");
+        jdbcQueryingManagerImpl.propertyChange(new PropertyChangeEvent(this, ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_REFRESH_INTERVAL, null, null));
+        Mockito.verify(downloadMetaDataTimer, Mockito.times(1)).schedule(Matchers.<TimerTask>any(TimerTask.class), Matchers.anyLong(), Matchers.eq(1L));
+
+        properties.put(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_REFRESH_INTERVAL, String.valueOf(Long.MAX_VALUE));
+        jdbcQueryingManagerImpl.propertyChange(new PropertyChangeEvent(this, ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_REFRESH_INTERVAL, null, null));
+        Mockito.verify(downloadMetaDataTimer, Mockito.times(1)).schedule(Matchers.<TimerTask>any(TimerTask.class), Matchers.anyLong(), Matchers.eq(Long.MAX_VALUE));
+    }
+
+    @BugId("SSG-6812")
+    @Test
+    public void cacheCleanUpIntervalMinMaxTest() throws NoSuchFieldException, IllegalAccessException {
+        Map<String, String> properties = CollectionUtils.MapBuilder.<String, String>builder().map();
+        MockConfig mockConfig = new MockConfig(properties);
+        jdbcQueryingManagerImpl = createJdbcQueryingManagerImpl(mockConfig);
+
+        properties.put(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_CLEANUP_REFRESH_INTERVAL, "-1");
+        jdbcQueryingManagerImpl.propertyChange(new PropertyChangeEvent(this, ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_CLEANUP_REFRESH_INTERVAL, null, null));
+        Mockito.verify(cleanUpTimer, Mockito.times(1)).schedule(Matchers.<TimerTask>any(TimerTask.class), Matchers.anyLong(), Matchers.eq(60000L));
+
+        properties.put(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_CLEANUP_REFRESH_INTERVAL, "0");
+        jdbcQueryingManagerImpl.propertyChange(new PropertyChangeEvent(this, ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_CLEANUP_REFRESH_INTERVAL, null, null));
+        Mockito.verifyNoMoreInteractions(cleanUpTimer);
+
+        properties.put(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_CLEANUP_REFRESH_INTERVAL, "1");
+        jdbcQueryingManagerImpl.propertyChange(new PropertyChangeEvent(this, ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_CLEANUP_REFRESH_INTERVAL, null, null));
+        Mockito.verify(cleanUpTimer, Mockito.times(1)).schedule(Matchers.<TimerTask>any(TimerTask.class), Matchers.anyLong(), Matchers.eq(1L));
+
+        properties.put(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_CLEANUP_REFRESH_INTERVAL, String.valueOf(Long.MAX_VALUE));
+        jdbcQueryingManagerImpl.propertyChange(new PropertyChangeEvent(this, ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_CLEANUP_REFRESH_INTERVAL, null, null));
+        Mockito.verify(cleanUpTimer, Mockito.times(1)).schedule(Matchers.<TimerTask>any(TimerTask.class), Matchers.anyLong(), Matchers.eq(Long.MAX_VALUE));
+    }
+
+    @BugId("SSG-6812")
+    @Test
+    public void minCacheConcurrencyMinMaxTest() throws NoSuchFieldException, IllegalAccessException {
+        Map<String, String> properties = CollectionUtils.MapBuilder.<String, String>builder().map();
+        MockConfig mockConfig = new MockConfig(properties);
+        jdbcQueryingManagerImpl = createJdbcQueryingManagerImpl(mockConfig);
+        jdbcQueryingManagerImpl.onApplicationEvent(new ReadyForMessages(this, null, null));
+
+        properties.put(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_MIN_CACHE_CONCURRENCY, "1");
+        jdbcQueryingManagerImpl.propertyChange(new PropertyChangeEvent(this, ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_MIN_CACHE_CONCURRENCY, null, null));
+        Assert.assertEquals(1, ((ThreadPool) jdbcMetadataRetrievalThreadPoolField.get(jdbcQueryingManagerImpl)).getCorePoolSize());
+
+        properties.put(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_MIN_CACHE_CONCURRENCY, "0");
+        jdbcQueryingManagerImpl.propertyChange(new PropertyChangeEvent(this, ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_MIN_CACHE_CONCURRENCY, null, null));
+        Assert.assertEquals(10, ((ThreadPool) jdbcMetadataRetrievalThreadPoolField.get(jdbcQueryingManagerImpl)).getCorePoolSize());
+
+        properties.put(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_MIN_CACHE_CONCURRENCY, "200");
+        jdbcQueryingManagerImpl.propertyChange(new PropertyChangeEvent(this, ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_MIN_CACHE_CONCURRENCY, null, null));
+        Assert.assertEquals(200, ((ThreadPool) jdbcMetadataRetrievalThreadPoolField.get(jdbcQueryingManagerImpl)).getCorePoolSize());
+
+        properties.put(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_MIN_CACHE_CONCURRENCY, "201");
+        jdbcQueryingManagerImpl.propertyChange(new PropertyChangeEvent(this, ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_MIN_CACHE_CONCURRENCY, null, null));
+        Assert.assertEquals(10, ((ThreadPool) jdbcMetadataRetrievalThreadPoolField.get(jdbcQueryingManagerImpl)).getCorePoolSize());
+    }
+
+    @BugId("SSG-6812")
+    @Test
+    public void cacheKeyNoUsageExpirationMinMaxTest() throws NoSuchFieldException, IllegalAccessException {
+        Map<String, String> properties = CollectionUtils.MapBuilder.<String, String>builder().map();
+        MockConfig mockConfig = new MockConfig(properties);
+        jdbcQueryingManagerImpl = createJdbcQueryingManagerImpl(mockConfig);
+        jdbcQueryingManagerImpl.onApplicationEvent(new ReadyForMessages(this, null, null));
+        Config config = (Config) configField.get(jdbcQueryingManagerImpl);
+
+        properties.put(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_NO_USAGE_EXPIRATION, "-1");
+        Assert.assertEquals(2678400L, config.getLongProperty(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_NO_USAGE_EXPIRATION, 2678400));
+
+        properties.put(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_NO_USAGE_EXPIRATION, "0");
+        Assert.assertEquals(0L, config.getLongProperty(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_NO_USAGE_EXPIRATION, 2678400));
+
+        properties.put(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_NO_USAGE_EXPIRATION, String.valueOf(Long.MAX_VALUE));
+        Assert.assertEquals(Long.MAX_VALUE, config.getLongProperty(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_NO_USAGE_EXPIRATION, 2678400));
+    }
+
+    @BugId("SSG-6812")
+    @Test
+    public void cacheTaskStatementTimeoutMinMaxTest() throws NoSuchFieldException, IllegalAccessException {
+        Map<String, String> properties = CollectionUtils.MapBuilder.<String, String>builder().map();
+        MockConfig mockConfig = new MockConfig(properties);
+        jdbcQueryingManagerImpl = createJdbcQueryingManagerImpl(mockConfig);
+        jdbcQueryingManagerImpl.onApplicationEvent(new ReadyForMessages(this, null, null));
+        Config config = (Config) configField.get(jdbcQueryingManagerImpl);
+
+        properties.put(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_TASK_MAX_STMT_TIME_OUT, "-1");
+        Assert.assertEquals(120, config.getIntProperty(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_TASK_MAX_STMT_TIME_OUT, 120));
+
+        properties.put(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_TASK_MAX_STMT_TIME_OUT, "0");
+        Assert.assertEquals(0, config.getIntProperty(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_TASK_MAX_STMT_TIME_OUT, 120));
+
+        properties.put(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_TASK_MAX_STMT_TIME_OUT, String.valueOf(Integer.MAX_VALUE));
+        Assert.assertEquals(Integer.MAX_VALUE, config.getIntProperty(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_TASK_MAX_STMT_TIME_OUT, 120));
+    }
+
+    @BugId("SSG-6812")
+    @Test
+    public void maxGatewayStatementTimeoutMinMaxTest() throws NoSuchFieldException, IllegalAccessException {
+        Map<String, String> properties = CollectionUtils.MapBuilder.<String, String>builder().map();
+        MockConfig mockConfig = new MockConfig(properties);
+        jdbcQueryingManagerImpl = createJdbcQueryingManagerImpl(mockConfig);
+        jdbcQueryingManagerImpl.onApplicationEvent(new ReadyForMessages(this, null, null));
+        Config config = (Config) configField.get(jdbcQueryingManagerImpl);
+
+        properties.put(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_MAX_GATEWAY_STMT_TIME_OUT, "0");
+        Assert.assertEquals(300, config.getIntProperty(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_MAX_GATEWAY_STMT_TIME_OUT, 300));
+
+        properties.put(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_MAX_GATEWAY_STMT_TIME_OUT, "1");
+        Assert.assertEquals(1, config.getIntProperty(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_MAX_GATEWAY_STMT_TIME_OUT, 300));
+
+        properties.put(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_MAX_GATEWAY_STMT_TIME_OUT, "60");
+        Assert.assertEquals(60, config.getIntProperty(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_MAX_GATEWAY_STMT_TIME_OUT, 300));
+
+        properties.put(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_MAX_GATEWAY_STMT_TIME_OUT, String.valueOf(Integer.MAX_VALUE));
+        Assert.assertEquals(Integer.MAX_VALUE, config.getIntProperty(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_MAX_GATEWAY_STMT_TIME_OUT, 300));
+    }
+
     @SuppressWarnings("unchecked")
     private void spyCacheTasks(JdbcQueryingManagerImpl jdbcQueryingManager) throws IllegalAccessException {
         currentCacheTask = null;
@@ -362,11 +496,17 @@ public class JdbcQueryManagerImplTasksTest {
         cleanUpTimerField.setAccessible(true);
         cleanUpTimerField.set(jdbcQueryingManager, cleanUpTimer);
 
+        jdbcMetadataRetrievalThreadPoolField = JdbcQueryingManagerImpl.class.getDeclaredField("jdbcMetadataRetrievalThreadPool");
+        jdbcMetadataRetrievalThreadPoolField.setAccessible(true);
+
         currentCacheTaskField = JdbcQueryingManagerImpl.class.getDeclaredField("currentCacheTask");
         currentCacheTaskField.setAccessible(true);
 
         currentCleanUpTaskField = JdbcQueryingManagerImpl.class.getDeclaredField("currentCleanUpTask");
         currentCleanUpTaskField.setAccessible(true);
+
+        configField = JdbcQueryingManagerImpl.class.getDeclaredField("config");
+        configField.setAccessible(true);
 
         return jdbcQueryingManager;
     }
