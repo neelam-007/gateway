@@ -1802,7 +1802,9 @@ CREATE TABLE email_listener (
   poll_interval int(8) NOT NULL,
   active tinyint(1) NOT NULL default 1,
   properties mediumtext,
-  PRIMARY KEY  (objectid)
+  security_zone_oid bigint(20),
+  PRIMARY KEY  (objectid),
+  CONSTRAINT email_listener_security_zone FOREIGN KEY (security_zone_oid) REFERENCES security_zone (objectid) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
 DROP TABLE IF EXISTS email_listener_state;

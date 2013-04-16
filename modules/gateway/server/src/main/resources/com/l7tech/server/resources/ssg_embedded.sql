@@ -290,6 +290,7 @@ create table email_listener (
     server_type varchar(4) not null,
     use_ssl smallint not null,
     username varchar(255) not null,
+    security_zone_oid bigint references security_zone(objectid) on delete set null,
     primary key (objectid)
 );
 

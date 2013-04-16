@@ -2,6 +2,7 @@ package com.l7tech.console.panels;
 
 import com.l7tech.console.util.PasswordGuiUtils;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.SecurityZoneWidget;
 import com.l7tech.gateway.common.Authorizer;
 import com.l7tech.gateway.common.security.rbac.AttemptedCreate;
 import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
@@ -64,6 +65,7 @@ public class EmailListenerPropertiesDialog extends JDialog {
     private JLabel serviceNameLabel;
     private JComboBox serviceNameCombo;
     private ByteLimitPanel byteLimit;
+    private SecurityZoneWidget zoneControl;
 
     private final EmailListener emailListener;
     private InputValidator inputValidator;
@@ -354,6 +356,7 @@ public class EmailListenerPropertiesDialog extends JDialog {
         checkInterval.setEditor(jsne);
         ((JSpinner.DefaultEditor) checkInterval.getEditor()).getTextField().setFocusLostBehavior(JFormattedTextField.PERSIST);  //we'll do our own checking
 
+        zoneControl.setEntityType(EntityType.EMAIL_LISTENER);
     }
 
     private PublishedService getSelectedHardwiredService() {
@@ -543,6 +546,7 @@ public class EmailListenerPropertiesDialog extends JDialog {
  	 	        associateWithPublishedService.setSelected(false);
  	 	    }
  	 	}
+        zoneControl.setSelectedZone(emailListener.getSecurityZone());
     }
 
     /**
@@ -560,6 +564,7 @@ public class EmailListenerPropertiesDialog extends JDialog {
         emailListener.setPassword(new String(password.getPassword()));
         emailListener.setFolder(folderName.getText().trim());
         emailListener.setPollInterval(((Number)checkInterval.getValue()).intValue());
+        emailListener.setSecurityZone(zoneControl.getSelectedZone());
 
         Properties properties = new Properties();
         if (associateWithPublishedService.isSelected()) {

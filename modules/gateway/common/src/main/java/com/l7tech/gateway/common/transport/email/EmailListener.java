@@ -1,6 +1,7 @@
 package com.l7tech.gateway.common.transport.email;
 
 import com.l7tech.objectmodel.imp.NamedEntityImp;
+import com.l7tech.objectmodel.imp.ZoneableNamedEntityImp;
 import com.l7tech.policy.wsp.WspSensitive;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.PoolByteArrayOutputStream;
@@ -22,7 +23,7 @@ import java.util.logging.Logger;
 @Entity
 @Proxy(lazy=false)
 @Table(name="email_listener")
-public class EmailListener extends NamedEntityImp {
+public class EmailListener extends ZoneableNamedEntityImp {
     private static final Logger logger = Logger.getLogger(EmailListener.class.getName());
     private static final Charset ENCODING = Charsets.UTF8;
 
