@@ -33,6 +33,10 @@ import org.mockito.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.GenericApplicationContext;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.namedparam.SqlParameterSource;
+import org.springframework.jdbc.core.simple.SimpleJdbcCall;
+import org.springframework.jdbc.datasource.AbstractDataSource;
 import org.springframework.jdbc.support.rowset.ResultSetWrappingSqlRowSet;
 import org.springframework.jdbc.support.rowset.SqlRowSet;
 import org.springframework.test.context.ContextConfiguration;
@@ -79,6 +83,14 @@ public class ServerJdbcQueryAssertionTest {
     private JdbcConnectionManager jdbcConnectionManager;
     @Mock
     private JdbcConnection jdbcConnection;
+    @Mock
+    private SimpleJdbcCall simpleJdbcCall;
+    @Mock
+    private Connection conn;
+    @Mock
+    private AbstractDataSource dataSource;
+    @Mock
+    private DatabaseMetaData databaseMetaData;
 
     @Before
     public void setUp() throws Exception {
@@ -105,6 +117,14 @@ public class ServerJdbcQueryAssertionTest {
         Mockito.doReturn(jdbcConnectionManager).when(appCtx).getBean(Matchers.eq("jdbcConnectionManager"), Matchers.eq(JdbcConnectionManager.class));
         when(jdbcConnectionManager.getJdbcConnection(Matchers.eq(connectionName))).thenReturn(jdbcConnection);
         when(jdbcConnection.getDriverClass()).thenReturn("com.mysql.jdbc.Driver");
+        when(jdbcConnectionManager.getJdbcConnection(Matchers.eq("MySQL"))).thenReturn(jdbcConnection);
+
+        when(dataSource.getConnection()).thenReturn(conn);
+        when(conn.getMetaData()).thenReturn(databaseMetaData);
+        when(databaseMetaData.getDatabaseProductName()).thenReturn("MySQL");//pretend we are using a MySQL database
+
+        when(simpleJdbcCall.execute(any(SqlParameterSource.class))).thenReturn(getDummyResults());
+        when(simpleJdbcCall.getJdbcTemplate()).thenReturn(new JdbcTemplate(dataSource));
     }
 
     /**
@@ -1201,6 +1221,48 @@ public class ServerJdbcQueryAssertionTest {
         assertFalse("Incorrect CLOB size exceeded message", testAudit.isAuditPresentContaining("CLOB value has exceeded maximum allowed size"));
     }
 
+    /**
+     * Test if we can properly set the required context variables
+     */
+    @Test
+    public void testContextVariables() throws Exception {
+        PolicyEnforcementContext peCtx = makeContext("<myrequest/>", "<myresponse/>");
+        String query = "CALL GetSamples ()";
+        final ArrayList<String> inParameterNames = new ArrayList<String>();
+        final JdbcCallHelper jdbcHelper = new JdbcCallHelper(simpleJdbcCall, inParameterNames);
+
+        List<SqlRowSet> results = jdbcHelper.queryForRowSet(query, new Object[0]);
+        JdbcQueryingManagerStub jdbcQueryingManager = (JdbcQueryingManagerStub) appCtx.getBean("jdbcQueryingManager");
+        jdbcQueryingManager.setMockResults(results);
+
+        JdbcQueryAssertion assertion = new JdbcQueryAssertion();
+        assertion.setConnectionName("MySQL");
+        assertion.setSqlQuery("select * from mytable");
+        ServerJdbcQueryAssertion fixture = new ServerJdbcQueryAssertion(assertion, appCtx);
+        fixture.checkRequest(peCtx);
+
+        //test multiple result set
+        assertNotNull(peCtx.getVariable("jdbcQuery.resultSet1.out1"));
+        assertNotNull(peCtx.getVariable("jdbcQuery.resultSet1.out2"));
+        assertNotNull(peCtx.getVariable("jdbcQuery.resultSet1.out3"));
+        assertNotNull(peCtx.getVariable("jdbcQuery.resultSet1.queryresult.count"));
+        assertEquals(((Object[]) peCtx.getVariable("jdbcQuery.resultSet1.out1"))[0], "result 1");
+
+        assertNotNull(peCtx.getVariable("jdbcQuery.resultSet2.outparam"));
+        assertNotNull(peCtx.getVariable("jdbcQuery.resultSet2.queryresult.count"));
+        assertEquals(((Object[]) peCtx.getVariable("jdbcQuery.resultSet2.outparam"))[0], "output param1");
+
+        //test single result set
+        when(simpleJdbcCall.execute(any(SqlParameterSource.class))).thenReturn(getDummyOutParameterResults());
+        results = jdbcHelper.queryForRowSet(query, new Object[0]);
+        jdbcQueryingManager.setMockResults(results);
+        peCtx = makeContext("<myrequest/>", "<myresponse/>");
+        fixture = new ServerJdbcQueryAssertion(assertion, appCtx);
+        fixture.checkRequest(peCtx);
+        assertNotNull(peCtx.getVariable("jdbcQuery.outparam"));
+        assertEquals(((Object[]) peCtx.getVariable("jdbcQuery.outparam"))[0], "output param1");
+    }
+
     // returns a stored procedure formatted result with 'bytes' column containing a blob
     private Object getMockStoredProcedureBlobResults(byte[] blobBytes) throws SQLException {
 
@@ -1243,4 +1305,23 @@ public class ServerJdbcQueryAssertionTest {
         return results;
     }
 
+    private Map<String, Object> getDummyOutParameterResults() {
+        Map<String, Object> results = new HashMap<String, Object>();
+        results.put("outparam", "output param1");
+        return results;
+    }
+
+    private Map<String, Object> getDummyResults() {
+        Map<String, Object> results = new HashMap<String, Object>();
+        List<Map<String, Object>> rows = new ArrayList<Map<String, Object>>();
+        Map<String, Object> row1 = new HashMap<String, Object>();
+        row1.put("out1", "result 1");
+        row1.put("out2", "result 2");
+        row1.put("out3", new Long(999));
+        row1.put("result", "function result");
+        rows.add(row1);
+        results.put("#result-set-", rows);
+        results.put("outparam", "output param1");
+        return results;
+    }
 }

@@ -1,13 +1,9 @@
-package com.l7tech.external.assertions.jdbcquery.server;
+package com.l7tech.server.jdbc;
 
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.external.assertions.jdbcquery.JdbcQueryAssertion;
 import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.gateway.common.jdbc.JdbcUtil;
 import com.l7tech.message.Message;
-import com.l7tech.server.jdbc.JdbcCallHelper;
-import com.l7tech.server.jdbc.JdbcConnectionManager;
-import com.l7tech.server.jdbc.JdbcQueryingManagerStub;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.test.BugNumber;
@@ -64,45 +60,6 @@ public class JdbcCallHelperTest {
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
         myMocks();
-    }
-
-    private void myMocks() throws Exception {
-        when(dataSource.getConnection()).thenReturn(conn);
-        when(conn.getMetaData()).thenReturn(databaseMetaData);
-        when(databaseMetaData.getDatabaseProductName()).thenReturn("MySQL");//pretend we are using a MySQL database
-
-        when(simpleJdbcCall.execute(any(SqlParameterSource.class))).thenReturn(getDummyResults());
-        when(simpleJdbcCall.getJdbcTemplate()).thenReturn(new JdbcTemplate(dataSource));
-
-        appCtx = Mockito.spy(appCtx);
-        Mockito.doReturn(jdbcConnectionManager).when(appCtx).getBean(Matchers.eq("jdbcConnectionManager"), Matchers.eq(JdbcConnectionManager.class));
-        when(jdbcConnectionManager.getJdbcConnection(Matchers.eq("MySQL"))).thenReturn(jdbcConnection);
-        when(jdbcConnection.getDriverClass()).thenReturn("my.driver.class");
-    }
-
-    private Map<String, Object> getDummyResults() {
-        Map<String, Object> results = new HashMap<String, Object>();
-        List<Map<String, Object>> rows = new ArrayList<Map<String, Object>>();
-        Map<String, Object> row1 = new HashMap<String, Object>();
-        row1.put("out1", "result 1");
-        row1.put("out2", "result 2");
-        row1.put("out3", new Long(999));
-        row1.put("result", "function result");
-        rows.add(row1);
-        results.put("#result-set-", rows);
-        results.put("outparam", "output param1");
-        return results;
-    }
-
-    private Map<String, Object> getDummyOutParameterResults() {
-        Map<String, Object> results = new HashMap<String, Object>();
-        results.put("outparam", "output param1");
-        return results;
-    }
-
-    private Map<String, Object> getDummyEmptyResult() {
-        Map<String, Object> results = new HashMap<String, Object>();
-        return results;
     }
 
     /**
@@ -220,48 +177,6 @@ public class JdbcCallHelperTest {
         } catch (Exception e) {
             //exception expected
         }
-    }
-
-    /**
-     * Test if we can properly set the required context variables
-     */
-    @Test
-    public void testContextVariables() throws Exception {
-        PolicyEnforcementContext peCtx = makeContext("<myrequest/>", "<myresponse/>");
-        String query = "CALL GetSamples ()";
-        final ArrayList<String> inParameterNames = new ArrayList<String>();
-        final JdbcCallHelper jdbcHelper = new JdbcCallHelper(simpleJdbcCall, inParameterNames);
-
-        List<SqlRowSet> results = jdbcHelper.queryForRowSet(query, new Object[0]);
-        JdbcQueryingManagerStub jdbcQueryingManager = (JdbcQueryingManagerStub) appCtx.getBean("jdbcQueryingManager");
-        jdbcQueryingManager.setMockResults(results);
-
-        JdbcQueryAssertion assertion = new JdbcQueryAssertion();
-        assertion.setConnectionName("MySQL");
-        assertion.setSqlQuery("select * from mytable");
-        ServerJdbcQueryAssertion fixture = new ServerJdbcQueryAssertion(assertion, appCtx);
-        fixture.checkRequest(peCtx);
-
-        //test multiple result set
-        assertNotNull(peCtx.getVariable("jdbcQuery.resultSet1.out1"));
-        assertNotNull(peCtx.getVariable("jdbcQuery.resultSet1.out2"));
-        assertNotNull(peCtx.getVariable("jdbcQuery.resultSet1.out3"));
-        assertNotNull(peCtx.getVariable("jdbcQuery.resultSet1.queryresult.count"));
-        assertEquals(((Object[]) peCtx.getVariable("jdbcQuery.resultSet1.out1"))[0], "result 1");
-
-        assertNotNull(peCtx.getVariable("jdbcQuery.resultSet2.outparam"));
-        assertNotNull(peCtx.getVariable("jdbcQuery.resultSet2.queryresult.count"));
-        assertEquals(((Object[]) peCtx.getVariable("jdbcQuery.resultSet2.outparam"))[0], "output param1");
-
-        //test single result set
-        when(simpleJdbcCall.execute(any(SqlParameterSource.class))).thenReturn(getDummyOutParameterResults());
-        results = jdbcHelper.queryForRowSet(query, new Object[0]);
-        jdbcQueryingManager.setMockResults(results);
-        peCtx = makeContext("<myrequest/>", "<myresponse/>");
-        fixture = new ServerJdbcQueryAssertion(assertion, appCtx);
-        fixture.checkRequest(peCtx);
-        assertNotNull(peCtx.getVariable("jdbcQuery.outparam"));
-        assertEquals(((Object[]) peCtx.getVariable("jdbcQuery.outparam"))[0], "output param1");
     }
 
     @BugNumber(12255)
@@ -481,6 +396,45 @@ public class JdbcCallHelperTest {
         Message response = new Message();
         response.initialize(XmlUtil.stringAsDocument(res));
         return PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
+    }
+
+    private void myMocks() throws Exception {
+        when(dataSource.getConnection()).thenReturn(conn);
+        when(conn.getMetaData()).thenReturn(databaseMetaData);
+        when(databaseMetaData.getDatabaseProductName()).thenReturn("MySQL");//pretend we are using a MySQL database
+
+        when(simpleJdbcCall.execute(any(SqlParameterSource.class))).thenReturn(getDummyResults());
+        when(simpleJdbcCall.getJdbcTemplate()).thenReturn(new JdbcTemplate(dataSource));
+
+        appCtx = Mockito.spy(appCtx);
+        Mockito.doReturn(jdbcConnectionManager).when(appCtx).getBean(Matchers.eq("jdbcConnectionManager"), Matchers.eq(JdbcConnectionManager.class));
+        when(jdbcConnectionManager.getJdbcConnection(Matchers.eq("MySQL"))).thenReturn(jdbcConnection);
+        when(jdbcConnection.getDriverClass()).thenReturn("my.driver.class");
+    }
+
+    private Map<String, Object> getDummyResults() {
+        Map<String, Object> results = new HashMap<String, Object>();
+        List<Map<String, Object>> rows = new ArrayList<Map<String, Object>>();
+        Map<String, Object> row1 = new HashMap<String, Object>();
+        row1.put("out1", "result 1");
+        row1.put("out2", "result 2");
+        row1.put("out3", new Long(999));
+        row1.put("result", "function result");
+        rows.add(row1);
+        results.put("#result-set-", rows);
+        results.put("outparam", "output param1");
+        return results;
+    }
+
+    private Map<String, Object> getDummyOutParameterResults() {
+        Map<String, Object> results = new HashMap<String, Object>();
+        results.put("outparam", "output param1");
+        return results;
+    }
+
+    private Map<String, Object> getDummyEmptyResult() {
+        Map<String, Object> results = new HashMap<String, Object>();
+        return results;
     }
 
 }
