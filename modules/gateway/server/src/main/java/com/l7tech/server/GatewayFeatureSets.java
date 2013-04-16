@@ -953,7 +953,14 @@ public class GatewayFeatureSets {
                 mass("assertion:ValidateCertificate"),
                 fs(encass),
                 fs(seczones),
-                fs(modularAssertions));
+                fs(modularAssertions),
+                fs(oAuthInstaller),
+                fs(policyBundleInstaller),
+                ass(CookieCredentialSourceAssertion.class),
+                ass(WssReplayProtection.class),
+                mass("assertion:SamlIssuer"),
+                mass("assertion:ValidateNonSoapSamlToken"),
+                fs(trustStore));
 
         PROFILE_ALL =
         fsp("set:Profile:Development", "Development Mode",
