@@ -1,6 +1,7 @@
 package com.l7tech.gateway.common.resources;
 
 import com.l7tech.objectmodel.imp.PersistentEntityImp;
+import com.l7tech.objectmodel.imp.ZoneablePersistentEntityImp;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.HexUtils;
 import org.hibernate.annotations.Proxy;
@@ -21,7 +22,7 @@ import javax.validation.constraints.Size;
 @Entity
 @Proxy(lazy = false)
 @Table(name = "resource_entry")
-public class ResourceEntry extends PersistentEntityImp {
+public class ResourceEntry extends ZoneablePersistentEntityImp {
 
     //- PUBLIC
 

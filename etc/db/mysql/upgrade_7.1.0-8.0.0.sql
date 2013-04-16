@@ -77,6 +77,9 @@ alter table secure_password add FOREIGN KEY (security_zone_oid) REFERENCES secur
 alter table email_listener add column security_zone_oid bigint(20);
 alter table email_listener add FOREIGN KEY (security_zone_oid) REFERENCES security_zone (objectid) ON DELETE SET NULL;
 
+alter table resource_entry add column security_zone_oid bigint(20);
+alter table resource_entry add FOREIGN KEY (security_zone_oid) REFERENCES security_zone (objectid) ON DELETE SET NULL;
+
 --
 -- RBAC for Assertions: Update "Publish Webservices" and "Manage Webservices" canned roles so they can still use policy assertions in 8.0
 --

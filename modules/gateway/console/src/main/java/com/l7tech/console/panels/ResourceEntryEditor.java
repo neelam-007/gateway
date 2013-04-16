@@ -7,6 +7,7 @@ import com.l7tech.common.io.XmlUtil;
 import com.l7tech.console.SsmApplication;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.SecurityZoneWidget;
 import com.l7tech.console.util.XMLContainerFactory;
 import com.l7tech.gateway.common.resources.ResourceAdmin;
 import com.l7tech.gateway.common.resources.ResourceEntry;
@@ -15,6 +16,7 @@ import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.FileChooserUtil;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.OkCancelDialog;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.EntityUtil;
 import com.l7tech.common.io.DtdUtils;
 import com.l7tech.util.ExceptionUtils;
@@ -62,6 +64,7 @@ public class ResourceEntryEditor extends JDialog {
     private JTextArea contentTextArea;
     private JTextField descriptionTextField;
     private JLabel descriptionLabel;
+    private SecurityZoneWidget zoneControl;
 
     private XMLContainer xmlContainer;
     private UIAccessibility uiAccessibility;
@@ -153,6 +156,8 @@ public class ResourceEntryEditor extends JDialog {
         getRootPane().setDefaultButton(okButton);
         Utilities.setButtonAccelerator(this, helpButton, KeyEvent.VK_F1);
         setMinimumSize( getContentPane().getMinimumSize() );
+
+        zoneControl.setEntityType(EntityType.RESOURCE_ENTRY);
 
         enableDisableComponents();
 
@@ -430,6 +435,7 @@ public class ResourceEntryEditor extends JDialog {
                 }
                 resourceEntry.setContent( contents );
                 resourceEntry.setContentType( resourceEntry.getType().getMimeType() );
+                resourceEntry.setSecurityZone(zoneControl.getSelectedZone());
                 success = true;
                 dispose();
             }
@@ -513,6 +519,7 @@ public class ResourceEntryEditor extends JDialog {
         if (content != null) {
             setResourceContents( content );
         }
+        zoneControl.setSelectedZone(resourceEntry.getSecurityZone());
         dataLoaded = true;
     }
 

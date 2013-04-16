@@ -438,7 +438,8 @@ class EntityPropertiesHelper {
             "type",
             "uri",
             "uriHash",
-            "version"
+            "version",
+            "securityZone"
         ))
         .put( SecurePassword.class, list(
             "encodedPassword",
