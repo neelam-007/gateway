@@ -103,6 +103,8 @@ public class CertDetailsPanel extends WizardStepPanel {
                         // cn NOT found, use the subject name
                         certNameTextField.setText(truncName(subjectName));
                     }
+                    //Set the carat position to the begining of the text field so that long names are easier to read/edit [SSM-4313]
+                    certNameTextField.setCaretPosition(0);
 
                     // remove the old view
                     if (certView != null) {

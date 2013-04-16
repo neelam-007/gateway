@@ -37,7 +37,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * This class provides users with a form for specifying the source or contents of the trusted 
+ * This class provides users with a form for specifying the source or contents of the trusted
  * certificate to be added to the trusted certificate store.
  *
  * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
@@ -339,11 +339,21 @@ public class CertImportMethodsPanel extends WizardStepPanel {
 
             if (!hostnameURL.equals(cn)) {
                 Object[] options = {"Accept", "Cancel"};
-                int result = JOptionPane.showOptionDialog(null,
-                                                          "<html>The hostname in URL does not match with the certificate's subject name. " +
-                                                          "<br>" + "Hostname in URL: " + hostnameURL + "</br>" +
-                                                          "<br>" + "Subject DN in Certificate: " + cn + "</br>" +
-                                                          "<br>" + "Do you want to accept the certificate?" + "</br></html>",
+
+                //Adding this message to a scrollPane to better show large Subject DN's [SSM-4313]
+                JLabel textArea = new JLabel("<html>The hostname in URL does not match with the certificate's subject name. " +
+                        "<br>" + "Hostname in URL: " + hostnameURL + "</br>" +
+                        "<br>" + "Subject DN in Certificate: " + cn + "</br>" +
+                        "<br>" + "Do you want to accept the certificate?" + "</br></html>");
+                JScrollPane scrollPane = new JScrollPane(textArea);
+                //Always have the Horizontal scrollbar so that the scrollPane gets properly sized.
+                scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
+                scrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER);
+                //Get the dimensions of the scrollPane and change its width only.
+                Dimension scrollPaneDimensions = scrollPane.getPreferredSize();
+                scrollPaneDimensions.width = 450;
+                scrollPane.setPreferredSize(scrollPaneDimensions);
+                int result = JOptionPane.showOptionDialog(null, scrollPane,
                                                           "Hostname Mismatch",
                                                           0, JOptionPane.WARNING_MESSAGE,
                                                           null, options, options[1]);

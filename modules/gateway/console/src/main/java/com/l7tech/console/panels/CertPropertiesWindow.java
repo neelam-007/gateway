@@ -409,9 +409,13 @@ public class CertPropertiesWindow extends JDialog {
         cal.setTime(cert.getNotAfter());
         certExpiredOnTextField.setText(sdf.format(cal.getTime()));
 
+        //Set the appropriate values and move the carat position to the begining to properly display large values [SSM-4313]
         certIssuedToTextField.setText(cert.getSubjectDN().getName());
+        certIssuedToTextField.setCaretPosition(0);
         certIssuedByTextField.setText(cert.getIssuerDN().getName());
+        certIssuedByTextField.setCaretPosition(0);
         certNameTextField.setText(trustedCert.getName());
+        certNameTextField.setCaretPosition(0);
 
         if (!certNameTextField.isEnabled()) {
             certNameTextField.setOpaque(false);
