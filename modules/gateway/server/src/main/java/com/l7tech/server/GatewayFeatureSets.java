@@ -958,8 +958,6 @@ public class GatewayFeatureSets {
                 fs(policyBundleInstaller),
                 ass(CookieCredentialSourceAssertion.class),
                 ass(WssReplayProtection.class),
-                mass("assertion:SamlIssuer"),
-                mass("assertion:ValidateNonSoapSamlToken"),
                 fs(trustStore));
 
         PROFILE_ALL =
