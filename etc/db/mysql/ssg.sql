@@ -937,8 +937,10 @@ CREATE TABLE secure_password (
   encoded_password mediumtext NOT NULL,
   last_update bigint(20) NOT NULL DEFAULT 0,
   type varchar(64) NOT NULL DEFAULT 'PASSWORD',
+  security_zone_oid bigint(20),
   PRIMARY KEY (objectid),
-  UNIQUE(name)
+  UNIQUE(name),
+  CONSTRAINT secure_password_security_zone FOREIGN KEY (security_zone_oid) REFERENCES security_zone (objectid) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
 DROP TABLE IF EXISTS http_configuration;

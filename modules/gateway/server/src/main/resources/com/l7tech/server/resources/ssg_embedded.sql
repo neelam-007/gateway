@@ -736,6 +736,7 @@ create table secure_password (
     last_update bigint,
     type varchar(64) not null,
     usage_from_variable smallint,
+    security_zone_oid bigint references security_zone(objectid) on delete set null,
     primary key (objectid)
 );
 

@@ -2,12 +2,14 @@ package com.l7tech.console.panels;
 
 import com.l7tech.console.SsmApplication;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.SecurityZoneWidget;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.security.password.SecurePassword.SecurePasswordType;
 import com.l7tech.gui.util.*;
 import com.l7tech.gui.widgets.PasswordDoubleEntryDialog;
 import com.l7tech.gui.widgets.SquigglyTextField;
 import com.l7tech.gui.widgets.TextListCellRenderer;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.EntityUtil;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.ObjectNotFoundException;
@@ -57,6 +59,7 @@ public class SecurePasswordPropertiesDialog extends JDialog {
     private JButton viewPublicKeyButton;
     private JCheckBox generateCheckBox;
     private JComboBox generateKeyBitsComboBox;
+    private SecurityZoneWidget zoneControl;
 
     private final SecurePassword securePassword;
     private final boolean newRecord;
@@ -232,6 +235,8 @@ public class SecurePasswordPropertiesDialog extends JDialog {
         Utilities.setMaxLength(confirmPasswordField.getDocument(), maxPasswordLength);
         Utilities.setMaxLength(pemPrivateKeyField.getDocument(), maxPasswordLength);
 
+        zoneControl.setEntityType(EntityType.SECURE_PASSWORD);
+
         enableOrDisableComponents();
         modelToView();
     }
@@ -350,6 +355,7 @@ public class SecurePasswordPropertiesDialog extends JDialog {
         final long update = securePassword.getLastUpdate();
         lastUpdateLabel.setText(update > 0L ? new Date(update).toString() : "<Never Set>");
         allowVariableCheckBox.setSelected(securePassword.isUsageFromVariable());
+        zoneControl.setSelectedZone(securePassword.getSecurityZone());
     }
 
     private void viewToModel() {
@@ -368,6 +374,7 @@ public class SecurePasswordPropertiesDialog extends JDialog {
         securePassword.setDescription(descriptionField.getText());
         securePassword.setType(type);
         securePassword.setUsageFromVariable(allowVariableCheckBox.isSelected());
+        securePassword.setSecurityZone(zoneControl.getSelectedZone());
         generateKeybits = generateCheckBox.isSelected() ? (Integer)generateKeyBitsComboBox.getSelectedItem() : 0;
     }
 

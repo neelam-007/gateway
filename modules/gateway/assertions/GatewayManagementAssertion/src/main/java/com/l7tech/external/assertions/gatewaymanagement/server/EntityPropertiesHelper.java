@@ -446,7 +446,8 @@ class EntityPropertiesHelper {
             "lastUpdate",
             "name",
             "oid",
-            "version"
+            "version",
+            "securityZone"
         ))
         .put( TrustedCert.class, list(
             "ski",

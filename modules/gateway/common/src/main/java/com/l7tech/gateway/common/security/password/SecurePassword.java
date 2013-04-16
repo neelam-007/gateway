@@ -1,6 +1,7 @@
 package com.l7tech.gateway.common.security.password;
 
 import com.l7tech.objectmodel.imp.NamedEntityImp;
+import com.l7tech.objectmodel.imp.ZoneableNamedEntityImp;
 import org.hibernate.annotations.Proxy;
 
 import javax.persistence.*;
@@ -15,7 +16,7 @@ import java.util.Date;
 @Entity
 @Proxy(lazy=false)
 @Table(name="secure_password")
-public class SecurePassword extends NamedEntityImp {
+public class SecurePassword extends ZoneableNamedEntityImp {
 
     public static enum SecurePasswordType {
         @XmlEnumValue("Password")
@@ -131,6 +132,7 @@ public class SecurePassword extends NamedEntityImp {
             return false;
         if (lastUpdate != null ? !lastUpdate.equals(that.lastUpdate) : that.lastUpdate != null) return false;
         if (type != null ? !type.equals(that.type) : that.type != null) return false;
+        if (securityZone != null ? !securityZone.equals(that.securityZone) : that.securityZone != null) return false;
 
         return true;
     }
@@ -143,6 +145,7 @@ public class SecurePassword extends NamedEntityImp {
         result = 31 * result + (lastUpdate != null ? lastUpdate.hashCode() : 0);
         result = 31 * result + (usageFromVariable ? 1 : 0);
         result = 31 * result + (type != null ? type.hashCode() : 0);
+        result = 31 * result + (securityZone != null ? securityZone.hashCode() : 0);
         return result;
     }
 }

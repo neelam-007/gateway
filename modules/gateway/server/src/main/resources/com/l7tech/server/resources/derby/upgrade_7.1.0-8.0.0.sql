@@ -62,6 +62,9 @@ alter table trusted_cert add foreign key (security_zone_oid) references security
 alter table sink_config add column security_zone_oid bigint;
 alter table sink_config add foreign key (security_zone_oid) references security_zone (objectid) on delete set null;
 
+alter table secure_password add column security_zone_oid bigint;
+alter table secure_password add foreign key (security_zone_oid) references security_zone (objectid) on delete set null;
+
 --
 -- RBAC for Assertions: Update "Publish Webservices" and "Manage Webservices" canned roles so they can still use policy assertions in 8.0
 --
