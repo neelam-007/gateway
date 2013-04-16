@@ -379,6 +379,7 @@ create table http_configuration (
     tls_version varchar(8),
     username varchar(255),
     version integer,
+    security_zone_oid bigint references security_zone(objectid) on delete set null,
     primary key (objectid)
 );
 

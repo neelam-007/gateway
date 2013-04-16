@@ -970,8 +970,10 @@ CREATE TABLE http_configuration (
   proxy_port int(5) NOT NULL DEFAULT 0,
   proxy_username varchar(255) DEFAULT NULL,
   proxy_password_oid bigint(20) DEFAULT NULL,
+  security_zone_oid bigint(20),
   FOREIGN KEY (password_oid) REFERENCES secure_password (objectid),
-  FOREIGN KEY (proxy_password_oid) REFERENCES secure_password (objectid)
+  FOREIGN KEY (proxy_password_oid) REFERENCES secure_password (objectid),
+  CONSTRAINT http_config_security_zone FOREIGN KEY (security_zone_oid) REFERENCES security_zone (objectid) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --

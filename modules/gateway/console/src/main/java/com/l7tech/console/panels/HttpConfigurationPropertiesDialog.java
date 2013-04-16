@@ -1,6 +1,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.console.util.CipherSuiteGuiUtil;
+import com.l7tech.console.util.SecurityZoneWidget;
 import com.l7tech.gateway.common.resources.HttpConfiguration;
 import com.l7tech.gateway.common.resources.HttpProxyConfiguration;
 import com.l7tech.gateway.common.security.password.SecurePassword;
@@ -9,6 +10,7 @@ import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.TextListCellRenderer;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.EntityUtil;
 import com.l7tech.util.Functions;
 
@@ -64,6 +66,7 @@ public class HttpConfigurationPropertiesDialog extends JDialog {
     private JLabel tlsVersionLabel;
     private JLabel tlsKeyLabel;
     private JTabbedPane tabbedPanel;
+    private SecurityZoneWidget zoneControl;
 
     private boolean readOnly;
     private boolean wasOk;
@@ -207,7 +210,7 @@ public class HttpConfigurationPropertiesDialog extends JDialog {
                 doCancel();
             }
         } );
-
+        zoneControl.setEntityType(EntityType.HTTP_CONFIGURATION);
         pack();
         setMinimumSize( getMinimumSize() );
         getRootPane().setDefaultButton( cancelButton );
@@ -344,6 +347,7 @@ public class HttpConfigurationPropertiesDialog extends JDialog {
                 }
                 break;
         }
+        zoneControl.setSelectedZone(httpConfiguration.getSecurityZone());
     }
 
     private void viewToModel( final HttpConfiguration httpConfiguration ) {
@@ -425,6 +429,7 @@ public class HttpConfigurationPropertiesDialog extends JDialog {
             httpConfiguration.setProxyUse( HttpConfiguration.Option.CUSTOM );
             httpConfiguration.setProxyConfiguration( proxyConfiguration );
         }
+        httpConfiguration.setSecurityZone(zoneControl.getSelectedZone());
     }
 
     private void setText( final JTextComponent textComponent, final Object text ) {

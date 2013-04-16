@@ -1,6 +1,7 @@
 package com.l7tech.gateway.common.resources;
 
 import com.l7tech.objectmodel.imp.PersistentEntityImp;
+import com.l7tech.objectmodel.imp.ZoneablePersistentEntityImp;
 import org.hibernate.annotations.Proxy;
 
 import javax.persistence.Column;
@@ -17,7 +18,7 @@ import javax.persistence.Version;
 @Entity
 @Proxy(lazy=false)
 @Table(name="http_configuration")
-public class HttpConfiguration extends PersistentEntityImp {
+public class HttpConfiguration extends ZoneablePersistentEntityImp {
 
     //- PUBLIC
 
@@ -94,6 +95,7 @@ public class HttpConfiguration extends PersistentEntityImp {
         setFollowRedirects( httpConfiguration.isFollowRedirects() );
         setProxyUse( httpConfiguration.getProxyUse() );
         setProxyConfiguration( new HttpProxyConfiguration(httpConfiguration.getProxyConfiguration(), lock) );
+        setSecurityZone(httpConfiguration.getSecurityZone());
         if ( lock ) lock();
     }
 
