@@ -2,6 +2,7 @@ package com.l7tech.gateway.common.log;
 
 import com.l7tech.common.io.NonCloseableOutputStream;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
+import com.l7tech.objectmodel.imp.ZoneableNamedEntityImp;
 import com.l7tech.util.*;
 import com.l7tech.util.Functions.Unary;
 import org.hibernate.annotations.Proxy;
@@ -28,7 +29,7 @@ import static java.util.Collections.unmodifiableMap;
 @Proxy(lazy=false)
 @Table(name="sink_config")
 @AttributeOverride(name="name", column=@Column(name="name", nullable=false, length=32))
-public class SinkConfiguration extends NamedEntityImp {
+public class SinkConfiguration extends ZoneableNamedEntityImp {
 
     //- PUBLIC
 
@@ -383,6 +384,7 @@ public class SinkConfiguration extends NamedEntityImp {
         if(severity != null ? severity != that.severity : that.severity != null) return false;
         if(categories != null ? !categories.equals(that.categories) : that.categories != null) return false;
         if(filters != null ? !filters.equals(that.filters) : that.filters != null) return false;
+        if(securityZone != null ? !securityZone.equals(that.securityZone) : that.securityZone != null) return false;
 
         Map<String, String> thatProperties = that.properties;
         if(properties != null && thatProperties == null || properties == null && thatProperties != null) {
@@ -418,6 +420,7 @@ public class SinkConfiguration extends NamedEntityImp {
         result = 31 * result + (severity != null ? severity.hashCode() : 0);
         result = 31 * result + (categories != null ? categories.hashCode() : 0);
         result = 31 * result + (filters != null ? filters.hashCode() : 0);
+        result = 31 * result + (securityZone != null ? securityZone.hashCode() : 0);
 
         if(type != null && properties != null) {
             for(String propertyName : type.getPropertyNames()) {
@@ -438,6 +441,7 @@ public class SinkConfiguration extends NamedEntityImp {
         this.setSeverity(objToCopy.getSeverity());
         this.setCategories(objToCopy.getCategories());
         this.setXmlProperties(objToCopy.getXmlProperties());
+        this.setSecurityZone(objToCopy.getSecurityZone());
     }
 
     /**

@@ -3,6 +3,7 @@ package com.l7tech.console.panels;
 import com.l7tech.console.panels.SinkConfigurationFilterSelectionDialog.FilterContext;
 import com.l7tech.console.panels.SinkConfigurationFilterSelectionDialog.FilterSelection;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.SecurityZoneWidget;
 import com.l7tech.gateway.common.log.GatewayDiagnosticContextKeys;
 import com.l7tech.gateway.common.log.LogSinkAdmin;
 import com.l7tech.gateway.common.log.SinkConfiguration;
@@ -10,6 +11,7 @@ import com.l7tech.gui.util.*;
 import com.l7tech.gui.widgets.OkCancelDialog;
 import com.l7tech.gui.widgets.TextEntryPanel;
 import com.l7tech.gui.widgets.TextListCellRenderer;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.util.*;
 import com.l7tech.util.Functions.Binary;
 import org.jetbrains.annotations.NotNull;
@@ -85,6 +87,7 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
     private JCheckBox rollingLogFileField;
     private JComboBox rollingIntervalField;
     private JComboBox syslogFormatField;
+    private SecurityZoneWidget zoneControl;
 
     private final FilterContext filterContext;
     private final SinkConfiguration sinkConfiguration;
@@ -351,6 +354,8 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
 
         // Description field must not be longer than 1000 characters
         ((AbstractDocument)descriptionField.getDocument()).setDocumentFilter(new DocumentSizeFilter(1000));
+
+        zoneControl.setEntityType(EntityType.LOG_SINK);
     }
 
     private void disableTabsForSSPC(){
@@ -760,6 +765,7 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
 
         Collections.sort( filterList );
         filtersList.setModel( Utilities.listModel( filterList ) );
+        zoneControl.setSelectedZone(sinkConfiguration.getSecurityZone());
     }
 
     /**
@@ -886,6 +892,7 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
         final String categories = TextUtils.join( ",", allFilters.remove( "category" ) ).toString();
         sinkConfiguration.setCategories( categories.isEmpty() ? null : categories );
         sinkConfiguration.setFilters( allFilters ); // Categories removed above
+        sinkConfiguration.setSecurityZone(zoneControl.getSelectedZone());
     }
 
     /**

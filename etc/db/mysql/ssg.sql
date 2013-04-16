@@ -1754,14 +1754,16 @@ CREATE TABLE sink_config (
   severity varchar(32) NOT NULL DEFAULT 'INFO',
   categories mediumtext,
   properties mediumtext,
-  PRIMARY KEY  (objectid)
+  security_zone_oid bigint(20),
+  PRIMARY KEY  (objectid),
+  CONSTRAINT sink_config_security_zone FOREIGN KEY (security_zone_oid) REFERENCES security_zone (objectid) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --
 --  NOTE: if changing this configuration, also update the defaults in JdkLogConfig 
 --
-INSERT INTO sink_config VALUES (-810,0,'ssg','Main log','FILE',1,'INFO','AUDIT,LOG','<java version="1.6.0" class="java.beans.XMLDecoder"><object class="java.util.HashMap"><void method="put"><string>file.maxSize</string><string>20000</string></void><void method="put"><string>file.format</string><string>STANDARD</string></void><void method="put"><string>file.logCount</string><string>10</string></void></object></java>');
-INSERT INTO sink_config VALUES (-811,0,'sspc','Process Controller Log','FILE',0,'FINEST','SSPC','<java version="1.6.0" class="java.beans.XMLDecoder"><object class="java.util.HashMap"><void method="put"><string>file.maxSize</string><string>20000</string></void><void method="put"><string>file.format</string><string>STANDARD</string></void><void method="put"><string>file.logCount</string><string>10</string></void></object></java>');
+INSERT INTO sink_config VALUES (-810,0,'ssg','Main log','FILE',1,'INFO','AUDIT,LOG','<java version="1.6.0" class="java.beans.XMLDecoder"><object class="java.util.HashMap"><void method="put"><string>file.maxSize</string><string>20000</string></void><void method="put"><string>file.format</string><string>STANDARD</string></void><void method="put"><string>file.logCount</string><string>10</string></void></object></java>',NULL);
+INSERT INTO sink_config VALUES (-811,0,'sspc','Process Controller Log','FILE',0,'FINEST','SSPC','<java version="1.6.0" class="java.beans.XMLDecoder"><object class="java.util.HashMap"><void method="put"><string>file.maxSize</string><string>20000</string></void><void method="put"><string>file.format</string><string>STANDARD</string></void><void method="put"><string>file.logCount</string><string>10</string></void></object></java>',NULL);
 
 DROP TABLE IF EXISTS wsdm_subscription;
 CREATE TABLE wsdm_subscription (
