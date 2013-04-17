@@ -134,7 +134,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
     private DefaultComboBoxModel interfaceComboBoxModel;
     private DefaultListModel propertyListModel = new DefaultListModel();
     private List<String> toBeRemovedProperties = new ArrayList<String>();
-    private boolean isCluster = false;
+    private boolean isCluster = true;
     private JCheckBox[] savedStateCheckBoxes = {
             cbEnableMessageInput,
             cbEnableSsmApplet,

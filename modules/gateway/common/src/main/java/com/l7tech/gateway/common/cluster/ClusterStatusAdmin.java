@@ -40,7 +40,7 @@ public interface ClusterStatusAdmin {
      * @return true if this node is part of a cluster
      */
     @Transactional(readOnly=true)
-    @Secured(types=EntityType.SSG_CONNECTOR, stereotype=MethodStereotype.FIND_ENTITIES)
+    @Secured(types=EntityType.CLUSTER_INFO, stereotype=MethodStereotype.FIND_ENTITIES)
     @Administrative(licensed=false)
     boolean isCluster();
 

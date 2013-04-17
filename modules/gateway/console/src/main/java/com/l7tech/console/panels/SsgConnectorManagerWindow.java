@@ -7,6 +7,7 @@ import com.l7tech.console.util.CipherSuiteGuiUtil;
 import com.l7tech.console.util.EntityUtils;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.gateway.common.transport.TransportAdmin;
 import com.l7tech.gui.util.DialogDisplayer;
@@ -46,6 +47,7 @@ public class SsgConnectorManagerWindow extends JDialog {
 
     private PermissionFlags flags;
     private PortRanges reservedPorts;
+    private boolean isCluster = true;
 
 
     public SsgConnectorManagerWindow(Window owner) {
@@ -145,6 +147,13 @@ public class SsgConnectorManagerWindow extends JDialog {
                 DialogDisplayer.display(dlg);
             }
         });
+
+        try {
+            isCluster = Registry.getDefault().getClusterStatusAdmin().isCluster();
+        } catch (PermissionDeniedException e) {
+            // Ignore it
+        }
+
         loadConnectors();
         pack();
         enableOrDisableButtons();
@@ -222,7 +231,7 @@ public class SsgConnectorManagerWindow extends JDialog {
     }
 
     private void editAndSave(final SsgConnector connector, final SsgConnector originalConnector, final boolean selectName) {
-        final SsgConnectorPropertiesDialog dlg = new SsgConnectorPropertiesDialog(this, connector, Registry.getDefault().getClusterStatusAdmin().isCluster());
+        final SsgConnectorPropertiesDialog dlg = new SsgConnectorPropertiesDialog(this, connector, isCluster);
         dlg.pack();
         Utilities.centerOnScreen(dlg);
         if(selectName)
