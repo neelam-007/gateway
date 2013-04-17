@@ -187,6 +187,7 @@ create table active_connector (
     enabled smallint,
     hardwired_service_oid bigint,
     type varchar(64) not null,
+    security_zone_oid bigint references security_zone(objectid) on delete set null,
     primary key (objectid)
 );
 

@@ -2,9 +2,7 @@ package com.l7tech.external.assertions.ssh.console;
 
 import com.l7tech.console.action.SecureAction;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.gateway.common.security.rbac.AttemptedEntityOperation;
-import com.l7tech.gateway.common.security.rbac.OperationType;
-import com.l7tech.gateway.common.transport.SsgActiveConnector;
+import com.l7tech.gateway.common.security.rbac.AttemptedAnyOperation;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.EntityType;
@@ -12,19 +10,7 @@ import com.l7tech.objectmodel.EntityType;
 public class SftpPollingListenerCustomAction extends SecureAction {
 
     public SftpPollingListenerCustomAction() {
-        super(new AttemptedEntityOperation(EntityType.SSG_ACTIVE_CONNECTOR,
-                new SsgActiveConnector() {
-                    public String getType() {
-                        return ACTIVE_CONNECTOR_TYPE_SFTP;
-                    }
-                }
-            ) {
-                @Override
-                public OperationType getOperation() {
-                    return OperationType.READ;
-                }
-            }
-        );
+        super(new AttemptedAnyOperation(EntityType.SSG_ACTIVE_CONNECTOR));
     }
 
     @Override

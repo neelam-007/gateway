@@ -3,6 +3,7 @@ package com.l7tech.external.assertions.ssh.console;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.console.panels.*;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.SecurityZoneWidget;
 import com.l7tech.console.util.SquigglyFieldUtils;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.security.password.SecurePassword;
@@ -16,6 +17,7 @@ import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.SquigglyTextField;
 import com.l7tech.gui.widgets.TextListCellRenderer;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.util.Pair;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.Nullable;
@@ -69,6 +71,7 @@ public class SftpPollingListenerPropertiesDialog extends JDialog {
     private JButton removePropertyButton;
     private SquigglyTextField fileNamePatternField;
     private JCheckBox filterFilesCheckBox;
+    private SecurityZoneWidget zoneControl;
     private ByteLimitPanel byteLimitPanel;
 
     private DefaultListModel propertyListModel = new DefaultListModel();
@@ -263,6 +266,7 @@ public class SftpPollingListenerPropertiesDialog extends JDialog {
                 if (idx >= 0) propertyListModel.remove(idx);
             }
         });
+        zoneControl.setEntityType(EntityType.SSG_ACTIVE_CONNECTOR);
 
         pack();
         modelToView( connector );
@@ -420,6 +424,7 @@ public class SftpPollingListenerPropertiesDialog extends JDialog {
             final String value = connector.getProperty(property);
             if (value != null) propertyListModel.addElement(new Pair<String,String>(property, value));
         }
+        zoneControl.setSelectedZone(connector.getSecurityZone());
 
         enableOrDisableComponents();
     }
@@ -482,6 +487,8 @@ public class SftpPollingListenerPropertiesDialog extends JDialog {
         List<Pair<String,String>> props = (List<Pair<String,String>>)Collections.list(propertyListModel.elements());
         for (Pair<String, String> prop : props)
             connector.setProperty(prop.left, prop.right);
+
+        connector.setSecurityZone(zoneControl.getSelectedZone());
     }
 
     private void setProperty( final SsgActiveConnector connector, final String name, final String value ) {

@@ -4,10 +4,7 @@ import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.console.panels.*;
 import com.l7tech.console.security.FormAuthorizationPreparer;
 import com.l7tech.console.security.SecurityProvider;
-import com.l7tech.console.util.CipherSuiteGuiUtil;
-import com.l7tech.console.util.FormPreparer;
-import com.l7tech.console.util.Registry;
-import com.l7tech.console.util.TopComponents;
+import com.l7tech.console.util.*;
 import com.l7tech.external.assertions.mqnative.MqNativeAcknowledgementType;
 import com.l7tech.external.assertions.mqnative.MqNativeAdmin;
 import com.l7tech.external.assertions.mqnative.MqNativeAdmin.MqNativeTestException;
@@ -133,6 +130,7 @@ public class MqNativePropertiesDialog extends JDialog {
     private JSpinner concurrentListenerSizeSpinner;
     private JCheckBox useConcurrencyCheckBox;
     private JLabel concurrentListenerSizeLabel;
+    private SecurityZoneWidget zoneControl;
     private ByteLimitPanel byteLimitPanel;
 
     private SsgActiveConnector mqNativeActiveConnector;
@@ -529,6 +527,7 @@ public class MqNativePropertiesDialog extends JDialog {
         keystoreComboBox.setRenderer( TextListCellRenderer.<Object>basicComboBoxRenderer() );
         keystoreComboBox.selectDefaultSsl();
         keystoreComboBox.setEnabled(false);
+        zoneControl.setEntityType(EntityType.SSG_ACTIVE_CONNECTOR);
 
         pack();
         initializeView();
@@ -789,6 +788,7 @@ public class MqNativePropertiesDialog extends JDialog {
 
         if(!populatedTheServiceList)
             ServiceComboBox.populateAndSelect(serviceNameCombo, true, 0);
+        zoneControl.setSelectedZone(mqNativeActiveConnector.getSecurityZone());
         enableOrDisableComponents();
     }
 
@@ -1148,6 +1148,7 @@ public class MqNativePropertiesDialog extends JDialog {
                 connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_REPLY_TYPE, REPLY_NONE.toString());
             }
         }
+        connector.setSecurityZone(zoneControl.getSelectedZone());
     }
 
     private void onSave() {

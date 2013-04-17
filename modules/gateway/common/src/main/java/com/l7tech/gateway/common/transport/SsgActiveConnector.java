@@ -1,6 +1,7 @@
 package com.l7tech.gateway.common.transport;
 
 import com.l7tech.objectmodel.imp.NamedEntityImp;
+import com.l7tech.objectmodel.imp.ZoneableNamedEntityImp;
 import com.l7tech.util.Functions.Unary;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
@@ -24,7 +25,7 @@ import java.util.logging.Logger;
 @Entity
 @Proxy(lazy=false)
 @Table(name="active_connector")
-public class SsgActiveConnector extends NamedEntityImp {
+public class SsgActiveConnector extends ZoneableNamedEntityImp {
     private static final Logger logger = Logger.getLogger(SsgActiveConnector.class.getName());
 
     /** If specified, incoming messages should be assumed to use the specified content type. */
@@ -109,6 +110,7 @@ public class SsgActiveConnector extends NamedEntityImp {
         this.type = ssgActiveConnector.getType();
         this.hardwiredServiceOid = ssgActiveConnector.getHardwiredServiceOid();
         this.setProperties( new HashMap<String, String>( ssgActiveConnector.getProperties() ) );
+        this.setSecurityZone(ssgActiveConnector.getSecurityZone());
     }
 
     public static SsgActiveConnector newWithType(String type) {

@@ -1832,7 +1832,9 @@ CREATE TABLE active_connector (
   name varchar(128) NOT NULL,
   type varchar(128) NOT NULL,
   hardwired_service_oid bigint(20),
-  PRIMARY KEY (objectid)
+  security_zone_oid bigint(20),
+  PRIMARY KEY (objectid),
+  CONSTRAINT active_conn_security_zone FOREIGN KEY (security_zone_oid) REFERENCES security_zone (objectid) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
 DROP TABLE IF EXISTS active_connector_property;
