@@ -993,7 +993,9 @@ CREATE TABLE connector (
   client_auth tinyint(1) NOT NULL DEFAULT 0,
   keystore_oid bigint(20) NULL,
   key_alias varchar(255) NULL,
-  PRIMARY KEY (objectid)
+  security_zone_oid bigint(20),
+  PRIMARY KEY (objectid),
+  CONSTRAINT connector_security_zone FOREIGN KEY (security_zone_oid) REFERENCES security_zone (objectid) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
 DROP TABLE IF EXISTS connector_property;

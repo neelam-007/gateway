@@ -1,16 +1,58 @@
 package com.l7tech.gateway.common.transport;
 
+import com.l7tech.objectmodel.SecurityZone;
 import com.l7tech.test.BugNumber;
+import org.junit.Before;
 import org.junit.Test;
 
 import static com.l7tech.gateway.common.transport.SsgConnector.CLIENT_AUTH_NEVER;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /**
  *
  */
 public class SsgConnectorTest {
+    private SsgConnector c1;
+    private SsgConnector c2;
+    private SecurityZone zone;
+
+    @Before
+    public void setup() {
+        zone = new SecurityZone();
+        zone.setName("TestZone");
+        c1 = new SsgConnector();
+        c2 = new SsgConnector();
+    }
+
+    @Test
+    public void equalsDifferentSecurityZone() {
+        c1.setSecurityZone(zone);
+        c2.setSecurityZone(null);
+        assertFalse(c1.equals(c2));
+        assertFalse(c2.equals(c1));
+    }
+
+    @Test
+    public void equalsSameSecurityZone() {
+        c1.setSecurityZone(zone);
+        c2.setSecurityZone(zone);
+        assertTrue(c1.equals(c2));
+        assertTrue(c2.equals(c1));
+    }
+
+    @Test
+    public void testHashCodeDifferentSecurityZone() {
+        c1.setSecurityZone(zone);
+        c2.setSecurityZone(null);
+        assertFalse(c1.hashCode() == c2.hashCode());
+    }
+
+    @Test
+    public void testHashCodeSameSecurityZone() {
+        c1.setSecurityZone(zone);
+        c2.setSecurityZone(zone);
+        assertEquals(c1.hashCode(), c2.hashCode());
+    }
 
     @Test
     public void testEquals() {
@@ -32,9 +74,9 @@ public class SsgConnectorTest {
     }
 
     private void eq(Object a, Object b) {
-            assertTrue(a.equals(b));
-            assertTrue(b.equals(a));
-            assertTrue(a.hashCode() == b.hashCode());
+        assertTrue(a.equals(b));
+        assertTrue(b.equals(a));
+        assertTrue(a.hashCode() == b.hashCode());
     }
 
     private void ne(Object a, Object b) {

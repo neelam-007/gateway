@@ -1,10 +1,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.common.mime.ContentTypeHeader;
-import com.l7tech.console.util.CipherSuiteGuiUtil;
-import com.l7tech.console.util.Registry;
-import com.l7tech.console.util.SortedListModel;
-import com.l7tech.console.util.TopComponents;
+import com.l7tech.console.util.*;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.transport.InterfaceTag;
@@ -16,6 +13,7 @@ import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.SquigglyTextField;
 import com.l7tech.gui.widgets.TextListCellRenderer;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.util.*;
 import org.jetbrains.annotations.Nullable;
@@ -127,6 +125,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
     private JCheckBox snmpQueryCheckBox;
     private JPanel builtinServicesPanel;
     private ByteLimitPanel requestByteLimitPanel;
+    private SecurityZoneWidget zoneControl;
 
     private SsgConnector connector;
     private boolean confirmed = false;
@@ -573,6 +572,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
                 return requestByteLimitPanel.validateFields();
             }
         });
+        zoneControl.setEntityType(EntityType.SSG_CONNECTOR);
 
         Utilities.enableGrayOnDisabled(contentTypeComboBox);
         Utilities.enableGrayOnDisabled(serviceNameComboBox);
@@ -1300,6 +1300,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
 
         String requestLimit = connector.getProperty(SsgConnector.PROP_REQUEST_SIZE_LIMIT);
         requestByteLimitPanel.setValue(requestLimit, Registry.getDefault().getTransportAdmin().getXmlMaxBytes());
+        zoneControl.setSelectedZone(connector.getSecurityZone());
 
         saveCheckBoxState(savedStateCheckBoxes);
         enableOrDisableComponents();
@@ -1415,6 +1416,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         }else {
             connector.removeProperty(SsgConnector.PROP_REQUEST_SIZE_LIMIT);
         }
+        connector.setSecurityZone(zoneControl.getSelectedZone());
     }
 
     @Override

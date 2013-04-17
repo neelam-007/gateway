@@ -252,6 +252,7 @@ create table connector (
     port integer,
     scheme varchar(128) not null,
     secure smallint,
+    security_zone_oid bigint references security_zone(objectid) on delete set null,
     primary key (objectid)
 );
 

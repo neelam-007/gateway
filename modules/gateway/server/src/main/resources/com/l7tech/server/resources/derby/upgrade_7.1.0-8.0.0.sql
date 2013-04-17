@@ -74,6 +74,9 @@ alter table resource_entry add foreign key (security_zone_oid) references securi
 alter table http_configuration add column security_zone_oid bigint;
 alter table http_configuration add foreign key (security_zone_oid) references security_zone (objectid) on delete set null;
 
+alter table connector add column security_zone_oid bigint;
+alter table connector add foreign key (security_zone_oid) references security_zone (objectid) on delete set null;
+
 --
 -- RBAC for Assertions: Update "Publish Webservices" and "Manage Webservices" canned roles so they can still use policy assertions in 8.0
 --

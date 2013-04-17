@@ -3,6 +3,7 @@ package com.l7tech.gateway.common.transport;
 import com.l7tech.common.io.PortOwner;
 import com.l7tech.common.io.PortRange;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
+import com.l7tech.objectmodel.imp.ZoneableNamedEntityImp;
 import com.l7tech.util.BeanUtils;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Pair;
@@ -28,7 +29,7 @@ import java.util.regex.Pattern;
 @Entity
 @Proxy(lazy=false)
 @Table(name="connector")
-public class SsgConnector extends NamedEntityImp implements PortOwner {
+public class SsgConnector extends ZoneableNamedEntityImp implements PortOwner {
     protected static final Logger logger = Logger.getLogger(SsgConnector.class.getName());
 
     /** Indicates that a client certificate challenge will never be sent. */
@@ -734,6 +735,7 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
         if (keystoreOid != null ? !keystoreOid.equals(that.keystoreOid) : that.keystoreOid != null) return false;
         if (properties != null ? !properties.equals(that.properties) : that.properties != null) return false;
         if (scheme != null ? !scheme.equals(that.scheme) : that.scheme != null) return false;
+        if (securityZone != null ? !securityZone.equals(that.securityZone) : that.securityZone != null) return false;
 
         return true;
     }
@@ -750,6 +752,7 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
         result = 31 * result + (keystoreOid != null ? keystoreOid.hashCode() : 0);
         result = 31 * result + (keyAlias != null ? keyAlias.hashCode() : 0);
         result = 31 * result + (properties != null ? properties.hashCode() : 0);
+        result = 31 * result + (securityZone != null ? securityZone.hashCode() : 0);
         return result;
     }
 
