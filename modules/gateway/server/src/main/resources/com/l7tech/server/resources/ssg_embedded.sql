@@ -1596,6 +1596,7 @@ CREATE TABLE encapsulated_assertion (
   name varchar(255),
   guid varchar(255) not null unique,
   policy_oid bigint NOT NULL,
+  security_zone_oid bigint references security_zone(objectid) on delete set null,
   PRIMARY KEY (objectid)
 );
 

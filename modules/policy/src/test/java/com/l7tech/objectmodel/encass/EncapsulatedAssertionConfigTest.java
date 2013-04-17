@@ -1,5 +1,6 @@
 package com.l7tech.objectmodel.encass;
 
+import com.l7tech.objectmodel.SecurityZone;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.policy.variable.DataType;
@@ -23,9 +24,11 @@ public class EncapsulatedAssertionConfigTest {
     private Map<String, String> properties;
     private EncapsulatedAssertionResultDescriptor out;
     private Set<EncapsulatedAssertionResultDescriptor> outs;
+    private SecurityZone zone;
 
     @Before
     public void setup() {
+        zone = new SecurityZone();
         in = new EncapsulatedAssertionArgumentDescriptor();
         in.setArgumentName(NAME);
         in.setArgumentType(DataType.STRING.getShortName());
@@ -49,6 +52,7 @@ public class EncapsulatedAssertionConfigTest {
         config.setName(NAME);
         config.setOid(OID);
         config.setVersion(VERSION);
+        config.setSecurityZone(zone);
     }
 
     @Test
@@ -152,6 +156,7 @@ public class EncapsulatedAssertionConfigTest {
         assertEquals(NAME, copy.getName());
         assertEquals(OID, copy.getOid());
         assertEquals(VERSION, copy.getVersion());
+        assertEquals(zone, copy.getSecurityZone());
     }
 
     private EncapsulatedAssertionArgumentDescriptor createArgDescriptor(final String name, final int ordinal) {

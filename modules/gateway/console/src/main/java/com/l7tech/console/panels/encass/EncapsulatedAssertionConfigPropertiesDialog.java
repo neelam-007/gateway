@@ -5,11 +5,13 @@ import com.l7tech.console.policy.SsmPolicyVariableUtils;
 import com.l7tech.console.tree.PaletteFolderRegistry;
 import com.l7tech.console.util.EncapsulatedAssertionConsoleUtil;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.SecurityZoneWidget;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gui.SimpleTableModel;
 import com.l7tech.gui.util.*;
 import com.l7tech.gui.widgets.OkCancelDialog;
 import com.l7tech.gui.widgets.WrappingLabel;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionArgumentDescriptor;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
@@ -77,6 +79,7 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
     private WrappingLabel artifactVersionDisplayLabel;
     private JLabel artifactVersionLabel;
     private JScrollPane artifactVersionScrollPane;
+    private SecurityZoneWidget zoneControl;
 
     private SimpleTableModel<EncapsulatedAssertionArgumentDescriptor> inputsTableModel;
     private SimpleTableModel<EncapsulatedAssertionResultDescriptor> outputsTableModel;
@@ -235,6 +238,8 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
         selectIconButton.setVerticalTextPosition(SwingConstants.BOTTOM);
         selectIconButton.setHorizontalTextPosition(SwingConstants.CENTER);
 
+        zoneControl.setEntityType(EntityType.ENCAPSULATED_ASSERTION);
+
         Utilities.enableDefaultFocusTraversal(descriptionTextArea);
 
         Utilities.setDoubleClickAction(inputsTable, editInputButton);
@@ -390,6 +395,8 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
         if (artifactVersion != null) {
             artifactVersionDisplayLabel.setText(artifactVersion);
         }
+
+        zoneControl.setSelectedZone(config.getSecurityZone());
     }
 
     private void setPolicyAndPolicyNameLabel(Policy policy) {
@@ -427,6 +434,7 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
         }
         config.setArgumentDescriptors(new HashSet<EncapsulatedAssertionArgumentDescriptor>(inputs));
         config.setResultDescriptors(new HashSet<EncapsulatedAssertionResultDescriptor>(outputsTableModel.getRows()));
+        config.setSecurityZone(zoneControl.getSelectedZone());
     }
 
     private void enableOrDisableThings() {
