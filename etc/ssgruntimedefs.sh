@@ -15,6 +15,7 @@ default_java_opts="$default_java_opts -Djava.security.egd=file:/dev/./urandom"
 default_java_opts="$default_java_opts -Dfile.encoding=UTF-8 -Dsun.net.inetaddr.ttl=30 "
 default_java_opts="$default_java_opts -Djava.awt.headless=true -XX:CompileThreshold=1500 "
 default_java_opts="$default_java_opts -Dcom.l7tech.server.defaultClusterHostname=$(hostname)"
+default_java_opts="$default_java_opts -Djava.util.Arrays.useLegacyMergeSort=true"
 
 SSG_JAVA_OPTS="$SSG_JAVA_OPTS $default_java_opts";
 
