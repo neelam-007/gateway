@@ -24,7 +24,7 @@ public enum PolicyType {
     /**
      * A policy that belongs to a single PublishedService
      */
-    PRIVATE_SERVICE(SERVICE, "Private Service Policy", false),
+    PRIVATE_SERVICE(SERVICE, "Private Service Policy", false, true),
 
     /**
      * A policy that can be used by any PublishedService
@@ -34,12 +34,12 @@ public enum PolicyType {
     /**
      * A reusable fragment that can be included into another policy
      */
-    INCLUDE_FRAGMENT(FRAGMENT, "Included Policy Fragment", true),
+    INCLUDE_FRAGMENT(FRAGMENT, "Included Policy Fragment", true, true),
 
     /**
      * A global fragment runs before or after a service policy
      */
-    GLOBAL_FRAGMENT(FRAGMENT, "Global Policy Fragment", true, getGlobalTags() ),
+    GLOBAL_FRAGMENT(FRAGMENT, "Global Policy Fragment", true, getGlobalTags(), false ),
 
     /**
      * A fragment that gets run before any routing assertion is attempted
@@ -78,7 +78,7 @@ public enum PolicyType {
     /**
      * A policy that is for internal use (see {@link Policy#getInternalTag} for what kind of internal policy it is)
      */
-    INTERNAL(FRAGMENT, "Internal Use Policy", true, getAuditMessageFilterTags()),
+    INTERNAL(FRAGMENT, "Internal Use Policy", true, getAuditMessageFilterTags(), false),
     
     ;
 
@@ -114,14 +114,19 @@ public enum PolicyType {
     }
 
     private PolicyType(Supertype supertype, String name, boolean includeInGui) {
-        this(supertype, name, includeInGui, null);
+        this(supertype, name, includeInGui, null, false);
     }
 
-    private PolicyType(Supertype supertype, String name, boolean includeInGui, Collection<String> guiTags) {
+    private PolicyType(Supertype supertype, String name, boolean includeInGui, boolean securityZoneable) {
+        this(supertype, name, includeInGui, null, securityZoneable);
+    }
+
+    private PolicyType(Supertype supertype, String name, boolean includeInGui, Collection<String> guiTags, boolean securityZoneable) {
         this.supertype = supertype;
         this.name = name;
         this.shownInGui = includeInGui;
         this.guiTags = guiTags==null ? Collections.<String>emptySet() : Collections.unmodifiableSet( new TreeSet<String>(guiTags) );
+        this.securityZoneable = securityZoneable;
     }
 
     public String getName() {
@@ -152,6 +157,13 @@ public enum PolicyType {
         return Arrays.asList( TAG_AUDIT_MESSAGE_FILTER, TAG_AUDIT_VIEWER);
     }
 
+    /**
+     * @return true if policies of this type should have their security zone (if any) honored by the zone predicate.
+     */
+    public boolean isSecurityZoneable() {
+        return securityZoneable;
+    }
+
     private static Collection<String> getGlobalTags() {
         return Arrays.asList(
             TAG_GLOBAL_MESSAGE_RECEIVED,
@@ -166,4 +178,5 @@ public enum PolicyType {
     private final Supertype supertype;
     private final boolean shownInGui;
     private final Set<String> guiTags;
+    private final boolean securityZoneable;
 }

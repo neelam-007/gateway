@@ -213,6 +213,9 @@ public class PolicyPropertiesPanel extends ValidatedPanel {
     }
 
     private void enableDisable() {
+        PolicyType type = (PolicyType) typeCombo.getSelectedItem();
+        zoneControl.setEnabled(type != null && type.isSecurityZoneable());
+        zoneControl.setToolTipText(zoneControl.isEnabled() ? null : "Policy type not zoneable");
         enableTagChooser();
     }
 
@@ -249,7 +252,7 @@ public class PolicyPropertiesPanel extends ValidatedPanel {
         policy.setName(nameField.getText().trim());
         policy.setSoap(soapCheckbox.isSelected());
         policy.setType((PolicyType)typeCombo.getSelectedItem());
-        policy.setSecurityZone(zoneControl.getSelectedZone());
+        policy.setSecurityZone(zoneControl.isEnabled() ? zoneControl.getSelectedZone() : null);
 
         if (policy.getType() == PolicyType.INTERNAL || policy.getType().getGuiTags() != null) {
             String tag = (String) tagCombo.getSelectedItem();

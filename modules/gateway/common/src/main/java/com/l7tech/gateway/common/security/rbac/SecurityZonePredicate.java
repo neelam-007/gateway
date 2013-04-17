@@ -1,9 +1,6 @@
 package com.l7tech.gateway.common.security.rbac;
 
-import com.l7tech.objectmodel.Entity;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.SecurityZone;
-import com.l7tech.objectmodel.ZoneableEntity;
+import com.l7tech.objectmodel.*;
 import org.hibernate.annotations.Proxy;
 
 import javax.persistence.JoinColumn;
@@ -41,9 +38,16 @@ public class SecurityZonePredicate extends ScopePredicate implements ScopeEvalua
 
     @Override
     public boolean matches(Entity entity) {
-        if (requiredZone != null && entity instanceof ZoneableEntity && entityTypePermitted(requiredZone, entity)) {
-            ZoneableEntity ze = (ZoneableEntity) entity;
-            return requiredZone.equals(ze.getSecurityZone());
+        if (requiredZone != null) {
+            if (entity instanceof PartiallyZoneableEntity) {
+                PartiallyZoneableEntity pze = (PartiallyZoneableEntity) entity;
+                if (!pze.isZoneable())
+                    return false;
+            }
+            if (entity instanceof ZoneableEntity && entityTypePermitted(requiredZone, entity)) {
+                ZoneableEntity ze = (ZoneableEntity) entity;
+                return requiredZone.equals(ze.getSecurityZone());
+            }
         }
         return false;
     }
