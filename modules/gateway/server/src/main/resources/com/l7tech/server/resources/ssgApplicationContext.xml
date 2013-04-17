@@ -1845,8 +1845,7 @@
         <constructor-arg ref="jdbcConnectionManager" />
     </bean>
 
-
-    <bean id="jdbcQueryingManager" class="com.l7tech.server.jdbc.JdbcQueryingManagerImpl" depends-on="serviceCache">
+    <bean id="jdbcQueryingManager" class="com.l7tech.server.jdbc.JdbcQueryingManagerImpl">
         <constructor-arg ref="jdbcConnectionPoolManager"/>
         <constructor-arg ref="jdbcConnectionManager" />
         <constructor-arg ref="serverConfig"/>
