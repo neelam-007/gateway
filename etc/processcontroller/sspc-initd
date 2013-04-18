@@ -53,14 +53,23 @@ start() {
                 fi
                 if [ "${PC_ADDR}" == "0.0.0.0" ] || [ "${PC_ADDR}" == "::" ] || [ "${PC_ADDR}" == "0:0:0:0:0:0:0:0" ] ; then
                     #ipv4 and ipv6
-                    echo "[0:0] -A INPUT -p tcp -m tcp --dport ${PC_PORT} -j ACCEPT" > "${PC_FIREWALL6_RULES}"
-                    echo "[0:0] -A INPUT -p tcp -m tcp --dport ${PC_PORT} -j ACCEPT" > "${PC_FIREWALL_RULES}"
+                    echo "*filter" > "${PC_FIREWALL6_RULES}"
+                    echo "[0:0] -A INPUT -p tcp -m tcp --dport ${PC_PORT} -j ACCEPT" >> "${PC_FIREWALL6_RULES}"
+                    echo "COMMIT" >> "${PC_FIREWALL6_RULES}"
+
+                    echo "*filter" > "${PC_FIREWALL_RULES}"
+                    echo "[0:0] -A INPUT -p tcp -m tcp --dport ${PC_PORT} -j ACCEPT" >> "${PC_FIREWALL_RULES}"
+                    echo "COMMIT" >> "${PC_FIREWALL_RULES}"
                 elif expr index "${PC_ADDR}" ":" >/dev/null; then
                     #ipv6 only
-                    echo "[0:0] -A INPUT -p tcp -m tcp -d ${PC_ADDR} --dport ${PC_PORT} -j ACCEPT" > "${PC_FIREWALL6_RULES}"
+                    echo "*filter" > "${PC_FIREWALL6_RULES}"
+                    echo "[0:0] -A INPUT -p tcp -m tcp -d ${PC_ADDR} --dport ${PC_PORT} -j ACCEPT" >> "${PC_FIREWALL6_RULES}"
+                    echo "COMMIT" >> "${PC_FIREWALL6_RULES}"
                 else
                     #ipv4 only
-                    echo "[0:0] -A INPUT -p tcp -m tcp -d ${PC_ADDR} --dport ${PC_PORT} -j ACCEPT" > "${PC_FIREWALL_RULES}"
+                    echo "*filter" > "${PC_FIREWALL_RULES}"
+                    echo "[0:0] -A INPUT -p tcp -m tcp -d ${PC_ADDR} --dport ${PC_PORT} -j ACCEPT" >> "${PC_FIREWALL_RULES}"
+                    echo "COMMIT" >> "${PC_FIREWALL_RULES}"
                 fi
                 [ -f "${PC_FIREWALL_RULES}" ] && chown gateway.gateway "${PC_FIREWALL_RULES}"
                 [ -f "${PC_FIREWALL6_RULES}" ] && chown gateway.gateway "${PC_FIREWALL6_RULES}"
