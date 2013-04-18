@@ -4,7 +4,6 @@ import com.l7tech.gateway.common.audit.BootMessages;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.server.RuntimeLifecycleException;
 import com.l7tech.server.audit.AuditContextUtils;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.cluster.ClusterPropertyManager;
@@ -14,14 +13,9 @@ import com.l7tech.server.event.system.SystemEvent;
 import com.l7tech.server.upgrade.FatalUpgradeException;
 import com.l7tech.server.upgrade.NonfatalUpgradeException;
 import com.l7tech.server.upgrade.UpgradeTask;
-import com.l7tech.util.BuildInfo;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.ResourceUtils;
-import org.hibernate.Session;
-import org.hibernate.SessionFactory;
 import org.hibernate.TransactionException;
-import org.hibernate.jdbc.Work;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEvent;
@@ -33,10 +27,6 @@ import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.TransactionCallbackWithoutResult;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.*;
 import java.util.logging.Logger;
 
@@ -46,6 +36,8 @@ import static com.l7tech.util.CollectionUtils.set;
  * Bean that checks sanity of the database/cluster/local configuration before allowing bootup to proceed.
  * <p/>
  * Currently this just checks for flagged database upgrade tasks in the cluster properties table.
+ * <p/>
+ * Upgrade tasks are run when various system events occur.
  */
 public class GatewaySanityChecker extends ApplicationObjectSupport implements InitializingBean {
     private static final Logger logger = Logger.getLogger(GatewaySanityChecker.class.getName());
@@ -92,9 +84,6 @@ public class GatewaySanityChecker extends ApplicationObjectSupport implements In
     private List<ClusterProperty> taskProps;
     private UpgradeTask[] earlyTasks;
 
-    public static final String SSG_VERSION_TABLE="ssg_version";
-    public static final String CURRENT_VERSION_COLUMN="current_version";
-    public static final String CHECK_VERSION_STMT="SELECT " + CURRENT_VERSION_COLUMN + " FROM " + SSG_VERSION_TABLE;
 
     public GatewaySanityChecker(PlatformTransactionManager transactionManager,
                                 ClusterPropertyManager clusterPropertyManager)
@@ -116,44 +105,6 @@ public class GatewaySanityChecker extends ApplicationObjectSupport implements In
                 GatewaySanityChecker.this.onApplicationEvent( event );
             }
         } );
-
-        //Check if the DB is the right version. This will only work for newer (5.0+) gateways, but it's at least a good start.
-        SessionFactory sf = ((SessionFactory)appCtx.getBean("sessionFactory"));
-
-        Session session;
-        session = sf.openSession();
-
-        final String myVersion = BuildInfo.getFormalProductVersion();
-        session.doWork(new Work() {
-            @Override
-            public void execute(Connection connection) throws SQLException {
-                Statement st =  null;
-                ResultSet rs = null;
-
-                try {
-                    st = connection.createStatement();
-                    String errMsg = null;
-                    try {
-                        rs = st.executeQuery(CHECK_VERSION_STMT);
-                        if (rs.next()) {
-                            //we have a table, now check the contents
-                            String dbVersion = rs.getString(CURRENT_VERSION_COLUMN);
-                            if (!myVersion.equalsIgnoreCase(dbVersion)) {
-                                errMsg = "The database is not the right version for this product (found, " + dbVersion + ", expected " + myVersion + "). Please check or upgrade the database before starting the gateway.";
-                            }
-                        } else {
-                            errMsg = "Could not find a correct version (" + myVersion + ") in the database. Please check or upgrade the database before starting the gateway.";
-                        }
-                    } catch (SQLException e) {
-                        errMsg = "The database is not an Gateway Database or is not the right version (" + myVersion + "). Please check or upgrade the database before starting the gateway.";
-                    }
-                    if (errMsg != null) throw new RuntimeLifecycleException(errMsg);
-                } finally {
-                    ResourceUtils.closeQuietly(rs);
-                    ResourceUtils.closeQuietly(st);
-                }
-            }
-        });
 
         // Run nonconditional sanity checking tasks
         if (earlyTasks != null) {

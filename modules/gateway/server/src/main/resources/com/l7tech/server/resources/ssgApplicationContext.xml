@@ -27,6 +27,8 @@
 
     <context:annotation-config/>
 
+    <bean id="gatewayDbVersionChecker" class="com.l7tech.server.util.GatewayDbVersionChecker"/>
+
     <bean id="applicationEventPublisher" class="com.l7tech.server.util.ApplicationEventPublisherFactoryBean"/>
 
     <bean id="systemProperties" class="com.l7tech.server.SystemProperties">
@@ -74,7 +76,7 @@
         <constructor-arg index="2" ref="serverConfig"/>
     </bean>
 
-    <bean id="clusterPropertyManager" class="com.l7tech.server.cluster.ClusterPropertyManagerImpl"
+    <bean id="clusterPropertyManager" class="com.l7tech.server.cluster.ClusterPropertyManagerImpl" depends-on="gatewayDbVersionChecker"
           parent="hibernateBean">
     </bean>
 
