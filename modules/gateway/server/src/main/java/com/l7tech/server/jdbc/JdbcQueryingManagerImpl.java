@@ -65,8 +65,6 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager, PropertyCha
 
     //The thread pool used to execute metadata retrieval tasks. This must be dynamically created because it's running depends on the PARAM_JDBC_QUERY_MANAGER_CACHE_METADATA_TASK_ENABLED cluster property
     private ThreadPool jdbcMetadataRetrievalThreadPool;
-    //This is the set of currently running metadata retrieval tasks. It is used to make sure the same task is not run at the same time.
-    private final Set<CachedMetaDataKey> runningJdbcMetadataRetrievalTasks = new ConcurrentHashSet<CachedMetaDataKey>();
     public static final String DOWNLOAD_TASK_LABEL = "JDBC meta data download task ";
     public static final String CLEAN_UP_TASK_LABEL = "JDBC cache clean up task ";
 
@@ -257,9 +255,8 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager, PropertyCha
             if (maxStaleAgeMillis > 0 && age > maxStaleAgeMillis) {
                 // if it has then re-cache it.
                 synchronized (uniqueKey.toString().intern()) {
-                    // Synchronization required for updateCache when cached item has expired.
-                    // This is needed to avoid all message processing threads for the unique cache key attempting to
-                    // download the same meta during the time it takes for this task to complete.
+                    // Synchronize around calling updateCache. This will make sure the multiple concurrent requests don't
+                    // attempt to update the cache for the same function at the same time.
                     // double check locking
                     age = timeSource.currentTimeMillis() - cachedMetaDataValue.cachedTime.get();
                     if (age > maxStaleAgeMillis) {
@@ -791,47 +788,38 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager, PropertyCha
                     break;
                 }
                 final String connectionName = key.connectionName;
-                //add the key to the currently running jdbcMetadataRetrievalTask set. This will return false if the key is already in the set.
-                boolean shouldSubmitTask = runningJdbcMetadataRetrievalTasks.add(key);
-                //only submit tasks not already being processed
-                if (shouldSubmitTask) {
-                    try {
-                        Future<Void> future = jdbcMetadataRetrievalThreadPool.submitTask(new Callable<Void>() {
-                            @Override
-                            public Void call() throws Exception {
-                            try {
+                try {
+                    Future<Void> future = jdbcMetadataRetrievalThreadPool.submitTask(new Callable<Void>() {
+                        @Override
+                        public Void call() throws Exception {
+                        try {
 
-                                final DataSource dataSource = jdbcConnectionPoolManager.getDataSource(connectionName);
-                                final int timeoutSeconds = config.getIntProperty(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_TASK_MAX_STMT_TIME_OUT, 120);
-                                //need to preserve the last access time if the item is already in cache.
-                                Long lastUseTime = null;
-                                if (simpleJdbcCallCache.containsKey(key)) {
-                                    lastUseTime = simpleJdbcCallCache.get(key).lastUseTime.get();
-                                }
-                                synchronized (key.toString().intern()) {
-                                    // Synchronization required for updateCache.
-                                    // This is needed to avoid all message processing threads for the unique cache key attempting to
-                                    // download the same meta during the time it takes for this task to complete.
-                                    //TODO: investigate the use of a minimum refresh age based on the CachedMetaDataValue.cachedTime, this should prevent re-caching metadata if it was just cached.
-                                    updateCache(connectionName, key.query, buildJdbcTemplate(dataSource, 0, timeoutSeconds), key.schemaNameOption, lastUseTime);
-                                }
-                            } catch (NamingException | SQLException e) {
-                                logger.warning(DOWNLOAD_TASK_LABEL + ": Could not get data source for connection: '" + connectionName + "' due to: " + ExceptionUtils.getMessage(e));
-                            } finally {
-                                //remove the key for the running set of tasks
-                                runningJdbcMetadataRetrievalTasks.remove(key);
+                            final DataSource dataSource = jdbcConnectionPoolManager.getDataSource(connectionName);
+                            final int timeoutSeconds = config.getIntProperty(ServerConfigParams.PARAM_JDBC_QUERY_MANAGER_CACHE_TASK_MAX_STMT_TIME_OUT, 120);
+                            //need to preserve the last access time if the item is already in cache.
+                            Long lastUseTime = null;
+                            if (simpleJdbcCallCache.containsKey(key)) {
+                                lastUseTime = simpleJdbcCallCache.get(key).lastUseTime.get();
                             }
-                            return null;
+                            synchronized (key.toString().intern()) {
+                                // Synchronization required for updateCache.
+                                // This is needed to avoid downloading the same meta during the time it takes for this task to complete.
+                                //TODO: investigate the use of a minimum refresh age based on the CachedMetaDataValue.cachedTime, this should prevent re-caching metadata if it was just cached.
+                                updateCache(connectionName, key.query, buildJdbcTemplate(dataSource, 0, timeoutSeconds), key.schemaNameOption, lastUseTime);
                             }
-                        });
-                        // Add the metadata retrieval task to the list of tasks run in this process
-                        metadataRetrievalTasks.add(future);
-                    } catch (ThreadPool.ThreadPoolShutDownException e) {
-                        logger.warning(DOWNLOAD_TASK_LABEL + "thread pool was shutdown: " + ExceptionUtils.getMessage(e));
-                    } catch (Exception e) {
-                        // This will catch any other exceptions that may have occurred.
-                        logger.warning(DOWNLOAD_TASK_LABEL + "thread pool exception occurred submitting a task: " + ExceptionUtils.getMessage(e));
-                    }
+                        } catch (NamingException | SQLException e) {
+                            logger.warning(DOWNLOAD_TASK_LABEL + ": Could not get data source for connection: '" + connectionName + "' due to: " + ExceptionUtils.getMessage(e));
+                        }
+                        return null;
+                        }
+                    });
+                    // Add the metadata retrieval task to the list of tasks run in this process
+                    metadataRetrievalTasks.add(future);
+                } catch (ThreadPool.ThreadPoolShutDownException e) {
+                    logger.warning(DOWNLOAD_TASK_LABEL + "thread pool was shutdown: " + ExceptionUtils.getMessage(e));
+                } catch (Exception e) {
+                    // This will catch any other exceptions that may have occurred.
+                    logger.warning(DOWNLOAD_TASK_LABEL + "thread pool exception occurred submitting a task: " + ExceptionUtils.getMessage(e));
                 }
             }
             //Wait till all tasks complete
@@ -843,6 +831,8 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager, PropertyCha
                     } else {
                         //Do not want to interrupt here, may cause unexpected side effects
                         task.cancel(false);
+                        //Should wait for all tasks to complete before exiting the MetadataCacheTask
+                        task.get();
                     }
                 } catch (InterruptedException e) {
                     logger.warning(DOWNLOAD_TASK_LABEL + "was interrupted while processing: " + ExceptionUtils.getMessage(e));
