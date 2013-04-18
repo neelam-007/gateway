@@ -83,6 +83,9 @@ alter table encapsulated_assertion add foreign key (security_zone_oid) reference
 alter table active_connector add column security_zone_oid bigint;
 alter table active_connector add foreign key (security_zone_oid) references security_zone (objectid) on delete set null;
 
+alter table revocation_check_policy add column security_zone_oid bigint;
+alter table revocation_check_policy add foreign key (security_zone_oid) references security_zone (objectid) on delete set null;
+
 --
 -- RBAC for Assertions: Update "Publish Webservices" and "Manage Webservices" canned roles so they can still use policy assertions in 8.0
 --

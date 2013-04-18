@@ -15,12 +15,14 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListDataListener;
 import javax.swing.event.ListDataEvent;
 
+import com.l7tech.console.util.SecurityZoneWidget;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.FilterDocument;
 import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.gateway.common.security.RevocationCheckPolicy;
 import com.l7tech.gateway.common.security.RevocationCheckPolicyItem;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.util.ValidationUtils;
 import com.l7tech.util.Functions;
 
@@ -130,6 +132,7 @@ public class RevocationCheckPolicyPropertiesDialog extends JDialog {
     private JButton moveUpButton;
     private JCheckBox succeedOnUnknownCheckBox;
     private JCheckBox continueOnServerUnavailableCheckBox;
+    private SecurityZoneWidget zoneControl;
 
     /**
      * Initialize the dialog
@@ -200,6 +203,7 @@ public class RevocationCheckPolicyPropertiesDialog extends JDialog {
         policyItemList.setCellRenderer(new TextListCellRenderer(new RevocationCheckPolicyItemAccessor()));
         policyItemList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         Utilities.setDoubleClickAction(policyItemList, editButton);
+        zoneControl.setEntityType(EntityType.REVOCATION_CHECK_POLICY);
 
         // Set data
         nameTextField.setDocument(new FilterDocument(64, new FilterDocument.Filter(){
@@ -216,7 +220,7 @@ public class RevocationCheckPolicyPropertiesDialog extends JDialog {
             policyItemModel.addElement(item);
         }
         policyItemList.setModel(policyItemModel);
-
+        zoneControl.setSelectedZone(revocationCheckPolicy.getSecurityZone());
         enableOrDisableControls();
 
         add(mainPanel);
@@ -352,6 +356,7 @@ public class RevocationCheckPolicyPropertiesDialog extends JDialog {
                 list.add((RevocationCheckPolicyItem) item);
             }
             revocationCheckPolicy.setRevocationCheckItems(list);
+            revocationCheckPolicy.setSecurityZone(zoneControl.getSelectedZone());
 
             oked = true;
             dispose();

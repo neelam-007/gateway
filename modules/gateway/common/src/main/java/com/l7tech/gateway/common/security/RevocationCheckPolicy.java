@@ -1,7 +1,7 @@
 package com.l7tech.gateway.common.security;
 
 import com.l7tech.common.io.NonCloseableOutputStream;
-import com.l7tech.objectmodel.imp.NamedEntityImp;
+import com.l7tech.objectmodel.imp.ZoneableNamedEntityImp;
 import com.l7tech.util.PoolByteArrayOutputStream;
 import com.l7tech.util.Charsets;
 import org.hibernate.annotations.Proxy;
@@ -23,7 +23,7 @@ import java.util.List;
 @Entity
 @Proxy(lazy=false)
 @Table(name="revocation_check_policy")
-public class RevocationCheckPolicy extends NamedEntityImp implements Cloneable {
+public class RevocationCheckPolicy extends ZoneableNamedEntityImp implements Cloneable {
 
     //- PUBLIC
 
@@ -111,7 +111,8 @@ public class RevocationCheckPolicy extends NamedEntityImp implements Cloneable {
         return defaultPolicy == that.defaultPolicy &&
                 defaultSuccess == that.defaultSuccess &&
                 continueOnServerUnavailable == that.continueOnServerUnavailable &&
-                revocationCheckItems.equals( that.revocationCheckItems );
+                revocationCheckItems.equals( that.revocationCheckItems ) &&
+                (securityZone != null ? securityZone.equals(that.securityZone) : that.securityZone == null);
 
     }
 
@@ -125,6 +126,7 @@ public class RevocationCheckPolicy extends NamedEntityImp implements Cloneable {
         result = 31 * result + (defaultPolicy ? 1 : 0);
         result = 31 * result + (defaultSuccess ? 1 : 0);
         result = 31 * result + (continueOnServerUnavailable ? 1 : 0);
+        result = 31 * result + (securityZone != null ? securityZone.hashCode() : 0);
         return result;
     }
 

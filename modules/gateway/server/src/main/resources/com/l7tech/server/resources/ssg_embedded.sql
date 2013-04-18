@@ -720,6 +720,7 @@ create table revocation_check_policy (
     default_policy smallint default 0,
     default_success smallint default 0,
     revocation_policy_xml clob(2147483647),
+    security_zone_oid bigint references security_zone(objectid) on delete set null,
     primary key (objectid)
 );
 

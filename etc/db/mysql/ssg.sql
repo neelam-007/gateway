@@ -470,8 +470,10 @@ CREATE TABLE revocation_check_policy (
   default_policy tinyint default '0',
   default_success tinyint default '0',
   continue_server_unavailable tinyint default '0',
+  security_zone_oid bigint(20),
   PRIMARY KEY  (objectid),
-  UNIQUE KEY rcp_name_idx (name)
+  UNIQUE KEY rcp_name_idx (name),
+  CONSTRAINT rcp_security_zone FOREIGN KEY (security_zone_oid) REFERENCES security_zone (objectid) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --
