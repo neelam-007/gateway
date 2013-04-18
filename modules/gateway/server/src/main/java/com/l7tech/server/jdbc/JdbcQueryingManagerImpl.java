@@ -255,8 +255,9 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager, PropertyCha
             if (maxStaleAgeMillis > 0 && age > maxStaleAgeMillis) {
                 // if it has then re-cache it.
                 synchronized (uniqueKey.toString().intern()) {
-                    // Synchronize around calling updateCache. This will make sure the multiple concurrent requests don't
-                    // attempt to update the cache for the same function at the same time.
+                    // Synchronization required for updateCache when cached item has expired.
+                    // This is needed to avoid all message processing threads for the unique cache key attempting to
+                    // download the same meta during the time it takes for this task to complete.
                     // double check locking
                     age = timeSource.currentTimeMillis() - cachedMetaDataValue.cachedTime.get();
                     if (age > maxStaleAgeMillis) {
@@ -802,8 +803,9 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager, PropertyCha
                                 lastUseTime = simpleJdbcCallCache.get(key).lastUseTime.get();
                             }
                             synchronized (key.toString().intern()) {
-                                // Synchronization required for updateCache.
+                                // Synchronization around updateCache.
                                 // This is needed to avoid downloading the same meta during the time it takes for this task to complete.
+                                // This can happen when a single message processing thread and the this thread update cache for the same function, which has a very low chance of actually happening.
                                 //TODO: investigate the use of a minimum refresh age based on the CachedMetaDataValue.cachedTime, this should prevent re-caching metadata if it was just cached.
                                 updateCache(connectionName, key.query, buildJdbcTemplate(dataSource, 0, timeoutSeconds), key.schemaNameOption, lastUseTime);
                             }
