@@ -69,6 +69,10 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
             throw new PolicyAssertionException(assertion, "Assertion must supply a sql statement");
         }
 
+        if (assertion.getSchema() != null && !Syntax.isAnyVariableReferenced(assertion.getSchema()) && assertion.getSchema().matches(".*\\s.*")) {
+            throw new PolicyAssertionException(assertion, "JDBC Query assertion schema must not contain spaces: " + assertion.getSchema());
+        }
+
         if (!Syntax.isAnyVariableReferenced(assertion.getConnectionName()) && (assertion.getSchema() == null || !Syntax.isAnyVariableReferenced(assertion.getSchema()))) {
             jdbcQueryingManager.registerQueryForPossibleCaching(assertion.getConnectionName(), assertion.getSqlQuery(), assertion.getSchema());
         }
@@ -100,6 +104,9 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
             if (!ValidationUtils.isValidInteger(resolvedQueryTimeout, false, 0, Integer.MAX_VALUE)) {
                 logAndAudit(AssertionMessages.JDBC_QUERYING_FAILURE_ASSERTION_FAILED, "Invalid resolved value for query timeout: " + resolvedQueryTimeout);
                 return AssertionStatus.FAILED;
+            }
+            if (schema != null && schema.matches(".*\\s.*")) {
+                throw new PolicyAssertionException(assertion, "JDBC Query assertion schema must not contain spaces: " + schema);
             }
             final int queryTimeout = Integer.parseInt(resolvedQueryTimeout);
 

@@ -27,7 +27,9 @@ import com.l7tech.util.*;
 import org.apache.commons.lang.RandomStringUtils;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.mockito.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,24 +44,21 @@ import org.springframework.jdbc.support.rowset.SqlRowSet;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.sql.DataSource;
 import javax.sql.rowset.serial.SerialBlob;
 import javax.sql.rowset.serial.SerialClob;
+import java.io.IOException;
 import java.sql.*;
 import java.util.*;
 import java.util.Date;
-import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
-import static com.l7tech.util.Functions.reduce;
+import static com.l7tech.gateway.common.audit.AssertionMessages.JDBC_QUERYING_FAILURE_ASSERTION_FAILED;
 import static org.junit.Assert.*;
-import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.*;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static com.l7tech.gateway.common.audit.AssertionMessages.JDBC_QUERYING_FAILURE_ASSERTION_FAILED;
 
 /**
  * @author ghuang
@@ -91,6 +90,9 @@ public class ServerJdbcQueryAssertionTest {
     private AbstractDataSource dataSource;
     @Mock
     private DatabaseMetaData databaseMetaData;
+
+    @Rule
+    public ExpectedException exception = ExpectedException.none();
 
     @Before
     public void setUp() throws Exception {
@@ -1261,6 +1263,34 @@ public class ServerJdbcQueryAssertionTest {
         fixture.checkRequest(peCtx);
         assertNotNull(peCtx.getVariable("jdbcQuery.outparam"));
         assertEquals(((Object[]) peCtx.getVariable("jdbcQuery.outparam"))[0], "output param1");
+    }
+
+    @BugId("SSM-4301")
+    @Test
+    public void testSchemaNameWithSpaced() throws PolicyAssertionException, IOException {
+        JdbcQueryAssertion assertion = new JdbcQueryAssertion();
+        assertion.setConnectionName("MySQL");
+        assertion.setSqlQuery("call myFunc 123");
+        assertion.setSchema("Schema with Space");
+
+        exception.expect(PolicyAssertionException.class);
+        exception.expectMessage("JDBC Query assertion schema must not contain spaces");
+        new ServerJdbcQueryAssertion(assertion, appCtx);
+    }
+
+    @BugId("SSM-4301")
+    @Test
+    public void testSchemaNameWithSpacedWhenCheckRequest() throws PolicyAssertionException, IOException {
+        JdbcQueryAssertion assertion = new JdbcQueryAssertion();
+        assertion.setConnectionName("MySQL");
+        assertion.setSqlQuery("call myFunc 123");
+        assertion.setSchema("${schema.with.space}");
+        peCtx.setVariable("schema.with.space", "Schema with Space");
+        ServerJdbcQueryAssertion serverJdbcQueryAssertion = new ServerJdbcQueryAssertion(assertion, appCtx);
+
+        exception.expect(PolicyAssertionException.class);
+        exception.expectMessage("JDBC Query assertion schema must not contain spaces");
+        serverJdbcQueryAssertion.checkRequest(peCtx);
     }
 
     // returns a stored procedure formatted result with 'bytes' column containing a blob

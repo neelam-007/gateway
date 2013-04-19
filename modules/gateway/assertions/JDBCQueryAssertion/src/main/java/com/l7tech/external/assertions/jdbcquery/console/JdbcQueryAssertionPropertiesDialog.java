@@ -14,6 +14,7 @@ import com.l7tech.gui.util.*;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.variable.Syntax;
+import com.l7tech.policy.variable.VariableNameSyntaxException;
 import com.l7tech.util.MutablePair;
 import com.l7tech.util.SyspropUtil;
 import com.l7tech.util.ValidationUtils;
@@ -475,6 +476,9 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
                     if (Syntax.getReferencedNames(schemaName).length > 0) {
                         displayQueryTestingResult("Cannot process testing due to JDBC Schema name containing context variable(s).");
                         return;
+                    } else if (schemaName.matches(".*\\s.*")) {
+                        displayQueryTestingResult("Cannot process testing due to JDBC Schema name containing spaces.");
+                        return;
                     }
 
                     if (Syntax.getReferencedNames(connName).length > 0) {
@@ -671,6 +675,11 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
             }
         }
 
+        if(schemaTextField.isEnabled() && !isSchemaValid()) {
+            DialogDisplayer.showMessageDialog(this, "Schema must be a single variable reference or a string that does not contain spaces.", "Invalid Schema", JOptionPane.INFORMATION_MESSAGE, null);
+            return;
+        }
+
         if (!isQueryTimeoutValid()) {
             DialogDisplayer.showMessageDialog(this, "Query Timeout must be a single variable reference or a valid Integer >= 0", "Invalid Query Timeout", JOptionPane.INFORMATION_MESSAGE, null);
             return;
@@ -696,6 +705,14 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
 
     }
 
+    private boolean isSchemaValid(){
+        final String schema = schemaTextField.getText().trim();
+        try {
+            return Syntax.isOnlyASingleVariableReferenced(schema) || (!Syntax.isAnyVariableReferenced(schema) && !schema.matches(".*\\s.*"));
+        } catch (VariableNameSyntaxException e) {
+            return false;
+        }
+    }
 
     private void doCancel() {
         JdbcQueryAssertionPropertiesDialog.this.dispose();
