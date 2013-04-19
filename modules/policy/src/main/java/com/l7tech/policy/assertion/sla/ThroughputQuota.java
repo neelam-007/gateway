@@ -13,9 +13,12 @@ import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
+import com.l7tech.policy.wsp.*;
 import com.l7tech.util.TextUtils;
 import com.l7tech.util.ValidationUtils;
+import org.w3c.dom.Element;
 
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -333,7 +336,12 @@ public class ThroughputQuota extends Assertion implements UsesVariables, SetsVar
 
         meta.put(PROPERTIES_ACTION_CLASSNAME, "com.l7tech.console.action.ThroughputQuotaPropertiesAction");
         meta.put(PROPERTIES_ACTION_NAME, "Throughput Quota Properties");
-        
+
+        final AssertionMapping tm = (AssertionMapping)meta.get(WSP_TYPE_MAPPING_INSTANCE);
+        meta.put(AssertionMetadata.WSP_COMPATIBILITY_MAPPINGS, new HashMap<String, TypeMapping>() {{
+            put("HalfAsyncThroughputQuota", halfAsyncCompatibilityMapping(tm));
+        }});
+
         return meta;
     }
 
@@ -362,5 +370,21 @@ public class ThroughputQuota extends Assertion implements UsesVariables, SetsVar
         if (readableCounterName.length() > 128) readableCounterName = TextUtils.truncateStringAtEnd(readableCounterName, 128);
 
         return readableCounterName;
+    }
+
+    /**
+     * Build a compatibility mapping that will read serialized XML produced by a HalfAsyncThroughputQuota.aar file
+     * (that we used as a stopgap pre-Goatfish) and instantiate a modern ThroughputQuota assertion in half-async mode.
+     *
+     * @param defaultMapping the default mapping for ThroughputQuota, to which almost all the work will be delegated.
+     * @return a TypeMapping that will parse HalfAsyncThroughputQuota policy XML into a ThroughputQuota assertion in half-async mode.
+     */
+    static TypeMapping halfAsyncCompatibilityMapping(final AssertionMapping defaultMapping) {
+        return new CompatibilityAssertionMapping(new ThroughputQuota(), "HalfAsyncThroughputQuota") {
+            protected void configureAssertion(Assertion ass, Element source, WspVisitor visitor) throws InvalidPolicyStreamException {
+                defaultMapping.populateObject(new TypedReference(ThroughputQuota.class, ass), source, visitor);
+                ((ThroughputQuota)ass).setSynchronous(false);
+            }
+        };
     }
 }

@@ -11,12 +11,6 @@ import com.l7tech.policy.assertion.sla.ThroughputQuota;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.policy.wsp.WspConstants;
 import com.l7tech.policy.wsp.WspReader;
-
-import static com.l7tech.util.CollectionUtils.MapBuilder;
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertTrue;
-import static org.junit.Assert.*;
-
 import com.l7tech.security.token.OpaqueSecurityToken;
 import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.ServerConfigParams;
@@ -25,6 +19,7 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.assertion.AssertionStatusException;
 import com.l7tech.server.sla.CounterManagerStub;
+import com.l7tech.test.BugId;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.MockConfig;
 import org.jetbrains.annotations.Nullable;
@@ -34,9 +29,14 @@ import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
 import java.text.MessageFormat;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+
+import static com.l7tech.util.CollectionUtils.MapBuilder;
+import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.fail;
 
 /**
  * @author jbufu
@@ -63,6 +63,33 @@ public class ServerThroughputQuotaTest {
         context.getDefaultAuthenticationContext().addAuthenticationResult(new AuthenticationResult(new InternalUser("testUser"), new OpaqueSecurityToken()));
     }
 
+    @Test
+    @BugId("SSG-6851")
+    public void testCompatibilityHalfAsyncThoughputQuotaModularAssertion() throws Exception {
+        final String policyXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+            "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+            "        <L7p:HalfAsyncThroughputQuota>\n" +
+            "            <L7p:CounterName stringValue=\"36994f1d-${request.authenticateduser.id}-${request.authenticateduser.providerid}-blahblah\"/>\n" +
+            "            <L7p:CounterStrategy intValue=\"1\"/>\n" +
+            "            <L7p:Global booleanValue=\"true\"/>\n" +
+            "            <L7p:Quota stringValue=\"553\"/>\n" +
+            "            <L7p:Synchronous booleanValue=\"false\"/>\n" +
+            "            <L7p:VariablePrefix stringValue=\"asdf\"/>\n" +
+            "        </L7p:HalfAsyncThroughputQuota>\n" +
+            "</wsp:Policy>";
+
+        AssertionRegistry tmf = new AssertionRegistry();
+        tmf.setApplicationContext(null);
+        WspConstants.setTypeMappingFinder(tmf);
+        WspReader wspReader = new WspReader(tmf);
+        tmf.registerAssertion(ThroughputQuota.class);
+
+        final ThroughputQuota assertion = (ThroughputQuota) wspReader.parseStrictly(policyXml, WspReader.INCLUDE_DISABLED);
+        assertTrue("Expected throughput quota 553, got '" + assertion.getQuota(), assertion.getQuota().equals("553"));
+        assertTrue("Expected high perf mode; sync=" + assertion.isSynchronous(), !assertion.isSynchronous());
+        assertEquals("var prefix", assertion.getVariablePrefix(), "asdf");
+        assertEquals("custom counter name", assertion.getCounterName(), "36994f1d-${request.authenticateduser.id}-${request.authenticateduser.providerid}-blahblah");
+    }
 
     @Test
     public void testCompatibilityBug5043Format() throws Exception {
