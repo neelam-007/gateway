@@ -52,12 +52,17 @@ public interface RbacAdmin {
     /**
      * Gets the roles assigned to the given user.  This is unsecured, so that anyone running
      * the SSM can find out what functionality they can access.
+     * <p/>
+     * <b>Note</b>: this method <em>intentionally</em> avoids validating user accounts (e.g. whether they're expired or disabled).
+     * <b>Don't ever use it for authorization</b>!
      *
-     * The User cannot be null.
+     * @param user the user whose roles to look up.  Must not be null.
+     * @return the roles for this user.  May be empty but never null.
      */
     @Transactional(readOnly=true)
     @Administrative(licensed=false)
     Collection<Role> findRolesForUser(User user) throws FindException;
+
     /**
      * Saves the specified Role.
      * @return the OID of the role that was saved
