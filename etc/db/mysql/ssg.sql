@@ -1057,8 +1057,10 @@ CREATE TABLE uddi_registries (
   monitoring_enabled tinyint(1) NOT NULL DEFAULT 0,
   subscribe_for_notifications tinyint(1) NOT NULL DEFAULT 0,
   monitor_frequency integer NOT NULL DEFAULT 0,
+  security_zone_oid bigint(20),
   PRIMARY KEY (objectid),
-  UNIQUE(name)
+  UNIQUE(name),
+  CONSTRAINT uddi_reg_security_zone FOREIGN KEY (security_zone_oid) REFERENCES security_zone (objectid) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --
@@ -1205,7 +1207,7 @@ CREATE TABLE uddi_service_control (
   publish_wspolicy_full tinyint(1) NOT NULL DEFAULT 0,
   publish_wspolicy_inlined tinyint(1) NOT NULL DEFAULT 0,
   has_had_endpoints_removed tinyint(1) NOT NULL DEFAULT 0,
-  has_been_overwritten tinyint(1) NOT NULL DEFAULT 0,        
+  has_been_overwritten tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (objectid),
   UNIQUE KEY  (published_service_oid),
   FOREIGN KEY (published_service_oid) REFERENCES published_service (objectid) ON DELETE CASCADE,

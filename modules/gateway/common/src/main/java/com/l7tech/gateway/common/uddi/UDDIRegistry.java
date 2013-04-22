@@ -5,6 +5,7 @@
 package com.l7tech.gateway.common.uddi;
 
 import com.l7tech.objectmodel.imp.NamedEntityImp;
+import com.l7tech.objectmodel.imp.ZoneableNamedEntityImp;
 import com.l7tech.policy.wsp.WspSensitive;
 import org.hibernate.annotations.Proxy;
 
@@ -15,7 +16,7 @@ import javax.persistence.Table;
 @Entity
 @Proxy(lazy=false)
 @Table(name="uddi_registries")
-public class UDDIRegistry extends NamedEntityImp {
+public class UDDIRegistry extends ZoneableNamedEntityImp {
 
     public enum UDDIRegistryType{
         CENTRASITE_ACTIVE_SOA("CentraSite ActiveSOA"),
@@ -275,5 +276,6 @@ public class UDDIRegistry extends NamedEntityImp {
         this.setMonitoringEnabled(copyFrom.isMonitoringEnabled());
         this.setMonitoringFrequency(copyFrom.getMonitoringFrequency());
         this.setSubscribeForNotifications(copyFrom.isSubscribeForNotifications());
+        this.setSecurityZone(copyFrom.getSecurityZone());
     }
 }

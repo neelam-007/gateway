@@ -14,7 +14,7 @@ import javax.xml.bind.annotation.XmlTransient;
  */
 @MappedSuperclass
 public abstract class ZoneablePersistentEntityImp extends PersistentEntityImp implements ZoneableEntity {
-    private SecurityZone securityZone;
+    protected SecurityZone securityZone;
 
     protected ZoneablePersistentEntityImp() {
         super();

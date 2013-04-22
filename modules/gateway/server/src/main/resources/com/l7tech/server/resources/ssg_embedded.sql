@@ -942,6 +942,7 @@ create table uddi_registries (
     subscribe_for_notifications smallint,
     subscription_url varchar(4096),
     registry_type varchar(255),
+    security_zone_oid bigint references security_zone(objectid) on delete set null,
     primary key (objectid)
 );
 

@@ -2,6 +2,7 @@ package com.l7tech.console.panels;
 
 import com.l7tech.console.util.PasswordGuiUtils;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.SecurityZoneWidget;
 import com.l7tech.gateway.common.admin.UDDIRegistryAdmin;
 import com.l7tech.gateway.common.uddi.UDDIRegistry;
 import com.l7tech.gui.util.DialogDisplayer;
@@ -9,6 +10,7 @@ import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.TextListCellRenderer;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.uddi.UDDIException;
 import com.l7tech.uddi.UDDIRegistryInfo;
 import com.l7tech.util.ExceptionUtils;
@@ -73,6 +75,7 @@ public class UddiRegistryPropertiesDialog extends JDialog {
     private JButton testUDDIRegistryButton;
     private JLabel uddiRegistryNameLabel;
     private JLabel uddiRegistryTypeLabel;
+    private SecurityZoneWidget zoneControl;
 
     private UDDIRegistry uddiRegistry;
     private boolean subscriptionServiceAvailable;
@@ -225,6 +228,7 @@ public class UddiRegistryPropertiesDialog extends JDialog {
                 }
             }
         });
+        zoneControl.setEntityType(EntityType.UDDI_REGISTRY);
 
         //field validation
         inputValidator.constrainTextFieldToBeNonEmpty("UDDI Registry Name", registryNameTextField, null);
@@ -464,6 +468,7 @@ public class UddiRegistryPropertiesDialog extends JDialog {
             subscribeForNotificationRadioButton.setSelected(true);
             notificationFrequencyTextField.setText( DEFAULT_SUBSCRIPTION_INTERVAL );
         }
+        zoneControl.setSelectedZone(uddiRegistry.getSecurityZone());
         enableOrDisableComponents();
     }
 
@@ -593,6 +598,7 @@ public class UddiRegistryPropertiesDialog extends JDialog {
         } else {
             uddiRegistry.setMonitoringFrequency( 0L );
         }
+        uddiRegistry.setSecurityZone(zoneControl.getSelectedZone());
     }
 
     @Override
