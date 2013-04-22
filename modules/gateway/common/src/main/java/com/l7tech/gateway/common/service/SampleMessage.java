@@ -1,11 +1,11 @@
 package com.l7tech.gateway.common.service;
 
-import com.l7tech.objectmodel.imp.NamedEntityImp;
+import com.l7tech.objectmodel.imp.ZoneableNamedEntityImp;
 
 /**
  * Holds a sample message for a {@link PublishedService}.
  */
-public class SampleMessage extends NamedEntityImp {
+public class SampleMessage extends ZoneableNamedEntityImp {
     public static final String ATTR_SERVICE_OID = "serviceOid";
 
     public SampleMessage(long serviceOid, String name, String operationName, String xml) {
@@ -64,5 +64,6 @@ public class SampleMessage extends NamedEntityImp {
         this.serviceOid = sm.serviceOid;
         this.operationName = sm.operationName;
         this.xml = sm.xml;
+        this.securityZone = sm.getSecurityZone();
     }
 }

@@ -819,10 +819,12 @@ CREATE TABLE sample_messages (
   name varchar(128) NOT NULL,
   xml mediumtext NOT NULL,
   operation_name varchar(128),
+  security_zone_oid bigint(20),
   INDEX i_ps_oid (published_service_oid),
   INDEX i_operation_name (operation_name),
   FOREIGN KEY (published_service_oid) REFERENCES published_service (objectid) ON DELETE CASCADE,
-  PRIMARY KEY (objectid)
+  PRIMARY KEY (objectid),
+  CONSTRAINT sample_msg_security_zone FOREIGN KEY (security_zone_oid) REFERENCES security_zone (objectid) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
 DROP TABLE IF EXISTS service_metrics;

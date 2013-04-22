@@ -730,6 +730,7 @@ create table sample_messages (
     operation_name varchar(255),
     published_service_oid bigint,
     "xml" clob(2147483647),
+    security_zone_oid bigint references security_zone(objectid) on delete set null,
     primary key (objectid)
 );
 

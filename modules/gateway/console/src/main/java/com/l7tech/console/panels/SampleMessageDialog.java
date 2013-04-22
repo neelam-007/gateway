@@ -1,6 +1,7 @@
 package com.l7tech.console.panels;
 
 import com.japisoft.xmlpad.XMLContainer;
+import com.l7tech.console.util.SecurityZoneWidget;
 import com.l7tech.console.util.XMLContainerFactory;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
@@ -17,6 +18,7 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.HashSet;
 
+import com.l7tech.objectmodel.EntityType;
 import org.w3c.dom.*;
 
 /**
@@ -33,6 +35,7 @@ public class SampleMessageDialog extends JDialog {
     private JButton cancelButton;
     private JPanel mainPanel;
     private JTextField nameField;
+    private SecurityZoneWidget zoneControl;
     private XMLContainer xmlContainer;
     private Map<String, String> namespaces;
 
@@ -67,6 +70,7 @@ public class SampleMessageDialog extends JDialog {
         okButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 message.setName(nameField.getText());
+                message.setSecurityZone(zoneControl.getSelectedZone());
                 if (allowOperationChange) message.setOperationName(operationNameField.getText());
                 String text = xmlContainer.getAccessibility().getText();
                 try {
@@ -132,7 +136,8 @@ public class SampleMessageDialog extends JDialog {
         });
 
         add(mainPanel);
-
+        zoneControl.setEntityType(EntityType.SAMPLE_MESSAGE);
+        zoneControl.setSelectedZone(message.getSecurityZone());
         enableButtons();
     }
 
