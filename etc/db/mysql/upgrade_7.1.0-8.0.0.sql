@@ -100,6 +100,11 @@ alter table uddi_registries add FOREIGN KEY (security_zone_oid) REFERENCES secur
 
 alter table sample_messages add column security_zone_oid bigint(20);
 alter table sample_messages add FOREIGN KEY (security_zone_oid) REFERENCES security_zone (objectid) ON DELETE SET NULL;
+
+alter table jms_endpoint add column security_zone_oid bigint(20);
+alter table jms_endpoint add FOREIGN KEY (security_zone_oid) REFERENCES security_zone (objectid) ON DELETE SET NULL;
+alter table jms_connection add column security_zone_oid bigint(20);
+alter table jms_connection add FOREIGN KEY (security_zone_oid) REFERENCES security_zone (objectid) ON DELETE SET NULL;
 --
 -- RBAC for Assertions: Update "Publish Webservices" and "Manage Webservices" canned roles so they can still use policy assertions in 8.0
 --

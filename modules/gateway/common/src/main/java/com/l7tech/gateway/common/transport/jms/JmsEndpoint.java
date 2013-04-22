@@ -8,7 +8,7 @@ package com.l7tech.gateway.common.transport.jms;
 
 import com.l7tech.gateway.common.security.password.SecurePasswordReferenceExpander;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.imp.NamedEntityImp;
+import com.l7tech.objectmodel.imp.ZoneableNamedEntityImp;
 import com.l7tech.policy.wsp.WspSensitive;
 import org.hibernate.annotations.Proxy;
 
@@ -27,7 +27,7 @@ import java.net.PasswordAuthentication;
 @Entity
 @Proxy(lazy=false)
 @Table(name="jms_endpoint")
-public class JmsEndpoint extends NamedEntityImp implements Serializable, Comparable {
+public class JmsEndpoint extends ZoneableNamedEntityImp implements Serializable, Comparable {
     public static final int DEFAULT_MAX_CONCURRENT_REQUESTS = 1;
 
     private long _connectionOid;
@@ -75,6 +75,7 @@ public class JmsEndpoint extends NamedEntityImp implements Serializable, Compara
         setDisabled(other.isDisabled());
         setUseMessageIdForCorrelation(other.isUseMessageIdForCorrelation());
         setRequestMaxSize(other.getRequestMaxSize());
+        setSecurityZone(other.getSecurityZone());
     }
 
     /**

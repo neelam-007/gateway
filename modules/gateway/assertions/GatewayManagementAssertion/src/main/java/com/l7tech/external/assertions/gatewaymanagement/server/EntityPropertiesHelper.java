@@ -381,7 +381,8 @@ class EntityPropertiesHelper {
             "oid",
             "properties",
             "providerType",
-            "template"
+            "template",
+            "securityZone"
         ) )
         .put( JmsEndpoint.class, list(
             "oid",
@@ -394,7 +395,8 @@ class EntityPropertiesHelper {
             "maxConcurrentRequests",
             "messageSource",
             "template",
-            "queue"
+            "queue",
+            "securityZone"
         ) )
         .put( Policy.class, list(
             "xml",

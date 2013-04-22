@@ -464,6 +464,7 @@ create table jms_connection (
     is_template smallint default 0,
     topic_factory_url varchar(255),
     username varchar(255),
+    security_zone_oid bigint references security_zone(objectid) on delete set null,
     primary key (objectid)
 );
 
@@ -487,6 +488,7 @@ create table jms_endpoint (
     is_template smallint default 0,
     use_message_id_for_correlation smallint,
     username varchar(255),
+    security_zone_oid bigint references security_zone(objectid) on delete set null,
     primary key (objectid)
 );
 

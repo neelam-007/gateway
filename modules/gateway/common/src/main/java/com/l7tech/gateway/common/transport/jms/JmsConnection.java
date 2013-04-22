@@ -4,7 +4,7 @@
 
 package com.l7tech.gateway.common.transport.jms;
 
-import com.l7tech.objectmodel.imp.NamedEntityImp;
+import com.l7tech.objectmodel.imp.ZoneableNamedEntityImp;
 import com.l7tech.policy.wsp.WspSensitive;
 import com.l7tech.util.PoolByteArrayOutputStream;
 import com.l7tech.util.Charsets;
@@ -30,7 +30,7 @@ import java.util.logging.Logger;
 @Entity
 @Proxy(lazy=false)
 @Table(name="jms_connection")
-public class JmsConnection extends NamedEntityImp implements Serializable {
+public class JmsConnection extends ZoneableNamedEntityImp implements Serializable {
     private static final Logger logger = Logger.getLogger(JmsConnection.class.getName());
     private static final Charset ENCODING = Charsets.UTF8;
 
@@ -108,6 +108,7 @@ public class JmsConnection extends NamedEntityImp implements Serializable {
         setProperties( other.getProperties() );
         setCachedProperties( other.properties() );
         setProviderType( other.getProviderType() );
+        setSecurityZone(other.getSecurityZone());
     }
 
     @Override

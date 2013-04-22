@@ -430,7 +430,9 @@ CREATE TABLE jms_connection (
   is_template tinyint NOT NULL default '0',
   properties mediumtext,
   provider_type varchar(255),
-  primary key(objectid)
+  security_zone_oid bigint(20),
+  primary key(objectid),
+  CONSTRAINT jms_conn_security_zone FOREIGN KEY (security_zone_oid) REFERENCES security_zone (objectid) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --
@@ -458,7 +460,9 @@ CREATE TABLE jms_endpoint(
   outbound_message_type varchar(128),
   use_message_id_for_correlation tinyint(1) NOT NULL DEFAULT 0,
   request_max_size bigint NOT NULL default -1,
-  primary key(objectid)
+  security_zone_oid bigint(20),
+  primary key(objectid),
+  CONSTRAINT jms_endpoint_security_zone FOREIGN KEY (security_zone_oid) REFERENCES security_zone (objectid) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
 DROP TABLE IF EXISTS revocation_check_policy;

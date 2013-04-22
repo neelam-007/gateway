@@ -2,24 +2,22 @@ package com.l7tech.console.util;
 
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.SecurityZone;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import javax.swing.border.LineBorder;
 import java.awt.*;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Widget that allows selection of a security zone.
  * <p/>
- * Users should call either {@link #reloadZones()} or {@link #setEntityType(com.l7tech.objectmodel.EntityType)}
+ * Users should call either {@link #reloadZones()} or {@link #setEntityType(com.l7tech.objectmodel.EntityType) or {@link #setEntityTypes(java.util.Collection)}}
  * before the widget is displayed.
  */
 public class SecurityZoneWidget extends JComboBox<SecurityZone> {
-    private EntityType entityType = null;
+    private Collection<EntityType> entityTypes = null;
     private boolean zoneLoadAttempted = false;
     private boolean hideIfNoZones = true;
 
@@ -58,8 +56,26 @@ public class SecurityZoneWidget extends JComboBox<SecurityZone> {
      *
      * @param entityType entity type to filter, or null to show zone list unfiltered by zone entity type restrictions.
      */
-    public void setEntityType(EntityType entityType) {
-        this.entityType = entityType;
+    public void setEntityType(@Nullable EntityType entityType) {
+        if (entityType != null) {
+            setEntityTypes(Collections.singletonList(entityType));
+        } else {
+            setEntityTypes(null);
+        }
+    }
+
+    /**
+     * Setting entity types filters the presented zone list to only those zones which permit all of the specified
+     * entity types.
+     *
+     * @param entityTypes entity types to filter, or null to show zone list unfiltered by zone entity type restrictions.
+     */
+    public void setEntityTypes(@Nullable final Collection<EntityType> entityTypes) {
+        if (entityTypes != null) {
+            this.entityTypes = new ArrayList<EntityType>(entityTypes);
+        } else {
+            this.entityTypes = null;
+        }
         reloadZones();
     }
 
@@ -75,14 +91,31 @@ public class SecurityZoneWidget extends JComboBox<SecurityZone> {
         if (zones.isEmpty() && hideIfNoZones)
             setVisible(false);
 
-        if (entityType != null) {
+        if (entityTypes != null) {
             Set<SecurityZone> permittedZones = new HashSet<>();
-            for (SecurityZone zone : zones) {
-                if (zone.permitsEntityType(entityType))
+            for (final SecurityZone zone : zones) {
+                boolean permitted = true;
+                for (final EntityType entityType : entityTypes) {
+                    if (!zone.permitsEntityType(entityType)) {
+                        permitted = false;
+                        break;
+                    }
+                }
+                if (permitted) {
                     permittedZones.add(zone);
+                }
             }
             zones = permittedZones;
         }
+
+//        if (entityType != null) {
+//            Set<SecurityZone> permittedZones = new HashSet<>();
+//            for (SecurityZone zone : zones) {
+//                if (zone.permitsEntityType(entityType))
+//                    permittedZones.add(zone);
+//            }
+//            zones = permittedZones;
+//        }
 
         loadedZones = new ArrayList<>();
         loadedZones.add(NULL_ZONE);

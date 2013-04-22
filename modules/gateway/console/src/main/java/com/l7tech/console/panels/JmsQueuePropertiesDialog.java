@@ -5,6 +5,7 @@ import com.l7tech.console.security.FormAuthorizationPreparer;
 import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.util.PasswordGuiUtils;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.SecurityZoneWidget;
 import com.l7tech.gateway.common.security.rbac.AttemptedCreate;
 import com.l7tech.gateway.common.security.rbac.AttemptedOperation;
 import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
@@ -120,6 +121,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
     private JLabel jndiPasswordWarningLabel;
     private JLabel queuePasswordWarningLabel;
     private ByteLimitPanel byteLimitPanel;
+    private SecurityZoneWidget zoneControl;
 
 
     private JmsConnection connection = null;
@@ -498,6 +500,9 @@ public class JmsQueuePropertiesDialog extends JDialog {
             }
         });
 
+        // the SecurityZoneWidget is shared by both the JmsEndpoint and JmsConnection
+        zoneControl.setEntityTypes(Arrays.asList(EntityType.JMS_CONNECTION, EntityType.JMS_ENDPOINT));
+
         pack();
         initializeView();
         enableOrDisableComponents();
@@ -791,7 +796,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
             properties.setProperty(JmsConnection.JMS_MSG_PROP_WITH_SOAPACTION, jmsMsgPropWithSoapActionTextField.getText());
         }
         conn.properties(properties);
-
+        conn.setSecurityZone(zoneControl.getSelectedZone());
         return conn;
     }
 
@@ -821,7 +826,8 @@ public class JmsQueuePropertiesDialog extends JDialog {
         ep.setQueue( TYPE_QUEUE.equals(destinationTypeComboBox.getSelectedItem()) );
         ep.setTemplate(viewIsTemplate());
         ep.setDestinationName(getTextOrNull(queueNameTextField));
-        
+        ep.setSecurityZone(zoneControl.getSelectedZone());
+
         JmsAcknowledgementType type = (JmsAcknowledgementType) acknowledgementModeComboBox.getSelectedItem();
 
         JmsOutboundMessageType omt = JmsOutboundMessageType.AUTOMATIC;
@@ -1104,6 +1110,8 @@ public class JmsQueuePropertiesDialog extends JDialog {
         if (inboundRadioButton.isSelected() && endpoint.isDisabled()) {
             disableListeningTheQueueCheckBox.setSelected(true);
         }
+
+        zoneControl.setSelectedZone(endpoint != null ? endpoint.getSecurityZone() : null);
 
         enableOrDisableComponents();
     }
