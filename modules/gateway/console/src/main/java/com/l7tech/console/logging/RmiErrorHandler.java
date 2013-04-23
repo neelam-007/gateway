@@ -96,12 +96,14 @@ public class RmiErrorHandler implements ErrorHandler {
             // if t = null, show message dialog, otherwise, show error dialog.
             DialogDisplayer.showMessageDialog(topParent, null, message, t);
         } else if (throwable instanceof ValidationException){
-            e.getLogger().log(Level.WARNING, "Invalid User.");
+            e.getLogger().log(Level.INFO, "Invalid User.");
             TopComponents.getInstance().setConnectionLost(true);
             TopComponents.getInstance().disconnectFromGateway();
             String message = "Invalid User.  Connection to the Gateway has been broken.";
             refreshUI( topParent );
-            DialogDisplayer.showMessageDialog(topParent, null, message, throwable);
+            DialogDisplayer.showMessageDialog(topParent,
+                    message,
+                    "Invalid User.", JOptionPane.WARNING_MESSAGE, null);
         } else {
             e.handle();
         }
