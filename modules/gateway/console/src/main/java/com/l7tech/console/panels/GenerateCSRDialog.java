@@ -66,6 +66,7 @@ public class GenerateCSRDialog extends JDialog {
         signatureHashComboBox.setSelectedItem(defaultSignatureHash);
 
         dnTextField.setText(defaultDN);
+        dnTextField.setCaretPosition(0);
     }
 
     private void onOK() {

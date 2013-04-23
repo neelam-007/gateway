@@ -200,6 +200,7 @@ public class SigningCertificatePropertiesDialog extends JDialog {
         if (csrProps == null || csrProps.isEmpty()) return;
 
         subjectDnTextField.setText(csrProps.get(TrustedCertAdmin.CSR_PROP_SUBJECT_DN));
+        subjectDnTextField.setCaretPosition(0);
 
         final String keyType = csrProps.get(TrustedCertAdmin.CSR_PROP_KEY_TYPE);
         if (keyType == null) return;
