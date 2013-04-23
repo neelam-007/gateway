@@ -912,6 +912,7 @@ create table uddi_proxied_service_info (
     update_proxy_on_local_change smallint,
     version integer,
     wsdl_hash varchar(512),
+    security_zone_oid bigint references security_zone(objectid) on delete set null,
     primary key (objectid)
 );
 
@@ -983,6 +984,7 @@ create table uddi_service_control (
     wsdl_port_binding_namespace varchar(255),
     wsdl_port_name varchar(255),
     wsdl_service_name varchar(255),
+    security_zone_oid bigint references security_zone(objectid) on delete set null,
     primary key (objectid)
 );
 

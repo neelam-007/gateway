@@ -8,6 +8,7 @@ import javax.persistence.Entity;
 import javax.persistence.Table;
 import javax.persistence.CascadeType;
 
+import com.l7tech.objectmodel.imp.ZoneablePersistentEntityImp;
 import com.l7tech.uddi.UDDIKeyedReference;
 import com.l7tech.uddi.UDDIUtilities;
 import com.l7tech.util.PoolByteArrayOutputStream;
@@ -38,7 +39,7 @@ import java.util.logging.Logger;
 @Entity
 @Proxy(lazy=false)
 @Table(name="uddi_proxied_service_info")
-public class UDDIProxiedServiceInfo extends PersistentEntityImp {
+public class UDDIProxiedServiceInfo extends ZoneablePersistentEntityImp {
 
     public static final String ATTR_SERVICE_OID = "publishedServiceOid";
 
@@ -192,6 +193,7 @@ public class UDDIProxiedServiceInfo extends PersistentEntityImp {
      * publishWsPolicyFull
      * publishWsPolicyInlined
      * UDDIProxiedServiceInfo.KEYED_REFERENCES
+     * securityZone
      *
      * This method will set the above properties from the 'proxiedServiceInfo' instance onto 'this'.
      * @param proxiedServiceInfo UDDIProxiedServiceInfo with modifications to persist.
@@ -202,7 +204,7 @@ public class UDDIProxiedServiceInfo extends PersistentEntityImp {
         this.setPublishWsPolicyEnabled(proxiedServiceInfo.isPublishWsPolicyEnabled());
         this.setPublishWsPolicyFull(proxiedServiceInfo.isPublishWsPolicyFull());
         this.setPublishWsPolicyInlined(proxiedServiceInfo.isPublishWsPolicyInlined());
-
+        this.setSecurityZone(proxiedServiceInfo.getSecurityZone());
         final Set<UDDIKeyedReference> fromUiRefs = proxiedServiceInfo.getProperty(UDDIProxiedServiceInfo.KEYED_REFERENCES_CONFIG);
         this.setProperty(UDDIProxiedServiceInfo.KEYED_REFERENCES_CONFIG, fromUiRefs);//ok if it's null, it just gets removed
     }

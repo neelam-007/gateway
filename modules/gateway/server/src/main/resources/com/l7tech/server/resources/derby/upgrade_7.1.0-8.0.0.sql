@@ -88,6 +88,10 @@ alter table revocation_check_policy add foreign key (security_zone_oid) referenc
 
 alter table uddi_registries add column security_zone_oid bigint;
 alter table uddi_registries add foreign key (security_zone_oid) references security_zone (objectid) on delete set null;
+alter table uddi_proxied_service_info add column security_zone_oid bigint;
+alter table uddi_proxied_service_info add foreign key (security_zone_oid) references security_zone (objectid) on delete set null;
+alter table uddi_service_control add column security_zone_oid bigint;
+alter table uddi_service_control add foreign key (security_zone_oid) references security_zone (objectid) on delete set null;
 
 alter table sample_messages add column security_zone_oid bigint;
 alter table sample_messages add foreign key (security_zone_oid) references security_zone (objectid) on delete set null;

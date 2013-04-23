@@ -97,6 +97,10 @@ alter table revocation_check_policy add FOREIGN KEY (security_zone_oid) REFERENC
 
 alter table uddi_registries add column security_zone_oid bigint(20);
 alter table uddi_registries add FOREIGN KEY (security_zone_oid) REFERENCES security_zone (objectid) ON DELETE SET NULL;
+alter table uddi_proxied_service_info add column security_zone_oid bigint(20);
+alter table uddi_proxied_service_info add FOREIGN KEY (security_zone_oid) REFERENCES security_zone (objectid) ON DELETE SET NULL;
+alter table uddi_service_control add column security_zone_oid bigint(20);
+alter table uddi_service_control add FOREIGN KEY (security_zone_oid) REFERENCES security_zone (objectid) ON DELETE SET NULL;
 
 alter table sample_messages add column security_zone_oid bigint(20);
 alter table sample_messages add FOREIGN KEY (security_zone_oid) REFERENCES security_zone (objectid) ON DELETE SET NULL;

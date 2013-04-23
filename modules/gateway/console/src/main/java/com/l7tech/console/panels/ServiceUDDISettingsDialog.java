@@ -1,5 +1,6 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.console.util.SecurityZoneWidget;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.uddi.UDDIRegistry;
 import com.l7tech.gateway.common.uddi.UDDIServiceControl;
@@ -15,6 +16,8 @@ import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.SecurityZone;
 import com.l7tech.uddi.UDDIKeyedReference;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.objectmodel.FindException;
@@ -64,6 +67,7 @@ public class ServiceUDDISettingsDialog extends JDialog {//TODO rename to Publish
     private JCheckBox gifPublishCheckBox;
     private JComboBox endPointTypeComboBox;
     private JLabel endPointTypeLabel;
+    private SecurityZoneWidget zoneControl;
 
     private PublishedService service;
     private boolean canUpdate;
@@ -256,7 +260,7 @@ public class ServiceUDDISettingsDialog extends JDialog {//TODO rename to Publish
             endPointTypeLabel.setVisible(isSystinet);
             endPointTypeComboBox.setVisible(isSystinet);
         }
-
+        zoneControl.setEntityType(EntityType.UDDI_PROXIED_SERVICE_INFO);
         modelToView();
         enableAndDisableComponents();
         Utilities.setEscKeyStrokeDisposes(this);
@@ -337,6 +341,7 @@ public class ServiceUDDISettingsDialog extends JDialog {//TODO rename to Publish
 
             clearStatusLabels(null);
         }
+        zoneControl.setSelectedZone(uddiProxyServiceInfo == null ? null : uddiProxyServiceInfo.getSecurityZone());
         
         // WS-Policy settings
         boolean originalWsPolicyAvailable = uddiServiceControl != null;
@@ -666,12 +671,21 @@ public class ServiceUDDISettingsDialog extends JDialog {//TODO rename to Publish
             }
         }
 
+        // check if security zone update is needed but radio button selection did not change
+        final SecurityZone existingZone = uddiProxyServiceInfo.getSecurityZone();
+        final SecurityZone selectedZone = zoneControl.getSelectedZone();
+        if (!dontPublishRadioButton.isSelected() && ((existingZone == null && selectedZone != null)
+                || (existingZone != null && !existingZone.equals(selectedZone)))) {
+            updateUddiProxiedServiceOnly(uddiRegistryAdmin);
+        }
+
         //The above processing of the SERVICE tab may have triggered an update to UDDI, in which case the dialog should dismiss.
         //Nothing below here should return false.
         return true;
     }
 
     private void updateUddiProxiedServiceOnly(UDDIRegistryAdmin uddiRegistryAdmin) {
+        uddiProxyServiceInfo.setSecurityZone(zoneControl.getSelectedZone());
         try {
             uddiRegistryAdmin.updateProxiedServiceOnly(uddiProxyServiceInfo);
         } catch (UpdateException e) {

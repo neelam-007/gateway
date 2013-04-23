@@ -250,7 +250,9 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
            original.isMetricsEnabled() != proxiedServiceInfo.isMetricsEnabled() ||
            original.isPublishWsPolicyEnabled() != proxiedServiceInfo.isPublishWsPolicyEnabled() ||
            original.isPublishWsPolicyFull() != proxiedServiceInfo.isPublishWsPolicyFull() ||
-           original.isPublishWsPolicyInlined() != proxiedServiceInfo.isPublishWsPolicyInlined();
+           original.isPublishWsPolicyInlined() != proxiedServiceInfo.isPublishWsPolicyInlined() ||
+           (original.getSecurityZone() == null && proxiedServiceInfo.getSecurityZone() != null ||
+                   original.getSecurityZone() != null && !original.getSecurityZone().equals(proxiedServiceInfo.getSecurityZone()));
 
         final boolean synchronizeWsdl = proxiedServiceInfo.isUpdateProxyOnLocalChange() &&
                 original.isUpdateProxyOnLocalChange() != proxiedServiceInfo.isUpdateProxyOnLocalChange();

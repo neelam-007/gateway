@@ -1109,10 +1109,12 @@ CREATE TABLE uddi_proxied_service_info (
   publish_type varchar(32) NOT NULL,
   wsdl_hash varchar(32) NOT NULL,
   properties mediumtext,
+  security_zone_oid bigint(20),
   PRIMARY KEY (objectid),
   UNIQUE KEY  (published_service_oid),
   FOREIGN KEY (published_service_oid) REFERENCES published_service (objectid) ON DELETE CASCADE,
-  FOREIGN KEY (uddi_registry_oid) REFERENCES uddi_registries (objectid) ON DELETE CASCADE
+  FOREIGN KEY (uddi_registry_oid) REFERENCES uddi_registries (objectid) ON DELETE CASCADE,
+  CONSTRAINT uddi_prox_svc_info_security_zone FOREIGN KEY (security_zone_oid) REFERENCES security_zone (objectid) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --
@@ -1214,10 +1216,12 @@ CREATE TABLE uddi_service_control (
   publish_wspolicy_inlined tinyint(1) NOT NULL DEFAULT 0,
   has_had_endpoints_removed tinyint(1) NOT NULL DEFAULT 0,
   has_been_overwritten tinyint(1) NOT NULL DEFAULT 0,
+  security_zone_oid bigint(20),
   PRIMARY KEY (objectid),
   UNIQUE KEY  (published_service_oid),
   FOREIGN KEY (published_service_oid) REFERENCES published_service (objectid) ON DELETE CASCADE,
-  FOREIGN KEY (uddi_registry_oid) REFERENCES uddi_registries (objectid) ON DELETE CASCADE
+  FOREIGN KEY (uddi_registry_oid) REFERENCES uddi_registries (objectid) ON DELETE CASCADE,
+  CONSTRAINT uddi_svc_ctrl_security_zone FOREIGN KEY (security_zone_oid) REFERENCES security_zone (objectid) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --

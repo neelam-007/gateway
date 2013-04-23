@@ -6,6 +6,7 @@ import javax.persistence.Table;
 import javax.persistence.Version;
 import javax.persistence.Column;
 
+import com.l7tech.objectmodel.imp.ZoneablePersistentEntityImp;
 import com.l7tech.util.BeanUtils;
 import org.hibernate.annotations.Proxy;
 /**
@@ -14,7 +15,7 @@ import org.hibernate.annotations.Proxy;
 @Entity
 @Proxy(lazy=false)
 @Table(name="uddi_service_control")
-public class UDDIServiceControl extends PersistentEntityImp {
+public class UDDIServiceControl extends ZoneablePersistentEntityImp {
     public static final String ATTR_SERVICE_OID = "publishedServiceOid";
 
     //- PUBLIC
@@ -272,6 +273,7 @@ public class UDDIServiceControl extends PersistentEntityImp {
             return false;
         if (!wsdlPortName.equals(that.wsdlPortName)) return false;
         if (!wsdlServiceName.equals(that.wsdlServiceName)) return false;
+        if (securityZone != null ? !securityZone.equals(that.securityZone) : that.securityZone != null) return false;
 
         return true;
     }
@@ -299,6 +301,8 @@ public class UDDIServiceControl extends PersistentEntityImp {
         result = 31 * result + (hasHadEndpointRemoved ? 1 : 0);
         result = 31 * result + (hasBeenOverwritten ? 1 : 0);
         result = 31 * result + (wsdlPortBindingNamespace != null ? wsdlPortBindingNamespace.hashCode() : 0);
+        result = 31 * result + (securityZone != null ? securityZone.hashCode() : 0);
+
         return result;
     }
 
