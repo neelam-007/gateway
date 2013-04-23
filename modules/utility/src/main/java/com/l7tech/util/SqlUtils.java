@@ -108,8 +108,8 @@ public class SqlUtils {
                     builder.append( tokenizer.sval );
                 }
             } else if ( token == StreamTokenizer.TT_EOL ) {
-                // check for comment line
-                if ( isCommentLine(builder) ) {
+                // check for comment line or empty line
+                if ( isCommentLine(builder) || isWhiteSpace(builder) ) {
                     builder.setLength( 0 );
                 } else if ( isDelimiterStart(builder) ) {
                     delimiter = getDelimiter(builder);
@@ -123,9 +123,21 @@ public class SqlUtils {
                     }
                 }
             } else if ( token == '\t' ) {
-                builder.append( (char)token );
+                //check for whitespace to trim whitespace before statements
+                if (isWhiteSpace(builder)) {
+                    builder.setLength(0);
+                } else {
+                    builder.append( (char)token );
+                }
+            } else if (token <= '\r') {
+                //Do nothing for carriage returns [SSG-6869]
             } else if ( token <= ' ' ) {
-                builder.append( ' ' );
+                //check for whitespace to trim whitespace before statements
+                if (isWhiteSpace(builder)) {
+                    builder.setLength(0);
+                } else {
+                    builder.append( ' ' );
+                }
             } else if ( token == '\'' ) {
                 if ( !wasEscaped && !isCommentLine(builder) ) inString = !inString;
                 builder.append( (char)token );
@@ -146,6 +158,16 @@ public class SqlUtils {
         }
 
         return statements.toArray( new String[statements.size()] );
+    }
+
+    /**
+     * Returns true if the charSequence is empty false otherwise.
+     *
+     * @param charSequence The charSequence to check.
+     * @return true if the sequence contains only whitespace. false otherwise.
+     */
+    private static boolean isWhiteSpace(final CharSequence charSequence) {
+        return charSequence.toString().trim().isEmpty();
     }
 
     /**

@@ -1,7 +1,8 @@
 package com.l7tech.util;
 
-import org.junit.Test;
+import com.l7tech.test.BugId;
 import org.junit.Assert;
+import org.junit.Test;
 
 import java.io.IOException;
 import java.io.StringReader;
@@ -229,6 +230,133 @@ public class SqlUtilsTest {
         assertEquals( "statement 1", "SELECT * FROM a", statements[0]);
         assertEquals( "statement 2", "SELECT * FROM b", statements[1]);
         assertEquals( "statement 3", "SELECT * \nFROM\nc", statements[2]);
+    }
+
+    @Test
+    public void testParseSqlStatementsWithCarriageReturn() throws Exception {
+        String sql =
+                "-- Comment \r\n" +
+                        "SELECT * FROM a;\r\n" +
+                        "\r\n" +
+                        "--\r\n" +
+                        "-- Comment \r\n" +
+                        "--\r\n" +
+                        "SELECT * FROM b;;\r\n" + // test duplicate ;
+                        "\r\n" +
+                        "\r\n" +
+                        "SELECT * \r\n" +
+                        "FROM\r\n" +
+                        "c;";
+        String[] statements = SqlUtils.getStatementsFromReader( new StringReader( sql ) );
+        assertEquals("statement count", 3, statements.length);
+        assertEquals( "statement 1", "SELECT * FROM a", statements[0]);
+        assertEquals( "statement 2", "SELECT * FROM b", statements[1]);
+        assertEquals( "statement 3", "SELECT * \nFROM\nc", statements[2]);
+    }
+
+    @Test
+    @BugId("SSG-6868")
+    public void testParseSqlStatementsContainsApostrophe() throws Exception {
+        String sql =
+                "-- Comment's \r\n" +
+                        "SELECT * FROM a;\r\n" +
+                        "\r\n" +
+                        "--\r\n" +
+                        "-- Comment's \r\n" +
+                        "--\r\n" +
+                        "SELECT * FROM b;;\r\n" + // test duplicate ;
+                        "\r\n" +
+                        "\r\n" +
+                        "SELECT * \r\n" +
+                        "FROM\r\n" +
+                        "c;";
+        String[] statements = SqlUtils.getStatementsFromReader( new StringReader( sql ) );
+        assertEquals("statement count", 3, statements.length);
+        assertEquals( "statement 1", "SELECT * FROM a", statements[0]);
+        assertEquals( "statement 2", "SELECT * FROM b", statements[1]);
+        assertEquals( "statement 3", "SELECT * \nFROM\nc", statements[2]);
+    }
+
+    @Test
+    public void testParseSqlStatementsWithExtraWhitespaces() throws Exception {
+        String sql =
+                "-- Comment \r\n" +
+                        "\tSELECT * FROM a   ;    \r\n" +
+                        "\r\n" +
+                        "--\r\n" +
+                        "-- \tComment \r\n" +
+                        "--\r\n" +
+                        "    SELECT * FROM b; \t\t  ;   \r\n" + // test duplicate ;
+                        "      \r\n" +
+                        "\t\r\n" +
+                        "SELECT * \r\n" +
+                        "FROM    \r\n" +
+                        "c;";
+        String[] statements = SqlUtils.getStatementsFromReader( new StringReader( sql ) );
+        assertEquals("statement count", 3, statements.length);
+        assertEquals( "statement 1", "SELECT * FROM a   ", statements[0]);
+        assertEquals( "statement 2", "SELECT * FROM b", statements[1]);
+        assertEquals( "statement 3", "SELECT * \nFROM    \nc", statements[2]);
+    }
+
+    @Test
+    public void testParseSqlStatementsWithMultipleStatementsPerLine() throws Exception {
+        String sql =
+                "-- Comment \n" +
+                        "SELECT * FROM a; \t\t  SELECT * FROM z;\n" +
+                        "\n" +
+                        "--\n" +
+                        "-- Comment \n" +
+                        "--\n" +
+                        "SELECT * FROM b;SELECT * FROM y\t;; SELECT * FROM x;\n" + // test duplicate ;
+                        "\n" +
+                        "\n" +
+                        "SELECT * \n" +
+                        "FROM\n" +
+                        "c;";
+        String[] statements = SqlUtils.getStatementsFromReader( new StringReader( sql ) );
+        assertEquals("statement count", 6, statements.length);
+        assertEquals( "statement 1", "SELECT * FROM a", statements[0]);
+        assertEquals( "statement 2", "SELECT * FROM z", statements[1]);
+        assertEquals( "statement 3", "SELECT * FROM b", statements[2]);
+        assertEquals( "statement 4", "SELECT * FROM y\t", statements[3]);
+        assertEquals( "statement 5", "SELECT * FROM x", statements[4]);
+        assertEquals( "statement 6", "SELECT * \nFROM\nc", statements[5]);
+    }
+
+    @Test
+    public void testParseSqlStatementsWithDelimiter() throws Exception {
+        String sql =
+                "-- First statement\n" +
+                        "SELECT * FROM a;\n" +
+                        "\n" +
+                        "--\n" +
+                        "-- Create \"sequence\" function for next_hi value\n" +
+                        "--\n" +
+                        "-- NOTE that the function is safe when either row based or statement based replication is in use.\n" +
+                        "--\n" +
+                        "delimiter //\n" +
+                        "CREATE FUNCTION next_hi() RETURNS bigint NOT DETERMINISTIC MODIFIES SQL DATA SQL SECURITY INVOKER\n" +
+                        "BEGIN\n" +
+                        "    UPDATE hibernate_unique_key SET next_hi=last_insert_id(next_hi)+IF(@@global.server_id=0,1,2);\n" +
+                        "    RETURN IF((last_insert_id()%2=0 and @@global.server_id=1) or (last_insert_id()%2=1 and @@global.server_id=2),last_insert_id()+1,last_insert_id());\n" +
+                        "END\n" +
+                        "//\n" +
+                        "SELECT * FROM z where y=;www// -- comment\n" +
+                        "delimiter ;\n" +
+                        "\n" +
+                        "-- last statement\n" +
+                        "SELECT * FROM b where d='//';";
+        String[] statements = SqlUtils.getStatementsFromReader( new StringReader( sql ) );
+        assertEquals("statement count", 4, statements.length);
+        assertEquals("statement 1", "SELECT * FROM a", statements[0]);
+        assertEquals( "statement 2", "CREATE FUNCTION next_hi() RETURNS bigint NOT DETERMINISTIC MODIFIES SQL DATA SQL SECURITY INVOKER\n" +
+                "BEGIN\n" +
+                "    UPDATE hibernate_unique_key SET next_hi=last_insert_id(next_hi)+IF(@@global.server_id=0,1,2);\n" +
+                "    RETURN IF((last_insert_id()%2=0 and @@global.server_id=1) or (last_insert_id()%2=1 and @@global.server_id=2),last_insert_id()+1,last_insert_id());\n" +
+                "END\n", statements[1]);
+        assertEquals( "statement 3", "SELECT * FROM z where y=;www", statements[2]);
+        assertEquals( "statement 4", "SELECT * FROM b where d='//'", statements[3]);
     }
 
     @Test
