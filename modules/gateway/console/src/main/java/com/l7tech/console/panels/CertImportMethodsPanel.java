@@ -6,7 +6,6 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
-import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.FileChooserUtil;
 import com.l7tech.gui.util.FontUtil;
 import com.l7tech.gui.widgets.TextListCellRenderer;
@@ -34,7 +33,6 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -355,19 +353,15 @@ public class CertImportMethodsPanel extends WizardStepPanel {
                 Dimension scrollPaneDimensions = scrollPane.getPreferredSize();
                 scrollPaneDimensions.width = 450;
                 scrollPane.setPreferredSize(scrollPaneDimensions);
+                int result = JOptionPane.showOptionDialog(null, scrollPane,
+                                                          "Hostname Mismatch",
+                                                          0, JOptionPane.WARNING_MESSAGE,
+                                                          null, options, options[1]);
 
-                final AtomicBoolean shouldContinue = new AtomicBoolean(false);
-                DialogDisplayer.showOptionDialog(this, scrollPane, "Hostname Mismatch", 0, JOptionPane.WARNING_MESSAGE,
-                        null, options, options[1], new DialogDisplayer.OptionListener() {
-                    @Override
-                    public void reportResult(int option) {
-                        if (option == 0) {
-                            shouldContinue.set(true);
-                        }
-                    }
-                });
                 // abort if the user does not accept the hostname mismatch
-                return shouldContinue.get();
+                if (result == 1) {
+                    return false;
+                }
             }
 
         } else if (copyAndPasteRadioButton.isSelected()) {
