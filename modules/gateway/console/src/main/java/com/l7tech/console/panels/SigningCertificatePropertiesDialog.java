@@ -172,7 +172,7 @@ public class SigningCertificatePropertiesDialog extends JDialog {
 
     private void showErrorMessage(String title, String msg) {
         logger.log(Level.WARNING, msg);
-        DialogDisplayer.showMessageDialog(this, msg, title, JOptionPane.ERROR_MESSAGE, null);
+        DialogDisplayer.showMessageDialog(this, msg.length() > 128 ? msg.substring(0, 125) + "..." : msg, title, JOptionPane.ERROR_MESSAGE, null);
     }
 
     private String getDefaultExpiryAge() {
