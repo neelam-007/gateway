@@ -1,9 +1,9 @@
 package com.l7tech.server.security.keystore.luna;
 
-import com.l7tech.common.io.EmptyInputStream;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.server.security.keystore.JdkKeyStoreBackedSsgKeyStore;
 import com.l7tech.server.security.keystore.KeyAccessFilter;
+import com.l7tech.server.security.keystore.SsgKeyMetadataFinder;
 import com.l7tech.server.security.keystore.SsgKeyStore;
 import com.l7tech.util.ExceptionUtils;
 
@@ -34,8 +34,8 @@ public class LunaSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore implements Ssg
     private final KeyStore keystore;
     private final AtomicBoolean checkedInit = new AtomicBoolean(false);
 
-    public LunaSsgKeyStore(long oid, SsgKeyStoreType type, String name, KeyAccessFilter keyAccessFilter) throws KeyStoreException {
-        super(keyAccessFilter);
+    public LunaSsgKeyStore(long oid, SsgKeyStoreType type, String name, KeyAccessFilter keyAccessFilter, SsgKeyMetadataFinder ssgKeyMetadataFinder) throws KeyStoreException {
+        super(keyAccessFilter, ssgKeyMetadataFinder);
         this.oid = oid;
         this.type = type;
         this.name = name;

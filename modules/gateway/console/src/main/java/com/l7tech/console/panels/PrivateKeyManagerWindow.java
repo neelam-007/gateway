@@ -16,10 +16,7 @@ import com.l7tech.gateway.common.security.keystore.KeystoreFileEntityHeader;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gui.util.*;
 import com.l7tech.gui.widgets.PasswordEntryDialog;
-import com.l7tech.objectmodel.DeleteException;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.SaveException;
+import com.l7tech.objectmodel.*;
 import com.l7tech.util.*;
 
 import javax.security.auth.x500.X500Principal;
@@ -489,8 +486,11 @@ public class PrivateKeyManagerWindow extends JDialog {
                 if (entrypass == null)
                     return null;
 
+                // TODO provide a way to set the security zone on the imported key.
+                final SecurityZone securityZone = null;
+
                 try {
-                    return Registry.getDefault().getTrustedCertManager().importKeyFromKeyStoreFile(keystoreId, alias, ksbytes, kstype, kspass, entrypass, ksalias);
+                    return Registry.getDefault().getTrustedCertManager().importKeyFromKeyStoreFile(keystoreId, alias, securityZone, ksbytes, kstype, kspass, entrypass, ksalias);
                 } catch (MultipleAliasesException e) {
                     Object defaultOptionPaneUI = UIManager.get("OptionPaneUI");
                     UIManager.put("OptionPaneUI", ComboBoxOptionPaneUI.class.getName());  // Let JOptionPane use JCombobox rather than JList to display aliases
@@ -499,7 +499,7 @@ public class PrivateKeyManagerWindow extends JDialog {
 
                     if (ksalias == null)
                         return null;
-                    return Registry.getDefault().getTrustedCertManager().importKeyFromKeyStoreFile(keystoreId, alias, ksbytes, kstype, kspass, entrypass, ksalias);
+                    return Registry.getDefault().getTrustedCertManager().importKeyFromKeyStoreFile(keystoreId, alias, securityZone, ksbytes, kstype, kspass, entrypass, ksalias);
                 }
 
             } catch (AccessControlException ace) {
@@ -600,7 +600,7 @@ public class PrivateKeyManagerWindow extends JDialog {
                 if (dlg.isDefaultKeyChanged()) {
                     defaultAliasTracker.invalidate();
                     loadPrivateKeys();
-                } else if (dlg.isCertificateChainChanged()) {
+                } else if (dlg.isCertificateChainChanged() || dlg.isSecurityZoneChanged()) {
                     loadPrivateKeys();
                 } else if (dlg.isDeleted()) {
                     doRemove(data);
@@ -1110,6 +1110,14 @@ public class PrivateKeyManagerWindow extends JDialog {
                         @Override
                         Object getValueForRow(KeyTableRow row) {
                             return row.getKeystore().getName();
+                        }
+                    },
+
+                    new Col("Zone", 60, 90, 90) {
+                        @Override
+                        Object getValueForRow(KeyTableRow row) {
+                            final SecurityZone zone = row.getKeyEntry().getSecurityZone();
+                            return zone == null ? " " : zone.getName();
                         }
                     },
 

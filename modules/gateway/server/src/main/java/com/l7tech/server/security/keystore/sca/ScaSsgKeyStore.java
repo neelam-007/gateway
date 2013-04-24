@@ -9,6 +9,7 @@ import com.l7tech.server.event.AdminInfo;
 import com.l7tech.server.security.keystore.*;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.ByteArrayInputStream;
 import java.security.KeyStore;
@@ -48,17 +49,18 @@ public class ScaSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore implements SsgK
      * @param password the password to use when accessing the PKCS#11 keystore
      * @param kem the KeystoreFileManager.  Required.
      * @param keyAccessFilter the key access filter.  Required.
+     * @param ssgKeyMetadataFinder the key metadata finder.  Required.
      * @return the ScaSsgKeyStore instance for this process
      * @throws KeyStoreException  if the global instance cannot be created
      */
-    public synchronized static ScaSsgKeyStore getInstance(long id, String name, char[] password, KeystoreFileManager kem, KeyAccessFilter keyAccessFilter) throws KeyStoreException {
+    public synchronized static ScaSsgKeyStore getInstance(long id, String name, char[] password, KeystoreFileManager kem, KeyAccessFilter keyAccessFilter, @NotNull SsgKeyMetadataFinder ssgKeyMetadataFinder) throws KeyStoreException {
         if (INSTANCE != null)
             return INSTANCE;
-        return INSTANCE = new ScaSsgKeyStore(id, name, password, kem, keyAccessFilter);
+        return INSTANCE = new ScaSsgKeyStore(id, name, password, kem, keyAccessFilter, ssgKeyMetadataFinder);
     }
 
-    private ScaSsgKeyStore(long id, String name, char[] password, KeystoreFileManager kem, KeyAccessFilter keyAccessFilter) throws KeyStoreException {
-        super(keyAccessFilter);
+    private ScaSsgKeyStore(long id, String name, char[] password, KeystoreFileManager kem, KeyAccessFilter keyAccessFilter, @NotNull SsgKeyMetadataFinder ssgKeyMetadataFinder) throws KeyStoreException {
+        super(keyAccessFilter, ssgKeyMetadataFinder);
         if (!( JceProvider.PKCS11_ENGINE.equals(JceProvider.getEngineClass())))
             throw new KeyStoreException("Can only create ScaSsgKeyStore if current JceProvider is " + JceProvider.PKCS11_ENGINE);
         if (kem == null)

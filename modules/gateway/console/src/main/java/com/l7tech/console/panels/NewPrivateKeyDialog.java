@@ -2,6 +2,7 @@ package com.l7tech.console.panels;
 
 import com.l7tech.common.io.KeyGenParams;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.SecurityZoneWidget;
 import com.l7tech.gateway.common.AsyncAdminMethods;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gateway.common.security.keystore.KeystoreFileEntityHeader;
@@ -10,6 +11,8 @@ import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.PleaseWaitDialog;
 import com.l7tech.gui.widgets.SquigglyTextField;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.SecurityZone;
 import com.l7tech.util.ExceptionUtils;
 
 import javax.security.auth.x500.X500Principal;
@@ -104,6 +107,7 @@ public class  NewPrivateKeyDialog extends JDialog {
     private JTextField expiryDaysField;
     private JCheckBox caCheckBox;
     private JComboBox cbSigHash;
+    private SecurityZoneWidget securityZoneWidget;
 
     private String defaultDn;
     private String lastDefaultDn;
@@ -293,6 +297,8 @@ public class  NewPrivateKeyDialog extends JDialog {
         ));
         cbSigHash.setModel(new DefaultComboBoxModel(hashes.toArray()));
         cbSigHash.setSelectedItem(dflth);
+
+        securityZoneWidget.setEntityType(EntityType.SSG_KEY_ENTRY);
     }
 
     /** @return the default DN for the current alias, or null if there isn't one. */
@@ -314,6 +320,7 @@ public class  NewPrivateKeyDialog extends JDialog {
         final int expiryDays = Integer.parseInt(expiryDaysField.getText());
         final boolean makeCaCert = caCheckBox.isSelected();
         final KeyType keyType = getSelectedKeyType();
+        final SecurityZone securityZone = securityZoneWidget.getSelectedZone();
         //noinspection UnusedAssignment
         Throwable ouch = null;
         try {
@@ -330,10 +337,10 @@ public class  NewPrivateKeyDialog extends JDialog {
                 public Object call() throws Exception {
                     if (keyType.curveName != null) {
                         // Elliptic curve
-                        keypairJobId = getCertAdmin().generateEcKeyPair(keystoreInfo.getOid(), alias, dn, keyType.curveName, expiryDays, makeCaCert, getSigAlg(true));
+                        keypairJobId = getCertAdmin().generateEcKeyPair(keystoreInfo.getOid(), alias, securityZone, dn, keyType.curveName, expiryDays, makeCaCert, getSigAlg(true));
                     } else {
                         // RSA
-                        keypairJobId = getCertAdmin().generateKeyPair(keystoreInfo.getOid(), alias, dn, keyType.size, expiryDays, makeCaCert, getSigAlg(false));
+                        keypairJobId = getCertAdmin().generateKeyPair(keystoreInfo.getOid(), alias, securityZone, dn, keyType.size, expiryDays, makeCaCert, getSigAlg(false));
                     }
                     newAlias = alias;
                     return null;

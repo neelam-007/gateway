@@ -97,10 +97,11 @@
                 <bean class="com.l7tech.external.assertions.gatewaymanagement.server.PrivateKeyResourceFactory" parent="entityResourceFactoryParent">
                     <constructor-arg index="3" ref="serverConfig"/>
                     <constructor-arg index="4" ref="ssgKeyStoreManager"/>
-                    <constructor-arg index="5" ref="clusterPropertyCache"/>
-                    <constructor-arg index="6" ref="clusterPropertyManager"/>
-                    <constructor-arg index="7"><null/></constructor-arg>
+                    <constructor-arg index="5"><null/></constructor-arg>
+                    <constructor-arg index="6" ref="clusterPropertyCache"/>
+                    <constructor-arg index="7" ref="clusterPropertyManager"/>
                     <constructor-arg index="8"><null/></constructor-arg>
+                    <constructor-arg index="9"><null/></constructor-arg>
                 </bean>
                 <bean class="com.l7tech.external.assertions.gatewaymanagement.server.ServiceResourceFactory" parent="entityResourceFactoryParent">
                     <constructor-arg index="3" ref="serviceManager"/>

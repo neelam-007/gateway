@@ -929,6 +929,22 @@ insert into keystore_file values (4, 0, 'nCipher HSM', 'hsm.NcipherKeyStoreData'
 -- Reserve OID 5 for "Generic" keystores
 -- insert into keystore_file values (5, 0, 'Generic', 'generic', null, null);
 
+--
+-- Table structure for keystore_key_metadata (stores metadata for keys in keystores accessible to the Gateway)
+--
+DROP TABLE IF EXISTS keystore_key_metadata;
+CREATE TABLE keystore_key_metadata (
+  objectid bigint(20) NOT NULL,
+  version int(11) NOT NULL default 0,
+  keystore_file_oid bigint(20) NOT NULL,
+  alias varchar(255) NOT NULL,
+  security_zone_oid bigint(20),
+  PRIMARY KEY (objectid),
+  UNIQUE KEY i_ks_alias (keystore_file_oid, alias),
+  CONSTRAINT keystore_key_metadata_keystore_file FOREIGN KEY (keystore_file_oid) REFERENCES keystore_file (objectid) ON DELETE CASCADE,
+  CONSTRAINT keystore_key_metadata_security_zone FOREIGN KEY (security_zone_oid) REFERENCES security_zone (objectid) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
+
 DROP TABLE IF EXISTS shared_keys;
 CREATE TABLE shared_keys (
   encodingid varchar(32) NOT NULL,

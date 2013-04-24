@@ -47,8 +47,8 @@ public class DatabasePkcs12SsgKeyStore extends JdkKeyStoreBackedSsgKeyStore impl
      * @param password the password to use to encrypt the PKCS#12 data bytes.  Required.
      * @param keyAccessFilter key access filter.  Required.
      */
-    public DatabasePkcs12SsgKeyStore(long oid, String name, KeystoreFileManager kem, char[] password, KeyAccessFilter keyAccessFilter) {
-        super(keyAccessFilter);
+    public DatabasePkcs12SsgKeyStore(long oid, String name, KeystoreFileManager kem, char[] password, KeyAccessFilter keyAccessFilter, SsgKeyMetadataFinder ssgKeyMetadataFinder) {
+        super(keyAccessFilter, ssgKeyMetadataFinder);
         this.id = oid;
         this.name = name;
         this.kem = kem;

@@ -8,6 +8,7 @@ import com.l7tech.console.event.WizardAdapter;
 import com.l7tech.console.event.WizardEvent;
 import com.l7tech.console.util.DefaultAliasTracker;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.SecurityZoneUtil;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.security.SpecialKeyType;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
@@ -20,10 +21,9 @@ import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.FileChooserUtil;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.PasswordDoubleEntryDialog;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.ObjectModelException;
-import com.l7tech.security.cert.*;
+import com.l7tech.objectmodel.*;
+import com.l7tech.security.cert.KeyUsageUtils;
+import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.FileUtils;
@@ -64,6 +64,8 @@ public class PrivateKeyPropertiesDialog extends JDialog {
     private JTextField locationField;
     private JTextField aliasField;
     private JTextField typeField;
+    private JTextField zoneField;
+    private JButton changeZoneButton;
     private JButton markAsSpecialPurposeButton;
     private JLabel caCapableLabel;
     private JButton exportKeyButton;
@@ -137,6 +139,7 @@ public class PrivateKeyPropertiesDialog extends JDialog {
     private boolean deleted;
     private boolean defaultKeyChanged;
     private boolean certificateChainChanged;
+    private boolean securityZoneChanged;
     private final DefaultAliasTracker defaultAliasTracker;
     private final PermissionFlags flags;
 
@@ -218,6 +221,9 @@ public class PrivateKeyPropertiesDialog extends JDialog {
             }
         });
         aliasField.setText(subject.getAlias());
+
+        SecurityZone zone = subject.getKeyEntry().getSecurityZone();
+        zoneField.setText(zone == null ? "<None>" : zone.getName());
         String location = subject.getKeystore().getName();
         if (subject.getKeystore().isReadonly())
             location = location + "  (Read-Only)";
@@ -256,6 +262,24 @@ public class PrivateKeyPropertiesDialog extends JDialog {
             }
         }
 
+        changeZoneButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                // TODO prompt for new security zone instead of hardcoding it
+                Set<SecurityZone> allzones = SecurityZoneUtil.getSecurityZones();
+                SecurityZone newZone = allzones.isEmpty() ? null : allzones.iterator().next();
+
+                try {
+                    Registry.getDefault().getTrustedCertManager().updateKeySecurityZone(subject.getKeystore().getOid(), subject.getAlias(), newZone);
+                    zoneField.setText(newZone == null ? "<None>" : newZone.getName());
+                } catch (UpdateException e1) {
+                    showErrorMessage("Unable to Set Security Zone", "Error: " + ExceptionUtils.getMessage(e1), e1);
+                }
+
+                securityZoneChanged = true;
+            }
+        });
+
         markAsSpecialPurposeButton.setEnabled(atLeastOneActionEnabled);
         if (!markAsSpecialPurposeButton.isEnabled())
             markAsSpecialPurposeButton.setToolTipText("Special-purpose key roles cannot be changed.");
@@ -288,6 +312,11 @@ public class PrivateKeyPropertiesDialog extends JDialog {
         }
         if (!flags.canUpdateSome())
             replaceCertificateChainButton.setEnabled(false);
+
+        Utilities.equalizeButtonSizes(new JButton[] {
+                changeZoneButton,
+                viewCertificateButton
+        });
 
         Utilities.equalizeButtonSizes(new JButton[] {
                 markAsSpecialPurposeButton,
@@ -324,6 +353,10 @@ public class PrivateKeyPropertiesDialog extends JDialog {
 
     public boolean isCertificateChainChanged() {
         return certificateChainChanged;
+    }
+
+    public boolean isSecurityZoneChanged() {
+        return securityZoneChanged;
     }
 
     class ListEntry {

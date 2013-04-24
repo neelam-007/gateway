@@ -11,6 +11,7 @@ import com.l7tech.gateway.common.security.SpecialKeyType;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gateway.common.security.keystore.KeystoreFileEntityHeader;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
+import com.l7tech.gateway.common.security.keystore.SsgKeyMetadata;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.security.password.SecurePassword.SecurePasswordType;
 import com.l7tech.objectmodel.*;
@@ -26,14 +27,19 @@ import com.l7tech.server.GatewayFeatureSets;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.identity.cert.RevocationCheckPolicyManager;
 import com.l7tech.server.security.keystore.SsgKeyFinder;
+import com.l7tech.server.security.keystore.SsgKeyMetadataManager;
 import com.l7tech.server.security.keystore.SsgKeyStore;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.security.password.SecurePasswordManager;
-import com.l7tech.util.*;
+import com.l7tech.util.ArrayUtils;
+import com.l7tech.util.Background;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.SyspropUtil;
 import org.bouncycastle.asn1.pkcs.CertificationRequestInfo;
 import org.bouncycastle.asn1.x509.X509Name;
 import org.bouncycastle.jce.PKCS10CertificationRequest;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.ApplicationEventPublisherAware;
@@ -62,6 +68,7 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
     private final DefaultKey defaultKey;
     private final LicenseManager licenseManager;
     private final SsgKeyStoreManager ssgKeyStoreManager;
+    private final SsgKeyMetadataManager ssgKeyMetadataManager;
     private final SecurePasswordManager securePasswordManager;
     private final ClusterPropertyManager clusterPropertyManager;
     private ApplicationEventPublisher applicationEventPublisher;
@@ -71,6 +78,7 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
                                 DefaultKey defaultKey,
                                 LicenseManager licenseManager,
                                 SsgKeyStoreManager ssgKeyStoreManager,
+                                @NotNull SsgKeyMetadataManager ssgKeyMetadataManager,
                                 SecurePasswordManager securePasswordManager,
                                 ClusterPropertyManager clusterPropertyManager)
     {
@@ -98,6 +106,7 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
         this.clusterPropertyManager = clusterPropertyManager;
         if (clusterPropertyManager == null)
             throw new IllegalArgumentException("clusterPropertyManager is required");
+        this.ssgKeyMetadataManager = ssgKeyMetadataManager;
     }
 
     private void checkLicenseHeavy() {
@@ -308,17 +317,25 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
     }
 
     @Override
-    public JobId<X509Certificate> generateKeyPair(long keystoreId, String alias, X500Principal dn, int keybits, int expiryDays, boolean makeCaCert, String sigAlg) throws FindException, GeneralSecurityException {
+    public JobId<X509Certificate> generateKeyPair(long keystoreId, String alias, @Nullable SecurityZone securityZone, X500Principal dn, int keybits, int expiryDays, boolean makeCaCert, String sigAlg) throws FindException, GeneralSecurityException {
         checkLicenseKeyStore();
         final PrivateKeyAdminHelper helper = getPrivateKeyAdminHelper();
-        return registerJob(helper.doGenerateKeyPair(keystoreId, alias, dn, new KeyGenParams(keybits), expiryDays, makeCaCert, sigAlg), X509Certificate.class);
+        final SsgKeyMetadata meta = makeMeta(keystoreId, alias, securityZone);
+        return registerJob(helper.doGenerateKeyPair(keystoreId, alias, meta, dn, new KeyGenParams(keybits), expiryDays, makeCaCert, sigAlg), X509Certificate.class);
     }
 
     @Override
-    public JobId<X509Certificate> generateEcKeyPair(long keystoreId, String alias, X500Principal dn, String curveName, int expiryDays, boolean makeCaCert, String sigAlg) throws FindException, GeneralSecurityException {
+    public JobId<X509Certificate> generateEcKeyPair(long keystoreId, String alias, @Nullable SecurityZone securityZone, X500Principal dn, String curveName, int expiryDays, boolean makeCaCert, String sigAlg) throws FindException, GeneralSecurityException {
         checkLicenseKeyStore();
         final PrivateKeyAdminHelper helper = getPrivateKeyAdminHelper();
-        return registerJob(helper.doGenerateKeyPair(keystoreId, alias, dn, new KeyGenParams(curveName), expiryDays, makeCaCert, sigAlg), X509Certificate.class);
+        final SsgKeyMetadata meta = makeMeta(keystoreId, alias, securityZone);
+        return registerJob(helper.doGenerateKeyPair(keystoreId, alias, meta, dn, new KeyGenParams(curveName), expiryDays, makeCaCert, sigAlg), X509Certificate.class);
+    }
+
+    private SsgKeyMetadata makeMeta(long keystoreOid, @NotNull String alias, @Nullable SecurityZone securityZone) {
+        // Currently metadata is required only if a security zone needs to be set for the new key entry.
+        // TODO if we change metadata to store other stuff (like special key purposes) it may need to be set in more situations than just for a non-null security zone.
+        return securityZone == null ? null : new SsgKeyMetadata(keystoreOid, alias, securityZone);
     }
 
     @Override
@@ -424,8 +441,21 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
     }
 
     @Override
+    public void updateKeySecurityZone(long keystoreId, @NotNull String alias, @Nullable SecurityZone securityZone) throws UpdateException {
+        checkLicenseKeyStore();
+
+        try {
+            getPrivateKeyAdminHelper().doUpdateKeyMetadata( keystoreId, alias, makeMeta(keystoreId, alias, securityZone) );
+        } catch ( final UpdateException e ) {
+            logger.log( Level.INFO, ExceptionUtils.getMessage( e ), ExceptionUtils.getDebugException( e ) );
+            throw e;
+        }
+    }
+
+    @Override
     public SsgKeyEntry importKeyFromKeyStoreFile(long keystoreId,
                                                  String alias,
+                                                 @Nullable SecurityZone securityZone,
                                                  byte[] keyStoreBytes,
                                                  String keyStoreType,
                                                  @Nullable char[] keyStorePass,
@@ -437,7 +467,8 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
             checkLicenseKeyStore();
 
             final PrivateKeyAdminHelper helper = getPrivateKeyAdminHelper();
-            return helper.doImportKeyFromKeyStoreFile(keystoreId, alias, keyStoreBytes, keyStoreType, keyStorePass, entryPass, entryAlias);
+            final SsgKeyMetadata meta = makeMeta(keystoreId, alias, securityZone);
+            return helper.doImportKeyFromKeyStoreFile(keystoreId, alias, meta, keyStoreBytes, keyStoreType, keyStorePass, entryPass, entryAlias);
 
         } catch (IOException e) {
             throw new KeyStoreException(ExceptionUtils.getMessage( e ), e);
@@ -746,7 +777,7 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
     }
 
     private PrivateKeyAdminHelper getPrivateKeyAdminHelper() {
-        return new PrivateKeyAdminHelper( defaultKey, ssgKeyStoreManager, applicationEventPublisher );
+        return new PrivateKeyAdminHelper( defaultKey, ssgKeyStoreManager, ssgKeyMetadataManager, applicationEventPublisher );
     }
 
     private Logger logger = Logger.getLogger(getClass().getName());

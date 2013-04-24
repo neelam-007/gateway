@@ -11,6 +11,8 @@ import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.objectmodel.*;
 import com.l7tech.security.cert.TrustedCert;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.security.auth.x500.X500Principal;
 import java.io.IOException;
@@ -117,12 +119,12 @@ public class TrustedCertAdminStub implements TrustedCertAdmin {
     }
 
     @Override
-    public JobId<X509Certificate> generateKeyPair(long keystoreId, String alias, X500Principal dn, int keybits, int expiryDays, boolean makeCaCert, String sigAlg) throws FindException, GeneralSecurityException {
+    public JobId<X509Certificate> generateKeyPair(long keystoreId, String alias, @Nullable SecurityZone securityZone, X500Principal dn, int keybits, int expiryDays, boolean makeCaCert, String sigAlg) throws FindException, GeneralSecurityException {
         return null;
     }
 
     @Override
-    public JobId<X509Certificate> generateEcKeyPair(long keystoreId, String alias, X500Principal dn, String curveName, int expiryDays, boolean makeCaCert, String sigAlg) throws FindException, GeneralSecurityException {
+    public JobId<X509Certificate> generateEcKeyPair(long keystoreId, String alias, @Nullable SecurityZone securityZone, X500Principal dn, String curveName, int expiryDays, boolean makeCaCert, String sigAlg) throws FindException, GeneralSecurityException {
         return null;
     }
 
@@ -141,7 +143,11 @@ public class TrustedCertAdminStub implements TrustedCertAdmin {
     }
 
     @Override
-    public SsgKeyEntry importKeyFromKeyStoreFile(long keystoreId, String alias, byte[] keyStoreBytes, String keyStoreType, char[] keyStorePass, char[] entryPass, String entryAlias) throws FindException, SaveException, KeyStoreException, MultipleAliasesException, AliasNotFoundException {
+    public void updateKeySecurityZone(long keystoreId, @NotNull String alias, @Nullable SecurityZone securityZone) throws UpdateException {
+    }
+
+    @Override
+    public SsgKeyEntry importKeyFromKeyStoreFile(long keystoreId, String alias, @Nullable SecurityZone securityZone, byte[] keyStoreBytes, String keyStoreType, char[] keyStorePass, char[] entryPass, String entryAlias) throws FindException, SaveException, KeyStoreException, MultipleAliasesException, AliasNotFoundException {
         return null;
     }
 

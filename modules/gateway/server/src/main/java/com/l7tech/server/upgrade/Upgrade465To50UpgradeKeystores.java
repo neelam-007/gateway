@@ -1,5 +1,6 @@
 package com.l7tech.server.upgrade;
 
+import com.l7tech.gateway.common.security.keystore.SsgKeyMetadata;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.cluster.ClusterPropertyManager;
@@ -16,6 +17,7 @@ import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.security.prov.JceProvider;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.context.ApplicationContext;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.transaction.support.TransactionSynchronizationAdapter;
@@ -265,7 +267,12 @@ public class Upgrade465To50UpgradeKeystores implements UpgradeTask {
                 public boolean isRestrictedAccessKeyEntry(SsgKeyEntry keyEntry) {
                     return false;
                 }
-            });
+            }, new SsgKeyMetadataFinder() {
+                    @Override
+                    public SsgKeyMetadata findMetadata(long keystoreOid, @NotNull String alias) throws FindException {
+                        return null;
+                    }
+                });
 
             // Re-encrypt the cluster shared key for the cluster passphrase
             SsgKeyEntry entry = scaKeyStore.getCertificateChain(keystoreInfo.sslAlias);

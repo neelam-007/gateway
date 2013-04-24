@@ -1,0 +1,90 @@
+package com.l7tech.gateway.common.security.keystore;
+
+import com.l7tech.objectmodel.SecurityZone;
+import com.l7tech.objectmodel.imp.ZoneablePersistentEntityImp;
+import org.hibernate.annotations.Proxy;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import javax.persistence.Column;
+import javax.persistence.Inheritance;
+import javax.persistence.InheritanceType;
+import javax.persistence.Table;
+
+/**
+ * Represents metadata that is associated with a key in a keystore accessible to the Gateway, indexed by
+ * keystore OID and key alias.
+ * <p/>
+ * TODO Use this mechanism to track special purpose keys (default SSL, default CA, audit signer, audit viewer, etc) instead of using a bunch of cluster properties
+ */
+@javax.persistence.Entity
+@Proxy(lazy=false)
+@Inheritance(strategy= InheritanceType.SINGLE_TABLE)
+@Table(name="keystore_key_metadata")
+public class SsgKeyMetadata extends ZoneablePersistentEntityImp {
+
+    long keystoreOid;
+    String alias;
+
+    public SsgKeyMetadata() {
+    }
+
+    public SsgKeyMetadata(long keystoreOid, @NotNull String alias, @Nullable SecurityZone securityZone) {
+        setKeystoreOid(keystoreOid);
+        setAlias(alias);
+        setSecurityZone(securityZone);
+    }
+
+    @Column(name = "keystore_file_oid", nullable=false, updatable=false)
+    public long getKeystoreOid() {
+        return keystoreOid;
+    }
+
+    public void setKeystoreOid(long keystoreOid) {
+        this.keystoreOid = keystoreOid;
+    }
+
+    @Column(name = "alias", nullable=false, updatable=false)
+    public String getAlias() {
+        return alias;
+    }
+
+    public void setAlias(String alias) {
+        this.alias = alias;
+    }
+
+    /**
+     * Copy payload values from the specified source to the specified destination.
+     * <p/>
+     * Payload values are any field other than oid, version, keystoreOid and alias.
+     *
+     * @param source source.  Required.
+     * @param dest   destination.  Required.
+     */
+    public static void copyPayloadValues(@NotNull SsgKeyMetadata source, @NotNull SsgKeyMetadata dest) {
+        dest.setSecurityZone(source.getSecurityZone());
+    }
+
+    @SuppressWarnings("RedundantIfStatement")
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof SsgKeyMetadata)) return false;
+        if (!super.equals(o)) return false;
+
+        SsgKeyMetadata metadata = (SsgKeyMetadata) o;
+
+        if (keystoreOid != metadata.keystoreOid) return false;
+        if (alias != null ? !alias.equals(metadata.alias) : metadata.alias != null) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = super.hashCode();
+        result = 31 * result + (int) (keystoreOid ^ (keystoreOid >>> 32));
+        result = 31 * result + (alias != null ? alias.hashCode() : 0);
+        return result;
+    }
+}

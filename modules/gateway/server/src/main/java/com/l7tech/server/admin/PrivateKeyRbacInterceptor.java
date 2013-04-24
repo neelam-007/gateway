@@ -5,10 +5,7 @@ import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.identity.User;
-import com.l7tech.objectmodel.Entity;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.ObjectNotFoundException;
+import com.l7tech.objectmodel.*;
 import com.l7tech.server.security.keystore.SsgKeyFinder;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.security.rbac.CustomRbacInterceptor;
@@ -111,13 +108,21 @@ public class PrivateKeyRbacInterceptor implements CustomRbacInterceptor {
                     break;
 
                 case CHECK_ARG_OPERATION:
-                    long keystoreId = (Long)invocation.getArguments()[secured.keystoreOidArg()];
-                    String keyAlias = (String)invocation.getArguments()[secured.keyAliasArg()];
-                    checkArgOperation(keystoreId, keyAlias, secured.argOp());
+                    long keystoreId = getKeystoreIdFromArg(invocation, secured);
+                    String keyAlias = getKeyAliasFromArg(invocation, secured);
+                    SecurityZone securityZone = getSecurityZoneFromArg(invocation, secured);
+                    checkArgOperation(keystoreId, keyAlias, securityZone, secured.argOp());
                     break;
 
                 case CHECK_ARG_EXPORT_KEY:
                     checkArgExportKey();
+                    break;
+
+                case CHECK_ARG_UPDATE_SECURITY_ZONE:
+                    keystoreId = getKeystoreIdFromArg(invocation, secured);
+                    keyAlias = getKeyAliasFromArg(invocation, secured);
+                    securityZone = getSecurityZoneFromArg(invocation, secured);
+                    checkArgUpdateSecurityZone(keystoreId, keyAlias, securityZone);
                     break;
 
                 case CHECK_UPDATE_ALL_KEYSTORES_NONFATAL:
@@ -132,10 +137,22 @@ public class PrivateKeyRbacInterceptor implements CustomRbacInterceptor {
         return true;
     }
 
-    private void checkArgOperation( long keystoreId, String keyAlias, OperationType operation ) throws FindException, KeyStoreException {
+    private static String getKeyAliasFromArg(MethodInvocation invocation, PrivateKeySecured secured) {
+        return (String)invocation.getArguments()[secured.keyAliasArg()];
+    }
+
+    private static Long getKeystoreIdFromArg(MethodInvocation invocation, PrivateKeySecured secured) {
+        return (Long)invocation.getArguments()[secured.keystoreOidArg()];
+    }
+
+    private static SecurityZone getSecurityZoneFromArg(MethodInvocation invocation, PrivateKeySecured secured) {
+        return secured.securityZoneArg() == -1 ? null : (SecurityZone)invocation.getArguments()[secured.securityZoneArg()];
+    }
+
+    private void checkArgOperation( long keystoreId, String keyAlias, SecurityZone securityZone, OperationType operation ) throws FindException, KeyStoreException {
         final SsgKeyEntry keyEntry;
         if (CREATE == operation) {
-            keyEntry = createFakeKeyEntry( keystoreId, keyAlias );
+            keyEntry = createFakeKeyEntry( keystoreId, keyAlias, securityZone );
         } else {
             keyEntry = findKeyEntry( keystoreId, keyAlias );
         }
@@ -162,6 +179,18 @@ public class PrivateKeyRbacInterceptor implements CustomRbacInterceptor {
         // TODO proper OTHER operation type name for "export private key" permission.  for now require DELETE ALL
         if (!rbacServices.isPermittedForAnyEntityOfType(user, OperationType.DELETE, EntityType.SSG_KEY_ENTRY))
             throw new PermissionDeniedException(OperationType.DELETE, EntityType.SSG_KEY_ENTRY, "export private key [delete all]");
+    }
+
+    private void checkArgUpdateSecurityZone(long keystoreId, String keyAlias, SecurityZone securityZone) throws FindException, KeyStoreException {
+        SsgKeyEntry keyEntry = findKeyEntry( keystoreId, keyAlias );
+
+        // Check entry and keystore permissions
+        checkPermittedForEntity(keyEntry, UPDATE);
+        checkPermittedForKeystore(keyEntry.getKeystoreId(), UPDATE);
+
+        // Ensure entry permissions still apply in prospective new security zone
+        keyEntry = createFakeKeyEntry( keystoreId, keyAlias, securityZone );
+        checkPermittedForEntity(keyEntry, UPDATE);
     }
 
     /**
@@ -241,8 +270,10 @@ public class PrivateKeyRbacInterceptor implements CustomRbacInterceptor {
 
 
     @NotNull
-    private SsgKeyEntry createFakeKeyEntry(long keystoreId, String alias) {
-        return SsgKeyEntry.createDummyEntityForAuditing(keystoreId, alias);
+    private SsgKeyEntry createFakeKeyEntry(long keystoreId, String alias, SecurityZone securityZone) {
+        final SsgKeyEntry entry = SsgKeyEntry.createDummyEntityForAuditing(keystoreId, alias);
+        entry.setSecurityZone(securityZone);
+        return entry;
     }
 
     @NotNull

@@ -48,6 +48,7 @@ public class SsgKeyStoreManagerImpl implements SsgKeyStoreManager, InitializingB
     private final Config config;
     private final MasterPasswordManager dbEncrypter;
     private final KeyAccessFilter keyAccessFilter;
+    private final SsgKeyMetadataFinder ssgKeyMetadataFinder;
 
     private boolean initialized = false;
     private List<SsgKeyFinder> keystores = null;
@@ -57,7 +58,8 @@ public class SsgKeyStoreManagerImpl implements SsgKeyStoreManager, InitializingB
                                    final Config config,
                                    final char[] sslKeystorePassphrase,
                                    final MasterPasswordManager passwordManager,
-                                   final KeyAccessFilter keyAccessFilter ) throws KeyStoreException, FindException {
+                                   final KeyAccessFilter keyAccessFilter,
+                                   final SsgKeyMetadataFinder ssgKeyMetadataFinder) throws KeyStoreException, FindException {
         if ( sslKeystorePassphrase == null || sslKeystorePassphrase.length==0 ) throw new IllegalArgumentException("sslKeystorePassphrase is required");
         if ( kem instanceof KeystoreFileManagerImpl ) {
             logger.severe("kem autoproxy failure");
@@ -68,6 +70,7 @@ public class SsgKeyStoreManagerImpl implements SsgKeyStoreManager, InitializingB
         this.config = config;
         this.dbEncrypter = passwordManager;
         this.keyAccessFilter = keyAccessFilter;
+        this.ssgKeyMetadataFinder = ssgKeyMetadataFinder;
     }
 
     private char[] toPassphrase(byte[] b) {
@@ -120,7 +123,7 @@ public class SsgKeyStoreManagerImpl implements SsgKeyStoreManager, InitializingB
 
                     String encryptedPassword = dbFile.getProperty("passphrase");
                     char[] decryptedPassword = dbEncrypter.decryptPasswordIfEncrypted(encryptedPassword);
-                    list.add(ScaSsgKeyStore.getInstance(id, name, decryptedPassword, keystoreFileManager, keyAccessFilter));
+                    list.add(ScaSsgKeyStore.getInstance(id, name, decryptedPassword, keystoreFileManager, keyAccessFilter, ssgKeyMetadataFinder));
                     createdHsmFinder = true;
                 }
             } else if (format.startsWith("hsm.Ncipher")) {
@@ -130,7 +133,7 @@ public class SsgKeyStoreManagerImpl implements SsgKeyStoreManager, InitializingB
                     if (createdNcipher)
                         throw new KeyStoreException("Database contains more than one keystore_file row with a format of hsm.Ncipher");
 
-                    list.add(new NcipherSsgKeyStore(id, name, keystoreFileManager, keyAccessFilter));
+                    list.add(new NcipherSsgKeyStore(id, name, keystoreFileManager, keyAccessFilter, ssgKeyMetadataFinder));
                     createdNcipher = true;
                 }
             } else if (format.equals("ss")) {
@@ -139,20 +142,20 @@ public class SsgKeyStoreManagerImpl implements SsgKeyStoreManager, InitializingB
                 if (haveSca || haveLuna || haveNcipher || haveGeneric)
                     logger.info("Ignoring keystore_file row with a format of sdb because this Gateway node is using an HSM or Luna or generic provider instead");
                 else
-                    list.add(new DatabasePkcs12SsgKeyStore(id, name, keystoreFileManager,  softwareKeystorePasssword, keyAccessFilter));
+                    list.add(new DatabasePkcs12SsgKeyStore(id, name, keystoreFileManager,  softwareKeystorePasssword, keyAccessFilter, ssgKeyMetadataFinder));
             }
 
             // We'll ignore the placeholder row for Luna, if any
         }
 
         if (haveLuna && list.isEmpty()) {
-            list.add(new LunaSsgKeyStore(3, SsgKeyFinder.SsgKeyStoreType.LUNA_HARDWARE, "SafeNet HSM", keyAccessFilter));
+            list.add(new LunaSsgKeyStore(3, SsgKeyFinder.SsgKeyStoreType.LUNA_HARDWARE, "SafeNet HSM", keyAccessFilter, ssgKeyMetadataFinder));
         }
 
         if (haveGeneric && list.isEmpty()) {
             String password = ConfigFactory.getProperty( GenericSsgKeyStore.PROP_KEYSTORE_PASSWORD, GenericSsgKeyStore.DEFAULT_KEYSTORE_PASSWORD );
             char[] decryptedPassword = password == null ? null : dbEncrypter.decryptPasswordIfEncrypted(password);
-            list.add(new GenericSsgKeyStore(5, SsgKeyFinder.SsgKeyStoreType.GENERIC, "Generic", decryptedPassword, keyAccessFilter));
+            list.add(new GenericSsgKeyStore(5, SsgKeyFinder.SsgKeyStoreType.GENERIC, "Generic", decryptedPassword, keyAccessFilter, ssgKeyMetadataFinder));
         }
 
         // Force all keyfinders to initialize their keystores early, so they don't end up trying to do so lazily

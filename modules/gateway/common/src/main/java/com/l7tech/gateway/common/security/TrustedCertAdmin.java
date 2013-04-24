@@ -14,6 +14,7 @@ import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.security.rbac.Secured;
 import com.l7tech.objectmodel.*;
 import com.l7tech.security.cert.TrustedCert;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -270,6 +271,7 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
      *
      * @param keystoreId the key store in which to create the new key pair and self-signed cert.
      * @param alias the alias to use when saving the new key pair and self-signed cert.  Required.
+     * @param securityZone the security zone in which to create the new key entry, or null.
      * @param dn the DN to use in the new self-signed cert.  Required.
      * @param keybits number of bits for the new RSA key, ie 512, 768, 1024 or 2048.  Required.
      * @param expiryDays number of days the self-signed cert should be valid.  Required.
@@ -284,8 +286,8 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
      */
     @Transactional(propagation=Propagation.REQUIRED)
     @Secured(customInterceptor="com.l7tech.server.admin.PrivateKeyRbacInterceptor")
-    @PrivateKeySecured(preChecks={CHECK_ARG_OPERATION}, argOp=OperationType.CREATE, returnCheck=NO_RETURN_CHECK)
-    JobId<X509Certificate> generateKeyPair(long keystoreId, String alias, X500Principal dn, int keybits, int expiryDays, boolean makeCaCert, String sigAlg) throws FindException, GeneralSecurityException;
+    @PrivateKeySecured(preChecks={CHECK_ARG_OPERATION}, argOp=OperationType.CREATE, securityZoneArg=2, returnCheck=NO_RETURN_CHECK)
+    JobId<X509Certificate> generateKeyPair(long keystoreId, String alias, @Nullable SecurityZone securityZone, X500Principal dn, int keybits, int expiryDays, boolean makeCaCert, String sigAlg) throws FindException, GeneralSecurityException;
 
     /**
      * Generate a new ECC key pair and self-signed certificate in the specified keystore with the specified
@@ -293,6 +295,7 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
      *
      * @param keystoreId the key store in which to create the new key pair and self-signed cert.
      * @param alias the alias to use when saving the new key pair and self-signed cert.  Required.
+     * @param securityZone the security zone in which to create the new key entry, or null.
      * @param dn the DN to use in the new self-signed cert.  Required.
      * @param curveName the named curve to set the ECC parameters.  Required.
      * @param expiryDays number of days the self-signed cert should be valid.  Required.
@@ -307,8 +310,8 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
      */
     @Transactional(propagation=Propagation.REQUIRED)
     @Secured(customInterceptor="com.l7tech.server.admin.PrivateKeyRbacInterceptor")
-    @PrivateKeySecured(preChecks={CHECK_ARG_OPERATION}, argOp=OperationType.CREATE, returnCheck=NO_RETURN_CHECK)
-    JobId<X509Certificate> generateEcKeyPair(long keystoreId, String alias, X500Principal dn, String curveName, int expiryDays, boolean makeCaCert, String sigAlg) throws FindException, GeneralSecurityException;
+    @PrivateKeySecured(preChecks={CHECK_ARG_OPERATION}, argOp=OperationType.CREATE, securityZoneArg=2, returnCheck=NO_RETURN_CHECK)
+    JobId<X509Certificate> generateEcKeyPair(long keystoreId, String alias, @Nullable SecurityZone securityZone, X500Principal dn, String curveName, int expiryDays, boolean makeCaCert, String sigAlg) throws FindException, GeneralSecurityException;
 
     /**
      * Generate a new PKCS#10 Certification Request (aka Certificate Signing Request) using the specified private key,
@@ -367,6 +370,20 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
     @PrivateKeySecured(preChecks={CHECK_ARG_OPERATION}, argOp=OperationType.UPDATE)
     void assignNewCert(long keystoreId, String alias, String[] pemChain) throws UpdateException, CertificateException;
 
+
+    /**
+     * Change the security zone of a private key.
+     *
+     * @param keystoreId the ID of the key store in which the private key can be found.  Required.
+     * @param alias the alias of the private key whose cert chain to replace.  Required.
+     * @param securityZone the security zone to set, or null to clear it.
+     * @throws UpdateException if there is a problem saving info to the database
+     */
+    @Transactional(propagation=Propagation.REQUIRED)
+    @Secured(customInterceptor="com.l7tech.server.admin.PrivateKeyRbacInterceptor")
+    @PrivateKeySecured(preChecks={CHECK_ARG_UPDATE_SECURITY_ZONE}, securityZoneArg=2)
+    void updateKeySecurityZone(long keystoreId, @NotNull String alias, @Nullable SecurityZone securityZone) throws UpdateException;
+
     /**
      * Import an RSA or ECC private key and certificate chain into the specified keystore ID under the specified alias,
      * from the specified PKCS#12 or JKS file (passed in as a byte array), decrypted with the specified passphrase.
@@ -379,6 +396,7 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
      *
      * @param keystoreId   the target keystore ID.  Required.
      * @param alias        the target alias within the keystore.  Required.
+     * @param securityZone the security zone in which to create the new key entry, or null.
      * @param keyStoreBytes  the bytes of the keystore file.  Required.
      * @param keyStoreType   the type of keystore, such as "PKCS12" or "JKS".  Required.
      * @param keyStorePass   the pass phrase for the keystore file.  May be null to pass null as the second argument to KeyStore.load().
@@ -401,9 +419,10 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
     // TODO need an annotation to note that this methods arguments must never be persisted in any debug or audit traces
     @Transactional(propagation=Propagation.REQUIRED)
     @Secured(customInterceptor="com.l7tech.server.admin.PrivateKeyRbacInterceptor")
-    @PrivateKeySecured(preChecks={CHECK_ARG_OPERATION}, argOp=OperationType.CREATE, returnCheck=NO_RETURN_CHECK)
+    @PrivateKeySecured(preChecks={CHECK_ARG_OPERATION}, argOp=OperationType.CREATE, securityZoneArg=2, returnCheck=NO_RETURN_CHECK)
     SsgKeyEntry importKeyFromKeyStoreFile(long keystoreId,
                                           String alias,
+                                          @Nullable SecurityZone securityZone,
                                           byte[] keyStoreBytes,
                                           String keyStoreType,
                                           @Nullable char[] keyStorePass,

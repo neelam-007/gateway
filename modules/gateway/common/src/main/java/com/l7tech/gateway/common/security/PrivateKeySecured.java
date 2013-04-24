@@ -35,6 +35,9 @@ public @interface PrivateKeySecured {
          * A {@link #keystoreOidArg} and {@link #keyAliasArg} identify a key entry for which
          * the calling user must possess {@link #argOp} permission on the key entry
          * as well as appropriate permission on its owning keystore (READ for READ, otherwise UPDATE).
+         * <p/>
+         * For CREATE operation, a {@link #securityZoneArg} identifies the security zone (or null) the new key
+         * will be assigned when it is created.
          */
         CHECK_ARG_OPERATION,
 
@@ -45,6 +48,17 @@ public @interface PrivateKeySecured {
          * Currently this is done by requiring permission to DELETE ALL SSG_KEY_ENTRY.
          */
         CHECK_ARG_EXPORT_KEY,
+
+        /**
+         * A {@link #keystoreOidArg} and {@link #keyAliasArg} identify a key entry for which
+         * the calling user must possess UPDATE permission on the existing key entry
+         * as well as UPDATE permission on its owning keystore.
+         * <p/>
+         * Additionally a {@link #securityZoneArg} identifies a new security zone (possibly null) into which
+         * the private key will be placed, and the calling user must still possess UPDATE permission on the
+         * key entry if it is placed into the new security zone.
+         */
+        CHECK_ARG_UPDATE_SECURITY_ZONE,
 
         /**
          * The calling user must possess permission to UPDATE ALL SSG_KEYSTORE.
@@ -85,6 +99,11 @@ public @interface PrivateKeySecured {
      * @return index of key entry alias argument of type String.
      */
     int keyAliasArg() default 1;
+
+    /**
+     * @return index of security zone argument of type SecurityZone, or -1 if there isn't one.
+     */
+    int securityZoneArg() default -1;
 
 
     // Post-checks

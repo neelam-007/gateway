@@ -7,6 +7,7 @@ import com.l7tech.common.io.KeyGenParams;
 import com.l7tech.gateway.common.security.MultipleAliasesException;
 import com.l7tech.gateway.common.security.SpecialKeyType;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
+import com.l7tech.gateway.common.security.keystore.SsgKeyMetadata;
 import com.l7tech.gateway.common.spring.remoting.RemoteUtils;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.objectmodel.*;
@@ -18,6 +19,7 @@ import com.l7tech.server.event.admin.Deleted;
 import com.l7tech.server.event.admin.KeyExportedEvent;
 import com.l7tech.server.event.admin.Updated;
 import com.l7tech.server.security.keystore.SsgKeyFinder;
+import com.l7tech.server.security.keystore.SsgKeyMetadataManager;
 import com.l7tech.server.security.keystore.SsgKeyStore;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.transport.http.HttpTransportModule;
@@ -26,6 +28,7 @@ import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.PoolByteArrayOutputStream;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationEventPublisher;
@@ -63,9 +66,11 @@ public class PrivateKeyAdminHelper {
 
     public PrivateKeyAdminHelper( final DefaultKey defaultKey,
                                   final SsgKeyStoreManager ssgKeyStoreManager,
+                                  final SsgKeyMetadataManager ssgKeyMetadataManager,
                                   final ApplicationEventPublisher applicationEventPublisher ) {
         this.defaultKey = defaultKey;
         this.ssgKeyStoreManager = ssgKeyStoreManager;
+        this.ssgKeyMetadataManager = ssgKeyMetadataManager;
         this.applicationEventPublisher = applicationEventPublisher;
     }
 
@@ -178,10 +183,45 @@ public class PrivateKeyAdminHelper {
     }
 
     /**
+     * Update metadata for a private key.  The private key must exist in the keystore in order to have its
+     * metadata updated.
+     * <p/>
+     * <b>Note:</b> Since metadata is not stored in the actual keystore this method can succeed even if the actual keystore is read-only.
+     *
+     * @param keystoreId The keystore oid.
+     * @param alias The key alias.
+     * @param keyMetadata The new key metadata, or null to clear any existing metadata.
+     * @throws UpdateException If an error occurs
+     */
+    public void doUpdateKeyMetadata(long keystoreId, @NotNull String alias, @Nullable SsgKeyMetadata keyMetadata) throws UpdateException {
+        SsgKeyFinder keyFinder;
+        try {
+            keyFinder = ssgKeyStoreManager.findByPrimaryKey(keystoreId);
+        } catch (KeyStoreException | FindException e) {
+            //noinspection ThrowableResultOfMethodCallIgnored
+            throw new UpdateException("Error getting keystore: " + ExceptionUtils.getMessage(e), e);
+        }
+
+        try {
+            // Ensure key currently exists
+            keyFinder.getCertificateChain(alias);
+
+            // Update metadata
+            ssgKeyMetadataManager.updateMetadataForKey(keystoreId, alias, keyMetadata);
+
+        } catch (Exception e) {
+            //noinspection ThrowableResultOfMethodCallIgnored
+            throw new UpdateException("Error setting new key metadata: " + ExceptionUtils.getMessage(e), e);
+        }
+
+    }
+
+    /**
      * Generate a new key pair.
      *
      * @param keystoreId The keystore id for the new key
      * @param alias The alias for the new key.
+     * @param ssgKeyMetadata The metadata to record for the new key, or null.
      * @param dn The subject DN to use.
      * @param params The key generation parameters.
      * @param expiryDays The number of days before certificate expiry
@@ -193,13 +233,14 @@ public class PrivateKeyAdminHelper {
      */
     public Future<X509Certificate> doGenerateKeyPair( final long keystoreId,
                                                       final String alias,
+                                                      final @Nullable SsgKeyMetadata ssgKeyMetadata,
                                                       final X500Principal dn,
                                                       final KeyGenParams params,
                                                       final int expiryDays,
                                                       final boolean makeCaCert,
                                                       final String sigAlg ) throws FindException, GeneralSecurityException {
         SsgKeyStore keystore = checkBeforeGenerate(keystoreId, alias, dn, expiryDays);
-        return keystore.generateKeyPair( auditAfterCreate( keystore, alias, "generated" ),
+        return keystore.generateKeyPair( afterCreate(keystore, alias, ssgKeyMetadata, "generated"),
                 alias, params, new CertGenParams( dn, expiryDays, makeCaCert, sigAlg ) );
     }
 
@@ -208,6 +249,7 @@ public class PrivateKeyAdminHelper {
      *
      * @param keystoreId The target keystore oid
      * @param alias The target alias
+     * @param ssgKeyMetadata The metadata to record for the new key, or null.
      * @param keyStoreBytes The keystore data
      * @param keyStoreType  the type of key store, eg "PKCS12" or "JKS"
      * @param keyStorePass The keystore password, or null to pass null as the second argument to KeyStore.load()
@@ -217,6 +259,7 @@ public class PrivateKeyAdminHelper {
      */
     public SsgKeyEntry doImportKeyFromKeyStoreFile( final long keystoreId,
                                               final String alias,
+                                              final @Nullable SsgKeyMetadata ssgKeyMetadata,
                                               @Nullable final byte[] keyStoreBytes, 
                                               String keyStoreType, 
                                               @Nullable final char[] keyStorePass, 
@@ -255,7 +298,7 @@ public class PrivateKeyAdminHelper {
 
         SsgKeyStore keystore = getKeyStore(keystoreId);
         SsgKeyEntry entry = new SsgKeyEntry(keystore.getOid(), alias, x509chain, (PrivateKey)key);
-        Future<Boolean> future = keystore.storePrivateKeyEntry(auditAfterCreate(keystore, alias, "imported"), entry, false);
+        Future<Boolean> future = keystore.storePrivateKeyEntry(afterCreate(keystore, alias, ssgKeyMetadata, "imported"), entry, false);
         if (!future.get())
             throw new KeyStoreException("Import operation returned false"); // can't happen
 
@@ -346,6 +389,7 @@ public class PrivateKeyAdminHelper {
 
     private final DefaultKey defaultKey;
     private final SsgKeyStoreManager ssgKeyStoreManager;
+    private final SsgKeyMetadataManager ssgKeyMetadataManager;
     private final ApplicationEventPublisher applicationEventPublisher;
 
     private String getSubjectDN(SsgKeyEntry entry) {
@@ -409,8 +453,18 @@ public class PrivateKeyAdminHelper {
         return keystore;
     }
 
-    private Runnable auditAfterCreate(SsgKeyStore keystore, String alias, String note) {
-        return publisher(new Created<SsgKeyEntry>(SsgKeyEntry.createDummyEntityForAuditing(keystore.getOid(), alias), note));
+    private Runnable afterCreate(final SsgKeyStore keystore, final String alias, @Nullable final SsgKeyMetadata keyMetadata, final String note) {
+        return new CallableRunnable<Object>( AdminInfo.find( true ).wrapCallable(new Callable<Object>() {
+            @Override
+            public Object call() throws Exception {
+                if (keyMetadata != null && ssgKeyMetadataManager != null) {
+                    ssgKeyMetadataManager.updateMetadataForKey(keystore.getOid(), alias, keyMetadata);
+                }
+
+                applicationEventPublisher.publishEvent(new Created<SsgKeyEntry>(SsgKeyEntry.createDummyEntityForAuditing(keystore.getOid(), alias), note));
+                return null;
+            }
+        }));
     }
 
     private Runnable auditAfterUpdate(SsgKeyStore keystore, String alias, String property, String note) {
@@ -443,5 +497,4 @@ public class PrivateKeyAdminHelper {
             throw new DeleteException("Unable to find keystore: " + ExceptionUtils.getMessage(e), e);
         }
     }
-
 }

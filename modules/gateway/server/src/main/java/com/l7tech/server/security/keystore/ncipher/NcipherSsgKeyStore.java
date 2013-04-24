@@ -42,8 +42,8 @@ public class NcipherSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore implements 
     private long lastLoaded = 0;
     private boolean checkForDeletedFilesOnNextStoreToDisk = false;
 
-    public NcipherSsgKeyStore(long id, String name, KeystoreFileManager kem, KeyAccessFilter keyAccessFilter) throws KeyStoreException {
-        super(keyAccessFilter);
+    public NcipherSsgKeyStore(long id, String name, KeystoreFileManager kem, KeyAccessFilter keyAccessFilter, SsgKeyMetadataFinder ssgKeyMetadataFinder) throws KeyStoreException {
+        super(keyAccessFilter, ssgKeyMetadataFinder);
         this.id = id;
         this.name = name;
         this.kem = kem;

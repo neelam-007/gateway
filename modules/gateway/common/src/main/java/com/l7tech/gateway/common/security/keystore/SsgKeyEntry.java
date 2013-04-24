@@ -1,6 +1,8 @@
 package com.l7tech.gateway.common.security.keystore;
 
 import com.l7tech.objectmodel.NamedEntity;
+import com.l7tech.objectmodel.SecurityZone;
+import com.l7tech.objectmodel.ZoneableEntity;
 import com.l7tech.security.xml.SignerInfo;
 import com.l7tech.util.Functions;
 
@@ -15,7 +17,7 @@ import java.security.cert.X509Certificate;
  * Represents a private key entry in a Gateway key store, including information about a cert chain and
  * RSA private key.
  */
-public class SsgKeyEntry extends SignerInfo implements NamedEntity, Serializable {
+public class SsgKeyEntry extends SignerInfo implements NamedEntity, Serializable, ZoneableEntity {
     private static final long serialVersionUID = 23272983482973430L;
 
     private static Functions.Nullary<Boolean> restrictedKeyAccessChecker;
@@ -23,6 +25,7 @@ public class SsgKeyEntry extends SignerInfo implements NamedEntity, Serializable
     private long keystoreId;
     private String alias;
     private boolean restrictedAccess;
+    private SsgKeyMetadata keyMetadata;
 
     /**
      * Create an SsgKeyEntry.
@@ -204,5 +207,33 @@ public class SsgKeyEntry extends SignerInfo implements NamedEntity, Serializable
     /** @param privateKey the new RSA private key, or null to clear it. */
     public void setPrivateKey(PrivateKey privateKey) {
         super.setPrivate(privateKey);
+    }
+
+    /**
+     * Attach metadata to this key entry.
+     * <p/>
+     * Metadata is any information about the key that doesn't come from the keystore.  The private key and cert chain
+     * come from the key store, but any other metadata needs to be provided via an SsgKeyMetadata entity.
+     * <p/>
+     * Metadata may not be changed once it is attached.
+     *
+     * @param keyMetadata metadata for this entry.  Required.
+     */
+    public void attachMetadata(@NotNull SsgKeyMetadata keyMetadata) {
+        if (this.keyMetadata != null && this.keyMetadata != keyMetadata)
+            throw new IllegalArgumentException("key metadata already attached");
+        this.keyMetadata = keyMetadata;
+    }
+
+    @Override
+    public SecurityZone getSecurityZone() {
+        return keyMetadata == null ? null : keyMetadata.getSecurityZone();
+    }
+
+    @Override
+    public void setSecurityZone(SecurityZone securityZone) {
+        if (keyMetadata == null)
+            keyMetadata = new SsgKeyMetadata();
+        keyMetadata.setSecurityZone(securityZone);
     }
 }

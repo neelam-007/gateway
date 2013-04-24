@@ -2,7 +2,6 @@ package com.l7tech.console.util;
 
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.SecurityZone;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
@@ -108,15 +107,6 @@ public class SecurityZoneWidget extends JComboBox<SecurityZone> {
             zones = permittedZones;
         }
 
-//        if (entityType != null) {
-//            Set<SecurityZone> permittedZones = new HashSet<>();
-//            for (SecurityZone zone : zones) {
-//                if (zone.permitsEntityType(entityType))
-//                    permittedZones.add(zone);
-//            }
-//            zones = permittedZones;
-//        }
-
         loadedZones = new ArrayList<>();
         loadedZones.add(NULL_ZONE);
         loadedZones.addAll(zones);
@@ -133,6 +123,9 @@ public class SecurityZoneWidget extends JComboBox<SecurityZone> {
         super.paint(g);
     }
 
+    /**
+     * @return the selected security zone, or null if the selected zone is "&lt;None&gt;".
+     */
     @Nullable
     public SecurityZone getSelectedZone() {
         SecurityZone ret = (SecurityZone)getSelectedItem();

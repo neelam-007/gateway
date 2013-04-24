@@ -148,6 +148,7 @@
                 <value>com.l7tech.security.cert.TrustedCert</value>
                 <value>com.l7tech.server.secureconversation.StoredSecureConversationSession</value>
                 <value>com.l7tech.server.security.keystore.KeystoreFile</value>
+                <value>com.l7tech.gateway.common.security.keystore.SsgKeyMetadata</value>
                 <value>com.l7tech.server.security.sharedkey.SharedKeyRecord</value>
                 <value>com.l7tech.policy.GenericEntity</value>
 

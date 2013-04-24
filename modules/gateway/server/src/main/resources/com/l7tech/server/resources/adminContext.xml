@@ -399,6 +399,7 @@
         <constructor-arg ref="defaultKey"/>
         <constructor-arg ref="licenseManager"/>
         <constructor-arg ref="ssgKeyStoreManager"/>
+        <constructor-arg ref="ssgKeyMetadataManager"/>
         <constructor-arg ref="securePasswordManager"/>
         <constructor-arg ref="clusterPropertyManager"/>
     </bean>

@@ -502,6 +502,16 @@ create table keystore_file (
     primary key (objectid)
 );
 
+create table keystore_key_metadata (
+  objectid bigint not null,
+  version integer,
+  keystore_file_oid bigint not null references keystore_file(objectid) on delete cascade,
+  alias varchar(255) not null,
+  security_zone_oid bigint references security_zone(objectid) on delete set null,
+  primary key (objectid),
+  unique (keystore_file_oid, alias)
+);
+
 create table logon_info (
     objectid bigint not null,
     fail_count integer,

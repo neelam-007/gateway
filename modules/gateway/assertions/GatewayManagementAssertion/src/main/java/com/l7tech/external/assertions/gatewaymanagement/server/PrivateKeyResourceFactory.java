@@ -25,6 +25,7 @@ import com.l7tech.server.admin.PrivateKeyAdminHelper;
 import com.l7tech.server.cluster.ClusterPropertyCache;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.security.keystore.SsgKeyFinder;
+import com.l7tech.server.security.keystore.SsgKeyMetadataManager;
 import com.l7tech.server.security.keystore.SsgKeyStore;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.security.rbac.RbacServices;
@@ -81,6 +82,7 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
                                       final PlatformTransactionManager transactionManager,
                                       final Config config,
                                       final SsgKeyStoreManager ssgKeyStoreManager,
+                                      final SsgKeyMetadataManager ssgKeyMetadataManager,
                                       final ClusterPropertyCache clusterPropertyCache,
                                       final ClusterPropertyManager clusterPropertyManager,
                                       final DefaultKey defaultKey,
@@ -88,6 +90,7 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
         super( rbacServices, securityFilter, transactionManager );
         this.config = config;
         this.ssgKeyStoreManager = ssgKeyStoreManager;
+        this.ssgKeyMetadataManager = ssgKeyMetadataManager;
         this.clusterPropertyCache = clusterPropertyCache;
         this.clusterPropertyManager = clusterPropertyManager;
         this.defaultKey = defaultKey;
@@ -368,6 +371,7 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
                         helper.doGenerateKeyPair(
                                 keystoreId,
                                 alias,
+                                null, // TODO metadata for security zone
                                 new X500Principal(dn, ValidationUtils.getOidKeywordMap()),
                                 keyGenParams,
                                 expiryDays,
@@ -410,7 +414,7 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
                 try {
                     final PrivateKeyAdminHelper helper = getPrivateKeyAdminHelper();
                     return right( buildPrivateKeyResource(
-                            helper.doImportKeyFromKeyStoreFile(keystoreId, alias, pkcs12bytes, "PKCS12", pkcs12pass, pkcs12pass, pkcs12alias),
+                            helper.doImportKeyFromKeyStoreFile(keystoreId, alias, null, pkcs12bytes, "PKCS12", pkcs12pass, pkcs12pass, pkcs12alias),  // TODO metadata for security zone
                             Option.<Collection<SpecialKeyType>>none() ) );
                 } catch ( AliasNotFoundException e ) {
                     return left( new InvalidResourceException( InvalidResourceException.ExceptionType.INVALID_VALUES, "Aliases not found : " + pkcs12alias ) );
@@ -541,13 +545,14 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
 
     private final Config config;
     private final SsgKeyStoreManager ssgKeyStoreManager;
+    private final SsgKeyMetadataManager ssgKeyMetadataManager;
     private final ClusterPropertyCache clusterPropertyCache;
     private final ClusterPropertyManager clusterPropertyManager;
     private final DefaultKey defaultKey;
     private final ApplicationEventPublisher applicationEventPublisher;
 
     private PrivateKeyAdminHelper getPrivateKeyAdminHelper() {
-        return new PrivateKeyAdminHelper( defaultKey, ssgKeyStoreManager, applicationEventPublisher );
+        return new PrivateKeyAdminHelper( defaultKey, ssgKeyStoreManager, ssgKeyMetadataManager, applicationEventPublisher );
     }
 
     private Pair<Long,String> getKeyId( final Map<String,String> selectorMap ) throws InvalidResourceSelectors {

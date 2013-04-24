@@ -2,6 +2,8 @@ package com.l7tech.server.security.keystore;
 
 import com.l7tech.common.io.*;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
+import com.l7tech.gateway.common.security.keystore.SsgKeyMetadata;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.ObjectNotFoundException;
 import com.l7tech.security.cert.BouncyCastleCertUtils;
 import com.l7tech.security.cert.ParamsKeyGenerator;
@@ -11,6 +13,7 @@ import com.l7tech.server.event.system.Stopped;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.NotFuture;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 
@@ -39,11 +42,11 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
     private static final AtomicBoolean startedRef = new AtomicBoolean(false);
 
     protected final KeyAccessFilter keyAccessFilter;
+    private final SsgKeyMetadataFinder metadataFinder;
 
-    protected JdkKeyStoreBackedSsgKeyStore(KeyAccessFilter keyAccessFilter) {
-        if (keyAccessFilter == null)
-            throw new NullPointerException("keyAccessFilter is required");
+    protected JdkKeyStoreBackedSsgKeyStore(@NotNull KeyAccessFilter keyAccessFilter, @NotNull SsgKeyMetadataFinder metadataFinder) {
         this.keyAccessFilter = keyAccessFilter;
+        this.metadataFinder = metadataFinder;
     }
 
     public static final class StartupListener implements ApplicationListener {
@@ -140,6 +143,16 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
         }
 
         SsgKeyEntry ssgKeyEntry = new SsgKeyEntry(getOid(), alias, x509chain, privateKey);
+
+        try {
+            SsgKeyMetadata meta = metadataFinder.findMetadata(getOid(), alias);
+            if (meta != null)
+                ssgKeyEntry.attachMetadata(meta);
+        } catch (FindException e) {
+            getLogger().log(Level.WARNING, "Unable to retrieve key entry metadata for " + "Keystore " + getName() + " with alias " + alias + ": " + ExceptionUtils.getMessage(e), e);
+            // Fallthrough and do without
+        }
+
         if (keyAccessFilter.isRestrictedAccessKeyEntry(ssgKeyEntry))
             ssgKeyEntry.setRestrictedAccess();
         return ssgKeyEntry;

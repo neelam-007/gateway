@@ -118,6 +118,21 @@ INSERT INTO rbac_permission VALUES (-442,0,-400,'CREATE',NULL,'ASSERTION_ACCESS'
 INSERT INTO rbac_permission VALUES (-443,0,-400,'READ',NULL,'ASSERTION_ACCESS');
 
 --
+-- Keystore private key metadata (security zones)
+--
+CREATE TABLE keystore_key_metadata (
+  objectid bigint(20) NOT NULL,
+  version int(11) NOT NULL,
+  keystore_file_oid bigint(20) NOT NULL,
+  alias varchar(255) NOT NULL,
+  security_zone_oid bigint(20),
+  PRIMARY KEY (objectid),
+  UNIQUE KEY i_ks_alias (keystore_file_oid, alias),
+  CONSTRAINT keystore_key_metadata_keystore_file FOREIGN KEY (keystore_file_oid) REFERENCES keystore_file (objectid) ON DELETE CASCADE,
+  CONSTRAINT keystore_key_metadata_security_zone FOREIGN KEY (security_zone_oid) REFERENCES security_zone (objectid) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
+
+--
 -- Register upgrade task for adding Assertion Access to auto-created "Manage <Blah>" roles
 --
 INSERT INTO cluster_properties

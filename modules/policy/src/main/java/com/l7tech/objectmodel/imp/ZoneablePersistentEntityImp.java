@@ -3,6 +3,7 @@ package com.l7tech.objectmodel.imp;
 import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.objectmodel.SecurityZone;
 import com.l7tech.objectmodel.ZoneableEntity;
+import org.jetbrains.annotations.Nullable;
 
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
@@ -33,7 +34,7 @@ public abstract class ZoneablePersistentEntityImp extends PersistentEntityImp im
     }
 
     @Override
-    public void setSecurityZone(final SecurityZone securityZone) {
+    public void setSecurityZone(@Nullable final SecurityZone securityZone) {
         this.securityZone = securityZone;
     }
 }

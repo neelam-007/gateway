@@ -1773,6 +1773,9 @@
         <constructor-arg ref="masterPasswordManager"/>
     </bean>
 
+    <bean id="ssgKeyMetadataManager" class="com.l7tech.server.security.keystore.SsgKeyMetadataManagerImpl"
+          parent="hibernateBean"/>
+
     <bean id="securePasswordManager" class="com.l7tech.server.security.password.SecurePasswordManagerImpl"
           parent="hibernateBean">
         <constructor-arg ref="sharedKeyManager"/>
@@ -1823,6 +1826,7 @@
                 <constructor-arg value="true"/>
             </bean>
         </constructor-arg>
+        <constructor-arg index="6" ref="ssgKeyMetadataManager"/>
     </bean>
 
     <bean id="keyAccessFilter" class="com.l7tech.server.GatewayKeyAccessFilter">
