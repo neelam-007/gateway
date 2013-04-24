@@ -1,15 +1,25 @@
 package com.l7tech.server.uddi;
 
 import com.l7tech.gateway.common.admin.UDDIRegistryAdmin;
+import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.uddi.UDDIProxiedServiceInfo;
+import com.l7tech.gateway.common.uddi.UDDIPublishStatus;
+import com.l7tech.gateway.common.uddi.UDDIRegistry;
+import com.l7tech.gateway.common.uddi.UDDIServiceControl;
 import com.l7tech.objectmodel.SecurityZone;
 import com.l7tech.server.service.ServiceCache;
 import com.l7tech.server.service.ServiceManager;
+import com.l7tech.wsdl.Wsdl;
+import org.jetbrains.annotations.Nullable;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentMatcher;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
+
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
@@ -40,6 +50,13 @@ public class UDDIRegistryAdminImplTest {
     private ServiceManager serviceManager;
     private UDDIProxiedServiceInfo info;
     private SecurityZone zone;
+    @Mock
+    private PublishedService service;
+    private Map<String, Object> properties;
+    private UDDIServiceControl control;
+    private UDDIRegistry registry;
+    @Mock
+    private Wsdl wsdl;
 
     @Before
     public void setup() {
@@ -49,6 +66,9 @@ public class UDDIRegistryAdminImplTest {
         info = new UDDIProxiedServiceInfo();
         info.setOid(OID);
         zone = new SecurityZone();
+        properties = new HashMap<>();
+        control = new UDDIServiceControl();
+        registry = new UDDIRegistry();
     }
 
     @Test
@@ -119,5 +139,84 @@ public class UDDIRegistryAdminImplTest {
         admin.updateProxiedServiceOnly(info);
 
         verify(uddiProxiedServiceInfoManager, never()).update(existing);
+    }
+
+    @Test
+    public void publishGatewayEndpointSetsSecurityZone() throws Exception {
+        when(serviceCache.getCachedService(anyLong())).thenReturn(service);
+        when(uddiServiceControlManager.findByPublishedServiceOid(anyLong())).thenReturn(control);
+        when(uddiRegistryManager.findByPrimaryKey(anyLong())).thenReturn(registry);
+        when(service.parsedWsdl()).thenReturn(wsdl);
+        when(wsdl.getHash()).thenReturn("abc123");
+
+        admin.publishGatewayEndpoint(service, false, properties, zone);
+
+        verify(uddiProxiedServiceInfoManager).save(argThat(infoWithSecurityZone(zone)));
+        verify(uddiPublishStatusManager).save(any(UDDIPublishStatus.class));
+    }
+
+    @Test
+    public void publishGatewayEndpointGifSetsSecurityZone() throws Exception {
+        properties.put(UDDIProxiedServiceInfo.GIF_SCHEME, UDDIRegistryAdmin.EndpointScheme.HTTP);
+        when(serviceCache.getCachedService(anyLong())).thenReturn(service);
+        when(uddiServiceControlManager.findByPublishedServiceOid(anyLong())).thenReturn(control);
+        when(uddiRegistryManager.findByPrimaryKey(anyLong())).thenReturn(registry);
+        when(service.parsedWsdl()).thenReturn(wsdl);
+        when(wsdl.getHash()).thenReturn("abc123");
+
+        admin.publishGatewayEndpointGif(service, properties, zone);
+
+        verify(uddiProxiedServiceInfoManager).save(argThat(infoWithSecurityZone(zone)));
+        verify(uddiPublishStatusManager).save(any(UDDIPublishStatus.class));
+    }
+
+    @Test
+    public void overwriteBusinessServiceInUDDISetsSecurityZone() throws Exception {
+        when(serviceCache.getCachedService(anyLong())).thenReturn(service);
+        when(uddiServiceControlManager.findByPublishedServiceOid(anyLong())).thenReturn(control);
+        when(service.parsedWsdl()).thenReturn(wsdl);
+        when(wsdl.getHash()).thenReturn("abc123");
+
+        admin.overwriteBusinessServiceInUDDI(service, false, zone);
+
+        verify(uddiProxiedServiceInfoManager).save(argThat(infoWithSecurityZone(zone)));
+        verify(uddiPublishStatusManager).save(any(UDDIPublishStatus.class));
+    }
+
+    @Test
+    public void publishGatewayWsdlSetsSecurityZone() throws Exception {
+        when(uddiRegistryManager.findByPrimaryKey(anyLong())).thenReturn(registry);
+        when(serviceCache.getCachedService(anyLong())).thenReturn(service);
+        when(service.parsedWsdl()).thenReturn(wsdl);
+        when(wsdl.getHash()).thenReturn("abc123");
+
+        admin.publishGatewayWsdl(service, 1234L, "bKey", "bName", false, zone);
+
+        verify(uddiProxiedServiceInfoManager).save(argThat(infoWithSecurityZone(zone)));
+        verify(uddiPublishStatusManager).save(any(UDDIPublishStatus.class));
+    }
+
+    private ProxiedServiceInfoWithSecurityZone infoWithSecurityZone(final SecurityZone zone) {
+        return new ProxiedServiceInfoWithSecurityZone(zone);
+    }
+
+    private class ProxiedServiceInfoWithSecurityZone extends ArgumentMatcher<UDDIProxiedServiceInfo> {
+        private SecurityZone zone;
+
+        private ProxiedServiceInfoWithSecurityZone(@Nullable final SecurityZone zone) {
+            this.zone = zone;
+        }
+
+        @Override
+        public boolean matches(final Object o) {
+            if (o != null) {
+                final UDDIProxiedServiceInfo serviceInfo = (UDDIProxiedServiceInfo) o;
+                if ((zone == null && serviceInfo.getSecurityZone() == null) ||
+                        (zone != null && zone.equals(serviceInfo.getSecurityZone()))) {
+                    return true;
+                }
+            }
+            return false;
+        }
     }
 }

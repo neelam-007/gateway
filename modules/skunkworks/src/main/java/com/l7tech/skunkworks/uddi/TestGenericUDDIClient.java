@@ -164,7 +164,7 @@ public class TestGenericUDDIClient {
 
         final String businessKey = "uddi:c4f2cbdd-beab-11de-8126-f78857d54072";//this exists in my local uddi registry
 
-        uddiRegistryAdmin.publishGatewayWsdl(serviceToPublish, activeSoa.getOid(), businessKey, "Skunkworks Organization", false);
+        uddiRegistryAdmin.publishGatewayWsdl(serviceToPublish, activeSoa.getOid(), businessKey, "Skunkworks Organization", false, null);
 
         SyspropUtil.clearProperty( "com.l7tech.console.suppressVersionCheck" );
     }

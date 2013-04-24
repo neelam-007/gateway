@@ -8,6 +8,7 @@
 package com.l7tech.gateway.common.admin;
 
 import com.l7tech.gateway.common.uddi.*;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.transaction.annotation.Transactional;
 import static org.springframework.transaction.annotation.Propagation.REQUIRED;
 import com.l7tech.gateway.common.security.rbac.Secured;
@@ -100,6 +101,7 @@ public interface UDDIRegistryAdmin {
      * @param uddiBusinessName String name of the owning BusinessEntity from UDDI
      * @param updateWhenGatewayWsdlChanges boolean if true, then the proxied published service will be udpated as the
      * Gateway's WSDL changes
+     * @param securityZone the SecurityZone to assign to the UDDIProxiedServiceInfo created on publish
      * @throws FindException if the published service or uddi registry could not be found
      * @throws PublishProxiedServiceException if the Gateway WSDL cannot be found
      * @throws com.l7tech.objectmodel.UpdateException if the UDDIProxiedService cannot be updated
@@ -109,7 +111,7 @@ public interface UDDIRegistryAdmin {
      */
     @Secured(types = EntityType.SERVICE, stereotype = MethodStereotype.SAVE_OR_UPDATE, relevantArg = 0)
     void publishGatewayWsdl(PublishedService publishedService, long uddiRegistryOid, String uddiBusinessKey, String uddiBusinessName,
-                            boolean updateWhenGatewayWsdlChanges)
+                            boolean updateWhenGatewayWsdlChanges, @Nullable SecurityZone securityZone)
             throws FindException, PublishProxiedServiceException, VersionException, UpdateException, SaveException, UDDIRegistryNotEnabledException;
 
     /**
@@ -117,11 +119,12 @@ public interface UDDIRegistryAdmin {
      *
      * @param publishedServiceIn PublishedService to publish a WSDL to an existing service in UDDI for
      * @param updateWhenGatewayWsdlChanges boolean if true, then the publish is configured to updated when the gateway wsdl changes
+     * @param securityZone the SecurityZone to assign to the UDDIProxiedServiceInfo created on publish
      * @throws com.l7tech.objectmodel.FindException
      * @throws com.l7tech.objectmodel.SaveException
      */
     @Secured(types = EntityType.SERVICE, stereotype = MethodStereotype.SAVE_OR_UPDATE, relevantArg = 0)
-    void overwriteBusinessServiceInUDDI(PublishedService publishedServiceIn, final boolean updateWhenGatewayWsdlChanges)
+    void overwriteBusinessServiceInUDDI(PublishedService publishedServiceIn, final boolean updateWhenGatewayWsdlChanges, @Nullable SecurityZone securityZone)
             throws SaveException, FindException;
 
     /**
@@ -135,6 +138,7 @@ public interface UDDIRegistryAdmin {
      * @param publishedService the PublishedService who's endpoint will be published to UDDI
      * @param removeOthers     boolean if true, then all other bindingTemplates will be removed from the BusinessService
      * @param properties Map of properties
+     * @param securityZone the SecurityZone to assign to the UDDIProxiedServiceInfo created on publish
      * @throws com.l7tech.gateway.common.admin.UDDIRegistryAdmin.UDDIRegistryNotEnabledException
      * @throws com.l7tech.objectmodel.FindException
      * @throws com.l7tech.objectmodel.SaveException
@@ -143,7 +147,8 @@ public interface UDDIRegistryAdmin {
     @Secured(types = EntityType.SERVICE, stereotype = MethodStereotype.SAVE_OR_UPDATE, relevantArg = 0)
     void publishGatewayEndpoint(PublishedService publishedService,
                                 boolean removeOthers,
-                                Map<String, Object> properties) throws FindException, SaveException, UDDIRegistryNotEnabledException;
+                                Map<String, Object> properties,
+                                @Nullable SecurityZone securityZone) throws FindException, SaveException, UDDIRegistryNotEnabledException;
 
     /**
      * Publish an endpoint to an existing Service in UDDI following the GIF. (Governance Interoperability Framework).
@@ -152,13 +157,15 @@ public interface UDDIRegistryAdmin {
      * @param properties Map of properties for the UDDIProxiedServiceInfo being created. It must contain a property
      * called {@link com.l7tech.gateway.common.uddi.UDDIProxiedServiceInfo#GIF_SCHEME}, which is of type EndpointScheme
      * for what type of endpoint to publish HTTP or HTTPS
+     * @param securityZone the SecurityZone to assign to the UDDIProxiedServiceInfo created on publish
      * @throws FindException
      * @throws SaveException
      * @throws UDDIRegistryNotEnabledException
      */
     @Secured(types = EntityType.SERVICE, stereotype = MethodStereotype.SAVE_OR_UPDATE, relevantArg = 0)
     void publishGatewayEndpointGif(PublishedService publishedService,
-                                   Map<String, Object> properties) throws FindException, SaveException, UDDIRegistryNotEnabledException;
+                                   Map<String, Object> properties,
+                                   @Nullable SecurityZone securityZone) throws FindException, SaveException, UDDIRegistryNotEnabledException;
 
     /**
      * Updated the UDDI with changes to a Published Service's WSDL

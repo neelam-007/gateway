@@ -14,6 +14,7 @@ import com.l7tech.uddi.UDDIUtilities;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.wsdl.Wsdl;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationAdapter;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
@@ -479,7 +480,8 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
     @Override
     public void publishGatewayEndpoint(final PublishedService publishedService,
                                        final boolean removeOthers,
-                                       final Map<String, Object> properties)
+                                       final Map<String, Object> properties,
+                                       final @Nullable SecurityZone securityZone)
             throws FindException, SaveException, UDDIRegistryNotEnabledException {
         if (publishedService == null) throw new NullPointerException("publishedServiceOid must not be null");
 
@@ -504,6 +506,7 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
         final UDDIProxiedServiceInfo serviceInfo = UDDIProxiedServiceInfo.getEndPointPublishInfo(service.getOid(),
                 uddiRegistry.getOid(), serviceControl.getUddiBusinessKey(), serviceControl.getUddiBusinessName(),
                 wsdlHash, removeOthers);
+        serviceInfo.setSecurityZone(securityZone);
 
         for (Map.Entry<String, Object> entry : properties.entrySet()) {
             serviceInfo.setProperty(entry.getKey(), entry.getValue());
@@ -517,7 +520,8 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
 
     @Override
     public void publishGatewayEndpointGif(final PublishedService publishedService,
-                                          final Map<String, Object> properties) throws FindException, SaveException, UDDIRegistryNotEnabledException {
+                                          final Map<String, Object> properties,
+                                          final @Nullable SecurityZone securityZone) throws FindException, SaveException, UDDIRegistryNotEnabledException {
         if(publishedService == null) throw new NullPointerException("publishedService must not be null");
 
         if(properties == null) throw new NullPointerException("properties cannot be null");
@@ -541,6 +545,7 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
         final UDDIProxiedServiceInfo serviceInfo = UDDIProxiedServiceInfo.getGifEndPointPublishInfo(service.getOid(),
                 uddiRegistry.getOid(), serviceControl.getUddiBusinessKey(), serviceControl.getUddiBusinessName(),
                 wsdlHash);
+        serviceInfo.setSecurityZone(securityZone);
 
         for (Map.Entry<String, Object> entry : properties.entrySet()) {
             serviceInfo.setProperty(entry.getKey(), entry.getValue());
@@ -552,7 +557,7 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
     }
 
     @Override
-    public void overwriteBusinessServiceInUDDI(PublishedService publishedServiceIn, final boolean updateWhenGatewayWsdlChanges)
+    public void overwriteBusinessServiceInUDDI(PublishedService publishedServiceIn, final boolean updateWhenGatewayWsdlChanges, final @Nullable SecurityZone securityZone)
             throws SaveException, FindException {
         final PublishedService publishedService = serviceCache.getCachedService(publishedServiceIn.getOid());
         if(publishedService == null) throw new IllegalArgumentException("No PublishedService found for #(" + publishedServiceIn +")" );
@@ -567,6 +572,7 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
                 UDDIProxiedServiceInfo.getOverwriteProxyServicePublishInfo(publishedService.getOid(),
                         serviceControl.getUddiRegistryOid(), serviceControl.getUddiBusinessKey(),
                         serviceControl.getUddiBusinessName(), wsdlHash, updateWhenGatewayWsdlChanges);
+        uddiProxiedServiceInfo.setSecurityZone(securityZone);
 
         final long oid = uddiProxiedServiceInfoManager.save(uddiProxiedServiceInfo);
         final UDDIPublishStatus newStatus = new UDDIPublishStatus(oid, UDDIPublishStatus.PublishStatus.PUBLISH);
@@ -580,7 +586,8 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
                                    final long uddiRegistryOid,
                                    final String uddiBusinessKey,
                                    final String uddiBusinessName,
-                                   final boolean updateWhenGatewayWsdlChanges)
+                                   final boolean updateWhenGatewayWsdlChanges,
+                                   final @Nullable SecurityZone securityZone)
             throws FindException, SaveException, UDDIRegistryNotEnabledException {
 
         if(publishedService == null) throw new NullPointerException("publishedService cannot be null");
@@ -600,6 +607,7 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
         final UDDIProxiedServiceInfo uddiProxiedServiceInfo = UDDIProxiedServiceInfo.getProxyServicePublishInfo(service.getOid(),
                 uddiRegistry.getOid(), uddiBusinessKey, uddiBusinessName,
                 wsdlHash, updateWhenGatewayWsdlChanges);
+        uddiProxiedServiceInfo.setSecurityZone(securityZone);
 
         final long oid = uddiProxiedServiceInfoManager.save(uddiProxiedServiceInfo);
         final UDDIPublishStatus newStatus = new UDDIPublishStatus(oid, UDDIPublishStatus.PublishStatus.PUBLISH);
