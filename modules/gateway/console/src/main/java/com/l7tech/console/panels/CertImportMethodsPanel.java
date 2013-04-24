@@ -359,7 +359,7 @@ public class CertImportMethodsPanel extends WizardStepPanel {
                                                           null, options, options[1]);
 
                 // abort if the user does not accept the hostname mismatch
-                if (result == 1) {
+                if (result != 0) {
                     return false;
                 }
             }
