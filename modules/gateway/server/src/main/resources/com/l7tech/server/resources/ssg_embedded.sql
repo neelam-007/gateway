@@ -201,7 +201,7 @@ create table active_connector_property (
 create table client_cert (
     objectid bigint not null,
     cert clob(2147483647),
-    issuer_dn varchar(500),
+    issuer_dn varchar(2048),
     serial varchar(255),
     ski varchar(64),
     subject_dn varchar(2048),
@@ -839,7 +839,7 @@ create table sink_config (
 create table trusted_cert (
     objectid bigint not null,
     cert_base64 clob(2147483647),
-    issuer_dn varchar(500),
+    issuer_dn varchar(2048),
     serial varchar(1024),
     ski varchar(64),
     subject_dn varchar(2048),

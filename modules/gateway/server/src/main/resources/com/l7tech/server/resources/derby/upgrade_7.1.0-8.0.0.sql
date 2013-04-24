@@ -108,6 +108,11 @@ INSERT INTO rbac_permission VALUES (-361,0,-350,'CREATE',NULL,'ASSERTION_ACCESS'
 INSERT INTO rbac_permission VALUES (-442,0,-400,'CREATE',NULL,'ASSERTION_ACCESS');
 INSERT INTO rbac_permission VALUES (-443,0,-400,'READ',NULL,'ASSERTION_ACCESS');
 
+-- Increasing the length of the issuer dn to match the length of the subject dn
+-- See SSG-6848, SSG-6849, SSG-6850
+ALTER TABLE client_cert ALTER COLUMN issuer_dn SET DATA TYPE VARCHAR(2048);
+ALTER TABLE trusted_cert ALTER COLUMN issuer_dn SET DATA TYPE VARCHAR(2048);
+
 --
 -- Keystore private key metadata (security zones)
 --

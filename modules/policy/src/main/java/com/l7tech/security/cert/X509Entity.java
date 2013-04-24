@@ -193,8 +193,8 @@ public abstract class X509Entity extends PersistentEntityImp {
      *
      * @return The issuer DN or null
      */
-    @Size(max=500)
-    @Column(name="issuer_dn",length=500)
+    @Size(max=2048)
+    @Column(name="issuer_dn",length=2048)
     public String getIssuerDn() {
         return issuerDn;
     }

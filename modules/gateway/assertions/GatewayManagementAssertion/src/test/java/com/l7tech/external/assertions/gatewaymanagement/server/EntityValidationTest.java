@@ -371,7 +371,7 @@ public class EntityValidationTest {
 
         // test issuer DN
         checkNull( trustedCert, "issuerDn", true );
-        checkSize( trustedCert, "issuerDn", 0, 500 );
+        checkSize( trustedCert, "issuerDn", 0, 2048 );
 
         // test serial
         checkNull( trustedCert, "serial", true );

@@ -117,6 +117,16 @@ INSERT INTO rbac_permission VALUES (-361,0,-350,'CREATE',NULL,'ASSERTION_ACCESS'
 INSERT INTO rbac_permission VALUES (-442,0,-400,'CREATE',NULL,'ASSERTION_ACCESS');
 INSERT INTO rbac_permission VALUES (-443,0,-400,'READ',NULL,'ASSERTION_ACCESS');
 
+-- Increasing the length of the issuer dn to match the length of the subject dn
+-- See SSG-6848, SSG-6849, SSG-6850
+ALTER TABLE client_cert MODIFY COLUMN issuer_dn VARCHAR(2048);
+ALTER TABLE trusted_cert MODIFY COLUMN issuer_dn VARCHAR(2048);
+-- updating the client_cert index to match the index in ssg.sql
+-- Note the trusted_cert table index doesn't need to be as it was already created with issuer_dn(255)
+-- setting the length to 255 will use the first 255 characters of the issuer_dn to create the index.
+ALTER TABLE client_cert DROP INDEX i_issuer_dn;
+CREATE INDEX i_issuer_dn ON client_cert (issuer_dn(255));
+
 --
 -- Keystore private key metadata (security zones)
 --
