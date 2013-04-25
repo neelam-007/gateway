@@ -46,17 +46,18 @@ public class RoleManagementDialog extends JDialog {
 
     private final PermissionFlags flags;
     private final RbacAdmin rbacAdmin = Registry.getDefault().getRbacAdmin();
+    private final DefaultListModel roleListModel = new DefaultListModel();
+    private final FilterListModel<RoleModel> filteredListRoleModel = new FilterListModel<RoleModel>(roleListModel);
+    private final boolean canEditRoles = RbacUtilities.isEnableRoleEditing();
+    private final boolean canEditBuiltinRoles = RbacUtilities.isEnableBuiltInRoleEditing();
+    private RoleAssignmentTableModel roleAssignmentTableModel;
+
     private final ActionListener roleActionListener = new ActionListener() {
         @Override
         public void actionPerformed(ActionEvent e) {
             doUpdateRoleAction(e);
         }
     };
-    private final DefaultListModel roleListModel = new DefaultListModel();
-    private final FilterListModel<RoleModel> filteredListRoleModel = new FilterListModel<RoleModel>(roleListModel);
-    private final boolean canEditRoles = RbacUtilities.isEnableRoleEditing();
-    private final boolean canEditBuiltinRoles = RbacUtilities.isEnableBuiltInRoleEditing();
-    private RoleAssignmentTableModel roleAssignmentTableModel;
 
     public RoleManagementDialog(final Window parent) throws HeadlessException {
         super(parent, resources.getString("manageRoles.title"), JDialog.DEFAULT_MODALITY_TYPE);
@@ -387,7 +388,7 @@ public class RoleManagementDialog extends JDialog {
 
         private RoleModel(Role role) {
             this.role = role;
-            this.name = role.getDescriptiveName();
+            this.name = role.getContextualDescriptiveName();
         }
 
         @Override

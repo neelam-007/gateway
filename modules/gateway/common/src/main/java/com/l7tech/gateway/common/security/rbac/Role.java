@@ -11,6 +11,7 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.NamedEntity;
 import com.l7tech.objectmodel.SecurityZone;
 import com.l7tech.objectmodel.folder.Folder;
+import com.l7tech.objectmodel.folder.HasFolder;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.util.TextUtils;
 import org.hibernate.annotations.Cascade;
@@ -22,6 +23,7 @@ import org.jetbrains.annotations.Nullable;
 import javax.persistence.*;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.Set;
 import java.util.regex.Matcher;
 
@@ -349,5 +351,48 @@ public class Role extends NamedEntityImp implements Comparable<Role> {
         }
 
         return sb.toString();
+    }
+
+    /**
+     * Construct description from the role name and folder path of the Entity, if it has one. The contextual
+     * description can be used to distinguish entities with the same name.
+     */
+    @Transient
+    public String getContextualDescriptiveName() {
+        if(cachedSpecificEntity instanceof HasFolder) {
+            final String PATH_SEPARATOR = "/";
+            final String ELLIPSIS = "...";
+
+            LinkedList<String> folderPath = new LinkedList<>();
+            HasFolder folderEntity = (HasFolder) cachedSpecificEntity;
+
+            while (null != folderEntity.getFolder()) {
+                folderPath.add(folderEntity.getFolder().getName());
+                folderEntity = folderEntity.getFolder();
+            }
+
+            StringBuilder description = new StringBuilder();
+            description.append(getDescriptiveName());
+            description.append(" (").append(PATH_SEPARATOR);
+
+            if (folderPath.size() > 1 && folderPath.size() <= 4) {
+                for (int i = folderPath.size() - 2; i >= 0; i--) {
+                    description.append(folderPath.get(i));
+                    description.append(PATH_SEPARATOR);
+                }
+            } else if(folderPath.size() > 4) {
+                description.append(folderPath.get(3));
+                description.append(PATH_SEPARATOR).append(ELLIPSIS).append(PATH_SEPARATOR);
+                description.append(folderPath.get(0));
+                description.append(PATH_SEPARATOR);
+            }
+
+            description.append(((NamedEntity) cachedSpecificEntity).getName()).append(")");
+
+            return description.toString();
+        } else {
+            // can extend later to create contextual descriptive names for other entity types
+            return getDescriptiveName();
+        }
     }
 }
