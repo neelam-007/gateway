@@ -49,14 +49,14 @@ public class EditFolderAction extends SecureAction {
      * @return the action name
      */
     public String getName() {
-        return "Rename Folder";
+        return "Edit Folder";
     }
 
     /**
      * @return the action description
      */
     public String getDescription() {
-        return "Rename Folder";
+        return "Edit Folder";
     }
 
     /**
@@ -67,20 +67,22 @@ public class EditFolderAction extends SecureAction {
     }
 
     protected void performAction() {
-        editFolder(Option.<String>none());
+        editFolder();
     }
 
-    private void editFolder( final Option<String> folderName ) {
+    private void editFolder() {
         Frame f = TopComponents.getInstance().getTopParent();
-        final PolicyFolderPropertiesDialog dialog = new PolicyFolderPropertiesDialog(f, folderName.orSome(folder.getName()));
+        final PolicyFolderPropertiesDialog dialog = new PolicyFolderPropertiesDialog(f, folderHeader);
         dialog.setVisible(true);
 
         if(dialog.isConfirmed()) {
             String prevFolderName = folder.getName();
             try {
                 folder.setName(dialog.getName());
+                folder.setSecurityZone(dialog.getSelectedSecurityZone());
                 folderAdmin.saveFolder(folder);
                 folderHeader.setName(dialog.getName());
+                folderHeader.setSecurityZoneOid(dialog.getSelectedSecurityZone() == null ? null : dialog.getSelectedSecurityZone().getOid());
                 final JTree tree = (JTree)TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME);
                 if (tree != null) {
                     DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
@@ -100,7 +102,7 @@ public class EditFolderAction extends SecureAction {
                         JOptionPane.WARNING_MESSAGE, new Runnable() {
                     @Override
                     public void run() {
-                        editFolder( some( dialog.getName() ) );
+                        editFolder();
                     }
                 });
             } catch(UpdateException e) {

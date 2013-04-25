@@ -150,7 +150,7 @@ public final class RootNode extends FolderNode {
      * a given service manager with the name.
      */
     public RootNode(String name) {
-        super(new FolderHeader(OID, name, null, 0, "/"), null);
+        super(new FolderHeader(OID, name, null, 0, "/", null), null);
         this.serviceManager = Registry.getDefault().getServiceManager();
         this.policyAdmin = Registry.getDefault().getPolicyAdmin();
         this.title = name;

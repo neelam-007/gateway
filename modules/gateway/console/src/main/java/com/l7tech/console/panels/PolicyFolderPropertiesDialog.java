@@ -1,9 +1,16 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.SecurityZoneUtil;
+import com.l7tech.console.util.SecurityZoneWidget;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.EntityUtil;
+import com.l7tech.objectmodel.SecurityZone;
 import com.l7tech.objectmodel.folder.Folder;
+import com.l7tech.objectmodel.folder.FolderHeader;
+import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import javax.swing.text.PlainDocument;
@@ -30,9 +37,11 @@ public class PolicyFolderPropertiesDialog extends JDialog {
     private JButton okButton;
     private JButton cancelButton;
     private JPanel contentPanel;
+    private SecurityZoneWidget zoneControl;
 
     private boolean confirmed = false;
     private final JDialog dialog;
+    private FolderHeader header;
 
     private static final int MAX_FOLDER_NAME_LENGTH = EntityUtil.getMaxFieldLength( Folder.class, "name", 128 );
 
@@ -41,11 +50,12 @@ public class PolicyFolderPropertiesDialog extends JDialog {
      * will be set from the provided value.
      *
      * @param owner The owner of this dialog window
-     * @param folderName The name of the policy/service folder
+     * @param header The name of the policy/service folder
      */
-    public PolicyFolderPropertiesDialog(Window owner, String folderName) throws HeadlessException {
+    public PolicyFolderPropertiesDialog(Window owner, @NotNull FolderHeader header) throws HeadlessException {
         super(owner, TITLE, DEFAULT_MODALITY_TYPE);
-        initialize(folderName);
+        this.header = header;
+        initialize();
         dialog = this;
     }
 
@@ -60,7 +70,7 @@ public class PolicyFolderPropertiesDialog extends JDialog {
     /**
      * Initializes this dialog window and sets fields with the given values.
      */
-    private void initialize(String folderName) {
+    private void initialize() {
         setContentPane(contentPanel);
         getRootPane().setDefaultButton( okButton );
 
@@ -79,12 +89,14 @@ public class PolicyFolderPropertiesDialog extends JDialog {
             }
         });
 
-        nameField.setText( folderName );
+        nameField.setText(header.getName());
+        zoneControl.setEntityType(EntityType.FOLDER);
+        zoneControl.setSelectedZone(header.getSecurityZoneOid() == null ? null : SecurityZoneUtil.getSecurityZoneByOid(header.getSecurityZoneOid()));
 
         addWindowListener(new WindowAdapter() {
             @Override
             public void windowOpened(WindowEvent e) {
-                if ( nameField.isEditable() ) {
+                if (nameField.isEditable()) {
                     nameField.requestFocusInWindow();
                     nameField.selectAll();
                 }
@@ -124,6 +136,10 @@ public class PolicyFolderPropertiesDialog extends JDialog {
 
     public String getName() {
         return nameField.getText().trim();
+    }
+
+    public SecurityZone getSelectedSecurityZone() {
+        return zoneControl.getSelectedZone();
     }
 
     /** @return true if the dialog has been dismissed with the ok button */

@@ -2,13 +2,14 @@ package com.l7tech.objectmodel.folder;
 
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.ZoneableEntityHeader;
 
 /**
  * Header class for service/policy folders.
  *
  * @author darmstrong
  */
-public class FolderHeader extends EntityHeader {
+public class FolderHeader extends ZoneableEntityHeader {
 
     //- PUBLIC
 
@@ -17,17 +18,20 @@ public class FolderHeader extends EntityHeader {
               folder.getName(),
               folder.getFolder() == null ? null : folder.getFolder().getOid(),
               folder.getVersion(),
-              folder.getPath() );
+              folder.getPath(),
+              folder.getSecurityZone() == null ? null : folder.getSecurityZone().getOid());
     }
 
     public FolderHeader( final long objectid,
                          final String name,
                          final Long parentFolderOid,
                          final Integer version,
-                         final String path) {
+                         final String path,
+                         final Long securityZoneOid) {
         super(objectid, EntityType.FOLDER, name, path, version);
         this.parentFolderOid = parentFolderOid;
         this.path = path;
+        this.securityZoneOid = securityZoneOid;
     }
 
     public Long getParentFolderOid() {

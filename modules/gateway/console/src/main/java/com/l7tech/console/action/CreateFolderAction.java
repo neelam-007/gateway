@@ -71,19 +71,22 @@ public class CreateFolderAction extends SecureAction {
 
     private void createFolder( final String name ) {
         final Frame f = TopComponents.getInstance().getTopParent();
-        final PolicyFolderPropertiesDialog dialog = new PolicyFolderPropertiesDialog(f, name);
+        final Folder newFolder = new Folder(name, parentFolder);
+        final PolicyFolderPropertiesDialog dialog = new PolicyFolderPropertiesDialog(f, new FolderHeader(newFolder));
         DialogDisplayer.display(dialog, new Runnable() {
             @Override
             public void run() {
                 if(dialog.isConfirmed()) {
-                    final Folder folder = new Folder(dialog.getName(), parentFolder);
+                    //final Folder folder = new Folder(dialog.getName(), parentFolder);
+                    newFolder.setName(dialog.getName());
+                    newFolder.setSecurityZone(dialog.getSelectedSecurityZone());
                     try {
-                        folder.setOid(folderAdmin.saveFolder(folder));
+                        newFolder.setOid(folderAdmin.saveFolder(newFolder));
 
                         final JTree tree = (JTree)TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME);
                         if (tree != null) {
                             DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
-                            FolderHeader header = new FolderHeader(folder);
+                            FolderHeader header = new FolderHeader(newFolder);
                             final AbstractTreeNode sn = new FolderNode(header, parentFolder);
                             model.insertNodeInto(sn, parentNode, parentNode.getInsertPosition(sn, RootNode.getComparator()));
 
@@ -103,7 +106,7 @@ public class CreateFolderAction extends SecureAction {
                                 JOptionPane.WARNING_MESSAGE, new Runnable() {
                             @Override
                             public void run() {
-                                createFolder( folder.getName() );
+                                createFolder(newFolder.getName());
                             }
                         });
                     } catch(UpdateException e) {

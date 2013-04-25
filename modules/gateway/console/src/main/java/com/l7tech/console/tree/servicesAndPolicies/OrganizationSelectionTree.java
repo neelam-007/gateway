@@ -33,7 +33,7 @@ public class OrganizationSelectionTree<LEH extends OrganizationHeader> extends J
      * @param leafsSelectable True if the displayed OrganizationHeaders are selectable.
      */
     public OrganizationSelectionTree( final boolean leafsSelectable ) {
-        this.rootNode = new CheckBoxNode( new FolderHeader(-5002L, "/", null, null, "/" ), false);
+        this.rootNode = new CheckBoxNode( new FolderHeader(-5002L, "/", null, null, "/", null), false);
         this.organizationTreeModel = new DefaultTreeModel(rootNode);
         this.leafsSelectable = leafsSelectable;
         setModel( organizationTreeModel );

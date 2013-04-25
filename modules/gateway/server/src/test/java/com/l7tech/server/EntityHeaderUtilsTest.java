@@ -1,10 +1,9 @@
 package com.l7tech.server;
 
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.ExternalEntityHeader;
-import com.l7tech.objectmodel.GuidEntityHeader;
+import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
+import com.l7tech.objectmodel.folder.Folder;
+import com.l7tech.objectmodel.folder.FolderHeader;
 import com.l7tech.test.BugId;
 import org.junit.Test;
 
@@ -80,6 +79,24 @@ public class EntityHeaderUtilsTest {
         assertNull(guidHeader.getName());
         assertNull(guidHeader.getDescription());
         assertNull(guidHeader.getVersion());
+    }
+
+    @Test
+    public void fromEntityFolderSetsSecurityZoneOid() {
+        final Folder folder = new Folder("testFolder", null);
+        final SecurityZone zone = new SecurityZone();
+        zone.setOid(1234L);
+        folder.setSecurityZone(zone);
+        final FolderHeader header = (FolderHeader) EntityHeaderUtils.fromEntity(folder);
+        assertEquals(new Long(1234), header.getSecurityZoneOid());
+    }
+
+    @Test
+    public void fromEntityFolderSetsNullSecurityZoneOid() {
+        final Folder folder = new Folder("testFolder", null);
+        folder.setSecurityZone(null);
+        final FolderHeader header = (FolderHeader) EntityHeaderUtils.fromEntity(folder);
+        assertNull(header.getSecurityZoneOid());
     }
 
     private EncapsulatedAssertionConfig createEncapsulatedAssertionConfig(final String guid, final String name, final Integer version) {

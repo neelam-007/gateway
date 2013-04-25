@@ -3,11 +3,10 @@ package com.l7tech.console.util;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SecurityZone;
 import com.l7tech.util.ExceptionUtils;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -18,7 +17,7 @@ import java.util.logging.Logger;
 public class SecurityZoneUtil {
     private static final Logger logger = Logger.getLogger(SecurityZoneUtil.class.getName());
 
-    private static final AtomicReference<Set<SecurityZone>> securityZones = new AtomicReference<>();
+    private static final AtomicReference<Map<Long, SecurityZone>> securityZones = new AtomicReference<>();
 
     /**
      * Check if any security zones exist and are visible to the current admin user.
@@ -36,21 +35,33 @@ public class SecurityZoneUtil {
     /**
      * @return all security zones visible to the current admin.  Never null.
      */
+    @NotNull
     public static Set<SecurityZone> getSecurityZones() {
-        Set<SecurityZone> ret = securityZones.get();
+        final Map<Long, SecurityZone> ret = loadMap();
+        return ret != null ? new HashSet<>(ret.values()) : Collections.<SecurityZone>emptySet();
+    }
 
+    @Nullable
+    public static SecurityZone getSecurityZoneByOid(final long oid) {
+        return loadMap().get(oid);
+    }
+
+    private static Map<Long, SecurityZone> loadMap() {
+        Map<Long, SecurityZone> ret = securityZones.get();
         if (ret == null) {
             try {
                 if (Registry.getDefault().isAdminContextPresent()) {
-                    Collection<SecurityZone> zones = Registry.getDefault().getRbacAdmin().findAllSecurityZones();
-                    ret = new HashSet<>(zones);
+                    final Collection<SecurityZone> zones = Registry.getDefault().getRbacAdmin().findAllSecurityZones();
+                    ret = new HashMap<>(zones.size());
+                    for (final SecurityZone zone : zones) {
+                        ret.put(zone.getOid(), zone);
+                    }
                     securityZones.set(ret);
                 }
-            } catch (FindException e) {
+            } catch (final FindException e) {
                 logger.log(Level.WARNING, "Unable to load security zones: " + ExceptionUtils.getMessage(e), e);
             }
         }
-
-        return ret != null ? ret : Collections.<SecurityZone>emptySet();
+        return ret;
     }
 }
