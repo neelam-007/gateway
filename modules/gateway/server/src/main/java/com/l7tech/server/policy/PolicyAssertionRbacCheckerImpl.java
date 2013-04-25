@@ -25,6 +25,10 @@ public class PolicyAssertionRbacCheckerImpl implements PolicyAssertionRbacChecke
     @Named("rbacServices")
     private RbacServices rbacServices;
 
+    @Inject
+    @Named("assertionAccessManager")
+    private AssertionAccessManager assertionAccessManager;
+
     @Override
     public void checkPolicy(@Nullable Policy policy) throws FindException, PermissionDeniedException, IOException {
         if (policy != null) {
@@ -44,7 +48,7 @@ public class PolicyAssertionRbacCheckerImpl implements PolicyAssertionRbacChecke
     }
 
     /*
-     * Check if all assertions are allowed for the user.  An assertion is allowed if the user has Create permission
+     * Check if all assertions are allowed for the user.  An assertion is allowed if the user has READ permission
      * on an AssertionAccess instance created for the assertion.
      */
     void checkPolicy(final @NotNull User user, @Nullable Assertion rootAssertion) throws FindException, PermissionDeniedException {
@@ -54,11 +58,11 @@ public class PolicyAssertionRbacCheckerImpl implements PolicyAssertionRbacChecke
         PolicyUtil.visitDescendantsAndSelf(rootAssertion, new Functions.UnaryVoid<Assertion>() {
             @Override
             public void call(Assertion assertion) {
-                final AssertionAccess access = AssertionAccess.forAssertion(assertion);
+                final AssertionAccess access = assertionAccessManager.getAssertionAccessCached(assertion);
                 try {
-                    if (!rbacServices.isPermittedForEntity(user, access, OperationType.CREATE, null)) {
+                    if (!rbacServices.isPermittedForEntity(user, access, OperationType.READ, null)) {
                         if (permErr[0] == null)
-                            permErr[0] = new PermissionDeniedException(OperationType.CREATE, access, null);
+                            permErr[0] = new PermissionDeniedException(OperationType.READ, access, null);
                     }
                 } catch (FindException e) {
                     if (findErr[0] == null)

@@ -4,6 +4,8 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityManager;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.AssertionAccess;
+import com.l7tech.policy.assertion.Assertion;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
 
@@ -32,4 +34,14 @@ public interface AssertionAccessManager extends EntityManager<AssertionAccess, E
      * @throws com.l7tech.objectmodel.FindException if there is a problem accessing the database
      */
     Collection<AssertionAccess> findAllRegistered() throws FindException;
+
+    /**
+     * Get the AssertionAccess instance for the specified assertion classname.
+     * <p/>
+     * This method is cached and may return slightly out-of-date info.
+     *
+     * @param assertion assertion whose AssertionAccess to look up.
+     * @return assertion access instance.  Never null.
+     */
+    AssertionAccess getAssertionAccessCached(@NotNull Assertion assertion);
 }

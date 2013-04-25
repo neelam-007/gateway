@@ -9,7 +9,7 @@ import java.io.IOException;
 
 /**
  * Interface implemented by utility that can check policies to see if any assertion is used for which the current admin user
- * does not have CREATE permission on the corresponding AssertionAccess virtual entity.
+ * does not have READ permission on the corresponding AssertionAccess virtual entity.
  */
 public interface PolicyAssertionRbacChecker {
     /**
@@ -22,7 +22,7 @@ public interface PolicyAssertionRbacChecker {
      * @throws IOException if the policy contains nonempty policy XML that cannot be parsed.
      * @throws com.l7tech.objectmodel.FindException if there is a problem loading permissions from the database.
      * @throws com.l7tech.gateway.common.security.rbac.PermissionDeniedException if at least one assertion is present in the policy for which the specified
-     *                                   admin user lacks CREATE permission for the corresponding AssertionAccess virtual entity.
+     *                                   admin user lacks READ permission for the corresponding AssertionAccess virtual entity.
      */
     void checkPolicy(@Nullable Policy policy) throws FindException, PermissionDeniedException, IOException;
 }
