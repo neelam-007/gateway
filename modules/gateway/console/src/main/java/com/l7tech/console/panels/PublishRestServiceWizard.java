@@ -98,9 +98,10 @@ public class PublishRestServiceWizard extends Wizard {
         final PublishedService service = new PublishedService();
         final ArrayList<Assertion> allAssertions = new ArrayList<Assertion>();
         try {
-            // get the assertions from the all assertion
+            // get the assertions from the all assertion and security zone
             if (authorizationPanel != null) {
                 authorizationPanel.readSettings(allAssertions);
+                service.setSecurityZone(authorizationPanel.getSelectedSecurityZone());
             }
             AllAssertion policy = new AllAssertion(allAssertions);
 

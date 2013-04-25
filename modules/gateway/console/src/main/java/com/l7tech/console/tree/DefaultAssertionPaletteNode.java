@@ -1,23 +1,9 @@
 package com.l7tech.console.tree;
 
-import com.l7tech.console.action.ConfigureSecurityZoneAction;
-import com.l7tech.console.action.SecureAction;
-import com.l7tech.console.util.EntitySaver;
-import com.l7tech.console.util.Registry;
-import com.l7tech.console.util.TopComponents;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.SecurityZone;
-import com.l7tech.objectmodel.UpdateException;
-import com.l7tech.policy.AssertionAccess;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
-import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 
-import javax.swing.*;
-import java.util.Collection;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -54,37 +40,5 @@ public class DefaultAssertionPaletteNode<AT extends Assertion> extends AbstractL
         } catch (InstantiationException | IllegalAccessException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    @Override
-    public Action[] getActions() {
-        Action[] ret = new Action[0];
-
-        // If no security zones are visible to current admin, don't bother offering the security zone action
-        try {
-            Collection<SecurityZone> zones = Registry.getDefault().getRbacAdmin().findAllSecurityZones();
-            if (zones == null || zones.isEmpty())
-                return ret;
-        } catch (FindException e) {
-            logger.log(Level.WARNING, "Unable to check security zones: " + ExceptionUtils.getMessage(e), e);
-        }
-
-        SecureAction zoneAction = new ConfigureSecurityZoneAction<AssertionAccess>(TopComponents.getInstance().getAssertionRegistry().getAssertionAccess(prototype), new EntitySaver<AssertionAccess>() {
-            @Override
-            public AssertionAccess saveEntity(AssertionAccess assertionAccess) throws SaveException {
-                try {
-                    Registry.getDefault().getRbacAdmin().saveAssertionAccess(assertionAccess);
-                    TopComponents.getInstance().getAssertionRegistry().updateAssertionAccess();
-                    return TopComponents.getInstance().getAssertionRegistry().getAssertionAccess(prototype);
-                } catch (UpdateException e) {
-                    throw new SaveException(e);
-                }
-            }
-        });
-
-        if (!zoneAction.isAuthorized())
-            return ret;
-
-        return zoneAction.isAuthorized() ? new Action[] { zoneAction } : new Action[]{};
     }
 }

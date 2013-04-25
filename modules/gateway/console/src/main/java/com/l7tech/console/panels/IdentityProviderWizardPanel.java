@@ -1,14 +1,13 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.console.util.SecurityZoneWidget;
 import com.l7tech.gui.util.ImageCache;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.console.util.IconManager;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.SortedSingleColumnTableModel;
 import com.l7tech.identity.*;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.IdentityHeader;
-import com.l7tech.objectmodel.EntityHeaderSet;
+import com.l7tech.objectmodel.*;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.policy.assertion.TrueAssertion;
@@ -263,9 +262,17 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
         add(sslCheckBox,
           new GridBagConstraints(0, 0, GridBagConstraints.REMAINDER, 1, 1.0, 0.0,
             GridBagConstraints.WEST,
-            GridBagConstraints.BOTH,
+            GridBagConstraints.VERTICAL,
             new Insets(0, 0, 8, 0), 0, 0));
 
+        zoneControl = new SecurityZoneWidget();
+        zoneControl.setEntityType(EntityType.SERVICE);
+        zoneControl.setSelectedZone(SecurityZoneWidget.NULL_ZONE);
+        add(zoneControl,
+                new GridBagConstraints(1, 0, 1, 1, 1.0, 0.0,
+                        GridBagConstraints.EAST,
+                        GridBagConstraints.NONE,
+                        new Insets(0, 0, 0, 0), 0, 0));
 
         final ButtonGroup authButtonGroup = new ButtonGroup();
         getAnonRadio().setSelected(true);
@@ -479,6 +486,10 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
         readSettings(settings);
     }
 
+    public SecurityZone getSelectedSecurityZone() {
+        return zoneControl.getSelectedZone();
+    }
+
     private void populateAssertions(ArrayList<Assertion> allAssertions) {
         java.util.List<Assertion> identityAssertions = new ArrayList<Assertion>();
         if (sslCheckBox.isSelected()) {
@@ -527,6 +538,9 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
             pa.setAssertion(new AllAssertion(assertionList));
         } else {
             pa.setAssertion(new AllAssertion());
+        }
+        if (pa.getService() != null) {
+            pa.getService().setSecurityZone(zoneControl.getSelectedZone());
         }
     }
 
@@ -637,7 +651,7 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
     private JComboBox credentialsLocationComboBox;
     private JRadioButton anonRadio;
     private JRadioButton authRadio;
-
+    private SecurityZoneWidget zoneControl;
     private JCheckBox sslCheckBox;
 
     private JRadioButton getAnonRadio() {

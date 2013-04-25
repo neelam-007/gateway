@@ -266,7 +266,7 @@ public interface ServiceAdmin extends AsyncAdminMethods, AliasAdmin<PublishedSer
      *         the search results for all services whose name matches the namePattern
      */
     @Transactional(readOnly = true)
-    @Secured(types = EntityType.UDDI_REGISTRY, stereotype = FIND_ENTITIES)
+    @Secured(types = EntityType.UDDI_REGISTRY, stereotype = GET_PROPERTY_BY_ID, relevantArg = 0)
     JobId<WsdlPortInfo[]>
     findWsdlInfosFromUDDIRegistry(long registryOid, String namePattern, boolean caseSensitive, boolean getWsdlURL);
 
@@ -287,7 +287,7 @@ public interface ServiceAdmin extends AsyncAdminMethods, AliasAdmin<PublishedSer
      * @throws FindException if there was a problem accessing the requested information.
      */
     @Transactional(readOnly = true)
-    @Secured(types=EntityType.UDDI_REGISTRY, stereotype=FIND_ENTITIES)
+    @Secured(types=EntityType.UDDI_REGISTRY, stereotype=GET_PROPERTY_BY_ID, relevantArg = 0)
     JobId<WsdlPortInfo[]>
     findWsdlInfosForSingleBusinessService(long registryOid, String serviceKey, boolean getFirstOnly) throws FindException;
 
@@ -303,7 +303,7 @@ public interface ServiceAdmin extends AsyncAdminMethods, AliasAdmin<PublishedSer
      *         the search results, for all business whose name matches the namePattern
      */
     @Transactional(readOnly = true)
-    @Secured(types=EntityType.UDDI_REGISTRY, stereotype=FIND_ENTITIES)
+    @Secured(types=EntityType.UDDI_REGISTRY, stereotype=GET_PROPERTY_BY_ID, relevantArg = 0)
     JobId<UDDINamedEntity[]> findBusinessesFromUDDIRegistry(long registryOid, String namePattern, boolean caseSensitive);
 
     /**
@@ -315,7 +315,7 @@ public interface ServiceAdmin extends AsyncAdminMethods, AliasAdmin<PublishedSer
      * @throws FindException if there was a problem accessing the requested information.
      */
     @Transactional(readOnly = true)
-    @Secured(types=EntityType.UDDI_REGISTRY, stereotype=FIND_ENTITIES)
+    @Secured(types=EntityType.UDDI_REGISTRY, stereotype=GET_PROPERTY_BY_ID, relevantArg = 0)
     UDDINamedEntity[] findPoliciesFromUDDIRegistry(long registryOid, String namePattern) throws FindException;
 
     /**

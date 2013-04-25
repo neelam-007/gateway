@@ -68,8 +68,10 @@ public class PublishNonSoapServiceWizard extends Wizard {
         ArrayList<Assertion> allAssertions = new ArrayList<Assertion>();
         try {
             // get the assertions from the all assertion
-            if (panel2 != null)
+            if (panel2 != null) {
                 panel2.readSettings(allAssertions);
+                service.setSecurityZone(panel2.getSelectedSecurityZone());
+            }
             AllAssertion policy = new AllAssertion(allAssertions);
             if (panel1.getDownstreamURL() != null)
                 policy.addChild(new HttpRoutingAssertion(panel1.getDownstreamURL()));
