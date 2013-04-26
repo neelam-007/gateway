@@ -15,7 +15,7 @@ public enum EntityType implements Comparable<EntityType> {
     GROUP("Group", true, true), // TODO Don't change the string "Group", it's in customer databases.
     SERVICE("Published Service", true, true),
     SERVICE_ALIAS("Published Service Alias", true, true),
-    SERVICE_DOCUMENT("Service Document", true, true),
+    SERVICE_DOCUMENT("Service Document", false, false),
     JMS_CONNECTION("JMS Connection", true, true),
     JMS_ENDPOINT("JMS Endpoint", true, true),
     TRUSTED_CERT("Trusted Certificate", true, true),
