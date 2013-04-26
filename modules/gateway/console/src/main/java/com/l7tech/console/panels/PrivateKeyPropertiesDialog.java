@@ -6,10 +6,7 @@ import com.l7tech.console.SsmApplication;
 import com.l7tech.console.action.SecureAction;
 import com.l7tech.console.event.WizardAdapter;
 import com.l7tech.console.event.WizardEvent;
-import com.l7tech.console.util.DefaultAliasTracker;
-import com.l7tech.console.util.Registry;
-import com.l7tech.console.util.SecurityZoneUtil;
-import com.l7tech.console.util.TopComponents;
+import com.l7tech.console.util.*;
 import com.l7tech.gateway.common.security.SpecialKeyType;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gateway.common.security.keystore.KeystoreFileEntityHeader;
@@ -27,6 +24,7 @@ import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.FileUtils;
+import org.apache.commons.lang.ObjectUtils;
 
 import javax.security.auth.x500.X500Principal;
 import javax.swing.*;
@@ -58,18 +56,18 @@ public class PrivateKeyPropertiesDialog extends JDialog {
     private JButton destroyPrivateKeyButton;
     private JButton viewCertificateButton;
     private JButton generateCSRButton;
-    private JButton closeButton;
+    private JButton cancelButton;
     private JButton replaceCertificateChainButton;
     private JPanel mainPanel;
     private JTextField locationField;
     private JTextField aliasField;
     private JTextField typeField;
-    private JTextField zoneField;
-    private JButton changeZoneButton;
     private JButton markAsSpecialPurposeButton;
     private JLabel caCapableLabel;
     private JButton exportKeyButton;
     private JPanel specialKeyTypeLabelsPanel;
+    private SecurityZoneWidget zoneControl;
+    private JButton okButton;
     private PrivateKeyManagerWindow.KeyTableRow subject;
 
     static enum SpecialKeyTypeRequirement {
@@ -159,7 +157,7 @@ public class PrivateKeyPropertiesDialog extends JDialog {
         AttemptedOperation deleteOperation = new AttemptedDeleteSpecific(EntityType.SSG_KEY_ENTRY, subject.getKeyEntry());
         AttemptedOperation updateOperation = new AttemptedUpdate(EntityType.SSG_KEY_ENTRY, subject.getKeyEntry());
 
-        closeButton.addActionListener(new ActionListener() {
+        cancelButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
                 close();
@@ -222,8 +220,9 @@ public class PrivateKeyPropertiesDialog extends JDialog {
         });
         aliasField.setText(subject.getAlias());
 
-        SecurityZone zone = subject.getKeyEntry().getSecurityZone();
-        zoneField.setText(zone == null ? "<None>" : zone.getName());
+        zoneControl.setEntityType(EntityType.SSG_KEY_ENTRY);
+        zoneControl.setSelectedZone(subject.getKeyEntry().getSecurityZone());
+
         String location = subject.getKeystore().getName();
         if (subject.getKeystore().isReadonly())
             location = location + "  (Read-Only)";
@@ -262,21 +261,18 @@ public class PrivateKeyPropertiesDialog extends JDialog {
             }
         }
 
-        changeZoneButton.addActionListener(new ActionListener() {
+        okButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                // TODO prompt for new security zone instead of hardcoding it
-                Set<SecurityZone> allzones = SecurityZoneUtil.getSecurityZones();
-                SecurityZone newZone = allzones.isEmpty() ? null : allzones.iterator().next();
-
-                try {
-                    Registry.getDefault().getTrustedCertManager().updateKeySecurityZone(subject.getKeystore().getOid(), subject.getAlias(), newZone);
-                    zoneField.setText(newZone == null ? "<None>" : newZone.getName());
-                } catch (UpdateException e1) {
-                    showErrorMessage("Unable to Set Security Zone", "Error: " + ExceptionUtils.getMessage(e1), e1);
+                if (!ObjectUtils.equals(subject.getKeyEntry().getSecurityZone(), zoneControl.getSelectedZone())) {
+                    try {
+                        Registry.getDefault().getTrustedCertManager().updateKeySecurityZone(subject.getKeystore().getOid(), subject.getAlias(), zoneControl.getSelectedZone());
+                        securityZoneChanged = true;
+                    } catch (final UpdateException ex) {
+                        showErrorMessage("Unable to Set Security Zone", "Error: " + ExceptionUtils.getMessage(ex), ex);
+                    }
                 }
-
-                securityZoneChanged = true;
+                close();
             }
         });
 
@@ -312,11 +308,6 @@ public class PrivateKeyPropertiesDialog extends JDialog {
         }
         if (!flags.canUpdateSome())
             replaceCertificateChainButton.setEnabled(false);
-
-        Utilities.equalizeButtonSizes(new JButton[] {
-                changeZoneButton,
-                viewCertificateButton
-        });
 
         Utilities.equalizeButtonSizes(new JButton[] {
                 markAsSpecialPurposeButton,

@@ -23,6 +23,7 @@ import com.l7tech.util.ExceptionUtils;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.uddi.UDDINamedEntity;
+import org.apache.commons.lang.ObjectUtils;
 
 import javax.swing.*;
 import java.awt.event.*;
@@ -675,7 +676,7 @@ public class ServiceUDDISettingsDialog extends JDialog {//TODO rename to Publish
             // check if security zone update is needed but radio button selection did not change
             final SecurityZone existingZone = uddiProxyServiceInfo.getSecurityZone();
             final SecurityZone selectedZone = zoneControl.getSelectedZone();
-            if ((existingZone == null && selectedZone != null) || (existingZone != null && !existingZone.equals(selectedZone))) {
+            if (!ObjectUtils.equals(existingZone, selectedZone)) {
                 updateUddiProxiedServiceOnly(uddiRegistryAdmin);
             }
         }

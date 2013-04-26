@@ -14,6 +14,7 @@ import com.l7tech.uddi.UDDIUtilities;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.wsdl.Wsdl;
+import org.apache.commons.lang.ObjectUtils;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationAdapter;
@@ -252,8 +253,7 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
            original.isPublishWsPolicyEnabled() != proxiedServiceInfo.isPublishWsPolicyEnabled() ||
            original.isPublishWsPolicyFull() != proxiedServiceInfo.isPublishWsPolicyFull() ||
            original.isPublishWsPolicyInlined() != proxiedServiceInfo.isPublishWsPolicyInlined() ||
-           (original.getSecurityZone() == null && proxiedServiceInfo.getSecurityZone() != null ||
-                   original.getSecurityZone() != null && !original.getSecurityZone().equals(proxiedServiceInfo.getSecurityZone()));
+           !ObjectUtils.equals(original.getSecurityZone(), proxiedServiceInfo.getSecurityZone());
 
         final boolean synchronizeWsdl = proxiedServiceInfo.isUpdateProxyOnLocalChange() &&
                 original.isUpdateProxyOnLocalChange() != proxiedServiceInfo.isUpdateProxyOnLocalChange();

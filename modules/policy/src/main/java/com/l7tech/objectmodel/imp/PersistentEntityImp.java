@@ -64,6 +64,9 @@ public abstract class PersistentEntityImp implements PersistentEntity, Serializa
         _oidObject = oid;
     }
 
+    /**
+     * Any subclasses which has a version column must override this method and map it manually as it is transient.
+     */
     @Override
     @Transient
     @XmlAttribute

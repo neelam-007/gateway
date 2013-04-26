@@ -28,6 +28,7 @@ import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.wsdl.Wsdl;
 import com.l7tech.xml.soap.SoapVersion;
+import org.apache.commons.lang.ObjectUtils;
 import org.w3c.dom.Document;
 
 import javax.swing.*;
@@ -887,7 +888,7 @@ public class ServicePropertiesDialog extends JDialog {
                     updateWsdlOnChange != uddiServiceControl.isUpdateWsdlOnChange() ||
                     disableServiceOnChange != uddiServiceControl.isDisableServiceOnChange() ||
                     uddiServiceControl.getOid() == UDDIServiceControl.DEFAULT_OID ||
-                    (existingSecurityZone == null && selectedSecurityZone != null || existingSecurityZone != null && !existingSecurityZone.equals(selectedSecurityZone))){
+                    !ObjectUtils.equals(existingSecurityZone, selectedSecurityZone)){
                     
                     uddiServiceControl.setUnderUddiControl( wsdlUnderUDDIControlCheckBox.isSelected() );
                     uddiServiceControl.setMonitoringEnabled( enableMonitoring );
@@ -935,7 +936,7 @@ public class ServicePropertiesDialog extends JDialog {
         if (policy != null) {
             final SecurityZone serviceZone = subject.getSecurityZone();
             final SecurityZone policyZone = policy.getSecurityZone();
-            if ((serviceZone == null && policyZone != null) || serviceZone != null && !serviceZone.equals(policyZone)) {
+            if (!ObjectUtils.equals(serviceZone, policyZone)) {
                 policy.setSecurityZone(serviceZone);
                 try {
                     Registry.getDefault().getPolicyAdmin().savePolicy(policy);
