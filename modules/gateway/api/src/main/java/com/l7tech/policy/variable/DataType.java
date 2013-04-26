@@ -21,6 +21,7 @@ import java.lang.reflect.Method;
  * @author alex
 */
 public final class DataType implements Serializable {
+    private static final long serialVersionUID = 8056552008434644172L;
     private static final Map nameMap = new HashMap();
 
     public static final DataType STRING = new DataType("string", "String", new Class[] { String.class });
