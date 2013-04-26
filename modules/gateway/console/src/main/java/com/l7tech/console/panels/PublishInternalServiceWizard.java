@@ -11,6 +11,7 @@ import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.service.*;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.SecurityZone;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Option;
@@ -30,7 +31,7 @@ import java.util.logging.Logger;
 /*
     User: megery
  */
-public class PublishInternalServiceWizard extends Wizard<PublishInternalServiceWizard.ServiceTemplateHolder> {
+public class PublishInternalServiceWizard extends Wizard<PublishInternalServiceWizard.InputHolder> {
     private static final Logger logger = Logger.getLogger(PublishInternalServiceWizard.class.getName());
 
     private EventListenerList localListenerList = new EventListenerList();
@@ -40,7 +41,7 @@ public class PublishInternalServiceWizard extends Wizard<PublishInternalServiceW
         return new PublishInternalServiceWizard(parent, getSteps());
     }
 
-    private PublishInternalServiceWizard(Frame parent, WizardStepPanel<PublishInternalServiceWizard.ServiceTemplateHolder> panel) {
+    private PublishInternalServiceWizard(Frame parent, WizardStepPanel<InputHolder> panel) {
         super(parent, panel, buildServiceTemplateHolder());
         setTitle("Publish Internal Service Wizard");
 
@@ -62,10 +63,10 @@ public class PublishInternalServiceWizard extends Wizard<PublishInternalServiceW
         });
     }
 
-    private static ServiceTemplateHolder buildServiceTemplateHolder() {
+    private static InputHolder buildServiceTemplateHolder() {
         ServiceAdmin svcManager = Registry.getDefault().getServiceManager();
         Set<ServiceTemplate> templates = svcManager.findAllTemplates();
-        return new ServiceTemplateHolder(templates);
+        return new InputHolder(templates);
     }
 
     private void completeTask(PublishedService service) throws MalformedURLException {
@@ -92,6 +93,7 @@ public class PublishInternalServiceWizard extends Wizard<PublishInternalServiceW
 
         final Frame parent = TopComponents.getInstance().getTopParent();
         final PublishedService newService = service;
+        newService.setSecurityZone(wizardInput.getSelectedSecurityZone());
 
        //check if service is SOAP
         if(service.isSoap()) {
@@ -187,7 +189,7 @@ public class PublishInternalServiceWizard extends Wizard<PublishInternalServiceW
           JOptionPane.ERROR_MESSAGE);
     }
 
-    public static WizardStepPanel<PublishInternalServiceWizard.ServiceTemplateHolder> getSteps() {
+    public static WizardStepPanel<InputHolder> getSteps() {
         return new InternalServiceSelectionPanel();
     }
 
@@ -231,12 +233,14 @@ public class PublishInternalServiceWizard extends Wizard<PublishInternalServiceW
         }
     }
 
-    public static class ServiceTemplateHolder {
+    public static class InputHolder {
         Set<ServiceTemplate> allTemplates;
         ServiceTemplate selectedTemplate;
+        SecurityZone selectedSecurityZone;
         
-        public ServiceTemplateHolder(Set<ServiceTemplate> templates) {
+        public InputHolder(Set<ServiceTemplate> templates) {
             this.allTemplates = templates;
+            this.selectedSecurityZone = null;
         }
 
         public Set<ServiceTemplate> getAllTemplates() {
@@ -253,6 +257,14 @@ public class PublishInternalServiceWizard extends Wizard<PublishInternalServiceW
 
         public void setSelectedTemplate(ServiceTemplate selectedTemplate) {
             this.selectedTemplate = selectedTemplate;
+        }
+
+        public SecurityZone getSelectedSecurityZone() {
+            return selectedSecurityZone;
+        }
+
+        public void setSelectedSecurityZone(final SecurityZone selectedSecurityZone) {
+            this.selectedSecurityZone = selectedSecurityZone;
         }
     }
 }

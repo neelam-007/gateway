@@ -1,11 +1,13 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.SecurityZoneWidget;
 import com.l7tech.console.util.ValidatorUtils;
 import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.gateway.common.service.ServiceTemplate;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.FilterDocument;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.util.ResolvingComparator;
 import com.l7tech.util.Resolver;
 import com.l7tech.util.SoapConstants;
@@ -24,7 +26,7 @@ import java.util.logging.Logger;
  *
  * User: Mike
  */
-public class InternalServiceSelectionPanel extends WizardStepPanel<PublishInternalServiceWizard.ServiceTemplateHolder> {
+public class InternalServiceSelectionPanel extends WizardStepPanel<PublishInternalServiceWizard.InputHolder> {
     private static final Logger logger = Logger.getLogger(InternalServiceSelectionPanel.class.getName());
 
     private JComboBox servicesChooser;
@@ -32,12 +34,13 @@ public class InternalServiceSelectionPanel extends WizardStepPanel<PublishIntern
     private JPanel mainPanel;
     private JComboBox wstNsComboBox;
     private JPanel wstNsPanel;
+    private SecurityZoneWidget zoneControl;
 
     public InternalServiceSelectionPanel() {
         this(null,true);
     }
 
-    public InternalServiceSelectionPanel(WizardStepPanel<PublishInternalServiceWizard.ServiceTemplateHolder> next, boolean readOnly) {
+    public InternalServiceSelectionPanel(WizardStepPanel<PublishInternalServiceWizard.InputHolder> next, boolean readOnly) {
         super(next, readOnly);
         initComponents();
     }
@@ -93,6 +96,7 @@ public class InternalServiceSelectionPanel extends WizardStepPanel<PublishIntern
                 serviceUri.setText(routingURI);
             }
         });
+        zoneControl.setEntityType(EntityType.SERVICE);
 
         setLayout(new BorderLayout());
         add(mainPanel, BorderLayout.CENTER);        
@@ -121,14 +125,14 @@ public class InternalServiceSelectionPanel extends WizardStepPanel<PublishIntern
     }
 
     @Override
-    public void readSettings(PublishInternalServiceWizard.ServiceTemplateHolder settings) throws IllegalArgumentException {
+    public void readSettings(PublishInternalServiceWizard.InputHolder settings) throws IllegalArgumentException {
         updateView(settings);
     }
 
-    private void updateView(PublishInternalServiceWizard.ServiceTemplateHolder serviceTemplateHolder) {
+    private void updateView(PublishInternalServiceWizard.InputHolder settings) {
         servicesChooser.removeAllItems();
 
-        java.util.List<ServiceTemplate> allTemplates = new ArrayList<ServiceTemplate>(serviceTemplateHolder.getAllTemplates());
+        java.util.List<ServiceTemplate> allTemplates = new ArrayList<ServiceTemplate>(settings.getAllTemplates());
         //noinspection unchecked
         Collections.sort( allTemplates, new ResolvingComparator(new Resolver<ServiceTemplate,String>(){
             @Override
@@ -153,17 +157,18 @@ public class InternalServiceSelectionPanel extends WizardStepPanel<PublishIntern
             servicesChooser.addItem(aTemplate);
         }
 
-        if (serviceTemplateHolder.getSelectedTemplate() != null) {
-            servicesChooser.setSelectedItem(serviceTemplateHolder.getSelectedTemplate());
+        if (settings.getSelectedTemplate() != null) {
+            servicesChooser.setSelectedItem(settings.getSelectedTemplate());
         }
+        zoneControl.setSelectedZone(settings.getSelectedSecurityZone());
     }
 
     @Override
-    public void storeSettings(PublishInternalServiceWizard.ServiceTemplateHolder settings) throws IllegalArgumentException {
+    public void storeSettings(PublishInternalServiceWizard.InputHolder settings) throws IllegalArgumentException {
         updateModel(settings);
     }
 
-    private void updateModel(PublishInternalServiceWizard.ServiceTemplateHolder serviceTemplateHolder) {
+    private void updateModel(PublishInternalServiceWizard.InputHolder settings) {
         ServiceTemplate fromList  = (ServiceTemplate) servicesChooser.getSelectedItem();
         String serviceUriText = serviceUri.getText();
         if (!serviceUriText.startsWith("/")) {
@@ -172,7 +177,8 @@ public class InternalServiceSelectionPanel extends WizardStepPanel<PublishIntern
         
         ServiceTemplate newOne = fromList.customize( serviceUriText );
 
-        serviceTemplateHolder.setSelectedTemplate(newOne);
+        settings.setSelectedTemplate(newOne);
+        settings.setSelectedSecurityZone(zoneControl.getSelectedZone());
     }
 
     @Override
