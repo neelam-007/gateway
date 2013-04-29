@@ -47,9 +47,9 @@ public class ApiSourceHashTest {
         BASE64Encoder encoder = new BASE64Encoder();
         for (File file : files) {
             String filePath = file.getPath().replaceAll("\\\\", "/");
-            Assert.assertTrue("The file is not listed in the source hashes. Find more info here " + INFO_URL + " \nFile: " + filePath, hashesMap.containsKey(filePath));
             String source = readFileAsString(file);
 
+            Assert.assertTrue("The file is not listed in the source hashes. Find more info here " + INFO_URL + " \nFile: " + filePath + " \nFile Hash: " + encoder.encode(toSHA1(source)), hashesMap.containsKey(filePath));
             Assert.assertEquals("File hash does not match, the file has been changed. Find more info here " + INFO_URL + " \nFile: " + filePath, hashesMap.get(filePath), encoder.encode(toSHA1(source)));
             hashesMap.remove(filePath);
         }
