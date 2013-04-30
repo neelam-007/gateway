@@ -2430,6 +2430,10 @@
     </bean>
 
     <!-- export beans to JMX -->
-    <context:mbean-export/>
+    <context:mbean-export server="mbeanServer"/>
+
+    <bean id="mbeanServer"
+          class="java.lang.management.ManagementFactory"
+          factory-method="getPlatformMBeanServer" />
 
 </beans>
