@@ -104,7 +104,7 @@ public class SslSetupManagerImpl implements SslSetupManager {
                                  final RsaKeySize rsaKeySize) throws IOException {
         X500Principal dn = new X500Principal("cn=" + hostname);
         try {
-            Future<X509Certificate> job = sks.generateKeyPair(null, alias, new KeyGenParams(rsaKeySize.getKeySize()), new CertGenParams(dn, 365 * 10, false, null));
+            Future<X509Certificate> job = sks.generateKeyPair(null, alias, new KeyGenParams(rsaKeySize.getKeySize()), new CertGenParams(dn, 365 * 10, false, null), null);
             job.get();
         } catch ( GeneralSecurityException e) {
             throw new IOException("Unable to create initial default SSL key: " + ExceptionUtils.getMessage(e), e);

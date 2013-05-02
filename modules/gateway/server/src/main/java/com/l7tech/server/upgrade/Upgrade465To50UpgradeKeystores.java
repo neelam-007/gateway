@@ -246,6 +246,7 @@ public class Upgrade465To50UpgradeKeystores implements UpgradeTask {
         }
 
         final KeystoreFileManager keystoreFileManager = getBean("keystoreFileManager", KeystoreFileManager.class);
+        final SsgKeyMetadataManager metadataManager = getBean("ssgKeyMetadataManager", SsgKeyMetadataManager.class);
         try {
             KeystoreFile hsmKeystoreFile = null;
             Collection<KeystoreFile> keystoreFiles = keystoreFileManager.findAll();
@@ -267,12 +268,7 @@ public class Upgrade465To50UpgradeKeystores implements UpgradeTask {
                 public boolean isRestrictedAccessKeyEntry(SsgKeyEntry keyEntry) {
                     return false;
                 }
-            }, new SsgKeyMetadataFinder() {
-                    @Override
-                    public SsgKeyMetadata findMetadata(long keystoreOid, @NotNull String alias) throws FindException {
-                        return null;
-                    }
-                });
+            }, metadataManager);
 
             // Re-encrypt the cluster shared key for the cluster passphrase
             SsgKeyEntry entry = scaKeyStore.getCertificateChain(keystoreInfo.sslAlias);

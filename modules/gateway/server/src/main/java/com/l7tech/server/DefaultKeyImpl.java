@@ -169,7 +169,7 @@ public class DefaultKeyImpl implements DefaultKey, PropertyChangeListener {
     private void generateKeyPair(SsgKeyStore sks, String alias) throws IOException {
         X500Principal dn = findDefaultSslKeyDn();
         try {
-            Future<X509Certificate> job = sks.generateKeyPair(null, alias, new KeyGenParams(), new CertGenParams(dn, 365 * 10, false, null));
+            Future<X509Certificate> job = sks.generateKeyPair(null, alias, new KeyGenParams(), new CertGenParams(dn, 365 * 10, false, null), null);
             job.get();
         } catch (GeneralSecurityException e) {
             throw new IOException("Unable to create initial default SSL key: " + ExceptionUtils.getMessage(e), e);

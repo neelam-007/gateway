@@ -3,8 +3,7 @@ package com.l7tech.server.security.keystore;
 import com.l7tech.common.io.*;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.security.keystore.SsgKeyMetadata;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.ObjectNotFoundException;
+import com.l7tech.objectmodel.*;
 import com.l7tech.security.cert.BouncyCastleCertUtils;
 import com.l7tech.security.cert.ParamsKeyGenerator;
 import com.l7tech.security.prov.CertificateRequest;
@@ -14,6 +13,7 @@ import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.NotFuture;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 
@@ -42,11 +42,11 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
     private static final AtomicBoolean startedRef = new AtomicBoolean(false);
 
     protected final KeyAccessFilter keyAccessFilter;
-    private final SsgKeyMetadataFinder metadataFinder;
+    private final SsgKeyMetadataManager metadataManager;
 
-    protected JdkKeyStoreBackedSsgKeyStore(@NotNull KeyAccessFilter keyAccessFilter, @NotNull SsgKeyMetadataFinder metadataFinder) {
+    protected JdkKeyStoreBackedSsgKeyStore(@NotNull KeyAccessFilter keyAccessFilter, @NotNull SsgKeyMetadataManager metadataManager) {
         this.keyAccessFilter = keyAccessFilter;
-        this.metadataFinder = metadataFinder;
+        this.metadataManager = metadataManager;
     }
 
     public static final class StartupListener implements ApplicationListener {
@@ -145,7 +145,7 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
         SsgKeyEntry ssgKeyEntry = new SsgKeyEntry(getOid(), alias, x509chain, privateKey);
 
         try {
-            SsgKeyMetadata meta = metadataFinder.findMetadata(getOid(), alias);
+            SsgKeyMetadata meta = metadataManager.findMetadata(getOid(), alias);
             if (meta != null)
                 ssgKeyEntry.attachMetadata(meta);
         } catch (FindException e) {
@@ -231,6 +231,11 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
             @Override
             public Boolean call() throws KeyStoreException {
                 storePrivateKeyEntryImpl(entry, overwriteExisting);
+                try {
+                    metadataManager.updateMetadataForKey(entry.getKeystoreId(), entry.getAlias(), entry.getKeyMetadata());
+                } catch (final ObjectModelException e) {
+                    throw new KeyStoreException("Unable to update metadata for key " + entry.getAlias(), e);
+                }
                 return Boolean.TRUE;
             }
         });
@@ -242,13 +247,18 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
             @Override
             public Boolean call() throws KeyStoreException {
                 keyStore().deleteEntry(keyAlias);
+                try {
+                    metadataManager.deleteMetadataForKey(getOid(), keyAlias);
+                } catch (final DeleteException e) {
+                    throw new KeyStoreException("Unable to delete metadata for key " + keyAlias, e);
+                }
                 return Boolean.TRUE;
             }
         });
     }
 
     @Override
-    public synchronized Future<X509Certificate> generateKeyPair(Runnable transactionCallback, final String alias, final KeyGenParams keyGenParams, final CertGenParams certGenParams)
+    public synchronized Future<X509Certificate> generateKeyPair(Runnable transactionCallback, final String alias, final KeyGenParams keyGenParams, final CertGenParams certGenParams, @Nullable final SsgKeyMetadata metadata)
             throws GeneralSecurityException
     {
         return mutateKeystore(transactionCallback, new Callable<X509Certificate>() {
@@ -263,7 +273,11 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
                 X509Certificate cert = BouncyCastleCertUtils.generateSelfSignedCertificate(certGenParams, keyPair);
 
                 keystore.setKeyEntry(alias, keyPair.getPrivate(), getEntryPassword(), new Certificate[] { cert });
-
+                try {
+                    metadataManager.updateMetadataForKey(getOid(), alias, metadata);
+                } catch (final ObjectModelException e) {
+                    throw new KeyStoreException("Unable to save metadata for key " + alias, e);
+                }
                 return cert;
             }
         });
@@ -322,6 +336,11 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
         } catch (NoSuchProviderException e) {
             throw new KeyStoreException(e);
         }
+    }
+
+    @Override
+    public void updateKeyMetadata(final long keystoreOid, @NotNull final String alias, @Nullable SsgKeyMetadata metadata) throws UpdateException, FindException, SaveException {
+        metadataManager.updateMetadataForKey(keystoreOid, alias, metadata);
     }
 
     /**

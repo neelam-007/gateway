@@ -3,6 +3,11 @@ package com.l7tech.server.security.keystore;
 import com.l7tech.common.io.CertGenParams;
 import com.l7tech.common.io.KeyGenParams;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
+import com.l7tech.gateway.common.security.keystore.SsgKeyMetadata;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.SaveException;
+import com.l7tech.objectmodel.UpdateException;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,7 +35,7 @@ public interface SsgKeyStore extends SsgKeyFinder {
      * @throws GeneralSecurityException if there is a problem generating, signing, or saving the new certificate or key pair
      */
     @Transactional(propagation=Propagation.REQUIRED)
-    public Future<X509Certificate> generateKeyPair(Runnable transactionCallback, final String alias, final KeyGenParams keyGenParams, final CertGenParams certGenParams)
+    public Future<X509Certificate> generateKeyPair(Runnable transactionCallback, final String alias, final KeyGenParams keyGenParams, final CertGenParams certGenParams, @Nullable final SsgKeyMetadata metadata)
             throws GeneralSecurityException;
 
     /**
@@ -79,4 +84,7 @@ public interface SsgKeyStore extends SsgKeyFinder {
      */
     @Transactional(propagation=Propagation.REQUIRED)
     Future<Boolean> deletePrivateKeyEntry(Runnable transactionCallback, String keyAlias) throws KeyStoreException;
+
+    @Transactional(propagation = Propagation.REQUIRED)
+    void updateKeyMetadata(long keystoreOid, String alias, SsgKeyMetadata metadata) throws UpdateException, FindException, SaveException;
 }

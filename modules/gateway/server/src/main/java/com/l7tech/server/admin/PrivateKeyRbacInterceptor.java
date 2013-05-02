@@ -2,6 +2,7 @@ package com.l7tech.server.admin;
 
 import com.l7tech.gateway.common.security.PrivateKeySecured;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
+import com.l7tech.gateway.common.security.keystore.SsgKeyMetadata;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.identity.User;
@@ -107,22 +108,22 @@ public class PrivateKeyRbacInterceptor implements CustomRbacInterceptor {
                     // No action required.
                     break;
 
+                // have to look up entities by id and check against operation
                 case CHECK_ARG_OPERATION:
                     long keystoreId = getKeystoreIdFromArg(invocation, secured);
                     String keyAlias = getKeyAliasFromArg(invocation, secured);
-                    SecurityZone securityZone = getSecurityZoneFromArg(invocation, secured);
-                    checkArgOperation(keystoreId, keyAlias, securityZone, secured.argOp());
+                    final SsgKeyMetadata meta = getMetadataFromArg(invocation, secured);
+                    checkArgOperation(keystoreId, keyAlias, meta, secured.argOp());
                     break;
 
                 case CHECK_ARG_EXPORT_KEY:
                     checkArgExportKey();
                     break;
 
-                case CHECK_ARG_UPDATE_SECURITY_ZONE:
-                    keystoreId = getKeystoreIdFromArg(invocation, secured);
-                    keyAlias = getKeyAliasFromArg(invocation, secured);
-                    securityZone = getSecurityZoneFromArg(invocation, secured);
-                    checkArgUpdateSecurityZone(keystoreId, keyAlias, securityZone);
+                // expects entity as arg
+                case CHECK_ARG_UPDATE_KEY_ENTRY:
+                    final SsgKeyEntry keyEntry = getKeyEntryFromFirstArg(invocation);
+                    checkArgUpdateKeyEntry(keyEntry, secured.argOp());
                     break;
 
                 case CHECK_UPDATE_ALL_KEYSTORES_NONFATAL:
@@ -137,6 +138,15 @@ public class PrivateKeyRbacInterceptor implements CustomRbacInterceptor {
         return true;
     }
 
+    private SsgKeyEntry getKeyEntryFromFirstArg(final MethodInvocation invocation) {
+        final Object[] args = invocation.getArguments();
+        if (args.length > 0 && args[0] instanceof SsgKeyEntry) {
+            return (SsgKeyEntry) args[0];
+        } else {
+            throw new IllegalArgumentException("First method argument must be an SsgKeyEntry");
+        }
+    }
+
     private static String getKeyAliasFromArg(MethodInvocation invocation, PrivateKeySecured secured) {
         return (String)invocation.getArguments()[secured.keyAliasArg()];
     }
@@ -145,20 +155,24 @@ public class PrivateKeyRbacInterceptor implements CustomRbacInterceptor {
         return (Long)invocation.getArguments()[secured.keystoreOidArg()];
     }
 
-    private static SecurityZone getSecurityZoneFromArg(MethodInvocation invocation, PrivateKeySecured secured) {
-        return secured.securityZoneArg() == -1 ? null : (SecurityZone)invocation.getArguments()[secured.securityZoneArg()];
+    private static SsgKeyMetadata getMetadataFromArg(MethodInvocation invocation, PrivateKeySecured secured) {
+        return secured.metadataArg() == -1 ? null : (SsgKeyMetadata) invocation.getArguments()[secured.metadataArg()];
     }
 
-    private void checkArgOperation( long keystoreId, String keyAlias, SecurityZone securityZone, OperationType operation ) throws FindException, KeyStoreException {
+    private void checkArgOperation( long keystoreId, String keyAlias, SsgKeyMetadata metadata, OperationType operation ) throws FindException, KeyStoreException {
         final SsgKeyEntry keyEntry;
         if (CREATE == operation) {
-            keyEntry = createFakeKeyEntry( keystoreId, keyAlias, securityZone );
+            keyEntry = createFakeKeyEntry( keystoreId, keyAlias, metadata );
         } else {
             keyEntry = findKeyEntry( keystoreId, keyAlias );
         }
 
         // Check entry permissions
         checkPermittedForEntity(keyEntry, operation);
+        if (UPDATE == operation) {
+            // check if update is allowed after modification
+            checkPermittedForEntity(createFakeKeyEntry(keystoreId, keyAlias, metadata), operation);
+        }
 
         // Check owning keystore permissions
         OperationType ksOperation = READ == operation ? READ : UPDATE;
@@ -181,16 +195,19 @@ public class PrivateKeyRbacInterceptor implements CustomRbacInterceptor {
             throw new PermissionDeniedException(OperationType.DELETE, EntityType.SSG_KEY_ENTRY, "export private key [delete all]");
     }
 
-    private void checkArgUpdateSecurityZone(long keystoreId, String keyAlias, SecurityZone securityZone) throws FindException, KeyStoreException {
-        SsgKeyEntry keyEntry = findKeyEntry( keystoreId, keyAlias );
+    private void checkArgUpdateKeyEntry(SsgKeyEntry toUpdate, OperationType operation) throws FindException, KeyStoreException {
+        if (operation == UPDATE) {
+            // Check updated entry and keystore permissions
+            checkPermittedForEntity(toUpdate, UPDATE);
+            checkPermittedForKeystore(toUpdate.getKeystoreId(), UPDATE);
 
-        // Check entry and keystore permissions
-        checkPermittedForEntity(keyEntry, UPDATE);
-        checkPermittedForKeystore(keyEntry.getKeystoreId(), UPDATE);
-
-        // Ensure entry permissions still apply in prospective new security zone
-        keyEntry = createFakeKeyEntry( keystoreId, keyAlias, securityZone );
-        checkPermittedForEntity(keyEntry, UPDATE);
+            // Ensure entry permissions apply for existing key entry
+            final SsgKeyEntry existing = findKeyEntry( toUpdate.getKeystoreId(), toUpdate.getAlias() );
+            checkPermittedForEntity(existing, UPDATE);
+        } else {
+            // currently only support UPDATE as CREATE is handled through other methods
+            throw new IllegalArgumentException("Operation" + operation + " is not supported");
+        }
     }
 
     /**
@@ -270,9 +287,9 @@ public class PrivateKeyRbacInterceptor implements CustomRbacInterceptor {
 
 
     @NotNull
-    private SsgKeyEntry createFakeKeyEntry(long keystoreId, String alias, SecurityZone securityZone) {
+    private SsgKeyEntry createFakeKeyEntry(long keystoreId, String alias, SsgKeyMetadata metadata) {
         final SsgKeyEntry entry = SsgKeyEntry.createDummyEntityForAuditing(keystoreId, alias);
-        entry.setSecurityZone(securityZone);
+        entry.attachMetadata(metadata);
         return entry;
     }
 

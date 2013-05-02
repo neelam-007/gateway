@@ -265,8 +265,9 @@ public class PrivateKeyPropertiesDialog extends JDialog {
             @Override
             public void actionPerformed(ActionEvent e) {
                 if (!ObjectUtils.equals(subject.getKeyEntry().getSecurityZone(), zoneControl.getSelectedZone())) {
+                    subject.getKeyEntry().setSecurityZone(zoneControl.getSelectedZone());
                     try {
-                        Registry.getDefault().getTrustedCertManager().updateKeySecurityZone(subject.getKeystore().getOid(), subject.getAlias(), zoneControl.getSelectedZone());
+                        Registry.getDefault().getTrustedCertManager().updateKeyEntry(subject.getKeyEntry());
                         securityZoneChanged = true;
                     } catch (final UpdateException ex) {
                         showErrorMessage("Unable to Set Security Zone", "Error: " + ExceptionUtils.getMessage(ex), ex);
@@ -677,21 +678,20 @@ public class PrivateKeyPropertiesDialog extends JDialog {
                 final TrustedCertAdmin admin = getTrustedCertAdmin();
                 try {
                     X509Certificate[] certChain = sp.getCertChain();
-                    String[] pemchain = new String[certChain.length];
-                    for (int i = 0; i < certChain.length; i++) {
-                        pemchain[i] = CertUtils.encodeAsPEM(certChain[i]);
-                    }
-                    admin.assignNewCert(subject.getKeystore().getOid(), subject.getAlias(), pemchain);
-                    //re-get the entry from the ssg after assigning (weird but see bzilla #3852)
-                    List<SsgKeyEntry> tmp = admin.findAllKeys(subject.getKeystore().getOid(), true);
-                    for (SsgKeyEntry ske : tmp) {
-                        if (ske.getAlias().equalsIgnoreCase(subject.getAlias())) {
-                            subject.setKeyEntry(ske);
-                            break;
+                    if (certChain != null) {
+                        subject.getKeyEntry().setCertificateChain(certChain);
+                        admin.updateKeyEntry(subject.getKeyEntry());
+                        //re-get the entry from the ssg after assigning (weird but see bzilla #3852)
+                        List<SsgKeyEntry> tmp = admin.findAllKeys(subject.getKeystore().getOid(), true);
+                        for (SsgKeyEntry ske : tmp) {
+                            if (ske.getAlias().equalsIgnoreCase(subject.getAlias())) {
+                                subject.setKeyEntry(ske);
+                                break;
+                            }
                         }
+                        populateList();
+                        certificateChainChanged = true;
                     }
-                    populateList();
-                    certificateChainChanged = true;
                 } catch (GeneralSecurityException e) {
                     showErrorMessage("Error Assigning Certificate",
                             "Error Assigning new Cert.  Make sure the " +

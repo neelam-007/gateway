@@ -552,7 +552,7 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
     private final ApplicationEventPublisher applicationEventPublisher;
 
     private PrivateKeyAdminHelper getPrivateKeyAdminHelper() {
-        return new PrivateKeyAdminHelper( defaultKey, ssgKeyStoreManager, ssgKeyMetadataManager, applicationEventPublisher );
+        return new PrivateKeyAdminHelper( defaultKey, ssgKeyStoreManager, applicationEventPublisher );
     }
 
     private Pair<Long,String> getKeyId( final Map<String,String> selectorMap ) throws InvalidResourceSelectors {

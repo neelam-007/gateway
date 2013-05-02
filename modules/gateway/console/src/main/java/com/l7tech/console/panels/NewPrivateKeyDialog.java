@@ -6,6 +6,7 @@ import com.l7tech.console.util.SecurityZoneWidget;
 import com.l7tech.gateway.common.AsyncAdminMethods;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gateway.common.security.keystore.KeystoreFileEntityHeader;
+import com.l7tech.gateway.common.security.keystore.SsgKeyMetadata;
 import com.l7tech.gui.NumberField;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.Utilities;
@@ -299,6 +300,7 @@ public class  NewPrivateKeyDialog extends JDialog {
         cbSigHash.setSelectedItem(dflth);
 
         securityZoneWidget.setEntityType(EntityType.SSG_KEY_ENTRY);
+        securityZoneWidget.setSelectedZone(SecurityZoneWidget.NULL_ZONE);
     }
 
     /** @return the default DN for the current alias, or null if there isn't one. */
@@ -320,7 +322,7 @@ public class  NewPrivateKeyDialog extends JDialog {
         final int expiryDays = Integer.parseInt(expiryDaysField.getText());
         final boolean makeCaCert = caCheckBox.isSelected();
         final KeyType keyType = getSelectedKeyType();
-        final SecurityZone securityZone = securityZoneWidget.getSelectedZone();
+        final SsgKeyMetadata metadata = new SsgKeyMetadata(keystoreInfo.getOid(), alias, securityZoneWidget.getSelectedZone());
         //noinspection UnusedAssignment
         Throwable ouch = null;
         try {
@@ -337,10 +339,10 @@ public class  NewPrivateKeyDialog extends JDialog {
                 public Object call() throws Exception {
                     if (keyType.curveName != null) {
                         // Elliptic curve
-                        keypairJobId = getCertAdmin().generateEcKeyPair(keystoreInfo.getOid(), alias, securityZone, dn, keyType.curveName, expiryDays, makeCaCert, getSigAlg(true));
+                        keypairJobId = getCertAdmin().generateEcKeyPair(keystoreInfo.getOid(), alias, metadata, dn, keyType.curveName, expiryDays, makeCaCert, getSigAlg(true));
                     } else {
                         // RSA
-                        keypairJobId = getCertAdmin().generateKeyPair(keystoreInfo.getOid(), alias, securityZone, dn, keyType.size, expiryDays, makeCaCert, getSigAlg(false));
+                        keypairJobId = getCertAdmin().generateKeyPair(keystoreInfo.getOid(), alias, metadata, dn, keyType.size, expiryDays, makeCaCert, getSigAlg(false));
                     }
                     newAlias = alias;
                     return null;

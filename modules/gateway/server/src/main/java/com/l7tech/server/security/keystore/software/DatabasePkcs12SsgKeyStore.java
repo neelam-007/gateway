@@ -8,6 +8,7 @@ import com.l7tech.server.security.keystore.*;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.PoolByteArrayOutputStream;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -46,9 +47,10 @@ public class DatabasePkcs12SsgKeyStore extends JdkKeyStoreBackedSsgKeyStore impl
      * @param kem      KeystoreFileManager.  Required.
      * @param password the password to use to encrypt the PKCS#12 data bytes.  Required.
      * @param keyAccessFilter key access filter.  Required.
+     * @param metadataManager the SsgKeyMetadataManager.
      */
-    public DatabasePkcs12SsgKeyStore(long oid, String name, KeystoreFileManager kem, char[] password, KeyAccessFilter keyAccessFilter, SsgKeyMetadataFinder ssgKeyMetadataFinder) {
-        super(keyAccessFilter, ssgKeyMetadataFinder);
+    public DatabasePkcs12SsgKeyStore(long oid, String name, KeystoreFileManager kem, char[] password, KeyAccessFilter keyAccessFilter, @NotNull SsgKeyMetadataManager metadataManager) {
+        super(keyAccessFilter, metadataManager);
         this.id = oid;
         this.name = name;
         this.kem = kem;

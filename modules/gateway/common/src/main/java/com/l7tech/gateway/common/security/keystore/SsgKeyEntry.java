@@ -5,6 +5,7 @@ import com.l7tech.objectmodel.SecurityZone;
 import com.l7tech.objectmodel.ZoneableEntity;
 import com.l7tech.security.xml.SignerInfo;
 import com.l7tech.util.Functions;
+import org.jetbrains.annotations.Nullable;
 
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
@@ -223,6 +224,11 @@ public class SsgKeyEntry extends SignerInfo implements NamedEntity, Serializable
         if (this.keyMetadata != null && this.keyMetadata != keyMetadata)
             throw new IllegalArgumentException("key metadata already attached");
         this.keyMetadata = keyMetadata;
+    }
+
+    @Nullable
+    public SsgKeyMetadata getKeyMetadata() {
+        return keyMetadata;
     }
 
     @Override

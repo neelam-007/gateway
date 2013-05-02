@@ -19,7 +19,6 @@ import com.l7tech.server.event.admin.Deleted;
 import com.l7tech.server.event.admin.KeyExportedEvent;
 import com.l7tech.server.event.admin.Updated;
 import com.l7tech.server.security.keystore.SsgKeyFinder;
-import com.l7tech.server.security.keystore.SsgKeyMetadataManager;
 import com.l7tech.server.security.keystore.SsgKeyStore;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.transport.http.HttpTransportModule;
@@ -66,11 +65,9 @@ public class PrivateKeyAdminHelper {
 
     public PrivateKeyAdminHelper( final DefaultKey defaultKey,
                                   final SsgKeyStoreManager ssgKeyStoreManager,
-                                  final SsgKeyMetadataManager ssgKeyMetadataManager,
                                   final ApplicationEventPublisher applicationEventPublisher ) {
         this.defaultKey = defaultKey;
         this.ssgKeyStoreManager = ssgKeyStoreManager;
-        this.ssgKeyMetadataManager = ssgKeyMetadataManager;
         this.applicationEventPublisher = applicationEventPublisher;
     }
 
@@ -185,8 +182,6 @@ public class PrivateKeyAdminHelper {
     /**
      * Update metadata for a private key.  The private key must exist in the keystore in order to have its
      * metadata updated.
-     * <p/>
-     * <b>Note:</b> Since metadata is not stored in the actual keystore this method can succeed even if the actual keystore is read-only.
      *
      * @param keystoreId The keystore oid.
      * @param alias The key alias.
@@ -201,15 +196,15 @@ public class PrivateKeyAdminHelper {
             //noinspection ThrowableResultOfMethodCallIgnored
             throw new UpdateException("Error getting keystore: " + ExceptionUtils.getMessage(e), e);
         }
-
         try {
             // Ensure key currently exists
             keyFinder.getCertificateChain(alias);
-
             // Update metadata
-            ssgKeyMetadataManager.updateMetadataForKey(keystoreId, alias, keyMetadata);
-
-        } catch (Exception e) {
+            final SsgKeyStore keyStore = keyFinder.getKeyStore();
+            if (keyStore != null) {
+                keyStore.updateKeyMetadata(keystoreId, alias, keyMetadata);
+            }
+        } catch (final Exception e) {
             //noinspection ThrowableResultOfMethodCallIgnored
             throw new UpdateException("Error setting new key metadata: " + ExceptionUtils.getMessage(e), e);
         }
@@ -240,8 +235,8 @@ public class PrivateKeyAdminHelper {
                                                       final boolean makeCaCert,
                                                       final String sigAlg ) throws FindException, GeneralSecurityException {
         SsgKeyStore keystore = checkBeforeGenerate(keystoreId, alias, dn, expiryDays);
-        return keystore.generateKeyPair( afterCreate(keystore, alias, ssgKeyMetadata, "generated"),
-                alias, params, new CertGenParams( dn, expiryDays, makeCaCert, sigAlg ) );
+        return keystore.generateKeyPair( afterCreate(keystore, alias, "generated"),
+                alias, params, new CertGenParams( dn, expiryDays, makeCaCert, sigAlg ), ssgKeyMetadata );
     }
 
     /**
@@ -298,7 +293,7 @@ public class PrivateKeyAdminHelper {
 
         SsgKeyStore keystore = getKeyStore(keystoreId);
         SsgKeyEntry entry = new SsgKeyEntry(keystore.getOid(), alias, x509chain, (PrivateKey)key);
-        Future<Boolean> future = keystore.storePrivateKeyEntry(afterCreate(keystore, alias, ssgKeyMetadata, "imported"), entry, false);
+        Future<Boolean> future = keystore.storePrivateKeyEntry(afterCreate(keystore, alias, "imported"), entry, false);
         if (!future.get())
             throw new KeyStoreException("Import operation returned false"); // can't happen
 
@@ -389,7 +384,6 @@ public class PrivateKeyAdminHelper {
 
     private final DefaultKey defaultKey;
     private final SsgKeyStoreManager ssgKeyStoreManager;
-    private final SsgKeyMetadataManager ssgKeyMetadataManager;
     private final ApplicationEventPublisher applicationEventPublisher;
 
     private String getSubjectDN(SsgKeyEntry entry) {
@@ -453,14 +447,10 @@ public class PrivateKeyAdminHelper {
         return keystore;
     }
 
-    private Runnable afterCreate(final SsgKeyStore keystore, final String alias, @Nullable final SsgKeyMetadata keyMetadata, final String note) {
+    private Runnable afterCreate(final SsgKeyStore keystore, final String alias, final String note) {
         return new CallableRunnable<Object>( AdminInfo.find( true ).wrapCallable(new Callable<Object>() {
             @Override
             public Object call() throws Exception {
-                if (keyMetadata != null && ssgKeyMetadataManager != null) {
-                    ssgKeyMetadataManager.updateMetadataForKey(keystore.getOid(), alias, keyMetadata);
-                }
-
                 applicationEventPublisher.publishEvent(new Created<SsgKeyEntry>(SsgKeyEntry.createDummyEntityForAuditing(keystore.getOid(), alias), note));
                 return null;
             }

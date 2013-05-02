@@ -14,6 +14,7 @@ import com.l7tech.gateway.common.security.SpecialKeyType;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gateway.common.security.keystore.KeystoreFileEntityHeader;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
+import com.l7tech.gateway.common.security.keystore.SsgKeyMetadata;
 import com.l7tech.gui.util.*;
 import com.l7tech.gui.widgets.PasswordEntryDialog;
 import com.l7tech.objectmodel.*;
@@ -488,9 +489,10 @@ public class PrivateKeyManagerWindow extends JDialog {
 
                 // TODO provide a way to set the security zone on the imported key.
                 final SecurityZone securityZone = null;
+                final SsgKeyMetadata metadata = new SsgKeyMetadata(keystoreId, alias, securityZone);
 
                 try {
-                    return Registry.getDefault().getTrustedCertManager().importKeyFromKeyStoreFile(keystoreId, alias, securityZone, ksbytes, kstype, kspass, entrypass, ksalias);
+                    return Registry.getDefault().getTrustedCertManager().importKeyFromKeyStoreFile(keystoreId, alias, metadata, ksbytes, kstype, kspass, entrypass, ksalias);
                 } catch (MultipleAliasesException e) {
                     Object defaultOptionPaneUI = UIManager.get("OptionPaneUI");
                     UIManager.put("OptionPaneUI", ComboBoxOptionPaneUI.class.getName());  // Let JOptionPane use JCombobox rather than JList to display aliases
@@ -499,7 +501,7 @@ public class PrivateKeyManagerWindow extends JDialog {
 
                     if (ksalias == null)
                         return null;
-                    return Registry.getDefault().getTrustedCertManager().importKeyFromKeyStoreFile(keystoreId, alias, securityZone, ksbytes, kstype, kspass, entrypass, ksalias);
+                    return Registry.getDefault().getTrustedCertManager().importKeyFromKeyStoreFile(keystoreId, alias, metadata, ksbytes, kstype, kspass, entrypass, ksalias);
                 }
 
             } catch (AccessControlException ace) {

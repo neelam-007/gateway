@@ -5,7 +5,7 @@ import com.l7tech.common.io.NullOutputStream;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.server.security.keystore.JdkKeyStoreBackedSsgKeyStore;
 import com.l7tech.server.security.keystore.KeyAccessFilter;
-import com.l7tech.server.security.keystore.SsgKeyMetadataFinder;
+import com.l7tech.server.security.keystore.SsgKeyMetadataManager;
 import com.l7tech.util.*;
 
 import java.io.*;
@@ -84,8 +84,8 @@ public class GenericSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore {
     private final boolean reloadAfterStore;
     private final AtomicReference<KeyStore> keystore = new AtomicReference<KeyStore>();
 
-    public GenericSsgKeyStore(long oid, SsgKeyStoreType type, String name, char[] systemKeystorePassword, KeyAccessFilter keyAccessFilter, SsgKeyMetadataFinder ssgKeyMetadataFinder) throws KeyStoreException {
-        super(keyAccessFilter, ssgKeyMetadataFinder);
+    public GenericSsgKeyStore(long oid, SsgKeyStoreType type, String name, char[] systemKeystorePassword, KeyAccessFilter keyAccessFilter, SsgKeyMetadataManager metadataManager) throws KeyStoreException {
+        super(keyAccessFilter, metadataManager);
         this.oid = oid;
         this.type = type;
         this.name = name;

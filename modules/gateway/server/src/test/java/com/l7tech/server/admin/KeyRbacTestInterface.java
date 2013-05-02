@@ -2,6 +2,7 @@ package com.l7tech.server.admin;
 
 import com.l7tech.gateway.common.security.PrivateKeySecured;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
+import com.l7tech.gateway.common.security.keystore.SsgKeyMetadata;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 
 import java.util.List;
@@ -9,6 +10,7 @@ import java.util.List;
 import static com.l7tech.gateway.common.security.PrivateKeySecured.PreCheck;
 import static com.l7tech.gateway.common.security.PrivateKeySecured.PreCheck.*;
 import static com.l7tech.gateway.common.security.PrivateKeySecured.ReturnCheck;
+import static com.l7tech.gateway.common.security.PrivateKeySecured.ReturnCheck.NO_RETURN_CHECK;
 
 /**
  * A test interface, whose only implementations are mocks, for testing the {@link PrivateKeyRbacInterceptor}.
@@ -65,4 +67,22 @@ public interface KeyRbacTestInterface {
 
     @PrivateKeySecured(preChecks={NO_PRE_CHECK}, returnCheck=ReturnCheck.FILTER_RETURN)
     List<Object> findUnrelatedStuff();
+
+    @PrivateKeySecured(preChecks={CHECK_ARG_OPERATION}, argOp=OperationType.CREATE, metadataArg=2, returnCheck=NO_RETURN_CHECK)
+    boolean checkArgOpCreateWithMetadata(long keystoreId, String alias, SsgKeyMetadata metadata);
+
+    @PrivateKeySecured(preChecks={CHECK_ARG_OPERATION}, argOp=OperationType.UPDATE, metadataArg=2, returnCheck=NO_RETURN_CHECK)
+    boolean checkArgOpUpdateWithMetadata(long keystoreId, String alias, SsgKeyMetadata metadata);
+
+    @PrivateKeySecured(preChecks={CHECK_ARG_UPDATE_KEY_ENTRY}, argOp = OperationType.UPDATE)
+    boolean checkArgUpdateKeyEntry(SsgKeyEntry keyEntry);
+
+    @PrivateKeySecured(preChecks={CHECK_ARG_UPDATE_KEY_ENTRY}, argOp = OperationType.UPDATE)
+    boolean checkArgUpdateKeyEntryNoArg();
+
+    @PrivateKeySecured(preChecks={CHECK_ARG_UPDATE_KEY_ENTRY}, argOp = OperationType.UPDATE)
+    boolean checkArgUpdateKeyEntryInvalidArg(String argNotKeyEntry);
+
+    @PrivateKeySecured(preChecks={CHECK_ARG_UPDATE_KEY_ENTRY}, argOp = OperationType.CREATE)
+    boolean checkArgUpdateKeyEntryInvalidOp(SsgKeyEntry keyEntry);
 }

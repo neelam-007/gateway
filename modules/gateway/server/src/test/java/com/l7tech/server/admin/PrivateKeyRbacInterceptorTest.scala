@@ -4,14 +4,13 @@ import org.specs2.mutable.SpecificationWithJUnit
 import org.specs2.mock.Mockito
 import org.specs2.specification.Scope
 import org.springframework.aop.framework.ReflectiveMethodInvocation
-import java.lang.IllegalStateException
 import org.aopalliance.intercept.MethodInvocation
 import java.lang.reflect.Method
 import com.l7tech.identity.User
 import com.l7tech.server.security.rbac.RbacServices
 import com.l7tech.server.security.keystore.{SsgKeyFinder, SsgKeyStoreManager}
-import com.l7tech.gateway.common.security.keystore.SsgKeyEntry
-import com.l7tech.objectmodel.{Entity, EntityType, ObjectNotFoundException}
+import com.l7tech.gateway.common.security.keystore.{SsgKeyMetadata, SsgKeyEntry}
+import com.l7tech.objectmodel.{SecurityZone, Entity, EntityType, ObjectNotFoundException}
 import com.l7tech.objectmodel.EntityType._
 import java.{lang, util}
 import com.l7tech.gateway.common.security.rbac.{PermissionDeniedException, OperationType}
@@ -70,11 +69,12 @@ class PrivateKeyRbacInterceptorTest extends SpecificationWithJUnit with Mockito 
       keyLookupWillSucceed
       grant(UPDATE, keystore)
       grant(UPDATE, keyEntry)
+      grantAllNonMockedKeyEntries(UPDATE)
 
       testInterface.updateKeyEntry(any, any) returns true
       interceptor.invoke(methodInvocation(updateKeyEntry, keystoreId, keyAlias)) must_== true
 
-      there were two(rbacServices).isPermittedForEntity(any, any, any, any)
+      there were three(rbacServices).isPermittedForEntity(any, any, any, any)
     }
 
     "fail CHECK_ARG_OPERATION precheck if not permitted for user with keystore" in new DefaultScope {
@@ -159,6 +159,112 @@ class PrivateKeyRbacInterceptorTest extends SpecificationWithJUnit with Mockito 
       there was no(rbacServices).isPermittedForEntity(user, keystore, OperationType.UPDATE, null) // key entry not checked if no keystore perm
     }
 
+    "pass CHECK_ARG_OPERATION precheck that requires create permission for key entry and update permission for keystore but no return check" in new DefaultScope {
+      keyLookupWillSucceed
+      grant(UPDATE, keystore)
+      grantAllNonMockedKeyEntries(CREATE)
+
+      testInterface.checkArgOpCreateWithMetadata(keystoreId, keyAlias, keyMetadata) returns true
+      interceptor.invoke(methodInvocation(checkArgOpCreateWithMetadata, keystoreId, keyAlias, keyMetadata)) must_== true
+
+      there was one(rbacServices).isPermittedForEntity(beEqualTo(user), haveClass[SsgKeyEntry], beEqualTo(OperationType.CREATE), org.mockito.Matchers.eq(null))
+      there was one(rbacServices).isPermittedForEntity(user, keystore, OperationType.UPDATE, null)
+    }
+
+    "fail CHECK_ARG_OPERATION precheck that requires create permission for key entry and update permission for keystore if CREATE permission not present for key entry" in new DefaultScope {
+      keyLookupWillSucceed
+      grant(UPDATE, keystore)
+
+      interceptor.invoke(methodInvocation(checkArgOpCreateWithMetadata, keystoreId, keyAlias, keyMetadata)) must throwA[PermissionDeniedException]
+
+      there was one(rbacServices).isPermittedForEntity(beEqualTo(user), haveClass[SsgKeyEntry], beEqualTo(OperationType.CREATE), org.mockito.Matchers.eq(null))
+      there was no(rbacServices).isPermittedForEntity(user, keystore, OperationType.UPDATE, null)
+    }
+
+    "fail CHECK_ARG_OPERATION precheck that requires create permission for key entry and update permission for keystore if UPDATE permission not present for keystore" in new DefaultScope {
+      keyLookupWillSucceed
+      grantAllNonMockedKeyEntries(CREATE)
+
+      interceptor.invoke(methodInvocation(checkArgOpCreateWithMetadata, keystoreId, keyAlias, keyMetadata)) must throwA[PermissionDeniedException]
+
+      there was one(rbacServices).isPermittedForEntity(beEqualTo(user), haveClass[SsgKeyEntry], beEqualTo(OperationType.CREATE), org.mockito.Matchers.eq(null))
+      there was one(rbacServices).isPermittedForEntity(user, keystore, OperationType.UPDATE, null)
+    }
+
+    "fail CHECK_ARG_OPERATION precheck that requires create permission for key entry and update permission for keystore if keystore lookup fails" in new DefaultScope {
+      grant(UPDATE, keystore)
+      grantAllNonMockedKeyEntries(CREATE)
+
+      interceptor.invoke(methodInvocation(checkArgOpCreateWithMetadata, keystoreId, keyAlias, keyMetadata)) must throwA[ObjectNotFoundException]
+
+      there was one(rbacServices).isPermittedForEntity(beEqualTo(user), haveClass[SsgKeyEntry], beEqualTo(OperationType.CREATE), org.mockito.Matchers.eq(null))
+      there was no(rbacServices).isPermittedForEntity(user, keystore, OperationType.UPDATE, null)
+    }
+
+    "pass CHECK_ARG_OPERATION precheck that requires update permission on key entry and provides metadata" in new DefaultScope {
+      keyLookupWillSucceed
+      grant(UPDATE, keyEntry)
+      grant(UPDATE, keystore)
+      grantAllNonMockedKeyEntries(UPDATE)
+
+      testInterface.checkArgOpUpdateWithMetadata(keystoreId, keyAlias, keyMetadata) returns true
+      interceptor.invoke(methodInvocation(checkArgOpUpdateWithMetadata, keystoreId, keyAlias, keyMetadata)) must_== true
+
+      there was one(rbacServices).isPermittedForEntity(user, keyEntry, OperationType.UPDATE, null)
+      there was one(rbacServices).isPermittedForEntity(beEqualTo(user), haveClass[SsgKeyEntry], beEqualTo(OperationType.UPDATE), org.mockito.Matchers.eq(null))
+      there was one(rbacServices).isPermittedForEntity(user, keystore, OperationType.UPDATE, null)
+    }
+
+    "fail CHECK_ARG_OPERATION precheck that requires update permission on key entry and provides metadata if permission to update existing key entry denied" in new DefaultScope {
+      keyLookupWillSucceed
+
+      interceptor.invoke(methodInvocation(checkArgOpUpdateWithMetadata, keystoreId, keyAlias, keyMetadata)) must throwA[PermissionDeniedException]
+
+      there was one(rbacServices).isPermittedForEntity(user, keyEntry, OperationType.UPDATE, null)
+      // no permission check for updated key entry done if permission denied for existing key entry
+      there was no(rbacServices).isPermittedForEntity(beEqualTo(user), haveClass[SsgKeyEntry], beEqualTo(OperationType.UPDATE), org.mockito.Matchers.eq(null))
+      there was no(rbacServices).isPermittedForEntity(user, keystore, OperationType.UPDATE, null)
+    }
+
+    "fail CHECK_ARG_OPERATION precheck that requires update permission on key entry and provides metadata if permission to update mutated key entry denied" in new DefaultScope {
+      keyLookupWillSucceed
+      grant(UPDATE, keyEntry)
+
+      interceptor.invoke(methodInvocation(checkArgOpUpdateWithMetadata, keystoreId, keyAlias, keyMetadata)) must throwA[PermissionDeniedException]
+
+      there was one(rbacServices).isPermittedForEntity(user, keyEntry, OperationType.UPDATE, null)
+      there was one(rbacServices).isPermittedForEntity(beEqualTo(user), haveClass[SsgKeyEntry], beEqualTo(OperationType.UPDATE), org.mockito.Matchers.eq(null))
+      there was no(rbacServices).isPermittedForEntity(user, keystore, OperationType.UPDATE, null)
+    }
+
+    "fail CHECK_ARG_OPERATION precheck that requires update permission on key entry and provides metadata if permission to update keystore denied" in new DefaultScope {
+      keyLookupWillSucceed
+      grant(UPDATE, keyEntry)
+      grantAllNonMockedKeyEntries(UPDATE)
+
+      interceptor.invoke(methodInvocation(checkArgOpUpdateWithMetadata, keystoreId, keyAlias, keyMetadata)) must throwA[PermissionDeniedException]
+
+      there was one(rbacServices).isPermittedForEntity(user, keyEntry, OperationType.UPDATE, null)
+      there was one(rbacServices).isPermittedForEntity(beEqualTo(user), haveClass[SsgKeyEntry], beEqualTo(OperationType.UPDATE), org.mockito.Matchers.eq(null))
+      there was one(rbacServices).isPermittedForEntity(user, keystore, OperationType.UPDATE, null)
+    }
+
+    "fail CHECK_ARG_OPERATION precheck that requires update permission on key entry and provides metadata if key entry lookup fails" in new DefaultScope {
+      ssgKeyStoreManager.findByPrimaryKey(new lang.Long(keystoreId)) returns keystore
+      keystore.getCertificateChain(keyAlias) throws new ObjectNotFoundException("key entry not found")
+
+      interceptor.invoke(methodInvocation(checkArgOpUpdateWithMetadata, keystoreId, keyAlias, keyMetadata)) must throwA[ObjectNotFoundException]
+
+      there was no(rbacServices).isPermittedForEntity(any, any, any, any)
+    }
+
+    "fail CHECK_ARG_OPERATION precheck that requires update permission on key entry and provides metadata if keystore lookup fails" in new DefaultScope {
+      interceptor.invoke(methodInvocation(checkArgOpUpdateWithMetadata, keystoreId, keyAlias, keyMetadata)) must throwA[ObjectNotFoundException]
+
+      there was one(ssgKeyStoreManager).findByPrimaryKey(new lang.Long(keystoreId))
+      there was no(rbacServices).isPermittedForEntity(any, any, any, any)
+    }
+
     "pass CHECK_UPDATE_ALL_KEYSTORES_NONFATAL precheck if user can update all keystores" in new DefaultScope {
       grantAll(UPDATE, SSG_KEYSTORE)
 
@@ -229,6 +335,100 @@ class PrivateKeyRbacInterceptorTest extends SpecificationWithJUnit with Mockito 
       there was one(rbacServices).isPermittedForEntity(user, keyEntry, READ, null)
       there was one(rbacServices).isPermittedForEntity(user, keystore, READ, null)
       there was one(rbacServices).isPermittedForAnyEntityOfType(user, OperationType.UPDATE, EntityType.SSG_KEYSTORE)
+    }
+
+    "pass CHECK_ARG_UPDATE_KEY_ENTRY pre check" in new DefaultScope {
+      val toUpdate = makeEntry(keystoreId, keyAlias)
+      val existing = keyEntry
+      keyLookupWillSucceed
+      grant(UPDATE, toUpdate)
+      grant(UPDATE, keystore)
+      grant(UPDATE, existing)
+
+      testInterface.checkArgUpdateKeyEntry(toUpdate) returns true
+      interceptor.invoke(methodInvocation(checkArgUpdateKeyEntry, toUpdate)) must_== true
+
+      there was one(rbacServices).isPermittedForEntity(user, toUpdate, UPDATE, null)
+      there was one(rbacServices).isPermittedForEntity(user, keystore, UPDATE, null)
+      there was one(rbacServices).isPermittedForEntity(user, existing, UPDATE, null)
+    }
+
+    "fail CHECK_ARG_UPDATE_KEY_ENTRY pre check if UPDATE permission not present for key entry to update" in new DefaultScope {
+      interceptor.invoke(methodInvocation(checkArgUpdateKeyEntry, keyEntry)) must throwA[PermissionDeniedException]
+
+      there was one(rbacServices).isPermittedForEntity(user, keyEntry, UPDATE, null)
+      there was no(rbacServices).isPermittedForEntity(user, keystore, UPDATE, null)
+      there was no(keystore).getCertificateChain(keyAlias)
+    }
+
+    "fail CHECK_ARG_UPDATE_KEY_ENTRY pre check if UPDATE keystore permission not present" in new DefaultScope {
+      keyLookupWillSucceed
+      grant(UPDATE, keyEntry)
+
+      interceptor.invoke(methodInvocation(checkArgUpdateKeyEntry, keyEntry)) must throwA[PermissionDeniedException]
+
+      there was one(rbacServices).isPermittedForEntity(user, keyEntry, UPDATE, null)
+      there was one(rbacServices).isPermittedForEntity(user, keystore, UPDATE, null)
+      there was no(keystore).getCertificateChain(keyAlias)
+    }
+
+    "fail CHECK_ARG_UPDATE_KEY_ENTRY pre check if UPDATE permission not present for updated key entry" in new DefaultScope {
+      val toUpdate = makeEntry(keystoreId, keyAlias)
+      val existing = keyEntry
+      keyLookupWillSucceed
+      grant(UPDATE, toUpdate)
+      grant(UPDATE, keystore)
+
+      interceptor.invoke(methodInvocation(checkArgUpdateKeyEntry, toUpdate)) must throwA[PermissionDeniedException]
+
+      there was one(rbacServices).isPermittedForEntity(user, toUpdate, UPDATE, null)
+      there was one(rbacServices).isPermittedForEntity(user, keystore, UPDATE, null)
+      there was one(rbacServices).isPermittedForEntity(user, existing, UPDATE, null)
+    }
+
+    "fail CHECK_ARG_UPDATE_KEY_ENTRY pre check if keystore lookup fails" in new DefaultScope {
+      grant(UPDATE, keyEntry)
+
+      interceptor.invoke(methodInvocation(checkArgUpdateKeyEntry, keyEntry)) must throwA[ObjectNotFoundException]
+
+      there was one(rbacServices).isPermittedForEntity(user, keyEntry, UPDATE, null)
+      there was one(ssgKeyStoreManager).findByPrimaryKey(keystoreId)
+      there was no(rbacServices).isPermittedForEntity(user, keystore, UPDATE, null)
+    }
+
+    "fail CHECK_ARG_UPDATE_KEY_ENTRY pre check if key entry lookup fails" in new DefaultScope {
+      grant(UPDATE, keyEntry)
+      ssgKeyStoreManager.findByPrimaryKey(new lang.Long(keystoreId)) returns keystore
+      grant(UPDATE, keystore)
+      keystore.getCertificateChain(keyAlias) throws new ObjectNotFoundException("key entry not found")
+
+      interceptor.invoke(methodInvocation(checkArgUpdateKeyEntry, keyEntry)) must throwA[ObjectNotFoundException]
+
+      there was one(rbacServices).isPermittedForEntity(user, keyEntry, UPDATE, null)
+      there was one(rbacServices).isPermittedForEntity(user, keystore, UPDATE, null)
+      there was one(keystore).getCertificateChain(keyAlias)
+    }
+
+    "fail CHECK_ARG_UPDATE_KEY_ENTRY if key entry is null" in new DefaultScope {
+      interceptor.invoke(methodInvocation(checkArgUpdateKeyEntry, null)) must throwA[IllegalArgumentException]
+      there was no(rbacServices).isPermittedForEntity(any, any, any, any)
+    }
+
+    "fail CHECK_ARG_UPDATE_KEY_ENTRY if operation is not UPDATE" in new DefaultScope {
+      interceptor.invoke(methodInvocation(checkArgUpdateKeyEntryInvalidOp, keyEntry)) must throwA[IllegalArgumentException]
+      there was no(rbacServices).isPermittedForEntity(any, any, any, any)
+    }
+
+    "fail CHECK_ARG_UPDATE_KEY_ENTRY if no args provided" in new DefaultScope {
+      val checkArgUpdateKeyEntryNoArg = testInterfaceClass.getMethod("checkArgUpdateKeyEntryNoArg")
+      interceptor.invoke(methodInvocation(checkArgUpdateKeyEntryNoArg)) must throwA[IllegalArgumentException]
+      there was no(rbacServices).isPermittedForEntity(any, any, any, any)
+    }
+
+    "fail CHECK_ARG_UPDATE_KEY_ENTRY if arg provided is not SsgKeyEntry" in new DefaultScope {
+      val checkArgUpdateKeyEntryInvalidArg = testInterfaceClass.getMethod("checkArgUpdateKeyEntryInvalidArg", classOf[String])
+      interceptor.invoke(methodInvocation(checkArgUpdateKeyEntryInvalidArg, "not a key entry")) must throwA[IllegalArgumentException]
+      there was no(rbacServices).isPermittedForEntity(any, any, any, any)
     }
 
     "fail multiple prechecks if even one fails" in new DefaultScope {
@@ -359,6 +559,10 @@ class PrivateKeyRbacInterceptorTest extends SpecificationWithJUnit with Mockito 
     val createKeyEntry = testInterfaceClass.getMethod("createKeyEntry", classOf[Long], classOf[String])
     val isNonFatalPreCheckPassed = testInterfaceClass.getMethod("isNonFatalPreCheckPassed", classOf[Object])
     val exportKey = testInterfaceClass.getMethod("exportKey", classOf[Long], classOf[String])
+    val checkArgUpdateKeyEntry = testInterfaceClass.getMethod("checkArgUpdateKeyEntry", classOf[SsgKeyEntry])
+    val checkArgUpdateKeyEntryInvalidOp = testInterfaceClass.getMethod("checkArgUpdateKeyEntryInvalidOp", classOf[SsgKeyEntry])
+    val checkArgOpCreateWithMetadata = testInterfaceClass.getMethod("checkArgOpCreateWithMetadata", classOf[Long], classOf[String], classOf[SsgKeyMetadata])
+    val checkArgOpUpdateWithMetadata = testInterfaceClass.getMethod("checkArgOpUpdateWithMetadata", classOf[Long], classOf[String], classOf[SsgKeyMetadata])
 
     /** Override to access protected c'tor */
     class MyReflectiveMethodInvocation(proxy: AnyRef, target: AnyRef, method: Method, arguments: Array[AnyRef], targetClass: Class[_])
@@ -373,11 +577,28 @@ class PrivateKeyRbacInterceptorTest extends SpecificationWithJUnit with Mockito 
       entry
     }
 
+    def makeEntry(keystoreOid: Long, keyAlias: String, securityZone: SecurityZone): SsgKeyEntry = {
+      val entry = mock[SsgKeyEntry]
+      entry.getAlias returns keyAlias
+      entry.getKeystoreId returns keystoreOid
+      entry.getSecurityZone returns securityZone
+      entry
+    }
+
+    def makeKeyMetadata(keystoreOid: Long, keyAlias: String, securityZone: SecurityZone) : SsgKeyMetadata = {
+      val entry = mock[SsgKeyMetadata]
+      entry.getAlias returns keyAlias
+      entry.getKeystoreOid returns keystoreId
+      entry.getSecurityZone returns securityZone;
+      entry
+    }
+
     val keystoreId = new java.lang.Long(82734)
     val keystore = mock[SsgKeyFinder]
 
     val keyAlias = "interceptor_test_key_alias"
     val keyEntry = makeEntry(keystoreId, keyAlias)
+    val keyMetadata = makeKeyMetadata(keystoreId, keyAlias, new SecurityZone())
 
     val user = mock[User]
     user.getName returns keyAlias
@@ -398,6 +619,9 @@ class PrivateKeyRbacInterceptorTest extends SpecificationWithJUnit with Mockito 
 
     /** configure rbacServices mock to return true when queried about the specified permission on the specified entity */
     def grant(op: OperationType, entity: Entity) = rbacServices.isPermittedForEntity(user, entity, op, null) returns true
+
+    /** configure rbacServies mock to return true when queried about the specified permission for all non-mocked SsgKeyEntry (mocked ones won't match the haveClass matcher) **/
+    def grantAllNonMockedKeyEntries(op: OperationType) = rbacServices.isPermittedForEntity(beEqualTo(user), haveClass[SsgKeyEntry], beEqualTo(op), org.mockito.Matchers.eq(null)) returns true
 
     /** configure rbacServices mock to return true when queried about the specified permission on all entities of the specified type */
     def grantAll(op: OperationType, entityType: EntityType) = rbacServices.isPermittedForAnyEntityOfType(user, op, entityType) returns true

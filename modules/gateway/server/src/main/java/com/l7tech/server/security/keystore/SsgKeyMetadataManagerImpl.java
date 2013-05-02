@@ -45,20 +45,6 @@ public class SsgKeyMetadataManagerImpl extends HibernateEntityManager<SsgKeyMeta
         return findUnique( criteria );
     }
 
-    @Override
-    @Transactional(readOnly=false)
-    public long setMetadataForNewKey(long keystoreOid, @NotNull String alias, @Nullable SsgKeyMetadata newMeta) throws FindException, DeleteException, SaveException {
-
-        SsgKeyMetadata existing = findMetadata(keystoreOid, alias);
-        if (existing != null)
-            delete(existing);
-
-        if (newMeta != null) {
-            return checkAndSave(keystoreOid, alias, newMeta);
-        }
-        return SsgKeyMetadata.DEFAULT_OID;
-    }
-
     private long checkAndSave(long keystoreOid, String alias, SsgKeyMetadata newMeta) throws SaveException {
         if (keystoreOid != newMeta.getKeystoreOid())
             throw new IllegalArgumentException("New metadata keystore OID does not match");
@@ -84,6 +70,18 @@ public class SsgKeyMetadataManagerImpl extends HibernateEntityManager<SsgKeyMeta
                 return -1;
 
             return checkAndSave(keystoreOid, alias, newMeta);
+        }
+    }
+
+    @Override
+    public void deleteMetadataForKey(long keystoreOid, @NotNull String alias) throws DeleteException {
+        try {
+            final SsgKeyMetadata found = findMetadata(keystoreOid, alias);
+            if (found != null) {
+                delete(found);
+            }
+        } catch (final FindException e) {
+            throw new DeleteException("Error looking up SsgKeyMetadata to delete", e);
         }
     }
 }

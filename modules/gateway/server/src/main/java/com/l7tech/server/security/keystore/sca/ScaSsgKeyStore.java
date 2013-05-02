@@ -49,18 +49,18 @@ public class ScaSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore implements SsgK
      * @param password the password to use when accessing the PKCS#11 keystore
      * @param kem the KeystoreFileManager.  Required.
      * @param keyAccessFilter the key access filter.  Required.
-     * @param ssgKeyMetadataFinder the key metadata finder.  Required.
+     * @param metadataManager the key metadata finder.  Required.
      * @return the ScaSsgKeyStore instance for this process
      * @throws KeyStoreException  if the global instance cannot be created
      */
-    public synchronized static ScaSsgKeyStore getInstance(long id, String name, char[] password, KeystoreFileManager kem, KeyAccessFilter keyAccessFilter, @NotNull SsgKeyMetadataFinder ssgKeyMetadataFinder) throws KeyStoreException {
+    public synchronized static ScaSsgKeyStore getInstance(long id, String name, char[] password, KeystoreFileManager kem, KeyAccessFilter keyAccessFilter, @NotNull SsgKeyMetadataManager metadataManager) throws KeyStoreException {
         if (INSTANCE != null)
             return INSTANCE;
-        return INSTANCE = new ScaSsgKeyStore(id, name, password, kem, keyAccessFilter, ssgKeyMetadataFinder);
+        return INSTANCE = new ScaSsgKeyStore(id, name, password, kem, keyAccessFilter, metadataManager);
     }
 
-    private ScaSsgKeyStore(long id, String name, char[] password, KeystoreFileManager kem, KeyAccessFilter keyAccessFilter, @NotNull SsgKeyMetadataFinder ssgKeyMetadataFinder) throws KeyStoreException {
-        super(keyAccessFilter, ssgKeyMetadataFinder);
+    private ScaSsgKeyStore(long id, String name, char[] password, KeystoreFileManager kem, KeyAccessFilter keyAccessFilter, @NotNull SsgKeyMetadataManager metadataManager) throws KeyStoreException {
+        super(keyAccessFilter, metadataManager);
         if (!( JceProvider.PKCS11_ENGINE.equals(JceProvider.getEngineClass())))
             throw new KeyStoreException("Can only create ScaSsgKeyStore if current JceProvider is " + JceProvider.PKCS11_ENGINE);
         if (kem == null)

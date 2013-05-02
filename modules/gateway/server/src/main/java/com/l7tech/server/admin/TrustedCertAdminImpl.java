@@ -317,19 +317,17 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
     }
 
     @Override
-    public JobId<X509Certificate> generateKeyPair(long keystoreId, String alias, @Nullable SecurityZone securityZone, X500Principal dn, int keybits, int expiryDays, boolean makeCaCert, String sigAlg) throws FindException, GeneralSecurityException {
+    public JobId<X509Certificate> generateKeyPair(long keystoreId, String alias, @Nullable SsgKeyMetadata metadata, X500Principal dn, int keybits, int expiryDays, boolean makeCaCert, String sigAlg) throws FindException, GeneralSecurityException {
         checkLicenseKeyStore();
         final PrivateKeyAdminHelper helper = getPrivateKeyAdminHelper();
-        final SsgKeyMetadata meta = makeMeta(keystoreId, alias, securityZone);
-        return registerJob(helper.doGenerateKeyPair(keystoreId, alias, meta, dn, new KeyGenParams(keybits), expiryDays, makeCaCert, sigAlg), X509Certificate.class);
+        return registerJob(helper.doGenerateKeyPair(keystoreId, alias, metadata, dn, new KeyGenParams(keybits), expiryDays, makeCaCert, sigAlg), X509Certificate.class);
     }
 
     @Override
-    public JobId<X509Certificate> generateEcKeyPair(long keystoreId, String alias, @Nullable SecurityZone securityZone, X500Principal dn, String curveName, int expiryDays, boolean makeCaCert, String sigAlg) throws FindException, GeneralSecurityException {
+    public JobId<X509Certificate> generateEcKeyPair(long keystoreId, String alias, @Nullable SsgKeyMetadata metadata, X500Principal dn, String curveName, int expiryDays, boolean makeCaCert, String sigAlg) throws FindException, GeneralSecurityException {
         checkLicenseKeyStore();
         final PrivateKeyAdminHelper helper = getPrivateKeyAdminHelper();
-        final SsgKeyMetadata meta = makeMeta(keystoreId, alias, securityZone);
-        return registerJob(helper.doGenerateKeyPair(keystoreId, alias, meta, dn, new KeyGenParams(curveName), expiryDays, makeCaCert, sigAlg), X509Certificate.class);
+        return registerJob(helper.doGenerateKeyPair(keystoreId, alias, metadata, dn, new KeyGenParams(curveName), expiryDays, makeCaCert, sigAlg), X509Certificate.class);
     }
 
     private SsgKeyMetadata makeMeta(long keystoreOid, @NotNull String alias, @Nullable SecurityZone securityZone) {
@@ -428,24 +426,26 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
     }
 
     @Override
-    public void assignNewCert(long keystoreId, String alias, String[] pemChain) throws UpdateException, CertificateException {
+    public void updateKeyEntry(@NotNull final SsgKeyEntry keyEntry) throws UpdateException {
         checkLicenseKeyStore();
-        X509Certificate[] safeChain = CertUtils.parsePemChain(pemChain);
 
-        try {
-            getPrivateKeyAdminHelper().doUpdateCertificateChain( keystoreId, alias, safeChain );
-        } catch ( final UpdateException e ) {
-            logger.log( Level.INFO, ExceptionUtils.getMessage( e ), ExceptionUtils.getDebugException( e ) );
-            throw e;
+        // ensure certs are parsed with the configured certificate factory
+        // which may not be the same as the default certificate factory used for serialization
+        final X509Certificate[] chain = keyEntry.getCertificateChain();
+        for (int i = 0; i < chain.length; i++) {
+            X509Certificate certificate = keyEntry.getCertificateChain()[i];
+            try {
+                chain[i] = CertUtils.decodeCert(certificate.getEncoded());
+            } catch (final CertificateException e) {
+                logger.log( Level.INFO, ExceptionUtils.getMessage( e ), ExceptionUtils.getDebugException( e ) );
+                throw new UpdateException("Unable to decode cert", e);
+            }
         }
-    }
-
-    @Override
-    public void updateKeySecurityZone(long keystoreId, @NotNull String alias, @Nullable SecurityZone securityZone) throws UpdateException {
-        checkLicenseKeyStore();
 
         try {
-            getPrivateKeyAdminHelper().doUpdateKeyMetadata( keystoreId, alias, makeMeta(keystoreId, alias, securityZone) );
+            getPrivateKeyAdminHelper().doUpdateCertificateChain( keyEntry.getKeystoreId(), keyEntry.getAlias(), keyEntry.getCertificateChain() );
+            getPrivateKeyAdminHelper().doUpdateKeyMetadata( keyEntry.getKeystoreId(), keyEntry.getAlias(),
+                    makeMeta(keyEntry.getKeystoreId(), keyEntry.getAlias(), keyEntry.getSecurityZone()));
         } catch ( final UpdateException e ) {
             logger.log( Level.INFO, ExceptionUtils.getMessage( e ), ExceptionUtils.getDebugException( e ) );
             throw e;
@@ -455,7 +455,7 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
     @Override
     public SsgKeyEntry importKeyFromKeyStoreFile(long keystoreId,
                                                  String alias,
-                                                 @Nullable SecurityZone securityZone,
+                                                 @Nullable SsgKeyMetadata metadata,
                                                  byte[] keyStoreBytes,
                                                  String keyStoreType,
                                                  @Nullable char[] keyStorePass,
@@ -467,8 +467,7 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
             checkLicenseKeyStore();
 
             final PrivateKeyAdminHelper helper = getPrivateKeyAdminHelper();
-            final SsgKeyMetadata meta = makeMeta(keystoreId, alias, securityZone);
-            return helper.doImportKeyFromKeyStoreFile(keystoreId, alias, meta, keyStoreBytes, keyStoreType, keyStorePass, entryPass, entryAlias);
+            return helper.doImportKeyFromKeyStoreFile(keystoreId, alias, metadata, keyStoreBytes, keyStoreType, keyStorePass, entryPass, entryAlias);
 
         } catch (IOException e) {
             throw new KeyStoreException(ExceptionUtils.getMessage( e ), e);
@@ -776,8 +775,11 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
         return revocationCheckPolicyManager;
     }
 
-    private PrivateKeyAdminHelper getPrivateKeyAdminHelper() {
-        return new PrivateKeyAdminHelper( defaultKey, ssgKeyStoreManager, ssgKeyMetadataManager, applicationEventPublisher );
+    /**
+     * Override for unit tests.
+     */
+    PrivateKeyAdminHelper getPrivateKeyAdminHelper() {
+        return new PrivateKeyAdminHelper( defaultKey, ssgKeyStoreManager, applicationEventPublisher );
     }
 
     private Logger logger = Logger.getLogger(getClass().getName());

@@ -3,7 +3,9 @@ package com.l7tech.server.security.keystore;
 import com.l7tech.common.io.CertGenParams;
 import com.l7tech.common.io.KeyGenParams;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
+import com.l7tech.gateway.common.security.keystore.SsgKeyMetadata;
 import com.l7tech.objectmodel.ObjectNotFoundException;
+import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.security.prov.CertificateRequest;
 import com.l7tech.util.NotFuture;
 import org.springframework.transaction.annotation.Propagation;
@@ -82,6 +84,10 @@ public class SsgKeyFinderStub implements SsgKeyStore {
     }
 
     @Override
+    public void updateKeyMetadata(long keystoreId, String alias, SsgKeyMetadata metadata) throws UpdateException {
+    }
+
+    @Override
     public String getName() {
         return "Stub KeyFinder";
     }
@@ -97,7 +103,7 @@ public class SsgKeyFinderStub implements SsgKeyStore {
     }
 
     @Override
-    public Future<X509Certificate> generateKeyPair( final Runnable transactionCallback, final String alias, final KeyGenParams keyGenParams, final CertGenParams certGenParams ) throws GeneralSecurityException {
+    public Future<X509Certificate> generateKeyPair( final Runnable transactionCallback, final String alias, final KeyGenParams keyGenParams, final CertGenParams certGenParams, final SsgKeyMetadata metadata ) throws GeneralSecurityException {
         throw new GeneralSecurityException("not implemented");
     }
 
