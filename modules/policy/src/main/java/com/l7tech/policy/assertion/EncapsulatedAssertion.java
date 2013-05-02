@@ -272,11 +272,12 @@ public class EncapsulatedAssertion extends Assertion implements UsesEntitiesAtDe
                 EncapsulatedAssertionConfig config = encapsulatedAssertion.config();
                 if (config == null)
                     return new EncapsulatedAssertion();
-                return new EncapsulatedAssertion(config.getReadOnlyCopy());
+                return new EncapsulatedAssertion(config);
             }
         });
 
         meta.put(POLICY_VALIDATOR_CLASSNAME, "com.l7tech.policy.validator.EncapsulatedAssertionValidator");
+        meta.put(PALETTE_NODE_CLASSNAME, "com.l7tech.console.tree.EncapsulatedAssertionNode");
 
         // Copy over properties that require some adaptation
         final String folder = config.getProperty(EncapsulatedAssertionConfig.PROP_PALETTE_FOLDER);

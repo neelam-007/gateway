@@ -31,7 +31,7 @@ public class EncapsulatedAssertionRegistry {
     /**
      * Register an EncapsulatedAssertionConfig.
      *
-     * @param config a config to add.  Required. A modified read-only copy will be stored.
+     * @param config a config to add.  Required.
      *               if a config with this OID is already registered, the old value will be replaced.
      */
     public void registerEncapsulatedAssertionConfig(@NotNull EncapsulatedAssertionConfig config) {
@@ -40,7 +40,6 @@ public class EncapsulatedAssertionRegistry {
         if (policy != null) {
             policy.setXml(null);
         }
-        config = config.getReadOnlyCopy();
         configs.put(config.getGuid(), config);
     }
 

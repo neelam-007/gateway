@@ -120,22 +120,26 @@ public abstract class AbstractLeafPaletteNode extends AbstractAssertionPaletteNo
                 logger.log(Level.WARNING, "Unable to check security zones: " + ExceptionUtils.getMessage(e), e);
             }
 
-            SecureAction zoneAction = new ConfigureSecurityZoneAction<AssertionAccess>(TopComponents.getInstance().getAssertionRegistry().getAssertionAccess(assertion), new EntitySaver<AssertionAccess>() {
-                @Override
-                public AssertionAccess saveEntity(AssertionAccess assertionAccess) throws SaveException {
-                    try {
-                        Registry.getDefault().getRbacAdmin().saveAssertionAccess(assertionAccess);
-                        TopComponents.getInstance().getAssertionRegistry().updateAssertionAccess();
-                        return TopComponents.getInstance().getAssertionRegistry().getAssertionAccess(assertion);
-                    } catch (UpdateException e) {
-                        throw new SaveException(e);
-                    }
-                }
-            });
+            SecureAction zoneAction = createSecurityZoneAction(assertion);
 
             ret = zoneAction.isAuthorized() ? new Action[] { zoneAction } : new Action[]{};
         }
         return ret;
+    }
+
+    protected ConfigureSecurityZoneAction createSecurityZoneAction(final Assertion assertion) {
+        return new ConfigureSecurityZoneAction<AssertionAccess>(TopComponents.getInstance().getAssertionRegistry().getAssertionAccess(assertion), new EntitySaver<AssertionAccess>() {
+            @Override
+            public AssertionAccess saveEntity(AssertionAccess assertionAccess) throws SaveException {
+                try {
+                    Registry.getDefault().getRbacAdmin().saveAssertionAccess(assertionAccess);
+                    TopComponents.getInstance().getAssertionRegistry().updateAssertionAccess();
+                    return TopComponents.getInstance().getAssertionRegistry().getAssertionAccess(assertion);
+                } catch (final UpdateException e) {
+                    throw new SaveException(e);
+                }
+            }
+        });
     }
 
     //- PRIVATE
