@@ -32,12 +32,15 @@ public @interface PrivateKeySecured {
         NO_PRE_CHECK,
 
         /**
-         * A {@link #keystoreOidArg} and {@link #keyAliasArg} identify a key entry for which
-         * the calling user must possess {@link #argOp} permission on the key entry
-         * as well as appropriate permission on its owning keystore (READ for READ, otherwise UPDATE).
-         * <p/>
-         * For CREATE/UPDATE operation, a {@link #metadataArg} identifies the SsgKeyMetadata (or null) the key
-         * will be assigned when it is created/updated.
+         * Calling user must possess {@link #argOp} permission on the key entry as well as appropriate permission on its
+         * owning keystore (READ for READ, otherwise UPDATE).
+         *
+         * The key entry can be provided by either:
+         *
+         * 1. indicating a {@link #keystoreOidArg}, {@link #keyAliasArg} and optional {@link #metadataArg} for
+         * CREATE/UPDATE operations which identifies the SsgKeyMetadata (or null) the key will be assigned when it is created/updated.
+         *
+         * 2. indicating a {@link #keyEntryArg}
          */
         CHECK_ARG_OPERATION,
 
@@ -48,11 +51,6 @@ public @interface PrivateKeySecured {
          * Currently this is done by requiring permission to DELETE ALL SSG_KEY_ENTRY.
          */
         CHECK_ARG_EXPORT_KEY,
-
-        /**
-         * The calling user must possess permission to UPDATE the key entry provided by the first method argument.
-         */
-        CHECK_ARG_UPDATE_KEY_ENTRY,
 
         /**
          * The calling user must possess permission to UPDATE ALL SSG_KEYSTORE.
@@ -98,6 +96,11 @@ public @interface PrivateKeySecured {
      * @return index of metadata argument of type SsgKeyMetadata, or -1 if there isn't one.
      */
     int metadataArg() default -1;
+
+    /**
+     * @return index of the SsgKeyEntry argument or -1 if there isn't one.
+     */
+    int keyEntryArg() default -1;
 
 
     // Post-checks

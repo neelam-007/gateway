@@ -350,14 +350,18 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
     String[] signCSR(long keystoreId, String alias, byte[] csrBytes, X500Principal subjectDn, int expiryDays, String sigAlg, String hashAlg) throws FindException, GeneralSecurityException;
 
     /**
-     * Change the SsgKeyEntry of a private key.
+     * Update the SsgKeyEntry of a private key.
+     *
+     * Supports update of: cert chain, key metadata.
+     *
+     * Does not support update of: alias, keystore id, restricted access flag.
      *
      * @param keyEntry the SsgKeyEntry to update.
      * @throws UpdateException if there is a problem saving info to the database
      */
     @Transactional(propagation=Propagation.REQUIRED)
     @Secured(customInterceptor="com.l7tech.server.admin.PrivateKeyRbacInterceptor")
-    @PrivateKeySecured(preChecks={CHECK_ARG_UPDATE_KEY_ENTRY}, argOp = OperationType.UPDATE)
+    @PrivateKeySecured(preChecks={CHECK_ARG_OPERATION}, argOp = OperationType.UPDATE, keyEntryArg = 0)
     void updateKeyEntry(SsgKeyEntry keyEntry) throws UpdateException;
 
     /**

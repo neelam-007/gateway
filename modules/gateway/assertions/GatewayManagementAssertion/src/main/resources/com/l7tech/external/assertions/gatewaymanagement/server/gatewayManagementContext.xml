@@ -125,11 +125,10 @@
                 <bean class="com.l7tech.external.assertions.gatewaymanagement.server.PrivateKeyResourceFactory" parent="resourceFactoryParent">
                     <constructor-arg index="3" ref="serverConfig"/>
                     <constructor-arg index="4" ref="ssgKeyStoreManager"/>
-                    <constructor-arg index="5" ref="ssgKeyMetadataManager"/>
-                    <constructor-arg index="6" ref="clusterPropertyCache"/>
-                    <constructor-arg index="7" ref="clusterPropertyManager"/>
-                    <constructor-arg index="8" ref="defaultKey"/>
-                    <constructor-arg index="9" ref="applicationEventProxy"/>
+                    <constructor-arg index="5" ref="clusterPropertyCache"/>
+                    <constructor-arg index="6" ref="clusterPropertyManager"/>
+                    <constructor-arg index="7" ref="defaultKey"/>
+                    <constructor-arg index="8" ref="applicationEventProxy"/>
                 </bean>
                 <bean class="com.l7tech.external.assertions.gatewaymanagement.server.RevocationCheckingPolicyResourceFactory" parent="resourceFactoryParent">
                     <constructor-arg index="3" ref="revocationCheckPolicyManager"/>

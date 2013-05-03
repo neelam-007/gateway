@@ -108,22 +108,21 @@ public class PrivateKeyRbacInterceptor implements CustomRbacInterceptor {
                     // No action required.
                     break;
 
-                // have to look up entities by id and check against operation
                 case CHECK_ARG_OPERATION:
-                    long keystoreId = getKeystoreIdFromArg(invocation, secured);
-                    String keyAlias = getKeyAliasFromArg(invocation, secured);
-                    final SsgKeyMetadata meta = getMetadataFromArg(invocation, secured);
-                    checkArgOperation(keystoreId, keyAlias, meta, secured.argOp());
+                    // check if key entry is provided
+                    final SsgKeyEntry keyEntry = getKeyEntryFromArg(invocation, secured);
+                    if (keyEntry != null) {
+                        checkArgOperation(keyEntry, secured.argOp());
+                    } else {
+                        long keystoreId = getKeystoreIdFromArg(invocation, secured);
+                        String keyAlias = getKeyAliasFromArg(invocation, secured);
+                        final SsgKeyMetadata meta = getMetadataFromArg(invocation, secured);
+                        checkArgOperation(keystoreId, keyAlias, meta, secured.argOp());
+                    }
                     break;
 
                 case CHECK_ARG_EXPORT_KEY:
                     checkArgExportKey();
-                    break;
-
-                // expects entity as arg
-                case CHECK_ARG_UPDATE_KEY_ENTRY:
-                    final SsgKeyEntry keyEntry = getKeyEntryFromFirstArg(invocation);
-                    checkArgUpdateKeyEntry(keyEntry, secured.argOp());
                     break;
 
                 case CHECK_UPDATE_ALL_KEYSTORES_NONFATAL:
@@ -147,6 +146,25 @@ public class PrivateKeyRbacInterceptor implements CustomRbacInterceptor {
         }
     }
 
+    /**
+     * Get the SsgKeyEntry arg from the method invocation.
+     * @throws IllegalArgumentException if the specified arg number did not hold an SsgKeyEntry.
+     * @return the SsgKeyEntry arg from the method invocation or null if no SsgKeyEntry arg was specified.
+     */
+    @Nullable
+    private SsgKeyEntry getKeyEntryFromArg(final MethodInvocation invocation, PrivateKeySecured secured) {
+        SsgKeyEntry keyEntry = null;
+        if (secured.keyEntryArg() != -1) {
+            final Object[] args = invocation.getArguments();
+            if (args.length > secured.keyEntryArg() && args[secured.keyEntryArg()] instanceof SsgKeyEntry) {
+                keyEntry = (SsgKeyEntry) args[secured.keyEntryArg()];
+            } else {
+                throw new IllegalArgumentException("Expected SsgKeyEntry argument with index " + secured.keyEntryArg());
+            }
+        }
+        return keyEntry;
+    }
+
     private static String getKeyAliasFromArg(MethodInvocation invocation, PrivateKeySecured secured) {
         return (String)invocation.getArguments()[secured.keyAliasArg()];
     }
@@ -159,24 +177,31 @@ public class PrivateKeyRbacInterceptor implements CustomRbacInterceptor {
         return secured.metadataArg() == -1 ? null : (SsgKeyMetadata) invocation.getArguments()[secured.metadataArg()];
     }
 
-    private void checkArgOperation( long keystoreId, String keyAlias, SsgKeyMetadata metadata, OperationType operation ) throws FindException, KeyStoreException {
-        final SsgKeyEntry keyEntry;
-        if (CREATE == operation) {
-            keyEntry = createFakeKeyEntry( keystoreId, keyAlias, metadata );
-        } else {
-            keyEntry = findKeyEntry( keystoreId, keyAlias );
-        }
+    private void checkArgOperation(final SsgKeyEntry keyEntry, final OperationType operation) throws FindException, KeyStoreException {
+        if (operation == UPDATE) {
+            // Ensure entry permissions apply for existing key entry
+            final SsgKeyEntry existing = findKeyEntry( keyEntry.getKeystoreId(), keyEntry.getAlias() );
+            checkPermittedForEntity(existing, UPDATE);
 
-        // Check entry permissions
-        checkPermittedForEntity(keyEntry, operation);
-        if (UPDATE == operation) {
-            // check if update is allowed after modification
-            checkPermittedForEntity(createFakeKeyEntry(keystoreId, keyAlias, metadata), operation);
+            // Check updated entry
+            checkPermittedForEntity(keyEntry, UPDATE);
+        } else {
+            checkPermittedForEntity(keyEntry, operation);
         }
 
         // Check owning keystore permissions
         OperationType ksOperation = READ == operation ? READ : UPDATE;
         checkPermittedForKeystore(keyEntry.getKeystoreId(), ksOperation);
+    }
+
+    private void checkArgOperation( long keystoreId, String keyAlias, SsgKeyMetadata metadata, OperationType operation ) throws FindException, KeyStoreException {
+        final SsgKeyEntry keyEntry;
+        if (operation == CREATE || operation == UPDATE) {
+            keyEntry = createFakeKeyEntry(keystoreId, keyAlias, metadata);
+        } else {
+            keyEntry = findKeyEntry(keystoreId, keyAlias);
+        }
+        checkArgOperation(keyEntry, operation);
     }
 
     private boolean checkUpdateAllKeystoresNonfatal(PrivateKeySecured secured) throws FindException {

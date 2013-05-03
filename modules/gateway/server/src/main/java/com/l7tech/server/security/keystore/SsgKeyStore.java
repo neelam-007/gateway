@@ -7,6 +7,7 @@ import com.l7tech.gateway.common.security.keystore.SsgKeyMetadata;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -85,6 +86,17 @@ public interface SsgKeyStore extends SsgKeyFinder {
     @Transactional(propagation=Propagation.REQUIRED)
     Future<Boolean> deletePrivateKeyEntry(Runnable transactionCallback, String keyAlias) throws KeyStoreException;
 
+    /**
+     * Update metadata for a key entry (identified by its alias) in the specified keystore.
+     *
+     * @param keystoreOid keystore OID.  Required.
+     * @param alias       key alias.  Required.
+     * @param metadata    new metadata to save for the key entry, or null if none is required.  If null, will avoid creating metadata if it doesn't already exist for this key.
+     *                    If any existing metadata is present for key, will update it to contain default values.
+     * @throws FindException   if there is a DB error checking for existing metadata.
+     * @throws UpdateException if there is a DB error updating existing metadata.
+     * @throws SaveException   if there is a DB error saving new metadata.
+     */
     @Transactional(propagation = Propagation.REQUIRED)
-    void updateKeyMetadata(long keystoreOid, String alias, SsgKeyMetadata metadata) throws UpdateException, FindException, SaveException;
+    void updateKeyMetadata(long keystoreOid, @NotNull String alias, @Nullable SsgKeyMetadata metadata) throws UpdateException, FindException, SaveException;
 }

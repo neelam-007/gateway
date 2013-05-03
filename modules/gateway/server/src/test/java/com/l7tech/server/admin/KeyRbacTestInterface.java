@@ -74,15 +74,21 @@ public interface KeyRbacTestInterface {
     @PrivateKeySecured(preChecks={CHECK_ARG_OPERATION}, argOp=OperationType.UPDATE, metadataArg=2, returnCheck=NO_RETURN_CHECK)
     boolean checkArgOpUpdateWithMetadata(long keystoreId, String alias, SsgKeyMetadata metadata);
 
-    @PrivateKeySecured(preChecks={CHECK_ARG_UPDATE_KEY_ENTRY}, argOp = OperationType.UPDATE)
-    boolean checkArgUpdateKeyEntry(SsgKeyEntry keyEntry);
+    @PrivateKeySecured(preChecks={CHECK_ARG_OPERATION}, argOp=OperationType.UPDATE, keyEntryArg = 0, returnCheck=NO_RETURN_CHECK)
+    boolean checkArgOpUpdateWithKeyEntry(SsgKeyEntry keyEntry);
 
-    @PrivateKeySecured(preChecks={CHECK_ARG_UPDATE_KEY_ENTRY}, argOp = OperationType.UPDATE)
-    boolean checkArgUpdateKeyEntryNoArg();
+    @PrivateKeySecured(preChecks={CHECK_ARG_OPERATION}, argOp=OperationType.CREATE, keyEntryArg = 0, returnCheck=NO_RETURN_CHECK)
+    boolean checkArgOpCreateWithKeyEntry(SsgKeyEntry keyEntry);
 
-    @PrivateKeySecured(preChecks={CHECK_ARG_UPDATE_KEY_ENTRY}, argOp = OperationType.UPDATE)
-    boolean checkArgUpdateKeyEntryInvalidArg(String argNotKeyEntry);
+    @PrivateKeySecured(preChecks={CHECK_ARG_OPERATION}, argOp=OperationType.READ, keyEntryArg = 0, returnCheck=NO_RETURN_CHECK)
+    boolean checkArgOpReadWithKeyEntry(SsgKeyEntry keyEntry);
 
-    @PrivateKeySecured(preChecks={CHECK_ARG_UPDATE_KEY_ENTRY}, argOp = OperationType.CREATE)
-    boolean checkArgUpdateKeyEntryInvalidOp(SsgKeyEntry keyEntry);
+    @PrivateKeySecured(preChecks={CHECK_ARG_OPERATION}, argOp=OperationType.DELETE, keyEntryArg = 0, returnCheck=NO_RETURN_CHECK)
+    boolean checkArgOpDeleteWithKeyEntry(SsgKeyEntry keyEntry);
+
+    @PrivateKeySecured(preChecks={CHECK_ARG_OPERATION}, argOp=OperationType.UPDATE, keyEntryArg = 0, returnCheck=NO_RETURN_CHECK)
+    boolean checkArgOpWithKeyEntryNoArg();
+
+    @PrivateKeySecured(preChecks={CHECK_ARG_OPERATION}, argOp=OperationType.UPDATE, keyEntryArg = 0, returnCheck=NO_RETURN_CHECK)
+    boolean checkArgOpWithKeyEntryInvalidArg(String argNotKeyEntry);
 }
