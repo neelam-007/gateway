@@ -2,6 +2,7 @@ package com.l7tech.external.assertions.mqnative;
 
 import com.l7tech.console.util.Registry;
 import com.l7tech.external.assertions.mqnative.server.MqNativeAdminServerSupport;
+import com.l7tech.external.assertions.mqnative.server.MqNativeUtils;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import com.l7tech.gateway.common.transport.TransportAdmin;
 import com.l7tech.objectmodel.EntityHeader;
@@ -18,14 +19,18 @@ import com.l7tech.policy.validator.PolicyValidationContext;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.wsp.BeanTypeMapping;
+import com.l7tech.policy.wsp.Java5EnumTypeMapping;
 import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
 import com.l7tech.policy.wsp.TypeMapping;
-import com.l7tech.server.transport.SsgActiveConnectorManager;
 import com.l7tech.server.util.EntityUseUtils.EntityTypeOverride;
 import com.l7tech.server.util.EntityUseUtils.EntityUse;
 import com.l7tech.util.CollectionUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static com.l7tech.policy.assertion.AssertionMetadata.*;
@@ -36,6 +41,8 @@ import static com.l7tech.policy.assertion.VariableUseSupport.variables;
  * Route outbound MQ Native to WebSphere MQ.
  */
 public class MqNativeRoutingAssertion extends RoutingAssertion implements UsesEntities, UsesVariables, SetsVariables {
+
+    public static final String MQ = MqNativeUtils.PREIFX;
     private static final String routePrefix = "Route";
     private static final String getPrefix = "Get";
     private static final String baseName = " via MQ Native";
@@ -56,11 +63,19 @@ public class MqNativeRoutingAssertion extends RoutingAssertion implements UsesEn
     private String responseTimeout;
     private String responseSize;
     private boolean isPutToQueue = true; // Default: set the message direction to "Put to Queue"
+    private boolean requestCopyHeaderToProperty = false; // Default: set the message direction to "Put to Queue"
+    private boolean requestCopyPropertyToHeader = false; // Default: set the message direction to "Put to Queue"
+    private boolean responseCopyHeaderToProperty = false; // Default: set the message direction to "Put to Queue"
+    private boolean responseCopyPropertyToHeader = false; // Default: set the message direction to "Put to Queue"
     private MqNativeDynamicProperties dynamicMqRoutingProperties;
+    @NotNull
+    private MqNativeMessageHeaderType requestMqHeaderType = defaultMqMessageHeaderType();
+    @NotNull
+    private MqNativeMessageHeaderType responseMqHeaderType = defaultMqMessageHeaderType();
     @Nullable
-    private Map<String,String> requestMessageAdvancedProperties;
+    private Map<String,String> requestMessageDescriptorOverrides = new HashMap<String, String>(0);
     @Nullable
-    private Map<String,String> responseMessageAdvancedProperties;
+    private Map<String,String> responseMessageDescriptorOverrides = new HashMap<String, String>(0);
     @NotNull
     private MqNativeMessagePropertyRuleSet requestMqMessagePropertyRuleSet = defaultMqNativeMessagePropertyRuleSet();
     @NotNull
@@ -72,7 +87,9 @@ public class MqNativeRoutingAssertion extends RoutingAssertion implements UsesEn
 
     private MqNativeMessagePropertyRuleSet defaultMqNativeMessagePropertyRuleSet() {
         MqNativeMessagePropertyRuleSet mqNativeMessagePropertyRuleSet = new MqNativeMessagePropertyRuleSet();
-        mqNativeMessagePropertyRuleSet.setPassThroughHeaders(true);
+        mqNativeMessagePropertyRuleSet.setPassThroughMqMessageDescriptors(true);
+        mqNativeMessagePropertyRuleSet.setPassThroughMqMessageHeaders(true);
+        mqNativeMessagePropertyRuleSet.setPassThroughMqMessageProperties(true);
         return mqNativeMessagePropertyRuleSet;
     }
 
@@ -82,6 +99,10 @@ public class MqNativeRoutingAssertion extends RoutingAssertion implements UsesEn
 
     private static MessageTargetableSupport defaultResponseTarget() {
         return new MessageTargetableSupport( TargetMessageType.RESPONSE, true);
+    }
+
+    private static MqNativeMessageHeaderType defaultMqMessageHeaderType() {
+        return MqNativeMessageHeaderType.ORIGINAL;
     }
 
     /**
@@ -200,40 +221,58 @@ public class MqNativeRoutingAssertion extends RoutingAssertion implements UsesEn
         this.dynamicMqRoutingProperties = dynamicMqRoutingProperties;
     }
 
+    @NotNull
+    public MqNativeMessageHeaderType getRequestMqHeaderType() {
+        return requestMqHeaderType;
+    }
+
+    public void setRequestMqHeaderType(@NotNull MqNativeMessageHeaderType requestMqHeaderType) {
+        this.requestMqHeaderType = requestMqHeaderType;
+    }
+
+    @NotNull
+    public MqNativeMessageHeaderType getResponseMqHeaderType() {
+        return responseMqHeaderType;
+    }
+
+    public void setResponseMqHeaderType(@NotNull MqNativeMessageHeaderType responseMqHeaderType) {
+        this.responseMqHeaderType = responseMqHeaderType;
+    }
+
     /**
-     * Get the advanced properties for the outbound request message.
+     * Get the message descriptor overrides for the outbound request message.
      *
      * @return The message properties or null.
      */
     @Nullable
-    public Map<String, String> getRequestMessageAdvancedProperties() {
-        return requestMessageAdvancedProperties;
+    public Map<String, String> getRequestMessageDescriptorOverrides() {
+        return requestMessageDescriptorOverrides;
     }
 
     /**
-     * Set the advanced properties for the outbound request message.
+     * Set the message descriptor overrides for the outbound request message.
      *
-     * @param requestMessageAdvancedProperties The properties to use.
+     * @param requestMessageDescriptorOverrides The properties to use.
      */
-    public void setRequestMessageAdvancedProperties( @Nullable final Map<String, String> requestMessageAdvancedProperties ) {
-        this.requestMessageAdvancedProperties = requestMessageAdvancedProperties;
+    public void setRequestMessageDescriptorOverrides(@Nullable final Map<String, String> requestMessageDescriptorOverrides) {
+        this.requestMessageDescriptorOverrides = requestMessageDescriptorOverrides;
     }
 
     /**
-     * Get the advanced properties for the outbound response message.
+     * Get the message descriptor overrides for the outbound response message.
      * @return The message properties or null.
      */
     @Nullable
-    public Map<String, String> getResponseMessageAdvancedProperties() {
-        return responseMessageAdvancedProperties;
+    public Map<String, String> getResponseMessageDescriptorOverrides() {
+        return responseMessageDescriptorOverrides;
     }
 
     /**
-     * Set the advanced properties for the outbound response message.
-     * @param responseMessageAdvancedProperties The properties to use.
+     * Set the message descriptor overrides for the outbound response message.
+     * @param responseMessageDescriptorOverrides The properties to use.
      */
-    public void setResponseMessageAdvancedProperties(@Nullable Map<String, String> responseMessageAdvancedProperties) {
-        this.responseMessageAdvancedProperties = responseMessageAdvancedProperties;
+    public void setResponseMessageDescriptorOverrides(@Nullable Map<String, String> responseMessageDescriptorOverrides) {
+        this.responseMessageDescriptorOverrides = responseMessageDescriptorOverrides;
     }
 
     /**
@@ -312,6 +351,38 @@ public class MqNativeRoutingAssertion extends RoutingAssertion implements UsesEn
         this.responseTarget = responseTarget==null ? defaultResponseTarget() : responseTarget;
     }
 
+    public boolean isRequestCopyHeaderToProperty() {
+        return requestCopyHeaderToProperty;
+    }
+
+    public void setRequestCopyHeaderToProperty(boolean requestCopyHeaderToProperty) {
+        this.requestCopyHeaderToProperty = requestCopyHeaderToProperty;
+    }
+
+    public boolean isRequestCopyPropertyToHeader() {
+        return requestCopyPropertyToHeader;
+    }
+
+    public void setRequestCopyPropertyToHeader(boolean requestCopyPropertyToHeader) {
+        this.requestCopyPropertyToHeader = requestCopyPropertyToHeader;
+    }
+
+    public boolean isResponseCopyHeaderToProperty() {
+        return responseCopyHeaderToProperty;
+    }
+
+    public void setResponseCopyHeaderToProperty(boolean responseCopyHeaderToProperty) {
+        this.responseCopyHeaderToProperty = responseCopyHeaderToProperty;
+    }
+
+    public boolean isResponseCopyPropertyToHeader() {
+        return responseCopyPropertyToHeader;
+    }
+
+    public void setResponseCopyPropertyToHeader(boolean responseCopyPropertyToHeader) {
+        this.responseCopyPropertyToHeader = responseCopyPropertyToHeader;
+    }
+
     @Override
     public boolean initializesRequest() {
         /*
@@ -379,7 +450,8 @@ public class MqNativeRoutingAssertion extends RoutingAssertion implements UsesEn
 
         meta.put( WSP_SUBTYPE_FINDER, new SimpleTypeMappingFinder( CollectionUtils.<TypeMapping>list(
                 new BeanTypeMapping( MqNativeMessagePropertyRuleSet.class, "mappingRuleSet" ),
-                new BeanTypeMapping( MqNativeDynamicProperties.class, "mqDynamicProperties" )
+                new BeanTypeMapping( MqNativeDynamicProperties.class, "mqDynamicProperties" ),
+                new Java5EnumTypeMapping( MqNativeMessageHeaderType.class, "mqMessageHeaderType" )
         ) ));
 
         meta.put(META_INITIALIZED, Boolean.TRUE);
@@ -390,7 +462,7 @@ public class MqNativeRoutingAssertion extends RoutingAssertion implements UsesEn
 
         private enum ActiveConnectorStatus {
             ENABLED,
-            NOTFOUND,
+            NOT_FOUND,
             DISABLED
         };
 
@@ -407,7 +479,7 @@ public class MqNativeRoutingAssertion extends RoutingAssertion implements UsesEn
             try {
                 activeConnector = ta.findSsgActiveConnectorByPrimaryKey(assertion.getSsgActiveConnectorId());
                 if ( activeConnector == null ) {
-                    activeConnectorStatus = ActiveConnectorStatus.NOTFOUND;
+                    activeConnectorStatus = ActiveConnectorStatus.NOT_FOUND;
                 } else  if ( activeConnector.isEnabled() ) {
                     activeConnectorStatus = ActiveConnectorStatus.ENABLED;
                 } else {
@@ -438,7 +510,7 @@ public class MqNativeRoutingAssertion extends RoutingAssertion implements UsesEn
                                             || ( replyToQueueName != null && !replyToQueueName.isEmpty() );
 
             } catch (FindException e) {
-                activeConnectorStatus = ActiveConnectorStatus.NOTFOUND;
+                activeConnectorStatus = ActiveConnectorStatus.NOT_FOUND;
             }
     }
 
@@ -448,7 +520,7 @@ public class MqNativeRoutingAssertion extends RoutingAssertion implements UsesEn
             switch (activeConnectorStatus) {
                 case ENABLED:
                     break;
-                case NOTFOUND:
+                case NOT_FOUND:
                     result.addWarning(new PolicyValidatorResult.Warning(assertion,"Destination Queue set to unknown MQ Native Queue",null));
                     break;
                 case DISABLED:
@@ -489,11 +561,32 @@ public class MqNativeRoutingAssertion extends RoutingAssertion implements UsesEn
 
     @Override
     public String[] getVariablesUsed() {
-        return expressions( responseTimeout, responseSize )
+
+        final List<String> expressions = new ArrayList<String>();
+
+        if (requestMessageDescriptorOverrides != null) {
+            for (Map.Entry<String, String> override : requestMessageDescriptorOverrides.entrySet()) {
+                expressions.add(override.getKey());
+                expressions.add(override.getValue());
+            }
+        }
+
+        if (responseMessageDescriptorOverrides != null) {
+            for (Map.Entry<String, String> override : responseMessageDescriptorOverrides.entrySet()) {
+                expressions.add(override.getKey());
+                expressions.add(override.getValue());
+            }
+        }
+        expressions.add(responseTimeout);
+        expressions.add(responseSize);
+
+        return expressions( expressions.toArray(new String[expressions.size()]) )
                 .with( requestTarget.getMessageTargetVariablesUsed() )
                 .withExpressions( dynamicMqRoutingProperties == null ? null : dynamicMqRoutingProperties.getVariableExpressions() )
                 .asArray();
     }
+
+
 
     @Override
     public VariableMetadata[] getVariablesSet() {

@@ -222,7 +222,7 @@ public abstract class ActiveTransportModule extends LifecycleBean {
         getAudit().logAndAudit( CONNECTOR_ERROR, new String[]{schemes, message}, exception);
     }
 
-    private Audit getAudit() {
+    protected Audit getAudit() {
         Audit audit = this.audit;
 
         if (audit == null) {

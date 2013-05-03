@@ -196,7 +196,7 @@ class MqNativeResourceManager implements ApplicationListener {
         connectionHolder.clear();
     }
 
-    private CachedConnection newConnection( final MqNativeEndpointConfig mqCfg ) throws MqNativeRuntimeException {
+    protected CachedConnection newConnection( final MqNativeEndpointConfig mqCfg ) throws MqNativeRuntimeException {
         final MqNativeEndpointKey key = mqCfg.getMqEndpointKey();
 
         try {
@@ -275,7 +275,7 @@ class MqNativeResourceManager implements ApplicationListener {
         return validatedValue;
     }
 
-    private static class CachedConnection {
+    protected static class CachedConnection {
         private final AtomicInteger referenceCount = new AtomicInteger(0);
         private final long createdTime = System.currentTimeMillis();
         private final AtomicLong lastAccessTime = new AtomicLong(createdTime);

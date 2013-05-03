@@ -1,10 +1,17 @@
 package com.l7tech.external.assertions.mqnative.server;
 
-import com.ibm.mq.*;
-import com.ibm.mq.headers.*;
+import com.ibm.mq.MQC;
+import com.ibm.mq.MQException;
+import com.ibm.mq.MQManagedObject;
+import com.ibm.mq.MQMessage;
+import com.ibm.mq.headers.MQDataException;
+import com.ibm.mq.headers.MQHeaderList;
+import com.ibm.mq.headers.internal.Header;
+import com.l7tech.common.http.GenericHttpRequestParams;
 import com.l7tech.external.assertions.mqnative.MqNativeAcknowledgementType;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
+import com.l7tech.message.OutboundHeaderSupport;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.server.transport.http.AnonymousSslClientSocketFactory;
@@ -14,6 +21,7 @@ import com.l7tech.server.transport.jms.JmsSslCustomizerSupport;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions.Unary;
 import com.l7tech.util.Functions.UnaryVoidThrows;
+import com.l7tech.util.HexUtils;
 import com.l7tech.util.Option;
 import com.l7tech.util.Pair;
 import org.apache.commons.lang.StringUtils;
@@ -21,17 +29,16 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.net.ssl.SSLSocketFactory;
-import java.io.ByteArrayInputStream;
-import java.io.DataInputStream;
 import java.io.IOException;
 import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.GregorianCalendar;
 import java.util.Hashtable;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.ibm.mq.constants.MQConstants.*;
-import static com.l7tech.external.assertions.mqnative.server.MqNativeMessageDescriptor.applyPropertiesToMessage;
 import static com.l7tech.gateway.common.transport.SsgActiveConnector.*;
 import static com.l7tech.util.Option.none;
 import static com.l7tech.util.Option.some;
@@ -41,10 +48,13 @@ import static com.l7tech.util.ValidationUtils.getMinMaxPredicate;
 /**
  * MQ Native connector helper class.
  */
-class MqNativeUtils {
+public class MqNativeUtils {
+
+    public static final String PREIFX = "mqnative";
+    public static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd-HH.mm.ss.SSSSSS");
     private static final Logger logger = Logger.getLogger(MqNativeUtils.class.getName());
 
-    static Pair<byte[], byte[]> parseHeaderPayload(@NotNull MQMessage msg) throws IOException, MQDataException {
+    public static Pair<byte[], byte[]> parseHeaderPayload(@NotNull final MQMessage msg) throws IOException, MQDataException {
         byte[] headerBytes;
         byte[] payloadBytes;
 
@@ -60,19 +70,28 @@ class MqNativeUtils {
             headerBytes = new byte[headerLength];
             msg.seek(0);
             msg.readFully(headerBytes);
-
-            payloadLength = msg.getTotalMessageLength() - headerLength;
+            //For V7 the total message length contains the message properties length also.
+            payloadLength = msg.getMessageLength() - headerLength;
         } else {
             headerBytes = new byte[0];
             payloadLength = msg.getMessageLength();
         }
-
         // parse payload
         payloadBytes = new byte[payloadLength];
         msg.seek(headerLength);
         msg.readFully(payloadBytes);
 
         return new Pair<byte[], byte[]>(headerBytes, payloadBytes);
+    }
+
+    public static Header parsePrimaryAdditionalHeader(@NotNull final MQMessage msg) throws IOException, MQDataException {
+        msg.seek(0);
+        MQHeaderList headerList = new MQHeaderList(msg);
+        if (headerList != null && headerList.size() > 0) {
+            return (Header) headerList.get(0);
+        } else {
+            return null;
+        }
     }
 
     static Option<String> getQueuePassword( final SsgActiveConnector connector,
@@ -162,80 +181,173 @@ class MqNativeUtils {
     /*
      * Create an MqNativeKnob.
      */
-    static MqNativeKnob buildMqNativeKnob(@Nullable final byte[] mqHeader,
-                                          @Nullable final MqNativeMessageDescriptor mqmd,
-                                          @Nullable final Map<String, String> mqmdOverride) {
-        return buildMqNativeKnob( null, mqHeader, mqmd, mqmdOverride );
-    }
-    /*
-     * Create an MqNativeKnob.
-     */
-    static MqNativeKnob buildMqNativeKnob( @Nullable final String soapAction,
-                                           @Nullable final byte[] mqHeader,
-                                           @Nullable final MqNativeMessageDescriptor mqmd) {
-        return buildMqNativeKnob( soapAction, mqHeader, mqmd, null );
+    public static MqNativeKnob buildMqNativeKnob(@Nullable final MqMessageProxy mqMessage) {
+        return buildMqNativeKnob( null, mqMessage );
     }
 
     /*
      * Create an MqNativeKnob.
      */
     static MqNativeKnob buildMqNativeKnob( @Nullable final String soapAction,
-                                           @Nullable final byte[] mqHeader,
-                                           @Nullable final MqNativeMessageDescriptor mqmd,
-                                           @Nullable final Map<String, String> mqmdOverride) {
+                                           @Nullable final MqMessageProxy mqMessageProxy) {
         return new MqNativeKnob() {
+
+            private static final String DESCRIPTOR_PREFIX = "md.";
+            private static final String PROPERTY_PREFIX = "property.";
+            private static final String HEADER_PREFIX = "header.";
+            private static final String HEADER_NAMES = "headernames";
+            private static final String HEADER_VALUES = "allheadervalues";
+            private static final String PROPERTY_NAMES = "propertynames";
+            private static final String PROPERTY_VALUES = "allpropertyvalues";
+            protected final OutboundHeaderSupport headerSupport = new OutboundHeaderSupport();
+            private MqMessageProxy proxy = mqMessageProxy;
+
             @Override
-            public String getSoapAction() {
-                return soapAction;
+            public MqMessageProxy getMessage() {
+                return proxy;
             }
+
+            @Override
+            public void reset(Object message) {
+                proxy = (MqMessageProxy) message;
+                headerSupport.clearHeaders();
+            }
+
+            @Override
+            public void setDateHeader(String name, long date) {
+            }
+
+            @Override
+            public void addDateHeader(String name, long date) {
+            }
+
+            @Override
+            public void setHeader(String name, String value) {
+                headerSupport.setHeader(name, value);
+            }
+
+            @Override
+            public void addHeader(String name, String value) {
+                //Not allow duplicate
+                setHeader(name, value);
+            }
+
+            @Override
+            public boolean containsHeader(String name) {
+                return headerSupport.containsHeader(name);
+            }
+
+            @Override
+            public void removeHeader(String name) {
+                headerSupport.removeHeader(name);
+            }
+
+            @Override
+            public void removeHeader(String name, Object value) {
+                headerSupport.removeHeader(name, value);
+            }
+
+            @Override
+            public void clearHeaders() {
+                headerSupport.clearHeaders();
+            }
+
+            @Override
+            public void writeHeaders(GenericHttpRequestParams target) {
+                headerSupport.writeHeaders(target);
+            }
+
+            @Override
+            public String[] getHeaderValues(String name) {
+                String[] value = headerSupport.getHeaderValues(name);
+                if (value!= null && value.length > 0){
+                    return value;
+                }
+                if (name.startsWith(DESCRIPTOR_PREFIX)) {
+                    String attr = name.substring(DESCRIPTOR_PREFIX.length());
+                    Object result = proxy.getMessageDescriptor(attr);
+                    if (result instanceof byte[]) {
+                        result = HexUtils.encodeBase64((byte[])result);
+                    } else if (result instanceof GregorianCalendar) {
+                        result = asString((GregorianCalendar) result);
+                    }
+                    return new String[]{String.valueOf(result)};
+                }
+                if (name.startsWith(PROPERTY_PREFIX)) {
+                    String attr = name.substring(PROPERTY_PREFIX.length());
+                    return new String[]{String.valueOf(proxy.getMessageProperty(attr))};
+                }
+                if (name.startsWith(HEADER_PREFIX)) {
+                    String attr = name.substring(HEADER_PREFIX.length());
+                    return new String[]{String.valueOf(proxy.getPrimaryHeaderValue(attr))};
+                }
+                if (name.equalsIgnoreCase(HEADER_NAMES)) {
+                    return getKeys(proxy.getPrimaryHeaderProperties());
+                }
+
+                if (name.equalsIgnoreCase(HEADER_VALUES)) {
+                    return getValues(proxy.getPrimaryHeaderProperties());
+                }
+
+                if (name.equalsIgnoreCase(PROPERTY_NAMES)) {
+                    return getKeys(proxy.getMessageProperties());
+                }
+
+                if (name.equalsIgnoreCase(PROPERTY_VALUES)) {
+                    return getValues(proxy.getMessageProperties());
+                }
+                return new String[0];
+            }
+
+            @Override
+            public String[] getHeaderNames() {
+                return headerSupport.getHeaderNames();
+            }
+
             @Override
             public long getServiceOid() {
-                return -1L;
+                return 0;
             }
-            @Override
-            public byte[] getMessageHeaderBytes() {
-                return mqHeader != null ? mqHeader : new byte[0];
-            }
-            @Override
-            public int getMessageHeaderLength() {
-                return mqHeader != null ? mqHeader.length : 0;
-            }
-            @Override
-            public MqNativeMessageDescriptor getMessageDescriptor() {
-                return mqmd;
-            }
-            @Override
-            public Map<String, String> getMessageDescriptorOverride() {
-                return mqmdOverride;
-            }
-        };
-    }
 
-    static void applyMqNativeKnobToMessage(final boolean isPassThroughHeaders,
-                                           @Nullable final MqNativeKnob mqNativeKnob,
-                                           @NotNull final MQMessage mqMessage) throws IOException, MQDataException, MQException, MqNativeConfigException {
-        if (mqNativeKnob != null) {
-            if (isPassThroughHeaders) {
-                // apply message descriptor
-                MqNativeMessageDescriptor mqmd = mqNativeKnob.getMessageDescriptor();
-                if (mqmd != null) {
-                    mqmd.copyTo(mqMessage);
-                }
+            @Override
+            public String getSoapAction() throws IOException {
+                return soapAction;
+            }
 
-                // apply header bytes
-                if (mqNativeKnob.getMessageHeaderLength() > 0) {
-                    if (MQFMT_RF_HEADER_2.equals(mqMessage.format)) {
-                        MQRFH2 rfh2 = new MQRFH2(new DataInputStream(new ByteArrayInputStream(mqNativeKnob.getMessageHeaderBytes())));
-                        rfh2.write(mqMessage);
-                    } else {
-                        mqMessage.write(mqNativeKnob.getMessageHeaderBytes());
+            private String[] getKeys(Map<String, Object> map) {
+
+                String[] mqHeaderNames = new String[0];
+                if (map != null && !map.isEmpty()) {
+                    mqHeaderNames = new String[map.size()];
+                    int i = 0;
+                    for (Map.Entry<String, Object> entry : map.entrySet() ) {
+                        mqHeaderNames[i] = entry.getKey();
+                        i++;
                     }
                 }
+                return mqHeaderNames;
             }
 
-            // always apply override
-            applyPropertiesToMessage(mqNativeKnob.getMessageDescriptorOverride(), mqMessage);
-        }
+            private String[] getValues(Map<String, Object> map) {
+                String[] mqAllHeaderValues = new String[0];
+                if (map != null) {
+                    mqAllHeaderValues = new String[map.size()];
+                    int i = 0;
+                    for (Map.Entry<String, Object> entry : map.entrySet() ) {
+                        mqAllHeaderValues[i] =  entry.getValue() + "";
+                        i++;
+                    }
+                }
+                return mqAllHeaderValues;
+            }
+
+            private String asString(GregorianCalendar calendar) {
+                if (calendar != null) {
+                    return MqNativeUtils.DATE_FORMAT.format(calendar.getTime());
+                }
+                return null;
+            }
+        };
     }
 
     static boolean isTransactional(SsgActiveConnector connector) {

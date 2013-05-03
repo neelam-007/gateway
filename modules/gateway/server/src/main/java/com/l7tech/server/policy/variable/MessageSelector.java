@@ -37,7 +37,10 @@ import java.util.regex.Pattern;
  * Extracts values by name from {@link Message}s.
  * @author alex
 */
-class MessageSelector implements ExpandVariables.Selector<Message> {
+public class MessageSelector implements ExpandVariables.Selector<Message> {
+
+    private static Map<String, MessageAttributeSelector> selectorMap = new HashMap<String, MessageAttributeSelector>();
+
     // NOTE: Variable names must be lower case
     private static final String HTTP_HEADER_PREFIX = "http.header.";
     private static final String HTTP_HEADERVALUES_PREFIX = "http.headervalues.";
@@ -137,6 +140,14 @@ class MessageSelector implements ExpandVariables.Selector<Message> {
 
     private static final List<Class<? extends HasHeaders>> jmsHeaderHaverKnobClasses = Arrays.<Class<? extends HasHeaders>>asList(JmsKnob.class);
 
+    public static void registerSelector(String prefix, MessageAttributeSelector selector) {
+        selectorMap.put(prefix, selector);
+    }
+
+    public static void unRegisterSelector(String prefix) {
+        selectorMap.remove(prefix);
+    }
+
     @Override
     public Class<Message> getContextObjectClass() {
         return Message.class;
@@ -150,7 +161,7 @@ class MessageSelector implements ExpandVariables.Selector<Message> {
         String prefix = lname;
         int index = prefix.indexOf( '.' );
         if ( index > -1) prefix = prefix.substring( 0, index );
-        if ( !ArrayUtils.contains(getPrefixes(), prefix) ) return null; // this check ensures prefixes are added to the list
+        if ( !ArrayUtils.contains(getPrefixes(), prefix) && (selectorMap.get(prefix) == null)) return null; // this check ensures prefixes are added to the list
 
         if (lname.startsWith(HTTP_HEADER_PREFIX))
             selector = singleHeaderSelector;
@@ -223,10 +234,12 @@ class MessageSelector implements ExpandVariables.Selector<Message> {
             selector = jmsHeaderNamesSelector;
         } else if (lname.startsWith(JMS_ALLHEADERVALUES)) {
             selector = jmsAllHeaderValuesSelector;
-        } else if (lname.startsWith(COMMAND_PARAMETER_PREFIX)) {
+       } else if (lname.startsWith(COMMAND_PARAMETER_PREFIX)) {
             selector = commandParameterSelector;
         } else if (lname.startsWith(COMMAND_TYPE_NAME)) {
             selector = commandTypeSelector;
+        } else if (selectorMap.get(prefix) != null) {
+            selector = selectorMap.get(prefix);
         } else {
             final Functions.Unary<Object,TcpKnob> tcpFieldGetter = TCP_FIELDS.get(lname);
             if (tcpFieldGetter != null) {
@@ -304,7 +317,7 @@ class MessageSelector implements ExpandVariables.Selector<Message> {
         };
     }
 
-    private static interface MessageAttributeSelector {
+    public static interface MessageAttributeSelector {
         Selection select(Message context, String name, Syntax.SyntaxErrorHandler handler, boolean strict);
     }
 
@@ -717,12 +730,12 @@ class MessageSelector implements ExpandVariables.Selector<Message> {
     private static final HeaderSelector multiHeaderSelector = new HeaderSelector(HTTP_HEADERVALUES_PREFIX, true, httpHeaderHaverKnobClasses);
     private static final HeaderSelector jmsHeaderSelector = new HeaderSelector(JMS_HEADER_PREFIX, false, jmsHeaderHaverKnobClasses);
 
-    private static class HeaderSelector implements MessageAttributeSelector {
+    public static class HeaderSelector implements MessageAttributeSelector {
         final String prefix;
         final boolean multi;
         final List<Class<? extends HasHeaders>> supportedClasses;
 
-        private HeaderSelector(final String prefix, final boolean multi, final List<Class<? extends HasHeaders>> supportedClasses) {
+        public HeaderSelector(final String prefix, final boolean multi, final List<Class<? extends HasHeaders>> supportedClasses) {
             this.prefix = prefix;
             this.multi = multi;
             this.supportedClasses = supportedClasses;

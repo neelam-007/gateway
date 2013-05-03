@@ -5,16 +5,13 @@ import com.ibm.mq.headers.MQDataException;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.mime.StashManager;
-import com.l7tech.external.assertions.mqnative.MqNativeDynamicProperties;
-import com.l7tech.external.assertions.mqnative.MqNativeReplyType;
-import com.l7tech.external.assertions.mqnative.MqNativeRoutingAssertion;
+import com.l7tech.external.assertions.mqnative.*;
 import com.l7tech.external.assertions.mqnative.server.MqNativeResourceManager.MqTaskCallback;
+import com.l7tech.external.assertions.mqnative.server.decorator.*;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.audit.AuditDetailMessage;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
-import com.l7tech.message.Message;
-import com.l7tech.message.MessageRole;
-import com.l7tech.message.MimeKnob;
+import com.l7tech.message.*;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.RoutingStatus;
@@ -54,7 +51,6 @@ import static com.ibm.mq.constants.MQConstants.*;
 import static com.l7tech.external.assertions.mqnative.MqNativeConstants.*;
 import static com.l7tech.external.assertions.mqnative.MqNativeReplyType.REPLY_AUTOMATIC;
 import static com.l7tech.external.assertions.mqnative.MqNativeReplyType.REPLY_SPECIFIED_QUEUE;
-import static com.l7tech.external.assertions.mqnative.server.MqNativeMessageDescriptor.applyPropertiesToMessage;
 import static com.l7tech.external.assertions.mqnative.server.MqNativeUtils.*;
 import static com.l7tech.gateway.common.audit.AssertionMessages.*;
 import static com.l7tech.gateway.common.transport.SsgActiveConnector.ACTIVE_CONNECTOR_TYPE_MQ_NATIVE;
@@ -82,8 +78,8 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
     private static final long RETRY_DELAY = 1000L;
     private static final long DEFAULT_MESSAGE_MAX_BYTES = 2621440L;
     private static final String completionCodeString = "mq.completion.code";
-    private static final String reasonCodeString = "mq.reason.code";
 
+    private static final String reasonCodeString = "mq.reason.code";
     @Inject
     private Config config;
     @Inject
@@ -256,6 +252,10 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
         }
     }
 
+    protected void setMqNativeResourceManager(MqNativeResourceManager mqNativeResourceManager) {
+        this.mqNativeResourceManager = mqNativeResourceManager;
+    }
+
     private void sleep( final long retryDelay ) throws MqRetriesInterruptedException {
         if ( retryDelay > 0 ) {
             try {
@@ -369,23 +369,36 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
                 final Pair<byte[], byte[]> mqResponseHeaderPayload = parseHeaderPayload(mqResponseMessage);
                 final StashManager stashManager = stashManagerFactory.createStashManager();
 
+                //populate response message
                 final com.l7tech.message.Message gatewayResponseMessage;
                 try {
                     gatewayResponseMessage = context.getOrCreateTargetMessage(assertion.getResponseTarget(), false);
                 } catch (NoSuchVariableException e) {
                     throw new AssertionStatusException(AssertionStatus.SERVER_ERROR, e.getMessage(), e);
                 }
+
+                //Customize Message
+                MQMessage responseMessage = new MQMessage();
+                responseMessage = new PassThroughDecorator(responseMessage, new MqMessageProxy(mqResponseMessage),
+                        gatewayResponseMessage.getKnob(OutboundHeadersKnob.class), assertion, context, getAudit());
+                ((MqMessageDecorator) responseMessage).setRequest(false);
+                responseMessage = new DescriptorDecorator((MqMessageDecorator)responseMessage);
+                responseMessage = new PropertyDecorator((MqMessageDecorator)responseMessage);
+                responseMessage = new HeaderDecorator((MqMessageDecorator)responseMessage);
+                responseMessage = ((MqMessageDecorator) responseMessage).decorate();
+
+                //Set the payload
                 gatewayResponseMessage.initialize(stashManager, ContentTypeHeader.XML_DEFAULT, new ByteArrayInputStream(mqResponseHeaderPayload.right));
                 logAndAudit(MQ_ROUTING_GOT_RESPONSE);
 
-                MqNativeKnob mqNativeResponseKnob;
-                if (assertion.getResponseMqNativeMessagePropertyRuleSet().isPassThroughHeaders()) {
-                    mqNativeResponseKnob = buildMqNativeKnob( mqResponseHeaderPayload.left,
-                            new MqNativeMessageDescriptor(mqResponseMessage), assertion.getResponseMessageAdvancedProperties() );
+                //Attach message to Knob
+                MqNativeKnob mqNativeKnob = gatewayResponseMessage.getKnob(MqNativeKnob.class);
+                if (mqNativeKnob == null) {
+                    mqNativeKnob = buildMqNativeKnob(new MqMessageProxy(responseMessage));
+                    gatewayResponseMessage.attachKnob(mqNativeKnob, MqNativeKnob.class);
                 } else {
-                    mqNativeResponseKnob = buildMqNativeKnob( new byte[0], null, assertion.getResponseMessageAdvancedProperties() );
+                    mqNativeKnob.reset(new MqMessageProxy(responseMessage));
                 }
-                gatewayResponseMessage.attachKnob(mqNativeResponseKnob, MqNativeKnob.class);
 
                 context.setRoutingStatus( RoutingStatus.ROUTED );
 
@@ -667,17 +680,30 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
         }
 
         // instantiate the request MQMessage
-        final MQMessage mqRequestMessage = new MQMessage();
+        MQMessage mqRequestMessage = new MQMessage();
 
-        // determine whether to copy over any header from the request knob
-        applyMqNativeKnobToMessage(assertion.getRequestMqNativeMessagePropertyRuleSet().isPassThroughHeaders(),
-                gatewayRequestMessage.getKnob(MqNativeKnob.class), mqRequestMessage);
+        MqNativeKnob mqNativeRequestKnob = gatewayRequestMessage.getKnob(MqNativeKnob.class);
+        if (mqNativeRequestKnob == null) {
+            mqNativeRequestKnob = buildMqNativeKnob(new MqMessageProxy(new MQMessage()));
+            gatewayRequestMessage.attachKnob(mqNativeRequestKnob, MqNativeKnob.class);
+        }
 
-        // apply any request properties override
-        applyPropertiesToMessage(assertion.getRequestMessageAdvancedProperties(), mqRequestMessage);
+        // Decorate the message
+        mqRequestMessage = new PassThroughDecorator(mqRequestMessage,
+                (MqMessageProxy) mqNativeRequestKnob.getMessage(),
+                gatewayRequestMessage.getKnob(OutboundHeadersKnob.class), assertion, context, getAudit());
+        ((MqMessageDecorator) mqRequestMessage).setRequest(true);
+        mqRequestMessage = new DescriptorDecorator((MqMessageDecorator)mqRequestMessage);
+        mqRequestMessage = new PropertyDecorator((MqMessageDecorator)mqRequestMessage);
+        mqRequestMessage = new HeaderDecorator((MqMessageDecorator)mqRequestMessage);
+        mqRequestMessage = ((MqMessageDecorator) mqRequestMessage).decorate();
 
         // write the payload of the message
         mqRequestMessage.write(outboundRequestBytes);
+
+        final StashManager stashManager = stashManagerFactory.createStashManager();
+        gatewayRequestMessage.initialize(stashManager, ContentTypeHeader.XML_DEFAULT, new ByteArrayInputStream(outboundRequestBytes));
+        mqNativeRequestKnob.reset(new MqMessageProxy(mqRequestMessage));
 
         // check whether a response is expected
         final MqNativeReplyType replyType = endpointCfg.getReplyType();

@@ -3,23 +3,32 @@ package com.l7tech.external.assertions.mqnative.server;
 import com.ibm.mq.MQException;
 import com.ibm.mq.MQMessage;
 import com.ibm.mq.headers.MQDataException;
+import com.ibm.mq.headers.MQHeaderList;
+import com.ibm.mq.headers.MQRFH2;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.StashManager;
 import com.l7tech.external.assertions.mqnative.MqNativeAcknowledgementType;
 import com.l7tech.external.assertions.mqnative.MqNativeReplyType;
+import com.l7tech.external.assertions.mqnative.MqNativeRoutingAssertion;
 import com.l7tech.gateway.common.LicenseException;
+import com.l7tech.gateway.common.audit.Audit;
+import com.l7tech.gateway.common.audit.LoggingAudit;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
+import com.l7tech.message.HasHeaders;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.*;
 import com.l7tech.server.*;
 import com.l7tech.server.event.FaultProcessed;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.PolicyVersionException;
+import com.l7tech.server.policy.assertion.ServerAddHeaderAssertion;
+import com.l7tech.server.policy.variable.ExpandVariables;
+import com.l7tech.server.policy.variable.MessageSelector;
 import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.server.transport.ListenerException;
 import com.l7tech.server.util.ThreadPoolBean;
+import com.l7tech.util.HexUtils;
 import com.l7tech.util.Pair;
 import org.junit.Before;
 import org.junit.Test;
@@ -34,7 +43,11 @@ import org.springframework.test.context.junit4.AbstractJUnit4SpringContextTests;
 
 import java.io.IOException;
 import java.text.ParseException;
+import java.util.Arrays;
+import java.util.GregorianCalendar;
+import java.util.Map;
 import java.util.Set;
+import java.util.logging.Logger;
 
 import static com.ibm.mq.constants.MQConstants.*;
 import static com.l7tech.external.assertions.mqnative.MqNativeConstants.MQ_CONNECT_ERROR_SLEEP_PROPERTY;
@@ -65,6 +78,9 @@ public class MqNativeModuleTest extends AbstractJUnit4SpringContextTests {
     private static final String encryptedPassword = "?????????????????";
     private static final char[] password = {'p', 'a', 's', 's', 'w', 'o', 'r', 'd'};
 
+    private static final Logger logger = Logger.getLogger(MqNativeModuleTest.class.getName());
+    private static final Audit audit = new LoggingAudit(logger);
+
     @Mock
     private ApplicationEventPublisher applicationEventPublisher;
     @Mock
@@ -93,6 +109,9 @@ public class MqNativeModuleTest extends AbstractJUnit4SpringContextTests {
         serverConfig = ApplicationContexts.getTestApplicationContext().getBean("serverConfig", ServerConfig.class);
         mqMessage = createMqMessage();
         mqNativeModule = createMqNativeModule();
+        MessageSelector.registerSelector(MqNativeRoutingAssertion.MQ, new MessageSelector.HeaderSelector(MqNativeRoutingAssertion.MQ + ".", true,
+                Arrays.<Class<? extends HasHeaders>>asList(MqNativeKnob.class)));
+
     }
 
     /**
@@ -264,4 +283,178 @@ public class MqNativeModuleTest extends AbstractJUnit4SpringContextTests {
             }
         });
     }
+
+    @Test
+    public void testCustomizeResponse() throws MessageProcessingSuspendedException, LicenseException, IOException, PolicyVersionException, MethodNotAllowedException, PolicyAssertionException, MqNativeException, MqNativeConfigException {
+        handleMessageInitialize();
+        when(ssgActiveConnector.getEnumProperty(PROPERTIES_KEY_MQ_NATIVE_REPLY_TYPE, REPLY_AUTOMATIC, MqNativeReplyType.class)).thenReturn(MqNativeReplyType.REPLY_SPECIFIED_QUEUE);
+        when(ssgActiveConnector.getEnumProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_ACKNOWLEDGEMENT_TYPE, null, MqNativeAcknowledgementType.class)).thenReturn(MqNativeAcknowledgementType.AUTOMATIC);
+
+        MqNativeModule mqNativeModuleSpy = spy(mqNativeModule);
+        doAnswer(new Answer() {
+            public Object answer(InvocationOnMock invocation) {
+                final MQMessage responseMessage = (MQMessage) invocation.getArguments()[1];
+                try {
+                    MqMessageProxy proxy = new MqMessageProxy(responseMessage);
+                    assertEquals("3000", String.valueOf(proxy.getMessageDescriptor("expiry")));
+                    assertEquals("propertyValue", proxy.getMessageProperty("folder.propertyName"));
+                    assertEquals("headerValue", proxy.getPrimaryHeaderValue("folder.headerName"));
+                } catch (Exception e) {
+                    fail("Invalid MQMessage.");
+                }
+
+                return null;
+            }}).when(mqNativeModuleSpy).sendResponse(any(MQMessage.class), any(MQMessage.class), any(SsgActiveConnector.class), any(MqNativeClient.class));
+
+        when(messageProcessor.processMessage(any(PolicyEnforcementContext.class))).thenAnswer(new Answer<Object>() {
+            @Override
+            public Object answer(InvocationOnMock invocationOnMock) throws Throwable {
+                final PolicyEnforcementContext context = (PolicyEnforcementContext) invocationOnMock.getArguments()[0];
+                addHeader(context, TargetMessageType.RESPONSE, "mqnative.md.expiry", "3000");
+                addHeader(context, TargetMessageType.RESPONSE, "mqnative.md.format", "MQRFH2");//output as format MQRFH2 format
+                addHeader(context, TargetMessageType.RESPONSE, "mqnative.property.folder.propertyName", "propertyValue");
+                addHeader(context, TargetMessageType.RESPONSE, "mqnative.header.folder.headerName", "headerValue");
+                return AssertionStatus.NONE;
+            }
+        });
+
+        mqNativeModuleSpy.handleMessageForConnector(ssgActiveConnector, mqNativeClient, mqMessage);
+
+    }
+
+    @Test
+    public void testContextVariables() throws MQException, MqNativeConfigException,  MqNativeException, IOException,
+            MessageProcessingSuspendedException, LicenseException, PolicyVersionException, MethodNotAllowedException, PolicyAssertionException {
+
+        handleMessageInitialize();
+        when(ssgActiveConnector.getEnumProperty(PROPERTIES_KEY_MQ_NATIVE_REPLY_TYPE, REPLY_AUTOMATIC, MqNativeReplyType.class)).thenReturn(MqNativeReplyType.REPLY_SPECIFIED_QUEUE);
+        when(ssgActiveConnector.getEnumProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_ACKNOWLEDGEMENT_TYPE, null, MqNativeAcknowledgementType.class)).thenReturn(MqNativeAcknowledgementType.AUTOMATIC);
+
+        when(messageProcessor.processMessage(any(PolicyEnforcementContext.class))).thenAnswer(new Answer<Object>() {
+            @Override
+            public Object answer(InvocationOnMock invocationOnMock) throws Throwable {
+                final PolicyEnforcementContext context = (PolicyEnforcementContext) invocationOnMock.getArguments()[0];
+                final Map<String, Object> vars = context.getVariableMap(new String[]{"request"}, audit);
+
+                if (!ExpandVariables.process("${request.mqNative.md.accountingToken}", vars, audit, false).equals(HexUtils.encodeBase64(mqMessage.accountingToken))) {
+                    return AssertionStatus.FAILED;
+                }
+                if (!ExpandVariables.process("${request.mqNative.md.applicationIdData}", vars, audit, false).equals(mqMessage.applicationIdData)) {
+                    return AssertionStatus.FAILED;
+                }
+                if (!ExpandVariables.process("${request.mqNative.md.backoutCount}", vars, audit, false).equals(Integer.toString(mqMessage.backoutCount))) {
+                    return AssertionStatus.FAILED;
+                }
+
+                String putDataTime = MqNativeUtils.DATE_FORMAT.format(mqMessage.putDateTime.getTime());
+                if (!ExpandVariables.process("${request.mqNative.md.putDateTime}", vars, audit, false).equals(putDataTime)) {
+                    return AssertionStatus.FAILED;
+                }
+                if (!ExpandVariables.process("${request.mqNative.md.version}", vars, audit, false).equals(Integer.toString(mqMessage.getVersion()))) {
+                    return AssertionStatus.FAILED;
+                }
+
+                if (!ExpandVariables.process("${request.mqNative.md.version}", vars, audit, false).equals(Integer.toString(mqMessage.getVersion()))) {
+                    return AssertionStatus.FAILED;
+                }
+                if (!ExpandVariables.process("${request.mqNative.headernames}", vars, audit, false).equals("folder.rfh2Field1")) {
+                    return AssertionStatus.FAILED;
+                }
+                if (!ExpandVariables.process("${request.mqNative.allheadervalues}", vars, audit, false).equals("rhf2Value1")) {
+                    return AssertionStatus.FAILED;
+                }
+                if (!ExpandVariables.process("${request.mqNative.propertynames}", vars, audit, false).contains("folder.testObjectProperty")) {
+                    return AssertionStatus.FAILED;
+                }
+                if (!ExpandVariables.process("${request.mqNative.propertynames}", vars, audit, false).contains("testLongProperty")) {
+                    return AssertionStatus.FAILED;
+                }
+                if (!ExpandVariables.process("${request.mqNative.propertynames}", vars, audit, false).contains("folder.propertyField1")) {
+                    return AssertionStatus.FAILED;
+                }
+                if (!ExpandVariables.process("${request.mqNative.allpropertyvalues}", vars, audit, false).contains("java.lang.Exception: testObjectValueAsException")) {
+                    return AssertionStatus.FAILED;
+                }
+                if (!ExpandVariables.process("${request.mqNative.allpropertyvalues}", vars, audit, false).contains("9223372036854775807")) {
+                    return AssertionStatus.FAILED;
+                }
+                if (!ExpandVariables.process("${request.mqNative.allpropertyvalues}", vars, audit, false).contains("propertyValue1")) {
+                    return AssertionStatus.FAILED;
+                }
+                if (!ExpandVariables.process("${request.mqNative.headernames.length}", vars, audit, false).equals("1")) {
+                    return AssertionStatus.FAILED;
+                }
+                if (!ExpandVariables.process("${request.mqNative.allheadervalues.length}", vars, audit, false).equals("1")) {
+                    return AssertionStatus.FAILED;
+                }
+                if (!ExpandVariables.process("${request.mqNative.propertynames.length}", vars, audit, false).equals("3")) {
+                    return AssertionStatus.FAILED;
+                }
+                if (!ExpandVariables.process("${request.mqNative.allpropertyvalues.length}", vars, audit, false).equals("3")) {
+                    return AssertionStatus.FAILED;
+                }
+                if (!ExpandVariables.process("${request.mqNative.header.folder.rfh2Field1}", vars, audit, false).equals("rhf2Value1")) {
+                    return AssertionStatus.FAILED;
+                }
+                if (!ExpandVariables.process("${request.mqNative.property.folder.propertyField1}", vars, audit, false).equals("propertyValue1")) {
+                    return AssertionStatus.FAILED;
+                }
+                context.getResponse().initialize(ContentTypeHeader.XML_DEFAULT, AssertionStatus.NONE.getMessage().getBytes());
+                return AssertionStatus.NONE;
+            }
+        });
+
+        MqNativeModule mqNativeModuleSpy = spy(mqNativeModule);
+        doAnswer(new Answer() {
+            public Object answer(InvocationOnMock invocation) {
+                final MQMessage responseMessage = (MQMessage) invocation.getArguments()[1];
+                try {
+                    final Pair<byte[], byte[]> parsedRequest = MqNativeUtils.parseHeaderPayload(responseMessage);
+                    assertEquals(new String(parsedRequest.right), AssertionStatus.NONE.getMessage());
+                } catch (IOException e) {
+                    fail(e.getMessage());
+                } catch (MQDataException e) {
+                    fail(e.getMessage());
+                }
+                return null;
+            }}).when(mqNativeModuleSpy).sendResponse(any(MQMessage.class), any(MQMessage.class), any(SsgActiveConnector.class), any(MqNativeClient.class));
+
+        mqMessage = new MQMessage();
+        mqMessage.accountingToken = "accountToken".getBytes();
+        mqMessage.applicationIdData = "applicationIdData";
+        mqMessage.backoutCount = "backoutCount".length();
+        mqMessage.putDateTime = (GregorianCalendar) GregorianCalendar.getInstance();
+        mqMessage.setVersion(2);
+        mqMessage.format = MQFMT_RF_HEADER_2;
+
+        MQRFH2 rfh2= new MQRFH2();
+        rfh2.setFieldValue("folder", "rfh2Field1","rhf2Value1");
+
+        MQHeaderList headerList = new MQHeaderList();
+        headerList.add(rfh2);
+        headerList.write(mqMessage);
+
+        // set no header (message properties)
+        mqMessage.setLongProperty("testLongProperty", Long.MAX_VALUE);
+        mqMessage.setStringProperty("folder.propertyField1", "propertyValue1");
+        mqMessage.setObjectProperty("folder.testObjectProperty", new Exception("testObjectValueAsException"));
+
+        // set data
+        String output = "Test Data";
+        mqMessage.write(output.getBytes());
+
+        mqNativeModuleSpy.handleMessageForConnector(ssgActiveConnector, mqNativeClient, mqMessage);
+    }
+
+    private void addHeader(PolicyEnforcementContext context, TargetMessageType targetMessageType, String name, String value) throws IOException, PolicyAssertionException {
+
+        AddHeaderAssertion addHeaderAssertion = new AddHeaderAssertion();
+        addHeaderAssertion.setTarget(targetMessageType);
+        addHeaderAssertion.setHeaderName(name);
+        addHeaderAssertion.setHeaderValue(value);
+        ServerAddHeaderAssertion serverAddHeaderAssertion = new ServerAddHeaderAssertion(addHeaderAssertion);
+        serverAddHeaderAssertion.checkRequest(context);
+    }
+
+
 }

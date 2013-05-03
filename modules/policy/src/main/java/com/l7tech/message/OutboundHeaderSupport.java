@@ -15,7 +15,7 @@ import java.util.TreeSet;
 /**
  * Support class that can be used to assist implementation of HasOutboundHeaders.
  */
-class OutboundHeaderSupport implements HasOutboundHeaders {
+public class OutboundHeaderSupport implements HasOutboundHeaders {
 
     //- PUBLIC
 

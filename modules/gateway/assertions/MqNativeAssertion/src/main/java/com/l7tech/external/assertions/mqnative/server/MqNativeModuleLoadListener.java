@@ -1,16 +1,20 @@
 package com.l7tech.external.assertions.mqnative.server;
 
 import com.l7tech.external.assertions.mqnative.MqNativeExternalReferenceFactory;
+import com.l7tech.external.assertions.mqnative.MqNativeRoutingAssertion;
+import com.l7tech.message.HasHeaders;
 import com.l7tech.server.LifecycleException;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.ServerConfig.PropertyRegistrationInfo;
 import com.l7tech.server.policy.export.PolicyExporterImporterManager;
+import com.l7tech.server.policy.variable.MessageSelector;
 import com.l7tech.server.util.Injector;
 import com.l7tech.server.util.ThreadPoolBean;
 import com.l7tech.util.ExceptionUtils;
 import org.springframework.context.ApplicationContext;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
@@ -54,6 +58,8 @@ public class MqNativeModuleLoadListener {
         if (mqNativeListenerModule != null) {
             logger.log(Level.WARNING, "MQ Native active connector module is already initialized");
         } else {
+            MessageSelector.registerSelector(MqNativeRoutingAssertion.MQ, new MessageSelector.HeaderSelector(MqNativeRoutingAssertion.MQ + "." , true,
+                    Arrays.<Class<? extends HasHeaders>>asList(MqNativeKnob.class)));
             // Create (if does not exist) all context variables used by this module
             initializeModuleClusterProperties(context.getBean("serverConfig", ServerConfig.class));
 
@@ -110,6 +116,7 @@ public class MqNativeModuleLoadListener {
             }
         }
 
+        MessageSelector.unRegisterSelector(MqNativeRoutingAssertion.MQ);
         unregisterExternalReferenceFactory();
     }
 

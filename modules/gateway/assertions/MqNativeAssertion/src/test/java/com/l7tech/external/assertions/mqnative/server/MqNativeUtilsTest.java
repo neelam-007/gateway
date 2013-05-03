@@ -17,32 +17,34 @@ import java.util.Map;
 
 import static com.ibm.mq.constants.CMQC.MQFMT_RF_HEADER;
 import static com.ibm.mq.constants.CMQC.MQFMT_RF_HEADER_2;
-import static com.l7tech.external.assertions.mqnative.MqNativeConstants.*;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.not;
-import static org.junit.Assert.*;
+import static com.ibm.mq.constants.MQPropertyIdentifiers.*;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertNull;
 
 public class MqNativeUtilsTest {
     /**
      * PROPCTL=COMPAT expected message format
      * On a V7 MQ server, a queue's property control (PROPCTL) is defaulted to compatible (COMPAT).
      */
-    private static final byte[] MQ_MESSAGE_COMPAT_HEADER = new byte[0];
+    public static final byte[] MQ_MESSAGE_COMPAT_HEADER = new byte[0];
 
     /**
      * PROPCTL=FORCE expected message format
      * On a V7 MQ server, a queue's property control can be set to force all messages properties into MQRFH2 headers (FORCE).
      * This is also the expected format used when a MQ v6 client creates a message on a v7 server.
      * RFH ... MQSTR ... <mcd><Msd>jms_text</Msd></mcd> ... T<jms><Dst>queue:///COREDEVREQUESTQ01</Dst><Tms>1342462125398</Tms><Dlv>2</Dlv></jms>This is the payload.
-     * Note the "..." sub string below are unprintable characters in a byte array.
+     * Note the "..." sub string above are unprintable characters in a byte array.
      */
     private static final byte[] MQ_MESSAGE_FORCE_HEADER_PART1 = {82, 70, 72, 32, 0, 0, 0, 2, 0, 0, 0, -96, 0, 0, 1, 17, 0, 0, 4, -72, 77, 81, 83,
             84, 82, 32, 32, 32, 0, 0, 0, 0, 0, 0, 4, -72, 0, 0, 0, 32, 60, 109, 99, 100, 62, 60, 77, 115, 100, 62, 106,
             109, 115, 95, 116, 101, 120, 116, 60, 47, 77, 115, 100, 62, 60, 47, 109, 99, 100, 62, 32, 32, 0, 0, 0};
-    private static final String MQ_MESSAGE_FORCE_HEADER_PART2 = "T<jms><Dst>queue:///COREDEVREQUESTQ01</Dst><Tms>1342462125398</Tms><Dlv>2</Dlv></jms>";
-    private static final byte[] MQ_MESSAGE_FORCE_HEADER = CONCATENATE(MQ_MESSAGE_FORCE_HEADER_PART1, (MQ_MESSAGE_FORCE_HEADER_PART2).getBytes());
+    public static final String TEST_DESTINATION = "queue:///COREDEVREQUESTQ01";
+    public static final long TEST_TIME_STAMP = 1342462125398L;
+    public static final int TEST_DELIVERY_MODE = 2;
+    private static final String MQ_MESSAGE_FORCE_HEADER_PART2 = "T<jms><Dst>" + TEST_DESTINATION + "</Dst><Tms>" + TEST_TIME_STAMP + "</Tms><Dlv>" + TEST_DELIVERY_MODE + "</Dlv></jms>";
+    public static final byte[] MQ_MESSAGE_FORCE_HEADER = CONCATENATE(MQ_MESSAGE_FORCE_HEADER_PART1, (MQ_MESSAGE_FORCE_HEADER_PART2).getBytes());
 
-    private static final String MESSAGE_PAYLOAD = "This is the payload.";
+    public static final String MESSAGE_PAYLOAD = "This is the payload.";
 
     private static byte[] CONCATENATE(@NotNull final byte[] bytes1, @NotNull final byte[] bytes2) {
         byte[] concatenated = new byte[bytes1.length + bytes2.length];
@@ -73,74 +75,67 @@ public class MqNativeUtilsTest {
     }
 
     @Test
-    public void buildMqNativeKnob() throws MQException  {
-        MqNativeMessageDescriptor mqmd = new MqNativeMessageDescriptor(new MQMessage());
+    public void parsePrimaryMessageHeader() throws IOException, MQDataException {
+        // expect no header for PROPCTL=COMPAT
+        MQMessage mqMessage = new MQMessage();
+        // no exposed header
+        mqMessage.write(MESSAGE_PAYLOAD.getBytes());
+        assertNull(MqNativeUtils.parsePrimaryAdditionalHeader(mqMessage));
+
+        // expected for PROPCTL=FORCE
+        mqMessage = new MQMessage();
+        MQRFH2 rfh2 = new MQRFH2(new DataInputStream(new ByteArrayInputStream(MQ_MESSAGE_FORCE_HEADER)));
+        rfh2.write(mqMessage);
+        mqMessage.format = MQFMT_RF_HEADER_2;
+        mqMessage.write(MESSAGE_PAYLOAD.getBytes());
+        MQRFH2 primaryMessageHeader = (MQRFH2) MqNativeUtils.parsePrimaryAdditionalHeader(mqMessage);
+        assertArrayEquals(rfh2.getNameValueData(), primaryMessageHeader.getNameValueData());
+    }
+
+//    @Test
+//    public void parseProperties() throws IOException, MQDataException, MQException {
+//        // expected properties for PROPCTL=COMPAT
+//        MQMessage mqMessage = new MQMessage();
+//        mqMessage.setStringProperty(RFH2_JMS_DESTINATION, TEST_DESTINATION);
+//        mqMessage.setLongProperty(RFH2_JMS_TIME_STAMP, TEST_TIME_STAMP);
+//        mqMessage.setIntProperty(RFH2_JMS_DELIVERY_MODE, TEST_DELIVERY_MODE);
+//        mqMessage.write(MESSAGE_PAYLOAD.getBytes());
+//        Map<String, Object> properties = MqNativeUtils.parseProperties(mqMessage);
+//        assertEquals(TEST_DESTINATION, properties.get(MQ_JMS_DESTINATION));
+//        assertEquals(TEST_TIME_STAMP, properties.get(MQ_JMS_TIME_STAMP));
+//        assertEquals(TEST_DELIVERY_MODE, properties.get(MQ_JMS_DELIVERY_MODE));
+//
+//        // expect no properties for PROPCTL=FORCE
+//        mqMessage = new MQMessage();
+//        MQRFH2 rfh2 = new MQRFH2(new DataInputStream(new ByteArrayInputStream(MQ_MESSAGE_FORCE_HEADER)));
+//        rfh2.write(mqMessage);
+//        mqMessage.format = MQFMT_RF_HEADER_2;
+//        mqMessage.write(MESSAGE_PAYLOAD.getBytes());
+//        properties = MqNativeUtils.parseProperties(mqMessage);
+//        assertNull(properties.get(MQ_JMS_DESTINATION));
+//        assertNull(properties.get(MQ_JMS_TIME_STAMP));
+//        assertNull(properties.get(MQ_JMS_DELIVERY_MODE));
+//    }
+
+    @Test
+    public void buildMqNativeKnob() throws IOException, MQDataException, MQException  {
+        final MqNativeMessageDescriptor mqmd = new MqNativeMessageDescriptor(new MQMessage());
         mqmd.messageType = 8;
         mqmd.format = MQFMT_RF_HEADER;
         mqmd.messageId = HexUtils.decodeBase64("QU1RIGNvcmVEZXZRdWV1ZXLDgcOPTzE0");
 
-        final Map<String,String> properties = new HashMap<String, String>(3);
-        properties.put(MQ_PROPERTY_PRIORITY, "4");
-        properties.put(MQ_PROPERTY_EXPIRY, "300");
-        properties.put(MQ_PROPERTY_CHARSET, "819");
+        final MQRFH2 rfh2 = new MQRFH2(new DataInputStream(new ByteArrayInputStream(MQ_MESSAGE_FORCE_HEADER)));
 
-        MqNativeKnob mqKnob = MqNativeUtils.buildMqNativeKnob(MQ_MESSAGE_FORCE_HEADER, mqmd, properties);
+        final Map<String,Object> messageProperties = new HashMap<String, Object>(3);
+        messageProperties.put(RFH2_JMS_DESTINATION, TEST_DESTINATION);
+        messageProperties.put(RFH2_JMS_TIME_STAMP, Long.toString(TEST_TIME_STAMP));
+        messageProperties.put(RFH2_JMS_DELIVERY_MODE, Integer.toString(TEST_DELIVERY_MODE));
 
-        assertArrayEquals(MQ_MESSAGE_FORCE_HEADER, mqKnob.getMessageHeaderBytes());
-        assertEquals(mqmd, mqKnob.getMessageDescriptor());
-        assertEquals(properties, mqKnob.getMessageDescriptorOverride());
-    }
+//        MqNativeKnob mqKnob = MqNativeUtils.buildMqNativeKnob(MQ_MESSAGE_FORCE_HEADER, rfh2, mqmd, messageProperties);
 
-    @Test
-    public void applyMqNativeKnobToMessage() throws IOException, MQDataException, MQException, MqNativeConfigException {
-        final byte[] testHeaderBytes = MQ_MESSAGE_FORCE_HEADER;
-        final String testFormat = MQFMT_RF_HEADER_2;
-        final int testEncoding = 273;
-        final byte[] testMessageId = HexUtils.decodeBase64("QU1RIGNvcmVEZXZRdWV1ZXLDgcOPTzE0");
-        final int testPriority = 4;
-        final int testExpiry = 300;
-        final int testCharacterSet = 819;
-
-        // setup message descriptors
-        MqNativeMessageDescriptor mqmd = new MqNativeMessageDescriptor(new MQMessage());
-        mqmd.format = testFormat; // RFH2 header
-        mqmd.encoding = testEncoding;
-        mqmd.messageId = testMessageId;
-        // setup properties override
-        final Map<String,String> properties = new HashMap<String, String>(3);
-        properties.put(MQ_PROPERTY_PRIORITY, Integer.toString(testPriority));
-        properties.put(MQ_PROPERTY_EXPIRY, Integer.toString(testExpiry));
-        properties.put(MQ_PROPERTY_CHARSET, Integer.toString(testCharacterSet));
-        MqNativeKnob mqKnob = MqNativeUtils.buildMqNativeKnob(testHeaderBytes, mqmd, properties);
-
-        // pass through headers
-        MQMessage mqMessage = new MQMessage();
-        MqNativeUtils.applyMqNativeKnobToMessage(true, mqKnob, mqMessage);
-        // test header
-        Pair<byte[], byte[]> msgHeaderPayload = MqNativeUtils.parseHeaderPayload(mqMessage);
-        assertArrayEquals(testHeaderBytes, msgHeaderPayload.left);
-        // test message descriptors
-        assertEquals(testFormat, mqMessage.format);
-        assertEquals(testEncoding, mqMessage.encoding);
-        assertArrayEquals(testMessageId, mqMessage.messageId);
-        // test properties override
-        assertEquals(testPriority, mqMessage.priority);
-        assertEquals(testExpiry, mqMessage.expiry);
-        assertEquals(testCharacterSet, mqMessage.characterSet);
-
-        // don't pass through headers
-        mqMessage = new MQMessage();
-        MqNativeUtils.applyMqNativeKnobToMessage(false, mqKnob, mqMessage);
-        // test header
-        msgHeaderPayload = MqNativeUtils.parseHeaderPayload(mqMessage);
-        assertThat(testHeaderBytes, is(not(msgHeaderPayload.left)));
-        // test message descriptors
-        assertThat(testFormat, is(not(mqMessage.format)));
-        assertThat(testEncoding, is(not(mqMessage.messageType)));
-        assertThat(testMessageId, is(not(mqMessage.messageId)));
-        // test properties override
-        assertEquals(testPriority, mqMessage.priority);
-        assertEquals(testExpiry, mqMessage.expiry);
-        assertEquals(testCharacterSet, mqMessage.characterSet);
+//        assertArrayEquals(MQ_MESSAGE_FORCE_HEADER, mqKnob.getAllMessageHeaderBytes());
+//        assertEquals(rfh2, mqKnob.getPrimaryMessageHeader());
+//        assertEquals(messageProperties, mqKnob.getMessagePropertyMap());
+//        assertEquals(mqmd, mqKnob.getMessageDescriptor());
     }
 }

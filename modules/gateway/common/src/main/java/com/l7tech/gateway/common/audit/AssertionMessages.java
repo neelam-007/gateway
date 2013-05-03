@@ -1140,6 +1140,9 @@ public class AssertionMessages extends Messages {
     public static final Messages.M MQ_ROUTING_RESPONSE_TIMEOUT              = m(9624, Level.FINER, "Using response timeout {0}ms.");
     public static final Messages.M MQ_ROUTING_RESPONSE_SIZE_LIMIT_ERROR     = m(9625, Level.WARNING, "Ignoring invalid response size limit: {0}");
     public static final Messages.M MQ_ROUTING_RESPONSE_SIZE_LIMIT           = m(9626, Level.FINER, "Using response size limit {0} (bytes)");
+    public static final Messages.M MQ_ROUTING_CANT_SET_MSG_DESCRIPTOR       = m(9627, Level.WARNING, "Ignoring invalid message descriptor field: {0}");
+    public static final Messages.M MQ_ROUTING_CANT_SET_MSG_PROPERTY         = m(9628, Level.WARNING, "Ignoring invalid message property field: {0}");
+    public static final Messages.M MQ_ROUTING_CANT_SET_MSG_HEADER         = m(9629, Level.WARNING, "Ignoring invalid message header field: {0}");
 
     public static final Messages.M GENERATE_HASH_VARIABLE_NOT_SET     = m(9635, Level.WARNING, "''{0}'' is not set.");
     public static final Messages.M GENERATE_HASH_UNSUPPORTED_ALGORITHM     = m(9636, Level.WARNING, "Unsupported Algorithm: ''{0}''");
