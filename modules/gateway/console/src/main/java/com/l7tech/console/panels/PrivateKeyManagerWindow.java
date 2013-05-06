@@ -437,25 +437,30 @@ public class PrivateKeyManagerWindow extends JDialog {
             return;
         final long mutableKeystoreId = mutableKeystore.getOid();
 
-        String alias = JOptionPane.showInputDialog(this, "Please enter an alias to use for the new private key entry.");
-        if (alias == null || alias.trim().length() < 1)
-            return;
-        alias = alias.trim();
+        final ImportPrivateKeyDialog importDialog = new ImportPrivateKeyDialog(TopComponents.getInstance().getTopParent());
+        importDialog.pack();
+        DialogDisplayer.display(importDialog, new Runnable() {
+            @Override
+            public void run() {
+                if (importDialog.isConfirmed()) {
+                    final String alias = importDialog.getAlias();
+                    SsgKeyEntry imported = performImport(mutableKeystoreId, alias, importDialog.getSecurityZone());
+                    if (imported == null)
+                        return;
 
-        SsgKeyEntry imported = performImport(mutableKeystoreId, alias);
-        if (imported == null)
-            return;
+                    X509Certificate[] chain = imported.getCertificateChain();
+                    if (chain != null && chain.length > 0)
+                        displayCertificateChainWarnings(chain);
 
-        X509Certificate[] chain = imported.getCertificateChain();
-        if (chain != null && chain.length > 0)
-            displayCertificateChainWarnings(chain);
-
-        loadPrivateKeys();
-        setSelectedKeyEntry(mutableKeystoreId, alias);
+                    loadPrivateKeys();
+                    setSelectedKeyEntry(mutableKeystoreId, alias);
+                }
+            }
+        });
     }
 
 
-    private SsgKeyEntry performImport(long keystoreId, String alias) {
+    private SsgKeyEntry performImport(long keystoreId, String alias, SecurityZone zone) {
         byte[] ksbytes = null;
         String kstype = null;
         String ksalias = null;
@@ -487,9 +492,7 @@ public class PrivateKeyManagerWindow extends JDialog {
                 if (entrypass == null)
                     return null;
 
-                // TODO provide a way to set the security zone on the imported key.
-                final SecurityZone securityZone = null;
-                final SsgKeyMetadata metadata = new SsgKeyMetadata(keystoreId, alias, securityZone);
+                final SsgKeyMetadata metadata = zone == null ? null : new SsgKeyMetadata(keystoreId, alias, zone);
 
                 try {
                     return Registry.getDefault().getTrustedCertManager().importKeyFromKeyStoreFile(keystoreId, alias, metadata, ksbytes, kstype, kspass, entrypass, ksalias);

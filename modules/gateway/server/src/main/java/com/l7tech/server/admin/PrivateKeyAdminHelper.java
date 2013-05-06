@@ -293,6 +293,9 @@ public class PrivateKeyAdminHelper {
 
         SsgKeyStore keystore = getKeyStore(keystoreId);
         SsgKeyEntry entry = new SsgKeyEntry(keystore.getOid(), alias, x509chain, (PrivateKey)key);
+        if (ssgKeyMetadata != null) {
+            entry.attachMetadata(ssgKeyMetadata);
+        }
         Future<Boolean> future = keystore.storePrivateKeyEntry(afterCreate(keystore, alias, "imported"), entry, false);
         if (!future.get())
             throw new KeyStoreException("Import operation returned false"); // can't happen
