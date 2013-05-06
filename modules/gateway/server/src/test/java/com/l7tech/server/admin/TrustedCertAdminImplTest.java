@@ -5,6 +5,7 @@ import com.l7tech.gateway.common.AsyncAdminMethods;
 import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.security.keystore.SsgKeyMetadata;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SecurityZone;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.security.cert.TestCertificateGenerator;
@@ -25,8 +26,10 @@ import org.mockito.runners.MockitoJUnitRunner;
 import org.springframework.context.ApplicationEventPublisher;
 
 import javax.security.auth.x500.X500Principal;
+import java.security.KeyStoreException;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
+import java.util.UUID;
 
 import static org.junit.Assert.*;
 import static org.mockito.Matchers.any;
@@ -109,46 +112,82 @@ public class TrustedCertAdminImplTest {
     }
 
     @Test
-    public void updateKeyEntryWithSecurityZone() throws Exception {
+    public void updateKeyEntrySecurityZoneChanged() throws Exception {
         final SecurityZone zone = new SecurityZone();
         final SsgKeyEntry keyEntry = new SsgKeyEntry(KEYSTORE_ID, ALIAS, chain, privateKey);
         keyEntry.setSecurityZone(zone);
+        when(adminHelper.doFindKeyEntry(ALIAS, KEYSTORE_ID)).thenReturn(new SsgKeyEntry(KEYSTORE_ID, ALIAS, chain, privateKey));
+
         admin.updateKeyEntry(keyEntry);
-        verify(adminHelper).doUpdateCertificateChain(KEYSTORE_ID, ALIAS, chain);
-        verify(adminHelper).doUpdateKeyMetadata(KEYSTORE_ID, ALIAS, new SsgKeyMetadata(KEYSTORE_ID, ALIAS, zone));
+        verify(adminHelper).doUpdateKeyMetadata(KEYSTORE_ID, ALIAS, keyEntry.getKeyMetadata());
+        // chain was not updated
+        verify(adminHelper, never()).doUpdateCertificateChain(anyLong(), anyString(), any(X509Certificate[].class));
     }
 
     @Test
-    public void updateKeyEntryWithoutSecurityZone() throws Exception {
+    public void updateKeyEntryChainChanged() throws Exception {
         final SsgKeyEntry keyEntry = new SsgKeyEntry(KEYSTORE_ID, ALIAS, chain, privateKey);
-        keyEntry.setSecurityZone(null);
+        when(adminHelper.doFindKeyEntry(ALIAS, KEYSTORE_ID)).thenReturn(new SsgKeyEntry(KEYSTORE_ID, ALIAS, generateCertChain(), privateKey));
+
         admin.updateKeyEntry(keyEntry);
         verify(adminHelper).doUpdateCertificateChain(KEYSTORE_ID, ALIAS, chain);
-        verify(adminHelper).doUpdateKeyMetadata(KEYSTORE_ID, ALIAS, null);
+        // metadata was not updated
+        verify(adminHelper, never()).doUpdateKeyMetadata(anyLong(), anyString(), any(SsgKeyMetadata.class));
+    }
+
+    @Test
+    public void updateKeyEntrySecurityZoneAndChainChanged() throws Exception {
+        final SecurityZone zone = new SecurityZone();
+        final SsgKeyEntry keyEntry = new SsgKeyEntry(KEYSTORE_ID, ALIAS, chain, privateKey);
+        keyEntry.setSecurityZone(zone);
+        when(adminHelper.doFindKeyEntry(ALIAS, KEYSTORE_ID)).thenReturn(new SsgKeyEntry(KEYSTORE_ID, ALIAS, generateCertChain(), privateKey));
+
+        admin.updateKeyEntry(keyEntry);
+        verify(adminHelper).doUpdateKeyMetadata(KEYSTORE_ID, ALIAS, keyEntry.getKeyMetadata());
+        verify(adminHelper).doUpdateCertificateChain(KEYSTORE_ID, ALIAS, chain);
+    }
+
+    @Test
+    public void updateKeyEntryNeitherSecurityZoneOrChainChanged() throws Exception {
+        final SsgKeyEntry keyEntry = new SsgKeyEntry(KEYSTORE_ID, ALIAS, chain, privateKey);
+        when(adminHelper.doFindKeyEntry(ALIAS, KEYSTORE_ID)).thenReturn(keyEntry);
+
+        admin.updateKeyEntry(keyEntry);
+        verify(adminHelper, never()).doUpdateCertificateChain(anyLong(), anyString(), any(X509Certificate[].class));
+        verify(adminHelper, never()).doUpdateKeyMetadata(anyLong(), anyString(), any(SsgKeyMetadata.class));
+    }
+
+    @Test(expected = UpdateException.class)
+    public void updateKeyEntryErrorFindingExistingKeyEntry() throws Exception {
+        when(adminHelper.doFindKeyEntry(ALIAS, KEYSTORE_ID)).thenThrow(new FindException("mocking exception"));
+        admin.updateKeyEntry(new SsgKeyEntry(KEYSTORE_ID, ALIAS, chain, privateKey));
+    }
+
+    @Test(expected = UpdateException.class)
+    public void updateKeyEntryErrorKeyStoreException() throws Exception {
+        when(adminHelper.doFindKeyEntry(ALIAS, KEYSTORE_ID)).thenThrow(new KeyStoreException("mocking exception"));
+        admin.updateKeyEntry(new SsgKeyEntry(KEYSTORE_ID, ALIAS, chain, privateKey));
     }
 
     @Test(expected = UpdateException.class)
     public void updateKeyEntryUpdateChainException() throws Exception {
+        when(adminHelper.doFindKeyEntry(ALIAS, KEYSTORE_ID)).thenReturn(new SsgKeyEntry(KEYSTORE_ID, ALIAS, chain, privateKey));
         doThrow(new UpdateException("mocking exception")).when(adminHelper).doUpdateCertificateChain(anyLong(), anyString(), any(X509Certificate[].class));
-        try {
-            admin.updateKeyEntry(new SsgKeyEntry(KEYSTORE_ID, ALIAS, chain, privateKey));
-            fail("expected UpdateException");
-        } catch (final UpdateException e) {
-            verify(adminHelper, never()).doUpdateKeyMetadata(KEYSTORE_ID, ALIAS, new SsgKeyMetadata(KEYSTORE_ID, ALIAS, null));
-            throw e;
-        }
+        admin.updateKeyEntry(new SsgKeyEntry(KEYSTORE_ID, ALIAS, generateCertChain(), privateKey));
     }
 
     @Test(expected = UpdateException.class)
     public void updateKeyEntryUpdateMetadataException() throws Exception {
+        final SsgKeyEntry keyEntry = new SsgKeyEntry(KEYSTORE_ID, ALIAS, chain, privateKey);
+        keyEntry.setSecurityZone(new SecurityZone());
+        when(adminHelper.doFindKeyEntry(ALIAS, KEYSTORE_ID)).thenReturn(new SsgKeyEntry(KEYSTORE_ID, ALIAS, chain, privateKey));
         doThrow(new UpdateException("mocking exception")).when(adminHelper).doUpdateKeyMetadata(anyLong(), anyString(), any(SsgKeyMetadata.class));
-        try {
-            admin.updateKeyEntry(new SsgKeyEntry(KEYSTORE_ID, ALIAS, chain, privateKey));
-            fail("expected UpdateException");
-        } catch (final UpdateException e) {
-            verify(adminHelper).doUpdateCertificateChain(KEYSTORE_ID, ALIAS, chain);
-            throw e;
-        }
+        admin.updateKeyEntry(keyEntry);
+    }
+
+    private X509Certificate[] generateCertChain() throws Exception {
+        final X509Certificate cert = new TestCertificateGenerator().subject("CN=" + UUID.randomUUID().toString()).generate();
+        return new X509Certificate[]{cert};
     }
 
     private class TestableTrustedCertAdminImpl extends TrustedCertAdminImpl {

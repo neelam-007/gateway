@@ -35,6 +35,7 @@ import com.l7tech.util.ArrayUtils;
 import com.l7tech.util.Background;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.SyspropUtil;
+import org.apache.commons.lang.ObjectUtils;
 import org.bouncycastle.asn1.pkcs.CertificationRequestInfo;
 import org.bouncycastle.asn1.x509.X509Name;
 import org.bouncycastle.jce.PKCS10CertificationRequest;
@@ -443,11 +444,29 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
         }
 
         try {
-            getPrivateKeyAdminHelper().doUpdateCertificateChain( keyEntry.getKeystoreId(), keyEntry.getAlias(), keyEntry.getCertificateChain() );
-            getPrivateKeyAdminHelper().doUpdateKeyMetadata( keyEntry.getKeystoreId(), keyEntry.getAlias(),
-                    makeMeta(keyEntry.getKeystoreId(), keyEntry.getAlias(), keyEntry.getSecurityZone()));
-        } catch ( final UpdateException e ) {
-            logger.log( Level.INFO, ExceptionUtils.getMessage( e ), ExceptionUtils.getDebugException( e ) );
+            final SsgKeyEntry existing = getPrivateKeyAdminHelper().doFindKeyEntry(keyEntry.getAlias(), keyEntry.getKeystoreId());
+            final X509Certificate[] existingChain = existing.getCertificateChain();
+            boolean chainUpdated = false;
+            if (chain.length == existingChain.length) {
+                for (int i = 0; i < existingChain.length; i++) {
+                    if (!CertUtils.certsAreEqual(existingChain[i], chain[i])) {
+                        chainUpdated = true;
+                        break;
+                    }
+                }
+            } else {
+                chainUpdated = true;
+            }
+            if (chainUpdated) {
+                getPrivateKeyAdminHelper().doUpdateCertificateChain( keyEntry.getKeystoreId(), keyEntry.getAlias(), keyEntry.getCertificateChain() );
+            }
+            if (!ObjectUtils.equals(existing.getKeyMetadata(), keyEntry.getKeyMetadata())) {
+                getPrivateKeyAdminHelper().doUpdateKeyMetadata(keyEntry.getKeystoreId(), keyEntry.getAlias(), keyEntry.getKeyMetadata());
+            }
+        } catch (final FindException | KeyStoreException e) {
+            throw new UpdateException("Unable to retrieve existing key entry", e);
+        } catch (final UpdateException e) {
+            logger.log( Level.WARNING, ExceptionUtils.getMessage( e ), ExceptionUtils.getDebugException( e ) );
             throw e;
         }
     }

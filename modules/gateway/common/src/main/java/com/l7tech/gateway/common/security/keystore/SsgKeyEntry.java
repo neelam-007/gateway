@@ -236,10 +236,19 @@ public class SsgKeyEntry extends SignerInfo implements NamedEntity, Serializable
         return keyMetadata == null ? null : keyMetadata.getSecurityZone();
     }
 
+    /**
+     * Sets the SecurityZone on the SsgKeyMetadata.
+     *
+     * If there is no SsgKeyMetadata currently attached, one with the SsgKeyEntry's keystoreId and alias and the given securityZone will be attached.
+     *
+     * @param securityZone a new security zone to assign to this entity, or null to take it out of all security zones.
+     */
     @Override
     public void setSecurityZone(SecurityZone securityZone) {
-        if (keyMetadata == null)
-            keyMetadata = new SsgKeyMetadata();
-        keyMetadata.setSecurityZone(securityZone);
+        if (keyMetadata == null) {
+            keyMetadata = new SsgKeyMetadata(keystoreId, alias, securityZone);
+        } else {
+            keyMetadata.setSecurityZone(securityZone);
+        }
     }
 }

@@ -13,7 +13,6 @@ import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.PleaseWaitDialog;
 import com.l7tech.gui.widgets.SquigglyTextField;
 import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.SecurityZone;
 import com.l7tech.util.ExceptionUtils;
 
 import javax.security.auth.x500.X500Principal;
@@ -322,7 +321,7 @@ public class  NewPrivateKeyDialog extends JDialog {
         final int expiryDays = Integer.parseInt(expiryDaysField.getText());
         final boolean makeCaCert = caCheckBox.isSelected();
         final KeyType keyType = getSelectedKeyType();
-        final SsgKeyMetadata metadata = new SsgKeyMetadata(keystoreInfo.getOid(), alias, securityZoneWidget.getSelectedZone());
+        final SsgKeyMetadata metadata = securityZoneWidget.getSelectedZone() == null ? null: new SsgKeyMetadata(keystoreInfo.getOid(), alias, securityZoneWidget.getSelectedZone());
         //noinspection UnusedAssignment
         Throwable ouch = null;
         try {
