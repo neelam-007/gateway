@@ -2,6 +2,7 @@ package com.l7tech.server.ssh;
 
 import com.jcraft.jsch.*;
 import com.l7tech.util.Functions;
+import org.apache.commons.pool.KeyedPoolableObjectFactory;
 
 import java.util.HashMap;
 import java.util.logging.Level;
@@ -13,10 +14,9 @@ import static com.l7tech.util.Functions.reduce;
  *
  * @author Victor Kazakov
  */
-public class SshSessionFactory {
+public class SshSessionFactory implements KeyedPoolableObjectFactory<SshSessionKey, SshSession> {
     protected static final java.util.logging.Logger jschLogger = java.util.logging.Logger.getLogger(JSch.class.getName());
 
-    //TODO move this to an initializer
     static {
         //Sets the JSch logger so that we can appropriately log messages from JSch
         JSch.setLogger(new Logger() {
@@ -127,7 +127,28 @@ public class SshSessionFactory {
         session.setConfig("compression.c2s", compressionsString);
         session.setConfig("compression.s2c", compressionsString);
 
+        session.connect(sshSessionKey.getConnectionTimeout());
         return new SshSession(sshSessionKey, session);
+    }
+
+    @Override
+    public void destroyObject(SshSessionKey key, SshSession session) throws Exception {
+        session.close();
+    }
+
+    @Override
+    public boolean validateObject(SshSessionKey key, SshSession session) {
+        return session.isConnected();
+    }
+
+    @Override
+    public void activateObject(SshSessionKey key, SshSession session) throws Exception {
+        // do nothing to activate
+    }
+
+    @Override
+    public void passivateObject(SshSessionKey key, SshSession session) throws Exception {
+        // do nothing to passivate
     }
 
     /**

@@ -515,6 +515,19 @@
                                 <value>jdbcQueryManager.cacheCleanUpInterval</value>
                             </list>
                         </entry>
+                        <entry key="sshSessionPool">
+                            <list>
+                                <value>ssh.session.pool.maxActive</value>
+                                <value>ssh.session.pool.maxTotal</value>
+                                <value>ssh.session.pool.maxIdle</value>
+                                <value>ssh.session.pool.whenExhaustedAction</value>
+                                <value>ssh.session.pool.timeBetweenEvictionRunsMillis</value>
+                                <value>ssh.session.pool.minEvictableIdleTimeMillis</value>
+                                <value>ssh.session.pool.minIdle</value>
+                                <value>ssh.session.pool.maxWait</value>
+                                <value>ssh.session.pool.numTestsPerEvictionRun</value>
+                            </list>
+                        </entry>
                     </map>
                 </constructor-arg>
             </bean>
@@ -2436,4 +2449,10 @@
           class="java.lang.management.ManagementFactory"
           factory-method="getPlatformMBeanServer" />
 
+    <bean id="sshSessionFactory" class="com.l7tech.server.ssh.SshSessionFactory"/>
+
+    <bean id="sshSessionPool" class="com.l7tech.server.ssh.SshSessionPool">
+        <constructor-arg ref="sshSessionFactory" />
+        <constructor-arg ref="serverConfig" />
+    </bean>
 </beans>

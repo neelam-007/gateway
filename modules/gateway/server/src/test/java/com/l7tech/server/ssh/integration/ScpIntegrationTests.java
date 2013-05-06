@@ -100,10 +100,8 @@ public class ScpIntegrationTests {
 
     @Test
     public void putSimpleTest() throws JSchException, IOException, SftpException, FileTransferException {
-        SshSessionKey sessionKey = new SshSessionKey(userName, host, port, Either.<String, String>left(password), socketTimeout, fingerprint, ciphers, macs, compressions);
+        SshSessionKey sessionKey = new SshSessionKey(userName, host, port, Either.<String, String>left(password), connectionTimeout, socketTimeout, fingerprint, ciphers, macs, compressions);
         try (SshSession session = sessionFactory.makeObject(sessionKey)) {
-            session.connect(connectionTimeout);
-
             try (ScpClient scpClient = session.getScpClient()) {
                 scpClient.connect();
 
@@ -124,18 +122,15 @@ public class ScpIntegrationTests {
         exception.expect(JSchException.class);
         exception.expectMessage("Algorithm negotiation fail");
 
-        SshSessionKey sessionKey = new SshSessionKey(userName, host, port, Either.<String, String>left(password), socketTimeout, fingerprint, ciphers, macs, compressions);
+        SshSessionKey sessionKey = new SshSessionKey(userName, host, port, Either.<String, String>left(password), connectionTimeout, socketTimeout, fingerprint, ciphers, macs, compressions);
         try (SshSession session = sessionFactory.makeObject(sessionKey)) {
-            session.connect(connectionTimeout);
         }
     }
 
     @Test
     public void getSimpleTest() throws JSchException, IOException, SftpException, FileTransferException {
-        SshSessionKey sessionKey = new SshSessionKey(userName, host, port, Either.<String, String>left(password), socketTimeout, fingerprint, ciphers, macs, compressions);
+        SshSessionKey sessionKey = new SshSessionKey(userName, host, port, Either.<String, String>left(password), connectionTimeout, socketTimeout, fingerprint, ciphers, macs, compressions);
         try (SshSession session = sessionFactory.makeObject(sessionKey)) {
-            session.connect(connectionTimeout);
-
             try (ScpClient scpClient = session.getScpClient()) {
                 scpClient.connect();
 
@@ -154,10 +149,8 @@ public class ScpIntegrationTests {
 
     @Test
     public void putGetEmptyFile() throws JSchException, IOException, SftpException, FileTransferException {
-        SshSessionKey sessionKey = new SshSessionKey(userName, host, port, Either.<String, String>left(password), socketTimeout, fingerprint, ciphers, macs, compressions);
+        SshSessionKey sessionKey = new SshSessionKey(userName, host, port, Either.<String, String>left(password), connectionTimeout, socketTimeout, fingerprint, ciphers, macs, compressions);
         try (SshSession session = sessionFactory.makeObject(sessionKey)) {
-            session.connect(connectionTimeout);
-
             try (ScpClient scpClient = session.getScpClient()) {
                 scpClient.connect();
 
@@ -176,10 +169,8 @@ public class ScpIntegrationTests {
 
     @Test
     public void putGetNoFingerPrintCheck() throws JSchException, IOException, SftpException, FileTransferException {
-        SshSessionKey sessionKey = new SshSessionKey(userName, host, port, Either.<String, String>left(password), socketTimeout, null, ciphers, macs, compressions);
+        SshSessionKey sessionKey = new SshSessionKey(userName, host, port, Either.<String, String>left(password), connectionTimeout, socketTimeout, null, ciphers, macs, compressions);
         try (SshSession session = sessionFactory.makeObject(sessionKey)) {
-            session.connect(connectionTimeout);
-
             try (ScpClient scpClient = session.getScpClient()) {
                 scpClient.connect();
 
@@ -200,19 +191,16 @@ public class ScpIntegrationTests {
     public void badFingerPrintCheck() throws JSchException, IOException, SftpException, FileTransferException {
         exception.expect(JSchException.class);
         exception.expectMessage("reject HostKey: " + host);
-        SshSessionKey sessionKey = new SshSessionKey(userName, host, port, Either.<String, String>left(password), socketTimeout, "bad fingerPrint", ciphers, macs, compressions);
+        SshSessionKey sessionKey = new SshSessionKey(userName, host, port, Either.<String, String>left(password), connectionTimeout, socketTimeout, "bad fingerPrint", ciphers, macs, compressions);
         try (SshSession session = sessionFactory.makeObject(sessionKey)) {
-            session.connect(connectionTimeout);
             session.getScpClient();
         }
     }
 
     @Test
     public void putGetPrivateKey() throws JSchException, IOException, SftpException, FileTransferException {
-        SshSessionKey sessionKey = new SshSessionKey(userName, host, port, Either.<String, String>right(privateKey), socketTimeout, fingerprint, ciphers, macs, compressions);
+        SshSessionKey sessionKey = new SshSessionKey(userName, host, port, Either.<String, String>right(privateKey), connectionTimeout, socketTimeout, fingerprint, ciphers, macs, compressions);
         try (SshSession session = sessionFactory.makeObject(sessionKey)) {
-            session.connect(connectionTimeout);
-
             try (ScpClient scpClient = session.getScpClient()) {
                 scpClient.connect();
 
@@ -231,10 +219,8 @@ public class ScpIntegrationTests {
 
     @Test
     public void putGetToDirectory() throws JSchException, IOException, SftpException, FileTransferException {
-        SshSessionKey sessionKey = new SshSessionKey(userName, host, port, Either.<String, String>right(privateKey), socketTimeout, fingerprint, ciphers, macs, compressions);
+        SshSessionKey sessionKey = new SshSessionKey(userName, host, port, Either.<String, String>right(privateKey), connectionTimeout, socketTimeout, fingerprint, ciphers, macs, compressions);
         try (SshSession session = sessionFactory.makeObject(sessionKey)) {
-            session.connect(connectionTimeout);
-
             try (ScpClient scpClient = session.getScpClient()) {
                 scpClient.connect();
 
@@ -253,10 +239,8 @@ public class ScpIntegrationTests {
 
     @Test
     public void putToNoExistingDirectory() throws JSchException, IOException, SftpException, FileTransferException {
-        SshSessionKey sessionKey = new SshSessionKey(userName, host, port, Either.<String, String>right(privateKey), socketTimeout, fingerprint, ciphers, macs, compressions);
+        SshSessionKey sessionKey = new SshSessionKey(userName, host, port, Either.<String, String>right(privateKey), connectionTimeout, socketTimeout, fingerprint, ciphers, macs, compressions);
         try (SshSession session = sessionFactory.makeObject(sessionKey)) {
-            session.connect(connectionTimeout);
-
             try (ScpClient scpClient = session.getScpClient()) {
                 scpClient.connect();
 
@@ -271,10 +255,8 @@ public class ScpIntegrationTests {
 
     @Test
     public void getFromNoExistingDirectory() throws JSchException, IOException, SftpException, FileTransferException {
-        SshSessionKey sessionKey = new SshSessionKey(userName, host, port, Either.<String, String>right(privateKey), socketTimeout, fingerprint, ciphers, macs, compressions);
+        SshSessionKey sessionKey = new SshSessionKey(userName, host, port, Either.<String, String>right(privateKey), connectionTimeout, socketTimeout, fingerprint, ciphers, macs, compressions);
         try (SshSession session = sessionFactory.makeObject(sessionKey)) {
-            session.connect(connectionTimeout);
-
             try (ScpClient scpClient = session.getScpClient()) {
                 scpClient.connect();
 
@@ -297,10 +279,8 @@ public class ScpIntegrationTests {
      */
     @Test
     public void putFileIsDirectory() throws JSchException, IOException, SftpException, FileTransferException {
-        SshSessionKey sessionKey = new SshSessionKey(userName, host, port, Either.<String, String>right(privateKey), socketTimeout, fingerprint, ciphers, macs, compressions);
+        SshSessionKey sessionKey = new SshSessionKey(userName, host, port, Either.<String, String>right(privateKey), connectionTimeout, socketTimeout, fingerprint, ciphers, macs, compressions);
         try (SshSession session = sessionFactory.makeObject(sessionKey)) {
-            session.connect(connectionTimeout);
-
             try (ScpClient scpClient = session.getScpClient()) {
                 scpClient.connect();
 
@@ -313,10 +293,8 @@ public class ScpIntegrationTests {
 
     @Test
     public void getFileIsDirectory() throws JSchException, IOException, SftpException, FileTransferException {
-        SshSessionKey sessionKey = new SshSessionKey(userName, host, port, Either.<String, String>right(privateKey), socketTimeout, fingerprint, ciphers, macs, compressions);
+        SshSessionKey sessionKey = new SshSessionKey(userName, host, port, Either.<String, String>right(privateKey), connectionTimeout, socketTimeout, fingerprint, ciphers, macs, compressions);
         try (SshSession session = sessionFactory.makeObject(sessionKey)) {
-            session.connect(connectionTimeout);
-
             try (ScpClient scpClient = session.getScpClient()) {
                 scpClient.connect();
 

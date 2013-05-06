@@ -20,8 +20,9 @@ public class SshSessionKey {
     private final List<String> encryptionAlgorithms;
     private final List<String> macAlgorithms;
     private final List<String> compressionAlgorithms;
+    private final int connectionTimeout;
 
-    public SshSessionKey(String user, String host, int port, Either<String, String> passwordOrPrivateKey, int socketTimeout, String fingerPrint, List<String> encryptionAlgorithms, List<String> macAlgorithms, List<String> compressionAlgorithms) {
+    public SshSessionKey(String user, String host, int port, Either<String, String> passwordOrPrivateKey, int connectionTimeout, int socketTimeout, String fingerPrint, List<String> encryptionAlgorithms, List<String> macAlgorithms, List<String> compressionAlgorithms) {
         this.user = user;
         this.host = host;
         this.port = port;
@@ -31,6 +32,7 @@ public class SshSessionKey {
         this.encryptionAlgorithms = encryptionAlgorithms;
         this.macAlgorithms = macAlgorithms;
         this.compressionAlgorithms = compressionAlgorithms;
+        this.connectionTimeout = connectionTimeout;
     }
 
     public String getUser() {
@@ -47,6 +49,10 @@ public class SshSessionKey {
 
     public Either<String, String> getPasswordOrPrivateKey() {
         return passwordOrPrivateKey;
+    }
+
+    public int getConnectionTimeout() {
+        return connectionTimeout;
     }
 
     public int getSocketTimeout() {
@@ -69,6 +75,7 @@ public class SshSessionKey {
         return compressionAlgorithms;
     }
 
+    // The connectionTimeout does not need to be checked here.
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -93,6 +100,7 @@ public class SshSessionKey {
         return true;
     }
 
+    // The connectionTimeout does not need to be considered here.
     @Override
     public int hashCode() {
         int result = user != null ? user.hashCode() : 0;

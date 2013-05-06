@@ -7,7 +7,10 @@ import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.external.assertions.ssh.SshRouteAssertion;
 import com.l7tech.external.assertions.ssh.keyprovider.SshKeyUtil;
 import com.l7tech.gateway.common.security.password.SecurePassword;
-import com.l7tech.message.*;
+import com.l7tech.message.CommandKnob;
+import com.l7tech.message.Message;
+import com.l7tech.message.MimeKnob;
+import com.l7tech.message.SshKnob;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -22,8 +25,8 @@ import com.l7tech.server.policy.assertion.ServerRoutingAssertion;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.server.ssh.SshSession;
-import com.l7tech.server.ssh.SshSessionFactory;
 import com.l7tech.server.ssh.SshSessionKey;
+import com.l7tech.server.ssh.SshSessionPool;
 import com.l7tech.server.ssh.client.*;
 import com.l7tech.server.util.ThreadPoolBean;
 import com.l7tech.util.*;
@@ -80,11 +83,12 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
     private ThreadPoolBean threadPool;
     private final String[] variablesUsed;
 
+    @Inject
+    private SshSessionPool sshSessionPool;
+
     public static final String defaultCipherOrder = "aes128-ctr, aes128-cbc, 3des-cbc, blowfish-cbc, aes192-ctr, aes192-cbc, aes256-ctr, aes256-cbc";
     public static final String defaultMacOrder = "hmac-md5,hmac-sha1,hmac-sha2-256,hmac-sha1-96,hmac-md5-96";
     public static final String defaultCompressionOrder = "none";
-
-    private SshSessionFactory sshSessionFactory = new SshSessionFactory();
 
     public ServerSshRouteAssertion(SshRouteAssertion assertion, ApplicationContext context) throws PolicyAssertionException {
         super(assertion, context);
@@ -136,127 +140,129 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
         //Create a new session
         SshSession session = null;
         try {
-            session = sshSessionFactory.makeObject(sshSessionKey);
-            session.connect(assertion.getConnectTimeout() * 1000);
-        } catch (JSchException e) {
-            if (session != null) {
-                session.close();
+            try {
+                //noinspection unchecked
+                session = (SshSession) sshSessionPool.borrowObject(sshSessionKey);
+            } catch (Exception e) {
+                logAndAudit(SSH_ROUTING_ERROR, new String[]{"Failed to retrieve ssh session: " + getMessage(e)}, getDebugException(e));
+                return AssertionStatus.FAILED;
             }
-            logAndAudit(SSH_ROUTING_ERROR, new String[]{"Failed to retrieve ssh session: " + getMessage(e)}, getDebugException(e));
-            return AssertionStatus.FAILED;
-        }
 
-        FileTransferClient sshClientToUse = null;
-        try {
-            if (assertion.isScpProtocol()) {
-                sshClientToUse = session.getScpClient();
-            } else {
-                sshClientToUse = session.getSftpClient();
-            }
-        } catch (JSchException e) {
-            if (sshClientToUse != null) {
-                sshClientToUse.close();
-            }
-            logAndAudit(SSH_ROUTING_ERROR, new String[]{"Failed to get an sshClient: " + getMessage(e)}, getDebugException(e));
-            return AssertionStatus.FAILED;
-        }
-
-        final FileTransferClient sshClient = sshClientToUse;
-
-        try {
-            sshClient.connect();
-        } catch (JSchException e) {
-            logAndAudit(SSH_ROUTING_ERROR, new String[]{"Unable to connect to ssh server: " + getMessage(e)}, getDebugException(e));
-            return AssertionStatus.FAILED;
-        }
-
-        if (!sshClient.isConnected()) {
-            sshClient.close();
-            logAndAudit(SSH_ROUTING_ERROR, "Failed to authenticate with the remote server.");
-            return AssertionStatus.FAILED;
-        }
-
-        // process the command type
-        final String fileName = ExpandVariables.process(assertion.getFileName(), variables, getAudit());
-        final String directory = ExpandVariables.process(assertion.getDirectory(), variables, getAudit());
-        try {
-            if (CommandKnob.CommandType.GET.equals(commandType)) {
-                performGetCommand(session, sshClient, fileName, directory, context, variables);
-            } else if (CommandKnob.CommandType.PUT.equals(commandType)) {
-                //get the request ssh knob. This is used to preserve file permissions.
-                final SshKnob sshKnob = request.getKnob(SshKnob.class);
-                performPutCommand(sshClient, fileName, directory, mimeKnob, variables, assertion.isPreserveFileMetadata() && sshKnob != null ? sshKnob.getFileMetadata() : null);
-            } else if (assertion.isScpProtocol()) {
+            FileTransferClient sshClientToUse = null;
+            try {
                 if (assertion.isScpProtocol()) {
-                    logAndAudit(SSH_ROUTING_ERROR, "Unsupported SCP command type: " + commandType);
-                    return AssertionStatus.BAD_REQUEST;
+                    sshClientToUse = session.getScpClient();
+                } else {
+                    sshClientToUse = session.getSftpClient();
                 }
-            } else {
-                switch (commandType) {
-                    case LIST: {
-                        if (performListCommand((SftpClient) sshClient, fileName, directory, context))
-                            return AssertionStatus.FAILED;
-                        break;
-                    }
-                    case STAT: {
-                        if (performStatCommand((SftpClient) sshClient, fileName, directory, context))
-                            return AssertionStatus.FAILED;
-                        break;
-                    }
-                    case DELETE: {
-                        boolean explicitCheck = config.getBooleanProperty("sftpRoutingExplicitlyValidateDeleteFile", true);
-                        performDeleteCommand((SftpClient) sshClient, fileName, directory, explicitCheck);
-                        break;
-                    }
-                    case MOVE: {
-                        final String newFileName = ExpandVariables.process(assertion.getNewFileName(), variables, getAudit());
-                        performMoveCommand((SftpClient) sshClient, fileName, directory, newFileName);
-                        break;
-                    }
-                    case MKDIR: {
-                        boolean explicitCheck = config.getBooleanProperty("sftpRoutingExplicitlyValidateMkdir", true);
-                        performMkdirCommand((SftpClient) sshClient, fileName, directory, explicitCheck);
-                        break;
-                    }
-                    case RMDIR: {
-                        boolean explicitCheck = config.getBooleanProperty("sftpRoutingExplicitlyValidateDeleteDir", true);
-                        performRmdirCommand((SftpClient) sshClient, fileName, directory, explicitCheck);
-                        break;
-                    }
-                    default: {
-                        //This shouldn't ever happen
-                        logAndAudit(SSH_ROUTING_ERROR, "Unsupported command type: " + commandType);
-                        return AssertionStatus.BAD_REQUEST;
-                    }
+            } catch (JSchException e) {
+                if (sshClientToUse != null) {
+                    sshClientToUse.close();
                 }
+                logAndAudit(SSH_ROUTING_ERROR, new String[]{"Failed to get an sshClient: " + getMessage(e)}, getDebugException(e));
+                return AssertionStatus.FAILED;
             }
-        } catch (FileTransferException | SftpException e) {
-            logAndAudit(SSH_ROUTING_ERROR,
-                    new String[]{SSH_EXCEPTION_ERROR + " '" + getMessage(e) + "', server: " + sshSessionKey.getHost()}, getDebugException(e));
-            return AssertionStatus.FAILED;
-        } catch (IOException e) {
-            logAndAudit(SSH_ROUTING_ERROR,
-                    new String[]{SSH_IO_EXCEPTION + " '" + getMessage(e) + "', server: " + sshSessionKey.getHost()}, getDebugException(e));
-            return AssertionStatus.FAILED;
-        } catch (ThreadPoolShutDownException | InterruptedException | NoSuchVariableException e) {
-            logAndAudit(SSH_ROUTING_ERROR, new String[]{"SSH2 Route Assertion error: " + getMessage(e)}, getDebugException(e));
-            return AssertionStatus.FAILED;
-        } catch (NoSuchPartException e) {
-            logAndAudit(SSH_ROUTING_ERROR,
-                    new String[]{SSH_NO_SUCH_PART_ERROR + ", server: " + sshSessionKey.getHost()}, getDebugException(e));
-            return AssertionStatus.FAILED;
-        } catch (Throwable t) {
-            logAndAudit(SSH_ROUTING_ERROR,
-                    new String[]{getMessage(t)}, getDebugException(t));
-            return AssertionStatus.FAILED;
-        } finally {
-            if (sshClient != null) {
+
+            final FileTransferClient sshClient = sshClientToUse;
+            try {
+                try {
+                    sshClient.connect();
+                } catch (JSchException e) {
+                    logAndAudit(SSH_ROUTING_ERROR, new String[]{"Unable to connect to ssh server: " + getMessage(e)}, getDebugException(e));
+                    return AssertionStatus.FAILED;
+                }
+
+                // process the command type
+                final String fileName = ExpandVariables.process(assertion.getFileName(), variables, getAudit());
+                final String directory = ExpandVariables.process(assertion.getDirectory(), variables, getAudit());
+                try {
+                    if (CommandKnob.CommandType.GET.equals(commandType)) {
+                        performGetCommand(session, sshClient, fileName, directory, context, variables);
+                    } else if (CommandKnob.CommandType.PUT.equals(commandType)) {
+                        //get the request ssh knob. This is used to preserve file permissions.
+                        final SshKnob sshKnob = request.getKnob(SshKnob.class);
+                        performPutCommand(sshClient, fileName, directory, mimeKnob, variables, assertion.isPreserveFileMetadata() && sshKnob != null ? sshKnob.getFileMetadata() : null);
+                    } else if (assertion.isScpProtocol()) {
+                        if (assertion.isScpProtocol()) {
+                            logAndAudit(SSH_ROUTING_ERROR, "Unsupported SCP command type: " + commandType);
+                            return AssertionStatus.BAD_REQUEST;
+                        }
+                    } else {
+                        switch (commandType) {
+                            case LIST: {
+                                if (performListCommand((SftpClient) sshClient, fileName, directory, context))
+                                    return AssertionStatus.FAILED;
+                                break;
+                            }
+                            case STAT: {
+                                if (performStatCommand((SftpClient) sshClient, fileName, directory, context))
+                                    return AssertionStatus.FAILED;
+                                break;
+                            }
+                            case DELETE: {
+                                boolean explicitCheck = config.getBooleanProperty("sftpRoutingExplicitlyValidateDeleteFile", true);
+                                performDeleteCommand((SftpClient) sshClient, fileName, directory, explicitCheck);
+                                break;
+                            }
+                            case MOVE: {
+                                final String newFileName = ExpandVariables.process(assertion.getNewFileName(), variables, getAudit());
+                                performMoveCommand((SftpClient) sshClient, fileName, directory, newFileName);
+                                break;
+                            }
+                            case MKDIR: {
+                                boolean explicitCheck = config.getBooleanProperty("sftpRoutingExplicitlyValidateMkdir", true);
+                                performMkdirCommand((SftpClient) sshClient, fileName, directory, explicitCheck);
+                                break;
+                            }
+                            case RMDIR: {
+                                boolean explicitCheck = config.getBooleanProperty("sftpRoutingExplicitlyValidateDeleteDir", true);
+                                performRmdirCommand((SftpClient) sshClient, fileName, directory, explicitCheck);
+                                break;
+                            }
+                            default: {
+                                //This shouldn't ever happen
+                                logAndAudit(SSH_ROUTING_ERROR, "Unsupported command type: " + commandType);
+                                return AssertionStatus.BAD_REQUEST;
+                            }
+                        }
+                    }
+                } catch (FileTransferException | SftpException e) {
+                    logAndAudit(SSH_ROUTING_ERROR,
+                            new String[]{SSH_EXCEPTION_ERROR + " '" + getMessage(e) + "', server: " + sshSessionKey.getHost()}, getDebugException(e));
+                    return AssertionStatus.FAILED;
+                } catch (IOException e) {
+                    logAndAudit(SSH_ROUTING_ERROR,
+                            new String[]{SSH_IO_EXCEPTION + " '" + getMessage(e) + "', server: " + sshSessionKey.getHost()}, getDebugException(e));
+                    return AssertionStatus.FAILED;
+                } catch (ThreadPoolShutDownException | InterruptedException | NoSuchVariableException e) {
+                    logAndAudit(SSH_ROUTING_ERROR, new String[]{"SSH2 Route Assertion error: " + getMessage(e)}, getDebugException(e));
+                    return AssertionStatus.FAILED;
+                } catch (NoSuchPartException e) {
+                    logAndAudit(SSH_ROUTING_ERROR,
+                            new String[]{SSH_NO_SUCH_PART_ERROR + ", server: " + sshSessionKey.getHost()}, getDebugException(e));
+                    return AssertionStatus.FAILED;
+                } catch (Throwable t) {
+                    logAndAudit(SSH_ROUTING_ERROR,
+                            new String[]{getMessage(t)}, getDebugException(t));
+                    return AssertionStatus.FAILED;
+                }
+            } finally {
                 //on all commands except GET commands the ssh client needs to be disconnected.
                 //On GET commands the client should be left connected this way data can still be streamed to the client once policy finished processing.
                 //It will be disconnected automatically after the data is sent.
-                if (!CommandKnob.CommandType.GET.equals(commandType)) {
+                if (sshClient != null && !CommandKnob.CommandType.GET.equals(commandType)) {
                     sshClient.close();
-                    session.close();
+                }
+            }
+        } finally {
+            //on all commands except GET commands the ssh client needs to be disconnected.
+            //On GET commands the client should be left connected this way data can still be streamed to the client once policy finished processing.
+            //It will be disconnected automatically after the data is sent.
+            if (session != null && !CommandKnob.CommandType.GET.equals(commandType)) {
+                try {
+                    sshSessionPool.returnObject(sshSessionKey, session);
+                } catch (Exception e) {
+                    logAndAudit(SSH_ROUTING_ERROR, new String[]{"Failed to return ssh session to pool: " + getMessage(e)}, getDebugException(e));
                 }
             }
         }
@@ -441,8 +447,8 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
                     gotData.countDown();
                     //need to disconnect the client manually for GET requests.
                     sshClient.close();
-                    //need to close the session as well
-                    session.close();
+                    //need to return the session to the pool.
+                    sshSessionPool.returnObject(session.getKey(), session);
                 }
             }
         }, pos);
@@ -665,6 +671,7 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
                 host,
                 port,
                 assertion.isUsePrivateKey() ? Either.<String, String>right(privateKeyText) : Either.<String, String>left(password),
+                (int) TimeUnit.SECONDS.toMillis((long) assertion.getConnectTimeout()),
                 (int) TimeUnit.SECONDS.toMillis((long) assertion.getReadTimeout()),
                 assertion.isUsePublicKey() ? publicKeyFingerprint : null, ciphers, macs, compressions);
     }

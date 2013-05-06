@@ -438,4 +438,11 @@
     <bean id="timeSource" class="com.l7tech.util.TimeSource"/>
 
     <bean id="entityFinder" class="com.l7tech.server.EntityFinderStub"/>
+
+    <bean id="sshSessionFactory" class="com.l7tech.server.ssh.SshSessionFactory"/>
+
+    <bean id="sshSessionPool" class="com.l7tech.server.ssh.SshSessionPool">
+        <constructor-arg ref="sshSessionFactory" />
+        <constructor-arg ref="serverConfig" />
+    </bean>
 </beans>

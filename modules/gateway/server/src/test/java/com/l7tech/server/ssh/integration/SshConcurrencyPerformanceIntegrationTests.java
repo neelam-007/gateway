@@ -92,9 +92,8 @@ public class SshConcurrencyPerformanceIntegrationTests {
     //Test one big file many small files
     @Test
     public void putGetPrivateKey() throws JSchException, IOException, SftpException, FileTransferException {
-        SshSessionKey sessionKey = new SshSessionKey(userName, host, port, Either.<String, String>right(privateKey), socketTimeout, fingerprint, ciphers, macs, compressions);
+        SshSessionKey sessionKey = new SshSessionKey(userName, host, port, Either.<String, String>right(privateKey),connectionTimeout, socketTimeout, fingerprint, ciphers, macs, compressions);
         try (SshSession session = sessionFactory.makeObject(sessionKey)) {
-            session.connect(connectionTimeout);
             final AtomicBoolean continueBigUpload = new AtomicBoolean(true);
 
             try {
@@ -161,7 +160,7 @@ public class SshConcurrencyPerformanceIntegrationTests {
     //Test high concurrency on one session
     @Test
     public void highConcurrencyOneSession() throws JSchException, IOException, SftpException, FileTransferException, InterruptedException {
-        SshSessionKey sessionKey = new SshSessionKey(userName, host, port, Either.<String, String>right(privateKey), socketTimeout, fingerprint, ciphers, macs, compressions);
+        SshSessionKey sessionKey = new SshSessionKey(userName, host, port, Either.<String, String>right(privateKey), connectionTimeout, socketTimeout, fingerprint, ciphers, macs, compressions);
 
         final int amountToUpload = 1024 * 1024 * 100;
         final int chunkSize = 32 * 1024;
@@ -176,7 +175,6 @@ public class SshConcurrencyPerformanceIntegrationTests {
         SshSession session = null;
         if (!manySessions) {
             session = sessionFactory.makeObject(sessionKey);
-            session.connect(connectionTimeout);
         }
 
         List<SftpClient> clients = new ArrayList<>(numClients);
@@ -185,7 +183,6 @@ public class SshConcurrencyPerformanceIntegrationTests {
         for (int i = 0; i < numClients; i++) {
             if (manySessions) {
                 session = sessionFactory.makeObject(sessionKey);
-                session.connect(connectionTimeout);
             }
             final SftpClient sftpClient = session.getSftpClient();
             sftpClient.connect();

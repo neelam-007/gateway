@@ -55,6 +55,7 @@
             <exclude org="xerces" module="xerces" name="*" type="*" ext="*" conf=""
                      matcher="exact"/>
         </dependency>
+        <dependency org="commons-pool" name="commons-pool" rev="1.6" force="true" conf="core"/>
         <dependency org="cglib" name="cglib-nodep" rev="2.2.2" force="true" conf="core"/>
         <dependency org="c3p0" name="c3p0" rev="0.9.1.2" force="true" conf="core"/>
         <dependency org="org.apache.derby" name="derby" rev="10.7.1.1" force="true" conf="core"/>
