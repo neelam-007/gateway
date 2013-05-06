@@ -1,6 +1,5 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.console.util.SecurityZoneWidget;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.uddi.UDDIRegistry;
 import com.l7tech.gateway.common.uddi.UDDIServiceControl;
@@ -16,14 +15,11 @@ import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.SecurityZone;
 import com.l7tech.uddi.UDDIKeyedReference;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.uddi.UDDINamedEntity;
-import org.apache.commons.lang.ObjectUtils;
 
 import javax.swing.*;
 import java.awt.event.*;
@@ -68,7 +64,6 @@ public class ServiceUDDISettingsDialog extends JDialog {//TODO rename to Publish
     private JCheckBox gifPublishCheckBox;
     private JComboBox endPointTypeComboBox;
     private JLabel endPointTypeLabel;
-    private SecurityZoneWidget zoneControl;
 
     private PublishedService service;
     private boolean canUpdate;
@@ -261,7 +256,7 @@ public class ServiceUDDISettingsDialog extends JDialog {//TODO rename to Publish
             endPointTypeLabel.setVisible(isSystinet);
             endPointTypeComboBox.setVisible(isSystinet);
         }
-        zoneControl.setEntityType(EntityType.UDDI_PROXIED_SERVICE_INFO);
+
         modelToView();
         enableAndDisableComponents();
         Utilities.setEscKeyStrokeDisposes(this);
@@ -342,8 +337,7 @@ public class ServiceUDDISettingsDialog extends JDialog {//TODO rename to Publish
 
             clearStatusLabels(null);
         }
-        zoneControl.setSelectedZone(uddiProxyServiceInfo == null ? null : uddiProxyServiceInfo.getSecurityZone());
-        
+
         // WS-Policy settings
         boolean originalWsPolicyAvailable = uddiServiceControl != null;
         boolean proxyWsPolicyAvailable = uddiProxyServiceInfo != null &&
@@ -672,22 +666,12 @@ public class ServiceUDDISettingsDialog extends JDialog {//TODO rename to Publish
             }
         }
 
-        if (uddiProxyServiceInfo != null && !dontPublishRadioButton.isSelected()) {
-            // check if security zone update is needed but radio button selection did not change
-            final SecurityZone existingZone = uddiProxyServiceInfo.getSecurityZone();
-            final SecurityZone selectedZone = zoneControl.getSelectedZone();
-            if (!ObjectUtils.equals(existingZone, selectedZone)) {
-                updateUddiProxiedServiceOnly(uddiRegistryAdmin);
-            }
-        }
-
         //The above processing of the SERVICE tab may have triggered an update to UDDI, in which case the dialog should dismiss.
         //Nothing below here should return false.
         return true;
     }
 
     private void updateUddiProxiedServiceOnly(UDDIRegistryAdmin uddiRegistryAdmin) {
-        uddiProxyServiceInfo.setSecurityZone(zoneControl.getSelectedZone());
         try {
             uddiRegistryAdmin.updateProxiedServiceOnly(uddiProxyServiceInfo);
         } catch (UpdateException e) {
@@ -849,7 +833,7 @@ public class ServiceUDDISettingsDialog extends JDialog {//TODO rename to Publish
             UDDIRegistryAdmin uddiRegistryAdmin = Registry.getDefault().getUDDIRegistryAdmin();
             UDDIRegistry uddiRegistry = allRegistries.get(uddiRegistriesComboBox.getSelectedItem().toString());
             try {
-                uddiRegistryAdmin.publishGatewayWsdl(service, uddiRegistry.getOid(), selectedBusinessKey, selectedBusinessName, updateWhenGatewayWSDLCheckBox.isSelected(), zoneControl.getSelectedZone());
+                uddiRegistryAdmin.publishGatewayWsdl(service, uddiRegistry.getOid(), selectedBusinessKey, selectedBusinessName, updateWhenGatewayWSDLCheckBox.isSelected(), service.getSecurityZone());
 
                 JOptionPane.showMessageDialog(ServiceUDDISettingsDialog.this,
                     "Task to publish Gateway WSDL to UDDI created successfully", "Successful Task Creation", JOptionPane.INFORMATION_MESSAGE);
@@ -883,7 +867,7 @@ public class ServiceUDDISettingsDialog extends JDialog {//TODO rename to Publish
         if (result == JOptionPane.YES_OPTION) {
             UDDIRegistryAdmin uddiRegistryAdmin = Registry.getDefault().getUDDIRegistryAdmin();
             try {
-                uddiRegistryAdmin.overwriteBusinessServiceInUDDI(service, updateWhenGatewayWSDLCheckBoxOverwrite.isSelected(), zoneControl.getSelectedZone());
+                uddiRegistryAdmin.overwriteBusinessServiceInUDDI(service, updateWhenGatewayWSDLCheckBoxOverwrite.isSelected(), service.getSecurityZone());
                 JOptionPane.showMessageDialog(ServiceUDDISettingsDialog.this,
                         "Task to overwrite BusinessService in UDDI created successfully", "Successful Task Creation", JOptionPane.INFORMATION_MESSAGE);
 
@@ -932,9 +916,9 @@ public class ServiceUDDISettingsDialog extends JDialog {//TODO rename to Publish
                 props.put(UDDIProxiedServiceInfo.KEYED_REFERENCES_CONFIG, keyedReferenceSet);//ok if null
                 if(isGif){
                     props.put(UDDIProxiedServiceInfo.GIF_SCHEME, endPointTypeComboBox.getSelectedItem());
-                    uddiRegistryAdmin.publishGatewayEndpointGif(service, props, zoneControl.getSelectedZone());
+                    uddiRegistryAdmin.publishGatewayEndpointGif(service, props, service.getSecurityZone());
                 } else {
-                    uddiRegistryAdmin.publishGatewayEndpoint(service, removeExistingBindingsCheckBox.isSelected(), props, zoneControl.getSelectedZone());
+                    uddiRegistryAdmin.publishGatewayEndpoint(service, removeExistingBindingsCheckBox.isSelected(), props, service.getSecurityZone());
                 }
 
                 JOptionPane.showMessageDialog(ServiceUDDISettingsDialog.this,

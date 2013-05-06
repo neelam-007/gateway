@@ -257,6 +257,7 @@ public class PublishServiceWizard extends Wizard {
                                 wsdlPortInfo.getBusinessServiceKey(), wsdlPortInfo.getBusinessServiceName(),
                                 wsdlPortInfo.getWsdlServiceName(), wsdlPortInfo.getWsdlPortName(), wsdlPortInfo.getWsdlPortBinding(),
                                 wsdlPortInfo.getWsdlPortBindingNamespace(), true);
+                        uddiServiceControl.setSecurityZone(service.getSecurityZone());
 
                         try {
                             Registry.getDefault().getUDDIRegistryAdmin().saveUDDIServiceControlOnly(uddiServiceControl, wsdlPortInfo.getAccessPointURL(), wsdlPortInfo.getLastUddiMonitoredTimeStamp());

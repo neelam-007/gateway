@@ -9,7 +9,6 @@ import com.l7tech.console.action.Actions;
 import com.l7tech.console.action.CreateServiceWsdlAction;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.util.*;
-import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.gateway.common.service.ServiceDocument;
@@ -108,7 +107,6 @@ public class ServicePropertiesDialog extends JDialog {
     private JLabel readOnlyWarningLabel;
     private JLabel resolutionConflictWarningLabel;
     private SecurityZoneWidget zoneControl;
-    private SecurityZoneWidget uddiZoneControl;
     private String ssgURL;
     private final boolean canUpdate;
     private final boolean canTrace;
@@ -477,16 +475,10 @@ public class ServicePropertiesDialog extends JDialog {
             uddiProxiedServiceInfo = Registry.getDefault().getUDDIRegistryAdmin().findProxiedServiceInfoForPublishedService(subject.getOid());
         } catch (FindException e) {
             uddiServiceControl = null;
-        } catch (final PermissionDeniedException e) {
-           uddiServiceControl = null;
-            // disable uddi tab
-           tabbedPane1.setEnabledAt(3, false);
         }
 
         zoneControl.setEntityType(EntityType.SERVICE);
         zoneControl.setSelectedZone(subject.getSecurityZone());
-        uddiZoneControl.setEntityType(EntityType.UDDI_SERVICE_CONTROL);
-        uddiZoneControl.setSelectedZone(uddiServiceControl == null ? null : uddiServiceControl.getSecurityZone());
 
         updateURL();
 
@@ -882,7 +874,7 @@ public class ServicePropertiesDialog extends JDialog {
                 }
 
                 final SecurityZone existingSecurityZone = uddiServiceControl.getSecurityZone();
-                final SecurityZone selectedSecurityZone = uddiZoneControl.getSelectedZone();
+                final SecurityZone selectedSecurityZone = zoneControl.getSelectedZone();
                 if( wsdlUnderUDDIControlCheckBox.isSelected() != uddiServiceControl.isUnderUddiControl() ||
                     enableMonitoring != uddiServiceControl.isMonitoringEnabled() ||
                     updateWsdlOnChange != uddiServiceControl.isUpdateWsdlOnChange() ||
@@ -901,6 +893,12 @@ public class ServicePropertiesDialog extends JDialog {
                     Registry.getDefault().getUDDIRegistryAdmin().saveUDDIServiceControlOnly(uddiServiceControl, accessPointURL, lastModifiedTimeStamp);
                 }
             }
+
+            if (uddiProxiedServiceInfo != null && !ObjectUtils.equals(uddiProxiedServiceInfo.getSecurityZone(), zoneControl.getSelectedZone())) {
+                uddiProxiedServiceInfo.setSecurityZone(zoneControl.getSelectedZone());
+                Registry.getDefault().getUDDIRegistryAdmin().updateProxiedServiceOnly(uddiProxiedServiceInfo);
+            }
+
             savePolicyIfSecurityZoneDiffers(subject);
 
             //we are good to close the dialog
