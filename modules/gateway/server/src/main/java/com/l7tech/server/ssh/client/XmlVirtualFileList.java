@@ -1,4 +1,4 @@
-package com.l7tech.external.assertions.ssh.server;
+package com.l7tech.server.ssh.client;
 
 import javax.xml.bind.annotation.*;
 import java.util.List;

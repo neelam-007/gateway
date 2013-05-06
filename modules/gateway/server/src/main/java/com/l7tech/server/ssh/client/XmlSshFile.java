@@ -1,4 +1,4 @@
-package com.l7tech.external.assertions.ssh.server;
+package com.l7tech.server.ssh.client;
 
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlRootElement;
@@ -15,6 +15,7 @@ public class XmlSshFile {
     private Long size;
     private Long lastModified;
     private Boolean file;
+    private Integer permissions;
 
     public XmlSshFile() {
     }
@@ -28,6 +29,13 @@ public class XmlSshFile {
         this(name, file);
         this.size = size;
         this.lastModified = lastModified;
+    }
+
+    public XmlSshFile(String name, Boolean file, long size, long lastModified, int permissions) {
+        this(name, file);
+        this.size = size;
+        this.lastModified = lastModified;
+        this.permissions = permissions;
     }
 
     @XmlAttribute
@@ -64,5 +72,14 @@ public class XmlSshFile {
 
     public void setFile(Boolean file) {
         this.file = file;
+    }
+
+    @XmlAttribute
+    public Integer getPermissions() {
+        return permissions;
+    }
+
+    public void setPermissions(Integer permissions) {
+        this.permissions = permissions;
     }
 }

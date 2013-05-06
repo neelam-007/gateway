@@ -450,4 +450,58 @@ public class IOUtils {
             }
         };
     }
+
+    /**
+     * Copy all of the in, right up to EOF or the given length, into out.  Does not flush or close either stream.
+     * This is equivalent to calling copyStream(in, out, length, null)
+     *
+     * @param in  the InputStream to read.  Must not be null.
+     * @param out the OutputStream to write.  Must not be null.
+     * @param length The number of bytes to copy. A negative number will copy till the EOF.
+     * @return the number bytes copied. This will either be length, or less then length if the end of the input stream was reached first.
+     * @throws java.io.IOException if in could not be read, or out could not be written
+     */
+    public static long copyStream(InputStream in, OutputStream out, long length) throws IOException {
+        return copyStream(in, out, length, null);
+    }
+
+    /**
+     * Copy all of the in, right up to EOF or the given length, into out.  Does not flush or close either stream.
+     *
+     * @param in              the InputStream to read.  Must not be null.
+     * @param out             the OutputStream to write.  Must not be null.
+     * @param length          The number of bytes to copy. A negative number will copy till the EOF.
+     * @param progressMonitor This is a function that will be called to allow another thread to monitor the progress of the stream copy.
+     *                        It will be called periodically given the total number of bytes copied so far as the single parameter to the function.
+     * @return the number bytes copied. This will either be length, or less then length if the end of the input stream was reached first.
+     * @throws java.io.IOException if in could not be read, or out could not be written
+     */
+    public static long copyStream(InputStream in, OutputStream out, long length, Functions.UnaryVoid<Long> progressMonitor) throws IOException {
+        if (in == null || out == null) throw new NullPointerException("in and out must both be non-null");
+        if (length == 0) {
+            return 0;
+        }
+        byte[] buf = BufferPool.getBuffer(16384);
+        int readBytes = buf.length;
+        if (length > 0 && length < readBytes) {
+            readBytes = (int) length;
+        }
+        try {
+            int got;
+            long total = 0;
+            while (readBytes > 0 && (got = in.read(buf, 0, readBytes)) > 0) {
+                out.write(buf, 0, got);
+                total += got;
+                if (length > 0) {
+                    readBytes = (int) Math.min(length - total, buf.length);
+                }
+                if (progressMonitor != null) {
+                    progressMonitor.call(total);
+                }
+            }
+            return total;
+        } finally {
+            BufferPool.returnBuffer(buf);
+        }
+    }
 }

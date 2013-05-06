@@ -1,4 +1,4 @@
-package com.l7tech.external.assertions.ssh.server;
+package com.l7tech.server.ssh.client;
 
 import org.junit.Assert;
 import org.junit.Test;

@@ -6,6 +6,8 @@ import com.l7tech.message.CommandKnob;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.MessageProcessor;
 import com.l7tech.server.StashManagerFactory;
+import com.l7tech.server.ssh.client.XmlSshFile;
+import com.l7tech.server.ssh.client.XmlVirtualFileList;
 import com.l7tech.server.util.EventChannel;
 import com.l7tech.server.util.SoapFaultManager;
 import com.l7tech.server.util.ThreadPoolBean;
@@ -750,6 +752,8 @@ class MessageProcessingSftpSubsystem extends SftpSubsystem {
                     if (parsedFile.getSize() != null) virtualSshFile.setSize(parsedFile.getSize());
                     if (parsedFile.getLastModified() != null)
                         virtualSshFile.setLastModified(parsedFile.getLastModified());
+                    if(parsedFile.getPermissions() != null)
+                        virtualSshFile.setPermission(parsedFile.getPermissions());
                     files.add(virtualSshFile);
                 }
             } else {
