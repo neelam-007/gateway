@@ -53,7 +53,6 @@ public class SecurityZoneManagerWindow extends JDialog {
         securityZonesTableModel = TableUtil.configureTable(securityZonesTable,
             column("Name", 40, 140, 99999, propertyTransform(SecurityZone.class, "name")),
             column("Description", 80, 300, 99999, propertyTransform(SecurityZone.class, "description")));
-
         loadSecurityZonesTable();
 
         securityZonesTable.getSelectionModel().addListSelectionListener(enableOrDisableListener);
@@ -117,7 +116,8 @@ public class SecurityZoneManagerWindow extends JDialog {
 
         createButton.addActionListener(ecc.createCreateAction());
         editButton.addActionListener(ecc.createEditAction());
-        removeButton.addActionListener(ecc.createDeleteAction());
+        Utilities.setDoubleClickAction(securityZonesTable, editButton);
+        removeButton.addActionListener(ecc.createDeleteAction(EntityType.SECURITY_ZONE, SecurityZoneManagerWindow.this));
 
         enableOrDisable();
     }

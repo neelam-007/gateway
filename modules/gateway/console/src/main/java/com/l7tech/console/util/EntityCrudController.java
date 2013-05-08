@@ -1,14 +1,20 @@
 package com.l7tech.console.util;
 
+import com.l7tech.console.action.DeleteEntityNodeAction;
 import com.l7tech.gui.SimpleTableModel;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.TableUtil;
 import com.l7tech.objectmodel.DeleteException;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.NamedEntity;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
+import org.apache.commons.lang.WordUtils;
+import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.logging.Level;
@@ -139,26 +145,68 @@ public class EntityCrudController<ET> {
         };
     }
 
+    /**
+     * @return a bare bones delete ActionListener which just deletes the entity on actionPerformed.
+     */
     public ActionListener createDeleteAction() {
+        return createDeleteAction(null, null);
+    }
+
+    /**
+     * Creates a delete action with a confirmation prompt if the entity is a NamedEntity.
+     *
+     * If either/both entityType or parent are null, the delete action will delete without confirmation.
+     *
+     * @param entityType the EntityType of the entity to delete which is used for the confirmation prompt.
+     * @param parent     the Component which is a parent to the input dialog.
+     * @return a delete ActionListener which prompts the user to confirm before deleting the entity on actionPerformed.
+     */
+    public ActionListener createDeleteAction(@Nullable final EntityType entityType, @Nullable final Component parent) {
         return new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 if (entityDeleter != null) {
                     final int rowIndex = entityTable.getSelectedRow();
-                    ET entity = entityTableModel.getRowObject(rowIndex);
+                    final ET entity = entityTableModel.getRowObject(rowIndex);
                     if (entity != null) {
-                        try {
-                            entityDeleter.deleteEntity(entity);
-                        } catch (DeleteException e1) {
-                            final String mess = "Unable to delete: " + ExceptionUtils.getMessage(e1);
-                            logger.log(Level.WARNING, mess, e1);
-                            DialogDisplayer.showMessageDialog(entityTable, mess, null);
+                        if (entity instanceof NamedEntity && entityType != null && parent != null) {
+                            confirmDelete((NamedEntity) entity, entityType, parent);
+                        } else {
+                            delete(entity);
                         }
                     }
-                    entityTableModel.removeRow(entity);
                 }
             }
         };
+    }
+
+    private void confirmDelete(final NamedEntity namedEntity, final EntityType entityType, final Component parent) {
+        final String msg = "Are you sure you wish to delete the " + entityType.getName() + " " + namedEntity.getName() + "?";
+        DialogDisplayer.showSafeConfirmDialog(
+                parent,
+                WordUtils.wrap(msg, DeleteEntityNodeAction.LINE_CHAR_LIMIT, null, true),
+                "Confirm Remove " + entityType.getName(),
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.WARNING_MESSAGE,
+                new DialogDisplayer.OptionListener() {
+                    @Override
+                    public void reportResult(int option) {
+                        if (option == JOptionPane.YES_OPTION) {
+                            delete((ET) namedEntity);
+                        }
+                    }
+                });
+    }
+
+    private void delete(final ET entity) {
+        try {
+            entityDeleter.deleteEntity(entity);
+            entityTableModel.removeRow(entity);
+        } catch (final DeleteException e) {
+            final String mess = "Unable to delete: " + ExceptionUtils.getMessage(e);
+            logger.log(Level.WARNING, mess, e);
+            DialogDisplayer.showMessageDialog(entityTable, mess, null);
+        }
     }
 
     //
