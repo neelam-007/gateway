@@ -69,6 +69,20 @@ class LegacyJmsEndpointListenerImpl extends AbstractJmsEndpointListener {
         }
     }
 
+    @Override
+    public void onMessage(Message message) {
+        try {
+            this.handleMessage(message);
+        } catch (JmsRuntimeException e) {
+            final JMSException jmsException = e.getCause() instanceof JMSException ? (JMSException) e.getCause() : null;
+            String detail = "";
+            if ( jmsException != null ) {
+                detail = ", due to " + JmsUtil.getJMSErrorMessage(jmsException);
+            }
+            _logger.log( Level.WARNING, "Error handling message: " + ExceptionUtils.getMessage( e ) + detail, ExceptionUtils.getDebugException( e ) );
+        }
+    }
+
     MessageProducer getFailureProducer() throws JMSException, NamingException, JmsConfigException, JmsRuntimeException {
         synchronized(sync) {
             if ( _failureProducer == null &&

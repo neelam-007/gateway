@@ -9,13 +9,7 @@ import com.l7tech.server.transport.jms.JmsBag;
 import com.l7tech.server.transport.jms.JmsConfigException;
 import com.l7tech.server.transport.jms.JmsRuntimeException;
 
-import javax.jms.Connection;
-import javax.jms.Destination;
-import javax.jms.JMSException;
-import javax.jms.Message;
-import javax.jms.MessageConsumer;
-import javax.jms.Queue;
-import javax.jms.Session;
+import javax.jms.*;
 import javax.naming.Context;
 import javax.naming.NamingException;
 import java.beans.PropertyChangeEvent;
@@ -37,7 +31,7 @@ import java.util.logging.Logger;
  *
  * @author: vchan
  */
-public abstract class AbstractJmsEndpointListener implements JmsEndpointListener {
+public abstract class AbstractJmsEndpointListener implements JmsEndpointListener, MessageListener {
 
     private final Logger _logger;
 
@@ -489,65 +483,90 @@ public abstract class AbstractJmsEndpointListener implements JmsEndpointListener
         @Override
         public final void run() {
 
-            int oopses = 0;
+            final int[] oopses = {0};
             log(Level.INFO, JmsMessages.INFO_LISTENER_POLLING_START, identify());
 
             try {
                 Message jmsMessage;
                 while ( !isStop() ) {
                     try {
-                        jmsMessage = receiveMessage();
 
-                        log(Level.FINE, JmsMessages.INFO_LISTENER_RECEIVE_MSG,
-                            new Object[]{identify(), jmsMessage == null ? null : jmsMessage.getJMSMessageID()});
+                        if (_endpointCfg.getEndpoint().isQueue()) {
+                            //Process Queue
+                            jmsMessage = receiveMessage();
 
-                        if ( jmsMessage != null && !isStop() ) {
+                            log(Level.FINE, JmsMessages.INFO_LISTENER_RECEIVE_MSG,
+                                new Object[]{identify(), jmsMessage == null ? null : jmsMessage.getJMSMessageID()});
 
-                            oopses = 0;
+                            if ( jmsMessage != null && !isStop() ) {
 
-                            // process on the message
-                            handleMessage(jmsMessage);
+                                oopses[0] = 0;
+
+                                // process on the message
+                                handleMessage(jmsMessage);
+
+                            }
+                        } else {
+                            //Process Topic
+                            if (_consumer == null) {
+                                getConsumer();
+                                ensureConnectionStarted();
+                                _consumer.setMessageListener(AbstractJmsEndpointListener.this);
+                                getJmsBag().getConnection().setExceptionListener(new ExceptionListener() {
+                                    @Override
+                                    public void onException(JMSException e) {
+                                        handleError(e, oopses);
+                                    }
+                                });
+                                oopses[0] = 0;
+                            } else {
+                                Thread.sleep(RECEIVE_TIMEOUT);
+                            }
 
                         }
                     } catch ( Throwable e ) {
-                        if (ExceptionUtils.causedBy(e, InterruptedException.class)) {
-                            log(Level.FINE, "JMS listener on {0} caught throwable: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-                            continue;
-                        }
-
-                        if (!ExceptionUtils.causedBy(e, RejectedExecutionException.class)) {
-                            log(Level.WARNING, formatMessage(
-                                    JmsMessages.WARN_LISTENER_RECEIVE_ERROR,
-                                    identify()),
-                                    ExceptionUtils.getDebugException(e));
-
-                            cleanup();
-                        }
-
-                        if ( ++oopses < MAXIMUM_OOPSES ) {
-                            // sleep for a short period of time before retrying
-                            log(Level.FINE, "JMS listener on {0} sleeping for {1} milliseconds.", new Object[]{_endpointCfg.getEndpoint(), OOPS_RETRY});
-                            try {
-                                Thread.sleep(OOPS_RETRY);
-                            } catch ( InterruptedException e1 ) {
-                                log(Level.INFO, JmsMessages.INFO_LISTENER_POLLING_INTERRUPTED, new Object[] {"retry interval"});
-                            }
-
-                        } else {
-                            // max oops reached .. sleep for a longer period of time before retrying
-                            int sleepTime = oopsSleep.get();
-                            log(Level.WARNING, JmsMessages.WARN_LISTENER_MAX_OOPS_REACHED, new Object[] {_endpointCfg.getEndpoint(), MAXIMUM_OOPSES, sleepTime });
-                            try {
-                                Thread.sleep(sleepTime);
-                            } catch ( InterruptedException e1 ) {
-                                log(Level.INFO, JmsMessages.INFO_LISTENER_POLLING_INTERRUPTED, new Object[] {"sleep interval"});
-                            }
-                        }
+                        handleError(e, oopses);
                     }
                 }
             } finally {
                 log(Level.INFO, JmsMessages.INFO_LISTENER_POLLING_STOP, identify());
                 cleanup();
+            }
+        }
+    }
+
+    protected void handleError(Throwable e, int[] oopses) {
+        if (ExceptionUtils.causedBy(e, InterruptedException.class)) {
+            log(Level.FINE, "JMS listener on {0} caught throwable: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            return;
+        }
+
+        if (!ExceptionUtils.causedBy(e, RejectedExecutionException.class)) {
+            log(Level.WARNING, formatMessage(
+                    JmsMessages.WARN_LISTENER_RECEIVE_ERROR,
+                    identify()),
+                    ExceptionUtils.getDebugException(e));
+
+            cleanup();
+        }
+
+        if ( ++oopses[0] < MAXIMUM_OOPSES ) {
+            // sleep for a short period of time before retrying
+            log(Level.FINE, "JMS listener on {0} sleeping for {1} milliseconds.", new Object[]{_endpointCfg.getEndpoint(), OOPS_RETRY});
+            try {
+                Thread.sleep(OOPS_RETRY);
+            } catch ( InterruptedException e1 ) {
+                log(Level.INFO, JmsMessages.INFO_LISTENER_POLLING_INTERRUPTED, new Object[] {"retry interval"});
+            }
+
+        } else {
+            // max oops reached .. sleep for a longer period of time before retrying
+            int sleepTime = oopsSleep.get();
+            log(Level.WARNING, JmsMessages.WARN_LISTENER_MAX_OOPS_REACHED, new Object[] {_endpointCfg.getEndpoint(), MAXIMUM_OOPSES, sleepTime });
+            try {
+                Thread.sleep(sleepTime);
+            } catch ( InterruptedException e1 ) {
+                log(Level.INFO, JmsMessages.INFO_LISTENER_POLLING_INTERRUPTED, new Object[] {"sleep interval"});
             }
         }
     }

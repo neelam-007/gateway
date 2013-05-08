@@ -3,6 +3,7 @@ package com.l7tech.server.transport.jms2.asynch;
 import com.l7tech.server.transport.jms.JmsBag;
 import com.l7tech.server.transport.jms.JmsConfigException;
 import com.l7tech.server.transport.jms.JmsRuntimeException;
+import com.l7tech.server.transport.jms.JmsUtil;
 import com.l7tech.server.transport.jms2.AbstractJmsEndpointListener;
 import com.l7tech.server.transport.jms2.JmsEndpointConfig;
 import com.l7tech.server.transport.jms2.JmsMessages;
@@ -90,6 +91,34 @@ class PooledJmsEndpointListenerImpl extends AbstractJmsEndpointListener {
             _logger.log(Level.WARNING, "Cannot submit JmsTask to queue as it has been shutdown", ExceptionUtils.getDebugException(e));
             task.cleanup();
             throw new JmsRuntimeException(e);
+        }
+    }
+
+    /**
+     * Handle message for topic
+     * @param message The received message
+     */
+    @Override
+    public void onMessage(Message message) {
+        try {
+            try {
+                //Process message synchronously with the same session.
+                JmsTask task = new JmsTask(_endpointCfg, new JmsTaskBag(_jmsBag), message, getFailureQueue(),null, null );
+                task.run();
+            } catch (NamingException e) {
+                throw new JmsRuntimeException(e);
+            } catch (JmsConfigException e) {
+                throw new JmsRuntimeException(e);
+            } catch (JMSException e) {
+                throw new JmsRuntimeException(e);
+            }
+        } catch (JmsRuntimeException e) {
+            final JMSException jmsException = e.getCause() instanceof JMSException ? (JMSException) e.getCause() : null;
+            String detail = "";
+            if ( jmsException != null ) {
+                detail = ", due to " + JmsUtil.getJMSErrorMessage(jmsException);
+            }
+            _logger.log( Level.WARNING, "Error handling message: " + ExceptionUtils.getMessage( e ) + detail, ExceptionUtils.getDebugException( e ) );
         }
     }
 
