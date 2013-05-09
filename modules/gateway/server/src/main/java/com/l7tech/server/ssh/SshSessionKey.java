@@ -6,7 +6,6 @@ import java.util.List;
 
 /**
  * This is the key used to identify and create an ssh session.
- * TODO: investigate if all these items need to be here.
  *
  * @author Victor Kazakov
  */
