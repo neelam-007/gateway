@@ -16,6 +16,8 @@ import static com.l7tech.util.Functions.reduce;
  */
 public class SshSessionFactory implements KeyedPoolableObjectFactory<SshSessionKey, SshSession> {
     protected static final java.util.logging.Logger jschLogger = java.util.logging.Logger.getLogger(JSch.class.getName());
+    //This is the default keep alive time for passive/idle ssh sessions
+    private static final int DEFAULT_SOCKET_KEEP_ALIVE = 300000;
 
     static {
         //Sets the JSch logger so that we can appropriately log messages from JSch
@@ -143,12 +145,12 @@ public class SshSessionFactory implements KeyedPoolableObjectFactory<SshSessionK
 
     @Override
     public void activateObject(SshSessionKey key, SshSession session) throws Exception {
-        // do nothing to activate
+        session.setSocketTimeout(key.getSocketTimeout());
     }
 
     @Override
     public void passivateObject(SshSessionKey key, SshSession session) throws Exception {
-        // do nothing to passivate
+        session.setSocketTimeout(DEFAULT_SOCKET_KEEP_ALIVE);
     }
 
     /**

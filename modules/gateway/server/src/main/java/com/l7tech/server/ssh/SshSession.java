@@ -81,4 +81,14 @@ public class SshSession implements AutoCloseable {
     public void connect(int connectionTimeout) throws JSchException {
         session.connect(connectionTimeout);
     }
+
+    /**
+     * Set the socket timeout of this session.
+     *
+     * @param timeout The socket timeout in milliseconds
+     * @throws JSchException
+     */
+    public void setSocketTimeout(int timeout) throws JSchException {
+        session.setTimeout(timeout);
+    }
 }

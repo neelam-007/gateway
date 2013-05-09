@@ -75,7 +75,7 @@ public class SshSessionKey {
         return compressionAlgorithms;
     }
 
-    // The connectionTimeout does not need to be checked here.
+    // The connectionTimeout and socketTimeout does not need to be checked here.
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -84,7 +84,6 @@ public class SshSessionKey {
         SshSessionKey that = (SshSessionKey) o;
 
         if (port != that.port) return false;
-        if (socketTimeout != that.socketTimeout) return false;
         if (compressionAlgorithms != null ? !compressionAlgorithms.equals(that.compressionAlgorithms) : that.compressionAlgorithms != null)
             return false;
         if (encryptionAlgorithms != null ? !encryptionAlgorithms.equals(that.encryptionAlgorithms) : that.encryptionAlgorithms != null)
@@ -100,14 +99,13 @@ public class SshSessionKey {
         return true;
     }
 
-    // The connectionTimeout does not need to be considered here.
+    // The connectionTimeout and socketTimeout does not need to be considered here.
     @Override
     public int hashCode() {
         int result = user != null ? user.hashCode() : 0;
         result = 31 * result + (host != null ? host.hashCode() : 0);
         result = 31 * result + port;
         result = 31 * result + (passwordOrPrivateKey != null ? passwordOrPrivateKey.hashCode() : 0);
-        result = 31 * result + socketTimeout;
         result = 31 * result + (fingerPrint != null ? fingerPrint.hashCode() : 0);
         result = 31 * result + (encryptionAlgorithms != null ? encryptionAlgorithms.hashCode() : 0);
         result = 31 * result + (macAlgorithms != null ? macAlgorithms.hashCode() : 0);
