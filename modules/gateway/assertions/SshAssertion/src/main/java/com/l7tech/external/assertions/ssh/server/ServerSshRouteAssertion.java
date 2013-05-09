@@ -116,10 +116,17 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
         final CommandKnob.CommandType commandType;
         final Map<String, ?> variables = context.getVariableMap(variablesUsed, getAudit());
         if (assertion.isRetrieveCommandTypeFromVariable()) {
+            final String commandTypeString;
+            try{
+                commandTypeString = context.getVariable(assertion.getCommandTypeVariableName()).toString();
+            } catch (NoSuchVariableException e){
+                logAndAudit(SSH_ROUTING_ERROR, "Command type variable not found: " + assertion.getCommandTypeVariableName());
+                return AssertionStatus.BAD_REQUEST;
+            }
             try {
-                commandType = CommandKnob.CommandType.valueOf(context.getVariable(assertion.getCommandTypeVariableName()).toString());
+                commandType = CommandKnob.CommandType.valueOf(commandTypeString);
             } catch (Exception e) {
-                logAndAudit(SSH_ROUTING_ERROR, "Invalid command type given: " + ExpandVariables.process(assertion.getCommandTypeVariableName(), variables, getAudit()));
+                logAndAudit(SSH_ROUTING_ERROR, "Invalid command type given: " + commandTypeString);
                 return AssertionStatus.BAD_REQUEST;
             }
         } else {
@@ -183,10 +190,8 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
                         final SshKnob sshKnob = request.getKnob(SshKnob.class);
                         performPutCommand(sshClient, fileName, directory, mimeKnob, variables, assertion.isPreserveFileMetadata() && sshKnob != null ? sshKnob.getFileMetadata() : null);
                     } else if (assertion.isScpProtocol()) {
-                        if (assertion.isScpProtocol()) {
-                            logAndAudit(SSH_ROUTING_ERROR, "Unsupported SCP command type: " + commandType);
-                            return AssertionStatus.BAD_REQUEST;
-                        }
+                        logAndAudit(SSH_ROUTING_ERROR, "Unsupported SCP command type: " + commandType);
+                        return AssertionStatus.BAD_REQUEST;
                     } else {
                         switch (commandType) {
                             case LIST: {
@@ -410,7 +415,7 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
         final CountDownLatch gotData = new CountDownLatch(1);
         //Save the file size to a context variable.
         final FileTransferProgressMonitor progressMonitor;
-        final AtomicLong fileSize = new AtomicLong();
+        final AtomicLong fileSize = new AtomicLong(-1);
         progressMonitor = new FileTransferProgressMonitor() {
             @Override
             public void start(int op, XmlSshFile file) {
@@ -461,13 +466,14 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
                     new String[]{"Error opening file stream: " + getMessage(exceptionThrown)}, getDebugException(exceptionThrown));
             throw new AssertionStatusException(AssertionStatus.FAILED);
         }
-        if (assertion.isSetFileSizeToContextVariable()) {
+        if (assertion.isSetFileSizeToContextVariable() && fileSize.get() >= 0) {
             context.setVariable(assertion.getSaveFileSizeContextVariable(), fileSize.get());
         }
         //Create the response message
         final Message response = context.getOrCreateTargetMessage(assertion.getResponseTarget(), false);
         //need to do file size + 1 because of how the ByteLimitInput stream works. It starts throwing exceptions when the given amount of bytes are read (used >= in comparison). So add one to avoid exceptions thrown.
-        response.initialize(stashManagerFactory.createStashManager(), ContentTypeHeader.create(assertion.getDownloadContentType()), pis, fileSize.get() + 1);
+        //if the file size was never set (==-1) then return the byte limit. If the file size is set and the byte limit is unlimited (0) return the file size. if the file size is set and the byte limit is set return the minimum of the two.
+        response.initialize(stashManagerFactory.createStashManager(), ContentTypeHeader.create(assertion.getDownloadContentType()), pis, fileSize.get() >= 0 ? byteLimit > 0 ? Math.min(fileSize.get() + 1, byteLimit) : fileSize.get() + 1 : byteLimit);
     }
 
     /**
