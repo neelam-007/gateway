@@ -24,15 +24,15 @@ public class SshSessionPool extends GenericKeyedObjectPool implements PropertyCh
     public static final String SSH_SESSION_POOL_MIN_EVICTABLE_IDLE_TIME_MILLIS = "ssh.session.pool.minEvictableIdleTimeMillis";
 
     // DEFAULTS
-    public static final int DEFAULT_SSH_SESSION_POOL_MAX_ACTIVE = 8;
-    public static final String DEFAULT_SSH_SESSION_POOL_WHEN_EXHAUSTED_ACTION = "BLOCK";
-    public static final int DEFAULT_SSH_SESSION_POOL_MAX_WAIT = 5000;
-    public static final int DEFAULT_SSH_SESSION_POOL_MAX_IDLE = 8;
+    public static final int DEFAULT_SSH_SESSION_POOL_MAX_ACTIVE = 10;
+    public static final String DEFAULT_SSH_SESSION_POOL_WHEN_EXHAUSTED_ACTION = "FAIL";
+    public static final int DEFAULT_SSH_SESSION_POOL_MAX_WAIT = 60000;
+    public static final int DEFAULT_SSH_SESSION_POOL_MAX_IDLE = -1;
     public static final int DEFAULT_SSH_SESSION_POOL_MAX_TOTAL = -1;
-    public static final int DEFAULT_SSH_SESSION_POOL_MIN_IDLE = 0;
+    public static final int DEFAULT_SSH_SESSION_POOL_MIN_IDLE = 1;
     public static final long DEFAULT_SSH_SESSION_POOL_TIME_BETWEEN_EVICTION_RUNS_MILLIS = 30 * 60 * 1000L;
     public static final int DEFAULT_SSH_SESSION_POOL_NUM_TESTS_PER_EVICTION_RUN = -1;
-    public static final long DEFAULT_SSH_SESSION_POOL_MIN_EVICTABLE_IDLE_TIME_MILLIS = 30 * 60 * 1000L;
+    public static final long DEFAULT_SSH_SESSION_POOL_MIN_EVICTABLE_IDLE_TIME_MILLIS = 10 * 60 * 1000L;
 
     private com.l7tech.util.Config config;
 
