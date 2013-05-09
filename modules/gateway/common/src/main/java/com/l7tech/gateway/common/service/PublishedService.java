@@ -100,6 +100,7 @@ public class PublishedService extends ZoneableNamedEntityImp implements Flushabl
         setFolder(objToCopy.getFolder());
         _wsdlUrl = objToCopy._wsdlUrl;
         setWsdlXml(objToCopy.getWsdlXml());
+        setSecurityZone(objToCopy.getSecurityZone());
         if (lock) {
             PersistentEntityUtil.lock(policy);
             lock();

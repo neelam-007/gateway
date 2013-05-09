@@ -42,6 +42,9 @@ public class AuditRecordTest {
 
             // This one apparently IS included but this test currently does not appear to permute it properly
             "strRequestId",
+
+            // Security zone is just for SSM rbac
+            "securityZone"
     };
 
     int ordinal = 1;

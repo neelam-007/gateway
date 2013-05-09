@@ -1,8 +1,10 @@
 package com.l7tech.server.audit;
 
 import com.l7tech.gateway.common.audit.*;
+import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.server.ServerConfigParams;
+import com.l7tech.server.service.ServiceCache;
 import com.l7tech.util.*;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
@@ -20,6 +22,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import javax.inject.Inject;
+import javax.inject.Provider;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.sql.Connection;
@@ -59,6 +63,19 @@ public class AuditRecordManagerImpl
     private ValidatedConfig validatedConfig;
 
     //- PUBLIC
+
+    @Override
+    public AuditRecord findByPrimaryKey(final long oid) throws FindException {
+        final AuditRecord found = super.findByPrimaryKey(oid);
+        if (found != null && found instanceof MessageSummaryAuditRecord) {
+            final MessageSummaryAuditRecord messageSummary = (MessageSummaryAuditRecord) found;
+            final PublishedService cachedService = serviceCache.get().getCachedService(messageSummary.getServiceOid());
+            if (cachedService != null) {
+                messageSummary.setSecurityZone(cachedService.getSecurityZone());
+            }
+        }
+        return found;
+    }
 
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) {
@@ -511,6 +528,11 @@ public class AuditRecordManagerImpl
     private static final Logger logger = Logger.getLogger(AuditRecordManagerImpl.class.getName());
     private Config config;
     private ApplicationContext applicationContext;
+    /**
+     * Using Provider with Inject to work around circular dependency issues. ServiceCache will not be retrieved until it is needed.
+     */
+    @Inject
+    private Provider<ServiceCache> serviceCache;
     private long messageLimitSize;
 
     @Override

@@ -1717,6 +1717,7 @@
             </bean>
         </property>
         <property name="encapsulatedAssertionConfigManager" ref="encapsulatedAssertionConfigManager"/>
+        <property name="auditRecordManager" ref="auditRecordManager"/>
     </bean>
 
     <bean id="applicationEventProxy" class="com.l7tech.server.util.ApplicationEventProxy" primary="true"/>

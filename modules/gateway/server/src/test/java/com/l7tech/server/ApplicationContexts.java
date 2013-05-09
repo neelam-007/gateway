@@ -64,6 +64,18 @@ public class ApplicationContexts {
      */
     public static <B> B inject( final B bean,
                                 final Map<String,?> beans ) {
+        return inject(bean, beans, true);
+    }
+
+    /**
+     * @see #inject(Object, java.util.Map) but allows you to specify if a dependency check on the bean should be performed.
+     * @param bean the object to inject.
+     * @param beans the injectable dependencies.
+     * @param dependencyCheck whether to perform a dependency check on the bean.
+     * @param <B> the bean type.
+     * @return the injected bean.
+     */
+    public static <B> B inject( final B bean, final Map<String,?> beans, final boolean dependencyCheck) {
         final DefaultListableBeanFactory factory = new DefaultListableBeanFactory();
         final AutowiredAnnotationBeanPostProcessor autowiredAnnotationBeanPostProcessor = new AutowiredAnnotationBeanPostProcessor();
         autowiredAnnotationBeanPostProcessor.setBeanFactory( factory );
@@ -71,7 +83,7 @@ public class ApplicationContexts {
         final Injector injector = new Injector() {
             @Override
             public void inject( final Object target ) {
-                factory.autowireBeanProperties( bean, AutowireCapableBeanFactory.AUTOWIRE_NO, true );
+                factory.autowireBeanProperties( bean, AutowireCapableBeanFactory.AUTOWIRE_NO, dependencyCheck );
             }
         };
         factory.registerSingleton( "injector", injector );

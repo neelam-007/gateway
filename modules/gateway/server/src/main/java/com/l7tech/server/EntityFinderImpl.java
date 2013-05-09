@@ -13,6 +13,7 @@ import com.l7tech.policy.PolicyUtil;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.UsesEntitiesAtDesignTime;
 import com.l7tech.security.token.SecurityTokenType;
+import com.l7tech.server.audit.AuditRecordManager;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.policy.EncapsulatedAssertionConfigManager;
 import com.l7tech.server.policy.PolicyManager;
@@ -49,6 +50,7 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
     private PolicyManager policyManager;
     private SsgKeyStoreManager keyStoreManager;
     private EncapsulatedAssertionConfigManager encapsulatedAssertionConfigManager;
+    private AuditRecordManager auditRecordManager;
 
     private static final int MAX_RESULTS = 100;
 
@@ -66,6 +68,10 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
 
     public void setKeyStoreManager(SsgKeyStoreManager keyStoreManager) {
         this.keyStoreManager = keyStoreManager;
+    }
+
+    public void setAuditRecordManager(@NotNull final AuditRecordManager auditRecordManager) {
+        this.auditRecordManager = auditRecordManager;
     }
 
     @Override
@@ -202,9 +208,9 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
                        "fake", false, 0L, null, null, "fake", "0.0.0.0");
             }
             throw new FindException("Error looking audit record type: " + auditHeader.getRecordType());
-        }
-        else
-        {
+        } else if(header instanceof AuditRecordHeader) {
+            return auditRecordManager.findByHeader(header);
+        } else {
             return find(EntityTypeRegistry.getEntityClass(header.getType()), header.getStrId());
         }
     }

@@ -7,16 +7,16 @@
 package com.l7tech.gateway.common.audit;
 
 import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.objectmodel.SecurityZone;
+import com.l7tech.objectmodel.ZoneableEntity;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.gateway.common.service.PublishedService;
-import com.l7tech.gateway.common.mapping.MessageContextMappingValues;
-import com.l7tech.gateway.common.mapping.MessageContextMapping;
-import com.l7tech.gateway.common.mapping.MessageContextMappingKeys;
 import com.l7tech.common.http.HttpConstants;
 import com.l7tech.security.token.SecurityTokenType;
+import org.jetbrains.annotations.Nullable;
 
+import javax.persistence.Transient;
 import java.util.logging.Level;
-import java.util.List;
 import java.io.OutputStream;
 import java.io.IOException;
 
@@ -31,7 +31,7 @@ import java.io.IOException;
  * @author alex
  * @version $Revision$
  */
-public class MessageSummaryAuditRecord extends AuditRecord {
+public class MessageSummaryAuditRecord extends AuditRecord implements ZoneableEntity {
     public static final String ATTR_SERVICE_OID = "serviceOid";
 
     /** @deprecated to be called only for serialization and persistence purposes! */
@@ -218,6 +218,19 @@ public class MessageSummaryAuditRecord extends AuditRecord {
     }
 
     /**
+     * Security zone is inherited from the PublishedService that produced this message summary but not mapped by Hibernate for performance reasons.
+     *
+     * Callers who care about the SecurityZone must ensure that it is attached prior to use.
+     *
+     * @return the SecurityZone of the PublishedService that produced this message summary. May be null if the SecurityZone was not attached or the PublishedService has no SecurityZone.
+     */
+    @Nullable
+    @Transient
+    public SecurityZone getSecurityZone() {
+        return securityZone;
+    }
+
+    /**
      * Property may be modified by the Audit Message Filter Policy.
      */
     public void setResponseXml( String responseXml ) {
@@ -266,6 +279,9 @@ public class MessageSummaryAuditRecord extends AuditRecord {
         this.routingLatency = routingLatency;
     }
 
+    public void setSecurityZone(@Nullable final SecurityZone securityZone) {
+        this.securityZone = securityZone;
+    }
 
     /**
      * Get the associated original policy enforcement context; used while running within the Gateway.
@@ -329,6 +345,8 @@ public class MessageSummaryAuditRecord extends AuditRecord {
 
     /** Holds the original policy enforcement context for Message Summary Audit Records. */
     private transient Object originalPolicyEnforcementContext;
+
+    private SecurityZone securityZone;
 
     @Override
     public void serializeOtherProperties(OutputStream out, boolean includeAllOthers) throws IOException {

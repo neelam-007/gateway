@@ -48,4 +48,11 @@ public class PublishedServiceTest {
         s2.setSecurityZone(zone);
         assertEquals(s1.hashCode(), s2.hashCode());
     }
+
+    @Test
+    public void copyConstructorSetsSecurityZone() {
+        s1.setSecurityZone(zone);
+        final PublishedService copy = new PublishedService(s1);
+        assertEquals(zone, copy.getSecurityZone());
+    }
 }
