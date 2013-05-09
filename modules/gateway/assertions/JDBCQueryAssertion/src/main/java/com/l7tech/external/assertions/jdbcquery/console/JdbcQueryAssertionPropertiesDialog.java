@@ -23,6 +23,7 @@ import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.AbstractTableModel;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.text.JTextComponent;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -68,6 +69,7 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
     private JCheckBox schemaCheckBox;
     private JTextField queryTimeoutTextField;
     private JLabel queryWarningLabel;
+    private JCheckBox saveResultsToContextCheckBox;
 
     private NamingTableModel namingTableModel;
     private Map<String, String> namingMap;
@@ -106,6 +108,7 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
     protected void configureView() {
         enableOrDisableOkButton();
         enableOrDisableTableButtons();
+        enableOrDisableNamingTable();
         enableOrDisableJdbcConnList();
         enableOrDisableQueryControls();
     }
@@ -228,6 +231,29 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
                 doCancel();
             }
         });
+
+        saveResultsToContextCheckBox.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                //Note that enabling or disabling the namingTable has no effect.
+                enableOrDisableTableButtons();
+                enableOrDisableNamingTable();
+            }
+        });
+        namingTable.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
+            public Component getTableCellRendererComponent
+                    (JTable table, Object value, boolean selected, boolean focused, int row, int column) {
+                setEnabled(table.isEnabled());
+                return super.getTableCellRendererComponent(table, value, selected, focused, row, column);
+            }
+        });
+    }
+
+    private void enableOrDisableNamingTable() {
+        final boolean saveResultsToContextVariable = saveResultsToContextCheckBox.isSelected();
+        namingTable.setEnabled(saveResultsToContextVariable);
+        namingTable.getTableHeader().setForeground(saveResultsToContextVariable ? Color.BLACK : Color.GRAY);
+        namingTable.repaint();
     }
 
     private void modelToView() {
@@ -248,6 +274,7 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
         }
         failAssertionCheckBox.setSelected(assertion.isAssertionFailureEnabled());
         generateResultsAsXMLCheckBox.setSelected(assertion.isGenerateXmlResult());
+        saveResultsToContextCheckBox.setSelected(assertion.isSaveResultsAsContextVariables());
         queryNameTextField.setText(assertion.getQueryName());
         convertVariablesToStringsCheckBox.setSelected(assertion.isConvertVariablesToStrings());
 
@@ -282,6 +309,7 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
         assertion.setQueryTimeout(("0".equals(queryTimeout)) ? null : queryTimeout);
         assertion.setAssertionFailureEnabled(failAssertionCheckBox.isSelected());
         assertion.setGenerateXmlResult(generateResultsAsXMLCheckBox.isSelected());
+        assertion.setSaveResultsAsContextVariables(saveResultsToContextCheckBox.isSelected());
         assertion.setQueryName(queryNameTextField.getText());
         assertion.setConvertVariablesToStrings(convertVariablesToStringsCheckBox.isSelected());
         final String schemaValue = schemaTextField.getText().trim();
@@ -424,10 +452,11 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
 
     private void enableOrDisableTableButtons() {
         int selectedRow = namingTable.getSelectedRow();
+        boolean saveResultsToContextVariable = saveResultsToContextCheckBox.isSelected();
 
-        boolean addEnabled = true;
-        boolean editEnabled = selectedRow >= 0;
-        boolean removeEnabled = selectedRow >= 0;
+        boolean addEnabled = saveResultsToContextVariable;
+        boolean editEnabled = saveResultsToContextVariable && selectedRow >= 0;
+        boolean removeEnabled = saveResultsToContextVariable && selectedRow >= 0;
 
         addButton.setEnabled(addEnabled);
         editButton.setEnabled(editEnabled);

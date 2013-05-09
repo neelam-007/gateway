@@ -42,6 +42,7 @@ public class JdbcQueryAssertion extends Assertion implements JdbcConnectionable,
     private boolean generateXmlResult;
     private String schema;
     private String queryTimeout;
+    private boolean saveResultsAsContextVariables = true;
 
     //default to true to support pre-fangtooth assertions
     private boolean convertVariablesToStrings = true;
@@ -62,6 +63,8 @@ public class JdbcQueryAssertion extends Assertion implements JdbcConnectionable,
         copy.setQueryName(queryName);
         copy.setNamingMap(copyMap(namingMap));
         copy.setSchema(schema);
+        copy.setGenerateXmlResult(generateXmlResult);
+        copy.setSaveResultsAsContextVariables(saveResultsAsContextVariables);
         return copy;
     }
 
@@ -76,6 +79,8 @@ public class JdbcQueryAssertion extends Assertion implements JdbcConnectionable,
         setNamingMap(copyMap(source.getNamingMap()));
         setEnabled(source.isEnabled());
         setSchema(source.getSchema());
+        setGenerateXmlResult(source.isGenerateXmlResult());
+        setSaveResultsAsContextVariables(source.isSaveResultsAsContextVariables());
     }
 
     @Override
@@ -188,15 +193,25 @@ public class JdbcQueryAssertion extends Assertion implements JdbcConnectionable,
         this.resolveAsObjectList = resolveAsObjectList;
     }
 
+    public boolean isSaveResultsAsContextVariables() {
+        return saveResultsAsContextVariables;
+    }
+
+    public void setSaveResultsAsContextVariables(boolean saveResultsAsContextVariables) {
+        this.saveResultsAsContextVariables = saveResultsAsContextVariables;
+    }
+
     @Override
     public VariableMetadata[] getVariablesSet() {
         List<VariableMetadata> varMeta = new ArrayList<VariableMetadata>();
         varMeta.add(new VariableMetadata(variablePrefix + "." + VARIABLE_COUNT, false, false, null, false, DataType.INTEGER));
 
-        for (String key : namingMap.keySet()) {
-            String varName = namingMap.get(key);
-            boolean multi_valued = !key.endsWith(VARIABLE_COUNT);
-            varMeta.add(new VariableMetadata(variablePrefix + "." + varName, false, multi_valued, null, false, DataType.STRING));
+        if(saveResultsAsContextVariables){
+            for (String key : namingMap.keySet()) {
+                String varName = namingMap.get(key);
+                boolean multi_valued = !key.endsWith(VARIABLE_COUNT);
+                varMeta.add(new VariableMetadata(variablePrefix + "." + varName, false, multi_valued, null, false, DataType.STRING));
+            }
         }
         
         if(generateXmlResult){

@@ -375,19 +375,27 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
      */
     int setContextVariables(Map<String, List<Object>> resultSet, PolicyEnforcementContext context) throws SQLException {
         if (context == null) throw new IllegalStateException("Policy Enforcement Context cannot be null.");
+        final boolean saveResultsAsContextVariables = assertion.isSaveResultsAsContextVariables();
 
-        Map<String, String> newNamingMap = getNewMapping(resultSet);
+        final Map<String, String> newNamingMap;
+        if(saveResultsAsContextVariables) {
+            newNamingMap = getNewMapping(resultSet);
+        } else {
+            newNamingMap = null;
+        }
 
         // Assign the results to context variables
         String varPrefix = getVariablePrefix(context);
         int row = 0;
         for (String columnName : resultSet.keySet()) {
-            if (logger.isLoggable(Level.FINER)) {
+            if (logger.isLoggable(Level.FINER) && saveResultsAsContextVariables) {
                 logger.log(Level.FINER, varPrefix + "." + newNamingMap.get(columnName.toLowerCase()) + resultSet.get(columnName).toArray());
             }
             if (resultSet.get(columnName) != null) {
                 row = resultSet.get(columnName).size();
-                context.setVariable(varPrefix + "." + newNamingMap.get(columnName.toLowerCase()), resultSet.get(columnName).toArray());
+                if(saveResultsAsContextVariables){
+                    context.setVariable(varPrefix + "." + newNamingMap.get(columnName.toLowerCase()), resultSet.get(columnName).toArray());
+                }
             } else {
                 logger.log(Level.FINER, columnName + " result list was null");
             }
@@ -398,26 +406,36 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
 
     int setContextVariables(SqlRowSet resultSet, PolicyEnforcementContext context, final String resultSetPrefix) throws SQLException {
         if (context == null) throw new IllegalStateException("Policy Enforcement Context cannot be null.");
+        final boolean saveResultsAsContextVariables = assertion.isSaveResultsAsContextVariables();
 
-        Map<String, String> newNamingMap = getNewMapping(resultSet);
+        final Map<String, String> newNamingMap;
+        final Map<String, List<Object>> results;
+        if(saveResultsAsContextVariables) {
+            newNamingMap = getNewMapping(resultSet);
 
-        // Get results
-        Map<String, List<Object>> results = new HashMap<String, List<Object>>(newNamingMap.size());
-        for (String column : newNamingMap.keySet()) results.put(column, new ArrayList<Object>());
+            // Get results
+            results = new HashMap<String, List<Object>>(newNamingMap.size());
+            for (String column : newNamingMap.keySet()) results.put(column, new ArrayList<Object>());
+        } else {
+            newNamingMap = null;
+            results = null;
+        }
 
         int maxRecords = assertion.getMaxRecords();
         int row = 0;
         while (resultSet.next() && row < maxRecords) {
-            for (String columnName : newNamingMap.keySet()) {
-                final List<Object> rows = results.get(columnName);
-                final Object value = resultSet.getObject(columnName);
-                //TODO - what other types may not be directly applicable as-is?
-                if (value instanceof Clob) {
-                    rows.add(getClobStringValue((Clob) value));
-                } else if (value instanceof Blob) {
-                    rows.add(getBlobValue((Blob) value));
-                } else {
-                    rows.add(value);
+            if(saveResultsAsContextVariables) {
+                for (String columnName : newNamingMap.keySet()) {
+                    final List<Object> rows = results.get(columnName);
+                    final Object value = resultSet.getObject(columnName);
+                    //TODO - what other types may not be directly applicable as-is?
+                    if (value instanceof Clob) {
+                        rows.add(getClobStringValue((Clob) value));
+                    } else if (value instanceof Blob) {
+                        rows.add(getBlobValue((Blob) value));
+                    } else {
+                        rows.add(value);
+                    }
                 }
             }
             row++;
@@ -425,11 +443,13 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
 
         // Assign the results to context variables
         String varPrefix = getVariablePrefix(context);
-        for (String column : results.keySet()) {
-            if (logger.isLoggable(Level.FINER)) {
-                logger.log(Level.FINER, varPrefix + resultSetPrefix + "." + newNamingMap.get(column.toLowerCase()) + results.get(column).toArray());
+        if(saveResultsAsContextVariables) {
+            for (String column : results.keySet()) {
+                if (logger.isLoggable(Level.FINER)) {
+                    logger.log(Level.FINER, varPrefix + resultSetPrefix + "." + newNamingMap.get(column.toLowerCase()) + results.get(column).toArray());
+                }
+                context.setVariable(varPrefix + resultSetPrefix + "." + newNamingMap.get(column.toLowerCase()), results.get(column).toArray());
             }
-            context.setVariable(varPrefix + resultSetPrefix + "." + newNamingMap.get(column.toLowerCase()), results.get(column).toArray());
         }
         context.setVariable(varPrefix + resultSetPrefix + "." + JdbcQueryAssertion.VARIABLE_COUNT, row);
 

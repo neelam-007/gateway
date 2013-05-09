@@ -1354,4 +1354,118 @@ public class ServerJdbcQueryAssertionTest {
         results.put("outparam", "output param1");
         return results;
     }
+
+    @BugId("SSM-4297")
+    @Test
+    public void testOptionalContextVariables() throws Exception {
+        PolicyEnforcementContext context = makeContext("<xml />", "<xml />");
+
+        GenericApplicationContext applicationContext = new GenericApplicationContext(new SimpleSingletonBeanFactory(new HashMap<String, Object>() {{
+            put("jdbcQueryingManager", jdbcQueryingManager);
+            put("jdbcConnectionManager", connectionManager);
+            put("serverConfig", ConfigFactory.getCachedConfig());
+        }}));
+        when(jdbcQueryingManager.performJdbcQuery(anyString(), anyString(), anyString(), anyInt(), anyInt(), anyListOf(Object.class))).thenReturn(getMockResults());
+
+        JdbcQueryAssertion assertion = this.assertion.clone();
+        assertion.setSaveResultsAsContextVariables(true);
+        assertion.setGenerateXmlResult(true);
+        ServerJdbcQueryAssertion serverAssertion = new ServerJdbcQueryAssertion(assertion, applicationContext);
+
+        AssertionStatus assertionStatus = serverAssertion.checkRequest(context);
+        assertEquals(AssertionStatus.NONE, assertionStatus);
+        assertEquals(1, ((Object[]) context.getVariable("jdbcQuery.id"))[0]);
+        assertEquals("name1", ((Object[]) context.getVariable("jdbcQuery.name"))[0]);
+        assertEquals("value1", ((Object[]) context.getVariable("jdbcQuery.value"))[0]);
+        assertEquals(1, context.getVariable("jdbcQuery.queryresult.count"));
+        String expectedXMLResult = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><L7j:jdbcQueryResult xmlns:L7j=\"http://ns.l7tech.com/2012/08/jdbc-query-result\"><L7j:row><L7j:col  name=\"id\" type=\"java.lang.Integer\">1</L7j:col><L7j:col  name=\"name\" type=\"java.lang.String\">name1</L7j:col><L7j:col  name=\"value\" type=\"java.lang.String\">value1</L7j:col></L7j:row></L7j:jdbcQueryResult>";
+        assertEquals(expectedXMLResult, context.getVariable("jdbcQuery.xmlResult"));
+
+        context = makeContext("<xml />", "<xml />");
+        assertion.setSaveResultsAsContextVariables(true);
+        assertion.setGenerateXmlResult(false);
+
+        assertionStatus = serverAssertion.checkRequest(context);
+        assertEquals(AssertionStatus.NONE, assertionStatus);
+        assertEquals(1, ((Object[]) context.getVariable("jdbcQuery.id"))[0]);
+        assertEquals("name1", ((Object[]) context.getVariable("jdbcQuery.name"))[0]);
+        assertEquals("value1", ((Object[]) context.getVariable("jdbcQuery.value"))[0]);
+        assertEquals(1, context.getVariable("jdbcQuery.queryresult.count"));
+        assertException(NoSuchVariableException.class, new Functions.UnaryVoidThrows<PolicyEnforcementContext, NoSuchVariableException>() {
+            @Override
+            public void call(PolicyEnforcementContext context) throws NoSuchVariableException {
+                context.getVariable("jdbcQuery.xmlResult");
+            }
+        }, context);
+
+        context = makeContext("<xml />", "<xml />");
+        assertion.setSaveResultsAsContextVariables(false);
+        assertion.setGenerateXmlResult(true);
+
+        assertionStatus = serverAssertion.checkRequest(context);
+        assertEquals(AssertionStatus.NONE, assertionStatus);
+        assertException(NoSuchVariableException.class, new Functions.UnaryVoidThrows<PolicyEnforcementContext, NoSuchVariableException>() {
+            @Override
+            public void call(PolicyEnforcementContext context) throws NoSuchVariableException {
+                context.getVariable("jdbcQuery.id");
+            }
+        }, context);
+        assertException(NoSuchVariableException.class, new Functions.UnaryVoidThrows<PolicyEnforcementContext, NoSuchVariableException>() {
+            @Override
+            public void call(PolicyEnforcementContext context) throws NoSuchVariableException {
+                context.getVariable("jdbcQuery.name");
+            }
+        }, context);
+        assertException(NoSuchVariableException.class, new Functions.UnaryVoidThrows<PolicyEnforcementContext, NoSuchVariableException>() {
+            @Override
+            public void call(PolicyEnforcementContext context) throws NoSuchVariableException {
+                context.getVariable("jdbcQuery.value");
+            }
+        }, context);
+        assertEquals(1, context.getVariable("jdbcQuery.queryresult.count"));
+        assertEquals(expectedXMLResult, context.getVariable("jdbcQuery.xmlResult"));
+
+        context = makeContext("<xml />", "<xml />");
+        assertion.setSaveResultsAsContextVariables(false);
+        assertion.setGenerateXmlResult(false);
+
+        assertionStatus = serverAssertion.checkRequest(context);
+        assertEquals(AssertionStatus.NONE, assertionStatus);
+        assertException(NoSuchVariableException.class, new Functions.UnaryVoidThrows<PolicyEnforcementContext, NoSuchVariableException>() {
+            @Override
+            public void call(PolicyEnforcementContext context) throws NoSuchVariableException {
+                context.getVariable("jdbcQuery.id");
+            }
+        }, context);
+        assertException(NoSuchVariableException.class, new Functions.UnaryVoidThrows<PolicyEnforcementContext, NoSuchVariableException>() {
+            @Override
+            public void call(PolicyEnforcementContext context) throws NoSuchVariableException {
+                context.getVariable("jdbcQuery.name");
+            }
+        }, context);
+        assertException(NoSuchVariableException.class, new Functions.UnaryVoidThrows<PolicyEnforcementContext, NoSuchVariableException>() {
+            @Override
+            public void call(PolicyEnforcementContext context) throws NoSuchVariableException {
+                context.getVariable("jdbcQuery.value");
+            }
+        }, context);
+        assertEquals(1, context.getVariable("jdbcQuery.queryresult.count"));
+        assertException(NoSuchVariableException.class, new Functions.UnaryVoidThrows<PolicyEnforcementContext, NoSuchVariableException>() {
+            @Override
+            public void call(PolicyEnforcementContext context) throws NoSuchVariableException {
+                context.getVariable("jdbcQuery.xmlResult");
+            }
+        }, context);
+    }
+
+    private static <E extends Throwable, P> void assertException(Class<E> throwable, Functions.UnaryVoidThrows<P, E> function, P parameter) {
+        try {
+            function.call(parameter);
+        } catch (Throwable e) {
+            if (throwable.equals(e.getClass())) {
+                return;
+            }
+        }
+        assertFalse("Expected exception not thrown", true);
+    }
 }
