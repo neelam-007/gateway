@@ -398,8 +398,10 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
             xmlSshFile.setPermissions(fileMetadata.getPermission());
         }
         // Upload the message. This will block until the entire file has been uploaded.
+        // Appending when the offset is > 0 is how the jscape client worked by default. This needs to be here for backwards compatibility with Goatfish.
+        // Todo: introduce a cluster property to implement appending in a better way.
         sshClient.upload(mimeKnob.getEntireMessageBodyAsInputStream(), directory, fileName,
-                fileLength, fileOffset, false, xmlSshFile, null);
+                fileLength, fileOffset, (sshClient instanceof SftpClient) && fileOffset > 0, xmlSshFile, null);
         return true;
     }
 

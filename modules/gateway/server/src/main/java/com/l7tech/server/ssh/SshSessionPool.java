@@ -43,7 +43,7 @@ public class SshSessionPool extends GenericKeyedObjectPool implements PropertyCh
                 config.getLongProperty(SSH_SESSION_POOL_MAX_WAIT, DEFAULT_SSH_SESSION_POOL_MAX_WAIT),
                 config.getIntProperty(SSH_SESSION_POOL_MAX_IDLE, DEFAULT_SSH_SESSION_POOL_MAX_IDLE),
                 config.getIntProperty(SSH_SESSION_POOL_MAX_TOTAL, DEFAULT_SSH_SESSION_POOL_MAX_TOTAL),
-                config.getIntProperty(SSH_SESSION_POOL_MIN_IDLE, DEFAULT_SSH_SESSION_POOL_MIN_IDLE), false, false,
+                config.getIntProperty(SSH_SESSION_POOL_MIN_IDLE, DEFAULT_SSH_SESSION_POOL_MIN_IDLE), true, true,
                 config.getLongProperty(SSH_SESSION_POOL_TIME_BETWEEN_EVICTION_RUNS_MILLIS, DEFAULT_SSH_SESSION_POOL_TIME_BETWEEN_EVICTION_RUNS_MILLIS),
                 config.getIntProperty(SSH_SESSION_POOL_NUM_TESTS_PER_EVICTION_RUN, DEFAULT_SSH_SESSION_POOL_NUM_TESTS_PER_EVICTION_RUN),
                 config.getLongProperty(SSH_SESSION_POOL_MIN_EVICTABLE_IDLE_TIME_MILLIS, DEFAULT_SSH_SESSION_POOL_MIN_EVICTABLE_IDLE_TIME_MILLIS),
