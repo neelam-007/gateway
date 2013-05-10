@@ -22,7 +22,7 @@ create table security_zone (
 
 create table rbac_predicate_security_zone (
   objectid bigint not null references rbac_predicate(objectid) on delete cascade,
-  security_zone_oid bigint not null references security_zone(objectid) on delete cascade,
+  security_zone_oid bigint references security_zone(objectid) on delete cascade,
   transitive smallint not null,
   primary key (objectid)
 );

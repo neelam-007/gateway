@@ -1,7 +1,9 @@
 package com.l7tech.gateway.common.security.rbac;
 
 import com.l7tech.objectmodel.*;
+import org.apache.commons.lang.ObjectUtils;
 import org.hibernate.annotations.Proxy;
+import org.jetbrains.annotations.Nullable;
 
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
@@ -26,28 +28,33 @@ public class SecurityZonePredicate extends ScopePredicate implements ScopeEvalua
     protected SecurityZonePredicate() {
     }
 
+    /**
+     * @return the SecurityZone that an entity must belong to in order to match this predicate. If null, an entity must be zoneable but not in a SecurityZone.
+     */
     @ManyToOne(optional=false)
     @JoinColumn(name = "security_zone_oid")
     public SecurityZone getRequiredZone() {
         return requiredZone;
     }
 
-    public void setRequiredZone(SecurityZone requiredZone) {
+    /**
+     * @param requiredZone the SecurityZone that an entity must belong to in order to match this predicate. If null, an entity must be zoneable but not in a SecurityZone.
+     */
+    public void setRequiredZone(@Nullable final SecurityZone requiredZone) {
         this.requiredZone = requiredZone;
     }
 
     @Override
     public boolean matches(Entity entity) {
-        if (requiredZone != null) {
-            if (entity instanceof PartiallyZoneableEntity) {
-                PartiallyZoneableEntity pze = (PartiallyZoneableEntity) entity;
-                if (!pze.isZoneable())
-                    return false;
-            }
-            if (entity instanceof ZoneableEntity && entityTypePermitted(requiredZone, entity)) {
-                ZoneableEntity ze = (ZoneableEntity) entity;
-                return requiredZone.equals(ze.getSecurityZone());
-            }
+        if (entity instanceof PartiallyZoneableEntity) {
+            final PartiallyZoneableEntity pze = (PartiallyZoneableEntity) entity;
+            if (!pze.isZoneable())
+                return false;
+        }
+        if (entity instanceof ZoneableEntity && (requiredZone == null || entityTypePermitted(requiredZone, entity))) {
+            final ZoneableEntity ze = (ZoneableEntity) entity;
+            // if required zone is null, the entity security zone must also be null
+            return ObjectUtils.equals(requiredZone, ze.getSecurityZone());
         }
         return false;
     }
@@ -88,7 +95,11 @@ public class SecurityZonePredicate extends ScopePredicate implements ScopeEvalua
     public String toString() {
         final StringBuilder sb = new StringBuilder();
         sb.append(permission.getEntityType().getPluralName());
-        sb.append(" in security zone ").append(requiredZone.getName());
+        if (requiredZone != null) {
+            sb.append(" in security zone ").append(requiredZone.getName());
+        } else {
+            sb.append(" not in any security zone");
+        }
         return sb.toString();
     }
 }

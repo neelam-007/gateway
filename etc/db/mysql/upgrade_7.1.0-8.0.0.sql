@@ -28,7 +28,7 @@ CREATE TABLE security_zone (
 
 CREATE TABLE rbac_predicate_security_zone (
   objectid bigint(20) NOT NULL,
-  security_zone_oid bigint(20) NOT NULL,
+  security_zone_oid bigint(20),
   PRIMARY KEY (objectid),
   FOREIGN KEY (objectid) REFERENCES rbac_predicate (objectid) ON DELETE CASCADE,
   FOREIGN KEY (security_zone_oid) REFERENCES security_zone (objectid) ON DELETE CASCADE

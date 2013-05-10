@@ -93,7 +93,6 @@ public class SecurityZone extends NamedEntityImp {
             "oid=" + getOid() +
             ", name='" + getName() + "'" +
             ", description='" + description + '\'' +
-            ", permittedEntityTypes='" + permittedEntityTypes + '\'' +
             '}';
     }
 }

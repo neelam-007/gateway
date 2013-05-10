@@ -9,10 +9,11 @@ import com.l7tech.objectmodel.SecurityZone;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import java.awt.*;
 import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.Collection;
+import java.util.*;
 import java.util.logging.Logger;
 
 /**
@@ -22,46 +23,58 @@ public class ScopeSecurityZonePanel extends ValidatedPanel<SecurityZonePredicate
     private static final Logger logger = Logger.getLogger(ScopeSecurityZonePanel.class.getName());
 
     private JPanel contentPane;
-    private JLabel label;
     private JComboBox<SecurityZone> zoneComboBox;
+    private JRadioButton specificZoneRadioButton;
+    private JRadioButton noSecurityZoneRadioButton;
 
     private final EntityType entityType;
     private final Permission permission;
     private SecurityZonePredicate model;
+    private SecurityZone initialRequiredZone;
 
     public ScopeSecurityZonePanel(@NotNull SecurityZonePredicate model, @NotNull EntityType entityType) {
         super("folderPredicate");
         this.model = model;
         this.permission = model.getPermission();
         this.entityType = entityType;
-        loadZonesComboBox(model.getRequiredZone());
+        this.initialRequiredZone = model.getRequiredZone();
+        modelToView(model.getRequiredZone());
+        final RadioChangeListener changeListener = new RadioChangeListener();
+        specificZoneRadioButton.addChangeListener(changeListener);
+        noSecurityZoneRadioButton.addChangeListener(changeListener);
         init();
     }
 
-    private void loadZonesComboBox(SecurityZone requiredZone) {
-        java.util.List<SecurityZone> zones = new ArrayList<SecurityZone>();
-        Collection<SecurityZone> serverZones = SecurityZoneUtil.getSecurityZones();
-        if (serverZones != null)
-            zones.addAll(serverZones);
-        if (requiredZone != null && !zones.contains(requiredZone))
-            zones.add(requiredZone);
-        zoneComboBox.setModel(new DefaultComboBoxModel<SecurityZone>(zones.toArray(new SecurityZone[zones.size()])));
-        if (requiredZone != null)
+    private void modelToView(final SecurityZone requiredZone) {
+        if (requiredZone != null) {
             zoneComboBox.setSelectedItem(requiredZone);
+            specificZoneRadioButton.setSelected(true);
+        } else {
+            noSecurityZoneRadioButton.setSelected(true);
+            zoneComboBox.setEnabled(false);
+        }
     }
 
     @Override
     protected SecurityZonePredicate getModel() {
-        doUpdateModel();
         return model;
     }
 
     @Override
     protected void initComponents() {
-        label.setText(MessageFormat.format(label.getText(), entityType.getPluralName()));
-
         setLayout(new BorderLayout());
         add(contentPane, BorderLayout.CENTER);
+        specificZoneRadioButton.setText(MessageFormat.format(specificZoneRadioButton.getText(), entityType.getPluralName()));
+        noSecurityZoneRadioButton.setText(MessageFormat.format(noSecurityZoneRadioButton.getText(), entityType.getPluralName()));
+        final java.util.List<SecurityZone> zones = new ArrayList<SecurityZone>();
+        final Collection<SecurityZone> serverZones = SecurityZoneUtil.getSecurityZones();
+        if (serverZones != null) {
+            zones.addAll(serverZones);
+        }
+        if (initialRequiredZone != null && !zones.contains(initialRequiredZone)) {
+            zones.add(initialRequiredZone);
+        }
+        zoneComboBox.setModel(new DefaultComboBoxModel<SecurityZone>(zones.toArray(new SecurityZone[zones.size()])));
     }
 
     @Override
@@ -71,17 +84,25 @@ public class ScopeSecurityZonePanel extends ValidatedPanel<SecurityZonePredicate
 
     @Override
     protected void doUpdateModel() {
-        model = new SecurityZonePredicate(permission, (SecurityZone) zoneComboBox.getSelectedItem());
+        final boolean selected = noSecurityZoneRadioButton.isSelected();
+        model = new SecurityZonePredicate(permission, selected ? null : (SecurityZone) zoneComboBox.getSelectedItem());
     }
 
     @Override
     protected String getSyntaxError(final SecurityZonePredicate model) {
         String error = null;
-
-        if (!(zoneComboBox.getSelectedItem() instanceof SecurityZone)) {
+        if (specificZoneRadioButton.isSelected() && !(zoneComboBox.getSelectedItem() instanceof SecurityZone)) {
             error = "A security zone must be selected.";
         }
-
         return error;
+    }
+
+    private class RadioChangeListener implements ChangeListener {
+        @Override
+        public void stateChanged(ChangeEvent e) {
+            doUpdateModel();
+            checkSyntax();
+            zoneComboBox.setEnabled(specificZoneRadioButton.isSelected());
+        }
     }
 }
