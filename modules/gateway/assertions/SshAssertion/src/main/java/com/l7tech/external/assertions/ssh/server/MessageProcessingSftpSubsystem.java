@@ -15,6 +15,7 @@ import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.util.ThreadPool.ThreadPoolShutDownException;
+import org.apache.commons.lang.StringUtils;
 import org.apache.sshd.common.util.Buffer;
 import org.apache.sshd.server.SshFile;
 import org.apache.sshd.server.sftp.SftpSubsystem;
@@ -22,9 +23,11 @@ import org.apache.sshd.server.sftp.SftpSubsystem;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.xml.bind.JAXB;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.logging.Level;
@@ -372,9 +375,9 @@ class MessageProcessingSftpSubsystem extends SftpSubsystem {
         getFileAttributes(attrs, file, buffer);
 
         if ((flags & SSH_FXF_TRUNC) != 0) {
-            if(file.doesExist() &&
+            if (file.doesExist() &&
                     connector.getBooleanProperty(SshCredentialAssertion.LISTEN_PROP_ENABLE_SFTP_DELETE) &&
-                    connector.getBooleanProperty(SshCredentialAssertion.LISTEN_PROP_DELETE_FILE_ON_TRUNCATE_REQUEST) ) {
+                    connector.getBooleanProperty(SshCredentialAssertion.LISTEN_PROP_DELETE_FILE_ON_TRUNCATE_REQUEST)) {
                 VirtualSshFile removedFile;
                 try {
                     removedFile = removeFile(path);
@@ -752,7 +755,7 @@ class MessageProcessingSftpSubsystem extends SftpSubsystem {
                     if (parsedFile.getSize() != null) virtualSshFile.setSize(parsedFile.getSize());
                     if (parsedFile.getLastModified() != null)
                         virtualSshFile.setLastModified(parsedFile.getLastModified());
-                    if(parsedFile.getPermissions() != null)
+                    if (parsedFile.getPermissions() != null)
                         virtualSshFile.setPermission(parsedFile.getPermissions());
                     files.add(virtualSshFile);
                 }
@@ -1084,6 +1087,139 @@ class MessageProcessingSftpSubsystem extends SftpSubsystem {
                     break;
                 }
             }
+        }
+    }
+
+    /**
+     * This method is overridden so that the file long name can be properly created.
+     *
+     * @param id    The handle ID
+     * @param files The list of files to send
+     * @throws IOException
+     */
+    @Override
+    protected void sendName(int id, Iterator<SshFile> files) throws IOException {
+        Buffer buffer = new Buffer();
+        buffer.putByte((byte) SSH_FXP_NAME);
+        buffer.putInt(id);
+        int wpos = buffer.wpos();
+        buffer.putInt(0);
+        int nb = 0;
+        while (files.hasNext() && buffer.wpos() < MAX_PACKET_LENGTH) {
+            SshFile f = files.next();
+            buffer.putString(f.getName());
+            buffer.putString(getLongName(f)); // Format specified in the specs
+            writeAttrs(buffer, f);
+            nb++;
+        }
+        int oldpos = buffer.wpos();
+        buffer.wpos(wpos);
+        buffer.putInt(nb);
+        buffer.wpos(oldpos);
+        send(buffer);
+    }
+
+    //This is the date format used by the getLongName method
+    private static final SimpleDateFormat dateFormat = new SimpleDateFormat("MMM dd HH:mm");
+
+    /**
+     * displays the long name of the file. The appropriate format is described here: http://tools.ietf.org/html/draft-ietf-secsh-filexfer-02#section-7
+     */
+    private String getLongName(SshFile f) {
+        String username = f.getOwner();
+        if (username.isEmpty()) {
+            username = "--------";
+        } else if (username.length() > 8) {
+            username = username.substring(0, 8);
+        }
+        username = StringUtils.rightPad(username, 8, ' ');
+
+        long length = f.getSize();
+        String lengthString = StringUtils.leftPad(String.valueOf(length), 8, ' ');
+
+        StringBuilder sb = new StringBuilder();
+        sb.append((f.isDirectory() ? "d" : "-"));
+        if (f instanceof VirtualSshFile && ((VirtualSshFile) f).getPermission() >= 0) {
+            int permissions = Integer.parseInt(Integer.toString(((VirtualSshFile) f).getPermission()), 8);
+            sb.append(((permissions & 00400) != 0 ? "r" : "-"));
+            sb.append(((permissions & 00200) != 0 ? "w" : "-"));
+            sb.append(((permissions & 00100) != 0 ? "x" : "-"));
+            sb.append(((permissions & 00040) != 0 ? "r" : "-"));
+            sb.append(((permissions & 00020) != 0 ? "w" : "-"));
+            sb.append(((permissions & 00010) != 0 ? "x" : "-"));
+            sb.append(((permissions & 00004) != 0 ? "r" : "-"));
+            sb.append(((permissions & 00002) != 0 ? "w" : "-"));
+            sb.append(((permissions & 00001) != 0 ? "x" : "-"));
+        } else {
+            sb.append((f.isReadable() ? "r" : "-"));
+            sb.append((f.isWritable() ? "w" : "-"));
+            sb.append((f.isExecutable() ? "x" : "-"));
+            sb.append((f.isReadable() ? "r" : "-"));
+            sb.append((f.isWritable() ? "w" : "-"));
+            sb.append((f.isExecutable() ? "x" : "-"));
+            sb.append((f.isReadable() ? "r" : "-"));
+            sb.append((f.isWritable() ? "w" : "-"));
+            sb.append((f.isExecutable() ? "x" : "-"));
+        }
+        sb.append(" ");
+        sb.append("  1");
+        sb.append(" ");
+        sb.append(username);
+        sb.append(" ");
+        sb.append(username);
+        sb.append(" ");
+        sb.append(lengthString);
+        sb.append(" ");
+        sb.append(f.getLastModified() < 0 ? "------------" : dateFormat.format(new Date(f.getLastModified())));
+        sb.append(" ");
+        sb.append(f.getName());
+
+        return sb.toString();
+    }
+
+    /**
+     * This is overridden to properly return the file permissions
+     *
+     * @throws IOException
+     */
+    @Override
+    protected void writeAttrs(Buffer buffer, SshFile file, int flags) throws IOException {
+        if (!file.doesExist()) {
+            throw new FileNotFoundException(file.getAbsolutePath());
+        }
+        int p = 0;
+        if (file.isFile()) {
+            p |= 0100000;
+        }
+        if (file.isDirectory()) {
+            p |= 0040000;
+        }
+        if (file instanceof VirtualSshFile && ((VirtualSshFile) file).getPermission() >= 0) {
+            p |= Integer.parseInt(Integer.toString(((VirtualSshFile) file).getPermission()), 8);
+        } else {
+            if (file.isReadable()) {
+                p |= 0000400;
+            }
+            if (file.isWritable()) {
+                p |= 0000200;
+            }
+            if (file.isExecutable()) {
+                p |= 0000100;
+            }
+        }
+        if (file.isFile()) {
+            buffer.putInt(SSH_FILEXFER_ATTR_SIZE | SSH_FILEXFER_ATTR_PERMISSIONS | SSH_FILEXFER_ATTR_ACMODTIME);
+            buffer.putLong(file.getSize());
+            buffer.putInt(p);
+            buffer.putInt(file.getLastModified() / 1000);
+            buffer.putInt(file.getLastModified() / 1000);
+        } else if (file.isDirectory()) {
+            buffer.putInt(SSH_FILEXFER_ATTR_PERMISSIONS | SSH_FILEXFER_ATTR_ACMODTIME);
+            buffer.putInt(p);
+            buffer.putInt(file.getLastModified() / 1000);
+            buffer.putInt(file.getLastModified() / 1000);
+        } else {
+            buffer.putInt(0);
         }
     }
 }
