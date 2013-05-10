@@ -55,6 +55,9 @@ public class SecurityZonePredicate extends ScopePredicate implements ScopeEvalua
             final ZoneableEntity ze = (ZoneableEntity) entity;
             // if required zone is null, the entity security zone must also be null
             return ObjectUtils.equals(requiredZone, ze.getSecurityZone());
+        } else if (entity != null && !(entity instanceof ZoneableEntity) && requiredZone == null) {
+            // non-zoneable entity matches no zone
+            return true;
         }
         return false;
     }
