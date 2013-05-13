@@ -262,11 +262,11 @@ public class ClusterLogWorker extends SwingWorker {
             if ( status == null ) {
                 throw new  AsyncAdminMethods.UnknownJobException( "Unknown job" );
             } else if ( !status.startsWith( "a" ) ) {
-                final AsyncAdminMethods.JobResult<AuditRecordHeader[]> jobResult = logService.getJobResult( jobId );
-                if ( jobResult.result != null ) {
-                    return  jobResult.result ;
-                } else {
-                    throw new FindException(jobResult.throwableMessage) ;
+                try{
+                    final AuditRecordHeader[] headers = logService.getFindHeadersHeaderJobResult(jobId);
+                    return headers;
+                }catch(Exception e ){
+                    throw new FindException(e.getMessage()) ;
                 }
             }
             delay = delay >= DELAY_CAP ? DELAY_CAP : delay * DELAY_MULTIPLIER;

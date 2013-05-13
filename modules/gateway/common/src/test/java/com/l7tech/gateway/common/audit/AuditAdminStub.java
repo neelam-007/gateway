@@ -32,6 +32,11 @@ public class AuditAdminStub implements AuditAdmin {
     }
 
     @Override
+    public AuditRecordHeader[] getFindHeadersHeaderJobResult(JobId<AuditRecordHeader[]> jobId) throws FindException, UnknownJobException, JobStillActiveException {
+        throw new UnsupportedOperationException("Not supported in stub mode");
+    }
+
+    @Override
     public Map<String, byte[]> getDigestsForAuditRecords(Collection<String> auditRecordIds, boolean fromPolicy) throws FindException {
         throw new UnsupportedOperationException("Not supported in stub mode");
     }

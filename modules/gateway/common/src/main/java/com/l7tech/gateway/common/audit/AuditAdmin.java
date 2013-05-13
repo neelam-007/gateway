@@ -50,12 +50,23 @@ public interface AuditAdmin extends AsyncAdminMethods{
      * @param criteria  an {@link AuditSearchCriteria} describing the search criteria.  Must not be null.
      * @return the job identifier for the find headers by criteria job.
      *          Call {@link #getJobStatus(com.l7tech.gateway.common.AsyncAdminMethods.JobId) getJobStatus} to poll for job completion
-     *         and {@link #getJobResult(JobId)} to pick up the result in the form of an array of AuditRecordHeader matching the criteria
+     *         and {@link #getFindHeadersHeaderJobResult} to pick up the result in the form of an array of AuditRecordHeader matching the criteria
      * @throws FindException if there was a problem retrieving Audit records from the database
      */
-    @Secured(stereotype=FIND_ENTITIES)
     @Administrative(licensed=false, background = true)
     AsyncAdminMethods.JobId<AuditRecordHeader[]> findHeaders(AuditSearchCriteria criteria) throws FindException;
+
+    /**
+     * Retrieves a collection of {@link AuditRecordHeader}s for the aync job that is filterable by the secured interceptor
+     * @param jobId the ID of the job whose result to pick up.  Required.
+     * @return a collection of {@link AuditRecordHeader}s retrieved from the job result
+     * @throws UnknownJobException if the specified jobId is unknown or has already been picked up.
+     * @throws JobStillActiveException if the specified job is not inactive.
+     * @throws FindException if there was a problem with @link #findHeaders(AuditSearchCriteria) findHeaders
+     */
+    @Secured(stereotype=FIND_HEADERS)
+    @Administrative(licensed=false, background = true)
+    AuditRecordHeader[] getFindHeadersHeaderJobResult(JobId<AuditRecordHeader[]> jobId) throws FindException, UnknownJobException, JobStillActiveException;
 
     /**
      * Get digests for audit records.
@@ -66,7 +77,7 @@ public interface AuditAdmin extends AsyncAdminMethods{
      * @throws FindException any problems searching.
      */
     @Transactional(readOnly=true)
-    @Secured(stereotype=FIND_ENTITIES)
+    @Secured(stereotype=FIND_ENTITIES)    // todo review and remove from ApplicationContextTest.SECURED_RETURNTYPE_WHITELIST
     @Administrative(licensed=false, background = true)
     Map<String, byte[]> getDigestsForAuditRecords(Collection<String> auditRecordIds, boolean fromPolicy) throws FindException;
 

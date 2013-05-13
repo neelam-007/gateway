@@ -1,8 +1,11 @@
 package com.l7tech.server;
 
 import com.l7tech.gateway.common.admin.Administrative;
+import com.l7tech.gateway.common.security.rbac.MethodStereotype;
 import com.l7tech.gateway.common.security.rbac.Secured;
 import com.l7tech.objectmodel.Entity;
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityHeaderSet;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.server.util.PostStartupApplicationListener;
 import com.l7tech.util.ArrayUtils;
@@ -55,6 +58,15 @@ public class ApplicationContextTest  {
     private static final Set<String> NON_SECURED_BEANS = set( "customAssertionRegistrar" );
     private static final Set<String> TRANSACTIONAL_GETTER_BLACKLIST = set( "auditAdmin", "serviceAdmin", "trustedCertAdmin", "emailListenerAdmin", "clusterStatusAdmin", "jdbcAdmin");
     private static final Set<String> TRANSACTION_ROLLBACK_WHITELIST = set( "adminLogin", "clusterIDManager", "counterManager", "distributedMessageIdManager", "ftpAdmin", "kerberosAdmin", "schemaEntryManager");
+    private static final Set<String> SECURED_RETURNTYPE_WHITELIST = set(
+            "com.l7tech.gateway.common.audit.AuditAdmin.getDigestsForAuditRecords",
+            "com.l7tech.gateway.common.audit.AuditAdmin.downloadAllAudits",
+            "com.l7tech.gateway.common.audit.AuditAdmin.downloadNextChunk",
+            "com.l7tech.gateway.common.resources.ResourceAdmin.getDefaultHttpProxyConfiguration",
+            "com.l7tech.gateway.common.jdbc.JdbcAdmin.testJdbcConnection",
+            "com.l7tech.gateway.common.cluster.ClusterStatusAdmin.isCluster",
+            "com.l7tech.gateway.common.admin.UDDIRegistryAdmin.testUDDIRegistryAuthentication"
+            );
     private static final Set<EntityType> IGNORE_ENTITY_TYPES = set(
         EntityType.ESM_ENTERPRISE_FOLDER,  
         EntityType.ESM_SSG_CLUSTER,
@@ -317,6 +329,65 @@ public class ApplicationContextTest  {
 
             if ( !secured && !NON_SECURED_BEANS.contains(beanId) ) {
                 Assert.fail( "Administrative bean '"+beanId+"', has no interface with the '"+Secured.class.getName()+"' annotation." );
+            }
+        }
+    }
+
+    /*
+    * Ensure that all Secured entity/entity getters return filterable return types
+    */
+    @SuppressWarnings({"unchecked"})
+    @Test
+    public void testAdministrativeSecuredReturnTypes() throws Exception {
+        DefaultListableBeanFactory dlbf = new DefaultListableBeanFactory();
+        List<String> beans = getAdminBeanIds( dlbf );
+
+        for ( String beanId : beans ) {
+
+            System.out.println("Checking bean '"+beanId+"'.");
+            BeanDefinition beanDef = dlbf.getBeanDefinition(beanId);
+            String className = beanDef.getBeanClassName();
+            Class adminClass = Class.forName(className);
+
+            Class adminInterface = null;
+            for ( Class interfaceClass : adminClass.getInterfaces() ) {
+                if ( interfaceClass.getAnnotation(Administrative.class) != null ) {
+                    adminInterface = interfaceClass;
+                    break;
+                }
+            }
+
+            if ( adminInterface != null ) {
+                Secured classSecuredAnn = (Secured) adminInterface.getAnnotation( Secured.class );
+                if ( classSecuredAnn != null ) {
+                    for ( Method method : adminInterface.getMethods() ) {
+                        Secured securedAnn = method.getAnnotation( Secured.class );
+                        if ( securedAnn!=null ) {
+                            if(SECURED_RETURNTYPE_WHITELIST.contains(adminInterface.getName()+"."+method.getName()))
+                                continue;
+                            else if((securedAnn.stereotype()== MethodStereotype.FIND_ENTITIES ||
+                                     securedAnn.stereotype()== MethodStereotype.FIND_HEADERS||
+                                    securedAnn.stereotype()== MethodStereotype.FIND_ENTITY )
+                                && securedAnn.customEntityTranslatorClassName().isEmpty()){
+                                Class returnType = method.getReturnType();
+                                if(EntityHeaderSet.class.isAssignableFrom(returnType)){
+                                    continue;
+                                }else if(Iterable.class.isAssignableFrom(returnType)){
+                                    continue;
+                                }else if (Entity.class.isAssignableFrom(returnType)||
+                                          EntityHeader.class.isAssignableFrom(returnType)){
+                                    continue;
+                                }else if (returnType.isArray() && (
+                                                  Entity.class.isAssignableFrom(returnType.getComponentType()) ||
+                                                  EntityHeader.class.isAssignableFrom(returnType.getComponentType()))){
+                                    continue;
+                                }else{
+                                   Assert.fail( "Secured method '"+adminInterface.getName()+"."+method.getName()+"' does not return a filter-able type" );
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
     }

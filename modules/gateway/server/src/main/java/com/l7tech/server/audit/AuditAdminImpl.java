@@ -224,6 +224,15 @@ public class AuditAdminImpl extends AsyncAdminMethodsImpl implements AuditAdmin,
     }
 
     @Override
+    public AuditRecordHeader[] getFindHeadersHeaderJobResult(JobId<AuditRecordHeader[]> jobId) throws FindException, UnknownJobException, JobStillActiveException {
+        JobResult result = super.getJobResult(jobId);
+        if(result.throwableMessage!=null){
+            throw new FindException(result.throwableMessage);
+        }
+        return super.getJobResult(jobId).result;
+    }
+
+    @Override
     public Map<String, byte[]> getDigestsForAuditRecords(Collection<String> auditRecordIds, boolean fromPolicy) throws FindException {
         if(fromPolicy){
             return auditLookupPolicyEvaluator.getDigestForAuditRecords(auditRecordIds);
