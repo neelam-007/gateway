@@ -87,6 +87,10 @@ public class SshSessionPool extends GenericKeyedObjectPool implements PropertyCh
                     setMaxTotal(config.getIntProperty(SSH_SESSION_POOL_MAX_TOTAL, DEFAULT_SSH_SESSION_POOL_MAX_TOTAL));
                     break;
                 case SSH_SESSION_POOL_MIN_IDLE:
+                    /**
+                     * Note the min idle property does not work as expected in the GenericKeyedObjectPool. It gets checked after an eviction run is made.
+                     * If during the eviction run all sessions for a given key are evicted the key will be removed from the pool and the min idle will not apply to that key as it will no longer be in the pool.
+                     */
                     setMinIdle(config.getIntProperty(SSH_SESSION_POOL_MIN_IDLE, DEFAULT_SSH_SESSION_POOL_MIN_IDLE));
                     break;
                 case SSH_SESSION_POOL_TIME_BETWEEN_EVICTION_RUNS_MILLIS:
