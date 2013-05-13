@@ -77,7 +77,7 @@ public interface AuditAdmin extends AsyncAdminMethods{
      * @throws FindException any problems searching.
      */
     @Transactional(readOnly=true)
-    @Secured(stereotype=FIND_ENTITIES)    // todo review and remove from ApplicationContextTest.SECURED_RETURNTYPE_WHITELIST
+    @Secured(stereotype=FIND_ENTITIES)
     @Administrative(licensed=false, background = true)
     Map<String, byte[]> getDigestsForAuditRecords(Collection<String> auditRecordIds, boolean fromPolicy) throws FindException;
 
