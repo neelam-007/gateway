@@ -111,4 +111,18 @@ public class SshSessionKey {
         result = 31 * result + (compressionAlgorithms != null ? compressionAlgorithms.hashCode() : 0);
         return result;
     }
+
+    @Override
+    public String toString() {
+        return "SshSessionKey{" +
+                "user='" + user + '\'' +
+                ", host='" + host + '\'' +
+                ", port=" + port +
+                ", passwordOrPrivateKey=" + passwordOrPrivateKey +
+                ", fingerPrint='" + fingerPrint + '\'' +
+                ", encryptionAlgorithms=" + encryptionAlgorithms +
+                ", macAlgorithms=" + macAlgorithms +
+                ", compressionAlgorithms=" + compressionAlgorithms +
+                '}';
+    }
 }

@@ -4,6 +4,8 @@ import org.apache.commons.pool.impl.GenericKeyedObjectPool;
 
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * This extends GenericKeyedObjectPool so that we can add property changes listeners and an initializer.
@@ -11,6 +13,7 @@ import java.beans.PropertyChangeListener;
  * @author Victor Kazakov
  */
 public class SshSessionPool extends GenericKeyedObjectPool implements PropertyChangeListener {
+    private static final Logger logger = Logger.getLogger(SshSessionPool.class.getName());
 
     // PROPERTIES
     public static final String SSH_SESSION_POOL_MAX_ACTIVE = "ssh.session.pool.maxActive";
@@ -51,9 +54,9 @@ public class SshSessionPool extends GenericKeyedObjectPool implements PropertyCh
         this.config = config;
     }
 
-    private static byte getWhenExhaustedAction(final com.l7tech.util.Config config){
+    private static byte getWhenExhaustedAction(final com.l7tech.util.Config config) {
         final String action = config.getProperty(SSH_SESSION_POOL_WHEN_EXHAUSTED_ACTION, DEFAULT_SSH_SESSION_POOL_WHEN_EXHAUSTED_ACTION);
-        switch(action) {
+        switch (action) {
             case "FAIL":
                 return GenericKeyedObjectPool.WHEN_EXHAUSTED_FAIL;
             case "GROW":
@@ -97,5 +100,20 @@ public class SshSessionPool extends GenericKeyedObjectPool implements PropertyCh
                     break;
             }
         }
+    }
+
+    @Override
+    public Object borrowObject(Object key) throws Exception {
+        logger.log(Level.FINE, "Borrowing session for key: {0}", key.toString());
+        final Object session = super.borrowObject(key);
+        logger.log(Level.FINER, "Total active = {0}, Total idle = {1}, Total active for key = {2}, Total idle for key = {3}, Key {4}", new Object[]{this.getNumActive(), this.getNumIdle(), this.getNumActive(key), this.getNumIdle(key), key});
+        return session;
+    }
+
+    @Override
+    public void returnObject(Object key, Object session) throws Exception {
+        logger.log(Level.FINE, "Returning session for key: {0}", key.toString());
+        super.returnObject(key, session);
+        logger.log(Level.FINER, "Total active = {0}, Total idle = {1}, Total active for key = {2}, Total idle for key = {3}, Key {4}", new Object[]{this.getNumActive(), this.getNumIdle(), this.getNumActive(key), this.getNumIdle(key), key});
     }
 }

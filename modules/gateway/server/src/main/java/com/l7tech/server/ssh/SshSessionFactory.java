@@ -16,6 +16,8 @@ import static com.l7tech.util.Functions.reduce;
  */
 public class SshSessionFactory implements KeyedPoolableObjectFactory<SshSessionKey, SshSession> {
     protected static final java.util.logging.Logger jschLogger = java.util.logging.Logger.getLogger(JSch.class.getName());
+    private static final java.util.logging.Logger logger = java.util.logging.Logger.getLogger(SshSessionFactory.class.getName());
+
     //This is the default keep alive time for passive/idle ssh sessions
     private static final int DEFAULT_SOCKET_KEEP_ALIVE = 300000;
 
@@ -60,6 +62,7 @@ public class SshSessionFactory implements KeyedPoolableObjectFactory<SshSessionK
      * @return The SshSession. It has not been connected yet. It must be connected before it can be used.
      */
     public SshSession makeObject(SshSessionKey sshSessionKey) throws JSchException {
+        logger.log(Level.FINE, "Making a new session for key {0}", sshSessionKey);
         JSch jsch = new JSch();
         final DefaultUI userInfo = new DefaultUI();
 
@@ -135,21 +138,25 @@ public class SshSessionFactory implements KeyedPoolableObjectFactory<SshSessionK
 
     @Override
     public void destroyObject(SshSessionKey key, SshSession session) throws Exception {
+        logger.log(Level.FINE, "Destroying session for key {0}", key);
         session.close();
     }
 
     @Override
     public boolean validateObject(SshSessionKey key, SshSession session) {
+        logger.log(Level.FINEST, "Validating session for key {0}", key);
         return session.isConnected();
     }
 
     @Override
     public void activateObject(SshSessionKey key, SshSession session) throws Exception {
+        logger.log(Level.FINER, "Activating session for key {0}", key);
         session.setSocketTimeout(key.getSocketTimeout());
     }
 
     @Override
     public void passivateObject(SshSessionKey key, SshSession session) throws Exception {
+        logger.log(Level.FINER, "Passivating session for key {0}", key);
         session.setSocketTimeout(DEFAULT_SOCKET_KEEP_ALIVE);
     }
 
