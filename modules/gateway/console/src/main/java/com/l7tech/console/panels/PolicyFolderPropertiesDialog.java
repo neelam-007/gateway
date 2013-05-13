@@ -3,6 +3,7 @@ package com.l7tech.console.panels;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.SecurityZoneUtil;
 import com.l7tech.console.util.SecurityZoneWidget;
+import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.objectmodel.EntityType;
@@ -25,7 +26,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 
 /**
- * Dialog for setting the name of a service/policy folder.
+ * Dialog for setting the properties of a service/policy folder.
  */
 public class PolicyFolderPropertiesDialog extends JDialog {
     public static final String TITLE = "Folder Properties";
@@ -90,8 +91,9 @@ public class PolicyFolderPropertiesDialog extends JDialog {
         });
 
         nameField.setText(header.getName());
-        zoneControl.setEntityType(EntityType.FOLDER);
-        zoneControl.setSelectedZone(header.getSecurityZoneOid() == null ? null : SecurityZoneUtil.getSecurityZoneByOid(header.getSecurityZoneOid()));
+        zoneControl.configure(EntityType.FOLDER,
+                header.getOid() == Folder.DEFAULT_OID ? OperationType.CREATE : OperationType.UPDATE,
+                header.getSecurityZoneOid() == null ? null : SecurityZoneUtil.getSecurityZoneByOid(header.getSecurityZoneOid()));
 
         addWindowListener(new WindowAdapter() {
             @Override

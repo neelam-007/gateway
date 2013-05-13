@@ -14,6 +14,7 @@ import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.security.rbac.AttemptedDeleteSpecific;
 import com.l7tech.gateway.common.security.rbac.AttemptedOperation;
 import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
+import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.FileChooserUtil;
 import com.l7tech.gui.util.Utilities;
@@ -220,8 +221,7 @@ public class PrivateKeyPropertiesDialog extends JDialog {
         });
         aliasField.setText(subject.getAlias());
 
-        zoneControl.setEntityType(EntityType.SSG_KEY_ENTRY);
-        zoneControl.setSelectedZone(subject.getKeyEntry().getSecurityZone());
+        zoneControl.configure(EntityType.SSG_KEY_ENTRY, OperationType.UPDATE, subject.getKeyEntry().getSecurityZone());
 
         String location = subject.getKeystore().getName();
         if (subject.getKeystore().isReadonly())

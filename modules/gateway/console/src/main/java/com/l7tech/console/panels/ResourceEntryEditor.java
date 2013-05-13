@@ -12,6 +12,7 @@ import com.l7tech.console.util.XMLContainerFactory;
 import com.l7tech.gateway.common.resources.ResourceAdmin;
 import com.l7tech.gateway.common.resources.ResourceEntry;
 import com.l7tech.gateway.common.resources.ResourceType;
+import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.FileChooserUtil;
 import com.l7tech.gui.util.Utilities;
@@ -157,7 +158,9 @@ public class ResourceEntryEditor extends JDialog {
         Utilities.setButtonAccelerator(this, helpButton, KeyEvent.VK_F1);
         setMinimumSize( getContentPane().getMinimumSize() );
 
-        zoneControl.setEntityType(EntityType.RESOURCE_ENTRY);
+        zoneControl.configure(EntityType.RESOURCE_ENTRY,
+                resourceEntry.getOid() == ResourceEntry.DEFAULT_OID ? OperationType.CREATE : canEdit ? OperationType.UPDATE : OperationType.READ,
+                resourceEntry.getSecurityZone());
 
         enableDisableComponents();
 
@@ -519,7 +522,6 @@ public class ResourceEntryEditor extends JDialog {
         if (content != null) {
             setResourceContents( content );
         }
-        zoneControl.setSelectedZone(resourceEntry.getSecurityZone());
         dataLoaded = true;
     }
 

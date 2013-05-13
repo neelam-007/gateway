@@ -3,6 +3,7 @@ package com.l7tech.console.panels;
 import com.japisoft.xmlpad.XMLContainer;
 import com.l7tech.console.util.SecurityZoneWidget;
 import com.l7tech.console.util.XMLContainerFactory;
+import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.common.io.XmlUtil;
@@ -136,8 +137,9 @@ public class SampleMessageDialog extends JDialog {
         });
 
         add(mainPanel);
-        zoneControl.setEntityType(EntityType.SAMPLE_MESSAGE);
-        zoneControl.setSelectedZone(message.getSecurityZone());
+        zoneControl.configure(EntityType.SAMPLE_MESSAGE,
+                message.getOid() == SampleMessage.DEFAULT_OID ? OperationType.CREATE : OperationType.UPDATE,
+                message.getSecurityZone());
         enableButtons();
     }
 

@@ -9,6 +9,7 @@ import com.l7tech.console.action.Actions;
 import com.l7tech.console.action.CreateServiceWsdlAction;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.util.*;
+import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.gateway.common.service.ServiceDocument;
@@ -477,8 +478,9 @@ public class ServicePropertiesDialog extends JDialog {
             uddiServiceControl = null;
         }
 
-        zoneControl.setEntityType(EntityType.SERVICE);
-        zoneControl.setSelectedZone(subject.getSecurityZone());
+        zoneControl.configure(EntityType.SERVICE,
+                subject.getOid() == PublishedService.DEFAULT_OID ? OperationType.CREATE : canUpdate ? OperationType.UPDATE : OperationType.READ,
+                subject.getSecurityZone());
 
         updateURL();
 

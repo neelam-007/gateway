@@ -5,6 +5,7 @@ import com.l7tech.console.util.SecurityZoneWidget;
 import com.l7tech.gateway.common.resources.HttpConfiguration;
 import com.l7tech.gateway.common.resources.HttpProxyConfiguration;
 import com.l7tech.gateway.common.security.password.SecurePassword;
+import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.RunOnChangeListener;
@@ -210,7 +211,9 @@ public class HttpConfigurationPropertiesDialog extends JDialog {
                 doCancel();
             }
         } );
-        zoneControl.setEntityType(EntityType.HTTP_CONFIGURATION);
+        zoneControl.configure(EntityType.HTTP_CONFIGURATION,
+                httpConfiguration.getOid() == HttpConfiguration.DEFAULT_OID ? OperationType.CREATE : readOnly ? OperationType.READ : OperationType.UPDATE,
+                httpConfiguration.getSecurityZone());
         pack();
         setMinimumSize( getMinimumSize() );
         getRootPane().setDefaultButton( cancelButton );
@@ -347,7 +350,6 @@ public class HttpConfigurationPropertiesDialog extends JDialog {
                 }
                 break;
         }
-        zoneControl.setSelectedZone(httpConfiguration.getSecurityZone());
     }
 
     private void viewToModel( final HttpConfiguration httpConfiguration ) {

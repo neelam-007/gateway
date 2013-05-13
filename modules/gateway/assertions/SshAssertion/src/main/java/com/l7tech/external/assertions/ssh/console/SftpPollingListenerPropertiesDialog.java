@@ -7,6 +7,7 @@ import com.l7tech.console.util.SecurityZoneWidget;
 import com.l7tech.console.util.SquigglyFieldUtils;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.security.password.SecurePassword;
+import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import com.l7tech.gateway.common.transport.TransportAdmin;
@@ -266,7 +267,9 @@ public class SftpPollingListenerPropertiesDialog extends JDialog {
                 if (idx >= 0) propertyListModel.remove(idx);
             }
         });
-        zoneControl.setEntityType(EntityType.SSG_ACTIVE_CONNECTOR);
+        zoneControl.configure(EntityType.SSG_ACTIVE_CONNECTOR,
+                connector.getOid() == SsgActiveConnector.DEFAULT_OID ? OperationType.CREATE : OperationType.UPDATE,
+                connector.getSecurityZone());
 
         pack();
         modelToView( connector );
@@ -424,7 +427,6 @@ public class SftpPollingListenerPropertiesDialog extends JDialog {
             final String value = connector.getProperty(property);
             if (value != null) propertyListModel.addElement(new Pair<String,String>(property, value));
         }
-        zoneControl.setSelectedZone(connector.getSecurityZone());
 
         enableOrDisableComponents();
     }

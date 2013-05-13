@@ -9,6 +9,7 @@ import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gateway.common.security.rbac.AttemptedCreate;
 import com.l7tech.gateway.common.security.rbac.AttemptedOperation;
 import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
+import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.gui.util.GuiCertUtil;
 import com.l7tech.gui.util.Utilities;
@@ -201,7 +202,9 @@ public class CertPropertiesWindow extends JDialog {
         });
         revocationCheckPolicyComboBox.setRenderer(new Renderers.RevocationCheckPolicyRenderer());
 
-        zoneControl.setEntityType(EntityType.TRUSTED_CERT);
+        zoneControl.configure(EntityType.TRUSTED_CERT,
+                trustedCert.getOid() == TrustedCert.DEFAULT_OID ? OperationType.CREATE : editable ? OperationType.UPDATE : OperationType.READ,
+                trustedCert.getSecurityZone());
 
         populateData();
         setRevocationCheckPolicyComboState(editable);
@@ -477,8 +480,6 @@ public class CertPropertiesWindow extends JDialog {
         if (trustedCert.getRevocationCheckPolicyOid() != null) {
             revocationCheckPolicyComboBox.setSelectedItem(findRevocationCheckPolicyByOid(trustedCert.getRevocationCheckPolicyOid()));
         }
-
-        zoneControl.setSelectedZone(trustedCert.getSecurityZone());
     }
 
     /**

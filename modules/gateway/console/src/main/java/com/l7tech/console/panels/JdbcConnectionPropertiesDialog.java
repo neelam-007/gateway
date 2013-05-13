@@ -3,6 +3,7 @@ package com.l7tech.console.panels;
 import static com.l7tech.console.util.AdminGuiUtils.doAsyncAdmin;
 
 import com.l7tech.console.util.SecurityZoneWidget;
+import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gui.widgets.SquigglyTextField;
 import com.l7tech.util.MutablePair;
 import com.l7tech.console.util.PasswordGuiUtils;
@@ -187,7 +188,7 @@ public class JdbcConnectionPropertiesDialog extends JDialog {
         if (admin != null) {
             driverClassWhiteList = admin.getPropertySupportedDriverClass();
         }
-        zoneControl.setEntityType(EntityType.JDBC_CONNECTION);
+        zoneControl.configure(EntityType.JDBC_CONNECTION, connection.getOid() == JdbcConnection.DEFAULT_OID ? OperationType.CREATE : OperationType.UPDATE, connection.getSecurityZone());
 
         modelToView();
         enableOrDisableButtons();
@@ -197,7 +198,6 @@ public class JdbcConnectionPropertiesDialog extends JDialog {
     }
 
     private void modelToView() {
-        zoneControl.setSelectedZone(connection.getSecurityZone());
         connectionNameTextField.setText(connection.getName());
         populateDriverClassComboBox();
         jdbcUrlTextField.setText(connection.getJdbcUrl());

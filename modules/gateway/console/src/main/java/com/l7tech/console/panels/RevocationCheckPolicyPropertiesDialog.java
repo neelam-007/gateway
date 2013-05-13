@@ -16,6 +16,7 @@ import javax.swing.event.ListDataListener;
 import javax.swing.event.ListDataEvent;
 
 import com.l7tech.console.util.SecurityZoneWidget;
+import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.FilterDocument;
@@ -203,7 +204,9 @@ public class RevocationCheckPolicyPropertiesDialog extends JDialog {
         policyItemList.setCellRenderer(new TextListCellRenderer(new RevocationCheckPolicyItemAccessor()));
         policyItemList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         Utilities.setDoubleClickAction(policyItemList, editButton);
-        zoneControl.setEntityType(EntityType.REVOCATION_CHECK_POLICY);
+        zoneControl.configure(EntityType.REVOCATION_CHECK_POLICY,
+                revocationCheckPolicy.getOid() == RevocationCheckPolicy.DEFAULT_OID ? OperationType.CREATE : readOnly ? OperationType.READ : OperationType.UPDATE,
+                revocationCheckPolicy.getSecurityZone());
 
         // Set data
         nameTextField.setDocument(new FilterDocument(64, new FilterDocument.Filter(){
@@ -220,7 +223,6 @@ public class RevocationCheckPolicyPropertiesDialog extends JDialog {
             policyItemModel.addElement(item);
         }
         policyItemList.setModel(policyItemModel);
-        zoneControl.setSelectedZone(revocationCheckPolicy.getSecurityZone());
         enableOrDisableControls();
 
         add(mainPanel);

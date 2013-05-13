@@ -1,6 +1,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.console.util.SecurityZoneWidget;
+import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.console.panels.OkCancelPanel;
@@ -28,8 +29,7 @@ public class ImportPrivateKeyDialog extends JDialog {
         setContentPane(contentPanel);
         setModal(true);
         getRootPane().setDefaultButton(okCancelPanel.getOkButton());
-        zoneControl.setEntityType(EntityType.SSG_KEY_ENTRY);
-        zoneControl.setSelectedZone(null);
+        zoneControl.configure(EntityType.SSG_KEY_ENTRY, OperationType.CREATE, null);
         okCancelPanel.getCancelButton().addActionListener(Utilities.createDisposeAction(this));
         inputValidator = new InputValidator(this, "Error");
         inputValidator.constrainTextFieldToBeNonEmpty("alias", aliasTextField, null);

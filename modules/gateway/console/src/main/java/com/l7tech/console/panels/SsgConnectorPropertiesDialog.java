@@ -3,6 +3,7 @@ package com.l7tech.console.panels;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.console.util.*;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
+import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.transport.InterfaceTag;
 import com.l7tech.gateway.common.transport.SsgConnector;
@@ -572,7 +573,9 @@ public class SsgConnectorPropertiesDialog extends JDialog {
                 return requestByteLimitPanel.validateFields();
             }
         });
-        zoneControl.setEntityType(EntityType.SSG_CONNECTOR);
+        zoneControl.configure(EntityType.SSG_CONNECTOR,
+                connector.getOid() == SsgConnector.DEFAULT_OID ? OperationType.CREATE : OperationType.UPDATE,
+                connector.getSecurityZone());
 
         Utilities.enableGrayOnDisabled(contentTypeComboBox);
         Utilities.enableGrayOnDisabled(serviceNameComboBox);
@@ -1300,7 +1303,6 @@ public class SsgConnectorPropertiesDialog extends JDialog {
 
         String requestLimit = connector.getProperty(SsgConnector.PROP_REQUEST_SIZE_LIMIT);
         requestByteLimitPanel.setValue(requestLimit, Registry.getDefault().getTransportAdmin().getXmlMaxBytes());
-        zoneControl.setSelectedZone(connector.getSecurityZone());
 
         saveCheckBoxState(savedStateCheckBoxes);
         enableOrDisableComponents();

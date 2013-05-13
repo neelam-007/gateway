@@ -6,13 +6,11 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.security.rbac.AttemptedReadAny;
 import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
+import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.OkCancelDialog;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.SecurityZone;
-import com.l7tech.objectmodel.ZoneableEntity;
+import com.l7tech.objectmodel.*;
 import com.l7tech.util.ExceptionUtils;
 import org.jetbrains.annotations.NotNull;
 
@@ -52,7 +50,7 @@ public class ConfigureSecurityZoneAction<ET extends ZoneableEntity> extends Secu
         final OkCancelDialog<SecurityZone> dlg = new OkCancelDialog<SecurityZone>(TopComponents.getInstance().getTopParent(),
             "Security Zone for " + entityType.getName(),
             true,
-            new SecurityZoneValidatedPanel(entityType, entity.getSecurityZone()),
+            new SecurityZoneValidatedPanel(entityType, entity.getSecurityZone(), canChange ? OperationType.UPDATE : OperationType.READ),
             !canChange);
         dlg.pack();
         Utilities.centerOnScreen(dlg);

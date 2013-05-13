@@ -7,6 +7,7 @@ import com.l7tech.console.util.SecurityZoneWidget;
 import com.l7tech.gateway.common.log.GatewayDiagnosticContextKeys;
 import com.l7tech.gateway.common.log.LogSinkAdmin;
 import com.l7tech.gateway.common.log.SinkConfiguration;
+import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gui.util.*;
 import com.l7tech.gui.widgets.OkCancelDialog;
 import com.l7tech.gui.widgets.TextEntryPanel;
@@ -355,7 +356,9 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
         // Description field must not be longer than 1000 characters
         ((AbstractDocument)descriptionField.getDocument()).setDocumentFilter(new DocumentSizeFilter(1000));
 
-        zoneControl.setEntityType(EntityType.LOG_SINK);
+        zoneControl.configure(EntityType.LOG_SINK,
+                sinkConfiguration.getOid() == SinkConfiguration.DEFAULT_OID ? OperationType.CREATE : readOnly ? OperationType.READ : OperationType.UPDATE,
+                sinkConfiguration.getSecurityZone());
     }
 
     private void disableTabsForSSPC(){
@@ -765,7 +768,6 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
 
         Collections.sort( filterList );
         filtersList.setModel( Utilities.listModel( filterList ) );
-        zoneControl.setSelectedZone(sinkConfiguration.getSecurityZone());
     }
 
     /**

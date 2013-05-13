@@ -5,6 +5,7 @@ import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.SecurityZoneWidget;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.gateway.common.service.ServiceTemplate;
 import com.l7tech.gui.util.DocumentSizeFilter;
@@ -189,8 +190,9 @@ public class PolicyPropertiesPanel extends ValidatedPanel {
         tagCombo.addItemListener(syntaxListener);
         nameField.getDocument().addDocumentListener(syntaxListener);
 
-        zoneControl.setEntityType(EntityType.POLICY);
-        zoneControl.setSelectedZone(policy.getSecurityZone());
+        zoneControl.configure(EntityType.POLICY,
+                policy.getOid() == Policy.DEFAULT_OID ? OperationType.CREATE : canUpdate ? OperationType.UPDATE : OperationType.READ,
+                policy.getSecurityZone());
 
         typeCombo.addItemListener(new ItemListener() {
             @Override

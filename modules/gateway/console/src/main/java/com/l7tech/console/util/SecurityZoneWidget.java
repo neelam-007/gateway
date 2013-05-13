@@ -1,5 +1,6 @@
 package com.l7tech.console.util;
 
+import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.SecurityZone;
 import org.jetbrains.annotations.Nullable;
@@ -12,26 +13,16 @@ import java.util.*;
 /**
  * Widget that allows selection of a security zone.
  * <p/>
- * Users should call either {@link #reloadZones()} or {@link #setEntityType(com.l7tech.objectmodel.EntityType) or {@link #setEntityTypes(java.util.Collection)}}
+ * Users should call either {@link #reloadZones} or {@link #configure(java.util.Collection, com.l7tech.gateway.common.security.rbac.OperationType, com.l7tech.objectmodel.SecurityZone)}
  * before the widget is displayed.
  */
 public class SecurityZoneWidget extends JComboBox<SecurityZone> {
     private Collection<EntityType> entityTypes = null;
     private boolean zoneLoadAttempted = false;
     private boolean hideIfNoZones = true;
-
-    /**
-     * Semaphore used internally that represents a null security zone.
-     */
-    public static final SecurityZone NULL_ZONE = new SecurityZone() {
-        {
-            setOid(-1);
-            setName("<None>");
-            setDescription("%%%NULL_ZONE%%%");
-        }
-    };
-
-    java.util.List<SecurityZone> loadedZones = Collections.emptyList();
+    private OperationType operation;
+    private SecurityZone initialZone;
+    private java.util.List<SecurityZone> loadedZones = Collections.emptyList();
 
     public SecurityZoneWidget() {
         setRenderer(new DefaultListCellRenderer() {
@@ -50,17 +41,27 @@ public class SecurityZoneWidget extends JComboBox<SecurityZone> {
     }
 
     /**
-     * Setting an entity type filters the presented zone list to only those zones which permit the specified
-     * entity type (and, of course, which are readable by the connected admin in the first place).
+     * Configure this widget. Configuration will determine which SecurityZones are available to the user.
      *
-     * @param entityType entity type to filter, or null to show zone list unfiltered by zone entity type restrictions.
+     * @param entityTypes entity types to filter, or null to show zone list unfiltered by zone entity type restrictions.
+     * @param operation   the OperationType that this widget is being used for.
+     *                    This will affect the SecurityZones available to the user for selection.
+     *                    Default is null which will not filter any SecurityZones based on user permissions.
+     * @param initialZone the initial SecurityZone to select in the combo box. If null and not OperationType.READ, the first available SecurityZone will be selected.
      */
-    public void setEntityType(@Nullable EntityType entityType) {
-        if (entityType != null) {
-            setEntityTypes(Collections.singletonList(entityType));
-        } else {
-            setEntityTypes(null);
-        }
+    public void configure(@Nullable final Collection<EntityType> entityTypes, @Nullable final OperationType operation, @Nullable SecurityZone initialZone) {
+        this.operation = operation;
+        setEntityTypes(entityTypes);
+        this.initialZone = initialZone;
+        reloadZones();
+        setSelectedZone(initialZone);
+    }
+
+    /**
+     * @see #configure(java.util.Collection, com.l7tech.gateway.common.security.rbac.OperationType, com.l7tech.objectmodel.SecurityZone)
+     */
+    public void configure(@Nullable final EntityType entityType, @Nullable final OperationType operation, @Nullable SecurityZone initialZone) {
+        configure(Collections.singletonList(entityType), operation, initialZone);
     }
 
     /**
@@ -69,13 +70,12 @@ public class SecurityZoneWidget extends JComboBox<SecurityZone> {
      *
      * @param entityTypes entity types to filter, or null to show zone list unfiltered by zone entity type restrictions.
      */
-    public void setEntityTypes(@Nullable final Collection<EntityType> entityTypes) {
+    private void setEntityTypes(@Nullable final Collection<EntityType> entityTypes) {
         if (entityTypes != null) {
             this.entityTypes = new ArrayList<EntityType>(entityTypes);
         } else {
             this.entityTypes = null;
         }
-        reloadZones();
     }
 
     /**
@@ -83,36 +83,45 @@ public class SecurityZoneWidget extends JComboBox<SecurityZone> {
      */
     public void reloadZones() {
         zoneLoadAttempted = true;
-        Object oldSelection = getSelectedItem();
+        final Object oldSelection = getSelectedItem();
+        loadedZones = new ArrayList<>();
+        if (operation == null || operation != OperationType.READ) {
+            // all readable zones
+            final Set<SecurityZone> readableZones = SecurityZoneUtil.getSecurityZones();
+            Set<SecurityZone> zones = new HashSet<>(readableZones.size() + 1);
+            zones.add(SecurityZoneUtil.NULL_ZONE);
+            zones.addAll(readableZones);
 
-        Set<SecurityZone> zones = new HashSet<>(SecurityZoneUtil.getSecurityZones());
-
-        if (zones.isEmpty() && hideIfNoZones)
-            setVisible(false);
-
-        if (entityTypes != null) {
-            Set<SecurityZone> permittedZones = new HashSet<>();
+            final Set<SecurityZone> invalidZones = new HashSet<>();
             for (final SecurityZone zone : zones) {
-                boolean permitted = true;
-                for (final EntityType entityType : entityTypes) {
-                    if (!zone.permitsEntityType(entityType)) {
-                        permitted = false;
-                        break;
-                    }
-                }
-                if (permitted) {
-                    permittedZones.add(zone);
+                if (!SecurityZoneUtil.isZoneValidForOperation(zone, entityTypes, operation, Registry.getDefault().getSecurityProvider().getUserPermissions())) {
+                    invalidZones.add(zone);
                 }
             }
-            zones = permittedZones;
+            zones.removeAll(invalidZones);
+
+            loadedZones.addAll(zones);
+
+        } else if (initialZone != null) {
+            loadedZones.add(initialZone);
         }
 
-        loadedZones = new ArrayList<>();
-        loadedZones.add(NULL_ZONE);
-        loadedZones.addAll(zones);
         setModel(new DefaultComboBoxModel<>(loadedZones.toArray(new SecurityZone[loadedZones.size()])));
+        if (oldSelection != null) {
+            setSelectedItem(oldSelection);
+        } else if (!loadedZones.isEmpty()) {
+            // nothing was selected, select the first option
+            setSelectedIndex(0);
+        }
+    }
 
-        setSelectedItem(oldSelection);
+    private void hideOrDisable() {
+        if (loadedZones.isEmpty() && hideIfNoZones) {
+            setVisible(false);
+        }
+        if (OperationType.READ == operation) {
+            setEnabled(false);
+        }
     }
 
     @Override
@@ -120,6 +129,7 @@ public class SecurityZoneWidget extends JComboBox<SecurityZone> {
         if (!zoneLoadAttempted) {
             reloadZones();
         }
+        hideOrDisable();
         super.paint(g);
     }
 
@@ -128,29 +138,24 @@ public class SecurityZoneWidget extends JComboBox<SecurityZone> {
      */
     @Nullable
     public SecurityZone getSelectedZone() {
-        SecurityZone ret = (SecurityZone)getSelectedItem();
-        if (NULL_ZONE == ret)
+        SecurityZone ret = (SecurityZone) getSelectedItem();
+        if (SecurityZoneUtil.NULL_ZONE == ret)
             ret = null;
         return ret;
     }
 
     public void setSelectedZone(@Nullable SecurityZone zone) {
-        if (zone == null)
-            zone = NULL_ZONE;
-
-        setSelectedItem(zone);
-
-        if (!zone.equals(getSelectedItem())) {
-            // Wasn't present, need to add it
-            loadedZones.add(zone);
-            setModel(new DefaultComboBoxModel<>(loadedZones.toArray(new SecurityZone[loadedZones.size()])));
+        if (zone == null){
+            zone = SecurityZoneUtil.NULL_ZONE;
+        }
+        if (loadedZones.contains(zone)) {
             setSelectedItem(zone);
         }
     }
 
     /**
      * @return true if the widget will setVisible(false) on itself when the zone list is reloaded
-     *              if there are no security zones present (or readable by the current admin).
+     *         if there are no security zones present (or readable by the current admin).
      */
     public boolean isHideIfNoZones() {
         return hideIfNoZones;

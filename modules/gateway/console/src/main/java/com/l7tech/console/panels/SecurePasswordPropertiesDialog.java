@@ -5,6 +5,7 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.SecurityZoneWidget;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.security.password.SecurePassword.SecurePasswordType;
+import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gui.util.*;
 import com.l7tech.gui.widgets.PasswordDoubleEntryDialog;
 import com.l7tech.gui.widgets.SquigglyTextField;
@@ -235,7 +236,9 @@ public class SecurePasswordPropertiesDialog extends JDialog {
         Utilities.setMaxLength(confirmPasswordField.getDocument(), maxPasswordLength);
         Utilities.setMaxLength(pemPrivateKeyField.getDocument(), maxPasswordLength);
 
-        zoneControl.setEntityType(EntityType.SECURE_PASSWORD);
+        zoneControl.configure(EntityType.SECURE_PASSWORD,
+                securePassword.getOid() == SecurePassword.DEFAULT_OID ? OperationType.CREATE : OperationType.UPDATE,
+                securePassword.getSecurityZone());
 
         enableOrDisableComponents();
         modelToView();
@@ -355,7 +358,6 @@ public class SecurePasswordPropertiesDialog extends JDialog {
         final long update = securePassword.getLastUpdate();
         lastUpdateLabel.setText(update > 0L ? new Date(update).toString() : "<Never Set>");
         allowVariableCheckBox.setSelected(securePassword.isUsageFromVariable());
-        zoneControl.setSelectedZone(securePassword.getSecurityZone());
     }
 
     private void viewToModel() {

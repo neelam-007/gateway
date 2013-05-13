@@ -6,6 +6,7 @@ import com.l7tech.console.util.SecurityZoneWidget;
 import com.l7tech.gateway.common.Authorizer;
 import com.l7tech.gateway.common.security.rbac.AttemptedCreate;
 import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
+import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.gateway.common.service.ServiceHeader;
@@ -356,7 +357,9 @@ public class EmailListenerPropertiesDialog extends JDialog {
         checkInterval.setEditor(jsne);
         ((JSpinner.DefaultEditor) checkInterval.getEditor()).getTextField().setFocusLostBehavior(JFormattedTextField.PERSIST);  //we'll do our own checking
 
-        zoneControl.setEntityType(EntityType.EMAIL_LISTENER);
+        zoneControl.configure(EntityType.EMAIL_LISTENER,
+                emailListener.getOid() == EmailListener.DEFAULT_OID ? OperationType.CREATE : OperationType.UPDATE,
+                emailListener.getSecurityZone());
     }
 
     private PublishedService getSelectedHardwiredService() {
@@ -546,7 +549,6 @@ public class EmailListenerPropertiesDialog extends JDialog {
  	 	        associateWithPublishedService.setSelected(false);
  	 	    }
  	 	}
-        zoneControl.setSelectedZone(emailListener.getSecurityZone());
     }
 
     /**

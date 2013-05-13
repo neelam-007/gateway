@@ -527,7 +527,9 @@ public class MqNativePropertiesDialog extends JDialog {
         keystoreComboBox.setRenderer( TextListCellRenderer.<Object>basicComboBoxRenderer() );
         keystoreComboBox.selectDefaultSsl();
         keystoreComboBox.setEnabled(false);
-        zoneControl.setEntityType(EntityType.SSG_ACTIVE_CONNECTOR);
+        zoneControl.configure(EntityType.SSG_ACTIVE_CONNECTOR,
+                mqNativeActiveConnector.getOid() == SsgActiveConnector.DEFAULT_OID ? OperationType.CREATE : OperationType.UPDATE,
+                zoneControl.getSelectedZone());
 
         pack();
         initializeView();
@@ -1148,7 +1150,6 @@ public class MqNativePropertiesDialog extends JDialog {
                 connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_REPLY_TYPE, REPLY_NONE.toString());
             }
         }
-        connector.setSecurityZone(zoneControl.getSelectedZone());
     }
 
     private void onSave() {

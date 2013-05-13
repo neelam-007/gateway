@@ -12,6 +12,8 @@ import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.logging.Logger;
@@ -39,9 +41,10 @@ public class ScopeSecurityZonePanel extends ValidatedPanel<SecurityZonePredicate
         this.entityType = entityType;
         this.initialRequiredZone = model.getRequiredZone();
         modelToView(model.getRequiredZone());
-        final RadioChangeListener changeListener = new RadioChangeListener();
+        final PredicateChangeListener changeListener = new PredicateChangeListener();
         specificZoneRadioButton.addChangeListener(changeListener);
         noSecurityZoneRadioButton.addChangeListener(changeListener);
+        zoneComboBox.addActionListener(changeListener);
         init();
     }
 
@@ -97,9 +100,18 @@ public class ScopeSecurityZonePanel extends ValidatedPanel<SecurityZonePredicate
         return error;
     }
 
-    private class RadioChangeListener implements ChangeListener {
+    private class PredicateChangeListener implements ChangeListener, ActionListener {
         @Override
-        public void stateChanged(ChangeEvent e) {
+        public void stateChanged(final ChangeEvent e) {
+            handleEvent();
+        }
+
+        @Override
+        public void actionPerformed(final ActionEvent e) {
+            handleEvent();
+        }
+
+        private void handleEvent() {
             doUpdateModel();
             checkSyntax();
             zoneComboBox.setEnabled(specificZoneRadioButton.isSelected());

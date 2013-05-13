@@ -6,10 +6,7 @@ import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.util.PasswordGuiUtils;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.SecurityZoneWidget;
-import com.l7tech.gateway.common.security.rbac.AttemptedCreate;
-import com.l7tech.gateway.common.security.rbac.AttemptedOperation;
-import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
-import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
+import com.l7tech.gateway.common.security.rbac.*;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.gateway.common.transport.jms.*;
@@ -501,7 +498,9 @@ public class JmsQueuePropertiesDialog extends JDialog {
         });
 
         // the SecurityZoneWidget is shared by both the JmsEndpoint and JmsConnection
-        zoneControl.setEntityTypes(Arrays.asList(EntityType.JMS_CONNECTION, EntityType.JMS_ENDPOINT));
+        zoneControl.configure(Arrays.asList(EntityType.JMS_CONNECTION, EntityType.JMS_ENDPOINT),
+                connection.getOid() == JmsConnection.DEFAULT_OID ? OperationType.CREATE : OperationType.UPDATE,
+                endpoint != null ? endpoint.getSecurityZone() : null);
 
         pack();
         initializeView();
@@ -1110,8 +1109,6 @@ public class JmsQueuePropertiesDialog extends JDialog {
         if (inboundRadioButton.isSelected() && endpoint.isDisabled()) {
             disableListeningTheQueueCheckBox.setSelected(true);
         }
-
-        zoneControl.setSelectedZone(endpoint != null ? endpoint.getSecurityZone() : null);
 
         enableOrDisableComponents();
     }

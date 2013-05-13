@@ -1,11 +1,9 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.console.util.SecurityZoneWidget;
+import com.l7tech.console.util.*;
+import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gui.util.ImageCache;
 import com.l7tech.gui.util.Utilities;
-import com.l7tech.console.util.IconManager;
-import com.l7tech.console.util.Registry;
-import com.l7tech.console.util.SortedSingleColumnTableModel;
 import com.l7tech.identity.*;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.assertion.Assertion;
@@ -266,8 +264,7 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
             new Insets(0, 0, 8, 0), 0, 0));
 
         zoneControl = new SecurityZoneWidget();
-        zoneControl.setEntityType(EntityType.SERVICE);
-        zoneControl.setSelectedZone(SecurityZoneWidget.NULL_ZONE);
+        zoneControl.configure(EntityType.SERVICE, OperationType.CREATE, null);
         add(zoneControl,
                 new GridBagConstraints(1, 0, 1, 1, 1.0, 0.0,
                         GridBagConstraints.EAST,

@@ -7,6 +7,7 @@ import com.l7tech.console.util.EncapsulatedAssertionConsoleUtil;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.SecurityZoneWidget;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gui.SimpleTableModel;
 import com.l7tech.gui.util.*;
 import com.l7tech.gui.widgets.OkCancelDialog;
@@ -238,7 +239,9 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
         selectIconButton.setVerticalTextPosition(SwingConstants.BOTTOM);
         selectIconButton.setHorizontalTextPosition(SwingConstants.CENTER);
 
-        zoneControl.setEntityType(EntityType.ENCAPSULATED_ASSERTION);
+        zoneControl.configure(EntityType.ENCAPSULATED_ASSERTION,
+                config.getOid() == EncapsulatedAssertionConfig.DEFAULT_OID ? OperationType.CREATE : readOnly ? OperationType.READ : OperationType.UPDATE,
+                config.getSecurityZone());
 
         Utilities.enableDefaultFocusTraversal(descriptionTextArea);
 
@@ -395,8 +398,6 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
         if (artifactVersion != null) {
             artifactVersionDisplayLabel.setText(artifactVersion);
         }
-
-        zoneControl.setSelectedZone(config.getSecurityZone());
     }
 
     private void setPolicyAndPolicyNameLabel(Policy policy) {

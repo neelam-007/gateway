@@ -2,11 +2,13 @@ package com.l7tech.console.panels;
 
 import com.l7tech.common.io.KeyGenParams;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.SecurityZoneUtil;
 import com.l7tech.console.util.SecurityZoneWidget;
 import com.l7tech.gateway.common.AsyncAdminMethods;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gateway.common.security.keystore.KeystoreFileEntityHeader;
 import com.l7tech.gateway.common.security.keystore.SsgKeyMetadata;
+import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gui.NumberField;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.Utilities;
@@ -298,8 +300,7 @@ public class  NewPrivateKeyDialog extends JDialog {
         cbSigHash.setModel(new DefaultComboBoxModel(hashes.toArray()));
         cbSigHash.setSelectedItem(dflth);
 
-        securityZoneWidget.setEntityType(EntityType.SSG_KEY_ENTRY);
-        securityZoneWidget.setSelectedZone(SecurityZoneWidget.NULL_ZONE);
+        securityZoneWidget.configure(EntityType.SSG_KEY_ENTRY, OperationType.CREATE, null);
     }
 
     /** @return the default DN for the current alias, or null if there isn't one. */
