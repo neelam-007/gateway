@@ -1,11 +1,8 @@
 package com.l7tech.common.http;
 
-import java.util.Map;
-import java.util.LinkedHashMap;
-import java.util.Iterator;
-import java.util.Arrays;
-import java.util.Hashtable;
+import java.util.*;
 
+import org.junit.BeforeClass;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -15,6 +12,10 @@ import static org.junit.Assert.*;
 public class ParameterizedStringTest  {
 
     //- PUBLIC
+    @BeforeClass
+    public static void setUp() throws Exception {
+        System.setProperty("com.l7tech.http.useSemicolonAsSeparator", "true");
+    }
 
     @Test
     public void testBasic() {
@@ -88,7 +89,7 @@ public class ParameterizedStringTest  {
 
     @Test
     public void testPermittedOthers() {
-        String queryString = "a=\\/:@|=;?#\"`^<>~";
+        String queryString = "a=\\/:@|=?#\"`^<>~";
         Map<String,String[]> paramStrMap = ParameterizedString.parseQueryString(queryString, true);
         Map httpUtilMap = HttpUtils_parseQueryString(queryString);
 
@@ -161,6 +162,21 @@ public class ParameterizedStringTest  {
         }
 
         assertEquals("Test for exception during parsing of query string '"+queryString+"'", httpUtilThrew, paramStrThrew);
+    }
+
+    //Bug SSG-6907
+    @Test
+    public void testParseParameterString_semicolonIncluded() throws Exception {
+        String query = "fred=1&freda=2;joe=6;josephine=8&george=8&georgina=9";
+        Map<String,String[]> parametersMap = new HashMap<>();
+        ParameterizedString.parseParameterString(parametersMap, query, false);
+        assertEquals(6, parametersMap.size());
+        assertArrayEquals(new String[]{"1"}, parametersMap.get("fred"));
+        assertArrayEquals(new String[]{"2"}, parametersMap.get("freda"));
+        assertArrayEquals(new String[]{"6"}, parametersMap.get("joe"));
+        assertArrayEquals(new String[]{"8"}, parametersMap.get("josephine"));
+        assertArrayEquals(new String[]{"8"}, parametersMap.get("george"));
+        assertArrayEquals(new String[]{"9"}, parametersMap.get("georgina"));
     }
 
 

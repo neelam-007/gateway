@@ -23,7 +23,7 @@ import java.util.regex.Pattern;
  */
 public class ParameterizedString {
     private static final int MAX_FIELD_LENGTH = ConfigFactory.getIntProperty( "com.l7tech.http.maxParameterLength", 600000 );
-
+    private static final boolean SEMICOLON_AS_SEPARATOR = ConfigFactory.getBooleanProperty("com.l7tech.http.useSemicolonAsSeparator", false);
     //- PUBLIC
 
     /**
@@ -151,10 +151,10 @@ public class ParameterizedString {
      * @param strict true for a strict parse
      * @throws IllegalArgumentException if the string is illegal
      */
-    public static void parseParameterString(Map<String,String[]> holder, String paramStr, boolean strict) {
+    public static void parseParameterString(Map<String, String[]> holder, String paramStr, boolean strict) {
         if(holder==null) throw new IllegalArgumentException("holder must not be null.");
         if(paramStr!=null) {
-            doParse(holder, paramStr, strict);
+            doParse(holder, paramStr, SEMICOLON_AS_SEPARATOR ?"&;":"&", strict);
         }
     }
 
@@ -211,8 +211,8 @@ public class ParameterizedString {
     /**
      * Do the work ...
      */
-    private static void doParse(Map<String,String[]> holder, String paramStr, boolean strict) {
-        StringTokenizer strtok = new StringTokenizer(paramStr, "&");
+    private static void doParse(Map<String, String[]> holder, String paramStr, String separators, boolean strict) {
+        StringTokenizer strtok = new StringTokenizer(paramStr, separators);
         while(strtok.hasMoreTokens()) {
             String nvp = strtok.nextToken();
 
