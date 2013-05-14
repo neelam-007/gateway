@@ -357,10 +357,10 @@ public class MqNativeModuleTest extends AbstractJUnit4SpringContextTests {
                 if (!ExpandVariables.process("${request.mqNative.md.version}", vars, audit, false).equals(Integer.toString(mqMessage.getVersion()))) {
                     return AssertionStatus.FAILED;
                 }
-                if (!ExpandVariables.process("${request.mqNative.headernames}", vars, audit, false).equals("folder.rfh2Field1")) {
+                if (!ExpandVariables.process("${request.mqNative.additionalheadernames}", vars, audit, false).equals("folder.rfh2Field1")) {
                     return AssertionStatus.FAILED;
                 }
-                if (!ExpandVariables.process("${request.mqNative.allheadervalues}", vars, audit, false).equals("rhf2Value1")) {
+                if (!ExpandVariables.process("${request.mqNative.alladditionalheadervalues}", vars, audit, false).equals("rhf2Value1")) {
                     return AssertionStatus.FAILED;
                 }
                 if (!ExpandVariables.process("${request.mqNative.propertynames}", vars, audit, false).contains("folder.testObjectProperty")) {
@@ -381,10 +381,10 @@ public class MqNativeModuleTest extends AbstractJUnit4SpringContextTests {
                 if (!ExpandVariables.process("${request.mqNative.allpropertyvalues}", vars, audit, false).contains("propertyValue1")) {
                     return AssertionStatus.FAILED;
                 }
-                if (!ExpandVariables.process("${request.mqNative.headernames.length}", vars, audit, false).equals("1")) {
+                if (!ExpandVariables.process("${request.mqNative.additionalheadernames.length}", vars, audit, false).equals("1")) {
                     return AssertionStatus.FAILED;
                 }
-                if (!ExpandVariables.process("${request.mqNative.allheadervalues.length}", vars, audit, false).equals("1")) {
+                if (!ExpandVariables.process("${request.mqNative.alladditionalheadervalues.length}", vars, audit, false).equals("1")) {
                     return AssertionStatus.FAILED;
                 }
                 if (!ExpandVariables.process("${request.mqNative.propertynames.length}", vars, audit, false).equals("3")) {
@@ -393,7 +393,7 @@ public class MqNativeModuleTest extends AbstractJUnit4SpringContextTests {
                 if (!ExpandVariables.process("${request.mqNative.allpropertyvalues.length}", vars, audit, false).equals("3")) {
                     return AssertionStatus.FAILED;
                 }
-                if (!ExpandVariables.process("${request.mqNative.header.folder.rfh2Field1}", vars, audit, false).equals("rhf2Value1")) {
+                if (!ExpandVariables.process("${request.mqNative.additionalheader.folder.rfh2Field1}", vars, audit, false).equals("rhf2Value1")) {
                     return AssertionStatus.FAILED;
                 }
                 if (!ExpandVariables.process("${request.mqNative.property.folder.propertyField1}", vars, audit, false).equals("propertyValue1")) {

@@ -194,9 +194,9 @@ public class MqNativeUtils {
 
             private static final String DESCRIPTOR_PREFIX = "md.";
             private static final String PROPERTY_PREFIX = "property.";
-            private static final String HEADER_PREFIX = "header.";
-            private static final String HEADER_NAMES = "headernames";
-            private static final String HEADER_VALUES = "allheadervalues";
+            private static final String HEADER_PREFIX = "additionalheader.";
+            private static final String HEADER_NAMES = "additionalheadernames";
+            private static final String HEADER_VALUES = "alladditionalheadervalues";
             private static final String PROPERTY_NAMES = "propertynames";
             private static final String PROPERTY_VALUES = "allpropertyvalues";
             protected final OutboundHeaderSupport headerSupport = new OutboundHeaderSupport();

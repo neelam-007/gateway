@@ -13,9 +13,9 @@ public enum MqNativeMessageHeaderType {
     /**
      * Use the primary original message header from the source message.
      */
-    ORIGINAL("Original", null, null),
+    ORIGINAL("Original Format", null, null),
     MQRFH2("MQRFH2", "com.ibm.mq.headers.MQRFH2", MqRfh2.class),
-    MQRFH1("MQRFH1", "com.ibm.mq.headers.MQRFH", MqRfh1.class);
+    MQRFH1("MQRFH", "com.ibm.mq.headers.MQRFH", MqRfh1.class);
 
     private String displayName;
     private String headerClassName;
