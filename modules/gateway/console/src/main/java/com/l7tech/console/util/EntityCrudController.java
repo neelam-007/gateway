@@ -128,7 +128,8 @@ public class EntityCrudController<ET> {
             public void actionPerformed(ActionEvent e) {
                 if (entityEditor != null) {
                     final int rowIndex = entityTable.getSelectedRow();
-                    ET entity = entityTableModel.getRowObject(rowIndex);
+                    final int modelIndex = entityTable.convertRowIndexToModel(rowIndex);
+                    final ET entity = entityTableModel.getRowObject(modelIndex);
                     if (entity != null) {
                         entityEditor.displayEditDialog(entity, new Functions.UnaryVoid<ET>() {
                             @Override

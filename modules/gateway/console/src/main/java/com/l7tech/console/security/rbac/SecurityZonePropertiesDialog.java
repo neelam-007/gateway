@@ -13,10 +13,8 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.ArrayList;
-import java.util.EnumSet;
+import java.util.*;
 import java.util.List;
-import java.util.Set;
 
 public class SecurityZonePropertiesDialog extends JDialog {
     private static final String CLIENT_PROP_ENTITY_TYPE = "com.l7tech.szpd.entityType";
@@ -29,6 +27,8 @@ public class SecurityZonePropertiesDialog extends JDialog {
     private JRadioButton allEntityTypesRadio;
     private JRadioButton specifiedEntityTypesRadio;
     private OkCancelPanel okCancelPanel;
+    private JButton selectAllButton;
+    private JButton selectNoneButton;
     private final InputValidator inputValidator = new InputValidator(this, getTitle());
 
     private boolean confirmed = false;
@@ -61,11 +61,17 @@ public class SecurityZonePropertiesDialog extends JDialog {
 
         okCancelPanel.getCancelButton().addActionListener(Utilities.createDisposeAction(this));
         okCancelPanel.getOkButton().setEnabled(!readOnly);
+        buttonToLink(selectAllButton);
+        buttonToLink(selectNoneButton);
+        selectAllButton.addActionListener(new SelectActionListener(true));
+        selectNoneButton.addActionListener(new SelectActionListener(false));
         setData(securityZone);
     }
 
     private void enableAndDisable() {
         entityTypesList.setEnabled(specifiedEntityTypesRadio.isSelected());
+        selectAllButton.setEnabled(specifiedEntityTypesRadio.isSelected());
+        selectNoneButton.setEnabled(specifiedEntityTypesRadio.isSelected());
     }
 
     void setData(final SecurityZone zone) {
@@ -74,7 +80,8 @@ public class SecurityZonePropertiesDialog extends JDialog {
 
         final Set<EntityType> permittedTypes = zone.getPermittedEntityTypes();
         List<JCheckBox> entries = new ArrayList<JCheckBox>();
-        entries.addAll(Functions.map(getAllZoneableEntityTypes(), new Functions.Unary<JCheckBox, EntityType>() {
+        final Set<EntityType> allZoneableEntityTypes = getAllZoneableEntityTypes();
+        entries.addAll(Functions.map(allZoneableEntityTypes, new Functions.Unary<JCheckBox, EntityType>() {
             @Override
             public JCheckBox call(EntityType entityType) {
                 JCheckBox cb = new JCheckBox(entityType.getName(), zone.permitsEntityType(entityType));
@@ -93,7 +100,7 @@ public class SecurityZonePropertiesDialog extends JDialog {
     }
 
     static Set<EntityType> getAllZoneableEntityTypes() {
-        Set<EntityType> ret = EnumSet.noneOf(EntityType.class);
+        Set<EntityType> ret = new TreeSet<>(EntityType.NAME_COMPARATOR);
         for (EntityType type : EntityType.values()) {
             if (type.isSecurityZoneable())
                 ret.add(type);
@@ -129,5 +136,30 @@ public class SecurityZonePropertiesDialog extends JDialog {
 
     public boolean isConfirmed() {
         return confirmed;
+    }
+
+    private void buttonToLink(final JButton button) {
+        button.setBorderPainted(false);
+        button.setContentAreaFilled(false);
+        button.setForeground(Color.BLUE);
+        button.setMargin(new Insets(0, 0, 0, 0));
+    }
+
+    private class SelectActionListener implements ActionListener {
+        // true for select all, false for select none
+        private final boolean selectAll;
+        private SelectActionListener(final boolean selectAll) {
+            this.selectAll = selectAll;
+        }
+        @Override
+        public void actionPerformed(final ActionEvent e) {
+            final JCheckBoxListModel model = (JCheckBoxListModel)entityTypesList.getModel();
+            model.visitEntries(new Functions.Binary<Boolean, Integer, JCheckBox>() {
+                @Override
+                public Boolean call(final Integer integer, final JCheckBox jCheckBox) {
+                    return selectAll;
+                }
+            });
+        }
     }
 }

@@ -11,12 +11,12 @@ import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.TableUtil;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.*;
+import com.l7tech.objectmodel.comparator.NamedEntityComparator;
 import com.l7tech.util.Functions;
 
 import javax.swing.*;
 import java.awt.*;
-import java.util.ArrayList;
-import java.util.EnumSet;
+import java.util.*;
 import java.util.logging.Logger;
 
 import static com.l7tech.gui.util.TableUtil.column;
@@ -53,6 +53,7 @@ public class SecurityZoneManagerWindow extends JDialog {
         securityZonesTableModel = TableUtil.configureTable(securityZonesTable,
             column("Name", 40, 140, 99999, propertyTransform(SecurityZone.class, "name")),
             column("Description", 80, 300, 99999, propertyTransform(SecurityZone.class, "description")));
+        Utilities.setRowSorter(securityZonesTable, securityZonesTableModel);
         loadSecurityZonesTable();
 
         securityZonesTable.getSelectionModel().addListSelectionListener(enableOrDisableListener);
@@ -135,7 +136,9 @@ public class SecurityZoneManagerWindow extends JDialog {
 
     private void loadSecurityZonesTable() {
         flushCachedZones();
-        securityZonesTableModel.setRows(new ArrayList<SecurityZone>(SecurityZoneUtil.getSecurityZones()));
+        final Set<SecurityZone> securityZones = new TreeSet<>(new NamedEntityComparator());
+        securityZones.addAll(SecurityZoneUtil.getSecurityZones());
+        securityZonesTableModel.setRows(new ArrayList<SecurityZone>(securityZones));
     }
 
     private void enableOrDisable() {
