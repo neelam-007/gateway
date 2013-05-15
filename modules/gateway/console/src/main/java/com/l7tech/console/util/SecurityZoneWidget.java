@@ -52,7 +52,7 @@ public class SecurityZoneWidget extends JComboBox<SecurityZone> {
     public void configure(@Nullable final Collection<EntityType> entityTypes, @Nullable final OperationType operation, @Nullable SecurityZone initialZone) {
         this.operation = operation;
         setEntityTypes(entityTypes);
-        this.initialZone = initialZone;
+        this.initialZone = initialZone == null ? SecurityZoneUtil.NULL_ZONE : initialZone;
         reloadZones();
         setSelectedZone(initialZone);
     }
