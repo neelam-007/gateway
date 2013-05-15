@@ -7,6 +7,7 @@ import com.l7tech.gateway.common.security.rbac.SecurityZonePredicate;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SecurityZone;
+import com.l7tech.objectmodel.comparator.NamedEntityComparator;
 import com.l7tech.util.ExceptionUtils;
 import org.apache.commons.lang.ObjectUtils;
 import org.jetbrains.annotations.NotNull;
@@ -57,6 +58,16 @@ public class SecurityZoneUtil {
     public static Set<SecurityZone> getSecurityZones() {
         final Map<Long, SecurityZone> ret = loadMap();
         return ret != null ? new HashSet<>(ret.values()) : Collections.<SecurityZone>emptySet();
+    }
+
+    /**
+     * @return all security zones visible to the current admin sorted by name. Never null.
+     */
+    @NotNull
+    public static Set<SecurityZone> getSortedSecurityZones() {
+        final Set<SecurityZone> sorted = new TreeSet<>(new NamedEntityComparator());
+        sorted.addAll(getSecurityZones());
+        return sorted;
     }
 
     @Nullable

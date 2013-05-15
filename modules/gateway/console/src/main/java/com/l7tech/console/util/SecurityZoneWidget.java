@@ -9,6 +9,7 @@ import javax.swing.*;
 import javax.swing.border.LineBorder;
 import java.awt.*;
 import java.util.*;
+import java.util.List;
 
 /**
  * Widget that allows selection of a security zone.
@@ -87,12 +88,12 @@ public class SecurityZoneWidget extends JComboBox<SecurityZone> {
         loadedZones = new ArrayList<>();
         if (operation == null || operation != OperationType.READ) {
             // all readable zones
-            final Set<SecurityZone> readableZones = SecurityZoneUtil.getSecurityZones();
-            Set<SecurityZone> zones = new HashSet<>(readableZones.size() + 1);
+            final Set<SecurityZone> readableZones = SecurityZoneUtil.getSortedSecurityZones();
+            final List<SecurityZone> zones = new ArrayList<>(readableZones.size() + 1);
             zones.add(SecurityZoneUtil.NULL_ZONE);
             zones.addAll(readableZones);
 
-            final Set<SecurityZone> invalidZones = new HashSet<>();
+            final List<SecurityZone> invalidZones = new ArrayList<>();
             for (final SecurityZone zone : zones) {
                 if (!SecurityZoneUtil.isZoneValidForOperation(zone, entityTypes, operation, Registry.getDefault().getSecurityProvider().getUserPermissions())) {
                     invalidZones.add(zone);
