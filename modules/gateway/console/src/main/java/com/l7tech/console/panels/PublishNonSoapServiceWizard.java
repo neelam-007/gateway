@@ -78,7 +78,10 @@ public class PublishNonSoapServiceWizard extends Wizard {
             ByteArrayOutputStream bo = new ByteArrayOutputStream();
             WspWriter.writePolicy(policy, bo);
             service.setFolder(folder.orSome(TopComponents.getInstance().getRootNode().getFolder()));
-            service.setPolicy(new Policy(PolicyType.PRIVATE_SERVICE, null, bo.toString(), false));
+            final Policy servicePolicy = new Policy(PolicyType.PRIVATE_SERVICE, null, bo.toString(), false);
+            // service policy inherits same security zone as the service
+            servicePolicy.setSecurityZone(panel2.getSelectedSecurityZone());
+            service.setPolicy(servicePolicy);
             service.setSoap(false);
             service.setWssProcessingEnabled(false);
             // xml application are not like soap. by default, not just post is allowed

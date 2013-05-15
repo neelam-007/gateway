@@ -120,7 +120,10 @@ public class PublishRestServiceWizard extends Wizard {
             ByteArrayOutputStream bo = new ByteArrayOutputStream();
             WspWriter.writePolicy(policy, bo);
             service.setFolder(folder.orSome(TopComponents.getInstance().getRootNode().getFolder()));
-            service.setPolicy(new Policy(PolicyType.PRIVATE_SERVICE, null, bo.toString(), false));
+            final Policy servicePolicy = new Policy(PolicyType.PRIVATE_SERVICE, null, bo.toString(), false);
+            // service policy inherits same security zone as the service
+            servicePolicy.setSecurityZone(authorizationPanel.getSelectedSecurityZone());
+            service.setPolicy(servicePolicy);
             service.setSoap(false);
             service.setWssProcessingEnabled(false);
             service.setHttpMethods(EnumSet.of(HttpMethod.POST, HttpMethod.GET, HttpMethod.PUT, HttpMethod.DELETE));

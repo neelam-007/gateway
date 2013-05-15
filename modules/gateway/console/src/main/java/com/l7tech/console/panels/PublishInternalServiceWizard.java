@@ -89,11 +89,12 @@ public class PublishInternalServiceWizard extends Wizard<PublishInternalServiceW
             service.setWsdlXml(toSave.getServiceDescriptorXml());
 
             service.setDisabled(false);
+            service.setSecurityZone(wizardInput.getSelectedSecurityZone());
+            service.getPolicy().setSecurityZone(wizardInput.getSelectedSecurityZone());
         }
 
         final Frame parent = TopComponents.getInstance().getTopParent();
         final PublishedService newService = service;
-        newService.setSecurityZone(wizardInput.getSelectedSecurityZone());
 
        //check if service is SOAP
         if(service.isSoap()) {

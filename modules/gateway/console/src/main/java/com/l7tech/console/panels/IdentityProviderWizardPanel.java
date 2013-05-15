@@ -538,6 +538,10 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
         }
         if (pa.getService() != null) {
             pa.getService().setSecurityZone(zoneControl.getSelectedZone());
+            if (pa.getService().getPolicy() != null) {
+                // service policy inherits same security zone as the service
+                pa.getService().getPolicy().setSecurityZone(zoneControl.getSelectedZone());
+            }
         }
     }
 
