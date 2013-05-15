@@ -999,9 +999,9 @@ public abstract class Assertion implements Cloneable, Serializable {
                 throw new RuntimeException(e);
             }
 
-            @SuppressWarnings({"MismatchedQueryAndUpdateOfCollection"}) final Map<String, String> props = comment.getProperties();
-            for (Map.Entry<String, String> entry : properties.entrySet()) {
-                props.put(entry.getKey(), entry.getValue());
+            // performing shallow copy is enough because Strings are immutable
+            if (properties != null) {
+                comment.properties = new HashMap(properties);
             }
             
             return comment;

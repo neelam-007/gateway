@@ -20,6 +20,8 @@ import com.l7tech.util.HexUtils;
 import org.junit.Test;
 import org.junit.Assert;
 
+import static org.hamcrest.CoreMatchers.*;
+
 /**
  * Test Assertion/CompositeAssertion data structure management.
  */
@@ -213,5 +215,50 @@ public class AssertionTest {
             }
         }
     }
-    
+
+    /**
+     * Test Assertion Comment cloning
+     */
+    @Test
+    public void testCloningAssertionComment()
+    {
+        TrueAssertion assertion = new TrueAssertion();
+
+        Assertion.Comment comment = new Assertion.Comment();
+        comment.setComment("left comment", Assertion.Comment.LEFT_COMMENT);
+        comment.setComment("right comment", Assertion.Comment.RIGHT_COMMENT);
+        assertion.setAssertionComment(comment);
+
+        final TrueAssertion cloneAssertion = (TrueAssertion)assertion.getCopy();
+
+        Assert.assertNotNull(assertion.getAssertionComment());
+        Assert.assertNotNull(cloneAssertion.getAssertionComment());
+
+        assertion.getAssertionComment().setComment("left comment changed", Assertion.Comment.LEFT_COMMENT);
+
+        Assert.assertEquals("right comment has same value",
+                assertion.getAssertionComment().getAssertionComment(Assertion.Comment.RIGHT_COMMENT),
+                cloneAssertion.getAssertionComment().getAssertionComment(Assertion.Comment.RIGHT_COMMENT));
+
+        // Expected behavior is that left comment of original and clone assertions have different value
+        Assert.assertThat("left comment has different value",
+                assertion.getAssertionComment().getAssertionComment(Assertion.Comment.LEFT_COMMENT),
+                not(equalTo(cloneAssertion.getAssertionComment().getAssertionComment(Assertion.Comment.LEFT_COMMENT))));
+
+        // Verify that assertions comment properties have different values/entries
+        Assert.assertThat("comment properties have different value",
+                assertion.getAssertionComment().getProperties(),
+                not(equalTo(cloneAssertion.getAssertionComment().getProperties())));
+
+        // Verify that both assertions have different comment properties reference
+        Assert.assertNotSame("comment properties reference is different",
+                assertion.getAssertionComment().getProperties(),
+                cloneAssertion.getAssertionComment().getProperties());
+
+        cloneAssertion.getAssertionComment().setComment("right comment changed", Assertion.Comment.RIGHT_COMMENT);
+
+        Assert.assertThat("right comment has different value",
+                assertion.getAssertionComment().getAssertionComment(Assertion.Comment.RIGHT_COMMENT),
+                not(equalTo(cloneAssertion.getAssertionComment().getAssertionComment(Assertion.Comment.RIGHT_COMMENT))));
+    }
 }
