@@ -94,6 +94,15 @@ public class SecurityZoneUtil {
         return match;
     }
 
+    public static Set<EntityType> getAllZoneableEntityTypes() {
+        final Set<EntityType> ret = new TreeSet<>(EntityType.NAME_COMPARATOR);
+        for (EntityType type : EntityType.values()) {
+            if (type.isSecurityZoneable())
+                ret.add(type);
+        }
+        return ret;
+    }
+
     private static boolean matchScope(@NotNull final SecurityZone zone, @Nullable Set<ScopePredicate> predicates) {
         boolean match = false;
         if (predicates == null || predicates.isEmpty()) {

@@ -1,5 +1,6 @@
 package com.l7tech.console.security.rbac;
 
+import com.l7tech.console.util.SecurityZoneUtil;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
@@ -80,7 +81,7 @@ public class SecurityZonePropertiesDialog extends JDialog {
 
         final Set<EntityType> permittedTypes = zone.getPermittedEntityTypes();
         List<JCheckBox> entries = new ArrayList<JCheckBox>();
-        final Set<EntityType> allZoneableEntityTypes = getAllZoneableEntityTypes();
+        final Set<EntityType> allZoneableEntityTypes = SecurityZoneUtil.getAllZoneableEntityTypes();
         entries.addAll(Functions.map(allZoneableEntityTypes, new Functions.Unary<JCheckBox, EntityType>() {
             @Override
             public JCheckBox call(EntityType entityType) {
@@ -97,15 +98,6 @@ public class SecurityZonePropertiesDialog extends JDialog {
         specifiedEntityTypesRadio.setSelected(!allTypes);
 
         enableAndDisable();
-    }
-
-    static Set<EntityType> getAllZoneableEntityTypes() {
-        Set<EntityType> ret = new TreeSet<>(EntityType.NAME_COMPARATOR);
-        for (EntityType type : EntityType.values()) {
-            if (type.isSecurityZoneable())
-                ret.add(type);
-        }
-        return ret;
     }
 
     public SecurityZone getData(SecurityZone zone) {

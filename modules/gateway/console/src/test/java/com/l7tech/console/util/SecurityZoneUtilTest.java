@@ -148,6 +148,11 @@ public class SecurityZoneUtilTest {
         assertFalse(SecurityZoneUtil.isZoneValidForOperation(SecurityZoneUtil.NULL_ZONE, entityTypes, OperationType.CREATE, permissions));
     }
 
+    @Test
+    public void getAllZoneableEntityTypes() {
+        assertFalse(SecurityZoneUtil.getAllZoneableEntityTypes().isEmpty());
+    }
+
     private Permission createPermission(final OperationType operation, final EntityType entityType, final SecurityZone... zones) {
         final Permission p = new Permission(new Role(), operation, entityType);
         final Set<ScopePredicate> scope = new HashSet<>(zones.length);

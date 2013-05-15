@@ -31,6 +31,8 @@ public class SecurityZoneManagerWindow extends JDialog {
     private JButton editButton;
     private JButton removeButton;
     private JTable securityZonesTable;
+    private JTabbedPane tabbedPanel;
+    private SecurityZonePropertiesPanel propertiesPanel;
 
     private SimpleTableModel<SecurityZone> securityZonesTableModel;
     private final PermissionFlags flags = PermissionFlags.get(EntityType.SECURITY_ZONE);
@@ -47,6 +49,8 @@ public class SecurityZoneManagerWindow extends JDialog {
             @Override
             public void run() {
                 enableOrDisable();
+                final SecurityZone selected = getSelectedSecurityZone();
+                propertiesPanel.configure(selected);
             }
         });
 
@@ -146,5 +150,11 @@ public class SecurityZoneManagerWindow extends JDialog {
         editButton.setEnabled(haveSelection);
         removeButton.setEnabled(flags.canDeleteSome() && haveSelection);
         createButton.setEnabled(flags.canCreateSome());
+    }
+
+    private SecurityZone getSelectedSecurityZone() {
+        final int rowIndex = securityZonesTable.getSelectedRow();
+        final int modelIndex = securityZonesTable.convertRowIndexToModel(rowIndex);
+        return securityZonesTableModel.getRowObject(modelIndex);
     }
 }
