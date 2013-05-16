@@ -298,6 +298,11 @@ public class PolicyAdminImpl implements PolicyAdmin {
         }
     }
 
+    @Override
+    public Collection<Policy> findBySecurityZoneOid(long securityZoneOid) {
+        return policyManager.findBySecurityZoneOid(securityZoneOid);
+    }
+
     private void ensureGuid( final Policy policy ) {
         if(policy.getGuid() == null) {
             UUID guid = UUID.randomUUID();

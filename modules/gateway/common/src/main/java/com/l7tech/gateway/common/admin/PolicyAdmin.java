@@ -24,7 +24,7 @@ import static org.springframework.transaction.annotation.Propagation.REQUIRED;
 @Transactional(propagation=REQUIRED, rollbackFor=Throwable.class)
 @Secured(types=POLICY)
 @Administrative
-public interface PolicyAdmin extends AliasAdmin<PolicyAlias> {
+public interface PolicyAdmin extends AliasAdmin<PolicyAlias>, SecurityZoneEntityAdmin<Policy> {
     /**
      * This is a container for a PolicyCheckpointState for the just saved policy and a map of the new policy
      * fragment names to their new OIDs.

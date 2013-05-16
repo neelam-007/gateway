@@ -1,7 +1,6 @@
 package com.l7tech.objectmodel.comparator;
 
 import com.l7tech.objectmodel.NamedEntity;
-import org.apache.commons.collections.ComparatorUtils;
 
 import java.util.Comparator;
 
@@ -14,12 +13,20 @@ public class NamedEntityComparator implements Comparator<NamedEntity> {
         int c;
         if (ne1 == null && ne2 == null) {
             c = 0;
-        } else if (ne1 == null && ne2 != null) {
+        } else if (ne1 == null) {
             c = -1;
-        } else if (ne1 != null && ne2 == null) {
+        } else if (ne2 == null) {
             c = 1;
         } else {
-            c = ComparatorUtils.nullLowComparator(ComparatorUtils.naturalComparator()).compare(ne1.getName(), ne2.getName());
+            if (ne1.getName() == null && ne2.getName() == null) {
+                c = 0;
+            } else if (ne1.getName() == null) {
+                c = -1;
+            } else if (ne2.getName() == null) {
+                c = 1;
+            } else {
+                return ne1.getName().compareToIgnoreCase(ne2.getName());
+            }
         }
         return c;
     }

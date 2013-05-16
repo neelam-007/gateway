@@ -42,6 +42,14 @@ public class NamedEntityComparatorTest {
     }
 
     @Test
+    public void lexicalOrderMixedCase() {
+        ne1.setName("Z");
+        ne2.setName("a");
+        assertTrue(comparator.compare(ne1, ne2) > 0);
+        assertTrue(comparator.compare(ne2, ne1) < 0);
+    }
+
+    @Test
     public void bothNullName() {
         ne1.setName(null);
         ne2.setName(null);

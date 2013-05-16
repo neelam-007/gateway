@@ -34,6 +34,7 @@ public class SecurityZoneManagerWindow extends JDialog {
     private JTable securityZonesTable;
     private JTabbedPane tabbedPanel;
     private SecurityZonePropertiesPanel propertiesPanel;
+    private SecurityZoneEntitiesPanel entitiesPanel;
 
     private SimpleTableModel<SecurityZone> securityZonesTableModel;
     private final PermissionFlags flags = PermissionFlags.get(EntityType.SECURITY_ZONE);
@@ -52,6 +53,7 @@ public class SecurityZoneManagerWindow extends JDialog {
                 enableOrDisable();
                 final SecurityZone selected = getSelectedSecurityZone();
                 propertiesPanel.configure(selected);
+                entitiesPanel.configure(selected);
             }
         });
 
@@ -157,7 +159,7 @@ public class SecurityZoneManagerWindow extends JDialog {
     private SecurityZone getSelectedSecurityZone() {
         SecurityZone selected = null;
         final int rowIndex = securityZonesTable.getSelectedRow();
-        if (rowIndex > 0) {
+        if (rowIndex >= 0) {
             final int modelIndex = securityZonesTable.convertRowIndexToModel(rowIndex);
             selected = securityZonesTableModel.getRowObject(modelIndex);
         }

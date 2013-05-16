@@ -6,11 +6,12 @@ import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.folder.HasFolder;
 import com.l7tech.objectmodel.folder.Folder;
+import com.l7tech.server.security.rbac.AbstractSecurityZoneEntityManager;
 
 /**
  * Extension of HibernateEntityManager that supports use of Folders.
  */
-public abstract class FolderSupportHibernateEntityManager<ET extends PersistentEntity, HT extends EntityHeader> extends HibernateEntityManager<ET,HT> {
+public abstract class FolderSupportHibernateEntityManager<ET extends PersistentEntity, HT extends EntityHeader> extends AbstractSecurityZoneEntityManager<ET,HT> {
 
     //- PUBLIC
 

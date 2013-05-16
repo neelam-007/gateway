@@ -8,6 +8,7 @@ import com.l7tech.objectmodel.folder.FolderedEntityManager;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyHeader;
 import com.l7tech.policy.PolicyType;
+import com.l7tech.server.security.rbac.SecurityZoneEntityManager;
 
 import java.util.Collection;
 import java.util.Set;
@@ -15,7 +16,7 @@ import java.util.Set;
 /**
  * @author alex
  */
-public interface PolicyManager extends FolderedEntityManager<Policy, PolicyHeader>, GuidBasedEntityManager<Policy>, PropertySearchableEntityManager<PolicyHeader>, RoleAwareEntityManager<Policy> {
+public interface PolicyManager extends FolderedEntityManager<Policy, PolicyHeader>, GuidBasedEntityManager<Policy>, PropertySearchableEntityManager<PolicyHeader>, RoleAwareEntityManager<Policy>, SecurityZoneEntityManager<Policy> {
 
     /**
      * Find headers for policies of the given type.

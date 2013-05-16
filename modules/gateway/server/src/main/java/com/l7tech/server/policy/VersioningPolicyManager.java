@@ -194,6 +194,11 @@ public class VersioningPolicyManager implements PolicyManager {
         policyManager.deleteRoles( entityOid );
     }
 
+    @Override
+    public Collection<Policy> findBySecurityZoneOid(long securityZoneOid) {
+        return policyManager.findBySecurityZoneOid(securityZoneOid);
+    }
+
     //- PRIVATE
 
     private final PolicyManager policyManager;
