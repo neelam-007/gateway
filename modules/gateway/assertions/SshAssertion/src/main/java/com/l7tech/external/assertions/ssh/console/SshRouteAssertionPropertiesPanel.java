@@ -342,7 +342,7 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
         }
 
         //Advanced Tab
-        setFileSizeToCheckBox.setEnabled(SFTPRadioButton.isSelected() && (CommandKnob.CommandType.GET.equals(selectedCommandType) ||  CommandKnob.CommandType.STAT.equals(selectedCommandType) || isCommandTypeFromVariable()));
+        setFileSizeToCheckBox.setEnabled(CommandKnob.CommandType.GET.equals(selectedCommandType) || (SFTPRadioButton.isSelected() && CommandKnob.CommandType.STAT.equals(selectedCommandType)) || isCommandTypeFromVariable());
         saveFileSizeContextVariable.setEnabled(setFileSizeToCheckBox.isEnabled() && setFileSizeToCheckBox.isSelected());
         responseLimitPanel.setEnabled(CommandKnob.CommandType.GET.equals(selectedCommandType) || isCommandTypeFromVariable());
         wssIgnoreButton.setEnabled(CommandKnob.CommandType.PUT.equals(selectedCommandType) || isCommandTypeFromVariable());
