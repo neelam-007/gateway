@@ -168,7 +168,8 @@ public class EntityCrudController<ET> {
             public void actionPerformed(ActionEvent e) {
                 if (entityDeleter != null) {
                     final int rowIndex = entityTable.getSelectedRow();
-                    final ET entity = entityTableModel.getRowObject(rowIndex);
+                    final int modelIndex = entityTable.convertRowIndexToModel(rowIndex);
+                    final ET entity = entityTableModel.getRowObject(modelIndex);
                     if (entity != null) {
                         if (entity instanceof NamedEntity && entityType != null && parent != null) {
                             confirmDelete((NamedEntity) entity, entityType, parent);

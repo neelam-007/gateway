@@ -13,6 +13,7 @@ import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.comparator.NamedEntityComparator;
 import com.l7tech.util.Functions;
+import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import java.awt.*;
@@ -152,9 +153,14 @@ public class SecurityZoneManagerWindow extends JDialog {
         createButton.setEnabled(flags.canCreateSome());
     }
 
+    @Nullable
     private SecurityZone getSelectedSecurityZone() {
+        SecurityZone selected = null;
         final int rowIndex = securityZonesTable.getSelectedRow();
-        final int modelIndex = securityZonesTable.convertRowIndexToModel(rowIndex);
-        return securityZonesTableModel.getRowObject(modelIndex);
+        if (rowIndex > 0) {
+            final int modelIndex = securityZonesTable.convertRowIndexToModel(rowIndex);
+            selected = securityZonesTableModel.getRowObject(modelIndex);
+        }
+        return selected;
     }
 }
