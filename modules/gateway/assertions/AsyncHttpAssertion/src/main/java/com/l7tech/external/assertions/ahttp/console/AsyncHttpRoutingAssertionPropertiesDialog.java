@@ -123,7 +123,7 @@ public class AsyncHttpRoutingAssertionPropertiesDialog extends AssertionProperti
         }
 
         if (header == null) {
-            header = new PolicyHeader(-1, false, PolicyType.INCLUDE_FRAGMENT, "Policy GUID " + policyGuid, null, policyGuid, null, null, 0, 0, false);
+            header = new PolicyHeader(-1, false, PolicyType.INCLUDE_FRAGMENT, "Policy GUID " + policyGuid, null, policyGuid, null, null, 0, 0, false, null);
         }
 
         final PolicyHeader[] headerArray = policyHeaders.toArray(new PolicyHeader[policyHeaders.size() + 1]);

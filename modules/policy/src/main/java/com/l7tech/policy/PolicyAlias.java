@@ -2,10 +2,12 @@ package com.l7tech.policy;
 
 import com.l7tech.objectmodel.Alias;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.SecurityZone;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.PropertyResolver;
 import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
 import com.l7tech.objectmodel.folder.Folder;
+import org.jetbrains.annotations.Nullable;
 
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlTransient;
@@ -22,9 +24,8 @@ public class PolicyAlias extends Alias<Policy> {
         super(policy, folder, policy.getSecurityZone());
     }
 
-    public PolicyAlias( final PolicyHeader policy, final Folder folder ) {
-        // TODO set security zone
-        super(policy.getOid(), folder, null);
+    public PolicyAlias( final PolicyHeader policy, final Folder folder, @Nullable final SecurityZone securityZone) {
+        super(policy.getOid(), folder, securityZone);
     }
 
     @XmlTransient

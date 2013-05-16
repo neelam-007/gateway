@@ -1,7 +1,9 @@
 package com.l7tech.policy;
 
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.HasSecurityZoneOid;
 import com.l7tech.objectmodel.OrganizationHeader;
+import org.jetbrains.annotations.Nullable;
 
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlTransient;
@@ -13,7 +15,7 @@ import javax.xml.bind.annotation.XmlTransient;
  */
 @SuppressWarnings( { "serial" } )
 @XmlRootElement(name="policyHeader")
-public class PolicyHeader extends OrganizationHeader {
+public class PolicyHeader extends OrganizationHeader implements HasSecurityZoneOid {
 
     //- PUBLIC
 
@@ -32,7 +34,8 @@ public class PolicyHeader extends OrganizationHeader {
              null,
              policyRevision,
              policy.getVersion(),
-             policy.isDisabled());
+             policy.isDisabled(),
+             policy.getSecurityZone() == null ? null : policy.getSecurityZone().getOid());
     }
 
     @Override
@@ -52,7 +55,8 @@ public class PolicyHeader extends OrganizationHeader {
              policyHeader.getAliasOid(),
              policyHeader.getPolicyRevision(),
              policyHeader.getVersion(),
-             policyHeader.isPolicyDisabled());
+             policyHeader.isPolicyDisabled(),
+             policyHeader.getSecurityZoneOid());
     }
 
     public PolicyHeader(final long oid,
@@ -65,7 +69,8 @@ public class PolicyHeader extends OrganizationHeader {
                         final Long aliasOid,
                         final long policyRevision,
                         final int version,
-                        final boolean isPolicyDisabled)
+                        final boolean isPolicyDisabled,
+                        @Nullable final Long securityZoneOid)
     {
         super(oid, EntityType.POLICY, name, description, version);
 
@@ -76,6 +81,7 @@ public class PolicyHeader extends OrganizationHeader {
         this.aliasOid = aliasOid;
         this.policyRevision = policyRevision;
         this.isPolicyDisabled = isPolicyDisabled;
+        this.securityZoneOid = securityZoneOid;
     }
 
     public boolean isSoap() {
@@ -111,7 +117,14 @@ public class PolicyHeader extends OrganizationHeader {
             displayName += " [" + tag + "]";
         }
 
-        return displayName;    }
+        return displayName;
+    }
+
+    @Nullable
+    @Override
+    public Long getSecurityZoneOid() {
+        return securityZoneOid;
+    }
 
     @Override
     public String toString() {
@@ -123,4 +136,5 @@ public class PolicyHeader extends OrganizationHeader {
     private final boolean isSoap;
     private final long policyRevision;
     private final PolicyType policyType;
+    private final Long securityZoneOid;
 }

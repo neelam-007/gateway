@@ -19,6 +19,8 @@ import com.l7tech.objectmodel.folder.FolderHeader;
 import com.l7tech.policy.PolicyAlias;
 import com.l7tech.policy.PolicyHeader;
 import com.l7tech.util.Functions.NullaryThrows;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
@@ -133,16 +135,11 @@ public class PasteAsAliasAction extends SecureAction {
             try {
                 if ( eh instanceof ServiceHeader ) {
                     header = new ServiceHeader((ServiceHeader)eh);
-                    SecurityZone securityZone = null;
-                    final Long securityZoneOid = ((ServiceHeader) eh).getSecurityZoneOid();
-                    if (securityZoneOid != null) {
-                        securityZone = SecurityZoneUtil.getSecurityZoneByOid(securityZoneOid);
-                    }
-                    final PublishedServiceAlias psa = new PublishedServiceAlias((ServiceHeader)eh, parentFolder, securityZone);
+                    final PublishedServiceAlias psa = new PublishedServiceAlias((ServiceHeader)eh, parentFolder, getSecurityZoneFromHeader((ServiceHeader)eh));
                     aliasOid = Registry.getDefault().getServiceManager().saveAlias(psa);
                 } else if ( eh instanceof PolicyHeader  ) {
                     header = new PolicyHeader((PolicyHeader)eh);
-                    final PolicyAlias pa = new PolicyAlias((PolicyHeader)eh, parentFolder);
+                    final PolicyAlias pa = new PolicyAlias((PolicyHeader)eh, parentFolder, getSecurityZoneFromHeader((PolicyHeader)eh));
                     aliasOid = Registry.getDefault().getPolicyAdmin().saveAlias(pa);
                 } else {
                     throw new IllegalStateException("Referent was neither a Policy nor a Service");
@@ -164,6 +161,16 @@ public class PasteAsAliasAction extends SecureAction {
             model.nodesWereInserted(parentNode, new int[]{insertPosition});
             rootNode.addAlias(header.getOid(), childNode);
         }
+    }
+
+    @Nullable
+    private SecurityZone getSecurityZoneFromHeader(@NotNull final HasSecurityZoneOid eh) {
+        SecurityZone securityZone = null;
+        final Long securityZoneOid = eh.getSecurityZoneOid();
+        if (securityZoneOid != null) {
+            securityZone = SecurityZoneUtil.getSecurityZoneByOid(securityZoneOid);
+        }
+        return securityZone;
     }
 
     private boolean aliasExistsInFolder( final NullaryThrows<Alias<?>,FindException> aliasLookup,
