@@ -19,11 +19,12 @@ public class PolicyAlias extends Alias<Policy> {
     protected PolicyAlias() { }
 
     public PolicyAlias( final Policy policy, final Folder folder ) {
-        super(policy, folder);
+        super(policy, folder, policy.getSecurityZone());
     }
 
     public PolicyAlias( final PolicyHeader policy, final Folder folder ) {
-        super(policy.getOid(), folder);
+        // TODO set security zone
+        super(policy.getOid(), folder, null);
     }
 
     @XmlTransient

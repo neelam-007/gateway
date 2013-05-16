@@ -5,7 +5,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * EntityHeader for an entity that has a SecurityZone.
  */
-public class ZoneableEntityHeader extends EntityHeader {
+public class ZoneableEntityHeader extends EntityHeader implements HasSecurityZoneOid {
     protected Long securityZoneOid;
 
     public ZoneableEntityHeader(long oid, EntityType type, String name, String description, Integer version) {

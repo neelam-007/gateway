@@ -1,14 +1,16 @@
 package com.l7tech.gateway.common.service;
 
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.HasSecurityZoneOid;
 import com.l7tech.objectmodel.OrganizationHeader;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Extension of EntityHeader with some service information.
  *
  * @author Steve Jones
  */
-public class ServiceHeader extends OrganizationHeader {
+public class ServiceHeader extends OrganizationHeader implements HasSecurityZoneOid {
 
     //- PUBLIC
 
@@ -25,7 +27,8 @@ public class ServiceHeader extends OrganizationHeader {
               svc.getVersion(),
               svc.getRoutingUri(),
               svc.isTracingEnabled(),
-              svc.getPolicy() == null ? false : svc.getPolicy().isDisabled());
+              svc.getPolicy() == null ? false : svc.getPolicy().isDisabled(),
+              svc.getSecurityZone() == null ? null : svc.getSecurityZone().getOid());
     }
 
     public ServiceHeader(final ServiceHeader serviceHeader){
@@ -41,7 +44,8 @@ public class ServiceHeader extends OrganizationHeader {
              serviceHeader.getVersion(),
              serviceHeader.getRoutingUri(),
              serviceHeader.isTracingEnabled(),
-             serviceHeader.isPolicyDisabled());
+             serviceHeader.isPolicyDisabled(),
+             serviceHeader.getSecurityZoneOid());
     }
     
     public ServiceHeader(final boolean isSoap,
@@ -56,7 +60,8 @@ public class ServiceHeader extends OrganizationHeader {
                          final int version,
                          final String routingUri,
                          final boolean tracingEnabled,
-                         final boolean isPolicyDisabled) {
+                         final boolean isPolicyDisabled,
+                         final Long securityZoneOid) {
         super(serviceOid == null ? -1 : serviceOid, EntityType.SERVICE, name, description, version);
         this.isSoap = isSoap;
         this.isDisabled = isDisabled;
@@ -67,6 +72,7 @@ public class ServiceHeader extends OrganizationHeader {
         this.routingUri = routingUri;
         this.tracingEnabled = tracingEnabled;
         this.isPolicyDisabled = isPolicyDisabled;
+        this.securityZoneOid = securityZoneOid;
     }
 
     public boolean isSoap() {
@@ -99,6 +105,12 @@ public class ServiceHeader extends OrganizationHeader {
         return tracingEnabled;
     }
 
+    @Nullable
+    @Override
+    public Long getSecurityZoneOid() {
+        return securityZoneOid;
+    }
+
     @Override
     public String toString() {
         return getDisplayName();
@@ -112,4 +124,5 @@ public class ServiceHeader extends OrganizationHeader {
     private final long policyRevision;
     private final String routingUri;
     private final boolean tracingEnabled;
+    private final Long securityZoneOid;
 }

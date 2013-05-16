@@ -7,6 +7,7 @@ import com.l7tech.console.tree.TreeNodeFactory;
 import com.l7tech.console.tree.servicesAndPolicies.FolderNode;
 import com.l7tech.console.tree.servicesAndPolicies.RootNode;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.SecurityZoneUtil;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.security.rbac.AttemptedCreate;
 import com.l7tech.gateway.common.service.PublishedServiceAlias;
@@ -132,7 +133,12 @@ public class PasteAsAliasAction extends SecureAction {
             try {
                 if ( eh instanceof ServiceHeader ) {
                     header = new ServiceHeader((ServiceHeader)eh);
-                    final PublishedServiceAlias psa = new PublishedServiceAlias((ServiceHeader)eh, parentFolder);
+                    SecurityZone securityZone = null;
+                    final Long securityZoneOid = ((ServiceHeader) eh).getSecurityZoneOid();
+                    if (securityZoneOid != null) {
+                        securityZone = SecurityZoneUtil.getSecurityZoneByOid(securityZoneOid);
+                    }
+                    final PublishedServiceAlias psa = new PublishedServiceAlias((ServiceHeader)eh, parentFolder, securityZone);
                     aliasOid = Registry.getDefault().getServiceManager().saveAlias(psa);
                 } else if ( eh instanceof PolicyHeader  ) {
                     header = new PolicyHeader((PolicyHeader)eh);

@@ -2,10 +2,12 @@ package com.l7tech.gateway.common.service;
 
 import com.l7tech.objectmodel.Alias;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.SecurityZone;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.PropertyResolver;
 import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
 import com.l7tech.objectmodel.folder.Folder;
+import org.jetbrains.annotations.Nullable;
 
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlTransient;
@@ -20,12 +22,13 @@ public class PublishedServiceAlias extends Alias<PublishedService> {
 
     public PublishedServiceAlias( final PublishedService pService,
                                   final Folder folder) {
-        super(pService, folder);
+        super(pService, folder, pService == null ? null : pService.getSecurityZone());
     }
 
     public PublishedServiceAlias( final ServiceHeader pService,
-                                  final Folder folder ) {
-        super(pService.getOid(), folder);
+                                  final Folder folder,
+                                  @Nullable final SecurityZone securityZone) {
+        super(pService.getOid(), folder, securityZone);
     }
 
     @XmlTransient

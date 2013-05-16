@@ -3,6 +3,8 @@ package com.l7tech.objectmodel;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.imp.ZoneablePersistentEntityImp;
 import com.l7tech.objectmodel.migration.Migration;
+import org.jetbrains.annotations.Nullable;
+
 import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
 
 import javax.xml.bind.annotation.XmlRootElement;
@@ -22,13 +24,15 @@ public abstract class Alias<ET extends PersistentEntity> extends ZoneablePersist
     protected Alias() { }
 
     protected Alias( final long entityOid,
-                     final Folder folder ) {
+                     final Folder folder,
+                     @Nullable final SecurityZone securityZone) {
         this.entityOid = entityOid;
         this.folder = folder;
+        this.securityZone = securityZone;
     }
 
-    protected Alias(ET entity, Folder folder) {
-        this( entity.getOid(), folder);
+    protected Alias(ET entity, Folder folder, @Nullable final SecurityZone securityZone) {
+        this( entity.getOid(), folder, securityZone);
     }
 
     /**
