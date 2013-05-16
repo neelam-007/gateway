@@ -1084,6 +1084,7 @@ public class AssertionMessages extends Messages {
     public static final M SSH_CREDENTIAL_AUTH_USER = m(9432, Level.FINE, "Found credentials for user ''{0}''.");
     public static final M SSH_ROUTING_PASSTHRU_NO_USERNAME = m(9433, Level.WARNING, "No user name found for passing through to SSH server");
     public static final M SSH_ROUTING_ERROR = m(9434, Level.WARNING, "SSH routing error: {0}");
+    public static final M SSH_ROUTING_INFO= m(9435, Level.FINE, "SSH routing: {0}");
 
     // ICAP modular assertion messages
     public static final M ICAP_INVALID_TIMEOUT = m(9445, Level.WARNING, "Invalid timeout value from timeout ({0}).  Timeout value must be a valid integer with range 1 to 3600 inclusive.");

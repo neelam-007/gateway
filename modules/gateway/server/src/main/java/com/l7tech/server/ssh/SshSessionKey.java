@@ -118,7 +118,7 @@ public class SshSessionKey {
                 "user='" + user + '\'' +
                 ", host='" + host + '\'' +
                 ", port=" + port +
-                ", passwordOrPrivateKey=" + passwordOrPrivateKey +
+                ", passwordOrPrivateKey=<not printed in case this gets logged>" +
                 ", fingerPrint='" + fingerPrint + '\'' +
                 ", encryptionAlgorithms=" + encryptionAlgorithms +
                 ", macAlgorithms=" + macAlgorithms +

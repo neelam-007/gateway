@@ -55,6 +55,7 @@ import java.util.logging.Level;
 
 import static com.l7tech.external.assertions.ssh.server.SshAssertionMessages.*;
 import static com.l7tech.gateway.common.audit.AssertionMessages.SSH_ROUTING_ERROR;
+import static com.l7tech.gateway.common.audit.AssertionMessages.SSH_ROUTING_INFO;
 import static com.l7tech.gateway.common.audit.AssertionMessages.SSH_ROUTING_PASSTHRU_NO_USERNAME;
 import static com.l7tech.message.Message.getMaxBytes;
 import static com.l7tech.util.CollectionUtils.list;
@@ -184,6 +185,8 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
                 // process the command type
                 final String fileName = ExpandVariables.process(assertion.getFileName(), variables, getAudit());
                 final String directory = ExpandVariables.process(assertion.getDirectory(), variables, getAudit());
+                logAndAudit(SSH_ROUTING_INFO,
+                        new String[]{"Running route via " + (assertion.isScpProtocol() ? "scp" : "sftp") + " command: " + commandType + ", directory: " + directory + ", file: " + fileName + ", key: " + sshSessionKey});
                 if (CommandKnob.CommandType.GET.equals(commandType)) {
                     if (!performGetCommand(session, sshClient, fileName, directory, context, variables))
                         return AssertionStatus.FAILED;
@@ -236,15 +239,15 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
                 }
             } catch (SftpException | FileTransferException | JSchException e) {
                 logAndAudit(SSH_ROUTING_ERROR,
-                        new String[]{SSH_EXCEPTION_ERROR + " '" + getMessage(e) + "', server: " + sshSessionKey.getHost()}, getDebugException(e));
+                        new String[]{SSH_EXCEPTION_ERROR + " '" + getMessage(e) + "', server: " + sshSessionKey.getHost() + ", command: " + commandType}, getDebugException(e));
                 return AssertionStatus.FAILED;
             } catch (IOException e) {
                 logAndAudit(SSH_ROUTING_ERROR,
-                        new String[]{SSH_IO_EXCEPTION + " '" + getMessage(e) + "', server: " + sshSessionKey.getHost()}, getDebugException(e));
+                        new String[]{SSH_IO_EXCEPTION + " '" + getMessage(e) + "', server: " + sshSessionKey.getHost() + ", command: " + commandType}, getDebugException(e));
                 return AssertionStatus.FAILED;
             } catch (NoSuchPartException e) {
                 logAndAudit(SSH_ROUTING_ERROR,
-                        new String[]{SSH_NO_SUCH_PART_ERROR + ", server: " + sshSessionKey.getHost()}, getDebugException(e));
+                        new String[]{SSH_NO_SUCH_PART_ERROR + ", server: " + sshSessionKey.getHost() + ", command: " + commandType}, getDebugException(e));
                 return AssertionStatus.FAILED;
             } catch (Throwable t) {
                 logAndAudit(SSH_ROUTING_ERROR,
