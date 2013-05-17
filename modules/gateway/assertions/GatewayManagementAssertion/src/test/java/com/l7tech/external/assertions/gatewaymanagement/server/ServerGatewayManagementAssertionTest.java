@@ -66,6 +66,7 @@ import com.l7tech.test.BugNumber;
 import com.l7tech.util.*;
 import com.l7tech.util.Functions.UnaryVoidThrows;
 import com.l7tech.xml.soap.SoapUtil;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Before;
 import org.junit.Test;
@@ -2871,6 +2872,12 @@ public class ServerGatewayManagementAssertionTest {
         @Override
         public Collection<PublishedService> findByRoutingUri(String routingUri) throws FindException {
             throw new FindException("Not implemented");
+        }
+
+        @NotNull
+        @Override
+        public Collection<PublishedService> findBySecurityZoneOid(long securityZoneOid) {
+            return null;
         }
     }
 

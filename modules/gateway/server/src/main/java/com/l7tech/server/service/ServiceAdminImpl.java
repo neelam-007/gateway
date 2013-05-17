@@ -27,6 +27,7 @@ import com.l7tech.server.uddi.UDDIHelper;
 import com.l7tech.server.uddi.UDDITemplateManager;
 import com.l7tech.uddi.*;
 import com.l7tech.util.*;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.beans.factory.DisposableBean;
 
@@ -734,6 +735,12 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
     @Override
     public void destroy() throws Exception {
         if (validatorExecutor != null) validatorExecutor.shutdown();
+    }
+
+    @NotNull
+    @Override
+    public Collection<PublishedService> findBySecurityZoneOid(long securityZoneOid) {
+        return serviceManager.findBySecurityZoneOid(securityZoneOid);
     }
 
     private Config validated( final Config config ) {

@@ -17,6 +17,7 @@ import com.l7tech.uddi.WsdlPortInfo;
 import com.l7tech.util.CollectionUpdate;
 import com.l7tech.util.CollectionUpdateProducer;
 import com.l7tech.util.ExceptionUtils;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.support.ApplicationObjectSupport;
 
@@ -372,5 +373,11 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
     @Override
     public <OUT extends Serializable> void cancelJob(JobId<OUT> jobId, boolean interruptIfRunning) {
         asyncSupport.cancelJob(jobId, interruptIfRunning);
+    }
+
+    @NotNull
+    @Override
+    public Collection<PublishedService> findBySecurityZoneOid(long securityZoneOid) {
+        return null;
     }
 }

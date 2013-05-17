@@ -14,6 +14,7 @@ import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyVersion;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
 import java.util.Map;
@@ -199,6 +200,12 @@ public class PolicyVersioningServiceManager implements ServiceManager {
     @Override
     public void deleteRoles( final long entityOid ) throws DeleteException {
         serviceManager.deleteRoles( entityOid );
+    }
+
+    @NotNull
+    @Override
+    public Collection<PublishedService> findBySecurityZoneOid(long securityZoneOid) {
+        return serviceManager.findBySecurityZoneOid(securityZoneOid);
     }
 
     //- PRIVATE

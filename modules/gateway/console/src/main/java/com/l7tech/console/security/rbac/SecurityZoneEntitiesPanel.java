@@ -15,6 +15,8 @@ import javax.swing.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import static com.l7tech.gui.util.TableUtil.column;
 import static com.l7tech.util.Functions.propertyTransform;
@@ -23,6 +25,7 @@ import static com.l7tech.util.Functions.propertyTransform;
  * Panel which displays the NamedEntities in a SecurityZone.
  */
 public class SecurityZoneEntitiesPanel extends JPanel {
+    private static final Logger logger = Logger.getLogger(SecurityZoneEntitiesPanel.class.getName());
     private JPanel contentPanel;
     private JTable entitiesTable;
     private JScrollPane scrollPane;
@@ -67,10 +70,15 @@ public class SecurityZoneEntitiesPanel extends JPanel {
                 switch (selected) {
                     case POLICY:
                         entities.addAll(Registry.getDefault().getPolicyAdmin().findBySecurityZoneOid(securityZone.getOid()));
+                        break;
+                    case SERVICE:
+                        entities.addAll(Registry.getDefault().getServiceManager().findBySecurityZoneOid(securityZone.getOid()));
+                        break;
                     default:
-                        Collections.sort(entities, new NamedEntityComparator());
-                        entitiesTableModel.setRows(entities);
+                        // do nothing
                 }
+                Collections.sort(entities, new NamedEntityComparator());
+                entitiesTableModel.setRows(entities);
             }
         } else {
             entitiesTableModel.setRows(Collections.<NamedEntity>emptyList());
