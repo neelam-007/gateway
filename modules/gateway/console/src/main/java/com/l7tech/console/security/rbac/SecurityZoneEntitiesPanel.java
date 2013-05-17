@@ -1,20 +1,26 @@
 package com.l7tech.console.security.rbac;
 
+import com.l7tech.console.util.ConsoleEntityFinder;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.SecurityZoneUtil;
 import com.l7tech.gui.SimpleTableModel;
+import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.TableUtil;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.NamedEntity;
 import com.l7tech.objectmodel.SecurityZone;
 import com.l7tech.objectmodel.comparator.NamedEntityComparator;
+import com.l7tech.util.ExceptionUtils;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -67,18 +73,15 @@ public class SecurityZoneEntitiesPanel extends JPanel {
             final EntityType selected = getSelectedEntityType();
             if (selected != null) {
                 final List<NamedEntity> entities = new ArrayList<>();
-                switch (selected) {
-                    case POLICY:
-                        entities.addAll(Registry.getDefault().getPolicyAdmin().findBySecurityZoneOid(securityZone.getOid()));
-                        break;
-                    case SERVICE:
-                        entities.addAll(Registry.getDefault().getServiceManager().findBySecurityZoneOid(securityZone.getOid()));
-                        break;
-                    default:
-                        // do nothing
+                final ConsoleEntityFinder entityFinder = Registry.getDefault().getEntityFinder();
+                try {
+                    entities.addAll(entityFinder.findByEntityTypeAndSecurityZoneOid(selected, securityZone.getOid()));
+                    Collections.sort(entities, new NamedEntityComparator());
+                    entitiesTableModel.setRows(entities);
+                } catch (final FindException e) {
+                    logger.log(Level.WARNING, "Error retrieving entities of type " + selected + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                    DialogDisplayer.showMessageDialog(this, "Unable to retrieve entities", "Error", JOptionPane.ERROR_MESSAGE, null);
                 }
-                Collections.sort(entities, new NamedEntityComparator());
-                entitiesTableModel.setRows(entities);
             }
         } else {
             entitiesTableModel.setRows(Collections.<NamedEntity>emptyList());

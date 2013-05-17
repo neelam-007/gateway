@@ -3,6 +3,7 @@ package com.l7tech.console.util.registry;
 import com.l7tech.common.io.PortRanges;
 import com.l7tech.console.TrustedCertAdminStub;
 import com.l7tech.console.security.SecurityProvider;
+import com.l7tech.console.util.ConsoleEntityFinder;
 import com.l7tech.console.util.ConsoleLicenseManager;
 import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.VersionException;
@@ -99,12 +100,20 @@ public class RegistryStub extends Registry {
      */
     @Override
     public ServiceAdmin getServiceManager() {
-        return null;
+        return serviceManager;
+    }
+
+    public void setServiceManager(final ServiceAdmin serviceManager) {
+        this.serviceManager = serviceManager;
     }
 
     @Override
     public FolderAdmin getFolderAdmin() {
-        return null;
+        return folderAdmin;
+    }
+
+    public void setFolderAdmin(final FolderAdmin folderAdmin) {
+        this.folderAdmin = folderAdmin;
     }
 
     /**
@@ -158,7 +167,11 @@ public class RegistryStub extends Registry {
 
     @Override
     public PolicyAdmin getPolicyAdmin() {
-        return null;
+        return policyAdmin;
+    }
+
+    public void setPolicyAdmin(final PolicyAdmin policyAdmin) {
+        this.policyAdmin = policyAdmin;
     }
 
     @Override
@@ -482,7 +495,7 @@ public class RegistryStub extends Registry {
 
     @NotNull
     @Override
-    public HeaderBasedEntityFinder getEntityFinder() {
+    public ConsoleEntityFinder getEntityFinder() {
         throw new UnsupportedOperationException();
     }
 
@@ -565,5 +578,8 @@ public class RegistryStub extends Registry {
     private LogSinkAdmin logSinkAdmin = new LogSinkAdminStub();
     private TrustedCertAdmin trustedCertAdmin = new TrustedCertAdminStub();
     private EncapsulatedAssertionAdmin encapsulatedAssertionAdmin;
+    private ServiceAdmin serviceManager;
+    private PolicyAdmin policyAdmin;
+    private FolderAdmin folderAdmin;
     private boolean adminContextPresent;
 }

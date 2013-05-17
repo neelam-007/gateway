@@ -6,11 +6,12 @@ import com.l7tech.objectmodel.RoleAwareEntityManager;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.FolderHeader;
 import com.l7tech.objectmodel.folder.FolderedEntityManager;
+import com.l7tech.server.security.rbac.SecurityZoneEntityManager;
 
 /**
  * Manager interface for managing service/policy folders.
  */
-public interface FolderManager extends FolderedEntityManager<Folder, FolderHeader>, RoleAwareEntityManager<Folder> {
+public interface FolderManager extends FolderedEntityManager<Folder, FolderHeader>, RoleAwareEntityManager<Folder>, SecurityZoneEntityManager<Folder> {
 
     /**
      * @return  The root folder

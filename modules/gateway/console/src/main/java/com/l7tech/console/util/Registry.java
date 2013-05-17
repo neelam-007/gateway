@@ -229,7 +229,7 @@ public abstract class Registry {
      * @throws IllegalStateException if the AdminContext is not available. See isAdminContextPresent()
      */
     @NotNull
-    public abstract HeaderBasedEntityFinder getEntityFinder();
+    public abstract ConsoleEntityFinder getEntityFinder();
 
     /**
      * @return the log sink admin interface implementation. Never null.
@@ -417,7 +417,7 @@ public abstract class Registry {
 
         @NotNull
         @Override
-        public HeaderBasedEntityFinder getEntityFinder() {
+        public ConsoleEntityFinder getEntityFinder() {
             throw new IllegalStateException(ILLEGAL_STATE_MSG);
         }
 

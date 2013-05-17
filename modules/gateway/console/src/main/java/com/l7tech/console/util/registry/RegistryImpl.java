@@ -1,6 +1,7 @@
 package com.l7tech.console.util.registry;
 
 import com.l7tech.console.security.SecurityProvider;
+import com.l7tech.console.util.ConsoleEntityFinder;
 import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.admin.*;
 import com.l7tech.gateway.common.audit.AuditAdmin;
@@ -324,9 +325,9 @@ public final class RegistryImpl extends Registry
 
     @NotNull
     @Override
-    public HeaderBasedEntityFinder getEntityFinder() {
+    public ConsoleEntityFinder getEntityFinder() {
         checkAdminContext();
-        return applicationContext.getBean("headerBasedEntityFinder", HeaderBasedEntityFinder.class);
+        return applicationContext.getBean("consoleEntityFinder", ConsoleEntityFinder.class);
     }
 
     @Override

@@ -9,6 +9,7 @@ import com.l7tech.server.ServerConfigParams;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
 import java.util.Map;
@@ -160,6 +161,12 @@ public class FolderAdminImpl implements FolderAdmin {
 
         FolderedEntityManager manager = entityManagerMap.get( entity.getClass() );
         manager.updateFolder( entity, folder );
+    }
+
+    @NotNull
+    @Override
+    public Collection<Folder> findBySecurityZoneOid(long securityZoneOid) {
+        return folderManager.findBySecurityZoneOid(securityZoneOid);
     }
 
     /**

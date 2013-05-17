@@ -151,12 +151,12 @@
 
     <bean id="policyPathBuilderFactory" class="com.l7tech.policy.PolicyPathBuilderFactory">
         <constructor-arg ref="managerPolicyCache"/>
-        <constructor-arg ref="headerBasedEntityFinder"/>
+        <constructor-arg ref="consoleEntityFinder"/>
     </bean>
 
     <bean id="managerPolicyCache" class="com.l7tech.console.policy.ManagerPolicyCache"/>
 
-    <bean id="headerBasedEntityFinder" class="com.l7tech.console.util.ConsoleEntityFinderImpl"/>
+    <bean id="consoleEntityFinder" class="com.l7tech.console.util.ConsoleEntityFinderImpl"/>
 
     <bean id="serviceAdmin" parent="invokerCommon">
         <property name="serviceUrl" value="https://securespangateway/ssg/manager/ServiceAdmin"/>
