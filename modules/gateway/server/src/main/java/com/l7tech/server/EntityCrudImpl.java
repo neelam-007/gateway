@@ -197,8 +197,13 @@ public class EntityCrudImpl extends HibernateDaoSupport implements EntityCrud {
     }
 
     @Override
-    public Collection<Entity> findByEntityTypeAndSecurityZoneOid(@NotNull EntityType type, long securityZoneOid) throws FindException {
+    public Collection<Entity> findByEntityTypeAndSecurityZoneOid(@NotNull final EntityType type, final long securityZoneOid) throws FindException {
         return entityFinder.findByEntityTypeAndSecurityZoneOid(type, securityZoneOid);
+    }
+
+    @Override
+    public <ET extends Entity> Collection<ET> findByClassAndSecurityZoneOid(@NotNull final Class<ET> clazz, final long securityZoneOid) throws FindException {
+        return entityFinder.findByClassAndSecurityZoneOid(clazz, securityZoneOid);
     }
 
     private ReadOnlyEntityManager getReadOnlyManager(Class<? extends Entity> clazz) {

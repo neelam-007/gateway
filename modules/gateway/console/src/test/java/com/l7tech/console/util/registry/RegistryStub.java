@@ -251,6 +251,11 @@ public class RegistryStub extends Registry {
             }
 
             @Override
+            public Collection<Entity> findEntitiesByClassAndSecurityZoneOid(@NotNull Class clazz, long securityZoneOid) throws FindException {
+                throw new FindException("not impl in stub");
+            }
+
+            @Override
             public Collection<AssertionAccess> findAccessibleAssertions() {
                 return Functions.map(Arrays.asList(AllAssertions.SERIALIZABLE_EVERYTHING), AssertionAccess.builderFromAssertion());
             }

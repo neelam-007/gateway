@@ -194,6 +194,11 @@ public class RbacAdminImpl implements RbacAdmin {
     }
 
     @Override
+    public Collection<Entity> findEntitiesByClassAndSecurityZoneOid(@NotNull final Class clazz, final long securityZoneOid) throws FindException {
+        return entityFinder.findByClassAndSecurityZoneOid(clazz, securityZoneOid);
+    }
+
+    @Override
     public Collection<AssertionAccess> findAccessibleAssertions() throws FindException {
         // Return them all, and allow the RBAC interceptor to filter out any the current admin can't see
         return assertionAccessManager.findAllRegistered();

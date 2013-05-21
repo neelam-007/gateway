@@ -1,6 +1,8 @@
 package com.l7tech.server;
 
 import com.l7tech.gateway.common.audit.AuditRecordHeader;
+import com.l7tech.gateway.common.security.keystore.SsgKeyMetadata;
+import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.EntityType;
@@ -16,6 +18,7 @@ import org.springframework.orm.hibernate3.HibernateCallback;
 import org.springframework.orm.hibernate3.HibernateTemplate;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.logging.Level;
 
@@ -52,7 +55,7 @@ public class EntityFinderImplTest {
     public void findByEntityTypeAndSecurityZoneOid() throws Exception {
         entities.add(new PublishedService());
         when(hibernateTemplate.execute(any(HibernateCallback.class))).thenReturn(entities);
-        final List<Entity> found = finder.findByEntityTypeAndSecurityZoneOid(EntityType.SERVICE, 1234L);
+        final Collection<Entity> found = finder.findByEntityTypeAndSecurityZoneOid(EntityType.SERVICE, 1234L);
         assertEquals(entities, found);
     }
 
@@ -65,5 +68,18 @@ public class EntityFinderImplTest {
     public void findByEntityTypeAndSecurityZoneOidHibernateException() throws Exception {
         when(hibernateTemplate.execute(any(HibernateCallback.class))).thenThrow(new HibernateException("mocking exception"));
         finder.findByEntityTypeAndSecurityZoneOid(EntityType.SSG_KEY_ENTRY, 1234L);
+    }
+
+    @Test
+    public void findByClassAndSecurityZoneOid() throws Exception {
+        entities.add(new SsgKeyMetadata());
+        when(hibernateTemplate.execute(any(HibernateCallback.class))).thenReturn(entities);
+        final Collection<SsgKeyMetadata> found = finder.findByClassAndSecurityZoneOid(SsgKeyMetadata.class, 1234L);
+        assertEquals(entities, found);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void findByClassAndSecurityZoneOidNotZoneable() throws Exception {
+        finder.findByClassAndSecurityZoneOid(Role.class, 1234L);
     }
 }

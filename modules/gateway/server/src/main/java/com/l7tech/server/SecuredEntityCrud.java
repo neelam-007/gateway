@@ -92,6 +92,11 @@ public class SecuredEntityCrud implements EntityCrud {
         return entityCrud.findByEntityTypeAndSecurityZoneOid(type, securityZoneOid);
     }
 
+    @Override
+    public <ET extends Entity> Collection<ET> findByClassAndSecurityZoneOid(@NotNull final Class<ET> clazz, final long securityZoneOid) throws FindException {
+        return entityCrud.findByClassAndSecurityZoneOid(clazz, securityZoneOid);
+    }
+
     //- PRIVATE
 
     private final RbacServices services;
