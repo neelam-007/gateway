@@ -1,4 +1,4 @@
-package com.l7tech.console.util;
+package com.l7tech.objectmodel;
 
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
@@ -17,5 +17,5 @@ public interface SecurityZoneEntityFinder {
      * @return a collection of entities of the given EntityType which are in a SecurityZone identified by the given oid.
      * @throws FindException if a db error occurs or the given EntityType is not supported.
      */
-    public Collection<NamedEntity> findByEntityTypeAndSecurityZoneOid(@NotNull final EntityType type, final long securityZoneOid) throws FindException;
+    public Collection<Entity> findByEntityTypeAndSecurityZoneOid(@NotNull final EntityType type, final long securityZoneOid) throws FindException;
 }

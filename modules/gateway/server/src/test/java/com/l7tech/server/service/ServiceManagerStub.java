@@ -10,7 +10,6 @@ import com.l7tech.server.EntityManagerStub;
 import com.l7tech.server.policy.PolicyManager;
 import com.l7tech.wsdl.Wsdl;
 import com.l7tech.xml.soap.SoapVersion;
-import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -194,11 +193,5 @@ public class ServiceManagerStub extends EntityManagerStub<PublishedService, Serv
 
     private static PublishedService[] toArray( Collection<PublishedService> publishedServices ) {
         return publishedServices.toArray( new PublishedService[publishedServices.size()] );
-    }
-
-    @NotNull
-    @Override
-    public Collection<PublishedService> findBySecurityZoneOid(long securityZoneOid) {
-        return null;
     }
 }

@@ -163,12 +163,6 @@ public class FolderAdminImpl implements FolderAdmin {
         manager.updateFolder( entity, folder );
     }
 
-    @NotNull
-    @Override
-    public Collection<Folder> findBySecurityZoneOid(long securityZoneOid) {
-        return folderManager.findBySecurityZoneOid(securityZoneOid);
-    }
-
     /**
      * Performs the following validations on the supplied Folder:
      * <ul>

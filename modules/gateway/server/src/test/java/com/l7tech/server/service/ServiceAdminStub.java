@@ -374,10 +374,4 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
     public <OUT extends Serializable> void cancelJob(JobId<OUT> jobId, boolean interruptIfRunning) {
         asyncSupport.cancelJob(jobId, interruptIfRunning);
     }
-
-    @NotNull
-    @Override
-    public Collection<PublishedService> findBySecurityZoneOid(long securityZoneOid) {
-        return null;
-    }
 }

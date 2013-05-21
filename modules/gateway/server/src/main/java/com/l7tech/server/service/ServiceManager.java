@@ -7,14 +7,13 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.folder.FolderedEntityManager;
 import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.gateway.common.service.PublishedService;
-import com.l7tech.server.security.rbac.SecurityZoneEntityManager;
 
 import java.util.Collection;
 
 /**
  * Service API. Get instance of this through the Locator class.
  */
-public interface ServiceManager extends PropertySearchableEntityManager<ServiceHeader>, FolderedEntityManager<PublishedService, ServiceHeader>, RoleAwareEntityManager<PublishedService>, SecurityZoneEntityManager<PublishedService> {
+public interface ServiceManager extends PropertySearchableEntityManager<ServiceHeader>, FolderedEntityManager<PublishedService, ServiceHeader>, RoleAwareEntityManager<PublishedService> {
     /**
      * Get what the server sees at that url.
      * Meant to be used by admin console entity.

@@ -2873,12 +2873,6 @@ public class ServerGatewayManagementAssertionTest {
         public Collection<PublishedService> findByRoutingUri(String routingUri) throws FindException {
             throw new FindException("Not implemented");
         }
-
-        @NotNull
-        @Override
-        public Collection<PublishedService> findBySecurityZoneOid(long securityZoneOid) {
-            return null;
-        }
     }
 
 }

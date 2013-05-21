@@ -3,7 +3,6 @@ package com.l7tech.console.util.registry;
 import com.l7tech.common.io.PortRanges;
 import com.l7tech.console.TrustedCertAdminStub;
 import com.l7tech.console.security.SecurityProvider;
-import com.l7tech.console.util.ConsoleEntityFinder;
 import com.l7tech.console.util.ConsoleLicenseManager;
 import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.VersionException;
@@ -244,6 +243,11 @@ public class RegistryStub extends Registry {
             @Override
             public void deleteSecurityZone(SecurityZone securityZone) throws DeleteException {
                 throw new DeleteException("not impl in stub");
+            }
+
+            @Override
+            public Collection<Entity> findEntitiesByTypeAndSecurityZoneOid(@NotNull EntityType type, long securityZoneOid) throws FindException {
+                throw new FindException("not impl in stub");
             }
 
             @Override
@@ -495,7 +499,7 @@ public class RegistryStub extends Registry {
 
     @NotNull
     @Override
-    public ConsoleEntityFinder getEntityFinder() {
+    public HeaderBasedEntityFinder getEntityFinder() {
         throw new UnsupportedOperationException();
     }
 

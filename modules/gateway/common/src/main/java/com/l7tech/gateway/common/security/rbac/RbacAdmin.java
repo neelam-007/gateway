@@ -7,6 +7,7 @@ import com.l7tech.gateway.common.admin.Administrative;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.AssertionAccess;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -97,6 +98,9 @@ public interface RbacAdmin {
 
     @Secured(types=EntityType.SECURITY_ZONE, stereotype=DELETE_ENTITY)
     void deleteSecurityZone(SecurityZone securityZone) throws DeleteException;
+
+    @Secured(stereotype = FIND_ENTITIES)
+    Collection<Entity> findEntitiesByTypeAndSecurityZoneOid(@NotNull final EntityType type, final long securityZoneOid) throws FindException;
 
     /**
      * Obtain information about the list of assertions classnames that the current admin user is permitted to make use of.

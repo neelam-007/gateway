@@ -17,7 +17,7 @@ import java.util.Collection;
 @Transactional(propagation=REQUIRED, rollbackFor=Throwable.class)
 @Secured(types= EntityType.FOLDER)
 @Administrative
-public interface FolderAdmin extends SecurityZoneEntityAdmin<Folder>{
+public interface FolderAdmin {
 
     String ROLE_NAME_TYPE_SUFFIX = "Folder";
     

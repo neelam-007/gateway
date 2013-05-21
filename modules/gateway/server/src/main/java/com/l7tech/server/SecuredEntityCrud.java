@@ -12,6 +12,7 @@ import org.jetbrains.annotations.NotNull;
 import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.util.Collection;
 import java.util.Map;
 
 /**
@@ -86,6 +87,11 @@ public class SecuredEntityCrud implements EntityCrud {
         entityCrud.update(entity);
     }
 
+    @Override
+    public Collection<Entity> findByEntityTypeAndSecurityZoneOid(@NotNull EntityType type, long securityZoneOid) throws FindException {
+        return entityCrud.findByEntityTypeAndSecurityZoneOid(type, securityZoneOid);
+    }
+
     //- PRIVATE
 
     private final RbacServices services;
@@ -129,5 +135,4 @@ public class SecuredEntityCrud implements EntityCrud {
     private User getUser() {
         return JaasUtils.getCurrentUser();
     }
-
 }

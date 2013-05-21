@@ -6,9 +6,6 @@ import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.server.EntityManagerStub;
-import org.jetbrains.annotations.NotNull;
-
-import java.util.Collection;
 
 /**
  * @author alex
@@ -39,11 +36,5 @@ public class FolderManagerStub extends EntityManagerStub<Folder, FolderHeader> i
 
     @Override
     public void addReadonlyFolderRole(Folder folder) throws SaveException {
-    }
-
-    @NotNull
-    @Override
-    public Collection<Folder> findBySecurityZoneOid(long securityZoneOid) {
-        return null;
     }
 }

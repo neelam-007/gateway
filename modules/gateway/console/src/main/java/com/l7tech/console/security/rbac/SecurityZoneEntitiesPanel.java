@@ -1,18 +1,20 @@
 package com.l7tech.console.security.rbac;
 
-import com.l7tech.console.util.ConsoleEntityFinder;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.SecurityZoneUtil;
+import com.l7tech.gateway.common.security.rbac.RbacAdmin;
+import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.gateway.common.service.PublishedServiceAlias;
 import com.l7tech.gui.SimpleTableModel;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.TableUtil;
 import com.l7tech.gui.util.Utilities;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.NamedEntity;
-import com.l7tech.objectmodel.SecurityZone;
-import com.l7tech.objectmodel.comparator.NamedEntityComparator;
+import com.l7tech.objectmodel.*;
+import com.l7tech.policy.Policy;
+import com.l7tech.policy.PolicyAlias;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Functions;
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
@@ -25,7 +27,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.l7tech.gui.util.TableUtil.column;
-import static com.l7tech.util.Functions.propertyTransform;
 
 /**
  * Panel which displays the NamedEntities in a SecurityZone.
@@ -36,13 +37,15 @@ public class SecurityZoneEntitiesPanel extends JPanel {
     private JTable entitiesTable;
     private JScrollPane scrollPane;
     private JComboBox entityTypeComboBox;
-    private SimpleTableModel<NamedEntity> entitiesTableModel;
+    private SimpleTableModel<Entity> entitiesTableModel;
     private SecurityZone securityZone;
 
     public SecurityZoneEntitiesPanel() {
         final List<EntityType> entityTypes = new ArrayList<>();
         entityTypes.add(null);
         entityTypes.addAll(SecurityZoneUtil.getAllZoneableEntityTypes());
+        // do not support audits as there may be a LOT of them in the zone
+        entityTypes.remove(EntityType.AUDIT_MESSAGE);
         entityTypeComboBox.setModel(new DefaultComboBoxModel<EntityType>(entityTypes.toArray(new EntityType[entityTypes.size()])));
         entityTypeComboBox.addActionListener(new ActionListener() {
             @Override
@@ -50,7 +53,32 @@ public class SecurityZoneEntitiesPanel extends JPanel {
                 loadTable();
             }
         });
-        entitiesTableModel = TableUtil.configureTable(entitiesTable, column("Name", 80, 300, 99999, propertyTransform(NamedEntity.class, "name")));
+        entitiesTableModel = TableUtil.configureTable(entitiesTable, column("Name", 80, 300, 99999, new Functions.Unary<String, Entity>() {
+            @Override
+            public String call(final Entity entity) {
+                String name = StringUtils.EMPTY;
+                if (entity instanceof NamedEntity) {
+                    name = ((NamedEntity) entity).getName();
+                } else if (entity instanceof PublishedServiceAlias) {
+                    final PublishedServiceAlias alias = (PublishedServiceAlias) entity;
+                    try {
+                        final PublishedService owningService = Registry.getDefault().getServiceManager().findServiceByID(String.valueOf(alias.getEntityOid()));
+                        name = owningService.getName() + " alias";
+                    } catch (final FindException e) {
+                        name = "service id " + alias.getEntityOid() + " alias";
+                    }
+                } else if (entity instanceof PolicyAlias) {
+                    final PolicyAlias alias = (PolicyAlias) entity;
+                    try {
+                        final Policy owningPolicy = Registry.getDefault().getPolicyAdmin().findPolicyByPrimaryKey(alias.getEntityOid());
+                        name = owningPolicy.getName() + " alias";
+                    } catch (final FindException e) {
+                        name = "policy id " + alias.getEntityOid() + " alias";
+                    }
+                }
+                return name;
+            }
+        }));
         Utilities.setRowSorter(entitiesTable, entitiesTableModel);
     }
 
@@ -72,11 +100,10 @@ public class SecurityZoneEntitiesPanel extends JPanel {
         if (securityZone != null) {
             final EntityType selected = getSelectedEntityType();
             if (selected != null) {
-                final List<NamedEntity> entities = new ArrayList<>();
-                final ConsoleEntityFinder entityFinder = Registry.getDefault().getEntityFinder();
+                final List<Entity> entities = new ArrayList<>();
+                final RbacAdmin rbacAdmin = Registry.getDefault().getRbacAdmin();
                 try {
-                    entities.addAll(entityFinder.findByEntityTypeAndSecurityZoneOid(selected, securityZone.getOid()));
-                    Collections.sort(entities, new NamedEntityComparator());
+                    entities.addAll(rbacAdmin.findEntitiesByTypeAndSecurityZoneOid(selected, securityZone.getOid()));
                     entitiesTableModel.setRows(entities);
                 } catch (final FindException e) {
                     logger.log(Level.WARNING, "Error retrieving entities of type " + selected + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
@@ -84,7 +111,7 @@ public class SecurityZoneEntitiesPanel extends JPanel {
                 }
             }
         } else {
-            entitiesTableModel.setRows(Collections.<NamedEntity>emptyList());
+            entitiesTableModel.setRows(Collections.<Entity>emptyList());
         }
     }
 }

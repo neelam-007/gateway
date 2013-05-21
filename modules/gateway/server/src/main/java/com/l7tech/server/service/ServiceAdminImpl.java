@@ -737,12 +737,6 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
         if (validatorExecutor != null) validatorExecutor.shutdown();
     }
 
-    @NotNull
-    @Override
-    public Collection<PublishedService> findBySecurityZoneOid(long securityZoneOid) {
-        return serviceManager.findBySecurityZoneOid(securityZoneOid);
-    }
-
     private Config validated( final Config config ) {
         final ValidatedConfig vc = new ValidatedConfig( config, logger, new Resolver<String,String>(){
             @Override

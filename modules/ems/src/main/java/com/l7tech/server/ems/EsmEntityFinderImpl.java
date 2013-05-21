@@ -5,6 +5,7 @@ import com.l7tech.server.EntityFinder;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.Serializable;
+import java.util.Collection;
 
 /**
  *
@@ -28,6 +29,11 @@ public class EsmEntityFinderImpl implements EntityFinder {
 
     @Override
     public EntityHeader findHeader( final EntityType etype,  final Serializable pk ) throws FindException {
+        return null;
+    }
+
+    @Override
+    public Collection<Entity> findByEntityTypeAndSecurityZoneOid(@NotNull EntityType type, long securityZoneOid) throws FindException {
         return null;
     }
 }

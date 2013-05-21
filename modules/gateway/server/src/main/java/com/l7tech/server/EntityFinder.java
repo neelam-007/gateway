@@ -16,7 +16,7 @@ import java.io.Serializable;
  * 
  * @author alex
  */
-public interface EntityFinder extends HeaderBasedEntityFinder {
+public interface EntityFinder extends HeaderBasedEntityFinder, SecurityZoneEntityFinder {
     @Transactional(readOnly=true)
     EntityHeaderSet<EntityHeader> findAll(Class<? extends Entity> entityClass) throws FindException;
 

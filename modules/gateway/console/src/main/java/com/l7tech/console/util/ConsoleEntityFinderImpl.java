@@ -4,16 +4,13 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
-
 
 /**
  * A utility that provides read-only lookup services for entities, backed by the actual admin APIs for the
  * corresponding entities.  This can be used within the SSM.  RBAC enforcement is done on the actual entity APIs.
  */
-public class ConsoleEntityFinderImpl implements ConsoleEntityFinder {
+public class ConsoleEntityFinderImpl implements HeaderBasedEntityFinder {
 
     @NotNull
     Entity findByEntityTypeAndGuid(EntityType type, String guid) throws FindException {
@@ -43,26 +40,6 @@ public class ConsoleEntityFinderImpl implements ConsoleEntityFinder {
                 return findByEntityTypeAndGuid(header.getType(), guid);
         }
         throw new UnsupportedEntityTypeException("Entity type currently not supported: " + header.getType());
-    }
-
-    @Override
-    @NotNull
-    public Collection<NamedEntity> findByEntityTypeAndSecurityZoneOid(@NotNull final EntityType type, final long securityZoneOid) throws FindException {
-        Collection<NamedEntity> entities = new HashSet<>();
-        switch (type) {
-            case POLICY :
-                entities.addAll(registry().getPolicyAdmin().findBySecurityZoneOid(securityZoneOid));
-                break;
-            case SERVICE:
-                entities.addAll(registry().getServiceManager().findBySecurityZoneOid(securityZoneOid));
-                break;
-            case FOLDER:
-                entities.addAll(registry().getFolderAdmin().findBySecurityZoneOid(securityZoneOid));
-                break;
-            default:
-                throw new UnsupportedEntityTypeException("Entity type currently not supported: " + type);
-        }
-        return entities;
     }
 
     /**

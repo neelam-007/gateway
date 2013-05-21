@@ -28,6 +28,7 @@ import org.hibernate.MappingException;
 import org.hibernate.Session;
 import org.hibernate.criterion.ProjectionList;
 import org.hibernate.criterion.Projections;
+import org.hibernate.criterion.Restrictions;
 import org.hibernate.metadata.ClassMetadata;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -38,6 +39,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.io.Serializable;
 import java.security.KeyStoreException;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Logger;
@@ -267,6 +269,28 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
             name = ne.getName();
         }
         return new EntityHeader(e.getId(), etype, name, null);
+    }
+
+    @SuppressWarnings({"unchecked"})
+    @Override
+    public List<Entity> findByEntityTypeAndSecurityZoneOid(@NotNull final EntityType type, final long securityZoneOid) throws FindException {
+        if (!type.isSecurityZoneable()) {
+            throw new IllegalArgumentException("EntityType must be support security zones.");
+        }
+        try {
+            final List<Entity> results = (List<Entity>) getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
+                @Override
+                public Collection doInHibernateReadOnly(Session session) throws HibernateException {
+                    final Criteria criteria = session.createCriteria(type.getEntityClass());
+                    criteria.add(Restrictions.eq("securityZone.oid", securityZoneOid));
+                    return criteria.list();
+                }
+            });
+            return results;
+        } catch (final HibernateException e) {
+            // can happen if the entity type class does store its security zone in the database
+            throw new FindException("Unable to retrieve entities with type " + type + " and security zone oid " + securityZoneOid, e);
+        }
     }
 
     private boolean hasName(final Class entityClass, final ClassMetadata metadata) {

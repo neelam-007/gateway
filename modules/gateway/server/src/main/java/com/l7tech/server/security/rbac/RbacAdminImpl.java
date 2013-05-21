@@ -14,6 +14,7 @@ import com.l7tech.server.EntityFinder;
 import com.l7tech.server.policy.AssertionAccessManager;
 import com.l7tech.server.util.JaasUtils;
 import com.l7tech.util.ExceptionUtils;
+import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Inject;
 import java.text.MessageFormat;
@@ -185,6 +186,11 @@ public class RbacAdminImpl implements RbacAdmin {
     public void deleteSecurityZone(SecurityZone securityZone) throws DeleteException {
         securityZoneManager.deleteRoles(securityZone.getOid());
         securityZoneManager.delete(securityZone);
+    }
+
+    @Override
+    public Collection<Entity> findEntitiesByTypeAndSecurityZoneOid(@NotNull final EntityType type, final long securityZoneOid) throws FindException {
+        return entityFinder.findByEntityTypeAndSecurityZoneOid(type, securityZoneOid);
     }
 
     @Override

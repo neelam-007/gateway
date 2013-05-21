@@ -155,11 +155,6 @@ public class InvalidatingPolicyAdmin implements PolicyAdmin {
         return delegate.findLatestRevisionForPolicy(policyOid);
     }
 
-    @Override
-    public Collection<Policy> findBySecurityZoneOid(long securityZoneOid) {
-        return delegate.findBySecurityZoneOid(securityZoneOid);
-    }
-
     //- PRIVATE
 
     private final PolicyAdmin delegate;
@@ -182,5 +177,4 @@ public class InvalidatingPolicyAdmin implements PolicyAdmin {
             listener.notifyUpdate( new EntityHeader( Long.toString(policyOid), EntityType.POLICY, "", "") );
         }
     }
-
 }

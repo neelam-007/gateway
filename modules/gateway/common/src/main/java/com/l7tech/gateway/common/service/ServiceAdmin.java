@@ -3,7 +3,6 @@ package com.l7tech.gateway.common.service;
 import com.l7tech.gateway.common.AsyncAdminMethods;
 import com.l7tech.gateway.common.admin.Administrative;
 import com.l7tech.gateway.common.admin.AliasAdmin;
-import com.l7tech.gateway.common.admin.SecurityZoneEntityAdmin;
 import com.l7tech.gateway.common.security.rbac.MethodStereotype;
 import com.l7tech.gateway.common.security.rbac.RbacAdmin;
 import com.l7tech.gateway.common.security.rbac.Secured;
@@ -41,7 +40,7 @@ import static org.springframework.transaction.annotation.Propagation.SUPPORTS;
 @Transactional(propagation=REQUIRED, rollbackFor=Throwable.class)
 @Secured(types=EntityType.SERVICE)
 @Administrative
-public interface ServiceAdmin extends AsyncAdminMethods, AliasAdmin<PublishedServiceAlias>, SecurityZoneEntityAdmin<PublishedService> {
+public interface ServiceAdmin extends AsyncAdminMethods, AliasAdmin<PublishedServiceAlias> {
     String ROLE_NAME_TYPE_SUFFIX = "Service";
     String ROLE_NAME_PATTERN = RbacAdmin.ROLE_NAME_PREFIX + " {0} " + ROLE_NAME_TYPE_SUFFIX + RbacAdmin.ROLE_NAME_OID_SUFFIX;
     enum DownloadDocumentType {WSDL, SCHEMA, XSL, UNKNOWN, MOD_ASS}
