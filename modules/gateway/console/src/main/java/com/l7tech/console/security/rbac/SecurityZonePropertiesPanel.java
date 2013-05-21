@@ -2,7 +2,9 @@ package com.l7tech.console.security.rbac;
 
 import com.l7tech.console.util.SecurityZoneUtil;
 import com.l7tech.gui.SimpleTableModel;
+import com.l7tech.gui.util.ImageCache;
 import com.l7tech.gui.util.TableUtil;
+import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.SecurityZone;
 import com.l7tech.util.Functions;
@@ -10,6 +12,7 @@ import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
+import javax.swing.table.DefaultTableCellRenderer;
 import java.util.ArrayList;
 import java.util.ResourceBundle;
 import java.util.Set;
@@ -50,19 +53,40 @@ public class SecurityZonePropertiesPanel extends JPanel {
                 entityTypesLabel.setText(RESOURCES.getString(PERMITTED_ENTITY_TYPES_LABEL));
                 entityTypesTableModel = TableUtil.configureTable(entityTypesTable,
                         column("Type", 80, 300, 99999, propertyTransform(EntityType.class, "name")),
-                        column("Permitted", 40, 140, 99999, new Functions.Unary<Object, EntityType>() {
+                        column("Permitted", 40, 140, 99999, new Functions.Unary<Boolean, EntityType>() {
                             @Override
-                            public Object call(final EntityType entityType) {
-                                return permittedTypes.contains(entityType) ? "yes" : "no";
+                            public Boolean call(final EntityType entityType) {
+                                return permittedTypes.contains(entityType);
                             }
                         }));
-
                 entityTypesTableModel.setRows(new ArrayList<EntityType>(SecurityZoneUtil.getAllZoneableEntityTypes()));
+                entityTypesTable.getColumnModel().getColumn(1).setCellRenderer(new CheckOrXCellRenderer());
+                Utilities.setRowSorter(entityTypesTable, entityTypesTableModel);
             }
         } else {
             nameField.setText(StringUtils.EMPTY);
             descriptionField.setText(StringUtils.EMPTY);
             scrollPane.setVisible(false);
+        }
+    }
+
+    private class CheckOrXCellRenderer extends DefaultTableCellRenderer {
+        @Override
+        protected void setValue(final Object value) {
+            if (value != null) {
+                if (Boolean.valueOf(value.toString())) {
+                    setIcon(ImageCache.getInstance().getIconAsIcon("com/l7tech/console/resources/check16.gif"));
+                } else {
+                    setIcon(ImageCache.getInstance().getIconAsIcon("com/l7tech/console/resources/RedCrossSign16.gif"));
+                }
+            } else {
+                super.setValue(value);
+            }
+        }
+
+        @Override
+        public int getHorizontalAlignment() {
+            return JLabel.CENTER;
         }
     }
 }

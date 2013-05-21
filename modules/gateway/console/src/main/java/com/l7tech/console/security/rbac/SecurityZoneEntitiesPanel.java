@@ -8,7 +8,6 @@ import com.l7tech.gateway.common.security.keystore.SsgKeyMetadata;
 import com.l7tech.gateway.common.security.rbac.RbacAdmin;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.PublishedServiceAlias;
-import com.l7tech.gateway.common.uddi.UDDIProxiedServiceInfo;
 import com.l7tech.gui.SimpleTableModel;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.TableUtil;
@@ -22,8 +21,12 @@ import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
+import javax.swing.table.TableRowSorter;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -33,25 +36,43 @@ import java.util.logging.Logger;
 import static com.l7tech.gui.util.TableUtil.column;
 
 /**
- * Panel which displays the NamedEntities in a SecurityZone.
+ * Panel which displays the Entities in a SecurityZone.
  */
 public class SecurityZoneEntitiesPanel extends JPanel {
     private static final Logger logger = Logger.getLogger(SecurityZoneEntitiesPanel.class.getName());
+    private static final String CASE_INSENSITIVE_FLAG = "(?i)";
     private JPanel contentPanel;
     private JTable entitiesTable;
     private JScrollPane scrollPane;
     private JComboBox entityTypeComboBox;
+    private JTextField filterTextField;
+    private JButton filterButton;
+    private JButton clearButton;
     private SimpleTableModel<Entity> entitiesTableModel;
     private SecurityZone securityZone;
 
     public SecurityZoneEntitiesPanel() {
         initComboBox();
         initTable();
+        initFiltering();
+        enableDisable();
     }
 
     public void configure(@Nullable final SecurityZone securityZone) {
         this.securityZone = securityZone;
+        if (this.securityZone == null) {
+            entityTypeComboBox.setSelectedItem(null);
+        }
         loadTable();
+        enableDisable();
+    }
+
+    private void enableDisable() {
+        entityTypeComboBox.setEnabled(securityZone != null);
+        entitiesTable.setEnabled(securityZone != null);
+        filterTextField.setEnabled(securityZone != null);
+        filterButton.setEnabled(filterTextField.getText().length() > 0);
+        clearButton.setEnabled(filterTextField.getText().length() > 0);
     }
 
     @Nullable
@@ -61,6 +82,37 @@ public class SecurityZoneEntitiesPanel extends JPanel {
             return (EntityType) selected;
         }
         return null;
+    }
+
+    private void initFiltering() {
+        filterButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(final ActionEvent e) {
+                ((TableRowSorter) entitiesTable.getRowSorter()).setRowFilter(RowFilter.regexFilter(CASE_INSENSITIVE_FLAG + filterTextField.getText().trim(), 0));
+            }
+        });
+        clearButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(final ActionEvent e) {
+                filterTextField.setText(StringUtils.EMPTY);
+                ((TableRowSorter) entitiesTable.getRowSorter()).setRowFilter(null);
+                enableDisable();
+            }
+        });
+        filterTextField.addKeyListener(new KeyListener() {
+            @Override
+            public void keyTyped(final KeyEvent e) {
+            }
+
+            @Override
+            public void keyPressed(final KeyEvent e) {
+            }
+
+            @Override
+            public void keyReleased(final KeyEvent e) {
+                enableDisable();
+            }
+        });
     }
 
     private void initTable() {
@@ -116,6 +168,16 @@ public class SecurityZoneEntitiesPanel extends JPanel {
         entityTypes.remove(EntityType.UDDI_SERVICE_CONTROL);
         // user is not aware that JMS involves two entity types - they share the same security zone
         entityTypes.remove(EntityType.JMS_ENDPOINT);
+        entityTypeComboBox.setRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+                if (value instanceof EntityType) {
+                    final EntityType type = (EntityType) value;
+                    value = type.getName();
+                }
+                return super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+            }
+        });
         entityTypeComboBox.setModel(new DefaultComboBoxModel<EntityType>(entityTypes.toArray(new EntityType[entityTypes.size()])));
         entityTypeComboBox.addActionListener(new ActionListener() {
             @Override
