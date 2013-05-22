@@ -6,10 +6,12 @@ import com.l7tech.objectmodel.SecurityZone;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
-import javax.swing.border.LineBorder;
+import javax.swing.plaf.basic.BasicComboBoxUI;
 import java.awt.*;
 import java.util.*;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Widget that allows selection of a security zone.
@@ -18,27 +20,34 @@ import java.util.List;
  * before the widget is displayed.
  */
 public class SecurityZoneWidget extends JComboBox<SecurityZone> {
+    private static final Logger logger = Logger.getLogger(SecurityZoneWidget.class.getName());
+    private static final String ELLIPSIS = "...";
+    private static final String MAX_CHAR_NAME_DISPLAY = "max.char.name.display";
     private Collection<EntityType> entityTypes = null;
     private boolean zoneLoadAttempted = false;
     private boolean hideIfNoZones = true;
     private OperationType operation;
     private SecurityZone initialZone;
     private java.util.List<SecurityZone> loadedZones = Collections.emptyList();
+    private static ResourceBundle RESOURCES = ResourceBundle.getBundle(SecurityZoneWidget.class.getName());
 
     public SecurityZoneWidget() {
         setRenderer(new DefaultListCellRenderer() {
             @Override
             public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
-
                 if (value instanceof SecurityZone) {
-                    SecurityZone securityZone = (SecurityZone) value;
-                    value = securityZone.getName();
+                    final SecurityZone securityZone = (SecurityZone) value;
+                    final String name = securityZone.getName();
+                    final Integer maxChars = getMaxCharsForName();
+                    if (maxChars != null && name.length() > maxChars) {
+                        value = name.substring(0, maxChars) + ELLIPSIS;
+                    } else {
+                        value = name;
+                    }
                 }
-
                 return super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
             }
         });
-        setBorder(new LineBorder(new Color(150, 30, 0), 2, false));
     }
 
     /**
@@ -66,20 +75,6 @@ public class SecurityZoneWidget extends JComboBox<SecurityZone> {
     }
 
     /**
-     * Setting entity types filters the presented zone list to only those zones which permit all of the specified
-     * entity types.
-     *
-     * @param entityTypes entity types to filter, or null to show zone list unfiltered by zone entity type restrictions.
-     */
-    private void setEntityTypes(@Nullable final Collection<EntityType> entityTypes) {
-        if (entityTypes != null) {
-            this.entityTypes = new ArrayList<EntityType>(entityTypes);
-        } else {
-            this.entityTypes = null;
-        }
-    }
-
-    /**
      * Reload the list of zones from the server.
      */
     public void reloadZones() {
@@ -100,9 +95,10 @@ public class SecurityZoneWidget extends JComboBox<SecurityZone> {
                 }
             }
             zones.removeAll(invalidZones);
-
             loadedZones.addAll(zones);
-
+            if (initialZone != null && !loadedZones.contains(initialZone)) {
+                loadedZones.add(0, SecurityZoneUtil.CURRENT_UNAVAILABLE_ZONE);
+            }
         } else if (initialZone != null) {
             loadedZones.add(initialZone);
         }
@@ -113,15 +109,6 @@ public class SecurityZoneWidget extends JComboBox<SecurityZone> {
         } else if (!loadedZones.isEmpty()) {
             // nothing was selected, select the first option
             setSelectedIndex(0);
-        }
-    }
-
-    private void hideOrDisable() {
-        if (loadedZones.isEmpty() && hideIfNoZones) {
-            setVisible(false);
-        }
-        if (OperationType.READ == operation) {
-            setEnabled(false);
         }
     }
 
@@ -140,17 +127,25 @@ public class SecurityZoneWidget extends JComboBox<SecurityZone> {
     @Nullable
     public SecurityZone getSelectedZone() {
         SecurityZone ret = (SecurityZone) getSelectedItem();
-        if (SecurityZoneUtil.NULL_ZONE == ret)
+        if (SecurityZoneUtil.NULL_ZONE == ret) {
             ret = null;
+        }
+        if (SecurityZoneUtil.CURRENT_UNAVAILABLE_ZONE == ret) {
+            // don't change the current zone
+            ret = initialZone;
+        }
         return ret;
     }
 
     public void setSelectedZone(@Nullable SecurityZone zone) {
-        if (zone == null){
+        if (zone == null) {
             zone = SecurityZoneUtil.NULL_ZONE;
         }
         if (loadedZones.contains(zone)) {
             setSelectedItem(zone);
+        } else {
+            // selected zone is not available
+            setSelectedItem(SecurityZoneUtil.CURRENT_UNAVAILABLE_ZONE);
         }
     }
 
@@ -168,5 +163,47 @@ public class SecurityZoneWidget extends JComboBox<SecurityZone> {
      */
     public void setHideIfNoZones(boolean hideIfNoZones) {
         this.hideIfNoZones = hideIfNoZones;
+    }
+
+    @Nullable
+    private Integer getMaxCharsForName() {
+        Integer max = null;
+        final String maxStr = RESOURCES.getString(MAX_CHAR_NAME_DISPLAY);
+        try {
+            max = Integer.valueOf(maxStr);
+        } catch (final NumberFormatException e) {
+            logger.log(Level.WARNING, "Invalid max chars for name: " + maxStr);
+        }
+        return max;
+    }
+
+    private void hideOrDisable() {
+        if (loadedZones.isEmpty() && hideIfNoZones) {
+            setVisible(false);
+        }
+        if (OperationType.READ == operation) {
+            setEnabled(false);
+            setUI(new BasicComboBoxUI() {
+                @Override
+                protected JButton createArrowButton() {
+                    // remove arrow by creating a plain button
+                    return new JButton();
+                }
+            });
+        }
+    }
+
+    /**
+     * Setting entity types filters the presented zone list to only those zones which permit all of the specified
+     * entity types.
+     *
+     * @param entityTypes entity types to filter, or null to show zone list unfiltered by zone entity type restrictions.
+     */
+    private void setEntityTypes(@Nullable final Collection<EntityType> entityTypes) {
+        if (entityTypes != null) {
+            this.entityTypes = new ArrayList<EntityType>(entityTypes);
+        } else {
+            this.entityTypes = null;
+        }
     }
 }

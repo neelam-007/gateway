@@ -6,9 +6,9 @@ import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gui.widgets.ValidatedPanel;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.SecurityZone;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import javax.swing.*;
 import java.awt.*;
 
 /**
@@ -19,6 +19,7 @@ import java.awt.*;
  * as the value if the user selects "none" as the zone.
  */
 public class SecurityZoneValidatedPanel extends ValidatedPanel<SecurityZone> {
+    private final JLabel securityZoneLabel = new JLabel("Security Zone:");
     private SecurityZoneWidget zoneWidget;
 
     public SecurityZoneValidatedPanel(EntityType entityType, SecurityZone zone, @Nullable OperationType operation) {
@@ -42,7 +43,8 @@ public class SecurityZoneValidatedPanel extends ValidatedPanel<SecurityZone> {
         zoneWidget = new SecurityZoneWidget();
         setMinimumSize(new Dimension(260, -1));
         setLayout(new BorderLayout());
-        add(zoneWidget, BorderLayout.CENTER);
+        add(securityZoneLabel, BorderLayout.NORTH);
+        add(zoneWidget, BorderLayout.SOUTH);
         zoneWidget.addActionListener(syntaxListener());
     }
 

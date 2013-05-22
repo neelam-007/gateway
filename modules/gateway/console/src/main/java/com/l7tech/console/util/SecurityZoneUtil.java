@@ -32,8 +32,20 @@ public class SecurityZoneUtil {
     public static final SecurityZone NULL_ZONE = new SecurityZone() {
         {
             setOid(-1);
-            setName("<None>");
+            setName("No security zone");
             setDescription("%%%NULL_ZONE%%%");
+            setPermittedEntityTypes(Collections.singleton(EntityType.ANY));
+        }
+    };
+
+    /**
+     * Use this if the currently set zone is not readable by the user.
+     */
+    public static final SecurityZone CURRENT_UNAVAILABLE_ZONE = new SecurityZone() {
+        {
+            setOid(-1);
+            setName("Current zone (zone details are unavailable)");
+            setDescription("%%%UNAVAILABLE_ZONE%%%");
             setPermittedEntityTypes(Collections.singleton(EntityType.ANY));
         }
     };
