@@ -255,7 +255,6 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
         buttonPanel.setLayout(new BoxLayout(buttonPanel, BoxLayout.Y_AXIS));
         identitiesjPanel.add(buttonPanel);
 
-
         sslCheckBox.setText("Require SSL/TLS Encryption");
         add(sslCheckBox,
           new GridBagConstraints(0, 0, GridBagConstraints.REMAINDER, 1, 1.0, 0.0,
@@ -263,13 +262,6 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
             GridBagConstraints.VERTICAL,
             new Insets(0, 0, 8, 0), 0, 0));
 
-        zoneControl = new SecurityZoneWidget();
-        zoneControl.configure(EntityType.SERVICE, OperationType.CREATE, null);
-        add(zoneControl,
-                new GridBagConstraints(1, 0, 1, 1, 1.0, 0.0,
-                        GridBagConstraints.EAST,
-                        GridBagConstraints.NONE,
-                        new Insets(0, 0, 0, 0), 0, 0));
 
         final ButtonGroup authButtonGroup = new ButtonGroup();
         getAnonRadio().setSelected(true);
@@ -317,6 +309,13 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
             new Insets(0, 0, 5, 0), 0, 0));
 
 
+        zoneControl = new SecurityZoneWidget();
+        zoneControl.configure(EntityType.SERVICE, OperationType.CREATE, null);
+        add(zoneControl,
+                new GridBagConstraints(0, 6, GridBagConstraints.REMAINDER, 1, 1.0, 0.0,
+                        GridBagConstraints.WEST,
+                        GridBagConstraints.HORIZONTAL,
+                        new Insets(0, 0, 0, 0), 0, 0));
     }
 
     private void populateIdentityTables() {

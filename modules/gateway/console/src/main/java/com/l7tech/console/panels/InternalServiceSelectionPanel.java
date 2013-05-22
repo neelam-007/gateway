@@ -200,4 +200,8 @@ public class InternalServiceSelectionPanel extends WizardStepPanel<PublishIntern
         return servicesChooser.getModel().getSize() > 0 &&
                 ValidatorUtils.validateResolutionPath(servicePath, true, true) == null;
     }
+
+    private void createUIComponents() {
+        // TODO: place custom component creation code here
+    }
 }
