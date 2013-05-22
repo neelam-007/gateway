@@ -27,8 +27,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
-import java.util.ArrayList;
-import java.util.Collections;
+import java.util.*;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -52,18 +51,16 @@ public class SecurityZoneEntitiesPanel extends JPanel {
     private SecurityZone securityZone;
 
     public SecurityZoneEntitiesPanel() {
-        initComboBox();
         initTable();
+        initComboBox();
         initFiltering();
         enableDisable();
     }
 
     public void configure(@Nullable final SecurityZone securityZone) {
         this.securityZone = securityZone;
-        if (this.securityZone == null) {
-            entityTypeComboBox.setSelectedItem(null);
-        }
         loadTable();
+        loadComboBox();
         enableDisable();
     }
 
@@ -71,8 +68,8 @@ public class SecurityZoneEntitiesPanel extends JPanel {
         entityTypeComboBox.setEnabled(securityZone != null);
         entitiesTable.setEnabled(securityZone != null);
         filterTextField.setEnabled(securityZone != null);
-        filterButton.setEnabled(filterTextField.getText().length() > 0);
-        clearButton.setEnabled(filterTextField.getText().length() > 0);
+        filterButton.setEnabled(securityZone != null && filterTextField.getText().length() > 0);
+        clearButton.setEnabled(securityZone != null && filterTextField.getText().length() > 0);
     }
 
     @Nullable
@@ -158,16 +155,6 @@ public class SecurityZoneEntitiesPanel extends JPanel {
     }
 
     private void initComboBox() {
-        final List<EntityType> entityTypes = new ArrayList<>();
-        entityTypes.add(null);
-        entityTypes.addAll(SecurityZoneUtil.getAllZoneableEntityTypes());
-        // do not support audits as there may be a LOT of them in the zone
-        entityTypes.remove(EntityType.AUDIT_MESSAGE);
-        // user is not aware of the UDDI entities under the hood - they inherit the security zone from the published service
-        entityTypes.remove(EntityType.UDDI_PROXIED_SERVICE_INFO);
-        entityTypes.remove(EntityType.UDDI_SERVICE_CONTROL);
-        // user is not aware that JMS involves two entity types - they share the same security zone
-        entityTypes.remove(EntityType.JMS_ENDPOINT);
         entityTypeComboBox.setRenderer(new DefaultListCellRenderer() {
             @Override
             public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
@@ -178,13 +165,39 @@ public class SecurityZoneEntitiesPanel extends JPanel {
                 return super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
             }
         });
-        entityTypeComboBox.setModel(new DefaultComboBoxModel<EntityType>(entityTypes.toArray(new EntityType[entityTypes.size()])));
         entityTypeComboBox.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(final ActionEvent e) {
                 loadTable();
             }
         });
+        loadComboBox();
+    }
+
+    private void loadComboBox() {
+        final EntityType previouslySelected = securityZone == null ? null : (EntityType) entityTypeComboBox.getSelectedItem();
+        final List<EntityType> entityTypes = new ArrayList<>();
+        if (securityZone != null) {
+            // first option is null to force user to select something before any entities are loaded
+            entityTypes.add(null);
+            if (securityZone.getPermittedEntityTypes().contains(EntityType.ANY)) {
+                // already sorted
+                entityTypes.addAll(SecurityZoneUtil.getAllZoneableEntityTypes());
+            } else {
+                final Set<EntityType> sortedSubset = new TreeSet<>(EntityType.NAME_COMPARATOR);
+                sortedSubset.addAll(securityZone.getPermittedEntityTypes());
+                entityTypes.addAll(sortedSubset);
+            }
+            // do not support audits as there may be a LOT of them in the zone
+            entityTypes.remove(EntityType.AUDIT_MESSAGE);
+            // user is not aware of the UDDI entities under the hood - they inherit the security zone from the published service
+            entityTypes.remove(EntityType.UDDI_PROXIED_SERVICE_INFO);
+            entityTypes.remove(EntityType.UDDI_SERVICE_CONTROL);
+            // user is not aware that JMS involves two entity types - they share the same security zone
+            entityTypes.remove(EntityType.JMS_ENDPOINT);
+        }
+        entityTypeComboBox.setModel(new DefaultComboBoxModel<EntityType>(entityTypes.toArray(new EntityType[entityTypes.size()])));
+        entityTypeComboBox.setSelectedItem(previouslySelected);
     }
 
     private void loadTable() {

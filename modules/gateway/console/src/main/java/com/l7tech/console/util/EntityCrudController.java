@@ -122,7 +122,13 @@ public class EntityCrudController<ET> {
         };
     }
 
-    public ActionListener createEditAction() {
+    /**
+     * Creates an ActionListener which opens an edit dialog for the selected row.
+     *
+     * @param callback optional Runnable to execute after a successful edit.
+     * @return an ActionListener which opens an edit dialog for the selected row.
+     */
+    public ActionListener createEditAction(@Nullable final Runnable callback) {
         return new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -135,8 +141,12 @@ public class EntityCrudController<ET> {
                             @Override
                             public void call(ET editedEntity) {
                                 if (editedEntity != null) {
-                                    if (null != (editedEntity = doSave(editedEntity)))
+                                    if (null != (editedEntity = doSave(editedEntity))) {
                                         entityTableModel.setRowObject(rowIndex, editedEntity);
+                                        if (callback != null) {
+                                            callback.run();
+                                        }
+                                    }
                                 }
                             }
                         });

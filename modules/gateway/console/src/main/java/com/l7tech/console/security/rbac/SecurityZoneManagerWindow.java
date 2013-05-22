@@ -51,9 +51,7 @@ public class SecurityZoneManagerWindow extends JDialog {
             @Override
             public void run() {
                 enableOrDisable();
-                final SecurityZone selected = getSelectedSecurityZone();
-                propertiesPanel.configure(selected);
-                entitiesPanel.configure(selected);
+                reloadTabbedPanels();
             }
         });
 
@@ -123,11 +121,22 @@ public class SecurityZoneManagerWindow extends JDialog {
         });
 
         createButton.addActionListener(ecc.createCreateAction());
-        editButton.addActionListener(ecc.createEditAction());
+        editButton.addActionListener(ecc.createEditAction(new Runnable() {
+            @Override
+            public void run() {
+                reloadTabbedPanels();
+            }
+        }));
         Utilities.setDoubleClickAction(securityZonesTable, editButton);
         removeButton.addActionListener(ecc.createDeleteAction(EntityType.SECURITY_ZONE, SecurityZoneManagerWindow.this));
 
         enableOrDisable();
+    }
+
+    private void reloadTabbedPanels() {
+        final SecurityZone selected = getSelectedSecurityZone();
+        propertiesPanel.configure(selected);
+        entitiesPanel.configure(selected);
     }
 
     private static void flushCachedZones() {
