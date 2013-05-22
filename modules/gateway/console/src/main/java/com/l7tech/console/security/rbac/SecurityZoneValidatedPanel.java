@@ -19,7 +19,6 @@ import java.awt.*;
  * as the value if the user selects "none" as the zone.
  */
 public class SecurityZoneValidatedPanel extends ValidatedPanel<SecurityZone> {
-    private final JLabel securityZoneLabel = new JLabel("Security Zone:");
     private SecurityZoneWidget zoneWidget;
 
     public SecurityZoneValidatedPanel(EntityType entityType, SecurityZone zone, @Nullable OperationType operation) {
@@ -43,9 +42,8 @@ public class SecurityZoneValidatedPanel extends ValidatedPanel<SecurityZone> {
         zoneWidget = new SecurityZoneWidget();
         setMinimumSize(new Dimension(260, -1));
         setLayout(new BorderLayout());
-        add(securityZoneLabel, BorderLayout.NORTH);
-        add(zoneWidget, BorderLayout.SOUTH);
-        zoneWidget.addActionListener(syntaxListener());
+        add(zoneWidget, BorderLayout.CENTER);
+        zoneWidget.addComboBoxActionListener(syntaxListener());
     }
 
     @Override

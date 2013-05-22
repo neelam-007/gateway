@@ -70,7 +70,7 @@ public class SecurePasswordPropertiesDialog extends JDialog {
     private String pemPublicKey;
     private int generateKeybits;
 
-    public SecurePasswordPropertiesDialog( final Window owner, final SecurePassword securePassword) {
+    public SecurePasswordPropertiesDialog( final Window owner, final SecurePassword securePassword, final boolean readOnly) {
         super(owner, "Stored Password Properties");
         setContentPane(contentPane);
         setModal(true);
@@ -237,7 +237,7 @@ public class SecurePasswordPropertiesDialog extends JDialog {
         Utilities.setMaxLength(pemPrivateKeyField.getDocument(), maxPasswordLength);
 
         zoneControl.configure(EntityType.SECURE_PASSWORD,
-                securePassword.getOid() == SecurePassword.DEFAULT_OID ? OperationType.CREATE : OperationType.UPDATE,
+                securePassword.getOid() == SecurePassword.DEFAULT_OID ? OperationType.CREATE : readOnly ? OperationType.READ : OperationType.UPDATE,
                 securePassword.getSecurityZone());
 
         enableOrDisableComponents();

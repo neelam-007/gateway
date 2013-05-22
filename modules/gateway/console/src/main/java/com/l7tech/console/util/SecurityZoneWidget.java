@@ -3,11 +3,14 @@ package com.l7tech.console.util;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.SecurityZone;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
+import javax.swing.border.TitledBorder;
 import javax.swing.plaf.basic.BasicComboBoxUI;
 import java.awt.*;
+import java.awt.event.ActionListener;
 import java.util.*;
 import java.util.List;
 import java.util.logging.Level;
@@ -19,20 +22,24 @@ import java.util.logging.Logger;
  * Users should call either {@link #reloadZones} or {@link #configure(java.util.Collection, com.l7tech.gateway.common.security.rbac.OperationType, com.l7tech.objectmodel.SecurityZone)}
  * before the widget is displayed.
  */
-public class SecurityZoneWidget extends JComboBox<SecurityZone> {
+public class SecurityZoneWidget extends JPanel {
     private static final Logger logger = Logger.getLogger(SecurityZoneWidget.class.getName());
     private static final String ELLIPSIS = "...";
     private static final String MAX_CHAR_NAME_DISPLAY = "max.char.name.display";
+    private static ResourceBundle RESOURCES = ResourceBundle.getBundle(SecurityZoneWidget.class.getName());
     private Collection<EntityType> entityTypes = null;
     private boolean zoneLoadAttempted = false;
     private boolean hideIfNoZones = true;
     private OperationType operation;
     private SecurityZone initialZone;
     private java.util.List<SecurityZone> loadedZones = Collections.emptyList();
-    private static ResourceBundle RESOURCES = ResourceBundle.getBundle(SecurityZoneWidget.class.getName());
+    private JComboBox<SecurityZone> zonesComboBox = new JComboBox<>();
 
     public SecurityZoneWidget() {
-        setRenderer(new DefaultListCellRenderer() {
+        setBorder(new TitledBorder("Security Zone"));
+        setLayout(new BorderLayout());
+        add(zonesComboBox, BorderLayout.CENTER);
+        zonesComboBox.setRenderer(new DefaultListCellRenderer() {
             @Override
             public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
                 if (value instanceof SecurityZone) {
@@ -79,7 +86,7 @@ public class SecurityZoneWidget extends JComboBox<SecurityZone> {
      */
     public void reloadZones() {
         zoneLoadAttempted = true;
-        final Object oldSelection = getSelectedItem();
+        final Object oldSelection = zonesComboBox.getSelectedItem();
         loadedZones = new ArrayList<>();
         if (operation == null || operation != OperationType.READ) {
             // all readable zones
@@ -103,12 +110,12 @@ public class SecurityZoneWidget extends JComboBox<SecurityZone> {
             loadedZones.add(initialZone);
         }
 
-        setModel(new DefaultComboBoxModel<>(loadedZones.toArray(new SecurityZone[loadedZones.size()])));
+        zonesComboBox.setModel(new DefaultComboBoxModel<>(loadedZones.toArray(new SecurityZone[loadedZones.size()])));
         if (oldSelection != null) {
-            setSelectedItem(oldSelection);
+            zonesComboBox.setSelectedItem(oldSelection);
         } else if (!loadedZones.isEmpty()) {
             // nothing was selected, select the first option
-            setSelectedIndex(0);
+            zonesComboBox.setSelectedIndex(0);
         }
     }
 
@@ -126,7 +133,7 @@ public class SecurityZoneWidget extends JComboBox<SecurityZone> {
      */
     @Nullable
     public SecurityZone getSelectedZone() {
-        SecurityZone ret = (SecurityZone) getSelectedItem();
+        SecurityZone ret = (SecurityZone) zonesComboBox.getSelectedItem();
         if (SecurityZoneUtil.NULL_ZONE == ret) {
             ret = null;
         }
@@ -142,10 +149,10 @@ public class SecurityZoneWidget extends JComboBox<SecurityZone> {
             zone = SecurityZoneUtil.NULL_ZONE;
         }
         if (loadedZones.contains(zone)) {
-            setSelectedItem(zone);
+            zonesComboBox.setSelectedItem(zone);
         } else {
             // selected zone is not available
-            setSelectedItem(SecurityZoneUtil.CURRENT_UNAVAILABLE_ZONE);
+            zonesComboBox.setSelectedItem(SecurityZoneUtil.CURRENT_UNAVAILABLE_ZONE);
         }
     }
 
@@ -163,6 +170,10 @@ public class SecurityZoneWidget extends JComboBox<SecurityZone> {
      */
     public void setHideIfNoZones(boolean hideIfNoZones) {
         this.hideIfNoZones = hideIfNoZones;
+    }
+
+    public void addComboBoxActionListener(@NotNull final ActionListener actionListener) {
+        zonesComboBox.addActionListener(actionListener);
     }
 
     @Nullable

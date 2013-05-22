@@ -6,6 +6,7 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.security.password.SecurePassword.SecurePasswordType;
+import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
 import com.l7tech.gui.SimpleTableModel;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.TableUtil;
@@ -74,7 +75,9 @@ public class SecurePasswordManagerWindow extends JDialog {
                 if (securePassword == null)
                     return;
 
-                final SecurePasswordPropertiesDialog dlg = new SecurePasswordPropertiesDialog(SecurePasswordManagerWindow.this, securePassword);
+                boolean readOnly = isEdit ? !Registry.getDefault().getSecurityProvider().hasPermission(new AttemptedUpdate(EntityType.SECURE_PASSWORD, securePassword)) : false;
+
+                final SecurePasswordPropertiesDialog dlg = new SecurePasswordPropertiesDialog(SecurePasswordManagerWindow.this, securePassword, readOnly);
                 dlg.pack();
                 Utilities.centerOnParentWindow(dlg);
                 DialogDisplayer.display(dlg, new Runnable() {
