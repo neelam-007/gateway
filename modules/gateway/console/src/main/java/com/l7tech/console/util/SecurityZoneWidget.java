@@ -34,11 +34,12 @@ public class SecurityZoneWidget extends JPanel {
     private SecurityZone initialZone;
     private java.util.List<SecurityZone> loadedZones = Collections.emptyList();
     private JComboBox<SecurityZone> zonesComboBox = new JComboBox<>();
+    private JLabel securityZoneLabel = new JLabel("Security Zone:");
 
     public SecurityZoneWidget() {
-        setBorder(new TitledBorder("Security Zone"));
         setLayout(new BorderLayout());
-        add(zonesComboBox, BorderLayout.CENTER);
+        add(securityZoneLabel, BorderLayout.NORTH);
+        add(zonesComboBox, BorderLayout.SOUTH);
         zonesComboBox.setRenderer(new DefaultListCellRenderer() {
             @Override
             public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
