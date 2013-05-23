@@ -74,6 +74,7 @@ create table audit_message (
     status integer not null,
     request_id varchar(40) not null,
     objectid bigint not null,
+    mapping_values_oid bigint,
     primary key (objectid)
 );
 
@@ -142,6 +143,11 @@ alter table audit_message
     foreign key (objectid)
     references audit_main
     on delete cascade;
+
+alter table audit_message
+    add constraint message_context_mapping
+    foreign key (mapping_values_oid)
+    references message_context_mapping_values (objectid);
 
 alter table audit_system
     add constraint FKB22BD7137AEF109A

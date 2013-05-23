@@ -651,6 +651,7 @@ public class ServerVariablesTest {
         SyspropUtil.setProperty(Message.PROPERTY_ENABLE_ORIGINAL_DOCUMENT, "false");
         Message.setDefaultEnableOriginalDocument(false);
         final AuditSinkPolicyEnforcementContext c = sinkcontext();
+        expandAndCheck(c, "${audit.mappingValuesOid}", "49585");
         expandAndCheck(c, "${audit.operationName}", "listProducts");
         expandAndCheck(c, "${audit.requestContentLength}", String.valueOf(REQUEST_BODY.getBytes().length));
         expandAndCheck(c, "${audit.responseContentLength}", String.valueOf(RESPONSE_BODY.getBytes().length));
@@ -679,7 +680,8 @@ public class ServerVariablesTest {
         addTextNode(c.getOriginalResponse(), "respfoo");
         String newreq = "<myrequest>reqfoo</myrequest>";
         String newresp = "<myresponse>respfoo</myresponse>";
-         expandAndCheck(c, "${audit.operationName}", "listProducts");
+        expandAndCheck(c, "${audit.mappingValuesOid}", "49585");
+        expandAndCheck(c, "${audit.operationName}", "listProducts");
         expandAndCheck(c, "${audit.request.mainpart}", newreq);
         expandAndCheck(c, "${audit.response.mainpart}", newresp);
         expandAndCheck(c, "${audit.requestContentLength}", String.valueOf(newreq.getBytes().length));
@@ -1171,7 +1173,7 @@ public class ServerVariablesTest {
     @SuppressWarnings({"deprecation"})
     AuditRecord auditRecord() {
         AuditRecord auditRecord = new MessageSummaryAuditRecord(Level.INFO, "node1", "req4545", AssertionStatus.NONE, "3.2.1.1", AUDITED_REQUEST_XML, 4833, AUDITED_RESPONSE_XML, 9483, 200, 232, 8859, "ACMEWarehouse",
-                "listProducts", true, SecurityTokenType.HTTP_BASIC, -2, "alice", "41123");
+                "listProducts", true, SecurityTokenType.HTTP_BASIC, -2, "alice", "41123", 49585);
         //noinspection deprecation
         auditRecord.setOid(9777L);
         auditRecord.setStrRequestId(new RequestId("222-333").toString());

@@ -111,7 +111,7 @@ public class AuditFilterPolicyManagerTest {
                 123,
                 "serviceName",
                 null,
-                false, null, 02, "user name", "user id");
+                false, null, 02, "user name", "user id", null);
         successAMFOutput = "<output>AMF output</output>";
         auditedMessages = new ArrayList<Integer>();
     }

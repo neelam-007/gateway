@@ -32,7 +32,7 @@ public class EmbeddedDbSchemaUpdaterTest {
         transactionManager = new DataSourceTransactionManager(database);
         updater = new TestableEmbeddedDbSchemaUpdater(transactionManager, "com/l7tech/server/util/db/derby");
         updater.setDataSource(database);
-        softwareVersion = "3.0.0";
+        softwareVersion = "3.0.1";
     }
 
     @After
@@ -49,7 +49,7 @@ public class EmbeddedDbSchemaUpdaterTest {
     public void ensureCurrentSchema() {
         assertEquals("1.0.0", getDbVersion());
         updater.ensureCurrentSchema();
-        assertEquals("3.0.0", getDbVersion());
+        assertEquals("3.0.1", getDbVersion());
     }
 
     @Test

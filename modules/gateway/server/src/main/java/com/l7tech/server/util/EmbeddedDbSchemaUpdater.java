@@ -2,7 +2,7 @@ package com.l7tech.server.util;
 
 import com.l7tech.util.BuildInfo;
 import com.l7tech.util.DbUpgradeUtil;
-import com.l7tech.util.Pair;
+import com.l7tech.util.Triple;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.core.io.Resource;
@@ -16,10 +16,10 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.sql.Connection;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -44,9 +44,17 @@ public class EmbeddedDbSchemaUpdater extends JdbcDaoSupport implements SchemaUpd
                     final String resourcePath = resource.getURL().getPath();
                     final int slashIndex = resourcePath.lastIndexOf('/');
                     final String resourceName = resourcePath.substring(slashIndex + 1);
-                    final Pair<String, String> upgradeInfo = DbUpgradeUtil.isUpgradeScript(resourceName);
+                    final Triple<String, String, String> upgradeInfo = DbUpgradeUtil.isUpgradeScript(resourceName);
                     if (upgradeInfo != null) {
-                        upgradeMap.put(upgradeInfo.getKey(), new Pair<String, Resource>(upgradeInfo.getValue(), resource));
+                        System.out.println("upgrade info:"+upgradeInfo.left+" || "+upgradeInfo.middle+" || "+upgradeInfo.right);
+                        if(upgradeMap.containsKey(upgradeInfo.left)){
+                            Triple<String, Resource, Resource> info = upgradeMap.get(upgradeInfo.left);
+                            System.out.println("upgrade info:"+info.left+" || "+info.middle+" || "+info.right);
+                            upgradeMap.put(upgradeInfo.left, new Triple<String, Resource, Resource>(upgradeInfo.middle, info.middle, resource));
+                        }else{
+                            upgradeMap.put(upgradeInfo.left, new Triple<String, Resource, Resource>(upgradeInfo.middle, resource,null));
+                        }
+
                     }
                 }
             }
@@ -81,7 +89,7 @@ public class EmbeddedDbSchemaUpdater extends JdbcDaoSupport implements SchemaUpd
                     throw new SchemaException("Error reading current version from database");
                 }
                 while (!dbVersion.equals(newVersion)) {
-                    final Pair<String, Resource> upgradeInfo = upgradeMap.get(dbVersion);
+                    final Triple<String, Resource,Resource> upgradeInfo = upgradeMap.get(dbVersion);
                     if (upgradeInfo == null) {
                         final String msg = "No upgrade path from \"" + dbVersion + "\" to \"" + newVersion + "\"";
                         logger.warning(msg);
@@ -99,9 +107,15 @@ public class EmbeddedDbSchemaUpdater extends JdbcDaoSupport implements SchemaUpd
     /**
      * Performs one version upgrade.
      */
-    private void upgradeSingleVersion(@NotNull final String dbVersion, @NotNull final Pair<String, Resource> upgradeInfo, @NotNull final JdbcTemplate jdbcTemplate) {
-        final String nextVersion = upgradeInfo.getKey();
-        final Resource upgradeResource = upgradeInfo.getValue();
+    private void upgradeSingleVersion(@NotNull final String dbVersion, @NotNull final  Triple<String, Resource, Resource> upgradeInfo, @NotNull final JdbcTemplate jdbcTemplate) {
+        final String nextVersion = upgradeInfo.left;
+        final Resource upgradeResource;
+        if(upgradeInfo.right==null){
+            upgradeResource = upgradeInfo.middle;
+        }else{
+            upgradeResource = upgradeInfo.middle.getFilename().contains("mayFail")?upgradeInfo.middle:upgradeInfo.right;
+        }
+
         if (StringUtils.isBlank(nextVersion) || upgradeResource == null) {
             throw new SchemaException("Unknown next version or upgrade resource");
         }
@@ -109,7 +123,38 @@ public class EmbeddedDbSchemaUpdater extends JdbcDaoSupport implements SchemaUpd
         try {
             DerbyDbHelper.runScripts(getConnection(), new Resource[]{upgradeResource}, false);
         } catch (final SQLException e) {
-            throw new SchemaException("Error executing upgrade", e);
+            if(upgradeInfo.right!=null){
+                final Resource checkSuccessResource = upgradeInfo.middle.getFilename().contains("checkSuccess")?upgradeInfo.middle:upgradeInfo.right;
+                try{
+                    String[] statements = DerbyDbHelper.getSqlStatements(checkSuccessResource);
+                    logger.info("Using upgrade script: " + checkSuccessResource.getFilename());
+                    Statement statement = null;
+                    for(int i = 0 ; i < statements.length-1; ++i){
+                        String sql = statements[i];
+                        statement = getConnection().createStatement();
+                        if ( logger.isLoggable( Level.FINE ) ) {
+                            logger.log( Level.FINE, "Running statement: " + sql );
+                        }
+                        statement.executeUpdate( sql );
+                    }
+
+                    String lastLine = statements[statements.length-1];
+                    logger.log( Level.FINE, "Running statement: " + lastLine );
+                    statement = getConnection().createStatement();
+                    ResultSet result = statement.executeQuery(lastLine);
+                    if(!result.next())
+                    {
+                        throw new SQLException("Error checking success, no result returned.");
+                    }
+
+                }catch (SQLException e1 ) {
+                    throw new SchemaException("Error executing upgrade", e1);
+                } catch (IOException e2) {
+                    throw new SchemaException("Error executing upgrade", e2);
+                }
+            }else{
+                throw new SchemaException("Error executing upgrade", e);
+            }
         }
         logger.info("Completed upgrade from " + dbVersion + "->" + nextVersion);
     }
@@ -122,5 +167,5 @@ public class EmbeddedDbSchemaUpdater extends JdbcDaoSupport implements SchemaUpd
     }
 
     private final PlatformTransactionManager transactionManager;
-    private final Map<String, Pair<String, Resource>> upgradeMap = new HashMap<String, Pair<String, Resource>>();
+    private final Map<String, Triple<String, Resource, Resource>> upgradeMap = new HashMap<String, Triple<String, Resource, Resource>>();
 }

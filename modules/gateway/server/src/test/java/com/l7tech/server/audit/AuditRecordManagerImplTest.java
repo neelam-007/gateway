@@ -44,7 +44,7 @@ public class AuditRecordManagerImplTest {
         manager = new TestableAuditRecorManager();
         manager.setApplicationContext(applicationContext);
         ApplicationContexts.inject(manager, CollectionUtils.<String, Object>mapBuilder().put("serviceCache", serviceCache).map(), false);
-        messageSummary = new MessageSummaryAuditRecord(Level.INFO, "node1", "2342345-4545", AssertionStatus.NONE, "3.2.1.1", null, 4833, null, 9483, 200, 232, SERVICE_OID, "ACMEWarehouse", "listProducts", true, SecurityTokenType.HTTP_BASIC, -2, "alice", "41123");
+        messageSummary = new MessageSummaryAuditRecord(Level.INFO, "node1", "2342345-4545", AssertionStatus.NONE, "3.2.1.1", null, 4833, null, 9483, 200, 232, SERVICE_OID, "ACMEWarehouse", "listProducts", true, SecurityTokenType.HTTP_BASIC, -2, "alice", "41123",null);
         zone = new SecurityZone();
         service = new PublishedService();
         service.setSecurityZone(zone);

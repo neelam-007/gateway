@@ -700,11 +700,13 @@ CREATE TABLE audit_message (
   response_zipxml mediumblob,
   response_status int(11),
   routing_latency int(11),
+  mapping_values_oid BIGINT(20),
   PRIMARY KEY  (objectid),
   KEY idx_status (status),
   KEY idx_request_id (request_id),
   KEY idx_service_oid (service_oid),
-  FOREIGN KEY (objectid) REFERENCES audit_main (objectid) ON DELETE CASCADE
+  FOREIGN KEY (objectid) REFERENCES audit_main (objectid) ON DELETE CASCADE,
+  CONSTRAINT message_context_mapping FOREIGN KEY (mapping_values_oid) REFERENCES message_context_mapping_values (objectid)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
 DROP TABLE IF EXISTS audit_system;

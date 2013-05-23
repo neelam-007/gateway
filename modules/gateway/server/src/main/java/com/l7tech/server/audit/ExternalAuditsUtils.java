@@ -149,7 +149,7 @@ public class ExternalAuditsUtils {
                 responseXML, responseXML.length() , 1234, 5678,
                 7, "serviceName", "operationNameHaver",
                 true, SecurityTokenType.UNKNOWN, -5,
-                "userName", "userId");
+                "userName", "userId",null);
         signAuditRecord(record,defaultKey);
 
         AuditSinkPolicyEnforcementContext context = new AuditSinkPolicyEnforcementContext(record,
@@ -308,7 +308,8 @@ public class ExternalAuditsUtils {
                     tokenType,
                     Long.parseLong(providerOid),
                     userName,
-                    userId ) ;  //mappingValueOidHaver
+                    userId ,
+                    null ) ;  //mappingValueOidHaver
 
 
 

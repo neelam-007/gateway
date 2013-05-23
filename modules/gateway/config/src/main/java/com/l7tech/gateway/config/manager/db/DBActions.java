@@ -67,6 +67,8 @@ public class DBActions {
     private long  hi;
     private int lo = MAX_LOW + 1;
 
+    private static final String DB_NAME_VAR = "<db_name>";
+
     //
     // CONSTRUCTOR
     //
@@ -183,7 +185,12 @@ public class DBActions {
                 } else {
                     logger.info("Upgrading \"" + databaseName + "\" from " + oldVersion + "->" + upgradeInfo[0]);
 
-                    String[] statements = DbUpgradeUtil.getStatementsFromFile(upgradeInfo[1]);
+                    String upgradeFile = upgradeInfo[1];
+                    if(upgradeInfo[2]!=null){
+                        upgradeFile = upgradeFile.substring(0,upgradeFile.lastIndexOf('_'))+"_"+DbUpgradeUtil.UPGRADE_MAYFAIL_SUFFIX+".sql";
+                    }
+                    logger.info("Using upgrade script: "+upgradeFile);
+                    String[] statements = DbUpgradeUtil.getStatementsFromFile(upgradeFile);
 
                     spammer = new ProgressTimerTask(ui);
 
@@ -194,8 +201,41 @@ public class DBActions {
                     }
 
                     conn.setAutoCommit(false);
-                    for (String statement : statements) {
-                        stmt.executeUpdate(statement);
+                    try{
+                        for (String statement : statements) {
+                            stmt.executeUpdate(statement);
+                        }
+                    } catch (SQLException e) {
+                        if(upgradeInfo[2]!=null){
+
+                            upgradeFile = upgradeFile.substring(0,upgradeFile.lastIndexOf('_'))+"_"+DbUpgradeUtil.UPGRADE_CHECKSUCCESS_SUFFIX+".sql";
+                            if (ui != null){
+                                ui.showSuccess("upgrade fail, checking success." + EOL_CHAR) ;
+                                ui.showSuccess("Using upgrade script: "+upgradeFile);
+                            }
+                            logger.info("Using upgrade script: "+upgradeFile);
+                            statements = DbUpgradeUtil.getStatementsFromFile(upgradeFile);
+                            Statement statement =  conn.createStatement();
+                            for(int i = 0 ; i < statements.length-1; ++i){
+                                String sql = statements[i];
+                                if ( logger.isLoggable( Level.FINE ) ) {
+                                    logger.log( Level.FINE, "Running statement: " + sql );
+                                }
+                                statement.executeUpdate( sql );
+                            }
+
+                            String lastLine = statements[statements.length-1];
+                            lastLine = lastLine.replace(DB_NAME_VAR,databaseName);
+                            logger.log( Level.FINE, "Running statement: " + lastLine );
+                            ResultSet result = statement.executeQuery(lastLine);
+                            logger.fine("Statement: "+statements[0]);
+                            if(!result.next())
+                            {
+                                throw new SQLException("Error checking success, no result returned.");
+                            }
+                        } else {
+                            throw e;
+                        }
                     }
 
                     conn.commit();

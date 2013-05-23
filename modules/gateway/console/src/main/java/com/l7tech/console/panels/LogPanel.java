@@ -12,6 +12,7 @@ import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
 import com.l7tech.gateway.common.cluster.LogRequest;
+import com.l7tech.gateway.common.mapping.MessageContextMapping;
 import com.l7tech.gateway.common.security.rbac.AttemptedOther;
 import com.l7tech.gateway.common.security.rbac.OtherOperationName;
 import com.l7tech.gui.NumberField;
@@ -1265,6 +1266,21 @@ public class LogPanel extends JPanel {
                 msg += TextUtils.pad("User Name", maxWidth) + ": " + sum.getUserName() + "\n";
                 if (sum.getAuthenticationType() != null) {
                     msg += TextUtils.pad("Auth Method", maxWidth) + ": " + sum.getAuthenticationType().getName() + "\n";
+                }
+
+                MessageContextMapping[] mappings = sum.obtainMessageContextMappings();
+                if (mappings != null && mappings.length > 0) {
+                    StringBuilder sb = new StringBuilder("\nMessage Context Mappings\n");
+                    boolean foundCustomMapping = false;
+                    for (MessageContextMapping mapping : mappings) {
+                        sb.append(TextUtils.pad("Mapping Key", maxWidth)).append(": ").append(mapping.getKey()).append("\n");
+                        sb.append(TextUtils.pad("Mapping Value", maxWidth)).append(": ").append(mapping.getValue()).append("\n");
+                        foundCustomMapping = true;
+                    }
+
+                    if (foundCustomMapping) {
+                        msg += sb.toString();
+                    }
                 }
 
                 if (sum.getRequestXml() != null) {

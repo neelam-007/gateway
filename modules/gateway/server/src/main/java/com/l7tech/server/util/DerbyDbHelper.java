@@ -11,6 +11,8 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.SQLWarning;
 import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -24,91 +26,107 @@ public class DerbyDbHelper {
     public static void runScripts( final Connection connection,
                                    final Resource[] scripts,
                                    final boolean deleteOnComplete ) throws SQLException {
-        String sql = null;
         for ( Resource scriptResource : scripts ) {
             if ( !scriptResource.exists() ) continue;
 
-            StreamTokenizer tokenizer;
-            try {
-                logger.config("Running DB script '"+scriptResource.getDescription()+"'.");
-                tokenizer = new StreamTokenizer( new InputStreamReader(scriptResource.getInputStream(), Charsets.UTF8) );
-                tokenizer.eolIsSignificant(true);
-                for ( int i='0'; i<='9'; i++) tokenizer.ordinaryChar( i );
-                tokenizer.quoteChar('\'');
-                tokenizer.ordinaryChar( '.' );
-                tokenizer.ordinaryChar( '-' );
-                tokenizer.ordinaryChar( ' ' );
-                tokenizer.wordChars(16, 31);
-                tokenizer.wordChars(33, 38);
-                tokenizer.wordChars(40, 45); // was 44 to exclude -
-                tokenizer.wordChars(46,126);
-                tokenizer.ordinaryChar( ';' );
-
-                int token;
-                StringBuilder builder = new StringBuilder();
-                while( (token = tokenizer.nextToken()) != StreamTokenizer.TT_EOF ) {
-                    if ( token == StreamTokenizer.TT_WORD ) {
-                        builder.append( tokenizer.sval );
-                    } else if ( token == ';' ) {
-                        sql = builder.toString().trim();
-                        final int lastNewLine = builder.lastIndexOf( "\n" );
-                        final int lastComment = builder.indexOf( "--", lastNewLine );
-                        if ( lastComment >= 0 ) {
-                            builder.append( ";" );
-                            continue;
+            logger.config("Running DB script '"+scriptResource.getDescription()+"'.");
+            try{
+                String[] sqlStatements = getSqlStatements(scriptResource);
+                for(String sql: sqlStatements ){
+                    Statement statement = null;
+                    try {
+                        statement = connection.createStatement();
+                        if ( logger.isLoggable( Level.FINE ) ) {
+                            logger.log( Level.FINE, "Running statement: " + sql );
                         }
-                        builder.setLength( 0 );
+                        statement.executeUpdate( sql );
 
-                        Statement statement = null;
-                        try {
-                            statement = connection.createStatement();
-                            if ( logger.isLoggable( Level.FINE ) ) {
-                                logger.log( Level.FINE, "Running statement: " + sql );
-                            }
-                            statement.executeUpdate( sql );
-
-                            SQLWarning warning = statement.getWarnings();
-                            while ( warning != null ) {
-                                logger.warning( "SQL Warning "+warning.getSQLState()+" ("+warning.getErrorCode()+"): " + warning.getMessage() );
-                                warning = warning.getNextWarning();
-                            }
-                        } finally {
-                            ResourceUtils.closeQuietly( statement );
+                        SQLWarning warning = statement.getWarnings();
+                        while ( warning != null ) {
+                            logger.warning( "SQL Warning "+warning.getSQLState()+" ("+warning.getErrorCode()+"): " + warning.getMessage() );
+                            warning = warning.getNextWarning();
                         }
-                    } else if ( token == StreamTokenizer.TT_EOL && builder.length() > 0 ) {
-                        //builder.replaceAll( "(?m)^[ \t]*--.*$", "" )
-                        final int lastNewLine = builder.lastIndexOf( "\n" );
-                        final int lastComment = builder.indexOf( "--", lastNewLine );
-                        if ( lastComment >= 0 ) {
-                            builder.setLength( lastComment );
-                        }
-                        builder.append( "\n" );
-                    } else if ( token == ' ' && builder.length() > 0 ) {
-                        builder.append( " " );
-                    } else if ( token == '\'' ) {
-                        builder.append( "'" );
-                        builder.append( tokenizer.sval );
-                        builder.append( "'" );
+                    } catch (SQLException e) {
+                        logger.log( Level.INFO, "Last SQL statement attempted: " + sql, ExceptionUtils.getDebugException(e) );
+                        throw e;
+                    } finally {
+                        ResourceUtils.closeQuietly( statement );
                     }
                 }
 
                 if ( deleteOnComplete && scriptResource.getFile()!=null ) {
-                    if ( scriptResource.getFile().delete() ) {
-                        logger.info( "Deleted DB script '"+scriptResource.getDescription()+"'." );
-                    } else {
-                        logger.warning( "Deletion failed for DB script '"+scriptResource.getDescription()+"'." );
-                    }
+                        if ( scriptResource.getFile().delete() ) {
+                            logger.info( "Deleted DB script '"+scriptResource.getDescription()+"'." );
+                        } else {
+                            logger.warning( "Deletion failed for DB script '"+scriptResource.getDescription()+"'." );
+                        }
                 }
             } catch (IOException ioe) {
                 logger.log( Level.WARNING, "Error processing DB script.", ioe );
-            } catch (SQLException e) {
-                logger.log( Level.INFO, "Last SQL statement attempted: " + sql, ExceptionUtils.getDebugException(e) );
-                throw e;
             }
         }
     }
 
     /**
+     * Extract sql statements and put them into a string array
+     * @param scriptResource Resource to read from
+     * @return Array of string sql statements
+     * @throws IOException
+     */
+    public static String[] getSqlStatements(Resource scriptResource) throws IOException {
+        final Collection<String> statements = new ArrayList<String>();
+        String sql = null;
+        StreamTokenizer tokenizer;
+        tokenizer = new StreamTokenizer( new InputStreamReader(scriptResource.getInputStream(), Charsets.UTF8) );
+        tokenizer.eolIsSignificant(true);
+        for ( int i='0'; i<='9'; i++) tokenizer.ordinaryChar( i );
+        tokenizer.quoteChar('\'');
+        tokenizer.ordinaryChar( '.' );
+        tokenizer.ordinaryChar( '-' );
+        tokenizer.ordinaryChar( ' ' );
+        tokenizer.wordChars(16, 31);
+        tokenizer.wordChars(33, 38);
+        tokenizer.wordChars(40, 45); // was 44 to exclude -
+        tokenizer.wordChars(46,126);
+        tokenizer.ordinaryChar( ';' );
+
+        int token;
+        StringBuilder builder = new StringBuilder();
+        while( (token = tokenizer.nextToken()) != StreamTokenizer.TT_EOF ) {
+            if ( token == StreamTokenizer.TT_WORD ) {
+                builder.append( tokenizer.sval );
+            } else if ( token == ';' ) {
+                sql = builder.toString().trim();
+                final int lastNewLine = builder.lastIndexOf( "\n" );
+                final int lastComment = builder.indexOf( "--", lastNewLine );
+                if ( lastComment >= 0 ) {
+                    builder.append( ";" );
+                    continue;
+                }
+                builder.setLength( 0 );
+
+                statements.add(sql);
+            } else if ( token == StreamTokenizer.TT_EOL && builder.length() > 0 ) {
+                //builder.replaceAll( "(?m)^[ \t]*--.*$", "" )
+                final int lastNewLine = builder.lastIndexOf( "\n" );
+                final int lastComment = builder.indexOf( "--", lastNewLine );
+                if ( lastComment >= 0 ) {
+                    builder.setLength( lastComment );
+                }
+                builder.append( "\n" );
+            } else if ( token == ' ' && builder.length() > 0 ) {
+                builder.append( " " );
+            } else if ( token == '\'' ) {
+                builder.append( "'" );
+                builder.append( tokenizer.sval );
+                builder.append( "'" );
+            }
+        }
+        return statements.toArray( new String[statements.size()] );
+    }
+
+
+        /**
      * Test the given datasource.
      *
      * <p>This will cause failure of the server if the database cannot be accessed.</p>

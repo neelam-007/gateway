@@ -125,7 +125,7 @@ public class AuditSinkSchemaTest {
                 "responseXml", 6 , 1234, 5678,
                 7, "serviceName", "operationNameHaver",
                 true, SecurityTokenType.UNKNOWN, -5,
-                "userName", "userId");
+                "userName", "userId", -10);
         signAuditRecord(record);
 
         AuditSinkPolicyEnforcementContext context = new AuditSinkPolicyEnforcementContext(record,  PolicyEnforcementContextFactory.createPolicyEnforcementContext(null, null) ,makeContext("<myrequest/>", "<myresponse/>"));

@@ -1,5 +1,5 @@
 --
--- Script to update mysql ssg database from 7.0.0 to 7.1.0
+-- Script to update mysql ssg database from 7.0.2 to 7.1.0
 --
 -- Layer 7 Technologies, inc
 --

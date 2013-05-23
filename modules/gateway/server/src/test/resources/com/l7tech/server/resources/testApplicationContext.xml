@@ -241,6 +241,7 @@
 
     <bean id="messageSummaryAuditFactory" class="com.l7tech.server.audit.MessageSummaryAuditFactory">
         <constructor-arg value="1234567890"/>
+        <property name="messageContextMappingManager" ref="messageContextMappingManager"/>
         <property name="identityProviderFactory" ref="identityProviderFactory" />
     </bean>
 

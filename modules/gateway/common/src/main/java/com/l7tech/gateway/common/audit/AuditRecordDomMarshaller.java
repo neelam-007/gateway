@@ -159,6 +159,16 @@ public class AuditRecordDomMarshaller {
         SecurityTokenType authenticationType = rec.getAuthenticationType();
         if (authenticationType != null)
             elm(e, "authType", authenticationType.getName());
+        MessageContextMappingValues mappingValuesEntity = rec.getMappingValuesEntity();
+        if (mappingValuesEntity != null) {
+            Element mv = factory.createElementNS(NS, "messageContextMappingValues");
+            addMessageContextMappingValuesFields(mv, mappingValuesEntity);
+            e.appendChild(mv);
+        }
+        Long mappingValuesOid = rec.getMappingValuesOid();
+        if (mappingValuesOid != null) {
+            elm(e, "mappingValuesOid", Long.toString(mappingValuesOid));
+        }
         elm(e, "operationName", rec.getOperationName());
         elm(e, "requestContentLength", Integer.toString(rec.getRequestContentLength()));
         elm(e, "requestSavedFlag", rec.getRequestXml() != null ? "true" : "false");

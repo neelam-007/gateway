@@ -61,26 +61,37 @@ public class DbUpgradeUtilTest {
     public void buildUpgradeMap() throws Exception {
         final URL upgradeDirectory = DbUpgradeUtilTest.class.getClassLoader().getResource("com/l7tech/util/db");
         final Map<String, String[]> upgradeMap = DbUpgradeUtil.buildUpgradeMap(new File(upgradeDirectory.toURI()));
-        assertEquals(2, upgradeMap.size());
+        assertEquals(3, upgradeMap.size());
         final String[] xToY = upgradeMap.get("x");
         assertEquals("y", xToY[0]);
         assertTrue(xToY[1].contains("upgrade_x-y.sql"));
         final String[] yToZ = upgradeMap.get("y");
         assertEquals("z", yToZ[0]);
         assertTrue(yToZ[1].contains("upgrade_y-z.sql"));
+        final String[] zToAA = upgradeMap.get("z");
+        assertEquals("aa", zToAA[0]);
+        assertTrue(zToAA[1].contains("upgrade_z-aa"));
+        assertNotNull(zToAA[2]);
     }
 
     @Test
     public void isUpgradeScript() throws Exception {
         // valid
-        final Pair<String, String> upgradeInfo = DbUpgradeUtil.isUpgradeScript("upgrade_x-y.sql");
+        final Triple<String, String, String> upgradeInfo = DbUpgradeUtil.isUpgradeScript("upgrade_x-y.sql");
         assertNotNull(upgradeInfo);
-        assertEquals("x", upgradeInfo.getKey());
-        assertEquals("y", upgradeInfo.getValue());
+        assertEquals("x", upgradeInfo.left);
+        assertEquals("y", upgradeInfo.middle);
+
+        final Triple<String, String, String> upgradeInfo1 = DbUpgradeUtil.isUpgradeScript("upgrade_x-y_mayFail.sql");
+        assertNotNull(upgradeInfo1);
+        assertEquals("x", upgradeInfo1.left);
+        assertEquals("y", upgradeInfo1.middle);
+        assertNotNull(upgradeInfo1.right);
 
         // invalid
         assertNull(DbUpgradeUtil.isUpgradeScript(""));
         assertNull(DbUpgradeUtil.isUpgradeScript("upgrade_x-y"));
+        assertNull(DbUpgradeUtil.isUpgradeScript("upgrade_x-y_something.sql"));
         assertNull(DbUpgradeUtil.isUpgradeScript("upgrade_x.sql"));
         assertNull(DbUpgradeUtil.isUpgradeScript("notupgrade"));
         assertNull(DbUpgradeUtil.isUpgradeScript("upgrade_x-y.txt"));

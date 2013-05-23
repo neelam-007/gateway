@@ -22,7 +22,7 @@ import java.util.Collections;
 @Ignore("This test modifies the database on localhost")
 public class DBActionsTest {
     private String currentVersion = null;
-    String[] versions = new String[] {"3.1", "3.2", "3.3", "3.4", "3.5", "4.0"};
+    String[] versions = new String[] {"6.2"};
 
     private String hostname = "localhost";
     private int port = 3306;
@@ -140,7 +140,8 @@ public class DBActionsTest {
         System.out.println("------- Creating test databases -------");
         DBActions.DBActionsResult result = null;
         for (String realVersion : versions) {
-            result = dbActions.createDb(getDatabaseConfig(dbName),
+            String versionName = realVersion.replaceAll("\\.", "");
+            result = dbActions.createDb(getDatabaseConfig(dbName+versionName),
                     null,
                     "ssg" + realVersion + ".sql", true);
             if (result.getStatus() != DBActions.StatusType.SUCCESS) {

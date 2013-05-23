@@ -285,6 +285,11 @@
                                 <value>customerMapping.addToServiceMetrics</value>
                             </list>
                         </entry>
+                        <entry key="messageSummaryAuditFactory">
+                            <list>
+                                <value>customerMapping.addToGatewayAuditEvents</value>
+                            </list>
+                        </entry>
                         <entry key="ssgConnectorManager">
                             <list>
                                 <value>interfaceTags</value>
@@ -1341,6 +1346,7 @@
     <!-- server side audit message factory -->
     <bean id="messageSummaryAuditFactory" class="com.l7tech.server.audit.MessageSummaryAuditFactory">
         <constructor-arg ref="clusterNodeId"/>
+        <property name="messageContextMappingManager" ref="messageContextMappingManager"/>
         <property name="identityProviderFactory" ref="identityProviderFactory"/>
     </bean>
 

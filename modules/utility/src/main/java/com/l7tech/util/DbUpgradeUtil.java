@@ -90,9 +90,9 @@ public final class DbUpgradeUtil {
         Map<String, String[]> upgradeMap = new HashMap<String, String[]>();
 
         for (File upgradeScript : upgradeScripts) {
-            final Pair<String, String> upgradeInfo = isUpgradeScript(upgradeScript.getName());
+            final Triple<String, String, String> upgradeInfo = isUpgradeScript(upgradeScript.getName());
             if (upgradeInfo != null) {
-                upgradeMap.put(upgradeInfo.getKey(), new String[]{upgradeInfo.getValue(), upgradeScript.getAbsolutePath()});
+                upgradeMap.put(upgradeInfo.left, new String[]{upgradeInfo.middle, upgradeScript.getAbsolutePath(),upgradeInfo.right});
             }
         }
         return upgradeMap;
@@ -101,23 +101,42 @@ public final class DbUpgradeUtil {
     /**
      * Determines if the given file name is valid for an upgrade script.
      *
-     * Valid upgrade script names must follow a convention upgrade_x-y.sql where x = the start version and y = the destination version.
+     * Valid upgrade script names must follow a convention upgrade_x-y.sql or upgrade_x-y_mayFail.sql or
+     *          upgrade_x-y_checkSuccess.sql where x = the start version and y = the destination version.
      *
      * @param fileName the file name of the potential upgrade script.
-     * @return a Pair where key = start version and value = destination version or null if the file name is not valid for an upgrade script.
+     * @return a Triple where left = start version
+     *                        middle = destination version or null if the file name is not valid for an upgrade script
+     *                        right = "mayFail" if the sql file is tagged as a mayFail/checkSuccess
      */
     @Nullable
-    public static Pair<String, String> isUpgradeScript(@NotNull final String fileName) {
-        Pair<String, String> upgradeInfo = null;
-        final Pattern pattern = Pattern.compile(UPGRADE_SQL_PATTERN);
-        final Matcher matcher = pattern.matcher(fileName);
-        if (matcher.matches()) {
-            String startVersion = matcher.group(1);
-            String destinationVersion = matcher.group(2);
-            upgradeInfo = new Pair<String, String>(startVersion, destinationVersion);
+    public static Triple<String, String, String> isUpgradeScript(@NotNull final String fileName) {
+        Triple<String, String, String> upgradeInfo = null;
+
+        final Pattern optionPattern = Pattern.compile(UPGRADE_SQL_PATTERN_OPTION);
+        final Matcher optionMatcher = optionPattern.matcher(fileName);
+        if (optionMatcher.matches()) {
+            String startVersion = optionMatcher.group(1);
+            String destinationVersion = optionMatcher.group(2);
+            upgradeInfo = new Triple<String, String, String>(startVersion, destinationVersion,UPGRADE_MAYFAIL_SUFFIX);
+        }
+        else {
+            final Pattern pattern = Pattern.compile(UPGRADE_SQL_PATTERN);
+            final Matcher matcher = pattern.matcher(fileName);
+            if (matcher.matches()) {
+                String startVersion = matcher.group(1);
+                String destinationVersion = matcher.group(2);
+                if(destinationVersion.contains("_")){
+                    return null;
+                }
+                upgradeInfo = new Triple<String, String, String>(startVersion, destinationVersion,null);
+            }
         }
         return upgradeInfo;
     }
 
+    public static final String UPGRADE_MAYFAIL_SUFFIX = "mayFail";
+    public static final String UPGRADE_CHECKSUCCESS_SUFFIX = "checkSuccess";
     private static final String UPGRADE_SQL_PATTERN = "^upgrade_(.*)-(.*).sql$";
+    private static final String UPGRADE_SQL_PATTERN_OPTION = "^upgrade_(.*)-(.*)_("+UPGRADE_MAYFAIL_SUFFIX+"|"+UPGRADE_CHECKSUCCESS_SUFFIX+").sql$";
 }
