@@ -1717,6 +1717,12 @@
             </bean>
         </property>
         <property name="encapsulatedAssertionConfigManager" ref="encapsulatedAssertionConfigManager"/>
+        <property name="auditRecordManager">
+            <bean class="com.l7tech.gateway.common.spring.factory.config.LazyProxyFactoryBean">
+                <constructor-arg value="auditRecordManager"/>
+                <constructor-arg value="com.l7tech.server.audit.AuditRecordManager"/>
+            </bean>
+        </property>
     </bean>
 
     <bean id="applicationEventProxy" class="com.l7tech.server.util.ApplicationEventProxy" primary="true"/>
