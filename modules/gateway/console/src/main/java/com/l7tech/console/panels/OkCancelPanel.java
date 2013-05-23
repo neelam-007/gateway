@@ -1,5 +1,7 @@
 package com.l7tech.console.panels;
 
+import org.jetbrains.annotations.NotNull;
+
 import javax.swing.*;
 
 /**
@@ -17,5 +19,9 @@ public class OkCancelPanel extends JPanel {
 
     public JButton getCancelButton() {
         return cancelButton;
+    }
+
+    public void setOkButtonText(@NotNull final String text) {
+        okButton.setText(text);
     }
 }
