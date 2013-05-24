@@ -84,7 +84,7 @@ public class SecurityZonePropertiesDialog extends JDialog {
         buttonToLink(selectNoneButton);
         selectAllButton.addActionListener(new SelectActionListener(true));
         selectNoneButton.addActionListener(new SelectActionListener(false));
-        errorLabel.setForeground(Color.RED);
+        errorLabel.setVisible(false);
     }
 
     private void initValidation() {
@@ -97,8 +97,10 @@ public class SecurityZonePropertiesDialog extends JDialog {
                 if (!valid) {
                     final String[] errors = getAllValidationErrors();
                     errorLabel.setText(errors.length > 0 ? errors[0] : StringUtils.EMPTY);
+                    errorLabel.setVisible(true);
                 } else {
                     errorLabel.setText(StringUtils.EMPTY);
+                    errorLabel.setVisible(false);
                 }
                 return valid;
             }
