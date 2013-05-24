@@ -25,6 +25,7 @@ import static com.l7tech.util.Functions.propertyTransform;
 
 public class SecurityZoneManagerWindow extends JDialog {
     private static final Logger logger = Logger.getLogger(SecurityZoneManagerWindow.class.getName());
+    private static final String WARNING_MSG = "All entities currently assigned to this zone will switch to the \"no security zone\" state if you continue. This action cannot be undone.";
 
     private JPanel contentPane;
     private JButton closeButton;
@@ -128,7 +129,8 @@ public class SecurityZoneManagerWindow extends JDialog {
             }
         }));
         Utilities.setDoubleClickAction(securityZonesTable, editButton);
-        removeButton.addActionListener(ecc.createDeleteAction(EntityType.SECURITY_ZONE, SecurityZoneManagerWindow.this));
+        removeButton.addActionListener(ecc.createDeleteAction(EntityType.SECURITY_ZONE, SecurityZoneManagerWindow.this,
+                WARNING_MSG));
 
         enableOrDisable();
     }

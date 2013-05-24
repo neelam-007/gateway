@@ -10,6 +10,7 @@ import com.l7tech.objectmodel.NamedEntity;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.WordUtils;
 import org.jetbrains.annotations.Nullable;
 
@@ -17,6 +18,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.text.MessageFormat;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -26,7 +28,7 @@ import java.util.logging.Logger;
  */
 public class EntityCrudController<ET> {
     private static final Logger logger = Logger.getLogger(EntityCrudController.class.getName());
-
+    private static final String DELETE_CONFIRMATION_FORMAT = "Are you sure you want to delete {0} {1}? {2}";
     private JTable entityTable;
     private SimpleTableModel<ET> entityTableModel;
     private EntityCreator<ET> entityCreator;
@@ -160,19 +162,20 @@ public class EntityCrudController<ET> {
      * @return a bare bones delete ActionListener which just deletes the entity on actionPerformed.
      */
     public ActionListener createDeleteAction() {
-        return createDeleteAction(null, null);
+        return createDeleteAction(null, null, null);
     }
 
     /**
      * Creates a delete action with a confirmation prompt if the entity is a NamedEntity.
-     *
+     * <p/>
      * If either/both entityType or parent are null, the delete action will delete without confirmation.
      *
-     * @param entityType the EntityType of the entity to delete which is used for the confirmation prompt.
-     * @param parent     the Component which is a parent to the input dialog.
+     * @param entityType        the EntityType of the entity to delete which is used for the confirmation prompt.
+     * @param parent            the Component which is a parent to the input dialog.
+     * @param additionalMessage an optional additional message to display to the user when confirming the deletion under the usual "are you sure" message.
      * @return a delete ActionListener which prompts the user to confirm before deleting the entity on actionPerformed.
      */
-    public ActionListener createDeleteAction(@Nullable final EntityType entityType, @Nullable final Component parent) {
+    public ActionListener createDeleteAction(@Nullable final EntityType entityType, @Nullable final Component parent, @Nullable final String additionalMessage) {
         return new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -182,7 +185,7 @@ public class EntityCrudController<ET> {
                     final ET entity = entityTableModel.getRowObject(modelIndex);
                     if (entity != null) {
                         if (entity instanceof NamedEntity && entityType != null && parent != null) {
-                            confirmDelete((NamedEntity) entity, entityType, parent);
+                            confirmDelete((NamedEntity) entity, entityType, parent, additionalMessage);
                         } else {
                             delete(entity);
                         }
@@ -192,18 +195,22 @@ public class EntityCrudController<ET> {
         };
     }
 
-    private void confirmDelete(final NamedEntity namedEntity, final EntityType entityType, final Component parent) {
-        final String msg = "Are you sure you wish to delete the " + entityType.getName() + " " + namedEntity.getName() + "?";
-        DialogDisplayer.showSafeConfirmDialog(
+    private void confirmDelete(final NamedEntity namedEntity, final EntityType entityType, final Component parent, final String additionalMessage) {
+        final String additionalWarning = additionalMessage == null ? StringUtils.EMPTY : additionalMessage;
+        final String msg = MessageFormat.format(DELETE_CONFIRMATION_FORMAT, entityType.getName().toLowerCase(), namedEntity.getName(), additionalWarning);
+        DialogDisplayer.showOptionDialog(
                 parent,
                 WordUtils.wrap(msg, DeleteEntityNodeAction.LINE_CHAR_LIMIT, null, true),
-                "Confirm Remove " + entityType.getName(),
-                JOptionPane.YES_NO_OPTION,
+                "Delete " + entityType.getName(),
+                JOptionPane.DEFAULT_OPTION,
                 JOptionPane.WARNING_MESSAGE,
+                null,
+                new Object[]{"Delete " + entityType.getName(), "Cancel"},
+                null,
                 new DialogDisplayer.OptionListener() {
                     @Override
                     public void reportResult(int option) {
-                        if (option == JOptionPane.YES_OPTION) {
+                        if (option == 0) {
                             delete((ET) namedEntity);
                         }
                     }
