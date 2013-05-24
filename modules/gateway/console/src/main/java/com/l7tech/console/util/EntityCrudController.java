@@ -28,7 +28,7 @@ import java.util.logging.Logger;
  */
 public class EntityCrudController<ET> {
     private static final Logger logger = Logger.getLogger(EntityCrudController.class.getName());
-    private static final String DELETE_CONFIRMATION_FORMAT = "Are you sure you want to delete {0} {1}? {2}";
+    private static final String DELETE_CONFIRMATION_FORMAT = "Are you sure you want to remove the {0} {1}? {2}";
     private JTable entityTable;
     private SimpleTableModel<ET> entityTableModel;
     private EntityCreator<ET> entityCreator;
@@ -201,11 +201,11 @@ public class EntityCrudController<ET> {
         DialogDisplayer.showOptionDialog(
                 parent,
                 WordUtils.wrap(msg, DeleteEntityNodeAction.LINE_CHAR_LIMIT, null, true),
-                "Delete " + entityType.getName(),
+                "Remove " + entityType.getName(),
                 JOptionPane.DEFAULT_OPTION,
                 JOptionPane.WARNING_MESSAGE,
                 null,
-                new Object[]{"Delete " + entityType.getName(), "Cancel"},
+                new Object[]{"Remove " + entityType.getName(), "Cancel"},
                 null,
                 new DialogDisplayer.OptionListener() {
                     @Override
