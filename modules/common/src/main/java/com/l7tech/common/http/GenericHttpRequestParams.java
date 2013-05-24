@@ -106,6 +106,7 @@ public class GenericHttpRequestParams {
         proxyHost = template.proxyHost;
         proxyPort = template.proxyPort;
         proxyAuthentication = template.proxyAuthentication;
+        forceIncludeRequestBody = template.forceIncludeRequestBody;
     }
 
     public GenericHttpState getState() {
