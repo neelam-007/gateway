@@ -47,6 +47,7 @@ public class SecurityZoneEntitiesPanel extends JPanel {
     private JTextField filterTextField;
     private JButton filterButton;
     private JButton clearButton;
+    private JLabel countLabel;
     private SimpleTableModel<Entity> entitiesTableModel;
     private SecurityZone securityZone;
 
@@ -61,6 +62,7 @@ public class SecurityZoneEntitiesPanel extends JPanel {
         this.securityZone = securityZone;
         loadTable();
         loadComboBox();
+        loadCount();
         enableDisable();
     }
 
@@ -70,6 +72,7 @@ public class SecurityZoneEntitiesPanel extends JPanel {
         filterTextField.setEnabled(securityZone != null);
         filterButton.setEnabled(securityZone != null && filterTextField.getText().length() > 0);
         clearButton.setEnabled(securityZone != null && filterTextField.getText().length() > 0);
+        countLabel.setVisible(securityZone != null);
     }
 
     @Nullable
@@ -86,6 +89,7 @@ public class SecurityZoneEntitiesPanel extends JPanel {
             @Override
             public void actionPerformed(final ActionEvent e) {
                 ((TableRowSorter) entitiesTable.getRowSorter()).setRowFilter(RowFilter.regexFilter(CASE_INSENSITIVE_FLAG + filterTextField.getText().trim(), 0));
+                loadCount();
             }
         });
         clearButton.addActionListener(new ActionListener() {
@@ -94,6 +98,7 @@ public class SecurityZoneEntitiesPanel extends JPanel {
                 filterTextField.setText(StringUtils.EMPTY);
                 ((TableRowSorter) entitiesTable.getRowSorter()).setRowFilter(null);
                 enableDisable();
+                loadCount();
             }
         });
         filterTextField.addKeyListener(new KeyListener() {
@@ -110,6 +115,12 @@ public class SecurityZoneEntitiesPanel extends JPanel {
                 enableDisable();
             }
         });
+    }
+
+    private void loadCount() {
+        final int showCount = entitiesTable.getRowCount();
+        final int total = entitiesTable.getModel().getRowCount();
+        countLabel.setText("showing " + showCount + " of " + total + " items");
     }
 
     private void initTable() {
@@ -169,6 +180,7 @@ public class SecurityZoneEntitiesPanel extends JPanel {
             @Override
             public void actionPerformed(final ActionEvent e) {
                 loadTable();
+                loadCount();
             }
         });
         loadComboBox();
