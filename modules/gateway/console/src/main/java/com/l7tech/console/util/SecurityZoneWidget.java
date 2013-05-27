@@ -1,13 +1,13 @@
 package com.l7tech.console.util;
 
 import com.l7tech.gateway.common.security.rbac.OperationType;
+import com.l7tech.gateway.common.security.rbac.Permission;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.SecurityZone;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
-import javax.swing.border.TitledBorder;
 import javax.swing.plaf.basic.BasicComboBoxUI;
 import java.awt.*;
 import java.awt.event.ActionListener;
@@ -32,7 +32,7 @@ public class SecurityZoneWidget extends JPanel {
     private boolean hideIfNoZones = true;
     private OperationType operation;
     private SecurityZone initialZone;
-    private java.util.List<SecurityZone> loadedZones = Collections.emptyList();
+    private Map<Long, SecurityZone> loadedZones = Collections.emptyMap();
     private JComboBox<SecurityZone> zonesComboBox = new JComboBox<>();
     private JLabel securityZoneLabel = new JLabel("Security Zone:");
 
@@ -95,30 +95,39 @@ public class SecurityZoneWidget extends JPanel {
     public void reloadZones() {
         zoneLoadAttempted = true;
         final Object oldSelection = zonesComboBox.getSelectedItem();
-        loadedZones = new ArrayList<>();
+        final Map<Long, SecurityZone> readableZones = SecurityZoneUtil.getSortedSecurityZonesAsMap();
+        // maintain order of insertion
+        loadedZones = new LinkedHashMap<>();
         if (operation == null || operation != OperationType.READ) {
-            // all readable zones
-            final Set<SecurityZone> readableZones = SecurityZoneUtil.getSortedSecurityZones();
-            final List<SecurityZone> zones = new ArrayList<>(readableZones.size() + 1);
-            zones.add(SecurityZoneUtil.NULL_ZONE);
-            zones.addAll(readableZones);
-
-            final List<SecurityZone> invalidZones = new ArrayList<>();
-            for (final SecurityZone zone : zones) {
-                if (!SecurityZoneUtil.isZoneValidForOperation(zone, entityTypes, operation, Registry.getDefault().getSecurityProvider().getUserPermissions())) {
-                    invalidZones.add(zone);
+            if (initialZone != null && !initialZone.equals(SecurityZoneUtil.NULL_ZONE)) {
+                // want current zone if not readable to be at the top - remove if necessary after other zones are loaded
+                loadedZones.put(SecurityZoneUtil.CURRENT_UNAVAILABLE_ZONE.getOid(), SecurityZoneUtil.CURRENT_UNAVAILABLE_ZONE);
+            }
+            final Collection<Permission> userPermissions = Registry.getDefault().getSecurityProvider().getUserPermissions();
+            if (SecurityZoneUtil.isZoneValidForOperation(SecurityZoneUtil.NULL_ZONE, entityTypes, operation, userPermissions)) {
+                // want null zone above other zones
+                loadedZones.put(SecurityZoneUtil.NULL_ZONE.getOid(), SecurityZoneUtil.NULL_ZONE);
+            }
+            // readable zones
+            for (final SecurityZone readableZone : readableZones.values()) {
+                if (SecurityZoneUtil.isZoneValidForOperation(readableZone,  entityTypes, operation, userPermissions)) {
+                    loadedZones.put(readableZone.getOid(), readableZone);
                 }
             }
-            zones.removeAll(invalidZones);
-            loadedZones.addAll(zones);
-            if (initialZone != null && !loadedZones.contains(initialZone)) {
-                loadedZones.add(0, SecurityZoneUtil.CURRENT_UNAVAILABLE_ZONE);
+            if (initialZone != null && loadedZones.containsKey(initialZone.getOid())) {
+                // current zone is readable so remove the current unavailable zone
+                loadedZones.remove(SecurityZoneUtil.CURRENT_UNAVAILABLE_ZONE.getOid());
             }
         } else if (initialZone != null) {
-            loadedZones.add(initialZone);
+            // read only - no need to load all zones into the combo box
+            if (readableZones.containsKey(initialZone.getOid())) {
+                loadedZones.put(initialZone.getOid(), initialZone);
+            } else {
+                loadedZones.put(SecurityZoneUtil.CURRENT_UNAVAILABLE_ZONE.getOid(), SecurityZoneUtil.CURRENT_UNAVAILABLE_ZONE);
+            }
         }
 
-        zonesComboBox.setModel(new DefaultComboBoxModel<>(loadedZones.toArray(new SecurityZone[loadedZones.size()])));
+        zonesComboBox.setModel(new DefaultComboBoxModel<>(loadedZones.values().toArray(new SecurityZone[loadedZones.size()])));
         if (oldSelection != null) {
             zonesComboBox.setSelectedItem(oldSelection);
         } else if (!loadedZones.isEmpty()) {
@@ -156,7 +165,7 @@ public class SecurityZoneWidget extends JPanel {
         if (zone == null) {
             zone = SecurityZoneUtil.NULL_ZONE;
         }
-        if (loadedZones.contains(zone)) {
+        if (loadedZones.containsKey(zone.getOid())) {
             zonesComboBox.setSelectedItem(zone);
         } else {
             // selected zone is not available
@@ -201,12 +210,16 @@ public class SecurityZoneWidget extends JPanel {
             setVisible(false);
         }
         if (OperationType.READ == operation) {
-            setEnabled(false);
-            setUI(new BasicComboBoxUI() {
+            zonesComboBox.setUI(new BasicComboBoxUI() {
                 @Override
                 protected JButton createArrowButton() {
                     // remove arrow by creating a plain button
-                    return new JButton();
+                    return new JButton() {
+                        @Override
+                        public int getWidth() {
+                            return 0;
+                        }
+                    };
                 }
             });
         }

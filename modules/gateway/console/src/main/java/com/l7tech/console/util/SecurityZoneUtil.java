@@ -43,7 +43,7 @@ public class SecurityZoneUtil {
      */
     public static final SecurityZone CURRENT_UNAVAILABLE_ZONE = new SecurityZone() {
         {
-            setOid(-1);
+            setOid(-2);
             setName("Current zone (zone details are unavailable)");
             setDescription("%%%UNAVAILABLE_ZONE%%%");
             setPermittedEntityTypes(Collections.singleton(EntityType.ANY));
@@ -80,6 +80,19 @@ public class SecurityZoneUtil {
         final Set<SecurityZone> sorted = new TreeSet<>(new NamedEntityComparator());
         sorted.addAll(getSecurityZones());
         return sorted;
+    }
+
+    /**
+     * @return a map of all security zones visible to the current admin sorted by name and keyed by oid. Never null.
+     */
+    @NotNull
+    public static Map<Long, SecurityZone> getSortedSecurityZonesAsMap() {
+        final Set<SecurityZone> sortedZones = getSortedSecurityZones();
+        final Map<Long, SecurityZone> zoneMap = new LinkedHashMap<>(sortedZones.size());
+        for (final SecurityZone zone : sortedZones) {
+            zoneMap.put(zone.getOid(), zone);
+        }
+        return zoneMap;
     }
 
     @Nullable
