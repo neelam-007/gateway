@@ -118,7 +118,7 @@ public class SecurityZonePropertiesDialog extends JDialog {
         inputValidator.attachToButton(okCancelPanel.getOkButton(), new ActionListener() {
             public void actionPerformed(final ActionEvent e) {
                 // don't display name validation errors until after user clicks ok
-                if (reservedNames.contains(nameField.getText().trim())) {
+                if (reservedNames.contains(nameField.getText().trim().toLowerCase())) {
                     final String error = MessageFormat.format(RESOURCES.getString(ERROR_UNIQUE_NAME), operation.getName().toLowerCase());
                     DialogDisplayer.showMessageDialog(SecurityZonePropertiesDialog.this, error,
                             operation.getName() + " Security Zone", JOptionPane.ERROR_MESSAGE, null);
@@ -130,12 +130,15 @@ public class SecurityZonePropertiesDialog extends JDialog {
         });
     }
 
+    /**
+     * Converts all name to lower case so that matching can be done as case insensitive.
+     */
     private void initReservedNames() {
         for (final SecurityZone zone : SecurityZoneUtil.getSecurityZones()) {
-            reservedNames.add(zone.getName());
+            reservedNames.add(zone.getName().toLowerCase());
         }
         if (securityZone.getOid() != SecurityZone.DEFAULT_OID) {
-            reservedNames.remove(securityZone.getName());
+            reservedNames.remove(securityZone.getName().toLowerCase());
         }
     }
 
