@@ -138,12 +138,22 @@ public class MqNativeAdvancedPropertiesPanel extends JPanel {
     }
 
     private void removeAdvancedProperty(JTable advancedPropertiesTable, AdvancedPropertiesTableModel advancedTableModel) {
-        int viewRow = advancedPropertiesTable.getSelectedRow();
-        if (viewRow < 0) return;
+        int[] viewRow = advancedPropertiesTable.getSelectedRows();
 
-        String name = (String) advancedTableModel.getValueAt(viewRow, 0);
-        String value = (String) advancedTableModel.getValueAt(viewRow, 1);
-        updatePropertiesList(advancedPropertiesTable, advancedTableModel, new Pair<String, String>(name, value), true);
+        if (viewRow.length < 1) return;
+
+        Pair<String, String>[] rows = new Pair[viewRow.length];
+
+        for (int i = 0; i < viewRow.length ; i++) {
+            String name = (String) advancedTableModel.getValueAt(viewRow[i], 0);
+            String value = (String) advancedTableModel.getValueAt(viewRow[i], 1);
+            rows[i] = new Pair<String, String>(name, value);
+        }
+
+        for (int i = 0; i < rows.length; i++) {
+            updatePropertiesList(advancedPropertiesTable, advancedTableModel, rows[i], true);
+        }
+
     }
 
     private void updatePropertiesList(JTable advancedPropertiesTable, AdvancedPropertiesTableModel advancedTableModel,
