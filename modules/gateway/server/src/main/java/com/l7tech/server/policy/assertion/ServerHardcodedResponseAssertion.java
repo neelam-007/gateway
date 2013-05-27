@@ -110,9 +110,7 @@ public class ServerHardcodedResponseAssertion extends AbstractServerAssertion<Ha
 
         // fla bugfix attach the status before closing otherwise, it's lost
         hrk.setStatus(status);
-        response.close();
         response.initialize(stashManager, contentType, new ByteArrayInputStream(bytes));
-        response.attachHttpResponseKnob(hrk);
 
         // todo: move to abstract routing assertion
         final Message request = context.getRequest();
@@ -166,6 +164,7 @@ public class ServerHardcodedResponseAssertion extends AbstractServerAssertion<Ha
                     // This was probably not an HTTP request, so cookies are meaningless anyway.
                 }
             };
+            response.attachHttpResponseKnob(hrk);
         }
         return hrk;
     }
