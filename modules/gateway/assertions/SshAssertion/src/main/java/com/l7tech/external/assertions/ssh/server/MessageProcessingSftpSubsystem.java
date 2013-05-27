@@ -456,7 +456,7 @@ class MessageProcessingSftpSubsystem extends SftpSubsystem {
         } else {
             // The ssh file returned will always be a VirtualSshFile
             final VirtualSshFile sshFile = (VirtualSshFile) fileHandle.getFile();
-            logger.log(Level.FINE, "Read request: Offset: {0} Length: {1} File: {2}", new Object[]{requestedOffset, requestedLength, sshFile.getAbsolutePath()});
+            logger.log(Level.FINEST, "Read request: Offset: {0} Length: {1} File: {2}", new Object[]{requestedOffset, requestedLength, sshFile.getAbsolutePath()});
 
             //Retrieve the max buffer size. It is settable as an advanced property on this connector.
             final int maxReadBufferSize = connector.getIntProperty(SshServerModule.LISTEN_PROP_SFTP_MAX_READ_BUFFER_SIZE, DEFAULT_MAX_READ_BUFFER_SIZE);
@@ -532,7 +532,7 @@ class MessageProcessingSftpSubsystem extends SftpSubsystem {
                 return;
             }
 
-            logger.log(Level.FINE, "Read: Length read from policy: " + lengthRead);
+            logger.log(Level.FINEST, "Read: Length read from policy: " + lengthRead);
             if (lengthRead >= 0) {
                 //When partial downloads are not enabled validate that the requested offset is an expected offset.
                 if (!connector.getBooleanProperty(SshCredentialAssertion.LISTEN_PROP_ENABLE_SFTP_PARTIAL_DOWNLOADS) &&
