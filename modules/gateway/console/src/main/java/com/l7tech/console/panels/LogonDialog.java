@@ -985,6 +985,7 @@ public class LogonDialog extends JDialog {
                     userNameTextField.getText(),
                     false);
             changePasswordDialog.setPasswordPolicyDescription(((InvalidPasswordException) cause).getPasswordPolicyDescription());
+            changePasswordDialog.setLoggedIn(false);
             changePasswordDialog.setVisible(true);
             if (changePasswordDialog.wasOk()) {
                 handled = true;
@@ -1004,6 +1005,7 @@ public class LogonDialog extends JDialog {
                         new ChangePasswordDialog(this, "Password expired, please change your password.", userNameTextField.getText(), false);
                 CredentialExpiredPasswordDetailsException ex = ExceptionUtils.getCauseIfCausedBy(cause, CredentialExpiredPasswordDetailsException.class);
                 changePasswordDialog.setPasswordPolicyDescription(ex.getPasswordPolicyDescription());
+                changePasswordDialog.setLoggedIn(false);
                 changePasswordDialog.setVisible(true);
                 if (changePasswordDialog.wasOk()) {
                     handled = true;

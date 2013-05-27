@@ -161,6 +161,12 @@ public class ChangePasswordDialog extends JDialog {
         this.passwordPolicyDescription = passwordPolicyDescription;
     }
 
+    public void setLoggedIn(boolean loggedIn) {
+        isLoggedIn = loggedIn;
+        tabbedPane1.setEnabledAt(ROLES_TAB, isLoggedIn);
+        updateButtons();
+    }
+
 
     //- PRIVATE
 
@@ -185,6 +191,9 @@ public class ChangePasswordDialog extends JDialog {
     private boolean cancel;
     private boolean help;
     private String passwordPolicyDescription = null;
+    private static boolean isLoggedIn = true;
+
+    private static int ROLES_TAB = 1;
 
     private void initComponents(String message) {
         this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
@@ -339,6 +348,9 @@ public class ChangePasswordDialog extends JDialog {
     }
 
     private static boolean permittedToChangePassword() {
+        if(!isLoggedIn)
+            return true;
+
         try {
             return Registry.getDefault().isAdminContextPresent() && Registry.getDefault().getIdentityAdmin().currentUsersPasswordCanBeChanged();
         } catch (AuthenticationException e) {
@@ -349,4 +361,5 @@ public class ChangePasswordDialog extends JDialog {
             return true;
         }
     }
+
 }
