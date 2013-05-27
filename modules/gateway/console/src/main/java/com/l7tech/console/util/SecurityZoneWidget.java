@@ -37,9 +37,16 @@ public class SecurityZoneWidget extends JPanel {
     private JLabel securityZoneLabel = new JLabel("Security Zone:");
 
     public SecurityZoneWidget() {
-        setLayout(new BorderLayout());
-        add(securityZoneLabel, BorderLayout.NORTH);
-        add(zonesComboBox, BorderLayout.SOUTH);
+        setLayout(new GridBagLayout());
+        final GridBagConstraints top = new GridBagConstraints();
+        top.fill = GridBagConstraints.HORIZONTAL;
+        final GridBagConstraints bottom = new GridBagConstraints();
+        bottom.gridy = 1;
+        bottom.weightx = 1;
+        bottom.weighty = 1;
+        bottom.fill = GridBagConstraints.HORIZONTAL;
+        add(securityZoneLabel, top);
+        add(zonesComboBox, bottom);
         zonesComboBox.setRenderer(new DefaultListCellRenderer() {
             @Override
             public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
