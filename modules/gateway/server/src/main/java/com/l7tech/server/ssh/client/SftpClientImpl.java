@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * This is the implementation of the SftpClient.
@@ -94,13 +95,14 @@ public class SftpClientImpl implements SftpClient {
 
         InputStream in = null;
         try {
+            final AtomicLong filesize = new AtomicLong();
             try {
                 //Get the file upload input stream
                 in = channel.get(remoteDir + remoteFile, fileTransferProgressMonitor == null ? null : new SftpProgressMonitor() {
                     @Override
                     public void init(int op, String src, String dest, long max) {
-                        //notify the progress monitor that the download is starting.
-                        fileTransferProgressMonitor.start(FileTransferProgressMonitor.DOWNLOAD, new XmlSshFile(remoteDir + remoteFile, true, max, 0));
+                        //get the file size
+                        filesize.set(max);
                     }
 
                     @Override
@@ -117,6 +119,11 @@ public class SftpClientImpl implements SftpClient {
             } catch (SftpException e) {
                 throw new FileTransferException(e);
             }
+            //notify the progress monitor that the download is starting. This should be done here and not in the above SftpProgressMonitor in order to properly catch some exceptions.
+            if (fileTransferProgressMonitor != null) {
+                fileTransferProgressMonitor.start(FileTransferProgressMonitor.DOWNLOAD, new XmlSshFile(remoteDir + remoteFile, true, filesize.get(), 0));
+            }
+
             // Copy the sftp input stream to the output stream
             IOUtils.copyStream(in, out, fileLength, fileTransferProgressMonitor == null ? null : new Functions.UnaryVoid<Long>() {
                 @Override
