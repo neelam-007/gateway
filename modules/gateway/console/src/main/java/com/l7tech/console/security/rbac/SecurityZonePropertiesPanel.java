@@ -29,10 +29,10 @@ public class SecurityZonePropertiesPanel extends JPanel {
     private static final String PERMITTED_ENTITY_TYPES_LABEL = "entityTypes.permitted";
     private JPanel contentPanel;
     private JTextField nameField;
-    private JTextField descriptionField;
     private JTable entityTypesTable;
     private JScrollPane scrollPane;
     private JLabel entityTypesLabel;
+    private JTextArea descriptionTextArea;
     private SimpleTableModel<EntityType> entityTypesTableModel;
 
     /**
@@ -43,7 +43,7 @@ public class SecurityZonePropertiesPanel extends JPanel {
     public void configure(@Nullable final SecurityZone securityZone) {
         if (securityZone != null) {
             nameField.setText(securityZone.getName());
-            descriptionField.setText(securityZone.getDescription());
+            descriptionTextArea.setText(securityZone.getDescription());
             final Set<EntityType> permittedTypes = securityZone.getPermittedEntityTypes();
             if (permittedTypes.contains(EntityType.ANY)) {
                 scrollPane.setVisible(false);
@@ -65,7 +65,7 @@ public class SecurityZonePropertiesPanel extends JPanel {
             }
         } else {
             nameField.setText(StringUtils.EMPTY);
-            descriptionField.setText(StringUtils.EMPTY);
+            descriptionTextArea.setText(StringUtils.EMPTY);
             scrollPane.setVisible(false);
         }
     }
