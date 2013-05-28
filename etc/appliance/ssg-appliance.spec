@@ -231,20 +231,43 @@ else
     sed -r -i -e 's/(^.*soft.*nproc[ \t]+)[0-9]+(.*)$/\15120/g' /etc/security/limits.conf
 fi
 
+if [ -f "/etc/redhat-release" ]; then
+	RHEL_MAJOR_RELEASE=`cat /etc/redhat-release | awk -F'release' '{ print $2 }' | awk '{ print $1 }' | awk -F'.' '{ print $1 }'`
+fi
+
 # fix the getty
-
-GETTYS=`grep ^s0:2345:respawn:/sbin/agetty /etc/inittab`
-if [ -z "${GETTYS}" ]; then
-	echo 	's0:2345:respawn:/sbin/agetty -L 9600 ttyS0 vt100' >> /etc/inittab
-	echo 	'ttyS0' >> /etc/securetty
+if [ "$RHEL_MAJOR_RELEASE" == "5" ]; then
+	GETTYS=`grep ^s0:2345:respawn:/sbin/agetty /etc/inittab`
+	if [ -z "${GETTYS}" ]; then
+	echo 's0:2345:respawn:/sbin/agetty -L 9600 ttyS0 vt100' >> /etc/inittab
+	echo 'ttyS0' >> /etc/securetty
+        fi
+elif [ "$RHEL_MAJOR_RELEASE" == "6" ]; then
+	# SSG-5875
+	for TTY_TO_ADD in `echo "ttyS0 ttyS1"`; do
+		if [ ! -f "/etc/init/layer7-$TTY_TO_ADD.conf" ]; then
+			echo "stop on runlevel [S016]" > "/etc/init/layer7-$TTY_TO_ADD.conf"
+			echo "start on runlevel [23]" >> "/etc/init/layer7-$TTY_TO_ADD.conf"
+			echo "respawn" >> "/etc/init/layer7-$TTY_TO_ADD.conf"
+			echo "exec agetty -L /dev/$TTY_TO_ADD 9600 vt100" >> "/etc/init/layer7-$TTY_TO_ADD.conf"
+		fi
+	done
 fi
 
-CONNTRACK=`grep "options ip_conntrack" /etc/modprobe.conf`
-if [ -z "${CONNTRACK}" ]; then
-	# add in larger hash size. final conntrack size will be 8* hashsize
-	# This allows larger number of in-flight connections
-	echo "options ip_conntrack hashsize=65536" >> /etc/modprobe.conf
+if [ "$RHEL_MAJOR_RELEASE" == "5" ]; then
+	CONNTRACK=`grep "options ip_conntrack" /etc/modprobe.conf`
+	if [ -z "${CONNTRACK}" ]; then
+		# add in larger hash size. final conntrack size will be 8* hashsize
+		# This allows larger number of in-flight connections
+		echo "options ip_conntrack hashsize=65536" >> /etc/modprobe.conf
+	fi
+elif [ "$RHEL_MAJOR_RELEASE" == "6" ]; then
+	# SSG-5875
+	if [ ! -f "/etc/modprobe.d/ssg-appliance.conf" ]; then
+		echo "options nf_conntrack hashsize=65536" > "/etc/modprobe.d/ssg-appliance.conf"
+	fi
 fi
+
 
 # Chown any files that have been left behind by a previous installation
 # except the files in orig_conf_files that needs to keep their attributes
@@ -302,6 +325,11 @@ if [ "$1" = "0" ] ; then
 		perl -pi.bak -e 's/^s0.*agetty.*//' /etc/inittab
 		perl -pi.bak -e 's/ttyS0//' /etc/securetty
 	fi
+
+	# SSG-5875
+	alias rm=rm
+	rm /etc/init/layer7-tty* &> /dev/null
+	rm /etc/modprobe.d/ssg-appliance.conf &> /dev/null
 
     chkconfig --del ssg-dbstatus
     chkconfig --del ssgsysconfig
