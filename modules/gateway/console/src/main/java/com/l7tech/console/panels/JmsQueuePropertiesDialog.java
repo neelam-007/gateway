@@ -499,7 +499,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
 
         // the SecurityZoneWidget is shared by both the JmsEndpoint and JmsConnection
         zoneControl.configure(Arrays.asList(EntityType.JMS_CONNECTION, EntityType.JMS_ENDPOINT),
-                connection.getOid() == JmsConnection.DEFAULT_OID ? OperationType.CREATE : OperationType.UPDATE,
+                (connection == null || connection.getOid() == JmsConnection.DEFAULT_OID) ? OperationType.CREATE : OperationType.UPDATE,
                 endpoint != null ? endpoint.getSecurityZone() : null);
 
         pack();
