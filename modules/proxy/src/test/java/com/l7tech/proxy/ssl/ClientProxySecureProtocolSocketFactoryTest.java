@@ -14,4 +14,5 @@ public class ClientProxySecureProtocolSocketFactoryTest {
     public void testDelegation() {
         TestUtils.assertOverridesAllMethods( SSLSocketFactory.class, ClientProxySecureProtocolSocketFactory.class );
     }
+
 }

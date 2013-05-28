@@ -9,20 +9,31 @@ import javax.net.ssl.HttpsURLConnection;
 import java.io.*;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.security.NoSuchAlgorithmException;
 import java.util.*;
 
 public class MockHttpServer {
 
-    private Integer port = null;
-    private boolean started = false;
+    protected Integer port = null;
+    protected boolean started = false;
+    private List<InetSocketAddress> servedClient = new ArrayList<InetSocketAddress>();
 
-    private HttpServer httpServer;
+    protected HttpServer httpServer;
     public int responseCode = HttpsURLConnection.HTTP_OK;
     private byte[] responseContent = new byte[0];
     private Map<String, List<String>> responseHeaders = new HashMap<String, List<String>>();
+    protected HttpHandler httpHandler;
+
+    public MockHttpServer() {
+        this.port = 17800;
+    }
 
     public MockHttpServer(int port) {
         this.port = port;
+    }
+
+    public void setHttpHandler(HttpHandler httpHandler) {
+        this.httpHandler = httpHandler;
     }
 
     public void setResponseCode(int responseCode) {
@@ -47,7 +58,15 @@ public class MockHttpServer {
         return port;
     }
 
-    public void start() {
+    public List<InetSocketAddress> getServedClient() {
+        return servedClient;
+    }
+
+    public void setServedClient(List<InetSocketAddress> servedClient) {
+        this.servedClient = servedClient;
+    }
+
+    public void start() throws NoSuchAlgorithmException {
 
         if (!started) {
             //only retry 10 times
@@ -62,7 +81,7 @@ public class MockHttpServer {
                     port++;
                 }
             }
-            httpServer.createContext("/", new MyHandler());
+            httpServer.createContext("/", httpHandler != null? httpHandler : new MyHandler());
             httpServer.setExecutor(null); // creates a default executor
             httpServer.start();
             started = true;
@@ -77,6 +96,7 @@ public class MockHttpServer {
             }
         } finally {
             httpServer = null;
+            servedClient.clear();
         }
     }
 
@@ -87,13 +107,16 @@ public class MockHttpServer {
             int b;
             StringBuilder sb = new StringBuilder();
             InputStream is = t.getRequestBody();
-            is = t.getRequestBody();
 
             while ((b = is.read()) != -1) {
                 sb.append((char) b);
             }
             is.close();
 
+            InetSocketAddress remoteAddress = t.getRemoteAddress();
+            if (!servedClient.contains(remoteAddress)) {
+                servedClient.add(remoteAddress);
+            }
 
             if (responseHeaders != null && responseHeaders.size() > 0) {
                 Headers respHeaders = t.getResponseHeaders();

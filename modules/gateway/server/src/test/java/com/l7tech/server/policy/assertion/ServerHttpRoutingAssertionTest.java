@@ -4,14 +4,20 @@
  */
 package com.l7tech.server.policy.assertion;
 
+import com.google.mockwebserver.MockResponse;
+import com.google.mockwebserver.MockWebServer;
 import com.l7tech.common.TestDocuments;
 import com.l7tech.common.http.*;
 import com.l7tech.common.http.prov.apache.IdentityBindingHttpConnectionManager;
+import com.l7tech.common.io.PermissiveHostnameVerifier;
+import com.l7tech.common.io.TestSSLSocketFactory;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ByteArrayStashManager;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.audit.TestAudit;
+import com.l7tech.gateway.common.log.TestHandler;
+import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.message.*;
 import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -19,16 +25,17 @@ import com.l7tech.policy.assertion.HttpPassthroughRule;
 import com.l7tech.policy.assertion.HttpPassthroughRuleSet;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.security.MockGenericHttpClient;
-import com.l7tech.server.ApplicationContexts;
-import com.l7tech.server.ServerConfigStub;
-import com.l7tech.server.TestLicenseManager;
-import com.l7tech.server.TestStashManagerFactory;
+import com.l7tech.server.*;
 import com.l7tech.server.identity.cert.TestTrustedCertManager;
 import com.l7tech.server.identity.cert.TrustedCertServicesImpl;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.ServerPolicyFactory;
+import com.l7tech.server.security.cert.CertValidationProcessor;
+import com.l7tech.server.security.cert.TestCertValidationProcessor;
+import com.l7tech.server.security.keystore.PermissiveKeyAccessFilter;
 import com.l7tech.server.transport.http.SslClientHostnameVerifier;
+import com.l7tech.server.transport.http.SslClientTrustManager;
 import com.l7tech.server.util.*;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.IOUtils;
@@ -47,7 +54,14 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.PasswordAuthentication;
+import java.net.URL;
+import java.security.KeyStore;
+import java.security.PrivateKey;
+import java.security.cert.Certificate;
+import java.security.cert.X509Certificate;
 import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import static junit.framework.Assert.*;
 import static org.junit.Assert.assertArrayEquals;
@@ -784,4 +798,175 @@ public class ServerHttpRoutingAssertionTest {
         }
     }
 
+    @Test
+    public void testSSLConnection() throws Exception {
+
+        //Setup the MockWebServer
+        MockWebServer server = new MockWebServer();
+        server.useHttps(new TestSSLSocketFactory(), false);
+        server.enqueue(new MockResponse().setBody("test"));
+        server.play();
+
+        final AssertionRegistry assertionRegistry = new AssertionRegistry();
+        assertionRegistry.afterPropertiesSet();
+        final ServerPolicyFactory serverPolicyFactory = new ServerPolicyFactory(new TestLicenseManager(), new MockInjector());
+        final HttpClientFactory identityBindingHttpClientFactory = new HttpClientFactory();
+
+        KeyStore keyStore = TestDocuments.getMockSSLServerKeyStore();
+
+        final String alias = keyStore.aliases().nextElement();
+        final PrivateKey key = (PrivateKey)keyStore.getKey(alias, "7layer]".toCharArray());
+        final X509Certificate[] chain = TestDocuments.toX509Certificate(keyStore.getCertificateChain(alias));
+
+        final DefaultKey defaultKey = new TestDefaultKey(new SsgKeyEntry( -1, "alias", chain, key));
+
+        TestTrustedCertManager trustedCertManager = new TestTrustedCertManager(defaultKey);
+        TrustedCertServicesImpl trustedCertServices = new TrustedCertServicesImpl(trustedCertManager);
+        TestCertValidationProcessor certValidationProcessor = new TestCertValidationProcessor();
+        final SslClientTrustManager sslClientTrustManager = new SslClientTrustManager(trustedCertServices, certValidationProcessor, CertValidationProcessor.Facility.valueOf("ROUTING"));
+
+        ApplicationContext ac = new GenericApplicationContext(new SimpleSingletonBeanFactory(new HashMap<String, Object>() {{
+            put("assertionRegistry", assertionRegistry);
+            put("policyFactory", serverPolicyFactory);
+            put("auditFactory", new TestAudit().factory());
+            put("messageProcessingEventChannel", new EventChannel());
+            put("serverConfig", new ServerConfigStub());
+            put("hostnameVerifier", new PermissiveHostnameVerifier());
+            put("stashManagerFactory", TestStashManagerFactory.getInstance());
+            put("httpRoutingHttpClientFactory", identityBindingHttpClientFactory);
+            put("defaultKey", defaultKey);
+            put("routingTrustManager", sslClientTrustManager);
+        }}));
+
+        serverPolicyFactory.setApplicationContext(ac);
+
+        //Simulate Connection ID
+        Message requestMessage = new Message();
+        PolicyEnforcementContext peCtx = PolicyEnforcementContextFactory.createPolicyEnforcementContext(requestMessage, new Message());
+
+        HttpRoutingAssertion assertion = new HttpRoutingAssertion();
+        assertion.setPassthroughHttpAuthentication(true);
+        URL url = server.getUrl("/");
+        assertion.setProtectedServiceUrl(url.toString());
+        ServerAssertion sass = serverPolicyFactory.compilePolicy(assertion, false);
+
+        AssertionStatus result = sass.checkRequest(peCtx);
+        assertEquals(AssertionStatus.NONE, result);
+        peCtx.close();
+
+    }
+
+    @Test
+    public void testHttpTrace() throws Exception {
+
+        Logger logger = Logger.getLogger("com.l7tech.server.routing.http.trace");
+        logger.setLevel(Level.FINEST);
+        logger.setUseParentHandlers(false);
+        TestHandler testHandler = new TestHandler();
+        logger.addHandler(testHandler);
+        //Setup the MockWebServer
+        MockWebServer server = new MockWebServer();
+        server.enqueue(new MockResponse().setBody("test"));
+        server.play();
+
+        final AssertionRegistry assertionRegistry = new AssertionRegistry();
+        assertionRegistry.afterPropertiesSet();
+        final ServerPolicyFactory serverPolicyFactory = new ServerPolicyFactory(new TestLicenseManager(), new MockInjector());
+        final HttpClientFactory identityBindingHttpClientFactory = new HttpClientFactory();
+
+        ApplicationContext ac = new GenericApplicationContext(new SimpleSingletonBeanFactory(new HashMap<String, Object>() {{
+            put("assertionRegistry", assertionRegistry);
+            put("policyFactory", serverPolicyFactory);
+            put("auditFactory", new TestAudit().factory());
+            put("messageProcessingEventChannel", new EventChannel());
+            put("serverConfig", new ServerConfigStub());
+            put("hostnameVerifier", new PermissiveHostnameVerifier());
+            put("stashManagerFactory", TestStashManagerFactory.getInstance());
+            put("httpRoutingHttpClientFactory", identityBindingHttpClientFactory);
+        }}));
+
+        serverPolicyFactory.setApplicationContext(ac);
+
+        //Simulate Connection ID
+        Message requestMessage = new Message();
+        PolicyEnforcementContext peCtx = PolicyEnforcementContextFactory.createPolicyEnforcementContext(requestMessage, new Message());
+
+        HttpRoutingAssertion assertion = new HttpRoutingAssertion();
+        URL url = server.getUrl("/");
+        assertion.setProtectedServiceUrl(url.toString());
+        ServerAssertion sass = serverPolicyFactory.compilePolicy(assertion, false);
+
+        AssertionStatus result = sass.checkRequest(peCtx);
+        assertEquals(AssertionStatus.NONE, result);
+        assertTrue(TestHandler.isAuditPresentContaining("FINEST: http-in"));
+        assertTrue(TestHandler.isAuditPresentContaining("FINEST: http-out"));
+        peCtx.close();
+    }
+
+
+    @Test
+    public void testHttpsTrace() throws Exception {
+
+        Logger logger = Logger.getLogger("com.l7tech.server.routing.http.trace");
+        logger.setLevel(Level.FINEST);
+        logger.setUseParentHandlers(false);
+        TestHandler testHandler = new TestHandler();
+        logger.addHandler(testHandler);
+
+        //Setup the MockWebServer
+        MockWebServer server = new MockWebServer();
+        server.useHttps(new TestSSLSocketFactory(), false);
+        server.enqueue(new MockResponse().setBody("test"));
+        server.play();
+
+        final AssertionRegistry assertionRegistry = new AssertionRegistry();
+        assertionRegistry.afterPropertiesSet();
+        final ServerPolicyFactory serverPolicyFactory = new ServerPolicyFactory(new TestLicenseManager(), new MockInjector());
+        final HttpClientFactory identityBindingHttpClientFactory = new HttpClientFactory();
+
+        KeyStore keyStore = TestDocuments.getMockSSLServerKeyStore();
+
+        final String alias = keyStore.aliases().nextElement();
+        final PrivateKey key = (PrivateKey)keyStore.getKey(alias, "7layer]".toCharArray());
+        final X509Certificate[] chain = TestDocuments.toX509Certificate(keyStore.getCertificateChain(alias));
+
+        final DefaultKey defaultKey = new TestDefaultKey(new SsgKeyEntry( -1, "alias", chain, key));
+
+        TestTrustedCertManager trustedCertManager = new TestTrustedCertManager(defaultKey);
+        TrustedCertServicesImpl trustedCertServices = new TrustedCertServicesImpl(trustedCertManager);
+        TestCertValidationProcessor certValidationProcessor = new TestCertValidationProcessor();
+        final SslClientTrustManager sslClientTrustManager = new SslClientTrustManager(trustedCertServices, certValidationProcessor, CertValidationProcessor.Facility.valueOf("ROUTING"));
+
+        ApplicationContext ac = new GenericApplicationContext(new SimpleSingletonBeanFactory(new HashMap<String, Object>() {{
+            put("assertionRegistry", assertionRegistry);
+            put("policyFactory", serverPolicyFactory);
+            put("auditFactory", new TestAudit().factory());
+            put("messageProcessingEventChannel", new EventChannel());
+            put("serverConfig", new ServerConfigStub());
+            put("hostnameVerifier", new PermissiveHostnameVerifier());
+            put("stashManagerFactory", TestStashManagerFactory.getInstance());
+            put("httpRoutingHttpClientFactory", identityBindingHttpClientFactory);
+            put("defaultKey", defaultKey);
+            put("routingTrustManager", sslClientTrustManager);
+        }}));
+
+        serverPolicyFactory.setApplicationContext(ac);
+
+        //Simulate Connection ID
+        Message requestMessage = new Message();
+        PolicyEnforcementContext peCtx = PolicyEnforcementContextFactory.createPolicyEnforcementContext(requestMessage, new Message());
+
+        HttpRoutingAssertion assertion = new HttpRoutingAssertion();
+        assertion.setPassthroughHttpAuthentication(true);
+        URL url = server.getUrl("/");
+        assertion.setProtectedServiceUrl(url.toString());
+        ServerAssertion sass = serverPolicyFactory.compilePolicy(assertion, false);
+
+        AssertionStatus result = sass.checkRequest(peCtx);
+        assertEquals(AssertionStatus.NONE, result);
+        assertTrue(TestHandler.isAuditPresentContaining("FINEST: http-in"));
+        assertTrue(TestHandler.isAuditPresentContaining("FINEST: http-out"));
+        peCtx.close();
+
+    }
 }

@@ -7,6 +7,7 @@ import com.l7tech.util.ResourceUtils;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
+import javax.net.ssl.SSLContext;
 import java.io.ByteArrayInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -229,7 +230,7 @@ public final class TestDocuments {
             throw new IOException("Unable to find all keys and certs in the wss interop keystores");
     }
 
-    private static X509Certificate[] toX509Certificate( final Certificate[] certificates ) {
+    public static X509Certificate[] toX509Certificate( final Certificate[] certificates ) {
         X509Certificate[] x509certs = null;
 
         if ( certificates != null ) {
@@ -455,6 +456,15 @@ public final class TestDocuments {
     public static synchronized RSAPrivateKey getFimSigningPrivateKey() throws Exception {
         if (fimSigningPrivateKey != null) return fimSigningPrivateKey;
         return fimSigningPrivateKey = (RSAPrivateKey)getFimSigningKeyStore().getKey("ws-trust-test-cert", "foo".toCharArray());
+    }
+
+    public static KeyStore getMockSSLServerKeyStore() throws Exception {
+        //Created by  keytool -genkey -alias alias -keypass 7layer] -keystore layer7.keystore -storepass 7layer]
+        char[] password = "7layer]".toCharArray();
+        KeyStore keyStore = KeyStore.getInstance("JKS");
+        InputStream is = TestDocuments.getInputStream(TestDocuments.DIR + "layer7.db");
+        keyStore.load(is, password);
+        return keyStore;
     }
 
     public static final String FIM2005APR_VALIDATION_CERT_PEM = "-----BEGIN CERTIFICATE-----\n" +
