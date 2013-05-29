@@ -1,7 +1,6 @@
 package com.l7tech.console.util;
 
 import com.l7tech.gateway.common.security.rbac.OperationType;
-import com.l7tech.gateway.common.security.rbac.Permission;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.SecurityZone;
 import org.jetbrains.annotations.NotNull;
@@ -98,7 +97,7 @@ public class SecurityZoneWidget extends JPanel {
         loadedZones = new ArrayList<>();
         if (operation == null || operation != OperationType.READ) {
             // all readable zones
-            final Set<SecurityZone> readableZones = SecurityZoneUtil.getSortedSecurityZones();
+            final Set<SecurityZone> readableZones = SecurityZoneUtil.getSortedReadableSecurityZones();
             final List<SecurityZone> zones = new ArrayList<>(readableZones.size() + 1);
             zones.add(SecurityZoneUtil.NULL_ZONE);
             zones.addAll(readableZones);
@@ -115,7 +114,12 @@ public class SecurityZoneWidget extends JPanel {
                 loadedZones.add(0, SecurityZoneUtil.CURRENT_UNAVAILABLE_ZONE);
             }
         } else if (initialZone != null) {
-            loadedZones.add(initialZone);
+            // read only
+            if (initialZone.equals(SecurityZoneUtil.NULL_ZONE) || SecurityZoneUtil.getSortedReadableSecurityZones().contains(initialZone)) {
+                loadedZones.add(initialZone);
+            } else {
+                loadedZones.add(SecurityZoneUtil.CURRENT_UNAVAILABLE_ZONE);
+            }
         }
 
         zonesComboBox.setModel(new DefaultComboBoxModel<>(loadedZones.toArray(new SecurityZone[loadedZones.size()])));

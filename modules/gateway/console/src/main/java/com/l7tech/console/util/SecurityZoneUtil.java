@@ -76,7 +76,7 @@ public class SecurityZoneUtil {
      * @return all security zones visible to the current admin sorted by name. Never null.
      */
     @NotNull
-    public static Set<SecurityZone> getSortedSecurityZones() {
+    public static Set<SecurityZone> getSortedReadableSecurityZones() {
         final Set<SecurityZone> sorted = new TreeSet<>(new NamedEntityComparator());
         sorted.addAll(getSecurityZones());
         return sorted;
@@ -133,8 +133,10 @@ public class SecurityZoneUtil {
             match = true;
         } else {
             // there might be a limit to which zone the user can set
+            boolean hasZonePredicate = false;
             for (final ScopePredicate predicate : predicates) {
                 if (predicate instanceof SecurityZonePredicate) {
+                    hasZonePredicate = true;
                     final SecurityZonePredicate zonePredicate = (SecurityZonePredicate) predicate;
                     final SecurityZone requiredZone = zonePredicate.getRequiredZone();
                     if (zone.equals(NULL_ZONE) && requiredZone == null || zone.equals(requiredZone)) {
@@ -142,6 +144,10 @@ public class SecurityZoneUtil {
                         break;
                     }
                 }
+            }
+            if (!hasZonePredicate) {
+                // can't tell if the user is restricted by zone so give them the benefit of the doubt
+                match = true;
             }
         }
         return match;

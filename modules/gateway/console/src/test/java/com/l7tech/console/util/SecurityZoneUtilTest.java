@@ -3,6 +3,7 @@ package com.l7tech.console.util;
 import com.l7tech.gateway.common.security.rbac.*;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.SecurityZone;
+import com.l7tech.test.BugId;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -99,6 +100,21 @@ public class SecurityZoneUtilTest {
         zone.setPermittedEntityTypes(Collections.singleton(EntityType.SERVICE));
         permissions.add(createPermission(OperationType.CREATE, EntityType.SERVICE, zone));
         assertTrue(SecurityZoneUtil.isZoneValidForOperation(zone, null, OperationType.CREATE, permissions));
+    }
+
+    /**
+     * If permissions have scope but scope does not contain any SecurityZonePredicate, we can't tell if they are restricted by zone so we give them the benefit of the doubt.
+     */
+    @BugId("SSG-7061")
+    @Test
+    public void validZoneNoSecurityZonePredicates() {
+        entityTypes.add(EntityType.SERVICE);
+        zone.setPermittedEntityTypes(entityTypes);
+        // user is allowed to update a specific service
+        final Permission permission = new Permission(new Role(), OperationType.UPDATE, EntityType.SERVICE);
+        permission.setScope(Collections.<ScopePredicate>singleton(new ObjectIdentityPredicate(permission, 1234L)));
+        permissions.add(permission);
+        assertTrue(SecurityZoneUtil.isZoneValidForOperation(zone, entityTypes, OperationType.UPDATE, permissions));
     }
 
     @Test
