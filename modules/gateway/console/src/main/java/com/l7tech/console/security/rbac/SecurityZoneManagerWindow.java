@@ -1,6 +1,8 @@
 package com.l7tech.console.security.rbac;
 
+import com.l7tech.console.action.DeleteEntityNodeAction;
 import com.l7tech.console.panels.PermissionFlags;
+import com.l7tech.console.tree.ServicesAndPoliciesTree;
 import com.l7tech.console.util.*;
 import com.l7tech.gateway.common.security.rbac.AttemptedCreateSpecific;
 import com.l7tech.gateway.common.security.rbac.AttemptedOperation;
@@ -13,11 +15,16 @@ import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.comparator.NamedEntityComparator;
 import com.l7tech.util.Functions;
+import org.apache.commons.lang.WordUtils;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import java.awt.*;
-import java.util.*;
+import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.EnumSet;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.logging.Logger;
 
 import static com.l7tech.gui.util.TableUtil.column;
@@ -25,7 +32,7 @@ import static com.l7tech.util.Functions.propertyTransform;
 
 public class SecurityZoneManagerWindow extends JDialog {
     private static final Logger logger = Logger.getLogger(SecurityZoneManagerWindow.class.getName());
-    private static final String WARNING_MSG = "All entities currently assigned to this zone will switch to the \"no security zone\" state if you continue. This action cannot be undone.";
+    private static final String DELETE_CONFIRMATION_FORMAT = "Are you sure you want to remove the security zone {0}? All entities currently assigned to this zone will switch to the \"no security zone\" state if you continue. This action cannot be undone.";
 
     private JPanel contentPane;
     private JButton closeButton;
@@ -57,8 +64,8 @@ public class SecurityZoneManagerWindow extends JDialog {
         });
 
         securityZonesTableModel = TableUtil.configureTable(securityZonesTable,
-            column("Name", 40, 140, 99999, propertyTransform(SecurityZone.class, "name")),
-            column("Description", 80, 300, 99999, propertyTransform(SecurityZone.class, "description")));
+                column("Name", 40, 140, 99999, propertyTransform(SecurityZone.class, "name")),
+                column("Description", 80, 300, 99999, propertyTransform(SecurityZone.class, "description")));
         Utilities.setRowSorter(securityZonesTable, securityZonesTableModel);
         loadSecurityZonesTable();
 
@@ -80,14 +87,42 @@ public class SecurityZoneManagerWindow extends JDialog {
             public void deleteEntity(SecurityZone entity) throws DeleteException {
                 Registry.getDefault().getRbacAdmin().deleteSecurityZone(entity);
                 flushCachedZones();
-                TopComponents.getInstance().getAssertionRegistry().updateAssertionAccess();
+                refreshTrees();
             }
+
+            @Override
+            public void displayDeleteDialog(final SecurityZone zone, final Functions.UnaryVoid<SecurityZone> afterDeleteListener) {
+                final String msg = MessageFormat.format(DELETE_CONFIRMATION_FORMAT, zone.getName());
+                DialogDisplayer.showOptionDialog(
+                        SecurityZoneManagerWindow.this,
+                        WordUtils.wrap(msg, DeleteEntityNodeAction.LINE_CHAR_LIMIT, null, true),
+                        "Remove " + zone.getName(),
+                        JOptionPane.DEFAULT_OPTION,
+                        JOptionPane.WARNING_MESSAGE,
+                        null,
+                        new Object[]{"Remove " + zone.getName(), "Cancel"},
+                        null,
+                        new DialogDisplayer.OptionListener() {
+                            @Override
+                            public void reportResult(int option) {
+                                if (option == 0) {
+                                    afterDeleteListener.call(zone);
+                                } else {
+                                    afterDeleteListener.call(null);
+                                }
+                            }
+                        });
+            }
+
+
         });
         ecc.setEntitySaver(new EntitySaver<SecurityZone>() {
             @Override
             public SecurityZone saveEntity(SecurityZone entity) throws SaveException {
                 long oid = Registry.getDefault().getRbacAdmin().saveSecurityZone(entity);
                 flushCachedZones();
+                reloadTabbedPanels();
+                refreshTrees();
                 try {
                     return Registry.getDefault().getRbacAdmin().findSecurityZoneByPrimaryKey(oid);
                 } catch (FindException e) {
@@ -100,8 +135,8 @@ public class SecurityZoneManagerWindow extends JDialog {
             public void displayEditDialog(final SecurityZone entity, final Functions.UnaryVoid<SecurityZone> afterEditListener) {
                 boolean create = PersistentEntity.DEFAULT_OID == entity.getOid();
                 AttemptedOperation operation = create
-                    ? new AttemptedCreateSpecific(EntityType.SECURITY_ZONE, entity)
-                    : new AttemptedUpdate(EntityType.SECURITY_ZONE, entity);
+                        ? new AttemptedCreateSpecific(EntityType.SECURITY_ZONE, entity)
+                        : new AttemptedUpdate(EntityType.SECURITY_ZONE, entity);
                 boolean readOnly = !Registry.getDefault().getSecurityProvider().hasPermission(operation);
                 final SecurityZonePropertiesDialog dlg = new SecurityZonePropertiesDialog(SecurityZoneManagerWindow.this, entity, readOnly);
                 dlg.pack();
@@ -122,15 +157,9 @@ public class SecurityZoneManagerWindow extends JDialog {
         });
 
         createButton.addActionListener(ecc.createCreateAction());
-        editButton.addActionListener(ecc.createEditAction(new Runnable() {
-            @Override
-            public void run() {
-                reloadTabbedPanels();
-            }
-        }));
+        editButton.addActionListener(ecc.createEditAction());
         Utilities.setDoubleClickAction(securityZonesTable, editButton);
-        removeButton.addActionListener(ecc.createDeleteAction(EntityType.SECURITY_ZONE, SecurityZoneManagerWindow.this,
-                WARNING_MSG));
+        removeButton.addActionListener(ecc.createDeleteAction());
 
         enableOrDisable();
     }
@@ -175,5 +204,11 @@ public class SecurityZoneManagerWindow extends JDialog {
             selected = securityZonesTableModel.getRowObject(modelIndex);
         }
         return selected;
+    }
+
+    private void refreshTrees() {
+        final ServicesAndPoliciesTree servicesAndPoliciesTree = (ServicesAndPoliciesTree) TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME);
+        servicesAndPoliciesTree.refresh();
+        TopComponents.getInstance().getAssertionRegistry().updateAssertionAccess();
     }
 }

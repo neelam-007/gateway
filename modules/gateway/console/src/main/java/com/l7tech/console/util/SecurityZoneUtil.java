@@ -82,19 +82,6 @@ public class SecurityZoneUtil {
         return sorted;
     }
 
-    /**
-     * @return a map of all security zones visible to the current admin sorted by name and keyed by oid. Never null.
-     */
-    @NotNull
-    public static Map<Long, SecurityZone> getSortedSecurityZonesAsMap() {
-        final Set<SecurityZone> sortedZones = getSortedSecurityZones();
-        final Map<Long, SecurityZone> zoneMap = new LinkedHashMap<>(sortedZones.size());
-        for (final SecurityZone zone : sortedZones) {
-            zoneMap.put(zone.getOid(), zone);
-        }
-        return zoneMap;
-    }
-
     @Nullable
     public static SecurityZone getSecurityZoneByOid(final long oid) {
         return loadMap().get(oid);
