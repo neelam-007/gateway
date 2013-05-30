@@ -1,12 +1,10 @@
 package com.l7tech.console.security.rbac;
 
 import com.l7tech.console.action.DeleteEntityNodeAction;
-import com.l7tech.console.panels.PermissionFlags;
+import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.tree.ServicesAndPoliciesTree;
 import com.l7tech.console.util.*;
-import com.l7tech.gateway.common.security.rbac.AttemptedCreateSpecific;
-import com.l7tech.gateway.common.security.rbac.AttemptedOperation;
-import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
+import com.l7tech.gateway.common.security.rbac.*;
 import com.l7tech.gui.SimpleTableModel;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.RunOnChangeListener;
@@ -45,12 +43,13 @@ public class SecurityZoneManagerWindow extends JDialog {
     private SecurityZoneEntitiesPanel entitiesPanel;
 
     private SimpleTableModel<SecurityZone> securityZonesTableModel;
-    private final PermissionFlags flags = PermissionFlags.get(EntityType.SECURITY_ZONE);
+    private boolean canCreate;
 
     public SecurityZoneManagerWindow(Window owner) {
         super(owner, "Manage Security Zones", DEFAULT_MODALITY_TYPE);
         setContentPane(contentPane);
         setModal(true);
+        canCreate = Registry.getDefault().getSecurityProvider().hasPermission(new AttemptedCreateSpecific(EntityType.SECURITY_ZONE, new SecurityZone()));
 
         closeButton.addActionListener(Utilities.createDisposeAction(this));
         Utilities.setEscAction(this, closeButton);
@@ -189,10 +188,11 @@ public class SecurityZoneManagerWindow extends JDialog {
     }
 
     private void enableOrDisable() {
-        boolean haveSelection = securityZonesTable.getSelectedRow() >= 0;
-        editButton.setEnabled(haveSelection);
-        removeButton.setEnabled(flags.canDeleteSome() && haveSelection);
-        createButton.setEnabled(flags.canCreateSome());
+        final SecurityProvider securityProvider = Registry.getDefault().getSecurityProvider();
+        final SecurityZone selected = getSelectedSecurityZone();
+        editButton.setEnabled(selected != null && securityProvider.hasPermission(new AttemptedUpdate(EntityType.SECURITY_ZONE, selected)));
+        removeButton.setEnabled(selected != null && securityProvider.hasPermission(new AttemptedDeleteSpecific(EntityType.SECURITY_ZONE, selected)));
+        createButton.setEnabled(canCreate);
     }
 
     @Nullable
