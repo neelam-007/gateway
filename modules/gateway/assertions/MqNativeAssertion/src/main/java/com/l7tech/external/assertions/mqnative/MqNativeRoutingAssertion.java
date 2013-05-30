@@ -480,6 +480,7 @@ public class MqNativeRoutingAssertion extends RoutingAssertion implements UsesEn
                 activeConnector = ta.findSsgActiveConnectorByPrimaryKey(assertion.getSsgActiveConnectorId());
                 if ( activeConnector == null ) {
                     activeConnectorStatus = ActiveConnectorStatus.NOT_FOUND;
+                    return;
                 } else  if ( activeConnector.isEnabled() ) {
                     activeConnectorStatus = ActiveConnectorStatus.ENABLED;
                 } else {
