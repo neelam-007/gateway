@@ -10,7 +10,7 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.policy.AssertionAccess;
 import com.l7tech.policy.Policy;
-import com.l7tech.server.EntityFinder;
+import com.l7tech.server.EntityCrud;
 import com.l7tech.server.policy.AssertionAccessManager;
 import com.l7tech.server.util.JaasUtils;
 import com.l7tech.util.ExceptionUtils;
@@ -31,17 +31,17 @@ public class RbacAdminImpl implements RbacAdmin {
     private static final Logger logger = Logger.getLogger(RbacAdminImpl.class.getName());
 
     private final RoleManager roleManager;
-    private final EntityFinder entityFinder;
-
     @Inject
     private SecurityZoneManager securityZoneManager;
 
     @Inject
     private AssertionAccessManager assertionAccessManager;
 
-    public RbacAdminImpl(RoleManager roleManager, EntityFinder entityFinder) {
+    @Inject
+    private EntityCrud entityCrud;
+
+    public RbacAdminImpl(RoleManager roleManager) {
         this.roleManager = roleManager;
-        this.entityFinder = entityFinder;
     }
 
     public Collection<Role> findAllRoles() throws FindException {
@@ -88,7 +88,7 @@ public class RbacAdminImpl implements RbacAdmin {
                     ObjectIdentityPredicate oip = (ObjectIdentityPredicate) scopePredicate;
                     final String id = oip.getTargetEntityId();
                     try {
-                        oip.setHeader(entityFinder.findHeader(permission.getEntityType(), id));
+                        oip.setHeader(entityCrud.findHeader(permission.getEntityType(), id));
                     } catch (FindException e) {
                         logger.log(Level.WARNING, "Couldn't look up EntityHeader for " + permission.getEntityType().getName() + " id=" + id + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
                     }
@@ -101,7 +101,7 @@ public class RbacAdminImpl implements RbacAdmin {
                         if(theRole.isUserCreated()){
                             header.setType(EntityType.FOLDER);
                         }
-                        Entity entity = entityFinder.find(header);
+                        Entity entity = entityCrud.find(header);
                         if(entity != null){
                             Folder folder = null;
                             if(entity instanceof Folder){
@@ -124,7 +124,7 @@ public class RbacAdminImpl implements RbacAdmin {
         EntityType entityType = theRole.getEntityType();
         if (entityOid != null && entityType != null) {
             try {
-                theRole.setCachedSpecificEntity(entityFinder.find(entityType.getEntityClass(), entityOid));
+                theRole.setCachedSpecificEntity(entityCrud.find(entityType.getEntityClass(), entityOid));
             } catch (FindException e) {
                 logger.log( Level.WARNING, MessageFormat.format( "Couldn''t find {0} (# {1}) to attach to ''{2}'' Role", entityType.name(), entityOid, theRole.getName() ), ExceptionUtils.getDebugException( e ) );
             }
@@ -151,7 +151,7 @@ public class RbacAdminImpl implements RbacAdmin {
     }
 
     public EntityHeaderSet<EntityHeader> findEntities(EntityType entityType) throws FindException {
-        return entityFinder.findAll(entityType.getEntityClass());
+        return entityCrud.findAll(entityType.getEntityClass());
     }
 
     @Override
@@ -190,12 +190,12 @@ public class RbacAdminImpl implements RbacAdmin {
 
     @Override
     public Collection<Entity> findEntitiesByTypeAndSecurityZoneOid(@NotNull final EntityType type, final long securityZoneOid) throws FindException {
-        return entityFinder.findByEntityTypeAndSecurityZoneOid(type, securityZoneOid);
+        return entityCrud.findByEntityTypeAndSecurityZoneOid(type, securityZoneOid);
     }
 
     @Override
-    public Collection<Entity> findEntitiesByClassAndSecurityZoneOid(@NotNull final Class clazz, final long securityZoneOid) throws FindException {
-        return entityFinder.findByClassAndSecurityZoneOid(clazz, securityZoneOid);
+    public void setSecurityZoneForEntities(final Long securityZoneOid, @NotNull final EntityType entityType, @NotNull final Collection<Long> entityOids) throws UpdateException {
+        entityCrud.setSecurityZoneForEntities(securityZoneOid, entityType, entityOids);
     }
 
     @Override

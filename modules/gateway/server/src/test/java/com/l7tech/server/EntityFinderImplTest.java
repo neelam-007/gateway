@@ -69,17 +69,4 @@ public class EntityFinderImplTest {
         when(hibernateTemplate.execute(any(HibernateCallback.class))).thenThrow(new HibernateException("mocking exception"));
         finder.findByEntityTypeAndSecurityZoneOid(EntityType.SSG_KEY_ENTRY, 1234L);
     }
-
-    @Test
-    public void findByClassAndSecurityZoneOid() throws Exception {
-        entities.add(new SsgKeyMetadata());
-        when(hibernateTemplate.execute(any(HibernateCallback.class))).thenReturn(entities);
-        final Collection<SsgKeyMetadata> found = finder.findByClassAndSecurityZoneOid(SsgKeyMetadata.class, 1234L);
-        assertEquals(entities, found);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void findByClassAndSecurityZoneOidNotZoneable() throws Exception {
-        finder.findByClassAndSecurityZoneOid(Role.class, 1234L);
-    }
 }

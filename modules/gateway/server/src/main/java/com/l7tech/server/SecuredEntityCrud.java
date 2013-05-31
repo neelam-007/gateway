@@ -6,8 +6,10 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.folder.HasFolder;
 import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.security.rbac.SecurityFilter;
+import com.l7tech.server.security.rbac.ZoneUpdateSecurityChecker;
 import com.l7tech.server.util.JaasUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.Serializable;
 import java.lang.reflect.Constructor;
@@ -19,15 +21,18 @@ import java.util.Map;
  * RBAC aware delegating EntityCrud implementation
  */
 public class SecuredEntityCrud implements EntityCrud {
+    private static final String ERROR_IN_PERMISSION_CHECK = "Error in permission check.";
 
     //- PUBLIC
 
     public SecuredEntityCrud( final RbacServices services,
                               final SecurityFilter securityFilter,
-                              final EntityCrud entityCrud ) {
+                              final EntityCrud entityCrud,
+                              @NotNull final ZoneUpdateSecurityChecker zoneUpdateSecurityChecker) {
         this.services = services;
         this.securityFilter = securityFilter;
         this.entityCrud = entityCrud;
+        this.zoneUpdateSecurityChecker = zoneUpdateSecurityChecker;
     }
 
     @Override
@@ -89,12 +94,17 @@ public class SecuredEntityCrud implements EntityCrud {
 
     @Override
     public Collection<Entity> findByEntityTypeAndSecurityZoneOid(@NotNull EntityType type, long securityZoneOid) throws FindException {
-        return entityCrud.findByEntityTypeAndSecurityZoneOid(type, securityZoneOid);
+        return securityFilter.filter(entityCrud.findByEntityTypeAndSecurityZoneOid(type, securityZoneOid), getUser(), OperationType.READ, null);
     }
 
     @Override
-    public <ET extends Entity> Collection<ET> findByClassAndSecurityZoneOid(@NotNull final Class<ET> clazz, final long securityZoneOid) throws FindException {
-        return entityCrud.findByClassAndSecurityZoneOid(clazz, securityZoneOid);
+    public void setSecurityZoneForEntities(@Nullable final Long securityZoneOid, @NotNull final EntityType entityType, @NotNull final Collection<Long> entityOids) throws UpdateException {
+        try {
+            zoneUpdateSecurityChecker.checkBulkUpdatePermitted(getUser(), securityZoneOid, entityType, entityOids);
+            entityCrud.setSecurityZoneForEntities(securityZoneOid, entityType, entityOids);
+        } catch (final FindException e) {
+            throw new UpdateException(ERROR_IN_PERMISSION_CHECK, e);
+        }
     }
 
     //- PRIVATE
@@ -102,6 +112,7 @@ public class SecuredEntityCrud implements EntityCrud {
     private final RbacServices services;
     private final SecurityFilter securityFilter;
     private final EntityCrud entityCrud;
+    private final ZoneUpdateSecurityChecker zoneUpdateSecurityChecker;
 
     private <T extends ObjectModelException> void checkPermitted( final OperationType operation, final Entity entity, final Class<T> exceptionType ) throws T {
         if (entity == null) return;
@@ -116,7 +127,7 @@ public class SecuredEntityCrud implements EntityCrud {
                 deniedMsg = "Folder Update Denied";
             }
         } catch ( FindException fe ) {
-            throw new RuntimeException( "Error in permission check.", fe );
+            throw new RuntimeException(ERROR_IN_PERMISSION_CHECK, fe );
         }
 
         if ( deniedMsg != null ) {

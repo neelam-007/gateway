@@ -282,8 +282,7 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
     }
 
     @SuppressWarnings({"unchecked"})
-    @Override
-    public <ET extends Entity> Collection<ET> findByClassAndSecurityZoneOid(@NotNull final Class<ET> clazz, final long securityZoneOid) throws FindException {
+    private <ET extends Entity> Collection<ET> findByClassAndSecurityZoneOid(@NotNull final Class<ET> clazz, final long securityZoneOid) throws FindException {
         if (!ZoneableEntity.class.isAssignableFrom(clazz)) {
             throw new IllegalArgumentException("Class must be a ZoneableEntity.");
         }

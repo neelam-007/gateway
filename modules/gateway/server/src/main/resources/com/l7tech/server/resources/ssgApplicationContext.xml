@@ -2241,6 +2241,7 @@
                     </bean>
                 </constructor-arg>
                 <constructor-arg index="2" ref="entityCrud"/>
+                <constructor-arg index="3" ref="zoneUpdateSecurityChecker"/>
             </bean>
         </constructor-arg>
         <constructor-arg index="1" ref="propertyResolverFactory"/>

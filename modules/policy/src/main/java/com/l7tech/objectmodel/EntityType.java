@@ -21,6 +21,7 @@ public enum EntityType implements Comparable<EntityType> {
     TRUSTED_CERT("Trusted Certificate", true, true),
     REVOCATION_CHECK_POLICY("Revocation Check Policy", true, true),
     SSG_KEY_ENTRY("Private Key", "Private Keys", true, true),
+    SSG_KEY_METADATA("Private Key Metadata", false, false),
     SSG_KEYSTORE("Private Key Store", "Private Key Stores", true, true),
     ALERT_TRIGGER("Alert Event", false, false),
     ALERT_ACTION("Alert Notification", false, false),

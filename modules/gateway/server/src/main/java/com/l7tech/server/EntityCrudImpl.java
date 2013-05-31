@@ -8,6 +8,7 @@ import com.l7tech.objectmodel.folder.HasFolder;
 import com.l7tech.objectmodel.folder.FolderedEntityManager;
 import com.l7tech.identity.IdentityProviderConfig;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 import org.springframework.orm.hibernate3.HibernateCallback;
 import org.springframework.transaction.annotation.Transactional;
@@ -202,8 +203,29 @@ public class EntityCrudImpl extends HibernateDaoSupport implements EntityCrud {
     }
 
     @Override
-    public <ET extends Entity> Collection<ET> findByClassAndSecurityZoneOid(@NotNull final Class<ET> clazz, final long securityZoneOid) throws FindException {
-        return entityFinder.findByClassAndSecurityZoneOid(clazz, securityZoneOid);
+    public void setSecurityZoneForEntities(@Nullable final Long securityZoneOid, @NotNull final EntityType entityType, @NotNull final Collection<Long> entityOids) throws UpdateException {
+        if (!entityType.isSecurityZoneable()) {
+            throw new IllegalArgumentException("Entity type must be security zoneable");
+        }
+        try{
+            final SecurityZone securityZone = securityZoneOid != null ? find(SecurityZone.class, securityZoneOid) : null;
+                if (securityZoneOid == null || (securityZoneOid != null && securityZone != null)) {
+                    for (final Long entityOid : entityOids) {
+                        final Entity entity = find(entityType.getEntityClass(), entityOid);
+                        if (entity instanceof ZoneableEntity) {
+                            final ZoneableEntity zoneable = (ZoneableEntity) entity;
+                            zoneable.setSecurityZone(securityZone);
+                            update(entity);
+                        } else {
+                            throw new UpdateException(entityType.getName() + " with oid " + entityOid + " does not exist or is not security zoneable");
+                        }
+                    }
+                } else {
+                    throw new UpdateException("Security zone with oid " + securityZoneOid + " does not exist");
+                }
+        } catch (final FindException e) {
+            throw new UpdateException("Unable to set security zone for entities: " + e.getMessage(), e);
+        }
     }
 
     private ReadOnlyEntityManager getReadOnlyManager(Class<? extends Entity> clazz) {

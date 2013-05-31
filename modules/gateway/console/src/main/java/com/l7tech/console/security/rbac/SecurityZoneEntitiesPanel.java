@@ -200,13 +200,7 @@ public class SecurityZoneEntitiesPanel extends JPanel {
                 sortedSubset.addAll(securityZone.getPermittedEntityTypes());
                 entityTypes.addAll(sortedSubset);
             }
-            // do not support audits as there may be a LOT of them in the zone
-            entityTypes.remove(EntityType.AUDIT_MESSAGE);
-            // user is not aware of the UDDI entities under the hood - they inherit the security zone from the published service
-            entityTypes.remove(EntityType.UDDI_PROXIED_SERVICE_INFO);
-            entityTypes.remove(EntityType.UDDI_SERVICE_CONTROL);
-            // user is not aware that JMS involves two entity types - they share the same security zone
-            entityTypes.remove(EntityType.JMS_ENDPOINT);
+            entityTypes.removeAll(SecurityZoneUtil.getHiddenZoneableEntityTypes());
         }
         entityTypeComboBox.setModel(new DefaultComboBoxModel<EntityType>(entityTypes.toArray(new EntityType[entityTypes.size()])));
         entityTypeComboBox.setSelectedItem(previouslySelected);
@@ -214,16 +208,15 @@ public class SecurityZoneEntitiesPanel extends JPanel {
 
     private void loadTable() {
         if (securityZone != null) {
-            final EntityType selected = getSelectedEntityType();
+            EntityType selected = getSelectedEntityType();
             if (selected != null) {
                 final List<Entity> entities = new ArrayList<>();
                 final RbacAdmin rbacAdmin = Registry.getDefault().getRbacAdmin();
                 try {
                     if (EntityType.SSG_KEY_ENTRY == selected) {
-                        entities.addAll(rbacAdmin.findEntitiesByClassAndSecurityZoneOid(SsgKeyMetadata.class, securityZone.getOid()));
-                    } else {
-                        entities.addAll(rbacAdmin.findEntitiesByTypeAndSecurityZoneOid(selected, securityZone.getOid()));
+                        selected = EntityType.SSG_KEY_METADATA;
                     }
+                    entities.addAll(rbacAdmin.findEntitiesByTypeAndSecurityZoneOid(selected, securityZone.getOid()));
                     entitiesTableModel.setRows(entities);
                 } catch (final FindException e) {
                     logger.log(Level.WARNING, "Error retrieving entities of type " + selected + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));

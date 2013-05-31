@@ -251,8 +251,8 @@ public class RegistryStub extends Registry {
             }
 
             @Override
-            public Collection<Entity> findEntitiesByClassAndSecurityZoneOid(@NotNull Class clazz, long securityZoneOid) throws FindException {
-                throw new FindException("not impl in stub");
+            public void setSecurityZoneForEntities(Long securityZoneOid, @NotNull EntityType entityType, @NotNull Collection<Long> entityOids) throws UpdateException {
+                throw new UpdateException("not impl in stub");
             }
 
             @Override

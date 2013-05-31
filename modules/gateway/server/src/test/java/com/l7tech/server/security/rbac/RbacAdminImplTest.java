@@ -5,7 +5,7 @@ import com.l7tech.objectmodel.SecurityZone;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.server.ApplicationContexts;
-import com.l7tech.server.EntityFinder;
+import com.l7tech.server.EntityCrud;
 import com.l7tech.server.policy.AssertionAccessManager;
 import com.l7tech.util.CollectionUtils;
 import org.junit.Before;
@@ -28,7 +28,7 @@ public class RbacAdminImplTest {
     @Mock
     private RoleManager roleManager;
     @Mock
-    private EntityFinder entityFinder;
+    private EntityCrud entityCrud;
     @Mock
     private SecurityZoneManager securityZoneManager;
     @Mock
@@ -40,14 +40,15 @@ public class RbacAdminImplTest {
 
     @Before
     public void setup() {
-        admin = new RbacAdminImpl(roleManager, entityFinder);
+        admin = new RbacAdminImpl(roleManager);
         zone = createSecurityZone(OID);
         zones = new ArrayList<SecurityZone>();
         zones.add(zone);
         ApplicationContexts.inject(admin, CollectionUtils.<String, Object>mapBuilder()
                 .put("securityZoneManager", securityZoneManager)
                 .put("assertionRegistry", assertionRegistry)
-                .put("assertionAccessManager", assertionAccessManager).unmodifiableMap());
+                .put("assertionAccessManager", assertionAccessManager)
+                .put("entityCrud", entityCrud).unmodifiableMap());
     }
 
     @Test

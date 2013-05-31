@@ -134,6 +134,8 @@
         <property name="advice" ref="rbacAdvice"/>
     </bean>
 
+    <bean id="zoneUpdateSecurityChecker" class="com.l7tech.server.security.rbac.ZoneUpdateSecurityCheckerImpl"/>
+
     <!--
       Administrative pointcut is on any bean that implements an @Administrative interface.
     -->
@@ -448,7 +450,6 @@
     <!-- RBAC admin impl -->
     <bean id="rbacAdmin" class="com.l7tech.server.security.rbac.RbacAdminImpl">
         <constructor-arg ref="roleManager"/>
-        <constructor-arg ref="entityFinder"/>
     </bean>
 
     <!-- Policy admin impl -->

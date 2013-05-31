@@ -9,7 +9,6 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SecurityZone;
 import com.l7tech.objectmodel.comparator.NamedEntityComparator;
 import com.l7tech.util.ExceptionUtils;
-import org.apache.commons.lang.ObjectUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -89,13 +88,13 @@ public class SecurityZoneUtil {
 
     /**
      * Determine if a given SecurityZone is valid for a user operation on an entity.
-     *
+     * <p/>
      * Can be used to filter SecurityZones that the user cannot successfully use for an entity operation.
      *
-     * @param zone the SecurityZone to evaluate. Required (use NULL_ZONE instead of null).
+     * @param zone                the SecurityZone to evaluate. Required (use NULL_ZONE instead of null).
      * @param requiredEntityTypes the EntityTypes that the SecurityZone must support to be valid or null to skip entity type validation.
-     * @param requiredOperation the OperationType used to evaluate whether the given Permissions support the given SecurityZone or null to skip permission validation.
-     * @param userPermissions the Permissions to evaluate against if a requiredOperation is also provided. Optional if no requiredOperation is provided.
+     * @param requiredOperation   the OperationType used to evaluate whether the given Permissions support the given SecurityZone or null to skip permission validation.
+     * @param userPermissions     the Permissions to evaluate against if a requiredOperation is also provided. Optional if no requiredOperation is provided.
      * @return true if the given SecurityZone is valid for the user operation on an entity.
      */
     public static boolean isZoneValidForOperation(@NotNull final SecurityZone zone, @Nullable final Collection<EntityType> requiredEntityTypes, @Nullable final OperationType requiredOperation, @Nullable final Collection<Permission> userPermissions) {
@@ -124,6 +123,26 @@ public class SecurityZoneUtil {
                 ret.add(type);
         }
         return ret;
+    }
+
+    /**
+     * @return zoneable EntityTypes for which the user can set a zone via SSM.
+     * @see #getHiddenZoneableEntityTypes()
+     */
+    public static Set<EntityType> getNonHiddenZoneableEntityTypes() {
+        final Set<EntityType> types = getAllZoneableEntityTypes();
+        types.removeAll(getHiddenZoneableEntityTypes());
+        return types;
+    }
+
+    /**
+     * @return EntityTypes that are zoneable but should be hidden from the user because they cannot have their zone set via SSM.
+     */
+    public static Set<EntityType> getHiddenZoneableEntityTypes() {
+        // do not support audits as there may be a LOT of them in the zone
+        // user is not aware of the UDDI entities under the hood - they inherit the security zone from the published service
+        // user is not aware that JMS involves two entity types - they share the same security zone
+        return new HashSet<>(Arrays.asList(EntityType.AUDIT_MESSAGE, EntityType.UDDI_PROXIED_SERVICE_INFO, EntityType.UDDI_SERVICE_CONTROL, EntityType.JMS_ENDPOINT));
     }
 
     private static boolean matchScope(@NotNull final SecurityZone zone, @Nullable Set<ScopePredicate> predicates) {

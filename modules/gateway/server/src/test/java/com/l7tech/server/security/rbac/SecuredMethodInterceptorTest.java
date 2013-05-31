@@ -355,48 +355,6 @@ public class SecuredMethodInterceptorTest {
     }
 
     /**
-     * This is used to stub a method invocation
-     */
-    private class StubMethodInvocation implements MethodInvocation {
-        private Method method;
-        private Object[] arguments;
-        private Object rtn;
-        private Object t;
-
-        private StubMethodInvocation(final Method method, final Object[] arguments, final Object rtn, final Object t) {
-            this.method = method;
-            this.arguments = arguments;
-            this.rtn = rtn;
-            this.t = t;
-        }
-
-        @Override
-        public Method getMethod() {
-            return method;
-        }
-
-        @Override
-        public Object[] getArguments() {
-            return arguments;
-        }
-
-        @Override
-        public Object proceed() throws Throwable {
-            return rtn;
-        }
-
-        @Override
-        public Object getThis() {
-            return t;
-        }
-
-        @Override
-        public AccessibleObject getStaticPart() {
-            return null;
-        }
-    }
-
-    /**
      * entity type shouldn't matter here they are all treated in a similar way. It is only used by rbacServices to find permissions
      * These are the different types of methods that will be tested
      */

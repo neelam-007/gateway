@@ -16,7 +16,7 @@ import java.util.Map;
  *
  * @author alex
  */
-public interface EntityCrud extends EntityFinder {
+public interface EntityCrud extends EntityFinder, SecurityZoneEntityManager {
     @Secured(stereotype=MethodStereotype.SAVE)
     Serializable save(Entity entity) throws SaveException;
 

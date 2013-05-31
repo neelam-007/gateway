@@ -59,7 +59,7 @@ public class SecurityZonePropertiesPanel extends JPanel {
                                 return permittedTypes.contains(entityType);
                             }
                         }));
-                entityTypesTableModel.setRows(new ArrayList<EntityType>(SecurityZoneUtil.getAllZoneableEntityTypes()));
+                entityTypesTableModel.setRows(new ArrayList<EntityType>(SecurityZoneUtil.getNonHiddenZoneableEntityTypes()));
                 entityTypesTable.getColumnModel().getColumn(1).setCellRenderer(new CheckOrXCellRenderer());
                 Utilities.setRowSorter(entityTypesTable, entityTypesTableModel);
             }
