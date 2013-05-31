@@ -124,7 +124,7 @@ public class MqMessageProxy {
         try {
             return headersProperties.get(index);
         } catch (IndexOutOfBoundsException e) {
-            return null;
+            return new HashMap<String, Object>();
         }
     }
 
