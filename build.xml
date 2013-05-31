@@ -562,6 +562,7 @@
                 <propertyref name="src.root"/>
                 <propertyref prefix="build.version"/>
                 <propertyref prefix="build.em.version"/>
+                <propertyref prefix="build.api.version"/>
                 <propertyref name="build.timestamp"/>
                 <propertyref name="install.build.number"/>
                 <propertyref name="build.host"/>
@@ -1367,9 +1368,10 @@
     <!--
       Generate a version string if not supplied
     -->
-    <target name="package.readversion" depends="package.readlocal,package.readversion.securespan, package.readversion.em">
+    <target name="package.readversion" depends="package.readlocal,package.readversion.securespan, package.readversion.em, package.readversion.api">
         <echo level="info">Build is using SS version: "${build.version}" [${build.rpmversion}-${build.version.revision}]</echo>
         <echo level="info">Build is using EM version: "${build.em.version}" [${build.em.rpmversion}-${build.em.version.revision}]</echo>
+        <echo level="info">Build is using API version: "${build.api.version}" [${build.api.rpmversion}-${build.api.version.revision}]</echo>
     </target>
     <target name="package.readlocal">
         <property file="${src.root}/local.build.version"/>        
@@ -1402,11 +1404,28 @@
         <property name="build.em.version" value="${build.em.version.major}.${build.em.version.minor}.${build.em.version.subminor}${build.em.version.label}"/>
         <property name="build.em.rpmversion" value="${build.em.version}"/>
     </target>
+    <target name="package.readversion.api" unless="build.api.version" depends="package.defaultapirpmversion">
+        <!-- Set properties to keep IDEA happy -->
+        <property name="build.api.version.major" value=""/>
+        <property name="build.api.version.minor" value=""/>
+        <property name="build.api.version.subminor" value=""/>
+        <property name="build.api.version.label" value=""/>
+        <property name="build.api.version.revision" value=""/>
+
+        <condition property="build.api.version" value="${build.api.version.major}.${build.api.version.minor}${build.api.version.label}">
+            <equals arg1="0" arg2="${build.api.version.subminor}"/>
+        </condition>
+        <property name="build.api.version" value="${build.api.version.major}.${build.api.version.minor}.${build.api.version.subminor}${build.api.version.label}"/>
+        <property name="build.api.rpmversion" value="${build.api.version}"/>
+    </target>
     <target name="package.defaultrpmversion" if="build.version" unless="build.rpmversion">
         <property name="build.rpmversion" value="${build.version}"/>        
     </target>
     <target name="package.defaultemrpmversion" if="build.em.version" unless="build.em.rpmversion">
         <property name="build.em.rpmversion" value="${build.em.version}"/>        
+    </target>
+    <target name="package.defaultapirpmversion" if="build.api.version" unless="build.api.rpmversion">
+        <property name="build.api.rpmversion" value="${build.api.version}"/>
     </target>
 
     <!--
@@ -3565,6 +3584,7 @@
 
         <input message="Enter SecureSpan version number" addproperty="official.build.version"/>
         <input message="Enter EM version number" addproperty="official.build.em.version"/>
+        <input message="Enter API version number" addproperty="official.build.api.version"/>
     </target>
     <target name="OFFICIAL-build.init" depends="OFFICIAL-build.init.pre,init-core,OFFICIAL-build.interactive">
         <condition property="rightdir">
@@ -3592,7 +3612,11 @@
             <equals arg1="0" arg2="${file.build.em.version.subminor}"/>
         </condition>
         <property name="official.build.em.version" value="${file.build.em.version.major}.${file.build.em.version.minor}.${file.build.em.version.subminor}${build.label}"/>
-        <echo file="local.build.version"># Generated local build properties file ${line.separator}build.version=${official.build.version}${line.separator}build.em.version=${official.build.em.version}${line.separator}</echo>
+        <condition property="official.build.api.version" value="${file.build.api.version.major}.${file.build.api.version.minor}${build.label}">
+            <equals arg1="0" arg2="${file.build.api.version.subminor}"/>
+        </condition>
+        <property name="official.build.api.version" value="${file.build.api.version.major}.${file.build.api.version.minor}.${file.build.api.version.subminor}${build.label}"/>
+        <echo file="local.build.version"># Generated local build properties file ${line.separator}build.version=${official.build.version}${line.separator}build.em.version=${official.build.em.version}${line.separator}build.api.version=${official.build.api.version}${line.separator}</echo>
     </target>
 
     <!--

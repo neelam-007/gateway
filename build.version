@@ -11,3 +11,8 @@ build.em.version.major=1
 build.em.version.minor=10
 build.em.version.subminor=0
 build.em.version.revision=1
+
+build.api.version.major=8
+build.api.version.minor=0
+build.api.version.subminor=0
+build.api.version.revision=1

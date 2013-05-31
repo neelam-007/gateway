@@ -3,5 +3,9 @@
     <property name="module.compile.target" value="1.3"/>
     <property name="module.sign" value="true"/>
 
+    <!-- Module properties -->
+    <!-- ${build.api.version} passed in by the main build script -->
+    <property name="module.version.target" value="${build.api.version}"/>
+
     <import file="../../../etc/build/build-common.xml"/>
 </project>
