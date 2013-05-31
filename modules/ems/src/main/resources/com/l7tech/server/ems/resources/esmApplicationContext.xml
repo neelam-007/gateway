@@ -272,6 +272,8 @@
         <constructor-arg index="0"><null/></constructor-arg>
     </bean>
 
+    <bean id="ssgKeyMetadataManager" class="com.l7tech.server.security.keystore.SsgKeyMetadataManagerImpl" parent="hibernateBean"/>
+
     <bean id="ssgKeyStoreManager" class="com.l7tech.server.security.keystore.SsgKeyStoreManagerImpl" depends-on="setupManager">
         <constructor-arg index="0" ref="sharedKeyManager"/>
         <constructor-arg index="1" ref="keystoreFileManager"/>
@@ -281,6 +283,7 @@
         <constructor-arg index="5">
             <bean class="com.l7tech.server.security.keystore.PermissiveKeyAccessFilter"/>
         </constructor-arg>
+        <constructor-arg index="6" ref="ssgKeyMetadataManager"/>
     </bean>
 
     <!-- server side audit record manager -->
