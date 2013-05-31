@@ -144,6 +144,9 @@ public class SecurityZonePropertiesDialog extends JDialog {
 
     private void enableAndDisable() {
         entityTypesList.setEnabled(specifiedEntityTypesRadio.isSelected());
+        for (int i = 0; i < entityTypesList.getModel().getSize(); i++) {
+             entityTypesList.getModel().getElementAt(i).setEnabled(specifiedEntityTypesRadio.isSelected());
+        }
         selectAllButton.setEnabled(specifiedEntityTypesRadio.isSelected());
         selectNoneButton.setEnabled(specifiedEntityTypesRadio.isSelected());
     }

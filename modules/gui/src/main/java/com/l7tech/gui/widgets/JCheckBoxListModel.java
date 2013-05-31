@@ -91,11 +91,13 @@ public class  JCheckBoxListModel extends AbstractListModel<JCheckBox> {
     public void toggle(int index) {
         if (armedEntry >= 0 && armedEntry != index) disarm();
         JCheckBox entry = getEntryAt(index);
-        ButtonModel entryModel = entry.getModel();
-        entryModel.setArmed(false);
-        entryModel.setRollover(false);
-        entry.setSelected(!entry.isSelected());
-        fireContentsChanged(this, index, index);
+        if (entry.isEnabled()) {
+            ButtonModel entryModel = entry.getModel();
+            entryModel.setArmed(false);
+            entryModel.setRollover(false);
+            entry.setSelected(!entry.isSelected());
+            fireContentsChanged(this, index, index);
+        }
     }
 
     /**
