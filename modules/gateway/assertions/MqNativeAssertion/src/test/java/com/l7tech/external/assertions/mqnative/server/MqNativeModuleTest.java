@@ -313,7 +313,7 @@ public class MqNativeModuleTest extends AbstractJUnit4SpringContextTests {
                 addHeader(context, TargetMessageType.RESPONSE, "mqnative.md.expiry", "3000");
                 addHeader(context, TargetMessageType.RESPONSE, "mqnative.md.format", "MQRFH2");//output as format MQRFH2 format
                 addHeader(context, TargetMessageType.RESPONSE, "mqnative.property.folder.propertyName", "propertyValue");
-                addHeader(context, TargetMessageType.RESPONSE, "mqnative.header.folder.headerName", "headerValue");
+                addHeader(context, TargetMessageType.RESPONSE, "mqnative.additionalheader.folder.headerName", "headerValue");
                 return AssertionStatus.NONE;
             }
         });
