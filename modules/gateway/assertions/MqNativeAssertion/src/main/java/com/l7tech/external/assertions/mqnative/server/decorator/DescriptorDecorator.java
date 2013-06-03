@@ -11,13 +11,18 @@ import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.message.OutboundHeadersKnob;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.util.HexUtils;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.text.ParseException;
 import java.util.GregorianCalendar;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
+
+import static java.util.Collections.unmodifiableMap;
 
 /**
  * Responsible to decorate the MQMessage Descriptor
@@ -46,11 +51,11 @@ public class DescriptorDecorator extends MqMessageDecorator {
         if (assertion != null) {
             if (isRequest) {
                 if (assertion.getRequestMessageDescriptorOverrides() != null && !assertion.getRequestMessageDescriptorOverrides().isEmpty()) {
-                    mdOverrides.putAll(assertion.getRequestMessageDescriptorOverrides());
+                    mdOverrides.putAll(expandVariables(assertion.getRequestMessageDescriptorOverrides()));
                 }
             } else {
                 if (assertion.getResponseMessageDescriptorOverrides() != null && !assertion.getResponseMessageDescriptorOverrides().isEmpty()) {
-                    mdOverrides.putAll(assertion.getResponseMessageDescriptorOverrides());
+                    mdOverrides.putAll(expandVariables(assertion.getResponseMessageDescriptorOverrides()));
                 }
             }
         }
@@ -131,6 +136,22 @@ public class DescriptorDecorator extends MqMessageDecorator {
         } catch (ParseException e) {
             throw new MqNativeConfigException("Invalid value '" + value + "' for property '" + name + "'");
         }
+    }
+
+    /**
+     * Expand the context variables from the provided map
+     *
+     * @param map The Map with context variable
+     * @return The expanded variables map.
+     */
+    private Map<String, Object> expandVariables(Map<String, String> map) {
+        Map<String,?> variables =  unmodifiableMap( context.getVariableMap( assertion.getVariablesUsed(), audit ) );
+        Map<String, Object> result = new HashMap();
+        for (Iterator iterator = map.entrySet().iterator(); iterator.hasNext(); ) {
+            Map.Entry<String, String> next = (Map.Entry<String, String>) iterator.next();
+            result.put(ExpandVariables.process(next.getKey(), variables, audit), ExpandVariables.process(next.getValue(), variables, audit));
+        }
+        return result;
     }
 
 }
