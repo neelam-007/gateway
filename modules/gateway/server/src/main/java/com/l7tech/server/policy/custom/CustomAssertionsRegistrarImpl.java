@@ -4,10 +4,12 @@ import com.l7tech.common.io.NonCloseableOutputStream;
 import com.l7tech.gateway.common.custom.CustomAssertionDescriptor;
 import com.l7tech.gateway.common.custom.CustomAssertionsRegistrar;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
+import com.l7tech.policy.assertion.ext.cei.CustomExtensionInterfaceBinding;
 import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.ext.CustomAssertion;
 import com.l7tech.policy.assertion.ext.CustomAssertionUI;
 import com.l7tech.policy.wsp.ClassLoaderUtil;
+import com.l7tech.server.admin.ExtensionInterfaceManager;
 import com.l7tech.server.policy.AssertionModule;
 import com.l7tech.server.policy.ServerAssertionRegistry;
 import com.l7tech.server.util.ModuleClassLoader;
@@ -16,6 +18,7 @@ import com.l7tech.util.PoolByteArrayOutputStream;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.ResourceUtils;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.support.ApplicationObjectSupport;
 
@@ -41,9 +44,10 @@ public class CustomAssertionsRegistrarImpl
 
     //- PUBLIC
 
-    public CustomAssertionsRegistrarImpl(ServerAssertionRegistry assertionRegistry) {
-        if (assertionRegistry == null) throw new IllegalArgumentException("assertionRegistry is required");
+    public CustomAssertionsRegistrarImpl(ServerAssertionRegistry assertionRegistry, ExtensionInterfaceManager extensionInterfaceManager) {
+        if (assertionRegistry == null || extensionInterfaceManager == null) throw new IllegalArgumentException("assertionRegistry and extensionInterfaceManager are required");
         this.assertionRegistry = assertionRegistry;
+        this.extensionInterfaceManager = extensionInterfaceManager;
     }
 
     @Override
@@ -279,6 +283,7 @@ public class CustomAssertionsRegistrarImpl
     private Config config;
     private ClassLoader customAssertionClassloader;
     private final ServerAssertionRegistry assertionRegistry;
+    private final ExtensionInterfaceManager extensionInterfaceManager;
 
     private Collection asCustomAssertionHolders(final Set customAssertionDescriptors) {
         Collection result = new ArrayList();
@@ -398,22 +403,25 @@ public class CustomAssertionsRegistrarImpl
         String assertionClass = null;
         String editorClass = null;
         String securityManagerClass = null;
+        String extensionInterfaceClassName = null;
         String optionalDescription = null;
         Category category = Category.UNFILLED;
 
         assertionClass = (String)properties.get(baseKey + ".class");
 
-        for (Iterator iterator = properties.keySet().iterator(); iterator.hasNext();) {
-            String key = (String)iterator.next();
+        for (Object o : properties.keySet()) {
+            String key = (String) o;
             if (key.startsWith(baseKey)) {
                 if (key.endsWith(".server")) {
-                    serverClass = (String)properties.get(key);
+                    serverClass = (String) properties.get(key);
                 } else if (key.endsWith(".ui")) {
-                    editorClass = (String)properties.get(key);
+                    editorClass = (String) properties.get(key);
                 } else if (key.endsWith(".security.manager")) {
-                    securityManagerClass = (String)properties.get(key);
+                    securityManagerClass = (String) properties.get(key);
+                } else if (key.endsWith(".extension.interface")) {
+                    extensionInterfaceClassName = (String) properties.get(key);
                 } else if (key.endsWith(".category")) {
-                    Category c = Category.asCategory((String)properties.get(key));
+                    Category c = Category.asCategory((String) properties.get(key));
                     if (c != null) {
                         category = c;
                     }
@@ -445,6 +453,12 @@ public class CustomAssertionsRegistrarImpl
             }
             CustomAssertionDescriptor eh = new CustomAssertionDescriptor(baseKey, a, eClass, sa, category, optionalDescription, sm);
             CustomAssertions.register(eh);
+
+            if (!StringUtils.isEmpty(extensionInterfaceClassName)) {
+                CustomExtensionInterfaceBinding ceiBinding = (CustomExtensionInterfaceBinding) Class.forName(extensionInterfaceClassName, true, classLoader).newInstance();
+                extensionInterfaceManager.registerInterface(ceiBinding.getInterfaceClass(), null, ceiBinding.getImplementationObject());
+            }
+
             logger.info("Registered custom assertion " + eh);
         } catch (ClassNotFoundException e) {
             StringBuffer sb = new StringBuffer("Cannot load class(es) for custom assertion, skipping...\n");

@@ -11,12 +11,20 @@ import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
-import com.l7tech.policy.assertion.ext.*;
+import com.l7tech.policy.assertion.ext.AssertionEditor;
+import com.l7tech.policy.assertion.ext.CustomAssertion;
+import com.l7tech.policy.assertion.ext.CustomAssertionUI;
+import com.l7tech.policy.assertion.ext.EditListener;
+import com.l7tech.policy.assertion.ext.cei.UsesConsoleContext;
 
 import javax.swing.*;
+import java.awt.*;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.awt.*;
+
+import static com.l7tech.console.api.CustomConsoleContext.addCustomExtensionInterfaceFinder;
 
 /**
  * The <code>CustomAssertionPropertiesAction</code> edits the SSL assertion
@@ -115,6 +123,11 @@ public class CustomAssertionPropertiesAction extends NodeAction {
         }
         try {
             customAssertionUI = registrar.getUI(cah.getCustomAssertion().getClass().getName());
+            if (customAssertionUI instanceof UsesConsoleContext) {
+                Map<String, Object> consoleContext = new HashMap<>(1);
+                addCustomExtensionInterfaceFinder(consoleContext);
+                ((UsesConsoleContext) customAssertionUI).setConsoleContextUsed(consoleContext);
+            }
             registrarCalled = true;
             return getCustomEditor();
         } catch (Exception e) {
