@@ -18,6 +18,8 @@ import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.logging.Logger;
@@ -38,6 +40,7 @@ public class SecurityZoneManagerWindow extends JDialog {
     private JTabbedPane tabbedPanel;
     private SecurityZonePropertiesPanel propertiesPanel;
     private SecurityZoneEntitiesPanel entitiesPanel;
+    private JButton assignButton;
 
     private SimpleTableModel<SecurityZone> securityZonesTableModel;
     private boolean canCreate;
@@ -167,6 +170,18 @@ public class SecurityZoneManagerWindow extends JDialog {
         editButton.addActionListener(ecc.createEditAction());
         Utilities.setDoubleClickAction(securityZonesTable, editButton);
         removeButton.addActionListener(ecc.createDeleteAction());
+        assignButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                final AssignSecurityZonesDialog assignDialog = new AssignSecurityZonesDialog(SecurityZoneManagerWindow.this, SecurityZoneUtil.getNonHiddenZoneableEntityTypes(), SecurityZoneUtil.getSortedReadableSecurityZones());
+                assignDialog.pack();
+                DialogDisplayer.display(assignDialog, new Runnable() {
+                    @Override
+                    public void run() {
+                    }
+                });
+            }
+        });
 
         enableOrDisable();
     }

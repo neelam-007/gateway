@@ -1769,4 +1769,16 @@ public class Utilities {
         container.setLayout(new BorderLayout());
         container.add(child, BorderLayout.CENTER);
     }
+
+    /**
+     * Change a button to be displayed as a non-underlined blue link.
+     *
+     * @param button the JButton to change to a non-underlined blue link.
+     */
+    public static void buttonToLink(final JButton button) {
+        button.setBorderPainted(false);
+        button.setContentAreaFilled(false);
+        button.setForeground(Color.BLUE);
+        button.setMargin(new Insets(0, 0, 0, 0));
+    }
 }

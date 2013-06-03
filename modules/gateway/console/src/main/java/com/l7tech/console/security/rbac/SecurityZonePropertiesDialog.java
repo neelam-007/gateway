@@ -92,8 +92,8 @@ public class SecurityZonePropertiesDialog extends JDialog {
         if (readOnly || nameField.getText().trim().isEmpty()) {
             okCancelPanel.getOkButton().setEnabled(false);
         }
-        buttonToLink(selectAllButton);
-        buttonToLink(selectNoneButton);
+        Utilities.buttonToLink(selectAllButton);
+        Utilities.buttonToLink(selectNoneButton);
         selectAllButton.addActionListener(new SelectActionListener(true));
         selectNoneButton.addActionListener(new SelectActionListener(false));
         errorLabel.setVisible(false);
@@ -280,13 +280,6 @@ public class SecurityZonePropertiesDialog extends JDialog {
 
     public boolean isConfirmed() {
         return confirmed;
-    }
-
-    private void buttonToLink(final JButton button) {
-        button.setBorderPainted(false);
-        button.setContentAreaFilled(false);
-        button.setForeground(Color.BLUE);
-        button.setMargin(new Insets(0, 0, 0, 0));
     }
 
     private Integer getResourceInt(final String property) {
