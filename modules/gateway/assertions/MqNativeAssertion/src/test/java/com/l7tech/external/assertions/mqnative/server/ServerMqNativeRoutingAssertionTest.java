@@ -329,15 +329,15 @@ public class ServerMqNativeRoutingAssertionTest {
     public void testOverrideRequestMessageHeader() throws Exception {
         MQMessage mqMessage = createMqMessage();
         context = makeContext(mqMessage);
-        context.setVariable("contextVariableName", "mqnative.header.folder.rfh2Field3");
+        context.setVariable("contextVariableName", "mqnative.additionalheader.folder.rfh2Field3");
         context.setVariable("contextVariableValue", "rfh2Value3");
 
         MqNativeMessagePropertyRuleSet ruleSet = new MqNativeMessagePropertyRuleSet();
         ruleSet.setPassThroughMqMessageHeaders(true);
         assertion.setRequestMqNativeMessagePropertyRuleSet(ruleSet);
 
-        addHeader(TargetMessageType.REQUEST, "mqnative.header.folder.rfh2Field1", "overridedRfh2Value1");
-        addHeader(TargetMessageType.REQUEST, "mqnative.header.folder.rfh2Field2", "rfh2Field2");
+        addHeader(TargetMessageType.REQUEST, "mqnative.additionalheader.folder.rfh2Field1", "overridedRfh2Value1");
+        addHeader(TargetMessageType.REQUEST, "mqnative.additionalheader.folder.rfh2Field2", "rfh2Field2");
         addHeader(TargetMessageType.REQUEST, "${contextVariableName}", "${contextVariableValue}");
 
         fixture.checkRequest(context);
@@ -515,7 +515,7 @@ public class ServerMqNativeRoutingAssertionTest {
         ruleSet.setPassThroughMqMessageHeaders(true);
         assertion.setRequestMqNativeMessagePropertyRuleSet(ruleSet);
 
-        addHeader(TargetMessageType.REQUEST,"mqnative.header.folder.rfh2Field1", "");
+        addHeader(TargetMessageType.REQUEST,"mqnative.additionalheader.folder.rfh2Field1", "");
         assertion.setRequestMqHeaderType(MqNativeMessageHeaderType.ORIGINAL);
 
         fixture.checkRequest(context);
@@ -534,7 +534,7 @@ public class ServerMqNativeRoutingAssertionTest {
         ruleSet.setPassThroughMqMessageHeaders(true);
         assertion.setRequestMqNativeMessagePropertyRuleSet(ruleSet);
 
-        addHeader(TargetMessageType.REQUEST, "mqnative.header.rfhField1", "");
+        addHeader(TargetMessageType.REQUEST, "mqnative.additionalheader.rfhField1", "");
         assertion.setRequestMqHeaderType(MqNativeMessageHeaderType.ORIGINAL);
 
         fixture.checkRequest(context);
@@ -662,7 +662,7 @@ public class ServerMqNativeRoutingAssertionTest {
 
         MQMessage mqMessage = createMqMessage();
         context = makeContext(mqMessage);
-        addHeader(TargetMessageType.RESPONSE, "mqnative.header.folder.rfh2ReplyField2", "rfh2ReplyValue2");
+        addHeader(TargetMessageType.RESPONSE, "mqnative.additionalheader.folder.rfh2ReplyField2", "rfh2ReplyValue2");
         fixture.checkRequest(context);
         MqNativeKnob mqNativeKnob = context.getResponse().getKnob(MqNativeKnob.class);
         MqMessageProxy replyMessage = (MqMessageProxy) mqNativeKnob.getMessage();

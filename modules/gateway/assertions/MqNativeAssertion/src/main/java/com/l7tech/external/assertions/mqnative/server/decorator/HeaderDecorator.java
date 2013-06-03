@@ -24,7 +24,7 @@ import java.util.Map;
  */
 public class HeaderDecorator extends MqMessageDecorator {
 
-    private static final String PREFIX = MQ_PREFIX + ".header.";
+    private static final String PREFIX = MQ_PREFIX + ".additionalheader.";
     private static final String MD_FORMAT = MQ_PREFIX + ".md.format";
 
     public HeaderDecorator(MQMessage mqMessage, MqMessageProxy source, OutboundHeadersKnob outboundHeadersKnob, MqNativeRoutingAssertion assertion, PolicyEnforcementContext context, Audit audit) throws MQException, IOException, MQDataException {
