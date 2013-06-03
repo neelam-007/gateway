@@ -7,12 +7,13 @@
     </info>
     <configurations>
         <include file="../assertion-ivyconfiguration.xml"/>
-    </configurations>	
+    </configurations>
     <publications>
         <artifact name="FtpRoutingAssertion" type="aar" ext="aar" conf="master"/>
     </publications>
     <dependencies>
         <dependency name="layer7-modular-assertions" rev="latest.integration"
                     conf="compile->compile;runtime->runtime;test->test"/>
+        <dependency org="org.mockftpserver" name="MockFtpServer" rev="2.4" force="true" conf="test"/>
     </dependencies>
 </ivy-module>

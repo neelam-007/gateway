@@ -16,12 +16,14 @@ import java.util.Map;
  */
 public final class FtpFileNameSource implements Serializable {
     /** Map for looking up instance by wspName. */
-    private static final Map<String, FtpFileNameSource> _wspNameMap = new HashMap<String, FtpFileNameSource>();
+    private static final Map<String, FtpFileNameSource> _wspNameMap = new HashMap<>();
 
     public static final FtpFileNameSource AUTO = new FtpFileNameSource("auto", "auto-generated");
+    //TODO jwilliams: remove PATTERN source once upgrade method organized
     public static final FtpFileNameSource PATTERN = new FtpFileNameSource("pattern", "user-specified pattern");
+    public static final FtpFileNameSource ARGUMENT = new FtpFileNameSource("argument", "user-specified pattern");
 
-    private static final FtpFileNameSource[] _values = new FtpFileNameSource[] {AUTO, PATTERN };
+    private static final FtpFileNameSource[] _values = new FtpFileNameSource[] {AUTO, PATTERN, ARGUMENT};
 
     /** String representation used in XML serialization.
         Must be unique. Must not change for backward compatibility. */
@@ -49,7 +51,7 @@ public final class FtpFileNameSource implements Serializable {
     }
 
     public static FtpFileNameSource[] values() {
-        return (FtpFileNameSource[]) _values.clone();
+        return _values.clone();
     }
 
     public static EnumTranslator getEnumTranslator() {

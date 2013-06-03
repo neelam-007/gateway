@@ -4,79 +4,117 @@
 
 package com.l7tech.external.assertions.ftprouting.console;
 
-import com.l7tech.console.panels.AssertionPropertiesOkCancelSupport;
-import com.l7tech.console.panels.CancelableOperationDialog;
-import com.l7tech.console.panels.PrivateKeysComboBox;
-import com.l7tech.console.panels.RoutingDialogUtils;
+import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.console.panels.*;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.external.assertions.ftprouting.FtpRoutingAssertion;
+import com.l7tech.external.assertions.ftprouting.server.FtpMethod;
+import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.transport.ftp.FtpCredentialsSource;
 import com.l7tech.gateway.common.transport.ftp.FtpFileNameSource;
 import com.l7tech.gateway.common.transport.ftp.FtpSecurity;
 import com.l7tech.gateway.common.transport.ftp.FtpTestException;
 import com.l7tech.gui.NumberField;
+import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.InputValidator;
-import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
+import com.l7tech.gui.widgets.BetterComboBox;
 import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.policy.assertion.MessageTargetable;
 import com.l7tech.policy.assertion.MessageTargetableSupport;
 import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Option;
 
 import javax.swing.*;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.lang.reflect.InvocationTargetException;
 import java.text.MessageFormat;
-import java.util.ResourceBundle;
+import java.util.*;
 import java.util.concurrent.Callable;
+
+import static com.l7tech.objectmodel.imp.PersistentEntityUtil.oid;
+import static com.l7tech.util.Option.optional;
 
 /**
  * Dialog for editing the FtpRoutingAssertion.
  *
- * @author rmak
  * @since SecureSpan 4.0
+ * @author rmak
+ * @author jwilliams
  */
 public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSupport<FtpRoutingAssertion> {
 
+    private static final ResourceBundle resources = ResourceBundle.getBundle(FtpRoutingPropertiesDialog.class.getName());
+
+    public static final int COMBO_BOX_NULL_SELECTION_INDEX = -1;
+
+    private static final String PROTOCOL_COMBO_ITEM_FTP_UNSECURED_LABEL = getResourceString("ftpUnsecuredDescription");
+    private static final String PROTOCOL_COMBO_ITEM_FTPS_EXPLICIT_LABEL = getResourceString("explicitSslDescription");
+    private static final String PROTOCOL_COMBO_ITEM_FTPS_IMPLICIT_LABEL = getResourceString("implicitSslDescription");
+
+    private static final int COMMAND_COMBO_ITEM_FROM_VARIABLE_INDEX = 0;
+    private static final String COMMAND_COMBO_ITEM_FROM_VARIABLE_LABEL = getResourceString("commandTypeFromVariable");
+
+    public static final String ENABLED_PROPERTY_NAME = "enabled";
+
+    public static final ContentTypeHeader[] OFFERED_CONTENT_TYPE_HEADERS = new ContentTypeHeader[] {
+            ContentTypeHeader.XML_DEFAULT,
+            ContentTypeHeader.TEXT_DEFAULT,
+            ContentTypeHeader.SOAP_1_2_DEFAULT,
+            ContentTypeHeader.APPLICATION_JSON,
+            ContentTypeHeader.OCTET_STREAM_DEFAULT,
+    };
+
     private JPanel _mainPanel;
-    private JRadioButton _ftpUnsecuredRadioButton;
-    private JRadioButton _ftpsExplicitRadioButton;
-    private JRadioButton _ftpsImplicitRadioButton;
-    private JCheckBox _verifyServerCertCheckBox;
-    private JTextField _hostNameTextField;              // blank not allowed
-    private JTextField _portNumberTextField;            // blank allowed
-    private JTextField _directoryTextField;             // blank allowed
-    private JRadioButton _filenameAutoRadioButton;
-    private JRadioButton _filenamePatternRadioButton;
-    private JTextField _filenamePatternTextField;       // blank not allowed
-    private JRadioButton _credentialsPassThruRadioButton;
-    private JRadioButton _credentialsSpecifyRadioButton;
-    private JTextField _userNameTextField;              // blank not allowed
-    private JPasswordField _passwordField;              // blank allowed
-    private JCheckBox _useClientCertCheckBox;
-    private PrivateKeysComboBox _clientCertsComboBox;
-    private JTextField _timeoutTextField;               // blank allowed
-    private JButton _testButton;
+    private JCheckBox verifyServerCertCheckBox;
+    private JTextField hostNameTextField;
+    private JTextField portNumberTextField;
+    private JTextField directoryTextField;
+    private JRadioButton passThroughCredsRadioButton;
+    private JRadioButton specifyUserCredsRadioButton;
+    private JTextField userNameTextField;
+    private SecurePasswordComboBox storedPasswordComboBox;
+    private JCheckBox supplyClientCertCheckBox;
+    private JTextField timeoutTextField;
+    private JButton testConnectionButton;
     private JRadioButton wssIgnoreRadio;
     private JRadioButton wssCleanupRadio;
     private JRadioButton wssRemoveRadio;
-    private JComboBox messageSource;
-    private JCheckBox contextVariableInPassword;
-    private char echoChar;
+    private JComboBox messageSourceComboBox;
+    private JCheckBox contextVariableInPasswordCheckBox;
+    private JComboBox messageTargetComboBox;
+    private JPanel targetVariablePanelHolder;
+    private JPanel responseLimitHolderPanel;
+    private JComboBox contentTypeComboBox;
+    private BetterComboBox commandComboBox;
+    private JTextField argumentsTextField;
+    private JButton manageStoredPasswordsButton;
+    private JPanel commandVariablePanelHolder;
+    private JComboBox protocolComboBox;
+    private PrivateKeysComboBox clientCertComboBox;
+    private JPasswordField plaintextPasswordField;
+    private JRadioButton storedPasswordRadioButton;
+    private JRadioButton plaintextPasswordRadioButton;
+    private JLabel plainTextPasswordWarningLabel;
+    private JCheckBox autoFilenameCheckBox;
+    private JLabel userNameLabel;
     private AbstractButton[] secHdrButtons = { wssIgnoreRadio, wssCleanupRadio, wssRemoveRadio, null };
-    private InputValidator validators;
+    private ByteLimitPanel responseLimitPanel;
+    private TargetVariablePanel commandVariablePanel;
+    private TargetVariablePanel targetVariablePanel;
 
-    public static final int DEFAULT_PORT_FTP = 21;
-    private static final ResourceBundle resources = ResourceBundle.getBundle( FtpRoutingPropertiesDialog.class.getName() );
-    
+    private char echoChar;
+    private InputValidator inputValidator;
+
     /**
      * Creates new form ServicePanel
      * @param owner  parent for dialog
@@ -85,7 +123,6 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
     public FtpRoutingPropertiesDialog(Window owner, FtpRoutingAssertion a) {
         super(FtpRoutingAssertion.class,  owner, a, true);
         initComponents();
-        setData(a);
     }
 
     @Override
@@ -98,334 +135,644 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
      * initialize the form.
      */
     @Override
-    protected void initComponents() {             
+    protected void initComponents() {
         super.initComponents();
 
-        final ActionListener securityListener = new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                enableOrDisableComponents();
-                final int port = getDefaultPortNumber();
-                _portNumberTextField.setText(Integer.toString(port));
-            }
-        };
-        _ftpUnsecuredRadioButton.addActionListener(securityListener);
-        _ftpsExplicitRadioButton.addActionListener(securityListener);
-        _ftpsImplicitRadioButton.addActionListener(securityListener);
+        // --- Connection tab ---
 
-        _hostNameTextField.getDocument().addDocumentListener(new DocumentListener() {
-            @Override
-            public void insertUpdate(DocumentEvent e) { enableOrDisableComponents(); }
-            @Override
-            public void removeUpdate(DocumentEvent e) { enableOrDisableComponents(); }
-            @Override
-            public void changedUpdate(DocumentEvent e) { enableOrDisableComponents(); }
-        });
+        // Protocol
+        protocolComboBox.addItem(PROTOCOL_COMBO_ITEM_FTP_UNSECURED_LABEL);
+        protocolComboBox.addItem(PROTOCOL_COMBO_ITEM_FTPS_EXPLICIT_LABEL);
+        protocolComboBox.addItem(PROTOCOL_COMBO_ITEM_FTPS_IMPLICIT_LABEL);
 
-        _portNumberTextField.getDocument().addDocumentListener(new RunOnChangeListener(new Runnable() {
-            @Override
-            public void run() {
-                enableOrDisableComponents();
-            }
-        }));
+        protocolComboBox.setSelectedIndex(COMBO_BOX_NULL_SELECTION_INDEX);
 
-        _timeoutTextField.setDocument(new NumberField(6));
-
-        final ActionListener filenameListener = new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                _filenamePatternTextField.setEnabled(_filenamePatternRadioButton.isSelected());
-                enableOrDisableComponents();
-            }
-        };
-        _filenameAutoRadioButton.addActionListener(filenameListener);
-        _filenamePatternRadioButton.addActionListener(filenameListener);
-
-        _filenamePatternTextField.getDocument().addDocumentListener(new DocumentListener() {
-            @Override
-            public void insertUpdate(DocumentEvent e) { enableOrDisableComponents(); }
-            @Override
-            public void removeUpdate(DocumentEvent e) { enableOrDisableComponents(); }
-            @Override
-            public void changedUpdate(DocumentEvent e) { enableOrDisableComponents(); }
-        });
-        Utilities.enableGrayOnDisabled(_filenamePatternTextField);
-
-        final ActionListener credentialsListener = new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                enableOrDisableComponents();
-            }
-        };
-        _credentialsPassThruRadioButton.addActionListener(credentialsListener);
-        _credentialsSpecifyRadioButton.addActionListener(credentialsListener);
-
-        _userNameTextField.getDocument().addDocumentListener(new DocumentListener() {
-            @Override
-            public void insertUpdate(DocumentEvent e) { enableOrDisableComponents(); }
-            @Override
-            public void removeUpdate(DocumentEvent e) { enableOrDisableComponents(); }
-            @Override
-            public void changedUpdate(DocumentEvent e) { enableOrDisableComponents(); }
-        });
-
-        echoChar = _passwordField.getEchoChar();
-        contextVariableInPassword.addItemListener(new ItemListener() {
+        protocolComboBox.addItemListener(new ItemListener() {
             @Override
             public void itemStateChanged(ItemEvent e) {
-                _passwordField.enableInputMethods(contextVariableInPassword.isSelected());
-                _passwordField.setEchoChar(contextVariableInPassword.isSelected() ? (char)0 : echoChar);
+                final boolean isFtps = (!PROTOCOL_COMBO_ITEM_FTP_UNSECURED_LABEL.equals(protocolComboBox.getSelectedItem()));
+                portNumberTextField.setText(Integer.toString(getDefaultPortNumber()));
+                supplyClientCertCheckBox.setEnabled(isFtps);
+                verifyServerCertCheckBox.setEnabled(isFtps);
             }
         });
 
-        Utilities.enableGrayOnDisabled(_userNameTextField);
-        Utilities.enableGrayOnDisabled(_passwordField);
-        Utilities.enableGrayOnDisabled(contextVariableInPassword);
+        // Connect timeout
+        timeoutTextField.setDocument(new NumberField(6));
 
-        _useClientCertCheckBox.addItemListener(new ItemListener() {
+        // Verify server certificate check box
+        verifyServerCertCheckBox.addPropertyChangeListener(ENABLED_PROPERTY_NAME, new PropertyChangeListener() {
             @Override
-            public void itemStateChanged(ItemEvent e) {
-                enableOrDisableComponents();
-            }
-        });
-        _clientCertsComboBox.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                enableOrDisableComponents();
+            public void propertyChange(PropertyChangeEvent e) {
+                if(!verifyServerCertCheckBox.isEnabled()) {
+                    verifyServerCertCheckBox.setSelected(false);
+                }
             }
         });
 
-        RoutingDialogUtils.tagSecurityHeaderHandlingButtons(secHdrButtons);
-
-        _testButton.addActionListener(new ActionListener() {
+        // Test Connection button
+        testConnectionButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 testConnection();
             }
         });
 
-        messageSource.addItem(new MessageTargetableSupport(TargetMessageType.REQUEST));
-        messageSource.addItem(new MessageTargetableSupport(TargetMessageType.RESPONSE));
+        // Command variable
+        commandVariablePanel = new TargetVariablePanel();
+        commandVariablePanelHolder.setLayout(new BorderLayout());
+        commandVariablePanelHolder.add(commandVariablePanel, BorderLayout.CENTER);
 
-        //validators
-        validators = new InputValidator(this, getResourceString("errorTitle"));
-        validators.addRule(validators.constrainTextFieldToBeNonEmpty(getResourceString("hostNameLabel"),_hostNameTextField,null));
-        validators.addRule(validators.constrainTextFieldToBeNonEmpty(getResourceString("specifyPatternLabel"),_filenamePatternTextField,null));
-        validators.addRule(validators.constrainTextFieldToBeNonEmpty(getResourceString("usernameLabel"),_userNameTextField,null));
+        // Command combo box
+        DefaultComboBoxModel commandComboBoxModel = new DefaultComboBoxModel();
 
-        validators.addRule(new InputValidator.ComponentValidationRule(_clientCertsComboBox) {
+        commandComboBoxModel.insertElementAt(COMMAND_COMBO_ITEM_FROM_VARIABLE_LABEL, COMMAND_COMBO_ITEM_FROM_VARIABLE_INDEX);
+
+        for (FtpMethod ftpMethod : getFtpMethods()) {
+            commandComboBoxModel.addElement(ftpMethod.getWspName());
+        }
+
+        commandComboBox.setModel(commandComboBoxModel);
+
+        commandComboBox.addItemListener(new ItemListener() {
+            @Override
+            public void itemStateChanged(ItemEvent e) {
+                enableOrDisableCommandSettingsComponents();
+            }
+        });
+
+        // Message source combo box
+        messageSourceComboBox.setRenderer(
+                new TextListCellRenderer<>(getMessageNameFunction("Default", null), null, false));
+
+        // Message target variable
+        targetVariablePanel = new TargetVariablePanel();
+        targetVariablePanelHolder.setLayout(new BorderLayout());
+        targetVariablePanelHolder.add(targetVariablePanel, BorderLayout.CENTER);
+
+        // Message target combo box
+        messageTargetComboBox.setRenderer(
+                new TextListCellRenderer<>(getMessageNameFunction("Default", "Message Variable"), null, true));
+
+        messageTargetComboBox.addItemListener(new ItemListener() {
+            @Override
+            public void itemStateChanged(ItemEvent e) {
+                enableOrDisableTargetVariablePanel();
+            }
+        });
+
+        // --- Authentication tab ---
+
+        // Pass through credentials option
+        passThroughCredsRadioButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                enableOrDisableCredentialsPanelComponents();
+            }
+        });
+
+        // Specify user credentials option
+        specifyUserCredsRadioButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                enableOrDisableCredentialsPanelComponents();
+            }
+        });
+
+        // User name
+        Utilities.enableGrayOnDisabled(userNameLabel);
+        Utilities.enableGrayOnDisabled(userNameTextField);
+
+        // Stored password option
+        storedPasswordRadioButton.addItemListener(new ItemListener() {
+            @Override
+            public void itemStateChanged(ItemEvent e) {
+                enableOrDisableCredentialsPanelComponents();
+            }
+        });
+
+        // Plaintext password option
+        plaintextPasswordRadioButton.addItemListener(new ItemListener() {
+            @Override
+            public void itemStateChanged(ItemEvent e) {
+                enableOrDisableCredentialsPanelComponents();
+            }
+        });
+
+        // Stored password combo box
+        storedPasswordComboBox.setRenderer(TextListCellRenderer.<SecurePasswordComboBox>basicComboBoxRenderer());
+
+        // Manage stored passwords button
+        manageStoredPasswordsButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent evt) {
+                SecurePasswordManagerWindow dialog = new SecurePasswordManagerWindow(TopComponents.getInstance().getTopParent());
+                dialog.pack();
+                Utilities.centerOnScreen(dialog);
+
+                // save selection
+                final Option<Long> selectedPasswordOid = optional(storedPasswordComboBox.getSelectedSecurePassword()).map(oid());
+
+                DialogDisplayer.display(dialog, new Runnable() {
+                    @Override
+                    public void run() {
+                        storedPasswordComboBox.reloadPasswordList(SecurePassword.SecurePasswordType.PASSWORD);
+                        // load selection
+                        if (selectedPasswordOid.isSome())
+                            storedPasswordComboBox.setSelectedSecurePassword(selectedPasswordOid.some());
+                        pack();
+                    }
+                });
+            }
+        });
+
+        // Plaintext password
+        echoChar = plaintextPasswordField.getEchoChar();
+        Utilities.enableGrayOnDisabled(plaintextPasswordField);
+
+        // Context variable in password check box
+        Utilities.enableGrayOnDisabled(contextVariableInPasswordCheckBox);
+
+        contextVariableInPasswordCheckBox.addItemListener(new ItemListener() {
+            @Override
+            public void itemStateChanged(ItemEvent e) {
+                plaintextPasswordField.enableInputMethods(contextVariableInPasswordCheckBox.isSelected());
+                plaintextPasswordField.setEchoChar(contextVariableInPasswordCheckBox.isSelected() ? (char) 0 : echoChar);
+            }
+        });
+
+        // Plaintext warning label
+        plainTextPasswordWarningLabel.setVisible(false);
+
+        // Supply client certificate check box
+        CheckAndComboPairListener supplyClientCertCheckBoxListener =
+                new CheckAndComboPairListener(supplyClientCertCheckBox, clientCertComboBox);
+
+        supplyClientCertCheckBox.addItemListener(supplyClientCertCheckBoxListener);
+        supplyClientCertCheckBox.addPropertyChangeListener(ENABLED_PROPERTY_NAME, supplyClientCertCheckBoxListener);
+
+        // --- Advanced tab ---
+
+        // Content type combo box
+        DefaultComboBoxModel contentTypeComboBoxModel = new DefaultComboBoxModel();
+
+        for (ContentTypeHeader offeredType : OFFERED_CONTENT_TYPE_HEADERS) {
+            contentTypeComboBoxModel.addElement(offeredType.getFullValue());
+        }
+
+        contentTypeComboBox.setModel(contentTypeComboBoxModel);
+
+        // Response limit settings
+        responseLimitPanel = new ByteLimitPanel();
+        responseLimitPanel.setAllowContextVars(true);
+        responseLimitHolderPanel.setLayout(new BorderLayout());
+        responseLimitHolderPanel.add(responseLimitPanel, BorderLayout.CENTER);
+
+        // WSS security settings
+        RoutingDialogUtils.tagSecurityHeaderHandlingButtons(secHdrButtons);
+
+        // TODO jwilliams: add more validators for various ftp commands e.g. require arguments for MKD or LIST?
+        // --- VALIDATION ---
+        inputValidator = new InputValidator(this, getResourceString("errorTitle"));
+
+        // host must be set
+        inputValidator.addRule(inputValidator.constrainTextFieldToBeNonEmpty(getResourceString("hostNameLabel"),
+                hostNameTextField, null));
+
+        // username must be set if the specify credentials option has been selected
+        inputValidator.addRule(inputValidator.constrainTextFieldToBeNonEmpty(getResourceString("usernameLabel"),
+                userNameTextField, null));
+
+        // the ftp command combo box must have a selection
+        inputValidator.addRule(new InputValidator.ComponentValidationRule(commandComboBox) {
             @Override
             public String getValidationError() {
-                if(_useClientCertCheckBox.isSelected() && _clientCertsComboBox.getSelectedIndex() == -1){
+                if (commandComboBox.getSelectedItem() == null
+                        || commandComboBox.getSelectedIndex() == COMBO_BOX_NULL_SELECTION_INDEX) {
+                    return getResourceString("commandNullError");
+                }
+
+                return null;
+            }
+        });
+
+        // validate the command variable
+        inputValidator.addRule(new InputValidator.ComponentValidationRule(commandComboBox) {
+            @Override
+            public String getValidationError() {
+                if (isCommandTypeFromVariable() && (commandVariablePanel.getVariable().trim().isEmpty())) {
+                    return getResourceString("commandVariableNullError");
+                }
+
+                return null;
+            }
+        });
+
+        inputValidator.addRule(new InputValidator.ValidationRule() {
+            @Override
+            public String getValidationError() {
+                return commandVariablePanel.getErrorMessage();
+            }
+        });
+
+        // either arguments or auto-generated file name must be specified, depending on ftp command
+        inputValidator.addRule(new InputValidator.ValidationRule() {
+            @Override
+            public String getValidationError() {
+                if (isCommandUploadType((String) commandComboBox.getSelectedItem())) {
+                    if (!autoFilenameCheckBox.isSelected() && argumentsTextField.getText().trim().isEmpty()) {
+                        return getResourceString("filenameNullForUploadCommandError");
+                    }
+                }
+
+                return null;
+            }
+        });
+
+        // validate target message variable
+        inputValidator.addRule(new InputValidator.ValidationRule() {
+            @Override
+            public String getValidationError() {
+                return targetVariablePanel.getErrorMessage();
+            }
+        });
+
+        // a stored password must be specified if the field is enabled
+        inputValidator.addRule(new InputValidator.ComponentValidationRule(storedPasswordComboBox) {
+            @Override
+            public String getValidationError() {
+                if(specifyUserCredsRadioButton.isSelected() && (storedPasswordComboBox == null
+                        || storedPasswordComboBox.getItemCount() == 0)) {
+                    return getResourceString("passwordEmptyError");
+                }
+
+                return null;
+            }
+        });
+
+        // client certificate must be specified if the field is enabled
+        inputValidator.addRule(new InputValidator.ComponentValidationRule(clientCertComboBox) {
+            @Override
+            public String getValidationError() {
+                if (supplyClientCertCheckBox.isSelected()
+                        && clientCertComboBox.getSelectedIndex() == COMBO_BOX_NULL_SELECTION_INDEX) {
                     return getResourceString("clientCertError");
                 }
+
                 return null;
             }
         });
 
-        validators.addRule(new InputValidator.ComponentValidationRule(_portNumberTextField) {
+        // port number must be within allowable range or reference a valid context variable
+        inputValidator.addRule(new InputValidator.ComponentValidationRule(portNumberTextField) {
             @Override
             public String getValidationError() {
-                boolean portIsValid = isPortValid();
-                if(!portIsValid){
-                    final int port = getDefaultPortNumber();
-                    return MessageFormat.format(getResourceString("portError"),port);
-
+                if (!isPortValid()) {
+                    return MessageFormat.format(getResourceString("portError"), getDefaultPortNumber());
                 }
+
                 return null;
             }
         });
 
+        // STOU command cannot use auto-generated file name
+        inputValidator.addRule(new InputValidator.ComponentValidationRule(autoFilenameCheckBox) {
+            @Override
+            public String getValidationError() {
+                if (autoFilenameCheckBox.isSelected()
+                        && (commandComboBox.getSelectedItem()).equals(FtpMethod.FTP_STOU.getWspName())) {
+                    return MessageFormat.format(getResourceString("stouAutoFilenameError"), getDefaultPortNumber());
+                }
+
+                return null;
+            }
+        });
+
+        // content type must be specified if the combo box is enabled
+        inputValidator.addRule(new InputValidator.ComponentValidationRule(contentTypeComboBox) {
+            @Override
+            public String getValidationError() {
+                if(contentTypeComboBox.getSelectedIndex() == COMBO_BOX_NULL_SELECTION_INDEX) {
+                    return getResourceString("contentTypeNullError");
+                }
+
+                return null;
+            }
+        });
+
+        // validate response limit panel settings
+        inputValidator.addRule(new InputValidator.ValidationRule() {
+            @Override
+            public String getValidationError() {
+                return responseLimitPanel.validateFields();
+            }
+        });
     }
 
-    private String getResourceString(String key){
-        final String value = resources.getString(key);
-        if(value.endsWith(":")){
-            return value.substring(0, value.lastIndexOf(":"));
+    private void enableOrDisableCommandSettingsComponents() {
+        System.out.println("enableOrDisableCommandSettingsComponents() called");
+
+        commandVariablePanel.setEnabled(isCommandTypeFromVariable());
+
+        if (commandComboBox.getSelectedIndex() == COMBO_BOX_NULL_SELECTION_INDEX) {
+            messageSourceComboBox.setEnabled(false);
+            messageTargetComboBox.setEnabled(false);
+            contentTypeComboBox.setEnabled(false);
+            responseLimitPanel.setEnabled(false);
+            autoFilenameCheckBox.setEnabled(false);
+
+            enableOrDisableTargetVariablePanel();
+        } else {
+            if (commandComboBox.getSelectedIndex() == COMMAND_COMBO_ITEM_FROM_VARIABLE_INDEX) {
+                messageSourceComboBox.setEnabled(true);
+                contentTypeComboBox.setEnabled(true);
+                responseLimitPanel.setEnabled(true);
+                autoFilenameCheckBox.setEnabled(true);
+            } else {
+                boolean isUploadCommand = isCommandUploadType((String) commandComboBox.getSelectedItem());
+
+                messageSourceComboBox.setEnabled(isUploadCommand);
+                autoFilenameCheckBox.setEnabled(isUploadCommand);
+                contentTypeComboBox.setEnabled(!isUploadCommand);
+                responseLimitPanel.setEnabled(!isUploadCommand);
+            }
+
+            messageTargetComboBox.setEnabled(true);
         }
-        return value;
+
+        if (!autoFilenameCheckBox.isEnabled()) {
+            autoFilenameCheckBox.setSelected(false);
+        }
     }
 
-    private void populateReqMsgSrcComboBox(FtpRoutingAssertion assertion) {
-        MessageTargetableSupport msgSource = assertion.getRequestTarget();
+    private void enableOrDisableTargetVariablePanel() {
+        Object selectedTarget = messageTargetComboBox.getSelectedItem();
+
+        targetVariablePanel.setEnabled(messageTargetComboBox.isEnabled() && selectedTarget != null
+                && ((MessageTargetable) selectedTarget).getTarget() == TargetMessageType.OTHER);
+    }
+
+    private void enableOrDisableCredentialsPanelComponents() {
+        boolean isSpecifyUserCreds = specifyUserCredsRadioButton.isSelected();
+
+        userNameLabel.setEnabled(isSpecifyUserCreds);
+        userNameTextField.setEnabled(isSpecifyUserCreds);
+
+        // enable/disable credentials type options
+        storedPasswordRadioButton.setEnabled(isSpecifyUserCreds);
+        plaintextPasswordRadioButton.setEnabled(isSpecifyUserCreds);
+
+        // enable/disable stored password control
+        storedPasswordComboBox.setEnabled(isSpecifyUserCreds && storedPasswordRadioButton.isSelected());
+        manageStoredPasswordsButton.setEnabled(isSpecifyUserCreds && storedPasswordRadioButton.isSelected());
+
+        // enable/disable password field and context variable check box
+        plaintextPasswordField.setEnabled(isSpecifyUserCreds && plaintextPasswordRadioButton.isSelected());
+        contextVariableInPasswordCheckBox.setEnabled(isSpecifyUserCreds && plaintextPasswordRadioButton.isSelected());
+
+        // show/hide plaintext warning label
+        plainTextPasswordWarningLabel.setVisible(isSpecifyUserCreds && plaintextPasswordRadioButton.isSelected());
+    }
+
+    private void populateRequestSourceComboBox(FtpRoutingAssertion assertion) {
+        MessageTargetableSupport msgSource = assertion.get_requestTarget();
         TargetMessageType msgSourceType = msgSource != null ? msgSource.getTarget() : null;
 
         if (msgSourceType == TargetMessageType.REQUEST)
-            messageSource.setSelectedIndex(0);
+            messageSourceComboBox.setSelectedIndex(0);
         else if (msgSourceType == TargetMessageType.RESPONSE)
-            messageSource.setSelectedIndex(1);
+            messageSourceComboBox.setSelectedIndex(1);
         else {
             String msgSourceVariable = msgSourceType == TargetMessageType.OTHER ? msgSource.getOtherTargetMessageVariable() : null;
             if (msgSourceVariable != null) {
                 boolean msgSourceFound = false;
-                for (int i=2; i < messageSource.getItemCount(); i++) {
-                    MessageTargetableSupport messageSourceItem = (MessageTargetableSupport) messageSource.getItemAt(i);
+                for (int i = 2; i < messageSourceComboBox.getItemCount(); i++) {
+                    MessageTargetableSupport messageSourceItem = (MessageTargetableSupport) messageSourceComboBox.getItemAt(i);
                     if (msgSourceVariable.equals(messageSourceItem.getOtherTargetMessageVariable())) {
                         msgSourceFound = true;
-                        messageSource.setSelectedIndex(i);
+                        messageSourceComboBox.setSelectedIndex(i);
                         break;
                     }
                 }
                 if (!msgSourceFound) {
                     MessageTargetableSupport notFoundMsgSource = new MessageTargetableSupport(msgSourceVariable);
-                    messageSource.addItem(notFoundMsgSource);
-                    messageSource.setSelectedItem(notFoundMsgSource);
+                    messageSourceComboBox.addItem(notFoundMsgSource);
+                    messageSourceComboBox.setSelectedItem(notFoundMsgSource);
                 }
             }
         }
     }
 
-    private void modelToView(FtpRoutingAssertion assertion) {
-        final FtpSecurity security = assertion.getSecurity();
-        if (security == null || security == FtpSecurity.FTP_UNSECURED) {
-            _ftpUnsecuredRadioButton.doClick(0);
-        } else if (security == FtpSecurity.FTPS_EXPLICIT) {
-            _ftpsExplicitRadioButton.doClick(0);
-        } else if (security == FtpSecurity.FTPS_IMPLICIT) {
-            _ftpsImplicitRadioButton.doClick(0);
-        }
-
-        _verifyServerCertCheckBox.setSelected(assertion.isVerifyServerCert());
-        _hostNameTextField.setText(assertion.getHostName());
-        _portNumberTextField.setText(assertion.getPort());
-        _directoryTextField.setText(assertion.getDirectory());
-
-        if (assertion.getFileNameSource() == null || assertion.getFileNameSource() == FtpFileNameSource.AUTO) {
-            _filenameAutoRadioButton.doClick(0);
-        } else if (assertion.getFileNameSource() == FtpFileNameSource.PATTERN) {
-            _filenamePatternRadioButton.doClick(0);
-        }
-        _filenamePatternTextField.setText(assertion.getFileNamePattern());
-
-        if (assertion.getCredentialsSource() == null || assertion.getCredentialsSource() == FtpCredentialsSource.PASS_THRU) {
-            _credentialsPassThruRadioButton.doClick(0);
-        } else if (assertion.getCredentialsSource() == FtpCredentialsSource.SPECIFIED) {
-            _credentialsSpecifyRadioButton.doClick(0);
-            _userNameTextField.setText(assertion.getUserName());
-            _passwordField.setText(assertion.getPassword());
-            _passwordField.enableInputMethods(assertion.isPasswordUsesContextVariables());
-            contextVariableInPassword.setSelected(assertion.isPasswordUsesContextVariables());
-        }
-
-        _useClientCertCheckBox.setSelected(assertion.isUseClientCert());
-        _clientCertsComboBox.select(assertion.getClientCertKeystoreId(), assertion.getClientCertKeyAlias());
-
-        _timeoutTextField.setText(Integer.toString(assertion.getTimeout() / 1000));
-
-        RoutingDialogUtils.configSecurityHeaderRadioButtons(assertion, -1, null, secHdrButtons);
-
-        populateReqMsgSrcComboBox(assertion);
-        messageSource.setRenderer( new TextListCellRenderer<MessageTargetable>( getMessageNameFunction("Default", null), null, false ) );
-
-        enableOrDisableComponents();
-    }
-
-    private int getDefaultPortNumber() {
-        int port = DEFAULT_PORT_FTP;
-        if (_ftpsImplicitRadioButton.isSelected()) {
-            port = FtpRoutingAssertion.DEFAULT_FTPS_IMPLICIT_PORT;
-        }
-        return port;
-    }
-
-    /**
-     * Enable/disable the OK and test buttons if all settings are OK.
-     */
-    private void enableOrDisableComponents() {
-        final boolean isFtps = _ftpsExplicitRadioButton.isSelected() || _ftpsImplicitRadioButton.isSelected();
-        _verifyServerCertCheckBox.setEnabled(isFtps);
-        _userNameTextField.setEnabled(_credentialsSpecifyRadioButton.isSelected());
-        _passwordField.setEnabled(_credentialsSpecifyRadioButton.isSelected());
-        contextVariableInPassword.setEnabled(_credentialsSpecifyRadioButton.isSelected());
-        _useClientCertCheckBox.setEnabled(isFtps);
-        _clientCertsComboBox.setEnabled(_useClientCertCheckBox.isEnabled() && _useClientCertCheckBox.isSelected());
-
-
-    }
-
-    /**
-     * @return Return true iff the port number is between 1 and 65535 or references a context variable.
-     */
-    private boolean isPortValid() {
-        boolean isValid;
-        String portStr = _portNumberTextField.getText();
-        try {
-            int port = Integer.parseInt(portStr);
-            isValid = port > 0 && port < 65535;
-        } catch (NumberFormatException e) {
-            // must be using context variable
-            isValid = Syntax.getReferencedNames(portStr).length > 0;
-        }
-        return isValid;
-    }
-
-
     @Override
     public void setData(FtpRoutingAssertion assertion) {
-        messageSource.setModel( buildMessageSourceComboBoxModel(assertion) );
-        messageSource.setSelectedItem( new MessageTargetableSupport(assertion.getRequestTarget()) );
-        modelToView(assertion);
+        // protocol
+        final FtpSecurity security = assertion.getSecurity();
+
+        if (security == null || security == FtpSecurity.FTP_UNSECURED) {
+            protocolComboBox.setSelectedItem(PROTOCOL_COMBO_ITEM_FTP_UNSECURED_LABEL);
+        } else if (security == FtpSecurity.FTPS_EXPLICIT) {
+            protocolComboBox.setSelectedItem(PROTOCOL_COMBO_ITEM_FTPS_EXPLICIT_LABEL);
+        } else if (security == FtpSecurity.FTPS_IMPLICIT) {
+            protocolComboBox.setSelectedItem(PROTOCOL_COMBO_ITEM_FTPS_IMPLICIT_LABEL);
+        }
+
+        // server settings
+        verifyServerCertCheckBox.setSelected(assertion.isVerifyServerCert());
+        hostNameTextField.setText(assertion.getHostName());
+        portNumberTextField.setText(assertion.getPort());
+        timeoutTextField.setText(Integer.toString(assertion.getTimeout() / 1000));
+
+        // ftp command
+        if (assertion.getFtpMethod() == null) {
+            if (assertion.getOtherCommand()) {
+                commandComboBox.setSelectedIndex(COMMAND_COMBO_ITEM_FROM_VARIABLE_INDEX);
+                commandVariablePanel.setVariable(assertion.getFtpMethodOtherCommand());
+            } else {
+                commandComboBox.setSelectedIndex(COMBO_BOX_NULL_SELECTION_INDEX);
+                enableOrDisableCommandSettingsComponents();
+            }
+        } else {
+            final String ftpMethod = assertion.getFtpMethod().getWspName();
+            commandComboBox.setSelectedItem(ftpMethod);
+        }
+
+        // message source
+        messageSourceComboBox.setModel(buildMessageSourceComboBoxModel(assertion));
+
+        populateRequestSourceComboBox(assertion);
+
+        /*
+        messageTargetComboBox.setModel(buildMessageTargetComboBoxModel(false));
+        final MessageTargetableSupport responseTarget = new MessageTargetableSupport(assertion.getResponseTarget());
+        messageTargetComboBox.setSelectedItem(new MessageTargetableSupport(responseTarget.getTarget()));
+         */
+
+        // message target
+        messageTargetComboBox.setModel(buildMessageTargetComboBoxModel(false));
+        final MessageTargetableSupport responseTarget = new MessageTargetableSupport(assertion.getResponseTarget());
+        messageTargetComboBox.setSelectedItem(responseTarget);
+
+        // message target variable
+        if (responseTarget.getTarget() == TargetMessageType.OTHER) {
+            targetVariablePanel.setVariable(responseTarget.getOtherTargetMessageVariable());
+        } else {
+            targetVariablePanel.setVariable("");
+        }
+
+        targetVariablePanel.setAssertion(assertion, getPreviousAssertion());
+
+        // directory
+        directoryTextField.setText(assertion.getDirectory());
+
+        // auto file name
+        autoFilenameCheckBox.setSelected(assertion.getFileNameSource() == FtpFileNameSource.AUTO);
+
+        // arguments
+        argumentsTextField.setText(assertion.getArguments());
+
+        // credentials
+        if (assertion.getCredentialsSource() == null || assertion.getCredentialsSource() == FtpCredentialsSource.PASS_THRU) {
+            passThroughCredsRadioButton.doClick(0);
+        } else if (assertion.getCredentialsSource() == FtpCredentialsSource.SPECIFIED) {
+            specifyUserCredsRadioButton.doClick(0);
+            userNameTextField.setText(assertion.getUserName());
+            plaintextPasswordField.setText(assertion.getPassword());
+            plaintextPasswordField.enableInputMethods(assertion.isPasswordUsesContextVariables());
+            contextVariableInPasswordCheckBox.setSelected(assertion.isPasswordUsesContextVariables());
+        }
+
+        if(assertion.getPasswordOid() != null) {
+            storedPasswordComboBox.setSelectedSecurePassword(assertion.getPasswordOid());
+        }
+
+        supplyClientCertCheckBox.setSelected(assertion.isUseClientCert());
+        clientCertComboBox.select(assertion.getClientCertKeystoreId(), assertion.getClientCertKeyAlias());
+
+        // content type settings
+        String contentType = assertion.getDownloadedContentType();
+
+        if (contentType == null) {
+            contentTypeComboBox.setSelectedIndex(0);
+        } else {
+            contentTypeComboBox.setSelectedItem(contentType);
+            if (!contentType.equalsIgnoreCase((String) contentTypeComboBox.getSelectedItem())) {
+                ((DefaultComboBoxModel) contentTypeComboBox.getModel()).addElement(contentType);
+                contentTypeComboBox.setSelectedItem(contentType);
+            }
+        }
+
+        // response limit settings
+        responseLimitPanel.setValue(assertion.getResponseByteLimit(), Registry.getDefault().getPolicyAdmin().getXmlMaxBytes());
+
+        // WSS settings
+        RoutingDialogUtils.configSecurityHeaderRadioButtons(assertion, -1, null, secHdrButtons);
+
+        // enable/disable components
+        enableOrDisableCredentialsPanelComponents();
     }
 
     /** Copies view into model. */
     @Override
     public FtpRoutingAssertion getData(FtpRoutingAssertion assertion) {
-        final String error = validators.validate();
-        if(error != null){
+        // perform validations
+        final String error = inputValidator.validate();
+
+        if(error != null) {
             throw new ValidationException(error);
         }
-        
-        if (_ftpUnsecuredRadioButton.isSelected()) {
+
+        // security
+        if (PROTOCOL_COMBO_ITEM_FTP_UNSECURED_LABEL.equals(protocolComboBox.getSelectedItem())) {
             assertion.setSecurity(FtpSecurity.FTP_UNSECURED);
-            _verifyServerCertCheckBox.setSelected(false);
-        } else if (_ftpsExplicitRadioButton.isSelected()) {
+            verifyServerCertCheckBox.setSelected(false);
+        } else if (PROTOCOL_COMBO_ITEM_FTPS_EXPLICIT_LABEL.equals(protocolComboBox.getSelectedItem())) {
             assertion.setSecurity(FtpSecurity.FTPS_EXPLICIT);
-        } else if (_ftpsImplicitRadioButton.isSelected()) {
+        } else if (PROTOCOL_COMBO_ITEM_FTPS_IMPLICIT_LABEL.equals(protocolComboBox.getSelectedItem())) {
             assertion.setSecurity(FtpSecurity.FTPS_IMPLICIT);
         }
 
-        assertion.setRequestTarget((MessageTargetableSupport) messageSource.getSelectedItem());
+        // server settings
+        assertion.setVerifyServerCert(verifyServerCertCheckBox.isSelected());
+        assertion.setHostName(hostNameTextField.getText());
+        assertion.setPort(portNumberTextField.getText());
 
-        assertion.setVerifyServerCert(_verifyServerCertCheckBox.isSelected());
+        // timeout
+        if (timeoutTextField.getText().trim().isEmpty()) {
+            timeoutTextField.setText(Integer.toString(FtpRoutingAssertion.DEFAULT_TIMEOUT / 1000));
+        } else {
+            assertion.setTimeout(Integer.parseInt(timeoutTextField.getText()) * 1000);
+        }
 
-        assertion.setHostName(_hostNameTextField.getText());
+        // ftp command
+        if (commandVariablePanel.isEnabled()) {
+            assertion.setFtpMethod(null);
+            assertion.setOtherCommand(true);
+            assertion.setFtpMethodOtherCommand(commandVariablePanel.getVariable());
+        } else {
+            assertion.setFtpMethod((FtpMethod) FtpMethod.getEnumTranslator().stringToObject(commandComboBox.getSelectedItem().toString()));
+        }
 
-        assertion.setPort(_portNumberTextField.getText());
+        // message source
+        assertion.set_requestTarget((MessageTargetableSupport) messageSourceComboBox.getSelectedItem());
 
-        assertion.setDirectory(_directoryTextField.getText());
+        // message target
+        final MessageTargetableSupport responseTarget =
+                new MessageTargetableSupport((MessageTargetable) messageTargetComboBox.getSelectedItem());
 
-        if (_filenameAutoRadioButton.isSelected()) {
+        if (responseTarget.getTarget() == TargetMessageType.OTHER) {
+            responseTarget.setOtherTargetMessageVariable(targetVariablePanel.getVariable());
+            responseTarget.setSourceUsedByGateway(false);
+            responseTarget.setTargetModifiedByGateway(true);
+        }
+
+        assertion.setResponseTarget(responseTarget);
+
+        // directory
+        assertion.setDirectory(directoryTextField.getText());
+
+        // auto file name
+        if (autoFilenameCheckBox.isSelected()) {
             assertion.setFileNameSource(FtpFileNameSource.AUTO);
-            _filenamePatternTextField.setText("");
-        } else if (_filenamePatternRadioButton.isSelected()) {
-            assertion.setFileNameSource(FtpFileNameSource.PATTERN);
+        } else {
+            assertion.setFileNameSource(FtpFileNameSource.ARGUMENT);
         }
 
-        assertion.setFileNamePattern(_filenamePatternTextField.getText());
+        // arguments
+        assertion.setArguments(argumentsTextField.getText().trim());
 
-        if (_credentialsPassThruRadioButton.isSelected()) {
+        // credentials
+        if (passThroughCredsRadioButton.isSelected()) {
             assertion.setCredentialsSource(FtpCredentialsSource.PASS_THRU);
-            _userNameTextField.setText("");
-            _passwordField.setText("");
-        } else if (_credentialsSpecifyRadioButton.isSelected()) {
+            userNameTextField.setText("");
+            plaintextPasswordField.setText("");
+            assertion.setPasswordOid(null);
+        } else if (specifyUserCredsRadioButton.isSelected()) {
             assertion.setCredentialsSource(FtpCredentialsSource.SPECIFIED);
-        }
-        assertion.setUserName(_userNameTextField.getText());
-        assertion.setPassword(new String(_passwordField.getPassword()));
-        assertion.setPasswordUsesContextVariables(contextVariableInPassword.isSelected());
-
-        assertion.setUseClientCert(_useClientCertCheckBox.isSelected());
-        if (_useClientCertCheckBox.isSelected()) {
-            assertion.setClientCertKeystoreId(_clientCertsComboBox.getSelectedKeystoreId());
-            assertion.setClientCertKeyAlias(_clientCertsComboBox.getSelectedKeyAlias());
+            assertion.setPassword(new String(plaintextPasswordField.getPassword()));
+            assertion.setPasswordOid(storedPasswordComboBox.getSelectedSecurePassword().getOid());
         }
 
-        if (_timeoutTextField.getText().trim().isEmpty()) {
-            _timeoutTextField.setText(Integer.toString(FtpRoutingAssertion.DEFAULT_TIMEOUT / 1000));
-        }
-        assertion.setTimeout(Integer.parseInt(_timeoutTextField.getText()) * 1000);
+        assertion.setUserName(userNameTextField.getText());
+        assertion.setPasswordUsesContextVariables(contextVariableInPasswordCheckBox.isSelected());
+        assertion.setUseClientCert(supplyClientCertCheckBox.isSelected());
 
+        if (supplyClientCertCheckBox.isSelected()) {
+            assertion.setClientCertKeystoreId(clientCertComboBox.getSelectedKeystoreId());
+            assertion.setClientCertKeyAlias(clientCertComboBox.getSelectedKeyAlias());
+        } else {
+            assertion.setClientCertKeystoreId(-1);
+            assertion.setClientCertKeyAlias(null);
+        }
+
+        // content type
+        assertion.setDownloadedContentType(contentTypeComboBox.getSelectedItem().toString());
+
+        // response limit settings
+        assertion.setResponseByteLimit(responseLimitPanel.getValue());
+
+        // WSS settings
         RoutingDialogUtils.configSecurityHeaderHandling(assertion, -1, secHdrButtons);
+
         return assertion;
     }
 
@@ -435,14 +782,15 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
      */
     private void testConnection() {
         // validate for test
-        final String error = validators.validate();
+        final String error = inputValidator.validate();
+
         if(error != null){
             JOptionPane.showMessageDialog(
-                        FtpRoutingPropertiesDialog.this,
-                        error,
-                        "FTP(S) Connection Failure",
-                        JOptionPane.ERROR_MESSAGE);
-                return;
+                    FtpRoutingPropertiesDialog.this,
+                    error,
+                    "FTP(S) Connection Failure",
+                    JOptionPane.ERROR_MESSAGE);
+            return;
         }
 
         try {
@@ -506,6 +854,7 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
                     panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
                     panel.add(new JLabel("The Gateway was unable to connect to this FTP(S) server:"));
                     panel.add(new JLabel(fte.getMessage()));
+
                     if (fte.getSessionLog() != null && fte.getSessionLog().length() != 0) {
                         panel.add(Box.createVerticalStrut(10));
                         panel.add(new JLabel("Detail log of FTP(S) session:"));
@@ -517,12 +866,12 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
                         sessionLog.setFont(new Font(null, Font.PLAIN, 11));
                         panel.add(sessionLog);
                     }
-                    JOptionPane.showMessageDialog(
+
+                    JOptionPane.showMessageDialog (
                             FtpRoutingPropertiesDialog.this,
                             panel,
                             "FTP(S) Connection Failure",
                             JOptionPane.ERROR_MESSAGE);
-
                 } else {
                     throw ExceptionUtils.wrap(cause);
                 }
@@ -539,5 +888,155 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
         if (a.isPasswordUsesContextVariables())
             tmp.append(a.getPassword());
         return Syntax.getReferencedNames(tmp.toString()).length > 0;
+    }
+
+    @Override
+    protected ComboBoxModel buildMessageTargetComboBoxModel(final boolean includeDefault) {
+        final DefaultComboBoxModel comboBoxModel = new DefaultComboBoxModel();
+        if (includeDefault) comboBoxModel.addElement(null);
+        comboBoxModel.addElement(new MessageTargetableSupport(TargetMessageType.RESPONSE));
+        comboBoxModel.addElement(new MessageTargetableSupport(TargetMessageType.OTHER));
+        return comboBoxModel;
+    }
+
+    private int getDefaultPortNumber() {
+        int port = FtpRoutingAssertion.DEFAULT_FTP_PORT;
+
+        if (PROTOCOL_COMBO_ITEM_FTPS_IMPLICIT_LABEL.equals(protocolComboBox.getSelectedItem())) {
+            port = FtpRoutingAssertion.DEFAULT_FTPS_IMPLICIT_PORT;
+        }
+
+        return port;
+    }
+
+    /**
+     * @return Return true iff the port number is between 1 and 65535 or references a context variable.
+     */
+    private boolean isPortValid() {
+        boolean isValid;
+        String portStr = portNumberTextField.getText();
+        try {
+            int port = Integer.parseInt(portStr);
+            isValid = port > 0 && port < 65535;
+        } catch (NumberFormatException e) {
+            // must be using context variable
+            isValid = Syntax.getReferencedNames(portStr).length > 0;
+        }
+        return isValid;
+    }
+
+    private boolean isCommandTypeFromVariable() {
+        return commandComboBox.getSelectedIndex() == COMMAND_COMBO_ITEM_FROM_VARIABLE_INDEX;
+    }
+
+    private boolean isCommandUploadType(String command) {
+
+        FtpMethod method = (FtpMethod) FtpMethod.getEnumTranslator().stringToObject(command);
+
+        return method.equals(FtpMethod.FTP_PUT)
+                || method.equals(FtpMethod.FTP_APPE)
+                || method.equals(FtpMethod.FTP_STOU);
+    }
+
+    private FtpMethod[] getFtpMethods() {
+        return new FtpMethod[] {
+                FtpMethod.FTP_GET,
+                FtpMethod.FTP_PUT,
+                FtpMethod.FTP_DELE,
+                FtpMethod.FTP_LIST,
+                FtpMethod.FTP_ABOR,
+                FtpMethod.FTP_ACCT,
+                FtpMethod.FTP_ADAT,
+                FtpMethod.FTP_ALLO,
+                FtpMethod.FTP_APPE,
+                FtpMethod.FTP_AUTH,
+                FtpMethod.FTP_CCC,
+                FtpMethod.FTP_CDUP,
+                FtpMethod.FTP_CONF,
+                FtpMethod.FTP_CWD,
+                FtpMethod.FTP_ENC,
+                FtpMethod.FTP_EPRT,
+                FtpMethod.FTP_EPSV,
+                FtpMethod.FTP_FEAT,
+                FtpMethod.FTP_HELP,
+                FtpMethod.FTP_LANG,
+                FtpMethod.FTP_MDTM,
+                FtpMethod.FTP_MIC,
+                FtpMethod.FTP_MKD,
+                FtpMethod.FTP_MLSD,
+                FtpMethod.FTP_MLST,
+                FtpMethod.FTP_MODE,
+                FtpMethod.FTP_NLST,
+                FtpMethod.FTP_NOOP,
+                FtpMethod.FTP_OPTS,
+                FtpMethod.FTP_PASS,
+                FtpMethod.FTP_PASV,
+                FtpMethod.FTP_PBSZ,
+                FtpMethod.FTP_PORT,
+                FtpMethod.FTP_PROT,
+                FtpMethod.FTP_PWD,
+                FtpMethod.FTP_QUIT,
+                FtpMethod.FTP_REIN,
+                FtpMethod.FTP_RMD,
+                FtpMethod.FTP_RNFR,
+                FtpMethod.FTP_RNTO,
+                FtpMethod.FTP_SITE,
+                FtpMethod.FTP_SIZE,
+                FtpMethod.FTP_STAT,
+                FtpMethod.FTP_STOU,
+                FtpMethod.FTP_STRU,
+                FtpMethod.FTP_SYST,
+                FtpMethod.FTP_TYPE,
+                FtpMethod.FTP_USER  };
+    }
+
+    private static String getResourceString(String key) {
+        final String value = resources.getString(key);
+
+        if(value.endsWith(":")) {
+            return value.substring(0, value.lastIndexOf(":"));
+        }
+
+        return value;
+    }
+
+    private class CheckAndComboPairListener implements PropertyChangeListener, ItemListener {
+        final JCheckBox checkBox;
+        final JComboBox comboBox;
+
+        public CheckAndComboPairListener(JCheckBox checkBox, JComboBox comboBox) {
+            this.checkBox = checkBox;
+            this.comboBox = comboBox;
+        }
+        @Override
+        public void propertyChange(PropertyChangeEvent e) {
+            if(!checkBox.isEnabled()) {
+                // remove ItemListener temporarily to avoid duplicate handling of Combo Box disabling
+                checkBox.removeItemListener(this);
+                checkBox.setSelected(false);
+                checkBox.addItemListener(this);
+
+                disableComboBox();
+            }
+        }
+
+        @Override
+        public void itemStateChanged(ItemEvent e) {
+            comboBox.setEnabled(checkBox.isEnabled()
+                    && checkBox.isSelected());
+
+            if(!comboBox.isEnabled()) {
+                deselectComboBoxItem();
+            }
+        }
+
+        private void disableComboBox() {
+            comboBox.setEnabled(false);
+            deselectComboBoxItem();
+        }
+
+        private void deselectComboBoxItem() {
+            comboBox.setSelectedIndex(COMBO_BOX_NULL_SELECTION_INDEX);
+        }
     }
 }

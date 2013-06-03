@@ -122,7 +122,8 @@ public class XpathUtil {
             }
         }
 
-        final Set<String> ret = new HashSet<String>();
+        final Set<String> ret = new HashSet<>();
+
         XPathHandler handler = new XPathHandlerAdapter() {
             @Override
             public void startFunction(String prefix, String localName) throws SAXPathException {
@@ -173,7 +174,7 @@ public class XpathUtil {
      * @return a list of all unprefixed XPath variable references found in the expression.  May be empty but never null.
      */
     public static List<String> getUnprefixedVariablesUsedInXpath(@NotNull String expr, @NotNull XpathVersion xpathVersion) {
-        final List<String> seenvars = new ArrayList<String>();
+        final List<String> seenvars = new ArrayList<>();
 
         try {
             if (XPATH_2_0.equals(xpathVersion)) {
@@ -191,10 +192,7 @@ public class XpathUtil {
                 reader.setXPathHandler(handler);
                 reader.parse(expr);
             }
-        } catch (SAXPathException e) {
-            logger.log(Level.FINE, "Unable to parse XPath expression to determine variables used: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-            /* FALLTHROUGH and leave seenvars empty */
-        } catch (InvalidXpathException e) {
+        } catch (SAXPathException | InvalidXpathException e) {
             logger.log(Level.FINE, "Unable to parse XPath expression to determine variables used: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             /* FALLTHROUGH and leave seenvars empty */
         }
@@ -244,7 +242,7 @@ public class XpathUtil {
      * @throws javax.xml.soap.SOAPException on SOAP processing error
      */
     public static Map<String,String> getNamespaces(SOAPMessage sm) throws SOAPException {
-        Map<String, String> namespaces = new HashMap<String, String>();
+        Map<String, String> namespaces = new HashMap<>();
         SOAPPart sp = sm.getSOAPPart();
         SOAPEnvelope env = sp.getEnvelope();
         SOAPBody body = env.getBody();
@@ -309,9 +307,10 @@ public class XpathUtil {
                                          final Set<String> removePrefixes ) {
         if ( ConfigFactory.getBooleanProperty( "com.l7tech.xml.xpath.enableNamespaceCleanup", true ) ) {
             try {
-                final Set<String> usedPrefixes = new HashSet<String>();
+                final Set<String> usedPrefixes = new HashSet<>();
                 final XPathReader reader = new XPathReader();
-                reader.setXPathHandler( new JaxenHandler() {
+
+                reader.setXPathHandler(new JaxenHandler() {
                     @Override
                     public void variableReference( final String prefix, final String variableName ) throws JaxenException {
                         usedPrefixes.add( prefix );
@@ -329,9 +328,10 @@ public class XpathUtil {
                         usedPrefixes.add( prefix );
                         super.startNameStep( axis, prefix, localName );
                     }
-                } );
+                });
+
                 reader.parse( expression );
-                Set<String> toRemove = new HashSet<String>( removePrefixes );
+                Set<String> toRemove = new HashSet<>( removePrefixes );
                 toRemove.removeAll( usedPrefixes );
                 if ( !toRemove.isEmpty() ) {
                     namespaces.keySet().removeAll( toRemove );
@@ -361,9 +361,7 @@ public class XpathUtil {
                     new XpathExpression(
                             xpath,
                             namespaces).compile());
-        } catch (XPathExpressionException e) {
-            throw new RuntimeException("Unexpected error with xpath expression: " + e.getMessage(), e);
-        } catch (InvalidXpathException e) {
+        } catch (XPathExpressionException | InvalidXpathException e) {
             throw new RuntimeException("Unexpected error with xpath expression: " + e.getMessage(), e);
         }
 
@@ -399,7 +397,7 @@ public class XpathUtil {
         if (list == null)
             return Collections.emptyList();
 
-        final List<Element> resultList = new ArrayList<Element>();
+        final List<Element> resultList = new ArrayList<>();
         for (Object obj : list) {
             if ( obj instanceof org.w3c.dom.Node ) {  // fix for Bug #984
                 org.w3c.dom.Node node = (org.w3c.dom.Node) obj;
@@ -526,7 +524,7 @@ public class XpathUtil {
             return;
         }
 
-        final Set<String> invalidPrefixes = new LinkedHashSet<String>();
+        final Set<String> invalidPrefixes = new LinkedHashSet<>();
 
         final XPathHandler handler = new XPathHandlerAdapter() {
             @Override
@@ -596,8 +594,8 @@ public class XpathUtil {
     @NotNull
     public static List<Element> findElements(@NotNull final Element elementToSearch,
                                              @NotNull final String xpath,
-                                             @NotNull final Map<String, String> namespaceMap) {
-        final List<Element> toReturn = new ArrayList<Element>();
+                                             @Nullable final Map<String, String> namespaceMap) {
+        final List<Element> toReturn = new ArrayList<>();
 
         final DomElementCursor includeCursor = new DomElementCursor(elementToSearch, false);
         final XpathResult result = getXpathResultQuietly(includeCursor, namespaceMap, xpath);

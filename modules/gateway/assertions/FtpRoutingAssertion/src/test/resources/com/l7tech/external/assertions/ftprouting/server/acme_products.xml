@@ -1,0 +1,6 @@
+<products xmlns="http://warehouse.acme.com/ws" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <product name="hammer" xlink:href="./54112"/>
+    <product name="drill" xlink:href="./54113"/>
+    <product name="circular saw" xlink:href="./54114"/>
+    <product name="jigsaw" xlink:href="./54115"/>
+</products>

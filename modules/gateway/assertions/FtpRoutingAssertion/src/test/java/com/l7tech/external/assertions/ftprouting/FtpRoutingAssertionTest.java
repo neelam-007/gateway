@@ -11,6 +11,7 @@ import org.junit.Test;
 
 /**
  * @author jbufu
+ * @author jwilliams
  */
 public class FtpRoutingAssertionTest {
 
@@ -43,9 +44,8 @@ public class FtpRoutingAssertionTest {
         assertEquals("SSL", assertion.getClientCertKeyAlias());
         assertEquals(FtpCredentialsSource.SPECIFIED, assertion.getCredentialsSource());
         assertEquals("/somepath", assertion.getDirectory());
-        assertEquals("ftp_aa", assertion.getFileNamePattern());
-        assertEquals("ftp_aa", assertion.getFileNamePattern());
-        assertEquals(FtpFileNameSource.PATTERN, assertion.getFileNameSource());
+        assertEquals("ftp_aa", assertion.getArguments());
+        assertEquals(FtpFileNameSource.ARGUMENT, assertion.getFileNameSource());
         assertEquals("somehost", assertion.getHostName());
         assertEquals("990", assertion.getPort());
         assertEquals("someuser", assertion.getUserName());
