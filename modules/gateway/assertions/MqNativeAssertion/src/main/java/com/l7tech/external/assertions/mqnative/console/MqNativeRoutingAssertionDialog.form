@@ -335,7 +335,7 @@
                               <text value="Pass through"/>
                             </properties>
                           </component>
-                          <component id="37615" class="javax.swing.JCheckBox" binding="requestCopyHeaderToPropertyCheckBox">
+                          <component id="37615" class="javax.swing.JCheckBox" binding="requestCopyPropertyToHeaderCheckBox">
                             <constraints>
                               <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                             </constraints>
@@ -372,7 +372,7 @@
                               <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                             </constraints>
                           </hspacer>
-                          <component id="b7586" class="javax.swing.JCheckBox" binding="requestCopyPropertyToHeaderCheckBox">
+                          <component id="b7586" class="javax.swing.JCheckBox" binding="requestCopyHeaderToPropertyCheckBox">
                             <constraints>
                               <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                             </constraints>
@@ -577,7 +577,7 @@
                           <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                         </constraints>
                       </hspacer>
-                      <component id="55fba" class="javax.swing.JCheckBox" binding="responseCopyHeaderToPropertyCheckBox">
+                      <component id="55fba" class="javax.swing.JCheckBox" binding="responseCopyPropertyToHeaderCheckBox">
                         <constraints>
                           <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                         </constraints>
@@ -609,7 +609,7 @@
                           <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                         </constraints>
                       </hspacer>
-                      <component id="f8619" class="javax.swing.JCheckBox" binding="responseCopyPropertyToHeaderCheckBox">
+                      <component id="f8619" class="javax.swing.JCheckBox" binding="responseCopyHeaderToPropertyCheckBox">
                         <constraints>
                           <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                         </constraints>

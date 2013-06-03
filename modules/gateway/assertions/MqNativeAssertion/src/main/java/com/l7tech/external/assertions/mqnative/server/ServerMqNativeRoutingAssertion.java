@@ -339,6 +339,7 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
                             logger.fine("New correlationId will be generated");
                         pmo.options |= MQPMO_NEW_CORREL_ID;
                     }
+                    //pmo.options |= MQPMO_SET_ALL_CONTEXT;
                     mqResponseMessage = writeMessageToQueue(targetQueue, replyQueue, pmo, readTimeout);
 
                     // no write response and no write reply required
@@ -395,7 +396,7 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
                 MqNativeKnob mqNativeKnob = gatewayResponseMessage.getKnob(MqNativeKnob.class);
                 if (mqNativeKnob == null) {
                     mqNativeKnob = buildMqNativeKnob(new MqMessageProxy(responseMessage));
-                    gatewayResponseMessage.attachKnob(mqNativeKnob, MqNativeKnob.class);
+                    gatewayResponseMessage.attachKnob(mqNativeKnob, true,  MqNativeKnob.class);
                 } else {
                     mqNativeKnob.reset(new MqMessageProxy(responseMessage));
                 }
@@ -685,7 +686,7 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
         MqNativeKnob mqNativeRequestKnob = gatewayRequestMessage.getKnob(MqNativeKnob.class);
         if (mqNativeRequestKnob == null) {
             mqNativeRequestKnob = buildMqNativeKnob(new MqMessageProxy(new MQMessage()));
-            gatewayRequestMessage.attachKnob(mqNativeRequestKnob, MqNativeKnob.class);
+            gatewayRequestMessage.attachKnob(mqNativeRequestKnob, true, MqNativeKnob.class);
         }
 
         // Decorate the message
