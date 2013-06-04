@@ -1,5 +1,6 @@
 package com.l7tech.console.security.rbac;
 
+import com.l7tech.console.panels.FilterPanel;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.SecurityZoneUtil;
 import com.l7tech.gateway.common.resources.HttpConfiguration;
@@ -17,7 +18,6 @@ import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyAlias;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
-import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
@@ -25,8 +25,6 @@ import javax.swing.table.TableRowSorter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
 import java.util.*;
 import java.util.List;
 import java.util.logging.Level;
@@ -39,15 +37,12 @@ import static com.l7tech.gui.util.TableUtil.column;
  */
 public class SecurityZoneEntitiesPanel extends JPanel {
     private static final Logger logger = Logger.getLogger(SecurityZoneEntitiesPanel.class.getName());
-    private static final String CASE_INSENSITIVE_FLAG = "(?i)";
     private JPanel contentPanel;
     private JTable entitiesTable;
     private JScrollPane scrollPane;
     private JComboBox entityTypeComboBox;
-    private JTextField filterTextField;
-    private JButton filterButton;
-    private JButton clearButton;
     private JLabel countLabel;
+    private FilterPanel filterPanel;
     private SimpleTableModel<Entity> entitiesTableModel;
     private SecurityZone securityZone;
 
@@ -69,9 +64,7 @@ public class SecurityZoneEntitiesPanel extends JPanel {
     private void enableDisable() {
         entityTypeComboBox.setEnabled(securityZone != null);
         entitiesTable.setEnabled(securityZone != null);
-        filterTextField.setEnabled(securityZone != null);
-        filterButton.setEnabled(securityZone != null && filterTextField.getText().length() > 0);
-        clearButton.setEnabled(securityZone != null && filterTextField.getText().length() > 0);
+        filterPanel.allowFiltering(securityZone != null);
         countLabel.setVisible(securityZone != null);
     }
 
@@ -85,36 +78,20 @@ public class SecurityZoneEntitiesPanel extends JPanel {
     }
 
     private void initFiltering() {
-        filterButton.addActionListener(new ActionListener() {
+        filterPanel.registerFilterCallback(new Runnable() {
             @Override
-            public void actionPerformed(final ActionEvent e) {
-                ((TableRowSorter) entitiesTable.getRowSorter()).setRowFilter(RowFilter.regexFilter(CASE_INSENSITIVE_FLAG + filterTextField.getText().trim(), 0));
+            public void run() {
                 loadCount();
             }
         });
-        clearButton.addActionListener(new ActionListener() {
+        filterPanel.registerClearCallback(new Runnable() {
             @Override
-            public void actionPerformed(final ActionEvent e) {
-                filterTextField.setText(StringUtils.EMPTY);
-                ((TableRowSorter) entitiesTable.getRowSorter()).setRowFilter(null);
+            public void run() {
                 enableDisable();
                 loadCount();
             }
         });
-        filterTextField.addKeyListener(new KeyListener() {
-            @Override
-            public void keyTyped(final KeyEvent e) {
-            }
-
-            @Override
-            public void keyPressed(final KeyEvent e) {
-            }
-
-            @Override
-            public void keyReleased(final KeyEvent e) {
-                enableDisable();
-            }
-        });
+        filterPanel.attachRowSorter(((TableRowSorter) entitiesTable.getRowSorter()), new int[]{0});
     }
 
     private void loadCount() {

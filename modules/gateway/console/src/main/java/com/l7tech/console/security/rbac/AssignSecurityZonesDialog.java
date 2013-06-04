@@ -1,10 +1,12 @@
 package com.l7tech.console.security.rbac;
 
+import com.l7tech.console.panels.FilterPanel;
 import com.l7tech.console.util.Registry;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.TableUtil;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.*;
+import org.apache.commons.collections.ComparatorUtils;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -23,6 +25,9 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 
+/**
+ * Dialog for bulk assigning entities to security zones.
+ */
 public class AssignSecurityZonesDialog extends JDialog {
     private JPanel contentPanel;
     private JComboBox typeComboBox;
@@ -34,23 +39,51 @@ public class AssignSecurityZonesDialog extends JDialog {
     private JComboBox zoneComboBox;
     private JButton setBtn;
     private JButton closeBtn;
-    private JPanel filterPanel;
     private JLabel filterLabel;
     private JLabel selectedLabel;
-    private EntitiesTableModel dataModel;
+    private FilterPanel filterPanel;
+    private EntitiesTableModel dataModel = new EntitiesTableModel(new String[]{"", "Name", "Current Zone"}, new Object[][]{});
 
     public AssignSecurityZonesDialog(@NotNull final Window owner, @NotNull final Collection<EntityType> entityTypes, @NotNull final Collection<SecurityZone> securityZones) {
         super(owner);
         setContentPane(contentPanel);
-        Utilities.centerOnParentWindow(owner);
         initBtns();
         initComboBoxes(entityTypes, securityZones);
         setPanelTitle();
         initTable();
         loadTable();
+        loadCount();
+        initFiltering();
     }
 
-    private void initComboBoxes(Collection<EntityType> entityTypes, Collection<SecurityZone> securityZones) {
+    private void initFiltering() {
+        filterPanel.attachRowSorter(((TableRowSorter) entitiesTable.getRowSorter()), new int[]{1});
+        filterPanel.registerFilterCallback(new Runnable() {
+            @Override
+            public void run() {
+                loadCount();
+            }
+        });
+        filterPanel.registerClearCallback(new Runnable() {
+            @Override
+            public void run() {
+                loadCount();
+            }
+        });
+    }
+
+    private void loadCount() {
+        final EntityType selectedEntityType = getSelectedEntityType();
+        if (selectedEntityType != null) {
+            final int showCount = entitiesTable.getRowCount();
+            final int total = entitiesTable.getModel().getRowCount();
+            filterLabel.setText("showing " + showCount + " of " + total + " " + selectedEntityType.getPluralName().toLowerCase());
+        } else {
+            filterLabel.setText(StringUtils.EMPTY);
+        }
+    }
+
+    private void initComboBoxes(final Collection<EntityType> entityTypes, final Collection<SecurityZone> securityZones) {
         typeComboBox.setModel((new DefaultComboBoxModel<EntityType>(entityTypes.toArray(new EntityType[entityTypes.size()]))));
         typeComboBox.setRenderer(new DefaultListCellRenderer() {
             @Override
@@ -66,8 +99,10 @@ public class AssignSecurityZonesDialog extends JDialog {
             public void actionPerformed(final ActionEvent e) {
                 setPanelTitle();
                 loadTable();
+                loadCount();
             }
         });
+        typeComboBox.setSelectedItem(null);
         zoneComboBox.setModel(new DefaultComboBoxModel<SecurityZone>(securityZones.toArray(new SecurityZone[securityZones.size()])));
         zoneComboBox.setRenderer(new DefaultListCellRenderer() {
             @Override
@@ -131,7 +166,6 @@ public class AssignSecurityZonesDialog extends JDialog {
     }
 
     private void initTable() {
-        dataModel = new EntitiesTableModel(new String[]{"", "Name", "Current Zone"}, new Object[][]{});
         entitiesTable.setModel(dataModel);
         entitiesTable.getColumnModel().getColumn(1).setCellRenderer(new DefaultTableCellRenderer() {
             @Override
@@ -141,14 +175,6 @@ public class AssignSecurityZonesDialog extends JDialog {
         });
         TableUtil.adjustColumnWidth(entitiesTable, 0, 30);
         TableUtil.adjustColumnWidth(entitiesTable, 2, 60);
-        final TableRowSorter<EntitiesTableModel> sorter = new TableRowSorter<>(dataModel);
-        sorter.setComparator(1, new Comparator<EntityHeader>() {
-            @Override
-            public int compare(EntityHeader o1, EntityHeader o2) {
-                return o1.getName().compareTo(o2.getName());
-            }
-        });
-        entitiesTable.setRowSorter(sorter);
         dataModel.addTableModelListener(new TableModelListener() {
             @Override
             public void tableChanged(final TableModelEvent e) {
@@ -161,6 +187,14 @@ public class AssignSecurityZonesDialog extends JDialog {
                 }
             }
         });
+        final Comparator<EntityHeader> headerComparator = new Comparator<EntityHeader>() {
+            @Override
+            public int compare(final EntityHeader o1, final EntityHeader o2) {
+                return o1.getName().compareToIgnoreCase(o2.getName());
+            }
+        };
+        Utilities.setRowSorter(entitiesTable, dataModel, new int[]{0, 1, 2}, new boolean[]{true, true, true},
+                new Comparator[]{null, ComparatorUtils.nullLowComparator(headerComparator), null});
     }
 
     @Nullable
