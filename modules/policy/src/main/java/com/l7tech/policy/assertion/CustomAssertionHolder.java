@@ -9,6 +9,8 @@ package com.l7tech.policy.assertion;
 import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.ext.CustomAssertion;
 import static com.l7tech.policy.assertion.AssertionMetadata.*;
+
+import com.l7tech.policy.assertion.ext.validator.CustomPolicyValidator;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.common.io.ClassLoaderObjectInputStream;
 import com.l7tech.util.ResourceUtils;
@@ -177,6 +179,10 @@ public class CustomAssertionHolder extends Assertion implements UsesVariables, S
             }
         });
         meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/custom.gif");
+
+        if (customAssertion instanceof CustomPolicyValidator) {
+            meta.put(POLICY_VALIDATOR_CLASSNAME, "com.l7tech.console.util.CustomAssertionHolderValidator");
+        }
 
         return meta;
     }
