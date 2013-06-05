@@ -49,7 +49,7 @@ public class EmbeddedDbSchemaUpdaterTest {
     public void ensureCurrentSchema() {
         assertEquals("1.0.0", getDbVersion());
         updater.ensureCurrentSchema();
-        assertEquals("3.0.1", getDbVersion());
+        assertEquals("3.2.0", getDbVersion());
     }
 
     @Test

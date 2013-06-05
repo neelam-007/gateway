@@ -82,7 +82,7 @@ public class DbUpgradeUtilTest {
         assertEquals("x", upgradeInfo.left);
         assertEquals("y", upgradeInfo.middle);
 
-        final Triple<String, String, String> upgradeInfo1 = DbUpgradeUtil.isUpgradeScript("upgrade_x-y_mayFail.sql");
+        final Triple<String, String, String> upgradeInfo1 = DbUpgradeUtil.isUpgradeScript("upgrade_x-y_try.sql");
         assertNotNull(upgradeInfo1);
         assertEquals("x", upgradeInfo1.left);
         assertEquals("y", upgradeInfo1.middle);
