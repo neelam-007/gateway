@@ -411,7 +411,13 @@ public class MqNativeUtils {
                 || reasonCode == MQRC_Q_MGR_NAME_ERROR
                 || reasonCode == MQRC_Q_MGR_NOT_AVAILABLE
                 || reasonCode == MQRC_UNKNOWN_OBJECT_NAME
-                || reasonCode == MQRC_JSSE_ERROR ) {
+                || reasonCode == MQRC_JSSE_ERROR
+                || reasonCode == MQRC_EXPIRY_ERROR
+                || reasonCode == MQRC_FEEDBACK_ERROR
+                || reasonCode == MQRC_PERSISTENCE_ERROR
+                || reasonCode == MQRC_PRIORITY_EXCEEDS_MAXIMUM
+                || reasonCode == MQRC_PRIORITY_ERROR
+                || reasonCode == MQRC_OFFSET_ERROR) {
             return ExceptionUtils.getDebugException(e);
         }
         return e;
