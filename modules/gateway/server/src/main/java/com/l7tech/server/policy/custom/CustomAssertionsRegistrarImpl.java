@@ -453,10 +453,7 @@ public class CustomAssertionsRegistrarImpl
             CustomAssertionDescriptor eh = new CustomAssertionDescriptor(baseKey, a, eClass, sa, category, optionalDescription, optionalUiAllowedPackages, optionalUiAllowedResources);
             CustomAssertions.register(eh);
 
-            if (!StringUtils.isEmpty(extensionInterfaceClassName)) {
-                CustomExtensionInterfaceBinding ceiBinding = (CustomExtensionInterfaceBinding) Class.forName(extensionInterfaceClassName, true, classLoader).newInstance();
-                extensionInterfaceManager.registerInterface(ceiBinding.getInterfaceClass(), null, ceiBinding.getImplementationObject());
-            }
+            registerCustomExtensionInterface(extensionInterfaceClassName, classLoader);
 
             logger.info("Registered custom assertion " + eh);
         } catch (ClassNotFoundException e) {
@@ -519,5 +516,12 @@ public class CustomAssertionsRegistrarImpl
         }
 
         return isCustomAssertionRes;
+    }
+
+    protected void registerCustomExtensionInterface(String extensionInterfaceClassName, ClassLoader classLoader) throws ClassNotFoundException, IllegalAccessException, InstantiationException {
+        if (!StringUtils.isEmpty(extensionInterfaceClassName)) {
+            CustomExtensionInterfaceBinding ceiBinding = (CustomExtensionInterfaceBinding) Class.forName(extensionInterfaceClassName, true, classLoader).newInstance();
+            extensionInterfaceManager.registerInterface(ceiBinding.getInterfaceClass(), null, ceiBinding.getImplementationObject());
+        }
     }
 }
