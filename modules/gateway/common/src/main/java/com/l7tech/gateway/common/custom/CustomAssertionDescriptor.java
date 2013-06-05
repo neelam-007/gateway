@@ -5,6 +5,9 @@ import com.l7tech.policy.assertion.ext.CustomAssertion;
 import com.l7tech.policy.assertion.ext.ServiceInvocation;
 import com.l7tech.policy.assertion.ext.CustomAssertionUI;
 
+import java.util.HashSet;
+import java.util.Set;
+
 /**
  * The class <code>CustomAssertionDescriptor</code> contains the
  * runtime information that represent a custom assertion.
@@ -15,7 +18,6 @@ import com.l7tech.policy.assertion.ext.CustomAssertionUI;
  * <li> the optional client side <code>ClientAssertion</code>
  * <li> an optional UI management side <code>CustomAssertionUI</code>
  * <li> the assertion <code>Category</code>
- * <li> the optional <code>SecurityManager</code> that the assertion runs under
  * </ul>
  *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
@@ -25,21 +27,23 @@ public class CustomAssertionDescriptor {
     private final Class serverAssertion;
     private final String name;
     private final String description;
+    private final String[] uiAllowedPackages;
+    private final Set<String> uiAllowedResources;
     private final Category category;
-    private final SecurityManager securityManager;
     private final Class uiClass;
 
     /**
      * Create the new extensibility holder instance with the assertion, server
      * assertion, and the client (Bridge) asseriton class.
      *
-     * @param name                 the assertion name
-     * @param assertionClass       the assertion class
-     * @param uiClass              the UI class, must be implementation of <code>CustomAssertionUI</code>
-     * @param serverAssertionClass the server side assertion class
-     * @param cat                  the assertion category
-     * @param optionalDescription  the description (may be null)
-     * @param securityManager      the SecurityManager (may be null)
+     * @param name                       the assertion name
+     * @param assertionClass             the assertion class
+     * @param uiClass                    the UI class, must be implementation of <code>CustomAssertionUI</code>
+     * @param serverAssertionClass       the server side assertion class
+     * @param cat                        the assertion category
+     * @param optionalDescription        the description (may be null)
+     * @param optionalUiAllowedPackages  the allowed packages for use by the SSM (may be null)
+     * @param optionalUiAllowedResources the allowed resources for use by the SSM (may be null)
      */
     public CustomAssertionDescriptor(final String name,
                                      final Class assertionClass,
@@ -47,12 +51,12 @@ public class CustomAssertionDescriptor {
                                      final Class serverAssertionClass,
                                      final Category cat,
                                      final String optionalDescription,
-                                     final SecurityManager securityManager) {
+                                     final String optionalUiAllowedPackages,
+                                     final String optionalUiAllowedResources) {
         this.name = name;
         this.description = optionalDescription;
         this.assertion = assertionClass;
         this.category = cat;
-        this.securityManager = securityManager;
         if (!CustomAssertion.class.isAssignableFrom(assertionClass)) {
             throw new IllegalArgumentException("Assertion " + assertionClass);
         }
@@ -67,6 +71,23 @@ public class CustomAssertionDescriptor {
         if (uiClass != null && !CustomAssertionUI.class.isAssignableFrom(uiClass)) {
             throw new IllegalArgumentException("Editor assertion " + uiClass);
         }
+
+        if (optionalUiAllowedPackages != null) {
+            this.uiAllowedPackages = optionalUiAllowedPackages.split(",");
+            for (int ix = 0; ix < uiAllowedPackages.length; ix++) {
+                this.uiAllowedPackages[ix] = this.uiAllowedPackages[ix].replace('.', '/').trim();
+            }
+        } else {
+            this.uiAllowedPackages = new String[0];
+        }
+
+        this.uiAllowedResources = new HashSet<String>();
+        if (optionalUiAllowedResources != null) {
+            String[] split = optionalUiAllowedResources.split(",");
+            for (int ix = 0; ix < split.length; ix++) {
+                this.uiAllowedResources.add(split[ix].trim());
+            }
+        }
     }
 
     /**
@@ -78,6 +99,14 @@ public class CustomAssertionDescriptor {
 
     public String getDescription() {
         return description;
+    }
+
+    public String[] getUiAllowedPackages() {
+        return uiAllowedPackages;
+    }
+
+    public Set<String> getUiAllowedResources() {
+        return uiAllowedResources;
     }
 
     /**
@@ -92,13 +121,6 @@ public class CustomAssertionDescriptor {
      */
     public Class getServerAssertion() {
         return serverAssertion;
-    }
-
-    /**
-     * @return the <code>SecurityManager</code> or <b>null</b> if none specified
-     */
-    public SecurityManager getSecurityManager() {
-        return securityManager;
     }
 
     /**

@@ -402,9 +402,10 @@ public class CustomAssertionsRegistrarImpl
         String serverClass = null;
         String assertionClass = null;
         String editorClass = null;
-        String securityManagerClass = null;
         String extensionInterfaceClassName = null;
         String optionalDescription = null;
+        String optionalUiAllowedPackages = null;
+        String optionalUiAllowedResources = null;
         Category category = Category.UNFILLED;
 
         assertionClass = (String)properties.get(baseKey + ".class");
@@ -416,8 +417,6 @@ public class CustomAssertionsRegistrarImpl
                     serverClass = (String) properties.get(key);
                 } else if (key.endsWith(".ui")) {
                     editorClass = (String) properties.get(key);
-                } else if (key.endsWith(".security.manager")) {
-                    securityManagerClass = (String) properties.get(key);
                 } else if (key.endsWith(".extension.interface")) {
                     extensionInterfaceClassName = (String) properties.get(key);
                 } else if (key.endsWith(".category")) {
@@ -427,6 +426,10 @@ public class CustomAssertionsRegistrarImpl
                     }
                 } else if (key.endsWith(".description")) {
                     optionalDescription = (String) properties.get(key);
+                } else if (key.endsWith(".ui.allowed.packages")) {
+                    optionalUiAllowedPackages = (String) properties.get(key);
+                } else if (key.endsWith(".ui.allowed.resources")) {
+                    optionalUiAllowedResources = (String) properties.get(key);
                 }
             }
         }
@@ -447,11 +450,7 @@ public class CustomAssertionsRegistrarImpl
             }
 
             Class sa = Class.forName(serverClass, true, classLoader);
-            SecurityManager sm = null;
-            if (securityManagerClass != null) {
-                sm = (SecurityManager)Class.forName(securityManagerClass, true, classLoader).newInstance();
-            }
-            CustomAssertionDescriptor eh = new CustomAssertionDescriptor(baseKey, a, eClass, sa, category, optionalDescription, sm);
+            CustomAssertionDescriptor eh = new CustomAssertionDescriptor(baseKey, a, eClass, sa, category, optionalDescription, optionalUiAllowedPackages, optionalUiAllowedResources);
             CustomAssertions.register(eh);
 
             if (!StringUtils.isEmpty(extensionInterfaceClassName)) {
@@ -495,6 +494,25 @@ public class CustomAssertionsRegistrarImpl
                 break;
             }
             if (uiClass != null && resourcePath.startsWith(uiClass.getPackage().getName().replace('.', '/'))) {
+                isCustomAssertionRes = true;
+                break;
+            }
+
+            // check if the resourcePath is in the UI allowed package list.
+            String[] uiAllowedPackages = customAssertionDescriptor.getUiAllowedPackages();
+            for (String currentUiAllowedPackage : uiAllowedPackages) {
+                if (resourcePath.startsWith(currentUiAllowedPackage)) {
+                    isCustomAssertionRes = true;
+                    break;
+                }
+            }
+            if (isCustomAssertionRes) {
+                break;
+            }
+
+            // check if the resourcePath is in the UI allowed resources list.
+            Set<String> uiAllowedResources = customAssertionDescriptor.getUiAllowedResources();
+            if (uiAllowedResources.contains(resourcePath)) {
                 isCustomAssertionRes = true;
                 break;
             }

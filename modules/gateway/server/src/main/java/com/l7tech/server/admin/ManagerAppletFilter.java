@@ -222,6 +222,10 @@ public class ManagerAppletFilter implements Filter {
             if (handleCustomAssertionClassRequest(hreq, hresp, auditor))
                 return;
 
+            if (handleCustomAssertionResourceRequest(hreq, hresp)) {
+                return;
+            }
+
             auditor.logAndAudit(ServiceMessages.APPLET_AUTH_FILTER_PASSED);
             final IOException[] ioeHolder = new IOException[1];
             final ServletException[] seHolder = new ServletException[1];
@@ -483,6 +487,42 @@ public class ManagerAppletFilter implements Filter {
                 if (data != null) {
                     handled = true;
                     auditor.logAndAudit(ServiceMessages.APPLET_AUTH_CLASS_DOWNLOAD, className);
+                    sendClass(hresp, data);
+                }
+            }
+        }
+
+        return handled;
+    }
+
+    /**
+     * Handle request for custom assertion resources.
+     *
+     * <p>The user MUST be authenticated before calling this method.</p>
+     *
+     * @param hreq  the HttpServletRequest
+     * @param hresp the HttpServletResponse
+     * @return true if the request has been handled (so no further action should be taken)
+     * @throws IOException if there is a problem loading or transmitting the class
+     */
+    private boolean handleCustomAssertionResourceRequest (final HttpServletRequest hreq,
+                                                          final HttpServletResponse hresp) throws IOException {
+        boolean handled = false;
+
+        String filePath = hreq.getRequestURI();
+        String contextPath = hreq.getContextPath();
+
+        if (filePath != null && contextPath != null) {
+            String resourceName = filePath.substring(contextPath.length());
+            if (filePath.startsWith(contextPath) && !resourceName.endsWith(".class")) {
+                if (resourceName.startsWith(DEFAULT_CODEBASE_PREFIX)) {
+                    // Remove the codebase prefix
+                    //
+                    resourceName = resourceName.substring(DEFAULT_CODEBASE_PREFIX.length(), resourceName.length());
+                }
+                byte[] data = customAssertionsRegistrar.getAssertionResourceBytes(resourceName);
+                if (data != null) {
+                    handled = true;
                     sendClass(hresp, data);
                 }
             }

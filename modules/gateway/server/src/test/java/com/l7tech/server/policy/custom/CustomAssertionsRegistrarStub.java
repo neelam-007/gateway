@@ -33,7 +33,7 @@ public class CustomAssertionsRegistrarStub implements CustomAssertionsRegistrar 
           new CustomAssertionDescriptor("Test.Assertion",
             TestAssertionProperties.class,
             null,
-            TestServiceInvocation.class, Category.ACCESS_CONTROL, "", null);
+            TestServiceInvocation.class, Category.ACCESS_CONTROL, "", "", "");
         CustomAssertions.register(eh);
     }
 
