@@ -3,10 +3,7 @@ package com.l7tech.server;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.identity.User;
-import com.l7tech.objectmodel.Entity;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.objectmodel.*;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.server.security.rbac.RbacServices;
@@ -41,7 +38,7 @@ public class SecuredEntityCrudTest {
     @Mock
     private ZoneUpdateSecurityChecker zoneUpdateSecurityChecker;
     private List<Long> oids;
-    private List<Entity> entities;
+    private List<ZoneableEntityHeader> entities;
 
     @Before
     public void setup() {
@@ -52,19 +49,19 @@ public class SecuredEntityCrudTest {
 
     @Test
     public void findByEntityTypeAndSecurityZoneOidFiltersEntities() throws Exception {
-        entities.add(new Policy(PolicyType.INCLUDE_FRAGMENT, "test", "test", false));
-        entities.add(new Policy(PolicyType.INCLUDE_FRAGMENT, "test2", "test2", false));
+        entities.add(new ZoneableEntityHeader());
+        entities.add(new ZoneableEntityHeader());
         when(entityCrud.findByEntityTypeAndSecurityZoneOid(EntityType.POLICY, ZONE_OID)).thenReturn(entities);
         when(securityFilter.filter(eq(entities), any(User.class), eq(OperationType.READ), eq((String) null))).thenAnswer(new Answer<Object>() {
             @Override
             public Object answer(final InvocationOnMock invocationOnMock) throws Throwable {
-                final List<Entity> arg = (List<Entity>) invocationOnMock.getArguments()[0];
+                final List<ZoneableEntityHeader> arg = (List<ZoneableEntityHeader>) invocationOnMock.getArguments()[0];
                 assertEquals(2, arg.size());
                 arg.remove(0);
                 return arg;
             }
         });
-        final Collection<Entity> filtered = securedEntityCrud.findByEntityTypeAndSecurityZoneOid(EntityType.POLICY, ZONE_OID);
+        final Collection<ZoneableEntityHeader> filtered = securedEntityCrud.findByEntityTypeAndSecurityZoneOid(EntityType.POLICY, ZONE_OID);
         assertEquals(1, filtered.size());
     }
 

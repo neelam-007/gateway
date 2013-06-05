@@ -1,6 +1,7 @@
 package com.l7tech.console.util.registry;
 
 import com.l7tech.console.security.SecurityProvider;
+import com.l7tech.console.util.EntityNameResolver;
 import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.admin.*;
 import com.l7tech.gateway.common.audit.AuditAdmin;
@@ -84,6 +85,7 @@ public final class RegistryImpl extends Registry
     private PolicyValidator policyValidator;
     private GuidBasedEntityManager<Policy> policyFinder;
     private PolicyPathBuilderFactory policyPathBuilderFactory;
+    private EntityNameResolver entityNameResolver;
 
     @Override
     public boolean isAdminContextPresent() {
@@ -371,6 +373,15 @@ public final class RegistryImpl extends Registry
         }
         encapsulatedAssertionAdmin = adminContext.getAdminInterface(EncapsulatedAssertionAdmin.class);
         return encapsulatedAssertionAdmin;
+    }
+
+    @Override
+    public EntityNameResolver getEntityNameResolver() {
+        checkAdminContext();
+        if (entityNameResolver == null) {
+            entityNameResolver = new EntityNameResolver(getServiceManager(), getPolicyAdmin(), getTrustedCertManager(), getResourceAdmin());
+        }
+        return entityNameResolver;
     }
 
     @Override

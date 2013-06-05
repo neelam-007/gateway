@@ -232,31 +232,40 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
     public EntityHeader findHeader( EntityType etype, Serializable pk) throws FindException {
         Entity e = find(etype.getEntityClass(), pk);
         if (e == null) return null;
-        
+        return entityToHeader(etype, e);
+    }
+
+    @Override
+    public Collection<ZoneableEntityHeader> findByEntityTypeAndSecurityZoneOid(@NotNull final EntityType type, final long securityZoneOid) throws FindException {
+        if (!type.isSecurityZoneable()) {
+            throw new IllegalArgumentException("EntityType must be support security zones.");
+        }
+        final Collection<? extends Entity> found = findByClassAndSecurityZoneOid(type.getEntityClass(), securityZoneOid);
+        final Collection<ZoneableEntityHeader> headers = new ArrayList<>();
+        for (final Entity entity : found) {
+            final EntityHeader header = entityToHeader(type, entity);
+            if (header instanceof ZoneableEntityHeader) {
+                headers.add((ZoneableEntityHeader)header);
+            }
+        }
+        return headers;
+    }
+
+    private EntityHeader entityToHeader(@NotNull final EntityType entityType, @NotNull final Entity entity) {
         String name = null;
-        if (e instanceof NamedEntity) {
-            NamedEntity ne = (NamedEntity) e;
+        if (entity instanceof NamedEntity) {
+            final NamedEntity ne = (NamedEntity) entity;
             name = ne.getName();
         }
-        EntityHeader header = new EntityHeader(e.getId(), etype, name, null);
-        if (e instanceof ZoneableEntity) {
-            final ZoneableEntity zoneableEntity = (ZoneableEntity) e;
+        EntityHeader header = new EntityHeader(entity.getId(), entityType, name, null);
+        if (entity instanceof ZoneableEntity) {
+            final ZoneableEntity zoneableEntity = (ZoneableEntity) entity;
             final SecurityZone zone = zoneableEntity.getSecurityZone();
             final ZoneableEntityHeader zoneableHeader = new ZoneableEntityHeader(header);
             zoneableHeader.setSecurityZoneOid(zone == null ? null : zone.getOid());
             header = zoneableHeader;
         }
-
         return header;
-    }
-
-    @Override
-    public Collection<Entity> findByEntityTypeAndSecurityZoneOid(@NotNull final EntityType type, final long securityZoneOid) throws FindException {
-        if (!type.isSecurityZoneable()) {
-            throw new IllegalArgumentException("EntityType must be support security zones.");
-        }
-        final Collection<? extends Entity> found = findByClassAndSecurityZoneOid(type.getEntityClass(), securityZoneOid);
-        return new ArrayList<>(found);
     }
 
     @SuppressWarnings({"unchecked"})

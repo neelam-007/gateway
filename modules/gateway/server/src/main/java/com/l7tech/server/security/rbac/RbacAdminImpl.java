@@ -189,7 +189,7 @@ public class RbacAdminImpl implements RbacAdmin {
     }
 
     @Override
-    public Collection<Entity> findEntitiesByTypeAndSecurityZoneOid(@NotNull final EntityType type, final long securityZoneOid) throws FindException {
+    public Collection<ZoneableEntityHeader> findEntitiesByTypeAndSecurityZoneOid(@NotNull final EntityType type, final long securityZoneOid) throws FindException {
         return entityCrud.findByEntityTypeAndSecurityZoneOid(type, securityZoneOid);
     }
 

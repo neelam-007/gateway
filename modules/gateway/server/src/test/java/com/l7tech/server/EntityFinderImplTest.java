@@ -4,6 +4,7 @@ import com.l7tech.gateway.common.audit.AuditRecordHeader;
 import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.gateway.common.service.MetricsBin;
 import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.gateway.common.service.PublishedServiceAlias;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyAlias;
@@ -40,6 +41,7 @@ import static org.mockito.Mockito.when;
 public class EntityFinderImplTest {
     private static final long OID = 1234L;
     private static final Long ZONE_OID = 1111L;
+    private static final String NAME = "test";
     private EntityFinderImpl finder;
     @Mock
     private AuditRecordManager auditRecordManager;
@@ -56,6 +58,7 @@ public class EntityFinderImplTest {
     private List<Entity> entities;
     private List<String> propertyNames;
     private List queryResults;
+    private SecurityZone zone;
 
     @Before
     public void setup() {
@@ -65,6 +68,8 @@ public class EntityFinderImplTest {
         entities = new ArrayList<>();
         propertyNames = new ArrayList<>();
         queryResults = new ArrayList();
+        zone = new SecurityZone();
+        zone.setOid(ZONE_OID);
 
         when(hibernateTemplate.getSessionFactory()).thenReturn(sessionFactory);
         when(sessionFactory.getClassMetadata(any(Class.class))).thenReturn(metadata);
@@ -80,10 +85,41 @@ public class EntityFinderImplTest {
 
     @Test
     public void findByEntityTypeAndSecurityZoneOid() throws Exception {
-        entities.add(new PublishedService());
+        final PublishedService service = new PublishedService();
+        service.setOid(OID);
+        service.setName(NAME);
+        service.setSecurityZone(zone);
+        entities.add(service);
         when(hibernateTemplate.execute(any(HibernateCallback.class))).thenReturn(entities);
-        final Collection<Entity> found = finder.findByEntityTypeAndSecurityZoneOid(EntityType.SERVICE, 1234L);
-        assertEquals(entities, found);
+
+        final Collection<ZoneableEntityHeader> found = finder.findByEntityTypeAndSecurityZoneOid(EntityType.SERVICE, 1234L);
+
+        assertEquals(1, found.size());
+        final ZoneableEntityHeader header = found.iterator().next();
+        assertEquals(ZONE_OID, header.getSecurityZoneOid());
+        assertEquals(OID, header.getOid());
+        assertEquals(NAME, header.getName());
+        assertEquals(EntityType.SERVICE, header.getType());
+        assertNull(header.getDescription());
+    }
+
+    @Test
+    public void findByEntityTypeAndSecurityZoneOidNotNamedEntity() throws Exception {
+        final PublishedServiceAlias alias = new PublishedServiceAlias(new PublishedService(), null);
+        alias.setOid(OID);
+        alias.setSecurityZone(zone);
+        entities.add(alias);
+        when(hibernateTemplate.execute(any(HibernateCallback.class))).thenReturn(entities);
+
+        final Collection<ZoneableEntityHeader> found = finder.findByEntityTypeAndSecurityZoneOid(EntityType.SERVICE_ALIAS, 1234L);
+
+        assertEquals(1, found.size());
+        final ZoneableEntityHeader header = found.iterator().next();
+        assertEquals(ZONE_OID, header.getSecurityZoneOid());
+        assertEquals(OID, header.getOid());
+        assertNull(header.getName());
+        assertEquals(EntityType.SERVICE_ALIAS, header.getType());
+        assertNull(header.getDescription());
     }
 
     @Test(expected = IllegalArgumentException.class)

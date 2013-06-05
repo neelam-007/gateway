@@ -361,6 +361,11 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
     }
 
     @Override
+    public PublishedService findByAlias(long aliasOid) throws FindException {
+        return null;
+    }
+
+    @Override
     public <OUT extends Serializable> String getJobStatus(JobId<OUT> jobId) {
         return asyncSupport.getJobStatus(jobId);
     }

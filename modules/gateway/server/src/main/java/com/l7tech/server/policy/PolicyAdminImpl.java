@@ -536,6 +536,16 @@ public class PolicyAdminImpl implements PolicyAdmin {
     }
 
     @Override
+    public Policy findByAlias(final long aliasOid) throws FindException {
+        Policy found = null;
+        final PolicyAlias alias = policyAliasManager.findByPrimaryKey(aliasOid);
+        if (alias != null) {
+            found = findPolicyByPrimaryKey(alias.getEntityOid());
+        }
+        return found;
+    }
+
+    @Override
     public List<PolicyVersion> findPolicyVersionHeadersByPolicy(long policyOid) throws FindException {
         final Set<PropertyDescriptor> allButXml = BeanUtils.omitProperties(BeanUtils.getProperties(PolicyVersion.class), "xml");
 

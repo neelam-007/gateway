@@ -4,16 +4,43 @@
  */
 package com.l7tech.server.policy;
 
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.policy.Policy;
+import com.l7tech.policy.PolicyAlias;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.server.TestLicenseManager;
 import com.l7tech.test.BugNumber;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.runners.MockitoJUnitRunner;
 
+import static org.junit.Assert.*;
+import static org.mockito.Matchers.anyLong;
+import static org.mockito.Mockito.*;
+
+
+@RunWith(MockitoJUnitRunner.class)
 public class PolicyAdminImplTest {
+    private static final long OID = 1234L;
+    private PolicyAdminImpl policyAdmin;
+    @Mock
+    private PolicyAliasManager policyAliasManager;
+    @Mock
+    private PolicyManager policyManager;
+    @Mock
+    private PolicyVersionManager policyVersionManager;
+
+    @Before
+    public void setup() {
+        policyAdmin = new PolicyAdminImpl(policyManager, policyAliasManager, null, policyVersionManager, null, null, null, null, null, null);
+    }
+
     @Test
     @BugNumber(10057)
-    public void testDefaultAuditMessageFilterPolicyXml_Licensed(){
+    public void testDefaultAuditMessageFilterPolicyXml_Licensed() {
 
         final TestLicenseManager licenseManager = new TestLicenseManager();
 
@@ -28,7 +55,7 @@ public class PolicyAdminImplTest {
 
     @Test
     @BugNumber(10057)
-    public void testDefaultAuditMessageFilterPolicyXml_NotLicensed(){
+    public void testDefaultAuditMessageFilterPolicyXml_NotLicensed() {
         PolicyAdminImpl policyManager = new PolicyAdminImpl(null, null, null, null, null, null, null, null, NO_UNKNOWN_LICENSE_MANAGER, null);
 
         final String amfDefaultXml = policyManager.getDefaultPolicyXml(PolicyType.INTERNAL, PolicyType.TAG_AUDIT_MESSAGE_FILTER);
@@ -41,7 +68,7 @@ public class PolicyAdminImplTest {
     /**
      * Tests with default policy xml which contains core assertions. These are parsed into real assertions and not
      * 'Unknown'.
-     * 
+     *
      * @throws Exception
      */
     @Test
@@ -60,7 +87,7 @@ public class PolicyAdminImplTest {
      */
     @Test
     @BugNumber(10057)
-    public void testAllLicensedApartFromUnknown() throws Exception{
+    public void testAllLicensedApartFromUnknown() throws Exception {
         PolicyAdminImpl policyManager = new PolicyAdminImpl(null, null, null, null, null, null, null, null, NO_UNKNOWN_LICENSE_MANAGER, null);
 
         final String fallbackXml = "fallback";
@@ -68,6 +95,23 @@ public class PolicyAdminImplTest {
                 nestedUnknownAssertion, fallbackXml, PolicyType.TAG_AUDIT_MESSAGE_FILTER);
 
         Assert.assertEquals("Fallback should be returned", fallbackXml, defaultXml);
+    }
+
+    @Test
+    public void findByAlias() throws FindException {
+        final Policy policy = new Policy(PolicyType.INCLUDE_FRAGMENT, "test", "test", false);
+        policy.setOid(1L);
+        final PolicyAlias alias = new PolicyAlias(policy, null);
+        when(policyAliasManager.findByPrimaryKey(OID)).thenReturn(alias);
+        when(policyManager.findByPrimaryKey(1L)).thenReturn(policy);
+        assertEquals(policy, policyAdmin.findByAlias(1234L));
+    }
+
+    @Test
+    public void findByAliasDoesNotExist() throws FindException {
+        when(policyAliasManager.findByPrimaryKey(anyLong())).thenReturn(null);
+        assertNull(policyAdmin.findByAlias(1234L));
+        verify(policyManager, never()).findByPrimaryKey(anyLong());
     }
 
     private static final String allLicensedXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
@@ -105,5 +149,5 @@ public class PolicyAdminImplTest {
             return !feature.endsWith("Unknown") && super.isFeatureEnabled(feature);
         }
     };
-    
+
 }

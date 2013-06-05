@@ -62,7 +62,7 @@ public class EntityFinderStub implements EntityFinder, DesignTimeEntityProvider 
     }
 
     @Override
-    public Collection<Entity> findByEntityTypeAndSecurityZoneOid(@NotNull EntityType type, long securityZoneOid) throws FindException {
+    public Collection<ZoneableEntityHeader> findByEntityTypeAndSecurityZoneOid(@NotNull EntityType type, long securityZoneOid) throws FindException {
         return null;
     }
 }

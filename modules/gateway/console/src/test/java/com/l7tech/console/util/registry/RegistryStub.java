@@ -4,6 +4,7 @@ import com.l7tech.common.io.PortRanges;
 import com.l7tech.console.TrustedCertAdminStub;
 import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.util.ConsoleLicenseManager;
+import com.l7tech.console.util.EntityNameResolver;
 import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.VersionException;
 import com.l7tech.gateway.common.admin.*;
@@ -246,7 +247,7 @@ public class RegistryStub extends Registry {
             }
 
             @Override
-            public Collection<Entity> findEntitiesByTypeAndSecurityZoneOid(@NotNull EntityType type, long securityZoneOid) throws FindException {
+            public Collection<ZoneableEntityHeader> findEntitiesByTypeAndSecurityZoneOid(@NotNull EntityType type, long securityZoneOid) throws FindException {
                 throw new FindException("not impl in stub");
             }
 
@@ -536,6 +537,11 @@ public class RegistryStub extends Registry {
     @Override
     public EncapsulatedAssertionAdmin getEncapsulatedAssertionAdmin() {
         return encapsulatedAssertionAdmin;
+    }
+
+    @Override
+    public EntityNameResolver getEntityNameResolver() {
+        return null;
     }
 
     public void setEncapsulatedAssertionAdmin(@NotNull final EncapsulatedAssertionAdmin encapsulatedAssertionAdmin) {

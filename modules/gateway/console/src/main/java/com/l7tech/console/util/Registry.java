@@ -250,6 +250,8 @@ public abstract class Registry {
      */
     public abstract EncapsulatedAssertionAdmin getEncapsulatedAssertionAdmin();
 
+    public abstract EntityNameResolver getEntityNameResolver();
+
     /**
      * Get a local proxy for an admin extension interface.
      * <p/>
@@ -433,6 +435,11 @@ public abstract class Registry {
 
         @Override
         public EncapsulatedAssertionAdmin getEncapsulatedAssertionAdmin() {
+            throw new IllegalStateException(ILLEGAL_STATE_MSG);
+        }
+
+        @Override
+        public EntityNameResolver getEntityNameResolver() {
             throw new IllegalStateException(ILLEGAL_STATE_MSG);
         }
 

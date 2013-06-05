@@ -155,6 +155,11 @@ public class InvalidatingPolicyAdmin implements PolicyAdmin {
         return delegate.findLatestRevisionForPolicy(policyOid);
     }
 
+    @Override
+    public Policy findByAlias(long aliasOid) throws FindException {
+        return delegate.findByAlias(aliasOid);
+    }
+
     //- PRIVATE
 
     private final PolicyAdmin delegate;

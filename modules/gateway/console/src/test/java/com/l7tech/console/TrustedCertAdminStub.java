@@ -211,6 +211,11 @@ public class TrustedCertAdminStub implements TrustedCertAdmin {
     }
 
     @Override
+    public SsgKeyMetadata findKeyMetadata(long metadataOid) throws FindException {
+        return null;
+    }
+
+    @Override
     public <OUT extends Serializable> String getJobStatus(JobId<OUT> jobId) {
         return null;
     }

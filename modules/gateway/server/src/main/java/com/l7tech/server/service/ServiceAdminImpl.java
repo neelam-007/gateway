@@ -673,6 +673,16 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
         return generateResolutionReport( service, serviceDocuments==null ? Collections.<ServiceDocument>emptyList() : serviceDocuments );
     }
 
+    @Override
+    public PublishedService findByAlias(final long aliasOid) throws FindException {
+        PublishedService found = null;
+        final PublishedServiceAlias alias = serviceAliasManager.findByPrimaryKey(aliasOid);
+        if (alias != null) {
+            found = findServiceByID(String.valueOf(alias.getEntityOid()));
+        }
+        return found;
+    }
+
     /**
      * Parse the String service ID to long (database format)
      *

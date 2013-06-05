@@ -786,6 +786,12 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
         return ParamsCertificateGenerator.isShortKey(publicKey);
     }
 
+    @Override
+    public SsgKeyMetadata findKeyMetadata(final long metadataOid) throws FindException {
+        return ssgKeyMetadataManager.findByPrimaryKey(metadataOid);
+    }
+
+
     private TrustedCertManager getManager() {
         return trustedCertManager;
     }

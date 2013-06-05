@@ -34,7 +34,7 @@ public class EsmEntityFinderImpl implements EntityFinder {
     }
 
     @Override
-    public Collection<Entity> findByEntityTypeAndSecurityZoneOid(@NotNull EntityType type, long securityZoneOid) throws FindException {
+    public Collection<ZoneableEntityHeader> findByEntityTypeAndSecurityZoneOid(@NotNull EntityType type, long securityZoneOid) throws FindException {
         throw new NotImplementedException("method findByEntityTypeAndSecurityZoneOid is not implemented");
     }
 }

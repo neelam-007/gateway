@@ -173,8 +173,15 @@ public class AssignSecurityZonesDialog extends JDialog {
         entitiesTable.setModel(dataModel);
         entitiesTable.getColumnModel().getColumn(1).setCellRenderer(new DefaultTableCellRenderer() {
             @Override
-            protected void setValue(Object value) {
-                setText(value instanceof EntityHeader ? ((EntityHeader) value).getName() : StringUtils.EMPTY);
+            protected void setValue(final Object value) {
+                final EntityHeader header = (EntityHeader) value;
+                String name;
+                try {
+                    name = Registry.getDefault().getEntityNameResolver().getNameForHeader(header);
+                } catch (final FindException e) {
+                    name = "unknown entity";
+                }
+                setText(name);
             }
         });
         TableUtil.adjustColumnWidth(entitiesTable, 0, 30);

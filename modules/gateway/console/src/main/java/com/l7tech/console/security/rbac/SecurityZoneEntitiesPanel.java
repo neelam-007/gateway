@@ -3,19 +3,15 @@ package com.l7tech.console.security.rbac;
 import com.l7tech.console.panels.FilterPanel;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.SecurityZoneUtil;
-import com.l7tech.gateway.common.resources.HttpConfiguration;
-import com.l7tech.gateway.common.resources.ResourceEntry;
-import com.l7tech.gateway.common.security.keystore.SsgKeyMetadata;
 import com.l7tech.gateway.common.security.rbac.RbacAdmin;
-import com.l7tech.gateway.common.service.PublishedService;
-import com.l7tech.gateway.common.service.PublishedServiceAlias;
 import com.l7tech.gui.SimpleTableModel;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.TableUtil;
 import com.l7tech.gui.util.Utilities;
-import com.l7tech.objectmodel.*;
-import com.l7tech.policy.Policy;
-import com.l7tech.policy.PolicyAlias;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.SecurityZone;
+import com.l7tech.objectmodel.ZoneableEntityHeader;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import org.jetbrains.annotations.Nullable;
@@ -43,7 +39,7 @@ public class SecurityZoneEntitiesPanel extends JPanel {
     private JComboBox entityTypeComboBox;
     private JLabel countLabel;
     private FilterPanel filterPanel;
-    private SimpleTableModel<Entity> entitiesTableModel;
+    private SimpleTableModel<ZoneableEntityHeader> entitiesTableModel;
     private SecurityZone securityZone;
 
     public SecurityZoneEntitiesPanel() {
@@ -101,42 +97,15 @@ public class SecurityZoneEntitiesPanel extends JPanel {
     }
 
     private void initTable() {
-        entitiesTableModel = TableUtil.configureTable(entitiesTable, column("Name", 80, 300, 99999, new Functions.Unary<String, Entity>() {
+        entitiesTableModel = TableUtil.configureTable(entitiesTable, column("Name", 80, 300, 99999, new Functions.Unary<String, ZoneableEntityHeader>() {
             @Override
-            public String call(final Entity entity) {
-                String name;
-                if (entity instanceof NamedEntity) {
-                    name = ((NamedEntity) entity).getName();
-                } else if (entity instanceof PublishedServiceAlias) {
-                    final PublishedServiceAlias alias = (PublishedServiceAlias) entity;
-                    try {
-                        final PublishedService owningService = Registry.getDefault().getServiceManager().findServiceByID(String.valueOf(alias.getEntityOid()));
-                        name = owningService.getName() + " alias";
-                    } catch (final FindException e) {
-                        name = "service id " + alias.getEntityOid() + " alias";
-                    }
-                } else if (entity instanceof PolicyAlias) {
-                    final PolicyAlias alias = (PolicyAlias) entity;
-                    try {
-                        final Policy owningPolicy = Registry.getDefault().getPolicyAdmin().findPolicyByPrimaryKey(alias.getEntityOid());
-                        name = owningPolicy.getName() + " alias";
-                    } catch (final FindException e) {
-                        name = "policy id " + alias.getEntityOid() + " alias";
-                    }
-                } else if (entity instanceof SsgKeyMetadata) {
-                    final SsgKeyMetadata metadata = (SsgKeyMetadata) entity;
-                    name = metadata.getAlias();
-                } else if (entity instanceof ResourceEntry) {
-                    final ResourceEntry resource = (ResourceEntry) entity;
-                    name = resource.getUri();
-                } else if (entity instanceof HttpConfiguration) {
-                    final HttpConfiguration httpConfig = (HttpConfiguration) entity;
-                    name = httpConfig.getProtocol() + " " + httpConfig.getHost() + " " + httpConfig.getPort();
-                } else {
-                    logger.log(Level.WARNING, "Unable to determine display name for entity: " + entity);
-                    name = "unknown entity";
+            public String call(final ZoneableEntityHeader header) {
+                try {
+                    return Registry.getDefault().getEntityNameResolver().getNameForHeader(header);
+                } catch (final FindException e) {
+                    logger.log(Level.WARNING, "Unable to determine name for entity: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                    return "unknown entity";
                 }
-                return name;
             }
         }));
         Utilities.setRowSorter(entitiesTable, entitiesTableModel);
@@ -187,7 +156,7 @@ public class SecurityZoneEntitiesPanel extends JPanel {
         if (securityZone != null) {
             EntityType selected = getSelectedEntityType();
             if (selected != null) {
-                final List<Entity> entities = new ArrayList<>();
+                final List<ZoneableEntityHeader> entities = new ArrayList<>();
                 final RbacAdmin rbacAdmin = Registry.getDefault().getRbacAdmin();
                 try {
                     if (EntityType.SSG_KEY_ENTRY == selected) {
@@ -201,7 +170,7 @@ public class SecurityZoneEntitiesPanel extends JPanel {
                 }
             }
         } else {
-            entitiesTableModel.setRows(Collections.<Entity>emptyList());
+            entitiesTableModel.setRows(Collections.<ZoneableEntityHeader>emptyList());
         }
     }
 }

@@ -198,7 +198,7 @@ public class EntityCrudImpl extends HibernateDaoSupport implements EntityCrud {
     }
 
     @Override
-    public Collection<Entity> findByEntityTypeAndSecurityZoneOid(@NotNull final EntityType type, final long securityZoneOid) throws FindException {
+    public Collection<ZoneableEntityHeader> findByEntityTypeAndSecurityZoneOid(@NotNull final EntityType type, final long securityZoneOid) throws FindException {
         return entityFinder.findByEntityTypeAndSecurityZoneOid(type, securityZoneOid);
     }
 

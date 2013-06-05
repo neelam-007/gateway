@@ -292,4 +292,8 @@ public interface PolicyAdmin extends AliasAdmin<PolicyAlias> {
     @Secured(stereotype=GET_PROPERTY_BY_ID, relevantArg=0)
     @Transactional(readOnly=true)
     PolicyVersion findLatestRevisionForPolicy(long policyOid);
+
+    @Transactional(readOnly = true)
+    @Secured(stereotype = FIND_ENTITY, types = EntityType.POLICY)
+    Policy findByAlias(final long aliasOid) throws FindException;
 }

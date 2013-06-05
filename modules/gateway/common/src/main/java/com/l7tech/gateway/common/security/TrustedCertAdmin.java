@@ -565,4 +565,6 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
     @Secured(customInterceptor="com.l7tech.server.admin.PrivateKeyRbacInterceptor")
     @PrivateKeySecured(preChecks={CHECK_ARG_OPERATION}, argOp=OperationType.READ)
     boolean isShortSigningKey(long keystoreId, String alias) throws FindException, KeyStoreException;
+
+    SsgKeyMetadata findKeyMetadata(final long metadataOid) throws FindException;
 }

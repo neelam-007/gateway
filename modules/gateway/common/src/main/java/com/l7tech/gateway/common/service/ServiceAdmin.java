@@ -393,6 +393,10 @@ public interface ServiceAdmin extends AsyncAdminMethods, AliasAdmin<PublishedSer
     @Secured(stereotype=MethodStereotype.SAVE_OR_UPDATE, relevantArg=0)
     ResolutionReport generateResolutionReportForNewService( PublishedService service, Collection<ServiceDocument> serviceDocuments ) throws FindException;
 
+    @Transactional(readOnly = true)
+    @Secured(stereotype = FIND_ENTITY, types = EntityType.SERVICE)
+    PublishedService findByAlias(final long aliasOid) throws FindException;
+
     class ResolutionReport implements Serializable {
         private final boolean resolvesByPath;
         private final ConflictInfo[] conflicts;

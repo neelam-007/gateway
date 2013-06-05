@@ -93,7 +93,7 @@ public class SecuredEntityCrud implements EntityCrud {
     }
 
     @Override
-    public Collection<Entity> findByEntityTypeAndSecurityZoneOid(@NotNull EntityType type, long securityZoneOid) throws FindException {
+    public Collection<ZoneableEntityHeader> findByEntityTypeAndSecurityZoneOid(@NotNull EntityType type, long securityZoneOid) throws FindException {
         return securityFilter.filter(entityCrud.findByEntityTypeAndSecurityZoneOid(type, securityZoneOid), getUser(), OperationType.READ, null);
     }
 
