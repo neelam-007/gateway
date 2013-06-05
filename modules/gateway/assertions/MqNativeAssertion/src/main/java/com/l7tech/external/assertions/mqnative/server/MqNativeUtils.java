@@ -398,6 +398,12 @@ public class MqNativeUtils {
      *      2059: MQRC_Q_MGR_NOT_AVAILABLE
      *      2085: MQRC_UNKNOWN_OBJECT_NAME
      *      2397: MQRC_JSSE_ERROR
+     *      2013: MQRC_EXPIRY_ERROR
+     *      2014: MQRC_FEEDBACK_ERROR
+     *      2047: MQRC_PERSISTENCE_ERROR
+     *      2049: MQRC_PRIORITY_EXCEEDS_MAXIMUM
+     *      2050: MQRC_PRIORITY_ERROR
+     *      2251: MQRC_OFFSET_ERROR
      *
      *      http://publib.boulder.ibm.com/infocenter/wmqv7/v7r1/topic/com.ibm.mq.doc/fm12030_.htm
      *
