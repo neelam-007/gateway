@@ -531,10 +531,12 @@ public class PolicyBundleInstallerTest {
                 try {
                     final Document documentReadOnly = context.getRequest().getXmlKnob().getDocumentReadOnly();
                     final String requestXml = XmlUtil.nodeToFormattedString(documentReadOnly);
-//                    System.out.println(requestXml);
 
                     if (requestXml.contains("http://schemas.xmlsoap.org/ws/2004/09/enumeration/Enumerate")) {
                         if (requestXml.contains(InstallerUtils.JDBC_MGMT_NS)) {
+                            // no results
+                            setResponse(context, XmlUtil.parse(FILTER_NO_RESULTS));
+                        } else if (requestXml.contains("/l7:Service/l7:ServiceDetail[@id='123345678']/l7:ServiceMappings/l7:HttpMapping/l7:UrlPattern")) {
                             // no results
                             setResponse(context, XmlUtil.parse(FILTER_NO_RESULTS));
                         } else {
@@ -552,20 +554,22 @@ public class PolicyBundleInstallerTest {
 
         installer.dryRunInstallBundle(dryRunEvent);
 
-        final List<String> urlPatternWithConflict = dryRunEvent.getUrlPatternWithConflict();
-        assertFalse(urlPatternWithConflict.isEmpty());
-        assertEquals(7, urlPatternWithConflict.size());
+        final List<String> serviceConflict = dryRunEvent.getServiceConflict();
+        assertFalse(serviceConflict.isEmpty());
+        assertEquals(8, serviceConflict.size());
 
         // validate all expected services from the bundle were found
-        assertTrue(urlPatternWithConflict.contains("/auth/oauth/v1/token"));
-        assertTrue(urlPatternWithConflict.contains("/auth/oauth/v1/*"));
-        assertTrue(urlPatternWithConflict.contains("/protected/resource"));
-        assertTrue(urlPatternWithConflict.contains("/auth/oauth/v1/request"));
-        assertTrue(urlPatternWithConflict.contains("/auth/oauth/v1/authorize"));
-        assertTrue(urlPatternWithConflict.contains("/oauth/v1/client"));
-        assertTrue(urlPatternWithConflict.contains("/auth/oauth/v1/authorize/website"));
+        assertTrue(serviceConflict.contains("/auth/oauth/v1/token"));
+        assertTrue(serviceConflict.contains("/auth/oauth/v1/*"));
+        assertTrue(serviceConflict.contains("/protected/resource"));
+        assertTrue(serviceConflict.contains("/auth/oauth/v1/request"));
+        assertTrue(serviceConflict.contains("/auth/oauth/v1/authorize"));
+        assertTrue(serviceConflict.contains("/oauth/v1/client"));
+        assertTrue(serviceConflict.contains("/auth/oauth/v1/authorize/website"));
+        assertTrue(serviceConflict.contains("TestingSoapServiceWithoutResolutionUrl"));
 
-        final List<String> policyWithNameConflict = dryRunEvent.getPolicyWithNameConflict();
+
+        final List<String> policyWithNameConflict = dryRunEvent.getPolicyConflict();
         assertFalse(policyWithNameConflict.isEmpty());
         assertEquals(7, policyWithNameConflict.size());
 
@@ -625,10 +629,10 @@ public class PolicyBundleInstallerTest {
 
         installer.dryRunInstallBundle(dryRunEvent);
 
-        final List<String> urlPatternWithConflict = dryRunEvent.getUrlPatternWithConflict();
+        final List<String> urlPatternWithConflict = dryRunEvent.getServiceConflict();
         assertTrue(urlPatternWithConflict.isEmpty());
 
-        final List<String> policyWithNameConflict = dryRunEvent.getPolicyWithNameConflict();
+        final List<String> policyWithNameConflict = dryRunEvent.getPolicyConflict();
         assertTrue(policyWithNameConflict.isEmpty());
 
         final List<String> jdbcConnsThatDontExist = dryRunEvent.getJdbcConnsThatDontExist();

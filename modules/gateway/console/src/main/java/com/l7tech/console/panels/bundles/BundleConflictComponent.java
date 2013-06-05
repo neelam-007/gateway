@@ -12,29 +12,22 @@ import java.util.List;
  */
 public class BundleConflictComponent extends JPanel {
 
-    private JList<String> urlConflictList;
-    private JList<String> policyNameConflictList;
+    private JList<String> serviceConflictList;
+    private JList<String> policyConflictList;
     private JList<String> missingJdbcConnList;
     private JList<String> missingModAssList;
     private JPanel mainPanel;
-    private JScrollPane urlScrollPane;
-    private JScrollPane policyScrollPane;
-    private JScrollPane jdbcScrollPane;
-    private JPanel urlConflictsPanel;
-    private JPanel policyNameConflictsPanel;
+    private JPanel serviceConflictsPanel;
+    private JPanel policyConflictsPanel;
     private JPanel jdbcPanel;
     private JPanel modAssPanel;
-    private JScrollPane modAssScrollPane;
-    private final PolicyBundleDryRunResult dryRunResult;
 
     public BundleConflictComponent(final String bundleId, final PolicyBundleDryRunResult dryRunResult) throws PolicyBundleDryRunResult.UnknownBundleIdException {
-        this.dryRunResult = dryRunResult;
+        final List<String> serviceConflicts = dryRunResult.getConflictsForItem(bundleId, PolicyBundleDryRunResult.DryRunItem.SERVICES);
+        buildJList(serviceConflictList, serviceConflictsPanel, serviceConflicts);
 
-        final List<String> urlConflicts = dryRunResult.getConflictsForItem(bundleId, PolicyBundleDryRunResult.DryRunItem.SERVICES);
-        buildJList(urlConflictList, urlConflictsPanel, urlConflicts);
-
-        final List<String> conflictPolicyNames = dryRunResult.getConflictsForItem(bundleId, PolicyBundleDryRunResult.DryRunItem.POLICIES);
-        buildJList(policyNameConflictList, policyNameConflictsPanel, conflictPolicyNames);
+        final List<String> conflictPolicies = dryRunResult.getConflictsForItem(bundleId, PolicyBundleDryRunResult.DryRunItem.POLICIES);
+        buildJList(policyConflictList, policyConflictsPanel, conflictPolicies);
         final List<String> missingJdbcConns = dryRunResult.getConflictsForItem(bundleId, PolicyBundleDryRunResult.DryRunItem.JDBC_CONNECTIONS);
         buildJList(missingJdbcConnList, jdbcPanel, missingJdbcConns);
         final List<String> missingModAsses = dryRunResult.getConflictsForItem(bundleId, PolicyBundleDryRunResult.DryRunItem.MODULAR_ASSERTION);

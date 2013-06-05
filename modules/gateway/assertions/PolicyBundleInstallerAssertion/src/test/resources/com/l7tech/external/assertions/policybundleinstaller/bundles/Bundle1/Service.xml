@@ -2550,4 +2550,71 @@
             </l7:ResourceSet>
         </l7:Resources>
     </l7:Service>
+    <l7:Service xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" id="123797510" version="2">
+        <l7:ServiceDetail folderId="-5002" id="2457600" version="2">
+            <l7:Name>TestingSoapServiceWithoutResolutionUrl</l7:Name>
+            <l7:Enabled>true</l7:Enabled>
+            <l7:ServiceMappings>
+                <l7:HttpMapping>
+                    <l7:Verbs>
+                        <l7:Verb>POST</l7:Verb>
+                    </l7:Verbs>
+                </l7:HttpMapping>
+                <l7:SoapMapping>
+                    <l7:Lax>false</l7:Lax>
+                </l7:SoapMapping>
+            </l7:ServiceMappings>
+            <l7:Properties>
+                <l7:Property key="policyRevision">
+                    <l7:LongValue>1</l7:LongValue>
+                </l7:Property>
+                <l7:Property key="wssProcessingEnabled">
+                    <l7:BooleanValue>true</l7:BooleanValue>
+                </l7:Property>
+                <l7:Property key="soapVersion">
+                    <l7:StringValue>1.1</l7:StringValue>
+                </l7:Property>
+                <l7:Property key="soap">
+                    <l7:BooleanValue>true</l7:BooleanValue>
+                </l7:Property>
+                <l7:Property key="internal">
+                    <l7:BooleanValue>false</l7:BooleanValue>
+                </l7:Property>
+            </l7:Properties>
+        </l7:ServiceDetail>
+        <l7:Resources>
+            <l7:ResourceSet tag="policy">
+                <l7:Resource type="policy" version="0">&lt;wsp:Policy xmlns:L7p=&quot;http://www.layer7tech.com/ws/policy&quot; xmlns:wsp=&quot;http://schemas.xmlsoap.org/ws/2002/12/policy&quot;&gt;
+                    &lt;wsp:All wsp:Usage=&quot;Required&quot;&gt;
+                    &lt;L7p:HttpRoutingAssertion&gt;
+                    &lt;L7p:ProtectedServiceUrl stringValue=&quot;${request.http.parameter.someServerUrl}&quot;/&gt;
+                    &lt;L7p:ProxyPassword stringValueNull=&quot;null&quot;/&gt;
+                    &lt;L7p:ProxyUsername stringValueNull=&quot;null&quot;/&gt;
+                    &lt;L7p:RequestHeaderRules httpPassthroughRuleSet=&quot;included&quot;&gt;
+                    &lt;L7p:Rules httpPassthroughRules=&quot;included&quot;&gt;
+                    &lt;L7p:item httpPassthroughRule=&quot;included&quot;&gt;
+                    &lt;L7p:Name stringValue=&quot;Cookie&quot;/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;L7p:item httpPassthroughRule=&quot;included&quot;&gt;
+                    &lt;L7p:Name stringValue=&quot;SOAPAction&quot;/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;/L7p:Rules&gt;
+                    &lt;/L7p:RequestHeaderRules&gt;
+                    &lt;L7p:RequestParamRules httpPassthroughRuleSet=&quot;included&quot;&gt;
+                    &lt;L7p:ForwardAll booleanValue=&quot;true&quot;/&gt;
+                    &lt;L7p:Rules httpPassthroughRules=&quot;included&quot;/&gt;
+                    &lt;/L7p:RequestParamRules&gt;
+                    &lt;L7p:ResponseHeaderRules httpPassthroughRuleSet=&quot;included&quot;&gt;
+                    &lt;L7p:Rules httpPassthroughRules=&quot;included&quot;&gt;
+                    &lt;L7p:item httpPassthroughRule=&quot;included&quot;&gt;
+                    &lt;L7p:Name stringValue=&quot;Set-Cookie&quot;/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;/L7p:Rules&gt;
+                    &lt;/L7p:ResponseHeaderRules&gt;
+                    &lt;/L7p:HttpRoutingAssertion&gt;
+                    &lt;/wsp:All&gt;
+                    &lt;/wsp:Policy&gt;</l7:Resource>
+            </l7:ResourceSet>
+        </l7:Resources>
+    </l7:Service>
 </enumeration>

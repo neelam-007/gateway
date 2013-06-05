@@ -124,22 +124,10 @@ public class GatewayManagementDocumentUtilitiesTest {
         GatewayManagementDocumentUtilities.getSelectorId(doc, false);
     }
 
-    public void testGetErrorDetails() throws Exception {
-
-    }
-
     @Test
     public void testResponse_ResourceAlreadyExists() throws Exception {
         final Document doc = XmlUtil.parse(ALREADY_EXISTS_RESPONSE);
         assertTrue(GatewayManagementDocumentUtilities.resourceAlreadyExists(doc));
-    }
-
-    public void testResourceAlreadyExists() throws Exception {
-
-    }
-
-    public void testUpdatePolicyIncludes() throws Exception {
-
     }
 
     @Test
@@ -150,6 +138,20 @@ public class GatewayManagementDocumentUtilitiesTest {
         assertFalse(folder.isEmpty());
         assertEquals(1, folder.size());
         assertEquals("123456789", folder.get(0).getAttribute("id"));
+    }
+
+    @Test
+    public void testFindServiceNamesAndUrlPatternsFromEnumeration() {
+        final Document serviceEnumDoc = XmlUtil.stringAsDocument(SERVICE_ENUM_DOC_XML);
+        final Map<Element, Element> serviceDetailMap = GatewayManagementDocumentUtilities.findServiceNamesAndUrlPatternsFromEnumeration(serviceEnumDoc);
+        assertEquals(1, serviceDetailMap.size());
+
+        final Element nameElmt = serviceDetailMap.keySet().toArray(new Element[]{})[0];
+        final String serviceName = XmlUtil.getTextValue(nameElmt);
+        assertEquals("TestingSoapServiceWithoutURL", serviceName);
+
+        final Element urlPatternElmt = serviceDetailMap.get(nameElmt);
+        assertNull(urlPatternElmt);
     }
 
     // - PRIVATE
@@ -435,4 +437,77 @@ public class GatewayManagementDocumentUtilitiesTest {
             "        </wsen:EnumerateResponse>\n" +
             "    </env:Body>\n" +
             "</env:Envelope>\n";
+
+    private static final String SERVICE_ENUM_DOC_XML = "<enumeration>\n" +
+        "  <l7:Service id=\"3801088\" version=\"1\" xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
+        "    <l7:ServiceDetail folderId=\"13303808\" id=\"3801088\" version=\"1\">\n" +
+        "      <l7:Name>TestingSoapServiceWithoutURL</l7:Name>\n" +
+        "      <l7:Enabled>true</l7:Enabled>\n" +
+        "      <l7:ServiceMappings>\n" +
+        "        <l7:HttpMapping>\n" +
+        "          <l7:Verbs>\n" +
+        "            <l7:Verb>POST</l7:Verb>\n" +
+        "          </l7:Verbs>\n" +
+        "        </l7:HttpMapping>\n" +
+        "        <l7:SoapMapping>\n" +
+        "          <l7:Lax>false</l7:Lax>\n" +
+        "        </l7:SoapMapping>\n" +
+        "      </l7:ServiceMappings>\n" +
+        "      <l7:Properties>\n" +
+        "        <l7:Property key=\"policyRevision\">\n" +
+        "          <l7:LongValue>2</l7:LongValue>\n" +
+        "        </l7:Property>\n" +
+        "        <l7:Property key=\"wssProcessingEnabled\">\n" +
+        "          <l7:BooleanValue>true</l7:BooleanValue>\n" +
+        "        </l7:Property>\n" +
+        "        <l7:Property key=\"soapVersion\">\n" +
+        "          <l7:StringValue>1.1</l7:StringValue>\n" +
+        "        </l7:Property>\n" +
+        "        <l7:Property key=\"soap\">\n" +
+        "          <l7:BooleanValue>true</l7:BooleanValue>\n" +
+        "        </l7:Property>\n" +
+        "        <l7:Property key=\"internal\">\n" +
+        "          <l7:BooleanValue>false</l7:BooleanValue>\n" +
+        "        </l7:Property>\n" +
+        "      </l7:Properties>\n" +
+        "    </l7:ServiceDetail>\n" +
+        "    <l7:Resources>\n" +
+        "      <l7:ResourceSet tag=\"policy\">\n" +
+        "        <l7:Resource type=\"policy\" version=\"2\">\n" +
+        "        <![CDATA[<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+        "          <wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+        "            <wsp:All wsp:Usage=\"Required\">\n" +
+        "              <L7p:HttpRoutingAssertion>\n" +
+        "                <L7p:ProtectedServiceUrl stringValue=\"${request.http.parameter.someServerUrl}\"/>\n" +
+        "                <L7p:ProxyPassword stringValueNull=\"null\"/>\n" +
+        "                <L7p:ProxyUsername stringValueNull=\"null\"/>\n" +
+        "                <L7p:RequestHeaderRules httpPassthroughRuleSet=\"included\">\n" +
+        "                  <L7p:Rules httpPassthroughRules=\"included\">\n" +
+        "                    <L7p:item httpPassthroughRule=\"included\">\n" +
+        "                      <L7p:Name stringValue=\"Cookie\"/>\n" +
+        "                    </L7p:item>\n" +
+        "                    <L7p:item httpPassthroughRule=\"included\">\n" +
+        "                      <L7p:Name stringValue=\"SOAPAction\"/>\n" +
+        "                    </L7p:item>\n" +
+        "                  </L7p:Rules>\n" +
+        "                </L7p:RequestHeaderRules>\n" +
+        "                <L7p:RequestParamRules httpPassthroughRuleSet=\"included\">\n" +
+        "                  <L7p:ForwardAll booleanValue=\"true\"/>\n" +
+        "                  <L7p:Rules httpPassthroughRules=\"included\"/>\n" +
+        "                </L7p:RequestParamRules>\n" +
+        "                <L7p:ResponseHeaderRules httpPassthroughRuleSet=\"included\">\n" +
+        "                  <L7p:Rules httpPassthroughRules=\"included\">\n" +
+        "                    <L7p:item httpPassthroughRule=\"included\">\n" +
+        "                      <L7p:Name stringValue=\"Set-Cookie\"/>\n" +
+        "                    </L7p:item>\n" +
+        "                  </L7p:Rules>\n" +
+        "                </L7p:ResponseHeaderRules>\n" +
+        "              </L7p:HttpRoutingAssertion>\n" +
+        "            </wsp:All>\n" +
+        "          </wsp:Policy>]]>\n" +
+        "        </l7:Resource>\n" +
+        "      </l7:ResourceSet>\n" +
+        "      </l7:Resources>\n" +
+        "  </l7:Service>\n" +
+        "</enumeration>\n";
 }

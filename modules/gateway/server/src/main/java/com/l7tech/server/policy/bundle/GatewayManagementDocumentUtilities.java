@@ -17,9 +17,7 @@ import org.xml.sax.SAXException;
 
 import javax.xml.xpath.XPathExpressionException;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.logging.Logger;
 
 /**
@@ -53,9 +51,33 @@ public class GatewayManagementDocumentUtilities {
         return XmlUtil.findChildElementsByName(enumerationElement, MGMT_VERSION_NAMESPACE, type);
     }
 
+    /**
+     * Find service name and resolution URL for each service defined in the service enumeration document object.
+     *
+     * @param serviceEnumeration: the Document object defining the service enumeration.
+     * @return a map in which each pair is (Service Name Element, Service Resolution URL Element)
+     */
     @NotNull
-    public static List<Element> findAllUrlPatternsFromEnumeration(final Document serviceEnumeration) {
-        return XpathUtil.findElements(serviceEnumeration.getDocumentElement(), ".//l7:UrlPattern", getNamespaceMap());
+    public static Map<Element, Element> findServiceNamesAndUrlPatternsFromEnumeration(final Document serviceEnumeration) {
+        Map<Element, Element> serviceDetailMap = new HashMap<>();
+        for (Element serviceDetailElmt: XpathUtil.findElements(serviceEnumeration.getDocumentElement(), ".//l7:ServiceDetail", getNamespaceMap())) {
+            List<Element> nameElmts = XpathUtil.findElements(serviceDetailElmt, ".//l7:Name", getNamespaceMap());
+            List<Element> urlPatternElmts = XpathUtil.findElements(serviceDetailElmt, ".//l7:UrlPattern", getNamespaceMap());
+
+            if (nameElmts.size() < 0) {
+                throw new IllegalArgumentException("Service xml does not contain Name element in ServiceDetail element.");
+            }
+            if (nameElmts.size() > 1 || urlPatternElmts.size() > 1) {
+                throw new IllegalArgumentException("Service xml contains more than one Name or UrlPattern element in ServiceDetail element.");
+            }
+
+            if (urlPatternElmts.size() == 0) {
+                serviceDetailMap.put(nameElmts.get(0), null);
+            } else {
+                serviceDetailMap.put(nameElmts.get(0), urlPatternElmts.get(0));
+            }
+        }
+        return serviceDetailMap;
     }
 
     @NotNull

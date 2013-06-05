@@ -71,17 +71,28 @@ public class PolicyBundleInstaller {
 
         final BundleInfo bundleInfo = context.getBundleInfo();
         final Document serviceEnumDoc = context.getBundleResolver().getBundleItem(bundleInfo.getId(), SERVICE, true);
-        final List<Element> allUrlPatternElms = GatewayManagementDocumentUtilities.findAllUrlPatternsFromEnumeration(serviceEnumDoc);
-        for (Element allUrlPatternElm : allUrlPatternElms) {
+
+        final Map<Element, Element> serviceDetailMap = GatewayManagementDocumentUtilities.findServiceNamesAndUrlPatternsFromEnumeration(serviceEnumDoc);
+        for (Element nameElmt: serviceDetailMap.keySet()) {
             checkInterrupted();
-            final String urlPattern = getPrefixedUrl(DomUtils.getTextValue(allUrlPatternElm));
+
+            Element urlPatternElmt = serviceDetailMap.get(nameElmt);
+
+            String conflictObject = null;
             try {
-                final List<Long> matchingServices = findMatchingService(urlPattern);
+                final List<Long> matchingServices;
+                if (urlPatternElmt != null) {
+                    conflictObject = getPrefixedUrl(DomUtils.getTextValue(urlPatternElmt));
+                    matchingServices = findMatchingServiceByUrl(conflictObject);
+                } else {
+                    conflictObject = DomUtils.getTextValue(nameElmt);
+                    matchingServices = findMatchingServiceByNameWithoutResolutionUrl(conflictObject);
+                }
                 if (!matchingServices.isEmpty()) {
-                    dryRunEvent.addUrlPatternWithConflict(urlPattern);
+                    dryRunEvent.addServiceConflict(conflictObject);
                 }
             } catch (GatewayManagementDocumentUtilities.UnexpectedManagementResponse e) {
-                throw new BundleResolver.InvalidBundleException("Could not check for conflict for url pattern '" + urlPattern + "'", e);
+                throw new BundleResolver.InvalidBundleException("Could not check for conflict for url pattern or service name'" + conflictObject + "'", e);
             }
         }
 
@@ -246,7 +257,7 @@ public class PolicyBundleInstaller {
 
             // lets check if the service has a URL mapping and if so, if any service already exists with that mapping.
             // if it does, then we won't install it.
-            // check if it has a URL mapping
+            // If the service has no resolution url, then we will check if there exists any conflicts with the same service name.
 
             if (urlPatternWriteableEl != null) {
                 final String existingUrl = DomUtils.getTextValue(urlPatternWriteableEl, true);
@@ -255,7 +266,7 @@ public class PolicyBundleInstaller {
                     DomUtils.setTextContent(urlPatternWriteableEl, maybePrefixedUrl);
                 }
 
-                final List<Long> matchingService = findMatchingService(maybePrefixedUrl);
+                final List<Long> matchingService = findMatchingServiceByUrl(maybePrefixedUrl);
                 if (!matchingService.isEmpty()) {
                     // Service already exists
                     logger.info("Not installing service with id #{" + id + "} and routing URI '" + maybePrefixedUrl + "' " +
@@ -263,11 +274,15 @@ public class PolicyBundleInstaller {
                     continue;
                 }
             } else {
-                String message = "Service with id #{" + id + "} does not use a custom resolution URI so it is not possible to detect if there are any resolution conflicts";
-                if (isPrefixValid(context.getInstallationPrefix())) {
-                    message = " or to add an installation prefix";
+                final Element serviceNameEl = XmlUtil.findFirstDescendantElement(serviceDetail, MGMT_VERSION_NAMESPACE, "Name");
+                final String serviceName = DomUtils.getTextValue(serviceNameEl);
+                final List<Long> matchingService = findMatchingServiceByNameWithoutResolutionUrl(serviceName);
+                if (!matchingService.isEmpty()) {
+                    // Service already exists
+                    logger.info("Not installing service with id #{" + id + "} and service name '" + serviceName + "' " +
+                        "due to existing service with conflicting service name");
+                    continue;
                 }
-                logger.info(message);
             }
 
             final Long newFolderId = oldToNewFolderIds.get(Long.valueOf(bundleFolderId));
@@ -670,13 +685,42 @@ public class PolicyBundleInstaller {
      * @return list of ids of any existing service which have this routing uri
      */
     @NotNull
-    private List<Long> findMatchingService(String urlMapping) throws UnexpectedManagementResponse, InterruptedException,
-            AccessDeniedManagementResponse {
-        final String serviceFilter = MessageFormat.format(GATEWAY_MGMT_ENUMERATE_FILTER, getUuid(),
-                SERVICES_MGMT_NS, 10, "/l7:Service/l7:ServiceDetail/l7:ServiceMappings/l7:HttpMapping/l7:UrlPattern[text()='" + urlMapping + "']");
+    private List<Long> findMatchingServiceByUrl(String urlMapping) throws UnexpectedManagementResponse, InterruptedException, AccessDeniedManagementResponse {
+        final String serviceFilter = MessageFormat.format(GATEWAY_MGMT_ENUMERATE_FILTER, getUuid(), SERVICES_MGMT_NS, 10,
+            "/l7:Service/l7:ServiceDetail/l7:ServiceMappings/l7:HttpMapping/l7:UrlPattern[text()='" + urlMapping + "']");
 
         final Pair<AssertionStatus, Document> documentPair = callManagementCheckInterrupted(serviceFilter);
         return GatewayManagementDocumentUtilities.getSelectorId(documentPair.right, true);
+    }
+
+    /**
+     * See if any existing service without resolution url contains a service with the same nameMapping e.g. service name
+     *
+     * @param nameMapping the service name for the search
+     * @return list of ids of any existing service which have the same service name as nameMapping and do not have resolution url.
+     */
+    @NotNull
+    private List<Long> findMatchingServiceByNameWithoutResolutionUrl(String nameMapping) throws UnexpectedManagementResponse, InterruptedException, AccessDeniedManagementResponse {
+        final List<Long> foundIds = new ArrayList<>();
+
+        final String serviceFilter = MessageFormat.format(GATEWAY_MGMT_ENUMERATE_FILTER, getUuid(), SERVICES_MGMT_NS, 10,
+            "/l7:Service/l7:ServiceDetail/l7:Name[text()='" + nameMapping + "']");
+        final Pair<AssertionStatus, Document> documentPair = callManagementCheckInterrupted(serviceFilter);
+
+        // Remove ids associated with some services having resolution url, since service conflict with resolution url has been done by findMatchingServiceByUrl.
+        final List<Long> nameMatchedServices = GatewayManagementDocumentUtilities.getSelectorId(documentPair.right, true);
+        for (Long id: nameMatchedServices) {
+            String oidFilter = MessageFormat.format(GATEWAY_MGMT_ENUMERATE_FILTER, getUuid(), SERVICES_MGMT_NS, 10,
+                "/l7:Service/l7:ServiceDetail[@id='" + id + "']/l7:ServiceMappings/l7:HttpMapping/l7:UrlPattern");
+            Pair<AssertionStatus, Document> matchedPair = callManagementCheckInterrupted(oidFilter);
+            List<Long> matchedIds = GatewayManagementDocumentUtilities.getSelectorId(matchedPair.right, true);
+
+            if (matchedIds.isEmpty()) {
+                foundIds.add(id);
+            }
+        }
+
+        return foundIds;
     }
 
     private Pair<AssertionStatus, Document> callManagementCheckInterrupted(String requestXml) throws InterruptedException,

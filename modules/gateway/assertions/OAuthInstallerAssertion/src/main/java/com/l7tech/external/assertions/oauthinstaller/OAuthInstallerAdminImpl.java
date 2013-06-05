@@ -614,7 +614,7 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
                     }
 
                     final List<AuditDetail> details = new ArrayList<AuditDetail>();
-                    final List<String> urlPatternWithConflict = dryRunEvent.getUrlPatternWithConflict();
+                    final List<String> urlPatternWithConflict = dryRunEvent.getServiceConflict();
                     if (!urlPatternWithConflict.isEmpty()) {
                         details.add(
                                 new AuditDetail(
@@ -624,7 +624,7 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
                                         urlPatternWithConflict.toString()));
                     }
 
-                    final List<String> policyWithNameConflict = dryRunEvent.getPolicyWithNameConflict();
+                    final List<String> policyWithNameConflict = dryRunEvent.getPolicyConflict();
                     if (!policyWithNameConflict.isEmpty()) {
                         details.add(
                                 new AuditDetail(

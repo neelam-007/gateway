@@ -13,24 +13,24 @@ public class DryRunInstallPolicyBundleEvent extends PolicyBundleEvent {
         super(source, context);
     }
 
-    public void addUrlPatternWithConflict(String urlPattern) {
-        serviceWithUriConflict.add(urlPattern);
+    public void addServiceConflict(String urlPatternOrServiceName) {
+        serviceConflict.add(urlPatternOrServiceName);
     }
 
     public void addPolicyNameWithConflict(String policyName) {
-        policyWithNameConflict.add(policyName);
+        policyConflict.add(policyName);
     }
 
     public void addMissingJdbcConnection(String missingJdbcConn) {
         jdbcConnsThatDontExist.add(missingJdbcConn);
     }
 
-    public List<String> getUrlPatternWithConflict() {
-        return Collections.unmodifiableList(serviceWithUriConflict);
+    public List<String> getServiceConflict() {
+        return Collections.unmodifiableList(serviceConflict);
     }
 
-    public List<String> getPolicyWithNameConflict() {
-        return Collections.unmodifiableList(policyWithNameConflict);
+    public List<String> getPolicyConflict() {
+        return Collections.unmodifiableList(policyConflict);
     }
 
     public List<String> getJdbcConnsThatDontExist() {
@@ -38,7 +38,7 @@ public class DryRunInstallPolicyBundleEvent extends PolicyBundleEvent {
     }
 
     // - PRIVATE
-    private List<String> serviceWithUriConflict = new ArrayList<String>();
-    private List<String> policyWithNameConflict = new ArrayList<String>();
+    private List<String> serviceConflict = new ArrayList<String>();
+    private List<String> policyConflict = new ArrayList<String>();
     private List<String> jdbcConnsThatDontExist = new ArrayList<String>();
 }
