@@ -113,7 +113,7 @@ public class EmbeddedDbSchemaUpdater extends JdbcDaoSupport implements SchemaUpd
         if(upgradeInfo.right==null){
             upgradeResource = upgradeInfo.middle;
         }else{
-            upgradeResource = upgradeInfo.middle.getFilename().contains("mayFail")?upgradeInfo.middle:upgradeInfo.right;
+            upgradeResource = upgradeInfo.middle.getFilename().contains(DbUpgradeUtil.UPGRADE_TRY_SUFFIX)?upgradeInfo.middle:upgradeInfo.right;
         }
 
         if (StringUtils.isBlank(nextVersion) || upgradeResource == null) {
@@ -124,7 +124,7 @@ public class EmbeddedDbSchemaUpdater extends JdbcDaoSupport implements SchemaUpd
             DerbyDbHelper.runScripts(getConnection(), new Resource[]{upgradeResource}, false);
         } catch (final SQLException e) {
             if(upgradeInfo.right!=null){
-                final Resource checkSuccessResource = upgradeInfo.middle.getFilename().contains("checkSuccess")?upgradeInfo.middle:upgradeInfo.right;
+                final Resource checkSuccessResource = upgradeInfo.middle.getFilename().contains(DbUpgradeUtil.UPGRADE_SUCCESS_SUFFIX)?upgradeInfo.middle:upgradeInfo.right;
                 try{
                     String[] statements = DerbyDbHelper.getSqlStatements(checkSuccessResource);
                     logger.info("Using upgrade script: " + checkSuccessResource.getFilename());

@@ -11,8 +11,6 @@ import java.text.MessageFormat;
 import java.util.*;
 import java.util.logging.Logger;
 import java.util.logging.Level;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.net.PasswordAuthentication;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -187,9 +185,8 @@ public class DBActions {
 
                     String upgradeFile = upgradeInfo[1];
                     if(upgradeInfo[2]!=null){
-                        upgradeFile = upgradeFile.substring(0,upgradeFile.lastIndexOf('_'))+"_"+DbUpgradeUtil.UPGRADE_MAYFAIL_SUFFIX+".sql";
+                        upgradeFile = upgradeFile.substring(0,upgradeFile.lastIndexOf('_'))+"_"+DbUpgradeUtil.UPGRADE_TRY_SUFFIX +".sql";
                     }
-                    logger.info("Using upgrade script: "+upgradeFile);
                     String[] statements = DbUpgradeUtil.getStatementsFromFile(upgradeFile);
 
                     spammer = new ProgressTimerTask(ui);
@@ -208,12 +205,10 @@ public class DBActions {
                     } catch (SQLException e) {
                         if(upgradeInfo[2]!=null){
 
-                            upgradeFile = upgradeFile.substring(0,upgradeFile.lastIndexOf('_'))+"_"+DbUpgradeUtil.UPGRADE_CHECKSUCCESS_SUFFIX+".sql";
+                            upgradeFile = upgradeFile.substring(0,upgradeFile.lastIndexOf('_'))+"_"+DbUpgradeUtil.UPGRADE_SUCCESS_SUFFIX +".sql";
                             if (ui != null){
                                 ui.showSuccess("upgrade fail, checking success." + EOL_CHAR) ;
-                                ui.showSuccess("Using upgrade script: "+upgradeFile);
                             }
-                            logger.info("Using upgrade script: "+upgradeFile);
                             statements = DbUpgradeUtil.getStatementsFromFile(upgradeFile);
                             Statement statement =  conn.createStatement();
                             for(int i = 0 ; i < statements.length-1; ++i){

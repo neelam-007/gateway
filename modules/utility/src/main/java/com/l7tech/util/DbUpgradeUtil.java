@@ -118,7 +118,7 @@ public final class DbUpgradeUtil {
         if (optionMatcher.matches()) {
             String startVersion = optionMatcher.group(1);
             String destinationVersion = optionMatcher.group(2);
-            upgradeInfo = new Triple<String, String, String>(startVersion, destinationVersion,UPGRADE_MAYFAIL_SUFFIX);
+            upgradeInfo = new Triple<String, String, String>(startVersion, destinationVersion, UPGRADE_TRY_SUFFIX);
         }
         else {
             final Pattern pattern = Pattern.compile(UPGRADE_SQL_PATTERN);
@@ -135,8 +135,8 @@ public final class DbUpgradeUtil {
         return upgradeInfo;
     }
 
-    public static final String UPGRADE_MAYFAIL_SUFFIX = "mayFail";
-    public static final String UPGRADE_CHECKSUCCESS_SUFFIX = "checkSuccess";
+    public static final String UPGRADE_TRY_SUFFIX = "try";
+    public static final String UPGRADE_SUCCESS_SUFFIX = "success";
     private static final String UPGRADE_SQL_PATTERN = "^upgrade_(.*)-(.*).sql$";
-    private static final String UPGRADE_SQL_PATTERN_OPTION = "^upgrade_(.*)-(.*)_("+UPGRADE_MAYFAIL_SUFFIX+"|"+UPGRADE_CHECKSUCCESS_SUFFIX+").sql$";
+    private static final String UPGRADE_SQL_PATTERN_OPTION = "^upgrade_(.*)-(.*)_("+ UPGRADE_TRY_SUFFIX +"|"+ UPGRADE_SUCCESS_SUFFIX +").sql$";
 }
