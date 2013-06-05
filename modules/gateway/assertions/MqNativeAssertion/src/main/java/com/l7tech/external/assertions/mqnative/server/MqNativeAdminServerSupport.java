@@ -24,8 +24,7 @@ import java.util.logging.Logger;
 
 import static com.ibm.mq.constants.MQConstants.*;
 import static com.l7tech.external.assertions.mqnative.MqNativeConstants.*;
-import static com.l7tech.external.assertions.mqnative.server.MqNativeUtils.closeQuietly;
-import static com.l7tech.external.assertions.mqnative.server.MqNativeUtils.isTransactional;
+import static com.l7tech.external.assertions.mqnative.server.MqNativeUtils.*;
 import static com.l7tech.gateway.common.transport.SsgActiveConnector.*;
 import static com.l7tech.util.ExceptionUtils.getDebugException;
 import static com.l7tech.util.ExceptionUtils.getMessage;
@@ -110,7 +109,7 @@ public class MqNativeAdminServerSupport {
                         if ( MqNativeReplyType.REPLY_SPECIFIED_QUEUE == replyType && !StringUtils.isEmpty( specifiedReplyQueueName ) ) {
                             logger.finer("Attempting to get specified inbound reply queue ...");
                             testName = "inbound specified reply queue - ";
-                            replyQueue = queueManager.accessQueue( specifiedReplyQueueName, QUEUE_OPEN_OPTIONS_INBOUND_REPLY_SPECIFIED_QUEUE );
+                            replyQueue = queueManager.accessQueue( specifiedReplyQueueName, getIntboundReplyMessageOption() );
                             replyQueue.close();
                             logger.finer("... successfully got specified inbound reply queue " + replyQueue.getName() + "!");
                         }
@@ -133,7 +132,8 @@ public class MqNativeAdminServerSupport {
                         logger.finer("Attempting to get outbound put queue ...");
                         testName = "outbound queue - ";
                         targetQueue = queueManager.accessQueue(
-                                mqNativeActiveConnector.getProperty( PROPERTIES_KEY_MQ_NATIVE_TARGET_QUEUE_NAME ), QUEUE_OPEN_OPTIONS_OUTBOUND_PUT );
+                                mqNativeActiveConnector.getProperty( PROPERTIES_KEY_MQ_NATIVE_TARGET_QUEUE_NAME ),
+                                getOutboundPutMessageOption() );
                         targetQueue.close();
                         logger.finer("... successfully got outbound put queue " + targetQueue.getName() + "!");
 

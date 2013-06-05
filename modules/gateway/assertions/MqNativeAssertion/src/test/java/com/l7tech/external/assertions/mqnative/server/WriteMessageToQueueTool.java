@@ -6,6 +6,7 @@ import com.ibm.mq.headers.MQRFH;
 import com.ibm.mq.headers.MQRFH2;
 
 import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.Hashtable;
 
 import static com.ibm.mq.constants.MQConstants.*;
@@ -25,17 +26,59 @@ public class WriteMessageToQueueTool {
 
         MQQueueManager queueManager = null;
         MQQueue queue = null;
-        final String queueName = "AWTESTREPLYQUEUE";
-        //final String queueName = "AWTESTREQUESTQUEUE";
+        //final String queueName = "AWTESTREPLYQUEUE";
+        final String queueName = "AWTESTREQUESTQUEUE";
 
         // number messages to create
         for (int i = 0; i < 1; i++) {
             try {
                 queueManager = new MQQueueManager(queueManagerName, connProps);
+                queue = queueManager.accessQueue(queueName, MQOO_OUTPUT | MQOO_FAIL_IF_QUIESCING | MQOO_SET_ALL_CONTEXT);
+                final MQPutMessageOptions pmo = new MQPutMessageOptions();
+                pmo.options = MQPMO_NO_SYNCPOINT | MQPMO_SET_ALL_CONTEXT;
+
+                /*
                 queue = queueManager.accessQueue(queueName, MQOO_OUTPUT | MQOO_FAIL_IF_QUIESCING);
                 final MQPutMessageOptions pmo = new MQPutMessageOptions();
                 pmo.options = MQPMO_NO_SYNCPOINT;
+                */
+
+
                 MQMessage writeMsg = new MQMessage();
+
+                writeMsg.accountingToken = "test".getBytes();
+                writeMsg.applicationIdData = "test";
+                writeMsg.applicationOriginData = "test";
+                writeMsg.backoutCount = 2;
+                writeMsg.messageSequenceNumber = 2;
+                writeMsg.originalLength = 2;
+                writeMsg.putApplicationName ="test";
+                GregorianCalendar gc = new GregorianCalendar();
+                gc.set(1900, 5, 1);
+                writeMsg.putDateTime = gc;
+                writeMsg.userId = "test";
+
+
+
+                writeMsg.replyToQueueManagerName = "test";
+                writeMsg.replyToQueueName ="test";
+                writeMsg.expiry = 3000;
+                writeMsg.feedback = MQC.MQFB_EXPIRATION;
+                writeMsg.report = MQC.MQRO_EXPIRATION;
+                writeMsg.priority = 2;
+                writeMsg.persistence = 2;
+                writeMsg.characterSet = 1208;
+                writeMsg.correlationId = "test".getBytes();
+                writeMsg.messageId = "test".getBytes();
+                writeMsg.groupId = "test".getBytes();
+                writeMsg.messageType = MQC.MQMT_REQUEST;
+
+
+                writeMsg.messageFlags = MQC.MQMF_SEGMENT;
+                writeMsg.offset = 3; //Can be set only when messageFlags = SEGMENT
+
+
+
 
                 // set a RFH1 header
                 /*
@@ -47,7 +90,7 @@ public class WriteMessageToQueueTool {
                 */
 
                 // set a RFH2 header
-                writeMsg.format = MQFMT_RF_HEADER_2;
+                //writeMsg.format = MQFMT_RF_HEADER_2;
                 MQRFH2 rfh2= new MQRFH2();
                 rfh2.setFieldValue("folder", "rfh2Field1","rhf2Value1");
                 rfh2.setFieldValue("folder", "rfh2Field2","rhf2Value2");

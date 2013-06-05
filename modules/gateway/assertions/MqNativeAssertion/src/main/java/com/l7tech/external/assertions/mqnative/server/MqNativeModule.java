@@ -548,6 +548,9 @@ public class MqNativeModule extends ActiveTransportModule implements Application
         final MQPutMessageOptions replyOptions = new MQPutMessageOptions();
         replyOptions.options = MQPMO_NEW_MSG_ID |
                 ( transactional ? MQPMO_SYNCPOINT : MQPMO_NO_SYNCPOINT );
+        if (isOpenForSetAllContext()) {
+            replyOptions.options |= MQPMO_SET_ALL_CONTEXT;
+        }
         switch(replyType) {
             case REPLY_NONE:
                 logger.fine( "No response will be sent!" );

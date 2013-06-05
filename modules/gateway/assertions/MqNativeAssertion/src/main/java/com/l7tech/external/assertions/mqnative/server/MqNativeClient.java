@@ -8,6 +8,8 @@ import com.l7tech.util.Functions;
 import com.l7tech.util.Functions.NullaryThrows;
 import com.l7tech.util.Functions.UnaryThrows;
 import com.l7tech.util.Option;
+
+import static com.l7tech.external.assertions.mqnative.server.MqNativeUtils.getIntboundReplyMessageOption;
 import static com.l7tech.util.Option.none;
 import static com.l7tech.util.Option.some;
 
@@ -73,7 +75,7 @@ class MqNativeClient implements Closeable {
         MQQueueManager queueManager = new MQQueueManager( queueManagerName, queueManagerProperties);
         MQQueue targetQueue = queueManager.accessQueue( queueName, QUEUE_OPEN_OPTIONS_INBOUND );
         MQQueue specifiedReplyQueue = replyQueueName.isSome() ?
-                queueManager.accessQueue( replyQueueName.some(), QUEUE_OPEN_OPTIONS_INBOUND_REPLY_SPECIFIED_QUEUE ) :
+                queueManager.accessQueue( replyQueueName.some(), getIntboundReplyMessageOption() ) :
                 null;
 
         return new Triple<MQQueueManager,MQQueue,MQQueue>(queueManager,targetQueue,specifiedReplyQueue);

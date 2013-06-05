@@ -324,7 +324,7 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
                 // route via write to queue
                 if (assertion.isPutToQueue()) {
                     // create the outbound queue
-                    targetQueue = queueManager.accessQueue( cfg.getQueueName(), QUEUE_OPEN_OPTIONS_OUTBOUND_PUT );
+                    targetQueue = queueManager.accessQueue( cfg.getQueueName(), getOutboundPutMessageOption() );
 
                     // create replyTo or temporary queue
                     if (context.isReplyExpected()) {
@@ -339,7 +339,9 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
                             logger.fine("New correlationId will be generated");
                         pmo.options |= MQPMO_NEW_CORREL_ID;
                     }
-                    //pmo.options |= MQPMO_SET_ALL_CONTEXT;
+                    if (isOpenForSetAllContext()) {
+                        pmo.options |= MQPMO_SET_ALL_CONTEXT;
+                    }
                     mqResponseMessage = writeMessageToQueue(targetQueue, replyQueue, pmo, readTimeout);
 
                     // no write response and no write reply required
