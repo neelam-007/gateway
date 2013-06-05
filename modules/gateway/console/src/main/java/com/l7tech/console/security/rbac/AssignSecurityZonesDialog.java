@@ -6,6 +6,7 @@ import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.TableUtil;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.*;
+import com.l7tech.util.ExceptionUtils;
 import org.apache.commons.collections.ComparatorUtils;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -24,11 +25,14 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Dialog for bulk assigning entities to security zones.
  */
 public class AssignSecurityZonesDialog extends JDialog {
+    private static final Logger logger = Logger.getLogger(AssignSecurityZonesDialog.class.getName());
     private JPanel contentPanel;
     private JComboBox typeComboBox;
     private JPanel entitiesPanel;
@@ -190,7 +194,9 @@ public class AssignSecurityZonesDialog extends JDialog {
         final Comparator<EntityHeader> headerComparator = new Comparator<EntityHeader>() {
             @Override
             public int compare(final EntityHeader o1, final EntityHeader o2) {
-                return o1.getName().compareToIgnoreCase(o2.getName());
+                String o1Name = o1.getName() == null ? StringUtils.EMPTY : o1.getName();
+                String o2Name = o2.getName() == null ? StringUtils.EMPTY : o2.getName();
+                return o1Name.compareToIgnoreCase(o2Name);
             }
         };
         Utilities.setRowSorter(entitiesTable, dataModel, new int[]{0, 1, 2}, new boolean[]{true, true, true},
@@ -231,8 +237,11 @@ public class AssignSecurityZonesDialog extends JDialog {
         for (int i = rowCount - 1; i >= 0; i--) {
             dataModel.removeRow(i);
         }
-        final EntityType selected = getSelectedEntityType();
+        EntityType selected = getSelectedEntityType();
         if (selected != null) {
+            if (selected == EntityType.SSG_KEY_ENTRY) {
+                selected = EntityType.SSG_KEY_METADATA;
+            }
             try {
                 final EntityHeaderSet<EntityHeader> entities = Registry.getDefault().getRbacAdmin().findEntities(selected);
                 final EntityHeader[] headers = entities.toArray(new EntityHeader[entities.size()]);
@@ -242,8 +251,8 @@ public class AssignSecurityZonesDialog extends JDialog {
                     data[0] = Boolean.FALSE;
                     data[1] = header;
                     String zone = "(no security zone)";
-                    if (header instanceof ZoneableEntityHeader) {
-                        final Long securityZoneOid = ((ZoneableEntityHeader) header).getSecurityZoneOid();
+                    if (header instanceof HasSecurityZoneOid) {
+                        final Long securityZoneOid = ((HasSecurityZoneOid) header).getSecurityZoneOid();
                         if (securityZoneOid != null) {
                             zone = Registry.getDefault().getRbacAdmin().findSecurityZoneByPrimaryKey(securityZoneOid).getName();
                         }
@@ -253,7 +262,9 @@ public class AssignSecurityZonesDialog extends JDialog {
                 }
                 dataModel.fireTableDataChanged();
             } catch (final FindException ex) {
-                ex.printStackTrace();
+                final String error = "Error retrieving entities of type " + selected;
+                logger.log(Level.WARNING, error, ExceptionUtils.getDebugException(ex));
+                DialogDisplayer.showMessageDialog(this, error, "Error", JOptionPane.ERROR_MESSAGE, null);
             }
         }
     }

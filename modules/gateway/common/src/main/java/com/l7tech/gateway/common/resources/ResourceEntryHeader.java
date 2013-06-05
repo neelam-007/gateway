@@ -2,11 +2,12 @@ package com.l7tech.gateway.common.resources;
 
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.ZoneableEntityHeader;
 
 /**
  * Entity header for resource entries.
  */
-public class ResourceEntryHeader extends EntityHeader {
+public class ResourceEntryHeader extends ZoneableEntityHeader {
 
     //- PUBLIC
 

@@ -1,5 +1,6 @@
 package com.l7tech.objectmodel;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -8,7 +9,19 @@ import org.jetbrains.annotations.Nullable;
 public class ZoneableEntityHeader extends EntityHeader implements HasSecurityZoneOid {
     protected Long securityZoneOid;
 
-    public ZoneableEntityHeader(long oid, EntityType type, String name, String description, Integer version) {
+    public ZoneableEntityHeader() {
+        super();
+    }
+
+    public ZoneableEntityHeader(@NotNull final EntityHeader headerToCopy) {
+        this(headerToCopy.getOid(), headerToCopy.getType(), headerToCopy.getName(), headerToCopy.getDescription(), headerToCopy.getVersion());
+    }
+
+    public ZoneableEntityHeader(final long oid, final EntityType type, final String name, final String description, final Integer version) {
+        super(oid, type, name, description, version);
+    }
+
+    public ZoneableEntityHeader(final String oid, final EntityType type, final String name, final String description, final Integer version) {
         super(oid, type, name, description, version);
     }
 

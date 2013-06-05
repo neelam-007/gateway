@@ -135,8 +135,9 @@ public class SecurityZonePropertiesDialog extends JDialog {
                     DialogDisplayer.showMessageDialog(SecurityZonePropertiesDialog.this, error,
                             operation.getName() + " Security Zone", JOptionPane.ERROR_MESSAGE, null);
                 } else {
-                    if (operation == OperationType.UPDATE) {
-                        final Collection<EntityType> removedEntityTypes = CollectionUtils.subtract(originalSupportedEntityTypes, getSelectedEntityTypes());
+                    final Set<EntityType> selected = getSelectedEntityTypes();
+                    if (operation == OperationType.UPDATE && !selected.contains(EntityType.ANY)) {
+                        final Collection<EntityType> removedEntityTypes = CollectionUtils.subtract(originalSupportedEntityTypes, selected);
                         try {
                             loadEntitiesToRemoveFromZone(removedEntityTypes);
                             if (!entitiesToRemoveFromZone.isEmpty()) {

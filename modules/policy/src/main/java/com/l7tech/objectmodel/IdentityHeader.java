@@ -8,7 +8,7 @@ import javax.xml.bind.annotation.XmlAttribute;
  * Extends EntityHeader to include an Identity Provider OID.
  */
 @XmlRootElement
-public class IdentityHeader extends EntityHeader {
+public class IdentityHeader extends ZoneableEntityHeader {
     private long providerOid;
     private final String commonName;
     private final boolean enabled;

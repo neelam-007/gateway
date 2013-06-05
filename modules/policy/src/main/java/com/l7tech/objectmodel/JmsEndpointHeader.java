@@ -9,7 +9,7 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @author jbufu
  */
 @XmlRootElement
-public class JmsEndpointHeader extends EntityHeader {
+public class JmsEndpointHeader extends ZoneableEntityHeader {
 
     private String providerName;
     private boolean incoming;

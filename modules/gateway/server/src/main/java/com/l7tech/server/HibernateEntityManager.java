@@ -626,13 +626,22 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
         if (entity instanceof NamedEntity) name = ((NamedEntity) entity).getName();
         if (name == null) name = "";
 
-
-        return (HT) new EntityHeader(
+        HT ht = (HT) new EntityHeader(
                 entity.getOid(),
                 getEntityType(),
                 name,
                 EMPTY_STRING,
                 entity.getVersion());
+
+        if (entity instanceof ZoneableEntity) {
+            final ZoneableEntity zoneableEntity = (ZoneableEntity) entity;
+            final SecurityZone zone = zoneableEntity.getSecurityZone();
+            final ZoneableEntityHeader zoneableHeader = new ZoneableEntityHeader(ht);
+            zoneableHeader.setSecurityZoneOid(zone == null ? null : zone.getOid());
+            ht = (HT) zoneableHeader;
+        }
+
+        return ht;
     }
 
     /**

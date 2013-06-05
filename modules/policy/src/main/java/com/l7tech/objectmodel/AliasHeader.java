@@ -6,7 +6,7 @@ package com.l7tech.objectmodel;
  * <p>Extension of entity header with additional data for the target of the
  * alias and for the containing Folder.</p>
  */
-public class AliasHeader<ET extends PersistentEntity> extends EntityHeader {
+public class AliasHeader<ET extends PersistentEntity> extends ZoneableEntityHeader {
 
     //- PUBLIC
 

@@ -39,6 +39,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.io.Serializable;
 import java.security.KeyStoreException;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -90,39 +91,7 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
             //noinspection unchecked
             else if(!(Entity.class.isAssignableFrom(entityClass) || EntityType.USER.equals(type) || EntityType.GROUP.equals(type)))
                 throw new UnsupportedEntityTypeException("The entity type of '" + type.getName() + "' is not supported.");
-            else return getHibernateTemplate().execute(new ReadOnlyHibernateCallback<EntityHeaderSet<EntityHeader>>() {
-                @Override
-                public EntityHeaderSet<EntityHeader> doInHibernateReadOnly(Session session) throws HibernateException {
-                    final ClassMetadata metadata = getSessionFactory().getClassMetadata(entityClass);
-                    final Criteria criteria = session.createCriteria(entityClass);
-                    final ProjectionList pl = Projections.projectionList();
-                    pl.add(Projections.property("oid"));
-                    final boolean names = hasName(entityClass, metadata);
-                    if (names) pl.add(Projections.property("name"));
-                    criteria.setProjection(pl);
-                    criteria.setMaxResults(MAX_RESULTS);
-                    List arrays = criteria.list();
-                    EntityHeaderSet<EntityHeader> headers = new EntityHeaderSet<EntityHeader>();
-                    for (Iterator i = arrays.iterator(); i.hasNext();) {
-                        Long oid;
-                        String name;
-                        if (names) {
-                            Object[] array = (Object[]) i.next();
-                            oid = (Long) array[0];
-                            name = (String) array[1];
-                        } else {
-                            oid = (Long) i.next();
-                            name = null;
-                        }
-                        if(name == null || name.isEmpty()) name = oid.toString();
-                        headers.add(new EntityHeader(oid.toString(), type, name, null));
-                    }
-
-                    if (arrays.size() >= MAX_RESULTS) headers.setMaxExceeded(MAX_RESULTS);
-
-                    return headers;
-                }
-            });
+            else return getHibernateTemplate().execute(new ReadOnlyFindAll(entityClass, type));
         } catch (DataAccessResourceFailureException e) {
             throw new FindException("Couldn't find entities", e);
         } catch (IllegalStateException e) {
@@ -269,7 +238,16 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
             NamedEntity ne = (NamedEntity) e;
             name = ne.getName();
         }
-        return new EntityHeader(e.getId(), etype, name, null);
+        EntityHeader header = new EntityHeader(e.getId(), etype, name, null);
+        if (e instanceof ZoneableEntity) {
+            final ZoneableEntity zoneableEntity = (ZoneableEntity) e;
+            final SecurityZone zone = zoneableEntity.getSecurityZone();
+            final ZoneableEntityHeader zoneableHeader = new ZoneableEntityHeader(header);
+            zoneableHeader.setSecurityZoneOid(zone == null ? null : zone.getOid());
+            header = zoneableHeader;
+        }
+
+        return header;
     }
 
     @Override
@@ -320,5 +298,71 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
     @Override
     public void provideNeededEntities(@NotNull UsesEntitiesAtDesignTime entityUser, @Nullable Functions.BinaryVoid<EntityHeader, FindException> errorHandler) throws FindException {
         PolicyUtil.provideNeededEntities(entityUser, this, errorHandler);
+    }
+
+    class ReadOnlyFindAll extends ReadOnlyHibernateCallback<EntityHeaderSet<EntityHeader>> {
+        private final Class<? extends Entity> entityClass;
+        private final EntityType entityType;
+        ReadOnlyFindAll(@NotNull final Class<? extends Entity> entityClass, @NotNull final EntityType entityType) {
+            this.entityClass = entityClass;
+            this.entityType = entityType;
+        }
+        @Override
+        protected EntityHeaderSet<EntityHeader> doInHibernateReadOnly(final Session session) throws HibernateException, SQLException {
+            final ClassMetadata metadata = getSessionFactory().getClassMetadata(entityClass);
+            final Criteria criteria = session.createCriteria(entityClass);
+            final ProjectionList pl = Projections.projectionList();
+
+            // oid is required
+            pl.add(Projections.property("oid"));
+
+            // name is optional
+            final boolean names = hasName(entityClass, metadata);
+            if (names) pl.add(Projections.property("name"));
+
+            // zone is optional
+            boolean hasZone = false;
+            if (ZoneableEntity.class.isAssignableFrom(entityClass)) {
+                hasZone = true;
+                pl.add(Projections.property("securityZone.oid"));
+            }
+
+            criteria.setProjection(pl);
+            criteria.setMaxResults(MAX_RESULTS);
+            List arrays = criteria.list();
+            EntityHeaderSet<EntityHeader> headers = new EntityHeaderSet<EntityHeader>();
+            for (Iterator i = arrays.iterator(); i.hasNext();) {
+                final Long oid;
+                String name = null;
+                Long zoneOid = null;
+                final Object next = i.next();
+                if (next instanceof Object[]) {
+                    final Object[] array = (Object[]) next;
+                    oid = (Long) array[0];
+                    if (names && hasZone) {
+                        name = (String) array[1];
+                        zoneOid = (Long) array[2];
+                    } else if (names) {
+                        name = (String) array[1];
+                    } else if (hasZone) {
+                        zoneOid = (Long) array[1];
+                    }
+                } else {
+                    oid = (Long) next;
+                }
+                if(name == null || name.isEmpty()) name = oid.toString();
+                EntityHeader header = new EntityHeader(oid.toString(), entityType, name, null);
+                if (hasZone) {
+                    final ZoneableEntityHeader zoneableHeader = new ZoneableEntityHeader(header);
+                    zoneableHeader.setSecurityZoneOid(zoneOid);
+                    header = zoneableHeader;
+                }
+                headers.add(header);
+            }
+
+            if (arrays.size() >= MAX_RESULTS) headers.setMaxExceeded(MAX_RESULTS);
+
+            return headers;
+        }
     }
 }

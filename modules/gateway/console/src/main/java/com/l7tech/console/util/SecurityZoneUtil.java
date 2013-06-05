@@ -142,7 +142,8 @@ public class SecurityZoneUtil {
         // do not support audits as there may be a LOT of them in the zone
         // user is not aware of the UDDI entities under the hood - they inherit the security zone from the published service
         // user is not aware that JMS involves two entity types - they share the same security zone
-        return new HashSet<>(Arrays.asList(EntityType.AUDIT_MESSAGE, EntityType.UDDI_PROXIED_SERVICE_INFO, EntityType.UDDI_SERVICE_CONTROL, EntityType.JMS_ENDPOINT));
+        // key metadata is fronted by ssg key entry
+        return new HashSet<>(Arrays.asList(EntityType.AUDIT_MESSAGE, EntityType.UDDI_PROXIED_SERVICE_INFO, EntityType.UDDI_SERVICE_CONTROL, EntityType.JMS_ENDPOINT, EntityType.SSG_KEY_METADATA));
     }
 
     private static boolean matchScope(@NotNull final SecurityZone zone, @Nullable Set<ScopePredicate> predicates) {

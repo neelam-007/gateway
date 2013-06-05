@@ -2,11 +2,12 @@ package com.l7tech.gateway.common.transport;
 
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.ZoneableEntityHeader;
 
 /**
  * Entity header for SsgActiveConnectors
  */
-public class SsgActiveConnectorHeader extends EntityHeader {
+public class SsgActiveConnectorHeader extends ZoneableEntityHeader {
     private String connectorType;
     private boolean enabled;
     private boolean inbound;
