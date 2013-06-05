@@ -39,7 +39,9 @@
             <children>
               <component id="35c9c" class="javax.swing.JTable" binding="entitiesTable">
                 <constraints/>
-                <properties/>
+                <properties>
+                  <preferredScrollableViewportSize width="450" height="200"/>
+                </properties>
               </component>
             </children>
           </scrollpane>

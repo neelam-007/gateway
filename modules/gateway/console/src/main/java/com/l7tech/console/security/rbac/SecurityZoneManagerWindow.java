@@ -175,6 +175,7 @@ public class SecurityZoneManagerWindow extends JDialog {
             public void actionPerformed(ActionEvent e) {
                 final AssignSecurityZonesDialog assignDialog = new AssignSecurityZonesDialog(SecurityZoneManagerWindow.this, SecurityZoneUtil.getNonHiddenZoneableEntityTypes(), SecurityZoneUtil.getSortedReadableSecurityZones());
                 assignDialog.pack();
+                Utilities.centerOnParentWindow(assignDialog);
                 DialogDisplayer.display(assignDialog, new Runnable() {
                     @Override
                     public void run() {

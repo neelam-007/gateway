@@ -42,7 +42,7 @@ public class EntityNameResolver {
     /**
      * Resolves a name for a given EntityHeader.
      * <p/>
-     * If there is a non-empty name on the header, it will take precedence (this should happen in most cases).
+     * If there is a non-empty, non-oid name on the header, it will take precedence (this should happen in most cases).
      * <p/>
      * Otherwise name will be resolved by looking up the entity that is referenced by the header (this is usually the case is for entities that don't have a name).
      *
@@ -54,7 +54,7 @@ public class EntityNameResolver {
     @NotNull
     public String getNameForHeader(@NotNull final EntityHeader header) throws FindException {
         String name = header.getName();
-        if (StringUtils.isBlank(name)) {
+        if (StringUtils.isBlank(name) || String.valueOf(header.getOid()).equals(header.getName())) {
             final EntityType entityType = header.getType();
             switch (entityType) {
                 case SERVICE_ALIAS:

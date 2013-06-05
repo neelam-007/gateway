@@ -120,4 +120,15 @@ public class EntityNameResolverTest {
     public void geNameForHeaderUnsupportedEntityType() throws Exception {
         assertTrue(resolver.getNameForHeader(new EntityHeader(OID, EntityType.ANY, null, null)).isEmpty());
     }
+
+    /**
+     * If the header has the entity's oid as its name - go get more info for the name.
+     */
+    @Test
+    public void getNameForHeaderWithOidInName() throws Exception {
+        final PublishedService service = new PublishedService();
+        service.setName(NAME);
+        when(serviceAdmin.findByAlias(OID)).thenReturn(service);
+        assertEquals(NAME + " alias", resolver.getNameForHeader(new EntityHeader(OID, EntityType.SERVICE_ALIAS, String.valueOf(OID), null)));
+    }
 }

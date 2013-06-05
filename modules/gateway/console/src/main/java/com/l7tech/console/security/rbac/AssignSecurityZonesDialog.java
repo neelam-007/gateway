@@ -21,9 +21,7 @@ import javax.swing.table.TableRowSorter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Comparator;
+import java.util.*;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -33,6 +31,9 @@ import java.util.logging.Logger;
  */
 public class AssignSecurityZonesDialog extends JDialog {
     private static final Logger logger = Logger.getLogger(AssignSecurityZonesDialog.class.getName());
+    private static final int HEADER_COL_INDEX = 1;
+    private static final int ZONE_COL_INDEX = 2;
+    private static final int CHECK_BOX_COL_INDEX = 0;
     private JPanel contentPanel;
     private JComboBox typeComboBox;
     private JPanel entitiesPanel;
@@ -49,7 +50,7 @@ public class AssignSecurityZonesDialog extends JDialog {
     private EntitiesTableModel dataModel = new EntitiesTableModel(new String[]{"", "Name", "Current Zone"}, new Object[][]{});
 
     public AssignSecurityZonesDialog(@NotNull final Window owner, @NotNull final Collection<EntityType> entityTypes, @NotNull final Collection<SecurityZone> securityZones) {
-        super(owner);
+        super(owner, "Assign Security Zones");
         setContentPane(contentPanel);
         initBtns();
         initComboBoxes(entityTypes, securityZones);
@@ -61,7 +62,7 @@ public class AssignSecurityZonesDialog extends JDialog {
     }
 
     private void initFiltering() {
-        filterPanel.attachRowSorter(((TableRowSorter) entitiesTable.getRowSorter()), new int[]{1});
+        filterPanel.attachRowSorter(((TableRowSorter) entitiesTable.getRowSorter()), new int[]{HEADER_COL_INDEX});
         filterPanel.registerFilterCallback(new Runnable() {
             @Override
             public void run() {
@@ -137,7 +138,7 @@ public class AssignSecurityZonesDialog extends JDialog {
             @Override
             public void actionPerformed(final ActionEvent e) {
                 for (int i = 0; i < dataModel.getRowCount(); i++) {
-                    dataModel.setValueAt(true, i, 0);
+                    dataModel.setValueAt(true, i, CHECK_BOX_COL_INDEX);
                 }
             }
         });
@@ -145,7 +146,7 @@ public class AssignSecurityZonesDialog extends JDialog {
             @Override
             public void actionPerformed(final ActionEvent e) {
                 for (int i = 0; i < dataModel.getRowCount(); i++) {
-                    dataModel.setValueAt(false, i, 0);
+                    dataModel.setValueAt(false, i, CHECK_BOX_COL_INDEX);
                 }
             }
         });
@@ -154,14 +155,16 @@ public class AssignSecurityZonesDialog extends JDialog {
             @Override
             public void actionPerformed(final ActionEvent e) {
                 final SecurityZone selectedZone = getSelectedZone();
-                final List<EntityHeader> selectedEntities = getSelectedEntities();
+                final Map<Integer, EntityHeader> selectedEntities = getSelectedEntities();
                 final List<Long> oids = new ArrayList<>(selectedEntities.size());
-                for (EntityHeader header : selectedEntities) {
-                    oids.add(header.getOid());
+                for (final EntityHeader selectedHeader : selectedEntities.values()) {
+                    oids.add(selectedHeader.getOid());
                 }
                 try {
                     Registry.getDefault().getRbacAdmin().setSecurityZoneForEntities(selectedZone == null ? null : selectedZone.getOid(), getSelectedEntityType(), oids);
-                    loadTable();
+                    for (final Integer selectedIndex : selectedEntities.keySet()) {
+                        dataModel.setValueAt(selectedZone.getName(), selectedIndex, ZONE_COL_INDEX);
+                    }
                 } catch (final UpdateException ex) {
                     DialogDisplayer.showMessageDialog(AssignSecurityZonesDialog.this, "Error", "Unable to assign entities to zone.", ex);
                 }
@@ -171,7 +174,7 @@ public class AssignSecurityZonesDialog extends JDialog {
 
     private void initTable() {
         entitiesTable.setModel(dataModel);
-        entitiesTable.getColumnModel().getColumn(1).setCellRenderer(new DefaultTableCellRenderer() {
+        entitiesTable.getColumnModel().getColumn(HEADER_COL_INDEX).setCellRenderer(new DefaultTableCellRenderer() {
             @Override
             protected void setValue(final Object value) {
                 final EntityHeader header = (EntityHeader) value;
@@ -184,8 +187,8 @@ public class AssignSecurityZonesDialog extends JDialog {
                 setText(name);
             }
         });
-        TableUtil.adjustColumnWidth(entitiesTable, 0, 30);
-        TableUtil.adjustColumnWidth(entitiesTable, 2, 60);
+        TableUtil.adjustColumnWidth(entitiesTable, CHECK_BOX_COL_INDEX, 30);
+        TableUtil.adjustColumnWidth(entitiesTable, ZONE_COL_INDEX, 60);
         dataModel.addTableModelListener(new TableModelListener() {
             @Override
             public void tableChanged(final TableModelEvent e) {
@@ -206,7 +209,7 @@ public class AssignSecurityZonesDialog extends JDialog {
                 return o1Name.compareToIgnoreCase(o2Name);
             }
         };
-        Utilities.setRowSorter(entitiesTable, dataModel, new int[]{0, 1, 2}, new boolean[]{true, true, true},
+        Utilities.setRowSorter(entitiesTable, dataModel, new int[]{CHECK_BOX_COL_INDEX, HEADER_COL_INDEX, ZONE_COL_INDEX}, new boolean[]{true, true, true},
                 new Comparator[]{null, ComparatorUtils.nullLowComparator(headerComparator), null});
     }
 
@@ -228,12 +231,15 @@ public class AssignSecurityZonesDialog extends JDialog {
         return null;
     }
 
-    private java.util.List<EntityHeader> getSelectedEntities() {
-        final java.util.List<EntityHeader> selectedEntities = new ArrayList<>();
+    /**
+     * @return a map of selected entities where key = row index and value = entity header.
+     */
+    private Map<Integer, EntityHeader> getSelectedEntities() {
+        final Map<Integer, EntityHeader> selectedEntities = new HashMap<>();
         for (int i = 0; i < dataModel.getRowCount(); i++) {
-            final boolean selected = (Boolean) dataModel.getValueAt(i, 0);
+            final boolean selected = (Boolean) dataModel.getValueAt(i, CHECK_BOX_COL_INDEX);
             if (selected) {
-                selectedEntities.add((EntityHeader) dataModel.getValueAt(i, 1));
+                selectedEntities.put(i, ((EntityHeader) dataModel.getValueAt(i, HEADER_COL_INDEX)));
             }
         }
         return selectedEntities;
@@ -255,8 +261,8 @@ public class AssignSecurityZonesDialog extends JDialog {
                 for (int i = 0; i < headers.length; i++) {
                     final EntityHeader header = headers[i];
                     final Object[] data = new Object[3];
-                    data[0] = Boolean.FALSE;
-                    data[1] = header;
+                    data[CHECK_BOX_COL_INDEX] = Boolean.FALSE;
+                    data[HEADER_COL_INDEX] = header;
                     String zone = "(no security zone)";
                     if (header instanceof HasSecurityZoneOid) {
                         final Long securityZoneOid = ((HasSecurityZoneOid) header).getSecurityZoneOid();
@@ -264,7 +270,7 @@ public class AssignSecurityZonesDialog extends JDialog {
                             zone = Registry.getDefault().getRbacAdmin().findSecurityZoneByPrimaryKey(securityZoneOid).getName();
                         }
                     }
-                    data[2] = zone;
+                    data[ZONE_COL_INDEX] = zone;
                     dataModel.addRow(data);
                 }
                 dataModel.fireTableDataChanged();
@@ -283,12 +289,12 @@ public class AssignSecurityZonesDialog extends JDialog {
 
         @Override
         public boolean isCellEditable(final int row, final int col) {
-            return col == 0;
+            return col == CHECK_BOX_COL_INDEX;
         }
 
         @Override
         public Class<?> getColumnClass(final int columnIndex) {
-            return columnIndex == 0 ? Boolean.class : String.class;
+            return columnIndex == CHECK_BOX_COL_INDEX ? Boolean.class : String.class;
         }
     }
 }
