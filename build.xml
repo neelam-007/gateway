@@ -2571,7 +2571,7 @@
         <!--
             Sign Layer7 API jar
         -->
-        <copy file="modules/gateway/api/build/layer7-api.jar" tofile="${build.dir}/layer7-api.jar"/>
+        <copy file="modules/gateway/api/build/layer7-api.jar" tofile="${build.dir}/layer7-api-${build.api.version}.jar"/>
 
         <mkdir dir="${build.dir}/docs"/>
 
@@ -2737,7 +2737,7 @@
         </copy>
 
         <mkdir dir="${build.dir}/CustomAssertionAPI-${build.version}/lib"/>
-        <copy file="${build.dir}/layer7-api.jar" tofile="${build.dir}/CustomAssertionAPI-${build.version}/lib/layer7-api.jar"/>
+        <copy file="${build.dir}/layer7-api-${build.api.version}.jar" tofile="${build.dir}/CustomAssertionAPI-${build.version}/lib/layer7-api-${build.api.version}.jar"/>
 
 
         <mkdir dir="${build.dir}/CustomAssertionAPI-${build.version}/TrafficLoggerSample"/>
@@ -2759,7 +2759,7 @@
         </copy>
 
         <mkdir dir="${build.dir}/CustomAssertionAPI-${build.version}/TrafficLoggerSample/lib"/>
-        <copy file="${build.dir}/layer7-api.jar" tofile="${build.dir}/CustomAssertionAPI-${build.version}/TrafficLoggerSample/lib/layer7-api.jar"/>
+        <copy file="${build.dir}/layer7-api-${build.api.version}.jar" tofile="${build.dir}/CustomAssertionAPI-${build.version}/TrafficLoggerSample/lib/layer7-api-${build.api.version}.jar"/>
 
         <zip destfile="${build.dir}/CustomAssertion_dev_kit-${build.version}.zip">
             <zipfileset dir="${build.dir}" filemode="755">
