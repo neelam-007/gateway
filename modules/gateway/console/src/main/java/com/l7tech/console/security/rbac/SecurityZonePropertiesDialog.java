@@ -10,7 +10,10 @@ import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.JCheckBoxListModel;
-import com.l7tech.objectmodel.*;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.SecurityZone;
+import com.l7tech.objectmodel.ZoneableEntityHeader;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import org.apache.commons.collections.CollectionUtils;
@@ -62,7 +65,7 @@ public class SecurityZonePropertiesDialog extends JDialog {
         this.readOnly = readOnly;
         operation = readOnly ? OperationType.READ : securityZone.getOid() == SecurityZone.DEFAULT_OID ? OperationType.CREATE : OperationType.UPDATE;
         if (operation == OperationType.UPDATE) {
-            originalSupportedEntityTypes.addAll(securityZone.getPermittedEntityTypes());
+            originalSupportedEntityTypes.addAll(securityZone.getPermittedEntityTypes().contains(EntityType.ANY) ? SecurityZoneUtil.getNonHiddenZoneableEntityTypes() : securityZone.getPermittedEntityTypes());
         }
         initValidation();
         initComponents();

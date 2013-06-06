@@ -2,6 +2,7 @@ package com.l7tech.console.security.rbac;
 
 import com.l7tech.console.panels.FilterPanel;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.SecurityZoneUtil;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.TableUtil;
 import com.l7tech.gui.util.Utilities;
@@ -34,6 +35,7 @@ public class AssignSecurityZonesDialog extends JDialog {
     private static final int HEADER_COL_INDEX = 1;
     private static final int ZONE_COL_INDEX = 2;
     private static final int CHECK_BOX_COL_INDEX = 0;
+    private static final String NO_SECURITY_ZONE = "(no security zone)";
     private JPanel contentPanel;
     private JComboBox typeComboBox;
     private JPanel entitiesPanel;
@@ -48,12 +50,18 @@ public class AssignSecurityZonesDialog extends JDialog {
     private JLabel selectedLabel;
     private FilterPanel filterPanel;
     private EntitiesTableModel dataModel = new EntitiesTableModel(new String[]{"", "Name", "Current Zone"}, new Object[][]{});
+    private Map<EntityType, List<SecurityZone>> entityTypes;
 
-    public AssignSecurityZonesDialog(@NotNull final Window owner, @NotNull final Collection<EntityType> entityTypes, @NotNull final Collection<SecurityZone> securityZones) {
+    /**
+     * @param owner       owner of this Dialog.
+     * @param entityTypes map where key = entity types that contain at least one modifiable entity and value = list of zones that can be set for the entity type
+     */
+    public AssignSecurityZonesDialog(@NotNull final Window owner, @NotNull final Map<EntityType, List<SecurityZone>> entityTypes) {
         super(owner, "Assign Security Zones");
         setContentPane(contentPanel);
+        this.entityTypes = entityTypes;
         initBtns();
-        initComboBoxes(entityTypes, securityZones);
+        initComboBoxes();
         setPanelTitle();
         initTable();
         loadTable();
@@ -88,11 +96,11 @@ public class AssignSecurityZonesDialog extends JDialog {
         }
     }
 
-    private void initComboBoxes(final Collection<EntityType> entityTypes, final Collection<SecurityZone> securityZones) {
-        typeComboBox.setModel((new DefaultComboBoxModel<EntityType>(entityTypes.toArray(new EntityType[entityTypes.size()]))));
+    private void initComboBoxes() {
+        typeComboBox.setModel((new DefaultComboBoxModel<EntityType>(entityTypes.keySet().toArray(new EntityType[entityTypes.keySet().size()]))));
         typeComboBox.setRenderer(new DefaultListCellRenderer() {
             @Override
-            public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+            public Component getListCellRendererComponent(final JList<?> list, Object value, final int index, final boolean isSelected, final boolean cellHasFocus) {
                 if (value instanceof EntityType) {
                     value = ((EntityType) value).getName();
                 }
@@ -105,10 +113,11 @@ public class AssignSecurityZonesDialog extends JDialog {
                 setPanelTitle();
                 loadTable();
                 loadCount();
+                reloadZoneComboBox();
             }
         });
         typeComboBox.setSelectedItem(null);
-        zoneComboBox.setModel(new DefaultComboBoxModel<SecurityZone>(securityZones.toArray(new SecurityZone[securityZones.size()])));
+        zoneComboBox.setModel(new DefaultComboBoxModel<>(new SecurityZone[]{}));
         zoneComboBox.setRenderer(new DefaultListCellRenderer() {
             @Override
             public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
@@ -118,6 +127,14 @@ public class AssignSecurityZonesDialog extends JDialog {
                 return super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
             }
         });
+    }
+
+    private void reloadZoneComboBox() {
+        final EntityType selectedEntityType = getSelectedEntityType();
+        if (selectedEntityType != null) {
+            final List<SecurityZone> zonesForEntityType = entityTypes.get(selectedEntityType);
+            zoneComboBox.setModel(new DefaultComboBoxModel<SecurityZone>(zonesForEntityType.toArray(new SecurityZone[zonesForEntityType.size()])));
+        }
     }
 
     private void setPanelTitle() {
@@ -163,7 +180,7 @@ public class AssignSecurityZonesDialog extends JDialog {
                 try {
                     Registry.getDefault().getRbacAdmin().setSecurityZoneForEntities(selectedZone == null ? null : selectedZone.getOid(), getSelectedEntityType(), oids);
                     for (final Integer selectedIndex : selectedEntities.keySet()) {
-                        dataModel.setValueAt(selectedZone.getName(), selectedIndex, ZONE_COL_INDEX);
+                        dataModel.setValueAt(selectedZone == null ? NO_SECURITY_ZONE : selectedZone.getName(), selectedIndex, ZONE_COL_INDEX);
                     }
                 } catch (final UpdateException ex) {
                     DialogDisplayer.showMessageDialog(AssignSecurityZonesDialog.this, "Error", "Unable to assign entities to zone.", ex);
@@ -215,11 +232,12 @@ public class AssignSecurityZonesDialog extends JDialog {
 
     @Nullable
     private SecurityZone getSelectedZone() {
+        SecurityZone selectedZone = null;
         final Object selected = zoneComboBox.getSelectedItem();
-        if (selected != null) {
-            return (SecurityZone) selected;
+        if (selected != null && !SecurityZoneUtil.NULL_ZONE.equals(selected)) {
+            selectedZone = (SecurityZone) selected;
         }
-        return null;
+        return selectedZone;
     }
 
     @Nullable
@@ -263,7 +281,7 @@ public class AssignSecurityZonesDialog extends JDialog {
                     final Object[] data = new Object[3];
                     data[CHECK_BOX_COL_INDEX] = Boolean.FALSE;
                     data[HEADER_COL_INDEX] = header;
-                    String zone = "(no security zone)";
+                    String zone = NO_SECURITY_ZONE;
                     if (header instanceof HasSecurityZoneOid) {
                         final Long securityZoneOid = ((HasSecurityZoneOid) header).getSecurityZoneOid();
                         if (securityZoneOid != null) {

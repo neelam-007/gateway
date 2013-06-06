@@ -22,6 +22,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.text.MessageFormat;
 import java.util.*;
+import java.util.List;
 import java.util.logging.Logger;
 
 import static com.l7tech.gui.util.TableUtil.column;
@@ -41,6 +42,7 @@ public class SecurityZoneManagerWindow extends JDialog {
     private SecurityZonePropertiesPanel propertiesPanel;
     private SecurityZoneEntitiesPanel entitiesPanel;
     private JButton assignButton;
+    private SecurityProvider securityProvider;
 
     private SimpleTableModel<SecurityZone> securityZonesTableModel;
     private boolean canCreate;
@@ -49,7 +51,8 @@ public class SecurityZoneManagerWindow extends JDialog {
         super(owner, "Manage Security Zones", DEFAULT_MODALITY_TYPE);
         setContentPane(contentPane);
         setModal(true);
-        canCreate = Registry.getDefault().getSecurityProvider().hasPermission(new AttemptedCreateSpecific(EntityType.SECURITY_ZONE, new SecurityZone()));
+        securityProvider = Registry.getDefault().getSecurityProvider();
+        canCreate = securityProvider.hasPermission(new AttemptedCreateSpecific(EntityType.SECURITY_ZONE, new SecurityZone()));
 
         closeButton.addActionListener(Utilities.createDisposeAction(this));
         Utilities.setEscAction(this, closeButton);
@@ -136,7 +139,7 @@ public class SecurityZoneManagerWindow extends JDialog {
                 AttemptedOperation operation = create
                         ? new AttemptedCreateSpecific(EntityType.SECURITY_ZONE, zone)
                         : new AttemptedUpdate(EntityType.SECURITY_ZONE, zone);
-                boolean readOnly = !Registry.getDefault().getSecurityProvider().hasPermission(operation);
+                boolean readOnly = !securityProvider.hasPermission(operation);
                 final SecurityZonePropertiesDialog dlg = new SecurityZonePropertiesDialog(SecurityZoneManagerWindow.this, zone, readOnly);
                 dlg.pack();
                 Utilities.centerOnParentWindow(dlg);
@@ -170,21 +173,51 @@ public class SecurityZoneManagerWindow extends JDialog {
         editButton.addActionListener(ecc.createEditAction());
         Utilities.setDoubleClickAction(securityZonesTable, editButton);
         removeButton.addActionListener(ecc.createDeleteAction());
-        assignButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                final AssignSecurityZonesDialog assignDialog = new AssignSecurityZonesDialog(SecurityZoneManagerWindow.this, SecurityZoneUtil.getNonHiddenZoneableEntityTypes(), SecurityZoneUtil.getSortedReadableSecurityZones());
-                assignDialog.pack();
-                Utilities.centerOnParentWindow(assignDialog);
-                DialogDisplayer.display(assignDialog, new Runnable() {
-                    @Override
-                    public void run() {
-                    }
-                });
-            }
-        });
-
+        final Map<EntityType, List<SecurityZone>> modifiableEntityTypes = getModifiableEntityTypes();
+        if (!modifiableEntityTypes.isEmpty()) {
+            assignButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    final AssignSecurityZonesDialog assignDialog = new AssignSecurityZonesDialog(SecurityZoneManagerWindow.this, modifiableEntityTypes);
+                    assignDialog.pack();
+                    Utilities.centerOnParentWindow(assignDialog);
+                    DialogDisplayer.display(assignDialog);
+                }
+            });
+        } else {
+            assignButton.setVisible(false);
+        }
         enableOrDisable();
+    }
+
+    /**
+     * Get sorted entity types for which the user can modify at least one entity by changing its zone (must be able to switch between at least two zones).
+     *
+     * @return a map of sorted entity types for which the user can modify at least one entity by changing its zone.
+     *         Key = entity type, value = sorted zones that can be set for the entity type.
+     */
+    private Map<EntityType, List<SecurityZone>> getModifiableEntityTypes() {
+        final Collection<Permission> userPermissions = securityProvider.getUserPermissions();
+        final Map<EntityType, List<SecurityZone>> validEntityTypes = new TreeMap<>(EntityType.NAME_COMPARATOR);
+        for (final EntityType type : SecurityZoneUtil.getNonHiddenZoneableEntityTypes()) {
+            // must be able to update at least one of the entity type
+            if (securityProvider.hasPermission(new AttemptedUpdateAny(type))) {
+                final List<SecurityZone> validZones = new ArrayList<>();
+                if (SecurityZoneUtil.isZoneValidForOperation(SecurityZoneUtil.NULL_ZONE, Collections.singleton(type), OperationType.UPDATE, userPermissions)) {
+                    validZones.add(SecurityZoneUtil.NULL_ZONE);
+                }
+                for (final SecurityZone zone : SecurityZoneUtil.getSortedReadableSecurityZones()) {
+                    if (SecurityZoneUtil.isZoneValidForOperation(zone, Collections.singleton(type), OperationType.UPDATE, userPermissions)) {
+                        validZones.add(zone);
+                    }
+                }
+                // must be able to switch between at least two zones
+                if (validZones.size() > 1) {
+                    validEntityTypes.put(type, validZones);
+                }
+            }
+        }
+        return validEntityTypes;
     }
 
     private void reloadTabbedPanels() {
