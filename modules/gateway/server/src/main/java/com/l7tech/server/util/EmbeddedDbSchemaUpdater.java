@@ -46,10 +46,8 @@ public class EmbeddedDbSchemaUpdater extends JdbcDaoSupport implements SchemaUpd
                     final String resourceName = resourcePath.substring(slashIndex + 1);
                     final Triple<String, String, String> upgradeInfo = DbUpgradeUtil.isUpgradeScript(resourceName);
                     if (upgradeInfo != null) {
-                        System.out.println("upgrade info:"+upgradeInfo.left+" || "+upgradeInfo.middle+" || "+upgradeInfo.right);
                         if(upgradeMap.containsKey(upgradeInfo.left)){
                             Triple<String, Resource, Resource> info = upgradeMap.get(upgradeInfo.left);
-                            System.out.println("upgrade info:"+info.left+" || "+info.middle+" || "+info.right);
                             upgradeMap.put(upgradeInfo.left, new Triple<String, Resource, Resource>(upgradeInfo.middle, info.middle, resource));
                         }else{
                             upgradeMap.put(upgradeInfo.left, new Triple<String, Resource, Resource>(upgradeInfo.middle, resource,null));
