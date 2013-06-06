@@ -3,15 +3,14 @@ package com.l7tech.gateway.common.service;
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.HasFolder;
-import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.objectmodel.imp.PersistentEntityUtil;
 import com.l7tech.objectmodel.imp.ZoneableNamedEntityImp;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
+import com.l7tech.search.Dependency;
 import com.l7tech.util.Functions.TernaryThrows;
-import com.l7tech.util.Service;
 import com.l7tech.wsdl.SerializableWSDLLocator;
 import com.l7tech.wsdl.Wsdl;
 import com.l7tech.xml.soap.SoapUtil;
@@ -612,6 +611,7 @@ public class PublishedService extends ZoneableNamedEntityImp implements Flushabl
 
     @Override
     @Migration(mapName = NONE, mapValue = NONE, resolver = PropertyResolver.Type.ASSERTION)
+    @Dependency(isDependency = false)
     public Folder getFolder() {
         return folder;
     }

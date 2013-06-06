@@ -3,14 +3,16 @@ package com.l7tech.policy;
 import com.l7tech.objectmodel.Alias;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.SecurityZone;
+import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.PropertyResolver;
-import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
-import com.l7tech.objectmodel.folder.Folder;
+import com.l7tech.search.Dependency;
 import org.jetbrains.annotations.Nullable;
 
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlTransient;
+
+import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
 
 /**
  * @author darmstrong
@@ -36,6 +38,7 @@ public class PolicyAlias extends Alias<Policy> {
 
     @Override
     @Migration(mapName = NONE, mapValue = NONE, resolver = PropertyResolver.Type.POLICY_ALIAS)
+    @Dependency(type = EntityType.POLICY, methodReturnType = Dependency.MethodReturnType.OID)
     public long getEntityOid() {
         return entityOid;
     }

@@ -2469,4 +2469,6 @@
         <constructor-arg ref="sshSessionFactory" />
         <constructor-arg ref="serverConfig" />
     </bean>
+
+    <bean id="dependencyAnalyzer" class="com.l7tech.server.search.DependencyAnalyzerImpl"/>
 </beans>

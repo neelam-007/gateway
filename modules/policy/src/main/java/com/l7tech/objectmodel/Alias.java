@@ -3,11 +3,12 @@ package com.l7tech.objectmodel;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.imp.ZoneablePersistentEntityImp;
 import com.l7tech.objectmodel.migration.Migration;
+import com.l7tech.search.Dependency;
 import org.jetbrains.annotations.Nullable;
 
-import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
-
 import javax.xml.bind.annotation.XmlRootElement;
+
+import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
 
 /**
  * Alias was created as a means of referring to any class which can be aliases generically.
@@ -48,6 +49,7 @@ public abstract class Alias<ET extends PersistentEntity> extends ZoneablePersist
 
     /** The folder where this alias lives. */
     @Migration(mapName = NONE, mapValue = NONE)
+    @Dependency(isDependency = false)
     public Folder getFolder() {
         return folder;
     }

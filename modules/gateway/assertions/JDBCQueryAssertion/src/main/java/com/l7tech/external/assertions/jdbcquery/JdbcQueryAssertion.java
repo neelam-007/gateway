@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.jdbcquery;
 
 import com.l7tech.gateway.common.jdbc.JdbcAdmin;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
@@ -11,6 +12,7 @@ import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.wsp.MapTypeMapping;
 import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
 import com.l7tech.policy.wsp.TypeMapping;
+import com.l7tech.search.Dependency;
 
 import java.util.*;
 
@@ -85,6 +87,7 @@ public class JdbcQueryAssertion extends Assertion implements JdbcConnectionable,
 
     @Override
     @Migration(mapName = MigrationMappingSelection.REQUIRED, export = false, resolver = PropertyResolver.Type.JDBC_CONNECTION)
+    @Dependency(type = EntityType.JDBC_CONNECTION, methodReturnType = Dependency.MethodReturnType.NAME)
     public String getConnectionName() {
         return connectionName;
     }
