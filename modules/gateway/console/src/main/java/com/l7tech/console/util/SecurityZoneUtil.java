@@ -87,33 +87,28 @@ public class SecurityZoneUtil {
     }
 
     /**
-     * Determine if a given SecurityZone is valid for a user operation on an entity.
+     * Get a sorted list of zones which the user is allowed to use for the given operation and entity types.
      * <p/>
-     * Can be used to filter SecurityZones that the user cannot successfully use for an entity operation.
+     * Examples:
+     * - get a list of zones which the user can select when updating policies
+     * - get a list of zones which the user can select when creating jms connections and jms endpoints.
      *
-     * @param zone                the SecurityZone to evaluate. Required (use NULL_ZONE instead of null).
-     * @param requiredEntityTypes the EntityTypes that the SecurityZone must support to be valid or null to skip entity type validation.
-     * @param requiredOperation   the OperationType used to evaluate whether the given Permissions support the given SecurityZone or null to skip permission validation.
-     * @param userPermissions     the Permissions to evaluate against if a requiredOperation is also provided. Optional if no requiredOperation is provided.
-     * @return true if the given SecurityZone is valid for the user operation on an entity.
+     * @param operation the operation that the zones must be valid for.
+     * @param types     the entity types that must be valid for the zones.
+     * @return a sorted list of zones which the user is allowed to use for the given operation and entity types.
      */
-    public static boolean isZoneValidForOperation(@NotNull final SecurityZone zone, @Nullable final Collection<EntityType> requiredEntityTypes, @Nullable final OperationType requiredOperation, @Nullable final Collection<Permission> userPermissions) {
-        boolean match = false;
-        if (matchEntityTypes(zone, requiredEntityTypes)) {
-            if (requiredOperation == null) {
-                match = true;
-            } else if (userPermissions != null) {
-                for (final Permission permission : userPermissions) {
-                    if (requiredOperation == permission.getOperation() && (permission.getEntityType() == EntityType.ANY || (requiredEntityTypes == null || requiredEntityTypes.contains(permission.getEntityType())))) {
-                        match = matchScope(zone, permission.getScope());
-                        if (match) {
-                            break;
-                        }
-                    }
-                }
+    public static List<SecurityZone> getSortedZonesForOperationAndEntityType(@NotNull final OperationType operation, @NotNull final Collection<EntityType> types) {
+        final Collection<Permission> userPermissions = Registry.getDefault().getSecurityProvider().getUserPermissions();
+        final List<SecurityZone> validZones = new ArrayList<>();
+        if (SecurityZoneUtil.isZoneValidForOperation(SecurityZoneUtil.NULL_ZONE, types, operation, userPermissions)) {
+            validZones.add(SecurityZoneUtil.NULL_ZONE);
+        }
+        for (final SecurityZone zone : SecurityZoneUtil.getSortedReadableSecurityZones()) {
+            if (SecurityZoneUtil.isZoneValidForOperation(zone, types, operation, userPermissions)) {
+                validZones.add(zone);
             }
         }
-        return match;
+        return validZones;
     }
 
     public static Set<EntityType> getAllZoneableEntityTypes() {
@@ -144,6 +139,36 @@ public class SecurityZoneUtil {
         // user is not aware that JMS involves two entity types - they share the same security zone
         // key metadata is fronted by ssg key entry
         return new HashSet<>(Arrays.asList(EntityType.AUDIT_MESSAGE, EntityType.UDDI_PROXIED_SERVICE_INFO, EntityType.UDDI_SERVICE_CONTROL, EntityType.JMS_ENDPOINT, EntityType.SSG_KEY_METADATA));
+    }
+
+    /**
+     * Determine if a given SecurityZone is valid for a user operation on an entity.
+     * <p/>
+     * Can be used to filter SecurityZones that the user cannot successfully use for an entity operation.
+     *
+     * @param zone                the SecurityZone to evaluate. Required (use NULL_ZONE instead of null).
+     * @param requiredEntityTypes the EntityTypes that the SecurityZone must support to be valid or null to skip entity type validation.
+     * @param requiredOperation   the OperationType used to evaluate whether the given Permissions support the given SecurityZone or null to skip permission validation.
+     * @param userPermissions     the Permissions to evaluate against if a requiredOperation is also provided. Optional if no requiredOperation is provided.
+     * @return true if the given SecurityZone is valid for the user operation on an entity.
+     */
+    static boolean isZoneValidForOperation(@NotNull final SecurityZone zone, @Nullable final Collection<EntityType> requiredEntityTypes, @Nullable final OperationType requiredOperation, @Nullable final Collection<Permission> userPermissions) {
+        boolean match = false;
+        if (matchEntityTypes(zone, requiredEntityTypes)) {
+            if (requiredOperation == null) {
+                match = true;
+            } else if (userPermissions != null) {
+                for (final Permission permission : userPermissions) {
+                    if (requiredOperation == permission.getOperation() && (permission.getEntityType() == EntityType.ANY || (requiredEntityTypes == null || requiredEntityTypes.contains(permission.getEntityType())))) {
+                        match = matchScope(zone, permission.getScope());
+                        if (match) {
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        return match;
     }
 
     private static boolean matchScope(@NotNull final SecurityZone zone, @Nullable Set<ScopePredicate> predicates) {

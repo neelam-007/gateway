@@ -10,8 +10,10 @@ import javax.swing.*;
 import javax.swing.plaf.basic.BasicComboBoxUI;
 import java.awt.*;
 import java.awt.event.ActionListener;
-import java.util.*;
-import java.util.List;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -96,21 +98,8 @@ public class SecurityZoneWidget extends JPanel {
         final Object oldSelection = zonesComboBox.getSelectedItem();
         loadedZones = new ArrayList<>();
         if (operation == null || operation != OperationType.READ) {
-            // all readable zones
-            final Set<SecurityZone> readableZones = SecurityZoneUtil.getSortedReadableSecurityZones();
-            final List<SecurityZone> zones = new ArrayList<>(readableZones.size() + 1);
-            zones.add(SecurityZoneUtil.NULL_ZONE);
-            zones.addAll(readableZones);
-
-            final List<SecurityZone> invalidZones = new ArrayList<>();
-            for (final SecurityZone zone : zones) {
-                if (!SecurityZoneUtil.isZoneValidForOperation(zone, entityTypes, operation, Registry.getDefault().getSecurityProvider().getUserPermissions())) {
-                    invalidZones.add(zone);
-                }
-            }
-            zones.removeAll(invalidZones);
-            loadedZones.addAll(zones);
-            if (initialZone != null && !loadedZones.contains(initialZone)) {
+            loadedZones.addAll(SecurityZoneUtil.getSortedZonesForOperationAndEntityType(operation, entityTypes));
+            if (operation == OperationType.UPDATE && initialZone != null && !loadedZones.contains(initialZone)) {
                 loadedZones.add(0, SecurityZoneUtil.CURRENT_UNAVAILABLE_ZONE);
             }
         } else if (initialZone != null) {

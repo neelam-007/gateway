@@ -202,15 +202,7 @@ public class SecurityZoneManagerWindow extends JDialog {
         for (final EntityType type : SecurityZoneUtil.getNonHiddenZoneableEntityTypes()) {
             // must be able to update at least one of the entity type
             if (securityProvider.hasPermission(new AttemptedUpdateAny(type))) {
-                final List<SecurityZone> validZones = new ArrayList<>();
-                if (SecurityZoneUtil.isZoneValidForOperation(SecurityZoneUtil.NULL_ZONE, Collections.singleton(type), OperationType.UPDATE, userPermissions)) {
-                    validZones.add(SecurityZoneUtil.NULL_ZONE);
-                }
-                for (final SecurityZone zone : SecurityZoneUtil.getSortedReadableSecurityZones()) {
-                    if (SecurityZoneUtil.isZoneValidForOperation(zone, Collections.singleton(type), OperationType.UPDATE, userPermissions)) {
-                        validZones.add(zone);
-                    }
-                }
+                final List<SecurityZone> validZones = SecurityZoneUtil.getSortedZonesForOperationAndEntityType(OperationType.UPDATE, Collections.singleton(type));
                 // must be able to switch between at least two zones
                 if (validZones.size() > 1) {
                     validEntityTypes.put(type, validZones);
