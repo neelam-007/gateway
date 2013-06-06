@@ -168,7 +168,10 @@ public class AssignSecurityZonesDialog extends JDialog {
             @Override
             public void actionPerformed(final ActionEvent e) {
                 for (int i = 0; i < dataModel.getRowCount(); i++) {
-                    dataModel.setValueAt(true, i, CHECK_BOX_COL_INDEX);
+                    // check all visible rows
+                    if (!filterPanel.isFiltered() || entitiesTable.getRowSorter().convertRowIndexToView(i) >= 0) {
+                        dataModel.setValueAt(true, i, CHECK_BOX_COL_INDEX);
+                    }
                 }
             }
         });
@@ -184,7 +187,10 @@ public class AssignSecurityZonesDialog extends JDialog {
         setBtn.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(final ActionEvent e) {
-                final SecurityZone selectedZone = getSelectedZone();
+                SecurityZone selectedZone = getSelectedZone();
+                if (selectedZone != null && selectedZone.equals(SecurityZoneUtil.NULL_ZONE)) {
+                    selectedZone = null;
+                }
                 final Map<Integer, EntityHeader> selectedEntities = getSelectedEntities();
                 final List<Long> oids = new ArrayList<>(selectedEntities.size());
                 for (final EntityHeader selectedHeader : selectedEntities.values()) {
@@ -247,7 +253,7 @@ public class AssignSecurityZonesDialog extends JDialog {
     private SecurityZone getSelectedZone() {
         SecurityZone selectedZone = null;
         final Object selected = zoneComboBox.getSelectedItem();
-        if (selected != null && !SecurityZoneUtil.NULL_ZONE.equals(selected)) {
+        if (selected != null) {
             selectedZone = (SecurityZone) selected;
         }
         return selectedZone;
