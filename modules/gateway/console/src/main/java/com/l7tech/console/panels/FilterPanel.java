@@ -102,6 +102,10 @@ public class FilterPanel extends JPanel {
         enableDisableBtns();
     }
 
+    public boolean isFiltered() {
+        return rowSorter.getRowFilter() != null;
+    }
+
     /**
      * Attach a TableRowSorter to this filter panel such that when the apply filter button is clicked, a case insensitive row filter will be applied to the TableRowSorter.
      *

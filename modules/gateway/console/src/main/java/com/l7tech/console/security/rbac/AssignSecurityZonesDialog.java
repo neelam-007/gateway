@@ -49,6 +49,9 @@ public class AssignSecurityZonesDialog extends JDialog {
     private JLabel filterLabel;
     private JLabel selectedLabel;
     private FilterPanel filterPanel;
+    private JPanel noEntitiesPanel;
+    private JLabel noEntitiesLabel;
+    private JScrollPane scrollPane;
     private EntitiesTableModel dataModel = new EntitiesTableModel(new String[]{"", "Name", "Current Zone"}, new Object[][]{});
     private Map<EntityType, List<SecurityZone>> entityTypes;
 
@@ -67,6 +70,7 @@ public class AssignSecurityZonesDialog extends JDialog {
         loadTable();
         loadCount();
         initFiltering();
+        enableDisable();
     }
 
     private void initFiltering() {
@@ -75,14 +79,22 @@ public class AssignSecurityZonesDialog extends JDialog {
             @Override
             public void run() {
                 loadCount();
+                setButtonTexts();
             }
         });
         filterPanel.registerClearCallback(new Runnable() {
             @Override
             public void run() {
                 loadCount();
+                setButtonTexts();
             }
         });
+    }
+
+    private void setButtonTexts() {
+        final String label = filterPanel.isFiltered() ? "visible" : "all";
+        selectAllBtn.setText("select " + label);
+        selectNoneBtn.setText("clear " + label);
     }
 
     private void loadCount() {
@@ -114,6 +126,7 @@ public class AssignSecurityZonesDialog extends JDialog {
                 loadTable();
                 loadCount();
                 reloadZoneComboBox();
+                enableDisable();
             }
         });
         typeComboBox.setSelectedItem(null);
@@ -297,6 +310,18 @@ public class AssignSecurityZonesDialog extends JDialog {
                 logger.log(Level.WARNING, error, ExceptionUtils.getDebugException(ex));
                 DialogDisplayer.showMessageDialog(this, error, "Error", JOptionPane.ERROR_MESSAGE, null);
             }
+        }
+    }
+
+    private void enableDisable() {
+        final boolean hasRows = entitiesTable.getModel().getRowCount() > 0;
+        scrollPane.setVisible(hasRows);
+        setBtn.setEnabled(hasRows && getSelectedZone() != null);
+        filterPanel.allowFiltering(hasRows);
+        noEntitiesPanel.setVisible(!hasRows);
+        if (noEntitiesPanel.isVisible()) {
+            final EntityType selectedEntityType = getSelectedEntityType();
+            noEntitiesLabel.setText(selectedEntityType == null ? "no entities are available" : "no " + selectedEntityType.getPluralName().toLowerCase() + " are available");
         }
     }
 
