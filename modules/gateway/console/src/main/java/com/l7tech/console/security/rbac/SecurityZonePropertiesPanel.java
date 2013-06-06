@@ -76,8 +76,10 @@ public class SecurityZonePropertiesPanel extends JPanel {
             if (value != null) {
                 if (Boolean.valueOf(value.toString())) {
                     setIcon(ImageCache.getInstance().getIconAsIcon("com/l7tech/console/resources/check16.gif"));
+                    setToolTipText("Permitted");
                 } else {
                     setIcon(ImageCache.getInstance().getIconAsIcon("com/l7tech/console/resources/RedCrossSign16.gif"));
+                    setToolTipText("Not Permitted");
                 }
             } else {
                 super.setValue(value);
