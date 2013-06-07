@@ -222,6 +222,17 @@ public class ServerLDAPQueryAssertion extends AbstractServerAssertion<LDAPQueryA
                 final String attributeName = attributeMapping.getAttributeName();
                 final String contextVariableName = attributeMapping.getMatchingContextVariableName();
 
+                /* Treat DN Special - it is not an attribute but we're going to pass it back like it is */
+                if ( attributeMapping.getAttributeName().equalsIgnoreCase("dn") ) {
+                    if ( attributeValues.get(contextVariableName) == null ) {
+                        List<String> dnValue = new LinkedList<String>();
+                        dnValue.add(simpleAttribute.getEntryName());
+                        attributeValues.put(contextVariableName,dnValue);
+                    }  else {
+                        attributeValues.get(contextVariableName).add(simpleAttribute.getEntryName());
+                    }
+                }
+
                 if ( simpleAttribute.isPresent() && simpleAttribute.getSize() > 0 ) {
                     List<String> values = attributeValues.get( contextVariableName );
                     if ( values == null ) {
