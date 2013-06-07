@@ -189,6 +189,15 @@ public class SecurityZoneWidget extends JPanel {
         return max;
     }
 
+    /**
+     * Also enables/disables child components.
+     */
+    @Override
+    public void setEnabled(final boolean enabled) {
+        super.setEnabled(enabled);
+        zonesComboBox.setEnabled(enabled);
+    }
+
     private void hideOrDisable() {
         if (loadedZones.isEmpty() && hideIfNoZones) {
             setVisible(false);
