@@ -123,7 +123,6 @@ public class SecurityZoneManagerWindow extends JDialog {
             public SecurityZone saveEntity(SecurityZone entity) throws SaveException {
                 long oid = Registry.getDefault().getRbacAdmin().saveSecurityZone(entity);
                 flushCachedZones();
-                reloadTabbedPanels();
                 refreshTrees();
                 try {
                     return Registry.getDefault().getRbacAdmin().findSecurityZoneByPrimaryKey(oid);
@@ -158,6 +157,7 @@ public class SecurityZoneManagerWindow extends JDialog {
                                     }
                                 }
                                 afterEditListener.call(data);
+                                reloadTabbedPanels();
                             } catch (final UpdateException e) {
                                 DialogDisplayer.showMessageDialog(SecurityZoneManagerWindow.this, "Error", "Unable to remove entities from this zone.", e);
                             }
