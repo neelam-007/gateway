@@ -14,6 +14,7 @@ import org.jetbrains.annotations.Nullable;
 import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.ResourceBundle;
 import java.util.Set;
 
@@ -27,6 +28,7 @@ public class SecurityZonePropertiesPanel extends JPanel {
     private static final ResourceBundle RESOURCES = ResourceBundle.getBundle(SecurityZonePropertiesPanel.class.getName());
     private static final String ANY_ENTITY_TYPE_LABEL = "entityType.any";
     private static final String PERMITTED_ENTITY_TYPES_LABEL = "entityTypes.permitted";
+    private static final int PERMITTED_COL_INDEX = 1;
     private JPanel contentPanel;
     private JTextField nameField;
     private JTable entityTypesTable;
@@ -34,6 +36,21 @@ public class SecurityZonePropertiesPanel extends JPanel {
     private JLabel entityTypesLabel;
     private JTextArea descriptionTextArea;
     private SimpleTableModel<EntityType> entityTypesTableModel;
+    private SecurityZone securityZone;
+
+    public SecurityZonePropertiesPanel() {
+        entityTypesTableModel = TableUtil.configureTable(entityTypesTable,
+                column("Type", 80, 300, 99999, propertyTransform(EntityType.class, "name")),
+                column("Permitted", 40, 140, 99999, new Functions.Unary<Boolean, EntityType>() {
+                    @Override
+                    public Boolean call(final EntityType entityType) {
+                        final Set<EntityType> permittedTypes = securityZone == null ? Collections.<EntityType>emptySet() : securityZone.getPermittedEntityTypes();
+                        return permittedTypes.contains(entityType);
+                    }
+                }));
+        entityTypesTable.getColumnModel().getColumn(PERMITTED_COL_INDEX).setCellRenderer(new CheckOrXCellRenderer());
+        Utilities.setRowSorter(entityTypesTable, entityTypesTableModel);
+    }
 
     /**
      * Configure the Security Zone displayed in the panel.
@@ -41,32 +58,25 @@ public class SecurityZonePropertiesPanel extends JPanel {
      * @param securityZone the SecurityZone to display or null if the display should display blank values.
      */
     public void configure(@Nullable final SecurityZone securityZone) {
+        this.securityZone = securityZone;
         if (securityZone != null) {
             nameField.setText(securityZone.getName());
             descriptionTextArea.setText(securityZone.getDescription());
-            final Set<EntityType> permittedTypes = securityZone.getPermittedEntityTypes();
-            if (permittedTypes.contains(EntityType.ANY)) {
-                scrollPane.setVisible(false);
+            if (securityZone.getPermittedEntityTypes().contains(EntityType.ANY)) {
                 entityTypesLabel.setText(RESOURCES.getString(ANY_ENTITY_TYPE_LABEL));
+                entityTypesTableModel.setRows(Collections.<EntityType>emptyList());
+                scrollPane.setVisible(false);
             } else {
-                scrollPane.setVisible(true);
                 entityTypesLabel.setText(RESOURCES.getString(PERMITTED_ENTITY_TYPES_LABEL));
-                entityTypesTableModel = TableUtil.configureTable(entityTypesTable,
-                        column("Type", 80, 300, 99999, propertyTransform(EntityType.class, "name")),
-                        column("Permitted", 40, 140, 99999, new Functions.Unary<Boolean, EntityType>() {
-                            @Override
-                            public Boolean call(final EntityType entityType) {
-                                return permittedTypes.contains(entityType);
-                            }
-                        }));
                 entityTypesTableModel.setRows(new ArrayList<EntityType>(SecurityZoneUtil.getNonHiddenZoneableEntityTypes()));
-                entityTypesTable.getColumnModel().getColumn(1).setCellRenderer(new CheckOrXCellRenderer());
-                Utilities.setRowSorter(entityTypesTable, entityTypesTableModel);
+                scrollPane.setVisible(true);
             }
         } else {
             nameField.setText(StringUtils.EMPTY);
             descriptionTextArea.setText(StringUtils.EMPTY);
-            scrollPane.setVisible(false);
+            entityTypesTableModel.setRows(Collections.<EntityType>emptyList());
+            entityTypesLabel.setText(RESOURCES.getString(PERMITTED_ENTITY_TYPES_LABEL));
+            scrollPane.setVisible(true);
         }
     }
 
