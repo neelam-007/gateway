@@ -31,7 +31,7 @@ public class SecurityZoneUtil {
     public static final SecurityZone NULL_ZONE = new SecurityZone() {
         {
             setOid(-1);
-            setName("No security zone");
+            setName("no security zone");
             setDescription("%%%NULL_ZONE%%%");
             setPermittedEntityTypes(Collections.singleton(EntityType.ANY));
         }
