@@ -2,14 +2,12 @@ package com.l7tech.console.tree.servicesAndPolicies;
 
 import com.l7tech.console.action.*;
 import com.l7tech.console.tree.*;
-import com.l7tech.console.util.EntitySaver;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.SecurityZoneUtil;
 import com.l7tech.gateway.common.admin.FolderAdmin;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.folder.FolderHeader;
 import com.l7tech.objectmodel.folder.Folder;
-import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import javax.swing.tree.TreeNode;
@@ -54,7 +52,7 @@ public class FolderNode extends AbstractTreeNode implements FolderNodeBase {
             new PublishInternalServiceAction(folder, this),
             new CreateEntityLogSinkAction(folderHeader),
             new CreatePolicyAction(folder, this),
-            new EditFolderAction(folder, folderHeader, this, folderAdmin),
+            new FolderPropertiesAction(folder, folderHeader, this, folderAdmin),
             new CreateFolderAction(folder, this, folderAdmin),
             new DeleteFolderAction(this, folderAdmin),
             new PasteAsAliasAction(this)

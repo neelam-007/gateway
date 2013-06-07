@@ -43,6 +43,7 @@ public class PolicyFolderPropertiesDialog extends JDialog {
     private boolean confirmed = false;
     private final JDialog dialog;
     private FolderHeader header;
+    private boolean readOnly;
 
     private static final int MAX_FOLDER_NAME_LENGTH = EntityUtil.getMaxFieldLength( Folder.class, "name", 128 );
 
@@ -53,9 +54,10 @@ public class PolicyFolderPropertiesDialog extends JDialog {
      * @param owner The owner of this dialog window
      * @param header The name of the policy/service folder
      */
-    public PolicyFolderPropertiesDialog(Window owner, @NotNull FolderHeader header) throws HeadlessException {
+    public PolicyFolderPropertiesDialog(Window owner, @NotNull FolderHeader header, boolean readOnly) throws HeadlessException {
         super(owner, TITLE, DEFAULT_MODALITY_TYPE);
         this.header = header;
+        this.readOnly = readOnly;
         initialize();
         dialog = this;
     }
@@ -77,6 +79,11 @@ public class PolicyFolderPropertiesDialog extends JDialog {
 
         initResources();
 
+        if (readOnly) {
+            okButton.setEnabled(false);
+            nameField.setEditable(false);
+        }
+
         nameField.setDocument(new PlainDocument(){
             public void insertString(int offs, String str, AttributeSet a) throws BadLocationException {
                 if(getLength() >= MAX_FOLDER_NAME_LENGTH){
@@ -92,7 +99,7 @@ public class PolicyFolderPropertiesDialog extends JDialog {
 
         nameField.setText(header.getName());
         zoneControl.configure(EntityType.FOLDER,
-                header.getOid() == Folder.DEFAULT_OID ? OperationType.CREATE : OperationType.UPDATE,
+                header.getOid() == Folder.DEFAULT_OID ? OperationType.CREATE : readOnly ? OperationType.READ : OperationType.UPDATE,
                 header.getSecurityZoneOid() == null ? null : SecurityZoneUtil.getSecurityZoneByOid(header.getSecurityZoneOid()));
 
         addWindowListener(new WindowAdapter() {

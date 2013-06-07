@@ -4,17 +4,17 @@ import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.ServicesAndPoliciesTree;
 import com.l7tech.console.tree.servicesAndPolicies.RootNode;
 import com.l7tech.console.tree.servicesAndPolicies.FolderNode;
+import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.panels.PolicyFolderPropertiesDialog;
+import com.l7tech.gateway.common.security.rbac.AttemptedReadSpecific;
+import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.FolderHeader;
 import com.l7tech.gateway.common.admin.FolderAdmin;
 import com.l7tech.objectmodel.*;
-import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.Option;
-import static com.l7tech.util.Option.some;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
@@ -27,18 +27,18 @@ import java.awt.*;
 
 
 /**
- * Action to rename a folder.
+ * Action to edit/view a folder's properties.
  */
-public class EditFolderAction extends SecureAction {
-    static Logger log = Logger.getLogger(EditFolderAction.class.getName());
+public class FolderPropertiesAction extends SecureAction {
+    static Logger log = Logger.getLogger(FolderPropertiesAction.class.getName());
 
     private Folder folder;
     private FolderAdmin folderAdmin;
     private AbstractTreeNode folderToRename;
     private FolderHeader folderHeader;
 
-    public EditFolderAction(Folder folder, FolderHeader folderHeader, AbstractTreeNode folderToRename, FolderAdmin folderAdmin) {
-        super(new AttemptedUpdate(EntityType.FOLDER, folder));
+    public FolderPropertiesAction(Folder folder, FolderHeader folderHeader, AbstractTreeNode folderToRename, FolderAdmin folderAdmin) {
+        super(new AttemptedReadSpecific(EntityType.FOLDER, folder));
         this.folder = folder;
         this.folderAdmin = folderAdmin;
         this.folderToRename = folderToRename;
@@ -49,14 +49,14 @@ public class EditFolderAction extends SecureAction {
      * @return the action name
      */
     public String getName() {
-        return "Edit Folder";
+        return "Folder Properties";
     }
 
     /**
      * @return the action description
      */
     public String getDescription() {
-        return "Edit Folder";
+        return "View/Edit the properties of the folder";
     }
 
     /**
@@ -67,15 +67,16 @@ public class EditFolderAction extends SecureAction {
     }
 
     protected void performAction() {
-        editFolder();
+        doProperties();
     }
 
-    private void editFolder() {
+    private void doProperties() {
         Frame f = TopComponents.getInstance().getTopParent();
-        final PolicyFolderPropertiesDialog dialog = new PolicyFolderPropertiesDialog(f, folderHeader);
+        final boolean readOnly = !Registry.getDefault().getSecurityProvider().hasPermission(new AttemptedUpdate(EntityType.FOLDER, folder));
+        final PolicyFolderPropertiesDialog dialog = new PolicyFolderPropertiesDialog(f, folderHeader, readOnly);
         dialog.setVisible(true);
 
-        if(dialog.isConfirmed()) {
+        if(dialog.isConfirmed() && !readOnly) {
             String prevFolderName = folder.getName();
             try {
                 folder.setName(dialog.getName());
@@ -102,7 +103,7 @@ public class EditFolderAction extends SecureAction {
                         JOptionPane.WARNING_MESSAGE, new Runnable() {
                     @Override
                     public void run() {
-                        editFolder();
+                        doProperties();
                     }
                 });
             } catch(UpdateException e) {

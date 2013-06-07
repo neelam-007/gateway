@@ -72,7 +72,7 @@ public class CreateFolderAction extends SecureAction {
     private void createFolder( final String name ) {
         final Frame f = TopComponents.getInstance().getTopParent();
         final Folder newFolder = new Folder(name, parentFolder);
-        final PolicyFolderPropertiesDialog dialog = new PolicyFolderPropertiesDialog(f, new FolderHeader(newFolder));
+        final PolicyFolderPropertiesDialog dialog = new PolicyFolderPropertiesDialog(f, new FolderHeader(newFolder), false);
         DialogDisplayer.display(dialog, new Runnable() {
             @Override
             public void run() {
