@@ -109,7 +109,7 @@ public class CustomAssertionsThirdPartyJarTest {
     @Test
     public void testGetResourceInCustomAssertionJarNotInWhiteList() {
         CustomAssertionsRegistrar.AssertionResourceData result =
-            customAssertionsRegistrarImpl.getAssertionResourceData("test.icon.NotInWhiteList.png.png");
+            customAssertionsRegistrarImpl.getAssertionResourceData("test.icon.NotInWhiteList.png");
         assertNull(result);
     }
 

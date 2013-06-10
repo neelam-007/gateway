@@ -474,7 +474,7 @@ public class ManagerAppletFilter implements Filter {
      * @return true if the request has been handled (so no further action should be taken)
      * @throws java.io.IOException if there is a problem loading or transmitting the class
      */
-    private boolean handleCustomAssertionClassRequest(final HttpServletRequest hreq,
+    final protected boolean handleCustomAssertionClassRequest(final HttpServletRequest hreq,
                                                       final HttpServletResponse hresp,
                                                       final Auditor auditor) throws IOException {
         boolean handled = false;
@@ -505,8 +505,8 @@ public class ManagerAppletFilter implements Filter {
      * @return true if the request has been handled (so no further action should be taken)
      * @throws IOException if there is a problem loading or transmitting the class
      */
-    private boolean handleCustomAssertionResourceRequest (final HttpServletRequest hreq,
-                                                          final HttpServletResponse hresp) throws IOException {
+    final protected boolean handleCustomAssertionResourceRequest (final HttpServletRequest hreq,
+                                                                  final HttpServletResponse hresp) throws IOException {
         boolean handled = false;
 
         String filePath = hreq.getRequestURI();
