@@ -1,10 +1,13 @@
 package com.l7tech.console.action;
 
+import com.l7tech.console.security.rbac.RoleManagerWindow;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gateway.common.security.rbac.AttemptedAnyOperation;
+import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.console.security.rbac.RoleManagementDialog;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.util.ConfigFactory;
 
 import javax.swing.*;
 
@@ -38,7 +41,14 @@ public class ManageRolesAction extends SecureAction {
 
     @Override
     protected void performAction() {
-        final JDialog dlg = new RoleManagementDialog(TopComponents.getInstance().getTopParent());
+        JDialog dlg;
+        if (ConfigFactory.getBooleanProperty("com.l7tech.rbac.useNewRoleManager", Boolean.FALSE)) {
+            dlg = new RoleManagerWindow(TopComponents.getInstance().getTopParent());
+            dlg.pack();
+            Utilities.centerOnParentWindow(dlg);
+        } else {
+            dlg = new RoleManagementDialog(TopComponents.getInstance().getTopParent());
+        }
         DialogDisplayer.display(dlg);
     }
 }
