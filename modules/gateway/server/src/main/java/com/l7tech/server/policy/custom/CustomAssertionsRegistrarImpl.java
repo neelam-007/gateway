@@ -39,8 +39,7 @@ import java.util.zip.ZipOutputStream;
  * @author emil
  * @version 16-Feb-2004
  */
-public class CustomAssertionsRegistrarImpl
-  extends ApplicationObjectSupport implements CustomAssertionsRegistrar, InitializingBean {
+public class CustomAssertionsRegistrarImpl extends ApplicationObjectSupport implements CustomAssertionsRegistrar, InitializingBean {
 
     //- PUBLIC
 
@@ -518,7 +517,7 @@ public class CustomAssertionsRegistrarImpl
         return isCustomAssertionRes;
     }
 
-    protected void registerCustomExtensionInterface(String extensionInterfaceClassName, ClassLoader classLoader) throws ClassNotFoundException, IllegalAccessException, InstantiationException {
+    protected final void registerCustomExtensionInterface(String extensionInterfaceClassName, ClassLoader classLoader) throws ClassNotFoundException, IllegalAccessException, InstantiationException {
         if (!StringUtils.isEmpty(extensionInterfaceClassName)) {
             CustomExtensionInterfaceBinding ceiBinding = (CustomExtensionInterfaceBinding) Class.forName(extensionInterfaceClassName, true, classLoader).newInstance();
             extensionInterfaceManager.registerInterface(ceiBinding.getInterfaceClass(), null, ceiBinding.getImplementationObject());
