@@ -66,7 +66,7 @@ public class RoleManagerWindow extends JDialog {
 
     private void initTable() {
         rolesTableModel = TableUtil.configureTable(rolesTable,
-                column("Name", 80, 400, 99999, propertyTransform(Role.class, "descriptiveName")),
+                column("Name", 80, 400, 99999, propertyTransform(Role.class, "contextualDescriptiveName")),
                 column("Type", 40, 80, 99999, new Functions.Unary<String, Role>() {
                     @Override
                     public String call(final Role role) {
