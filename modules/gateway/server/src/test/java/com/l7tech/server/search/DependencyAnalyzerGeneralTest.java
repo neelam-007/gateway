@@ -2,17 +2,18 @@ package com.l7tech.server.search;
 
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.search.Dependency;
 import com.l7tech.server.EntityCrud;
 import com.l7tech.server.EntityHeaderUtils;
+import com.l7tech.server.search.objects.DependencySearchResults;
+import com.l7tech.server.search.processors.DependencyProcessor;
+import com.l7tech.server.search.processors.GenericDependencyProcessor;
 import com.l7tech.util.CollectionUtils;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
-import org.mockito.Matchers;
-import org.mockito.Mock;
-import org.mockito.Mockito;
+import org.mockito.*;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import java.util.HashMap;
@@ -27,17 +28,17 @@ import java.util.Set;
 @RunWith(MockitoJUnitRunner.class)
 public class DependencyAnalyzerGeneralTest {
 
-    Map<String, String> depth0SearchOptions = new HashMap<String, String>(DependencyAnalyzer.DefaultSearchOptions){
+    Map<String, String> depth0SearchOptions = new HashMap<String, String>(DependencyAnalyzer.DefaultSearchOptions) {
         {
             put(DependencyAnalyzer.SearchDepthOptionKey, "0");
         }
     };
-    Map<String, String> depth1SearchOptions = new HashMap<String, String>(DependencyAnalyzer.DefaultSearchOptions){
+    Map<String, String> depth1SearchOptions = new HashMap<String, String>(DependencyAnalyzer.DefaultSearchOptions) {
         {
             put(DependencyAnalyzer.SearchDepthOptionKey, "1");
         }
     };
-    Map<String, String> depth2SearchOptions = new HashMap<String, String>(DependencyAnalyzer.DefaultSearchOptions){
+    Map<String, String> depth2SearchOptions = new HashMap<String, String>(DependencyAnalyzer.DefaultSearchOptions) {
         {
             put(DependencyAnalyzer.SearchDepthOptionKey, "2");
         }
@@ -47,9 +48,15 @@ public class DependencyAnalyzerGeneralTest {
     private EntityCrud entityCrud;
 
     @InjectMocks
+    GenericDependencyProcessor genericDependencyProcessor = new GenericDependencyProcessor();
+
+    @Spy
+    DependencyProcessorStore processorStore = new DependencyProcessorStore(CollectionUtils.MapBuilder.<Dependency.DependencyType, DependencyProcessor>builder().put(Dependency.DependencyType.GENERIC, genericDependencyProcessor).map());
+
+    @InjectMocks
     DependencyAnalyzer dependencyAnalyzer = new DependencyAnalyzerImpl();
 
-    private DependencyAnalyzerGeneralTest.MyEntityWithNoDependencies myEntityWithNoDependencies = new MyEntityWithNoDependencies("MyEntityWithNoDependencies");;
+    private DependencyAnalyzerGeneralTest.MyEntityWithNoDependencies myEntityWithNoDependencies = new MyEntityWithNoDependencies("MyEntityWithNoDependencies");
     private final MyEntityWithOneDependency myEntityWithOneDependency = new MyEntityWithOneDependency("MyEntityWithOneDependency", myEntityWithNoDependencies);
     private final MyEntityWithDifferentGetter myEntityWithDifferentGetter = new MyEntityWithDifferentGetter("MyEntityWithDifferentGetter", myEntityWithNoDependencies);
     private final MyEntityWithInheritedDependency myEntityWithInheritedDependency = new MyEntityWithInheritedDependency("MyEntityWithInheritedDependency", myEntityWithNoDependencies);
@@ -58,7 +65,7 @@ public class DependencyAnalyzerGeneralTest {
 
     @Before
     public void beforeTests() throws FindException {
-        for(Entity entity : entities){
+        for (Entity entity : entities) {
             Mockito.when(entityCrud.find(Matchers.eq(EntityHeaderUtils.fromEntity(entity)))).thenReturn(entity);
         }
     }

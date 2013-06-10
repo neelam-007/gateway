@@ -38,7 +38,7 @@ public class PolicyAlias extends Alias<Policy> {
 
     @Override
     @Migration(mapName = NONE, mapValue = NONE, resolver = PropertyResolver.Type.POLICY_ALIAS)
-    @Dependency(type = EntityType.POLICY, methodReturnType = Dependency.MethodReturnType.OID)
+    @Dependency(type = Dependency.DependencyType.POLICY, methodReturnType = Dependency.MethodReturnType.OID)
     public long getEntityOid() {
         return entityOid;
     }

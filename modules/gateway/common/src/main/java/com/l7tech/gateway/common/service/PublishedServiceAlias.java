@@ -40,7 +40,7 @@ public class PublishedServiceAlias extends Alias<PublishedService> {
     }
 
     @Override
-    @Dependency(type = EntityType.SERVICE, methodReturnType = Dependency.MethodReturnType.OID)
+    @Dependency(type = Dependency.DependencyType.SERVICE, methodReturnType = Dependency.MethodReturnType.OID)
     @Migration(mapName = NONE, mapValue = NONE, resolver = PropertyResolver.Type.SERVICE_ALIAS)
     public long getEntityOid() {
         return entityOid;

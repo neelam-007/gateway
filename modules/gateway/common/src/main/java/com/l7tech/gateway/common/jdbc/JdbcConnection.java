@@ -1,10 +1,13 @@
 package com.l7tech.gateway.common.jdbc;
 
 import com.l7tech.common.io.NonCloseableOutputStream;
-import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.objectmodel.imp.ZoneableNamedEntityImp;
 import com.l7tech.policy.wsp.WspSensitive;
-import com.l7tech.util.*;
+import com.l7tech.search.Dependency;
+import com.l7tech.util.Charsets;
+import com.l7tech.util.HexUtils;
+import com.l7tech.util.PoolByteArrayOutputStream;
+import com.l7tech.util.ResourceUtils;
 import org.hibernate.annotations.Proxy;
 
 import javax.persistence.*;
@@ -93,6 +96,7 @@ public class JdbcConnection extends ZoneableNamedEntityImp implements Comparable
     @Size(max=64)
     @Column(name="password",nullable=false)
     @WspSensitive
+    @Dependency(type = Dependency.DependencyType.SECURE_PASSWORD, methodReturnType = Dependency.MethodReturnType.Variable)
     public String getPassword() {
         return password;
     }

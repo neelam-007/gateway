@@ -31,7 +31,23 @@ public @interface Dependency {
      * These are the different possible method return types for entities.
      */
     public enum MethodReturnType {
-        OID, NAME, GUID, ENTITY
+        OID, NAME, GUID, Variable, ENTITY
+    }
+
+    /**
+     * These are the different types of dependencies
+     */
+    public enum DependencyType {
+        GENERIC(EntityType.ANY), ASSERTION(null), POLICY(EntityType.POLICY), FOLDER(EntityType.FOLDER), JDBC_CONNECTION(EntityType.JDBC_CONNECTION), SECURE_PASSWORD(EntityType.SECURE_PASSWORD), SERVICE(EntityType.SERVICE);
+        private EntityType entityType;
+
+        DependencyType(EntityType entityType) {
+            this.entityType = entityType;
+        }
+
+        public EntityType getEntityType() {
+            return entityType;
+        }
     }
 
     /**
@@ -42,7 +58,7 @@ public @interface Dependency {
     /**
      * @return The Entity type for the entity that is returned or referenced by this method.
      */
-    EntityType type() default EntityType.ANY;
+    DependencyType type() default DependencyType.GENERIC;
 
     /**
      * @return The type of object that this method returned. This is either the entity itself or an identifier that can

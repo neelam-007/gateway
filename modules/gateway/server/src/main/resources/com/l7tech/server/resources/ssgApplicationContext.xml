@@ -12,6 +12,7 @@
        xmlns:aop="http://www.springframework.org/schema/aop"
        xmlns:context="http://www.springframework.org/schema/context"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:util="http://www.springframework.org/schema/util"
        xsi:schemaLocation="http://www.springframework.org/schema/beans
                             http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
                             http://www.springframework.org/schema/aop
@@ -19,7 +20,9 @@
                             http://www.springframework.org/schema/tx
                             http://www.springframework.org/schema/tx/spring-tx-2.5.xsd
                             http://www.springframework.org/schema/context
-                            http://www.springframework.org/schema/context/spring-context-2.5.xsd">
+                            http://www.springframework.org/schema/context/spring-context-2.5.xsd
+                            http://www.springframework.org/schema/util
+                            http://www.springframework.org/schema/util/spring-util-2.0.xsd">
 
 
     <!-- enable automatic proxy generation for any class or superclass annotated with @Transactional -->
@@ -2471,4 +2474,35 @@
     </bean>
 
     <bean id="dependencyAnalyzer" class="com.l7tech.server.search.DependencyAnalyzerImpl"/>
+
+    <bean id="dependencyProcessorStore" class="com.l7tech.server.search.DependencyProcessorStore">
+        <constructor-arg>
+            <util:map>
+                <entry>
+                    <key><util:constant static-field="com.l7tech.search.Dependency.DependencyType.GENERIC"/></key>
+                    <bean class="com.l7tech.server.search.processors.GenericDependencyProcessor"/>
+                </entry>
+                <entry>
+                    <key><util:constant static-field="com.l7tech.search.Dependency.DependencyType.POLICY"/></key>
+                    <bean class="com.l7tech.server.search.processors.PolicyDependencyProcessor"/>
+                </entry>
+                <entry>
+                    <key><util:constant static-field="com.l7tech.search.Dependency.DependencyType.FOLDER"/></key>
+                    <bean class="com.l7tech.server.search.processors.FolderDependencyProcessor"/>
+                </entry>
+                <entry>
+                    <key><util:constant static-field="com.l7tech.search.Dependency.DependencyType.JDBC_CONNECTION"/></key>
+                    <bean class="com.l7tech.server.search.processors.JdbcConnectionDependencyProcessor"/>
+                </entry>
+                <entry>
+                    <key><util:constant static-field="com.l7tech.search.Dependency.DependencyType.SECURE_PASSWORD"/></key>
+                    <bean class="com.l7tech.server.search.processors.SecurePasswordDependencyProcessor"/>
+                </entry>
+                <entry>
+                    <key><util:constant static-field="com.l7tech.search.Dependency.DependencyType.ASSERTION"/></key>
+                    <bean class="com.l7tech.server.search.processors.AssertionDependencyProcessor"/>
+                </entry>
+            </util:map>
+        </constructor-arg>
+    </bean>
 </beans>

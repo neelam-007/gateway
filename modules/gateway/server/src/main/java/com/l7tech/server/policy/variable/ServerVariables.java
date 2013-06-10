@@ -1250,7 +1250,7 @@ public class ServerVariables {
         }
     }
 
-    private static final Pattern SINGLE_SECPASS_PATTERN = Pattern.compile("^\\$\\{secpass\\.([a-zA-Z_][a-zA-Z0-9_\\-]*)\\.plaintext\\}$");
+    public static final Pattern SINGLE_SECPASS_PATTERN = Pattern.compile("^\\$\\{secpass\\.([a-zA-Z_][a-zA-Z0-9_\\-]*)\\.plaintext\\}$");
 
     /**
      * Utility method to recognize a password that is actually a single ${secpass.*.plaintext} reference.
