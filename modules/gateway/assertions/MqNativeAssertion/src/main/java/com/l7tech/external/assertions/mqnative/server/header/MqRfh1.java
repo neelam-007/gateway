@@ -4,9 +4,7 @@ import com.ibm.mq.MQException;
 import com.ibm.mq.headers.MQRFH;
 
 import java.io.IOException;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.StringTokenizer;
+import java.util.*;
 
 import static com.ibm.mq.constants.CMQC.MQFMT_RF_HEADER_1;
 
@@ -53,16 +51,21 @@ public class MqRfh1 implements MqNativeHeaderAdaptor {
     }
 
     public void reallyApplyPropertiesToMessage(final Map<String, Object> messagePropertyMap) throws IOException, MQException {
-        rfh = new MQRFH();
         if (messagePropertyMap != null) {
-            for (Map.Entry<String, Object> entry : messagePropertyMap.entrySet()) {
-                if (entry.getValue() != null) {
-                    rfh.addNameValuePair(entry.getKey(), entry.getValue().toString());
+            StringBuilder sb = new StringBuilder();
+            Iterator iterator = messagePropertyMap.entrySet().iterator();
+            while (iterator.hasNext()) {
+                Map.Entry<String, Object> entry = (Map.Entry<String, Object>) iterator.next();
+                sb.append(entry.getKey());
+                sb.append(" ");
+                sb.append(entry.getValue().toString());
+                if (iterator.hasNext()) {
+                    sb.append("\u0000");
                 }
             }
+            rfh = new MQRFH(sb.toString());
         }
     }
-
 
     public Map<String, Object> parseHeaderValues() throws IOException {
         return parseHeaderValues(rfh);
