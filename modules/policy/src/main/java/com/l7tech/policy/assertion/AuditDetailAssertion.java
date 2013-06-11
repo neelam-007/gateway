@@ -83,7 +83,7 @@ public class AuditDetailAssertion extends Assertion implements UsesVariables {
 
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {
-        return Syntax.getReferencedNames(detail);
+        return Syntax.getReferencedNames(detail, customLoggerSuffix);
     }
 
     private final static String baseName = "Add Audit Details";
@@ -113,5 +113,4 @@ public class AuditDetailAssertion extends Assertion implements UsesVariables {
         meta.put(PROPERTIES_ACTION_NAME, "Audit Detail Properties");
         return meta;
     }
-
 }

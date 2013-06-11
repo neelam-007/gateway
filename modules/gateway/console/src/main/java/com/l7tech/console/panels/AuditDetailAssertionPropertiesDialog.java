@@ -4,6 +4,7 @@ import com.l7tech.gui.MaxLengthDocument;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.policy.assertion.AuditDetailAssertion;
+import com.l7tech.policy.variable.Syntax;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -141,8 +142,9 @@ public class AuditDetailAssertionPropertiesDialog extends LegacyAssertionPropert
 
     private boolean validData() {
         String err = null;
+        final boolean contextVariablesUsed = Syntax.getReferencedNames(customLoggerTextField.getText()).length > 0;
 
-        if (customLoggerTextField.isEnabled() && !validLoggerName(customLoggerTextField.getText()))
+        if (customLoggerTextField.isEnabled() && !contextVariablesUsed && !validLoggerName(customLoggerTextField.getText()))
             err = "A custom logger name suffix must consist of letters and numbers separated by periods.  For example, \"example.widgetwatcher\"";
 
         if (err == null)
