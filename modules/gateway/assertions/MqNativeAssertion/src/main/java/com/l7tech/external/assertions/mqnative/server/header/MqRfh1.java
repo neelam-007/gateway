@@ -53,10 +53,11 @@ public class MqRfh1 implements MqNativeHeaderAdaptor {
     }
 
     public void reallyApplyPropertiesToMessage(final Map<String, Object> messagePropertyMap) throws IOException, MQException {
-        rfh = new MQRFH();
         if (messagePropertyMap != null) {
             for (Map.Entry<String, Object> entry : messagePropertyMap.entrySet()) {
-                rfh.addNameValuePair(entry.getKey(), (String) entry.getValue());
+                if (entry.getValue() != null) {
+                    rfh.addNameValuePair(entry.getKey(), entry.getValue().toString());
+                }
             }
         }
     }
