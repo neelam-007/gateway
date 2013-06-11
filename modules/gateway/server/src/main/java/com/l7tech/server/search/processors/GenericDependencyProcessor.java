@@ -1,14 +1,18 @@
 package com.l7tech.server.search.processors;
 
-import com.l7tech.objectmodel.Entity;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.FindException;
+import com.l7tech.identity.IdentityProviderConfigManager;
+import com.l7tech.objectmodel.*;
 import com.l7tech.server.EntityCrud;
+import com.l7tech.server.EntityHeaderUtils;
 import com.l7tech.server.search.objects.Dependency;
+import com.l7tech.server.search.objects.DependentEntity;
+import com.l7tech.server.search.objects.DependentObject;
+import com.l7tech.util.Functions;
 import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Inject;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -29,6 +33,9 @@ public class GenericDependencyProcessor<O> implements DependencyProcessor<O> {
     @Inject
     private EntityCrud entityCrud;
 
+    @Inject
+    private IdentityProviderConfigManager identityProviderConfigManager;
+
     @Override
     @NotNull
     public List<Dependency> findDependencies(O object, DependencyFinder finder) throws FindException {
@@ -38,7 +45,7 @@ public class GenericDependencyProcessor<O> implements DependencyProcessor<O> {
         for (Method method : entityMethods) {
             //process each method that return an Entity or is annotated with @Dependency.
             if (isEntityMethod(method)) {
-                Entity dependentEntity = null;
+                List<Entity> dependentEntities = null;
                 try {
                     //calls the getter method and retrieves the dependency.
                     Object getterMethodReturn = method.invoke(object);
@@ -46,18 +53,25 @@ public class GenericDependencyProcessor<O> implements DependencyProcessor<O> {
                     com.l7tech.search.Dependency annotation = method.getAnnotation(com.l7tech.search.Dependency.class);
                     if (annotation != null && !annotation.methodReturnType().equals(com.l7tech.search.Dependency.MethodReturnType.ENTITY)) {
                         //If the dependency annotation is specified us the finder to retrieve the entity.
-                        dependentEntity = finder.retrieveEntity(getterMethodReturn, annotation);
+                        dependentEntities = finder.retrieveEntities(getterMethodReturn, annotation);
                     } else {
-                        dependentEntity = (Entity) getterMethodReturn;
+                        dependentEntities = getterMethodReturn == null ? null : Arrays.asList((Entity) getterMethodReturn);
                     }
                 } catch (Exception e) {
                     //if an exception is thrown attempting to retrieve the dependency then log the exception but continue processing.
                     logger.log(Level.FINE, "WARNING finding dependencies - error getting dependent entity from method " + (method != null ? "using method " + method.getName() : "") + " for entity " + object.getClass(), e);
                 }
-                if (dependentEntity != null) {
+                if (dependentEntities != null) {
                     //if a dependency if found then search for its dependencies and add it to the set of dependencies found
-                    final Dependency dependency = finder.getDependencyHelper(dependentEntity);
-                    dependencies.add(dependency);
+                    for (Entity entity : dependentEntities) {
+                        if (entity != null) {
+                            //Making sure an entity does not depend on itself
+                            if (!object.equals(entity)) {
+                                final Dependency dependency = finder.getDependency(entity);
+                                dependencies.add(dependency);
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -74,27 +88,44 @@ public class GenericDependencyProcessor<O> implements DependencyProcessor<O> {
      */
     @SuppressWarnings("unchecked")
     @Override
-    public Entity find(@NotNull Object searchValue, com.l7tech.search.Dependency dependency) throws FindException {
+    public List<? extends Entity> find(@NotNull Object searchValue, com.l7tech.search.Dependency dependency) throws FindException {
         switch (dependency.methodReturnType()) {
             case OID:
                 //used the entity crud to find the entity using its OID
-                EntityHeader header;
+                List<EntityHeader> headers;
                 if (searchValue instanceof Long)
-                    header = new EntityHeader((Long) searchValue, dependency.type().getEntityType(), null, null);
+                    headers = Arrays.asList(new EntityHeader((Long) searchValue, dependency.type().getEntityType(), null, null));
                 else if (searchValue instanceof String)
-                    header = new EntityHeader((String) searchValue, dependency.type().getEntityType(), null, null);
-                else
+                    headers = Arrays.asList(new EntityHeader((String) searchValue, dependency.type().getEntityType(), null, null));
+                else if (searchValue instanceof long[]) {
+                    long[] oids = (long[]) searchValue;
+                    headers = new ArrayList<>(oids.length);
+                    for (long oid : oids) {
+                        headers.add(new EntityHeader(oid, dependency.type().getEntityType(), null, null));
+                    }
+                } else
                     throw new IllegalArgumentException("Unsupported OID value type: " + searchValue.getClass());
                 //noinspection ConstantConditions
-                return entityCrud.find(header);
+                return Functions.map(headers, new Functions.UnaryThrows<Entity, EntityHeader, FindException>() {
+                    @Override
+                    public Entity call(EntityHeader entityHeader) throws FindException {
+                        return loadEntity(entityHeader);
+                    }
+                });
             case ENTITY:
                 if (searchValue instanceof Entity)
-                    return (Entity) searchValue;
+                    return Arrays.asList((Entity) searchValue);
                 else
                     throw new IllegalStateException("Method return type is Entity but the returned object is not an entity: " + searchValue.getClass());
             default:
                 throw new IllegalArgumentException("Unsupported search method: " + dependency.methodReturnType());
         }
+    }
+
+    @Override
+    public DependentObject createDependentObject(O dependent) {
+        EntityHeader entityHeader = EntityHeaderUtils.fromEntity((Entity) dependent);
+        return new DependentEntity(entityHeader.getName(), entityHeader.getType(), entityHeader instanceof GuidEntityHeader ? ((GuidEntityHeader) entityHeader).getGuid() : null, entityHeader.getStrId());
     }
 
     /**
@@ -124,7 +155,22 @@ public class GenericDependencyProcessor<O> implements DependencyProcessor<O> {
         if (annotation != null) {
             return annotation.isDependency();
         } else {
-            return method.getName().startsWith("get") && Entity.class.isAssignableFrom(method.getReturnType());
+            return method.getName().startsWith("get") && Entity.class.isAssignableFrom(method.getReturnType()) && Modifier.isPublic(method.getModifiers());
         }
+    }
+
+    /**
+     * Gets an entity given an entity header. This is needed to handle the special case where the entityCrud down-casts
+     * identity provider entities
+     *
+     * @param entityHeader The entity header for the entity to return
+     * @return The entity.
+     * @throws FindException This is thrown if the entity cannot be found
+     */
+    protected Entity loadEntity(EntityHeader entityHeader) throws FindException {
+        if (EntityType.ID_PROVIDER_CONFIG.equals(entityHeader.getType())) {
+            return identityProviderConfigManager.findByHeader(entityHeader);
+        } else
+            return entityCrud.find(entityHeader);
     }
 }

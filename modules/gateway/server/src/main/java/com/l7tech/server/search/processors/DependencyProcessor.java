@@ -3,7 +3,9 @@ package com.l7tech.server.search.processors;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.search.objects.Dependency;
+import com.l7tech.server.search.objects.DependentObject;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
@@ -35,5 +37,14 @@ public interface DependencyProcessor<O> {
      * @return The Entity specified by the given search value
      * @throws FindException This is thrown if the entity cannot be found
      */
-    public <E extends Entity> E find(@NotNull Object searchValue, com.l7tech.search.Dependency dependency) throws FindException;
+    @Nullable
+    public <E extends Entity> List<E> find(@NotNull Object searchValue, com.l7tech.search.Dependency dependency) throws FindException;
+
+    /**
+     * Creates a DependentObject given an instance of the dependent.
+     *
+     * @param dependent The dependent to create the DependentObject from
+     * @return The dependent object for the given dependent
+     */
+    public DependentObject createDependentObject(O dependent);
 }

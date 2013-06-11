@@ -6,6 +6,8 @@ import com.l7tech.server.jdbc.JdbcConnectionManager;
 import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Inject;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * This is used to find JdbcConnection's by their name
@@ -17,13 +19,14 @@ public class JdbcConnectionDependencyProcessor extends GenericDependencyProcesso
     @Inject
     private JdbcConnectionManager jdbcConnectionManager;
 
-    public JdbcConnection find(@NotNull Object searchValue, com.l7tech.search.Dependency dependency) throws FindException {
+    @SuppressWarnings("unchecked")
+    public List<JdbcConnection> find(@NotNull Object searchValue, com.l7tech.search.Dependency dependency) throws FindException {
         switch (dependency.methodReturnType()) {
             case NAME:
-                return jdbcConnectionManager.getJdbcConnection((String) searchValue);
+                return Arrays.asList(jdbcConnectionManager.getJdbcConnection((String) searchValue));
             default:
                 //if a different search method is specified then search for the jdbc connection using the GenericDependency processor
-                return (JdbcConnection) super.find(searchValue, dependency);
+                return (List<JdbcConnection>) super.find(searchValue, dependency);
         }
     }
 }

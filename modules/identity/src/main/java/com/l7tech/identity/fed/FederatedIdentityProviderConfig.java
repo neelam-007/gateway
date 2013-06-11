@@ -8,16 +8,16 @@ package com.l7tech.identity.fed;
 
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderType;
+import com.l7tech.search.Dependency;
+import org.hibernate.annotations.Proxy;
 
-import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlTransient;
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
 import javax.persistence.Transient;
+import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.XmlTransient;
 import java.util.HashMap;
 import java.util.Set;
-
-import org.hibernate.annotations.Proxy;
 
 /**
  * @author alex
@@ -81,6 +81,7 @@ public class FederatedIdentityProviderConfig extends IdentityProviderConfig {
     }
 
     @Transient
+    @Dependency(methodReturnType = Dependency.MethodReturnType.OID, type = Dependency.DependencyType.TRUSTED_CERT)
     public long[] getTrustedCertOids() {
         long[] oids = (long[])getProperty(PROP_CERT_OIDS);
         if ( oids == null ) {

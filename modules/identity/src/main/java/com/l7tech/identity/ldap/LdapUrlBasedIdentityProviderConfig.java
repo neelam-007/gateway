@@ -2,6 +2,7 @@ package com.l7tech.identity.ldap;
 
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderType;
+import com.l7tech.search.Dependency;
 import org.jetbrains.annotations.Nullable;
 
 import javax.persistence.Transient;
@@ -58,6 +59,7 @@ public abstract class LdapUrlBasedIdentityProviderConfig extends IdentityProvide
      * @return  Keystore Id used for client auth or NULL for default key.
      */
     @Transient
+    @Dependency(methodReturnType = Dependency.MethodReturnType.OID, type = Dependency.DependencyType.PRIVATE_KEY)
     public Long getKeystoreId() {
         return (Long) getProperty(KEYSTORE_ID);
     }

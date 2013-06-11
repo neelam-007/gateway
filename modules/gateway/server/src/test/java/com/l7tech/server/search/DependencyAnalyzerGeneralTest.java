@@ -93,9 +93,11 @@ public class DependencyAnalyzerGeneralTest {
 
     @Test
     public void testFindEntitiesWithCycle() throws FindException {
-        MyEntityWithOneDependency entity = myEntityWithOneDependency;
-        entity.setDependency(entity);
-        DependencySearchResults dependencies = dependencyAnalyzer.getDependencies(EntityHeaderUtils.fromEntity(entity));
+        MyEntityWithOneDependency rootEntity = new MyEntityWithOneDependency("MyEntityWithOneDependency", myEntityWithNoDependencies);
+        MyEntityWithOneDependency entity = new MyEntityWithOneDependency("MyEntityWithOneDependency", myEntityWithNoDependencies);
+        entity.setDependency(rootEntity);
+        rootEntity.setDependency(entity);
+        DependencySearchResults dependencies = dependencyAnalyzer.getDependencies(EntityHeaderUtils.fromEntity(rootEntity));
 
         Assert.assertEquals(1, dependencies.getDependencies().size());
     }
@@ -124,12 +126,15 @@ public class DependencyAnalyzerGeneralTest {
 
     @Test
     public void testFindEntitiesWithDepth1WithCycle() throws FindException {
-        MyEntityWithOneDependency entity = myEntityWithOneDependency;
-        entity.setDependency(entity);
-        DependencySearchResults dependencies = dependencyAnalyzer.getDependencies(EntityHeaderUtils.fromEntity(entity), depth1SearchOptions);
+        MyEntityWithOneDependency rootEntity = new MyEntityWithOneDependency("MyEntityWithOneDependency", myEntityWithNoDependencies);
+        MyEntityWithOneDependency entity = new MyEntityWithOneDependency("MyEntityWithOneDependency", myEntityWithNoDependencies);
+        entity.setDependency(rootEntity);
+        rootEntity.setDependency(entity);
+
+        DependencySearchResults dependencies = dependencyAnalyzer.getDependencies(EntityHeaderUtils.fromEntity(rootEntity), depth1SearchOptions);
 
         Assert.assertEquals(1, dependencies.getDependencies().size());
-        Assert.assertTrue(dependencies.getDependencies().iterator().next().areDependenciesSet());
+        Assert.assertFalse(dependencies.getDependencies().iterator().next().areDependenciesSet());
     }
 
     @Test

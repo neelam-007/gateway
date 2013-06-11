@@ -2,15 +2,19 @@ package com.l7tech.server.search.processors;
 
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.search.Dependency;
 import com.l7tech.server.policy.variable.ServerVariables;
 import com.l7tech.server.security.password.SecurePasswordManager;
 import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Inject;
+import java.util.Arrays;
+import java.util.List;
 import java.util.regex.Matcher;
 
 /**
- * This is used to find secure passwords given a context variable as a reference. The secure password context variable is of the form. secpass.<name>.plaintext
+ * This is used to find secure passwords given a context variable as a reference. The secure password context variable
+ * is of the form. secpass.<name>.plaintext
  *
  * @author Victor Kazakov
  */
@@ -19,12 +23,15 @@ public class SecurePasswordDependencyProcessor extends GenericDependencyProcesso
     @Inject
     private SecurePasswordManager securePasswordManager;
 
-    public SecurePassword find(@NotNull Object searchValue, com.l7tech.search.Dependency dependency) throws FindException {
+    @SuppressWarnings("unchecked")
+    public List<SecurePassword> find(@NotNull Object searchValue, Dependency dependency) throws FindException {
         switch (dependency.methodReturnType()) {
-            case NAME:
-                return securePasswordManager.findByUniqueName((String) searchValue);
+            case NAME: {
+                final SecurePassword securePassword = securePasswordManager.findByUniqueName((String) searchValue);
+                return securePassword != null ? Arrays.asList(securePassword) : null;
+            }
             case Variable: {
-                Matcher matcher = ServerVariables.SINGLE_SECPASS_PATTERN.matcher((String)searchValue);
+                Matcher matcher = ServerVariables.SINGLE_SECPASS_PATTERN.matcher((String) searchValue);
                 if (!matcher.matches()) {
                     // Assume it is a literal password
                     return null;
@@ -32,10 +39,11 @@ public class SecurePasswordDependencyProcessor extends GenericDependencyProcesso
                 String alias = matcher.group(1);
                 assert alias != null; // enforced by regex
                 assert alias.length() > 0; // enforced by regex
-                return securePasswordManager.findByUniqueName(alias);
+                final SecurePassword securePassword = securePasswordManager.findByUniqueName(alias);
+                return securePassword != null ? Arrays.asList(securePassword) : null;
             }
             default:
-                return (SecurePassword) super.find(searchValue, dependency);
+                return (List<SecurePassword>) super.find(searchValue, dependency);
         }
     }
 }

@@ -47,10 +47,10 @@ public class PolicyDependencyProcessor extends GenericDependencyProcessor<Policy
         while (assit.hasNext()) {
             final Assertion currentAssertion = (Assertion) assit.next();
             if(assertionsAsDependencies){
-                dependencies.add(processor.getDependencyHelper(currentAssertion));
+                dependencies.add(processor.getDependency(currentAssertion));
             } else {
                 //for all the dependencies in the assertion if the dependency is not already found add it to the list of dependencies.
-                Functions.forall(processor.getDependenciesHelper(currentAssertion), new Functions.Unary<Boolean, Dependency>() {
+                Functions.forall(processor.getDependencies(currentAssertion), new Functions.Unary<Boolean, Dependency>() {
                     @Override
                     public Boolean call(Dependency dependency) {
                         if (!dependencies.contains(dependency))

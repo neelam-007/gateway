@@ -7,7 +7,14 @@ package com.l7tech.server.search.objects;
  */
 public class DependentAssertion extends DependentObject {
 
-    public DependentAssertion(String name) {
+    private String descriptiveName;
+
+    public DependentAssertion(String name, String descriptiveName) {
         super(name);
+        this.descriptiveName = descriptiveName;
+    }
+
+    public String getDescriptiveName() {
+        return descriptiveName;
     }
 }

@@ -1,7 +1,9 @@
 package com.l7tech.server.search;
 
+import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.EntityCrud;
 import com.l7tech.server.search.objects.DependencySearchResults;
@@ -25,6 +27,9 @@ public class DependencyAnalyzerImpl implements DependencyAnalyzer {
 
     @Inject
     private EntityCrud entityCrud;
+
+    @Inject
+    private IdentityProviderConfigManager identityProviderConfigManager;
 
     @Inject
     private DependencyProcessorStore processorStore;
@@ -62,10 +67,17 @@ public class DependencyAnalyzerImpl implements DependencyAnalyzer {
         logger.log(Level.FINE, "Finding dependencies for {0}", entityHeaders);
         ArrayList<Entity> entities = new ArrayList<>(entityHeaders.size());
         for (EntityHeader entityHeader : entityHeaders) {
-            entities.add(entityCrud.find(entityHeader));
+            entities.add(loadEntity(entityHeader));
         }
 
         DependencyFinder dependencyFinder = new DependencyFinder(searchOptions, processorStore);
         return dependencyFinder.process(entities);
+    }
+
+    private Entity loadEntity(EntityHeader entityHeader) throws FindException {
+        if (EntityType.ID_PROVIDER_CONFIG.equals(entityHeader.getType())) {
+            return identityProviderConfigManager.findByHeader(entityHeader);
+        } else
+            return entityCrud.find(entityHeader);
     }
 }

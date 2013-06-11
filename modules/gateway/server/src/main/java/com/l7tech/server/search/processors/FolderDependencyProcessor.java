@@ -60,7 +60,7 @@ public class FolderDependencyProcessor extends GenericDependencyProcessor<Folder
         //sub-folder dependencies
         for (Folder currentFolder : folders) {
             if (currentFolder.getFolder() != null && folder.getOid() == currentFolder.getFolder().getOid()) {
-                Dependency dependency = finder.getDependencyHelper(currentFolder);
+                Dependency dependency = finder.getDependency(currentFolder);
                 dependencies.add(dependency);
             }
         }
@@ -69,7 +69,7 @@ public class FolderDependencyProcessor extends GenericDependencyProcessor<Folder
         //service dependencies
         for (PublishedService service : services) {
             if (service.getFolder() != null && folder.getOid() == service.getFolder().getOid()) {
-                Dependency dependency = finder.getDependencyHelper(service);
+                Dependency dependency = finder.getDependency(service);
                 dependencies.add(dependency);
                 servicePolicies.add(service.getPolicy());
             }
@@ -77,21 +77,21 @@ public class FolderDependencyProcessor extends GenericDependencyProcessor<Folder
         //policy dependencies
         for (Policy policy : policies) {
             if (policy.getFolder() != null && folder.getOid() == policy.getFolder().getOid() && !servicePolicies.contains(policy)) {
-                Dependency dependency = finder.getDependencyHelper(policy);
+                Dependency dependency = finder.getDependency(policy);
                 dependencies.add(dependency);
             }
         }
         //policy alias dependencies
         for (PolicyAlias policyAlias : policyAliases) {
             if (policyAlias.getFolder() != null && folder.getOid() == policyAlias.getFolder().getOid()) {
-                Dependency dependency = finder.getDependencyHelper(policyAlias);
+                Dependency dependency = finder.getDependency(policyAlias);
                 dependencies.add(dependency);
             }
         }
         //service alias dependencies
         for (PublishedServiceAlias serviceAlias : serviceAliases) {
             if (serviceAlias.getFolder() != null && folder.getOid() == serviceAlias.getFolder().getOid()) {
-                Dependency dependency = finder.getDependencyHelper(serviceAlias);
+                Dependency dependency = finder.getDependency(serviceAlias);
                 dependencies.add(dependency);
             }
         }

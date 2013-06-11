@@ -1,16 +1,15 @@
 package com.l7tech.server.search.processors;
 
 import com.l7tech.objectmodel.Entity;
-import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.GuidEntityHeader;
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.AssertionMetadata;
-import com.l7tech.server.EntityHeaderUtils;
 import com.l7tech.server.search.DependencyAnalyzer;
 import com.l7tech.server.search.DependencyAnalyzerException;
 import com.l7tech.server.search.DependencyProcessorStore;
-import com.l7tech.server.search.objects.*;
+import com.l7tech.server.search.objects.Dependency;
+import com.l7tech.server.search.objects.DependencySearchResults;
+import com.l7tech.server.search.objects.DependentObject;
 import com.l7tech.util.Functions;
 import org.jetbrains.annotations.NotNull;
 
@@ -55,10 +54,10 @@ public class DependencyFinder {
         int originalSearchDepth = getIntegerOption(DependencyAnalyzer.SearchDepthOptionKey);
         ArrayList<DependencySearchResults> results = new ArrayList<>(entities.size());
         for (Entity entity : entities) {
-            //increment the search depth by 1 (this is done because the first thing the getDependenciesHelper does is decrement it by 1
+            //increment the search depth by 1 (this is done because the first thing the getDependencies does is decrement it by 1
             searchDepth = originalSearchDepth + 1;
             //retrieve the dependency object for the entity
-            Dependency dependency = getDependencyHelper(entity);
+            Dependency dependency = getDependency(entity);
             //create the dependencySearchResults object
             results.add(new DependencySearchResults(dependency.getDependent(), dependency.getDependencies(), searchOptions));
         }
@@ -71,7 +70,8 @@ public class DependencyFinder {
      * @param dependent The object to search dependencies for.
      * @return The dependency object representing this object given.
      */
-    protected Dependency getDependencyHelper(Object dependent) throws FindException {
+    @NotNull
+    protected Dependency getDependency(Object dependent) throws FindException {
         searchDepth--;
         //Checks if the dependencies for this dependent has already been found.
         Dependency dependencyFound = getFoundDependenciesForObject(dependent);
@@ -79,14 +79,14 @@ public class DependencyFinder {
         if (dependencyFound != null)
             return dependencyFound;
         //Creates a dependency for this object.
-        final Dependency dependency = new Dependency(createDependencyObject(dependent));
+        final Dependency dependency = new Dependency(createDependentObject(dependent));
 
         // Adds the dependency to the dependencies found set. This needs to be done before calling the
-        // getDependenciesHelper() method in order to handle the cyclical case
+        // getDependencies() method in order to handle the cyclical case
         dependenciesFound.add(dependency);
         if (searchDepth != 0)
             //If the depth is non 0 then find the dependencies for the given entity.
-            dependency.setDependencies(getDependenciesHelper(dependent));
+            dependency.setDependencies(getDependencies(dependent));
         return dependency;
     }
 
@@ -97,7 +97,7 @@ public class DependencyFinder {
      * @param dependent The entity to find the dependencies for
      * @return The set of dependencies that this entity has.
      */
-    protected List<Dependency> getDependenciesHelper(final Object dependent) throws FindException {
+    protected List<Dependency> getDependencies(final Object dependent) throws FindException {
         //if the depth is 0 return the empty set. Base case.
         if (searchDepth == 0) {
             return Collections.emptyList();
@@ -113,10 +113,11 @@ public class DependencyFinder {
     /**
      * Retrieves an entity given a search value and the Dependency annotation.
      */
-    protected Entity retrieveEntity(Object searchValue, com.l7tech.search.Dependency dependency) throws DependencyAnalyzerException, FindException {
+    protected List<Entity> retrieveEntities(Object searchValue, com.l7tech.search.Dependency dependency) throws DependencyAnalyzerException, FindException {
         //Finds the correct processor to use to retrieve the entity
         DependencyProcessor processor = processorStore.getProcessor(dependency.type());
         // use the processor to retrieve the entity using the search value.
+        //noinspection unchecked
         return processor.find(searchValue, dependency);
     }
 
@@ -127,22 +128,12 @@ public class DependencyFinder {
      *                  Assertion}
      * @return The DependentObject for the given dependent
      */
-    private DependentObject createDependencyObject(Object dependent) {
-        if (dependent instanceof Entity) {
-            return createDependencyEntity(EntityHeaderUtils.fromEntity((Entity) dependent));
-        } else if (dependent instanceof Assertion) {
-            return createDependencyAssertion((Assertion) dependent);
-        } else {
-            throw new IllegalStateException("Unknown entity type: " + dependent.getClass());
-        }
-    }
-
-    private static DependentEntity createDependencyEntity(EntityHeader entity) {
-        return new DependentEntity(entity.getName(), entity.getType(), entity instanceof GuidEntityHeader ? ((GuidEntityHeader) entity).getGuid() : null, entity.getStrId());
-    }
-
-    private static DependentAssertion createDependencyAssertion(Assertion assertion) {
-        return new DependentAssertion((String) assertion.meta().get(AssertionMetadata.SHORT_NAME));
+    private DependentObject createDependentObject(Object dependent) {
+        //Finds the correct processor to use
+        DependencyProcessor processor = processorStore.getProcessor(getFromObject(dependent));
+        // use the processor to create the DependentObject from the dependent
+        //noinspection unchecked
+        return processor.createDependentObject(dependent);
     }
 
     /**
@@ -157,7 +148,7 @@ public class DependencyFinder {
             @Override
             public Boolean call(Dependency dependency) {
                 //return true if the dependency is for the same entity as the one we are searching for.
-                return dependency.getDependent().equals(createDependencyObject(dependent));
+                return dependency.getDependent().equals(createDependentObject(dependent));
             }
         });
     }
@@ -207,7 +198,8 @@ public class DependencyFinder {
     private static com.l7tech.search.Dependency.DependencyType getFromObject(Object obj) {
         if (obj instanceof Entity) {
             //if its an entity use the entity type to find the dependency type
-            switch (EntityHeaderUtils.fromEntity((Entity) obj).getType()) {
+            //noinspection unchecked
+            switch (EntityType.findTypeByEntity((Class<? extends Entity>) obj.getClass())) {
                 case POLICY:
                     return com.l7tech.search.Dependency.DependencyType.POLICY;
                 case FOLDER:
@@ -216,6 +208,8 @@ public class DependencyFinder {
                     return com.l7tech.search.Dependency.DependencyType.JDBC_CONNECTION;
                 case SECURE_PASSWORD:
                     return com.l7tech.search.Dependency.DependencyType.SECURE_PASSWORD;
+                case CLUSTER_PROPERTY:
+                    return com.l7tech.search.Dependency.DependencyType.CLUSTER_PROPERTY;
                 default:
                     return com.l7tech.search.Dependency.DependencyType.GENERIC;
             }

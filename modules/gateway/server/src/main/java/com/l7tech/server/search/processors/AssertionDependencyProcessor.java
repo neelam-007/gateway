@@ -4,12 +4,11 @@ import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.UsesEntities;
-import com.l7tech.policy.assertion.UsesVariables;
-import com.l7tech.server.EntityCrud;
+import com.l7tech.policy.assertion.*;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.search.objects.Dependency;
+import com.l7tech.server.search.objects.DependentAssertion;
+import com.l7tech.server.search.objects.DependentObject;
 import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Inject;
@@ -21,9 +20,6 @@ import java.util.List;
  * @author Victor Kazakov
  */
 public class AssertionDependencyProcessor extends GenericDependencyProcessor<Assertion> implements DependencyProcessor<Assertion> {
-
-    @Inject
-    private EntityCrud entityCrud;
 
     @Inject
     private ClusterPropertyManager clusterPropertyManager;
@@ -48,9 +44,9 @@ public class AssertionDependencyProcessor extends GenericDependencyProcessor<Ass
         //if the assertion implements UsesEntities then use the getEntitiesUsed method to find the entities used by the assertion.
         if (assertion instanceof UsesEntities) {
             for (EntityHeader header : ((UsesEntities) assertion).getEntitiesUsed()) {
-                final Entity entity = entityCrud.find(header);
+                final Entity entity = loadEntity(header);
                 if (entity != null) {
-                    Dependency dependency = finder.getDependencyHelper(entity);
+                    Dependency dependency = finder.getDependency(entity);
                     if (!dependencies.contains(dependency))
                         dependencies.add(dependency);
                 }
@@ -61,7 +57,7 @@ public class AssertionDependencyProcessor extends GenericDependencyProcessor<Ass
             for (String variable : ((UsesVariables) assertion).getVariablesUsed()) {
                 ClusterProperty property = clusterPropertyManager.findByUniqueName(variable);
                 if (property != null) {
-                    Dependency dependency = finder.getDependencyHelper(property);
+                    Dependency dependency = finder.getDependency(property);
                     if (!dependencies.contains(dependency))
                         dependencies.add(dependency);
                 }
@@ -71,11 +67,18 @@ public class AssertionDependencyProcessor extends GenericDependencyProcessor<Ass
         return dependencies;
     }
 
+    @Override
+    public DependentObject createDependentObject(Assertion assertion) {
+        final AssertionNodeNameFactory assertionNodeNameFactory = (AssertionNodeNameFactory) assertion.meta().get(AssertionMetadata.POLICY_NODE_NAME_FACTORY);
+        //noinspection unchecked
+        return new DependentAssertion((String) assertion.meta().get(AssertionMetadata.SHORT_NAME), assertionNodeNameFactory != null ? assertionNodeNameFactory.getAssertionName(assertion, true) : null);
+    }
+
     /**
      * This throws an exception. It should not be called. Assertions cannot be found the same way other entities can.
      */
     @SuppressWarnings("unchecked")
-    public Entity find(@NotNull Object searchValue, com.l7tech.search.Dependency dependency) {
+    public List<? extends Entity> find(@NotNull Object searchValue, com.l7tech.search.Dependency dependency) {
         throw new UnsupportedOperationException("Assertions cannot be loaded as entities");
     }
 }
