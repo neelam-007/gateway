@@ -48,12 +48,6 @@ public class RoleManagerWindow extends JDialog {
     }
 
     private void initFiltering() {
-        filterPanel.registerClearCallback(new Runnable() {
-            @Override
-            public void run() {
-                loadCount();
-            }
-        });
         filterPanel.registerFilterCallback(new Runnable() {
             @Override
             public void run() {

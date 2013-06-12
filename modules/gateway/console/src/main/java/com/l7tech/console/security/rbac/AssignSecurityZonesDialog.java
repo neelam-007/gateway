@@ -82,13 +82,6 @@ public class AssignSecurityZonesDialog extends JDialog {
                 setButtonTexts();
             }
         });
-        filterPanel.registerClearCallback(new Runnable() {
-            @Override
-            public void run() {
-                loadCount();
-                setButtonTexts();
-            }
-        });
     }
 
     private void setButtonTexts() {

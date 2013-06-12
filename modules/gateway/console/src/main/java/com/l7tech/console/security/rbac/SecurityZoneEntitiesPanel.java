@@ -77,13 +77,6 @@ public class SecurityZoneEntitiesPanel extends JPanel {
                 loadCount();
             }
         });
-        filterPanel.registerClearCallback(new Runnable() {
-            @Override
-            public void run() {
-                enableDisable();
-                loadCount();
-            }
-        });
         filterPanel.attachRowSorter(((TableRowSorter) entitiesTable.getRowSorter()), new int[]{0});
     }
 
