@@ -7,7 +7,6 @@ import com.l7tech.policy.assertion.ext.ServiceException;
 import com.l7tech.policy.assertion.ext.cei.CustomExtensionInterfaceFinder;
 
 import java.lang.reflect.Method;
-import java.util.HashMap;
 import java.util.Map;
 
 public class CustomConsoleContext {
@@ -34,6 +33,10 @@ public class CustomConsoleContext {
                 return Registry.getDefault().getExtensionInterface(interfaceClass, null);
             }
         });
+    }
+
+    public static void addCommonUIServices(Map<String, Object> consoleContext, CustomAssertionHolder customAssertionHolder, Assertion previousAssertion) {
+        consoleContext.put("commonUIServices", new CommonUIServicesImpl(customAssertionHolder, previousAssertion));
     }
 
     protected static boolean isSupportedDataType(Class inDataTypeClass) {
