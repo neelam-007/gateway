@@ -164,6 +164,7 @@ public class SecurityZonePropertiesDialog extends JDialog {
     }
 
     private void loadEntitiesToRemoveFromZone(final Collection<EntityType> removedEntityTypes) throws FindException {
+        this.entitiesToRemoveFromZone.clear();
         final RbacAdmin rbacAdmin = Registry.getDefault().getRbacAdmin();
         for (EntityType removedType : removedEntityTypes) {
             final Collection<EntityHeader> entitiesInZone = new ArrayList<>();
