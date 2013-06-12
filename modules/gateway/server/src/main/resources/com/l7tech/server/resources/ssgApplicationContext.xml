@@ -2217,6 +2217,13 @@
                 <ref bean="ssgActiveConnectorManager"/>
                 <ref bean="ssgFirewallRuleManager"/>
                 <ref bean="encapsulatedAssertionConfigManager"/>
+                <ref bean="assertionAccessManager"/>
+                <ref bean="httpConfigurationManager"/>
+                <ref bean="jdbcConnectionManager"/>
+                <ref bean="ssgKeyMetadataManager"/>
+                <ref bean="sampleMessageManager"/>
+                <ref bean="securePasswordManager"/>
+                <ref bean="uddiRegistryManager"/>
             </list>
         </constructor-arg>
     </bean>

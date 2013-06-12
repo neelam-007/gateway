@@ -15,7 +15,7 @@ import javax.xml.bind.annotation.XmlTransient;
  */
 @SuppressWarnings( { "serial" } )
 @XmlRootElement(name="policyHeader")
-public class PolicyHeader extends OrganizationHeader implements HasSecurityZoneOid {
+public class PolicyHeader extends OrganizationHeader {
 
     //- PUBLIC
 
@@ -120,12 +120,6 @@ public class PolicyHeader extends OrganizationHeader implements HasSecurityZoneO
         return displayName;
     }
 
-    @Nullable
-    @Override
-    public Long getSecurityZoneOid() {
-        return securityZoneOid;
-    }
-
     @Override
     public String toString() {
         return getName();
@@ -136,5 +130,4 @@ public class PolicyHeader extends OrganizationHeader implements HasSecurityZoneO
     private final boolean isSoap;
     private final long policyRevision;
     private final PolicyType policyType;
-    private final Long securityZoneOid;
 }

@@ -356,6 +356,8 @@ public class Role extends NamedEntityImp implements Comparable<Role> {
     /**
      * Construct description from the role name and folder path of the Entity, if it has one. The contextual
      * description can be used to distinguish entities with the same name.
+     *
+     * TODO delete me and replace with calls to EntityNameResolver
      */
     @Transient
     public String getContextualDescriptiveName() {

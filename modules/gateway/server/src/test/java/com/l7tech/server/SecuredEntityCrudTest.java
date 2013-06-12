@@ -38,7 +38,7 @@ public class SecuredEntityCrudTest {
     @Mock
     private ZoneUpdateSecurityChecker zoneUpdateSecurityChecker;
     private List<Long> oids;
-    private List<ZoneableEntityHeader> entities;
+    private List<EntityHeader> entities;
 
     @Before
     public void setup() {
@@ -61,7 +61,7 @@ public class SecuredEntityCrudTest {
                 return arg;
             }
         });
-        final Collection<ZoneableEntityHeader> filtered = securedEntityCrud.findByEntityTypeAndSecurityZoneOid(EntityType.POLICY, ZONE_OID);
+        final Collection<EntityHeader> filtered = securedEntityCrud.findByEntityTypeAndSecurityZoneOid(EntityType.POLICY, ZONE_OID);
         assertEquals(1, filtered.size());
     }
 

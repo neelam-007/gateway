@@ -306,7 +306,8 @@ public class ResourceAdminImpl implements ResourceAdmin {
                     uriAndRefKey1.length > 1 ? uriAndRefKey1[1] : null,
                     null,
                     null,
-                    0 );
+                    0,
+                    null);
 
             resourceMap.put( defaultResourceEntry.getKey(), header );
         }

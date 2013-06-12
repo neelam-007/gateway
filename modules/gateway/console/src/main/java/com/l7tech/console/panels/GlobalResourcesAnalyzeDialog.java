@@ -702,7 +702,8 @@ public class GlobalResourcesAnalyzeDialog extends JDialog {
                         header.getResourceKey1(),
                         header.getResourceKey2(),
                         header.getResourceKey3(),
-                        header.getVersion()
+                        header.getVersion(),
+                        header.getSecurityZoneOid()
                 );
 
                 break;

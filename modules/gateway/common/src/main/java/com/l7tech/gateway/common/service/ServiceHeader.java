@@ -10,7 +10,7 @@ import org.jetbrains.annotations.Nullable;
  *
  * @author Steve Jones
  */
-public class ServiceHeader extends OrganizationHeader implements HasSecurityZoneOid {
+public class ServiceHeader extends OrganizationHeader {
 
     //- PUBLIC
 
@@ -105,12 +105,6 @@ public class ServiceHeader extends OrganizationHeader implements HasSecurityZone
         return tracingEnabled;
     }
 
-    @Nullable
-    @Override
-    public Long getSecurityZoneOid() {
-        return securityZoneOid;
-    }
-
     @Override
     public String toString() {
         return getDisplayName();
@@ -124,5 +118,4 @@ public class ServiceHeader extends OrganizationHeader implements HasSecurityZone
     private final long policyRevision;
     private final String routingUri;
     private final boolean tracingEnabled;
-    private final Long securityZoneOid;
 }

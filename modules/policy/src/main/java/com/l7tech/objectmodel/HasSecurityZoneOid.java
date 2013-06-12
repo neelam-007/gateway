@@ -11,4 +11,11 @@ public interface HasSecurityZoneOid {
      */
     @Nullable
     public Long getSecurityZoneOid();
+
+    /**
+     * Set the oid of the referenced SecurityZone.
+     *
+     * @param securityZoneOid the oid of the referenced SecurityZone.
+     */
+    public void setSecurityZoneOid(@Nullable final Long securityZoneOid);
 }

@@ -82,7 +82,7 @@ public class OrganizationSelectionTree<LEH extends OrganizationHeader> extends J
         expandPath(new TreePath(rootNode.getPath()));
     }
 
-    private void insertNodes( Iterable<EntityHeader> contents, AbstractTreeNode target, long folderOid ) {
+    private void insertNodes( Iterable<? extends EntityHeader> contents, AbstractTreeNode target, long folderOid ) {
         for( final EntityHeader entityHeader : contents ) {
             if( getParentFolderOid(entityHeader) != null && folderOid == getParentFolderOid(entityHeader) ) {
                 final boolean isFolder = entityHeader instanceof FolderHeader;

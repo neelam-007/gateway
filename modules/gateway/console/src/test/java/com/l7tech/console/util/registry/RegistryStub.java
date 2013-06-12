@@ -247,7 +247,7 @@ public class RegistryStub extends Registry {
             }
 
             @Override
-            public Collection<ZoneableEntityHeader> findEntitiesByTypeAndSecurityZoneOid(@NotNull EntityType type, long securityZoneOid) throws FindException {
+            public Collection<EntityHeader> findEntitiesByTypeAndSecurityZoneOid(@NotNull EntityType type, long securityZoneOid) throws FindException {
                 throw new FindException("not impl in stub");
             }
 

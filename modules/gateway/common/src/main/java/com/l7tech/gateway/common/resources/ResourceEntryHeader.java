@@ -3,6 +3,7 @@ package com.l7tech.gateway.common.resources;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.ZoneableEntityHeader;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Entity header for resource entries.
@@ -19,7 +20,8 @@ public class ResourceEntryHeader extends ZoneableEntityHeader {
               resourceEntry.getResourceKey1(),
               resourceEntry.getResourceKey2(),
               resourceEntry.getResourceKey3(),
-              resourceEntry.getVersion() );
+              resourceEntry.getVersion(),
+              resourceEntry.getSecurityZone() == null ? null : resourceEntry.getSecurityZone().getOid());
     }
 
     public ResourceEntryHeader( final String id,
@@ -29,7 +31,8 @@ public class ResourceEntryHeader extends ZoneableEntityHeader {
                                 final String resourceKey1,
                                 final String resourceKey2,
                                 final String resourceKey3,
-                                final Integer version ) {
+                                final Integer version,
+                                @Nullable final Long securityZoneOid) {
         super( id, EntityType.RESOURCE_ENTRY, null, description, version );
 
         this.uri = uri;
@@ -37,6 +40,7 @@ public class ResourceEntryHeader extends ZoneableEntityHeader {
         this.resourceKey1 = resourceKey1;
         this.resourceKey2 = resourceKey2;
         this.resourceKey3 = resourceKey3;
+        this.securityZoneOid = securityZoneOid;
     }
 
     public String getResourceKey1() {

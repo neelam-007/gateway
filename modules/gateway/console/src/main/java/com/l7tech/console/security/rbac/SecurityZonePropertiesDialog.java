@@ -10,10 +10,7 @@ import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.JCheckBoxListModel;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.SecurityZone;
-import com.l7tech.objectmodel.ZoneableEntityHeader;
+import com.l7tech.objectmodel.*;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import org.apache.commons.collections.CollectionUtils;
@@ -169,14 +166,14 @@ public class SecurityZonePropertiesDialog extends JDialog {
     private void loadEntitiesToRemoveFromZone(final Collection<EntityType> removedEntityTypes) throws FindException {
         final RbacAdmin rbacAdmin = Registry.getDefault().getRbacAdmin();
         for (EntityType removedType : removedEntityTypes) {
-            final Collection<ZoneableEntityHeader> entitiesInZone = new ArrayList<>();
+            final Collection<EntityHeader> entitiesInZone = new ArrayList<>();
             if (removedType == EntityType.SSG_KEY_ENTRY) {
                 removedType = EntityType.SSG_KEY_METADATA;
             }
             entitiesInZone.addAll(rbacAdmin.findEntitiesByTypeAndSecurityZoneOid(removedType, securityZone.getOid()));
             if (!entitiesInZone.isEmpty()) {
                 final List<Long> oids = new ArrayList<>(entitiesInZone.size());
-                for (final ZoneableEntityHeader entity : entitiesInZone) {
+                for (final EntityHeader entity : entitiesInZone) {
                     oids.add(entity.getOid());
                 }
                 this.entitiesToRemoveFromZone.put(removedType, oids);

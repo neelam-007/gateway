@@ -9,7 +9,7 @@ import com.l7tech.objectmodel.ZoneableEntityHeader;
  *
  * @author darmstrong
  */
-public class FolderHeader extends ZoneableEntityHeader {
+public class FolderHeader extends ZoneableEntityHeader implements HasFolderOid {
 
     //- PUBLIC
 
@@ -50,6 +50,16 @@ public class FolderHeader extends ZoneableEntityHeader {
     @Override
     public String toString() {
         return getName();
+    }
+
+    @Override
+    public Long getFolderOid() {
+        return getParentFolderOid();
+    }
+
+    @Override
+    public void setFolderOid(Long folderOid) {
+        throw new UnsupportedOperationException("set folderOid not supported");
     }
 
     //- PRIVATE

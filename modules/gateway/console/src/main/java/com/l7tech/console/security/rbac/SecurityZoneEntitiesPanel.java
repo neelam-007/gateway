@@ -8,10 +8,7 @@ import com.l7tech.gui.SimpleTableModel;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.TableUtil;
 import com.l7tech.gui.util.Utilities;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.SecurityZone;
-import com.l7tech.objectmodel.ZoneableEntityHeader;
+import com.l7tech.objectmodel.*;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import org.jetbrains.annotations.Nullable;
@@ -39,7 +36,7 @@ public class SecurityZoneEntitiesPanel extends JPanel {
     private JComboBox entityTypeComboBox;
     private JLabel countLabel;
     private FilterPanel filterPanel;
-    private SimpleTableModel<ZoneableEntityHeader> entitiesTableModel;
+    private SimpleTableModel<EntityHeader> entitiesTableModel;
     private SecurityZone securityZone;
 
     public SecurityZoneEntitiesPanel() {
@@ -97,9 +94,9 @@ public class SecurityZoneEntitiesPanel extends JPanel {
     }
 
     private void initTable() {
-        entitiesTableModel = TableUtil.configureTable(entitiesTable, column("Name", 80, 300, 99999, new Functions.Unary<String, ZoneableEntityHeader>() {
+        entitiesTableModel = TableUtil.configureTable(entitiesTable, column("Name", 80, 300, 99999, new Functions.Unary<String, EntityHeader>() {
             @Override
-            public String call(final ZoneableEntityHeader header) {
+            public String call(final EntityHeader header) {
                 try {
                     return Registry.getDefault().getEntityNameResolver().getNameForHeader(header);
                 } catch (final FindException e) {
@@ -156,7 +153,7 @@ public class SecurityZoneEntitiesPanel extends JPanel {
         if (securityZone != null) {
             EntityType selected = getSelectedEntityType();
             if (selected != null) {
-                final List<ZoneableEntityHeader> entities = new ArrayList<>();
+                final List<EntityHeader> entities = new ArrayList<>();
                 final RbacAdmin rbacAdmin = Registry.getDefault().getRbacAdmin();
                 try {
                     if (EntityType.SSG_KEY_ENTRY == selected) {
@@ -170,7 +167,7 @@ public class SecurityZoneEntitiesPanel extends JPanel {
                 }
             }
         } else {
-            entitiesTableModel.setRows(Collections.<ZoneableEntityHeader>emptyList());
+            entitiesTableModel.setRows(Collections.<EntityHeader>emptyList());
         }
     }
 }

@@ -11,7 +11,7 @@ import com.l7tech.objectmodel.folder.HasFolderOid;
  *
  * @author darmstrong
  */
-public abstract class OrganizationHeader extends GuidEntityHeader implements Aliasable, HasFolderOid {
+public abstract class OrganizationHeader extends ZoneableGuidEntityHeader implements Aliasable, HasFolderOid {
     protected OrganizationHeader(long oid, EntityType type, String name, String description, int version) {
         super(oid, type, name, description, version);
     }
