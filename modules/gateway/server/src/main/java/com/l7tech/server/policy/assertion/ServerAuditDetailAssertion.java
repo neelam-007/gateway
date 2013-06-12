@@ -47,15 +47,25 @@ public class ServerAuditDetailAssertion extends AbstractServerAssertion<AuditDet
         String loggerName = customLoggerSuffix != null ? "com.l7tech.log.custom." + customLoggerSuffix : ServerAuditDetailAssertion.class.getName();
 
         final String loggerNameVars[] = Syntax.getReferencedNames(loggerName);
-        final StringBuilder invalidVars = new StringBuilder();
+        final StringBuilder varsNotExisting = new StringBuilder(0);
+        final StringBuilder varsWithInvalidPackageName = new StringBuilder(0);
+
         for (int i = 0; i < loggerNameVars.length; i++) {
             String loggerNameVar = loggerNameVars[i];
-            if (ExpandVariables.process("${" + loggerNameVar + "}", context.getVariableMap(varsUsed, getAudit()), getAudit()).trim().isEmpty()) {
-                if (i > 0 && invalidVars.length() > 0) invalidVars.append(", ");
-                invalidVars.append(loggerNameVar);
+            String varValue = ExpandVariables.process("${" + loggerNameVar + "}", context.getVariableMap(varsUsed, getAudit()), getAudit()).trim();
+
+            if (varValue.isEmpty()) {
+                if (i > 0 && varsNotExisting.length() > 0) varsNotExisting.append(", ");
+                varsNotExisting.append(loggerNameVar);
+            } else if (! varValue.matches(AuditDetailAssertion.CUSTOM_LOGGER_NAME_PATTERN)) {
+                if (i > 0 && varsNotExisting.length() > 0) varsNotExisting.append(", ");
+                varsWithInvalidPackageName.append(loggerNameVar);
             }
         }
-        if (invalidVars.length() > 0) {
+
+        // As long as any context variable does not exist or the value of context variable contains invalid package pattern,
+        // set the logger name back to the default package name.
+        if (varsNotExisting.length() > 0 || varsWithInvalidPackageName.length() > 0) {
             loggerName = ServerAuditDetailAssertion.class.getName();
         } else {
             loggerName = ExpandVariables.process(loggerName, context.getVariableMap(varsUsed, getAudit()), getAudit());
@@ -64,8 +74,13 @@ public class ServerAuditDetailAssertion extends AbstractServerAssertion<AuditDet
         logger = Logger.getLogger(loggerName);
         auditor = new Auditor(this, springContext, logger);
 
-        if (invalidVars.length() > 0) {
-            auditor.logAndAudit(AssertionMessages.CUSTOM_LOGGER_NAME_FALLBACK, invalidVars.toString(), ServerAuditDetailAssertion.class.getName());
+        if (varsNotExisting.length() > 0) {
+            auditor.logAndAudit(AssertionMessages.CUSTOM_LOGGER_NAME_FALLBACK_DUE_TO_VARIABLES_NOT_EXIST,
+                varsNotExisting.toString(), ServerAuditDetailAssertion.class.getName());
+        }
+        if (varsWithInvalidPackageName.length() > 0) {
+            auditor.logAndAudit(AssertionMessages.CUSTOM_LOGGER_NAME_FALLBACK_DUE_TO_INVALID_PACKAGE_NAME,
+                varsWithInvalidPackageName.toString(), ServerAuditDetailAssertion.class.getName());
         }
 
         String detail = assertion.getDetail();
@@ -83,6 +98,10 @@ public class ServerAuditDetailAssertion extends AbstractServerAssertion<AuditDet
         }
 
         return AssertionStatus.NONE;
+    }
+
+    public Logger getLogger() {
+        return logger;
     }
 
     private AuditDetailMessage findDetailMessage(Level level) {

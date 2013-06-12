@@ -21,6 +21,7 @@ import static com.l7tech.policy.assertion.AssertionMetadata.*;
  * Date: Jan 19, 2006<br/>
  */
 public class AuditDetailAssertion extends Assertion implements UsesVariables {
+    public static final String CUSTOM_LOGGER_NAME_PATTERN = "^[A-Za-z][A-Za-z0-9]*(?:\\.[A-Za-z][A-Za-z0-9]*)*$";
     private String level = Level.INFO.toString();
     private String detail;
     private boolean loggingOnly = false;

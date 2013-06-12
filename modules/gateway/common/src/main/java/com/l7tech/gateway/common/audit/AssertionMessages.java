@@ -1214,7 +1214,8 @@ public class AssertionMessages extends Messages {
     public static final M CERT_VALIDATION_FAILURE = m(10002, Level.WARNING, "Certificate {0} validation ({1}) failed: {2}");
 
     // Audit Detail Assertion
-    public static final M CUSTOM_LOGGER_NAME_FALLBACK = m(10020, Level.WARNING, "The custom logger name includes invalid context variable(s): {0}.  The custom logger name now falls back to the default package name, {1}.");
+    public static final M CUSTOM_LOGGER_NAME_FALLBACK_DUE_TO_VARIABLES_NOT_EXIST = m(10020, Level.WARNING, "The custom logger name uses non-existing context variables: {0}.  The custom logger name now falls back to the default package name, {1}.");
+    public static final M CUSTOM_LOGGER_NAME_FALLBACK_DUE_TO_INVALID_PACKAGE_NAME = m(10021, Level.WARNING, "The custom logger name contains invalid package name derived from context variable(s): {0}. The custom logger name now falls back to the default package name, {1}.");
 
     // Encapsulated Assertion
     public static final M ENCASS_INVALID_BACKING_POLICY = m(10050, Level.WARNING, "Underlying policy fragment is invalid for Encapsulated Assertion: {0}");

@@ -155,7 +155,7 @@ public class AuditDetailAssertionPropertiesDialog extends LegacyAssertionPropert
     }
 
     private boolean validLoggerName(String name) {
-        return !(name == null || name.trim().length() < 1) && name.matches("^[A-Za-z][A-Za-z0-9]*(?:\\.[A-Za-z][A-Za-z0-9]*)*$");
+        return !(name == null || name.trim().length() < 1) && name.matches(AuditDetailAssertion.CUSTOM_LOGGER_NAME_PATTERN);
     }
 
     private void cancel() {
