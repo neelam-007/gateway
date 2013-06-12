@@ -9,6 +9,7 @@ import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gateway.common.security.keystore.SsgKeyMetadata;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceAdmin;
+import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
@@ -212,6 +213,19 @@ public class EntityNameResolverTest {
     public void getPathFromFolderOidFindException() throws Exception {
         when(folderAdmin.findByPrimaryKey(OID)).thenThrow(new FindException("mocking exception"));
         resolver.getPath(new HasFolderOidStub(OID));
+    }
+
+    @Test
+    public void getNameForServiceHeaderIncludesRoutingUri() throws Exception {
+        final PublishedService service = new PublishedService();
+        service.setName(NAME);
+        service.setRoutingUri("/routingUri");
+        assertEquals("test[/routingUri] (/test)", resolver.getNameForHeader(new ServiceHeader(service)));
+    }
+
+    @Test
+    public void getNameForHeaderNullTypeAndName() throws Exception {
+        assertTrue(resolver.getNameForHeader(new EntityHeader(null, null, null, null)).isEmpty());
     }
 
     private class HasFolderStub implements HasFolder {

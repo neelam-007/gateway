@@ -9,9 +9,9 @@ import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gateway.common.security.keystore.SsgKeyMetadata;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceAdmin;
+import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.HasFolder;
@@ -57,24 +57,24 @@ public class EntityNameResolver {
     }
 
     /**
-     * Resolves a name for a given EntityHeader which may include a folder path.
+     * Resolves a descriptive name for a given EntityHeader which may include a name and/or folder path and/or other unique info depending on the header type.
      * <p/>
      * If there is a non-empty, non-oid name on the header, it will take precedence (this should happen in most cases).
      * <p/>
-     * Otherwise name will be resolved by looking up the entity that is referenced by the header (this is usually the case is for entities that don't have a name).
+     * Otherwise the descriptive name will be resolved by looking up the entity that is referenced by the header (this is usually the case is for entities that don't have a name).
      *
-     * @param header the EntityHeader for which to determine a name. Usually a header that has just been retrieved via an Admin call.
-     * @return a name for the given EntityHeader which may include a folder path. Cannot be null.
+     * @param header the EntityHeader for which to determine a descriptive name. Usually a header that has just been retrieved via an Admin call.
+     * @return a name for the given EntityHeader which may include a name and/or folder path and/or other unique info. Cannot be null.
      *         Can be empty if the name on the header is empty/null and the resolver does not know how to look up the referenced entity.
      * @throws FindException if a db error occurs or the entity referenced by the header does not exist.
      */
     @NotNull
     public String getNameForHeader(@NotNull final EntityHeader header) throws FindException {
-        String name = header.getName();
+        final String nameOnHeader = header.getName();
+        String name = nameOnHeader == null ? StringUtils.EMPTY : nameOnHeader;
         Entity retrievedEntity = null;
-        if (StringUtils.isBlank(name) || String.valueOf(header.getOid()).equals(header.getName())) {
-            final EntityType entityType = header.getType();
-            switch (entityType) {
+        if (header.getType() != null && (StringUtils.isBlank(name) || String.valueOf(header.getOid()).equals(name))) {
+            switch (header.getType()) {
                 case SERVICE_ALIAS:
                     final PublishedService owningService = serviceAdmin.findByAlias(header.getOid());
                     validateFoundEntity(header, owningService);
@@ -112,8 +112,32 @@ public class EntityNameResolver {
         }
 
         final String path = resolvePath(header, retrievedEntity);
+        String uniqueInfo = getUniqueInfo(header);
+        if (StringUtils.isNotBlank(uniqueInfo)) {
+            uniqueInfo = "[" + uniqueInfo + "]";
+        }
 
-        return path == null ? name : name + " (" + path + name + ")";
+        return path == null ? name + uniqueInfo : name + uniqueInfo + " (" + path + name + ")";
+    }
+
+    /**
+     * Some entity types may require other info than its name and/or path to make it unique from others.
+     */
+    private String getUniqueInfo(@NotNull final EntityHeader header) {
+        String extraInfo = StringUtils.EMPTY;
+        if (header.getType() != null) {
+            switch (header.getType()) {
+                case SERVICE:
+                    if (header instanceof ServiceHeader) {
+                        final ServiceHeader serviceHeader = (ServiceHeader) header;
+                        extraInfo = serviceHeader.getRoutingUri();
+                    }
+                    break;
+                default:
+                    extraInfo = StringUtils.EMPTY;
+            }
+        }
+        return extraInfo;
     }
 
     /**
