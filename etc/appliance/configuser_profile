@@ -1,6 +1,9 @@
 
 set -u
-set -e
+
+# SSG-7152: This command causes this script to immediately exit if any commands it calls returns a non-zero exit status
+# Disabling it is necessary to allow us to handle return codes from scripts like ssgconfig_launch
+# set -e
 
 trap doLogout INT
 
