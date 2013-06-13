@@ -325,6 +325,11 @@ if [ "$1" = "0" ] ; then
 		perl -pi.bak -e 's/^s0.*agetty.*//' /etc/inittab
 		perl -pi.bak -e 's/ttyS0//' /etc/securetty
 	fi
+	
+	# SSG-5875
+	alias rm=rm
+	rm /etc/init/layer7-tty* > /dev/null
+	rm /etc/modprobe.d/ssg-appliance.conf > /dev/null
 
 	# SSG-5875
 	alias rm=rm
