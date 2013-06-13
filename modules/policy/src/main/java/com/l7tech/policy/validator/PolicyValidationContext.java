@@ -17,6 +17,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -35,6 +36,7 @@ public class PolicyValidationContext implements Serializable {
     private final @Nullable SoapVersion soapVersion;
     private transient Map<Assertion,AssertionValidator> validatorMap = new HashMap<Assertion,AssertionValidator>();
     private transient Either<WSDLException,Wsdl> wsdl;
+    private Set<String> permittedAssertionClasses;
 
     /**
      * Create a policy validation context.
@@ -120,6 +122,23 @@ public class PolicyValidationContext implements Serializable {
     @Nullable
     public SoapVersion getSoapVersion() {
         return soapVersion;
+    }
+
+    /**
+     * Set to a non-null collection if the validation context should validate assertions against a white list of permitted assertions.
+     *
+     * @param permittedAssertionClasses a white list of assertion classes that are permitted in the context.
+     */
+    public void setPermittedAssertionClasses(@Nullable final Set<String> permittedAssertionClasses) {
+        this.permittedAssertionClasses = permittedAssertionClasses;
+    }
+
+    /**
+     * @return a white list collection of assertion classes that are permitted in the context or null if no validation is required against a white list.
+     */
+    @Nullable
+    public Set<String> getPermittedAssertionClasses() {
+        return permittedAssertionClasses;
     }
 
     AssertionValidator getValidator( final Assertion assertion ) {

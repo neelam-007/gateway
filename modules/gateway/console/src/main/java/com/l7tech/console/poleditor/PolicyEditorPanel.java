@@ -333,7 +333,9 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                     	r.addError(new PolicyValidatorResult.Error(Collections.<Integer>emptyList(), -1, "Policy could not be loaded", null));
                     	return r;
                 	}
-                    PolicyValidatorResult r = policyValidator.validate(assertion, new PolicyValidationContext(policy.getType(), policy.getInternalTag(), wsdlLocator, soap, soapVersion), licenseManager);
+                    final PolicyValidationContext pvc = new PolicyValidationContext(policy.getType(), policy.getInternalTag(), wsdlLocator, soap, soapVersion);
+                    pvc.setPermittedAssertionClasses(TopComponents.getInstance().getAssertionRegistry().getPermittedAssertionClasses());
+                    PolicyValidatorResult r = policyValidator.validate(assertion, pvc, licenseManager);
                     policyValidator.checkForCircularIncludes(policy.getGuid(), policy.getName(), assertion, r);
                     return r;
                 }

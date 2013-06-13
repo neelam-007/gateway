@@ -377,6 +377,13 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
         return permittedAssertionClasses.get(ass.getClass().getName());
     }
 
+    /**
+     * @return the set of permitted assertion classes for the current user.
+     */
+    public Set<String> getPermittedAssertionClasses() {
+        return permittedAssertionClasses.keySet();
+    }
+
     private static class PaletteNodeFactoryMetadataFinder<AT extends Assertion> implements MetadataFinder {
         @Override
         public Object get(AssertionMetadata meta, String key) {

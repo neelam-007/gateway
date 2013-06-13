@@ -62,10 +62,11 @@ public class PathValidator {
     private static final Class<? extends Assertion> ASSERTION_WSSUSERNAMETOKENBASIC = WssBasic.class;
     private static final Class<? extends Assertion> ASSERTION_ENCRYPTEDUSERNAMETOKEN = EncryptedUsernameTokenAssertion.class;
     private static final Class<? extends Assertion> ASSERTION_KERBEROSTICKET = RequestWssKerberos.class;
+    private static final String ASSERTION_PERMISSION_DENIED = "assertion.permission.denied";
 
     private static Map<String, Object> policyParseCache = Collections.synchronizedMap(new WeakHashMap<String, Object>());
 
-    static final String REQUEST_TARGET_NAME = "Request"; // note, this is case insensitive 
+    static final String REQUEST_TARGET_NAME = "Request"; // note, this is case insensitive
     static final String RESPONSE_TARGET_NAME = "Response";
 
     /**
@@ -131,6 +132,11 @@ public class PathValidator {
                 result.addWarning(new PolicyValidatorResult.Warning(
                         a, bundle.getString("assertion.unknown"), null));
             }
+        }
+
+        if (!(a instanceof UnknownAssertion) && pvc.getPermittedAssertionClasses() != null &&
+                !pvc.getPermittedAssertionClasses().contains(a.getClass().getName())) {
+            result.addWarning(new PolicyValidatorResult.Warning(a, bundle.getString(ASSERTION_PERMISSION_DENIED), null));
         }
 
         // process any preconditions
