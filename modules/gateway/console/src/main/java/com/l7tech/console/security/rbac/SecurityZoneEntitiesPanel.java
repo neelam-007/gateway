@@ -8,12 +8,18 @@ import com.l7tech.gui.SimpleTableModel;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.TableUtil;
 import com.l7tech.gui.util.Utilities;
-import com.l7tech.objectmodel.*;
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.SecurityZone;
+import com.l7tech.objectmodel.folder.HasFolderOid;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
+import javax.swing.table.TableColumn;
 import javax.swing.table.TableRowSorter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -30,6 +36,7 @@ import static com.l7tech.gui.util.TableUtil.column;
  */
 public class SecurityZoneEntitiesPanel extends JPanel {
     private static final Logger logger = Logger.getLogger(SecurityZoneEntitiesPanel.class.getName());
+    private static final int PATH_COL_INDEX = 1;
     private JPanel contentPanel;
     private JTable entitiesTable;
     private JScrollPane scrollPane;
@@ -38,6 +45,7 @@ public class SecurityZoneEntitiesPanel extends JPanel {
     private FilterPanel filterPanel;
     private SimpleTableModel<EntityHeader> entitiesTableModel;
     private SecurityZone securityZone;
+    private TableColumn pathColumn;
 
     public SecurityZoneEntitiesPanel() {
         initTable();
@@ -87,17 +95,34 @@ public class SecurityZoneEntitiesPanel extends JPanel {
     }
 
     private void initTable() {
-        entitiesTableModel = TableUtil.configureTable(entitiesTable, column("Name", 80, 300, 99999, new Functions.Unary<String, EntityHeader>() {
-            @Override
-            public String call(final EntityHeader header) {
-                try {
-                    return Registry.getDefault().getEntityNameResolver().getNameForHeader(header);
-                } catch (final FindException e) {
-                    logger.log(Level.WARNING, "Unable to determine name for entity: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-                    return "unknown entity";
-                }
-            }
-        }));
+        entitiesTableModel = TableUtil.configureTable(entitiesTable,
+                column("Name", 80, 300, 99999, new Functions.Unary<String, EntityHeader>() {
+                    @Override
+                    public String call(final EntityHeader header) {
+                        try {
+                            return Registry.getDefault().getEntityNameResolver().getNameForHeader(header, false);
+                        } catch (final FindException e) {
+                            logger.log(Level.WARNING, "Unable to determine name for entity: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                            return "unknown entity";
+                        }
+                    }
+                }),
+                column("Path", 60, 60, 99999, new Functions.Unary<String, EntityHeader>() {
+                    @Override
+                    public String call(final EntityHeader entityHeader) {
+                        String path = StringUtils.EMPTY;
+                        if (entityHeader instanceof HasFolderOid) {
+                            try {
+                                path = Registry.getDefault().getEntityNameResolver().getPath((HasFolderOid) entityHeader);
+                            } catch (final FindException e) {
+                                logger.log(Level.WARNING, "Unable to determine path for entity: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                                return "unknown path";
+                            }
+                        }
+                        return path;
+                    }
+                }));
+        pathColumn = entitiesTable.getColumnModel().getColumn(PATH_COL_INDEX);
         Utilities.setRowSorter(entitiesTable, entitiesTableModel);
     }
 
@@ -161,6 +186,22 @@ public class SecurityZoneEntitiesPanel extends JPanel {
             }
         } else {
             entitiesTableModel.setRows(Collections.<EntityHeader>emptyList());
+        }
+
+        showHidePathColumn();
+    }
+
+    private void showHidePathColumn() {
+        final boolean pathColumnVisible = entitiesTable.getColumnCount() > 1;
+        if (entitiesTableModel.getRowCount() > 0) {
+            final EntityHeader firstHeader = entitiesTableModel.getRowObject(0);
+            if (firstHeader instanceof HasFolderOid && !pathColumnVisible) {
+                entitiesTable.addColumn(pathColumn);
+            } else if (!(firstHeader instanceof HasFolderOid) && pathColumnVisible) {
+                entitiesTable.removeColumn(pathColumn);
+            }
+        } else if (pathColumnVisible) {
+            entitiesTable.removeColumn(pathColumn);
         }
     }
 }
