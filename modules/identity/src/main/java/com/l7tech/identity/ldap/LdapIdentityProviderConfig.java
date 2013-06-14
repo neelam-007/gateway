@@ -2,7 +2,7 @@ package com.l7tech.identity.ldap;
 
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderType;
-import com.l7tech.util.NameValuePair;
+import com.l7tech.search.Dependency;
 import com.l7tech.util.TimeUnit;
 import org.hibernate.annotations.Proxy;
 import org.jetbrains.annotations.NotNull;
@@ -207,6 +207,7 @@ public class LdapIdentityProviderConfig extends LdapUrlBasedIdentityProviderConf
      * the bind passwd for searching
      */
     @Transient
+    @Dependency(methodReturnType = Dependency.MethodReturnType.VARIABLE, type = Dependency.DependencyType.SECURE_PASSWORD)
     public String getBindPasswd() {
         return (String)getProperty(BIND_PASS);
     }
@@ -473,6 +474,7 @@ public class LdapIdentityProviderConfig extends LdapUrlBasedIdentityProviderConf
     }
 
    @Transient
+   @Dependency(methodReturnType = Dependency.MethodReturnType.OID, type = Dependency.DependencyType.SECURE_PASSWORD, key = "service.passwordOid")
    public Map<String, String> getNtlmAuthenticationProviderProperties() {
        TreeMap<String, String> props = getProperty(NTLM_AUTHENTICATION_PROVIDER_PROPERTIES);
        if(props != null){

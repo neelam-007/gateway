@@ -1,5 +1,7 @@
 package com.l7tech.policy;
 
+import com.l7tech.search.Dependency;
+
 /**
  * User: megery
  * Date: 2-Mar-2010
@@ -35,6 +37,7 @@ public class JmsDynamicProperties {
         this.jndiUserName = jndiUserName;
     }
 
+    @Dependency(methodReturnType = Dependency.MethodReturnType.VARIABLE, type = Dependency.DependencyType.SECURE_PASSWORD)
     public String getJndiPassword() {
         return jndiPassword;
     }
@@ -73,6 +76,7 @@ public class JmsDynamicProperties {
         this.destUserName = destUserName;
     }
 
+    @Dependency(methodReturnType = Dependency.MethodReturnType.VARIABLE, type = Dependency.DependencyType.SECURE_PASSWORD)
     public String getDestPassword() {
         return destPassword;
     }

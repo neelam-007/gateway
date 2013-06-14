@@ -364,6 +364,16 @@ public class GenericDependencyProcessorTest {
         }
 
         @Override
+        public String key() {
+            return "";
+        }
+
+        @Override
+        public boolean searchObject() {
+            return false;
+        }
+
+        @Override
         public Class<? extends Annotation> annotationType() {
             return com.l7tech.search.Dependency.class;
         }

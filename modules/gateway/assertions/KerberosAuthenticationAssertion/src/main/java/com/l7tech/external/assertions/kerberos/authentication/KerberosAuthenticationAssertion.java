@@ -15,6 +15,7 @@ import com.l7tech.policy.assertion.xmlsec.RequestWssKerberos;
 import com.l7tech.policy.validator.AssertionValidator;
 import com.l7tech.policy.validator.PolicyValidationContext;
 import com.l7tech.policy.variable.Syntax;
+import com.l7tech.search.Dependency;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -99,6 +100,7 @@ public class KerberosAuthenticationAssertion extends Assertion implements UsesVa
         this.krbConfiguredAccount = krbConfiguredAccount;
     }
 
+    @Dependency(type = Dependency.DependencyType.SECURE_PASSWORD, methodReturnType = Dependency.MethodReturnType.OID)
     public long getKrbSecurePasswordReference() {
         return krbSecurePasswordReference;
     }

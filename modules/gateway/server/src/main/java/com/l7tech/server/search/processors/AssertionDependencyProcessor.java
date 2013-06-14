@@ -1,11 +1,14 @@
 package com.l7tech.server.search.processors;
 
 import com.l7tech.gateway.common.cluster.ClusterProperty;
+import com.l7tech.gateway.common.resources.ResourceEntry;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.policy.AssertionResourceInfo;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.server.cluster.ClusterPropertyManager;
+import com.l7tech.server.globalresources.ResourceEntryManager;
 import com.l7tech.server.search.objects.Dependency;
 import com.l7tech.server.search.objects.DependentAssertion;
 import com.l7tech.server.search.objects.DependentObject;
@@ -23,6 +26,9 @@ public class AssertionDependencyProcessor extends GenericDependencyProcessor<Ass
 
     @Inject
     private ClusterPropertyManager clusterPropertyManager;
+
+    @Inject
+    private ResourceEntryManager resourceEntryManager;
 
     /**
      * Finds the dependencies that an assertion has. First finds the dependencies by looking at the methods defined by
@@ -58,6 +64,21 @@ public class AssertionDependencyProcessor extends GenericDependencyProcessor<Ass
                 ClusterProperty property = clusterPropertyManager.findByUniqueName(variable);
                 if (property != null) {
                     Dependency dependency = finder.getDependency(property);
+                    if (!dependencies.contains(dependency))
+                        dependencies.add(dependency);
+                }
+            }
+        }
+        //If the assertion implements UsesResourceInfo then add the used resource as a dependent.
+        if (assertion instanceof UsesResourceInfo) {
+            AssertionResourceInfo assertionResourceInfo = ((UsesResourceInfo) assertion).getResourceInfo();
+            if (assertionResourceInfo != null && assertionResourceInfo.getType().equals(AssertionResourceType.GLOBAL_RESOURCE)) {
+                String uri = ((GlobalResourceInfo) assertionResourceInfo).getId();
+                //Passing null as the resource type should be ok as resources as unique by uri anyways.
+                @SuppressWarnings("NullableProblems")
+                ResourceEntry resourceEntry = resourceEntryManager.findResourceByUriAndType(uri, null);
+                if (resourceEntry != null) {
+                    Dependency dependency = finder.getDependency(resourceEntry);
                     if (!dependencies.contains(dependency))
                         dependencies.add(dependency);
                 }

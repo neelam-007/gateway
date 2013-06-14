@@ -2,8 +2,9 @@ package com.l7tech.gateway.common.transport;
 
 import com.l7tech.common.io.PortOwner;
 import com.l7tech.common.io.PortRange;
-import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.objectmodel.imp.ZoneableNamedEntityImp;
+import com.l7tech.search.Dependencies;
+import com.l7tech.search.Dependency;
 import com.l7tech.util.BeanUtils;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Pair;
@@ -430,6 +431,9 @@ public class SsgConnector extends ZoneableNamedEntityImp implements PortOwner {
      * @param key  the name of the property to get
      * @return the requested property, or null if it is not set
      */
+    @Dependencies({
+            @Dependency(methodReturnType = Dependency.MethodReturnType.OID, type = Dependency.DependencyType.SERVICE, key = PROP_HARDWIRED_SERVICE_ID)
+    })
     public String getProperty(String key) {
         return properties.get(key);
     }

@@ -1,7 +1,7 @@
 package com.l7tech.gateway.common.resources;
 
-import com.l7tech.objectmodel.imp.PersistentEntityImp;
 import com.l7tech.objectmodel.imp.ZoneablePersistentEntityImp;
+import com.l7tech.search.Dependency;
 import org.hibernate.annotations.Proxy;
 
 import javax.persistence.Column;
@@ -163,6 +163,7 @@ public class HttpConfiguration extends ZoneablePersistentEntityImp {
      * @return The identifier or null.
      */
     @Column(name="password_oid")
+    @Dependency(type = Dependency.DependencyType.SECURE_PASSWORD, methodReturnType = Dependency.MethodReturnType.OID)
     public Long getPasswordOid() {
         return passwordOid;
     }
@@ -292,7 +293,8 @@ public class HttpConfiguration extends ZoneablePersistentEntityImp {
         this.proxyUse = proxyUse;
     }
 
-    @Embedded    
+    @Embedded
+    @Dependency(searchObject = true)
     public HttpProxyConfiguration getProxyConfiguration() {
         return proxyConfiguration;
     }

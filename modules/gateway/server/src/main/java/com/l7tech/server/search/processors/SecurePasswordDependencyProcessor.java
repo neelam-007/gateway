@@ -30,7 +30,7 @@ public class SecurePasswordDependencyProcessor extends GenericDependencyProcesso
                 final SecurePassword securePassword = securePasswordManager.findByUniqueName((String) searchValue);
                 return securePassword != null ? Arrays.asList(securePassword) : null;
             }
-            case Variable: {
+            case VARIABLE: {
                 Matcher matcher = ServerVariables.SINGLE_SECPASS_PATTERN.matcher((String) searchValue);
                 if (!matcher.matches()) {
                     // Assume it is a literal password

@@ -7,6 +7,7 @@ import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.annotation.RequiresSOAP;
 import com.l7tech.policy.wsp.WspSensitive;
+import com.l7tech.search.Dependency;
 import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.security.xml.KeyReference;
 
@@ -193,6 +194,7 @@ public class AddWssSecurityToken extends MessageTargetableAssertion implements W
     }
 
     @WspSensitive
+    @Dependency(methodReturnType = Dependency.MethodReturnType.VARIABLE, type = Dependency.DependencyType.SECURE_PASSWORD)
     public String getPassword() {
         return password;
     }

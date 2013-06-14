@@ -13,6 +13,7 @@ import com.l7tech.policy.wsp.Java5EnumTypeMapping;
 import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
 import com.l7tech.policy.wsp.TypeMapping;
 import com.l7tech.policy.wsp.WspEnumTypeMapping;
+import com.l7tech.search.Dependency;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -187,6 +188,7 @@ public class SshRouteAssertion extends RoutingAssertion implements UsesVariables
         this.username = username;
     }
 
+    @Dependency(methodReturnType = Dependency.MethodReturnType.OID, type = Dependency.DependencyType.SECURE_PASSWORD)
     public Long getPrivateKeyOid() {
         return privateKeyOid;
     }
@@ -203,6 +205,7 @@ public class SshRouteAssertion extends RoutingAssertion implements UsesVariables
         this.sshPublicKey = sshPublicKey;
     }
 
+    @Dependency(methodReturnType = Dependency.MethodReturnType.OID, type = Dependency.DependencyType.SECURE_PASSWORD)
     public Long getPasswordOid() {
         return passwordOid;
     }

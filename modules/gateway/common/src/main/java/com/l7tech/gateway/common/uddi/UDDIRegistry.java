@@ -4,9 +4,9 @@
  */
 package com.l7tech.gateway.common.uddi;
 
-import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.objectmodel.imp.ZoneableNamedEntityImp;
 import com.l7tech.policy.wsp.WspSensitive;
+import com.l7tech.search.Dependency;
 import org.hibernate.annotations.Proxy;
 
 import javax.persistence.Column;
@@ -188,6 +188,7 @@ public class UDDIRegistry extends ZoneableNamedEntityImp {
 
     @Column(name="password")
     @WspSensitive
+    @Dependency(methodReturnType = Dependency.MethodReturnType.VARIABLE, type = Dependency.DependencyType.SECURE_PASSWORD)
     public String getRegistryAccountPassword() {
         return registryAccountPassword;
     }

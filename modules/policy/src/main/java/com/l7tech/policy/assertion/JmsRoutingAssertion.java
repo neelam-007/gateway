@@ -11,6 +11,7 @@ import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.wsp.Java5EnumTypeMapping;
 import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
 import com.l7tech.policy.wsp.TypeMapping;
+import com.l7tech.search.Dependency;
 
 import java.util.Arrays;
 
@@ -253,6 +254,7 @@ public class JmsRoutingAssertion extends RoutingAssertionWithSamlSV implements U
         return copy;
     }
 
+    @Dependency(searchObject = true)
     public JmsDynamicProperties getDynamicJmsRoutingProperties() {
         return dynamicJmsRoutingProperties;
     }

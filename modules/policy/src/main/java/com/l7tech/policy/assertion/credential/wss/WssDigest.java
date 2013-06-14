@@ -2,6 +2,7 @@ package com.l7tech.policy.assertion.credential.wss;
 
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.wsp.WspSensitive;
+import com.l7tech.search.Dependency;
 
 /**
  * WSS Digest authentication.
@@ -29,6 +30,7 @@ public class WssDigest extends WssCredentialSourceAssertion {
     }
 
     @WspSensitive
+    @Dependency(methodReturnType = Dependency.MethodReturnType.VARIABLE, type = Dependency.DependencyType.SECURE_PASSWORD)
     public String getRequiredPassword() {
         return requiredPassword;
     }

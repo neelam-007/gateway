@@ -1,9 +1,12 @@
 package com.l7tech.server.search.processors;
 
+import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.objectmodel.*;
+import com.l7tech.search.Dependencies;
 import com.l7tech.server.EntityCrud;
 import com.l7tech.server.EntityHeaderUtils;
+import com.l7tech.server.search.DependencyAnalyzerException;
 import com.l7tech.server.search.objects.Dependency;
 import com.l7tech.server.search.objects.DependentEntity;
 import com.l7tech.server.search.objects.DependentObject;
@@ -11,11 +14,13 @@ import com.l7tech.util.Functions;
 import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Inject;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -47,19 +52,29 @@ public class GenericDependencyProcessor<O> implements DependencyProcessor<O> {
             if (isEntityMethod(method)) {
                 List<Entity> dependentEntities = null;
                 try {
-                    //calls the getter method and retrieves the dependency.
-                    Object getterMethodReturn = method.invoke(object);
-                    //gets the Dependency annotation on the method if one is specified.
-                    com.l7tech.search.Dependency annotation = method.getAnnotation(com.l7tech.search.Dependency.class);
-                    if (annotation != null && !annotation.methodReturnType().equals(com.l7tech.search.Dependency.MethodReturnType.ENTITY)) {
-                        //If the dependency annotation is specified us the finder to retrieve the entity.
-                        dependentEntities = finder.retrieveEntities(getterMethodReturn, annotation);
+                    Dependencies dependenciesAnnotation = method.getAnnotation(Dependencies.class);
+                    if (dependenciesAnnotation == null) {
+                        //gets the Dependency annotation on the method if one is specified.
+                        com.l7tech.search.Dependency annotation = method.getAnnotation(com.l7tech.search.Dependency.class);
+                        if (annotation != null && annotation.searchObject()) {
+                            Object getterMethodReturn = retrieveDependencyFromMethod(object, method, annotation);
+                            dependencies.addAll(finder.getDependencies(getterMethodReturn));
+                        } else {
+                            Object getterMethodReturn = retrieveDependencyFromMethod(object, method, annotation);
+                            dependentEntities = getDependenciesFromMethodReturnValue(annotation, getterMethodReturn, finder);
+                        }
                     } else {
-                        dependentEntities = getterMethodReturn == null ? null : Arrays.asList((Entity) getterMethodReturn);
+                        dependentEntities = new ArrayList<>();
+                        for (com.l7tech.search.Dependency annotation : dependenciesAnnotation.value()) {
+                            //calls the getter method and retrieves the dependency.
+                            Object getterMethodReturn = retrieveDependencyFromMethod(object, method, annotation);
+                            dependentEntities.addAll(getDependenciesFromMethodReturnValue(annotation, getterMethodReturn, finder));
+                        }
                     }
                 } catch (Exception e) {
                     //if an exception is thrown attempting to retrieve the dependency then log the exception but continue processing.
                     logger.log(Level.FINE, "WARNING finding dependencies - error getting dependent entity from method " + (method != null ? "using method " + method.getName() : "") + " for entity " + object.getClass(), e);
+                    throw new FindException("WARNING finding dependencies - error getting dependent entity from method " + (method != null ? "using method " + method.getName() : "") + " for entity " + object.getClass());
                 }
                 if (dependentEntities != null) {
                     //if a dependency if found then search for its dependencies and add it to the set of dependencies found
@@ -76,6 +91,35 @@ public class GenericDependencyProcessor<O> implements DependencyProcessor<O> {
             }
         }
         return dependencies;
+    }
+
+    private Object retrieveDependencyFromMethod(O object, Method method, com.l7tech.search.Dependency annotation) throws IllegalAccessException, InvocationTargetException {
+        //calls the getter method and retrieves the dependency.
+        Object getterMethodReturn;
+        if (method.getParameterTypes().length == 0) {
+            getterMethodReturn = method.invoke(object);
+        } else if (method.getParameterTypes().length == 1 && annotation != null && !annotation.key().isEmpty()) {
+            getterMethodReturn = method.invoke(object, annotation.key());
+        } else {
+            throw new IllegalArgumentException("Cannot retrieve dependency from method with more then one parameters.");
+        }
+        return getterMethodReturn;
+    }
+
+    private List<Entity> getDependenciesFromMethodReturnValue(com.l7tech.search.Dependency annotation, Object methodReturnValue, DependencyFinder finder) throws DependencyAnalyzerException, FindException {
+        List<Entity> dependentEntities;
+        if (annotation != null && !annotation.methodReturnType().equals(com.l7tech.search.Dependency.MethodReturnType.ENTITY)) {
+            if (methodReturnValue instanceof Map) {
+                if (annotation.key().isEmpty())
+                    throw new IllegalStateException("When an entity method returns a map the map key must be specified in order to retrieve the correct search value.");
+                methodReturnValue = ((Map) methodReturnValue).get(annotation.key());
+            }
+            //If the dependency annotation is specified us the finder to retrieve the entity.
+            dependentEntities = finder.retrieveEntities(methodReturnValue, annotation);
+        } else {
+            dependentEntities = methodReturnValue == null ? null : Arrays.asList((Entity) methodReturnValue);
+        }
+        return dependentEntities;
     }
 
     /**
@@ -125,6 +169,10 @@ public class GenericDependencyProcessor<O> implements DependencyProcessor<O> {
     @Override
     public DependentObject createDependentObject(O dependent) {
         EntityHeader entityHeader = EntityHeaderUtils.fromEntity((Entity) dependent);
+        //Fix LDAP and Federated identity providers not being found properly
+        if (dependent instanceof IdentityProviderConfig) {
+            entityHeader.setType(EntityType.ID_PROVIDER_CONFIG);
+        }
         return new DependentEntity(entityHeader.getName(), entityHeader.getType(), entityHeader instanceof GuidEntityHeader ? ((GuidEntityHeader) entityHeader).getGuid() : null, entityHeader.getStrId());
     }
 
@@ -152,10 +200,13 @@ public class GenericDependencyProcessor<O> implements DependencyProcessor<O> {
      */
     private static boolean isEntityMethod(Method method) {
         com.l7tech.search.Dependency annotation = method.getAnnotation(com.l7tech.search.Dependency.class);
+        Dependencies dependenciesAnnotation = method.getAnnotation(Dependencies.class);
         if (annotation != null) {
             return annotation.isDependency();
+        } else if (dependenciesAnnotation != null) {
+            return dependenciesAnnotation.value().length > 0;
         } else {
-            return method.getName().startsWith("get") && Entity.class.isAssignableFrom(method.getReturnType()) && Modifier.isPublic(method.getModifiers());
+            return method.getName().startsWith("get") && Entity.class.isAssignableFrom(method.getReturnType()) && Modifier.isPublic(method.getModifiers()) && method.getParameterTypes().length == 0;
         }
     }
 

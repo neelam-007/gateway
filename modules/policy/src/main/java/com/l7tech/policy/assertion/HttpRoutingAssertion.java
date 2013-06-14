@@ -19,6 +19,7 @@ import com.l7tech.policy.wsp.Java5EnumTypeMapping;
 import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
 import com.l7tech.policy.wsp.TypeMapping;
 import com.l7tech.policy.wsp.WspSensitive;
+import com.l7tech.search.Dependency;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
@@ -390,6 +391,7 @@ public class HttpRoutingAssertion extends RoutingAssertionWithSamlSV implements 
     }
 
     @WspSensitive
+    @Dependency(methodReturnType = Dependency.MethodReturnType.VARIABLE, type = Dependency.DependencyType.SECURE_PASSWORD)
     public String getPassword() {
         return password;
     }
@@ -773,6 +775,7 @@ public class HttpRoutingAssertion extends RoutingAssertionWithSamlSV implements 
     }
 
     @WspSensitive
+    @Dependency(methodReturnType = Dependency.MethodReturnType.VARIABLE, type = Dependency.DependencyType.SECURE_PASSWORD)
     public String getProxyPassword() {
         return proxyPassword;
     }

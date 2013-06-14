@@ -31,7 +31,7 @@ public @interface Dependency {
      * These are the different possible method return types for entities.
      */
     public enum MethodReturnType {
-        OID, NAME, GUID, Variable, ENTITY
+        OID, NAME, GUID, VARIABLE, ENTITY
     }
 
     /**
@@ -40,8 +40,9 @@ public @interface Dependency {
     public enum DependencyType {
         GENERIC(EntityType.ANY), ASSERTION(null), POLICY(EntityType.POLICY), FOLDER(EntityType.FOLDER),
         JDBC_CONNECTION(EntityType.JDBC_CONNECTION), SECURE_PASSWORD(EntityType.SECURE_PASSWORD),
-        SERVICE(EntityType.SERVICE), TRUSTED_CERT(EntityType.TRUSTED_CERT), PRIVATE_KEY(EntityType.SSG_KEYSTORE),
-        CLUSTER_PROPERTY(EntityType.CLUSTER_PROPERTY);
+        SERVICE(EntityType.SERVICE), TRUSTED_CERT(EntityType.TRUSTED_CERT),
+        CLUSTER_PROPERTY(EntityType.CLUSTER_PROPERTY), ID_PROVIDER_CONFIG(EntityType.ID_PROVIDER_CONFIG),
+        JMS_CONNECTION(EntityType.JMS_CONNECTION);
         private EntityType entityType;
 
         DependencyType(EntityType entityType) {
@@ -68,4 +69,21 @@ public @interface Dependency {
      *         be used to retrieve the entity. The Default is {@link MethodReturnType#ENTITY}
      */
     MethodReturnType methodReturnType() default MethodReturnType.ENTITY;
+
+    /**
+     * This is used in the case where a method returns a map of properties where one of the properties is an entity or a
+     * key for an entity. The key should be the key to retrieve the entity.
+     *
+     * @return The map key used to get the entity or the entity identifier.
+     */
+    String key() default "";
+
+    /**
+     * Set this to true to search the returned object for dependencies to add to this object. The returned object will
+     * not be added as a dependency
+     *
+     * @return If true the method return object will be search for dependencies to add to this object. The returned
+     *         object will not be considered a dependency
+     */
+    boolean searchObject() default false;
 }

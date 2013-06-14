@@ -6,10 +6,13 @@ package com.l7tech.gateway.common.transport.jms;
 
 import com.l7tech.objectmodel.imp.ZoneableNamedEntityImp;
 import com.l7tech.policy.wsp.WspSensitive;
+import com.l7tech.search.Dependencies;
+import com.l7tech.search.Dependency;
 import com.l7tech.util.PoolByteArrayOutputStream;
 import com.l7tech.util.Charsets;
 import org.hibernate.annotations.Proxy;
 
+import javax.naming.Context;
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
@@ -137,6 +140,7 @@ public class JmsConnection extends ZoneableNamedEntityImp implements Serializabl
     @Size(max=255)
     @Column(name="password", length=255)
     @WspSensitive
+    @Dependency(type = Dependency.DependencyType.SECURE_PASSWORD, methodReturnType = Dependency.MethodReturnType.VARIABLE)
     public String getPassword() {
         return _password;
     }
@@ -213,6 +217,10 @@ public class JmsConnection extends ZoneableNamedEntityImp implements Serializabl
         _template = template;
     }
 
+    @Dependencies({
+            @Dependency(methodReturnType = Dependency.MethodReturnType.OID, type = Dependency.DependencyType.SERVICE, key = PROP_HARDWIRED_SERVICE_ID),
+            @Dependency(methodReturnType = Dependency.MethodReturnType.VARIABLE, type = Dependency.DependencyType.SECURE_PASSWORD, key = Context.SECURITY_CREDENTIALS)
+    })
     public Properties properties() {
         if (cachedProperties != null) {
             return cachedProperties;

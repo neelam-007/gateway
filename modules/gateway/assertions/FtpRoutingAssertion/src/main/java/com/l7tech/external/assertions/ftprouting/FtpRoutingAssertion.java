@@ -15,6 +15,7 @@ import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
 import com.l7tech.policy.wsp.TypeMapping;
 import com.l7tech.policy.wsp.WspEnumTypeMapping;
 import com.l7tech.policy.wsp.WspSensitive;
+import com.l7tech.search.Dependency;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -167,6 +168,7 @@ public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariabl
     }
 
     @WspSensitive
+    @Dependency(type = Dependency.DependencyType.SECURE_PASSWORD, methodReturnType = Dependency.MethodReturnType.VARIABLE)
     public String getPassword() {
         return _password;
     }

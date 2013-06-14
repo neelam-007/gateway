@@ -10,6 +10,7 @@ import com.l7tech.gateway.common.security.password.SecurePasswordReferenceExpand
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.imp.ZoneableNamedEntityImp;
 import com.l7tech.policy.wsp.WspSensitive;
+import com.l7tech.search.Dependency;
 import org.hibernate.annotations.Proxy;
 
 import javax.persistence.*;
@@ -113,6 +114,7 @@ public class JmsEndpoint extends ZoneableNamedEntityImp implements Serializable,
     @Size(max=255)
     @Column(name="password",length=255)
     @WspSensitive
+    @Dependency(type = Dependency.DependencyType.SECURE_PASSWORD, methodReturnType = Dependency.MethodReturnType.VARIABLE)
     public String getPassword() {
         return _password;
     }
@@ -155,6 +157,7 @@ public class JmsEndpoint extends ZoneableNamedEntityImp implements Serializable,
     }
 
     @Column(name="connection_oid", nullable=false)
+    @Dependency(methodReturnType = Dependency.MethodReturnType.OID, type = Dependency.DependencyType.JMS_CONNECTION)
     public long getConnectionOid() {
         return _connectionOid;
     }

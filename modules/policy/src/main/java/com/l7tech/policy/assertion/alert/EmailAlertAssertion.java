@@ -13,6 +13,7 @@ import com.l7tech.policy.wsp.Java5EnumTypeMapping;
 import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
 import com.l7tech.policy.wsp.TypeMapping;
 import com.l7tech.policy.wsp.WspSensitive;
+import com.l7tech.search.Dependency;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.HexUtils;
 
@@ -200,6 +201,7 @@ public class EmailAlertAssertion extends Assertion implements UsesVariables {
     }
 
     @WspSensitive
+    @Dependency(methodReturnType = Dependency.MethodReturnType.VARIABLE, type = Dependency.DependencyType.SECURE_PASSWORD)
     public String getAuthPassword() {
         return authPassword;
     }

@@ -96,7 +96,7 @@ public class JdbcConnection extends ZoneableNamedEntityImp implements Comparable
     @Size(max=64)
     @Column(name="password",nullable=false)
     @WspSensitive
-    @Dependency(type = Dependency.DependencyType.SECURE_PASSWORD, methodReturnType = Dependency.MethodReturnType.Variable)
+    @Dependency(type = Dependency.DependencyType.SECURE_PASSWORD, methodReturnType = Dependency.MethodReturnType.VARIABLE)
     public String getPassword() {
         return password;
     }

@@ -1,8 +1,8 @@
 package com.l7tech.gateway.common.transport.email;
 
-import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.objectmodel.imp.ZoneableNamedEntityImp;
 import com.l7tech.policy.wsp.WspSensitive;
+import com.l7tech.search.Dependency;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.PoolByteArrayOutputStream;
 import org.hibernate.annotations.Cascade;
@@ -103,6 +103,7 @@ public class EmailListener extends ZoneableNamedEntityImp {
 
     @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY, mappedBy = "emailListener")
     @Cascade(org.hibernate.annotations.CascadeType.DELETE_ORPHAN)
+    @Dependency(isDependency = false)
     public EmailListenerState getEmailListenerState() {
         return emailListenerState;
     }
@@ -176,6 +177,7 @@ public class EmailListener extends ZoneableNamedEntityImp {
         this.properties = properties;
     }
 
+    @Dependency(key = PROP_HARDWIRED_SERVICE_ID, methodReturnType = Dependency.MethodReturnType.OID, type = Dependency.DependencyType.SERVICE)
     public Properties properties() {
         Properties properties = new Properties();
         try {
@@ -255,6 +257,7 @@ public class EmailListener extends ZoneableNamedEntityImp {
 
     @Column(name="password", length=32, nullable=false)
     @WspSensitive
+    @Dependency(type = Dependency.DependencyType.SECURE_PASSWORD, methodReturnType = Dependency.MethodReturnType.VARIABLE)
     public String getPassword() {
         return password;
     }

@@ -1,5 +1,7 @@
 package com.l7tech.gateway.common.resources;
 
+import com.l7tech.search.Dependency;
+
 import javax.persistence.Column;
 import javax.persistence.Embeddable;
 import java.io.Serializable;
@@ -58,6 +60,7 @@ public class HttpProxyConfiguration implements Serializable {
     }
 
     @Column(name="proxy_password_oid")
+    @Dependency(methodReturnType = Dependency.MethodReturnType.OID, type = Dependency.DependencyType.SECURE_PASSWORD)
     public Long getPasswordOid() {
         return passwordOid;
     }
