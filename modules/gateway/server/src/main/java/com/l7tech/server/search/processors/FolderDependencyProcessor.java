@@ -3,6 +3,7 @@ package com.l7tech.server.search.processors;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.PublishedServiceAlias;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.SecurityZone;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyAlias;
@@ -95,6 +96,13 @@ public class FolderDependencyProcessor extends GenericDependencyProcessor<Folder
                 dependencies.add(dependency);
             }
         }
+
+        SecurityZone securityZone = folder.getSecurityZone();
+        if (securityZone != null) {
+            Dependency securityZoneDependency = finder.getDependency(securityZone);
+            dependencies.add(securityZoneDependency);
+        }
+
         return dependencies;
     }
 }

@@ -1,6 +1,7 @@
 package com.l7tech.server.search.processors;
 
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.SecurityZone;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.server.search.DependencyAnalyzer;
@@ -16,7 +17,8 @@ import java.util.Iterator;
 import java.util.List;
 
 /**
- * This will find the dependencies that a policy has. It will iterate through all the assertion in the policy and add them as dependencies.
+ * This will find the dependencies that a policy has. It will iterate through all the assertion in the policy and add
+ * them as dependencies.
  *
  * @author Victor Kazakov
  */
@@ -46,7 +48,7 @@ public class PolicyDependencyProcessor extends GenericDependencyProcessor<Policy
         //iterate for each assertion.
         while (assit.hasNext()) {
             final Assertion currentAssertion = (Assertion) assit.next();
-            if(assertionsAsDependencies){
+            if (assertionsAsDependencies) {
                 dependencies.add(processor.getDependency(currentAssertion));
             } else {
                 //for all the dependencies in the assertion if the dependency is not already found add it to the list of dependencies.
@@ -60,6 +62,14 @@ public class PolicyDependencyProcessor extends GenericDependencyProcessor<Policy
                 });
             }
         }
+
+        SecurityZone securityZone = policy.getSecurityZone();
+        if (securityZone != null) {
+            final Dependency securityZoneDependency = processor.getDependency(securityZone);
+            if (!dependencies.contains(securityZoneDependency))
+                dependencies.add(securityZoneDependency);
+        }
+
         return dependencies;
     }
 }
