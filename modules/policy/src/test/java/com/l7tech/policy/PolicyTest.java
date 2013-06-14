@@ -20,6 +20,16 @@ public class PolicyTest {
     }
 
     @Test
+    public void copyConstructors() {
+        p1.setSecurityZone(zone);
+        final Policy copy1 = new Policy(p1, null, false, null);
+        assertEquals(zone, copy1.getSecurityZone());
+
+        final Policy copy2 = new Policy(p1);
+        assertEquals(zone, copy2.getSecurityZone());
+    }
+
+    @Test
     public void equalsDifferentSecurityZone() {
         p1.setSecurityZone(zone);
         p2.setSecurityZone(null);

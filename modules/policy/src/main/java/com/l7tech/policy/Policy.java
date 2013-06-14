@@ -103,8 +103,10 @@ public class Policy extends ZoneableNamedEntityImp implements Flushable, HasFold
         setGuid(policy.getGuid());
         setFolder(policy.getFolder());
         setVisibility(visibility != null ? visibility : policy.getVisibility());
-        if (entityProvider != null)
+        setSecurityZone(policy.getSecurityZone());
+        if (entityProvider != null) {
             provideEntitiesToAssertionBeans(entityProvider);
+        }
         if ( lock ) lock();
     }
 
