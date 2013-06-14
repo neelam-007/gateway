@@ -63,13 +63,14 @@ public class EntityNameResolver {
      * <p/>
      * Otherwise the descriptive name will be resolved by looking up the entity that is referenced by the header (this is usually the case is for entities that don't have a name).
      *
-     * @param header the EntityHeader for which to determine a descriptive name. Usually a header that has just been retrieved via an Admin call.
+     * @param header      the EntityHeader for which to determine a descriptive name. Usually a header that has just been retrieved via an Admin call.
+     * @param includePath true if entities in folders should have their folder path included in the descriptive name.
      * @return a name for the given EntityHeader which may include a name and/or folder path and/or other unique info. Cannot be null.
      *         Can be empty if the name on the header is empty/null and the resolver does not know how to look up the referenced entity.
      * @throws FindException if a db error occurs or the entity referenced by the header does not exist.
      */
     @NotNull
-    public String getNameForHeader(@NotNull final EntityHeader header) throws FindException {
+    public String getNameForHeader(@NotNull final EntityHeader header, final boolean includePath) throws FindException {
         final String nameOnHeader = header.getName();
         String name = nameOnHeader == null ? StringUtils.EMPTY : nameOnHeader;
         Entity retrievedEntity = null;
@@ -111,13 +112,28 @@ public class EntityNameResolver {
             }
         }
 
-        final String path = resolvePath(header, retrievedEntity);
+        String path = null;
+        if (includePath) {
+            path = resolvePath(header, retrievedEntity);
+        }
         String uniqueInfo = getUniqueInfo(header);
         if (StringUtils.isNotBlank(uniqueInfo)) {
             uniqueInfo = "[" + uniqueInfo + "]";
         }
 
         return path == null ? name + uniqueInfo : name + uniqueInfo + " (" + path + name + ")";
+    }
+
+    /**
+     * Resolves a descriptive name for a given EntityHeader which may include a name and/or folder path and/or other unique info depending on the header type.
+     * <p/>
+     * Will include the path if it is available.
+     *
+     * @see #getNameForHeader(com.l7tech.objectmodel.EntityHeader, boolean)
+     */
+    @NotNull
+    public String getNameForHeader(@NotNull final EntityHeader header) throws FindException {
+        return getNameForHeader(header, true);
     }
 
     /**

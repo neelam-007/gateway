@@ -1,12 +1,14 @@
 package com.l7tech.objectmodel;
 
+import com.l7tech.objectmodel.folder.HasFolderOid;
+
 /**
  * EntityHeader for Aliases.
  *
  * <p>Extension of entity header with additional data for the target of the
  * alias and for the containing Folder.</p>
  */
-public class AliasHeader<ET extends PersistentEntity> extends ZoneableEntityHeader {
+public class AliasHeader<ET extends PersistentEntity> extends ZoneableEntityHeader implements HasFolderOid {
 
     //- PUBLIC
 

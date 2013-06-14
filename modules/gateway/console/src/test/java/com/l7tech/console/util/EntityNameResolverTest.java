@@ -228,6 +228,14 @@ public class EntityNameResolverTest {
         assertTrue(resolver.getNameForHeader(new EntityHeader(null, null, null, null)).isEmpty());
     }
 
+    @Test
+    public void getNameWithoutPath() throws Exception {
+        final PublishedService service = new PublishedService();
+        service.setName(NAME);
+        service.setRoutingUri("/routingUri");
+        assertEquals("test[/routingUri]", resolver.getNameForHeader(new ServiceHeader(service), false));
+    }
+
     private class HasFolderStub implements HasFolder {
         private Folder folder;
 

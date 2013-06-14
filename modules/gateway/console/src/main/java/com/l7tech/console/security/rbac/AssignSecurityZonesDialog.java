@@ -4,9 +4,10 @@ import com.l7tech.console.panels.FilterPanel;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.SecurityZoneUtil;
 import com.l7tech.gui.util.DialogDisplayer;
-import com.l7tech.gui.util.TableUtil;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.*;
+import com.l7tech.objectmodel.comparator.NamedEntityComparator;
+import com.l7tech.objectmodel.folder.HasFolderOid;
 import com.l7tech.util.ExceptionUtils;
 import org.apache.commons.collections.ComparatorUtils;
 import org.apache.commons.lang.StringUtils;
@@ -18,6 +19,7 @@ import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableColumn;
 import javax.swing.table.TableRowSorter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -35,6 +37,7 @@ public class AssignSecurityZonesDialog extends JDialog {
     private static final int HEADER_COL_INDEX = 1;
     private static final int ZONE_COL_INDEX = 2;
     private static final int CHECK_BOX_COL_INDEX = 0;
+    private static final int PATH_COL_INDEX = 3;
     private static final String NO_SECURITY_ZONE = "(no security zone)";
     private JPanel contentPanel;
     private JComboBox typeComboBox;
@@ -52,8 +55,9 @@ public class AssignSecurityZonesDialog extends JDialog {
     private JPanel noEntitiesPanel;
     private JLabel noEntitiesLabel;
     private JScrollPane scrollPane;
-    private EntitiesTableModel dataModel = new EntitiesTableModel(new String[]{"", "Name", "Current Zone"}, new Object[][]{});
+    private EntitiesTableModel dataModel = new EntitiesTableModel(new String[]{"", "Name", "Current Zone", "Path"}, new Object[][]{});
     private Map<EntityType, List<SecurityZone>> entityTypes;
+    private TableColumn pathColumn;
 
     /**
      * @param owner       owner of this Dialog.
@@ -192,7 +196,7 @@ public class AssignSecurityZonesDialog extends JDialog {
                 try {
                     Registry.getDefault().getRbacAdmin().setSecurityZoneForEntities(selectedZone == null ? null : selectedZone.getOid(), getSelectedEntityType(), oids);
                     for (final Integer selectedIndex : selectedEntities.keySet()) {
-                        dataModel.setValueAt(selectedZone == null ? NO_SECURITY_ZONE : selectedZone.getName(), selectedIndex, ZONE_COL_INDEX);
+                        dataModel.setValueAt(selectedZone == null ? SecurityZoneUtil.NULL_ZONE : selectedZone, selectedIndex, ZONE_COL_INDEX);
                     }
                 } catch (final UpdateException ex) {
                     DialogDisplayer.showMessageDialog(AssignSecurityZonesDialog.this, "Error", "Unable to assign entities to zone.", ex);
@@ -209,15 +213,26 @@ public class AssignSecurityZonesDialog extends JDialog {
                 final EntityHeader header = (EntityHeader) value;
                 String name;
                 try {
-                    name = Registry.getDefault().getEntityNameResolver().getNameForHeader(header);
+                    name = Registry.getDefault().getEntityNameResolver().getNameForHeader(header, false);
                 } catch (final FindException e) {
                     name = "unknown entity";
                 }
                 setText(name);
             }
         });
-        TableUtil.adjustColumnWidth(entitiesTable, CHECK_BOX_COL_INDEX, 30);
-        TableUtil.adjustColumnWidth(entitiesTable, ZONE_COL_INDEX, 60);
+        entitiesTable.getColumnModel().getColumn(ZONE_COL_INDEX).setCellRenderer(new DefaultTableCellRenderer() {
+            @Override
+            protected void setValue(final Object value) {
+                if (value instanceof SecurityZone) {
+                    final SecurityZone zone = (SecurityZone) value;
+                    setText(zone.equals(SecurityZoneUtil.NULL_ZONE) ? NO_SECURITY_ZONE : zone.getName());
+                }
+            }
+        });
+        setColumnWidths(CHECK_BOX_COL_INDEX, 30, 30);
+        setColumnWidths(PATH_COL_INDEX, 60, 99999);
+        setColumnWidths(ZONE_COL_INDEX, 80, 99999);
+        pathColumn = entitiesTable.getColumnModel().getColumn(PATH_COL_INDEX);
         dataModel.addTableModelListener(new TableModelListener() {
             @Override
             public void tableChanged(final TableModelEvent e) {
@@ -238,8 +253,14 @@ public class AssignSecurityZonesDialog extends JDialog {
                 return o1Name.compareToIgnoreCase(o2Name);
             }
         };
-        Utilities.setRowSorter(entitiesTable, dataModel, new int[]{CHECK_BOX_COL_INDEX, HEADER_COL_INDEX, ZONE_COL_INDEX}, new boolean[]{true, true, true},
-                new Comparator[]{null, ComparatorUtils.nullLowComparator(headerComparator), null});
+        Utilities.setRowSorter(entitiesTable, dataModel, new int[]{CHECK_BOX_COL_INDEX, HEADER_COL_INDEX, ZONE_COL_INDEX, PATH_COL_INDEX}, new boolean[]{true, true, true, true},
+                new Comparator[]{null, ComparatorUtils.nullLowComparator(headerComparator), new NamedEntityComparator(), null});
+    }
+
+    private void setColumnWidths(final int index, final int min, final int max) {
+        entitiesTable.getColumnModel().getColumn(index).setPreferredWidth(min);
+        entitiesTable.getColumnModel().getColumn(index).setMinWidth(min);
+        entitiesTable.getColumnModel().getColumn(index).setMaxWidth(max);
     }
 
     @Nullable
@@ -287,28 +308,48 @@ public class AssignSecurityZonesDialog extends JDialog {
             }
             try {
                 final EntityHeaderSet<EntityHeader> entities = Registry.getDefault().getRbacAdmin().findEntities(selected);
+                boolean atLeastOnePath = false;
                 final EntityHeader[] headers = entities.toArray(new EntityHeader[entities.size()]);
                 for (int i = 0; i < headers.length; i++) {
                     final EntityHeader header = headers[i];
-                    final Object[] data = new Object[3];
+                    final Object[] data = new Object[4];
                     data[CHECK_BOX_COL_INDEX] = Boolean.FALSE;
                     data[HEADER_COL_INDEX] = header;
-                    String zone = NO_SECURITY_ZONE;
+                    if (header instanceof HasFolderOid) {
+                        data[PATH_COL_INDEX] = Registry.getDefault().getEntityNameResolver().getPath((HasFolderOid) header);
+                        if (!atLeastOnePath) {
+                            atLeastOnePath = true;
+                        }
+                    } else {
+                        data[PATH_COL_INDEX] = StringUtils.EMPTY;
+                    }
+                    SecurityZone zone = SecurityZoneUtil.NULL_ZONE;
                     if (header instanceof HasSecurityZoneOid) {
                         final Long securityZoneOid = ((HasSecurityZoneOid) header).getSecurityZoneOid();
                         if (securityZoneOid != null) {
-                            zone = Registry.getDefault().getRbacAdmin().findSecurityZoneByPrimaryKey(securityZoneOid).getName();
+                            zone = SecurityZoneUtil.getSecurityZoneByOid(securityZoneOid);
                         }
                     }
                     data[ZONE_COL_INDEX] = zone;
                     dataModel.addRow(data);
                 }
+
+                showHidePathColumn(atLeastOnePath);
                 dataModel.fireTableDataChanged();
             } catch (final FindException ex) {
                 final String error = "Error retrieving entities of type " + selected;
                 logger.log(Level.WARNING, error, ExceptionUtils.getDebugException(ex));
                 DialogDisplayer.showMessageDialog(this, error, "Error", JOptionPane.ERROR_MESSAGE, null);
             }
+        }
+    }
+
+    private void showHidePathColumn(final boolean show) {
+        final boolean pathColumnVisible = entitiesTable.getColumnCount() > PATH_COL_INDEX;
+        if (!show && pathColumnVisible) {
+            entitiesTable.getColumnModel().removeColumn(pathColumn);
+        } else if (show && !pathColumnVisible) {
+            entitiesTable.getColumnModel().addColumn(pathColumn);
         }
     }
 
