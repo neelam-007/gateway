@@ -455,6 +455,28 @@ public class ManagedObjectFactory {
         MarshallingUtils.marshal( mo, result, false );
     }
 
+
+    public static Class[] getAllManagedObjectClasses(){
+        return new Class[]{
+                ClusterPropertyMO.class,
+                EncapsulatedAssertionMO.class,
+                FolderMO.class,
+                GenericEntityMO.class,
+                IdentityProviderMO.class,
+                InterfaceTagMO.class,
+                JDBCConnectionMO.class,
+                JMSDestinationMO.class,
+                ListenPortMO.class,
+                PolicyMO.class,
+                PrivateKeyMO.class,
+                ResourceDocumentMO.class,
+                RevocationCheckingPolicyMO.class,
+                ServiceMO.class,
+                StoredPasswordMO.class,
+                TrustedCertificateMO.class
+        };
+    }
+
     /**
      * General purpose exception for factory errors.
      */
