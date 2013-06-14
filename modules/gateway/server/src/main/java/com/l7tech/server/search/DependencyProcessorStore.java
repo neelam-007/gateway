@@ -23,7 +23,7 @@ public class DependencyProcessorStore {
     public DependencyProcessorStore(@NotNull Map<Dependency.DependencyType, DependencyProcessor> processors) {
         this.processors = processors;
         //validates that the generic processor is present in the processor map. This is required.
-        if (!processors.containsKey(Dependency.DependencyType.GENERIC)) {
+        if (!processors.containsKey(Dependency.DependencyType.GENERIC) || processors.get(Dependency.DependencyType.GENERIC) == null) {
             throw new IllegalArgumentException("The map of entity processors must contain a processor for a generic object. Add a processor for EntityType.ANY");
         }
     }

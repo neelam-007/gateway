@@ -108,7 +108,7 @@ public class GenericDependencyProcessor<O> implements DependencyProcessor<O> {
 
     private List<Entity> getDependenciesFromMethodReturnValue(com.l7tech.search.Dependency annotation, Object methodReturnValue, DependencyFinder finder) throws DependencyAnalyzerException, FindException {
         List<Entity> dependentEntities;
-        if (annotation != null && !annotation.methodReturnType().equals(com.l7tech.search.Dependency.MethodReturnType.ENTITY)) {
+        if (annotation != null) {
             if (methodReturnValue instanceof Map) {
                 if (annotation.key().isEmpty())
                     throw new IllegalStateException("When an entity method returns a map the map key must be specified in order to retrieve the correct search value.");
