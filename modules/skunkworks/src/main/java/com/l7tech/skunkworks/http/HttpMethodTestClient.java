@@ -2,6 +2,7 @@ package com.l7tech.skunkworks.http;
 
 import com.l7tech.common.http.*;
 import com.l7tech.common.http.prov.apache.CommonsHttpClient;
+import com.l7tech.common.http.prov.apache.components.HttpComponentsClient;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.IOUtils;
@@ -18,7 +19,7 @@ public class HttpMethodTestClient {
     public static void main(String[] args) throws Exception {
         String server = "http://127.0.0.1:8080/method";
 
-        GenericHttpClient client = new CommonsHttpClient();
+        GenericHttpClient client = new HttpComponentsClient();
         final GenericHttpRequestParams params = new GenericHttpRequestParams(new URL(server));
         params.setForceIncludeRequestBody(true);
         params.setContentType(ContentTypeHeader.TEXT_DEFAULT);

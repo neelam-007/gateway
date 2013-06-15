@@ -2,11 +2,10 @@ package com.l7tech.server.policy.assertion;
 
 import com.l7tech.common.http.*;
 import com.l7tech.common.http.prov.apache.CommonsHttpClient;
-import com.l7tech.common.http.prov.apache.StaleCheckingHttpConnectionManager;
+import com.l7tech.common.http.prov.apache.components.HttpComponentsClient;
 import com.l7tech.common.io.AliasNotFoundException;
 import com.l7tech.common.io.ByteLimitInputStream;
 import com.l7tech.common.io.CertUtils;
-import static com.l7tech.common.io.failover.AbstractFailoverStrategy.makeSynchronized;
 import com.l7tech.common.io.failover.FailoverStrategy;
 import com.l7tech.common.io.failover.FailoverStrategyFactory;
 import com.l7tech.common.io.failover.StickyFailoverStrategy;
@@ -40,9 +39,10 @@ import com.l7tech.security.xml.processor.ProcessorException;
 import com.l7tech.server.DefaultStashManagerFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.variable.ExpandVariables;
+import com.l7tech.server.transport.http.HttpConnectionIdleTimeoutManager2;
 import com.l7tech.server.util.HttpForwardingRuleEnforcer;
 import com.l7tech.util.*;
-import org.apache.commons.httpclient.params.HttpConnectionManagerParams;
+import org.apache.http.impl.conn.PoolingClientConnectionManager;
 import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
 
@@ -65,12 +65,16 @@ import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.logging.Level;
 
+import static com.l7tech.common.io.failover.AbstractFailoverStrategy.makeSynchronized;
+
 /**
  * SSG implementation of a routing assertion that uses the SSB.
  */
 public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutingAssertion<BridgeRoutingAssertion> {
 
     private final String[] varNames;
+    private HttpConnectionIdleTimeoutManager2 listener;
+    private PoolingClientConnectionManager connectionManager;
 
     private static final Managers.BridgeStashManagerFactory BRIDGE_STASH_MANAGER_FACTORY =
         new Managers.BridgeStashManagerFactory() {
@@ -95,6 +99,7 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
         hostnameVerifier = applicationContext.getBean("hostnameVerifier", HostnameVerifier.class);
         trustedCertManager = applicationContext.getBean("trustedCertManager", TrustedCertManager.class);
         wspReader = applicationContext.getBean("wspReader", WspReader.class);
+        listener = applicationContext.getBean("httpConnectionIdleTimeoutManager2", HttpConnectionIdleTimeoutManager2.class);
 
         try {
             signerInfo = ServerAssertionUtils.getSignerInfo(ctx, assertion);
@@ -539,16 +544,16 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
         int hmax = getMaxConnectionsPerHost();
         int tmax = getMaxConnectionsAllHosts();
         if (hmax <= 0) {
-            hmax = CommonsHttpClient.getDefaultMaxConnectionsPerHost();
-            tmax = CommonsHttpClient.getDefaultMaxTotalConnections();
+            hmax = HttpComponentsClient.getDefaultMaxConnectionsPerHost();
+            tmax = HttpComponentsClient.getDefaultMaxTotalConnections();
         }
 
-        StaleCheckingHttpConnectionManager connectionManager = new StaleCheckingHttpConnectionManager();
-        HttpConnectionManagerParams params = connectionManager.getParams();
-        params.setDefaultMaxConnectionsPerHost(hmax);
-        params.setMaxTotalConnections(tmax);
-        connectionManager.setPerHostStaleCleanupCount(getStaleCheckCount());
-        GenericHttpClient client = new CommonsHttpClient(connectionManager, getConnectionTimeout(null), getTimeout(null)) {
+        connectionManager = new PoolingClientConnectionManager();
+        connectionManager.setDefaultMaxPerRoute(hmax);
+        connectionManager.setMaxTotal(tmax);
+        listener.notifyHttpConnectionManagerCreated(connectionManager);
+
+        GenericHttpClient client = new HttpComponentsClient(connectionManager, getConnectionTimeout(null), getTimeout(null)) {
             @Override
             public GenericHttpRequest createRequest(HttpMethod method, GenericHttpRequestParams params) throws GenericHttpException {
                 // override params to match server config
@@ -715,6 +720,14 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
                                                      final RoutingResultListener rrl,
                                                      final HeaderHolder hh ) {
         return new BRASimpleHttpClient(client, context, bridgeRequest, rrl, hh);
+    }
+
+    @Override
+    public void close() {
+        super.close();
+        if (listener != null && connectionManager != null) {
+            listener.notifyHttpConnectionManagerDestroyed(connectionManager);
+        }
     }
 
     private class BRASimpleHttpClient extends SimpleHttpClient implements RerunnableGenericHttpClient {

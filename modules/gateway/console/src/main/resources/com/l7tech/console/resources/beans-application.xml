@@ -7,16 +7,16 @@
 
     <bean id="preferences" class="com.l7tech.console.util.HeavySsmPreferences"/>
 
-    <bean id="httpRequestExecutor" class="com.l7tech.gateway.common.spring.remoting.http.SecureHttpInvokerRequestExecutor">
+    <bean id="httpRequestExecutor" class="com.l7tech.gateway.common.spring.remoting.http.SecureHttpComponentsHttpInvokerRequestExecutor">
         <constructor-arg>
-            <ref bean="httpClient"/>
+            <ref bean="httpComponentsClient"/>
         </constructor-arg>
         <constructor-arg>
             <value>SecureSpan-Manager/3.6</value>
         </constructor-arg>
     </bean>
 
-    <bean id="httpClient" class="com.l7tech.gateway.common.spring.remoting.http.SecureHttpClient"/>
+    <bean id="httpComponentsClient" class="com.l7tech.gateway.common.spring.remoting.http.SecureHttpComponentsClient"/>
 
     <!-- shared invoker properties, inherited with parent= -->
     <bean id="invokerCommon" abstract="true" class="org.springframework.remoting.httpinvoker.HttpInvokerProxyFactoryBean">

@@ -25,9 +25,9 @@
     </bean>
 
     <bean id="clusterHttpRequestExecutor"
-          class="com.l7tech.gateway.common.spring.remoting.http.SecureHttpInvokerRequestExecutor">
+          class="com.l7tech.gateway.common.spring.remoting.http.SecureHttpComponentsHttpInvokerRequestExecutor">
         <constructor-arg>
-            <ref bean="clusterHttpClient"/>
+            <ref bean="clusterHttpComponentsClient"/>
         </constructor-arg>
         <constructor-arg>
             <value>SecureSpan-Manager/3.6</value>
@@ -35,7 +35,7 @@
         <property name="trustFailureHandler" ref="clusterSslTrustFailureHandler"/>
     </bean>
 
-    <bean id="clusterHttpClient" class="com.l7tech.gateway.common.spring.remoting.http.SecureHttpClient">
+    <bean id="clusterHttpComponentsClient" class="com.l7tech.gateway.common.spring.remoting.http.SecureHttpComponentsClient">
         <constructor-arg ref="sslKeyManagers"/>
     </bean>
 

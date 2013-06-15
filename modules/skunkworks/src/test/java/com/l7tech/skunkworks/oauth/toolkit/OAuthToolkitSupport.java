@@ -2,6 +2,7 @@ package com.l7tech.skunkworks.oauth.toolkit;
 
 import com.l7tech.common.http.*;
 import com.l7tech.common.http.prov.apache.CommonsHttpClient;
+import com.l7tech.common.http.prov.apache.components.HttpComponentsClient;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.util.IOUtils;
@@ -44,7 +45,7 @@ public abstract class OAuthToolkitSupport {
 
     @Before
     public void setupSupport() {
-        client = new CommonsHttpClient();
+        client = new HttpComponentsClient();
         xPath = XPathFactory.newInstance().newXPath();
         final HashMap<String, String> map = new HashMap<String, String>();
         map.put("ns", "http://ns.l7tech.com/2012/11/otk-clientstore");

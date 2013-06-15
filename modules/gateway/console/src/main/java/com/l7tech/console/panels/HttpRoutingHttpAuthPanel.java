@@ -31,7 +31,7 @@ public class HttpRoutingHttpAuthPanel extends JPanel {
 
     private final HttpRoutingAssertion assertion;
 
-    HttpRoutingHttpAuthPanel(HttpRoutingAssertion assertion) {
+    public HttpRoutingHttpAuthPanel(HttpRoutingAssertion assertion) {
         super();
         this.assertion = assertion;
 
@@ -61,7 +61,7 @@ public class HttpRoutingHttpAuthPanel extends JPanel {
         ntlmDomainField.setEnabled(enabled);
     }
 
-    void updateModel() {
+    public void updateModel() {
         assertion.setLogin(nullIfEmpty(usernameField.getText()));
         final char[] pass = passwordField.getPassword();
         assertion.setPassword(pass == null || pass.length == 0 ? null : new String(pass));

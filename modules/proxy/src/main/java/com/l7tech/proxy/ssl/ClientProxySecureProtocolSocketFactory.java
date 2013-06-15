@@ -6,22 +6,17 @@
 
 package com.l7tech.proxy.ssl;
 
-import org.apache.commons.httpclient.ConnectTimeoutException;
-import org.apache.commons.httpclient.params.HttpConnectionParams;
-import org.apache.commons.httpclient.protocol.SecureProtocolSocketFactory;
-
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 import java.io.IOException;
 import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.net.SocketTimeoutException;
 
 /**
  * New socket factory for SSL with the Jakarta Commons HTTP client.
  */
-public class ClientProxySecureProtocolSocketFactory extends SSLSocketFactory implements SecureProtocolSocketFactory {
+//TODO com.l7tech.proxy.util.SslUtilsTest.testPasswordChange() may failed because this class not implements SecureProtocolSocketFactory anymore
+public class ClientProxySecureProtocolSocketFactory extends SSLSocketFactory {
     private final SSLSocketFactory defaultSslSocketFactory = (SSLSocketFactory)SSLSocketFactory.getDefault();
 
     private static class InstanceHolder {
@@ -74,23 +69,6 @@ public class ClientProxySecureProtocolSocketFactory extends SSLSocketFactory imp
 
     public Socket createSocket(InetAddress inetAddress, int i) throws IOException {
         return configSocket((SSLSocket) socketFactory().createSocket(inetAddress, i));
-    }
-
-    public Socket createSocket(String host, int port, InetAddress clientHost, int clientPort, HttpConnectionParams httpConnectionParams) throws IOException {
-        SSLSocket socket = (SSLSocket) socketFactory().createSocket();
-        configSocket(socket);
-        int connectTimeout = httpConnectionParams.getConnectionTimeout();
-
-        socket.bind(new InetSocketAddress(clientHost, clientPort));
-
-        try {
-            socket.connect(new InetSocketAddress(host, port), connectTimeout);
-        }
-        catch(SocketTimeoutException ste) {
-            throw new ConnectTimeoutException("Timeout when connecting to host '"+host+"'.", ste);
-        }
-
-        return socket;
     }
 
     private SSLSocket configSocket(SSLSocket s) {

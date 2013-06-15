@@ -1,19 +1,20 @@
 package com.l7tech.console.util;
 
 import com.l7tech.common.io.CertUtils;
-import com.l7tech.gateway.common.spring.remoting.http.SecureHttpClient;
+import com.l7tech.gateway.common.spring.remoting.http.SecureHttpComponentsClient;
 
 import javax.net.ssl.X509KeyManager;
+import java.net.Socket;
 import java.security.KeyStore;
 import java.security.Principal;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
-import java.net.Socket;
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
 import java.util.logging.Logger;
 
 /**
- * Key Manager that will be set into the SecureHTTPClient object which will be used to create the SSL connection.
+ * Key Manager that will be set into the SecureHTTPComponentsClient object which will be used to create the SSL connection.
  *
  * User: dlee
  * Date: Jul 23, 2008
@@ -27,7 +28,7 @@ public class KeyManager {
     private final static String TRUST_PASSWORD = "password";
 
     public KeyManager() {
-        SecureHttpClient.setKeyManager(buildKeyManager());
+        SecureHttpComponentsClient.setKeyManager(buildKeyManager());
     }
 
     public void setKeyStore(KeyStore keyStore) {

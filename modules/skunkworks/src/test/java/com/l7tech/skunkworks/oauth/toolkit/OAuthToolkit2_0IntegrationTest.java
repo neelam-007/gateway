@@ -2,6 +2,7 @@ package com.l7tech.skunkworks.oauth.toolkit;
 
 import com.l7tech.common.http.*;
 import com.l7tech.common.http.prov.apache.CommonsHttpClient;
+import com.l7tech.common.http.prov.apache.components.HttpComponentsClient;
 import com.l7tech.test.BugId;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.Charsets;
@@ -57,7 +58,7 @@ public class OAuthToolkit2_0IntegrationTest extends OAuthToolkitSupport {
 
     @Before
     public void setup() {
-        client = new CommonsHttpClient();
+        client = new HttpComponentsClient();
     }
 
     @BugNumber(12946)

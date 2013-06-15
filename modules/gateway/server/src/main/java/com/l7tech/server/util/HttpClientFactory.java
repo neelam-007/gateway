@@ -1,13 +1,11 @@
 package com.l7tech.server.util;
 
 import com.l7tech.common.http.*;
-import com.l7tech.common.http.prov.apache.CommonsHttpClient;
+import com.l7tech.common.http.prov.apache.components.HttpComponentsClient;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.util.ConfigFactory;
-import org.apache.commons.httpclient.HostConfiguration;
-import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
-import org.apache.commons.httpclient.params.HttpConnectionManagerParams;
+import org.apache.http.impl.conn.PoolingClientConnectionManager;
 
 import javax.net.ssl.*;
 import java.security.GeneralSecurityException;
@@ -30,11 +28,10 @@ public class HttpClientFactory implements GenericHttpClientFactory {
     private static final int MAX_CONNECTIONS_PER_HOST = ConfigFactory.getIntProperty( PROP_MAX_CONN_PER_HOST, 100 );
     private static final int MAX_CONNECTIONS = ConfigFactory.getIntProperty( PROP_MAX_TOTAL_CONN, 1000 );
 
-    private static final MultiThreadedHttpConnectionManager connectionManager = new MultiThreadedHttpConnectionManager();
+    private static final PoolingClientConnectionManager connectionManager = new PoolingClientConnectionManager();
     static {
-        HttpConnectionManagerParams params = connectionManager.getParams();
-        params.setMaxConnectionsPerHost( HostConfiguration.ANY_HOST_CONFIGURATION, MAX_CONNECTIONS_PER_HOST );
-        params.setMaxTotalConnections( MAX_CONNECTIONS );
+        connectionManager.setDefaultMaxPerRoute(MAX_CONNECTIONS_PER_HOST);
+        connectionManager.setMaxTotal(MAX_CONNECTIONS);
     }
 
     public HttpClientFactory(final DefaultKey keystore,
@@ -61,7 +58,7 @@ public class HttpClientFactory implements GenericHttpClientFactory {
      * @param identity IGNORED this factory does not support identity binding
      */
     public GenericHttpClient createHttpClient(int hostConnections, int totalConnections, int connectTimeout, int timeout, Object identity) {
-        return new CommonsHttpClient(connectionManager, connectTimeout, timeout) {
+        return new HttpComponentsClient(connectionManager, connectTimeout, timeout) {
             public GenericHttpRequest createRequest(HttpMethod method, GenericHttpRequestParams params) throws GenericHttpException {
                 final String proto = params.getTargetUrl().getProtocol();
                 if ("https".equalsIgnoreCase(proto)) {

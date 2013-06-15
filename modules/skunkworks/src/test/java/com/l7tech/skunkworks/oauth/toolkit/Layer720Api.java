@@ -2,6 +2,7 @@ package com.l7tech.skunkworks.oauth.toolkit;
 
 import com.l7tech.common.http.*;
 import com.l7tech.common.http.prov.apache.CommonsHttpClient;
+import com.l7tech.common.http.prov.apache.components.HttpComponentsClient;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.IOUtils;
@@ -80,7 +81,7 @@ public class Layer720Api extends DefaultApi20 {
     public GenericHttpResponse authorize(final String responseType, final String consumerKey, final String callback,
                                          final PasswordAuthentication passwordAuthentication, final String cookie,
                                          final boolean followRedirects, final String action, final String scope, final String state) throws Exception {
-        final CommonsHttpClient client = new CommonsHttpClient();
+        final HttpComponentsClient client = new HttpComponentsClient();
         final StringBuilder urlBuilder = new StringBuilder();
         urlBuilder.append("https://").append(gatewayHost);
         urlBuilder.append(":8443/auth/oauth/v2/authorize?client_id=").append(consumerKey);
@@ -119,7 +120,7 @@ public class Layer720Api extends DefaultApi20 {
     }
 
     public GenericHttpResponse authorizeWithClientCredentials(final PasswordAuthentication clientCredentials) throws Exception {
-        final CommonsHttpClient client = new CommonsHttpClient();
+        final HttpComponentsClient client = new HttpComponentsClient();
         final GenericHttpRequestParams params = new GenericHttpRequestParams(new URL("https://" + gatewayHost +
                 ":8443/auth/oauth/v2/token"));
         params.setSslSocketFactory(getSSLSocketFactory());
@@ -132,7 +133,7 @@ public class Layer720Api extends DefaultApi20 {
     }
 
     public GenericHttpResponse authorizeWithResourceOwnerCredentials(final PasswordAuthentication clientCredentials, final String username, final String password) throws Exception {
-        final CommonsHttpClient client = new CommonsHttpClient();
+        final HttpComponentsClient client = new HttpComponentsClient();
         final GenericHttpRequestParams params = new GenericHttpRequestParams(new URL("https://" + gatewayHost +
                 ":8443/auth/oauth/v2/token"));
         params.setSslSocketFactory(getSSLSocketFactory());
@@ -147,7 +148,7 @@ public class Layer720Api extends DefaultApi20 {
     }
 
     public GenericHttpResponse authorizeWithSAMLToken(final PasswordAuthentication clientCredentials, final PasswordAuthentication passwordAuthentication) throws Exception {
-        final CommonsHttpClient client = new CommonsHttpClient();
+        final HttpComponentsClient client = new HttpComponentsClient();
         final String tokenRestrictionsEncoded = URLEncoder.encode(String.format("https://%s:8443/auth/oauth/v2/token", gatewayHost), "UTF-8");
         final GenericHttpRequestParams samlTokenParams = new GenericHttpRequestParams(new URL("https://" + gatewayHost +
                 ":8443/oauth/v2/samlTokenServer?audience_recipient_restriction=" + tokenRestrictionsEncoded));

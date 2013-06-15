@@ -8,6 +8,7 @@ public enum HttpMethod {
     GET(false, true),
     POST(true, false),
     PUT(true, false),
+    PATCH(true, false),
     DELETE(false, true),
     HEAD(false, true),
     OPTIONS(false, false), // According to RFC 2616 an OPTIONS request may include a body

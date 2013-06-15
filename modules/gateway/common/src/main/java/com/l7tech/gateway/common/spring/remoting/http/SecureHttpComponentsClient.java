@@ -1,36 +1,30 @@
 package com.l7tech.gateway.common.spring.remoting.http;
 
-import com.l7tech.util.ConfigFactory;
-import com.l7tech.util.InetAddressUtil;
 import com.l7tech.gateway.common.spring.remoting.ssl.SSLTrustFailureHandler;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.SyspropUtil;
-import org.apache.commons.httpclient.ConnectTimeoutException;
-import org.apache.commons.httpclient.HostConfiguration;
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
-import org.apache.commons.httpclient.params.HttpConnectionManagerParams;
-import org.apache.commons.httpclient.params.HttpConnectionParams;
-import org.apache.commons.httpclient.protocol.Protocol;
-import org.apache.commons.httpclient.protocol.ProtocolSocketFactory;
-import org.apache.commons.httpclient.protocol.SecureProtocolSocketFactory;
+import org.apache.http.client.params.ClientPNames;
+import org.apache.http.conn.scheme.Scheme;
+import org.apache.http.conn.ssl.X509HostnameVerifier;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.conn.PoolingClientConnectionManager;
+import org.apache.http.params.CoreConnectionPNames;
 
 import javax.net.ssl.*;
 import java.io.IOException;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.net.SocketTimeoutException;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 import java.security.Principal;
 import java.security.PrivateKey;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Extension of HttpClient that sets up SSL for the Manager (or other client)
  */
-public class SecureHttpClient extends HttpClient {
+public class SecureHttpComponentsClient extends DefaultHttpClient {
 
     //- PUBLIC
 
@@ -42,26 +36,24 @@ public class SecureHttpClient extends HttpClient {
 
     public static final String DEFAULT_PROTOCOLS = null; // "TLSv1";
 
-    public SecureHttpClient() {
+    public SecureHttpComponentsClient() {
         this( getDefaultKeyManagers() );
     }
 
-    public SecureHttpClient( KeyManager[] keyManagers ) {
-        super(new MultiThreadedHttpConnectionManager());
+    public SecureHttpComponentsClient(KeyManager[] keyManagers) {
+        super(new PoolingClientConnectionManager());
 
         this.keyManagers = keyManagers;
 
-        MultiThreadedHttpConnectionManager connectionManager =
-                (MultiThreadedHttpConnectionManager) getHttpConnectionManager();
+        PoolingClientConnectionManager connectionManager = (PoolingClientConnectionManager) getConnectionManager();
 
-        HttpConnectionManagerParams params = connectionManager.getParams();
-        params.setMaxTotalConnections( ConfigFactory.getIntProperty( PROP_MAX_CONNECTIONS, 20 ) );
-        params.setMaxConnectionsPerHost(HostConfiguration.ANY_HOST_CONFIGURATION, ConfigFactory.getIntProperty(PROP_MAX_HOSTCONNECTIONS, 20));
-        params.setConnectionTimeout( ConfigFactory.getIntProperty(PROP_CONNECTION_TIMEOUT, 30000) );
-        params.setSoTimeout( ConfigFactory.getIntProperty(PROP_READ_TIMEOUT, 60000) );
+        connectionManager.setMaxTotal(ConfigFactory.getIntProperty(PROP_MAX_CONNECTIONS, 20));
+        connectionManager.setDefaultMaxPerRoute(ConfigFactory.getIntProperty(PROP_MAX_HOSTCONNECTIONS, 20));
+        getParams().setLongParameter(ClientPNames.CONN_MANAGER_TIMEOUT, ConfigFactory.getIntProperty(PROP_CONNECTION_TIMEOUT, 30000));
+        getParams().setIntParameter(CoreConnectionPNames.SO_TIMEOUT, ConfigFactory.getIntProperty(PROP_READ_TIMEOUT, 60000));
+        getParams().setBooleanParameter("http.protocol.expect-continue", Boolean.TRUE);
 
         updateHostConfiguration();
-        getParams().setBooleanParameter("http.protocol.expect-continue", Boolean.TRUE);
     }
 
     /**
@@ -80,7 +72,7 @@ public class SecureHttpClient extends HttpClient {
      * @param keyManager the key manager to use.  required.
      */
     public static void setKeyManager(X509KeyManager keyManager) {
-        SecureHttpClient.keyManager = keyManager;
+        SecureHttpComponentsClient.keyManager = keyManager;
     }
 
     //- PRIVATE
@@ -91,7 +83,7 @@ public class SecureHttpClient extends HttpClient {
     private static SSLTrustFailureHandler currentTrustFailureHandler;
 
     private void updateHostConfiguration(){
-        getHostConfiguration().setHost(InetAddressUtil.getLocalHostAddress(), 80, getProtocol(getSSLSocketFactory()));
+        getConnectionManager().getSchemeRegistry().register(getScheme(getSSLSocketFactory()));
     }
 
     private final KeyManager[] keyManagers;
@@ -108,6 +100,34 @@ public class SecureHttpClient extends HttpClient {
             throw new RuntimeException("Error initializing SSL", gse);
         }
     }
+
+    private Scheme getScheme(final SSLSocketFactory sockFac) {
+        return new Scheme("https", 443, new SecureDirectSocketFactory(sockFac, null));
+    }
+
+    private static class SecureDirectSocketFactory extends org.apache.http.conn.ssl.SSLSocketFactory {
+
+        private SecureDirectSocketFactory(javax.net.ssl.SSLSocketFactory socketfactory, X509HostnameVerifier hostnameVerifier) {
+            super(socketfactory, hostnameVerifier);
+        }
+
+        protected void prepareSocket(SSLSocket socket) throws IOException {
+            if(socket != null) {
+                configureSslClientSocket(socket);
+            }
+        }
+
+    }
+
+    private static void configureSslClientSocket(Socket s) {
+        SSLSocket sslSocket = (SSLSocket) s;
+        if ( PROTOCOLS != null) {
+            String[] protos = PROTOCOLS.trim().split("\\s*,\\s*");
+            sslSocket.setEnabledProtocols(protos);
+        }
+    }
+
+
 
     private KeyManager[] getKeyManagers() {
         return keyManagers;
@@ -210,62 +230,11 @@ public class SecureHttpClient extends HttpClient {
         };
     }
 
-    private Protocol getProtocol(final SSLSocketFactory sockFac) {
-        return new Protocol("https", (ProtocolSocketFactory) new SecureProtocolSocketFactory() {
-            @Override
-            public Socket createSocket(Socket socket, String host, int port, boolean autoClose) throws IOException {
-                Socket sock = sockFac.createSocket(socket, host, port, autoClose);
-                configureSslClientSocket(sock);
-                return sock;
-            }
-
-            @Override
-            public Socket createSocket(String host, int port, InetAddress clientAddress, int clientPort) throws IOException {
-                Socket sock = sockFac.createSocket(host, port, clientAddress, clientPort);
-                configureSslClientSocket(sock);
-                return sock;
-            }
-
-            @Override
-            public Socket createSocket(String host, int port) throws IOException {
-                Socket sock = sockFac.createSocket(host, port);
-                configureSslClientSocket(sock);
-                return sock;
-            }
-
-            @Override
-            public Socket createSocket(String host, int port, InetAddress clientAddress, int clientPort, HttpConnectionParams httpConnectionParams) throws IOException {
-                Socket socket = sockFac.createSocket();
-                configureSslClientSocket(socket);
-                int connectTimeout = httpConnectionParams.getConnectionTimeout();
-
-                socket.bind(new InetSocketAddress(clientAddress, clientPort));
-
-                try {
-                    socket.connect(new InetSocketAddress(host, port), connectTimeout);
-                }
-                catch(SocketTimeoutException ste) {
-                    throw new ConnectTimeoutException("Timeout when connecting to host '"+host+"'.", ste);
-                }
-
-                return socket;
-            }
-        }, 443);
-    }
-
-    private static void configureSslClientSocket(Socket s) {
-        SSLSocket sslSocket = (SSLSocket) s;
-        if ( PROTOCOLS != null) {
-            String[] protos = PROTOCOLS.trim().split("\\s*,\\s*");
-            sslSocket.setEnabledProtocols(protos);
-        }
-    }
-
     /**
      * Resets the connection by closing any idle connections and recreates the SSL connections.
      */
     public void resetConnection() {
-        this.getHttpConnectionManager().closeIdleConnections(0);
+        this.getConnectionManager().closeIdleConnections(0, TimeUnit.MILLISECONDS);
         updateHostConfiguration();
     }
 }

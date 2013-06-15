@@ -30,7 +30,7 @@ public class HttpRoutingWindowsIntegratedAuthPanel extends JPanel {
 
     private final HttpRoutingAssertion assertion;
 
-    HttpRoutingWindowsIntegratedAuthPanel(HttpRoutingAssertion assertion) {
+    public HttpRoutingWindowsIntegratedAuthPanel(HttpRoutingAssertion assertion) {
         super();
         this.assertion = assertion;
 
@@ -79,7 +79,7 @@ public class HttpRoutingWindowsIntegratedAuthPanel extends JPanel {
         useGatewayKeytabRadioButton.setEnabled(enabled);
     }
 
-    void updateModel() {
+    public void updateModel() {
 
         if (useConfiguredCredentialsRadioButton.isSelected()) {
             assertion.setKrbDelegatedAuthentication(false);

@@ -4,8 +4,7 @@ import com.l7tech.common.http.FailoverHttpClient;
 import com.l7tech.common.http.GenericHttpClient;
 import com.l7tech.common.http.HttpCookie;
 import com.l7tech.common.http.SimpleHttpClient;
-import com.l7tech.common.http.prov.apache.CommonsHttpClient;
-import com.l7tech.common.io.failover.AbstractFailoverStrategy;
+import com.l7tech.common.http.prov.apache.components.HttpComponentsClient;
 import static com.l7tech.common.io.failover.AbstractFailoverStrategy.makeSynchronized;
 import com.l7tech.common.io.failover.FailoverStrategy;
 import com.l7tech.common.io.failover.FailoverStrategyFactory;
@@ -19,7 +18,7 @@ import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.DateTranslator;
 import com.l7tech.util.ExceptionUtils;
 import org.apache.commons.collections.map.LRUMap;
-import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
+import org.apache.http.conn.ClientConnectionManager;
 
 import javax.net.ssl.*;
 import java.io.IOException;
@@ -60,7 +59,7 @@ public class SsgRuntime {
     // Maximum number of Sender Vouches tokens to cache at a time.
     private static final int MAX_SV_USERS = ConfigFactory.getIntProperty( "com.l7tech.proxy.maxSvUsers", 1000 );
 
-    private MultiThreadedHttpConnectionManager httpConnectionManager;
+    private ClientConnectionManager httpConnectionManager;
 
     private SsgNotifyPolicyManager ssgNotifyPolicyManager = null; // policy store that is not saved to disk
     private char[] password = null;
@@ -657,10 +656,10 @@ public class SsgRuntime {
         return toSsgDateTranslator;
     }
 
-    public MultiThreadedHttpConnectionManager getHttpConnectionManager() {
+    public ClientConnectionManager getHttpConnectionManager() {
         synchronized (ssg) {
             if (httpConnectionManager == null) {
-                httpConnectionManager = CommonsHttpClient.newConnectionManager();
+                httpConnectionManager = HttpComponentsClient.newConnectionManager();
             }
             return httpConnectionManager;
         }
@@ -675,7 +674,7 @@ public class SsgRuntime {
         synchronized (ssg) {
             if (simpleHttpClient == null) {
                 // Base it on commons
-                GenericHttpClient client = new CommonsHttpClient(getHttpConnectionManager(), ssg.getHttpConnectTimeout(), ssg.getHttpReadTimeout());
+                GenericHttpClient client = new HttpComponentsClient(getHttpConnectionManager(), ssg.getHttpConnectTimeout(), ssg.getHttpReadTimeout());
 
                 // Make it use the right SSL
                 client = new SslPeerHttpClient(client,

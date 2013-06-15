@@ -1,5 +1,8 @@
 package com.l7tech.common.http;
 
+import org.apache.http.cookie.Cookie;
+import org.apache.http.impl.cookie.BasicClientCookie;
+
 import java.io.IOException;
 import java.util.*;
 import java.util.regex.Pattern;
@@ -195,15 +198,21 @@ public class CookieUtils {
      * set to null).</p>
      *
      * @param httpCookie the cookie to convert.
+     * @param prefix the prefix to remove.
      * @return the HTTP Client cookie.
      */
-    public static org.apache.commons.httpclient.Cookie toHttpClientCookie(HttpCookie httpCookie) {
-        org.apache.commons.httpclient.Cookie cookie = new org.apache.commons.httpclient.Cookie();
+    public static Cookie toHttpClientCookie(HttpCookie httpCookie, String prefix) {
 
-        cookie.setName(httpCookie.getCookieName());
+        BasicClientCookie cookie = null;
+
+        if (prefix == null) {
+            cookie = new BasicClientCookie(httpCookie.getCookieName(), httpCookie.getCookieValue());
+        } else {
+            cookie = new BasicClientCookie(httpCookie.getCookieName().substring(prefix.length()), httpCookie.getCookieValue());
+        }
+
         cookie.setValue(httpCookie.getCookieValue());
         cookie.setVersion(httpCookie.getVersion());
-        cookie.setDomainAttributeSpecified(httpCookie.isDomainExplicit());
         cookie.setDomain(httpCookie.getDomain());
         cookie.setPath(httpCookie.getPath());
         cookie.setComment(httpCookie.getComment());
@@ -220,17 +229,17 @@ public class CookieUtils {
      * @param isNew true if this is a "new" cookie (as though from a Set-Cookie header)
      * @return the HttpCookie.
      */
-    public static HttpCookie fromHttpClientCookie(org.apache.commons.httpclient.Cookie httpClientCookie, boolean isNew) {
+    public static HttpCookie fromHttpClientCookie(Cookie httpClientCookie, boolean isNew) {
         HttpCookie cookie;
 
         if(isNew) {
             cookie = new HttpCookie(httpClientCookie.getName()
                                    ,httpClientCookie.getValue()
                                    ,httpClientCookie.getVersion()
-                                   ,httpClientCookie.isPathAttributeSpecified() ? httpClientCookie.getPath() : null
-                                   ,httpClientCookie.isDomainAttributeSpecified() ? httpClientCookie.getDomain() : null
+                                   ,httpClientCookie.getPath()
+                                   ,httpClientCookie.getDomain()
                                    ,httpClientCookie.getExpiryDate() == null ? -1 : (int)((httpClientCookie.getExpiryDate().getTime()-System.currentTimeMillis())/1000L)
-                                   ,httpClientCookie.getSecure()
+                                   ,httpClientCookie.isSecure()
                                    ,httpClientCookie.getComment());
         }
         else {
@@ -313,27 +322,6 @@ public class CookieUtils {
         }
 
         return out.toArray(new HttpCookie[out.size()]);
-    }
-
-    /**
-     * Convert a Servlet cookie to an HttpClient cookie.
-     *
-     * @param servletCookie the cookie to convert
-     * @return the HTTP Client cookie
-     */
-    public static org.apache.commons.httpclient.Cookie servletCookieToHttpClientCookie(javax.servlet.http.Cookie servletCookie) {
-        org.apache.commons.httpclient.Cookie c = new org.apache.commons.httpclient.Cookie();
-
-        c.setName(servletCookie.getName());
-        c.setValue(servletCookie.getValue());
-        c.setPath(servletCookie.getPath());
-        c.setDomain(servletCookie.getDomain());
-        c.setVersion(servletCookie.getVersion());
-        c.setComment(servletCookie.getComment());
-        if (servletCookie.getMaxAge() >= 0)
-            c.setExpiryDate(new Date(System.currentTimeMillis() + (servletCookie.getMaxAge() * 1000L)));
-
-        return c;
     }
 
     /**

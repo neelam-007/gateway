@@ -2,7 +2,8 @@ package com.l7tech.server.policy.assertion;
 
 import com.l7tech.common.http.*;
 import com.l7tech.common.http.HttpCookie;
-import com.l7tech.common.http.prov.apache.CommonsHttpClient;
+import com.l7tech.common.http.prov.apache.components.ClientConnectionManagerFactory;
+import com.l7tech.common.http.prov.apache.components.HttpComponentsClient;
 import com.l7tech.common.io.*;
 import com.l7tech.common.io.failover.AbstractFailoverStrategy;
 import com.l7tech.common.io.failover.FailoverStrategy;
@@ -30,8 +31,9 @@ import com.l7tech.server.policy.variable.ServerVariables;
 import com.l7tech.server.security.kerberos.KerberosRoutingClient;
 import com.l7tech.server.transport.http.SslClientTrustManager;
 import com.l7tech.server.util.HttpForwardingRuleEnforcer;
-import com.l7tech.server.util.IdentityBindingHttpClientFactory;
+import com.l7tech.server.util.IdentityBindingHttpClientFactory2;
 import com.l7tech.util.*;
+import org.apache.http.conn.ConnectTimeoutException;
 import org.jaaslounge.decoding.kerberos.KerberosEncData;
 import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
@@ -81,6 +83,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
     private final boolean urlUsesVariables;
     private final URL protectedServiceUrl;
     private boolean customURLList;
+    private SSLContext sslContext = null;
 
     public ServerHttpRoutingAssertion(HttpRoutingAssertion assertion, ApplicationContext ctx) throws PolicyAssertionException {
         super(assertion, ctx);
@@ -135,7 +138,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                 final DefaultKey ku = (DefaultKey)applicationContext.getBean("defaultKey");
                 keyManagers = ku.getSslKeyManagers();
             }
-            SSLContext sslContext = SSLContext.getInstance("TLS");
+            sslContext = SSLContext.getInstance("TLS");
 
             final Long[] tlsTrustedCertOids = assertion.getTlsTrustedCertOids();
             Set<Long> customTrustedCerts = tlsTrustedCertOids == null ? null : new HashSet<Long>(Arrays.asList(tlsTrustedCertOids));
@@ -162,6 +165,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "Failed to initialize SSL context: " + ExceptionUtils.getMessage(e), null);
             signerInfo = null;
             sslSocketFactory = null;
+            sslContext = null;
         }
         this.senderVouchesSignerInfo = signerInfo;
         this.socketFactory = sslSocketFactory;
@@ -171,7 +175,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             httpClientFactory = makeHttpClientFactory();
         } catch (Exception e) {
             logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { "Could not create HTTP client factory." }, e);
-            httpClientFactory = new IdentityBindingHttpClientFactory();
+            httpClientFactory = new IdentityBindingHttpClientFactory2();
         }
         this.httpClientFactory = httpClientFactory;
 
@@ -218,7 +222,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
     private GenericHttpClientFactory makeHttpClientFactory() throws FindException {
         final String proxyHost = assertion.getProxyHost();
         if (proxyHost == null) {
-            return applicationContext.getBean("httpRoutingHttpClientFactory", GenericHttpClientFactory.class);
+            return applicationContext.getBean("httpRoutingHttpClientFactory2", GenericHttpClientFactory.class);
         }
 
         final String proxyPassword = ServerVariables.expandPasswordOnlyVariable(getAudit(), assertion.getProxyPassword());
@@ -232,10 +236,8 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
 
             @Override
             public GenericHttpClient createHttpClient(int hostConnections, int totalConnections, int connectTimeout, int timeout, Object identity) {
-                return new CommonsHttpClient(proxyHost, assertion.getProxyPort(), assertion.getProxyUsername(), proxyPassword,
-                        CommonsHttpClient.newConnectionManager(),
-                        connectTimeout,
-                        timeout);
+                return new HttpComponentsClient(ClientConnectionManagerFactory.getInstance().createConnectionManager(ClientConnectionManagerFactory.ConnectionManagerType.POOLING, hostConnections, totalConnections),
+                        identity, connectTimeout, timeout,  proxyHost, assertion.getProxyPort(), assertion.getProxyUsername(), proxyPassword);
             }
         };
     }
@@ -327,6 +329,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
         try {
             GenericHttpRequestParams routedRequestParams = new GenericHttpRequestParams(url);
             routedRequestParams.setSslSocketFactory(socketFactory);
+            routedRequestParams.setSslContext(sslContext);
             routedRequestParams.setHostnameVerifier(hostnameVerifier);
             if ( assertion.getMaxRetries() >= 0 ) {
                 routedRequestParams.setMaxRetries( assertion.getMaxRetries() );
@@ -864,7 +867,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             context.setVariable(HttpRoutingAssertion.VAR_HTTP_ROUTING_REASON_CODE, HOST_NOT_FOUND);
         } else if (cause instanceof java.net.SocketTimeoutException) {
             context.setVariable(HttpRoutingAssertion.VAR_HTTP_ROUTING_REASON_CODE, READ_TIMEOUT);
-        } else if (cause instanceof org.apache.commons.httpclient.ConnectTimeoutException) {
+        } else if (cause instanceof ConnectTimeoutException) {
             context.setVariable(HttpRoutingAssertion.VAR_HTTP_ROUTING_REASON_CODE, CONNECTION_TIMEOUT);
         } else if (cause instanceof MalformedURLException) {
             context.setVariable(HttpRoutingAssertion.VAR_HTTP_ROUTING_REASON_CODE, BAD_URL);

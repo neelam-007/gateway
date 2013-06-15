@@ -1,21 +1,24 @@
 package com.l7tech.common.io;
 
-import org.apache.commons.httpclient.params.HttpConnectionParams;
-import org.apache.commons.httpclient.protocol.SecureProtocolSocketFactory;
+import org.apache.http.conn.ConnectTimeoutException;
+import org.apache.http.conn.scheme.SchemeLayeredSocketFactory;
+import org.apache.http.conn.ssl.X509HostnameVerifier;
+import org.apache.http.params.HttpParams;
 
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSocketFactory;
-import javax.net.ssl.X509TrustManager;
+import javax.net.ssl.*;
 import java.io.IOException;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.net.UnknownHostException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
+import java.security.cert.X509Certificate;
 
 /**
  * Ever-trusting SSL socket factory for testing
  */
-public class PermissiveSSLSocketFactory extends SSLSocketFactory implements SecureProtocolSocketFactory {
+public class PermissiveSSLSocketFactory extends SSLSocketFactory implements SchemeLayeredSocketFactory {
     private final SSLSocketFactory defaultSslSocketFactory = (SSLSocketFactory)SSLSocketFactory.getDefault();
     private final SSLContext sslContext;
 
@@ -45,34 +48,69 @@ public class PermissiveSSLSocketFactory extends SSLSocketFactory implements Secu
         return sslContext.getSocketFactory();
     }
 
-    public Socket createSocket(Socket socket, String host, int port, boolean autoClose)
-            throws IOException {
-        return socketFactory().createSocket(socket, host, port, autoClose);
+    private org.apache.http.conn.ssl.SSLSocketFactory socketFactoryWrapper() {
+        return new org.apache.http.conn.ssl.SSLSocketFactory(sslContext.getSocketFactory(), new X509HostnameVerifier() {
+            @Override
+            public void verify(String s, SSLSocket sslSocket) throws IOException {
+            }
+
+            @Override
+            public void verify(String s, X509Certificate x509Certificate) throws SSLException {
+            }
+
+            @Override
+            public void verify(String s, String[] strings, String[] strings1) throws SSLException {
+            }
+
+            @Override
+            public boolean verify(String hostname, SSLSession session) {
+                return true;
+            }
+        });
     }
 
-    public Socket createSocket(String host, int port, InetAddress clientHost, int clientPort)
-            throws IOException {
-        return socketFactory().createSocket(host, port, clientHost, clientPort);
-    }
-
-    public Socket createSocket(InetAddress inetAddress, int i, InetAddress inetAddress1, int i1) throws IOException
-    {
-        return socketFactory().createSocket(inetAddress, i, inetAddress1, i1);
-    }
-
-    public Socket createSocket(String host, int port) throws IOException {
+    @Override
+    public Socket createSocket(String host, int port) throws IOException, UnknownHostException {
         return socketFactory().createSocket(host, port);
     }
 
-    public Socket createSocket(InetAddress inetAddress, int i) throws IOException {
-        return socketFactory().createSocket(inetAddress, i);
+    @Override
+    public Socket createSocket(String host, int port, InetAddress localHost, int localPort) throws IOException, UnknownHostException {
+        return socketFactory().createSocket(host, port, localHost, localPort);
     }
 
-    public Socket createSocket(String host, int port, InetAddress clientHost, int clientPort, HttpConnectionParams httpConnectionParams) throws IOException {
-        return createSocket(host, port, clientHost, clientPort);
+    @Override
+    public Socket createSocket(InetAddress host, int port) throws IOException {
+        return socketFactory().createSocket(host, port);
     }
 
-    public Socket createSocket() throws IOException {
-        return socketFactory().createSocket();
+    @Override
+    public Socket createSocket(InetAddress address, int port, InetAddress localAddress, int localPort) throws IOException {
+        return socketFactory().createSocket(address, port, localAddress, localPort);
+    }
+
+    @Override
+    public Socket createSocket(Socket s, String host, int port, boolean autoClose) throws IOException {
+        return socketFactory().createSocket(s, host, port, autoClose);
+    }
+
+    @Override
+    public Socket createLayeredSocket(Socket socket, String s, int i, HttpParams httpParams) throws IOException, UnknownHostException {
+        return socketFactoryWrapper().createLayeredSocket(socket, s, i, httpParams);
+    }
+
+    @Override
+    public Socket createSocket(HttpParams httpParams) throws IOException {
+        return socketFactoryWrapper().createSocket(httpParams) ;
+    }
+
+    @Override
+    public Socket connectSocket(Socket socket, InetSocketAddress inetSocketAddress, InetSocketAddress inetSocketAddress1, HttpParams httpParams) throws IOException, UnknownHostException, ConnectTimeoutException {
+        return socketFactoryWrapper().connectSocket(socket, inetSocketAddress, inetSocketAddress1, httpParams);
+    }
+
+    @Override
+    public boolean isSecure(Socket socket) throws IllegalArgumentException {
+        return socketFactoryWrapper().isSecure(socket);
     }
 }

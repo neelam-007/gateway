@@ -13,16 +13,16 @@ import com.l7tech.policy.assertion.HtmlFormDataType;
 import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
-import org.apache.commons.httpclient.methods.PostMethod;
-import org.apache.commons.httpclient.methods.multipart.ByteArrayPartSource;
-import org.apache.commons.httpclient.methods.multipart.FilePart;
-import org.apache.commons.httpclient.methods.multipart.MultipartRequestEntity;
-import org.apache.commons.httpclient.methods.multipart.Part;
+import org.apache.http.entity.mime.HttpMultipartMode;
+import org.apache.http.entity.mime.MultipartEntity;
+import org.apache.http.entity.mime.content.FileBody;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.text.MessageFormat;
 import java.util.Collections;
 
@@ -269,76 +269,114 @@ public class ServerHtmlFormDataAssertionTest {
 
     @Test
     public void checkPostRequestStringDataTypeFileFound() throws Exception {
-        final Part[] parts = new Part[]{new FilePart(FIELDNAME, new ByteArrayPartSource(FILENAME, "dummyfilecontent".getBytes()))};
-        final MultipartRequestEntity entity = new MultipartRequestEntity(parts, new PostMethod().getParams());
-        final ByteArrayOutputStream requestContent = new ByteArrayOutputStream();
-        entity.writeRequest(requestContent);
+        File file = File.createTempFile("mime", ".tmp");
+        try {
+            FileOutputStream fos = new FileOutputStream(file);
+            fos.write("dummyfilecontent".getBytes());
+            fos.close();
+            FileBody fileBody = new FileBody(file, FILENAME, "application/octet-stream", null);
+            MultipartEntity multipartEntity = new MultipartEntity(HttpMultipartMode.BROWSER_COMPATIBLE);
+            multipartEntity.addPart(FIELDNAME, fileBody);
 
-        assertion.setFieldSpecs(new HtmlFormDataAssertion.FieldSpec[]{STRING_ANYWHERE_FIELD_SPEC});
-        assertion.setAllowPost(true);
-        mockRequest.setMethod(POST);
-        mockRequest.addHeader(CONTENT_TYPE, entity.getContentType());
-        mockRequest.setContent(requestContent.toByteArray());
-        request.attachHttpRequestKnob(new HttpServletRequestKnob(mockRequest));
-        request.initialize(ContentTypeHeader.parseValue(entity.getContentType()), requestContent.toByteArray());
+            final ByteArrayOutputStream requestContent = new ByteArrayOutputStream();
+            multipartEntity.writeTo(requestContent);
 
-        assertEquals(AssertionStatus.FALSIFIED, serverAssertion.checkRequest(context));
-        assertTrue(testAudit.isAuditPresentContaining(MessageFormat.format(AssertionMessages.HTMLFORMDATA_FAIL_DATATYPE.getMessage(), FIELDNAME, FILENAME, HtmlFormDataType.STRING.getWspName())));
+            assertion.setFieldSpecs(new HtmlFormDataAssertion.FieldSpec[]{STRING_ANYWHERE_FIELD_SPEC});
+            assertion.setAllowPost(true);
+            mockRequest.setMethod(POST);
+            mockRequest.addHeader(CONTENT_TYPE, multipartEntity.getContentType().getValue());
+            mockRequest.setContent(requestContent.toByteArray());
+            request.attachHttpRequestKnob(new HttpServletRequestKnob(mockRequest));
+            request.initialize(ContentTypeHeader.parseValue(multipartEntity.getContentType().getValue()), requestContent.toByteArray());
+
+            assertEquals(AssertionStatus.FALSIFIED, serverAssertion.checkRequest(context));
+            assertTrue(testAudit.isAuditPresentContaining(MessageFormat.format(AssertionMessages.HTMLFORMDATA_FAIL_DATATYPE.getMessage(), FIELDNAME, FILENAME, HtmlFormDataType.STRING.getWspName())));
+        } finally {
+            file.delete();
+        }
     }
+
 
     @Test
     public void checkPostRequestFileDataTypeEmptyNotAllowed() throws Exception {
-        final Part[] parts = new Part[]{new FilePart(FIELDNAME, new ByteArrayPartSource("", "".getBytes()))};
-        final MultipartRequestEntity entity = new MultipartRequestEntity(parts, new PostMethod().getParams());
-        final ByteArrayOutputStream requestContent = new ByteArrayOutputStream();
-        entity.writeRequest(requestContent);
 
-        assertion.setFieldSpecs(new HtmlFormDataAssertion.FieldSpec[]{new HtmlFormDataAssertion.FieldSpec(FIELDNAME, HtmlFormDataType.FILE, 1, 1, HtmlFormDataLocation.ANYWHERE, Boolean.FALSE)});
-        assertion.setAllowPost(true);
-        mockRequest.setMethod(POST);
-        mockRequest.addHeader(CONTENT_TYPE, entity.getContentType());
-        mockRequest.setContent(requestContent.toByteArray());
-        request.attachHttpRequestKnob(new HttpServletRequestKnob(mockRequest));
-        request.initialize(ContentTypeHeader.parseValue(entity.getContentType()), requestContent.toByteArray());
+        File file = File.createTempFile("mime", ".tmp");
+        try {
+            FileBody fileBody = new FileBody(file, "", "application/octet-stream", null);
+            MultipartEntity multipartEntity = new MultipartEntity(HttpMultipartMode.BROWSER_COMPATIBLE);
+            multipartEntity.addPart(FIELDNAME, fileBody);
 
-        assertEquals(AssertionStatus.FALSIFIED, serverAssertion.checkRequest(context));
-        assertTrue(testAudit.isAuditPresentContaining(MessageFormat.format(AssertionMessages.HTMLFORMDATA_EMPTY_NOT_ALLOWED.getMessage(), FIELDNAME)));
+            final ByteArrayOutputStream requestContent = new ByteArrayOutputStream();
+            multipartEntity.writeTo(requestContent);
+
+            assertion.setFieldSpecs(new HtmlFormDataAssertion.FieldSpec[]{new HtmlFormDataAssertion.FieldSpec(FIELDNAME, HtmlFormDataType.FILE, 1, 1, HtmlFormDataLocation.ANYWHERE, Boolean.FALSE)});
+            assertion.setAllowPost(true);
+            mockRequest.setMethod(POST);
+            mockRequest.addHeader(CONTENT_TYPE, multipartEntity.getContentType().getValue());
+            mockRequest.setContent(requestContent.toByteArray());
+            request.attachHttpRequestKnob(new HttpServletRequestKnob(mockRequest));
+            request.initialize(ContentTypeHeader.parseValue(multipartEntity.getContentType().getValue()), requestContent.toByteArray());
+
+            assertEquals(AssertionStatus.FALSIFIED, serverAssertion.checkRequest(context));
+            assertTrue(testAudit.isAuditPresentContaining(MessageFormat.format(AssertionMessages.HTMLFORMDATA_EMPTY_NOT_ALLOWED.getMessage(), FIELDNAME)));
+        } finally {
+            file.delete();
+        }
     }
 
     @Test
     public void checkPostRequestFileDataTypeEmpty() throws Exception {
-        final Part[] parts = new Part[]{new FilePart(FIELDNAME, new ByteArrayPartSource("", "".getBytes()))};
-        final MultipartRequestEntity entity = new MultipartRequestEntity(parts, new PostMethod().getParams());
-        final ByteArrayOutputStream requestContent = new ByteArrayOutputStream();
-        entity.writeRequest(requestContent);
 
-        assertion.setFieldSpecs(new HtmlFormDataAssertion.FieldSpec[]{new HtmlFormDataAssertion.FieldSpec(FIELDNAME, HtmlFormDataType.FILE, 1, 1, HtmlFormDataLocation.ANYWHERE, Boolean.TRUE)});
-        assertion.setAllowPost(true);
-        mockRequest.setMethod(POST);
-        mockRequest.addHeader(CONTENT_TYPE, entity.getContentType());
-        mockRequest.setContent(requestContent.toByteArray());
-        request.attachHttpRequestKnob(new HttpServletRequestKnob(mockRequest));
-        request.initialize(ContentTypeHeader.parseValue(entity.getContentType()), requestContent.toByteArray());
+        File file = File.createTempFile("mime", ".tmp");
+        try {
+            FileBody fileBody = new FileBody(file, "", "application/octet-stream", null);
+            MultipartEntity multipartEntity = new MultipartEntity(HttpMultipartMode.BROWSER_COMPATIBLE);
+            multipartEntity.addPart(FIELDNAME, fileBody);
 
-        assertEquals(AssertionStatus.NONE, serverAssertion.checkRequest(context));
+            final ByteArrayOutputStream requestContent = new ByteArrayOutputStream();
+            multipartEntity.writeTo(requestContent);
+
+            assertion.setFieldSpecs(new HtmlFormDataAssertion.FieldSpec[]{new HtmlFormDataAssertion.FieldSpec(FIELDNAME, HtmlFormDataType.FILE, 1, 1, HtmlFormDataLocation.ANYWHERE, Boolean.TRUE)});
+            assertion.setAllowPost(true);
+            mockRequest.setMethod(POST);
+            mockRequest.addHeader(CONTENT_TYPE, multipartEntity.getContentType().getValue());
+            mockRequest.setContent(requestContent.toByteArray());
+            request.attachHttpRequestKnob(new HttpServletRequestKnob(mockRequest));
+            request.initialize(ContentTypeHeader.parseValue(multipartEntity.getContentType().getValue()), requestContent.toByteArray());
+
+            assertEquals(AssertionStatus.NONE, serverAssertion.checkRequest(context));
+
+        } finally {
+            file.delete();
+        }
+
     }
 
     @Test
     public void checkPostRequestFileDataTypeEmptyNullAllowEmpty() throws Exception {
-        final Part[] parts = new Part[]{new FilePart(FIELDNAME, new ByteArrayPartSource("", "".getBytes()))};
-        final MultipartRequestEntity entity = new MultipartRequestEntity(parts, new PostMethod().getParams());
-        final ByteArrayOutputStream requestContent = new ByteArrayOutputStream();
-        entity.writeRequest(requestContent);
 
-        assertion.setFieldSpecs(new HtmlFormDataAssertion.FieldSpec[]{new HtmlFormDataAssertion.FieldSpec(FIELDNAME, HtmlFormDataType.FILE, 1, 1, HtmlFormDataLocation.ANYWHERE, null)});
-        assertion.setAllowPost(true);
-        mockRequest.setMethod(POST);
-        mockRequest.addHeader(CONTENT_TYPE, entity.getContentType());
-        mockRequest.setContent(requestContent.toByteArray());
-        request.attachHttpRequestKnob(new HttpServletRequestKnob(mockRequest));
-        request.initialize(ContentTypeHeader.parseValue(entity.getContentType()), requestContent.toByteArray());
+        File file = File.createTempFile("mime", ".tmp");
+        try {
+            FileBody fileBody = new FileBody(file, "", "application/octet-stream", null);
+            MultipartEntity multipartEntity = new MultipartEntity(HttpMultipartMode.BROWSER_COMPATIBLE);
+            multipartEntity.addPart(FIELDNAME, fileBody);
 
-        assertEquals(AssertionStatus.NONE, serverAssertion.checkRequest(context));
+            final ByteArrayOutputStream requestContent = new ByteArrayOutputStream();
+            multipartEntity.writeTo(requestContent);
+
+            assertion.setFieldSpecs(new HtmlFormDataAssertion.FieldSpec[]{new HtmlFormDataAssertion.FieldSpec(FIELDNAME, HtmlFormDataType.FILE, 1, 1, HtmlFormDataLocation.ANYWHERE, null)});
+            assertion.setAllowPost(true);
+            mockRequest.setMethod(POST);
+            mockRequest.addHeader(CONTENT_TYPE, multipartEntity.getContentType().getValue());
+            mockRequest.setContent(requestContent.toByteArray());
+            request.attachHttpRequestKnob(new HttpServletRequestKnob(mockRequest));
+            request.initialize(ContentTypeHeader.parseValue(multipartEntity.getContentType().getValue()), requestContent.toByteArray());
+
+            assertEquals(AssertionStatus.NONE, serverAssertion.checkRequest(context));
+
+        } finally {
+            file.delete();
+        }
     }
 
     @Test

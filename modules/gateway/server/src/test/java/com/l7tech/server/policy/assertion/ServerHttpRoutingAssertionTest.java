@@ -8,7 +8,6 @@ import com.google.mockwebserver.MockResponse;
 import com.google.mockwebserver.MockWebServer;
 import com.l7tech.common.TestDocuments;
 import com.l7tech.common.http.*;
-import com.l7tech.common.http.prov.apache.IdentityBindingHttpConnectionManager;
 import com.l7tech.common.io.PermissiveHostnameVerifier;
 import com.l7tech.common.io.TestSSLSocketFactory;
 import com.l7tech.common.io.XmlUtil;
@@ -39,7 +38,7 @@ import com.l7tech.server.transport.http.SslClientTrustManager;
 import com.l7tech.server.util.*;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.IOUtils;
-import org.apache.commons.httpclient.HttpConnectionManager;
+import org.apache.http.pool.PoolStats;
 import org.junit.Assert;
 import org.junit.Test;
 import org.springframework.context.ApplicationContext;
@@ -68,6 +67,8 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertNull;
 
 public class ServerHttpRoutingAssertionTest {
+
+    private static final String CLIENT_FACTORY = "httpRoutingHttpClientFactory2";
 
     @Test(expected = AssertionStatusException.class)
     @BugNumber(11385)
@@ -113,7 +114,7 @@ public class ServerHttpRoutingAssertionTest {
                 new GenericHttpHeader("Content-Type", "text/xml"),
         });
 
-        TestingHttpClientFactory testingHttpClientFactory = appContext.getBean("httpRoutingHttpClientFactory", TestingHttpClientFactory.class);
+        TestingHttpClientFactory testingHttpClientFactory = appContext.getBean(CLIENT_FACTORY, TestingHttpClientFactory.class);
 
         final String expectedResponse = "<bar/>";
         testingHttpClientFactory.setMockHttpClient(
@@ -156,7 +157,7 @@ public class ServerHttpRoutingAssertionTest {
 
         PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
 
-        TestingHttpClientFactory testingHttpClientFactory = appContext.getBean("httpRoutingHttpClientFactory", TestingHttpClientFactory.class);
+        TestingHttpClientFactory testingHttpClientFactory = appContext.getBean(CLIENT_FACTORY, TestingHttpClientFactory.class);
 
         final Object[] requestRecordedExtraHeaders = {null};
         final PasswordAuthentication[] requestRecordedPasswordAuthentication = {null};
@@ -215,7 +216,7 @@ public class ServerHttpRoutingAssertionTest {
 
         PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
 
-        TestingHttpClientFactory testingHttpClientFactory = appContext.getBean("httpRoutingHttpClientFactory", TestingHttpClientFactory.class);
+        TestingHttpClientFactory testingHttpClientFactory = appContext.getBean(CLIENT_FACTORY, TestingHttpClientFactory.class);
 
         final Object[] requestRecordedExtraHeaders = {null};
         final PasswordAuthentication[] requestRecordedPasswordAuthentication = {null};
@@ -269,7 +270,7 @@ public class ServerHttpRoutingAssertionTest {
         response.attachHttpResponseKnob(new HttpServletResponseKnob(new MockHttpServletResponse()));
         PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
 
-        TestingHttpClientFactory testingHttpClientFactory = appContext.getBean("httpRoutingHttpClientFactory", TestingHttpClientFactory.class);
+        TestingHttpClientFactory testingHttpClientFactory = appContext.getBean(CLIENT_FACTORY, TestingHttpClientFactory.class);
 
         final byte[] expectedResponse = IOUtils.compressGzip("<bar/>".getBytes());
         final GenericHttpHeaders responseHeaders = new GenericHttpHeaders(new GenericHttpHeader[]{new GenericHttpHeader("Content-Encoding", "gzip")});
@@ -302,7 +303,7 @@ public class ServerHttpRoutingAssertionTest {
         request.attachHttpRequestKnob(new HttpServletRequestKnob(hrequest));
         PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
 
-        TestingHttpClientFactory testingHttpClientFactory = appContext.getBean("httpRoutingHttpClientFactory", TestingHttpClientFactory.class);
+        TestingHttpClientFactory testingHttpClientFactory = appContext.getBean(CLIENT_FACTORY, TestingHttpClientFactory.class);
 
         final Object[] requestRecordedExtraHeaders = {null};
 
@@ -357,7 +358,7 @@ public class ServerHttpRoutingAssertionTest {
         request.attachHttpRequestKnob(new HttpServletRequestKnob(hrequest));
 
         PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
-        TestingHttpClientFactory testingHttpClientFactory = appContext.getBean("httpRoutingHttpClientFactory", TestingHttpClientFactory.class);
+        TestingHttpClientFactory testingHttpClientFactory = appContext.getBean(CLIENT_FACTORY, TestingHttpClientFactory.class);
         
         final String expectedResponse = "<bar/>";
         final GenericHttpHeaders responseHeaders = new GenericHttpHeaders(new GenericHttpHeader[0]);
@@ -400,7 +401,7 @@ public class ServerHttpRoutingAssertionTest {
         request.attachHttpRequestKnob(new HttpServletRequestKnob(hrequest));
 
         PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
-        TestingHttpClientFactory testingHttpClientFactory = appContext.getBean("httpRoutingHttpClientFactory", TestingHttpClientFactory.class);
+        TestingHttpClientFactory testingHttpClientFactory = appContext.getBean(CLIENT_FACTORY, TestingHttpClientFactory.class);
 
         final String expectedResponse = "<bar/>";
         final GenericHttpHeaders responseHeaders = new GenericHttpHeaders(new GenericHttpHeader[0]);
@@ -457,7 +458,7 @@ public class ServerHttpRoutingAssertionTest {
         request.attachHttpRequestKnob(new HttpServletRequestKnob(hrequest));
 
         PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
-        TestingHttpClientFactory testingHttpClientFactory = appContext.getBean("httpRoutingHttpClientFactory", TestingHttpClientFactory.class);
+        TestingHttpClientFactory testingHttpClientFactory = appContext.getBean(CLIENT_FACTORY, TestingHttpClientFactory.class);
 
         final String expectedResponse = "<bar/>";
         final GenericHttpHeaders responseHeaders = new GenericHttpHeaders(new GenericHttpHeader[0]);
@@ -494,7 +495,7 @@ public class ServerHttpRoutingAssertionTest {
         ApplicationContexts.inject(serverAssertion, Collections.singletonMap("auditFactory", testAudit.factory()));
         final PolicyEnforcementContext policyContext = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message());
         ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
-        TestingHttpClientFactory testingHttpClientFactory = appContext.getBean("httpRoutingHttpClientFactory", TestingHttpClientFactory.class);
+        TestingHttpClientFactory testingHttpClientFactory = appContext.getBean(CLIENT_FACTORY, TestingHttpClientFactory.class);
 
         final String expectedResponse = "<bar/>";
         final GenericHttpHeaders responseHeaders = new GenericHttpHeaders(new GenericHttpHeader[0]);
@@ -584,7 +585,7 @@ public class ServerHttpRoutingAssertionTest {
 
         PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
 
-        TestingHttpClientFactory testingHttpClientFactory = appContext.getBean("httpRoutingHttpClientFactory", TestingHttpClientFactory.class);
+        TestingHttpClientFactory testingHttpClientFactory = appContext.getBean(CLIENT_FACTORY, TestingHttpClientFactory.class);
 
         final Object[] requestRecordedExtraHeaders = {null};
         final PasswordAuthentication[] requestRecordedPasswordAuthentication = {null};
@@ -626,7 +627,7 @@ public class ServerHttpRoutingAssertionTest {
                 put("serverConfig", new ServerConfigStub());
                 put("hostnameVerifier", new SslClientHostnameVerifier(new ServerConfigStub(), new TrustedCertServicesImpl(new TestTrustedCertManager())));
                 put("stashManagerFactory", TestStashManagerFactory.getInstance());
-                put("httpRoutingHttpClientFactory", identityBindingHttpClientFactory);
+                put(CLIENT_FACTORY, identityBindingHttpClientFactory);
             }}));
 
             serverPolicyFactory.setApplicationContext(ac);
@@ -644,8 +645,9 @@ public class ServerHttpRoutingAssertionTest {
                 }
             };
             Message requestMessage = new Message();
+            Message responseMessage = new Message();
             requestMessage.attachHttpRequestKnob(requestKnob);
-            PolicyEnforcementContext peCtx = PolicyEnforcementContextFactory.createPolicyEnforcementContext(requestMessage, new Message());
+            PolicyEnforcementContext peCtx = PolicyEnforcementContextFactory.createPolicyEnforcementContext(requestMessage, responseMessage);
 
             HttpRoutingAssertion assertion = new HttpRoutingAssertion();
             assertion.setPassthroughHttpAuthentication(true);
@@ -657,22 +659,46 @@ public class ServerHttpRoutingAssertionTest {
             AssertionStatus result = sass.checkRequest(peCtx);
             assertEquals(peCtx.getVariable(HttpRoutingAssertion.VAR_HTTP_ROUTING_REASON_CODE), HttpsURLConnection.HTTP_UNAUTHORIZED);
             assertEquals(AssertionStatus.AUTH_REQUIRED, result);
+            IOUtils.copyStream(responseMessage.getMimeKnob().getEntireMessageBodyAsInputStream(), System.out);
             peCtx.close();
-
-            //Make sure the connection is bound
-            Map map = ((IdentityBindingHttpConnectionManager)identityBindingHttpClientFactory.getConnectionManager()).getConnectionsById();
-            assertNotNull(map.get(connectionID));
 
             //Resubmit the request
             httpServer.setResponseCode(HttpsURLConnection.HTTP_OK);
             requestMessage = new Message();
+            responseMessage = new Message();
             requestMessage.attachHttpRequestKnob(requestKnob);
-            peCtx = PolicyEnforcementContextFactory.createPolicyEnforcementContext(requestMessage, new Message());
+            peCtx = PolicyEnforcementContextFactory.createPolicyEnforcementContext(requestMessage, responseMessage);
             result = sass.checkRequest(peCtx);
+            IOUtils.copyStream(responseMessage.getMimeKnob().getEntireMessageBodyAsInputStream(), System.out);
             assertEquals(result, AssertionStatus.NONE);
-            map = ((IdentityBindingHttpConnectionManager)identityBindingHttpClientFactory.getConnectionManager()).getConnectionsById();
-            //Make sure the connection is bound
-            assertNotNull(map.get(connectionID));
+            //Make sure the connection is bound, re-use the connection
+            PoolStats stats = identityBindingHttpClientFactory.getStats();
+            assertEquals(1, stats.getAvailable());
+            assertEquals(1, httpServer.getServedClient().size());
+
+            //another request with different connection id
+            final int connectionID2 = r.nextInt();
+            requestKnob = new HttpRequestKnobStub(headers) {
+                @Override
+                public Object getConnectionIdentifier() {
+                    return connectionID2;
+                }
+            };
+            requestMessage = new Message();
+            responseMessage = new Message();
+            requestMessage.attachHttpRequestKnob(requestKnob);
+            peCtx = PolicyEnforcementContextFactory.createPolicyEnforcementContext(requestMessage, responseMessage);
+
+            httpServer.setResponseCode(HttpsURLConnection.HTTP_UNAUTHORIZED);
+            result = sass.checkRequest(peCtx);
+            IOUtils.copyStream(responseMessage.getMimeKnob().getEntireMessageBodyAsInputStream(), System.out);
+            assertEquals(peCtx.getVariable(HttpRoutingAssertion.VAR_HTTP_ROUTING_REASON_CODE), HttpsURLConnection.HTTP_UNAUTHORIZED);
+            assertEquals(AssertionStatus.AUTH_REQUIRED, result);
+            peCtx.close();
+            stats = identityBindingHttpClientFactory.getStats();
+            assertEquals(2, stats.getAvailable());
+
+
         } finally {
             httpServer.stop();
         }
@@ -701,7 +727,7 @@ public class ServerHttpRoutingAssertionTest {
                 put("serverConfig", new ServerConfigStub());
                 put("hostnameVerifier", new SslClientHostnameVerifier(new ServerConfigStub(), new TrustedCertServicesImpl(new TestTrustedCertManager())));
                 put("stashManagerFactory", TestStashManagerFactory.getInstance());
-                put("httpRoutingHttpClientFactory", identityBindingHttpClientFactory);
+                put(CLIENT_FACTORY, identityBindingHttpClientFactory);
             }}));
 
             serverPolicyFactory.setApplicationContext(ac);
@@ -719,23 +745,46 @@ public class ServerHttpRoutingAssertionTest {
                 }
             };
             Message requestMessage = new Message();
+            Message responseMessage = new Message();
             requestMessage.attachHttpRequestKnob(requestKnob);
-            PolicyEnforcementContext peCtx = PolicyEnforcementContextFactory.createPolicyEnforcementContext(requestMessage, new Message());
+            PolicyEnforcementContext peCtx = PolicyEnforcementContextFactory.createPolicyEnforcementContext(requestMessage, responseMessage);
 
             HttpRoutingAssertion assertion = new HttpRoutingAssertion();
             assertion.setPassthroughHttpAuthentication(true);
             assertion.setProtectedServiceUrl("http://localhost:" +httpServer.getPort());
             ServerAssertion sass = serverPolicyFactory.compilePolicy(assertion, false);
 
+            //First Request
             httpServer.setResponseCode(HttpsURLConnection.HTTP_UNAUTHORIZED);
             AssertionStatus result = sass.checkRequest(peCtx);
+            IOUtils.copyStream(responseMessage.getMimeKnob().getEntireMessageBodyAsInputStream(), System.out);
             assertEquals(peCtx.getVariable(HttpRoutingAssertion.VAR_HTTP_ROUTING_REASON_CODE), HttpsURLConnection.HTTP_UNAUTHORIZED);
             assertEquals(AssertionStatus.AUTH_REQUIRED, result);
             peCtx.close();
 
-            //Make sure the connection is not bound
-            Map map = ((IdentityBindingHttpConnectionManager)identityBindingHttpClientFactory.getConnectionManager()).getConnectionsById();
-            assertNull(map.get(connectionID));
+             //Another request
+            final int connectionID2 = r.nextInt();
+            requestKnob = new HttpRequestKnobStub(headers) {
+                @Override
+                public Object getConnectionIdentifier() {
+                    return connectionID2;
+                }
+            };
+            requestMessage = new Message();
+            responseMessage = new Message();
+            requestMessage.attachHttpRequestKnob(requestKnob);
+            peCtx = PolicyEnforcementContextFactory.createPolicyEnforcementContext(requestMessage, responseMessage);
+
+            httpServer.setResponseCode(HttpsURLConnection.HTTP_UNAUTHORIZED);
+            result = sass.checkRequest(peCtx);
+            IOUtils.copyStream(responseMessage.getMimeKnob().getEntireMessageBodyAsInputStream(), System.out);
+            assertEquals(peCtx.getVariable(HttpRoutingAssertion.VAR_HTTP_ROUTING_REASON_CODE), HttpsURLConnection.HTTP_UNAUTHORIZED);
+            assertEquals(AssertionStatus.AUTH_REQUIRED, result);
+            peCtx.close();
+
+            PoolStats stats = identityBindingHttpClientFactory.getStats();
+            //Pooled, so it should reuse existing connection
+            assertEquals(1, stats.getAvailable());
 
         } finally {
             httpServer.stop();
@@ -746,7 +795,7 @@ public class ServerHttpRoutingAssertionTest {
     @Test
     public void testPassThroughAllRequestParametersWithInvalidBody() throws Exception {
         ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
-        TestingHttpClientFactory testingHttpClientFactory = appContext.getBean("httpRoutingHttpClientFactory", TestingHttpClientFactory.class);
+        TestingHttpClientFactory testingHttpClientFactory = appContext.getBean(CLIENT_FACTORY, TestingHttpClientFactory.class);
         HttpRoutingAssertion hra = new HttpRoutingAssertion();
         hra.setProtectedServiceUrl("http://localhost:17380/testPassThroughAllRequestParametersWithInvalidBody");
 
@@ -792,10 +841,12 @@ public class ServerHttpRoutingAssertionTest {
         assertArrayEquals(expectedResult.toByteArray(), data);
     }
 
-    private static class HttpClientFactory extends IdentityBindingHttpClientFactory {
-        public HttpConnectionManager getConnectionManager() {
-            return super.connectionManager;
+    private static class HttpClientFactory extends IdentityBindingHttpClientFactory2 {
+
+        public PoolStats getStats() {
+            return getTotalStats();
         }
+
     }
 
     @Test

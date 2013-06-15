@@ -130,7 +130,7 @@ public class HttpPassthroughRuleSet implements Cloneable, Serializable  {
 
     @SuppressWarnings({"CloneDoesntDeclareCloneNotSupportedException"})
     @Override
-    protected HttpPassthroughRuleSet clone() {
+    public HttpPassthroughRuleSet clone() {
         try {
             HttpPassthroughRuleSet hprs = (HttpPassthroughRuleSet) super.clone();
 

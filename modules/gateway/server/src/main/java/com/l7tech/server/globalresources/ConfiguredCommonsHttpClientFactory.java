@@ -1,12 +1,10 @@
 package com.l7tech.server.globalresources;
 
 import com.l7tech.common.http.GenericHttpClient;
-import com.l7tech.common.http.prov.apache.CommonsHttpClient;
-import com.l7tech.server.transport.http.HttpConnectionManagerListener;
+import com.l7tech.common.http.prov.apache.components.HttpComponentsClient;
+import com.l7tech.server.transport.http.HttpConnectionManagerListener2;
 import com.l7tech.util.ConfigFactory;
-import org.apache.commons.httpclient.HostConfiguration;
-import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
-import org.apache.commons.httpclient.params.HttpConnectionManagerParams;
+import org.apache.http.impl.conn.PoolingClientConnectionManager;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -18,7 +16,7 @@ public class ConfiguredCommonsHttpClientFactory extends ConfiguredHttpClientFact
     //- PUBLIC
 
     public ConfiguredCommonsHttpClientFactory( final HttpConfigurationCache httpConfigurationCache,
-                                               final HttpConnectionManagerListener listener,
+                                               final HttpConnectionManagerListener2 listener,
                                                final boolean useSslKeyForDefault ) {
         super( httpConfigurationCache, useSslKeyForDefault );
         if ( notifiedConnectionManager.compareAndSet( false, true ) ) {
@@ -34,7 +32,7 @@ public class ConfiguredCommonsHttpClientFactory extends ConfiguredHttpClientFact
     @Override
     GenericHttpClient newGenericHttpClient( final int connectTimeout,
                                             final int readTimeout ) {
-        return new CommonsHttpClient( connectionManager, connectTimeout, readTimeout );
+        return new HttpComponentsClient( connectionManager, connectTimeout, readTimeout );
     }
 
     //- PRIVATE
@@ -46,11 +44,10 @@ public class ConfiguredCommonsHttpClientFactory extends ConfiguredHttpClientFact
     private static final int MAX_CONNECTIONS = ConfigFactory.getIntProperty( PROP_MAX_TOTAL_CONN, 1000 );
 
     private static final AtomicBoolean notifiedConnectionManager = new AtomicBoolean(false);
-    private static final MultiThreadedHttpConnectionManager connectionManager = new MultiThreadedHttpConnectionManager();
+    private static final PoolingClientConnectionManager connectionManager = new PoolingClientConnectionManager();
     static {
-        final HttpConnectionManagerParams params = connectionManager.getParams();
-        params.setMaxConnectionsPerHost( HostConfiguration.ANY_HOST_CONFIGURATION, MAX_CONNECTIONS_PER_HOST );
-        params.setMaxTotalConnections( MAX_CONNECTIONS );
+        connectionManager.setMaxTotal(MAX_CONNECTIONS);
+        connectionManager.setDefaultMaxPerRoute(MAX_CONNECTIONS_PER_HOST);
     }
 
 }

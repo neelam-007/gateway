@@ -4,6 +4,7 @@ import com.l7tech.common.mime.ContentTypeHeader;
 import org.jetbrains.annotations.NotNull;
 
 import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
 import java.net.PasswordAuthentication;
 import java.net.URL;
@@ -54,6 +55,16 @@ public class GenericHttpRequestParams {
     private int proxyPort;
     private PasswordAuthentication proxyAuthentication;
     private boolean forceIncludeRequestBody;
+
+    public SSLContext getSslContext() {
+        return sslContext;
+    }
+
+    public void setSslContext(SSLContext sslContext) {
+        this.sslContext = sslContext;
+    }
+
+    private SSLContext sslContext;
     // NOTE: Add any new fields to the copy constructor
 
     /**

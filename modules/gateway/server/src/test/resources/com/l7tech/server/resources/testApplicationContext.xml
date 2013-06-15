@@ -307,8 +307,18 @@
         <constructor-arg ref="hostnameVerifier"/>
     </bean>
 
+
+    <!-- Http connection clean up for http client 4.X -->
+    <bean id="httpConnectionIdleTimeoutManager2" class="com.l7tech.server.transport.http.HttpConnectionIdleTimeoutManager2">
+        <constructor-arg index="0" ref="serverConfig"/>
+        <constructor-arg index="1">
+            <bean class="com.l7tech.server.util.ManagedTimer">
+                <constructor-arg value="HTTP Connection Idle Timeout"/>
+            </bean>
+        </constructor-arg>
+    </bean>
     <!-- server side HTTP routing HTTP client factory -->
-    <bean id="httpRoutingHttpClientFactory"
+    <bean id="httpRoutingHttpClientFactory2"
           class="com.l7tech.server.util.TestingHttpClientFactory"/>
 
     <bean id="stashManagerFactory" class="com.l7tech.server.TestStashManagerFactory" factory-method="getInstance"/>

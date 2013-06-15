@@ -2,6 +2,7 @@ package com.l7tech.skunkworks.oauth.toolkit;
 
 import com.l7tech.common.http.*;
 import com.l7tech.common.http.prov.apache.CommonsHttpClient;
+import com.l7tech.common.http.prov.apache.components.HttpComponentsClient;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.IOUtils;
@@ -75,7 +76,7 @@ public class OAuthToolkit1_0IntegrationTest {
 
     @Before
     public void setup() {
-        client = new CommonsHttpClient();
+        client = new HttpComponentsClient();
         passwordAuthentication = new PasswordAuthentication(USER, PASSWORD.toCharArray());
     }
 

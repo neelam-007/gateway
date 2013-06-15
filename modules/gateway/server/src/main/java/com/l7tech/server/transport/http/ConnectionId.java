@@ -57,6 +57,7 @@ public class ConnectionId implements Comparable, Serializable {
     }
 
     public boolean equals( Object o ) {
+        if (o == null) return false;
         ConnectionId other = (ConnectionId)o;
         return (_generation == other._generation &&
                 _sequence == other._sequence);

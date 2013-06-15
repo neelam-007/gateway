@@ -16,8 +16,13 @@ import com.l7tech.util.Charsets;
 import com.l7tech.util.HtmlConstants;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.ResourceUtils;
-import org.apache.commons.httpclient.Cookie;
-import org.apache.commons.httpclient.HttpState;
+import org.apache.http.client.CookieStore;
+import org.apache.http.client.protocol.ClientContext;
+import org.apache.http.cookie.Cookie;
+import org.apache.http.impl.client.BasicCookieStore;
+import org.apache.http.impl.cookie.BasicClientCookie;
+import org.apache.http.protocol.BasicHttpContext;
+import org.apache.http.protocol.HttpContext;
 import org.cyberneko.html.parsers.DOMParser;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Element;
@@ -91,7 +96,7 @@ public class ServerSamlBrowserArtifact extends AbstractServerAssertion<SamlBrows
     private AssertionStatus doCheckRequest(PolicyEnforcementContext context, boolean passCookies) throws PolicyAssertionException {
         AuthenticationProperties ap = assertion.getAuthenticationProperties();
         GenericHttpState httpState = new GenericHttpState();
-        HttpState state = new HttpState();
+        HttpContext state = new BasicHttpContext();
         httpState.setStateObject(state);
         GenericHttpRequestParams loginParams = new GenericHttpRequestParams(loginUrl, httpState);
         loginParams.setFollowRedirects(false);
@@ -119,7 +124,7 @@ public class ServerSamlBrowserArtifact extends AbstractServerAssertion<SamlBrows
 
                 if(ap.isEnableCookies() && passCookies) {
                     // then grab any cookies off of the request (from bridge)
-                    usingCache = addCookies(context, (HttpState) httpState.getStateObject(), loginUrl.getHost(), inCookies);
+                    usingCache = addCookies(context, (HttpContext) httpState.getStateObject(), loginUrl.getHost(), inCookies);
                 }
 
                 if(usingCache) {
@@ -209,7 +214,7 @@ public class ServerSamlBrowserArtifact extends AbstractServerAssertion<SamlBrows
 
                 if(ap.isEnableCookies()) {
                     // pass cookies back to the bridge/client
-                    passCookies(context, (HttpState) httpState.getStateObject(), inCookies);
+                    passCookies(context, (HttpContext) httpState.getStateObject(), inCookies);
                 }
 
                 return AssertionStatus.NONE;
@@ -241,17 +246,21 @@ public class ServerSamlBrowserArtifact extends AbstractServerAssertion<SamlBrows
     /**
      * Take prefixed cookies from incoming request, remove prefix and add to http state
      */
-    private boolean addCookies(PolicyEnforcementContext context, HttpState state, String cookieDomain, Collection<Cookie> added) {
+    private boolean addCookies(PolicyEnforcementContext context, HttpContext state, String cookieDomain, Collection<Cookie> added) {
         boolean addedCookies = false;
         final Set<HttpCookie> cookies = context.getCookies();
+        CookieStore cookieStore = (CookieStore) state.getAttribute(ClientContext.COOKIE_STORE);
+        if (cookieStore == null) {
+            cookieStore = new BasicCookieStore();
+            state.setAttribute(ClientContext.COOKIE_STORE, cookieStore);
+        }
+
         for ( final HttpCookie cookie : cookies ) {
             if (cookie.getCookieName().startsWith(COOKIE_PREFIX)) {
                 // Get and fixup HTTP Client cookie
-                Cookie httpClientCookie = CookieUtils.toHttpClientCookie(cookie);
-                String cookieName = cookie.getCookieName().substring(COOKIE_PREFIX.length());
+                BasicClientCookie httpClientCookie = (BasicClientCookie) CookieUtils.toHttpClientCookie(cookie, COOKIE_PREFIX);
                 String cookiePath = cookie.getPath();
                 if (cookiePath == null) cookiePath = "/";
-                httpClientCookie.setName(cookieName);
                 httpClientCookie.setPath(cookiePath);
                 httpClientCookie.setDomain(cookieDomain);
 
@@ -261,7 +270,7 @@ public class ServerSamlBrowserArtifact extends AbstractServerAssertion<SamlBrows
                 }
 
                 // Add to state
-                state.addCookie(httpClientCookie);
+                cookieStore.addCookie(httpClientCookie);
                 added.add(httpClientCookie);
                 addedCookies = true;
             }
@@ -273,11 +282,11 @@ public class ServerSamlBrowserArtifact extends AbstractServerAssertion<SamlBrows
     /**
      * Get cookies from the http state, prefix them and add them to the response.
      */
-    private void passCookies(PolicyEnforcementContext context, HttpState state, Collection originalCookies) {
+    private void passCookies(PolicyEnforcementContext context, HttpContext state, Collection originalCookies) {
 
-        Cookie[] cookies = state.getCookies();
+        CookieStore cookieStore = (CookieStore) state.getAttribute(ClientContext.COOKIE_STORE);
 
-        Set<Cookie> newCookies = new LinkedHashSet<Cookie>(Arrays.asList(cookies));
+        Set<Cookie> newCookies = new LinkedHashSet<Cookie>(cookieStore.getCookies());
         newCookies.removeAll(originalCookies);
 
         for (Cookie cookie : newCookies) {
@@ -285,15 +294,16 @@ public class ServerSamlBrowserArtifact extends AbstractServerAssertion<SamlBrows
             if (logger.isLoggable(Level.FINE)) {
                 logger.log(Level.FINE, "New cookie from SSO endpoint, name='" + cookie.getName() + "'.");
             }
-
             // modify for client
-            cookie.setName(COOKIE_PREFIX + cookie.getName());
-            cookie.setDomain(null);
-            cookie.setDomainAttributeSpecified(false);
-            cookie.setPath(null);
-            cookie.setPathAttributeSpecified(false);
+            BasicClientCookie basicClientCookie = new BasicClientCookie(COOKIE_PREFIX+cookie.getName(), cookie.getValue());
+            basicClientCookie.setComment(cookie.getComment());
+            basicClientCookie.setDomain(null);
+            basicClientCookie.setExpiryDate(cookie.getExpiryDate());
+            basicClientCookie.setPath(null);
+            basicClientCookie.setSecure(cookie.isSecure());
+            basicClientCookie.setVersion(cookie.getVersion());
 
-            context.addCookie(CookieUtils.fromHttpClientCookie(cookie, true));
+            context.addCookie(CookieUtils.fromHttpClientCookie(basicClientCookie, true));
         }
     }
 

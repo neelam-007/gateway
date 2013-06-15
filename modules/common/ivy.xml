@@ -19,9 +19,6 @@
         <dependency org="apache-harmony" name="apache-harmony-asn1" rev="0.1" force="true" conf="core"/>
         <dependency org="bouncycastle" name="bcprov-jdk16" rev="1.46" force="true" conf="core"/>
         <dependency org="commons-collections" name="commons-collections" rev="3.2.1" force="true" conf="core"/>
-       <dependency org="commons-httpclient" name="commons-httpclient" rev="3.1" force="true" conf="core">
-            <exclude org="junit" module="junit" name="*" type="*" ext="*" conf="" matcher="exact"/>
-        </dependency>
         <dependency org="commons-lang" name="commons-lang" rev="2.6" force="true" conf="core"/>
         <dependency org="javax.mail" name="mail" rev="1.4.5" force="true" conf="core"/>
         <dependency org="javax.servlet" name="servlet-api" rev="2.5" force="true" conf="core"/>
@@ -32,5 +29,8 @@
         <dependency org="com.ibm" name="xss4j.00.patch" rev="1.1" force="true" conf="core"/>
         <dependency org="com.ibm" name="xss4j" rev="1.0" force="true" conf="core"/>
         <dependency org="com.google.mockwebserver" name="mockwebserver" rev="20130505" force="true" conf="core"/>
+        <dependency org="org.apache.httpcomponents" name="httpcore" rev="4.2.4" force="true" conf="core"/>
+        <dependency org="org.apache.httpcomponents" name="httpclient" rev="4.2.5" force="true" conf="core"/>
+        <dependency org="org.apache.httpcomponents" name="httpmime" rev="4.2.5" force="true" conf="core"/>
     </dependencies>
 </ivy-module>

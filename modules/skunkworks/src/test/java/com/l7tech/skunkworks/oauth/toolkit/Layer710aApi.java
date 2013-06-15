@@ -2,6 +2,7 @@ package com.l7tech.skunkworks.oauth.toolkit;
 
 import com.l7tech.common.http.*;
 import com.l7tech.common.http.prov.apache.CommonsHttpClient;
+import com.l7tech.common.http.prov.apache.components.HttpComponentsClient;
 import org.scribe.builder.api.DefaultApi10a;
 import org.scribe.model.Token;
 
@@ -76,7 +77,7 @@ public class Layer710aApi extends DefaultApi10a {
     }
 
     private GenericHttpResponse authorize(final String requestToken, final PasswordAuthentication passwordAuthentication, final String cookie) throws Exception {
-        final CommonsHttpClient client = new CommonsHttpClient();
+        final HttpComponentsClient client = new HttpComponentsClient();
 
         final String url = "https://" + gatewayHost + ":8443/auth/oauth/v1/authorize?state=authorized&oauth_token=" + requestToken;
         final GenericHttpRequestParams authenticateParams = new GenericHttpRequestParams(new URL(url));

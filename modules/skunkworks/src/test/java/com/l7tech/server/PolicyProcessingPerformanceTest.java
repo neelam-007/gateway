@@ -148,7 +148,7 @@ public class PolicyProcessingPerformanceTest extends TestCase {
 
         messageProcessor = applicationContext.getBean("messageProcessor", MessageProcessor.class);
         soapFaultManager = applicationContext.getBean("soapFaultManager", SoapFaultManager.class);
-        testingHttpClientFactory = applicationContext.getBean("httpRoutingHttpClientFactory", TestingHttpClientFactory.class);
+        testingHttpClientFactory = applicationContext.getBean("httpRoutingHttpClientFactory2", TestingHttpClientFactory.class);
         inboundSecureConversationContextManager = applicationContext.getBean("inboundSecureConversationContextManager", InboundSecureConversationContextManager.class);
 
         // well known test session
