@@ -5,6 +5,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import static com.l7tech.policy.assertion.AssertionMetadata.DESCRIPTION;
+import static com.l7tech.policy.assertion.AssertionMetadata.POLICY_NODE_NAME_FACTORY;
 import static com.l7tech.policy.assertion.AssertionMetadata.SHORT_NAME;
 import static com.l7tech.policy.assertion.CustomAssertionHolder.CUSTOM_ASSERTION;
 import static org.junit.Assert.*;
@@ -40,6 +41,13 @@ public class CustomAssertionHolderTest {
         holder.setDescriptionText(null);
         final AssertionMetadata meta = holder.meta();
         assertEquals(CUSTOM_ASSERTION, meta.get(DESCRIPTION));
+    }
+
+    @Test
+    public void testNodeNames() {
+        holder.setNodeNames(new String[] {null, "Policy Node Name Demo"});
+        final AssertionNodeNameFactory nameFactory = holder.meta().get(POLICY_NODE_NAME_FACTORY);
+        assertEquals("Policy Node Name Demo", nameFactory.getAssertionName(holder, true));
     }
 
     private class StubCustomAssertion implements CustomAssertion {

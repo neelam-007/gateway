@@ -296,6 +296,7 @@ public class CustomAssertionsRegistrarImpl extends ApplicationObjectSupport impl
                 ch.setCustomAssertion(cas);
                 ch.setCategory(cd.getCategory());
                 ch.setDescriptionText(cd.getDescription());
+                ch.setNodeNames(cd.getNodeNames());
                 result.add(ch);
             } catch (Exception e) {
                 logger.log(Level.WARNING, "Unable to instantiate custom assertion", e);
@@ -405,6 +406,7 @@ public class CustomAssertionsRegistrarImpl extends ApplicationObjectSupport impl
         String optionalDescription = null;
         String optionalUiAllowedPackages = null;
         String optionalUiAllowedResources = null;
+        String[] nodeNames = new String[2]; // to hold Palette Node Name and Policy Node Name
         Category category = Category.UNFILLED;
 
         assertionClass = (String)properties.get(baseKey + ".class");
@@ -429,6 +431,10 @@ public class CustomAssertionsRegistrarImpl extends ApplicationObjectSupport impl
                     optionalUiAllowedPackages = (String) properties.get(key);
                 } else if (key.endsWith(".ui.allowed.resources")) {
                     optionalUiAllowedResources = (String) properties.get(key);
+                } else if (key.endsWith(".palette.node.name")) {
+                    nodeNames[0] = (String) properties.get(key);
+                } else if (key.endsWith(".policy.node.name")) {
+                    nodeNames[1] = (String) properties.get(key);
                 }
             }
         }
@@ -449,7 +455,7 @@ public class CustomAssertionsRegistrarImpl extends ApplicationObjectSupport impl
             }
 
             Class sa = Class.forName(serverClass, true, classLoader);
-            CustomAssertionDescriptor eh = new CustomAssertionDescriptor(baseKey, a, eClass, sa, category, optionalDescription, optionalUiAllowedPackages, optionalUiAllowedResources);
+            CustomAssertionDescriptor eh = new CustomAssertionDescriptor(baseKey, a, eClass, sa, category, optionalDescription, optionalUiAllowedPackages, optionalUiAllowedResources, nodeNames);
             CustomAssertions.register(eh);
 
             registerCustomExtensionInterface(extensionInterfaceClassName, classLoader);

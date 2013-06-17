@@ -80,13 +80,24 @@ public class CustomAccessControlNode extends DefaultAssertionPaletteNode<CustomA
     @Override
     public String getName() {
         if ( name == null ) {
-            CustomAssertionHolder cha = (CustomAssertionHolder)asAssertion();
-            final CustomAssertion ca = cha.getCustomAssertion();
-            String assName = ca.getName();
-            if (assName == null) {
-                assName = "Unspecified custom assertion (class '" + ca.getClass() + "')";
+            CustomAssertionHolder cah = (CustomAssertionHolder)asAssertion();
+            final CustomAssertion ca = cah.getCustomAssertion();
+            final String[] nodeNames = cah.getNodeNames();
+
+            String paletteNodeName;
+            if (nodeNames == null) {
+                paletteNodeName = ca.getName();
+            } else {
+                // Get the palette node name from the array (index = 0)
+                paletteNodeName = nodeNames[0];
+                // If there is no Palette Node Name setup, then get name from the Custom Assertion
+                if (paletteNodeName == null) paletteNodeName = ca.getName();
             }
-            name = assName;
+
+            if (paletteNodeName == null) {
+                paletteNodeName = "Unspecified custom assertion (class '" + ca.getClass() + "')";
+            }
+            name = paletteNodeName;
         }
         return name;
     }

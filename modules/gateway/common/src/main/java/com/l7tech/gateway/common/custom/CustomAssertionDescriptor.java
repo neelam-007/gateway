@@ -27,6 +27,7 @@ public class CustomAssertionDescriptor {
     private final Class serverAssertion;
     private final String name;
     private final String description;
+    private final String[] nodeNames; // to hold Palette Node Name and Policy Node Name
     private final String[] uiAllowedPackages;
     private final Set<String> uiAllowedResources;
     private final Category category;
@@ -52,11 +53,14 @@ public class CustomAssertionDescriptor {
                                      final Category cat,
                                      final String optionalDescription,
                                      final String optionalUiAllowedPackages,
-                                     final String optionalUiAllowedResources) {
+                                     final String optionalUiAllowedResources,
+                                     final String[] nodeNames) {
         this.name = name;
         this.description = optionalDescription;
         this.assertion = assertionClass;
         this.category = cat;
+        this.nodeNames = nodeNames;
+
         if (!CustomAssertion.class.isAssignableFrom(assertionClass)) {
             throw new IllegalArgumentException("Assertion " + assertionClass);
         }
@@ -99,6 +103,10 @@ public class CustomAssertionDescriptor {
 
     public String getDescription() {
         return description;
+    }
+
+    public String[] getNodeNames() {
+        return nodeNames;
     }
 
     public String[] getUiAllowedPackages() {

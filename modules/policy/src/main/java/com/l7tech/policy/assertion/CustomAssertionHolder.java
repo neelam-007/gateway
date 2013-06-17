@@ -99,9 +99,18 @@ public class CustomAssertionHolder extends Assertion implements UsesVariables, S
         this.descriptionText = descriptionText;
     }
 
+    public String[] getNodeNames() {
+        return nodeNames;
+    }
+
+    public void setNodeNames(String[] nodeNames) {
+        this.nodeNames = nodeNames;
+    }
+
     private CustomAssertion customAssertion;
     private Category category;
     private String descriptionText;
+    private String[] nodeNames = new String[2]; // to hold Palette Node Name and Policy Node Name
 
     @Override
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
@@ -171,11 +180,22 @@ public class CustomAssertionHolder extends Assertion implements UsesVariables, S
             @Override
             public String getAssertionName( CustomAssertionHolder assertion, boolean decorate) {
                 final CustomAssertion ca = getCustomAssertion();
-                String name = ca.getName();
-                if (name == null) {
-                    name = "Unspecified custom assertion (class '" + ca.getClass() + "'";
+                final String[] nodeNames = assertion.getNodeNames();
+
+                String policyName;
+                if (nodeNames == null) {
+                    policyName = ca.getName();
+                } else {
+                    // Get the policy node name from the array (index = 1)
+                    policyName =  nodeNames[1];
+                    // If there is no Policy Node Name setup, then get name from the Custom Assertion
+                    if (policyName == null) policyName = ca.getName();
                 }
-                return (decorate) ? AssertionUtils.decorateName(assertion, name) : name;
+
+                if (policyName == null) {
+                    policyName = "Unspecified custom assertion (class '" + ca.getClass() + "'";
+                }
+                return (decorate) ? AssertionUtils.decorateName(assertion, policyName) : policyName;
             }
         });
         meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/custom.gif");
@@ -186,6 +206,5 @@ public class CustomAssertionHolder extends Assertion implements UsesVariables, S
 
         return meta;
     }
-
 }
 
