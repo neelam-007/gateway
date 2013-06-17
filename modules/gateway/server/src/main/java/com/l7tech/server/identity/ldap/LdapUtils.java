@@ -319,7 +319,7 @@ public final class LdapUtils {
                 logger.info("User failed to authenticate: " + dn + " in provider " + providerConfig.getName());
                 return false;
             } catch (NamingException e) {
-                logger.log(Level.WARNING, "General naming failure for user: " + dn + " in provider " + providerConfig.getName(), e);
+                logger.log(Level.WARNING, "General naming failure for user: " + dn + " in provider " + providerConfig.getName(), ExceptionUtils.getDebugException(e));
                 return false;
             } finally {
                 ResourceUtils.closeQuietly(userCtx);
