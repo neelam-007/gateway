@@ -634,6 +634,16 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
                                         policyWithNameConflict.toString()));
                     }
 
+                    final List<String> certificateWithConflict = dryRunEvent.getCertificateConflict();
+                    if (!certificateWithConflict.isEmpty()) {
+                        details.add(
+                            new AuditDetail(
+                                AssertionMessages.OTK_DRY_RUN_CONFLICT,
+                                bundleInfo.getName(),
+                                "Certificates",
+                                certificateWithConflict.toString()));
+                    }
+
                     final List<String> jdbcConnsThatDontExist = dryRunEvent.getJdbcConnsThatDontExist();
                     if (!jdbcConnsThatDontExist.isEmpty()) {
                         details.add(
@@ -656,6 +666,7 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
                     final Map<DryRunItem, List<String>> itemToConflicts = new HashMap<DryRunItem, List<String>>();
                     itemToConflicts.put(DryRunItem.SERVICES, urlPatternWithConflict);
                     itemToConflicts.put(DryRunItem.POLICIES, policyWithNameConflict);
+                    itemToConflicts.put(DryRunItem.CERTIFICATES, certificateWithConflict);
                     itemToConflicts.put(DryRunItem.JDBC_CONNECTIONS, jdbcConnsThatDontExist);
                     itemToConflicts.put(DryRunItem.MODULAR_ASSERTION, missingModularAssertions);
 

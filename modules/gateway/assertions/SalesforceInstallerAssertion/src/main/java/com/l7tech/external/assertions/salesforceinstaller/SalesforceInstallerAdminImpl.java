@@ -350,6 +350,16 @@ public class SalesforceInstallerAdminImpl extends AsyncAdminMethodsImpl implemen
                                 policyWithNameConflict.toString()));
                     }
 
+                    final List<String> certificateWithConflict = dryRunEvent.getCertificateConflict();
+                    if (!certificateWithConflict.isEmpty()) {
+                        details.add(
+                            new AuditDetail(
+                                AssertionMessages.OTK_DRY_RUN_CONFLICT,
+                                bundleInfo.getName(),
+                                "Certificates",
+                                certificateWithConflict.toString()));
+                    }
+
                     // work around for lack of MODULAR_ASSERTION dry run item, which became available after SSG 7.0
                     final List<String> policyConflictAndAssertionMissing = new ArrayList<String>(policyWithNameConflict);
                     if (!assertionChecker.isAssertionAvailable(EXECUTE_SALESFORCE_OPERATION_XML)) {
@@ -369,6 +379,7 @@ public class SalesforceInstallerAdminImpl extends AsyncAdminMethodsImpl implemen
                     final Map<PolicyBundleDryRunResult.DryRunItem, List<String>> itemToConflicts = new HashMap<PolicyBundleDryRunResult.DryRunItem, List<String>>();
                     itemToConflicts.put(PolicyBundleDryRunResult.DryRunItem.SERVICES, urlPatternWithConflict);
                     itemToConflicts.put(PolicyBundleDryRunResult.DryRunItem.POLICIES, policyConflictAndAssertionMissing);
+                    itemToConflicts.put(PolicyBundleDryRunResult.DryRunItem.CERTIFICATES, certificateWithConflict);
                     itemToConflicts.put(PolicyBundleDryRunResult.DryRunItem.JDBC_CONNECTIONS, jdbcConnsThatDontExist);
 
                     bundleToConflicts.put(bundleId, itemToConflicts);

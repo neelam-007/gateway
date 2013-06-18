@@ -32,6 +32,7 @@ public class InstallerUtils {
     public static final String FOLDER_MGMT_NS = "http://ns.l7tech.com/2010/04/gateway-management/folders";
     public static final String POLICIES_MGMT_NS = "http://ns.l7tech.com/2010/04/gateway-management/policies";
     public static final String SERVICES_MGMT_NS = "http://ns.l7tech.com/2010/04/gateway-management/services";
+    public static final String CERTIFICATE_MGMT_NS = "http://ns.l7tech.com/2010/04/gateway-management/trustedCertificates";
     public static final String JDBC_MGMT_NS = "http://ns.l7tech.com/2010/04/gateway-management/jdbcConnections";
 
     // - PACKAGE

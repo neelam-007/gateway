@@ -85,6 +85,33 @@ public class GatewayManagementDocumentUtilities {
         return XpathUtil.findElements(policyEnumeration.getDocumentElement(), ".//l7:Name", getNamespaceMap());
     }
 
+    /**
+     * Retrieve serial number and name for each trusted certificates defined in a certificate enumeration document.
+     *
+     * @param certificateEnumeration: a Document object defines all certificates.
+     * @return a map in which each pair is (SerialNumber element, Name element).  The map could be empty, but not null.
+     */
+    @NotNull
+    public static Map<Element, Element> findCertificateSerialNumbersAndNamesFromEnumeration(final Document certificateEnumeration) {
+        Map<Element, Element> certificatesMap = new HashMap<>();
+        if (certificateEnumeration == null) return certificatesMap;
+
+        for (Element trustedCertElmt: XpathUtil.findElements(certificateEnumeration.getDocumentElement(), ".//l7:TrustedCertificate", getNamespaceMap())) {
+            List<Element> nameElmts = XpathUtil.findElements(trustedCertElmt, ".//l7:Name", getNamespaceMap());
+            List<Element> serialNumElmts = XpathUtil.findElements(trustedCertElmt, ".//l7:SerialNumber", getNamespaceMap());
+
+            if (nameElmts.size() != 1) {
+                throw new IllegalArgumentException("Certificate xml does not contain valid Name element in TrustedCertificate element.");
+            }
+            if (serialNumElmts.size() != 1) {
+                throw new IllegalArgumentException("Certificate xml does not contain valid SerialNumber element in TrustedCertificate element.");
+            }
+
+            certificatesMap.put(serialNumElmts.get(0), nameElmts.get(0));
+        }
+        return certificatesMap;
+    }
+
     public static String getEntityName(final Element elementWithName) {
         final Element nameEl = DomUtils.findFirstChildElementByName(elementWithName, MGMT_VERSION_NAMESPACE, "Name");
         if (nameEl == null) {
@@ -364,5 +391,4 @@ public class GatewayManagementDocumentUtilities {
 
         return foundElements.isEmpty() ? null : foundElements.get(0);
     }
-
 }

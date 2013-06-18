@@ -21,6 +21,8 @@ public class BundleConflictComponent extends JPanel {
     private JPanel policyConflictsPanel;
     private JPanel jdbcPanel;
     private JPanel modAssPanel;
+    private JPanel certificateConflictsPanel;
+    private JList certificateConflictList;
 
     public BundleConflictComponent(final String bundleId, final PolicyBundleDryRunResult dryRunResult) throws PolicyBundleDryRunResult.UnknownBundleIdException {
         final List<String> serviceConflicts = dryRunResult.getConflictsForItem(bundleId, PolicyBundleDryRunResult.DryRunItem.SERVICES);
@@ -28,11 +30,15 @@ public class BundleConflictComponent extends JPanel {
 
         final List<String> conflictPolicies = dryRunResult.getConflictsForItem(bundleId, PolicyBundleDryRunResult.DryRunItem.POLICIES);
         buildJList(policyConflictList, policyConflictsPanel, conflictPolicies);
+
+        final List<String> conflictCertificates = dryRunResult.getConflictsForItem(bundleId, PolicyBundleDryRunResult.DryRunItem.CERTIFICATES);
+        buildJList(certificateConflictList, certificateConflictsPanel, conflictCertificates);
+
         final List<String> missingJdbcConns = dryRunResult.getConflictsForItem(bundleId, PolicyBundleDryRunResult.DryRunItem.JDBC_CONNECTIONS);
         buildJList(missingJdbcConnList, jdbcPanel, missingJdbcConns);
+
         final List<String> missingModAsses = dryRunResult.getConflictsForItem(bundleId, PolicyBundleDryRunResult.DryRunItem.MODULAR_ASSERTION);
         buildJList(missingModAssList, modAssPanel, missingModAsses);
-
     }
 
     public JPanel getMainPanel() {

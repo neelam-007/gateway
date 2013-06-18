@@ -21,6 +21,10 @@ public class DryRunInstallPolicyBundleEvent extends PolicyBundleEvent {
         policyConflict.add(policyName);
     }
 
+    public void addCertificateNameWithConflict(String certificateName) {
+        certificateConflict.add(certificateName);
+    }
+
     public void addMissingJdbcConnection(String missingJdbcConn) {
         jdbcConnsThatDontExist.add(missingJdbcConn);
     }
@@ -33,6 +37,10 @@ public class DryRunInstallPolicyBundleEvent extends PolicyBundleEvent {
         return Collections.unmodifiableList(policyConflict);
     }
 
+    public List<String> getCertificateConflict() {
+        return Collections.unmodifiableList(certificateConflict);
+    }
+
     public List<String> getJdbcConnsThatDontExist() {
         return Collections.unmodifiableList(jdbcConnsThatDontExist);
     }
@@ -40,5 +48,6 @@ public class DryRunInstallPolicyBundleEvent extends PolicyBundleEvent {
     // - PRIVATE
     private List<String> serviceConflict = new ArrayList<String>();
     private List<String> policyConflict = new ArrayList<String>();
+    private List<String> certificateConflict = new ArrayList<String>();
     private List<String> jdbcConnsThatDontExist = new ArrayList<String>();
 }

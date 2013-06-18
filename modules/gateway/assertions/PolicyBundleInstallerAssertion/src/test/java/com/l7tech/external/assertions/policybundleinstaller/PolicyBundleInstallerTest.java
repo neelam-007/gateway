@@ -581,6 +581,12 @@ public class PolicyBundleInstallerTest {
         assertTrue(policyWithNameConflict.contains("GenerateOAuthToken"));
         assertTrue(policyWithNameConflict.contains("OAuth Client Token Store Context Variables"));
 
+        final List<String> certificateConflict = dryRunEvent.getCertificateConflict();
+        assertFalse(certificateConflict.isEmpty());
+        assertEquals(2, certificateConflict.size());
+        assertTrue(certificateConflict.contains("TestBundleCertificateInstallation1"));
+        assertTrue(certificateConflict.contains("TestBundleCertificateInstallation2"));
+
         final List<String> jdbcConnsThatDontExist = dryRunEvent.getJdbcConnsThatDontExist();
         assertFalse(jdbcConnsThatDontExist.isEmpty());
         assertEquals(1, jdbcConnsThatDontExist.size());
@@ -720,10 +726,10 @@ public class PolicyBundleInstallerTest {
 
     private Map<String, Document> getItemsToDocs(boolean hasPolicy) {
         final Map<String, Document> itemsToDocs = new HashMap<String, Document>();
-        //com.l7tech.external.assertions.policybundleinstaller.bundles.Bundle1
         final String baseName = "/com/l7tech/external/assertions/policybundleinstaller/bundles/Bundle1";
         itemsToDocs.put("Folder.xml", getDocumentFromResource(baseName + "/Folder.xml"));
         itemsToDocs.put("Service.xml", getDocumentFromResource(baseName + "/Service.xml"));
+        itemsToDocs.put("TrustedCertificate.xml", getDocumentFromResource(baseName + "/TrustedCertificate.xml"));
 
         if (hasPolicy) {
             itemsToDocs.put("Policy.xml", getDocumentFromResource(baseName + "/Policy.xml"));
@@ -766,8 +772,6 @@ public class PolicyBundleInstallerTest {
         try {
             System.out.println(XmlUtil.nodeToFormattedString(requestXml));
             final String format = MessageFormat.format(CANNED_CREATE_ID_RESPONSE_TEMPLATE, String.valueOf(nextOid++));
-//                    System.out.println(format);
-//                    System.out.println();
             final Document parse = XmlUtil.parse(format);
             return new Pair<AssertionStatus, Document>(
                     AssertionStatus.NONE,

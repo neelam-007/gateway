@@ -14,7 +14,7 @@ import java.util.List;
 public interface BundleResolver {
 
     public enum BundleItem{
-        FOLDER("Folder.xml"), POLICY("Policy.xml"), SERVICE("Service.xml");
+        FOLDER("Folder.xml"), POLICY("Policy.xml"), SERVICE("Service.xml"), CERTIFICATE("TrustedCertificate.xml");
 
         private BundleItem(String fileName) {
             this.fileName = fileName;

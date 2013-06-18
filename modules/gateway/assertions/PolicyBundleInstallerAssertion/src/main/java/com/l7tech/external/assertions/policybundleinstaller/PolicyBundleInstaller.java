@@ -32,7 +32,6 @@ import static com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities
 
 import static com.l7tech.server.policy.bundle.PolicyUtils.findJdbcReferences;
 import static com.l7tech.server.policy.bundle.PolicyUtils.updatePolicyIncludes;
-import static com.l7tech.util.DomUtils.findExactlyOneChildElementByName;
 import static com.l7tech.util.Functions.Nullary;
 
 public class PolicyBundleInstaller {
@@ -85,7 +84,7 @@ public class PolicyBundleInstaller {
                     conflictObject = getPrefixedUrl(DomUtils.getTextValue(urlPatternElmt));
                     matchingServices = findMatchingServiceByUrl(conflictObject);
                 } else {
-                    conflictObject = DomUtils.getTextValue(nameElmt);
+                    conflictObject = XmlUtil.getTextValue(nameElmt);
                     matchingServices = findMatchingServiceByNameWithoutResolutionUrl(conflictObject);
                 }
                 if (!matchingServices.isEmpty()) {
@@ -110,6 +109,23 @@ public class PolicyBundleInstaller {
                 }
             } catch (GatewayManagementDocumentUtilities.UnexpectedManagementResponse e) {
                 throw new BundleResolver.InvalidBundleException("Could not check for conflict for policy name  '" + policyName + "'", e);
+            }
+        }
+
+        checkInterrupted();
+
+        final Document certificateEnumDoc = context.getBundleResolver().getBundleItem(bundleInfo.getId(), CERTIFICATE, true);
+        final Map<Element, Element> certificateMap = GatewayManagementDocumentUtilities.findCertificateSerialNumbersAndNamesFromEnumeration(certificateEnumDoc);
+        for (Element certSerialNumElm : certificateMap.keySet()) {
+            checkInterrupted();
+            final String serialNumber = XmlUtil.getTextValue(certSerialNumElm);
+            try {
+                final List<Long> matchingPolicies = findMatchingCertificateBySerialNumber(serialNumber);
+                if (!matchingPolicies.isEmpty()) {
+                    dryRunEvent.addCertificateNameWithConflict(XmlUtil.getTextValue(certificateMap.get(certSerialNumElm)));
+                }
+            } catch (GatewayManagementDocumentUtilities.UnexpectedManagementResponse e) {
+                throw new BundleResolver.InvalidBundleException("Could not check for conflict for certificate serial number  '" + serialNumber + "'", e);
             }
         }
 
@@ -195,6 +211,14 @@ public class PolicyBundleInstaller {
             }
         }
 
+        // install trusted certificate
+        final Document certificateBundle = context.getBundleResolver().getBundleItem(context.getBundleInfo().getId(), CERTIFICATE, true);
+        if (certificateBundle == null) {
+            logger.info("No certificate to install for bundle " + context.getBundleInfo());
+        } else {
+            installTrustedCertificate(certificateBundle);
+        }
+
         logger.info("Finished installing bundle: " + context.getBundleInfo());
     }
 
@@ -209,6 +233,47 @@ public class PolicyBundleInstaller {
 
         public InstallationException(Throwable cause) {
             super(cause);
+        }
+    }
+
+    /**
+     * Install all trusted certificates defined by a given certificate enumeration document.
+     * Before installing a certificate, check if the certificate already exists.  If so, skip it, otherwise create it.
+     *
+     * @param trustedCertEnumeration: the Document object defines all trusted certificates.
+     * @throws UnexpectedManagementResponse
+     * @throws InterruptedException
+     * @throws AccessDeniedManagementResponse
+     */
+    public void installTrustedCertificate(final Document trustedCertEnumeration) throws UnexpectedManagementResponse, InterruptedException, AccessDeniedManagementResponse {
+        final List<Element> certificateElms = GatewayManagementDocumentUtilities.getEntityElements(trustedCertEnumeration.getDocumentElement(), "TrustedCertificate");
+        for (Element certificateElm : certificateElms) {
+            checkInterrupted();
+
+            final Element certSerialNumElm = XmlUtil.findFirstDescendantElement(certificateElm, MGMT_VERSION_NAMESPACE, "SerialNumber");
+            final Element certificateNameElm = XmlUtil.findFirstDescendantElement(certificateElm, MGMT_VERSION_NAMESPACE, "Name");
+
+            final String serialNumber = XmlUtil.getTextValue(certSerialNumElm);
+            final List<Long> matchingPolicies = findMatchingCertificateBySerialNumber(serialNumber);
+
+            // If a certificate already exists, skip certificate creation and check the next candidate
+            if (! matchingPolicies.isEmpty()) {
+                logger.info("Not installing a trusted certificate with name '" + DomUtils.getTextValue(certificateNameElm) + "', due to existing certificate with conflicting Thumbprint SHA1");
+                continue;
+            }
+
+            // If no conflict occurs, then create the certificate
+            final String certificateXmlTemplate = XmlUtil.nodeToStringQuiet(certificateElm);
+            final String createCertificateXml = MessageFormat.format(CREATE_ENTITY_XML, getUuid(), CERTIFICATE_MGMT_NS, certificateXmlTemplate);
+
+            final Pair<AssertionStatus, Document> pair = callManagementCheckInterrupted(createCertificateXml);
+
+            final Long createdId = GatewayManagementDocumentUtilities.getCreatedId(pair.right);
+            if (createdId == null) {
+                final StringBuilder failureDetail = new StringBuilder("Could not create the certificate from the bundle: ")
+                    .append(GatewayManagementDocumentUtilities.getErrorDetails(pair.right));
+                throw new GatewayManagementDocumentUtilities.UnexpectedManagementResponse(failureDetail.toString());
+            }
         }
     }
 
@@ -655,7 +720,7 @@ public class PolicyBundleInstaller {
                 final List<Element> jdbcReferencesElms = findJdbcReferences(policyDocumentFromResource.getDocumentElement());
                 for (Element jdbcRefElm : jdbcReferencesElms) {
                     try {
-                        final Element connNameElm = findExactlyOneChildElementByName(jdbcRefElm, BundleUtils.L7_NS_POLICY, "ConnectionName");
+                        final Element connNameElm = XmlUtil.findExactlyOneChildElementByName(jdbcRefElm, BundleUtils.L7_NS_POLICY, "ConnectionName");
                         final String policyConnName = connNameElm.getAttribute("stringValue").trim();
                         if (mappedJdbcReferences.containsKey(policyConnName)) {
                             connNameElm.setAttribute("stringValue", mappedJdbcReferences.get(policyConnName));
@@ -750,6 +815,15 @@ public class PolicyBundleInstaller {
                 POLICIES_MGMT_NS, 10, "/l7:Policy/l7:PolicyDetail/l7:Name[text()='" + policyName + "']");
 
         final Pair<AssertionStatus, Document> documentPair = callManagementCheckInterrupted(serviceFilter);
+        return GatewayManagementDocumentUtilities.getSelectorId(documentPair.right, true);
+    }
+
+    @NotNull
+    private List<Long> findMatchingCertificateBySerialNumber(String certificateSerialNumber) throws InterruptedException, UnexpectedManagementResponse, AccessDeniedManagementResponse {
+        final String certificateFilter = MessageFormat.format(GATEWAY_MGMT_ENUMERATE_FILTER, getUuid(),
+            CERTIFICATE_MGMT_NS, 10, "/l7:TrustedCertificate/l7:CertificateData/l7:SerialNumber[text()='" + certificateSerialNumber + "']");
+
+        final Pair<AssertionStatus, Document> documentPair = callManagementCheckInterrupted(certificateFilter);
         return GatewayManagementDocumentUtilities.getSelectorId(documentPair.right, true);
     }
 
