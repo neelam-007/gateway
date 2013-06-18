@@ -403,6 +403,8 @@ public class MqNativeUtils {
      *      2047: MQRC_PERSISTENCE_ERROR
      *      2049: MQRC_PRIORITY_EXCEEDS_MAXIMUM
      *      2050: MQRC_PRIORITY_ERROR
+     *      2442: MQRC_PROPERTY_NAME_ERROR
+     *      2026: MQRC_MD_ERROR
      *      2251: MQRC_OFFSET_ERROR
      *
      *      http://publib.boulder.ibm.com/infocenter/wmqv7/v7r1/topic/com.ibm.mq.doc/fm12030_.htm
@@ -423,6 +425,8 @@ public class MqNativeUtils {
                 || reasonCode == MQRC_PERSISTENCE_ERROR
                 || reasonCode == MQRC_PRIORITY_EXCEEDS_MAXIMUM
                 || reasonCode == MQRC_PRIORITY_ERROR
+                || reasonCode == MQRC_PROPERTY_NAME_ERROR
+                || reasonCode == MQRC_MD_ERROR
                 || reasonCode == MQRC_OFFSET_ERROR) {
             return ExceptionUtils.getDebugException(e);
         }
