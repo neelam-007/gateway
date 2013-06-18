@@ -45,8 +45,8 @@ public class SalesforceInstallerAction extends SecureAction {
         DialogDisplayer.display(dlg);
     }
 
-//    @Override
-//    protected String iconResource() {
-//        return "com/l7tech/external/assertions/salesforce/salesforce-16x16.png";
-//    }
+    @Override
+    protected String iconResource() {
+        return "com/l7tech/console/resources/salesforce_16.png";
+    }
 }
