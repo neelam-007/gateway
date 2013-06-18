@@ -7,7 +7,7 @@ modules/gateway/api/src/main/java/com/l7tech/policy/assertion/ext/cei/CustomExte
 modules/gateway/api/src/main/java/com/l7tech/policy/assertion/ext/message/CustomContentHeader.java,47MxzZQqHeNhvImk3z4tgvCJZBc=
 modules/gateway/api/src/main/java/com/l7tech/policy/assertion/ext/ServiceInvocation.java,zWGJSATkRVOFSEu45EfCycrQiHE=
 modules/gateway/api/src/main/java/com/l7tech/policy/assertion/ext/CustomAuditor.java,pCy8km26X8xPvjMZa6YUsCNE9HU=
-modules/gateway/api/src/main/java/com/l7tech/policy/assertion/ext/cei/CustomExtensionInterfaceBinding.java,bpkj8femkJxJ2EcGTE1vWfpKyzw=
+modules/gateway/api/src/main/java/com/l7tech/policy/assertion/ext/cei/CustomExtensionInterfaceBinding.java,UsKmLaolDPxVF2/CMjHqpro6PnA=
 modules/gateway/api/src/main/java/com/l7tech/policy/assertion/ext/CustomAssertionStatus.java,OsJ2IalNMRY9v9Th4nu45HXnbkM=
 modules/gateway/api/src/main/java/com/l7tech/policy/assertion/ext/commonui/CustomSecurePasswordPanel.java,E7wAo7hBqr2pSYBx33ljMgKDZ5w=
 modules/gateway/api/src/main/java/com/l7tech/policy/variable/VariableNameSyntaxException.java,DWyGnpbOaW3xoQpTedHzWbWdg24=

@@ -1236,6 +1236,7 @@
     <bean id="customAssertionRegistrar" class="com.l7tech.server.policy.custom.CustomAssertionsRegistrarImpl">
         <constructor-arg ref="assertionRegistry"/>
         <constructor-arg ref="extensionInterfaceManager"/>
+        <constructor-arg ref="securePasswordManager"/>
         <property name="serverConfig" ref="serverConfig"/>
     </bean>
     <!-- jms connection manager -->

@@ -700,10 +700,11 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
             // plug in the message parts in here
             context.put("messageParts", extractParts(pec.getResponse()));
             //add the ServiceFinder
-            context.put("serviceFinder", new ServiceFinderImpl(
-                    new CertificateFinderImpl((TrustedCertManager) applicationContext.getBean("trustedCertManager")),
-                    new VariableServicesImpl(getAudit()),
-                    new SecurePasswordServicesImpl((SecurePasswordManager) applicationContext.getBean("securePasswordManager"))));
+            ServiceFinderImpl serviceFinder = new ServiceFinderImpl();
+            serviceFinder.setCertificateFinderImpl(new CertificateFinderImpl((TrustedCertManager) applicationContext.getBean("trustedCertManager")));
+            serviceFinder.setVariableServicesImpl(new VariableServicesImpl(getAudit()));
+            serviceFinder.setSecurePasswordServicesImpl(new SecurePasswordServicesImpl((SecurePasswordManager) applicationContext.getBean("securePasswordManager")));
+            context.put("serviceFinder", serviceFinder);
 
             securityContext = new SecurityContext() {
                 @Override
@@ -816,10 +817,11 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
             // plug in the message parts in here
             context.put("messageParts", extractParts(pec.getRequest()));
             //add ServiceFinder
-            context.put("serviceFinder", new ServiceFinderImpl(
-                new CertificateFinderImpl((TrustedCertManager) applicationContext.getBean("trustedCertManager")),
-                new VariableServicesImpl(getAudit()),
-                new SecurePasswordServicesImpl((SecurePasswordManager) applicationContext.getBean("securePasswordManager"))));
+            ServiceFinderImpl serviceFinder = new ServiceFinderImpl();
+            serviceFinder.setCertificateFinderImpl(new CertificateFinderImpl((TrustedCertManager) applicationContext.getBean("trustedCertManager")));
+            serviceFinder.setVariableServicesImpl(new VariableServicesImpl(getAudit()));
+            serviceFinder.setSecurePasswordServicesImpl(new SecurePasswordServicesImpl((SecurePasswordManager) applicationContext.getBean("securePasswordManager")));
+            context.put("serviceFinder", serviceFinder);
 
             securityContext = new SecurityContext() {
                 @Override

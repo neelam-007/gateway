@@ -1,5 +1,7 @@
 package com.l7tech.policy.assertion.ext.cei;
 
+import com.l7tech.policy.assertion.ext.ServiceFinder;
+
 /**
  * Describes an available implementation of an custom extension interface.  These are interfaces that the custom assertion can register
  * on the Gateway, and the corresponding Policy Manager code can invoke server side methods of these interfaces via the Console Context.
@@ -11,8 +13,28 @@ package com.l7tech.policy.assertion.ext.cei;
  * for now allow only passing and returning of primitives and String data types (arrays are okay).
  */
 public class CustomExtensionInterfaceBinding<T> {
+    private static ServiceFinder serviceFinder;
+
     private final Class<T> interfaceClass;
     private final T implementationObject;
+
+    /**
+     * Gets the service finder.
+     *
+     * @return the service finder
+     */
+    public static ServiceFinder getServiceFinder() {
+        return serviceFinder;
+    }
+
+    /**
+     * Sets the service finder.
+     *
+     * @param serviceFinder the service finder
+     */
+    public static void setServiceFinder(ServiceFinder serviceFinder) {
+        CustomExtensionInterfaceBinding.serviceFinder = serviceFinder;
+    }
 
     /**
      * Create a description of an available implementation of an extension interface.

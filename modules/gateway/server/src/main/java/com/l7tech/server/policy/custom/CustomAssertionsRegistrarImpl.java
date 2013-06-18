@@ -4,14 +4,12 @@ import com.l7tech.common.io.NonCloseableOutputStream;
 import com.l7tech.gateway.common.custom.CustomAssertionDescriptor;
 import com.l7tech.gateway.common.custom.CustomAssertionsRegistrar;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
+import com.l7tech.policy.assertion.ext.*;
 import com.l7tech.policy.assertion.ext.cei.CustomExtensionInterfaceBinding;
-import com.l7tech.policy.assertion.ext.Category;
-import com.l7tech.policy.assertion.ext.CustomAssertion;
-import com.l7tech.policy.assertion.ext.CustomAssertionUI;
 import com.l7tech.policy.wsp.ClassLoaderUtil;
 import com.l7tech.server.admin.ExtensionInterfaceManager;
-import com.l7tech.server.policy.AssertionModule;
-import com.l7tech.server.policy.ServerAssertionRegistry;
+import com.l7tech.server.policy.*;
+import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.server.util.ModuleClassLoader;
 import com.l7tech.util.Config;
 import com.l7tech.util.PoolByteArrayOutputStream;
@@ -43,10 +41,11 @@ public class CustomAssertionsRegistrarImpl extends ApplicationObjectSupport impl
 
     //- PUBLIC
 
-    public CustomAssertionsRegistrarImpl(ServerAssertionRegistry assertionRegistry, ExtensionInterfaceManager extensionInterfaceManager) {
+    public CustomAssertionsRegistrarImpl(ServerAssertionRegistry assertionRegistry, ExtensionInterfaceManager extensionInterfaceManager, SecurePasswordManager securePasswordManager) {
         if (assertionRegistry == null || extensionInterfaceManager == null) throw new IllegalArgumentException("assertionRegistry and extensionInterfaceManager are required");
         this.assertionRegistry = assertionRegistry;
         this.extensionInterfaceManager = extensionInterfaceManager;
+        this.securePasswordManager = securePasswordManager;
     }
 
     @Override
@@ -283,6 +282,7 @@ public class CustomAssertionsRegistrarImpl extends ApplicationObjectSupport impl
     private ClassLoader customAssertionClassloader;
     private final ServerAssertionRegistry assertionRegistry;
     private final ExtensionInterfaceManager extensionInterfaceManager;
+    private final SecurePasswordManager securePasswordManager;
 
     private Collection asCustomAssertionHolders(final Set customAssertionDescriptors) {
         Collection result = new ArrayList();
@@ -524,6 +524,17 @@ public class CustomAssertionsRegistrarImpl extends ApplicationObjectSupport impl
     }
 
     protected final void registerCustomExtensionInterface(String extensionInterfaceClassName, ClassLoader classLoader) throws ClassNotFoundException, IllegalAccessException, InstantiationException {
+        if (CustomExtensionInterfaceBinding.getServiceFinder() == null) {
+            // Set ServiceFinder in CustomExtensionInterfaceBinding.
+            // The service finder is a static variable. All SSM will use the same instance of service
+            // finder in the SSG. Ensure that the services added to the service finder is thread-safe.
+            // SecurePasswordServicesImpl only does thread-safe read operations.
+            //
+            ServiceFinderImpl serviceFinder = new ServiceFinderImpl();
+            serviceFinder.setSecurePasswordServicesImpl(new SecurePasswordServicesImpl(securePasswordManager));
+            CustomExtensionInterfaceBinding.setServiceFinder(serviceFinder);
+        }
+
         if (!StringUtils.isEmpty(extensionInterfaceClassName)) {
             CustomExtensionInterfaceBinding ceiBinding = (CustomExtensionInterfaceBinding) Class.forName(extensionInterfaceClassName, true, classLoader).newInstance();
             extensionInterfaceManager.registerInterface(ceiBinding.getInterfaceClass(), null, ceiBinding.getImplementationObject());

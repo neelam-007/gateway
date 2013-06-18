@@ -3,6 +3,7 @@ package com.l7tech.server.admin;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.policy.ServerAssertionRegistry;
 import com.l7tech.server.policy.custom.CustomAssertionsRegistrarImpl;
+import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.util.Config;
 import com.l7tech.util.FileUtils;
 import com.l7tech.util.SyspropUtil;
@@ -74,28 +75,31 @@ public class CustomAssertionsThirdPartyJarAppletTest {
     private ExtensionInterfaceManager extensionInterfaceManagerMock;
 
     @Mock
-    private FilterConfig filterConfig;
+    private SecurePasswordManager securePasswordManagerMock;
 
     @Mock
-    private HttpServletRequest hreq;
+    private FilterConfig filterConfigMock;
 
     @Mock
-    private HttpServletResponse hresp;
+    private HttpServletRequest hreqMock;
 
     @Mock
-    private ServletContext servletContext;
+    private HttpServletResponse hrespMock;
 
     @Mock
-    private WebApplicationContext webApplicationContext;
+    private ServletContext servletContextMock;
 
     @Mock
-    private ServletOutputStream servletOutputStream;
+    private WebApplicationContext webApplicationContextMock;
 
     @Mock
-    private Auditor auditor;
+    private ServletOutputStream servletOutputStreamMock;
 
     @Mock
-    private Object dummyBean;
+    private Auditor auditorMock;
+
+    @Mock
+    private Object dummyBeanMock;
 
     private CustomAssertionsRegistrarImpl customAssertionsRegistrarImpl;
 
@@ -132,18 +136,18 @@ public class CustomAssertionsThirdPartyJarAppletTest {
         when(configMock.getProperty("custom.assertions.modules")).thenReturn(modulesDirPath);
         when(configMock.getProperty("custom.assertions.temp")).thenReturn(modulesTmpDirPath);
 
-        when(servletContext.getAttribute(anyString())).thenReturn(webApplicationContext);
-        when(filterConfig.getServletContext()).thenReturn(servletContext);
-        when(hreq.getContextPath()).thenReturn("");
-        when(hresp.getOutputStream()).thenReturn(servletOutputStream);
+        when(servletContextMock.getAttribute(anyString())).thenReturn(webApplicationContextMock);
+        when(filterConfigMock.getServletContext()).thenReturn(servletContextMock);
+        when(hreqMock.getContextPath()).thenReturn("");
+        when(hrespMock.getOutputStream()).thenReturn(servletOutputStreamMock);
 
         customAssertionsRegistrarImpl =
-            new CustomAssertionsRegistrarImpl(serverAssertionRegistryMock, extensionInterfaceManagerMock);
+            new CustomAssertionsRegistrarImpl(serverAssertionRegistryMock, extensionInterfaceManagerMock, securePasswordManagerMock);
         customAssertionsRegistrarImpl.setServerConfig(configMock);
         // Load Custom Assertions
         customAssertionsRegistrarImpl.afterPropertiesSet();
 
-        when(webApplicationContext.getBean(Matchers.anyString(), Matchers.<Class<?>>any())).thenAnswer(new Answer<Object>() {
+        when(webApplicationContextMock.getBean(Matchers.anyString(), Matchers.<Class<?>>any())).thenAnswer(new Answer<Object>() {
             @Override
             public Object answer(InvocationOnMock invocationOnMock) throws Throwable {
                 if (invocationOnMock.getArguments()[0].equals("customAssertionRegistrar")) {
@@ -156,62 +160,62 @@ public class CustomAssertionsThirdPartyJarAppletTest {
         });
 
         managerAppletFilter = new ManagerAppletFilter();
-        managerAppletFilter.init(filterConfig);
+        managerAppletFilter.init(filterConfigMock);
     }
 
     @Test
     public void testGetResourceInCustomAssertionJarInWhiteList() throws IOException {
-        when(hreq.getRequestURI()).thenReturn("/ssg/webadmin/applet/test.icon.png");
-        boolean handled = managerAppletFilter.handleCustomAssertionResourceRequest(hreq, hresp);
+        when(hreqMock.getRequestURI()).thenReturn("/ssg/webadmin/applet/test.icon.png");
+        boolean handled = managerAppletFilter.handleCustomAssertionResourceRequest(hreqMock, hrespMock);
         assertTrue(handled);
     }
 
     @Test
     public void testGetResourceInCustomAssertionJarNotInWhiteList() throws IOException {
-        when(hreq.getRequestURI()).thenReturn("/ssg/webadmin/applet/test.icon.NotInWhiteList.png");
-        boolean handled = managerAppletFilter.handleCustomAssertionResourceRequest(hreq, hresp);
+        when(hreqMock.getRequestURI()).thenReturn("/ssg/webadmin/applet/test.icon.NotInWhiteList.png");
+        boolean handled = managerAppletFilter.handleCustomAssertionResourceRequest(hreqMock, hrespMock);
         assertFalse(handled);
     }
 
     @Test
     public void testGetResourceInThirdPartyJarInWhiteList() throws IOException {
-        when(hreq.getRequestURI()).thenReturn("/ssg/webadmin/applet/salesforce-partner-v26.wsdl");
-        boolean handled = managerAppletFilter.handleCustomAssertionResourceRequest(hreq, hresp);
+        when(hreqMock.getRequestURI()).thenReturn("/ssg/webadmin/applet/salesforce-partner-v26.wsdl");
+        boolean handled = managerAppletFilter.handleCustomAssertionResourceRequest(hreqMock, hrespMock);
         assertTrue(handled);
     }
 
     @Test
     public void testGetResourceInThirdPartyJarNotInWhiteList() throws IOException {
-        when(hreq.getRequestURI()).thenReturn("/ssg/webadmin/applet/salesforce-partner-v26-NotInWhiteList.wsdl");
-        boolean handled = managerAppletFilter.handleCustomAssertionResourceRequest(hreq, hresp);
+        when(hreqMock.getRequestURI()).thenReturn("/ssg/webadmin/applet/salesforce-partner-v26-NotInWhiteList.wsdl");
+        boolean handled = managerAppletFilter.handleCustomAssertionResourceRequest(hreqMock, hrespMock);
         assertFalse(handled);
     }
 
     @Test
     public void testGetResourceNotExist() throws IOException {
-        when(hreq.getRequestURI()).thenReturn("/ssg/webadmin/applet/Resource_File_Does_Not_Exist.png");
-        boolean handled = managerAppletFilter.handleCustomAssertionResourceRequest(hreq, hresp);
+        when(hreqMock.getRequestURI()).thenReturn("/ssg/webadmin/applet/Resource_File_Does_Not_Exist.png");
+        boolean handled = managerAppletFilter.handleCustomAssertionResourceRequest(hreqMock, hrespMock);
         assertFalse(handled);
     }
 
     @Test
     public void testGetClassInThirdPartyJarInWhiteList() throws IOException {
-        when(hreq.getRequestURI()).thenReturn("/ssg/webadmin/applet/com/salesforce/jaxws/SforceService.class");
-        boolean handled = managerAppletFilter.handleCustomAssertionClassRequest(hreq, hresp, auditor);
+        when(hreqMock.getRequestURI()).thenReturn("/ssg/webadmin/applet/com/salesforce/jaxws/SforceService.class");
+        boolean handled = managerAppletFilter.handleCustomAssertionClassRequest(hreqMock, hrespMock, auditorMock);
         assertTrue(handled);
     }
 
     @Test
     public void testGetClassInThirdPartyJarNotInWhiteList() throws IOException {
-        when(hreq.getRequestURI()).thenReturn("/ssg/webadmin/applet/com/l7tech/custom/salesforce/assertion/partner/SforceService.class");
-        boolean handled = managerAppletFilter.handleCustomAssertionClassRequest(hreq, hresp, auditor);
+        when(hreqMock.getRequestURI()).thenReturn("/ssg/webadmin/applet/com/l7tech/custom/salesforce/assertion/partner/SforceService.class");
+        boolean handled = managerAppletFilter.handleCustomAssertionClassRequest(hreqMock, hrespMock, auditorMock);
         assertFalse(handled);
     }
 
     @Test
     public void testGetClassInThirdPartyJarNotExist() throws IOException {
-        when(hreq.getRequestURI()).thenReturn("/ssg/webadmin/applet/com/salesforce/jaxws/Class_File_Does_Not_Exist.class");
-        boolean handled = managerAppletFilter.handleCustomAssertionClassRequest(hreq, hresp, auditor);
+        when(hreqMock.getRequestURI()).thenReturn("/ssg/webadmin/applet/com/salesforce/jaxws/Class_File_Does_Not_Exist.class");
+        boolean handled = managerAppletFilter.handleCustomAssertionClassRequest(hreqMock, hrespMock, auditorMock);
         assertFalse(handled);
     }
 }

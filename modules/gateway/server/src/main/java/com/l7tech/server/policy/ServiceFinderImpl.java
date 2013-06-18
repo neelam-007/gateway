@@ -8,15 +8,22 @@ import com.l7tech.policy.assertion.ext.VariableServices;
 
 
 public class ServiceFinderImpl implements ServiceFinder {
-    private final CertificateFinderImpl certificateFinder;
-    private final VariableServicesImpl variableServices;
-    private final SecurePasswordServicesImpl securePasswordServices;
+    private CertificateFinderImpl certificateFinder;
+    private VariableServicesImpl variableServices;
+    private SecurePasswordServicesImpl securePasswordServices;
 
-    public ServiceFinderImpl(CertificateFinderImpl certificateFinder,
-                             VariableServicesImpl variableServices,
-                             SecurePasswordServicesImpl securePasswordServices) {
+    public ServiceFinderImpl() {
+    }
+
+    public void setCertificateFinderImpl(CertificateFinderImpl certificateFinder) {
         this.certificateFinder = certificateFinder;
+    }
+
+    public void setVariableServicesImpl(VariableServicesImpl variableServices) {
         this.variableServices = variableServices;
+    }
+
+    public void setSecurePasswordServicesImpl(SecurePasswordServicesImpl securePasswordServices) {
         this.securePasswordServices = securePasswordServices;
     }
 

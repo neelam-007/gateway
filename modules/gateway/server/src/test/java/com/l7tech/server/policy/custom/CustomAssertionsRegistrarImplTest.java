@@ -3,6 +3,7 @@ package com.l7tech.server.policy.custom;
 import com.l7tech.policy.assertion.ext.cei.CustomExtensionInterfaceBinding;
 import com.l7tech.server.admin.ExtensionInterfaceManager;
 import com.l7tech.server.policy.ServerAssertionRegistry;
+import com.l7tech.server.security.password.SecurePasswordManager;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -14,12 +15,15 @@ import static junit.framework.Assert.assertTrue;
 @RunWith(MockitoJUnitRunner.class)
 public class CustomAssertionsRegistrarImplTest {
     @Mock @SuppressWarnings("unused")
-    private ServerAssertionRegistry serverAssertionRegistry;
+    private ServerAssertionRegistry serverAssertionRegistryMock;
+
+    @Mock
+    private SecurePasswordManager securePasswordManagerMock;
 
     @Test
     public void registerCustomExtensionInterface() throws Exception {
         ExtensionInterfaceManager extensionInterfaceManager = new ExtensionInterfaceManager(null, null, null);
-        CustomAssertionsRegistrarImpl customAssertionsRegistrarImpl = new CustomAssertionsRegistrarImpl(serverAssertionRegistry, extensionInterfaceManager);
+        CustomAssertionsRegistrarImpl customAssertionsRegistrarImpl = new CustomAssertionsRegistrarImpl(serverAssertionRegistryMock, extensionInterfaceManager, securePasswordManagerMock);
 
         // register MyCustomExtensionInterfaceBinding which holds an implementation of MyInterface
         customAssertionsRegistrarImpl.registerCustomExtensionInterface("com.l7tech.server.policy.custom.CustomAssertionsRegistrarImplTest$MyCustomExtensionInterfaceBinding", ClassLoader.getSystemClassLoader());
