@@ -7,14 +7,8 @@ package com.l7tech.gateway.common;
 
 import com.l7tech.gateway.common.security.rbac.*;
 import com.l7tech.objectmodel.EntityType;
-import org.jetbrains.annotations.Nullable;
 
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * The <code>Authorizer</code> abstract class provide authorization methods for
@@ -25,7 +19,6 @@ import java.util.logging.Logger;
  * @version Sep 2, 2004
  */
 public abstract class Authorizer {
-    private static final Logger logger = Logger.getLogger(Authorizer.class.getName());
 
     //- PUBLIC
 
@@ -92,23 +85,8 @@ public abstract class Authorizer {
                     }
                 }
             } else if (attempted instanceof AttemptedCreate) {
-                // give the benefit of the doubt unless you are sure they won't be able to create the entity
-                boolean canCreate = true;
-                if (attempted.getType() != EntityType.ANY) {
-                    try {
-                        final Collection<EntityType> zonePermittedTypes = getZonePermittedTypes(OperationType.CREATE);
-                        if (zonePermittedTypes != null) {
-                            // if user permissions only have security zone predicates, we can accurately determine if
-                            // they can create this entity type by looking at the permitted entity types on the zone(s)
-                            canCreate = zonePermittedTypes.contains(attempted.getType());
-                        } else {
-                            // no zone predicates to check against
-                        }
-                    } catch (final ComplexScopeException e) {
-                        logger.log(Level.FINE, "Permission scope is too complex to determine authorization for " + attempted);
-                    }
-                }
-                return canCreate;
+                // CREATE doesn't support any scope yet, only a type
+                return true;
             } else if (attempted instanceof AttemptedReadAny) {
                 // EntityType and Operation already match
                 return true;
@@ -154,49 +132,5 @@ public abstract class Authorizer {
         }
 
         return operation;
-    }
-
-    /**
-     * Scope is too complex to determine authorization.
-     */
-    protected class ComplexScopeException extends Exception {
-        private ComplexScopeException(final String message) {
-            super(message);
-        }
-    }
-
-    /**
-     * Get a collection of EntityType that the user is allowed to operate on due to the presence of one/more SecurityZonePredicate on their permissions.
-     *
-     * @param operation the relevant OperationType.
-     * @return a collection of EntityType that the user is allowed to operate on due to the presence of one/more
-     *         SecurityZonePredicate on their permissions or null if the user does not have any SecurityZonePredicate on their permissions.
-     * @throws ComplexScopeException if the user permissions contains predicates other than SecurityZonePredicate
-     *                               which require more information to determine if the user has entity type permission for the operation.
-     */
-    @Nullable
-    private Collection<EntityType> getZonePermittedTypes(final OperationType operation) throws ComplexScopeException {
-        Set<EntityType> permittedTypes = null;
-        for (final Permission permission : getUserPermissions()) {
-            if (permission.getOperation() == operation) {
-                for (final ScopePredicate predicate : permission.getScope()) {
-                    if (predicate instanceof SecurityZonePredicate) {
-                        if (permittedTypes == null) {
-                            permittedTypes = new HashSet<>();
-                        }
-                        final SecurityZonePredicate zonePredicate = (SecurityZonePredicate) predicate;
-                        final Set<EntityType> typesOnZone = zonePredicate.getRequiredZone().getPermittedEntityTypes();
-                        if (typesOnZone.contains(EntityType.ANY)) {
-                            permittedTypes.addAll(Arrays.asList(EntityType.values()));
-                        } else {
-                            permittedTypes.addAll(typesOnZone);
-                        }
-                    } else {
-                        throw new ComplexScopeException("Permissions contain predicates other than SecurityZonePredicates.");
-                    }
-                }
-            }
-        }
-        return permittedTypes;
     }
 }
