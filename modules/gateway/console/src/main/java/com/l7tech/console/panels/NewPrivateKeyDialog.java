@@ -109,7 +109,7 @@ public class  NewPrivateKeyDialog extends JDialog {
     private JTextField expiryDaysField;
     private JCheckBox caCheckBox;
     private JComboBox cbSigHash;
-    private SecurityZoneWidget securityZoneWidget;
+    private SecurityZoneWidget zoneControl;
 
     private String defaultDn;
     private String lastDefaultDn;
@@ -300,7 +300,7 @@ public class  NewPrivateKeyDialog extends JDialog {
         cbSigHash.setModel(new DefaultComboBoxModel(hashes.toArray()));
         cbSigHash.setSelectedItem(dflth);
 
-        securityZoneWidget.configure(EntityType.SSG_KEY_ENTRY, OperationType.CREATE, null);
+        zoneControl.configure(EntityType.SSG_KEY_ENTRY, OperationType.CREATE, null);
     }
 
     /** @return the default DN for the current alias, or null if there isn't one. */
@@ -322,7 +322,7 @@ public class  NewPrivateKeyDialog extends JDialog {
         final int expiryDays = Integer.parseInt(expiryDaysField.getText());
         final boolean makeCaCert = caCheckBox.isSelected();
         final KeyType keyType = getSelectedKeyType();
-        final SsgKeyMetadata metadata = securityZoneWidget.getSelectedZone() == null ? null: new SsgKeyMetadata(keystoreInfo.getOid(), alias, securityZoneWidget.getSelectedZone());
+        final SsgKeyMetadata metadata = zoneControl.getSelectedZone() == null ? null: new SsgKeyMetadata(keystoreInfo.getOid(), alias, zoneControl.getSelectedZone());
         //noinspection UnusedAssignment
         Throwable ouch = null;
         try {

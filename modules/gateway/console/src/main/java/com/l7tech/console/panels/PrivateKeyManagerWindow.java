@@ -439,6 +439,7 @@ public class PrivateKeyManagerWindow extends JDialog {
 
         final ImportPrivateKeyDialog importDialog = new ImportPrivateKeyDialog(TopComponents.getInstance().getTopParent());
         importDialog.pack();
+        Utilities.centerOnScreen(importDialog);
         DialogDisplayer.display(importDialog, new Runnable() {
             @Override
             public void run() {
