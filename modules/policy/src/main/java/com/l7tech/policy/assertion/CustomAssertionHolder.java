@@ -10,6 +10,8 @@ import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.ext.CustomAssertion;
 import static com.l7tech.policy.assertion.AssertionMetadata.*;
 
+import com.l7tech.policy.assertion.ext.targetable.CustomMessageTargetable;
+import com.l7tech.policy.assertion.ext.targetable.CustomMessageTargetableSupport;
 import com.l7tech.policy.assertion.ext.validator.CustomPolicyValidator;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.common.io.ClassLoaderObjectInputStream;
@@ -37,7 +39,7 @@ import java.util.logging.Logger;
  * @version 1.0
  * @see CustomAssertion
  */
-public class CustomAssertionHolder extends Assertion implements UsesVariables, SetsVariables {
+public class CustomAssertionHolder extends Assertion implements UsesVariables, SetsVariables, MessageTargetable {
     /**
      * Serialization id, maintain to indicate serialization compatibility
      * with a previous versions of the  class.
@@ -45,7 +47,12 @@ public class CustomAssertionHolder extends Assertion implements UsesVariables, S
     private static final long serialVersionUID = 7410439507802944818L;
 
     private static final Logger logger = Logger.getLogger(CustomAssertionHolder.class.getName());
-    static final String CUSTOM_ASSERTION = "Custom Assertion";
+    protected static final String CUSTOM_ASSERTION = "Custom Assertion";
+
+    private CustomAssertion customAssertion;
+    private Category category;
+    private String descriptionText;
+    private String[] nodeNames = new String[2]; // to hold Palette Node Name and Policy Node Name
 
     public CustomAssertionHolder() {
         this.parent = null;
@@ -77,7 +84,7 @@ public class CustomAssertionHolder extends Assertion implements UsesVariables, S
     /**
      * Set the custome assertion bean
      *
-     * @param ca the new custome assertino bean
+     * @param ca the new custom assertion bean
      */
     public void setCustomAssertion(CustomAssertion ca) {
         this.customAssertion = ca;
@@ -106,11 +113,6 @@ public class CustomAssertionHolder extends Assertion implements UsesVariables, S
     public void setNodeNames(String[] nodeNames) {
         this.nodeNames = nodeNames;
     }
-
-    private CustomAssertion customAssertion;
-    private Category category;
-    private String descriptionText;
-    private String[] nodeNames = new String[2]; // to hold Palette Node Name and Policy Node Name
 
     @Override
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
@@ -153,9 +155,7 @@ public class CustomAssertionHolder extends Assertion implements UsesVariables, S
                         new ByteArrayInputStream(baos.toByteArray()),
                         this.customAssertion.getClass().getClassLoader());
                 clone.customAssertion  = (CustomAssertion) in.readObject();
-            } catch (IOException e) {
-                logger.log( Level.FINE, "Error serializing assertion.", e);
-            } catch (ClassNotFoundException e) {
+            } catch (IOException | ClassNotFoundException e) {
                 logger.log( Level.FINE, "Error serializing assertion.", e);
             } catch (SecurityException se) {
                 logger.log( Level.FINE, "Permission denied when serializing assertion.");
@@ -205,6 +205,98 @@ public class CustomAssertionHolder extends Assertion implements UsesVariables, S
         }
 
         return meta;
+    }
+    /**
+     * This is duplicate of com.l7tech.gateway.common.custom.CustomToMessageTargetableConverter#convertToTargetMessageType.
+     * <p/>
+     * !!NOTE!!
+     * <p/>
+     * CustomToMessageTargetableConverter is used in both <i>layer7-gateway-console</i> and <i>layer7-gateway-server</i> modules.
+     * Since CustomAssertionHolder is inside <i>layer7-policy</i> module, the only module common to all 3 is <i>layer7-policy-exporter</i>.
+     * However, <i>layer7-policy-exporter</i> doesn't look like a right place for CustomToMessageTargetableConverter class.
+     *
+     * For POC purpose, we'll going to keep duplicate functions and change them afterwards.
+     */
+    private TargetMessageType convertToTargetMessageType(final String messageVariableName) {
+        if (messageVariableName == null) {
+            return TargetMessageType.OTHER;
+        } else if (messageVariableName.compareToIgnoreCase(CustomMessageTargetableSupport.TARGET_REQUEST) == 0) {
+            return TargetMessageType.REQUEST;
+        } else if (messageVariableName.compareToIgnoreCase(CustomMessageTargetableSupport.TARGET_RESPONSE) == 0) {
+            return TargetMessageType.RESPONSE;
+        }
+        return TargetMessageType.OTHER;
+    }
+
+    /**
+     * This is duplicate of com.l7tech.gateway.common.custom.CustomToMessageTargetableConverter#convertToMessageVariableName.
+     *
+     * !!NOTE!!
+     * CustomToMessageTargetableConverter is used in both <i>layer7-gateway-console</i> and <i>layer7-gateway-server</i> modules.
+     * Since CustomAssertionHolder is inside <i>layer7-policy</i> module, the only module common to all 3 is <i>layer7-policy-exporter</i>.
+     * However, <i>layer7-policy-exporter</i> doesn't look like a right place for CustomToMessageTargetableConverter class.
+     *
+     * For POC purpose, we'll going to keep duplicate functions and change them afterwards.
+     */
+    private String convertToMessageVariableName(final TargetMessageType targetMessageType) {
+        if (targetMessageType == TargetMessageType.REQUEST) {
+            return CustomMessageTargetableSupport.TARGET_REQUEST;
+        } else if (targetMessageType == TargetMessageType.RESPONSE) {
+            return CustomMessageTargetableSupport.TARGET_RESPONSE;
+        }
+        return "";
+    }
+
+    @Override
+    public TargetMessageType getTarget() {
+        if (customAssertion instanceof CustomMessageTargetable) {
+            return convertToTargetMessageType(((CustomMessageTargetable) customAssertion).getTargetMessageVariable());
+        } else {
+            return TargetMessageType.REQUEST;
+        }
+    }
+
+    @Override
+    public void setTarget(TargetMessageType target) {
+        if (customAssertion instanceof CustomMessageTargetable) {
+            ((CustomMessageTargetable) customAssertion).setTargetMessageVariable(convertToMessageVariableName(target));
+        }
+    }
+
+    @Override
+    public String getOtherTargetMessageVariable() {
+        if (customAssertion instanceof CustomMessageTargetable) {
+            final String messageTarget = ((CustomMessageTargetable) customAssertion).getTargetMessageVariable();
+            if (messageTarget == null ||
+                    messageTarget.compareToIgnoreCase(CustomMessageTargetableSupport.TARGET_REQUEST) == 0 ||
+                    messageTarget.compareToIgnoreCase(CustomMessageTargetableSupport.TARGET_RESPONSE) == 0) {
+                return null;
+            }
+            return messageTarget;
+        } else {
+            return null;
+        }
+    }
+
+    @Override
+    public void setOtherTargetMessageVariable(String otherMessageVariable) {
+        if (customAssertion instanceof CustomMessageTargetable) {
+            ((CustomMessageTargetable) customAssertion).setTargetMessageVariable(otherMessageVariable);
+        }
+    }
+
+    @Override
+    public String getTargetName() {
+        if (customAssertion instanceof CustomMessageTargetable) {
+            return ((CustomMessageTargetable) customAssertion).getTargetName();
+        } else {
+            return null;
+        }
+    }
+
+    @Override
+    public boolean isTargetModifiedByGateway() {
+        return customAssertion instanceof CustomMessageTargetable && ((CustomMessageTargetable) customAssertion).isTargetModifiedByGateway();
     }
 }
 

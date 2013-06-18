@@ -3,15 +3,13 @@ package com.l7tech.server.policy.assertion;
 import com.l7tech.common.http.CookieUtils;
 import com.l7tech.common.http.HttpCookie;
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.common.mime.NoSuchPartException;
-import com.l7tech.common.mime.PartInfo;
-import com.l7tech.common.mime.PartIterator;
+import com.l7tech.common.mime.*;
 import com.l7tech.gateway.common.audit.AssertionMessages;
-import com.l7tech.gateway.common.custom.CustomAssertionDescriptor;
-import com.l7tech.gateway.common.custom.CustomAssertionsRegistrar;
+import com.l7tech.gateway.common.custom.*;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.identity.AnonymousUserReference;
 import com.l7tech.identity.UserBean;
+import com.l7tech.json.JSONData;
 import com.l7tech.message.*;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
@@ -19,7 +17,11 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.ext.*;
+import com.l7tech.policy.assertion.ext.message.*;
+import com.l7tech.policy.assertion.ext.targetable.CustomMessageTargetable;
+import com.l7tech.policy.assertion.ext.message.DataExtractor;
 import com.l7tech.policy.variable.NoSuchVariableException;
+import com.l7tech.policy.variable.VariableNotSettableException;
 import com.l7tech.security.cert.TrustedCertManager;
 import com.l7tech.security.token.OpaqueSecurityToken;
 import com.l7tech.server.identity.AuthenticationResult;
@@ -33,9 +35,6 @@ import com.l7tech.server.policy.custom.CustomAuditorImpl;
 import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.IOUtils;
-import org.springframework.context.ApplicationContext;
-import org.w3c.dom.Document;
-import org.xml.sax.SAXException;
 
 import javax.security.auth.Subject;
 import javax.security.auth.login.FailedLoginException;
@@ -44,9 +43,14 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpServletResponseWrapper;
 import java.io.IOException;
+import java.io.InputStream;
 import java.security.*;
 import java.util.*;
 import java.util.logging.Level;
+
+import org.springframework.context.ApplicationContext;
+import org.w3c.dom.Document;
+import org.xml.sax.SAXException;
 
 /**
  * The <code>ServerCustomAssertionHolder</code> class represents the server side of the
@@ -114,6 +118,7 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
             context.put("httpResponse", wrap(httpServletResponse, pec));
     }
 
+    @SuppressWarnings("ConstantConditions")
     @Override
     public AssertionStatus checkRequest(final PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         if (customAssertion == null) {
@@ -163,25 +168,24 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
                     }
                 }
                 subject.setReadOnly();
-                Subject.doAs(subject, new PrivilegedExceptionAction() {
+                Object retStatus = Subject.doAs(subject, new PrivilegedExceptionAction() {
                     @Override
                     public Object run() throws Exception {
-                        CustomService customService = null;
+                        CustomServiceResponse customServiceResponse = null;
+                        CustomServiceRequest customServiceRequest = null;
+                        CustomAssertionStatus status = null;
                         try {
-                            if (isPostRouting(context) && context.getResponse().isInitialized() && context.getResponse().getKnob(MimeKnob.class) != null) {
-                                CustomServiceResponse customServiceResponse = new CustomServiceResponse(context);
-                                customService = customServiceResponse;
-                                serviceInvocation.onResponse(customServiceResponse);
-                            } else {
-                                CustomServiceRequest customServiceRequest = new CustomServiceRequest(context);
-                                customService = customServiceRequest;
-                                serviceInvocation.onRequest(customServiceRequest);
+                            customServiceRequest = new CustomServiceRequest(context);
+                            if (context.getResponse().isInitialized() && context.getResponse().getKnob(MimeKnob.class) != null) {
+                                customServiceResponse = new CustomServiceResponse(context);
                             }
+                            serviceInvocation.setPostRouting(isPostRouting(context));
+                            status = serviceInvocation.checkRequest(customServiceRequest, customServiceResponse);
+                        } finally {
+                            if (customServiceRequest != null) customServiceRequest.onCompletion();
+                            if (customServiceResponse != null) customServiceResponse.onCompletion();
                         }
-                        finally {
-                            if (customService != null) customService.onCompletion();
-                        }
-                        return null;
+                        return status;
                     }
                 });
                 if (isAuthAssertion) {
@@ -191,6 +195,10 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
                     } else {
                         authContext.addAuthenticationResult(new AuthenticationResult(new AnonymousUserReference("", -1, "<unknown>"), new OpaqueSecurityToken()));
                     }
+                }
+
+                if (retStatus != null && retStatus instanceof CustomAssertionStatus) {
+                    return convertToAssertionStatus((CustomAssertionStatus)retStatus);
                 }
 
                 return AssertionStatus.NONE;
@@ -222,6 +230,22 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
         }
     }
 
+    /**
+     * Convert from CustomAssertionStatus into AssertionStatus
+     * @return AssertionStatus object from
+    */
+    private static AssertionStatus convertToAssertionStatus(CustomAssertionStatus status) {
+        switch (status) {
+            case NONE: return AssertionStatus.NONE;
+            case AUTH_FAILED: return AssertionStatus.AUTH_FAILED;
+            case UNAUTHORIZED: return AssertionStatus.UNAUTHORIZED;
+            case FALSIFIED: return AssertionStatus.FALSIFIED;
+            case FAILED: return AssertionStatus.FAILED;
+        }
+
+        return AssertionStatus.NONE;
+    }
+
     private boolean isPostRouting(PolicyEnforcementContext context) {
         return RoutingStatus.ROUTED.equals(context.getRoutingStatus()) || RoutingStatus.ATTEMPTED.equals(context.getRoutingStatus());
     }
@@ -240,10 +264,7 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
      * check if descriptor is valid, log if invalid
      */
     private boolean checkDescriptor(CustomAssertionDescriptor descriptor) {
-        if (descriptor == null || descriptor.getServerAssertion() == null) {
-            return false;
-        }
-        return true;
+        return !(descriptor == null || descriptor.getServerAssertion() == null);
     }
 
     private Object[][] extractParts(Message m) throws IOException {
@@ -345,7 +366,315 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
         }
     }
 
-    private class CustomServiceResponse extends CustomService implements ServiceResponse {
+    /**
+     * Implement DataExtractor interface
+     */
+    private abstract class CustomServiceDataExtractor extends CustomService implements DataExtractor
+    {
+        /**
+         * Abstract method which should be implemented from {@link CustomServiceRequest} or {@link CustomServiceResponse}
+         * Get the Message object associated with a targetable variable.
+         *
+         * @param targetable     The target message.
+         *                       If null then target will default to Request or Response depending if the assertion is before or after routing.
+         * @param getOrCreate    true if you want to create the variable if does not exist.
+         * @return Message object associated with the targetable variable. Never NULL.
+         * @throws NoSuchVariableException      If a variable with the name exists but is not a message variable.
+         * @throws VariableNotSettableException If the variable does not exist and cannot be created.
+         */
+        protected abstract Message extractMessage(final CustomMessageTargetable targetable, boolean getOrCreate) throws NoSuchVariableException, VariableNotSettableException;
+
+        @Override
+        public CustomMessageData getMessageData(final CustomMessageTargetable targetable, final CustomMessageFormat format) throws NoSuchVariableException, IllegalArgumentException {
+            if (format == null) {
+                throw new IllegalArgumentException("format cannot be null");
+            }
+
+            final Message targetMessage = extractMessage(targetable, false);
+
+            // if there is no data then return null
+            if (!isDataOfType(targetMessage, format)) {
+                return null;
+            }
+
+            switch (format)
+            {
+                case XML:
+                    Document document;
+                    try {
+                        document = (Document) targetMessage.getXmlKnob().getDocumentReadOnly().cloneNode(true);
+                    } catch (Exception e) {
+                        logger.log(Level.FINE, "This target may not be XML", e);
+                        document = null;
+                    }
+
+                    final Document retDoc = document;
+                    return new CustomMessageData<Document>() {
+                        @Override
+                        public CustomContentHeader getContentType() {
+                            ContentTypeHeader contentTypeHeader;
+                            try {
+                                contentTypeHeader = targetMessage.getMimeKnob().getFirstPart().getContentType();
+                            } catch (IOException e) {
+                                contentTypeHeader = targetMessage.getMimeKnob().getOuterContentType();
+                            }
+                            return contentTypeHeader != null ? new CustomToContentTypeHeaderConverter(contentTypeHeader) : null;
+                        }
+                        @Override
+                        public Document getData() {
+                            return retDoc;
+                        }
+                    };
+
+                case JSON:
+                    JSONData jsonData;
+                    try {
+                        jsonData = targetMessage.getJsonKnob().getJsonData();
+                    } catch (Exception e) {
+                        logger.log(Level.FINE, "This target may not be JSON", e);
+                        jsonData = null;
+                    }
+
+                    final JSONData retJsonData = jsonData;
+                    return new CustomMessageData<CustomJsonData>() {
+                        @Override
+                        public CustomContentHeader getContentType() {
+                            ContentTypeHeader contentTypeHeader;
+                            try {
+                                contentTypeHeader = targetMessage.getMimeKnob().getFirstPart().getContentType();
+                            } catch (IOException e) {
+                                contentTypeHeader = targetMessage.getMimeKnob().getOuterContentType();
+                            }
+                            return contentTypeHeader != null ? new CustomToContentTypeHeaderConverter(contentTypeHeader) : null;
+                        }
+                        @Override
+                        public CustomJsonData getData() {
+                            return retJsonData != null ? new CustomToJsonData(retJsonData) : null;
+                        }
+                    };
+
+                case BYTES:
+                    final MimeKnob knobBytes = targetMessage.getKnob(MimeKnob.class);
+                    // should always be true
+                    if (knobBytes != null)
+                    {
+                        byte[] bytes = null;
+                        try {
+                            final InputStream inputStream = knobBytes.getEntireMessageBodyAsInputStream();
+                            if (inputStream != null) {
+                                bytes = IOUtils.slurpStream(inputStream);
+                            }
+                        } catch (IOException | NoSuchPartException e) {
+                            logger.log(Level.FINE, "Failed to get Message entire body as stream", e);
+                            bytes = null;
+                        }
+
+                        final byte[] retBytes = bytes;
+                        return new CustomMessageData<byte[]>() {
+                            @Override
+                            public CustomContentHeader getContentType() {
+                                return new CustomToContentTypeHeaderConverter(knobBytes.getOuterContentType());
+                            }
+                            @Override
+                            public byte[] getData() {
+                                return retBytes;
+                            }
+                        };
+                    }
+                    return null;
+
+                case INPUT_STREAM:
+                    final MimeKnob knobInput = targetMessage.getKnob(MimeKnob.class);
+                    // should always be true
+                    if (knobInput != null)
+                    {
+                        InputStream inputStream;
+                        try {
+                            inputStream = knobInput.getEntireMessageBodyAsInputStream();
+                        } catch (IOException | NoSuchPartException e) {
+                            logger.log(Level.FINE, "Failed to get Message entire body as stream", e);
+                            inputStream = null;
+                        }
+
+                        final InputStream retInputStream = inputStream;
+                        return new CustomMessageData<InputStream>() {
+                            @Override
+                            public CustomContentHeader getContentType() {
+                                return new CustomToContentTypeHeaderConverter(knobInput.getOuterContentType());
+                            }
+                            @Override
+                            public InputStream getData() {
+                                return retInputStream;
+                            }
+                        };
+                    }
+                    return null;
+            }
+
+            return null;
+        }
+
+        @Override
+        public CustomMessageData getMessageData(final CustomMessageFormat format) throws NoSuchVariableException, IllegalArgumentException {
+            return getMessageData(null, format);
+        }
+
+        @Override
+        public boolean isMessageDataOfType(final CustomMessageTargetable targetable, final CustomMessageFormat format) throws NoSuchVariableException, IllegalArgumentException {
+            if (format == null) {
+                throw new IllegalArgumentException("format cannot be null");
+            }
+            return (isDataOfType(extractMessage(targetable, false), format));
+        }
+
+        private boolean isDataOfType(final Message targetMessage, final CustomMessageFormat format) {
+            try {
+                switch (format) {
+                    case XML:
+                        return targetMessage.isInitialized() && targetMessage.isXml();
+                    case JSON:
+                        return targetMessage.isInitialized() && targetMessage.isJson();
+                    case BYTES:
+                        return targetMessage.isInitialized() && targetMessage.getKnob(MimeKnob.class) != null;
+                    case INPUT_STREAM:
+                        return targetMessage.isInitialized() && targetMessage.getKnob(MimeKnob.class) != null;
+                }
+            } catch (IOException ignored) { }
+            return false;
+        }
+
+        @Override
+        public boolean isMessageDataOfType(final CustomMessageFormat format) throws NoSuchVariableException, IllegalArgumentException {
+            return isMessageDataOfType(null, format);
+        }
+
+        @Override
+        public void setDOM(final CustomMessageTargetable targetable, final Document document) throws NoSuchVariableException, VariableNotSettableException {
+            final Message targetMessage = extractMessage(targetable, true);
+            final XmlKnob knob = targetMessage.getKnob(XmlKnob.class);
+            if (knob == null) {
+                targetMessage.initialize(document);
+            } else {
+                knob.setDocument(document);
+            }
+
+            try {
+                if (logger.isLoggable(Level.FINE)) {
+                    final String docString = XmlUtil.nodeToString(document);
+                    logger.fine("Set the target message XML document to:\n" + docString);
+                }
+            } catch (IOException e) {
+                logger.log(Level.WARNING, "Error stringyfing XML document", e);
+            }
+        }
+
+        @Override
+        public void setDOM(final Document document) throws NoSuchVariableException, VariableNotSettableException {
+            setDOM(null, document);
+        }
+
+        @Override
+        public void setJson(final CustomMessageTargetable targetable, final String jsonData) throws NoSuchVariableException, VariableNotSettableException, IOException {
+            final Message targetMessage = extractMessage(targetable, true);
+            targetMessage.initialize(ContentTypeHeader.APPLICATION_JSON, jsonData != null ? jsonData.getBytes() : new byte[0]);
+            try {
+                logger.fine("Set the target message JSON data to:\n" + jsonData);
+            } catch (Exception e) {
+                logger.log(Level.WARNING, "Error stringyfing Json document", e);
+            }
+        }
+
+        @Override
+        public void setJson(final String jsonData) throws NoSuchVariableException, VariableNotSettableException, IOException {
+            setJson(null, jsonData);
+        }
+
+        @Override
+        public void setBytes(final CustomMessageTargetable targetable, final CustomContentHeader contentType, final byte[] bytes) throws NoSuchVariableException, VariableNotSettableException, IOException, IllegalArgumentException {
+            if (contentType == null) {
+                throw new IllegalArgumentException("contentType cannot be null");
+            }
+            if (!(contentType instanceof CustomToContentTypeHeaderConverter)) {
+                throw new IllegalArgumentException("contentType cannot be null");
+            }
+
+            final Message targetMessage = extractMessage(targetable, true);
+            targetMessage.initialize(((CustomToContentTypeHeaderConverter)contentType).getInternalType(), bytes != null ? bytes : new byte[0]);
+
+            if (logger.isLoggable(Level.FINE)) {
+                try {
+                    logger.fine("Set the target message document to:\n" +
+                            ((bytes == null) ? "<null>" : Arrays.toString(bytes)));
+                } catch (Exception e) {
+                    logger.log(Level.WARNING, "Error stringyfing byte array", e);
+                }
+            }
+        }
+
+        @Override
+        public void setBytes(final CustomContentHeader contentType, final byte[] bytes) throws NoSuchVariableException, VariableNotSettableException, IOException, IllegalArgumentException {
+            setBytes(null, contentType, bytes);
+        }
+
+        @Override
+        public void setEntireMessageBodyFromInputStream(final CustomMessageTargetable targetable,
+                                                        final CustomContentHeader contentType,
+                                                        final InputStream body)
+                throws NoSuchVariableException, VariableNotSettableException, IOException, IllegalArgumentException
+        {
+            if (contentType == null) {
+                throw new IllegalArgumentException("contentType cannot be null");
+            }
+            if (!(contentType instanceof CustomToContentTypeHeaderConverter)) {
+                throw new IllegalArgumentException("contentType cannot be null");
+            }
+            if (body == null) {
+                throw new IllegalArgumentException("body cannot be null");
+            }
+
+            final Message targetMessage = extractMessage(targetable, true);
+            targetMessage.initialize(new ByteArrayStashManager(),
+                    ((CustomToContentTypeHeaderConverter)contentType).getInternalType(),
+                    body);
+
+            if (logger.isLoggable(Level.FINE)) {
+                try {
+                    logger.fine("Set the target message document to:\n" + Arrays.toString(IOUtils.slurpStream(body)));
+                } catch (Exception e) {
+                    logger.log(Level.WARNING, "Error stringyfing InoutStream", e);
+                }
+            }
+        }
+
+        @Override
+        public void setEntireMessageBodyFromInputStream(final CustomContentHeader contentType,
+                                                        final InputStream body)
+                throws NoSuchVariableException, VariableNotSettableException, IOException, IllegalArgumentException
+        {
+            setEntireMessageBodyFromInputStream(null, contentType, body);
+        }
+
+        @Override
+        public CustomContentHeader parseContentTypeValue(final String contentTypeHeaderValue) throws IOException {
+            final ContentTypeHeader header = ContentTypeHeader.parseValue(contentTypeHeaderValue);
+            return header != null ? new CustomToContentTypeHeaderConverter(header) : null;
+        }
+
+        @Override
+        public CustomContentHeader createContentType(final CustomContentHeader.Type type) throws IllegalArgumentException {
+            if (type == null) {
+                throw new IllegalArgumentException("type cannot be null");
+            }
+
+            final ContentTypeHeader header = (CustomToContentTypeHeaderConverter.toContentTypeHeader(type));
+            if (header == null) {
+                throw new IllegalArgumentException("type: " + type + " is not supported");
+            }
+            return (new CustomToContentTypeHeaderConverter(header));
+        }
+    }
+
+    private class CustomServiceResponse extends CustomServiceDataExtractor implements ServiceResponse {
         private final PolicyEnforcementContext pec;
         private final Map context = new HashMap();
         private Document document;
@@ -412,8 +741,10 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
             else
                 respXml.setDocument(document);
             try {
-                final String docstring = XmlUtil.nodeToString(document);
-                logger.fine("Set the response document to" + docstring);
+                if (logger.isLoggable(Level.FINE)) {
+                    final String docstring = XmlUtil.nodeToString(document);
+                    logger.fine("Set the response document to" + docstring);
+                }
             } catch (IOException e) {
                 logger.log(Level.WARNING, "Error stringyfing document", e);
             }
@@ -449,9 +780,19 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
         public void setVariable(String name, Object value) {
             pec.setVariable(name, value);
         }
+
+        @Override
+        protected Message extractMessage(CustomMessageTargetable targetable, boolean getOrCreate) throws NoSuchVariableException, VariableNotSettableException {
+            if (targetable == null) {
+                return pec.getResponse();
+            }
+            return getOrCreate ?
+                    pec.getOrCreateTargetMessage(new CustomToMessageTargetableConverter(targetable), false) :
+                    pec.getTargetMessage(new CustomToMessageTargetableConverter(targetable));
+        }
     }
 
-    private class CustomServiceRequest extends CustomService implements ServiceRequest {
+    private class CustomServiceRequest extends CustomServiceDataExtractor implements ServiceRequest {
         private final PolicyEnforcementContext pec;
         private final Map context = new HashMap();
         private Document document;
@@ -512,8 +853,10 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
             else
                 reqXml.setDocument(document);
             try {
-                final String docstring = XmlUtil.nodeToString(document);
-                logger.fine("Set the request document to" + docstring);
+                if (logger.isLoggable(Level.FINE)) {
+                    final String docString = XmlUtil.nodeToString(document);
+                    logger.fine("Set the request document to" + docString);
+                }
             } catch (IOException e) {
                 logger.log(Level.WARNING, "Error stringyfing document", e);
             }
@@ -568,6 +911,15 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
         @Override
         public void setVariable(String name, Object value) {
             pec.setVariable(name, value);
+        }
+
+        protected final Message extractMessage(final CustomMessageTargetable targetable, boolean getOrCreate) throws NoSuchVariableException, VariableNotSettableException {
+            if (targetable == null) {
+                return pec.getRequest();
+            }
+            return getOrCreate ?
+                    pec.getOrCreateTargetMessage(new CustomToMessageTargetableConverter(targetable), false) :
+                    pec.getTargetMessage(new CustomToMessageTargetableConverter(targetable));
         }
     }
 

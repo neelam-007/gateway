@@ -21,9 +21,6 @@ import java.security.GeneralSecurityException;
  * </p><p>
  * The auditing methods can be used to record related to processing of a request or response.
  * </p>
- *
- * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
- * @version 1.1
  */
 public abstract class ServiceInvocation {
 
@@ -55,6 +52,8 @@ public abstract class ServiceInvocation {
      * @throws GeneralSecurityException is thrown on security related
      *                                  error - the nature of the failure may be described by subclass
      * @see ServiceRequest
+     *
+     * @deprecated replaced by checkRequest(...), when overridden and implemented to return a non null status.
      */
     public void onRequest(ServiceRequest request)
       throws IOException, GeneralSecurityException {}
@@ -67,16 +66,59 @@ public abstract class ServiceInvocation {
      * @throws GeneralSecurityException is thrown on security related
      *                                  error - the nature of the failure may be described by subclass
      * @see ServiceResponse
+     *
+     * @deprecated replaced by checkRequest(...), when overridden and implemented to return a non null status.
      */
     public void onResponse(ServiceResponse response)
       throws IOException, GeneralSecurityException {}
+
+    /**
+     *
+     * Override and implement this method for SSG server-side processing of the input data.
+     * Use the MessageTargetable interface to configure assertion to target request, response or other message-typed variable.
+     *
+     * This method replaces onRequest(...) and onResponse(...), which are obsolete and have been deprecated.
+     *
+     * For backwards compatibility, ServiceResponse param is passed as well and is valid (not null) only after routing.
+     * For future implementations use only ServiceRequest.
+     *
+     * @param request request data associated with the service
+     * @param response response data associated with the service or null if before routing.
+     * @return result status from processing the Custom Assertion
+     * @throws IOException              only if its thrown from {@link #onRequest(ServiceRequest)} or {@link #onResponse(ServiceResponse)}.
+     *                                  For future implementation return {@link CustomAssertionStatus}.
+     * @throws GeneralSecurityException only if {@link #onRequest(ServiceRequest)} or {@link #onResponse(ServiceResponse)} throws this exception.
+     *                                  For future implementation return {@link CustomAssertionStatus}.
+     * @see #onRequest(ServiceRequest)
+     * @see #onResponse(ServiceResponse)
+     */
+    public CustomAssertionStatus checkRequest(final ServiceRequest request, final ServiceResponse response)
+      throws IOException, GeneralSecurityException
+    {
+        if (isPostRouting() && response != null) {
+            //noinspection deprecation
+            onResponse(response);
+        } else {
+            //noinspection deprecation
+            onRequest(request);
+        }
+        return CustomAssertionStatus.NONE;
+    }
+
+    public void setPostRouting(boolean postRouting) {
+        this.postRouting = postRouting;
+    }
+
+    public boolean isPostRouting() {
+        return postRouting;
+    }
 
     //- PROTECTED
 
     /**
      * Audit an information message.
      *
-     * <p>This is for recording occurances that effect the outcome of
+     * <p>This is for recording occurrences that effect the outcome of
      * this assertions processing.</p>
      *
      * @param message The text of the audit
@@ -88,7 +130,7 @@ public abstract class ServiceInvocation {
     /**
      * Audit a warning message.
      *
-     * <p>This is for recording occurances that negatively effect the outcome
+     * <p>This is for recording occurrences that negatively effect the outcome
      * of this assertions processing. This would typically be used to record
      * the reason for any failure of this assertion.</p>
      *
@@ -109,4 +151,5 @@ public abstract class ServiceInvocation {
     //- PRIVATE
 
     private CustomAuditor auditor;
+    private boolean postRouting = false;
 }

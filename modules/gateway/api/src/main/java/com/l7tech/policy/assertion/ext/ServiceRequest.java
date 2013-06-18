@@ -1,20 +1,44 @@
 package com.l7tech.policy.assertion.ext;
 
-import org.w3c.dom.Document;
+import com.l7tech.policy.assertion.ext.message.DataExtractor;
 
+import org.w3c.dom.Document;
 import java.util.Map;
 
 /**
  * Defines an interface to provide request information to custom assertions.
  *
- * @author <a href="mailto:emarceta@layer7tech.com">Emil Marceta</a>
  * @see ServiceInvocation
  */
-public interface ServiceRequest {
+public interface ServiceRequest extends DataExtractor {
     /**
      * Get the copy of the document that is associated with the current request.
      *
      * @return the DOM <code>Document</code> attached to this service request.
+     *
+     * @deprecated Kept for backwards compatibility, please use either {@link DataExtractor#getMessageData(com.l7tech.policy.assertion.ext.message.CustomMessageFormat)} or
+     * {@link DataExtractor#getMessageData(com.l7tech.policy.assertion.ext.targetable.CustomMessageTargetable, com.l7tech.policy.assertion.ext.message.CustomMessageFormat)},
+     * where you can specify the output message format.
+     * <p/>
+     * e.g.
+     * <pre>
+     *     {@code
+     *     // get XML
+     *     CustomMessageData data = request.getMessageData(CustomMessageTargetable.XML);
+     *     assert(data.getData() instanceof Document);
+     *     Document doc = (Document)data.getData();
+     *
+     *     // get JSON
+     *     CustomMessageData data = request.getMessageData(CustomMessageTargetable.JSON);
+     *     assert(data.getData() instanceof CustomJsonData);
+     *     CustomJsonData jsonData = (CustomJsonData)data.getData();
+     *
+     *     // get row bytes
+     *     CustomMessageData data = request.getMessageData(CustomMessageTargetable.BYTES);
+     *     assert(data.getData() instanceof byte[]);
+     *     byte[] body = (byte[])data.getData();
+     *     }
+     * </pre>
      */
     Document getDocument();
 
@@ -22,7 +46,10 @@ public interface ServiceRequest {
      * Set or replace the request document
      *
      * @param document the DOM <code>Document</code> to attach to this service
-     *                 request. The exisitng document will be replaced.
+     *                 request. The existing document will be replaced.
+     *
+     * @deprecated Kept for backwards compatibility, please use either {@link DataExtractor#setDOM(org.w3c.dom.Document)} or
+     * {@link DataExtractor#setDOM(com.l7tech.policy.assertion.ext.targetable.CustomMessageTargetable, org.w3c.dom.Document)}
      */
     void setDocument(Document document);
 
@@ -43,10 +70,10 @@ public interface ServiceRequest {
      * <p><b>httpResponse</b> -- {@link javax.servlet.http.HttpServletResponse HttpServletResponse} object that can be used to modify the response
      * <p><b>updatedCookies</b> -- an immutable <code>java.util.Vector</code> of request {@link javax.servlet.http.Cookie Cookie} objects
      * <p><b>originalCookies</b> -- an immutable <code>java.util.Collection</code> of the request {@link javax.servlet.http.Cookie Cookie} objects
-     * <p><b>serviceFinder</b> -- an implementaion of {@link ServiceFinder}, which provides access to additional Layer 7 API services.
+     * <p><b>serviceFinder</b> -- an implementation of {@link ServiceFinder}, which provides access to additional Layer 7 API services.
      * <p><b>messageparts</b> -- an immutable two-dimensional <code>java.lang.Object</code> array containing the request mime parts and associated content-types.
      *
-     * The size of the 2D array is [number of mime parts][2], where the content-types appear in indeces [i][0] and the associated mime parts appear in indeces [i][1].
+     * The size of the 2D array is [number of mime parts][2], where the content-types appear in indexes [i][0] and the associated mime parts appear in indexes [i][1].
      * Content-types are of type <code>java.lang.String</code> and mime parts are <code>byte</code> arrays and can be cast as such.
      *
      *
@@ -57,6 +84,7 @@ public interface ServiceRequest {
      *
      * @return a {@link java.util.Map Map} of data representing the current policy execution context
      */
+    @SuppressWarnings("JavadocReference")
     Map getContext();
 
     /**
