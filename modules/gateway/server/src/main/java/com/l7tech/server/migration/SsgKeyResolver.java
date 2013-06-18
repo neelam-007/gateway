@@ -1,20 +1,23 @@
 package com.l7tech.server.migration;
 
+import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.objectmodel.ExternalEntityHeader;
-import com.l7tech.objectmodel.migration.*;
+import com.l7tech.objectmodel.SsgKeyHeader;
+import com.l7tech.objectmodel.migration.MigrationDependency;
+import com.l7tech.objectmodel.migration.MigrationMappingSelection;
+import com.l7tech.objectmodel.migration.MigrationUtils;
+import com.l7tech.objectmodel.migration.PropertyResolverException;
+import com.l7tech.policy.assertion.PrivateKeyable;
 import com.l7tech.server.EntityHeaderUtils;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
-import com.l7tech.policy.assertion.PrivateKeyable;
-import com.l7tech.gateway.common.security.keystore.SsgKeyHeader;
-import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 
-import java.util.Set;
-import java.util.Map;
-import java.util.HashMap;
+import java.lang.reflect.Method;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.lang.reflect.Method;
 
 /**
  * Extracts and applies SsgKeyEntry dependencies using an Assertion's PrivateKeyable interface.
@@ -54,7 +57,7 @@ public class SsgKeyResolver extends AbstractPropertyResolver {
             SsgKeyEntry key = null;
             try {
                 key = keyManager.lookupKeyByKeyAlias(keyable.getKeyAlias(), keyable.getNonDefaultKeystoreId());
-                ExternalEntityHeader dependency = EntityHeaderUtils.toExternal(new SsgKeyHeader(key));
+                ExternalEntityHeader dependency = EntityHeaderUtils.toExternal(new SsgKeyHeader(key.getId(), key.getKeystoreId(), key.getAlias(), key.getName()));
                 dependency.setValueMapping(valueMappingType, valueType, getPropertyValue(entity, property));
                 result.put(dependency, Collections.singleton(new MigrationDependency(source, dependency, propertyName, getType(), mappingType, exported)));
             } catch (Exception e) {

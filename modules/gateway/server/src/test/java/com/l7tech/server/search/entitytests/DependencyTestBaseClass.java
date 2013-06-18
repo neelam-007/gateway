@@ -7,11 +7,13 @@ import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.search.Dependency;
+import com.l7tech.server.DefaultKey;
 import com.l7tech.server.EntityCrud;
 import com.l7tech.server.search.DependencyAnalyzer;
 import com.l7tech.server.search.DependencyAnalyzerImpl;
 import com.l7tech.server.search.DependencyProcessorStore;
 import com.l7tech.server.search.processors.*;
+import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.util.CollectionUtils;
 import org.junit.Before;
@@ -33,6 +35,10 @@ public abstract class DependencyTestBaseClass {
     private IdentityProviderConfigManager identityProviderConfigManager;
     @Mock
     private SecurePasswordManager securePasswordManager;
+    @Mock
+    private DefaultKey defaultKey;
+    @Mock
+    private SsgKeyStoreManager keyStoreManager;
 
     @InjectMocks
     GenericDependencyProcessor genericDependencyProcessor = new GenericDependencyProcessor();
@@ -48,6 +54,8 @@ public abstract class DependencyTestBaseClass {
     AssertionDependencyProcessor assertionDependencyProcessor = new AssertionDependencyProcessor();
     @InjectMocks
     ClusterPropertyDependencyProcessor clusterPropertyDependencyProcessor = new ClusterPropertyDependencyProcessor();
+    @InjectMocks
+    IdentityProviderProcessor identityProviderProcessor = new IdentityProviderProcessor();
 
     @Spy
     DependencyProcessorStore processorStore = new DependencyProcessorStore(CollectionUtils.MapBuilder.<Dependency.DependencyType, DependencyProcessor>builder()
@@ -58,6 +66,7 @@ public abstract class DependencyTestBaseClass {
             .put(Dependency.DependencyType.SECURE_PASSWORD, securePasswordDependencyProcessor)
             .put(Dependency.DependencyType.ASSERTION, assertionDependencyProcessor)
             .put(Dependency.DependencyType.CLUSTER_PROPERTY, clusterPropertyDependencyProcessor)
+            .put(Dependency.DependencyType.ID_PROVIDER_CONFIG, identityProviderProcessor)
             .map());
 
     @InjectMocks
@@ -76,6 +85,7 @@ public abstract class DependencyTestBaseClass {
             Mockito.when(identityProviderConfigManager.findByHeader(entityHeader)).thenReturn((IdentityProviderConfig) entity);
         } else if(entity instanceof SecurePassword){
             Mockito.when(securePasswordManager.findByUniqueName(entityHeader.getName())).thenReturn((SecurePassword) entity);
+            Mockito.when(securePasswordManager.findByPrimaryKey(entityHeader.getOid())).thenReturn((SecurePassword) entity);
         }
     }
 }

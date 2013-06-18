@@ -198,20 +198,12 @@ public class DependencyFinder {
     private static com.l7tech.search.Dependency.DependencyType getFromObject(Object obj) {
         if (obj instanceof Entity) {
             //if its an entity use the entity type to find the dependency type
-            //noinspection unchecked
-            switch (EntityType.findTypeByEntity((Class<? extends Entity>) obj.getClass())) {
-                case POLICY:
-                    return com.l7tech.search.Dependency.DependencyType.POLICY;
-                case FOLDER:
-                    return com.l7tech.search.Dependency.DependencyType.FOLDER;
-                case JDBC_CONNECTION:
-                    return com.l7tech.search.Dependency.DependencyType.JDBC_CONNECTION;
-                case SECURE_PASSWORD:
-                    return com.l7tech.search.Dependency.DependencyType.SECURE_PASSWORD;
-                case CLUSTER_PROPERTY:
-                    return com.l7tech.search.Dependency.DependencyType.CLUSTER_PROPERTY;
-                default:
-                    return com.l7tech.search.Dependency.DependencyType.GENERIC;
+            try {
+                //noinspection unchecked
+                return com.l7tech.search.Dependency.DependencyType.valueOf(EntityType.findTypeByEntity((Class<? extends Entity>) obj.getClass()).toString());
+            } catch (IllegalArgumentException e) {
+                //Use the Generic dependency type for other entity types
+                return com.l7tech.search.Dependency.DependencyType.GENERIC;
             }
         } else if (obj instanceof Assertion) {
             return com.l7tech.search.Dependency.DependencyType.ASSERTION;

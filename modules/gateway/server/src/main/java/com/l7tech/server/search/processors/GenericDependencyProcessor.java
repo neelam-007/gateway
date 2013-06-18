@@ -1,22 +1,29 @@
 package com.l7tech.server.search.processors;
 
+import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.objectmodel.*;
+import com.l7tech.policy.UsesPrivateKeys;
 import com.l7tech.search.Dependencies;
+import com.l7tech.server.DefaultKey;
 import com.l7tech.server.EntityCrud;
 import com.l7tech.server.EntityHeaderUtils;
 import com.l7tech.server.search.DependencyAnalyzerException;
 import com.l7tech.server.search.objects.Dependency;
 import com.l7tech.server.search.objects.DependentEntity;
 import com.l7tech.server.search.objects.DependentObject;
+import com.l7tech.server.security.keystore.SsgKeyFinder;
+import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.util.Functions;
 import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Inject;
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.security.KeyStoreException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -40,6 +47,12 @@ public class GenericDependencyProcessor<O> implements DependencyProcessor<O> {
 
     @Inject
     private IdentityProviderConfigManager identityProviderConfigManager;
+
+    @Inject
+    private SsgKeyStoreManager keyStoreManager;
+
+    @Inject
+    DefaultKey defaultKey;
 
     @Override
     @NotNull
@@ -68,7 +81,10 @@ public class GenericDependencyProcessor<O> implements DependencyProcessor<O> {
                         for (com.l7tech.search.Dependency annotation : dependenciesAnnotation.value()) {
                             //calls the getter method and retrieves the dependency.
                             Object getterMethodReturn = retrieveDependencyFromMethod(object, method, annotation);
-                            dependentEntities.addAll(getDependenciesFromMethodReturnValue(annotation, getterMethodReturn, finder));
+                            final List<Entity> dependenciesFromMethodReturnValue = getDependenciesFromMethodReturnValue(annotation, getterMethodReturn, finder);
+                            if(dependenciesFromMethodReturnValue != null) {
+                                dependentEntities.addAll(dependenciesFromMethodReturnValue);
+                            }
                         }
                     }
                 } catch (Exception e) {
@@ -87,6 +103,18 @@ public class GenericDependencyProcessor<O> implements DependencyProcessor<O> {
                             }
                         }
                     }
+                }
+            }
+        }
+
+        //if the object implements UsesPrivateKeys then add the used private keys as dependencies.
+        if (object instanceof UsesPrivateKeys && ((UsesPrivateKeys) object).getPrivateKeysUsed() != null) {
+            for (SsgKeyHeader keyHeader : ((UsesPrivateKeys) object).getPrivateKeysUsed()) {
+                final Entity keyEntry = loadEntity(keyHeader);
+                if (keyEntry != null) {
+                    Dependency dependency = finder.getDependency(keyEntry);
+                    if (!dependencies.contains(dependency))
+                        dependencies.add(dependency);
                 }
             }
         }
@@ -115,7 +143,7 @@ public class GenericDependencyProcessor<O> implements DependencyProcessor<O> {
                 methodReturnValue = ((Map) methodReturnValue).get(annotation.key());
             }
             //If the dependency annotation is specified us the finder to retrieve the entity.
-            dependentEntities = finder.retrieveEntities(methodReturnValue, annotation);
+            dependentEntities = methodReturnValue == null ? null : finder.retrieveEntities(methodReturnValue, annotation);
         } else {
             dependentEntities = methodReturnValue == null ? null : Arrays.asList((Entity) methodReturnValue);
         }
@@ -212,7 +240,7 @@ public class GenericDependencyProcessor<O> implements DependencyProcessor<O> {
 
     /**
      * Gets an entity given an entity header. This is needed to handle the special case where the entityCrud down-casts
-     * identity provider entities
+     * identity provider entities. This will also handle SsgKeyEntry types, retireving the default type if needed.
      *
      * @param entityHeader The entity header for the entity to return
      * @return The entity.
@@ -221,6 +249,31 @@ public class GenericDependencyProcessor<O> implements DependencyProcessor<O> {
     protected Entity loadEntity(EntityHeader entityHeader) throws FindException {
         if (EntityType.ID_PROVIDER_CONFIG.equals(entityHeader.getType())) {
             return identityProviderConfigManager.findByHeader(entityHeader);
+        } else if (EntityType.SSG_KEY_ENTRY.equals(entityHeader.getType())) {
+            final SsgKeyHeader keyHeader = (SsgKeyHeader) entityHeader;
+            final SsgKeyEntry keyEntry;
+            try {
+                if (keyHeader.getKeystoreId() == -1) {
+                    if (keyHeader.getAlias() == null) {
+                        //if the keystore id is -1 and the alias is 0 then use the default key.
+                        try {
+                            keyEntry = defaultKey.getSslInfo();
+                        } catch (IOException e) {
+                            throw new FindException("Could got det Default ssl Key", e);
+                        }
+                    } else {
+                        //the keystore is -1 but an alias is specified. Then find the key using the keyStoreManager
+                        keyEntry = keyStoreManager.lookupKeyByKeyAlias(keyHeader.getAlias(), keyHeader.getKeystoreId());
+                    }
+                } else {
+                    //This is when both the keyStore and alias as specified.
+                    final SsgKeyFinder ssgKeyFinder = keyStoreManager.findByPrimaryKey(keyHeader.getKeystoreId());
+                    keyEntry = ssgKeyFinder.getCertificateChain(keyHeader.getAlias());
+                }
+            } catch (KeyStoreException e) {
+                throw new FindException("Exception finding SsgKeyEntry", e);
+            }
+            return keyEntry;
         } else
             return entityCrud.find(entityHeader);
     }

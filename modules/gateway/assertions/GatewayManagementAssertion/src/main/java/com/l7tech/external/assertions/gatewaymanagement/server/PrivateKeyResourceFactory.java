@@ -15,7 +15,7 @@ import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.security.MultipleAliasesException;
 import com.l7tech.gateway.common.security.SpecialKeyType;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
-import com.l7tech.gateway.common.security.keystore.SsgKeyHeader;
+import com.l7tech.objectmodel.SsgKeyHeader;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.objectmodel.*;
 import com.l7tech.security.cert.KeyUsageUtils;

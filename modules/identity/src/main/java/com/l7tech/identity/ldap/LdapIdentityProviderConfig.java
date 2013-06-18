@@ -474,7 +474,6 @@ public class LdapIdentityProviderConfig extends LdapUrlBasedIdentityProviderConf
     }
 
    @Transient
-   @Dependency(methodReturnType = Dependency.MethodReturnType.OID, type = Dependency.DependencyType.SECURE_PASSWORD, key = "service.passwordOid")
    public Map<String, String> getNtlmAuthenticationProviderProperties() {
        TreeMap<String, String> props = getProperty(NTLM_AUTHENTICATION_PROVIDER_PROPERTIES);
        if(props != null){

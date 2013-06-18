@@ -12,7 +12,6 @@ import com.l7tech.objectmodel.SecurityZone;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.server.search.objects.DependencySearchResults;
 import com.l7tech.server.search.objects.DependentEntity;
-import com.l7tech.server.security.keystore.KeystoreFile;
 import com.l7tech.util.CollectionUtils;
 import org.junit.Assert;
 import org.junit.Test;
@@ -140,15 +139,9 @@ public class IdentityProviderTest extends DependencyTestBaseClass {
 
     @Test
     public void simpleLDAP() throws FindException {
-        KeystoreFile keystoreFile = new KeystoreFile();
-        long keystoreFileOid = idCount.getAndIncrement();
-        keystoreFile.setOid(keystoreFileOid);
-        mockEntity(keystoreFile, new EntityHeader(keystoreFileOid, EntityType.SSG_KEYSTORE, null, null));
-
         BindOnlyLdapIdentityProviderConfig bindOnlyLdapIdentityProviderConfig = new BindOnlyLdapIdentityProviderConfig();
         final long identityProviderOid = idCount.getAndIncrement();
         bindOnlyLdapIdentityProviderConfig.setOid(identityProviderOid);
-        bindOnlyLdapIdentityProviderConfig.setKeystoreId(keystoreFileOid);
 
         final EntityHeader identityProviderConfigEntityHeader = new EntityHeader(identityProviderOid, EntityType.ID_PROVIDER_CONFIG, null, null);
 
@@ -182,7 +175,10 @@ public class IdentityProviderTest extends DependencyTestBaseClass {
         final long identityProviderOid = idCount.getAndIncrement();
         ldapIdentityProviderConfig.setOid(identityProviderOid);
         ldapIdentityProviderConfig.setBindPasswd("${secpass." + securePasswordName + ".plaintext}");
-        ldapIdentityProviderConfig.setNtlmAuthenticationProviderProperties(new TreeMap<>(CollectionUtils.MapBuilder.<String, String>builder().put("service.passwordOid", String.valueOf(securePasswordOid2)).map()));
+        ldapIdentityProviderConfig.setNtlmAuthenticationProviderProperties(new TreeMap<>(CollectionUtils.MapBuilder.<String, String>builder()
+                .put("enabled", "true")
+                .put("service.passwordOid", String.valueOf(securePasswordOid2))
+                .map()));
 
         final EntityHeader identityProviderConfigEntityHeader = new EntityHeader(identityProviderOid, EntityType.ID_PROVIDER_CONFIG, null, null);
 

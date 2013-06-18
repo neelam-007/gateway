@@ -4,7 +4,9 @@
 
 package com.l7tech.gateway.common.transport.jms;
 
+import com.l7tech.objectmodel.SsgKeyHeader;
 import com.l7tech.objectmodel.imp.ZoneableNamedEntityImp;
+import com.l7tech.policy.UsesPrivateKeys;
 import com.l7tech.policy.wsp.WspSensitive;
 import com.l7tech.search.Dependencies;
 import com.l7tech.search.Dependency;
@@ -20,6 +22,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 import java.io.ByteArrayInputStream;
 import java.io.Serializable;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
 import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -33,7 +36,7 @@ import java.util.logging.Logger;
 @Entity
 @Proxy(lazy=false)
 @Table(name="jms_connection")
-public class JmsConnection extends ZoneableNamedEntityImp implements Serializable {
+public class JmsConnection extends ZoneableNamedEntityImp implements UsesPrivateKeys, Serializable {
     private static final Logger logger = Logger.getLogger(JmsConnection.class.getName());
     private static final Charset ENCODING = Charsets.UTF8;
 
@@ -288,8 +291,29 @@ public class JmsConnection extends ZoneableNamedEntityImp implements Serializabl
     }
 
     /**
+     * This is used by the dependencyAnalyzer in order to find private key dependencies.
+     * @return The private keys used by thing jms connection
+     */
+    @Override
+    @Transient
+    public SsgKeyHeader[] getPrivateKeysUsed() {
+        ArrayList<SsgKeyHeader> headers = new ArrayList<>();
+        if (TibcoEmsConstants.SSL.equals(properties().getProperty(TibcoEmsConstants.TibjmsContext.SECURITY_PROTOCOL)) && properties().getProperty(JmsConnection.PROP_JNDI_SSG_KEYSTORE_ID) != null) {
+            String alias = properties().getProperty(JmsConnection.PROP_JNDI_SSG_KEY_ALIAS);
+            String keyStoreId = properties().getProperty(JmsConnection.PROP_JNDI_SSG_KEYSTORE_ID);
+            headers.add(new SsgKeyHeader(keyStoreId + ":" + alias, Long.parseLong(keyStoreId), alias, alias));
+        }
+        if (("com.l7tech.server.transport.jms.prov.MQSeriesCustomizer".equals(properties().getProperty(JmsConnection.PROP_CUSTOMIZER)) || "com.l7tech.server.transport.jms.prov.TibcoConnectionFactoryCustomizer".equals(properties().getProperty(JmsConnection.PROP_CUSTOMIZER))) && properties().getProperty(JmsConnection.PROP_QUEUE_SSG_KEYSTORE_ID) != null) {
+            String alias = properties().getProperty(JmsConnection.PROP_QUEUE_SSG_KEY_ALIAS);
+            String keyStoreId = properties().getProperty(JmsConnection.PROP_QUEUE_SSG_KEYSTORE_ID);
+            headers.add(new SsgKeyHeader(keyStoreId + ":" + alias, Long.parseLong(keyStoreId), alias, alias));
+        }
+        return headers.toArray(new SsgKeyHeader[headers.size()]);
+    }
+
+    /**
      * Standard validation group with additional constraints for non-templates.
      */
-    public interface StandardValidationGroup {}    
-    
+    public interface StandardValidationGroup {}
+
 }

@@ -1,7 +1,4 @@
-package com.l7tech.gateway.common.security.keystore;
-
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityType;
+package com.l7tech.objectmodel;
 
 /**
  * @author jbufu
@@ -15,10 +12,6 @@ public class SsgKeyHeader extends EntityHeader {
         super(id, EntityType.SSG_KEY_ENTRY, name, "");
         this.keystoreId = keystoreId;
         this.alias = alias;
-    }
-
-    public SsgKeyHeader(SsgKeyEntry ssgKey) {
-        this(ssgKey.getId(), ssgKey.getKeystoreId(), ssgKey.getAlias(), ssgKey.getName());
     }
 
     public long getKeystoreId() {

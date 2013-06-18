@@ -3,6 +3,7 @@ package com.l7tech.gateway.common.security.keystore;
 import com.l7tech.objectmodel.NamedEntity;
 import com.l7tech.objectmodel.SecurityZone;
 import com.l7tech.objectmodel.ZoneableEntity;
+import com.l7tech.search.Dependency;
 import com.l7tech.security.xml.SignerInfo;
 import com.l7tech.util.Functions;
 import org.jetbrains.annotations.Nullable;
@@ -166,6 +167,7 @@ public class SsgKeyEntry extends SignerInfo implements NamedEntity, Serializable
     }
 
     /** @return the keystore id from which this entry came. */
+    @Dependency(methodReturnType = Dependency.MethodReturnType.OID, type = Dependency.DependencyType.SSG_KEYSTORE)
     public long getKeystoreId() {
         return keystoreId;
     }
@@ -226,7 +228,9 @@ public class SsgKeyEntry extends SignerInfo implements NamedEntity, Serializable
         this.keyMetadata = keyMetadata;
     }
 
+    // This is not a dependency because it is covered by the ZoneableEntity interface.
     @Nullable
+    @Dependency(isDependency = false)
     public SsgKeyMetadata getKeyMetadata() {
         return keyMetadata;
     }

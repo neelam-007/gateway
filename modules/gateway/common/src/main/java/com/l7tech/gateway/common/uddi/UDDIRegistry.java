@@ -4,7 +4,9 @@
  */
 package com.l7tech.gateway.common.uddi;
 
+import com.l7tech.objectmodel.SsgKeyHeader;
 import com.l7tech.objectmodel.imp.ZoneableNamedEntityImp;
+import com.l7tech.policy.UsesPrivateKeys;
 import com.l7tech.policy.wsp.WspSensitive;
 import com.l7tech.search.Dependency;
 import org.hibernate.annotations.Proxy;
@@ -12,11 +14,12 @@ import org.hibernate.annotations.Proxy;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 
 @Entity
 @Proxy(lazy=false)
 @Table(name="uddi_registries")
-public class UDDIRegistry extends ZoneableNamedEntityImp {
+public class UDDIRegistry extends ZoneableNamedEntityImp implements UsesPrivateKeys {
 
     public enum UDDIRegistryType{
         CENTRASITE_ACTIVE_SOA("CentraSite ActiveSOA"),
@@ -255,6 +258,15 @@ public class UDDIRegistry extends ZoneableNamedEntityImp {
 
     public void setSubscribeForNotifications(boolean subscribeForNotifications) {
         isSubscribeForNotifications = subscribeForNotifications;
+    }
+
+    @Override
+    @Transient
+    public SsgKeyHeader[] getPrivateKeysUsed() {
+        if(getKeyAlias() != null) {
+            return new SsgKeyHeader[]{new SsgKeyHeader(getKeystoreOid() + ":" + getKeyAlias(), getKeystoreOid(), getKeyAlias(), getKeyAlias())};
+        }
+        return null;
     }
 
     public void copyFrom (UDDIRegistry copyFrom){

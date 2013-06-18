@@ -5,6 +5,7 @@ import com.l7tech.gateway.common.resources.ResourceEntry;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.SsgKeyHeader;
 import com.l7tech.policy.AssertionResourceInfo;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.server.cluster.ClusterPropertyManager;
@@ -79,6 +80,19 @@ public class AssertionDependencyProcessor extends GenericDependencyProcessor<Ass
                 ResourceEntry resourceEntry = resourceEntryManager.findResourceByUriAndType(uri, null);
                 if (resourceEntry != null) {
                     Dependency dependency = finder.getDependency(resourceEntry);
+                    if (!dependencies.contains(dependency))
+                        dependencies.add(dependency);
+                }
+            }
+        }
+
+        //Add any private keys to the assertion dependencies
+        if (assertion instanceof PrivateKeyable) {
+            PrivateKeyable privateKeyable = (PrivateKeyable) assertion;
+            if ((!(privateKeyable instanceof OptionalPrivateKeyable) || ((OptionalPrivateKeyable) privateKeyable).isUsesNoKey()) && privateKeyable.getKeyAlias() != null) {
+                final Entity keyEntry = loadEntity(new SsgKeyHeader(privateKeyable.getNonDefaultKeystoreId() + ":" + privateKeyable.getKeyAlias(), privateKeyable.getNonDefaultKeystoreId(), privateKeyable.getKeyAlias(), privateKeyable.getKeyAlias()));
+                if (keyEntry != null) {
+                    Dependency dependency = finder.getDependency(keyEntry);
                     if (!dependencies.contains(dependency))
                         dependencies.add(dependency);
                 }

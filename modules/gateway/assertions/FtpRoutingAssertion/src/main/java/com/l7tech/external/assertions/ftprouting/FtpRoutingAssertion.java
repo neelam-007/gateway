@@ -7,9 +7,11 @@ package com.l7tech.external.assertions.ftprouting;
 import com.l7tech.gateway.common.transport.ftp.FtpCredentialsSource;
 import com.l7tech.gateway.common.transport.ftp.FtpFileNameSource;
 import com.l7tech.gateway.common.transport.ftp.FtpSecurity;
+import com.l7tech.objectmodel.SsgKeyHeader;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
+import com.l7tech.policy.UsesPrivateKeys;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
 import com.l7tech.policy.wsp.TypeMapping;
@@ -30,7 +32,7 @@ import static com.l7tech.policy.assertion.AssertionMetadata.*;
  * @author rmak
  * @since SecureSpan 4.0
  */
-public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariables {
+public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariables, UsesPrivateKeys {
 
     private static final String META_INITIALIZED = FtpRoutingAssertion.class.getName() + ".metadataInitialized";
 
@@ -315,5 +317,13 @@ public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariabl
             _passwordUsesContextVariables ? _password : null,
             _fileNamePattern
         ).asArray();
+    }
+
+    @Override
+    public SsgKeyHeader[] getPrivateKeysUsed() {
+        if (isUseClientCert()) {
+            return new SsgKeyHeader[]{new SsgKeyHeader(getClientCertKeystoreId() + ":" + getClientCertKeyAlias(), getClientCertKeystoreId(), getClientCertKeyAlias(), getClientCertKeyAlias())};
+        }
+        return null;
     }
 }

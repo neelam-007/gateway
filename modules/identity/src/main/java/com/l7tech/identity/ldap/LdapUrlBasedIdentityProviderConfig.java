@@ -2,6 +2,8 @@ package com.l7tech.identity.ldap;
 
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderType;
+import com.l7tech.objectmodel.SsgKeyHeader;
+import com.l7tech.policy.UsesPrivateKeys;
 import org.jetbrains.annotations.Nullable;
 
 import javax.persistence.Transient;
@@ -10,7 +12,7 @@ import java.io.Serializable;
 /**
  * Superclass for identity provider configs that are based on a list of LDAP and/or LDAPS URLs.
  */
-public abstract class LdapUrlBasedIdentityProviderConfig extends IdentityProviderConfig implements Serializable {
+public abstract class LdapUrlBasedIdentityProviderConfig extends IdentityProviderConfig implements UsesPrivateKeys, Serializable {
     public static final String URL = "ldapurl";
     private static final String CLIENT_AUTH_ENABLED = "clientAuth";
     private static final String KEYSTORE_ID = "keystoreId";
@@ -76,5 +78,14 @@ public abstract class LdapUrlBasedIdentityProviderConfig extends IdentityProvide
 
     public void setKeyAlias(@Nullable String keyAlias) {
         setProperty(KEY_ALIAS, keyAlias);
+    }
+
+    @Override
+    public SsgKeyHeader[] getPrivateKeysUsed() {
+        if (isClientAuthEnabled()) {
+            final Long keystoreId = getKeystoreId() == null ? -1 : getKeystoreId();
+            return new SsgKeyHeader[]{new SsgKeyHeader(keystoreId + ":" + getKeyAlias(), keystoreId, getKeyAlias(), getKeyAlias())};
+        }
+        return null;
     }
 }

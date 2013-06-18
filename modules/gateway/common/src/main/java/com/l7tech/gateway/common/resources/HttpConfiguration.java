@@ -1,16 +1,12 @@
 package com.l7tech.gateway.common.resources;
 
+import com.l7tech.objectmodel.SsgKeyHeader;
 import com.l7tech.objectmodel.imp.ZoneablePersistentEntityImp;
+import com.l7tech.policy.UsesPrivateKeys;
 import com.l7tech.search.Dependency;
 import org.hibernate.annotations.Proxy;
 
-import javax.persistence.Column;
-import javax.persistence.Embedded;
-import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
-import javax.persistence.Table;
-import javax.persistence.Version;
+import javax.persistence.*;
 
 /**
  * HTTP configuration persistent entity.
@@ -18,7 +14,7 @@ import javax.persistence.Version;
 @Entity
 @Proxy(lazy=false)
 @Table(name="http_configuration")
-public class HttpConfiguration extends ZoneablePersistentEntityImp {
+public class HttpConfiguration extends ZoneablePersistentEntityImp implements UsesPrivateKeys {
 
     //- PUBLIC
 
@@ -302,6 +298,15 @@ public class HttpConfiguration extends ZoneablePersistentEntityImp {
     public void setProxyConfiguration( final HttpProxyConfiguration proxyConfiguration ) {
         checkLocked();
         this.proxyConfiguration = proxyConfiguration;
+    }
+
+    @Override
+    @Transient
+    public SsgKeyHeader[] getPrivateKeysUsed() {
+        if(getTlsKeystoreAlias() != null) {
+            return new SsgKeyHeader[]{new SsgKeyHeader(getTlsKeystoreOid() + ":" + getTlsKeystoreAlias(), getTlsKeystoreOid(), getTlsKeystoreAlias(), getTlsKeystoreAlias())};
+        }
+        return null;
     }
 
     //- PRIVATE

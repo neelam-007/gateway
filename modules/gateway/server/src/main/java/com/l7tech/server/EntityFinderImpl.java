@@ -3,7 +3,7 @@ package com.l7tech.server;
 import com.l7tech.gateway.common.Component;
 import com.l7tech.gateway.common.audit.*;
 import com.l7tech.gateway.common.security.keystore.KeystoreFileEntityHeader;
-import com.l7tech.gateway.common.security.keystore.SsgKeyHeader;
+import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.identity.Group;
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.User;
@@ -142,7 +142,8 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
             EntityHeaderSet<EntityHeader> result = new EntityHeaderSet<EntityHeader>();
             for (SsgKeyFinder keyFinder : keyStoreManager.findAll()) {
                 for (String alias : keyFinder.getAliases()) {
-                    result.add(new SsgKeyHeader(keyFinder.getCertificateChain(alias)));
+                    final SsgKeyEntry key = keyFinder.getCertificateChain(alias);
+                    result.add(new SsgKeyHeader(key.getId(), key.getKeystoreId(), key.getAlias(), key.getName()));
                 }
             }
             return result;

@@ -6,7 +6,7 @@ package com.l7tech.server;
 import com.l7tech.gateway.common.resources.ResourceEntry;
 import com.l7tech.gateway.common.resources.ResourceEntryHeader;
 import com.l7tech.gateway.common.resources.ResourceType;
-import com.l7tech.gateway.common.security.keystore.SsgKeyHeader;
+import com.l7tech.objectmodel.SsgKeyHeader;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceDocument;
 import com.l7tech.gateway.common.service.ServiceHeader;
