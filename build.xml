@@ -1627,7 +1627,9 @@
         <pack-mac jarfile="${build.dir}/managerapplet/lib/certj-6.0.jar"/>
         <pack-mac jarfile="${build.dir}/managerapplet/lib/commons-codec-1.6.jar"/>
         <pack-mac jarfile="${build.dir}/managerapplet/lib/commons-collections-3.2.1.jar"/>
-        <pack-mac jarfile="${build.dir}/managerapplet/lib/commons-httpclient-3.1.jar"/>
+        <pack-mac jarfile="${build.dir}/managerapplet/lib/httpclient-4.2.5.jar"/>
+        <pack-mac jarfile="${build.dir}/managerapplet/lib/httpcore-4.2.4.jar"/>
+        <pack-mac jarfile="${build.dir}/managerapplet/lib/httpmime-4.2.5.jar"/>
         <pack-mac jarfile="${build.dir}/managerapplet/lib/commons-lang-2.6.jar"/>
         <pack-mac jarfile="${build.dir}/managerapplet/lib/concurrent-1.3.4.jar"/>
         <pack-mac jarfile="${build.dir}/managerapplet/lib/dom4j-1.6.1.jar"/>
