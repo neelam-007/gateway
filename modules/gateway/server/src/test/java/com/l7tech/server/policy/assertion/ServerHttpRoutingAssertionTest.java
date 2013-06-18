@@ -958,7 +958,7 @@ public class ServerHttpRoutingAssertionTest {
     @Test
     public void testHttpsTrace() throws Exception {
 
-        Logger logger = Logger.getLogger("com.l7tech.server.routing.http.trace");
+        Logger logger = Logger.getLogger("com.l7tech.server.routing.https.trace");
         logger.setLevel(Level.FINEST);
         logger.setUseParentHandlers(false);
         TestHandler testHandler = new TestHandler();
@@ -1015,8 +1015,8 @@ public class ServerHttpRoutingAssertionTest {
 
         AssertionStatus result = sass.checkRequest(peCtx);
         assertEquals(AssertionStatus.NONE, result);
-        assertTrue(TestHandler.isAuditPresentContaining("FINEST: http-in"));
-        assertTrue(TestHandler.isAuditPresentContaining("FINEST: http-out"));
+        assertTrue(TestHandler.isAuditPresentContaining("FINEST: https-in"));
+        assertTrue(TestHandler.isAuditPresentContaining("FINEST: https-out"));
         peCtx.close();
 
     }
