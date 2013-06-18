@@ -111,20 +111,20 @@ public class IdentityProviderNode extends EntityHeaderNode<EntityHeader> {
 
             list.add(new ForceAdminPasswordResetAction());
             list.add(new IdentityProviderManagePasswordPolicyAction());
+            list.add(new ConfigureSecurityZoneAction<IdentityProviderConfig>(config, new EntitySaver<IdentityProviderConfig>() {
+                @Override
+                public IdentityProviderConfig saveEntity(@NotNull final IdentityProviderConfig entity) throws SaveException {
+                    try {
+                        final long oid = Registry.getDefault().getIdentityAdmin().saveIdentityProviderConfig(entity);
+                        entity.setOid(oid);
+                    } catch (final UpdateException e) {
+                        throw new SaveException("Unable to save identity provider: " + e.getMessage(), e);
+                    }
+                    return entity;
+                }
+            }));
         }
 
-        list.add(new ConfigureSecurityZoneAction<IdentityProviderConfig>(config, new EntitySaver<IdentityProviderConfig>() {
-            @Override
-            public IdentityProviderConfig saveEntity(@NotNull final IdentityProviderConfig entity) throws SaveException {
-                try {
-                    final long oid = Registry.getDefault().getIdentityAdmin().saveIdentityProviderConfig(entity);
-                    entity.setOid(oid);
-                } catch (final UpdateException e) {
-                    throw new SaveException("Unable to save identity provider: " + e.getMessage(), e);
-                }
-                return entity;
-            }
-        }));
 
         return list.toArray(new Action[list.size()]);
     }

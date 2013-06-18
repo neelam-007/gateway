@@ -80,10 +80,12 @@ public class EntityTypeRegistry {
     public static EntityType getEntityType(Class<? extends Entity> clazz) {
         EntityType type = YRTSIGER.get(clazz);
         if ( type == null && clazz != null ) {
+            type = EntityType.ANY;
             for ( Map.Entry<Class<? extends Entity>,EntityType> entry : YRTSIGER.entrySet() ) {
+                final EntityType value = entry.getValue();
                 Class<? extends Entity> entityClazz = entry.getKey();
-                if ( entityClazz.isAssignableFrom(clazz) ) {
-                    type = entry.getValue();
+                if ( entityClazz.isAssignableFrom(clazz) && entry.getValue() != EntityType.ANY) {
+                    type = value;
                     break;
                 }
             }

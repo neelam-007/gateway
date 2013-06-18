@@ -1,7 +1,10 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.console.util.SecurityZoneWidget;
+import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.identity.fed.FederatedIdentityProviderConfig;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
+import com.l7tech.objectmodel.EntityType;
 
 import javax.swing.*;
 import java.awt.*;
@@ -21,6 +24,7 @@ public class FederatedIPGeneralPanel extends IdentityProviderStepPanel {
     private JCheckBox samlCheckbox;
 
     private JPanel mainPanel;
+    private SecurityZoneWidget zoneControl;
 
     private static ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.FederatedIdentityProviderDialog", Locale.getDefault());
     private static Logger logger = Logger.getLogger(FederatedIPGeneralPanel.class.getName());
@@ -108,6 +112,9 @@ public class FederatedIPGeneralPanel extends IdentityProviderStepPanel {
         {
             providerNameTextField.requestFocus();
             providerNameTextField.selectAll();
+            zoneControl.configure(EntityType.ID_PROVIDER_CONFIG, OperationType.CREATE, null);
+        } else {
+            zoneControl.configure(EntityType.ID_PROVIDER_CONFIG, isReadOnly() ? OperationType.READ : OperationType.UPDATE, iProviderConfig.getSecurityZone());
         }
     }
 
@@ -128,7 +135,7 @@ public class FederatedIPGeneralPanel extends IdentityProviderStepPanel {
         iProviderConfig.setSamlSupported(samlCheckbox.isSelected());
         iProviderConfig.setX509Supported(x509CertCheckbox.isSelected());
         iProviderConfig.setName(providerNameTextField.getText().trim());
-
+        iProviderConfig.setSecurityZone(zoneControl.getSelectedZone());
     }
 
     public boolean onNextButton() {

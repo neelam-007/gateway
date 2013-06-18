@@ -1,7 +1,10 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.console.util.SecurityZoneWidget;
+import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.identity.ldap.BindOnlyLdapIdentityProviderConfig;
+import com.l7tech.objectmodel.EntityType;
 
 import javax.swing.*;
 import java.awt.*;
@@ -15,6 +18,7 @@ public class BindOnlyLdapGeneralPanel extends IdentityProviderStepPanel {
     private JTextField dnPrefixField;
     private JTextField dnSuffixField;
     private JTextField providerNameField;
+    private SecurityZoneWidget zoneControl;
 
     private boolean finishAllowed = false;
 
@@ -85,6 +89,9 @@ public class BindOnlyLdapGeneralPanel extends IdentityProviderStepPanel {
             if( config.getOid() == BindOnlyLdapIdentityProviderConfig.DEFAULT_OID) {
                 providerNameField.requestFocus();
                 providerNameField.selectAll();
+                zoneControl.configure(EntityType.ID_PROVIDER_CONFIG, OperationType.CREATE, null);
+            } else {
+                zoneControl.configure(EntityType.ID_PROVIDER_CONFIG, isReadOnly() ? OperationType.READ : OperationType.UPDATE, config.getSecurityZone());
             }
         }
     }
@@ -98,7 +105,7 @@ public class BindOnlyLdapGeneralPanel extends IdentityProviderStepPanel {
             config.setClientAuthEnabled(ldapUrlListPanel.isClientAuthEnabled());
             config.setBindPatternPrefix(dnPrefixField.getText());
             config.setBindPatternSuffix(dnSuffixField.getText());
-
+            config.setSecurityZone(zoneControl.getSelectedZone());
             boolean clientAuth = ldapUrlListPanel.isClientAuthEnabled();
             config.setClientAuthEnabled(clientAuth);
             if (clientAuth) {

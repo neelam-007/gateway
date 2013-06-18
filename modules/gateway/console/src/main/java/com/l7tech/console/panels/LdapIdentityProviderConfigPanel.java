@@ -2,9 +2,12 @@ package com.l7tech.console.panels;
 
 import com.l7tech.console.util.PasswordGuiUtils;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.SecurityZoneWidget;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.admin.IdentityAdmin;
+import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.util.ExceptionUtils;
 
@@ -44,6 +47,7 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
     private JLabel plaintextPasswordWarningLabel;
     private JCheckBox adminEnabledCheckbox;
     private JPanel hostUrlPanel;
+    private SecurityZoneWidget zoneControl;
 
     private LdapUrlListPanel ldapUrlListPanel;
 
@@ -236,6 +240,9 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
                 {
                     providerNameTextField.requestFocus();
                     providerNameTextField.selectAll();
+                    zoneControl.configure(EntityType.ID_PROVIDER_CONFIG, OperationType.CREATE, null);
+                } else {
+                    zoneControl.configure(EntityType.ID_PROVIDER_CONFIG, OperationType.UPDATE, iProviderConfig.getSecurityZone());
                 }
             }
         }
@@ -288,6 +295,7 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
                     ldapSettings.setKeystoreId(null);
                     ldapSettings.setKeyAlias(null);
                 }
+                ldapSettings.setSecurityZone(zoneControl.getSelectedZone());
             }
         }
     }

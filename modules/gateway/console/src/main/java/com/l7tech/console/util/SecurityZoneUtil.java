@@ -93,18 +93,18 @@ public class SecurityZoneUtil {
      * - get a list of zones which the user can select when updating policies
      * - get a list of zones which the user can select when creating jms connections and jms endpoints.
      *
-     * @param operation the operation that the zones must be valid for.
-     * @param types     the entity types that must be valid for the zones.
+     * @param operation the optional operation that the zones must be valid for. If null, no filtering will be done.
+     * @param types     the optional entity types that must be valid for the zones. If null, no filtering will be done.
      * @return a sorted list of zones which the user is allowed to use for the given operation and entity types.
      */
-    public static List<SecurityZone> getSortedZonesForOperationAndEntityType(@NotNull final OperationType operation, @NotNull final Collection<EntityType> types) {
+    public static List<SecurityZone> getSortedZonesForOperationAndEntityType(@Nullable final OperationType operation, @Nullable final Collection<EntityType> types) {
         final Collection<Permission> userPermissions = Registry.getDefault().getSecurityProvider().getUserPermissions();
         final List<SecurityZone> validZones = new ArrayList<>();
-        if (SecurityZoneUtil.isZoneValidForOperation(SecurityZoneUtil.NULL_ZONE, types, operation, userPermissions)) {
+        if (operation == null || types == null || SecurityZoneUtil.isZoneValidForOperation(SecurityZoneUtil.NULL_ZONE, types, operation, userPermissions)) {
             validZones.add(SecurityZoneUtil.NULL_ZONE);
         }
         for (final SecurityZone zone : SecurityZoneUtil.getSortedReadableSecurityZones()) {
-            if (SecurityZoneUtil.isZoneValidForOperation(zone, types, operation, userPermissions)) {
+            if (operation == null || types == null || SecurityZoneUtil.isZoneValidForOperation(zone, types, operation, userPermissions)) {
                 validZones.add(zone);
             }
         }
