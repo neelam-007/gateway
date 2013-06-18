@@ -1,16 +1,25 @@
 package com.l7tech.console.api;
 
 import com.l7tech.console.util.Registry;
+import com.l7tech.gateway.common.security.TrustedCertAdmin;
+import com.l7tech.gateway.common.security.password.SecurePassword;
+import com.l7tech.policy.assertion.CustomAssertionHolder;
 import com.l7tech.policy.assertion.ext.cei.CustomExtensionInterfaceFinder;
+import com.l7tech.policy.assertion.ext.commonui.CommonUIServices;
+import com.l7tech.policy.assertion.ext.commonui.CustomSecurePasswordPanel;
+import com.l7tech.policy.assertion.ext.commonui.CustomTargetVariablePanel;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.runners.MockitoJUnitRunner;
 
+import javax.swing.*;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -22,6 +31,9 @@ import static org.mockito.Mockito.when;
 public class CustomConsoleContextTest {
     @Mock @SuppressWarnings("unused")
     private Registry registry;
+
+    @Mock @SuppressWarnings("unused")
+    private TrustedCertAdmin trustedCertAdmin;
 
     @Before
     public void setUp() throws Exception {
@@ -103,7 +115,67 @@ public class CustomConsoleContextTest {
         assertEquals(testFace, customExtensionInterfaceFinder.getExtensionInterface(MyInterface.class));
 
         // not registered
-        assertNull(customExtensionInterfaceFinder.getExtensionInterface(this.getClass()));
+        assertNull(customExtensionInterfaceFinder.getExtensionInterface(MyInterfaceNotRegistered.class));
+    }
+
+    @Test
+    @Ignore("Developer Test")
+    public void commonUIServicesCreateTargetVariablePanel() throws Exception {
+        Registry.setDefault(registry);
+
+        Map<String, Object> consoleContext = new HashMap<>(1);
+        CustomConsoleContext.addCommonUIServices(consoleContext, new CustomAssertionHolder(), null);
+        CommonUIServices commonUIServices = (CommonUIServices) consoleContext.get("commonUIServices");
+
+        CustomTargetVariablePanel targetVariablePanel = commonUIServices.createTargetVariablePanel();
+        assertNotNull(targetVariablePanel);
+        assertNotNull(targetVariablePanel.getPanel());
+    }
+
+    @Test
+    @Ignore("Developer Test")
+    public void commonUIServicesCreatePasswordComboBoxPanel() throws Exception {
+        Registry.setDefault(registry);
+        when(registry.getTrustedCertManager()).thenReturn(trustedCertAdmin);
+        List<SecurePassword> passwords = this.createSecurePasswordList();
+        when(trustedCertAdmin.findAllSecurePasswords()).thenReturn(passwords);
+
+        Map<String, Object> consoleContext = new HashMap<>(1);
+        CustomConsoleContext.addCommonUIServices(consoleContext, new CustomAssertionHolder(), null);
+        CommonUIServices commonUIServices = (CommonUIServices) consoleContext.get("commonUIServices");
+
+        CustomSecurePasswordPanel securePasswordPanel = commonUIServices.createPasswordComboBoxPanel(new JDialog());
+        assertNotNull(securePasswordPanel);
+        assertNotNull(securePasswordPanel.getPanel());
+
+        // check that only passwords are populated. Not PEM private keys.
+        assertTrue(securePasswordPanel.containsItem(1000L));
+        assertTrue(securePasswordPanel.containsItem(1001L));
+        assertFalse(securePasswordPanel.containsItem(1002L));
+        assertFalse(securePasswordPanel.containsItem(1003L));
+    }
+
+    @Test
+    @Ignore("Developer Test")
+    public void commonUIServicesCreatePEMPrivateKeyComboBoxPanel() throws Exception {
+        Registry.setDefault(registry);
+        when(registry.getTrustedCertManager()).thenReturn(trustedCertAdmin);
+        List<SecurePassword> passwords = this.createSecurePasswordList();
+        when(trustedCertAdmin.findAllSecurePasswords()).thenReturn(passwords);
+
+        Map<String, Object> consoleContext = new HashMap<>(1);
+        CustomConsoleContext.addCommonUIServices(consoleContext, new CustomAssertionHolder(), null);
+        CommonUIServices commonUIServices = (CommonUIServices) consoleContext.get("commonUIServices");
+
+        CustomSecurePasswordPanel securePasswordPanel = commonUIServices.createPEMPrivateKeyComboBoxPanel(new JDialog());
+        assertNotNull(securePasswordPanel);
+        assertNotNull(securePasswordPanel.getPanel());
+
+        // check that only PEM private keys are populated. Not passwords.
+        assertFalse(securePasswordPanel.containsItem(1000L));
+        assertFalse(securePasswordPanel.containsItem(1001L));
+        assertTrue(securePasswordPanel.containsItem(1002L));
+        assertTrue(securePasswordPanel.containsItem(1003L));
     }
 
     private interface MyInterface {
@@ -115,5 +187,44 @@ public class CustomConsoleContextTest {
         public String echo(String in) {
             return "Echo: " + in;
         }
+    }
+
+    private interface MyInterfaceNotRegistered {
+        String echo(String in);
+    }
+
+    private List<SecurePassword> createSecurePasswordList() {
+        // Add 2 passwords and 2 PEM private keys.
+        List<SecurePassword> passwords = new ArrayList<>(4);
+
+        SecurePassword password = new SecurePassword();
+        password.setOid(1000L);
+        password.setName("pass1");
+        password.setType(SecurePassword.SecurePasswordType.PASSWORD);
+        password.setEncodedPassword("");
+        passwords.add(password);
+
+        password = new SecurePassword();
+        password.setOid(1001L);
+        password.setName("pass2");
+        password.setType(SecurePassword.SecurePasswordType.PASSWORD);
+        password.setEncodedPassword("");
+        passwords.add(password);
+
+        password = new SecurePassword();
+        password.setOid(1002L);
+        password.setName("pem1");
+        password.setType(SecurePassword.SecurePasswordType.PEM_PRIVATE_KEY);
+        password.setEncodedPassword("");
+        passwords.add(password);
+
+        password = new SecurePassword();
+        password.setOid(1003L);
+        password.setName("pem2");
+        password.setType(SecurePassword.SecurePasswordType.PEM_PRIVATE_KEY);
+        password.setEncodedPassword("");
+        passwords.add(password);
+
+        return passwords;
     }
 }
