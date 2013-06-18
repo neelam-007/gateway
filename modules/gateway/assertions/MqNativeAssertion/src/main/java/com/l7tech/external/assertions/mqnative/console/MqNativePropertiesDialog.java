@@ -529,7 +529,7 @@ public class MqNativePropertiesDialog extends JDialog {
         keystoreComboBox.setEnabled(false);
         zoneControl.configure(EntityType.SSG_ACTIVE_CONNECTOR,
                 mqNativeActiveConnector.getOid() == SsgActiveConnector.DEFAULT_OID ? OperationType.CREATE : OperationType.UPDATE,
-                zoneControl.getSelectedZone());
+                mqNativeActiveConnector.getSecurityZone());
 
         pack();
         initializeView();
@@ -790,7 +790,6 @@ public class MqNativePropertiesDialog extends JDialog {
 
         if(!populatedTheServiceList)
             ServiceComboBox.populateAndSelect(serviceNameCombo, true, 0);
-        zoneControl.setSelectedZone(mqNativeActiveConnector.getSecurityZone());
         enableOrDisableComponents();
     }
 
@@ -1007,7 +1006,7 @@ public class MqNativePropertiesDialog extends JDialog {
 
     private void viewToModel( final SsgActiveConnector connector ) throws MqNativeSettingsException {
         connector.setEnabled(enabledCheckBox.isSelected());
-
+        connector.setSecurityZone(zoneControl.getSelectedZone());
         connector.setType(SsgActiveConnector.ACTIVE_CONNECTOR_TYPE_MQ_NATIVE);
         connector.setName(mqConnectionName.getText());
 
