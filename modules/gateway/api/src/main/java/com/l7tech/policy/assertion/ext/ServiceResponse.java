@@ -24,17 +24,17 @@ public interface ServiceResponse extends DataExtractor {
      * <pre>
      *     {@code
      *     // get XML
-     *     CustomMessageData data = request.getMessageData(CustomMessageTargetable.XML);
+     *     CustomMessageData data = request.getMessageData(CustomMessageFormat.XML);
      *     assert(data.getData() instanceof Document);
      *     Document doc = (Document)data.getData();
      *
      *     // get JSON
-     *     CustomMessageData data = request.getMessageData(CustomMessageTargetable.JSON);
+     *     CustomMessageData data = request.getMessageData(CustomMessageFormat.JSON);
      *     assert(data.getData() instanceof CustomJsonData);
      *     CustomJsonData jsonData = (CustomJsonData)data.getData();
      *
      *     // get row bytes
-     *     CustomMessageData data = request.getMessageData(CustomMessageTargetable.BYTES);
+     *     CustomMessageData data = request.getMessageData(CustomMessageFormat.BYTES);
      *     assert(data.getData() instanceof byte[]);
      *     byte[] body = (byte[])data.getData();
      *     }

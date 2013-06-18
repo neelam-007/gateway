@@ -198,14 +198,11 @@ public class CustomAssertionHolderTest {
         assertion.setCategory(Category.AUDIT_ALERT);
         assertion.setEnabled(false);
 
-        //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        // TODO: Uncomment once we merge with halibut trunk, where comment cloning is fixed
-        //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        //Assertion.Comment comment = new Assertion.Comment();
-        //comment.setComment("left comment", Assertion.Comment.LEFT_COMMENT);
-        //comment.setComment("right comment", Assertion.Comment.RIGHT_COMMENT);
-        //assertion.setAssertionComment(comment);
-        //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        // add left and right comment
+        Assertion.Comment comment = new Assertion.Comment();
+        comment.setComment("left comment", Assertion.Comment.LEFT_COMMENT);
+        comment.setComment("right comment", Assertion.Comment.RIGHT_COMMENT);
+        assertion.setAssertionComment(comment);
 
         // Do the cloning
         final Assertion copy = assertion.getCopy();
@@ -264,18 +261,20 @@ public class CustomAssertionHolderTest {
                 assertion.isEnabled(), cloneAssertion.isEnabled());
 
 
-        //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        // TODO: Uncomment once we merge with halibut trunk, where comment cloning is fixed
-        //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        //Assert.assertNotNull(assertion.getAssertionComment());
-        //Assert.assertNotNull(cloneAssertion.getAssertionComment());
+        // test comments
+        assertNotNull(assertion.getAssertionComment());
+        assertNotNull(cloneAssertion.getAssertionComment());
 
-        //assertEquals("Comments are equal", assertion.getAssertionComment(), cloneAssertion.getAssertionComment());
-        //assertion.getAssertionComment().setComment("left comment changed", Assertion.Comment.LEFT_COMMENT);
-        //Assert.assertEquals("right comment has same value",
-        //        assertion.getAssertionComment().getAssertionComment(Assertion.Comment.RIGHT_COMMENT),
-        //        cloneAssertion.getAssertionComment().getAssertionComment(Assertion.Comment.RIGHT_COMMENT));
-        //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        assertEquals("Comments are equal", assertion.getAssertionComment().getProperties(), cloneAssertion.getAssertionComment().getProperties());
+
+        assertion.getAssertionComment().setComment("left comment changed", Assertion.Comment.LEFT_COMMENT);
+        assertEquals("right comment has same value",
+                assertion.getAssertionComment().getAssertionComment(Assertion.Comment.RIGHT_COMMENT),
+                cloneAssertion.getAssertionComment().getAssertionComment(Assertion.Comment.RIGHT_COMMENT));
+        assertThat("left comment has different value",
+                assertion.getAssertionComment().getAssertionComment(Assertion.Comment.LEFT_COMMENT),
+                not(equalTo(cloneAssertion.getAssertionComment().getAssertionComment(Assertion.Comment.LEFT_COMMENT))));
+
 
         // again test Custom Assertion (expected sourceTarget to be different)
         assertThat("Custom Assertions are different",
