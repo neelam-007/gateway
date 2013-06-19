@@ -13,10 +13,12 @@ import com.l7tech.gateway.common.resources.ResourceEntryHeader;
 import com.l7tech.gateway.common.resources.ResourceType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.ObjectModelException;
+import com.l7tech.objectmodel.SecurityZone;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
 import com.l7tech.util.TextUtils;
+import org.jetbrains.annotations.Nullable;
 import org.xml.sax.EntityResolver;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -137,16 +139,20 @@ class GlobalResourceImportContext {
         private final String detail;
         private Throwable error;
         private final Set<Pair<String,String>> dependencies = new HashSet<Pair<String,String>>();
+        // SecurityZone to set on the resource
+        private final SecurityZone securityZone;
 
         private ResourceHolder( final ResourceDocument resourceDocument,
                                 final ResourceType resourceType,
                                 final String detail,
-                                final Throwable error ) {
+                                final Throwable error,
+                                @Nullable final SecurityZone securityZone) {
             if ( resourceDocument == null ) throw new IllegalArgumentException( "resourceDocument is required" );
             this.resourceDocument = resourceDocument;
             this.resourceType = resourceType;
             this.detail = detail;
             this.error = error;
+            this.securityZone = securityZone;
         }
 
         public boolean isError() {
@@ -351,6 +357,9 @@ class GlobalResourceImportContext {
                 resourceEntry.setContentType( resourceType.getMimeType() );
                 resourceEntry.setResourceKey1( detail );
             }
+            if (resourceEntry != null) {
+                resourceEntry.setSecurityZone(securityZone);
+            }
 
             return resourceEntry;
         }
@@ -419,6 +428,17 @@ class GlobalResourceImportContext {
         this.importOptions = new HashMap<ImportOption, ImportChoice>( importOptions );
     }
 
+    SecurityZone getSecurityZone() {
+        return securityZone;
+    }
+
+    /**
+     * @param securityZone the SecurityZone to set on all imported resources.
+     */
+    void setSecurityZone(@Nullable final SecurityZone securityZone) {
+        this.securityZone = securityZone;
+    }
+
     ResourceDocument newResourceDocument( final String uri,
                                           final String content ) throws IOException {
         return new URIResourceDocument( asUri(uri), content, null );
@@ -451,7 +471,7 @@ class GlobalResourceImportContext {
     ResourceHolder newSchemaResourceHolder( final ResourceDocument resourceDocument,
                                             final String targetNamespace,
                                             final Throwable error ) {
-        return new ResourceHolder( resourceDocument, ResourceType.XML_SCHEMA, targetNamespace, error );
+        return new ResourceHolder( resourceDocument, ResourceType.XML_SCHEMA, targetNamespace, error, securityZone );
     }
 
     ResourceHolder newDTDResourceHolder( final ResourceDocument resourceDocument,
@@ -461,11 +481,11 @@ class GlobalResourceImportContext {
         if ( resourceDocument instanceof ResourceEntryResourceDocument  ) {
             resourcePublicId = ((ResourceEntryResourceDocument)resourceDocument).resourceEntryHeader.getResourceKey1();
         }
-        return new ResourceHolder( resourceDocument, ResourceType.DTD, resourcePublicId, error );
+        return new ResourceHolder( resourceDocument, ResourceType.DTD, resourcePublicId, error, securityZone );
     }
 
     ResourceHolder newResourceHolder( final ResourceDocument resourceDocument  ) {
-        return new ResourceHolder( resourceDocument, null, null, null );
+        return new ResourceHolder( resourceDocument, null, null, null, securityZone );
     }
 
     static ResourceHolder newResourceHolder( final ResourceDocument resourceDocument, 
@@ -474,7 +494,7 @@ class GlobalResourceImportContext {
         if ( resourceDocument instanceof ResourceEntryResourceDocument  ) {
             detail = ((ResourceEntryResourceDocument)resourceDocument).resourceEntryHeader.getResourceKey1();    
         }
-        return new ResourceHolder( resourceDocument, resourceType, detail, null );
+        return new ResourceHolder( resourceDocument, resourceType, detail, null, null );
     }
 
     static Set<DependencySummary> getDependencies( final DependencyScope scope,
@@ -1195,6 +1215,7 @@ class GlobalResourceImportContext {
     private Map<ImportOption,ImportChoice> importOptions = buildImportOptionMap();
     private ResourceDocumentResolver schemaResolver;
     private ResourceDocumentResolver dtdResolver;
+    private SecurityZone securityZone;
 
     private ResourceDocumentResolver getResolver( final Collection<ResourceDocumentResolver> resolvers ) {
         final ResourceDocumentResolver resolver;

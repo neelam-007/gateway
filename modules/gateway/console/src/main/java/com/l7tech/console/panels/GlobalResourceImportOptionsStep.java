@@ -1,6 +1,9 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.console.util.SecurityZoneWidget;
+import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gui.widgets.TextListCellRenderer;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.util.Functions;
 
 import javax.swing.*;
@@ -26,6 +29,7 @@ class GlobalResourceImportOptionsStep extends GlobalResourceImportWizardStepPane
     private Map<ImportOption,ImportChoice> importOptions = Collections.emptyMap();
     private Collection<GlobalResourceImportContext.ResourceInputSource> inputSources = Collections.emptySet();
     private Map<String, GlobalResourceImportContext.ResourceHolder> processedResources = Collections.emptyMap();
+    private SecurityZoneWidget zoneControl;
 
     GlobalResourceImportOptionsStep( final GlobalResourceImportWizardStepPanel next ) {
         super( "options-step", next );
@@ -69,6 +73,9 @@ class GlobalResourceImportOptionsStep extends GlobalResourceImportWizardStepPane
             optionsPanel.add( Box.createVerticalStrut( 12 ) );
         }
         
+        zoneControl = new SecurityZoneWidget();
+        setBoxOptions(zoneControl);
+        optionsPanel.add(zoneControl);
         optionsPanel.add( Box.createVerticalGlue() );
     }
 
@@ -86,8 +93,8 @@ class GlobalResourceImportOptionsStep extends GlobalResourceImportWizardStepPane
     public boolean onNextButton() {
         // process resources
         getContext().setImportOptions( buildImportOptions() );
+        getContext().setSecurityZone(zoneControl.getSelectedZone());
         processedResources = GlobalResourceImportWizard.processResources( getContext(), inputSources );
-
         return true;
     }
 
@@ -96,6 +103,7 @@ class GlobalResourceImportOptionsStep extends GlobalResourceImportWizardStepPane
         importOptions = settings.getImportOptions();
         inputSources = settings.getResourceInputSources();
         applyOptions();
+        zoneControl.configure(EntityType.RESOURCE_ENTRY, OperationType.CREATE, settings.getSecurityZone());
     }
 
     @Override
