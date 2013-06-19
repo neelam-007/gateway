@@ -29,6 +29,9 @@ import static org.junit.Assert.*;
 public class CustomAssertionHolderTest {
     private static final String DESC = "My Custom Assertion Description";
     private static final String NAME = "My Custom Assertion";
+    private static final String CUSTOM_ASSERTION_LEFT_COMMENT = "Custom Assertion Left Comment";
+    private static final String CUSTOM_ASSERTION_RIGHT_COMMENT = "Custom Assertion Left Comment";
+
     @SuppressWarnings("serial")
     private static final Map TEST_CA_MAP_ELEMENTS = new HashMap<String, Integer>() {
         {
@@ -41,7 +44,7 @@ public class CustomAssertionHolderTest {
     private CustomAssertionHolder holder;
 
     @Before
-    public void setup() {
+    public void setup() throws Exception {
         holder = new CustomAssertionHolder();
         holder.setCustomAssertion(new StubCustomAssertion());
         holder.setDescriptionText(DESC);
@@ -199,7 +202,7 @@ public class CustomAssertionHolderTest {
         assertion.setEnabled(false);
 
         // add left and right comment
-        Assertion.Comment comment = new Assertion.Comment();
+        final Assertion.Comment comment = new Assertion.Comment();
         comment.setComment("left comment", Assertion.Comment.LEFT_COMMENT);
         comment.setComment("right comment", Assertion.Comment.RIGHT_COMMENT);
         assertion.setAssertionComment(comment);
@@ -334,29 +337,29 @@ public class CustomAssertionHolderTest {
 
     @Test
     public void testSerializable() throws Exception {
-        Assertion writePolicy = makeTestPolicy();
+        final Assertion writePolicy = makeTestPolicy();
         assertNotNull("Policy not NULL", writePolicy);
         assertTrue("Policy instance of ExactlyOneAssertion", writePolicy instanceof ExactlyOneAssertion);
 
-        ExactlyOneAssertion eoa1 = (ExactlyOneAssertion)writePolicy;
-        assertSame("Number of policy children is 1", eoa1.getChildren().size(), 1);
-        assertTrue("The one element is of type CustomAssertionHolder", eoa1.getChildren().get(0) instanceof CustomAssertionHolder);
+        final ExactlyOneAssertion eoaInitial = (ExactlyOneAssertion)writePolicy;
+        assertSame("Number of policy children is 1", eoaInitial.getChildren().size(), 1);
+        assertTrue("The first element is of type CustomAssertionHolder", eoaInitial.getChildren().get(0) instanceof CustomAssertionHolder);
 
-        String strPolicy1 = WspWriter.getPolicyXml(writePolicy);
-        Assertion readPolicy = WspReader.getDefault().parseStrictly(strPolicy1, WspReader.OMIT_DISABLED);
+        final String initialPolicyString = WspWriter.getPolicyXml(writePolicy);
+        final Assertion readPolicy = WspReader.getDefault().parseStrictly(initialPolicyString, WspReader.OMIT_DISABLED);
 
         // do a quick check
         assertNotNull("Read policy is not NULL", readPolicy);
         assertTrue("Read policy is of type ExactlyOneAssertion", readPolicy instanceof ExactlyOneAssertion);
-        String strPolicy2 = WspWriter.getPolicyXml(readPolicy);
-        assertEquals("Both policies XMLs are the same", strPolicy1, strPolicy2);
+        final String readPolicyString = WspWriter.getPolicyXml(readPolicy);
+        assertEquals("Both policies XMLs are the same", initialPolicyString, readPolicyString);
 
-        ExactlyOneAssertion eoa2 = (ExactlyOneAssertion)readPolicy;
-        assertSame("Read policy number of children is 1", eoa2.getChildren().size(), 1);
-        assertTrue("Read policy one child is of type CustomAssertionHolder", eoa2.getChildren().get(0) instanceof CustomAssertionHolder);
+        final ExactlyOneAssertion eoaRead = (ExactlyOneAssertion)readPolicy;
+        assertSame("Read policy number of children is 1", eoaRead.getChildren().size(), 1);
+        assertTrue("Read policy first child is of type CustomAssertionHolder", eoaRead.getChildren().get(0) instanceof CustomAssertionHolder);
 
-        CustomAssertionHolder caOriginal = (CustomAssertionHolder)eoa1.getChildren().get(0);
-        CustomAssertionHolder caSerialized = (CustomAssertionHolder)eoa2.getChildren().get(0);
+        final CustomAssertionHolder caOriginal = (CustomAssertionHolder)eoaInitial.getChildren().get(0);
+        final CustomAssertionHolder caSerialized = (CustomAssertionHolder)eoaRead.getChildren().get(0);
 
         assertEquals("Target is the same between original and serialized assertion",
                 caOriginal.getTarget(), caSerialized.getTarget());
@@ -372,6 +375,25 @@ public class CustomAssertionHolderTest {
                 caOriginal.getCustomAssertion(), caSerialized.getCustomAssertion());
         assertNotSame("CustomAssertion between original and serialized assertion has different reference",
                 caOriginal.getCustomAssertion(), caSerialized.getCustomAssertion());
+
+        assertNotNull(caOriginal.getAssertionComment());
+        assertNotNull(caSerialized.getAssertionComment());
+
+        assertEquals("Comments are equal",
+                caOriginal.getAssertionComment().getProperties(),
+                caSerialized.getAssertionComment().getProperties());
+        assertEquals("left comment has same value",
+                caOriginal.getAssertionComment().getAssertionComment(Assertion.Comment.LEFT_COMMENT),
+                caSerialized.getAssertionComment().getAssertionComment(Assertion.Comment.LEFT_COMMENT));
+        assertEquals("left comment is properly de-serialized",
+                caOriginal.getAssertionComment().getAssertionComment(Assertion.Comment.LEFT_COMMENT),
+                CUSTOM_ASSERTION_LEFT_COMMENT);
+        assertEquals("right comment has same value",
+                caOriginal.getAssertionComment().getAssertionComment(Assertion.Comment.RIGHT_COMMENT),
+                caSerialized.getAssertionComment().getAssertionComment(Assertion.Comment.RIGHT_COMMENT));
+        assertEquals("right comment is properly de-serialized",
+                caOriginal.getAssertionComment().getAssertionComment(Assertion.Comment.RIGHT_COMMENT),
+                CUSTOM_ASSERTION_RIGHT_COMMENT);
     }
 
     /**
@@ -380,9 +402,15 @@ public class CustomAssertionHolderTest {
      * @return test policy consistent of a single MessageTargetableCustomAssertion
      */
     private Assertion makeTestPolicy() {
-        final CustomAssertionHolder ca = new CustomAssertionHolder();
-        ca.setCategory(Category.ACCESS_CONTROL);
-        ca.setCustomAssertion(new TestCustomMessageTargetable("test string", 11, false, TEST_CA_MAP_ELEMENTS));
-        return new ExactlyOneAssertion(Arrays.asList(ca));
+        // Custom Assertion
+        final CustomAssertionHolder customAssertion = new CustomAssertionHolder();
+        customAssertion.setCategory(Category.ACCESS_CONTROL);
+        customAssertion.setCustomAssertion(new TestCustomMessageTargetable("test string", 11, false, TEST_CA_MAP_ELEMENTS));
+        final Assertion.Comment customAssertionComment = new Assertion.Comment();
+        customAssertionComment.setComment(CUSTOM_ASSERTION_LEFT_COMMENT, Assertion.Comment.LEFT_COMMENT);
+        customAssertionComment.setComment(CUSTOM_ASSERTION_RIGHT_COMMENT, Assertion.Comment.RIGHT_COMMENT);
+        customAssertion.setAssertionComment(customAssertionComment);
+
+        return new ExactlyOneAssertion(Arrays.asList(customAssertion));
     }
 }

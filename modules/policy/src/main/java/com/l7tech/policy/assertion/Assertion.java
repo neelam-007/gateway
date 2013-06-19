@@ -902,6 +902,12 @@ public abstract class Assertion implements Cloneable, Serializable {
     private void readObject( final ObjectInputStream in ) throws ClassNotFoundException, IOException {
         ObjectInputStream.GetField fields = in.readFields();
         enabled = fields.get("enabled", true);
+
+        // fix for Jira SSM-3678
+        // read assertionComment only for CustomAssertionHolder instances
+        if (assertionComment == null && this instanceof CustomAssertionHolder) {
+            assertionComment = (Comment) fields.get("assertionComment", null);
+        }
     }
 
     /**
