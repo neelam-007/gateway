@@ -3,12 +3,15 @@ package com.l7tech.console.panels;
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.console.SsmApplication;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.SecurityZoneWidget;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
+import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gui.util.FileChooserUtil;
 import com.l7tech.gui.util.FontUtil;
 import com.l7tech.gui.widgets.TextListCellRenderer;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.util.Charsets;
@@ -61,6 +64,7 @@ public class CertImportMethodsPanel extends WizardStepPanel {
     private JRadioButton privateKeyRadioButton;
     private JComboBox trustedCertsComboBox;
     private PrivateKeysComboBox privateKeysComboBox;
+    private SecurityZoneWidget zoneControl;
     private X509Certificate[] certChain = null;
     private boolean defaultToSslOption;
     private static ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.CertificateDialog", Locale.getDefault());
@@ -149,6 +153,7 @@ public class CertImportMethodsPanel extends WizardStepPanel {
         urlConnRadioButton.addChangeListener(enableListener);
         trustedCertRadioButton.addChangeListener(enableListener);
         privateKeyRadioButton.addChangeListener(enableListener);
+        zoneControl.configure(EntityType.TRUSTED_CERT, OperationType.CREATE, null);
     }
 
     private static class CertComboEntry {
@@ -453,6 +458,7 @@ public class CertImportMethodsPanel extends WizardStepPanel {
         if (settings instanceof TrustedCert) {
             TrustedCert tc = (TrustedCert) settings;
             tc.setCertificate(certChain[0]);
+            tc.setSecurityZone(zoneControl.getSelectedZone());
         } else if (settings instanceof SsgKeyEntry) {
             SsgKeyEntry ssgKeyEntry = (SsgKeyEntry)settings;
             ssgKeyEntry.setCertificateChain(certChain);

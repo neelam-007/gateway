@@ -3,13 +3,12 @@ package com.l7tech.console.panels;
 import com.l7tech.console.event.CertEvent;
 import com.l7tech.console.event.CertListener;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.SecurityZoneWidget;
+import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gui.util.*;
 import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.gui.widgets.CertificatePanel;
-import com.l7tech.objectmodel.DuplicateObjectException;
-import com.l7tech.objectmodel.EntityUtil;
-import com.l7tech.objectmodel.ObjectModelException;
-import com.l7tech.objectmodel.VersionException;
+import com.l7tech.objectmodel.*;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.util.ResolvingComparator;
 import com.l7tech.util.Resolver;
@@ -92,24 +91,25 @@ public class CertificateImportDialog extends JDialog {
 
         DefaultListModel model = new DefaultListModel();
         certificateList.setModel( model );
-        certificateList.setCellRenderer( new TextListCellRenderer<Object>( new Functions.Unary<String,Object>(){
+        certificateList.setCellRenderer(new TextListCellRenderer<Object>(new Functions.Unary<String, Object>() {
             @Override
-            public String call( final Object o) {
-                return certificateNameResolver.resolve((X509Certificate[])o);
+            public String call(final Object o) {
+                return certificateNameResolver.resolve((X509Certificate[]) o);
             }
-        }, new Functions.Unary<String,Object>(){
+        }, new Functions.Unary<String, Object>() {
             @Override
-            public String call( final Object o) {
-                return getTooltip(((X509Certificate[])o)[0]);
+            public String call(final Object o) {
+                return getTooltip(((X509Certificate[]) o)[0]);
             }
-        }, false ) );
-        certificateList.addListSelectionListener( new RunOnChangeListener( new Runnable(){
+        }, false
+        ));
+        certificateList.addListSelectionListener(new RunOnChangeListener(new Runnable() {
             @Override
             public void run() {
                 updateControlState();
             }
-        } ) );
-
+        }));
+        zoneControl.configure(EntityType.TRUSTED_CERT, OperationType.CREATE, null);
         updateControlState();
         pack();
         Utilities.setDoubleClickAction( certificateList, viewButton );
@@ -218,6 +218,7 @@ public class CertificateImportDialog extends JDialog {
     private JList certificateList;
     private JCheckBox importAsTrustAnchorCheckBox;
     private JCheckBox importChainCheckBox;
+    private SecurityZoneWidget zoneControl;
 
 
     private void onOK() {
@@ -365,6 +366,7 @@ public class CertificateImportDialog extends JDialog {
                 cert.setName( truncName( name ) );
                 cert.setCertificate( certificate );
                 cert.setTrustAnchor( isTrustAnchor );
+                cert.setSecurityZone(zoneControl.getSelectedZone());
 
                 try {
                     Registry.getDefault().getTrustedCertManager().saveCert(cert);
