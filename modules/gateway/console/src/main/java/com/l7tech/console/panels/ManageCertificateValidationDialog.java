@@ -6,6 +6,7 @@ import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
 import com.l7tech.gateway.common.security.RevocationCheckPolicy;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
+import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.*;
@@ -338,8 +339,9 @@ public class ManageCertificateValidationDialog extends JDialog {
         final int row = policyList.getSelectedIndex();
         final RevocationCheckPolicy check = (RevocationCheckPolicy) policyList.getModel().getElementAt(row);
         if (check != null) {
+            final boolean canUpdate = Registry.getDefault().getSecurityProvider().hasPermission(new AttemptedUpdate(EntityType.REVOCATION_CHECK_POLICY, check));
             final RevocationCheckPolicyPropertiesDialog editor =
-                    new RevocationCheckPolicyPropertiesDialog(this, !flags.canUpdateAll(), check, getRevocationCheckPolicies());
+                    new RevocationCheckPolicyPropertiesDialog(this, !canUpdate, check, getRevocationCheckPolicies());
             DialogDisplayer.display(editor, new Runnable(){
                 public void run() {
                     if (editor.wasOk()) {
