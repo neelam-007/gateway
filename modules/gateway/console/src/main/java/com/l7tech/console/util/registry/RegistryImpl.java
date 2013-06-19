@@ -475,6 +475,7 @@ public final class RegistryImpl extends Registry
         encapsulatedAssertionAdmin = null;
         emailListenerAdmin = null;
         emailAdmin = null;
+        entityNameResolver = null;
     }
 
 
