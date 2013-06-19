@@ -169,6 +169,30 @@ public class SecurityZoneUtilTest {
         assertFalse(SecurityZoneUtil.getAllZoneableEntityTypes().isEmpty());
     }
 
+    @Test
+    public void getHiddenZoneableEntityTypes() {
+        final Set<EntityType> hidden = SecurityZoneUtil.getHiddenZoneableEntityTypes();
+        assertTrue(hidden.contains(EntityType.AUDIT_MESSAGE));
+        assertTrue(hidden.contains(EntityType.UDDI_PROXIED_SERVICE_INFO));
+        assertTrue(hidden.contains(EntityType.UDDI_SERVICE_CONTROL));
+        assertTrue(hidden.contains(EntityType.SSG_KEY_METADATA));
+    }
+
+    @Test
+    public void getEntityTypesWithInheritedZones() {
+        final Map<EntityType, Collection<EntityType>> inheritanceMap = SecurityZoneUtil.getEntityTypesWithInheritedZones();
+        assertEquals(3, inheritanceMap.size());
+        final Collection<EntityType> inheritedFromService = inheritanceMap.get(EntityType.SERVICE);
+        assertEquals(3, inheritedFromService.size());
+        assertTrue(inheritedFromService.containsAll(Arrays.asList(EntityType.AUDIT_MESSAGE, EntityType.UDDI_PROXIED_SERVICE_INFO, EntityType.UDDI_SERVICE_CONTROL)));
+        final Collection<EntityType> inheritedFromPrivateKey = inheritanceMap.get(EntityType.SSG_KEY_ENTRY);
+        assertEquals(1, inheritedFromPrivateKey.size());
+        assertTrue(inheritedFromPrivateKey.contains(EntityType.SSG_KEY_METADATA));
+        final Collection<EntityType> inheritedFromJmsConnection = inheritanceMap.get(EntityType.JMS_CONNECTION);
+        assertEquals(1, inheritedFromJmsConnection.size());
+        assertTrue(inheritedFromJmsConnection.contains(EntityType.JMS_ENDPOINT));
+    }
+
     private Permission createPermission(final OperationType operation, final EntityType entityType, final SecurityZone... zones) {
         final Permission p = new Permission(new Role(), operation, entityType);
         final Set<ScopePredicate> scope = new HashSet<>(zones.length);

@@ -24,6 +24,24 @@ public class SecurityZoneUtil {
     private static final Logger logger = Logger.getLogger(SecurityZoneUtil.class.getName());
 
     private static final AtomicReference<Map<Long, SecurityZone>> securityZones = new AtomicReference<>();
+    private static final Map<EntityType, Collection<EntityType>> TYPES_WITH_INHERITED_ZONES;
+    private static final Set<EntityType> HIDDEN_TYPES;
+
+    static {
+        TYPES_WITH_INHERITED_ZONES = new HashMap<>();
+        // do not support audits as there may be a LOT of them in the zone
+        // user is not aware of the UDDI entities under the hood - they inherit the security zone from the published service
+        TYPES_WITH_INHERITED_ZONES.put(EntityType.SERVICE, Arrays.asList(EntityType.AUDIT_MESSAGE, EntityType.UDDI_PROXIED_SERVICE_INFO, EntityType.UDDI_SERVICE_CONTROL));
+        // user is not aware that JMS involves two entity types - they share the same security zone
+        TYPES_WITH_INHERITED_ZONES.put(EntityType.JMS_CONNECTION, Arrays.asList(EntityType.JMS_ENDPOINT));
+        // key metadata is fronted by ssg key entry
+        TYPES_WITH_INHERITED_ZONES.put(EntityType.SSG_KEY_ENTRY, Arrays.asList(EntityType.SSG_KEY_METADATA));
+
+        HIDDEN_TYPES = new HashSet<>();
+        for (final Collection<EntityType> typesThatInherit : TYPES_WITH_INHERITED_ZONES.values()) {
+            HIDDEN_TYPES.addAll(typesThatInherit);
+        }
+    }
 
     /**
      * Semaphore used internally that represents a null security zone.
@@ -111,6 +129,10 @@ public class SecurityZoneUtil {
         return validZones;
     }
 
+    /**
+     * @return a sorted set of all zoneable entity types. Some types do not allow the user to set their zone via the SSM.
+     */
+    @NotNull
     public static Set<EntityType> getAllZoneableEntityTypes() {
         final Set<EntityType> ret = new TreeSet<>(EntityType.NAME_COMPARATOR);
         for (EntityType type : EntityType.values()) {
@@ -124,6 +146,7 @@ public class SecurityZoneUtil {
      * @return zoneable EntityTypes for which the user can set a zone via SSM.
      * @see #getHiddenZoneableEntityTypes()
      */
+    @NotNull
     public static Set<EntityType> getNonHiddenZoneableEntityTypes() {
         final Set<EntityType> types = getAllZoneableEntityTypes();
         types.removeAll(getHiddenZoneableEntityTypes());
@@ -133,12 +156,19 @@ public class SecurityZoneUtil {
     /**
      * @return EntityTypes that are zoneable but should be hidden from the user because they cannot have their zone set via SSM.
      */
+    @NotNull
     public static Set<EntityType> getHiddenZoneableEntityTypes() {
-        // do not support audits as there may be a LOT of them in the zone
-        // user is not aware of the UDDI entities under the hood - they inherit the security zone from the published service
-        // user is not aware that JMS involves two entity types - they share the same security zone
-        // key metadata is fronted by ssg key entry
-        return new HashSet<>(Arrays.asList(EntityType.AUDIT_MESSAGE, EntityType.UDDI_PROXIED_SERVICE_INFO, EntityType.UDDI_SERVICE_CONTROL, EntityType.JMS_ENDPOINT, EntityType.SSG_KEY_METADATA));
+        return HIDDEN_TYPES;
+    }
+
+    /**
+     * Some EntityTypes cannot have their SecurityZone set via the SSM. These EntityTypes 'inherit' their SecurityZone from other entities.
+     *
+     * @return a map of EntityTypes that inherit their SecurityZone from other EntityTypes where key = the EntityType that is inherited from
+     *         and value = collection of EntityTypes which inherit the SecurityZone from the parent.
+     */
+    public static Map<EntityType, Collection<EntityType>> getEntityTypesWithInheritedZones() {
+        return TYPES_WITH_INHERITED_ZONES;
     }
 
     /**
