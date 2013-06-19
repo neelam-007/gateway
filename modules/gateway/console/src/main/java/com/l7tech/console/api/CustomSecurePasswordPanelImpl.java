@@ -21,22 +21,19 @@ import java.util.List;
  */
 public class CustomSecurePasswordPanelImpl implements CustomSecurePasswordPanel {
 
-    private static final int COMBO_BOX_MIN_WIDTH = 50;
-    private static final int COMBO_BOX_PREFERRED_WIDTH = 100;
+    private static final int MANAGE_PASSWORD_BUTTON_PANEL_FIXED_WIDTH = 125;
+    private static final int MANAGE_PASSWORD_BUTTON_PANEL_FIXED_HEIGHT = 23;
 
     private final SecurePasswordComboBox securePasswordComboBox;
     private final SecurePassword.SecurePasswordType typeFilter;
     private final JDialog parent;
     private final JPanel mainPanel;
     private final JButton managePasswordsButton;
-    private boolean isManagePasswordsButtonDisplayed;
     private List<ManagePasswordsDialogClosedListener> managePasswordsDialogClosedListeners;
 
     public CustomSecurePasswordPanelImpl(SecurePassword.SecurePasswordType typeFilter, JDialog owner) {
         securePasswordComboBox = new SecurePasswordComboBox(typeFilter);
         securePasswordComboBox.setRenderer(TextListCellRenderer.<SecurePasswordComboBox>basicComboBoxRenderer());
-        securePasswordComboBox.setMinimumSize(new Dimension(COMBO_BOX_MIN_WIDTH, -1));
-        securePasswordComboBox.setPreferredSize(new Dimension(COMBO_BOX_PREFERRED_WIDTH, -1));
         this.typeFilter = typeFilter;
         parent = owner;
 
@@ -66,8 +63,20 @@ public class CustomSecurePasswordPanelImpl implements CustomSecurePasswordPanel 
         mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.X_AXIS));
         mainPanel.add(securePasswordComboBox);
         mainPanel.add(Box.createHorizontalStrut(10)); // Add a spacer between combo box and button.
-        mainPanel.add(managePasswordsButton);
-        isManagePasswordsButtonDisplayed = true;
+
+        // Create a panel that contains manage passwords button.
+        // This panel is fixed size, so that if manage passwords button is hidden,
+        // the password combo box remains consistent as though manage password button is
+        // still displayed.
+        JPanel managePasswordsButtonPanel = new JPanel();
+        Dimension dimension = new Dimension(MANAGE_PASSWORD_BUTTON_PANEL_FIXED_WIDTH, MANAGE_PASSWORD_BUTTON_PANEL_FIXED_HEIGHT);
+        managePasswordsButtonPanel.setPreferredSize(dimension);
+        managePasswordsButtonPanel.setMaximumSize(dimension);
+        managePasswordsButtonPanel.setMinimumSize(dimension);
+        managePasswordsButtonPanel.setLayout(new BorderLayout());
+        managePasswordsButtonPanel.add(managePasswordsButton, BorderLayout.CENTER);
+
+        mainPanel.add(managePasswordsButtonPanel);
     }
 
     @Override
@@ -116,15 +125,8 @@ public class CustomSecurePasswordPanelImpl implements CustomSecurePasswordPanel 
 
     @Override
     public void setDisplayManagePasswordsButton (boolean display) {
-        if (display && !isManagePasswordsButtonDisplayed) {
-            mainPanel.add(managePasswordsButton);
-            mainPanel.validate();
-            isManagePasswordsButtonDisplayed = true;
-        } else if (!display && isManagePasswordsButtonDisplayed) {
-            mainPanel.remove(managePasswordsButton);
-            mainPanel.validate();
-            isManagePasswordsButtonDisplayed = false;
-        }
+        managePasswordsButton.setVisible(display);
+        managePasswordsButton.setEnabled(display);
     }
 
     @Override
