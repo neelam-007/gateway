@@ -73,7 +73,6 @@ public abstract class ServiceInvocation {
       throws IOException, GeneralSecurityException {}
 
     /**
-     *
      * Override and implement this method for SSG server-side processing of the input data.
      * Use the MessageTargetable interface to configure assertion to target request, response or other message-typed variable.
      *
@@ -85,32 +84,30 @@ public abstract class ServiceInvocation {
      * @param request request data associated with the service
      * @param response response data associated with the service or null if before routing.
      * @return result status from processing the Custom Assertion
-     * @throws IOException              only if its thrown from {@link #onRequest(ServiceRequest)} or {@link #onResponse(ServiceResponse)}.
-     *                                  For future implementation return {@link CustomAssertionStatus}.
-     * @throws GeneralSecurityException only if {@link #onRequest(ServiceRequest)} or {@link #onResponse(ServiceResponse)} throws this exception.
-     *                                  For future implementation return {@link CustomAssertionStatus}.
+     *
      * @see #onRequest(ServiceRequest)
      * @see #onResponse(ServiceResponse)
      */
-    public CustomAssertionStatus checkRequest(final ServiceRequest request, final ServiceResponse response)
-      throws IOException, GeneralSecurityException
-    {
-        if (isPostRouting() && response != null) {
-            //noinspection deprecation
-            onResponse(response);
-        } else {
-            //noinspection deprecation
-            onRequest(request);
+    public CustomAssertionStatus checkRequest(final ServiceRequest request, final ServiceResponse response) {
+        try {
+            // request cannot be null
+            Object isPostRoutingObject = request.getContext().get("isPostRouting");
+            boolean isPostRouting = isPostRoutingObject != null && (Boolean) isPostRoutingObject;
+
+            if (isPostRouting && response != null) {
+                //noinspection deprecation
+                onResponse(response);
+            } else {
+                //noinspection deprecation
+                onRequest(request);
+            }
+        } catch (GeneralSecurityException e) {
+            throw new RuntimeException(e);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
+
         return CustomAssertionStatus.NONE;
-    }
-
-    public void setPostRouting(boolean postRouting) {
-        this.postRouting = postRouting;
-    }
-
-    public boolean isPostRouting() {
-        return postRouting;
     }
 
     //- PROTECTED
@@ -151,5 +148,4 @@ public abstract class ServiceInvocation {
     //- PRIVATE
 
     private CustomAuditor auditor;
-    private boolean postRouting = false;
 }

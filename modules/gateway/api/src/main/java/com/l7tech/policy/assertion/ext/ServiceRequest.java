@@ -1,7 +1,5 @@
 package com.l7tech.policy.assertion.ext;
 
-import com.l7tech.policy.assertion.ext.message.DataExtractor;
-
 import org.w3c.dom.Document;
 import java.util.Map;
 
@@ -10,48 +8,23 @@ import java.util.Map;
  *
  * @see ServiceInvocation
  */
-public interface ServiceRequest extends DataExtractor {
+public interface ServiceRequest {
     /**
-     * Get the copy of the document that is associated with the current request.
+     * Get the copy of the document that is associated with the default request.
      *
      * @return the DOM <code>Document</code> attached to this service request.
-     *
-     * @deprecated Kept for backwards compatibility, please use either {@link DataExtractor#getMessageData(com.l7tech.policy.assertion.ext.message.CustomMessageFormat)} or
-     * {@link DataExtractor#getMessageData(com.l7tech.policy.assertion.ext.targetable.CustomMessageTargetable, com.l7tech.policy.assertion.ext.message.CustomMessageFormat)},
-     * where you can specify the output message format.
-     * <p/>
-     * e.g.
-     * <pre>
-     *     {@code
-     *     // get XML
-     *     CustomMessageData data = request.getMessageData(CustomMessageFormat.XML);
-     *     assert(data.getData() instanceof Document);
-     *     Document doc = (Document)data.getData();
-     *
-     *     // get JSON
-     *     CustomMessageData data = request.getMessageData(CustomMessageFormat.JSON);
-     *     assert(data.getData() instanceof CustomJsonData);
-     *     CustomJsonData jsonData = (CustomJsonData)data.getData();
-     *
-     *     // get row bytes
-     *     CustomMessageData data = request.getMessageData(CustomMessageFormat.BYTES);
-     *     assert(data.getData() instanceof byte[]);
-     *     byte[] body = (byte[])data.getData();
-     *     }
-     * </pre>
      */
     Document getDocument();
 
     /**
-     * Set or replace the request document
+     * Set or replace the default request document
      *
      * @param document the DOM <code>Document</code> to attach to this service
      *                 request. The existing document will be replaced.
-     *
-     * @deprecated Kept for backwards compatibility, please use either {@link DataExtractor#setDOM(org.w3c.dom.Document)} or
-     * {@link DataExtractor#setDOM(com.l7tech.policy.assertion.ext.targetable.CustomMessageTargetable, org.w3c.dom.Document)}
      */
     void setDocument(Document document);
+
+    // TODO: For now only DOM is supported and extracting message targetable data is to come in the next milestone.
 
     /**
      * Get the security context associated with the request
