@@ -70,7 +70,7 @@ public class CustomAssertionHolderTest {
 
     @Test
     public void testNodeNames() {
-        holder.setNodeNames(new String[] {null, "Policy Node Name Demo"});
+        holder.setPolicyNodeName("Policy Node Name Demo");
         final AssertionNodeNameFactory nameFactory = holder.meta().get(POLICY_NODE_NAME_FACTORY);
         assertEquals("Policy Node Name Demo", nameFactory.getAssertionName(holder, true));
     }

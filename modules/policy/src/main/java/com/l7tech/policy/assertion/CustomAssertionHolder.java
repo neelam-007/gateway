@@ -52,7 +52,8 @@ public class CustomAssertionHolder extends Assertion implements UsesVariables, S
     private CustomAssertion customAssertion;
     private Category category;
     private String descriptionText;
-    private String[] nodeNames = new String[2]; // to hold Palette Node Name and Policy Node Name
+    private String paletteNodeName;
+    private String policyNodeName;
 
     public CustomAssertionHolder() {
         this.parent = null;
@@ -106,12 +107,20 @@ public class CustomAssertionHolder extends Assertion implements UsesVariables, S
         this.descriptionText = descriptionText;
     }
 
-    public String[] getNodeNames() {
-        return nodeNames;
+    public String getPaletteNodeName() {
+        return paletteNodeName;
     }
 
-    public void setNodeNames(String[] nodeNames) {
-        this.nodeNames = nodeNames;
+    public void setPaletteNodeName(String paletteNodeName) {
+        this.paletteNodeName = paletteNodeName;
+    }
+
+    public String getPolicyNodeName() {
+        return policyNodeName;
+    }
+
+    public void setPolicyNodeName(String policyNodeName) {
+        this.policyNodeName = policyNodeName;
     }
 
     @Override
@@ -180,22 +189,15 @@ public class CustomAssertionHolder extends Assertion implements UsesVariables, S
             @Override
             public String getAssertionName( CustomAssertionHolder assertion, boolean decorate) {
                 final CustomAssertion ca = getCustomAssertion();
-                final String[] nodeNames = assertion.getNodeNames();
 
-                String policyName;
-                if (nodeNames == null) {
-                    policyName = ca.getName();
-                } else {
-                    // Get the policy node name from the array (index = 1)
-                    policyName =  nodeNames[1];
-                    // If there is no Policy Node Name setup, then get name from the Custom Assertion
-                    if (policyName == null) policyName = ca.getName();
-                }
+                String policyNodeName = assertion.getPolicyNodeName();
+                // If there is no Policy Node Name setup, then get name from the Custom Assertion
+                if (policyNodeName == null) policyNodeName = ca.getName();
 
-                if (policyName == null) {
-                    policyName = "Unspecified custom assertion (class '" + ca.getClass() + "'";
+                if (policyNodeName == null) {
+                    policyNodeName = "Unspecified custom assertion (class '" + ca.getClass() + "'";
                 }
-                return (decorate) ? AssertionUtils.decorateName(assertion, policyName) : policyName;
+                return (decorate) ? AssertionUtils.decorateName(assertion, policyNodeName) : policyNodeName;
             }
         });
         meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/custom.gif");

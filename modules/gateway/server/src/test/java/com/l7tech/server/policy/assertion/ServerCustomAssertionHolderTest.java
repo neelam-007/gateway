@@ -318,7 +318,8 @@ public class ServerCustomAssertionHolderTest
                 "Test Message Targetable CustomAssertion Description",
                 null, // for now do not use allowed packages
                 null, // for now do not use allowed resources
-                null // nodeNames
+                null, // for palette node name
+                null  // for policy node name
         );
 
         // add sample Legacy descriptor
@@ -331,7 +332,8 @@ public class ServerCustomAssertionHolderTest
                 "Test CustomAssertion Description",
                 null, // for now do not use allowed packages
                 null, // for now do not use allowed resources
-                null // nodeNames
+                null, // for palette node name
+                null  // for policy node name
         );
 
         // mock the new descriptors
@@ -1520,7 +1522,8 @@ public class ServerCustomAssertionHolderTest
                 "Test All Content-Types CustomAssertion Description",
                 null, // for now do not use allowed packages
                 null, // for now do not use allowed resources
-                null // nodeNames
+                null, // for palette node name
+                null  // for policy node name
         );
 
         // mock the new descriptors
