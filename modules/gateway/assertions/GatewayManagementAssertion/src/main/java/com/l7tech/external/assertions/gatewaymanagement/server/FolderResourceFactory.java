@@ -4,25 +4,30 @@ import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory.I
 import com.l7tech.gateway.api.FolderMO;
 import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.gateway.common.security.rbac.OperationType;
-import com.l7tech.objectmodel.ConstraintViolationException;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.ObjectModelException;
-import com.l7tech.objectmodel.PersistentEntity;
+import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.FolderHeader;
 import com.l7tech.objectmodel.folder.InvalidParentFolderException;
 import com.l7tech.server.folder.FolderManager;
 import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.security.rbac.SecurityFilter;
+import com.l7tech.util.Either;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions.Unary;
 import com.l7tech.util.Option;
+
+import static com.l7tech.util.Either.left;
+import static com.l7tech.util.Either.right;
+import static com.l7tech.util.Eithers.extract;
 import static com.l7tech.util.Option.none;
 import static com.l7tech.util.Option.some;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.transaction.PlatformTransactionManager;
 
+import java.lang.reflect.Method;
 import java.util.Collections;
+import java.util.Map;
 
 /**
  * 
@@ -36,7 +41,8 @@ public class FolderResourceFactory extends EntityManagerResourceFactory<FolderMO
                                   final SecurityFilter securityFilter,
                                   final PlatformTransactionManager transactionManager,
                                   final FolderManager folderManager ) {
-        super( false, false, services, securityFilter, transactionManager, folderManager );
+        super( false, true, services, securityFilter, transactionManager, folderManager );
+        this.folderManager = folderManager;
     }
 
     //- PROTECTED
@@ -92,6 +98,73 @@ public class FolderResourceFactory extends EntityManagerResourceFactory<FolderMO
     @Override
     protected void beforeDeleteEntity( final EntityBag<Folder> folderEntityBag ) throws ObjectModelException {
         checkRoot( folderEntityBag.getEntity() );
+    }
+
+    @Override
+    public FolderMO getResource(final Map<String, String> selectorMap) throws ResourceNotFoundException {
+        return extract( transactional( new TransactionalCallback<Either<ResourceNotFoundException,FolderMO>>(){
+            @Override
+            public Either<ResourceNotFoundException,FolderMO> execute() throws ObjectModelException {
+                try {
+                    Folder folder = selectFolder(selectorMap);
+                    EntityBag<Folder> entityBag = new EntityBag<Folder>(folder);
+                    checkPermitted( OperationType.READ, null, entityBag.getEntity() );
+                    return right( identify( asResource( entityBag ), entityBag.getEntity() ) );
+                } catch ( ResourceNotFoundException e ) {
+                    return left( e );
+                }
+            }
+        }, true ) );
+    }
+
+    private Folder selectFolder(Map<String, String> selectorMap) throws ResourceAccessException, ResourceNotFoundException {
+
+        Folder folder = null;
+        final String id = selectorMap.get( IDENTITY_SELECTOR );
+        final String name = selectorMap.get( NAME_SELECTOR );
+
+        if ( id == null && name == null ) {
+            throw new InvalidResourceSelectors();
+        }
+
+        if ( id != null ) {
+            try {
+                folder = folderManager.findByPrimaryKey( toInternalId(id) );
+            } catch (FindException e) {
+                handleObjectModelException(e);
+            }
+        }
+
+        if ( folder == null &&  name != null ) {
+            EntityHeader header = new EntityHeader();
+            header.setDescription(name);
+            try {
+                folder = folderManager.findByHeader(header);
+            } catch (FindException e) {
+                handleObjectModelException(e);
+            }
+        }
+
+        // Verify all selectors match (selectors must be AND'd)
+        if ( folder != null ) {
+            if ( id != null && !id.equalsIgnoreCase(folder.getId())) {
+                folder = null;
+            } else if ( name != null && !(name.equalsIgnoreCase(folder.getName()) || name.equalsIgnoreCase(folder.getPath().substring(1)))) {
+                folder = null;
+            }
+        }
+
+        if ( folder != null ) {
+            folder = filterEntity( folder );
+        }
+
+        if ( folder == null ) {
+            throw new ResourceNotFoundException("Resource not found " + selectorMap);
+        } else {
+            EntityContext.setEntityInfo( getType(), folder.getId() );
+        }
+
+        return folder;
     }
 
     //- PACKAGE
@@ -153,6 +226,7 @@ public class FolderResourceFactory extends EntityManagerResourceFactory<FolderMO
     //- PRIVATE
 
     private static final long ROOT_FOLDER_OID = -5002L;
+    private FolderManager folderManager;
 
     private void checkRoot( final Folder folder ) throws ObjectModelException {
         if ( folder.getOid() == ROOT_FOLDER_OID ) throw new ConstraintViolationException("Cannot update root folder");

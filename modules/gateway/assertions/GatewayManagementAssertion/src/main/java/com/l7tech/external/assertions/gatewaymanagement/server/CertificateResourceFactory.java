@@ -30,7 +30,7 @@ public class CertificateResourceFactory extends EntityManagerResourceFactory<Tru
                                        final SecurityFilter securityFilter,
                                        final PlatformTransactionManager transactionManager,
                                        final TrustedCertManager trustedCertManager ) {
-        super( false, false, services, securityFilter, transactionManager, trustedCertManager );
+        super( false, true, services, securityFilter, transactionManager, trustedCertManager );
     }
 
     //- PROTECTED

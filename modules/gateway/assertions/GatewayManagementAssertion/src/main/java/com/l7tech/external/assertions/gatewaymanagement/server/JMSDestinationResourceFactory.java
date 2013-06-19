@@ -38,7 +38,7 @@ public class JMSDestinationResourceFactory extends EntityManagerResourceFactory<
                                           final PlatformTransactionManager transactionManager,
                                           final JmsEndpointManager jmsEndpointManager,
                                           final JmsConnectionManager jmsConnectionManager ) {
-        super( false, false, services, securityFilter, transactionManager, jmsEndpointManager );
+        super( false, true, services, securityFilter, transactionManager, jmsEndpointManager );
         this.jmsConnectionManager = jmsConnectionManager;
     }
 

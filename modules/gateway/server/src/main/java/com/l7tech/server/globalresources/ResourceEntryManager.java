@@ -6,6 +6,7 @@ import com.l7tech.gateway.common.resources.ResourceType;
 import com.l7tech.objectmodel.EntityManager;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.PropertySearchableEntityManager;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
 
@@ -22,7 +23,7 @@ public interface ResourceEntryManager extends EntityManager<ResourceEntry, Resou
      * @return the resource entry or null
      * @throws FindException if an error occurs
      */
-    ResourceEntry findResourceByUriAndType( String uri, ResourceType type ) throws FindException;
+    ResourceEntry findResourceByUriAndType(String uri, @Nullable ResourceType type) throws FindException;
 
     /**
      * Find resource headers by type.
@@ -31,7 +32,7 @@ public interface ResourceEntryManager extends EntityManager<ResourceEntry, Resou
      * @return The collection of matching resource entry headers (may be empty but never null)
      * @throws FindException if an error occurs
      */
-    Collection<ResourceEntryHeader> findHeadersByType( ResourceType type ) throws FindException;
+    Collection<ResourceEntryHeader> findHeadersByType(@Nullable ResourceType type) throws FindException;
 
     /**
      * Find a resource entry by URI and type.
@@ -44,7 +45,7 @@ public interface ResourceEntryManager extends EntityManager<ResourceEntry, Resou
      * @return the resource entry header or null
      * @throws FindException if an error occurs
      */
-    ResourceEntryHeader findHeaderByUriAndType( String uri, ResourceType type ) throws FindException;
+    ResourceEntryHeader findHeaderByUriAndType(String uri, @Nullable ResourceType type) throws FindException;
 
     /**
      * Find a resource resource by type and (optional) generic key.
@@ -54,7 +55,7 @@ public interface ResourceEntryManager extends EntityManager<ResourceEntry, Resou
      * @return The collection of matching resource entry headers (may be empty but never null)
      * @throws FindException if an error occurs
      */
-    Collection<ResourceEntryHeader> findHeadersByKeyAndType( String key, ResourceType type ) throws FindException;
+    Collection<ResourceEntryHeader> findHeadersByKeyAndType(String key, @Nullable ResourceType type) throws FindException;
 
     /**
      * Find an XML Schema resource by target namespace.
@@ -63,7 +64,7 @@ public interface ResourceEntryManager extends EntityManager<ResourceEntry, Resou
      * @return The collection of matching resource entry headers (may be empty but never null)
      * @throws FindException if an error occurs
      */
-    Collection<ResourceEntryHeader> findHeadersByTNS( String targetNamespace ) throws FindException;
+    Collection<ResourceEntryHeader> findHeadersByTNS(@Nullable String targetNamespace) throws FindException;
 
     /**
      * Find a DTD resource by public identifier.

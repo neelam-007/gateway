@@ -101,7 +101,7 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
 
     @Override
     public Set<String> getSelectors() {
-        return Collections.singleton( IDENTITY_SELECTOR );
+        return Collections.unmodifiableSet(new HashSet<String>(Arrays.asList(IDENTITY_SELECTOR, NAME_SELECTOR)));
     }
 
     @Override
@@ -486,23 +486,34 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
      * @return The identifier pair
      * @throws E If the given identifier is not valid
      */
-    static <E extends Exception> Pair<Long,String>  toInternalId( final String identifier,
+    static <E extends Exception> Pair<Long,String>  toInternalId( final String identifier ,
                                                                   final Functions.NullaryVoidThrows<E> validationThrower ) throws E {
-        if ( identifier == null ) validationThrower.call();
+        return toInternalId(Collections.<String,String>emptyMap().put(IDENTITY_SELECTOR,identifier), validationThrower);
+    }
 
-        final String[] keystoreAndAlias = identifier.split( ":" );
-        if ( keystoreAndAlias.length!=2 ) {
-            validationThrower.call();
-        }
-
+    static <E extends Exception> Pair<Long,String>  toInternalId( final Map<String,String> selectorMap ,
+                                                                  final Functions.NullaryVoidThrows<E> validationThrower ) throws E {
+        String identifier = selectorMap.get(NAME_SELECTOR);
         long keyStoreId;
-        try {
-            keyStoreId = Long.parseLong(keystoreAndAlias[0]);
-        } catch ( NumberFormatException nfe ) {
-            validationThrower.call();
+        final String alias;
+        if ( identifier == null ){
+            identifier = selectorMap.get(IDENTITY_SELECTOR);
+            if ( identifier == null ) validationThrower.call();
+            final String[] keystoreAndAlias = identifier.split( ":" );
+            if ( keystoreAndAlias.length!=2 ) {
+                validationThrower.call();
+            }
+            try {
+                keyStoreId = Long.parseLong(keystoreAndAlias[0]);
+            } catch ( NumberFormatException nfe ) {
+                validationThrower.call();
+                keyStoreId = -1L;
+            }
+            alias = keystoreAndAlias[1];
+        }else{
             keyStoreId = -1L;
+            alias = identifier;
         }
-        final String alias = keystoreAndAlias[1];
 
         return new Pair<Long,String>( keyStoreId, alias );
     }
@@ -530,6 +541,7 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
     private static final Logger logger = Logger.getLogger( PrivateKeyResourceFactory.class.getName() );
 
     private static final String IDENTITY_SELECTOR = "id";
+    private static final String NAME_SELECTOR = "name";
     private static final int DEFAULT_CERTIFICATE_EXPIRY_DAYS = ConfigFactory.getIntProperty( "com.l7tech.external.assertions.gatewaymanagement.defaultCertificateExpiryDays", 365 * 5 );
     private static final int DEFAULT_CSR_EXPIRY_DAYS = ConfigFactory.getIntProperty( "com.l7tech.external.assertions.gatewaymanagement.defaultCsrExpiryDays", 365 * 2 );
     private static final int DEFAULT_RSA_KEY_SIZE = ConfigFactory.getIntProperty( "com.l7tech.external.assertions.gatewaymanagement.defaultRsaKeySize", 2048 );
@@ -552,7 +564,7 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
     }
 
     private Pair<Long,String> getKeyId( final Map<String,String> selectorMap ) throws InvalidResourceSelectors {
-        return toInternalId( selectorMap.get( IDENTITY_SELECTOR ), SELECTOR_THROWER );
+        return toInternalId( selectorMap, SELECTOR_THROWER );
     }
 
     private PrivateKeyMO getResourceInternal( final Map<String, String> selectorMap,

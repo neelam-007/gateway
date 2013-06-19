@@ -1,21 +1,35 @@
 package com.l7tech.external.assertions.gatewaymanagement.server;
 
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.gateway.api.FolderMO;
 import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.gateway.api.Resource;
 import com.l7tech.gateway.api.ResourceDocumentMO;
 import com.l7tech.gateway.common.resources.ResourceEntry;
 import com.l7tech.gateway.common.resources.ResourceEntryHeader;
 import static com.l7tech.gateway.common.resources.ResourceType.*;
+
+import com.l7tech.gateway.common.security.rbac.OperationType;
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.ObjectModelException;
+import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.server.globalresources.ResourceEntryManager;
 import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.security.rbac.SecurityFilter;
 import com.l7tech.util.ConfigFactory;
+import com.l7tech.util.Either;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Option;
+
+import static com.l7tech.util.Either.left;
+import static com.l7tech.util.Either.right;
+import static com.l7tech.util.Eithers.extract;
 import static com.l7tech.util.TextUtils.trim;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.xml.sax.EntityResolver;
+
+import java.util.Map;
 
 /**
  * The DocumentResourceFactory is a general purpose resource factory.
@@ -36,7 +50,8 @@ public class DocumentResourceFactory extends EntityManagerResourceFactory<Resour
                                     final PlatformTransactionManager transactionManager,
                                     final ResourceEntryManager resourceEntryManager,
                                     final EntityResolver entityResolver ) {
-        super( false, false, services, securityFilter, transactionManager, resourceEntryManager );
+        super( false, true, services, securityFilter, transactionManager, resourceEntryManager );
+        this.resourceEntryManager = resourceEntryManager;
         this.entityResolver = entityResolver;
     }
 
@@ -128,7 +143,72 @@ public class DocumentResourceFactory extends EntityManagerResourceFactory<Resour
         oldEntity.setResourceKey2( newEntity.getResourceKey2() );
         oldEntity.setResourceKey3( newEntity.getResourceKey3() );
     }
+    @Override
+    public ResourceDocumentMO getResource(final Map<String, String> selectorMap) throws ResourceNotFoundException {
+        return extract( transactional( new TransactionalCallback<Either<ResourceNotFoundException,ResourceDocumentMO>>(){
+            @Override
+            public Either<ResourceNotFoundException,ResourceDocumentMO> execute() throws ObjectModelException {
+                try {
+                    ResourceEntry resource = selectResourceEntry(selectorMap);
+                    EntityBag<ResourceEntry> entityBag = new EntityBag<ResourceEntry>(resource);
+                    checkPermitted( OperationType.READ, null, entityBag.getEntity() );
+                    return right( identify( asResource( entityBag ), entityBag.getEntity() ) );
+                } catch ( ResourceNotFoundException e ) {
+                    return left( e );
+                }
+            }
+        }, true ) );
+    }
 
+    private ResourceEntry selectResourceEntry(Map<String, String> selectorMap) throws ResourceAccessException, ResourceNotFoundException {
+
+        ResourceEntry resource = null;
+        final String id = selectorMap.get( IDENTITY_SELECTOR );
+        final String name = selectorMap.get( NAME_SELECTOR );
+
+        if ( id == null && name == null ) {
+            throw new InvalidResourceSelectors();
+        }
+
+        if ( id != null ) {
+            try {
+                resource = resourceEntryManager.findByPrimaryKey( toInternalId(id) );
+            } catch (FindException e) {
+                handleObjectModelException(e);
+            }
+        }
+
+        if ( resource == null &&  name != null ) {
+            EntityHeader header = new EntityHeader();
+            header.setDescription(name);
+            try {
+                resource = resourceEntryManager.findResourceByUriAndType(name,null);
+            } catch (FindException e) {
+                handleObjectModelException(e);
+            }
+        }
+
+        // Verify all selectors match (selectors must be AND'd)
+        if ( resource != null ) {
+            if ( id != null && !id.equalsIgnoreCase(resource.getId())) {
+                resource = null;
+            } else if ( name != null && !(name.equalsIgnoreCase(resource.getUri()))) {
+                resource = null;
+            }
+        }
+
+        if ( resource != null ) {
+            resource = filterEntity( resource );
+        }
+
+        if ( resource == null ) {
+            throw new ResourceNotFoundException("Resource not found " + selectorMap);
+        } else {
+            EntityContext.setEntityInfo( getType(), resource.getId() );
+        }
+
+        return resource;
+    }
     //- PRIVATE
 
     private static final Boolean TNS_REQUIRED = ConfigFactory.getBooleanProperty( "com.l7tech.external.assertions.gatewaymanagement.schemaTNSRequired", false );
@@ -137,6 +217,7 @@ public class DocumentResourceFactory extends EntityManagerResourceFactory<Resour
     private static final String PROP_TARGET_NAMESPACE = "targetNamespace";
 
     private final EntityResolver entityResolver;
+    private final ResourceEntryManager resourceEntryManager;
 
     private String getTns( final String uri,
                            final String contents ) throws InvalidResourceException {

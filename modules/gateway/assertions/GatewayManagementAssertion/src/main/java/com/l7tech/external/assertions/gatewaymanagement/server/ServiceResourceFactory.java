@@ -57,7 +57,7 @@ public class ServiceResourceFactory extends EntityManagerResourceFactory<Service
                                    final ServiceWsdlUpdateChecker uddiServiceWsdlUpdateChecker,
                                    final PolicyHelper policyHelper,
                                    final FolderResourceFactory folderResourceFactory ) {
-        super( false, false, services, securityFilter, transactionManager, serviceManager );
+        super( false, true, services, securityFilter, transactionManager, serviceManager );
         this.serviceManager = serviceManager;
         this.serviceDocumentManager = serviceDocumentManager;
         this.serviceDocumentResolver = serviceDocumentResolver;

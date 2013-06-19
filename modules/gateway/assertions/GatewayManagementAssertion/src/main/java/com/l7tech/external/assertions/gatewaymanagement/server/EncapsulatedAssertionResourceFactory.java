@@ -32,7 +32,7 @@ public class EncapsulatedAssertionResourceFactory extends EntityManagerResourceF
                                                  final PlatformTransactionManager transactionManager,
                                                  final EncapsulatedAssertionConfigManager encapsulatedAssertionConfigManager,
                                                  final PolicyManager policyManager) {
-        super(false, false, true, services, securityFilter, transactionManager, encapsulatedAssertionConfigManager );
+        super(false, true, true, services, securityFilter, transactionManager, encapsulatedAssertionConfigManager );
         this.policyManager = policyManager;
     }
 
