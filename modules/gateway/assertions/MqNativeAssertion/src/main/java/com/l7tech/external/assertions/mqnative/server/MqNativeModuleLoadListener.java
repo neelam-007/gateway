@@ -2,15 +2,24 @@ package com.l7tech.external.assertions.mqnative.server;
 
 import com.l7tech.external.assertions.mqnative.MqNativeExternalReferenceFactory;
 import com.l7tech.external.assertions.mqnative.MqNativeRoutingAssertion;
+import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import com.l7tech.message.HasHeaders;
+import com.l7tech.objectmodel.Entity;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.SsgKeyHeader;
 import com.l7tech.server.LifecycleException;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.ServerConfig.PropertyRegistrationInfo;
 import com.l7tech.server.policy.export.PolicyExporterImporterManager;
 import com.l7tech.server.policy.variable.MessageSelector;
+import com.l7tech.server.search.objects.Dependency;
+import com.l7tech.server.search.processors.BaseDependencyProcessor;
+import com.l7tech.server.search.processors.DependencyFinder;
+import com.l7tech.server.search.processors.DependencyProcessor;
 import com.l7tech.server.util.Injector;
 import com.l7tech.server.util.ThreadPoolBean;
 import com.l7tech.util.ExceptionUtils;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.context.ApplicationContext;
 
 import java.util.ArrayList;
@@ -35,6 +44,8 @@ public class MqNativeModuleLoadListener {
 
     private static PolicyExporterImporterManager policyExporterImporterManager;
     private static MqNativeExternalReferenceFactory externalReferenceFactory;
+
+    private static Map<String, DependencyProcessor<SsgActiveConnector>> ssgActiveConnectorDependencyProcessorTypeMap;
 
     /**
      * This is a complete list of cluster-wide properties used by the MQNative module.
@@ -95,6 +106,28 @@ public class MqNativeModuleLoadListener {
             } catch (LifecycleException e) {
                 logger.log(Level.WARNING, "MQ Native active connector module threw exception during startup: " + ExceptionUtils.getMessage(e), e);
             }
+
+            // Get the ssg connector dependency processor map to add the mq connector dependency processor
+            //noinspection unchecked
+            ssgActiveConnectorDependencyProcessorTypeMap = context.getBean( "ssgActiveConnectorDependencyProcessorTypeMap", Map.class );
+            ssgActiveConnectorDependencyProcessorTypeMap.put(SsgActiveConnector.ACTIVE_CONNECTOR_TYPE_MQ_NATIVE, new BaseDependencyProcessor<SsgActiveConnector>(){
+                @Override
+                @NotNull
+                public List<Dependency> findDependencies(SsgActiveConnector activeConnector, DependencyFinder finder) throws FindException {
+                    List<Entity> dependentEntities = new ArrayList<>();
+                    //add the mq password as a dependency if it is set
+                    if (activeConnector.getBooleanProperty(SsgActiveConnector.PROPERTIES_KEY_MQ_NATIVE_IS_QUEUE_CREDENTIAL_REQUIRED)) {
+                        dependentEntities.addAll(finder.retrieveEntities(activeConnector.getProperty(SsgActiveConnector.PROPERTIES_KEY_MQ_NATIVE_SECURE_PASSWORD_OID), com.l7tech.search.Dependency.DependencyType.SECURE_PASSWORD, com.l7tech.search.Dependency.MethodReturnType.OID));
+                    }
+                    //add the ssl key used if it is set
+                    if (activeConnector.getBooleanProperty(SsgActiveConnector.PROPERTIES_KEY_MQ_NATIVE_IS_SSL_ENABLED) && activeConnector.getBooleanProperty(SsgActiveConnector.PROPERTIES_KEY_MQ_NATIVE_IS_SSL_KEYSTORE_USED)) {
+                        String keyAlias = activeConnector.getProperty(SsgActiveConnector.PROPERTIES_KEY_MQ_NATIVE_SSL_KEYSTORE_ALIAS);
+                        String keyStoreId = activeConnector.getProperty(SsgActiveConnector.PROPERTIES_KEY_MQ_NATIVE_SSL_KEYSTORE_ID);
+                        dependentEntities.addAll(finder.retrieveEntities(new SsgKeyHeader(keyStoreId + ":" + keyAlias, Long.parseLong(keyStoreId), keyAlias, keyAlias), com.l7tech.search.Dependency.DependencyType.SSG_PRIVATE_KEY, com.l7tech.search.Dependency.MethodReturnType.ENTITY_HEADER));
+                    }
+                    return finder.getDependenciesFromEntities(activeConnector, finder, dependentEntities);
+                }
+            });
         }
     }
 
@@ -118,6 +151,9 @@ public class MqNativeModuleLoadListener {
 
         MessageSelector.unRegisterSelector(MqNativeRoutingAssertion.MQ);
         unregisterExternalReferenceFactory();
+
+        //remove the dependency processor
+        ssgActiveConnectorDependencyProcessorTypeMap.remove(SsgActiveConnector.ACTIVE_CONNECTOR_TYPE_MQ_NATIVE);
     }
 
     /**

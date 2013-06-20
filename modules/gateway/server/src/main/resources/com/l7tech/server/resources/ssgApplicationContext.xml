@@ -938,7 +938,7 @@
 
     <bean id="sslContextInitializer" class="com.l7tech.server.security.cert.SslContextInitializer" init-method="init">
         <constructor-arg index="0" ref="trustManager"/>
-        <constructor-arg index="1" ref="ssgKeyStoreManager"/>    
+        <constructor-arg index="1" ref="ssgKeyStoreManager"/>
         <constructor-arg index="2" ref="applicationEventProxy"/>
     </bean>
 
@@ -2512,7 +2512,45 @@
                     <key><util:constant static-field="com.l7tech.search.Dependency.DependencyType.ID_PROVIDER_CONFIG"/></key>
                     <bean class="com.l7tech.server.search.processors.IdentityProviderProcessor"/>
                 </entry>
+                <entry>
+                    <key><util:constant static-field="com.l7tech.search.Dependency.DependencyType.SSG_ACTIVE_CONNECTOR"/></key>
+                    <bean class="com.l7tech.server.search.processors.SsgActiveConnectorDependencyProcessor">
+                        <constructor-arg>
+                            <ref bean="ssgActiveConnectorDependencyProcessorTypeMap" />
+                        </constructor-arg>
+                    </bean>
+                </entry>
+                <entry>
+                    <key><util:constant static-field="com.l7tech.search.Dependency.DependencyType.SSG_CONNECTOR"/></key>
+                    <bean class="com.l7tech.server.search.processors.SsgConnectorDependencyProcessor">
+                        <constructor-arg>
+                            <ref bean="ssgConnectorDependencyProcessorTypeMap" />
+                        </constructor-arg>
+                    </bean>
+                </entry>
             </util:map>
         </constructor-arg>
     </bean>
+
+    <util:map id="ssgActiveConnectorDependencyProcessorTypeMap" key-type="java.lang.String" value-type="com.l7tech.server.search.processors.DependencyProcessor" />
+    <util:map id="ssgConnectorDependencyProcessorTypeMap" key-type="java.lang.String" value-type="com.l7tech.server.search.processors.DependencyProcessor">
+        <entry>
+            <key><util:constant static-field="com.l7tech.gateway.common.transport.SsgConnector.SCHEME_HTTP"/></key>
+            <bean class="com.l7tech.server.search.processors.DoNothingDependencyProcessor"/>
+        </entry>
+        <entry>
+            <key><util:constant static-field="com.l7tech.gateway.common.transport.SsgConnector.SCHEME_HTTPS"/></key>
+            <ref bean="sslSsgConnectorDependencyProcessor"/>
+        </entry>
+        <entry>
+            <key><util:constant static-field="com.l7tech.gateway.common.transport.SsgConnector.SCHEME_FTP"/></key>
+            <bean class="com.l7tech.server.search.processors.DoNothingDependencyProcessor"/>
+        </entry>
+        <entry>
+            <key><util:constant static-field="com.l7tech.gateway.common.transport.SsgConnector.SCHEME_FTPS"/></key>
+            <ref bean="sslSsgConnectorDependencyProcessor"/>
+        </entry>
+    </util:map>
+    <bean id="sslSsgConnectorDependencyProcessor" class="com.l7tech.server.search.processors.SslSsgConnectorDependencyProcessor" />
+
 </beans>

@@ -1,6 +1,7 @@
 package com.l7tech.server.search.entitytests;
 
 import com.l7tech.gateway.common.security.password.SecurePassword;
+import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.objectmodel.Entity;
@@ -20,6 +21,9 @@ import org.junit.Before;
 import org.junit.runner.RunWith;
 import org.mockito.*;
 import org.mockito.runners.MockitoJUnitRunner;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * This was created: 6/12/13 as 4:44 PM
@@ -57,6 +61,10 @@ public abstract class DependencyTestBaseClass {
     @InjectMocks
     IdentityProviderProcessor identityProviderProcessor = new IdentityProviderProcessor();
 
+    protected Map<String, DependencyProcessor<SsgConnector>> ssgConnectorProcessors = new HashMap<>();
+    @InjectMocks
+    SsgConnectorDependencyProcessor ssgConnectorDependencyProcessor = new SsgConnectorDependencyProcessor(ssgConnectorProcessors);
+
     @Spy
     DependencyProcessorStore processorStore = new DependencyProcessorStore(CollectionUtils.MapBuilder.<Dependency.DependencyType, DependencyProcessor>builder()
             .put(Dependency.DependencyType.GENERIC, genericDependencyProcessor)
@@ -67,6 +75,7 @@ public abstract class DependencyTestBaseClass {
             .put(Dependency.DependencyType.ASSERTION, assertionDependencyProcessor)
             .put(Dependency.DependencyType.CLUSTER_PROPERTY, clusterPropertyDependencyProcessor)
             .put(Dependency.DependencyType.ID_PROVIDER_CONFIG, identityProviderProcessor)
+            .put(Dependency.DependencyType.SSG_CONNECTOR, ssgConnectorDependencyProcessor)
             .map());
 
     @InjectMocks

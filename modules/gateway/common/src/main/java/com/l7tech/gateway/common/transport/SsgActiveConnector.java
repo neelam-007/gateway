@@ -1,7 +1,7 @@
 package com.l7tech.gateway.common.transport;
 
-import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.objectmodel.imp.ZoneableNamedEntityImp;
+import com.l7tech.search.Dependency;
 import com.l7tech.util.Functions.Unary;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
@@ -140,6 +140,7 @@ public class SsgActiveConnector extends ZoneableNamedEntityImp {
     }
 
     @Column(name="hardwired_service_oid")
+    @Dependency(methodReturnType = Dependency.MethodReturnType.OID, type = Dependency.DependencyType.SERVICE)
     public Long getHardwiredServiceOid() {
         return hardwiredServiceOid;
     }

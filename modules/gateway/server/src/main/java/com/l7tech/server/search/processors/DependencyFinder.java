@@ -5,7 +5,6 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.server.search.DependencyAnalyzer;
-import com.l7tech.server.search.DependencyAnalyzerException;
 import com.l7tech.server.search.DependencyProcessorStore;
 import com.l7tech.server.search.objects.Dependency;
 import com.l7tech.server.search.objects.DependencySearchResults;
@@ -104,21 +103,28 @@ public class DependencyFinder {
         }
 
         //find the dependency processor to use.
-        DependencyProcessor processor = processorStore.getProcessor(getFromObject(dependent));
+        DependencyProcessor processor = processorStore.getProcessor(getTypeFromObject(dependent));
         //using the dependency processor find the dependencies and return the results.
         //noinspection unchecked
         return processor.findDependencies(dependent, this);
     }
 
     /**
-     * Retrieves an entity given a search value and the Dependency annotation.
+     * Retrieves an entity given a search value and information about the search value.
+     *
+     * @param searchValue     The search value to search for the dependency by
+     * @param dependencyType  The type of dependency that is to be found
+     * @param searchValueType The search value type.
+     * @return This is the list of entity found using the search value.
      */
-    protected List<Entity> retrieveEntities(Object searchValue, com.l7tech.search.Dependency dependency) throws DependencyAnalyzerException, FindException {
+    public List<Entity> retrieveEntities(Object searchValue, com.l7tech.search.Dependency.DependencyType dependencyType, com.l7tech.search.Dependency.MethodReturnType searchValueType) throws FindException {
         //Finds the correct processor to use to retrieve the entity
-        DependencyProcessor processor = processorStore.getProcessor(dependency.type());
+        DependencyProcessor processor = processorStore.getProcessor(
+                // If the search value type is an entity the get the processor based on the type of entity.
+                com.l7tech.search.Dependency.MethodReturnType.ENTITY.equals(searchValueType) ? getTypeFromObject(searchValue) : dependencyType);
         // use the processor to retrieve the entity using the search value.
         //noinspection unchecked
-        return processor.find(searchValue, dependency);
+        return processor.find(searchValue, dependencyType, searchValueType);
     }
 
     /**
@@ -130,7 +136,7 @@ public class DependencyFinder {
      */
     private DependentObject createDependentObject(Object dependent) {
         //Finds the correct processor to use
-        DependencyProcessor processor = processorStore.getProcessor(getFromObject(dependent));
+        DependencyProcessor processor = processorStore.getProcessor(getTypeFromObject(dependent));
         // use the processor to create the DependentObject from the dependent
         //noinspection unchecked
         return processor.createDependentObject(dependent);
@@ -195,7 +201,7 @@ public class DependencyFinder {
      * @return The dependency type of the given object
      */
     @NotNull
-    private static com.l7tech.search.Dependency.DependencyType getFromObject(Object obj) {
+    private static com.l7tech.search.Dependency.DependencyType getTypeFromObject(Object obj) {
         if (obj instanceof Entity) {
             //if its an entity use the entity type to find the dependency type
             try {
@@ -210,5 +216,33 @@ public class DependencyFinder {
         } else {
             return com.l7tech.search.Dependency.DependencyType.GENERIC;
         }
+    }
+
+    /**
+     * This will return a list of dependencies given a list of entities. The dependencies will have their dependencies
+     * discovered using the DependencyFinder.
+     *
+     * @param object            The object that the given entities belong to. This is used to make sure that the object
+     *                          does not depend on itself.
+     * @param finder            The finder used to get the Dependencies from the entities.
+     * @param dependentEntities The Entities to return as Dependencies.
+     * @return The list of dependencies representing the given list of entities.
+     * @throws FindException This is thrown if there was an error finding an entity.
+     */
+    public List<Dependency> getDependenciesFromEntities(Object object, DependencyFinder finder, List<Entity> dependentEntities) throws FindException {
+        ArrayList<Dependency> dependencies = new ArrayList<>();
+        if (dependentEntities != null) {
+            //if a dependency if found then search for its dependencies and add it to the set of dependencies found
+            for (Entity entity : dependentEntities) {
+                if (entity != null) {
+                    //Making sure an entity does not depend on itself
+                    if (!object.equals(entity)) {
+                        final Dependency dependency = finder.getDependency(entity);
+                        dependencies.add(dependency);
+                    }
+                }
+            }
+        }
+        return dependencies;
     }
 }

@@ -1,9 +1,21 @@
 package com.l7tech.external.assertions.ssh.server;
 
+import com.l7tech.external.assertions.ssh.SshCredentialAssertion;
+import com.l7tech.gateway.common.transport.SsgActiveConnector;
+import com.l7tech.gateway.common.transport.SsgConnector;
+import com.l7tech.objectmodel.Entity;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.LifecycleException;
+import com.l7tech.server.search.objects.Dependency;
+import com.l7tech.server.search.processors.BaseDependencyProcessor;
+import com.l7tech.server.search.processors.DependencyFinder;
+import com.l7tech.server.search.processors.DependencyProcessor;
 import com.l7tech.util.ExceptionUtils;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.context.ApplicationContext;
 
+import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -13,6 +25,7 @@ import java.util.logging.Logger;
 public class SshServerModuleLoadListener {
     private static final Logger logger = Logger.getLogger(SshServerModuleLoadListener.class.getName());
     private static SshServerModule instance;
+    private static Map<String, DependencyProcessor<SsgConnector>> ssgConnectorDependencyProcessorTypeMap;
 
     public static synchronized void onModuleLoaded(ApplicationContext context) {
         if (instance != null) {
@@ -24,6 +37,22 @@ public class SshServerModuleLoadListener {
             } catch (LifecycleException e) {
                 logger.log(Level.WARNING, "SSH module threw exception on startup: " + ExceptionUtils.getMessage(e), e);
             }
+
+            // Get the ssg connector dependency processor map to add the ssh connector dependency processor
+            //noinspection unchecked
+            ssgConnectorDependencyProcessorTypeMap = context.getBean( "ssgConnectorDependencyProcessorTypeMap", Map.class );
+            ssgConnectorDependencyProcessorTypeMap.put(SshServerModule.SCHEME_SSH, new BaseDependencyProcessor<SsgConnector>() {
+                @Override
+                @NotNull
+                public List<Dependency> findDependencies(SsgConnector connector, DependencyFinder finder) throws FindException {
+                    List<Entity> dependentEntities = null;
+                    //adds the ssh password as a dependency if one is defined.
+                    if (connector.getProperty(SshCredentialAssertion.LISTEN_PROP_HOST_PRIVATE_KEY) != null) {
+                        dependentEntities = finder.retrieveEntities(connector.getProperty(SshCredentialAssertion.LISTEN_PROP_HOST_PRIVATE_KEY), com.l7tech.search.Dependency.DependencyType.SECURE_PASSWORD, com.l7tech.search.Dependency.MethodReturnType.OID);
+                    }
+                    return finder.getDependenciesFromEntities(connector, finder, dependentEntities);
+                }
+            });
         }
     }
 
@@ -43,6 +72,8 @@ public class SshServerModuleLoadListener {
                 instance = null;
             }
         }
+        //remove the dependency processor from the list
+        ssgConnectorDependencyProcessorTypeMap.remove(SsgActiveConnector.ACTIVE_CONNECTOR_TYPE_SFTP);
     }
 
 }

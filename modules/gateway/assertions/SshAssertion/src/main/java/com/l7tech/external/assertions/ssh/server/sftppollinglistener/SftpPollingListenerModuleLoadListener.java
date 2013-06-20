@@ -1,11 +1,19 @@
 package com.l7tech.external.assertions.ssh.server.sftppollinglistener;
 
 import com.l7tech.external.assertions.ssh.SftpPollingListenerConstants;
+import com.l7tech.gateway.common.transport.SsgActiveConnector;
+import com.l7tech.objectmodel.Entity;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.LifecycleException;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.search.objects.Dependency;
+import com.l7tech.server.search.processors.BaseDependencyProcessor;
+import com.l7tech.server.search.processors.DependencyFinder;
+import com.l7tech.server.search.processors.DependencyProcessor;
 import com.l7tech.server.util.Injector;
 import com.l7tech.server.util.ThreadPoolBean;
 import com.l7tech.util.ExceptionUtils;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.context.ApplicationContext;
 
 import java.util.ArrayList;
@@ -22,6 +30,7 @@ public class SftpPollingListenerModuleLoadListener implements SftpPollingListene
 
     // Manages all SFTP polling listener processes
     private static SftpPollingListenerModule sftpPollingListenerModule;
+    private static Map<String, DependencyProcessor<SsgActiveConnector>> ssgActiveConnectorDependencyProcessorTypeMap;
 
     @SuppressWarnings({"UnusedDeclaration"})
     public static synchronized void onModuleLoaded(final ApplicationContext context) {
@@ -51,6 +60,24 @@ public class SftpPollingListenerModuleLoadListener implements SftpPollingListene
             } catch (LifecycleException e) {
                 logger.log(Level.WARNING, "SFTP polling listener module threw exception during startup: " + ExceptionUtils.getMessage(e), e);
             }
+
+            // Get the ssg connector dependency processor map to add the mq connector dependency processor
+            //noinspection unchecked
+            ssgActiveConnectorDependencyProcessorTypeMap = context.getBean( "ssgActiveConnectorDependencyProcessorTypeMap", Map.class );
+            ssgActiveConnectorDependencyProcessorTypeMap.put(SsgActiveConnector.ACTIVE_CONNECTOR_TYPE_SFTP, new BaseDependencyProcessor<SsgActiveConnector>() {
+                @Override
+                @NotNull
+                public List<Dependency> findDependencies(SsgActiveConnector activeConnector, DependencyFinder finder) throws FindException {
+                    List<Entity> dependentEntities;
+                    //add the password as a dependency
+                    if (activeConnector.getProperty(SsgActiveConnector.PROPERTIES_KEY_SFTP_SECURE_PASSWORD_OID) != null) {
+                        dependentEntities = finder.retrieveEntities(activeConnector.getProperty(SsgActiveConnector.PROPERTIES_KEY_SFTP_SECURE_PASSWORD_OID), com.l7tech.search.Dependency.DependencyType.SECURE_PASSWORD, com.l7tech.search.Dependency.MethodReturnType.OID);
+                    } else {
+                        dependentEntities = finder.retrieveEntities(activeConnector.getProperty(SsgActiveConnector.PROPERTIES_KEY_SFTP_SECURE_PASSWORD_KEY_OID), com.l7tech.search.Dependency.DependencyType.SECURE_PASSWORD, com.l7tech.search.Dependency.MethodReturnType.OID);
+                    }
+                    return finder.getDependenciesFromEntities(activeConnector, finder, dependentEntities);
+                }
+            });
         }
     }
 
@@ -71,6 +98,8 @@ public class SftpPollingListenerModuleLoadListener implements SftpPollingListene
                 sftpPollingListenerModule = null;
             }
         }
+        //remove the dependency processor
+        ssgActiveConnectorDependencyProcessorTypeMap.remove(SsgActiveConnector.ACTIVE_CONNECTOR_TYPE_SFTP);
     }
 
     /**

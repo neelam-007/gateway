@@ -1,9 +1,13 @@
 package com.l7tech.external.assertions.rawtcp.server;
 
+import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.server.LifecycleException;
+import com.l7tech.server.search.processors.DependencyProcessor;
+import com.l7tech.server.search.processors.DoNothingDependencyProcessor;
 import com.l7tech.util.ExceptionUtils;
 import org.springframework.context.ApplicationContext;
 
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -13,6 +17,7 @@ import java.util.logging.Logger;
 public class ModuleLoadListener {
     private static final Logger logger = Logger.getLogger(ModuleLoadListener.class.getName());
     private static SimpleRawTransportModule instance;
+    private static Map<String, DependencyProcessor<SsgConnector>> ssgConnectorDependencyProcessorTypeMap;
 
     public static synchronized void onModuleLoaded(ApplicationContext context) {
         if (instance != null) {
@@ -25,6 +30,12 @@ public class ModuleLoadListener {
             } catch (LifecycleException e) {
                 logger.log(Level.WARNING, "Simple raw transport module threw exception on startup: " + ExceptionUtils.getMessage(e), e);
             }
+
+            // Get the ssg connector dependency processor map to add the tcp connector dependency processor
+            //noinspection unchecked
+            ssgConnectorDependencyProcessorTypeMap = context.getBean( "ssgConnectorDependencyProcessorTypeMap", Map.class );
+            // Us the DoNothingDependencyProcessor because the tcp connector does not add any dependencies beyond the the defaults.
+            ssgConnectorDependencyProcessorTypeMap.put(SimpleRawTransportModule.SCHEME_RAW_TCP, new DoNothingDependencyProcessor<SsgConnector>());
         }
     }
 
@@ -44,6 +55,8 @@ public class ModuleLoadListener {
                 instance = null;
             }
         }
+        //remove the dependency processor
+        ssgConnectorDependencyProcessorTypeMap.remove(SimpleRawTransportModule.SCHEME_RAW_TCP);
     }
 
 }

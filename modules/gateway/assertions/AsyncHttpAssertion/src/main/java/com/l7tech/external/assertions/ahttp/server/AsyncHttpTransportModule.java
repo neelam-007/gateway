@@ -19,6 +19,8 @@ import com.l7tech.server.event.system.ReadyForMessages;
 import com.l7tech.server.identity.cert.TrustedCertServices;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
+import com.l7tech.server.search.processors.DependencyProcessor;
+import com.l7tech.server.search.processors.DoNothingDependencyProcessor;
 import com.l7tech.server.transport.ListenerException;
 import com.l7tech.server.transport.SsgConnectorManager;
 import com.l7tech.server.transport.TransportModule;
@@ -76,6 +78,9 @@ public class AsyncHttpTransportModule extends TransportModule implements Applica
     private final Map<Long, Pair<SsgConnector, AsyncHttpListenerInfo>> activeConnectors = new ConcurrentHashMap<Long, Pair<SsgConnector, AsyncHttpListenerInfo>>();
 
     private static final Map<String, PendingAsyncRequest> activeAsyncRequests = new ConcurrentHashMap<String, PendingAsyncRequest>(2048, 0.75f, 256);
+
+    //This is the map of ssgConnectorDependency processors. We need it in order to add the AsyncHttp dependency processor
+    private static Map<String, DependencyProcessor<SsgConnector>> ssgConnectorDependencyProcessorTypeMap;
 
     protected AsyncHttpTransportModule(@NotNull final ApplicationEventProxy applicationEventProxy,
                                        @NotNull final GatewayState gatewayState,
@@ -401,6 +406,13 @@ public class AsyncHttpTransportModule extends TransportModule implements Applica
             } catch (LifecycleException e) {
                 logger.log(Level.WARNING, "Async HTTP transport module threw exception on startup: " + ExceptionUtils.getMessage(e), e);
             }
+
+            //get the map of SsgConnector dependency processors.
+            //noinspection unchecked
+            ssgConnectorDependencyProcessorTypeMap = context.getBean( "ssgConnectorDependencyProcessorTypeMap", Map.class );
+            //add a custom processor for async http. this is the do nothing dependency processor because Async http does
+            // not declare any dependencies beyond the default SsgConnector dependencies
+            ssgConnectorDependencyProcessorTypeMap.put(SCHEME_ASYNC_HTTP, new DoNothingDependencyProcessor<SsgConnector>());
         }
     }
 
@@ -421,6 +433,8 @@ public class AsyncHttpTransportModule extends TransportModule implements Applica
                 instance = null;
             }
         }
+        //remove the dependency processor
+        ssgConnectorDependencyProcessorTypeMap.remove(SCHEME_ASYNC_HTTP);
     }
 
     public static boolean sendResponseToPendingRequest(String requestId, Message response, boolean destroyAsRead) {

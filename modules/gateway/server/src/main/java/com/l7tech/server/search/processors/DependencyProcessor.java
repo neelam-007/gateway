@@ -32,13 +32,14 @@ public interface DependencyProcessor<O> {
      * Returns an entity given a search value and the dependency info.
      *
      * @param searchValue The search value that should uniquely identify the entity.
-     * @param dependency  The dependency info that describes this dependency and search value
+     * @param dependencyType The type of dependency that is object is.
+     * @param searchValueType The type of value the search value is.
      * @param <E>         The Entity
      * @return The Entity specified by the given search value
      * @throws FindException This is thrown if the entity cannot be found
      */
     @Nullable
-    public <E extends Entity> List<E> find(@NotNull Object searchValue, com.l7tech.search.Dependency dependency) throws FindException;
+    public <E extends Entity> List<E> find(@NotNull Object searchValue, com.l7tech.search.Dependency.DependencyType dependencyType, com.l7tech.search.Dependency.MethodReturnType searchValueType) throws FindException;
 
     /**
      * Creates a DependentObject given an instance of the dependent.

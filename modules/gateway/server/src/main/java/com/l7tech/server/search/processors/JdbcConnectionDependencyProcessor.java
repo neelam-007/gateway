@@ -20,13 +20,13 @@ public class JdbcConnectionDependencyProcessor extends GenericDependencyProcesso
     private JdbcConnectionManager jdbcConnectionManager;
 
     @SuppressWarnings("unchecked")
-    public List<JdbcConnection> find(@NotNull Object searchValue, com.l7tech.search.Dependency dependency) throws FindException {
-        switch (dependency.methodReturnType()) {
+    public List<JdbcConnection> find(@NotNull Object searchValue, com.l7tech.search.Dependency.DependencyType dependencyType, com.l7tech.search.Dependency.MethodReturnType searchValueType) throws FindException {
+        switch (searchValueType) {
             case NAME:
                 return Arrays.asList(jdbcConnectionManager.getJdbcConnection((String) searchValue));
             default:
                 //if a different search method is specified then search for the jdbc connection using the GenericDependency processor
-                return (List<JdbcConnection>) super.find(searchValue, dependency);
+                return (List<JdbcConnection>) super.find(searchValue, dependencyType, searchValueType);
         }
     }
 }

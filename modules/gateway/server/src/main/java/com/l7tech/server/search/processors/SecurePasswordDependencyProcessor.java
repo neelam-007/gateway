@@ -2,7 +2,6 @@ package com.l7tech.server.search.processors;
 
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.search.Dependency;
 import com.l7tech.server.policy.variable.ServerVariables;
 import com.l7tech.server.security.password.SecurePasswordManager;
 import org.jetbrains.annotations.NotNull;
@@ -24,8 +23,8 @@ public class SecurePasswordDependencyProcessor extends GenericDependencyProcesso
     private SecurePasswordManager securePasswordManager;
 
     @SuppressWarnings("unchecked")
-    public List<SecurePassword> find(@NotNull Object searchValue, Dependency dependency) throws FindException {
-        switch (dependency.methodReturnType()) {
+    public List<SecurePassword> find(@NotNull Object searchValue, com.l7tech.search.Dependency.DependencyType dependencyType, com.l7tech.search.Dependency.MethodReturnType searchValueType) throws FindException {
+        switch (searchValueType) {
             case NAME: {
                 final SecurePassword securePassword = securePasswordManager.findByUniqueName((String) searchValue);
                 return securePassword != null ? Arrays.asList(securePassword) : null;
@@ -43,7 +42,7 @@ public class SecurePasswordDependencyProcessor extends GenericDependencyProcesso
                 return securePassword != null ? Arrays.asList(securePassword) : null;
             }
             default:
-                return (List<SecurePassword>) super.find(searchValue, dependency);
+                return (List<SecurePassword>) super.find(searchValue, dependencyType, searchValueType);
         }
     }
 }

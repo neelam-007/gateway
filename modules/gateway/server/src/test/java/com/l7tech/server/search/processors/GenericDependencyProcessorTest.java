@@ -23,8 +23,9 @@ import org.mockito.*;
 import org.mockito.internal.verification.Times;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import java.lang.annotation.Annotation;
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 
 /**
  * This was created: 6/11/13 as 10:30 AM
@@ -131,7 +132,7 @@ public class GenericDependencyProcessorTest {
             }
         });
 
-        List<Entity> entities = processor.find(oid, new DependencyAnnotation(com.l7tech.search.Dependency.DependencyType.GENERIC, com.l7tech.search.Dependency.MethodReturnType.OID));
+        List<Entity> entities = processor.find(oid, com.l7tech.search.Dependency.DependencyType.GENERIC, com.l7tech.search.Dependency.MethodReturnType.OID);
 
         Mockito.verify(entityCrud).find(Matchers.any(EntityHeader.class));
         Assert.assertNotNull(entities);
@@ -161,7 +162,7 @@ public class GenericDependencyProcessorTest {
             }
         });
 
-        List<Entity> entities = processor.find(oid, new DependencyAnnotation(com.l7tech.search.Dependency.DependencyType.GENERIC, com.l7tech.search.Dependency.MethodReturnType.OID));
+        List<Entity> entities = processor.find(oid, com.l7tech.search.Dependency.DependencyType.GENERIC, com.l7tech.search.Dependency.MethodReturnType.OID);
 
         Mockito.verify(entityCrud).find(Matchers.any(EntityHeader.class));
         Assert.assertNotNull(entities);
@@ -194,7 +195,7 @@ public class GenericDependencyProcessorTest {
             });
         }
 
-        List<Entity> entities = processor.find(oids, new DependencyAnnotation(com.l7tech.search.Dependency.DependencyType.GENERIC, com.l7tech.search.Dependency.MethodReturnType.OID));
+        List<Entity> entities = processor.find(oids, com.l7tech.search.Dependency.DependencyType.GENERIC, com.l7tech.search.Dependency.MethodReturnType.OID);
 
         Mockito.verify(entityCrud, new Times(3)).find(Matchers.any(EntityHeader.class));
         Assert.assertNotNull(entities);
@@ -245,7 +246,7 @@ public class GenericDependencyProcessorTest {
         Assert.assertNotNull(dependencies);
         Assert.assertEquals(1, dependencies.size());
         Assert.assertNotNull(dependencies.get(0));
-        Assert.assertEquals(returnedEntity.getId(), ((DependentEntity)dependencies.get(0).getDependent()).getInternalID());
+        Assert.assertEquals(returnedEntity.getId(), ((DependentEntity) dependencies.get(0).getDependent()).getInternalID());
     }
 
     @Test
@@ -338,7 +339,7 @@ public class GenericDependencyProcessorTest {
 
             @com.l7tech.search.Dependency(key = PROPERTY_KEY)
             public Object getProperty(String key) {
-                if(PROPERTY_KEY.equals(key))
+                if (PROPERTY_KEY.equals(key))
                     return returnedEntity;
                 return null;
             }
@@ -404,8 +405,8 @@ public class GenericDependencyProcessorTest {
             }
 
             @Dependencies({
-                @com.l7tech.search.Dependency(key = PROPERTY_KEY),
-                @com.l7tech.search.Dependency(key = PROPERTY_KEY2)
+                    @com.l7tech.search.Dependency(key = PROPERTY_KEY),
+                    @com.l7tech.search.Dependency(key = PROPERTY_KEY2)
             })
             public Map<String, Object> getProperties() {
                 return CollectionUtils.MapBuilder.<String, Object>builder().put(PROPERTY_KEY, returnedEntity).put(PROPERTY_KEY2, returnedEntity2).map();
@@ -447,48 +448,6 @@ public class GenericDependencyProcessorTest {
 
             return !(id != null ? !id.equals(that.id) : that.id != null);
 
-        }
-    }
-
-    @SuppressWarnings("ClassExplicitlyAnnotation")
-    private static class DependencyAnnotation implements com.l7tech.search.Dependency {
-        boolean dependency = true;
-        DependencyType type = DependencyType.GENERIC;
-        MethodReturnType methodReturnType = MethodReturnType.OID;
-
-        private DependencyAnnotation(DependencyType type, MethodReturnType methodReturnType) {
-            this.type = type;
-            this.methodReturnType = methodReturnType;
-        }
-
-        @Override
-        public boolean isDependency() {
-            return dependency;
-        }
-
-        @Override
-        public DependencyType type() {
-            return type;
-        }
-
-        @Override
-        public MethodReturnType methodReturnType() {
-            return methodReturnType;
-        }
-
-        @Override
-        public String key() {
-            return "";
-        }
-
-        @Override
-        public boolean searchObject() {
-            return false;
-        }
-
-        @Override
-        public Class<? extends Annotation> annotationType() {
-            return com.l7tech.search.Dependency.class;
         }
     }
 }

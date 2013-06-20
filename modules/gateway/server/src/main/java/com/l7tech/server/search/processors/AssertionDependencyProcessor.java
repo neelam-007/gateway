@@ -113,7 +113,7 @@ public class AssertionDependencyProcessor extends GenericDependencyProcessor<Ass
      * This throws an exception. It should not be called. Assertions cannot be found the same way other entities can.
      */
     @SuppressWarnings("unchecked")
-    public List<? extends Entity> find(@NotNull Object searchValue, com.l7tech.search.Dependency dependency) {
+    public List<? extends Entity> find(@NotNull Object searchValue, com.l7tech.search.Dependency.DependencyType dependencyType, com.l7tech.search.Dependency.MethodReturnType searchValueType) {
         throw new UnsupportedOperationException("Assertions cannot be loaded as entities");
     }
 }

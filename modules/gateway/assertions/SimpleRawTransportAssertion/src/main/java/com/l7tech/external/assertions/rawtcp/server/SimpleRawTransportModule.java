@@ -51,7 +51,7 @@ import static com.l7tech.util.CollectionUtils.caseInsensitiveSet;
  */
 public class SimpleRawTransportModule extends TransportModule implements ApplicationListener {
     private static final Logger logger = Logger.getLogger(SimpleRawTransportModule.class.getName());
-    private static final String SCHEME_RAW_TCP = "l7.raw.tcp";
+    protected static final String SCHEME_RAW_TCP = "l7.raw.tcp";
 
     private static final Set<String> SUPPORTED_SCHEMES = caseInsensitiveSet(SCHEME_RAW_TCP);
 

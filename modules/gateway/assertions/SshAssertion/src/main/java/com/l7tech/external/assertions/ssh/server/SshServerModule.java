@@ -124,7 +124,7 @@ public class SshServerModule extends TransportModule implements ApplicationListe
     static final AttributeKey<AtomicInteger> MINA_SESSION_ATTR_CHANNEL_COUNT = new AttributeKey<AtomicInteger>();
 
     private static final Logger LOGGER = Logger.getLogger(SshServerModule.class.getName());
-    private static final String SCHEME_SSH = "SSH2";
+    protected static final String SCHEME_SSH = "SSH2";
     private static final Pattern SPLIT_DELIMITER = Pattern.compile("<split>");
     private static final Set<String> SUPPORTED_SCHEMES = caseInsensitiveSet( SCHEME_SSH );
     private static final String SSHD_PROPERTY_PREFIX = "sshd.";
