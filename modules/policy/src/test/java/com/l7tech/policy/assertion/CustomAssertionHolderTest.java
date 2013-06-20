@@ -18,9 +18,7 @@ import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
 
-import static com.l7tech.policy.assertion.AssertionMetadata.DESCRIPTION;
-import static com.l7tech.policy.assertion.AssertionMetadata.POLICY_NODE_NAME_FACTORY;
-import static com.l7tech.policy.assertion.AssertionMetadata.SHORT_NAME;
+import static com.l7tech.policy.assertion.AssertionMetadata.*;
 import static com.l7tech.policy.assertion.CustomAssertionHolder.CUSTOM_ASSERTION;
 
 import static org.hamcrest.CoreMatchers.*;
@@ -76,6 +74,22 @@ public class CustomAssertionHolderTest {
         holder.setPolicyNodeName("Policy Node Name Demo");
         final AssertionNodeNameFactory nameFactory = holder.meta().get(POLICY_NODE_NAME_FACTORY);
         assertEquals("Policy Node Name Demo", nameFactory.getAssertionName(holder, true));
+    }
+
+    @Test
+    public void testSetIsUiAutoOpen() {
+        Assertion.clearCachedMetadata(holder.getClass().getName());
+        holder.setIsUiAutoOpen(true);
+        String adviceClassName = holder.meta().get(POLICY_ADVICE_CLASSNAME);
+        assertEquals("com.l7tech.console.tree.policy.advice.CustomAssertionHolderAdvice", adviceClassName);
+    }
+
+    @Test
+    public void testUnsetIsUiAutoOpen() {
+        Assertion.clearCachedMetadata(holder.getClass().getName());
+        holder.setIsUiAutoOpen(false);
+        String adviceClassName = holder.meta().get(POLICY_ADVICE_CLASSNAME);
+        assertNotSame("com.l7tech.console.tree.policy.advice.CustomAssertionHolderAdvice", adviceClassName);
     }
 
     @SuppressWarnings("serial")

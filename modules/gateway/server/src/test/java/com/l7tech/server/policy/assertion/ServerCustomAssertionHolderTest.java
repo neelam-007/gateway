@@ -149,6 +149,7 @@ public class ServerCustomAssertionHolderTest
                 TestServiceInvocation.class,
                 Category.AUDIT_ALERT,
                 "Test CustomAssertion Description",
+                false, // for ui auto open
                 null, // for now do not use allowed packages
                 null, // for now do not use allowed resources
                 null, // for palette node name

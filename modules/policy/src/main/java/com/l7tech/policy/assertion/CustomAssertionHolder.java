@@ -54,6 +54,7 @@ public class CustomAssertionHolder extends Assertion implements UsesVariables, S
     private String descriptionText;
     private String paletteNodeName;
     private String policyNodeName;
+    private boolean isUiAutoOpen;
 
     public CustomAssertionHolder() {
         this.parent = null;
@@ -121,6 +122,14 @@ public class CustomAssertionHolder extends Assertion implements UsesVariables, S
 
     public void setPolicyNodeName(String policyNodeName) {
         this.policyNodeName = policyNodeName;
+    }
+
+    public boolean getIsUiAutoOpen() {
+        return isUiAutoOpen;
+    }
+
+    public void setIsUiAutoOpen(boolean isUiAutoOpen) {
+        this.isUiAutoOpen = isUiAutoOpen;
     }
 
     @Override
@@ -204,6 +213,10 @@ public class CustomAssertionHolder extends Assertion implements UsesVariables, S
 
         if (customAssertion instanceof CustomPolicyValidator) {
             meta.put(POLICY_VALIDATOR_CLASSNAME, "com.l7tech.console.util.CustomAssertionHolderValidator");
+        }
+
+        if (this.getIsUiAutoOpen()) {
+            meta.put(POLICY_ADVICE_CLASSNAME, "com.l7tech.console.tree.policy.advice.CustomAssertionHolderAdvice");
         }
 
         return meta;

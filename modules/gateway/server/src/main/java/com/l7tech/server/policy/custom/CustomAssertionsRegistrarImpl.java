@@ -298,6 +298,7 @@ public class CustomAssertionsRegistrarImpl extends ApplicationObjectSupport impl
                 ch.setDescriptionText(cd.getDescription());
                 ch.setPaletteNodeName(cd.getPaletteNodeName());
                 ch.setPolicyNodeName(cd.getPolicyNodeName());
+                ch.setIsUiAutoOpen(cd.getIsUiAutoOpen());
                 result.add(ch);
             } catch (Exception e) {
                 logger.log(Level.WARNING, "Unable to instantiate custom assertion", e);
@@ -405,8 +406,9 @@ public class CustomAssertionsRegistrarImpl extends ApplicationObjectSupport impl
         String editorClass = null;
         String extensionInterfaceClassName = null;
         String optionalDescription = null;
-        String optionalUiAllowedPackages = null;
-        String optionalUiAllowedResources = null;
+        boolean isUiAutoOpen = false;
+        String uiAllowedPackages = null;
+        String uiAllowedResources = null;
         String paletteNodeName = null;
         String policyNodeName = null;
         Category category = Category.UNFILLED;
@@ -429,10 +431,13 @@ public class CustomAssertionsRegistrarImpl extends ApplicationObjectSupport impl
                     }
                 } else if (key.endsWith(".description")) {
                     optionalDescription = (String) properties.get(key);
-                } else if (key.endsWith(".ui.allowed.packages")) {
-                    optionalUiAllowedPackages = (String) properties.get(key);
+                } else if (key.endsWith(".ui.auto.open")) {
+                    isUiAutoOpen = Boolean.parseBoolean((String) properties.get(key));
+                }
+                else if (key.endsWith(".ui.allowed.packages")) {
+                    uiAllowedPackages = (String) properties.get(key);
                 } else if (key.endsWith(".ui.allowed.resources")) {
-                    optionalUiAllowedResources = (String) properties.get(key);
+                    uiAllowedResources = (String) properties.get(key);
                 } else if (key.endsWith(".palette.node.name")) {
                     paletteNodeName = (String) properties.get(key);
                 } else if (key.endsWith(".policy.node.name")) {
@@ -457,7 +462,7 @@ public class CustomAssertionsRegistrarImpl extends ApplicationObjectSupport impl
             }
 
             Class sa = Class.forName(serverClass, true, classLoader);
-            CustomAssertionDescriptor eh = new CustomAssertionDescriptor(baseKey, a, eClass, sa, category, optionalDescription, optionalUiAllowedPackages, optionalUiAllowedResources, paletteNodeName, policyNodeName);
+            CustomAssertionDescriptor eh = new CustomAssertionDescriptor(baseKey, a, eClass, sa, category, optionalDescription, isUiAutoOpen, uiAllowedPackages, uiAllowedResources, paletteNodeName, policyNodeName);
             CustomAssertions.register(eh);
 
             registerCustomExtensionInterface(extensionInterfaceClassName, classLoader);

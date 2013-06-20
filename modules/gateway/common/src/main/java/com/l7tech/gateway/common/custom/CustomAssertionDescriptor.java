@@ -29,6 +29,7 @@ public class CustomAssertionDescriptor {
     private final String description;
     private final String paletteNodeName;
     private final String policyNodeName;
+    private final boolean isUiAutoOpen;
     private final String[] uiAllowedPackages;
     private final Set<String> uiAllowedResources;
     private final Category category;
@@ -38,14 +39,16 @@ public class CustomAssertionDescriptor {
      * Create the new extensibility holder instance with the assertion, server
      * assertion, and the client (Bridge) asseriton class.
      *
-     * @param name                       the assertion name
-     * @param assertionClass             the assertion class
-     * @param uiClass                    the UI class, must be implementation of <code>CustomAssertionUI</code>
-     * @param serverAssertionClass       the server side assertion class
-     * @param cat                        the assertion category
-     * @param optionalDescription        the description (may be null)
-     * @param optionalUiAllowedPackages  the allowed packages for use by the SSM (may be null)
-     * @param optionalUiAllowedResources the allowed resources for use by the SSM (may be null)
+     * @param name                 the assertion name
+     * @param assertionClass       the assertion class
+     * @param uiClass              the UI class, must be implementation of <code>CustomAssertionUI</code>
+     * @param serverAssertionClass the server side assertion class
+     * @param cat                  the assertion category
+     * @param optionalDescription  the description (may be null)
+     * @param isUiAutoOpen         indicates whether or not the UI should be opened automatically when
+     *                             the assertion is added to a policy
+     * @param uiAllowedPackages    the allowed packages for use by the SSM (may be null)
+     * @param uiAllowedResources   the allowed resources for use by the SSM (may be null)
      */
     public CustomAssertionDescriptor(final String name,
                                      final Class assertionClass,
@@ -53,8 +56,9 @@ public class CustomAssertionDescriptor {
                                      final Class serverAssertionClass,
                                      final Category cat,
                                      final String optionalDescription,
-                                     final String optionalUiAllowedPackages,
-                                     final String optionalUiAllowedResources,
+                                     final boolean isUiAutoOpen,
+                                     final String uiAllowedPackages,
+                                     final String uiAllowedResources,
                                      final String paletteNodeName,
                                      final String policyNodeName) {
         this.name = name;
@@ -79,18 +83,20 @@ public class CustomAssertionDescriptor {
             throw new IllegalArgumentException("Editor assertion " + uiClass);
         }
 
-        if (optionalUiAllowedPackages != null) {
-            this.uiAllowedPackages = optionalUiAllowedPackages.split(",");
-            for (int ix = 0; ix < uiAllowedPackages.length; ix++) {
+        if (uiAllowedPackages != null) {
+            this.uiAllowedPackages = uiAllowedPackages.split(",");
+            for (int ix = 0; ix < this.uiAllowedPackages.length; ix++) {
                 this.uiAllowedPackages[ix] = this.uiAllowedPackages[ix].replace('.', '/').trim();
             }
         } else {
             this.uiAllowedPackages = new String[0];
         }
 
+        this.isUiAutoOpen = isUiAutoOpen;
+
         this.uiAllowedResources = new HashSet<String>();
-        if (optionalUiAllowedResources != null) {
-            String[] split = optionalUiAllowedResources.split(",");
+        if (uiAllowedResources != null) {
+            String[] split = uiAllowedResources.split(",");
             for (int ix = 0; ix < split.length; ix++) {
                 this.uiAllowedResources.add(split[ix].trim());
             }
@@ -114,6 +120,10 @@ public class CustomAssertionDescriptor {
 
     public String getPolicyNodeName() {
         return policyNodeName;
+    }
+
+    public boolean getIsUiAutoOpen() {
+        return isUiAutoOpen;
     }
 
     public String[] getUiAllowedPackages() {
