@@ -11,7 +11,8 @@ public interface ServiceFinder {
      * Not all services may be available based on gateway license, configuration and version.
      *
      * @param serviceInterface the interface class of the desired service, required
+     * @param <T> class that implements a Layer 7 API service
      * @return requested service or null
      */
-    public Object lookupService(Class serviceInterface);
+    public <T> T lookupService(Class<T> serviceInterface);
 }

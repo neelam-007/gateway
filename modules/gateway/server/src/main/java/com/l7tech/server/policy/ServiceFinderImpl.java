@@ -27,15 +27,15 @@ public class ServiceFinderImpl implements ServiceFinder {
         this.securePasswordServices = securePasswordServices;
     }
 
-    public Object lookupService(Class serviceInterface) {
+    public <T> T lookupService(Class<T> serviceInterface) {
         if (CertificateFinder.class.equals(serviceInterface)) {
-            return certificateFinder;
+            return (T) certificateFinder;
         }
         if (VariableServices.class.equals(serviceInterface)) {
-            return variableServices;
+            return (T) variableServices;
         }
         if (SecurePasswordServices.class.equals(serviceInterface)) {
-            return securePasswordServices;
+            return (T) securePasswordServices;
         }
         return null;
     }
