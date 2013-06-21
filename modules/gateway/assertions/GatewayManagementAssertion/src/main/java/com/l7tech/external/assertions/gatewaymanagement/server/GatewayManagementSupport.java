@@ -1,24 +1,18 @@
 package com.l7tech.external.assertions.gatewaymanagement.server;
 
-import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.api.impl.AccessorSupport;
+import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.gateway.api.impl.ValidationUtils;
-import com.l7tech.gateway.common.audit.AssertionMessages;
-import com.l7tech.gateway.common.audit.Audit;
-import com.l7tech.message.HttpResponseKnob;
-import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.policy.assertion.RoutingStatus;
-import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AssertionStatusException;
 import com.l7tech.util.BuildInfo;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.HexUtils;
+import com.l7tech.util.Pair;
 import com.sun.ws.management.*;
 import com.sun.ws.management.addressing.Addressing;
 import com.sun.ws.management.enumeration.EnumerationExtensions;
@@ -48,11 +42,12 @@ import org.xmlsoap.schemas.ws._2004._08.addressing.EndpointReferenceType;
 import org.xmlsoap.schemas.ws._2004._09.enumeration.EnumerateResponse;
 
 import javax.mail.MethodNotSupportedException;
-import javax.servlet.http.HttpServletResponse;
+import javax.management.modelmbean.InvalidTargetObjectTypeException;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlSchema;
 import javax.xml.soap.*;
+import javax.xml.transform.dom.DOMSource;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.security.Principal;
@@ -65,202 +60,147 @@ import java.util.logging.Logger;
  */
 public class GatewayManagementSupport {
 
-    private final Map<String,String> resourceURIMap = new HashMap<String,String>();
+    private static final Logger logger = Logger.getLogger( GatewayManagementSupport.class.getName() );
+
+    // resource name -> Pair < resource URI, ManagedObject class>
+    private final Map<String,Pair<String,Class<ManagedObject>>> resourceURIMap = new HashMap<String,Pair<String,Class<ManagedObject>>>();
     public static final long TIMEOUT_DURATION_MS = 1000L;
 
-    public static GatewayManagementSupport createInstance(final Assertion assertion, final Audit audit , final Logger logger, final BeanFactory context) throws PolicyAssertionException {
-        return new GatewayManagementSupport(assertion, audit , logger,  context);
+    public static GatewayManagementSupport createInstance(final Assertion assertion,  final BeanFactory context) throws PolicyAssertionException {
+        return new GatewayManagementSupport(assertion, context);
     }
 
-    public AssertionStatus processRequest(final PolicyEnforcementContext context,
-                                          final Message request,
-                                          final Message response,
-                                          final Audit audit) throws IOException {
-
-        try{
-            AssertionStatus status = AssertionStatus.NONE;
-            String URI = request.getHttpRequestKnob().getRequestUri();
-            String baseURI = context.getService().getRoutingUri();
-            URI = URI.substring(baseURI.length()-1);
-
-            Document requestDocument = request.isEnableOriginalDocument() ? request.getXmlKnob().getOriginalDocument(): null;
-
-            final Principal user = context.getDefaultAuthenticationContext().getLastAuthenticatedUser();
-
-            context.setRoutingStatus(RoutingStatus.ATTEMPTED);
-            status = doProcessRequest(request, response, audit, request.getHttpRequestKnob().getMethod(),URI, requestDocument , user);
-            context.setRoutingStatus(RoutingStatus.ROUTED);
-
-            return status;
-        }catch(Exception e){
-            return handleErrors(e,audit,response);
-        }
-
+    /**
+     * Get the specified resource by name
+     * @param resourceType  resource type
+     * @param selectorValue name of resource
+     * @param user  user to authenticate against
+     * @param remoteAddr   remote address, used for contextual logging
+     * @return  List of managed object and the resource document
+     * @throws Exception
+     */
+    public Pair<Document,List<ManagedObject>> getResource( String resourceType, String selectorValue,Principal user, String remoteAddr) throws Exception {
+        return handleResourceOperation(Transfer.GET_ACTION_URI, resourceType, selectorValue, null, user, remoteAddr) ;
     }
 
-    private AssertionStatus doProcessRequest( Message request, Message response, Audit audit, HttpMethod method, String URI, Document requestDocument, Principal user) throws IOException {
-        AssertionStatus status;
-
-        if(!URI.contains("/") && method.equals(HttpMethod.GET)){
-            // enumerate
-            status =  handleEnumerate( URI, request, response, user, audit);
-
-        } else{
-            status = handle(method , URI, request, response, user, audit);
-        }
-        return status;
+    /**
+     * Deletes the specified resource by name
+     * @param resourceType  resource type
+     * @param selectorValue name of resource
+     * @param user  user to authenticate against
+     * @param remoteAddr   remote address, used for contextual logging
+     * @throws Exception
+     */
+    public void deleteResource(String resourceType, String selectorValue,Principal user, String remoteAddr ) throws Exception {
+        handleResourceOperation(Transfer.DELETE_ACTION_URI, resourceType, selectorValue, null, user, remoteAddr) ;
     }
 
-    private AssertionStatus handleEnumerate(String URI,Message request, Message response, Principal user, Audit audit) throws IOException {
-        final String resourceURI = getResourceUri(URI);
+    public Pair<Document,List<ManagedObject>> createResource( String resourceType, String selectorValue, Document requestDocument, Principal user, String remoteAddr) throws Exception {
+        // todo check for namespace ?
+        //        XmlUtil.findAllNamespaces(requestDocument).containsKey()
+        throw new UnsupportedOperationException("Not yet implemented");
+//        return handleResourceOperation(Transfer.CREATE_ACTION_URI, resourceType, selectorValue, requestDocument, user, remoteAddr) ;
+    }
+
+    /**
+     * Get a list of the specified resource type
+     * @param resourceType  resource type
+     * @param user  user to authenticate against
+     * @param remoteAddr   remote address, used for contextual logging
+     * @throws Exception
+     */
+    public Pair<Document,List<ManagedObject>> getResourceList(String resourceType, Principal user, String remoteAddr) throws Exception {
+        final String resourceURI = getResourceUri(resourceType);
         final String actionUri =  Enumeration.ENUMERATE_ACTION_URI;
+        final String handlerURL = resourceType;
 
-        AssertionStatus status = AssertionStatus.NONE;
         final Management managementRequest;
         final HandlerContext handlerContext;
-        try {
 
-            managementRequest = createManagementRequest( actionUri, resourceURI, TIMEOUT_DURATION_MS, null, null);
-            handlerContext = getHandlerContext(request.getHttpRequestKnob().getRequestUrl(), request.getHttpRequestKnob().getRemoteAddress(), user, managementRequest.getContentType());
-
-        }catch ( Exception e){
-            audit.logAndAudit( AssertionMessages.GATEWAYMANAGEMENT_ERROR, new String[]{ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e) );
-            setResponseStatus(response, HttpServletResponse.SC_BAD_REQUEST,ExceptionUtils.getMessage(e));
-            return AssertionStatus.FAILED;
-        }
+        managementRequest = createManagementRequest( actionUri, resourceURI, TIMEOUT_DURATION_MS, null, null);
+        handlerContext = getHandlerContext(handlerURL, remoteAddr, user, managementRequest.getContentType());
 
         // Get Enum context
         Object enumContext = null;
-        try{
+        Enumeration enumerationRequest = new Enumeration(managementRequest);
+        enumerationRequest.setAction(Enumeration.ENUMERATE_ACTION_URI);
+        enumerationRequest.setEnumerate(null, null, null);
+        Addressing enumerateResponse = (Addressing)agent.handleRequest(new Management(enumerationRequest.getMessage()), handlerContext);
 
-            Enumeration enumerationRequest = new Enumeration(managementRequest);
-            enumerationRequest.setAction(Enumeration.ENUMERATE_ACTION_URI);
-            enumerationRequest.setEnumerate(null,null,null);
-            Addressing enumerateResponse = (Addressing)agent.handleRequest(new Management(enumerationRequest.getMessage()), handlerContext);
-
-            Enumeration enumResponse = new Enumeration(enumerateResponse);
-            EnumerateResponse  getEnumerateResponse= enumResponse.getEnumerateResponse();
-            enumContext = getEnumerateResponse.getEnumerationContext().getContent().get(0);
-            if(enumContext == null){
-                audit.logAndAudit( AssertionMessages.GATEWAYMANAGEMENT_ERROR, new String[]{"Failed to get enumeration context",""});
-                setResponseStatus(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,"Failed to get enumeration context");
-                return AssertionStatus.FAILED;
-            }
-
-        } catch ( Exception e){
-            audit.logAndAudit( AssertionMessages.GATEWAYMANAGEMENT_ERROR, new String[]{ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e) );
-            setResponseStatus(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,ExceptionUtils.getMessage(e));
-            return AssertionStatus.FAILED;
+        Enumeration enumResponse = new Enumeration(enumerateResponse);
+        EnumerateResponse  getEnumerateResponse= enumResponse.getEnumerateResponse();
+        enumContext = getEnumerateResponse.getEnumerationContext().getContent().get(0);
+        if(enumContext == null){
+            throw new IOException("Enumeration Context not found"); // todo
         }
 
         // Get items
         final Document responseDoc = createResultDocument();
         final int PullElementBatch = 10;
-        try{
-            boolean done = true;
-            do{
 
-                Enumeration pullRequest = new Enumeration(managementRequest);
-                pullRequest.setAction(Enumeration.PULL_ACTION_URI);
-                pullRequest.setPull(enumContext,0,PullElementBatch,managementRequest.getTimeout());
+        boolean done = true;
+        List<ManagedObject> managedObjects = new ArrayList<>();
+        do{
+            Enumeration pullRequest = new Enumeration(managementRequest);
+            pullRequest.setAction(Enumeration.PULL_ACTION_URI);
+            pullRequest.setPull(enumContext,0,PullElementBatch,managementRequest.getTimeout());
 
-                Addressing pullResponse = (Addressing)agent.handleRequest(new Management(pullRequest.getMessage()), handlerContext);
+            Addressing pullResponse = (Addressing)agent.handleRequest(new Management(pullRequest.getMessage()), handlerContext);
 
-                Fault fault = pullResponse.getFault();
-                if(fault!=null)
-                {
-                    setResponseStatus(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,fault.getReason().getText().get(0).getValue());
-                    return AssertionStatus.FAILED;
-                }
+            Fault fault = pullResponse.getFault();
+            if(fault!=null)
+            {
+                throwException(fault,handlerContext);
+            }
 
-                Element elmItems = XmlUtil.findFirstDescendantElement(pullResponse.getBody(), Enumeration.NS_URI, EnumerationExtensions.ITEMS.getLocalPart());
-                NodeList itemNodes = elmItems.getChildNodes();
-                for (int i = 0; i < itemNodes.getLength(); i++) {
-                    appendChildNode(itemNodes.item(i),responseDoc);
-                }
+            Element elmItems = XmlUtil.findFirstDescendantElement(pullResponse.getBody(), Enumeration.NS_URI, EnumerationExtensions.ITEMS.getLocalPart());
+            NodeList itemNodes = elmItems.getChildNodes();
+            managedObjects.addAll(appendChildNodes(itemNodes, responseDoc));
 
-                Element endElem = XmlUtil.findFirstDescendantElement(pullResponse.getBody(), Enumeration.NS_URI, EnumerationExtensions.END_OF_SEQUENCE.getLocalPart());
-                done =  endElem != null;
+            Element endElem = XmlUtil.findFirstDescendantElement(pullResponse.getBody(), Enumeration.NS_URI, EnumerationExtensions.END_OF_SEQUENCE.getLocalPart());
+            done =  endElem != null;
 
-            }while(!done);
+        }while(!done);
 
-            response.initialize(ContentTypeHeader.XML_DEFAULT, XmlUtil.toByteArray(responseDoc));
-
-        }catch ( Exception e ){
-            audit.logAndAudit( AssertionMessages.GATEWAYMANAGEMENT_ERROR, new String[]{ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e) );
-            setResponseStatus(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,ExceptionUtils.getMessage(e));
-            return AssertionStatus.FAILED;
-        }
-        return status;
+        return new Pair<Document,List<ManagedObject>>(responseDoc,managedObjects);
     }
 
-    private  GatewayManagementSupport(final Assertion assertion, final Audit audit , final Logger logger, final BeanFactory context) throws PolicyAssertionException {
-        this.agent = GatewayManagementSupport.getAgent(audit, logger, assertion);
+    private  GatewayManagementSupport(final Assertion assertion, final BeanFactory context) throws PolicyAssertionException {
+        this.agent = GatewayManagementSupport.getAgent( assertion);
         this.assertionContext = GatewayManagementSupport.buildContext( context, "gatewayManagementContext.xml" );
     }
 
-    private AssertionStatus handle( final HttpMethod method,
-                                   final String URI,
-                                   final Message request,
-                                   final Message response,
-                                   final Principal user,
-                                   final Audit audit) throws IOException
-    {
-        AssertionStatus status = AssertionStatus.NONE;
+    private Pair<Document,List<ManagedObject>> handleResourceOperation(final String actionUri,
+                                             final String resourceType,
+                                             final String selectorValue,
+                                             final Document body,
+                                             final Principal user,
+                                             final String remoteAddr) throws Exception, MethodNotSupportedException, SOAPException {
         final Management managementRequest;
         final HandlerContext handlerContext;
+
+        final String resourceURI = getResourceUri(resourceType);
+        final String selectorProperty;
         try {
-            final String actionUri ;
-            if(method==HttpMethod.GET){
-                actionUri = Transfer.GET_ACTION_URI;
-            }
-            else if(method==HttpMethod.DELETE){
-                actionUri = Transfer.DELETE_ACTION_URI;
-            }
-            else {
-                // todo  more
-                throw new MethodNotSupportedException();
-            }
-
-            String resource = URI.substring(0,URI.indexOf("/"));
-            final String resourceURI = getResourceUri(resource);
-
-            String selectorProperty = URI.substring(URI.indexOf("/")+1);
-            try {
-                selectorProperty = HexUtils.urlDecode(selectorProperty);
-            } catch (IOException e) {
-                throw new InvalidPropertiesFormatException(e);
-            }
-
-            String selectorType = getSelectorType(request);
-            managementRequest = createManagementRequest(actionUri, resourceURI, TIMEOUT_DURATION_MS, selectorProperty, selectorType);
-            handlerContext = getHandlerContext(request.getHttpRequestKnob().getRequestUrl(), request.getHttpRequestKnob().getRemoteAddress(), user,  managementRequest.getContentType());
-
-        }catch ( Exception e){
-            audit.logAndAudit( AssertionMessages.GATEWAYMANAGEMENT_ERROR, new String[]{ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e) );
-            setResponseStatus(response, HttpServletResponse.SC_BAD_REQUEST,ExceptionUtils.getMessage(e));
-            return AssertionStatus.FAILED;
+            selectorProperty = HexUtils.urlDecode(selectorValue);
+        } catch (IOException e) {
+            throw new InvalidPropertiesFormatException(e); //todo
         }
 
-        try{
-            SOAP soapResponse = (SOAP) agent.handleRequest(managementRequest, handlerContext);
-            GatewayManagementSupport.sendResponse(soapResponse, response, audit);
-        } catch ( Exception e){
-            audit.logAndAudit( AssertionMessages.GATEWAYMANAGEMENT_ERROR, new String[]{ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e) );
-            setResponseStatus(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,ExceptionUtils.getMessage(e));
-            return AssertionStatus.FAILED;
+        final String selectorType = "name";
+        final String url = resourceType+"/"+selectorValue;
+
+        managementRequest = createManagementRequest(actionUri, resourceURI, TIMEOUT_DURATION_MS, selectorProperty, selectorType);
+        handlerContext = getHandlerContext(url, remoteAddr, user,  managementRequest.getContentType());
+
+        if(!actionUri.equals(Transfer.GET_ACTION_URI) && !actionUri.equals(Transfer.DELETE_ACTION_URI) ){
+            // todo attach body to request
+            managementRequest.getBody().addDocument(body);
         }
 
-        return status;
-    }
 
-    // search by 'id' if parameter t=id. default searches by 'name'
-    private String getSelectorType(Message request) throws IOException {
-
-        String typeParam = request.getHttpRequestKnob().getParameter("t");
-        if(typeParam!=null && typeParam.equalsIgnoreCase("id"))
-            return "id";
-        return "name";
+        SOAP soapResponse = (SOAP) agent.handleRequest(managementRequest, handlerContext);
+        return getResponse(soapResponse, handlerContext);
     }
 
     private HandlerContext getHandlerContext(String URL, String remoteAddr, Principal user, ContentType contentTypeHeader) {
@@ -271,33 +211,6 @@ public class GatewayManagementSupport {
         properties.put( "com.l7tech.context", assertionContext );
         properties.put( "com.l7tech.remoteAddr",remoteAddr );
         return new HandlerContextImpl(user, contentTypeStr, charEncoding, URL , properties);
-    }
-
-    // todo
-    private AssertionStatus handleErrors(Exception e, Audit audit, Message response){
-        try{
-            if ( e instanceof InvalidPropertiesFormatException) {
-                audit.logAndAudit( AssertionMessages.GATEWAYMANAGEMENT_ERROR, new String[]{ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e) );
-                setResponseStatus(response, HttpServletResponse.SC_BAD_REQUEST,ExceptionUtils.getMessage(e));
-            } else if ( e instanceof MethodNotSupportedException   ) {
-                audit.logAndAudit( AssertionMessages.GATEWAYMANAGEMENT_ERROR, new String[]{ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e) );
-                setResponseStatus(response, HttpServletResponse.SC_METHOD_NOT_ALLOWED,ExceptionUtils.getMessage(e));
-            }else{
-                audit.logAndAudit(AssertionMessages.GATEWAYMANAGEMENT_ERROR, new String[]{ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e) );
-                setResponseStatus(response, HttpServletResponse.SC_BAD_REQUEST, ExceptionUtils.getMessage(e));
-            }
-            return AssertionStatus.FAILED;
-        }catch(IOException ex){
-            audit.logAndAudit(AssertionMessages.GATEWAYMANAGEMENT_ERROR, new String[]{"Error handling error:"+ExceptionUtils.getMessage(ex)}, ExceptionUtils.getDebugException(ex) );
-            return AssertionStatus.FAILED;
-        }
-
-    }
-
-    private void setResponseStatus(Message response, int httpStatus, String message) throws IOException {
-        // todo
-        response.getHttpResponseKnob().setStatus(httpStatus);
-        response.initialize(ContentTypeHeader.TEXT_DEFAULT, message.getBytes());
     }
 
     /**
@@ -354,7 +267,7 @@ public class GatewayManagementSupport {
     }
 
 
-    private String getResourceUri(String resourceType) throws InvalidPropertiesFormatException {
+    private String getResourceUri(String resourceType) throws InvalidTargetObjectTypeException {
         if(resourceURIMap.isEmpty()){
             Class[] MOclasses = ManagedObjectFactory.getAllManagedObjectClasses();
 
@@ -369,16 +282,85 @@ public class GatewayManagementSupport {
                     }
                 }
                 String uri = getResourceUri(MO);
-                resourceURIMap.put(element.toLowerCase(), uri);
+                resourceURIMap.put(element.toLowerCase(), new Pair<String,Class<ManagedObject>>(uri,MO));
             }
         }
-        String resourceURI =  resourceURIMap.get(resourceType.toLowerCase());
+        String resourceURI =  resourceURIMap.get(resourceType.toLowerCase()).left;
         if(resourceURI==null)
-            throw new InvalidPropertiesFormatException("Invalid resource type: "+resourceType) ;
+            throw new InvalidTargetObjectTypeException("Invalid resource type: "+resourceType) ;
         return resourceURI;
 
     }
 
+    /**
+     * Throws exception if there was an error in the management response
+     */
+    private Pair<Document,List<ManagedObject>> getResponse(final SOAP managementResponse,
+                                                          final HandlerContext handlerContext)
+            throws Exception {
+
+        if ( managementResponse instanceof Identify) {
+            throw new UnsupportedOperationException("Identify operation not supported");
+        }
+
+        if ( managementResponse.getBody().hasFault()) {
+            throwException(managementResponse.getFault(), handlerContext);
+        }
+
+        List<ManagedObject> managedObjects = new ArrayList<>();
+        Document responseDoc = createResultDocument();
+        Node body = managementResponse.getBody();
+        NodeList childNodes = body.getChildNodes();
+        managedObjects.addAll(appendChildNodes(childNodes, responseDoc));
+        responseDoc.normalizeDocument();
+        return new Pair<Document,List<ManagedObject>>(responseDoc,managedObjects);
+
+    }
+
+    // Throws the exception from the handler context.  If that is not present, it creates and throws a runtime exception with the fault message
+    private static void throwException(Fault fault, HandlerContext handlerContext) throws Exception {
+        final Map<String,Object> properties = (Map<String,Object>)handlerContext.getRequestProperties();
+        final Object exception = properties.get( "com.l7tech.status.exception" );
+        if(exception==null){
+            List<Reasontext> reasons = fault.getReason().getText();
+            String faultReason = "";
+            for(Reasontext reason: reasons){
+                faultReason += reason.getValue() +" ";
+            }
+
+            throw new RuntimeException(faultReason);
+        }
+        throw (Exception)exception;
+    }
+
+
+    private List<ManagedObject> appendChildNodes(NodeList nodes, Document parentDocument) {
+        List<ManagedObject> managedObjects = new ArrayList<>();
+        for (int i = 0; i < nodes.getLength(); i++) {
+            Node node = nodes.item(i);
+            node = parentDocument.importNode(node, true);
+            parentDocument.getDocumentElement().appendChild(node);
+            DOMSource domSource = new DOMSource();
+            domSource.setNode(node);
+            Class<ManagedObject> MOclass = getMOClass(node.getLocalName());
+            try {
+                ManagedObject mo = MarshallingUtils.unmarshal(MOclass, domSource);
+                managedObjects.add(mo);
+            } catch (IOException e) {
+                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+            }
+        }
+        return managedObjects;
+
+    }
+
+    private Class<ManagedObject> getMOClass(String MOname) {
+        return resourceURIMap.get(MOname.toLowerCase()).right;
+    }
+
+    private static Document createResultDocument() {
+        return XmlUtil.createEmptyDocument("ManagementResult", ResourceHandler.MANAGEMENT_PREFIX, ResourceHandler.MANAGEMENT_NAMESPACE);
+    }
 
     private final WSManAgent agent;
 
@@ -394,16 +376,16 @@ public class GatewayManagementSupport {
         return assertionContext;
     }
 
-    public static WSManReflectiveAgent getAgent( final Audit audit, final Logger logger, final Assertion assertion ) throws PolicyAssertionException {
+    public static WSManReflectiveAgent getAgent(  final Assertion assertion ) throws PolicyAssertionException {
         WSManReflectiveAgent agent = sharedAgent.get();
         if ( agent == null ) {
-            agent = buildAgent( audit, logger, assertion );
+            agent = buildAgent( assertion );
             sharedAgent.compareAndSet( null, agent );
         }
         return agent;
     }
 
-    private static WSManReflectiveAgent buildAgent( final Audit audit, final Logger logger, final Assertion assertion ) throws PolicyAssertionException {
+    private static WSManReflectiveAgent buildAgent( final Assertion assertion ) throws PolicyAssertionException {
         try {
             return new WSManReflectiveAgent(null, ValidationUtils.getSchemaSources(), null){
                 @SuppressWarnings({"ThrowableInstanceNeverThrown"})
@@ -416,7 +398,7 @@ public class GatewayManagementSupport {
 
                     try {
                         validateManagementHeaders( request );
-                        validateAddressing( audit, request );
+                        validateAddressing(request );
                         response = processForIdentify( request );
                     } catch (Throwable th) {
                         if ( th instanceof AssertionStatusException ) throw (AssertionStatusException) th;
@@ -545,79 +527,21 @@ public class GatewayManagementSupport {
      * Wiseman supports async messages but we don't, so fail if the response
      * is not the anonymous address.
      */
-    private static void validateAddressing( final Audit audit, final Management request ) throws SOAPException, JAXBException {
-        ensureAnonymous( audit, request.getReplyTo() );
-        if ( request.getReplyTo() == null ) ensureAnonymous( audit, request.getFrom() );
-        ensureAnonymous( audit, request.getFaultTo() );
+    private static void validateAddressing( final Management request ) throws  Exception, SOAPException, JAXBException {
+        ensureAnonymous( request.getReplyTo() );
+        if ( request.getReplyTo() == null ) ensureAnonymous(  request.getFrom() );
+        ensureAnonymous(  request.getFaultTo() );
     }
 
-    private static void ensureAnonymous( final Audit audit, final EndpointReferenceType endpointReference )  {
+    private static void ensureAnonymous( final EndpointReferenceType endpointReference ) throws Exception  {
         if ( endpointReference != null &&
                 endpointReference.getAddress() != null &&
                 !Addressing.ANONYMOUS_ENDPOINT_URI.equals(endpointReference.getAddress().getValue()) ) {
-            audit.logAndAudit(AssertionMessages.GATEWAYMANAGEMENT_ERROR, "Unsupported response endpoint address '" + endpointReference.getAddress().getValue() + "'");
-            throw new AssertionStatusException( AssertionStatus.FALSIFIED );
+            throw new Exception("Unsupported response endpoint address '" + endpointReference.getAddress().getValue() + "'");  // todo
         }
     }
 
-    public static void sendResponse( final SOAP soapResponse,
-                                      final Message response,
-                                      final Audit audit )
-            throws SOAPException, JAXBException, IOException {
 
-        if ( soapResponse instanceof Identify) {
-            response.getHttpResponseKnob().setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            audit.logAndAudit(AssertionMessages.GATEWAYMANAGEMENT_ERROR, new String[]{"Identify not supported"});
-        } else {
-            sendManagementResponse((Management) soapResponse, response, audit);
-        }
-    }
-
-    private static void sendManagementResponse( final Management managementResponse,
-                                                final Message response,
-                                                final Audit audit )
-            throws SOAPException, JAXBException, IOException {
-        final HttpResponseKnob httpResponseKnob = response.getHttpResponseKnob();
-
-        if ( managementResponse.getBody().hasFault()) {
-            // sender faults need to set error code to BAD_REQUEST for client errors
-            if ( SOAP.SENDER.equals(managementResponse.getBody().getFault().getFaultCodeAsQName())) {
-                httpResponseKnob.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            } else {
-                httpResponseKnob.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            }
-
-            Fault fault = managementResponse.getFault();
-            List<Reasontext> reasons = fault.getReason().getText();
-            String faultReason = "";
-            for(Reasontext reason: reasons){
-                faultReason += reason.getValue() +" ";
-            }
-
-
-            response.initialize(ContentTypeHeader.TEXT_DEFAULT, faultReason.getBytes());
-            audit.logAndAudit(AssertionMessages.GATEWAYMANAGEMENT_ERROR, new String[]{faultReason});
-            return;
-        }
-
-        Node body = managementResponse.getBody();
-        Node managedObjectXml =  body.getFirstChild();
-        Document responseDoc = createResultDocument();
-        appendChildNode(managedObjectXml, responseDoc);
-        responseDoc.normalizeDocument();
-
-
-        response.initialize(responseDoc);
-    }
-
-    private static void appendChildNode(Node managedObjectXml, Document parentDocument) {
-        managedObjectXml = parentDocument.importNode(managedObjectXml, true);
-        parentDocument.getDocumentElement().appendChild(managedObjectXml);
-    }
-
-    private static Document createResultDocument() {
-        return XmlUtil.createEmptyDocument("ManagementResult", ResourceHandler.MANAGEMENT_PREFIX, ResourceHandler.MANAGEMENT_NAMESPACE);
-    }
 
     private static class SchemaValidationException extends Exception {
         private SchemaValidationException( final String message, final Throwable cause ) {

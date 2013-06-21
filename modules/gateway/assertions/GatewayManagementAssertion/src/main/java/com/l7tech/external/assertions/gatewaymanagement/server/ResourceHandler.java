@@ -111,8 +111,10 @@ public class ResourceHandler extends DefaultHandler implements Enumeratable {
                         }
                     });
 
-                    if ( exceptionHolder[0] != null )
+                    if ( exceptionHolder[0] != null ){
+                        properties.put( "com.l7tech.status.exception", exceptionHolder[0] );
                         throw exceptionHolder[0];
+                    }
 
                     return null;
                 }
