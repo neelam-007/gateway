@@ -15,7 +15,13 @@ public class CustomTargetVariablePanelImpl implements CustomTargetVariablePanel 
 
     public CustomTargetVariablePanelImpl (final Assertion assertion, final Assertion previousAssertion) {
         this.panel = new TargetVariablePanel();
-        panel.setAssertion(assertion, previousAssertion);
+
+        // CustomTargetVariablePanelImpl is also used by CustomAssertionHolderAction to display a Task Action.
+        // In this case, there isn't associated assertion and previous assertion.
+        //
+        if (assertion != null && previousAssertion != null) {
+            panel.setAssertion(assertion, previousAssertion);
+        }
     }
 
     @Override

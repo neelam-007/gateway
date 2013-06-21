@@ -146,6 +146,7 @@ public class ServerCustomAssertionHolderTest
                 "Test.TestLegacyCustomAssertion",
                 TestLegacyCustomAssertion.class,
                 null, // for now do not use UI class
+                null, // for now do not use task action UI class
                 TestServiceInvocation.class,
                 Category.AUDIT_ALERT,
                 "Test CustomAssertion Description",

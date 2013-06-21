@@ -5,6 +5,7 @@ import com.l7tech.gateway.common.custom.CustomAssertionDescriptor;
 import com.l7tech.gateway.common.custom.CustomAssertionsRegistrar;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
 import com.l7tech.policy.assertion.ext.*;
+import com.l7tech.policy.assertion.ext.action.CustomTaskActionUI;
 import com.l7tech.policy.assertion.ext.cei.CustomExtensionInterfaceBinding;
 import com.l7tech.policy.wsp.ClassLoaderUtil;
 import com.l7tech.server.admin.ExtensionInterfaceManager;
@@ -251,6 +252,11 @@ public class CustomAssertionsRegistrarImpl extends ApplicationObjectSupport impl
         return CustomAssertions.getUI(assertionClassName);
     }
 
+    @Override
+    public CustomTaskActionUI getTaskActionUI(String assertionClassName) {
+        return CustomAssertions.getTaskActionUI(assertionClassName);
+    }
+
     /**
      *
      */
@@ -404,6 +410,7 @@ public class CustomAssertionsRegistrarImpl extends ApplicationObjectSupport impl
         String serverClass = null;
         String assertionClass = null;
         String editorClass = null;
+        String taskActionClass = null;
         String extensionInterfaceClassName = null;
         String optionalDescription = null;
         boolean isUiAutoOpen = false;
@@ -420,6 +427,8 @@ public class CustomAssertionsRegistrarImpl extends ApplicationObjectSupport impl
             if (key.startsWith(baseKey)) {
                 if (key.endsWith(".server")) {
                     serverClass = (String) properties.get(key);
+                } else if (key.endsWith("task.action.ui")) {
+                    taskActionClass = (String) properties.get(key);
                 } else if (key.endsWith(".ui")) {
                     editorClass = (String) properties.get(key);
                 } else if (key.endsWith(".extension.interface")) {
@@ -461,8 +470,13 @@ public class CustomAssertionsRegistrarImpl extends ApplicationObjectSupport impl
                 eClass = Class.forName(editorClass, true, classLoader);
             }
 
+            Class taClass = null;
+            if (taskActionClass != null && !"".equals(taskActionClass)) {
+                taClass = Class.forName(taskActionClass, true, classLoader);
+            }
+
             Class sa = Class.forName(serverClass, true, classLoader);
-            CustomAssertionDescriptor eh = new CustomAssertionDescriptor(baseKey, a, eClass, sa, category, optionalDescription, isUiAutoOpen, uiAllowedPackages, uiAllowedResources, paletteNodeName, policyNodeName);
+            CustomAssertionDescriptor eh = new CustomAssertionDescriptor(baseKey, a, eClass, taClass, sa, category, optionalDescription, isUiAutoOpen, uiAllowedPackages, uiAllowedResources, paletteNodeName, policyNodeName);
             CustomAssertions.register(eh);
 
             registerCustomExtensionInterface(extensionInterfaceClassName, classLoader);

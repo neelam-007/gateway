@@ -3,6 +3,7 @@ package com.l7tech.gateway.common.custom;
 import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.ext.CustomAssertionUI;
 import com.l7tech.gateway.common.admin.Administrative;
+import com.l7tech.policy.assertion.ext.action.CustomTaskActionUI;
 
 import java.io.Serializable;
 import java.util.Collection;
@@ -76,6 +77,16 @@ public interface CustomAssertionsRegistrar {
      */
     @Administrative(licensed=false)
     CustomAssertionUI getUI(String assertionClassName);
+
+    /**
+     * Return the <code>CustomTaskActionUI</code> class for a given assertion or
+     * <b>null<b>
+     *
+     * @param assertionClassName the assertion class name
+     * @return the task action UI class or <b>null</b>
+     */
+    @Administrative(licensed=false)
+    CustomTaskActionUI getTaskActionUI(String assertionClassName);
 
     /**
      * Assertion data is used to wrap one or more resources.

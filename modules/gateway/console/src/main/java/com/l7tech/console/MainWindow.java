@@ -26,6 +26,7 @@ import com.l7tech.console.util.*;
 import com.l7tech.gateway.common.*;
 import com.l7tech.gateway.common.audit.LogonEvent;
 import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
+import com.l7tech.gateway.common.custom.CustomAssertionsRegistrar;
 import com.l7tech.gateway.common.security.rbac.AttemptedDeleteAll;
 import com.l7tech.gui.util.*;
 import com.l7tech.gui.widgets.TextListCellRenderer;
@@ -34,6 +35,9 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
+import com.l7tech.policy.assertion.CustomAssertionHolder;
+import com.l7tech.policy.assertion.ext.CustomAssertion;
+import com.l7tech.policy.assertion.ext.action.CustomTaskActionUI;
 import com.l7tech.util.*;
 
 import javax.security.auth.login.LoginException;
@@ -2092,6 +2096,11 @@ public class MainWindow extends JFrame implements SheetHolder {
                 }
             }
         }
+
+        // Add actions from custom assertions.
+        //
+        menuActions.addAll(this.getCustomAssertionActions());
+
         // sort actions before sticking them into Additional Actions menu
         // so they'll appear in the same order
         Collections.sort(menuActions, new ActionComparator());
@@ -2102,6 +2111,24 @@ public class MainWindow extends JFrame implements SheetHolder {
         }
 
         menu.setEnabled(added);
+    }
+
+    private List<Action> getCustomAssertionActions() {
+        List<Action> result = new ArrayList<>();
+
+        CustomAssertionsRegistrar registrar = Registry.getDefault().getCustomAssertionsRegistrar();
+        Collection customAssertions = registrar.getAssertions();
+
+        for (Object customAssertion : customAssertions) {
+            CustomAssertionHolder cah = (CustomAssertionHolder) customAssertion;
+            CustomAssertion ca = cah.getCustomAssertion();
+            CustomTaskActionUI taskActionUI = registrar.getTaskActionUI(ca.getClass().getName());
+            if (taskActionUI != null) {
+                result.add(new CustomAssertionHolderAction(taskActionUI));
+            }
+        }
+
+        return result;
     }
 
     /**

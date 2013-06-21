@@ -3,6 +3,7 @@ package com.l7tech.server.policy.custom;
 import com.l7tech.gateway.common.custom.CustomAssertionDescriptor;
 import com.l7tech.policy.assertion.ext.CustomAssertionUI;
 import com.l7tech.policy.assertion.ext.Category;
+import com.l7tech.policy.assertion.ext.action.CustomTaskActionUI;
 
 import java.util.*;
 import java.util.logging.Logger;
@@ -68,6 +69,30 @@ class CustomAssertions {
       return null;
   }
 
+    /**
+     * Return the <code>CustomAssertionUI</code> for a given assertion or
+     * <b>null<b>
+     *
+     * @param assertionClassName the assertion class
+     * @return the task action UI class or <b>null</b>
+     */
+    static CustomTaskActionUI getTaskActionUI(String assertionClassName) {
+        for (Iterator iterator = assertions.values().iterator(); iterator.hasNext();) {
+            CustomAssertionDescriptor cd = (CustomAssertionDescriptor)iterator.next();
+            if (assertionClassName.equals(cd.getAssertion().getName())) {
+                try {
+                    Class takActionUiClass = cd.getTakActionUiClass();
+                    if (takActionUiClass == null) {
+                        return null;
+                    }
+                    return (CustomTaskActionUI)takActionUiClass.newInstance();
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
+        return null;
+    }
 
     /**
      * Return all the registered <code>CustomAssertionDescriptor</code>

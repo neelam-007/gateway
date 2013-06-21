@@ -4,6 +4,7 @@ import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.ext.CustomAssertion;
 import com.l7tech.policy.assertion.ext.ServiceInvocation;
 import com.l7tech.policy.assertion.ext.CustomAssertionUI;
+import com.l7tech.policy.assertion.ext.action.CustomTaskActionUI;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -34,6 +35,7 @@ public class CustomAssertionDescriptor {
     private final Set<String> uiAllowedResources;
     private final Category category;
     private final Class uiClass;
+    private final Class taskActionUiClass;
 
     /**
      * Create the new extensibility holder instance with the assertion, server
@@ -42,6 +44,7 @@ public class CustomAssertionDescriptor {
      * @param name                 the assertion name
      * @param assertionClass       the assertion class
      * @param uiClass              the UI class, must be implementation of <code>CustomAssertionUI</code>
+     * @param taskActionUiClass    the task action UI class, must be implementation of <code>CustomTaskActionUI</code>
      * @param serverAssertionClass the server side assertion class
      * @param cat                  the assertion category
      * @param optionalDescription  the description (may be null)
@@ -53,6 +56,7 @@ public class CustomAssertionDescriptor {
     public CustomAssertionDescriptor(final String name,
                                      final Class assertionClass,
                                      final Class uiClass,
+                                     final Class taskActionUiClass,
                                      final Class serverAssertionClass,
                                      final Category cat,
                                      final String optionalDescription,
@@ -83,6 +87,13 @@ public class CustomAssertionDescriptor {
             throw new IllegalArgumentException("Editor assertion " + uiClass);
         }
 
+        this.taskActionUiClass = taskActionUiClass;
+        if (taskActionUiClass != null && !CustomTaskActionUI.class.isAssignableFrom(taskActionUiClass)) {
+            throw new IllegalArgumentException("Task Action UI " + taskActionUiClass);
+        }
+
+        this.isUiAutoOpen = isUiAutoOpen;
+
         if (uiAllowedPackages != null) {
             this.uiAllowedPackages = uiAllowedPackages.split(",");
             for (int ix = 0; ix < this.uiAllowedPackages.length; ix++) {
@@ -91,8 +102,6 @@ public class CustomAssertionDescriptor {
         } else {
             this.uiAllowedPackages = new String[0];
         }
-
-        this.isUiAutoOpen = isUiAutoOpen;
 
         this.uiAllowedResources = new HashSet<String>();
         if (uiAllowedResources != null) {
@@ -161,6 +170,13 @@ public class CustomAssertionDescriptor {
      */
     public Class getUiClass() {
         return uiClass;
+    }
+
+    /**
+     * @return the task action UI class or <b>null</b> if it has not been set
+     */
+    public Class getTakActionUiClass() {
+        return taskActionUiClass;
     }
 
     public String toString() {

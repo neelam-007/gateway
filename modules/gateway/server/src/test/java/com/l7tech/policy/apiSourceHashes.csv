@@ -1,3 +1,4 @@
+modules/gateway/api/src/main/java/com/l7tech/policy/assertion/ext/action/CustomTaskActionUI.java,A4F4i+L2wP3i8ll2XJ6F8u3Q7/Y=
 modules/gateway/api/src/main/java/com/l7tech/policy/assertion/ext/CustomAssertion.java,FOrQL5eQTL+vBZ07FyrmLio6myY=
 modules/gateway/api/src/main/java/com/l7tech/policy/assertion/SetsVariables.java,MOtDhKfdwZ6Q9Sl+X1KK8diFVB0=
 modules/gateway/api/src/main/java/com/l7tech/policy/assertion/ext/VariableServices.java,gqoTtG57+rlAvSck/p5LED2R+C0=
@@ -6,15 +7,15 @@ modules/gateway/api/src/main/java/com/l7tech/policy/assertion/ext/cei/CustomExte
 modules/gateway/api/src/main/java/com/l7tech/policy/assertion/ext/ServiceInvocation.java,fXsdalIhPFVr0n6jFm2mz/tfRXs=
 modules/gateway/api/src/main/java/com/l7tech/policy/assertion/ext/CustomAuditor.java,pCy8km26X8xPvjMZa6YUsCNE9HU=
 modules/gateway/api/src/main/java/com/l7tech/policy/assertion/ext/cei/CustomExtensionInterfaceBinding.java,UsKmLaolDPxVF2/CMjHqpro6PnA=
-modules/gateway/api/src/main/java/com/l7tech/policy/assertion/ext/CustomAssertionStatus.java,OsJ2IalNMRY9v9Th4nu45HXnbkM=
 modules/gateway/api/src/main/java/com/l7tech/policy/assertion/ext/commonui/CustomSecurePasswordPanel.java,E7wAo7hBqr2pSYBx33ljMgKDZ5w=
+modules/gateway/api/src/main/java/com/l7tech/policy/assertion/ext/CustomAssertionStatus.java,OsJ2IalNMRY9v9Th4nu45HXnbkM=
 modules/gateway/api/src/main/java/com/l7tech/policy/variable/VariableNameSyntaxException.java,DWyGnpbOaW3xoQpTedHzWbWdg24=
 modules/gateway/api/src/main/java/com/l7tech/policy/assertion/ext/SecurityContext.java,WXllwc1huchtbt/8fdjV/Fch0m0=
 modules/gateway/api/src/main/java/com/l7tech/policy/assertion/ext/targetable/CustomMessageTargetableSupport.java,SnuKMDSVsCliVj6Us+qaE9kfF6s=
 modules/gateway/api/src/main/java/com/l7tech/policy/variable/InvalidDataException.java,xYHfXybMHypiuSpnLByxy8HZagM=
-modules/gateway/api/src/main/java/com/l7tech/policy/assertion/ext/SecurePasswordServices.java,IydGe0qd+KXP8dr5fMzxKnFnbxM=
 modules/gateway/api/src/main/java/com/l7tech/policy/assertion/ext/cei/UsesConsoleContext.java,lSFLZYIyCEp9cGJ+RSincrYlsig=
 modules/gateway/api/src/main/java/com/l7tech/policy/assertion/ext/CertificateFinder.java,tqq6r0eF2qMG3Ft17hJ3BJqgrmg=
+modules/gateway/api/src/main/java/com/l7tech/policy/assertion/ext/SecurePasswordServices.java,IydGe0qd+KXP8dr5fMzxKnFnbxM=
 modules/gateway/api/src/main/java/com/l7tech/policy/variable/DataType.java,Br0xWhmaWxPkHtzMTgpGwHGZDIc=
 modules/gateway/api/src/main/java/com/l7tech/policy/assertion/ext/commonui/CustomTargetVariablePanel.java,dSaP3rfGHhfqG53KOqNxjiNdQ9A=
 modules/gateway/api/src/main/java/com/l7tech/policy/assertion/ext/CustomAssertionPrincipal.java,zxbTbP3rC78G9VQu0uUOe2tvfTg=

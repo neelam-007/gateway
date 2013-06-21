@@ -5,6 +5,7 @@ import com.l7tech.policy.assertion.CustomAssertionHolder;
 import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.ext.CustomAssertionUI;
 import com.l7tech.policy.assertion.ext.CustomAssertion;
+import com.l7tech.policy.assertion.ext.action.CustomTaskActionUI;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.gateway.common.custom.CustomAssertionsRegistrar;
 import com.l7tech.gateway.common.custom.CustomAssertionDescriptor;
@@ -32,7 +33,7 @@ public class CustomAssertionsRegistrarStub implements CustomAssertionsRegistrar 
         CustomAssertionDescriptor eh =
           new CustomAssertionDescriptor("Test.Assertion",
             TestAssertionProperties.class,
-            null,
+            null, null,
             TestServiceInvocation.class, Category.ACCESS_CONTROL, "", false, "", "", null, null);
         CustomAssertions.register(eh);
     }
@@ -82,6 +83,11 @@ public class CustomAssertionsRegistrarStub implements CustomAssertionsRegistrar 
     @Override
     public CustomAssertionUI getUI(String a) {
         return CustomAssertions.getUI(a);
+    }
+
+    @Override
+    public CustomTaskActionUI getTaskActionUI(String a) {
+        return CustomAssertions.getTaskActionUI(a);
     }
 
     /**

@@ -49,7 +49,7 @@ public class CustomSecurePasswordPanelImpl implements CustomSecurePasswordPanel 
                 final SecurePasswordManagerWindow dialog = new SecurePasswordManagerWindow(parentWindow);
 
                 dialog.pack();
-                Utilities.centerOnScreen(dialog);
+                Utilities.centerOnParentWindow(dialog);
                 DialogDisplayer.display(dialog, new Runnable() {
                     @Override
                     public void run() {
