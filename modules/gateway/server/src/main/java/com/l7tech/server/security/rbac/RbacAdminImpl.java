@@ -20,6 +20,7 @@ import javax.inject.Inject;
 import java.text.MessageFormat;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -196,6 +197,11 @@ public class RbacAdminImpl implements RbacAdmin {
     @Override
     public void setSecurityZoneForEntities(final Long securityZoneOid, @NotNull final EntityType entityType, @NotNull final Collection<Long> entityOids) throws UpdateException {
         entityCrud.setSecurityZoneForEntities(securityZoneOid, entityType, entityOids);
+    }
+
+    @Override
+    public void setSecurityZoneForEntities(final Long securityZoneOid, @NotNull final Map<EntityType, Collection<Long>> entityOids) throws UpdateException {
+        entityCrud.setSecurityZoneForEntities(securityZoneOid, entityOids);
     }
 
     @Override

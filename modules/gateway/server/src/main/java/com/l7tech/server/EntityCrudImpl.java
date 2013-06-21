@@ -3,25 +3,25 @@
  */
 package com.l7tech.server;
 
-import com.l7tech.objectmodel.*;
-import com.l7tech.objectmodel.folder.HasFolder;
-import com.l7tech.objectmodel.folder.FolderedEntityManager;
 import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.objectmodel.*;
+import com.l7tech.objectmodel.folder.FolderedEntityManager;
+import com.l7tech.objectmodel.folder.HasFolder;
+import org.hibernate.HibernateException;
+import org.hibernate.Session;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 import org.springframework.orm.hibernate3.HibernateCallback;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 import org.springframework.transaction.annotation.Propagation;
-import org.hibernate.Session;
-import org.hibernate.HibernateException;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.Serializable;
+import java.sql.SQLException;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Collection;
-import java.sql.SQLException;
 
 /**
  * Generic CRUD for persistent entities.  Reads delegated to {@link EntityFinderImpl} unless some {@link EntityManager}
@@ -204,27 +204,50 @@ public class EntityCrudImpl extends HibernateDaoSupport implements EntityCrud {
 
     @Override
     public void setSecurityZoneForEntities(@Nullable final Long securityZoneOid, @NotNull final EntityType entityType, @NotNull final Collection<Long> entityOids) throws UpdateException {
+        if (!entityOids.isEmpty()) {
+            try {
+                setSecurityZoneForEntities(findSecurityZone(securityZoneOid), entityType, entityOids);
+            } catch (final FindException e) {
+                throw new UpdateException("Unable to set security zone for entities: " + e.getMessage(), e);
+            }
+        }
+    }
+
+    @Override
+    public void setSecurityZoneForEntities(@Nullable final Long securityZoneOid, @NotNull Map<EntityType, Collection<Long>> entityOids) throws UpdateException {
+        if (!entityOids.isEmpty()) {
+            try {
+                final SecurityZone securityZone = findSecurityZone(securityZoneOid);
+                for (final Map.Entry<EntityType, Collection<Long>> entry : entityOids.entrySet()) {
+                    setSecurityZoneForEntities(securityZone, entry.getKey(), entry.getValue());
+                }
+            } catch (final FindException e) {
+                throw new UpdateException("Unable to set security zone for entities: " + e.getMessage(), e);
+            }
+        }
+    }
+
+    private SecurityZone findSecurityZone(@Nullable final Long securityZoneOid) throws FindException {
+        final SecurityZone securityZone = securityZoneOid != null ? find(SecurityZone.class, securityZoneOid) : null;
+        if (securityZone == null && securityZoneOid != null) {
+            throw new FindException("Security zone with oid " + securityZoneOid + " does not exist");
+        }
+        return securityZone;
+    }
+
+    private void setSecurityZoneForEntities(@Nullable final SecurityZone securityZone, @NotNull final EntityType entityType, @NotNull final Collection<Long> entityOids) throws UpdateException, FindException {
         if (!entityType.isSecurityZoneable()) {
             throw new IllegalArgumentException("Entity type must be security zoneable");
         }
-        try{
-            final SecurityZone securityZone = securityZoneOid != null ? find(SecurityZone.class, securityZoneOid) : null;
-                if (securityZoneOid == null || (securityZoneOid != null && securityZone != null)) {
-                    for (final Long entityOid : entityOids) {
-                        final Entity entity = find(entityType.getEntityClass(), entityOid);
-                        if (entity instanceof ZoneableEntity) {
-                            final ZoneableEntity zoneable = (ZoneableEntity) entity;
-                            zoneable.setSecurityZone(securityZone);
-                            update(entity);
-                        } else {
-                            throw new UpdateException(entityType.getName() + " with oid " + entityOid + " does not exist or is not security zoneable");
-                        }
-                    }
-                } else {
-                    throw new UpdateException("Security zone with oid " + securityZoneOid + " does not exist");
-                }
-        } catch (final FindException e) {
-            throw new UpdateException("Unable to set security zone for entities: " + e.getMessage(), e);
+        for (final Long entityOid : entityOids) {
+            final Entity entity = find(entityType.getEntityClass(), entityOid);
+            if (entity instanceof ZoneableEntity) {
+                final ZoneableEntity zoneable = (ZoneableEntity) entity;
+                zoneable.setSecurityZone(securityZone);
+                update(entity);
+            } else {
+                throw new UpdateException(entityType.getName() + " with oid " + entityOid + " does not exist or is not security zoneable");
+            }
         }
     }
 

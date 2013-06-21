@@ -4,8 +4,6 @@ import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
-import com.l7tech.policy.Policy;
-import com.l7tech.policy.PolicyType;
 import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.security.rbac.SecurityFilter;
 import com.l7tech.server.security.rbac.ZoneUpdateSecurityChecker;
@@ -17,9 +15,7 @@ import org.mockito.invocation.InvocationOnMock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 
 import static org.junit.Assert.*;
 import static org.mockito.Matchers.eq;
@@ -38,12 +34,14 @@ public class SecuredEntityCrudTest {
     @Mock
     private ZoneUpdateSecurityChecker zoneUpdateSecurityChecker;
     private List<Long> oids;
+    private Map<EntityType, Collection<Long>> oidsMap;
     private List<EntityHeader> entities;
 
     @Before
     public void setup() {
         securedEntityCrud = new SecuredEntityCrud(rbacServices, securityFilter, entityCrud, zoneUpdateSecurityChecker);
         oids = new ArrayList<>();
+        oidsMap = new HashMap<>();
         entities = new ArrayList<>();
     }
 
@@ -104,6 +102,49 @@ public class SecuredEntityCrudTest {
             fail("Expected UpdateException");
         } catch (final UpdateException e) {
             verify(zoneUpdateSecurityChecker).checkBulkUpdatePermitted(any(User.class), eq(ZONE_OID), eq(EntityType.POLICY), eq(oids));
+            throw e;
+        }
+    }
+
+    @Test
+    public void setSecurityZoneForEntitiesMultipleEntityTypes() throws Exception {
+        securedEntityCrud.setSecurityZoneForEntities(ZONE_OID, oidsMap);
+        verify(zoneUpdateSecurityChecker).checkBulkUpdatePermitted(any(User.class), eq(ZONE_OID), eq(oidsMap));
+        verify(entityCrud).setSecurityZoneForEntities(ZONE_OID, oidsMap);
+    }
+
+    @Test(expected = PermissionDeniedException.class)
+    public void setSecurityZoneForEntitiesMultipleEntityTypesPermissionDenied() throws Exception {
+        doThrow(new PermissionDeniedException(OperationType.UPDATE, EntityType.POLICY, "mocking exception")).when(zoneUpdateSecurityChecker).checkBulkUpdatePermitted(any(User.class), eq(ZONE_OID), eq(oidsMap));
+        try {
+            securedEntityCrud.setSecurityZoneForEntities(ZONE_OID, oidsMap);
+            fail("Expected PermissionDeniedException");
+        } catch (final PermissionDeniedException e) {
+            verify(entityCrud, never()).setSecurityZoneForEntities(anyLong(), any(EntityType.class), any(Collection.class));
+            throw e;
+        }
+    }
+
+    @Test(expected = UpdateException.class)
+    public void setSecurityZoneForEntitiesMultipleEntityTypesFindException() throws Exception {
+        doThrow(new FindException("mocking exception")).when(zoneUpdateSecurityChecker).checkBulkUpdatePermitted(any(User.class), anyLong(), anyMap());
+        try {
+            securedEntityCrud.setSecurityZoneForEntities(ZONE_OID, oidsMap);
+            fail("Expected UpdateException");
+        } catch (final UpdateException e) {
+            verify(entityCrud, never()).setSecurityZoneForEntities(anyLong(), anyMap());
+            throw e;
+        }
+    }
+
+    @Test(expected = UpdateException.class)
+    public void setSecurityZoneForEntitiesMultipleEntityTypesUpdateException() throws Exception {
+        doThrow(new UpdateException("mocking exception")).when(entityCrud).setSecurityZoneForEntities(anyLong(), anyMap());
+        try {
+            securedEntityCrud.setSecurityZoneForEntities(ZONE_OID, oidsMap);
+            fail("Expected UpdateException");
+        } catch (final UpdateException e) {
+            verify(zoneUpdateSecurityChecker).checkBulkUpdatePermitted(any(User.class), eq(ZONE_OID), eq(oidsMap));
             throw e;
         }
     }

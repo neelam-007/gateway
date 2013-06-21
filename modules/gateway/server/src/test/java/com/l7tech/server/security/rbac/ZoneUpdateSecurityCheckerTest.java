@@ -2,7 +2,10 @@ package com.l7tech.server.security.rbac;
 
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
+import com.l7tech.gateway.common.transport.jms.JmsConnection;
+import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
 import com.l7tech.identity.internal.InternalUser;
+import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.SecurityZone;
 import com.l7tech.policy.Policy;
@@ -17,8 +20,7 @@ import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 import static org.junit.Assert.*;
 import static org.mockito.Matchers.any;
@@ -35,9 +37,12 @@ public class ZoneUpdateSecurityCheckerTest {
     @Mock
     private RbacServices rbacServices;
     private List<Long> oids;
+    private Map<EntityType, Collection<Long>> oidMap;
     private InternalUser user;
     private SecurityZone zone;
     private Policy policy = new Policy(PolicyType.INCLUDE_FRAGMENT, "test", "test", false);
+    private JmsConnection connection;
+    private JmsEndpoint endpoint;
     private Method bulkUpdate;
 
     @Before
@@ -48,8 +53,11 @@ public class ZoneUpdateSecurityCheckerTest {
                 .put("rbacServices", rbacServices)
                 .unmodifiableMap(), false);
         oids = new ArrayList<>();
+        oidMap = new HashMap<>();
         user = new InternalUser("test");
         zone = new SecurityZone();
+        connection = new JmsConnection();
+        endpoint = new JmsEndpoint();
     }
 
     @Test
@@ -127,6 +135,40 @@ public class ZoneUpdateSecurityCheckerTest {
         } catch (final PermissionDeniedException e) {
             assertEquals(OperationType.UPDATE, e.getOperation());
             assertEquals(policy2, e.getEntity());
+            throw e;
+        }
+    }
+
+    @Test
+    public void checkUpdatePermittedForMultipleEntityTypes() throws Throwable {
+        oidMap.put(EntityType.JMS_CONNECTION, Collections.singleton(1L));
+        oidMap.put(EntityType.JMS_ENDPOINT, Collections.singleton(2L));
+        when(entityFinder.find(JmsConnection.class, 1L)).thenReturn(connection);
+        when(entityFinder.find(JmsEndpoint.class, 2L)).thenReturn(endpoint);
+        when(rbacServices.isPermittedForEntity(eq(user), any(JmsConnection.class), eq(OperationType.UPDATE), eq((String) null))).thenReturn(true);
+        when(rbacServices.isPermittedForEntity(eq(user), any(JmsEndpoint.class), eq(OperationType.UPDATE), eq((String) null))).thenReturn(true);
+
+        checker.checkBulkUpdatePermitted(user, null, oidMap);
+
+        // once for pre-edit check, once for after edit check
+        verify(rbacServices, times(2)).isPermittedForEntity(user, connection, OperationType.UPDATE, null);
+        verify(rbacServices, times(2)).isPermittedForEntity(user, endpoint, OperationType.UPDATE, null);
+    }
+
+    @Test(expected = PermissionDeniedException.class)
+    public void atLeastOnePermissionDeniedForUpdateMultipleEntityTypes() throws Throwable {
+        oidMap.put(EntityType.JMS_CONNECTION, Collections.singleton(1L));
+        oidMap.put(EntityType.JMS_ENDPOINT, Collections.singleton(2L));
+        when(entityFinder.find(JmsConnection.class, 1L)).thenReturn(connection);
+        when(entityFinder.find(JmsEndpoint.class, 2L)).thenReturn(endpoint);
+        when(rbacServices.isPermittedForEntity(eq(user), any(Entity.class), eq(OperationType.UPDATE), eq((String) null))).thenReturn(false);
+
+        try {
+            checker.checkBulkUpdatePermitted(user, null, oidMap);
+            fail("Expected PermissionDeniedException");
+        } catch (final PermissionDeniedException e) {
+            assertEquals(OperationType.UPDATE, e.getOperation());
+            assertTrue(e.getEntity().equals(connection) || e.getEntity().equals(endpoint));
             throw e;
         }
     }

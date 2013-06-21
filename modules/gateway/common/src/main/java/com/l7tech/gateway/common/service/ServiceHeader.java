@@ -28,7 +28,8 @@ public class ServiceHeader extends OrganizationHeader {
               svc.getRoutingUri(),
               svc.isTracingEnabled(),
               svc.getPolicy() == null ? false : svc.getPolicy().isDisabled(),
-              svc.getSecurityZone() == null ? null : svc.getSecurityZone().getOid());
+              svc.getSecurityZone() == null ? null : svc.getSecurityZone().getOid(),
+              svc.getPolicy() == null ? null : svc.getPolicy().getOid());
     }
 
     public ServiceHeader(final ServiceHeader serviceHeader){
@@ -45,7 +46,8 @@ public class ServiceHeader extends OrganizationHeader {
              serviceHeader.getRoutingUri(),
              serviceHeader.isTracingEnabled(),
              serviceHeader.isPolicyDisabled(),
-             serviceHeader.getSecurityZoneOid());
+             serviceHeader.getSecurityZoneOid(),
+             serviceHeader.getPolicyOid());
     }
     
     public ServiceHeader(final boolean isSoap,
@@ -61,7 +63,8 @@ public class ServiceHeader extends OrganizationHeader {
                          final String routingUri,
                          final boolean tracingEnabled,
                          final boolean isPolicyDisabled,
-                         final Long securityZoneOid) {
+                         final Long securityZoneOid,
+                         final Long policyOid) {
         super(serviceOid == null ? -1 : serviceOid, EntityType.SERVICE, name, description, version);
         this.isSoap = isSoap;
         this.isDisabled = isDisabled;
@@ -73,6 +76,7 @@ public class ServiceHeader extends OrganizationHeader {
         this.tracingEnabled = tracingEnabled;
         this.isPolicyDisabled = isPolicyDisabled;
         this.securityZoneOid = securityZoneOid;
+        this.policyOid = policyOid;
     }
 
     public boolean isSoap() {
@@ -101,6 +105,10 @@ public class ServiceHeader extends OrganizationHeader {
         return policyRevision;
     }
 
+    public Long getPolicyOid() {
+        return policyOid;
+    }
+
     public boolean isTracingEnabled() {
         return tracingEnabled;
     }
@@ -116,6 +124,7 @@ public class ServiceHeader extends OrganizationHeader {
     private final boolean isDisabled;
     private final String displayName;
     private final long policyRevision;
+    private final Long policyOid;
     private final String routingUri;
     private final boolean tracingEnabled;
 }

@@ -197,7 +197,6 @@ public class SecurityZoneManagerWindow extends JDialog {
      *         Key = entity type, value = sorted zones that can be set for the entity type.
      */
     private Map<EntityType, List<SecurityZone>> getModifiableEntityTypes() {
-        final Collection<Permission> userPermissions = securityProvider.getUserPermissions();
         final Map<EntityType, List<SecurityZone>> validEntityTypes = new TreeMap<>(EntityType.NAME_COMPARATOR);
         for (final EntityType type : SecurityZoneUtil.getNonHiddenZoneableEntityTypes()) {
             // must be able to update at least one of the entity type

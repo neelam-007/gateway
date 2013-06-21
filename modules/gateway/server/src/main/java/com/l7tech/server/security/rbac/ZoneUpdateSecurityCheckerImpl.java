@@ -11,6 +11,7 @@ import org.jetbrains.annotations.Nullable;
 
 import javax.inject.Inject;
 import java.util.Collection;
+import java.util.Map;
 
 public class ZoneUpdateSecurityCheckerImpl implements ZoneUpdateSecurityChecker {
     @Inject
@@ -38,6 +39,13 @@ public class ZoneUpdateSecurityCheckerImpl implements ZoneUpdateSecurityChecker 
             } else {
                 throw new IllegalArgumentException("Entity with oid " + oid + " does not exist or is not Security Zoneable");
             }
+        }
+    }
+
+    @Override
+    public void checkBulkUpdatePermitted(@NotNull User user, @Nullable Long securityZoneOid, @NotNull Map<EntityType, Collection<Long>> entityOids) throws FindException {
+        for (final Map.Entry<EntityType, Collection<Long>> entry : entityOids.entrySet()) {
+            checkBulkUpdatePermitted(user, securityZoneOid, entry.getKey(), entry.getValue());
         }
     }
 

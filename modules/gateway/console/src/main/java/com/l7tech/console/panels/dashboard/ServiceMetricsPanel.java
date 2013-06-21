@@ -161,7 +161,7 @@ public class ServiceMetricsPanel extends JPanel implements LogonListener {
 
     /** Combobox item to represent all published services selected. */
     private static final ServiceHeader ALL_SERVICES = new ServiceHeader(false, false,
-            _resources.getString("publishedServiceCombo.allValue"), null, null, null, -1L, null, -1L, -1, null, false, false, null);
+            _resources.getString("publishedServiceCombo.allValue"), null, null, null, -1L, null, -1L, -1, null, false, false, null, null);
 
     private final DefaultComboBoxModel _publishedServicesComboModel =
             new DefaultComboBoxModel() {

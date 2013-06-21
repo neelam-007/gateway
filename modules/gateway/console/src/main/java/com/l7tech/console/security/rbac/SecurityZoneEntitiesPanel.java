@@ -13,6 +13,8 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SecurityZone;
 import com.l7tech.objectmodel.folder.HasFolderOid;
+import com.l7tech.policy.PolicyHeader;
+import com.l7tech.policy.PolicyType;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import org.apache.commons.lang.StringUtils;
@@ -178,6 +180,18 @@ public class SecurityZoneEntitiesPanel extends JPanel {
                         selected = EntityType.SSG_KEY_METADATA;
                     }
                     entities.addAll(rbacAdmin.findEntitiesByTypeAndSecurityZoneOid(selected, securityZone.getOid()));
+                    final List<EntityHeader> servicePolicies = new ArrayList<>();
+                    if (EntityType.POLICY == selected) {
+                        for (final EntityHeader entity : entities) {
+                            if (entity instanceof PolicyHeader) {
+                                final PolicyHeader policy = (PolicyHeader) entity;
+                                if (PolicyType.PRIVATE_SERVICE == policy.getPolicyType()) {
+                                    servicePolicies.add(entity);
+                                }
+                            }
+                        }
+                    }
+                    entities.removeAll(servicePolicies);
                     entitiesTableModel.setRows(entities);
                 } catch (final FindException e) {
                     logger.log(Level.WARNING, "Error retrieving entities of type " + selected + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));

@@ -7,6 +7,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
+import java.util.Map;
 
 /**
  * Interface for SecurityZone-related RBAC checks.
@@ -25,4 +26,6 @@ public interface ZoneUpdateSecurityChecker {
      * @throws IllegalArgumentException if any of the entities identified by oid do not identify existing entities or the EntityType is not security zoneable.
      */
     void checkBulkUpdatePermitted(@NotNull final User user, @Nullable final Long securityZoneOid, @NotNull final EntityType entityType, @NotNull final Collection<Long> entityOids) throws FindException;
+
+    void checkBulkUpdatePermitted(@NotNull final User user, @Nullable final Long securityZoneOid, @NotNull final Map<EntityType, Collection<Long>> entityOids) throws FindException;
 }

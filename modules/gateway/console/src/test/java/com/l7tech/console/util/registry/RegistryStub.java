@@ -50,6 +50,7 @@ import java.net.PasswordAuthentication;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Map;
 
 import static com.l7tech.util.Option.none;
 
@@ -253,6 +254,11 @@ public class RegistryStub extends Registry {
 
             @Override
             public void setSecurityZoneForEntities(Long securityZoneOid, @NotNull EntityType entityType, @NotNull Collection<Long> entityOids) throws UpdateException {
+                throw new UpdateException("not impl in stub");
+            }
+
+            @Override
+            public void setSecurityZoneForEntities(Long securityZoneOid, @NotNull Map<EntityType, Collection<Long>> entityOids) throws UpdateException {
                 throw new UpdateException("not impl in stub");
             }
 

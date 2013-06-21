@@ -8,6 +8,8 @@ import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.comparator.NamedEntityComparator;
 import com.l7tech.objectmodel.folder.HasFolderOid;
+import com.l7tech.policy.PolicyHeader;
+import com.l7tech.policy.PolicyType;
 import com.l7tech.util.ExceptionUtils;
 import org.apache.commons.collections.ComparatorUtils;
 import org.apache.commons.lang.StringUtils;
@@ -24,8 +26,10 @@ import javax.swing.table.TableRowSorter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.*;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -181,28 +185,7 @@ public class AssignSecurityZonesDialog extends JDialog {
             }
         });
         closeBtn.addActionListener(Utilities.createDisposeAction(this));
-        setBtn.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(final ActionEvent e) {
-                SecurityZone selectedZone = getSelectedZone();
-                if (selectedZone != null && selectedZone.equals(SecurityZoneUtil.NULL_ZONE)) {
-                    selectedZone = null;
-                }
-                final Map<Integer, EntityHeader> selectedEntities = getSelectedEntities();
-                final List<Long> oids = new ArrayList<>(selectedEntities.size());
-                for (final EntityHeader selectedHeader : selectedEntities.values()) {
-                    oids.add(selectedHeader.getOid());
-                }
-                try {
-                    Registry.getDefault().getRbacAdmin().setSecurityZoneForEntities(selectedZone == null ? null : selectedZone.getOid(), getSelectedEntityType(), oids);
-                    for (final Integer selectedIndex : selectedEntities.keySet()) {
-                        dataModel.setValueAt(selectedZone == null ? SecurityZoneUtil.NULL_ZONE : selectedZone, selectedIndex, ZONE_COL_INDEX);
-                    }
-                } catch (final UpdateException ex) {
-                    DialogDisplayer.showMessageDialog(AssignSecurityZonesDialog.this, "Error", "Unable to assign entities to zone.", ex);
-                }
-            }
-        });
+        setBtn.addActionListener(new BulkUpdateActionListener());
     }
 
     private void initTable() {
@@ -303,15 +286,20 @@ public class AssignSecurityZonesDialog extends JDialog {
         }
         EntityType selected = getSelectedEntityType();
         if (selected != null) {
-            if (selected == EntityType.SSG_KEY_ENTRY) {
-                selected = EntityType.SSG_KEY_METADATA;
-            }
+            selected = convertToBackingEntityType(selected);
             try {
                 final EntityHeaderSet<EntityHeader> entities = Registry.getDefault().getRbacAdmin().findEntities(selected);
                 boolean atLeastOnePath = false;
                 final EntityHeader[] headers = entities.toArray(new EntityHeader[entities.size()]);
                 for (int i = 0; i < headers.length; i++) {
                     final EntityHeader header = headers[i];
+                    if (header instanceof PolicyHeader) {
+                        final PolicyHeader policy = (PolicyHeader) header;
+                        if (PolicyType.PRIVATE_SERVICE == policy.getPolicyType() || !policy.getPolicyType().isSecurityZoneable()) {
+                            // don't show service policies or non-zoneable policies
+                            continue;
+                        }
+                    }
                     final Object[] data = new Object[4];
                     data[CHECK_BOX_COL_INDEX] = Boolean.FALSE;
                     data[HEADER_COL_INDEX] = header;
@@ -342,6 +330,14 @@ public class AssignSecurityZonesDialog extends JDialog {
                 DialogDisplayer.showMessageDialog(this, error, "Error", JOptionPane.ERROR_MESSAGE, null);
             }
         }
+    }
+
+    private EntityType convertToBackingEntityType(final EntityType selected) {
+        EntityType ret = selected;
+        if (ret == EntityType.SSG_KEY_ENTRY) {
+            ret = EntityType.SSG_KEY_METADATA;
+        }
+        return ret;
     }
 
     private void showHidePathColumn(final boolean show) {
@@ -378,6 +374,32 @@ public class AssignSecurityZonesDialog extends JDialog {
         @Override
         public Class<?> getColumnClass(final int columnIndex) {
             return columnIndex == CHECK_BOX_COL_INDEX ? Boolean.class : String.class;
+        }
+    }
+
+    private class BulkUpdateActionListener implements ActionListener {
+        @Override
+        public void actionPerformed(final ActionEvent e) {
+            final EntityType selectedEntityType = convertToBackingEntityType(getSelectedEntityType());
+            SecurityZone selectedZone = getSelectedZone();
+            if (selectedZone != null && selectedZone.equals(SecurityZoneUtil.NULL_ZONE)) {
+                selectedZone = null;
+            }
+            final Long securityZoneOid = selectedZone == null ? null : selectedZone.getOid();
+            final Map<Integer, EntityHeader> selectedEntities = getSelectedEntities();
+            try {
+                final BulkZoneUpdater updater = new BulkZoneUpdater(Registry.getDefault().getRbacAdmin(),
+                        Registry.getDefault().getUDDIRegistryAdmin(), Registry.getDefault().getJmsManager(), Registry.getDefault().getPolicyAdmin());
+                updater.bulkUpdate(securityZoneOid, selectedEntityType, selectedEntities.values());
+                // update the table
+                for (final Integer selectedIndex : selectedEntities.keySet()) {
+                    dataModel.setValueAt(selectedZone == null ? SecurityZoneUtil.NULL_ZONE : selectedZone, selectedIndex, ZONE_COL_INDEX);
+                }
+            } catch (final FindException ex) {
+                DialogDisplayer.showMessageDialog(AssignSecurityZonesDialog.this, "Error", "Error assigning entities to zone.", ex);
+            } catch (final UpdateException ex) {
+                DialogDisplayer.showMessageDialog(AssignSecurityZonesDialog.this, "Error", "Unable to assign entities to zone.", ex);
+            }
         }
     }
 }
