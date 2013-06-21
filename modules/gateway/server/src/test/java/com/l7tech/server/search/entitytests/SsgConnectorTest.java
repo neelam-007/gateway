@@ -34,7 +34,7 @@ public class SsgConnectorTest extends DependencyTestBaseClass {
     @Before
     public void before() {
         //add the custom connector dependency processor
-        ssgConnectorProcessors.put(myCustomConnectorScheme, new BaseDependencyProcessor<SsgConnector>() {
+        dependencyProcessorRegistry.register(myCustomConnectorScheme, new BaseDependencyProcessor<SsgConnector>() {
             @NotNull
             public List<Dependency> findDependencies(SsgConnector object, DependencyFinder finder) throws FindException {
                 return Arrays.asList(myDependency);
@@ -45,7 +45,7 @@ public class SsgConnectorTest extends DependencyTestBaseClass {
     @After
     public void after() {
         //remove all custom connector dependency processors.
-        ssgConnectorProcessors.clear();
+        dependencyProcessorRegistry.remove(myCustomConnectorScheme);
     }
 
 

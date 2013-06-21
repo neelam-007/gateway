@@ -2,11 +2,13 @@ package com.l7tech.server.search.processors;
 
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.server.search.DependencyProcessorRegistry;
 import com.l7tech.server.search.objects.Dependency;
 import org.jetbrains.annotations.NotNull;
 
+import javax.inject.Inject;
+import javax.inject.Named;
 import java.util.List;
-import java.util.Map;
 
 /**
  * The connector dependency processor. This will find default dependencies defined by the SsgConnector and then delegate
@@ -16,17 +18,9 @@ import java.util.Map;
  */
 public class SsgConnectorDependencyProcessor extends GenericDependencyProcessor<SsgConnector> {
 
-    private Map<String, DependencyProcessor<SsgConnector>> processors;
-
-    /**
-     * Creates a new SsgConnectorDependencyProcessor given the map of dependency processors to use for the different
-     * connectors
-     *
-     * @param processors The map of dependency processors to use of the different connector schemes
-     */
-    public SsgConnectorDependencyProcessor(Map<String, DependencyProcessor<SsgConnector>> processors) {
-        this.processors = processors;
-    }
+    @Inject
+    @Named("ssgConnectorDependencyProcessorRegistry")
+    private DependencyProcessorRegistry processorRegistry;
 
     @Override
     @NotNull
@@ -35,7 +29,7 @@ public class SsgConnectorDependencyProcessor extends GenericDependencyProcessor<
         List<Dependency> dependencies = super.findDependencies(activeConnector, finder);
 
         //Gets the dependencies from the dependency processor for the connector scheme
-        DependencyProcessor processor = processors.get(activeConnector.getScheme());
+        DependencyProcessor processor = processorRegistry.get(activeConnector.getScheme());
         if (processor != null) {
             //noinspection unchecked
             dependencies.addAll(processor.findDependencies(activeConnector, finder));

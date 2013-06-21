@@ -2,11 +2,13 @@ package com.l7tech.server.search.processors;
 
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.server.search.DependencyProcessorRegistry;
 import com.l7tech.server.search.objects.Dependency;
 import org.jetbrains.annotations.NotNull;
 
+import javax.inject.Inject;
+import javax.inject.Named;
 import java.util.List;
-import java.util.Map;
 
 /**
  * The active connector dependency processor. This will find default dependencies defined by the SsgActiveConnector and
@@ -17,17 +19,9 @@ import java.util.Map;
  */
 public class SsgActiveConnectorDependencyProcessor extends GenericDependencyProcessor<SsgActiveConnector> {
 
-    private Map<String, DependencyProcessor<SsgActiveConnector>> processors;
-
-    /**
-     * Creates a new SsgActiveConnectorDependencyProcessor given the map of active connector dependency processors for
-     * the different active connector types
-     *
-     * @param processors The map of active connector dependency processors.
-     */
-    public SsgActiveConnectorDependencyProcessor(Map<String, DependencyProcessor<SsgActiveConnector>> processors) {
-        this.processors = processors;
-    }
+    @Inject
+    @Named("ssgActiveConnectorDependencyProcessorRegistry")
+    private DependencyProcessorRegistry processorRegistry;
 
     @Override
     @NotNull
@@ -36,7 +30,7 @@ public class SsgActiveConnectorDependencyProcessor extends GenericDependencyProc
         List<Dependency> dependencies = super.findDependencies(activeConnector, finder);
 
         //delegate to the custom dependency processor for the SsgActiveConnector type.
-        DependencyProcessor processor = processors.get(activeConnector.getType());
+        DependencyProcessor processor = processorRegistry.get(activeConnector.getType());
         if (processor != null) {
             //noinspection unchecked
             dependencies.addAll(processor.findDependencies(activeConnector, finder));

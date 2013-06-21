@@ -6,10 +6,10 @@ import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.LifecycleException;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.search.DependencyProcessorRegistry;
 import com.l7tech.server.search.objects.Dependency;
 import com.l7tech.server.search.processors.BaseDependencyProcessor;
 import com.l7tech.server.search.processors.DependencyFinder;
-import com.l7tech.server.search.processors.DependencyProcessor;
 import com.l7tech.server.util.Injector;
 import com.l7tech.server.util.ThreadPoolBean;
 import com.l7tech.util.ExceptionUtils;
@@ -30,7 +30,7 @@ public class SftpPollingListenerModuleLoadListener implements SftpPollingListene
 
     // Manages all SFTP polling listener processes
     private static SftpPollingListenerModule sftpPollingListenerModule;
-    private static Map<String, DependencyProcessor<SsgActiveConnector>> ssgActiveConnectorDependencyProcessorTypeMap;
+    private static DependencyProcessorRegistry processorRegistry;
 
     @SuppressWarnings({"UnusedDeclaration"})
     public static synchronized void onModuleLoaded(final ApplicationContext context) {
@@ -63,8 +63,8 @@ public class SftpPollingListenerModuleLoadListener implements SftpPollingListene
 
             // Get the ssg connector dependency processor map to add the mq connector dependency processor
             //noinspection unchecked
-            ssgActiveConnectorDependencyProcessorTypeMap = context.getBean( "ssgActiveConnectorDependencyProcessorTypeMap", Map.class );
-            ssgActiveConnectorDependencyProcessorTypeMap.put(SsgActiveConnector.ACTIVE_CONNECTOR_TYPE_SFTP, new BaseDependencyProcessor<SsgActiveConnector>() {
+            processorRegistry = context.getBean( "ssgActiveConnectorDependencyProcessorRegistry", DependencyProcessorRegistry.class );
+            processorRegistry.register(SsgActiveConnector.ACTIVE_CONNECTOR_TYPE_SFTP, new BaseDependencyProcessor<SsgActiveConnector>() {
                 @Override
                 @NotNull
                 public List<Dependency> findDependencies(SsgActiveConnector activeConnector, DependencyFinder finder) throws FindException {
@@ -99,7 +99,7 @@ public class SftpPollingListenerModuleLoadListener implements SftpPollingListene
             }
         }
         //remove the dependency processor
-        ssgActiveConnectorDependencyProcessorTypeMap.remove(SsgActiveConnector.ACTIVE_CONNECTOR_TYPE_SFTP);
+        processorRegistry.remove(SsgActiveConnector.ACTIVE_CONNECTOR_TYPE_SFTP);
     }
 
     /**

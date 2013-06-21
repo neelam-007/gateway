@@ -2,12 +2,11 @@ package com.l7tech.external.assertions.rawtcp.server;
 
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.server.LifecycleException;
-import com.l7tech.server.search.processors.DependencyProcessor;
+import com.l7tech.server.search.DependencyProcessorRegistry;
 import com.l7tech.server.search.processors.DoNothingDependencyProcessor;
 import com.l7tech.util.ExceptionUtils;
 import org.springframework.context.ApplicationContext;
 
-import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -17,7 +16,7 @@ import java.util.logging.Logger;
 public class ModuleLoadListener {
     private static final Logger logger = Logger.getLogger(ModuleLoadListener.class.getName());
     private static SimpleRawTransportModule instance;
-    private static Map<String, DependencyProcessor<SsgConnector>> ssgConnectorDependencyProcessorTypeMap;
+    private static DependencyProcessorRegistry processorRegistry;
 
     public static synchronized void onModuleLoaded(ApplicationContext context) {
         if (instance != null) {
@@ -33,9 +32,9 @@ public class ModuleLoadListener {
 
             // Get the ssg connector dependency processor map to add the tcp connector dependency processor
             //noinspection unchecked
-            ssgConnectorDependencyProcessorTypeMap = context.getBean( "ssgConnectorDependencyProcessorTypeMap", Map.class );
+            processorRegistry = context.getBean( "ssgConnectorDependencyProcessorRegistry", DependencyProcessorRegistry.class );
             // Us the DoNothingDependencyProcessor because the tcp connector does not add any dependencies beyond the the defaults.
-            ssgConnectorDependencyProcessorTypeMap.put(SimpleRawTransportModule.SCHEME_RAW_TCP, new DoNothingDependencyProcessor<SsgConnector>());
+            processorRegistry.register(SimpleRawTransportModule.SCHEME_RAW_TCP, new DoNothingDependencyProcessor<SsgConnector>());
         }
     }
 
@@ -56,7 +55,7 @@ public class ModuleLoadListener {
             }
         }
         //remove the dependency processor
-        ssgConnectorDependencyProcessorTypeMap.remove(SimpleRawTransportModule.SCHEME_RAW_TCP);
+        processorRegistry.remove(SimpleRawTransportModule.SCHEME_RAW_TCP);
     }
 
 }

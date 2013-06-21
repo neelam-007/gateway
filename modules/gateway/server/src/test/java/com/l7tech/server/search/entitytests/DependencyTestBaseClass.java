@@ -1,7 +1,6 @@
 package com.l7tech.server.search.entitytests;
 
 import com.l7tech.gateway.common.security.password.SecurePassword;
-import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.objectmodel.Entity;
@@ -12,6 +11,7 @@ import com.l7tech.server.DefaultKey;
 import com.l7tech.server.EntityCrud;
 import com.l7tech.server.search.DependencyAnalyzer;
 import com.l7tech.server.search.DependencyAnalyzerImpl;
+import com.l7tech.server.search.DependencyProcessorRegistry;
 import com.l7tech.server.search.DependencyProcessorStore;
 import com.l7tech.server.search.processors.*;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
@@ -21,9 +21,6 @@ import org.junit.Before;
 import org.junit.runner.RunWith;
 import org.mockito.*;
 import org.mockito.runners.MockitoJUnitRunner;
-
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * This was created: 6/12/13 as 4:44 PM
@@ -44,6 +41,9 @@ public abstract class DependencyTestBaseClass {
     @Mock
     private SsgKeyStoreManager keyStoreManager;
 
+    @Spy
+    DependencyProcessorRegistry dependencyProcessorRegistry;
+
     @InjectMocks
     GenericDependencyProcessor genericDependencyProcessor = new GenericDependencyProcessor();
     @InjectMocks
@@ -61,9 +61,8 @@ public abstract class DependencyTestBaseClass {
     @InjectMocks
     IdentityProviderProcessor identityProviderProcessor = new IdentityProviderProcessor();
 
-    protected Map<String, DependencyProcessor<SsgConnector>> ssgConnectorProcessors = new HashMap<>();
     @InjectMocks
-    SsgConnectorDependencyProcessor ssgConnectorDependencyProcessor = new SsgConnectorDependencyProcessor(ssgConnectorProcessors);
+    SsgConnectorDependencyProcessor ssgConnectorDependencyProcessor = new SsgConnectorDependencyProcessor();
 
     @Spy
     DependencyProcessorStore processorStore = new DependencyProcessorStore(CollectionUtils.MapBuilder.<Dependency.DependencyType, DependencyProcessor>builder()

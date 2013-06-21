@@ -6,16 +6,15 @@ import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.LifecycleException;
+import com.l7tech.server.search.DependencyProcessorRegistry;
 import com.l7tech.server.search.objects.Dependency;
 import com.l7tech.server.search.processors.BaseDependencyProcessor;
 import com.l7tech.server.search.processors.DependencyFinder;
-import com.l7tech.server.search.processors.DependencyProcessor;
 import com.l7tech.util.ExceptionUtils;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.context.ApplicationContext;
 
 import java.util.List;
-import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -25,7 +24,7 @@ import java.util.logging.Logger;
 public class SshServerModuleLoadListener {
     private static final Logger logger = Logger.getLogger(SshServerModuleLoadListener.class.getName());
     private static SshServerModule instance;
-    private static Map<String, DependencyProcessor<SsgConnector>> ssgConnectorDependencyProcessorTypeMap;
+    private static DependencyProcessorRegistry processorRegistry;
 
     public static synchronized void onModuleLoaded(ApplicationContext context) {
         if (instance != null) {
@@ -40,8 +39,8 @@ public class SshServerModuleLoadListener {
 
             // Get the ssg connector dependency processor map to add the ssh connector dependency processor
             //noinspection unchecked
-            ssgConnectorDependencyProcessorTypeMap = context.getBean( "ssgConnectorDependencyProcessorTypeMap", Map.class );
-            ssgConnectorDependencyProcessorTypeMap.put(SshServerModule.SCHEME_SSH, new BaseDependencyProcessor<SsgConnector>() {
+            processorRegistry = context.getBean( "ssgConnectorDependencyProcessorRegistry", DependencyProcessorRegistry.class );
+            processorRegistry.register(SshServerModule.SCHEME_SSH, new BaseDependencyProcessor<SsgConnector>() {
                 @Override
                 @NotNull
                 public List<Dependency> findDependencies(SsgConnector connector, DependencyFinder finder) throws FindException {
@@ -73,7 +72,7 @@ public class SshServerModuleLoadListener {
             }
         }
         //remove the dependency processor from the list
-        ssgConnectorDependencyProcessorTypeMap.remove(SsgActiveConnector.ACTIVE_CONNECTOR_TYPE_SFTP);
+        processorRegistry.remove(SsgActiveConnector.ACTIVE_CONNECTOR_TYPE_SFTP);
     }
 
 }

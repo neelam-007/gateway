@@ -19,7 +19,7 @@ import com.l7tech.server.event.system.ReadyForMessages;
 import com.l7tech.server.identity.cert.TrustedCertServices;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
-import com.l7tech.server.search.processors.DependencyProcessor;
+import com.l7tech.server.search.DependencyProcessorRegistry;
 import com.l7tech.server.search.processors.DoNothingDependencyProcessor;
 import com.l7tech.server.transport.ListenerException;
 import com.l7tech.server.transport.SsgConnectorManager;
@@ -80,7 +80,7 @@ public class AsyncHttpTransportModule extends TransportModule implements Applica
     private static final Map<String, PendingAsyncRequest> activeAsyncRequests = new ConcurrentHashMap<String, PendingAsyncRequest>(2048, 0.75f, 256);
 
     //This is the map of ssgConnectorDependency processors. We need it in order to add the AsyncHttp dependency processor
-    private static Map<String, DependencyProcessor<SsgConnector>> ssgConnectorDependencyProcessorTypeMap;
+    private static DependencyProcessorRegistry processorRegistry;
 
     protected AsyncHttpTransportModule(@NotNull final ApplicationEventProxy applicationEventProxy,
                                        @NotNull final GatewayState gatewayState,
@@ -409,10 +409,10 @@ public class AsyncHttpTransportModule extends TransportModule implements Applica
 
             //get the map of SsgConnector dependency processors.
             //noinspection unchecked
-            ssgConnectorDependencyProcessorTypeMap = context.getBean( "ssgConnectorDependencyProcessorTypeMap", Map.class );
+            processorRegistry = context.getBean( "ssgConnectorDependencyProcessorRegistry", DependencyProcessorRegistry.class );
             //add a custom processor for async http. this is the do nothing dependency processor because Async http does
             // not declare any dependencies beyond the default SsgConnector dependencies
-            ssgConnectorDependencyProcessorTypeMap.put(SCHEME_ASYNC_HTTP, new DoNothingDependencyProcessor<SsgConnector>());
+            processorRegistry.register(SCHEME_ASYNC_HTTP, new DoNothingDependencyProcessor<SsgConnector>());
         }
     }
 
@@ -434,7 +434,7 @@ public class AsyncHttpTransportModule extends TransportModule implements Applica
             }
         }
         //remove the dependency processor
-        ssgConnectorDependencyProcessorTypeMap.remove(SCHEME_ASYNC_HTTP);
+        processorRegistry.remove(SCHEME_ASYNC_HTTP);
     }
 
     public static boolean sendResponseToPendingRequest(String requestId, Message response, boolean destroyAsRead) {
