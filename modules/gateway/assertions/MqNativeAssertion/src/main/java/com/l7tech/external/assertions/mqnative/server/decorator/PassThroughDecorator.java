@@ -35,10 +35,10 @@ public class PassThroughDecorator extends MqMessageDecorator {
 
         if (assertion != null) {
             if (isRequest) {
-                passThroughMessageDescriptor = assertion.getRequestMqNativeMessagePropertyRuleSet().isPassThroughMqMessageDescriptors();
+                passThroughMessageDescriptor = assertion.getRequestMqNativeMessagePropertyRuleSet().isPassThroughHeaders();
                 passThroughMessageProperty = assertion.getRequestMqNativeMessagePropertyRuleSet().isPassThroughMqMessageProperties();
             } else {
-                passThroughMessageDescriptor = assertion.getResponseMqNativeMessagePropertyRuleSet().isPassThroughMqMessageDescriptors();
+                passThroughMessageDescriptor = assertion.getResponseMqNativeMessagePropertyRuleSet().isPassThroughHeaders();
                 passThroughMessageProperty = assertion.getResponseMqNativeMessagePropertyRuleSet().isPassThroughMqMessageProperties();
             }
         }

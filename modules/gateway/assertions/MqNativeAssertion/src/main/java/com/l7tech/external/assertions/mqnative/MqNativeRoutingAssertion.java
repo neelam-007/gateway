@@ -72,10 +72,11 @@ public class MqNativeRoutingAssertion extends RoutingAssertion implements UsesEn
     private MqNativeMessageHeaderType requestMqHeaderType = defaultMqMessageHeaderType();
     @NotNull
     private MqNativeMessageHeaderType responseMqHeaderType = defaultMqMessageHeaderType();
+    //Message Descriptor
     @Nullable
-    private Map<String,String> requestMessageDescriptorOverrides = new HashMap<String, String>(0);
+    private Map<String,String> requestMessageAdvancedProperties = new HashMap<String, String>(0);
     @Nullable
-    private Map<String,String> responseMessageDescriptorOverrides = new HashMap<String, String>(0);
+    private Map<String,String> responseMessageAdvancedProperties = new HashMap<String, String>(0);
     @NotNull
     private MqNativeMessagePropertyRuleSet requestMqMessagePropertyRuleSet = defaultMqNativeMessagePropertyRuleSet();
     @NotNull
@@ -87,7 +88,7 @@ public class MqNativeRoutingAssertion extends RoutingAssertion implements UsesEn
 
     private MqNativeMessagePropertyRuleSet defaultMqNativeMessagePropertyRuleSet() {
         MqNativeMessagePropertyRuleSet mqNativeMessagePropertyRuleSet = new MqNativeMessagePropertyRuleSet();
-        mqNativeMessagePropertyRuleSet.setPassThroughMqMessageDescriptors(true);
+        mqNativeMessagePropertyRuleSet.setPassThroughHeaders(true);
         mqNativeMessagePropertyRuleSet.setPassThroughMqMessageHeaders(true);
         mqNativeMessagePropertyRuleSet.setPassThroughMqMessageProperties(true);
         return mqNativeMessagePropertyRuleSet;
@@ -245,17 +246,17 @@ public class MqNativeRoutingAssertion extends RoutingAssertion implements UsesEn
      * @return The message properties or null.
      */
     @Nullable
-    public Map<String, String> getRequestMessageDescriptorOverrides() {
-        return requestMessageDescriptorOverrides;
+    public Map<String, String> getRequestMessageAdvancedProperties() {
+        return requestMessageAdvancedProperties;
     }
 
     /**
      * Set the message descriptor overrides for the outbound request message.
      *
-     * @param requestMessageDescriptorOverrides The properties to use.
+     * @param requestMessageAdvancedProperties The properties to use.
      */
-    public void setRequestMessageDescriptorOverrides(@Nullable final Map<String, String> requestMessageDescriptorOverrides) {
-        this.requestMessageDescriptorOverrides = requestMessageDescriptorOverrides;
+    public void setRequestMessageAdvancedProperties(@Nullable final Map<String, String> requestMessageAdvancedProperties) {
+        this.requestMessageAdvancedProperties = requestMessageAdvancedProperties;
     }
 
     /**
@@ -263,16 +264,16 @@ public class MqNativeRoutingAssertion extends RoutingAssertion implements UsesEn
      * @return The message properties or null.
      */
     @Nullable
-    public Map<String, String> getResponseMessageDescriptorOverrides() {
-        return responseMessageDescriptorOverrides;
+    public Map<String, String> getResponseMessageAdvancedProperties() {
+        return responseMessageAdvancedProperties;
     }
 
     /**
      * Set the message descriptor overrides for the outbound response message.
-     * @param responseMessageDescriptorOverrides The properties to use.
+     * @param responseMessageAdvancedProperties The properties to use.
      */
-    public void setResponseMessageDescriptorOverrides(@Nullable Map<String, String> responseMessageDescriptorOverrides) {
-        this.responseMessageDescriptorOverrides = responseMessageDescriptorOverrides;
+    public void setResponseMessageAdvancedProperties(@Nullable Map<String, String> responseMessageAdvancedProperties) {
+        this.responseMessageAdvancedProperties = responseMessageAdvancedProperties;
     }
 
     /**
@@ -565,15 +566,15 @@ public class MqNativeRoutingAssertion extends RoutingAssertion implements UsesEn
 
         final List<String> expressions = new ArrayList<String>();
 
-        if (requestMessageDescriptorOverrides != null) {
-            for (Map.Entry<String, String> override : requestMessageDescriptorOverrides.entrySet()) {
+        if (requestMessageAdvancedProperties != null) {
+            for (Map.Entry<String, String> override : requestMessageAdvancedProperties.entrySet()) {
                 expressions.add(override.getKey());
                 expressions.add(override.getValue());
             }
         }
 
-        if (responseMessageDescriptorOverrides != null) {
-            for (Map.Entry<String, String> override : responseMessageDescriptorOverrides.entrySet()) {
+        if (responseMessageAdvancedProperties != null) {
+            for (Map.Entry<String, String> override : responseMessageAdvancedProperties.entrySet()) {
                 expressions.add(override.getKey());
                 expressions.add(override.getValue());
             }

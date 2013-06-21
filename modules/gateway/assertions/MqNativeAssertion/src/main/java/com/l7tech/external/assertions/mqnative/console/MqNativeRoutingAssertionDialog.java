@@ -397,7 +397,7 @@ public class MqNativeRoutingAssertionDialog extends AssertionPropertiesOkCancelS
         final MessageTargetableSupport sourceMessageTargetable = new MessageTargetableSupport((MessageTargetable) messageSourceComboBox.getSelectedItem());
         assertion.setRequestTarget(sourceMessageTargetable);
         MqNativeMessagePropertyRuleSet requestRuleSet = assertion.getRequestMqNativeMessagePropertyRuleSet();
-        requestRuleSet.setPassThroughMqMessageDescriptors(requestMessageDescriptorHeaderPanel.isPassThrough());
+        requestRuleSet.setPassThroughHeaders(requestMessageDescriptorHeaderPanel.isPassThrough());
         requestRuleSet.setPassThroughMqMessageHeaders(requestHeadersPassThroughCheckBox.isSelected());
         requestRuleSet.setPassThroughMqMessageProperties(requestPropertiesPassThroughCheckBox.isSelected());
 
@@ -411,17 +411,17 @@ public class MqNativeRoutingAssertionDialog extends AssertionPropertiesOkCancelS
         }
         assertion.setResponseTarget(targetMessageTargetable);
         MqNativeMessagePropertyRuleSet responseRuleSet = assertion.getResponseMqNativeMessagePropertyRuleSet();
-        responseRuleSet.setPassThroughMqMessageDescriptors(responseMessageDescriptorHeaderPanel.isPassThrough());
+        responseRuleSet.setPassThroughHeaders(responseMessageDescriptorHeaderPanel.isPassThrough());
         responseRuleSet.setPassThroughMqMessageHeaders(responseHeadersPassThroughCheckBox.isSelected());
         responseRuleSet.setPassThroughMqMessageProperties(responsePropertiesPassThroughCheckBox.isSelected());
 
         assertion.setRequestMqHeaderType((MqNativeMessageHeaderType) requestOverrideMqHeaderTypeComboBox.getSelectedItem());
         assertion.setResponseMqHeaderType((MqNativeMessageHeaderType) responseOverrideMqHeaderTypeComboBox.getSelectedItem());
         final Map<String,String> requestDescriptors = requestMessageDescriptorHeaderPanel.getAdvancedPropertiesTableModelAsMap();
-        assertion.setRequestMessageDescriptorOverrides(requestDescriptors.isEmpty() || !putToQueueRadioButton.isSelected() ? null : requestDescriptors);
+        assertion.setRequestMessageAdvancedProperties(requestDescriptors.isEmpty() || !putToQueueRadioButton.isSelected() ? null : requestDescriptors);
 
         final Map<String,String> responseDescriptor = responseMessageDescriptorHeaderPanel.getAdvancedPropertiesTableModelAsMap();
-        assertion.setResponseMessageDescriptorOverrides(responseDescriptor.isEmpty() ? null : responseDescriptor);
+        assertion.setResponseMessageAdvancedProperties(responseDescriptor.isEmpty() ? null : responseDescriptor);
 
         String responseTimeoutOverride = mqResponseTimeout.getText();
         if (responseTimeoutOverride != null && ! responseTimeoutOverride.isEmpty()) {
@@ -462,7 +462,7 @@ public class MqNativeRoutingAssertionDialog extends AssertionPropertiesOkCancelS
         final MessageTargetableSupport sourceTargetable = new MessageTargetableSupport(assertion.getRequestTarget());
         messageSourceComboBox.setSelectedItem(sourceTargetable);
         MqNativeMessagePropertyRuleSet requestRuleSet = assertion.getRequestMqNativeMessagePropertyRuleSet();
-        requestMessageDescriptorHeaderPanel.setPassThrough(requestRuleSet.isPassThroughMqMessageDescriptors());
+        requestMessageDescriptorHeaderPanel.setPassThrough(requestRuleSet.isPassThroughHeaders());
         requestHeadersPassThroughCheckBox.setSelected(requestRuleSet.isPassThroughMqMessageHeaders());
         requestPropertiesPassThroughCheckBox.setSelected(requestRuleSet.isPassThroughMqMessageProperties());
 
@@ -470,7 +470,7 @@ public class MqNativeRoutingAssertionDialog extends AssertionPropertiesOkCancelS
         final MessageTargetableSupport targetTargetable = new MessageTargetableSupport(assertion.getResponseTarget());
         messageTargetComboBox.setSelectedItem(new MessageTargetableSupport( targetTargetable.getTarget()) );
         MqNativeMessagePropertyRuleSet responseRuleSet = assertion.getResponseMqNativeMessagePropertyRuleSet();
-        responseMessageDescriptorHeaderPanel.setPassThrough(responseRuleSet.isPassThroughMqMessageDescriptors());
+        responseMessageDescriptorHeaderPanel.setPassThrough(responseRuleSet.isPassThroughHeaders());
         responseHeadersPassThroughCheckBox.setSelected(responseRuleSet.isPassThroughMqMessageHeaders());
         responsePropertiesPassThroughCheckBox.setSelected(responseRuleSet.isPassThroughMqMessageProperties());
         targetMessageVariablePanel.setVariable(
@@ -481,8 +481,8 @@ public class MqNativeRoutingAssertionDialog extends AssertionPropertiesOkCancelS
         requestOverrideMqHeaderTypeComboBox.setSelectedItem(assertion.getRequestMqHeaderType());
         responseOverrideMqHeaderTypeComboBox.setSelectedItem(assertion.getResponseMqHeaderType());
 
-        requestMessageDescriptorHeaderPanel.setAdvancedPropertiesTableModel(assertion.getRequestMessageDescriptorOverrides());
-        responseMessageDescriptorHeaderPanel.setAdvancedPropertiesTableModel(assertion.getResponseMessageDescriptorOverrides());
+        requestMessageDescriptorHeaderPanel.setAdvancedPropertiesTableModel(assertion.getRequestMessageAdvancedProperties());
+        responseMessageDescriptorHeaderPanel.setAdvancedPropertiesTableModel(assertion.getResponseMessageAdvancedProperties());
 
         requestCopyHeaderToPropertyCheckBox.setSelected(assertion.isRequestCopyHeaderToProperty());
         requestCopyPropertyToHeaderCheckBox.setSelected(assertion.isRequestCopyPropertyToHeader());

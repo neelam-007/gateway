@@ -230,7 +230,7 @@ public class ServerMqNativeRoutingAssertionTest {
     @Test
     public void testPassThrough() throws Exception {
         MqNativeMessagePropertyRuleSet ruleSet = new MqNativeMessagePropertyRuleSet();
-        ruleSet.setPassThroughMqMessageDescriptors(true);
+        ruleSet.setPassThroughHeaders(true);
         ruleSet.setPassThroughMqMessageHeaders(true);
         ruleSet.setPassThroughMqMessageProperties(true);
         assertion.setRequestMqNativeMessagePropertyRuleSet(ruleSet);
@@ -255,7 +255,7 @@ public class ServerMqNativeRoutingAssertionTest {
     @Test
     public void testPassThroughSimpleMessage() throws Exception {
         MqNativeMessagePropertyRuleSet ruleSet = new MqNativeMessagePropertyRuleSet();
-        ruleSet.setPassThroughMqMessageDescriptors(true);
+        ruleSet.setPassThroughHeaders(true);
         ruleSet.setPassThroughMqMessageHeaders(true);
         ruleSet.setPassThroughMqMessageProperties(true);
         assertion.setRequestMqNativeMessagePropertyRuleSet(ruleSet);
@@ -279,7 +279,7 @@ public class ServerMqNativeRoutingAssertionTest {
         context = makeContext(mqMessage);
 
         MqNativeMessagePropertyRuleSet ruleSet = new MqNativeMessagePropertyRuleSet();
-        ruleSet.setPassThroughMqMessageDescriptors(true);
+        ruleSet.setPassThroughHeaders(true);
         assertion.setRequestMqNativeMessagePropertyRuleSet(ruleSet);
         context.setVariable("contextVariableName", "mqnative.md.applicationOriginData");
         context.setVariable("contextVariableValue", "applicationOriginDataValue");
@@ -363,7 +363,7 @@ public class ServerMqNativeRoutingAssertionTest {
 
     public void testRequestHeaderTypeOriginalHeader(MQMessage message, Class type) throws Exception {
         MqNativeMessagePropertyRuleSet ruleSet = new MqNativeMessagePropertyRuleSet();
-        ruleSet.setPassThroughMqMessageDescriptors(true);
+        ruleSet.setPassThroughHeaders(true);
         ruleSet.setPassThroughMqMessageHeaders(true);
         ruleSet.setPassThroughMqMessageProperties(true);
         assertion.setRequestMqNativeMessagePropertyRuleSet(ruleSet);
@@ -390,7 +390,7 @@ public class ServerMqNativeRoutingAssertionTest {
 
     public void testRequestHeaderTypeMQRFH2(MQMessage message) throws Exception {
         MqNativeMessagePropertyRuleSet ruleSet = new MqNativeMessagePropertyRuleSet();
-        ruleSet.setPassThroughMqMessageDescriptors(true);
+        ruleSet.setPassThroughHeaders(true);
         ruleSet.setPassThroughMqMessageHeaders(true);
         ruleSet.setPassThroughMqMessageProperties(true);
         assertion.setRequestMqNativeMessagePropertyRuleSet(ruleSet);
@@ -417,7 +417,7 @@ public class ServerMqNativeRoutingAssertionTest {
 
     public void testRequestHeaderTypeMQRFH1(MQMessage message) throws Exception {
         MqNativeMessagePropertyRuleSet ruleSet = new MqNativeMessagePropertyRuleSet();
-        ruleSet.setPassThroughMqMessageDescriptors(true);
+        ruleSet.setPassThroughHeaders(true);
         ruleSet.setPassThroughMqMessageHeaders(true);
         ruleSet.setPassThroughMqMessageProperties(true);
         assertion.setRequestMqNativeMessagePropertyRuleSet(ruleSet);
@@ -438,7 +438,7 @@ public class ServerMqNativeRoutingAssertionTest {
         context = makeContext(mqMessage);
 
         MqNativeMessagePropertyRuleSet ruleSet = new MqNativeMessagePropertyRuleSet();
-        ruleSet.setPassThroughMqMessageDescriptors(true);
+        ruleSet.setPassThroughHeaders(true);
         assertion.setRequestMqNativeMessagePropertyRuleSet(ruleSet);
         context.setVariable("contextVariableName", "mqnative.md.invalid");
         context.setVariable("contextVariableValue", "invalid");
@@ -458,7 +458,7 @@ public class ServerMqNativeRoutingAssertionTest {
         context = makeContext(mqMessage);
 
         MqNativeMessagePropertyRuleSet ruleSet = new MqNativeMessagePropertyRuleSet();
-        ruleSet.setPassThroughMqMessageDescriptors(true);
+        ruleSet.setPassThroughHeaders(true);
         assertion.setRequestMqNativeMessagePropertyRuleSet(ruleSet);
 
         addHeader(TargetMessageType.REQUEST, "${contextVariableName}", "${contextVariableValue}");
@@ -476,14 +476,14 @@ public class ServerMqNativeRoutingAssertionTest {
         context = makeContext(mqMessage);
 
         MqNativeMessagePropertyRuleSet ruleSet = new MqNativeMessagePropertyRuleSet();
-        ruleSet.setPassThroughMqMessageDescriptors(true);
+        ruleSet.setPassThroughHeaders(true);
         assertion.setRequestMqNativeMessagePropertyRuleSet(ruleSet);
         context.setVariable("contextVariableName", "mqnative.md.expiry");
         context.setVariable("contextVariableValue", "InvalidData");
 
         Map<String, String> map = new HashMap<String, String>();
         addHeader(TargetMessageType.REQUEST, "${contextVariableName}", "${contextVariableValue}");
-        assertion.setRequestMessageDescriptorOverrides(map);
+        assertion.setRequestMessageAdvancedProperties(map);
 
         AssertionStatus status = fixture.checkRequest(context);
         assertEquals(AssertionStatus.FAILED, status);
@@ -495,7 +495,7 @@ public class ServerMqNativeRoutingAssertionTest {
         context = makeContext(mqMessage);
 
         MqNativeMessagePropertyRuleSet ruleSet = new MqNativeMessagePropertyRuleSet();
-        ruleSet.setPassThroughMqMessageDescriptors(true);
+        ruleSet.setPassThroughHeaders(true);
         assertion.setRequestMqNativeMessagePropertyRuleSet(ruleSet);
         context.setVariable("contextVariableName", "mqnative.md.putDateTime");
         context.setVariable("contextVariableValue", "InvalidData");
@@ -604,7 +604,7 @@ public class ServerMqNativeRoutingAssertionTest {
     @Test
     public void testPassThroughResponse() throws Exception {
         MqNativeMessagePropertyRuleSet ruleSet = new MqNativeMessagePropertyRuleSet();
-        ruleSet.setPassThroughMqMessageDescriptors(true);
+        ruleSet.setPassThroughHeaders(true);
         ruleSet.setPassThroughMqMessageHeaders(true);
         ruleSet.setPassThroughMqMessageProperties(true);
         assertion.setResponseMqNativeMessagePropertyRuleSet(ruleSet);
@@ -621,7 +621,7 @@ public class ServerMqNativeRoutingAssertionTest {
     @Test
     public void testOverrideResponseMessageDescriptor() throws Exception {
         MqNativeMessagePropertyRuleSet ruleSet = new MqNativeMessagePropertyRuleSet();
-        ruleSet.setPassThroughMqMessageDescriptors(true);
+        ruleSet.setPassThroughHeaders(true);
         ruleSet.setPassThroughMqMessageHeaders(true);
         ruleSet.setPassThroughMqMessageProperties(true);
         assertion.setResponseMqNativeMessagePropertyRuleSet(ruleSet);
@@ -638,7 +638,7 @@ public class ServerMqNativeRoutingAssertionTest {
     @Test
     public void testOverrideResponseMessageProperties() throws Exception {
         MqNativeMessagePropertyRuleSet ruleSet = new MqNativeMessagePropertyRuleSet();
-        ruleSet.setPassThroughMqMessageDescriptors(true);
+        ruleSet.setPassThroughHeaders(true);
         ruleSet.setPassThroughMqMessageHeaders(true);
         ruleSet.setPassThroughMqMessageProperties(true);
         assertion.setResponseMqNativeMessagePropertyRuleSet(ruleSet);
@@ -655,7 +655,7 @@ public class ServerMqNativeRoutingAssertionTest {
     @Test
     public void testOverrideResponseHeader() throws Exception {
         MqNativeMessagePropertyRuleSet ruleSet = new MqNativeMessagePropertyRuleSet();
-        ruleSet.setPassThroughMqMessageDescriptors(true);
+        ruleSet.setPassThroughHeaders(true);
         ruleSet.setPassThroughMqMessageHeaders(true);
         ruleSet.setPassThroughMqMessageProperties(true);
         assertion.setResponseMqNativeMessagePropertyRuleSet(ruleSet);

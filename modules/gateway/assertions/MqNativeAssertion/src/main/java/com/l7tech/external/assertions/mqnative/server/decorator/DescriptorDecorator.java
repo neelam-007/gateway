@@ -50,12 +50,12 @@ public class DescriptorDecorator extends MqMessageDecorator {
         //Get customized header by assertion configuration.
         if (assertion != null) {
             if (isRequest) {
-                if (assertion.getRequestMessageDescriptorOverrides() != null && !assertion.getRequestMessageDescriptorOverrides().isEmpty()) {
-                    mdOverrides.putAll(expandVariables(assertion.getRequestMessageDescriptorOverrides()));
+                if (assertion.getRequestMessageAdvancedProperties() != null && !assertion.getRequestMessageAdvancedProperties().isEmpty()) {
+                    mdOverrides.putAll(expandVariables(assertion.getRequestMessageAdvancedProperties()));
                 }
             } else {
-                if (assertion.getResponseMessageDescriptorOverrides() != null && !assertion.getResponseMessageDescriptorOverrides().isEmpty()) {
-                    mdOverrides.putAll(expandVariables(assertion.getResponseMessageDescriptorOverrides()));
+                if (assertion.getResponseMessageAdvancedProperties() != null && !assertion.getResponseMessageAdvancedProperties().isEmpty()) {
+                    mdOverrides.putAll(expandVariables(assertion.getResponseMessageAdvancedProperties()));
                 }
             }
         }
