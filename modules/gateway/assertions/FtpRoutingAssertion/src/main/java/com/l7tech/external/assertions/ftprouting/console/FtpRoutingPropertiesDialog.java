@@ -27,6 +27,7 @@ import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Option;
+import org.apache.commons.lang.StringUtils;
 
 import javax.swing.*;
 import java.awt.*;
@@ -55,7 +56,10 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
 
     private static final ResourceBundle resources = ResourceBundle.getBundle(FtpRoutingPropertiesDialog.class.getName());
 
-    public static final int COMBO_BOX_NULL_SELECTION_INDEX = -1;
+    private static char SINGLE_SPACE_SEPARATOR = ' ';
+    public static final String COMPONENT_LABEL_SUFFIX = ":";
+
+    public static final int OPTION_COMPONENT_NULL_SELECTION_INDEX = -1;
 
     private static final String PROTOCOL_COMBO_ITEM_FTP_UNSECURED_LABEL = getResourceString("ftpUnsecuredDescription");
     private static final String PROTOCOL_COMBO_ITEM_FTPS_EXPLICIT_LABEL = getResourceString("explicitSslDescription");
@@ -73,6 +77,9 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
             ContentTypeHeader.APPLICATION_JSON,
             ContentTypeHeader.OCTET_STREAM_DEFAULT,
     };
+
+    public static final int PORT_RANGE_START = 1;
+    public static final int PORT_RANGE_END = 65535;
 
     private JPanel _mainPanel;
     private JCheckBox verifyServerCertCheckBox;
@@ -113,7 +120,7 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
     private TargetVariablePanel targetVariablePanel;
 
     private char echoChar;
-    private InputValidator inputValidator;
+    private InputValidator inputValidator, connectionTestValidator;
 
     /**
      * Creates new form ServicePanel
@@ -145,7 +152,7 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
         protocolComboBox.addItem(PROTOCOL_COMBO_ITEM_FTPS_EXPLICIT_LABEL);
         protocolComboBox.addItem(PROTOCOL_COMBO_ITEM_FTPS_IMPLICIT_LABEL);
 
-        protocolComboBox.setSelectedIndex(COMBO_BOX_NULL_SELECTION_INDEX);
+        protocolComboBox.setSelectedIndex(OPTION_COMPONENT_NULL_SELECTION_INDEX);
 
         protocolComboBox.addItemListener(new ItemListener() {
             @Override
@@ -331,24 +338,48 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
         // WSS security settings
         RoutingDialogUtils.tagSecurityHeaderHandlingButtons(secHdrButtons);
 
-        // TODO jwilliams: add more validators for various ftp commands e.g. require arguments for MKD or LIST?
+        // TODO: add more validators for various ftp commands e.g. require arguments for MKD or LIST?
         // --- VALIDATION ---
         inputValidator = new InputValidator(this, getResourceString("errorTitle"));
+        connectionTestValidator = new InputValidator(this, getResourceString("errorTitle"));
 
         // host must be set
-        inputValidator.addRule(inputValidator.constrainTextFieldToBeNonEmpty(getResourceString("hostNameLabel"),
+        inputValidator.addRule(
+                inputValidator.constrainTextFieldToBeNonEmpty(getResourceString("hostNameLabel"),
+                hostNameTextField, null));
+        connectionTestValidator.addRule(
+                connectionTestValidator.constrainTextFieldToBeNonEmpty(getResourceString("hostNameLabel"),
                 hostNameTextField, null));
 
-        // username must be set if the specify credentials option has been selected
-        inputValidator.addRule(inputValidator.constrainTextFieldToBeNonEmpty(getResourceString("usernameLabel"),
-                userNameTextField, null));
+        // port number must be within allowable range or reference a valid context variable
+        InputValidator.ValidationRule portNumberRule = new InputValidator.ComponentValidationRule(portNumberTextField) {
+            @Override
+            public String getValidationError() {
+                if (!isPortValid()) {
+                    return MessageFormat.format(getResourceString("portError"), getDefaultPortNumber());
+                }
+
+                return null;
+            }
+        };
+
+        // connection timeout must be set
+        inputValidator.addRule(
+                inputValidator.constrainTextFieldToBeNonEmpty(getResourceString("timeoutLabel"),
+                        timeoutTextField, null));
+        connectionTestValidator.addRule(
+                connectionTestValidator.constrainTextFieldToBeNonEmpty(getResourceString("timeoutLabel"),
+                        timeoutTextField, null));
+
+        inputValidator.addRule(portNumberRule);
+        connectionTestValidator.addRule(portNumberRule);
 
         // the ftp command combo box must have a selection
         inputValidator.addRule(new InputValidator.ComponentValidationRule(commandComboBox) {
             @Override
             public String getValidationError() {
                 if (commandComboBox.getSelectedItem() == null
-                        || commandComboBox.getSelectedIndex() == COMBO_BOX_NULL_SELECTION_INDEX) {
+                        || commandComboBox.getSelectedIndex() == OPTION_COMPONENT_NULL_SELECTION_INDEX) {
                     return getResourceString("commandNullError");
                 }
 
@@ -375,13 +406,24 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
             }
         });
 
-        // either arguments or auto-generated file name must be specified, depending on ftp command
+        /**
+         * - either arguments or auto-generated file name must be specified, depending on ftp command
+         * - auto-filename checkbox invalid for non-upload commands
+         */
         inputValidator.addRule(new InputValidator.ValidationRule() {
             @Override
             public String getValidationError() {
                 if (isCommandUploadType((String) commandComboBox.getSelectedItem())) {
                     if (!autoFilenameCheckBox.isSelected() && argumentsTextField.getText().trim().isEmpty()) {
                         return getResourceString("filenameNullForUploadCommandError");
+                    }
+                } else if (autoFilenameCheckBox.isSelected()) {
+                    return getResourceString("nonUploadAutoFilenameError");
+                }
+
+                if (isCommandRetrieve((String) commandComboBox.getSelectedItem())) {
+                    if(argumentsTextField.getText().trim().isEmpty()) {
+                        return getResourceString("retrNoArgumentError");
                     }
                 }
 
@@ -397,6 +439,43 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
             }
         });
 
+        // specify user credentials must be selected for connection tests
+        connectionTestValidator.addRule(new InputValidator.ComponentValidationRule(storedPasswordComboBox) {
+            @Override
+            public String getValidationError() {
+                if(!specifyUserCredsRadioButton.isSelected()) {
+                    return getResourceString("connectionTestFailureCredentialsFromRequestMessage");
+                }
+
+                return null;
+            }
+        });
+
+        // username must be set if the specify credentials option has been selected
+        inputValidator.addRule(
+                inputValidator.constrainTextFieldToBeNonEmpty(getResourceString("usernameLabel"),
+                        userNameTextField, null));
+        connectionTestValidator.addRule(
+                connectionTestValidator.constrainTextFieldToBeNonEmpty(getResourceString("usernameLabel"),
+                        userNameTextField, null));
+
+        // a password option must be selected if specify credentials selected
+        InputValidator.ComponentValidationRule passwordSourceRule =
+                new InputValidator.ComponentValidationRule(specifyUserCredsRadioButton) {
+            @Override
+            public String getValidationError() {
+                if(specifyUserCredsRadioButton.isSelected()
+                        && !storedPasswordRadioButton.isSelected() && !plaintextPasswordRadioButton.isSelected()) {
+                    return getResourceString("passwordSourceUnspecifiedError");
+                }
+
+                return null;
+            }
+        };
+
+        inputValidator.addRule(passwordSourceRule);
+        connectionTestValidator.addRule(passwordSourceRule);
+
         // a stored password must be specified if the field is enabled
         inputValidator.addRule(new InputValidator.ComponentValidationRule(storedPasswordComboBox) {
             @Override
@@ -410,30 +489,41 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
             }
         });
 
+        // only plaintext passwords can be used in the connection test
+        connectionTestValidator.addRule(new InputValidator.ComponentValidationRule(plaintextPasswordRadioButton) {
+            @Override
+            public String getValidationError() {
+                if(!plaintextPasswordRadioButton.isSelected()) {
+                    return getResourceString("connectionTestFailurePasswordNotPlaintextMessage");
+                }
+
+                return null;
+            }
+        });
+
+        // if plaintext password is selected, the password must be specified
+        inputValidator.addRule(
+                inputValidator.constrainTextFieldToBeNonEmpty(getResourceString("plaintextPasswordRadioButton"),
+                        plaintextPasswordField, null));
+        connectionTestValidator.addRule(
+                connectionTestValidator.constrainTextFieldToBeNonEmpty(getResourceString("plaintextPasswordRadioButton"),
+                        plaintextPasswordField, null));
+
         // client certificate must be specified if the field is enabled
-        inputValidator.addRule(new InputValidator.ComponentValidationRule(clientCertComboBox) {
+        InputValidator.ValidationRule clientCertRule = new InputValidator.ComponentValidationRule(clientCertComboBox) {
             @Override
             public String getValidationError() {
                 if (supplyClientCertCheckBox.isSelected()
-                        && clientCertComboBox.getSelectedIndex() == COMBO_BOX_NULL_SELECTION_INDEX) {
+                        && clientCertComboBox.getSelectedIndex() == OPTION_COMPONENT_NULL_SELECTION_INDEX) {
                     return getResourceString("clientCertError");
                 }
 
                 return null;
             }
-        });
+        };
 
-        // port number must be within allowable range or reference a valid context variable
-        inputValidator.addRule(new InputValidator.ComponentValidationRule(portNumberTextField) {
-            @Override
-            public String getValidationError() {
-                if (!isPortValid()) {
-                    return MessageFormat.format(getResourceString("portError"), getDefaultPortNumber());
-                }
-
-                return null;
-            }
-        });
+        inputValidator.addRule(clientCertRule);
+        connectionTestValidator.addRule(clientCertRule);
 
         // STOU command cannot use auto-generated file name
         inputValidator.addRule(new InputValidator.ComponentValidationRule(autoFilenameCheckBox) {
@@ -452,7 +542,7 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
         inputValidator.addRule(new InputValidator.ComponentValidationRule(contentTypeComboBox) {
             @Override
             public String getValidationError() {
-                if(contentTypeComboBox.getSelectedIndex() == COMBO_BOX_NULL_SELECTION_INDEX) {
+                if(contentTypeComboBox.getSelectedIndex() == OPTION_COMPONENT_NULL_SELECTION_INDEX) {
                     return getResourceString("contentTypeNullError");
                 }
 
@@ -470,18 +560,14 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
     }
 
     private void enableOrDisableCommandSettingsComponents() {
-        System.out.println("enableOrDisableCommandSettingsComponents() called");
-
         commandVariablePanel.setEnabled(isCommandTypeFromVariable());
 
-        if (commandComboBox.getSelectedIndex() == COMBO_BOX_NULL_SELECTION_INDEX) {
+        if (commandComboBox.getSelectedIndex() == OPTION_COMPONENT_NULL_SELECTION_INDEX) {
             messageSourceComboBox.setEnabled(false);
             messageTargetComboBox.setEnabled(false);
             contentTypeComboBox.setEnabled(false);
             responseLimitPanel.setEnabled(false);
             autoFilenameCheckBox.setEnabled(false);
-
-            enableOrDisableTargetVariablePanel();
         } else {
             if (commandComboBox.getSelectedIndex() == COMMAND_COMBO_ITEM_FROM_VARIABLE_INDEX) {
                 messageSourceComboBox.setEnabled(true);
@@ -503,6 +589,8 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
         if (!autoFilenameCheckBox.isEnabled()) {
             autoFilenameCheckBox.setSelected(false);
         }
+
+        enableOrDisableTargetVariablePanel();
     }
 
     private void enableOrDisableTargetVariablePanel() {
@@ -588,7 +676,7 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
                 commandComboBox.setSelectedIndex(COMMAND_COMBO_ITEM_FROM_VARIABLE_INDEX);
                 commandVariablePanel.setVariable(assertion.getFtpMethodOtherCommand());
             } else {
-                commandComboBox.setSelectedIndex(COMBO_BOX_NULL_SELECTION_INDEX);
+                commandComboBox.setSelectedIndex(OPTION_COMPONENT_NULL_SELECTION_INDEX);
                 enableOrDisableCommandSettingsComponents();
             }
         } else {
@@ -616,7 +704,7 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
         if (responseTarget.getTarget() == TargetMessageType.OTHER) {
             targetVariablePanel.setVariable(responseTarget.getOtherTargetMessageVariable());
         } else {
-            targetVariablePanel.setVariable("");
+            targetVariablePanel.setVariable(StringUtils.EMPTY);
         }
 
         targetVariablePanel.setAssertion(assertion, getPreviousAssertion());
@@ -636,9 +724,16 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
         } else if (assertion.getCredentialsSource() == FtpCredentialsSource.SPECIFIED) {
             specifyUserCredsRadioButton.doClick(0);
             userNameTextField.setText(assertion.getUserName());
-            plaintextPasswordField.setText(assertion.getPassword());
-            plaintextPasswordField.enableInputMethods(assertion.isPasswordUsesContextVariables());
-            contextVariableInPasswordCheckBox.setSelected(assertion.isPasswordUsesContextVariables());
+
+            if(null != assertion.getPasswordOid()) {
+                storedPasswordRadioButton.setSelected(true);
+                storedPasswordComboBox.setSelectedSecurePassword(assertion.getPasswordOid());
+            } else {
+                plaintextPasswordRadioButton.setSelected(true);
+                plaintextPasswordField.setText(assertion.getPassword());
+                plaintextPasswordField.enableInputMethods(assertion.isPasswordUsesContextVariables());
+                contextVariableInPasswordCheckBox.setSelected(assertion.isPasswordUsesContextVariables());
+            }
         }
 
         if(assertion.getPasswordOid() != null) {
@@ -665,7 +760,7 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
         responseLimitPanel.setValue(assertion.getResponseByteLimit(), Registry.getDefault().getPolicyAdmin().getXmlMaxBytes());
 
         // WSS settings
-        RoutingDialogUtils.configSecurityHeaderRadioButtons(assertion, -1, null, secHdrButtons);
+        RoutingDialogUtils.configSecurityHeaderRadioButtons(assertion, OPTION_COMPONENT_NULL_SELECTION_INDEX, null, secHdrButtons);
 
         // enable/disable components
         enableOrDisableCredentialsPanelComponents();
@@ -681,6 +776,15 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
             throw new ValidationException(error);
         }
 
+        fillAssertionConnectionData(assertion);
+        fillAssertionCommandData(assertion);
+        fillAssertionCredentialsData(assertion);
+        fillAssertionAdvancedData(assertion);
+
+        return assertion;
+    }
+
+    private void fillAssertionConnectionData(final FtpRoutingAssertion assertion) {
         // security
         if (PROTOCOL_COMBO_ITEM_FTP_UNSECURED_LABEL.equals(protocolComboBox.getSelectedItem())) {
             assertion.setSecurity(FtpSecurity.FTP_UNSECURED);
@@ -702,7 +806,9 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
         } else {
             assertion.setTimeout(Integer.parseInt(timeoutTextField.getText()) * 1000);
         }
+    }
 
+    private void fillAssertionCommandData(final FtpRoutingAssertion assertion) {
         // ftp command
         if (commandVariablePanel.isEnabled()) {
             assertion.setFtpMethod(null);
@@ -739,17 +845,37 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
 
         // arguments
         assertion.setArguments(argumentsTextField.getText().trim());
+    }
 
+    private void fillAssertionAdvancedData(final FtpRoutingAssertion assertion) {
+        // content type
+        assertion.setDownloadedContentType(contentTypeComboBox.getSelectedItem().toString());
+
+        // response limit settings
+        assertion.setResponseByteLimit(responseLimitPanel.getValue());
+
+        // WSS settings
+        RoutingDialogUtils.configSecurityHeaderHandling(assertion,
+                OPTION_COMPONENT_NULL_SELECTION_INDEX, secHdrButtons);
+    }
+
+    private void fillAssertionCredentialsData(final FtpRoutingAssertion assertion) {
         // credentials
         if (passThroughCredsRadioButton.isSelected()) {
             assertion.setCredentialsSource(FtpCredentialsSource.PASS_THRU);
-            userNameTextField.setText("");
-            plaintextPasswordField.setText("");
+            userNameTextField.setText(StringUtils.EMPTY);
+            plaintextPasswordField.setText(StringUtils.EMPTY);
             assertion.setPasswordOid(null);
         } else if (specifyUserCredsRadioButton.isSelected()) {
             assertion.setCredentialsSource(FtpCredentialsSource.SPECIFIED);
-            assertion.setPassword(new String(plaintextPasswordField.getPassword()));
-            assertion.setPasswordOid(storedPasswordComboBox.getSelectedSecurePassword().getOid());
+
+            if(storedPasswordRadioButton.isSelected()) {
+                assertion.setPasswordOid(storedPasswordComboBox.getSelectedSecurePassword().getOid());
+                assertion.setPassword(null);
+            } else {
+                assertion.setPasswordOid(null);
+                assertion.setPassword(new String(plaintextPasswordField.getPassword()));
+            }
         }
 
         assertion.setUserName(userNameTextField.getText());
@@ -760,55 +886,50 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
             assertion.setClientCertKeystoreId(clientCertComboBox.getSelectedKeystoreId());
             assertion.setClientCertKeyAlias(clientCertComboBox.getSelectedKeyAlias());
         } else {
-            assertion.setClientCertKeystoreId(-1);
+            assertion.setClientCertKeystoreId(OPTION_COMPONENT_NULL_SELECTION_INDEX);
             assertion.setClientCertKeyAlias(null);
         }
-
-        // content type
-        assertion.setDownloadedContentType(contentTypeComboBox.getSelectedItem().toString());
-
-        // response limit settings
-        assertion.setResponseByteLimit(responseLimitPanel.getValue());
-
-        // WSS settings
-        RoutingDialogUtils.configSecurityHeaderHandling(assertion, -1, secHdrButtons);
-
-        return assertion;
     }
 
     /**
-     * Runs connection test with cancellable progress bar. Displays result with
-     * session log if failure.
+     * Runs connection test with cancellable progress bar. Displays result with session log if failure.
      */
     private void testConnection() {
         // validate for test
-        final String error = inputValidator.validate();
+        final String error = connectionTestValidator.validate();
 
         if(error != null){
             JOptionPane.showMessageDialog(
                     FtpRoutingPropertiesDialog.this,
                     error,
-                    "FTP(S) Connection Failure",
+                    getResourceString("connectionTestFailureTitle"),
                     JOptionPane.ERROR_MESSAGE);
             return;
         }
 
         try {
-            final FtpRoutingAssertion a = getData(new FtpRoutingAssertion());
+            final FtpRoutingAssertion a = new FtpRoutingAssertion();
+
+            fillAssertionConnectionData(a);
+            fillAssertionCommandData(a);
+            fillAssertionCredentialsData(a);
 
             if (ftpConfigurationUsesVariables(a)) {
                 JOptionPane.showMessageDialog(
                         FtpRoutingPropertiesDialog.this,
-                        "FTP configuration uses context variables, connection cannot be tested at policy design time.",
-                        "FTP(S) Connection Failure",
+                        getResourceString("connectionTestFailureContextVariablesUsedMessage"),
+                        getResourceString("connectionTestFailureTitle"),
                         JOptionPane.ERROR_MESSAGE);
                 return;
             }
 
             final JProgressBar progressBar = new JProgressBar();
             progressBar.setIndeterminate(true);
+
             final CancelableOperationDialog cancelDialog =
-                    new CancelableOperationDialog(null, "FTP(S) Connection Test", "Testing connection to FTP(S) server ...", progressBar);
+                    new CancelableOperationDialog(null, getResourceString("connectionTestAttemptTitle"),
+                            getResourceString("connectionTestAttemptMessage"), progressBar);
+
             cancelDialog.pack();
             cancelDialog.setModal(true);
             Utilities.centerOnScreen(cancelDialog);
@@ -818,6 +939,7 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
                 public Boolean call() throws Exception {
                     final boolean isFtps = a.getSecurity() == FtpSecurity.FTPS_EXPLICIT || a.getSecurity() == FtpSecurity.FTPS_IMPLICIT;
                     final boolean isExplicit = a.getSecurity() == FtpSecurity.FTPS_EXPLICIT;
+
                     Registry.getDefault().getFtpManager().testConnection(
                             isFtps,
                             isExplicit,
@@ -831,46 +953,52 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
                             a.getClientCertKeyAlias(),
                             a.getDirectory(),
                             a.getTimeout());
+
                     return Boolean.TRUE;
                 }
             };
 
             final Boolean result = Utilities.doWithDelayedCancelDialog(callable, cancelDialog, 500L);
+
             if (result == Boolean.TRUE) {
                 JOptionPane.showMessageDialog(
                         FtpRoutingPropertiesDialog.this,
-                        "The Gateway has verified the connection to this FTP(S) server.",
-                        "FTP(S) Connection Success",
+                        getResourceString("connectionTestSuccessMessage"),
+                        getResourceString("connectionTestSuccessTitle"),
                         JOptionPane.INFORMATION_MESSAGE);
             }
         } catch (InterruptedException e) {
             // Swing thread interrupted.
         } catch (InvocationTargetException e) {
             final Throwable cause = e.getCause();
+
             if (cause != null) {
                 if (cause instanceof FtpTestException) {
-                    final FtpTestException fte = (FtpTestException)cause;
+                    final FtpTestException fte = (FtpTestException) cause;
+
                     JPanel panel = new JPanel();
                     panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-                    panel.add(new JLabel("The Gateway was unable to connect to this FTP(S) server:"));
+                    panel.add(new JLabel(getResourceString("connectionTestFailureMessage")));
                     panel.add(new JLabel(fte.getMessage()));
 
                     if (fte.getSessionLog() != null && fte.getSessionLog().length() != 0) {
-                        panel.add(Box.createVerticalStrut(10));
-                        panel.add(new JLabel("Detail log of FTP(S) session:"));
                         JTextArea sessionLog = new JTextArea(fte.getSessionLog());
+
                         sessionLog.setAlignmentX(Component.LEFT_ALIGNMENT);
                         sessionLog.setBorder(BorderFactory.createEtchedBorder());
                         sessionLog.setEditable(false);
                         sessionLog.setEnabled(true);
                         sessionLog.setFont(new Font(null, Font.PLAIN, 11));
+
+                        panel.add(Box.createVerticalStrut(10));
+                        panel.add(new JLabel(getResourceString("connectionTestFailureDetailLogMessage")));
                         panel.add(sessionLog);
                     }
 
                     JOptionPane.showMessageDialog (
                             FtpRoutingPropertiesDialog.this,
                             panel,
-                            "FTP(S) Connection Failure",
+                            getResourceString("connectionTestFailureTitle"),
                             JOptionPane.ERROR_MESSAGE);
                 } else {
                     throw ExceptionUtils.wrap(cause);
@@ -881,12 +1009,16 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
 
     private boolean ftpConfigurationUsesVariables(FtpRoutingAssertion a) {
         StringBuilder tmp = new StringBuilder();
-        tmp.append(a.getHostName()).append(" ")
-           .append(a.getPort()).append(" ")
-           .append(a.getUserName()).append(" ")
-           .append(a.getDirectory()).append(" ");
-        if (a.isPasswordUsesContextVariables())
+
+        tmp.append(a.getHostName()).append(SINGLE_SPACE_SEPARATOR)
+           .append(a.getPort()).append(SINGLE_SPACE_SEPARATOR)
+           .append(a.getUserName()).append(SINGLE_SPACE_SEPARATOR)
+           .append(a.getDirectory()).append(SINGLE_SPACE_SEPARATOR);
+
+        if (a.isPasswordUsesContextVariables()) {
             tmp.append(a.getPassword());
+        }
+
         return Syntax.getReferencedNames(tmp.toString()).length > 0;
     }
 
@@ -910,18 +1042,20 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
     }
 
     /**
-     * @return Return true iff the port number is between 1 and 65535 or references a context variable.
+     * @return Return true if the port number is between 1 and 65535 or references a context variable.
      */
     private boolean isPortValid() {
         boolean isValid;
         String portStr = portNumberTextField.getText();
+
         try {
             int port = Integer.parseInt(portStr);
-            isValid = port > 0 && port < 65535;
+            isValid = port >= PORT_RANGE_START && port <= PORT_RANGE_END;
         } catch (NumberFormatException e) {
             // must be using context variable
             isValid = Syntax.getReferencedNames(portStr).length > 0;
         }
+
         return isValid;
     }
 
@@ -930,12 +1064,18 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
     }
 
     private boolean isCommandUploadType(String command) {
-
         FtpMethod method = (FtpMethod) FtpMethod.getEnumTranslator().stringToObject(command);
 
-        return method.equals(FtpMethod.FTP_PUT)
-                || method.equals(FtpMethod.FTP_APPE)
-                || method.equals(FtpMethod.FTP_STOU);
+        return method != null &&
+                (method.equals(FtpMethod.FTP_PUT)
+                        || method.equals(FtpMethod.FTP_APPE)
+                        || method.equals(FtpMethod.FTP_STOU));
+    }
+
+    private boolean isCommandRetrieve(String command) {
+        FtpMethod method = (FtpMethod) FtpMethod.getEnumTranslator().stringToObject(command);
+
+        return method != null && method.equals(FtpMethod.FTP_GET);
     }
 
     private FtpMethod[] getFtpMethods() {
@@ -990,11 +1130,17 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
                 FtpMethod.FTP_USER  };
     }
 
+    /**
+     * Returns the value of the specified resource string. If the string has a label suffix, e.g. a colon,
+     * it is removed.
+     * @param key the key of the resource
+     * @return the resource string
+     */
     private static String getResourceString(String key) {
         final String value = resources.getString(key);
 
-        if(value.endsWith(":")) {
-            return value.substring(0, value.lastIndexOf(":"));
+        if(value.endsWith(COMPONENT_LABEL_SUFFIX)) {
+            return value.substring(0, value.lastIndexOf(COMPONENT_LABEL_SUFFIX));
         }
 
         return value;
@@ -1036,7 +1182,7 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
         }
 
         private void deselectComboBoxItem() {
-            comboBox.setSelectedIndex(COMBO_BOX_NULL_SELECTION_INDEX);
+            comboBox.setSelectedIndex(OPTION_COMPONENT_NULL_SELECTION_INDEX);
         }
     }
 }

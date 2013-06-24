@@ -198,7 +198,7 @@ public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariabl
         return _password;
     }
 
-    public void setPassword(String password) {
+    public void setPassword(@Nullable String password) {
         _password = password;
     }
 
@@ -450,7 +450,6 @@ public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariabl
 
     @Override
     public VariableMetadata[] getVariablesSet() {
-        return _requestTarget.getMessageTargetVariablesSet().with( _responseTarget.getMessageTargetVariablesSet()).asArray();
+        return _requestTarget.getMessageTargetVariablesSet().with(_responseTarget.getMessageTargetVariablesSet()).asArray();
     }
-
 }

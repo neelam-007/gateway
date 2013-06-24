@@ -38,7 +38,7 @@ public class FtpMethod implements Serializable {
     public static final FtpMethod FTP_MIC  = new FtpMethod("MIC" , "Integrity Protected Command", FtpMethodEnum.FTP_MIC);
     public static final FtpMethod FTP_MKD  = new FtpMethod("MKD" , "Make directory", FtpMethodEnum.FTP_MKD);
     public static final FtpMethod FTP_MLSD = new FtpMethod("MLSD", "Lists the contents of a directory if a directory is named", FtpMethodEnum.FTP_MLSD);
-    public static final FtpMethod FTP_MLST = new FtpMethod("MLST", "Provides data about exactly the object named on the command line", FtpMethodEnum.FTP_MLST);
+    public static final FtpMethod FTP_MLST = new FtpMethod("MLST", "Provides data about the specified object on the command line", FtpMethodEnum.FTP_MLST);
     public static final FtpMethod FTP_MODE = new FtpMethod("MODE", "Sets the transfer mode (Stream, Block or Compressed)", FtpMethodEnum.FTP_MODE);
     public static final FtpMethod FTP_NLST = new FtpMethod("NLST", "Returns a list of files in a specified directory", FtpMethodEnum.FTP_NLST);
     public static final FtpMethod FTP_NOOP = new FtpMethod("NOOP", "No operation", FtpMethodEnum.FTP_NOOP);
@@ -46,7 +46,7 @@ public class FtpMethod implements Serializable {
     public static final FtpMethod FTP_PASS = new FtpMethod("PASS", "Authentication password", FtpMethodEnum.FTP_PASS);
     public static final FtpMethod FTP_PASV = new FtpMethod("PASV", "Enter passive mode", FtpMethodEnum.FTP_PASV);
     public static final FtpMethod FTP_PBSZ = new FtpMethod("PBSZ", "Protection Buffer Size", FtpMethodEnum.FTP_PBSZ);
-    public static final FtpMethod FTP_PORT = new FtpMethod("PORT", "Speciifes an address and port to which the server should connect", FtpMethodEnum.FTP_PORT);
+    public static final FtpMethod FTP_PORT = new FtpMethod("PORT", "Specifies an address and port to which the server should connect", FtpMethodEnum.FTP_PORT);
     public static final FtpMethod FTP_PROT = new FtpMethod("PROT", "Data Channel Protection Level", FtpMethodEnum.FTP_PROT);
     public static final FtpMethod FTP_PWD  = new FtpMethod("PWD" , "Print working directory.  Returns current working directory of the host", FtpMethodEnum.FTP_PWD);
     public static final FtpMethod FTP_QUIT = new FtpMethod("QUIT", "Disconnect", FtpMethodEnum.FTP_QUIT);

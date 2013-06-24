@@ -4,6 +4,7 @@ import com.jscape.inet.ftp.*;
 import com.jscape.inet.ftps.Ftps;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.gateway.common.audit.AssertionMessages;
+import com.l7tech.gateway.common.audit.LoggingAudit;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.message.FtpRequestKnob;
 import com.l7tech.message.HttpServletRequestKnob;
@@ -11,10 +12,12 @@ import com.l7tech.message.Message;
 import com.l7tech.message.MimeKnob;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.gateway.common.transport.ftp.*;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.policy.assertion.AssertionStatusException;
+import com.l7tech.server.policy.variable.ServerVariables;
 import com.l7tech.util.*;
 import com.l7tech.external.assertions.ftprouting.FtpRoutingAssertion;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -135,15 +138,16 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
             }
         } else if (assertion.getCredentialsSource() == FtpCredentialsSource.SPECIFIED) {
             userName = getUserName(variableExpander);
-            password = getPassword(variableExpander);
+
+            try {
+                password = getPassword(variableExpander);
+            } catch (FindException e) {
+                logAndAudit(AssertionMessages.FTP_ROUTING_UNABLE_TO_FIND_STORED_PASSWORD, e.getMessage());
+                return AssertionStatus.FAILED;
+            }
         }
 
         String arguments = null;
-
-        /**
-         * if ftp command variable (ftpmethod == null), use that with arguments and auto-file name setting
-         * else use ftpmethod with arguments and auto file name setting
-         */
 
         if (assertion.getFileNameSource() == FtpFileNameSource.AUTO) {
             // Cannot use STOU because
@@ -167,42 +171,42 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
         }
 
         try {
-                FtpRequestKnob ftpRequest = request.getKnob(FtpRequestKnob.class);
-                ClientIdentity identity;
+            FtpRequestKnob ftpRequest = request.getKnob(FtpRequestKnob.class);
+            ClientIdentity identity;
 
-                if (ftpRequest != null) {
-                    identity = new ClientIdentity(ftpRequest.getCredentials().getUserName(), ftpRequest.getRemoteHost(),
-                            ftpRequest.getRemotePort(), ftpRequest.getPath());
-                } else {
-                    final HttpServletRequestKnob httpServletRequestKnob =
-                            context.getRequest().getKnob(HttpServletRequestKnob.class);
+            if (ftpRequest != null) {
+                identity = new ClientIdentity(ftpRequest.getCredentials().getUserName(), ftpRequest.getRemoteHost(),
+                        ftpRequest.getRemotePort(), ftpRequest.getPath());
+            } else {
+                final HttpServletRequestKnob httpServletRequestKnob =
+                        context.getRequest().getKnob(HttpServletRequestKnob.class);
 
-                    URL url = httpServletRequestKnob.getRequestURL();
-                    String host = url.getHost();
-                    int port = url.getPort();
-                    String path = url.getPath();
-                    identity = new ClientIdentity(userName, host, port, path);
-                }
+                URL url = httpServletRequestKnob.getRequestURL();
+                String host = url.getHost();
+                int port = url.getPort();
+                String path = url.getPath();
+                identity = new ClientIdentity(userName, host, port, path);
+            }
 
-                final InputStream messageBodyStream = mimeKnob.getEntireMessageBodyAsInputStream();
-                final long bodyBytes = mimeKnob.getContentLength();
-                final FtpSecurity security = assertion.getSecurity();
+            final InputStream messageBodyStream = mimeKnob.getEntireMessageBodyAsInputStream();
+            final long bodyBytes = mimeKnob.getContentLength();
+            final FtpSecurity security = assertion.getSecurity();
 
-                if (security == FtpSecurity.FTP_UNSECURED) {
-                    ftpConnectionPoolManager = getFtpConnectionPoolManager();
-                    doFtp(context, variableExpander, ftpConnectionPoolManager, identity, userName, password,
-                            messageBodyStream, ftpMethod, bodyBytes, arguments);
-                } else if (security == FtpSecurity.FTPS_EXPLICIT) {
-                    ftpsConnectionPoolManager = getFtpsConnectionPoolManager();
-                    doFtps(context, variableExpander, ftpsConnectionPoolManager, identity, true, userName, password,
-                            messageBodyStream, ftpMethod, bodyBytes, arguments);
-                } else if (security == FtpSecurity.FTPS_IMPLICIT) {
-                    ftpsConnectionPoolManager = getFtpsConnectionPoolManager();
-                    doFtps(context, variableExpander, ftpsConnectionPoolManager, identity, false, userName, password,
-                            messageBodyStream, ftpMethod, bodyBytes, arguments);
-                }
+            if (security == FtpSecurity.FTP_UNSECURED) {
+                ftpConnectionPoolManager = getFtpConnectionPoolManager();
+                doFtp(context, variableExpander, ftpConnectionPoolManager, identity, userName, password,
+                        messageBodyStream, ftpMethod, bodyBytes, arguments);
+            } else if (security == FtpSecurity.FTPS_EXPLICIT) {
+                ftpsConnectionPoolManager = getFtpsConnectionPoolManager();
+                doFtps(context, variableExpander, ftpsConnectionPoolManager, identity, true, userName, password,
+                        messageBodyStream, ftpMethod, bodyBytes, arguments);
+            } else if (security == FtpSecurity.FTPS_IMPLICIT) {
+                ftpsConnectionPoolManager = getFtpsConnectionPoolManager();
+                doFtps(context, variableExpander, ftpsConnectionPoolManager, identity, false, userName, password,
+                        messageBodyStream, ftpMethod, bodyBytes, arguments);
+            }
 
-                return AssertionStatus.NONE;
+            return AssertionStatus.NONE;
         } catch (NoSuchPartException e) {
             throw new CausedIOException("Unable to get request body.", e);
         } catch (FtpException e) {
@@ -233,10 +237,14 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
         return variableExpander.expandVariables(assertion.getUserName());
     }
 
-    private String getPassword(final VariableExpander variableExpander) {
-        return assertion.isPasswordUsesContextVariables()
-                ? variableExpander.expandVariables(assertion.getPassword())
-                : assertion.getPassword();
+    private String getPassword(final VariableExpander variableExpander) throws FindException {
+        if(null != assertion.getPasswordOid()) {
+            return ServerVariables.getSecurePasswordByOid(new LoggingAudit(logger), assertion.getPasswordOid());
+        } else {
+            return assertion.isPasswordUsesContextVariables()
+                   ? variableExpander.expandVariables(assertion.getPassword())
+                   : assertion.getPassword();
+        }
     }
 
     private void doFtp(PolicyEnforcementContext context,
@@ -793,7 +801,6 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
     private static InputStream inputStreamFtps(final Ftps ftps,
                                                final String arguments,
                                                final FtpMethod ftpMethod) throws FtpException {
-
         InputStream is;
 
         final FtpListener listener = new FtpListener();
