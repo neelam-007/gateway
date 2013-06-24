@@ -345,6 +345,7 @@
                 </entry>
             </map>
         </constructor-arg>
+        <constructor-arg index="2" ref="rbacServices"/>
     </bean>
 
     <!-- resource admin implementation -->

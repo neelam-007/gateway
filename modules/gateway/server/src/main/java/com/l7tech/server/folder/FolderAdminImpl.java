@@ -1,11 +1,17 @@
 package com.l7tech.server.folder;
 
 import com.l7tech.gateway.common.admin.FolderAdmin;
+import com.l7tech.gateway.common.security.rbac.OperationType;
+import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
+import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.FolderHeader;
 import com.l7tech.objectmodel.folder.FolderedEntityManager;
+import com.l7tech.objectmodel.folder.HasFolder;
 import com.l7tech.server.ServerConfigParams;
+import com.l7tech.server.security.rbac.RbacServices;
+import com.l7tech.server.util.JaasUtils;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
@@ -23,11 +29,14 @@ public class FolderAdminImpl implements FolderAdmin {
 
     private final FolderManager folderManager;
     private final Map<Class<? extends Entity>, FolderedEntityManager> entityManagerMap;
+    private final RbacServices rbacServices;
 
     public FolderAdminImpl( final FolderManager folderManager,
-                            final Map<Class<? extends Entity>, FolderedEntityManager> entityManagerMap) {
+                            final Map<Class<? extends Entity>, FolderedEntityManager> entityManagerMap,
+                            @NotNull final RbacServices rbacServices) {
         this.folderManager = folderManager;
         this.entityManagerMap = entityManagerMap;
+        this.rbacServices = rbacServices;
     }
 
     @Override
@@ -124,7 +133,6 @@ public class FolderAdminImpl implements FolderAdmin {
     @Override
     public void moveEntityToFolder( final Folder folder, PersistentEntity entity ) throws UpdateException {
         if ( entity == null ) throw new UpdateException( "Entity is required." );
-
         Folder rootFolder;
         try {
             rootFolder = folderManager.findRootFolder();
@@ -132,17 +140,17 @@ public class FolderAdminImpl implements FolderAdmin {
             throw new UpdateException( "Error finding root folder.", fe );
         }
 
-        Folder targetFolder = folder != null ? folder : rootFolder;
+        Folder destinationFolder = folder != null ? folder : rootFolder;
 
-        if(entity.getOid() == targetFolder.getOid())
+        if(entity.getOid() == destinationFolder.getOid())
             throw new UpdateException("Parent folder cannot be the same as folder id", null);
 
         if ( entity instanceof Folder ) {
             try {
-                if (((Folder)entity).isParentOf(targetFolder))
+                if (((Folder)entity).isParentOf(destinationFolder))
                     throw new UpdateException("The destination folder is a subfolder of the source folder");
 
-                final int targetMaxDepth = MAX_FOLDER_DEPTH - rootFolder.getNesting(targetFolder);
+                final int targetMaxDepth = MAX_FOLDER_DEPTH - rootFolder.getNesting(destinationFolder);
                 for(Folder maybeChild : folderManager.findAll()) {
                     int relativeChildDepth = ((Folder) entity).getNesting(maybeChild);
                     if (relativeChildDepth >= 0) // it's a child of the moved folder
@@ -159,8 +167,31 @@ public class FolderAdminImpl implements FolderAdmin {
             }
         }
 
+        checkMoveEntityPermissions(entity, destinationFolder);
+
         FolderedEntityManager manager = entityManagerMap.get( entity.getClass() );
-        manager.updateFolder( entity, folder );
+        manager.updateFolder( entity, destinationFolder );
+    }
+
+    private void checkMoveEntityPermissions(@NotNull final PersistentEntity entity, @NotNull final Folder targetFolder) throws UpdateException {
+        final User user = JaasUtils.getCurrentUser();
+        try {
+            if (!rbacServices.isPermittedForEntity(user, targetFolder, OperationType.UPDATE, null)) {
+                throw new PermissionDeniedException(OperationType.UPDATE, targetFolder, null);
+            }
+            if (!rbacServices.isPermittedForEntity(user, entity, OperationType.UPDATE, null)) {
+                throw new PermissionDeniedException(OperationType.UPDATE, entity, null);
+            }
+            if (entity instanceof HasFolder) {
+                final HasFolder hasFolder = (HasFolder) entity;
+                final Folder originalFolder = hasFolder.getFolder();
+                if (!rbacServices.isPermittedForEntity(user, originalFolder, OperationType.UPDATE, null)) {
+                    throw new PermissionDeniedException(OperationType.UPDATE, originalFolder, null);
+                }
+            }
+        } catch (final FindException e) {
+            throw new UpdateException("Unable to check rbac permissions for moving entity to another folder.", e);
+        }
     }
 
     /**

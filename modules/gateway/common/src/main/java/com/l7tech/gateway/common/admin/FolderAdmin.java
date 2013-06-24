@@ -51,12 +51,16 @@ public interface FolderAdmin {
     /**
      * Update the parent folder for the given entity.
      *
+     * Caller must have update permission on both the target and destination folders as well as the entity.
+     *
+     * RBAC check is done by impl class outside of the SecureMethodInterceptor due to complexity of the check.
+     *
      * @param folder The target folder (may be null for root)
      * @param entity The entity to move (must not be null)
      * @throws UpdateException if the update fails
      * @throws ConstraintViolationException if the move causes a contraint violation (e.g. duplicate folder name)
+     * @throws com.l7tech.gateway.common.security.rbac.PermissionDeniedException if the user does not have update permission on the entity as well as both the target and desination folders.
      */
-    @Secured(types=EntityType.FOLDER, stereotype=MethodStereotype.DELETE_MULTI) //TODO we need an UPDATE_MULTI
     void moveEntityToFolder( Folder folder, PersistentEntity entity ) throws UpdateException, ConstraintViolationException;
 
     /**
