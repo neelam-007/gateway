@@ -1,5 +1,6 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.gui.util.DialogDisplayer;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
@@ -7,6 +8,7 @@ import javax.swing.*;
 import javax.swing.table.TableRowSorter;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.util.regex.Pattern;
 
 /**
  * Reusable filter panel.
@@ -34,8 +36,10 @@ public class FilterPanel extends JPanel {
             public void keyReleased(KeyEvent e) {
                 if (rowSorter != null) {
                     final String filterText = getFilterText();
+                    // special characters are treated literally
+                    final String escaped = Pattern.quote(filterText);
                     if (StringUtils.isNotBlank(filterText)) {
-                        rowSorter.setRowFilter(RowFilter.regexFilter(CASE_INSENSITIVE_FLAG + filterText, columnsToFilter));
+                        rowSorter.setRowFilter(RowFilter.regexFilter(CASE_INSENSITIVE_FLAG + escaped, columnsToFilter));
                     } else {
                         rowSorter.setRowFilter(null);
                     }
