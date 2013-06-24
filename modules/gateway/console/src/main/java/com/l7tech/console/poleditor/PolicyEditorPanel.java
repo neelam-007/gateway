@@ -334,7 +334,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                     	return r;
                 	}
                     final PolicyValidationContext pvc = new PolicyValidationContext(policy.getType(), policy.getInternalTag(), wsdlLocator, soap, soapVersion);
-                    pvc.setPermittedAssertionClasses(TopComponents.getInstance().getAssertionRegistry().getPermittedAssertionClasses());
+                    pvc.setPermittedAssertionClasses(new HashSet<>(TopComponents.getInstance().getAssertionRegistry().getPermittedAssertionClasses()));
                     PolicyValidatorResult r = policyValidator.validate(assertion, pvc, licenseManager);
                     policyValidator.checkForCircularIncludes(policy.getGuid(), policy.getName(), assertion, r);
                     return r;
@@ -965,6 +965,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                 public PolicyValidatorResult call() throws Exception {
                     final Policy policy = getPolicyNode().getPolicy();
                     final PolicyValidationContext pvc = new PolicyValidationContext(type, internalTag, wsdlLocator, soap, soapVersion);
+                    pvc.setPermittedAssertionClasses(new HashSet<>(TopComponents.getInstance().getAssertionRegistry().getPermittedAssertionClasses()));
                     final PolicyValidatorResult result = policyValidator.validate(assertion, pvc, licenseManager);
                     policyValidator.checkForCircularIncludes(policy.getGuid(), policy.getName(), assertion, result);
                     final ServiceAdmin serviceAdmin = Registry.getDefault().getServiceManager();
