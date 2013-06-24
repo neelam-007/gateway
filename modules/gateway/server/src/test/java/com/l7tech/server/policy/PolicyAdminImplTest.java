@@ -8,8 +8,12 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyAlias;
 import com.l7tech.policy.PolicyType;
+import com.l7tech.policy.PolicyVersion;
+import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.TestLicenseManager;
+import com.l7tech.test.BugId;
 import com.l7tech.test.BugNumber;
+import com.l7tech.util.CollectionUtils;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -32,10 +36,18 @@ public class PolicyAdminImplTest {
     private PolicyManager policyManager;
     @Mock
     private PolicyVersionManager policyVersionManager;
+    @Mock
+    private EncapsulatedAssertionConfigManager encassConfigManager;
+    @Mock
+    private PolicyAssertionRbacChecker policyChecker;
 
     @Before
     public void setup() {
         policyAdmin = new PolicyAdminImpl(policyManager, policyAliasManager, null, policyVersionManager, null, null, null, null, null, null);
+        ApplicationContexts.inject(policyAdmin, CollectionUtils.<String, Object>mapBuilder()
+                .put("policyChecker", policyChecker)
+                .put("encapsulatedAssertionConfigManager", encassConfigManager).unmodifiableMap(),
+                false);
     }
 
     @Test
@@ -112,6 +124,40 @@ public class PolicyAdminImplTest {
         when(policyAliasManager.findByPrimaryKey(anyLong())).thenReturn(null);
         assertNull(policyAdmin.findByAlias(1234L));
         verify(policyManager, never()).findByPrimaryKey(anyLong());
+    }
+
+    @Test
+    public void savePolicyChecksPolicyXmlIfChanged() throws Exception {
+        final long oid = 1234L;
+        final String guid = "abc1234";
+        final Policy existing = new Policy(PolicyType.INCLUDE_FRAGMENT, "test", "existing", false);
+        existing.setOid(oid);
+        existing.setGuid(guid);
+        final Policy toUpdate = new Policy(PolicyType.INCLUDE_FRAGMENT, "test", "updated", false);
+        toUpdate.setOid(oid);
+        toUpdate.setGuid(guid);
+        when(policyManager.findByPrimaryKey(oid)).thenReturn(existing);
+        when(policyVersionManager.checkpointPolicy(toUpdate, true, false)).thenReturn(new PolicyVersion());
+
+        policyAdmin.savePolicy(toUpdate, true);
+        verify(policyChecker).checkPolicy(toUpdate);
+        verify(policyManager).update(toUpdate);
+    }
+
+    @BugId("SSG-7150")
+    @Test
+    public void savePolicyDoesNotCheckPolicyXmlIfNotChanged() throws Exception {
+        final long oid = 1234L;
+        final String guid = "abc1234";
+        final Policy toUpdate = new Policy(PolicyType.INCLUDE_FRAGMENT, "test", "updated", false);
+        toUpdate.setOid(oid);
+        toUpdate.setGuid(guid);
+        // policy xml hasn't changed
+        when(policyManager.findByPrimaryKey(oid)).thenReturn(toUpdate);
+        when(policyVersionManager.checkpointPolicy(toUpdate, true, false)).thenReturn(new PolicyVersion());
+
+        policyAdmin.savePolicy(toUpdate, true);
+        verify(policyChecker, never()).checkPolicy(toUpdate);
     }
 
     private static final String allLicensedXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +

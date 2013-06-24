@@ -277,7 +277,11 @@ public class PolicyAdminImpl implements PolicyAdmin {
                 policyManager.addManagePolicyRole(policy);
                 return new PolicyCheckpointState(oid, policy.getGuid(), checkpoint.getOrdinal(), checkpoint.isActive());
             } else {
-                policyChecker.checkPolicy(policy);
+                final Policy existing = policyManager.findByPrimaryKey(policy.getOid());
+                if (!existing.getXml().equals(policy.getXml())) {
+                    // only check rbac for assertions if the policy xml has changed
+                    policyChecker.checkPolicy(policy);
+                }
                 policyManager.update(policy);
                 final PolicyVersion checkpoint = policyVersionManager.checkpointPolicy(policy, true, false);
                 long versionOrdinal = checkpoint.getOrdinal();
