@@ -18,6 +18,7 @@ import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
+import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
@@ -89,42 +90,46 @@ public class AddIdentityAssertionAction extends PolicyUpdatingAssertionAction {
                 }
             }
 
-            private void updateExistingAssertion(final FindIdentitiesDialog.FindResult result){
-                long providerId = result.providerConfigOid;
-                EntityHeader[] headers = result.entityHeaders;
-                IdentityAdmin admin = Registry.getDefault().getIdentityAdmin();
+            private void updateExistingAssertion(@Nullable final FindIdentitiesDialog.FindResult result){
+                if (result != null) {
+                    long providerId = result.providerConfigOid;
+                    EntityHeader[] headers = result.entityHeaders;
+                    IdentityAdmin admin = Registry.getDefault().getIdentityAdmin();
 
-                if(headers.length == 0) return;
+                    if(headers.length == 0) return;
 
-                final EntityHeader entityHeader = headers[0];
-                try {
-                    if (entityHeader.getType() == EntityType.USER) {
-                        User u = admin.findUserByID(providerId, entityHeader.getStrId());
-                        final SpecificUser assertion = (SpecificUser) node.asAssertion();
-                        assertion.setIdentityProviderOid(u.getProviderId());
-                        assertion.setUserLogin(u.getLogin());
-                        assertion.setUserUid(u.getId());
-                        assertion.setUserName(u.getName());
-                    } else if (entityHeader.getType() == EntityType.GROUP) {
-                        final MemberOfGroup assertion = (MemberOfGroup) node.asAssertion();
-                        Group g = admin.findGroupByID(providerId, entityHeader.getStrId());
-                        assertion.setIdentityProviderOid(g.getProviderId());
-                        assertion.setGroupName(g.getName());
-                        assertion.setGroupId(g.getId());
+                    final EntityHeader entityHeader = headers[0];
+                    try {
+                        if (entityHeader.getType() == EntityType.USER) {
+                            User u = admin.findUserByID(providerId, entityHeader.getStrId());
+                            final SpecificUser assertion = (SpecificUser) node.asAssertion();
+                            assertion.setIdentityProviderOid(u.getProviderId());
+                            assertion.setUserLogin(u.getLogin());
+                            assertion.setUserUid(u.getId());
+                            assertion.setUserName(u.getName());
+                        } else if (entityHeader.getType() == EntityType.GROUP) {
+                            final MemberOfGroup assertion = (MemberOfGroup) node.asAssertion();
+                            Group g = admin.findGroupByID(providerId, entityHeader.getStrId());
+                            assertion.setIdentityProviderOid(g.getProviderId());
+                            assertion.setGroupName(g.getName());
+                            assertion.setGroupId(g.getId());
+                        }
+
+                        final IdentityAssertionTreeNode identityNode = (IdentityAssertionTreeNode) node;
+                        identityNode.clearCache();
+                    } catch (FindException e) {
+                        throw new RuntimeException("Couldn't retrieve user or group", e);
                     }
 
-                    final IdentityAssertionTreeNode identityNode = (IdentityAssertionTreeNode) node;
-                    identityNode.clearCache();
-                } catch (FindException e) {
-                    throw new RuntimeException("Couldn't retrieve user or group", e);
-                }
-
-                JTree tree = TopComponents.getInstance().getPolicyTree();
-                if (tree != null) {
-                    PolicyTreeModel model = (PolicyTreeModel)tree.getModel();
-                    model.assertionTreeNodeChanged((AssertionTreeNode)node);
+                    JTree tree = TopComponents.getInstance().getPolicyTree();
+                    if (tree != null) {
+                        PolicyTreeModel model = (PolicyTreeModel)tree.getModel();
+                        model.assertionTreeNodeChanged((AssertionTreeNode)node);
+                    } else {
+                        log.log(Level.WARNING, "Unable to reach the policy tree.");
+                    }
                 } else {
-                    log.log(Level.WARNING, "Unable to reach the policy tree.");
+                    // nothing was selected, do not change the existing assertion
                 }
             }
             
