@@ -1020,17 +1020,22 @@ public class JdbcQueryManagerImplCacheTest {
      * @param obj The object to lock
      * @return A countdown latch. On the first countdown the object will become unlocked.
      */
-    private CountDownLatch lockObject(final Object obj) {
+    private CountDownLatch lockObject(final Object obj) throws InterruptedException {
         final CountDownLatch lock = new CountDownLatch(1);
+        final CountDownLatch waitForLocked = new CountDownLatch(1);
         executor.submit(new Callable<Void>() {
             @Override
             public Void call() throws Exception {
                 synchronized (obj) {
+                    waitForLocked.countDown();
                     lock.await();
                 }
                 return null;
             }
         });
+        // wait for the lock to be obtained before returning. This fixes a very rare but possible test case failure where
+        // the rest of the test case is executed before the lock is actually obtained.
+        waitForLocked.await();
         return lock;
     }
 
