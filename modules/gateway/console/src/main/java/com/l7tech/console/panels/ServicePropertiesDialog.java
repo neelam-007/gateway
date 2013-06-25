@@ -9,6 +9,7 @@ import com.l7tech.console.action.Actions;
 import com.l7tech.console.action.CreateServiceWsdlAction;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.util.*;
+import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceAdmin;
@@ -195,7 +196,7 @@ public class ServicePropertiesDialog extends JDialog {
 
         String hostname = TopComponents.getInstance().ssgURL().getHost();
         // todo, we need to be able to query gateway to get port instead of assuming default
-        ssgURL = "http://" + hostname + STD_PORT;        
+        ssgURL = "http://" + hostname + STD_PORT;
 
         String existinguri = subject.getRoutingUri();
         if (subject.isInternal()) {
@@ -246,7 +247,7 @@ public class ServicePropertiesDialog extends JDialog {
 
         if (!subject.isSoap()) {
             tabbedPane1.setEnabledAt(2, false);
-            tabbedPane1.setEnabledAt(3, false);            
+            tabbedPane1.setEnabledAt(3, false);
             noURIRadio.setEnabled(false);
             customURIRadio.setSelected(true);
         } else {
@@ -418,7 +419,7 @@ public class ServicePropertiesDialog extends JDialog {
             public void actionPerformed(ActionEvent e) {
                 try {
                     if(uddiServiceControl != null) throw new RuntimeException("uddiServiceControl should be null");
-                    
+
                     SearchUddiDialog swd = new SearchUddiDialog(ServicePropertiesDialog.this, SearchUddiDialog.SEARCH_TYPE.WSDL_SEARCH, true);
                     swd.addSelectionListener(new SearchUddiDialog.ItemSelectedListener() {
                         @Override
@@ -525,7 +526,7 @@ public class ServicePropertiesDialog extends JDialog {
             monitoringDisableServicecheckBox.setEnabled( false );
         }else{
             clearButton.setEnabled(canUpdate);
-            selectButton.setEnabled(false);            
+            selectButton.setEnabled(false);
 
             final boolean serviceCannotBeUnderUDDIControl = uddiProxiedServiceInfo != null &&
                     uddiProxiedServiceInfo.getPublishType() != UDDIProxiedServiceInfo.PublishType.PROXY;
@@ -622,7 +623,7 @@ public class ServicePropertiesDialog extends JDialog {
                                                  final Collection<ServiceDocument> subjectDocuments ) {
         try {
             final ServiceAdmin serviceManager = Registry.getDefault().getServiceManager();
-            return !subject.isDisabled() && 
+            return !subject.isDisabled() &&
                     ((subject.getOid()!=PublishedService.DEFAULT_OID && !serviceManager.generateResolutionReport( subject, subjectDocuments ).isSuccess() ) ||
                      (subject.getOid()==PublishedService.DEFAULT_OID && !serviceManager.generateResolutionReportForNewService( subject, subjectDocuments ).isSuccess()));
         } catch ( FindException e ) {
@@ -686,7 +687,7 @@ public class ServicePropertiesDialog extends JDialog {
     private void applyReadOnlySettings(boolean isReadOnly) {
         editWSDLButton.setEnabled(!isReadOnly);
         resetWSDLButton.setEnabled(!isReadOnly);
-        resetWSDLButton.setEnabled(!isReadOnly);        
+        resetWSDLButton.setEnabled(!isReadOnly);
     }
 
     private void enableIfHasUpdatePermission(final Component component) {
@@ -795,7 +796,7 @@ public class ServicePropertiesDialog extends JDialog {
     public Collection<ServiceDocument> getServiceDocuments() {
         Collection<ServiceDocument> docs = null;
         if (newWsdlDocuments != null)
-            docs = Collections.unmodifiableCollection(newWsdlDocuments);        
+            docs = Collections.unmodifiableCollection(newWsdlDocuments);
         return docs;
     }
 
@@ -849,6 +850,21 @@ public class ServicePropertiesDialog extends JDialog {
         viewToModel( subject );
         Collection<ServiceDocument> documents = getServiceDocuments();
 
+        if (servicePolicyRequiresZoneUpdate(subject)) {
+            // ensure user has permission to update the service policy
+            final Policy servicePolicy = subject.getPolicy();
+            servicePolicy.setSecurityZone(subject.getSecurityZone());
+            if (!Registry.getDefault().getSecurityProvider().hasPermission(new AttemptedUpdate(EntityType.POLICY, servicePolicy))) {
+                DialogDisplayer.showMessageDialog(ServicePropertiesDialog.this, "Error", "You do not have permission to modify the Security Zone of the service policy.", null);
+            } else {
+                doSave(documents);
+            }
+        } else {
+            doSave(documents);
+        }
+    }
+
+    private void doSave(Collection<ServiceDocument> documents) {
         //attempt to save the changes
         try {
             long newOid;
@@ -883,7 +899,7 @@ public class ServicePropertiesDialog extends JDialog {
                     disableServiceOnChange != uddiServiceControl.isDisableServiceOnChange() ||
                     uddiServiceControl.getOid() == UDDIServiceControl.DEFAULT_OID ||
                     !ObjectUtils.equals(existingSecurityZone, selectedSecurityZone)){
-                    
+
                     uddiServiceControl.setUnderUddiControl( wsdlUnderUDDIControlCheckBox.isSelected() );
                     uddiServiceControl.setMonitoringEnabled( enableMonitoring );
                     uddiServiceControl.setUpdateWsdlOnChange( updateWsdlOnChange );
@@ -932,19 +948,27 @@ public class ServicePropertiesDialog extends JDialog {
      * Service policy is hidden from the user so we assume the policy security zone should be the same as the service zone
      */
     private void savePolicyIfSecurityZoneDiffers(final PublishedService subject) {
+    if (servicePolicyRequiresZoneUpdate(subject)) {
+        final Policy policy = subject.getPolicy();
+        policy.setSecurityZone(subject.getSecurityZone());
+            try {
+                Registry.getDefault().getPolicyAdmin().savePolicy(policy);
+            } catch (final PolicyAssertionException | SaveException e) {
+                logger.log(Level.WARNING, "Unable to save security zone change for policy: " + e.getMessage(), ExceptionUtils.getDebugException(e));
+            }
+        }
+    }
+
+    private boolean servicePolicyRequiresZoneUpdate(final PublishedService subject) {
         final Policy policy = subject.getPolicy();
         if (policy != null) {
             final SecurityZone serviceZone = subject.getSecurityZone();
             final SecurityZone policyZone = policy.getSecurityZone();
             if (!ObjectUtils.equals(serviceZone, policyZone)) {
-                policy.setSecurityZone(serviceZone);
-                try {
-                    Registry.getDefault().getPolicyAdmin().savePolicy(policy);
-                } catch (final PolicyAssertionException | SaveException e) {
-                    logger.log(Level.WARNING, "Unable to save security zone change for policy: " + e.getMessage(), ExceptionUtils.getDebugException(e));
-                }
+                return true;
             }
         }
+        return false;
     }
 
     private void viewToModel( final PublishedService subject ) {
