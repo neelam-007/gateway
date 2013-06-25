@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<enumeration>
+    <l7:Assertion xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management">
+        <l7:Name>Look Up API Key</l7:Name>
+        <wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy" xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy">
+            <wsp:All wsp:Usage="Required">
+                <L7p:LookupApiKey>
+                    <L7p:ApiKey stringValue="apikey"/>
+                </L7p:LookupApiKey>
+            </wsp:All>
+        </wsp:Policy>
+    </l7:Assertion>
+</enumeration>

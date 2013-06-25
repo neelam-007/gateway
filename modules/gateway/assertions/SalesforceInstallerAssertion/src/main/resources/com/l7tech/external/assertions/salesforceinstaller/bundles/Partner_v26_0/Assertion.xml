@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<enumeration>
+    <l7:Assertion xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management">
+        <l7:Name>Salesforce.com Partner Connector POC</l7:Name>
+        <wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy" xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy">
+            <wsp:All wsp:Usage="Required">
+                <L7p:CustomAssertion>
+                    <L7p:base64SerializedValue>rO0ABXNyADFjb20ubDd0ZWNoLnBvbGljeS5hc3NlcnRpb24uQ3VzdG9tQXNzZXJ0aW9uSG9sZGVyZtcreFwddTICAANMAAhjYXRlZ29yeXQAKkxjb20vbDd0ZWNoL3BvbGljeS9hc3NlcnRpb24vZXh0L0NhdGVnb3J5O0wAD2N1c3RvbUFzc2VydGlvbnQAMUxjb20vbDd0ZWNoL3BvbGljeS9hc3NlcnRpb24vZXh0L0N1c3RvbUFzc2VydGlvbjtMAA9kZXNjcmlwdGlvblRleHR0ABJMamF2YS9sYW5nL1N0cmluZzt4cgAlY29tLmw3dGVjaC5wb2xpY3kuYXNzZXJ0aW9uLkFzc2VydGlvbttfY5k8vaKxAgACWgAHZW5hYmxlZEwAEGFzc2VydGlvbkNvbW1lbnR0AC9MY29tL2w3dGVjaC9wb2xpY3kvYXNzZXJ0aW9uL0Fzc2VydGlvbiRDb21tZW50O3hwAXBzcgAoY29tLmw3dGVjaC5wb2xpY3kuYXNzZXJ0aW9uLmV4dC5DYXRlZ29yeVqwnGWhRP41AgACSQAFbXlLZXlMAAZteU5hbWVxAH4AA3hwAAAACHQADk1lc3NhZ2VSb3V0aW5nc3IAVWNvbS5sN3RlY2guY3VzdG9tLnNhbGVzZm9yY2UucGFydG5lci52MjYuYXNzZXJ0aW9uLlNhbGVzRm9yY2VDb25uZWN0b3JDdXN0b21Bc3NlcnRpb26pl5c2ADsQ8wIABkwAEWRlc3RpbmF0aW9uVGFyZ2V0dABLTGNvbS9sN3RlY2gvcG9saWN5L2Fzc2VydGlvbi9leHQvdGFyZ2V0YWJsZS9DdXN0b21NZXNzYWdlVGFyZ2V0YWJsZVN1cHBvcnQ7TAAVZXhwYW5kQ29udGV4dFZhcmlhYmxlcQB+AANMAAdzT2JqZWN0cQB+AANMAAxzb3VyY2VUYXJnZXRxAH4AC0wACHVzZXJOYW1lcQB+AANMAA52YXJpYWJsZVByZWZpeHEAfgADeHBzcgBJY29tLmw3dGVjaC5wb2xpY3kuYXNzZXJ0aW9uLmV4dC50YXJnZXRhYmxlLkN1c3RvbU1lc3NhZ2VUYXJnZXRhYmxlU3VwcG9ydJx38XNkDeVqAgAEWgATc291cmNlVXNlZEJ5R2F0ZXdheVoAF3RhcmdldE1vZGlmaWVkQnlHYXRld2F5TAAab3RoZXJUYXJnZXRNZXNzYWdlVmFyaWFibGVxAH4AA0wABnRhcmdldHQARExjb20vbDd0ZWNoL3BvbGljeS9hc3NlcnRpb24vZXh0L3RhcmdldGFibGUvQ3VzdG9tVGFyZ2V0TWVzc2FnZVR5cGU7eHAAAXQAFHRlc3RPdGhlckRlc3RpbmF0aW9ufnIAQmNvbS5sN3RlY2gucG9saWN5LmFzc2VydGlvbi5leHQudGFyZ2V0YWJsZS5DdXN0b21UYXJnZXRNZXNzYWdlVHlwZQAAAAAAAAAAEgAAeHIADmphdmEubGFuZy5FbnVtAAAAAAAAAAASAAB4cHQABU9USEVSdAAAcHNxAH4ADQEAcH5xAH4AEXQAB1JFUVVFU1R0AAB0AABw</L7p:base64SerializedValue>
+                </L7p:CustomAssertion>
+            </wsp:All>
+        </wsp:Policy>
+    </l7:Assertion>
+</enumeration>

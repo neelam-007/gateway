@@ -49,16 +49,6 @@ import static com.l7tech.server.event.AdminInfo.find;
 public class SalesforceInstallerAdminImpl extends AsyncAdminMethodsImpl implements SalesforceInstallerAdmin {
 
     public static final String NS_INSTALLER_VERSION = "http://ns.l7tech.com/2013/02/salesforce-bundle";
-    public static final String EXECUTE_SALESFORCE_OPERATION_XML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-        "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
-        "    <wsp:All wsp:Usage=\"Required\">\n" +
-        "        <L7p:CustomAssertion>\n" +
-        "            <L7p:base64SerializedValue>rO0ABXNyADFjb20ubDd0ZWNoLnBvbGljeS5hc3NlcnRpb24uQ3VzdG9tQXNzZXJ0aW9uSG9sZGVyZtcreFwddTICAANMAAhjYXRlZ29yeXQAKkxjb20vbDd0ZWNoL3BvbGljeS9hc3NlcnRpb24vZXh0L0NhdGVnb3J5O0wAD2N1c3RvbUFzc2VydGlvbnQAMUxjb20vbDd0ZWNoL3BvbGljeS9hc3NlcnRpb24vZXh0L0N1c3RvbUFzc2VydGlvbjtMAA9kZXNjcmlwdGlvblRleHR0ABJMamF2YS9sYW5nL1N0cmluZzt4cgAlY29tLmw3dGVjaC5wb2xpY3kuYXNzZXJ0aW9uLkFzc2VydGlvbttfY5k8vaKxAgACWgAHZW5hYmxlZEwAEGFzc2VydGlvbkNvbW1lbnR0AC9MY29tL2w3dGVjaC9wb2xpY3kvYXNzZXJ0aW9uL0Fzc2VydGlvbiRDb21tZW50O3hwAXBzcgAoY29tLmw3dGVjaC5wb2xpY3kuYXNzZXJ0aW9uLmV4dC5DYXRlZ29yeVqwnGWhRP41AgACSQAFbXlLZXlMAAZteU5hbWVxAH4AA3hwAAAACHQADk1lc3NhZ2VSb3V0aW5nc3IAQ2NvbS5sN3RlY2guY3VzdG9tLnNhbGVzZm9yY2UuYXNzZXJ0aW9uLlNhbGVzZm9yY2VPcGVyYXRpb25Bc3NlcnRpb24AAAAAAAAAAQIAEUwADmNvbm5lY3Rpb25EYXRhdABHTGNvbS9sN3RlY2gvY3VzdG9tL3NhbGVzZm9yY2UvYXNzZXJ0aW9uL2hlbHBlcmFzc2VydGlvbi9Db25uZWN0aW9uRGF0YTtMABFjcmVhdGVTT2JqZWN0RGF0YXQASkxjb20vbDd0ZWNoL2N1c3RvbS9zYWxlc2ZvcmNlL2Fzc2VydGlvbi9oZWxwZXJhc3NlcnRpb24vQ3JlYXRlU09iamVjdERhdGE7TAAVY3JlYXRlU09iamVjdERhdGFMaXN0dAAQTGphdmEvdXRpbC9MaXN0O0wAF2Rlc2NTT2JqZWN0TWV0YWRhdGFMaXN0cQB+AA1MABdkZXNjU29iamVjdE1ldGFkYXRhTGlzdHEAfgANTAAQZXhlY3V0ZVF1ZXJ5RGF0YXQASUxjb20vbDd0ZWNoL2N1c3RvbS9zYWxlc2ZvcmNlL2Fzc2VydGlvbi9oZWxwZXJhc3NlcnRpb24vRXhlY3V0ZVF1ZXJ5RGF0YTtMABdsYXN0Q29ubmVjdGlvblRpbWVTdGFtcHQAFExqYXZhL3NxbC9UaW1lc3RhbXA7TAARcHJldlNPYmplY3RBY3Rpb25xAH4AA0wAEnJldHJpZXZlQWN0aW9uRGF0YXQAS0xjb20vbDd0ZWNoL2N1c3RvbS9zYWxlc2ZvcmNlL2Fzc2VydGlvbi9oZWxwZXJhc3NlcnRpb24vUmV0cmlldmVBY3Rpb25EYXRhO0wAGnJldHJpZXZlRGVsZXRlZE9iamVjdHNEYXRhdABTTGNvbS9sN3RlY2gvY3VzdG9tL3NhbGVzZm9yY2UvYXNzZXJ0aW9uL2hlbHBlcmFzc2VydGlvbi9SZXRyaWV2ZURlbGV0ZWRPYmplY3RzRGF0YTtMABFyZXRyaWV2ZUZpZWxkTGlzdHEAfgANTAAbcmV0cmlldmVNb2RpZmllZE9iamVjdHNEYXRhdABUTGNvbS9sN3RlY2gvY3VzdG9tL3NhbGVzZm9yY2UvYXNzZXJ0aW9uL2hlbHBlcmFzc2VydGlvbi9SZXRyaWV2ZU1vZGlmaWVkT2JqZWN0c0RhdGE7TAANc09iamVjdEFjdGlvbnEAfgADTAAPc2VhcmNoUXVlcnlEYXRhdABKTGNvbS9sN3RlY2gvY3VzdG9tL3NhbGVzZm9yY2UvYXNzZXJ0aW9uL2hlbHBlcmFzc2VydGlvbi9TZWFyY2hPYmplY3RzRGF0YTtMABF1cGRhdGVTT2JqZWN0RGF0YXQASkxjb20vbDd0ZWNoL2N1c3RvbS9zYWxlc2ZvcmNlL2Fzc2VydGlvbi9oZWxwZXJhc3NlcnRpb24vVXBkYXRlU09iamVjdERhdGE7TAAVdXBkYXRlU09iamVjdERhdGFMaXN0cQB+AA1bAAN2YXJ0AC5bTGNvbS9sN3RlY2gvcG9saWN5L3ZhcmlhYmxlL1ZhcmlhYmxlTWV0YWRhdGE7eHBwcHBwcHBwcHBwcHBwcHBwdXIALltMY29tLmw3dGVjaC5wb2xpY3kudmFyaWFibGUuVmFyaWFibGVNZXRhZGF0YTvCENmz6riGNgIAAHhwAAAAAHA=</L7p:base64SerializedValue>\n" +
-        "        </L7p:CustomAssertion>\n" +
-        "    </wsp:All>\n" +
-        "</wsp:Policy>";
-
-    AssertionChecker assertionChecker = new AssertionChecker();
 
     public SalesforceInstallerAdminImpl(final String bundleBaseName, ApplicationEventPublisher appEventPublisher) throws SalesforceInstallationException {
         this.appEventPublisher = appEventPublisher;
@@ -288,10 +278,6 @@ public class SalesforceInstallerAdminImpl extends AsyncAdminMethodsImpl implemen
         }
     }
 
-    public void setAssertionChecker(AssertionChecker assertionChecker) {
-        this.assertionChecker = assertionChecker;
-    }
-
     // - PROTECTED
     protected PolicyBundleDryRunResult doDryRunInstall(@NotNull final String taskIdentifier,
                                                        @NotNull final Collection<String> componentIds,
@@ -317,7 +303,7 @@ public class SalesforceInstallerAdminImpl extends AsyncAdminMethodsImpl implemen
                     //todo fix folder id
                     final String prefixToUse = (installationPrefix != null && !installationPrefix.isEmpty()) ? installationPrefix : null;
                     final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(
-                        bundleInfo, bundleMappings.get(bundleId), prefixToUse, bundleResolver);
+                            bundleInfo, bundleMappings.get(bundleId), prefixToUse, bundleResolver, true);
 
                     final DryRunInstallPolicyBundleEvent dryRunEvent =
                         new DryRunInstallPolicyBundleEvent(bundleMappings, context);
@@ -360,10 +346,14 @@ public class SalesforceInstallerAdminImpl extends AsyncAdminMethodsImpl implemen
                                 certificateWithConflict.toString()));
                     }
 
-                    // work around for lack of MODULAR_ASSERTION dry run item, which became available after SSG 7.0
-                    final List<String> policyConflictAndAssertionMissing = new ArrayList<String>(policyWithNameConflict);
-                    if (!assertionChecker.isAssertionAvailable(EXECUTE_SALESFORCE_OPERATION_XML)) {
-                        policyConflictAndAssertionMissing.add("Missing custom assertion: Execute Salesforce Operation, verify execute_salesforce_operation.jar exists under /opt/SecureSpan/Gateway/runtime/modules/lib/.");
+                    final List<String> missingRequiredAssertions = dryRunEvent.getMissingAssertions();
+                    if (! missingRequiredAssertions.isEmpty()) {
+                        details.add(
+                            new AuditDetail(
+                                AssertionMessages.OTK_DRY_RUN_CONFLICT,
+                                bundleInfo.getName(),
+                                "Missing Assertions",
+                                missingRequiredAssertions.toString()));
                     }
 
                     final List<String> jdbcConnsThatDontExist = dryRunEvent.getJdbcConnsThatDontExist();
@@ -378,9 +368,10 @@ public class SalesforceInstallerAdminImpl extends AsyncAdminMethodsImpl implemen
 
                     final Map<PolicyBundleDryRunResult.DryRunItem, List<String>> itemToConflicts = new HashMap<PolicyBundleDryRunResult.DryRunItem, List<String>>();
                     itemToConflicts.put(PolicyBundleDryRunResult.DryRunItem.SERVICES, urlPatternWithConflict);
-                    itemToConflicts.put(PolicyBundleDryRunResult.DryRunItem.POLICIES, policyConflictAndAssertionMissing);
+                    itemToConflicts.put(PolicyBundleDryRunResult.DryRunItem.POLICIES, policyWithNameConflict);
                     itemToConflicts.put(PolicyBundleDryRunResult.DryRunItem.CERTIFICATES, certificateWithConflict);
                     itemToConflicts.put(PolicyBundleDryRunResult.DryRunItem.JDBC_CONNECTIONS, jdbcConnsThatDontExist);
+                    itemToConflicts.put(PolicyBundleDryRunResult.DryRunItem.ASSERTIONS, missingRequiredAssertions);
 
                     bundleToConflicts.put(bundleId, itemToConflicts);
 
@@ -461,7 +452,7 @@ public class SalesforceInstallerAdminImpl extends AsyncAdminMethodsImpl implemen
                         if (bundleInfo.getId().equals(bundleId)) {
 
                             final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(
-                                bundleInfo, folderOid, bundleMappings.get(bundleId), prefixToUse, bundleResolver);
+                                    bundleInfo, folderOid, bundleMappings.get(bundleId), prefixToUse, bundleResolver, true);
                             final InstallPolicyBundleEvent installEvent =
                                 new InstallPolicyBundleEvent(this, context, null);
                             jobContext.currentEvent = installEvent;
@@ -501,35 +492,6 @@ public class SalesforceInstallerAdminImpl extends AsyncAdminMethodsImpl implemen
     static class SalesforceInstallationAuditEvent extends DetailedAdminEvent {
         public SalesforceInstallationAuditEvent(final Object source, final String note, final Level level) {
             super(source, note, level);
-        }
-    }
-
-    /**
-     * Allow mock unit test to stub Custom Assertion check.
-     * Custom Assertion class not found because they reside in a different Subversion project.
-     */
-    class AssertionChecker {
-        public boolean isAssertionAvailable(final String assertionAsXml) {
-            if (spring == null) {
-                throw new IllegalStateException("Installer is not configured. ApplicationContext is missing");
-            }
-
-            final WspReader wspReader = spring.getBean("wspReader", WspReader.class);
-            try {
-                Assertion assertions = wspReader.parseStrictly(assertionAsXml, WspReader.Visibility.omitDisabled);
-
-                // scan for UnknownAssertion
-                Iterator it = assertions.preorderIterator();
-                while (it.hasNext()) {
-                    final Object assertion = it.next();
-                    if (assertion instanceof UnknownAssertion)
-                        return false;
-                }
-            } catch (IOException e) {
-                // assertion is not installed
-                return false;
-            }
-            return true;
         }
     }
 

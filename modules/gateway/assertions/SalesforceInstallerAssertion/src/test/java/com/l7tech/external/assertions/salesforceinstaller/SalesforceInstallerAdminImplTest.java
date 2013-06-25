@@ -6,9 +6,6 @@ import com.l7tech.policy.bundle.PolicyBundleDryRunResult;
 import com.l7tech.server.event.wsman.DryRunInstallPolicyBundleEvent;
 import com.l7tech.server.event.wsman.InstallPolicyBundleEvent;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationEventPublisher;
 
@@ -16,15 +13,10 @@ import java.util.*;
 
 import static com.l7tech.external.assertions.salesforceinstaller.SalesforceInstallerAdminImpl.SalesforceInstallationAuditEvent;
 import static org.junit.Assert.*;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
 public class SalesforceInstallerAdminImplTest {
 
     private final String baseName = "/com/l7tech/external/assertions/salesforceinstaller/bundles/";
-
-    @Mock SalesforceInstallerAdminImpl.AssertionChecker assertionChecker;
 
     /**
      * Validates that the correct number and type of spring events are published for a dry run.
@@ -51,10 +43,6 @@ public class SalesforceInstallerAdminImplTest {
                 }
             }
         });
-
-        // stub out Custom Assertion check, which will cause class not found (Custom Assertion reside in a different Subversion project)
-        when(assertionChecker.isAssertionAvailable(anyString())).thenReturn(true);
-        admin.setAssertionChecker(assertionChecker);
 
         final AsyncAdminMethods.JobId<PolicyBundleDryRunResult> jobId = admin.dryRunInstall(
                 Arrays.asList("6a88602e-df72-414a-9f88-9849197c8b7f"), new HashMap<String, BundleMapping>(), null);
@@ -103,10 +91,6 @@ public class SalesforceInstallerAdminImplTest {
                 }
             }
         });
-
-        // stub out Custom Assertion check, which will cause class not found (Custom Assertion reside in a different Subversion project)
-        when(assertionChecker.isAssertionAvailable(anyString())).thenReturn(true);
-        admin.setAssertionChecker(assertionChecker);
 
         final AsyncAdminMethods.JobId<ArrayList> jobId = admin.install(Arrays.asList("6a88602e-df72-414a-9f88-9849197c8b7f"),
                 -5002, new HashMap<String, BundleMapping>(), null);

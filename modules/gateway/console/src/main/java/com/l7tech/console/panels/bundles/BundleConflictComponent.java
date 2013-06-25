@@ -15,12 +15,12 @@ public class BundleConflictComponent extends JPanel {
     private JList<String> serviceConflictList;
     private JList<String> policyConflictList;
     private JList<String> missingJdbcConnList;
-    private JList<String> missingModAssList;
+    private JList<String> missingAssertionList;
     private JPanel mainPanel;
     private JPanel serviceConflictsPanel;
     private JPanel policyConflictsPanel;
     private JPanel jdbcPanel;
-    private JPanel modAssPanel;
+    private JPanel assertionPanel;
     private JPanel certificateConflictsPanel;
     private JList certificateConflictList;
 
@@ -37,8 +37,8 @@ public class BundleConflictComponent extends JPanel {
         final List<String> missingJdbcConns = dryRunResult.getConflictsForItem(bundleId, PolicyBundleDryRunResult.DryRunItem.JDBC_CONNECTIONS);
         buildJList(missingJdbcConnList, jdbcPanel, missingJdbcConns);
 
-        final List<String> missingModAsses = dryRunResult.getConflictsForItem(bundleId, PolicyBundleDryRunResult.DryRunItem.MODULAR_ASSERTION);
-        buildJList(missingModAssList, modAssPanel, missingModAsses);
+        final List<String> missingAssertions = dryRunResult.getConflictsForItem(bundleId, PolicyBundleDryRunResult.DryRunItem.ASSERTIONS);
+        buildJList(missingAssertionList, assertionPanel, missingAssertions);
     }
 
     public JPanel getMainPanel() {

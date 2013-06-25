@@ -41,6 +41,7 @@ public class GatewayManagementDocumentUtilities {
             .put("L7p", "http://www.layer7tech.com/ws/policy")
             .put("wxf", "http://schemas.xmlsoap.org/ws/2004/09/transfer")
             .put("wsa", "http://schemas.xmlsoap.org/ws/2004/08/addressing")
+            .put("wsp", "http://schemas.xmlsoap.org/ws/2002/12/policy")
             .unmodifiableMap();
 
     public static Map<String, String> getNamespaceMap() {

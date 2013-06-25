@@ -12,7 +12,6 @@ import com.l7tech.policy.bundle.BundleInfo;
 import com.l7tech.policy.bundle.BundleMapping;
 import com.l7tech.policy.bundle.PolicyBundleDryRunResult;
 import com.l7tech.policy.variable.Syntax;
-import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.server.admin.AsyncAdminMethodsImpl;
 import com.l7tech.server.event.admin.DetailedAdminEvent;
@@ -65,14 +64,6 @@ import static com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities
 public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OAuthInstallerAdmin {
 
     public static final String NS_INSTALLER_VERSION = "http://ns.l7tech.com/2012/11/oauth-toolkit-bundle";
-    public static final String LOOKUP_API_KEY_XML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-            "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
-            "    <wsp:All wsp:Usage=\"Required\">\n" +
-            "        <L7p:LookupApiKey>\n" +
-            "            <L7p:ApiKey stringValue=\"apikey\"/>\n" +
-            "        </L7p:LookupApiKey>\n" +
-            "    </wsp:All>\n" +
-            "</wsp:Policy>\n";
 
     public OAuthInstallerAdminImpl(final String bundleBaseName, ApplicationEventPublisher appEventPublisher) throws OAuthToolkitInstallationException {
         this.appEventPublisher = appEventPublisher;
@@ -592,6 +583,7 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
         final Set<String> processedComponents = new HashSet<String>();
         outer:
         for (String bundleId : otkComponentIds) {
+            final boolean checkAssertionExistence = SECURE_ZONE_STORAGE_COMP_ID.equals(bundleId) && integrateApiPortal;
             final List<BundleInfo> resultList = bundleResolver.getResultList();
             for (BundleInfo bundleInfo : resultList) {
                 if (bundleInfo.getId().equals(bundleId)) {
@@ -601,7 +593,7 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
                     }
 
                     final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(
-                            bundleInfo, bundleMappings.get(bundleId), prefixToUse, bundleResolver);
+                            bundleInfo, bundleMappings.get(bundleId), prefixToUse, bundleResolver, checkAssertionExistence);
 
                     final DryRunInstallPolicyBundleEvent dryRunEvent =
                             new DryRunInstallPolicyBundleEvent(this, context);
@@ -644,21 +636,21 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
                                         jdbcConnsThatDontExist.toString()));
                     }
 
-                    final List<String> missingModularAssertions = new ArrayList<String>();
-                    if (SECURE_ZONE_STORAGE_COMP_ID.equals(bundleId) && integrateApiPortal) {
-                        //check if API Portal integration is possible if it was requested.
-                        final boolean isLookUpApiAvailable = isLookupApiKeyAssertionAvailable();
-                        if (!isLookUpApiAvailable) {
-                            missingModularAssertions.add("Look Up API Key");
-                        }
+                    final List<String> missingRequiredAssertions = dryRunEvent.getMissingAssertions();
+                    if (! missingRequiredAssertions.isEmpty()) {
+                        details.add(
+                            new AuditDetail(
+                                AssertionMessages.OTK_DRY_RUN_CONFLICT,
+                                bundleInfo.getName(),
+                                "Missing Assertions",
+                                missingRequiredAssertions.toString()));
                     }
 
                     final Map<DryRunItem, List<String>> itemToConflicts = new HashMap<DryRunItem, List<String>>();
                     itemToConflicts.put(DryRunItem.SERVICES, urlPatternWithConflict);
                     itemToConflicts.put(DryRunItem.POLICIES, policyWithNameConflict);
                     itemToConflicts.put(DryRunItem.JDBC_CONNECTIONS, jdbcConnsThatDontExist);
-                    itemToConflicts.put(DryRunItem.MODULAR_ASSERTION, missingModularAssertions);
-
+                    itemToConflicts.put(DryRunItem.ASSERTIONS, missingRequiredAssertions);
 
                     bundleToConflicts.put(bundleId, itemToConflicts);
 
@@ -731,12 +723,13 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
                         break;
                     }
 
+                    final boolean checkRequiredAssertions = SECURE_ZONE_STORAGE_COMP_ID.equals(bundleId) && integrateApiPortal;
                     final List<BundleInfo> resultList1 = bundleResolver.getResultList();
                     for (BundleInfo bundleInfo : resultList1) {
                         if (bundleInfo.getId().equals(bundleId)) {
 
                             final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(
-                                    bundleInfo, folderOid, bundleMappings.get(bundleId), prefixToUse, bundleResolver);
+                                    bundleInfo, folderOid, bundleMappings.get(bundleId), prefixToUse, bundleResolver, checkRequiredAssertions);
                             final InstallPolicyBundleEvent installEvent =
                                     new InstallPolicyBundleEvent(this,
                                             context,
@@ -770,7 +763,6 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
         }
 
         return installedBundles;
-
     }
 
     /**
@@ -1054,21 +1046,6 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
                 }
             }
         };
-    }
-
-    private boolean isLookupApiKeyAssertionAvailable() {
-        if (spring == null) {
-            throw new IllegalStateException("OAuth Installer is not configured. ApplicationContext is missing");
-        }
-
-        final WspReader wspReader = spring.getBean("wspReader", WspReader.class);
-        try {
-            wspReader.parseStrictly(LOOKUP_API_KEY_XML, WspReader.Visibility.omitDisabled);
-        } catch (IOException e) {
-            // Lookup API Key assertion is not installed
-            return false;
-        }
-        return true;
     }
 
     /**

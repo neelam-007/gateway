@@ -17,13 +17,16 @@ public class PolicyBundleInstallerContext {
      * @param bundleMapping Nullable Map of mappings for the bundle to install
      * @param installationPrefix If not null, the value will be used to prefix the installation.
      * @param bundleResolver used to resolve items from bundleInfo
+     * @param checkingAssertionExistenceRequired a flag to indicate if checking assertions have been installed on gateway
      */
     public PolicyBundleInstallerContext(@NotNull BundleInfo bundleInfo,
                                         @Nullable BundleMapping bundleMapping,
                                         @Nullable String installationPrefix,
-                                        @NotNull BundleResolver bundleResolver) {
-        this(bundleInfo, ROOT_FOLDER_OID, bundleMapping, installationPrefix, bundleResolver);
+                                        @NotNull BundleResolver bundleResolver,
+                                        boolean checkingAssertionExistenceRequired) {
+        this(bundleInfo, ROOT_FOLDER_OID, bundleMapping, installationPrefix, bundleResolver, checkingAssertionExistenceRequired);
     }
+
 
 
     /**
@@ -32,16 +35,19 @@ public class PolicyBundleInstallerContext {
      * @param bundleMapping Nullable Map of mappings for the bundle to install
      * @param installationPrefix If not null, the value will be used to prefix the installation.
      * @param bundleResolver used to resolve items from bundleInfo
+     * @param checkingAssertionExistenceRequired a flag to indicate if checking assertions have been installed on gateway
      */
     public PolicyBundleInstallerContext(@NotNull BundleInfo bundleInfo,
                                         long folderOid,
                                         @Nullable BundleMapping bundleMapping,
                                         @Nullable String installationPrefix,
-                                        @NotNull BundleResolver bundleResolver) {
+                                        @NotNull BundleResolver bundleResolver,
+                                        boolean checkingAssertionExistenceRequired) {
         this.bundleInfo = bundleInfo;
         this.folderOid = folderOid;
         this.bundleMapping = bundleMapping;
         this.bundleResolver = bundleResolver;
+        this.checkingAssertionExistenceRequired = checkingAssertionExistenceRequired;
 
         this.installationPrefix = (installationPrefix == null || installationPrefix.trim().isEmpty())?
                 null:
@@ -77,6 +83,10 @@ public class PolicyBundleInstallerContext {
         return bundleResolver;
     }
 
+    public boolean isCheckingAssertionExistenceRequired() {
+        return checkingAssertionExistenceRequired;
+    }
+
     // - PRIVATE
 
     private static final long ROOT_FOLDER_OID = -5002L;
@@ -91,4 +101,5 @@ public class PolicyBundleInstallerContext {
     @NotNull
     final BundleResolver bundleResolver;
 
+    private final boolean checkingAssertionExistenceRequired;
 }

@@ -1,9 +1,12 @@
 package com.l7tech.external.assertions.policybundleinstaller;
 
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.UnknownAssertion;
 import com.l7tech.policy.bundle.BundleInfo;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.bundle.BundleMapping;
+import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.server.event.wsman.DryRunInstallPolicyBundleEvent;
 import com.l7tech.server.policy.bundle.*;
 import com.l7tech.util.*;
@@ -148,6 +151,44 @@ public class PolicyBundleInstaller {
                     }
                 } catch (GatewayManagementDocumentUtilities.UnexpectedManagementResponse e) {
                     throw new BundleResolver.InvalidBundleException("Could not verify JDBC Connection '" + jdbcConnToVerify + "'", e);
+                }
+            }
+        }
+
+        // Check assertion existence if it is required
+        if (context.isCheckingAssertionExistenceRequired()) {
+            final Document enumerationDoc = context.getBundleResolver().getBundleItem(bundleInfo.getId(), ASSERTION, true);
+            if (enumerationDoc == null) {
+                throw new IllegalArgumentException("Assertion.xml is required for checking assertion existence.");
+            }
+            final List<Element> assertionElms = GatewayManagementDocumentUtilities.getEntityElements(enumerationDoc.getDocumentElement(), "Assertion");
+            for (Element assertionElm: assertionElms) {
+                final Element assertionNameElm = XmlUtil.findFirstDescendantElement(assertionElm, MGMT_VERSION_NAMESPACE, "Name");
+                final Element policyElm = XmlUtil.findFirstDescendantElement(assertionElm, GatewayManagementDocumentUtilities.getNamespaceMap().get("wsp"), "Policy");
+                final boolean isCustomAssertion = XmlUtil.findFirstDescendantElement(assertionElm, GatewayManagementDocumentUtilities.getNamespaceMap().get("L7p"), "CustomAssertion") != null;
+
+                boolean assertionNotFound = false;
+                try {
+                    Assertion assertions = WspReader.getDefault().parseStrictly(XmlUtil.nodeToString(policyElm), WspReader.OMIT_DISABLED);
+                    // Scan for UnknownAssertion
+                    Iterator it = assertions.preorderIterator();
+                    while (it.hasNext()) {
+                        final Object assertion = it.next();
+                        if (assertion instanceof UnknownAssertion) {
+                            // Custom Assertion class not found because they reside in a different Subversion project
+                            assertionNotFound = true;
+                            break;
+                        }
+                    }
+                } catch (IOException e) {
+                    // Assertion is not installed
+                    assertionNotFound = true;
+                }
+
+                if (assertionNotFound) {
+                    if (assertionNameElm == null) throw new IllegalArgumentException("Assertion xml does not contain a Name element.");
+
+                    dryRunEvent.addMissingAssertions(XmlUtil.getTextValue(assertionNameElm) + (isCustomAssertion? " (Custom Assertion)":""));
                 }
             }
         }

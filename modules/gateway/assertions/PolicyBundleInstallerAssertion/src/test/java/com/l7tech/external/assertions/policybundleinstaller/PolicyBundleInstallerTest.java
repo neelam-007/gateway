@@ -56,7 +56,7 @@ public class PolicyBundleInstallerTest {
         final List<BundleInfo> resultList = bundleResolver.getResultList();
         final BundleInfo bundleInfo = resultList.get(0);
 
-        final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(bundleInfo, new BundleMapping(), null, bundleResolver);
+        final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(bundleInfo, new BundleMapping(), null, bundleResolver, true);
         final InstallPolicyBundleEvent installEvent = new InstallPolicyBundleEvent(this, context, null);
         final Functions.Nullary<Boolean> cancelledCallback = getCancelledCallback(installEvent);
         final PolicyBundleInstaller bundleInstaller = new PolicyBundleInstaller(new GatewayManagementInvoker() {
@@ -105,7 +105,7 @@ public class PolicyBundleInstallerTest {
         final BundleInfo bundleInfo = resultList.get(0);
         //OAuth_1_0
         final Document oAuth_1_0 = bundleResolver.getBundleItem(bundleInfo.getId(), FOLDER, false);
-        final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(bundleInfo, new BundleMapping(), null, bundleResolver);
+        final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(bundleInfo, new BundleMapping(), null, bundleResolver, true);
         final InstallPolicyBundleEvent installEvent = new InstallPolicyBundleEvent(this, context, null);
 
         final PolicyBundleInstaller bundleInstaller = new PolicyBundleInstaller(new GatewayManagementInvoker() {
@@ -197,7 +197,7 @@ public class PolicyBundleInstallerTest {
         final Map<String, String> nameToPreviousGuid = new HashMap<String, String>();
 
         final BundleResolver bundleResolver = getBundleResolver();
-        final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(bundleInfo, new BundleMapping(), installationPrefix, bundleResolver);
+        final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(bundleInfo, new BundleMapping(), installationPrefix, bundleResolver, true);
         final InstallPolicyBundleEvent installEvent = new InstallPolicyBundleEvent(this, context, null);
 
         final PolicyBundleInstaller bundleInstaller = new PolicyBundleInstaller(new GatewayManagementInvoker() {
@@ -286,7 +286,7 @@ public class PolicyBundleInstallerTest {
         final List<BundleInfo> resultList = bundleResolver.getResultList();
         final BundleInfo bundleInfo = resultList.get(0);
         //OAuth_1_0
-        final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(bundleInfo, new BundleMapping(), null, bundleResolver);
+        final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(bundleInfo, new BundleMapping(), null, bundleResolver, true);
         final InstallPolicyBundleEvent installEvent = new InstallPolicyBundleEvent(this, context, null);
 
         final PolicyBundleInstaller bundleInstaller = new PolicyBundleInstaller(new GatewayManagementInvoker() {
@@ -324,7 +324,7 @@ public class PolicyBundleInstallerTest {
 
         final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(
                 new BundleInfo("4e321ca1-83a0-4df5-8216-c2d2bb36067d", "1.0", "Bundle with JDBC references", "Desc"),
-                null, null, bundleResolver);
+                null, null, bundleResolver, true);
         final InstallPolicyBundleEvent installEvent = new InstallPolicyBundleEvent(this, context, null);
 
         final PolicyBundleInstaller bundleInstaller = new PolicyBundleInstaller(new GatewayManagementInvoker() {
@@ -442,7 +442,7 @@ public class PolicyBundleInstallerTest {
         //OAuth_1_0
         final BundleInfo bundleInfo = resultList.get(0);
         final String prefix = "version1a";
-        final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(bundleInfo, new BundleMapping(), prefix, bundleResolver);
+        final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(bundleInfo, new BundleMapping(), prefix, bundleResolver, true);
         final InstallPolicyBundleEvent installEvent = new InstallPolicyBundleEvent(this, context, null);
 
         final PolicyBundleInstaller bundleInstaller = new PolicyBundleInstaller(new GatewayManagementInvoker() {
@@ -519,7 +519,7 @@ public class PolicyBundleInstallerTest {
 
         final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(
                 bundleInfo,
-                null, null, bundleResolver);
+                null, null, bundleResolver, true);
 
         final DryRunInstallPolicyBundleEvent dryRunEvent = new DryRunInstallPolicyBundleEvent(this, context);
 
@@ -587,6 +587,10 @@ public class PolicyBundleInstallerTest {
         assertTrue(certificateConflict.contains("TestBundleCertificateInstallation1"));
         assertTrue(certificateConflict.contains("TestBundleCertificateInstallation2"));
 
+        final List<String> missingAssertions = dryRunEvent.getMissingAssertions();
+        assertFalse((missingAssertions.isEmpty()));
+        assertEquals(2, certificateConflict.size());
+
         final List<String> jdbcConnsThatDontExist = dryRunEvent.getJdbcConnsThatDontExist();
         assertFalse(jdbcConnsThatDontExist.isEmpty());
         assertEquals(1, jdbcConnsThatDontExist.size());
@@ -602,7 +606,7 @@ public class PolicyBundleInstallerTest {
 
         final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(
                 bundleInfo,
-                null, null, bundleResolver);
+                null, null, bundleResolver, true);
 
         final DryRunInstallPolicyBundleEvent dryRunEvent = new DryRunInstallPolicyBundleEvent(this, context);
 
@@ -654,7 +658,7 @@ public class PolicyBundleInstallerTest {
 
         final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(
                 bundleInfo,
-                null, null, bundleResolver);
+                null, null, bundleResolver, true);
 
         final InstallPolicyBundleEvent installEvent = new InstallPolicyBundleEvent(this, context, null);
 
@@ -730,6 +734,7 @@ public class PolicyBundleInstallerTest {
         itemsToDocs.put("Folder.xml", getDocumentFromResource(baseName + "/Folder.xml"));
         itemsToDocs.put("Service.xml", getDocumentFromResource(baseName + "/Service.xml"));
         itemsToDocs.put("TrustedCertificate.xml", getDocumentFromResource(baseName + "/TrustedCertificate.xml"));
+        itemsToDocs.put("Assertion.xml", getDocumentFromResource(baseName + "/Assertion.xml"));
 
         if (hasPolicy) {
             itemsToDocs.put("Policy.xml", getDocumentFromResource(baseName + "/Policy.xml"));
