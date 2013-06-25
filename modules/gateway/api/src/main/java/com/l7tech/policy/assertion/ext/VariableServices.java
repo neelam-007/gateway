@@ -9,7 +9,15 @@ import java.util.Map;
  */
 public interface VariableServices {
 
+    /**
+     * Use {@link com.l7tech.policy.variable.ContextVariablesUtils#getReferencedNames(String)} instead.
+     */
+    @Deprecated
     public String[] getReferencedVarNames(String varName);
 
+    /**
+     * Use {@link ServiceRequest#expandVariable(String, java.util.Map)} instead.
+     */
+    @Deprecated
     public Object expandVariable(String varName, Map varMap);
 }

@@ -17,6 +17,7 @@ import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.ext.*;
 import com.l7tech.policy.variable.NoSuchVariableException;
+import com.l7tech.policy.variable.Syntax;
 import com.l7tech.security.cert.TrustedCertManager;
 import com.l7tech.security.token.OpaqueSecurityToken;
 import com.l7tech.server.identity.AuthenticationResult;
@@ -27,6 +28,7 @@ import com.l7tech.server.policy.SecurePasswordServicesImpl;
 import com.l7tech.server.policy.ServiceFinderImpl;
 import com.l7tech.server.policy.VariableServicesImpl;
 import com.l7tech.server.policy.custom.CustomAuditorImpl;
+import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.IOUtils;
@@ -478,6 +480,25 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
         public void setVariable(String name, Object value) {
             pec.setVariable(name, value);
         }
+
+        @Override
+        public String expandVariable(String s) {
+            Map<String, Object> vars = this.getVariableMap(Syntax.getReferencedNames(s));
+            return this.expandVariable(s, vars);
+        }
+
+        @Override
+        public String expandVariable(String s, Map<String, Object> vars) {
+            if (s == null) {
+                return null;
+            }
+            return ExpandVariables.process(s, vars, getAudit());
+        }
+
+        @Override
+        public Map<String, Object> getVariableMap(String[] names) {
+            return pec.getVariableMap(names, getAudit());
+        }
     }
 
     private class CustomServiceRequest extends CustomService implements ServiceRequest {
@@ -603,6 +624,25 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
         @Override
         public void setVariable(String name, Object value) {
             pec.setVariable(name, value);
+        }
+
+        @Override
+        public String expandVariable(String s) {
+            Map<String, Object> vars = this.getVariableMap(Syntax.getReferencedNames(s));
+            return this.expandVariable(s, vars);
+        }
+
+        @Override
+        public String expandVariable(String s, Map<String, Object> vars) {
+            if (s == null) {
+                return null;
+            }
+            return ExpandVariables.process(s, vars, getAudit());
+        }
+
+        @Override
+        public Map<String, Object> getVariableMap(String[] names) {
+            return pec.getVariableMap(names, getAudit());
         }
     }
 
