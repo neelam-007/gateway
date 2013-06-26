@@ -41,7 +41,10 @@ public class CustomAssertionPropertiesAction extends NodeAction {
     private boolean registrarCalled;
 
     public CustomAssertionPropertiesAction(CustomAssertionTreeNode node) {
-        super(node, CustomAssertionHolder.class, node.getName(), node.getTooltipText(), node.getIcon());
+        super(node, CustomAssertionHolder.class,
+            (((CustomAssertionHolder)node.asAssertion()).getCustomAssertion().getName() == null?
+                ((CustomAssertionHolder)node.asAssertion()).getPolicyNodeName() : ((CustomAssertionHolder)node.asAssertion()).getCustomAssertion().getName())+ " Properties",
+            node.getTooltipText(), node.getIcon());
         registrar = Registry.getDefault().getCustomAssertionsRegistrar();
 
     }
