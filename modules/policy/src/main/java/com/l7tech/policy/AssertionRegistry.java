@@ -50,8 +50,8 @@ public class AssertionRegistry implements AssertionFinder, TypeMappingFinder, Ap
         installEnhancedMetadataDefaults();
     }
 
-    private final Map<String, Assertion> prototypes = new ConcurrentHashMap<String, Assertion>();
-    private final Map<String, Assertion> byExternalName = new ConcurrentHashMap<String, Assertion>();
+    private final Map<String, Assertion> prototypes = new ConcurrentHashMap<>();
+    private final Map<String, Assertion> byExternalName = new ConcurrentHashMap<>();
     private ApplicationContext applicationContext;
     private boolean shuttingDown = false;
 
@@ -98,9 +98,7 @@ public class AssertionRegistry implements AssertionFinder, TypeMappingFinder, Ap
             if (old != null) publishEvent(new AssertionUnregistrationEvent(this, old));
             publishEvent(new AssertionRegistrationEvent(this, prototype));
             return prototype;
-        } catch (InstantiationException e) {
-            throw new RuntimeException(e); // can't happen; assertion must have public nullary c'tor
-        } catch (IllegalAccessException e) {
+        } catch (InstantiationException | IllegalAccessException e) {
             throw new RuntimeException(e); // can't happen; assertion must have public nullary c'tor
         }
     }
@@ -150,7 +148,7 @@ public class AssertionRegistry implements AssertionFinder, TypeMappingFinder, Ap
     }
 
     protected Set<String> getAssertionClassnames() {
-        Set<String> ret =  new HashSet<String>();
+        Set<String> ret =  new HashSet<>();
         for (Assertion assertion : prototypes.values())
             ret.add(assertion.getClass().getName());
         return ret;
@@ -167,7 +165,7 @@ public class AssertionRegistry implements AssertionFinder, TypeMappingFinder, Ap
     }
 
     public Set<Assertion> getAssertions() {
-        return new HashSet<Assertion>(prototypes.values());
+        return new HashSet<>(prototypes.values());
     }
 
     public Assertion findByExternalName(String externalName) {
@@ -210,9 +208,7 @@ public class AssertionRegistry implements AssertionFinder, TypeMappingFinder, Ap
             try {
                 Assertion instance = (Assertion)clazz.newInstance();
                 return (TypeMapping)instance.meta().get(WSP_TYPE_MAPPING_INSTANCE);
-            } catch (InstantiationException e) {
-                throw new RuntimeException(e); // broken bean
-            } catch (IllegalAccessException e) {
+            } catch (InstantiationException | IllegalAccessException e) {
                 throw new RuntimeException(e); // broken bean
             }
         }
@@ -250,9 +246,7 @@ public class AssertionRegistry implements AssertionFinder, TypeMappingFinder, Ap
                         Class clazz = assertion != null ? assertion.getClass() : metadataClass;
                         try {
                             return (Assertion)clazz.newInstance();
-                        } catch (InstantiationException e) {
-                            throw new RuntimeException(e); // shouldn't happen -- assertion should have public nullary ctor
-                        } catch (IllegalAccessException e) {
+                        } catch (InstantiationException | IllegalAccessException e) {
                             throw new RuntimeException(e); // shouldn't happen -- assertion should have public nullary ctor
                         }
                     }
@@ -279,10 +273,7 @@ public class AssertionRegistry implements AssertionFinder, TypeMappingFinder, Ap
                     } catch (ClassNotFoundException e) {
                         logger.log(Level.FINER, "Assertion " + assClass.getName() + " metadata declares a custom TypeMapping, but the class was not found: " + ExceptionUtils.getMessage(e), e);
                         /* FALLTHROUGH and try default assertion mapping */
-                    } catch (IllegalAccessException e) {
-                        logger.log(Level.WARNING, "Assertion " + assClass.getName() + " metadata declares a custom TypeMapping, but it could not be instantiated with the nullary constructor: " + ExceptionUtils.getMessage(e), e);
-                        /* FALLTHROUGH and try default assertion mapping */
-                    } catch (InstantiationException e) {
+                    } catch (IllegalAccessException | InstantiationException e) {
                         logger.log(Level.WARNING, "Assertion " + assClass.getName() + " metadata declares a custom TypeMapping, but it could not be instantiated with the nullary constructor: " + ExceptionUtils.getMessage(e), e);
                         /* FALLTHROUGH and try default assertion mapping */
                     }
@@ -320,7 +311,7 @@ public class AssertionRegistry implements AssertionFinder, TypeMappingFinder, Ap
      * @param assertionClass  the assertion class to check. Required.
      * @return true iff. the specified assertion class is recognized as a core assertion.
      */
-    private static boolean isCoreAssertion(Class assertionClass) {
+    public static boolean isCoreAssertion(Class assertionClass) {
         for (Assertion ass : AllAssertions.SERIALIZABLE_EVERYTHING) {
             if (ass.getClass() == assertionClass)
                 return true;

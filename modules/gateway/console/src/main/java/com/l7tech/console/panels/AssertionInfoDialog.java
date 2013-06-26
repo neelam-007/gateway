@@ -1,10 +1,9 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.console.util.Registry;
 import com.l7tech.gui.util.Utilities;
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.AssertionMetadata;
-import com.l7tech.policy.assertion.SetsVariables;
-import com.l7tech.policy.assertion.UsesVariables;
+import com.l7tech.policy.AssertionRegistry;
+import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.variable.VariableNameSyntaxException;
 import com.l7tech.util.ExceptionUtils;
@@ -27,6 +26,7 @@ public class AssertionInfoDialog extends JDialog {
         super(parent, "Assertion Information", true);
         setContentPane(contentPanel);
         nameLabel.setText(assertion.meta().get(AssertionMetadata.SHORT_NAME).toString());
+        assertionTypeLabel.setText(getAssertionType(assertion));
         descriptionTextPane.setText(assertion.meta().get(AssertionMetadata.DESCRIPTION).toString());
         descriptionTextPane.setCaretPosition(0);
         descriptionScrollPane.setBorder(BorderFactory.createEmptyBorder());
@@ -48,6 +48,7 @@ public class AssertionInfoDialog extends JDialog {
     private JTable setsVariablesTable;
     private JLabel setsVariablesLabel;
     private JLabel nameLabel;
+    private JLabel assertionTypeLabel;
     private JScrollPane descriptionScrollPane;
     // using a text pane because some assertion descriptions contain html code for styling
     private JTextPane descriptionTextPane;
@@ -83,10 +84,10 @@ public class AssertionInfoDialog extends JDialog {
                 final SetsVariables setsVariables = (SetsVariables) assertion;
                 final VariableMetadata[] variablesSet = setsVariables.getVariablesSet();
                 if (variablesSet.length > 0) {
-                    Arrays.sort(variablesSet, new NullSafeComparator<VariableMetadata>(new Comparator<VariableMetadata>() {
+                    Arrays.sort(variablesSet, new NullSafeComparator<>(new Comparator<VariableMetadata>() {
                         @Override
                         public int compare(@NotNull final VariableMetadata o1, @NotNull final VariableMetadata o2) {
-                            return new NullSafeComparator<String>(String.CASE_INSENSITIVE_ORDER, true).compare(o1.getName(), o2.getName());
+                            return new NullSafeComparator<>(String.CASE_INSENSITIVE_ORDER, true).compare(o1.getName(), o2.getName());
                         }
                     }, true));
                     final Object[][] data = new Object[variablesSet.length][3];
@@ -141,5 +142,38 @@ public class AssertionInfoDialog extends JDialog {
         public boolean isCellEditable(int i, int i1) {
             return false;
         }
+    }
+
+    private String getAssertionType(@NotNull final Assertion assertion) {
+        String assertionType;
+        if (assertion instanceof CustomAssertionHolder) {
+            CustomAssertionHolder customAssertionHolder = (CustomAssertionHolder) assertion;
+            CustomAssertionHolder registeredCustomAssertionPrototype = null;
+            try {
+                for (Object registeredAssertion : Registry.getDefault().getCustomAssertionsRegistrar().getAssertions()) {
+                    if (customAssertionHolder.getCustomAssertion().getClass() == ((CustomAssertionHolder) registeredAssertion).getCustomAssertion().getClass()) {
+                        registeredCustomAssertionPrototype = (CustomAssertionHolder) registeredAssertion;
+                    }
+                }
+            } catch (Exception e) {
+                LOGGER.log(Level.WARNING, "Error retrieving registered custom assertion module file name from Custom Assertions Registrar: " + e.getMessage(), ExceptionUtils.getDebugException(e));
+            }
+            if (registeredCustomAssertionPrototype != null && registeredCustomAssertionPrototype.getModuleFileName() != null) {
+                // use file name from registrar
+                assertionType = "Custom (" + registeredCustomAssertionPrototype.getModuleFileName() + ")";
+            } else if (customAssertionHolder.getModuleFileName() != null) {
+                // use de-serialized file name from WspReader thawed assertion
+                assertionType = "Custom (" + customAssertionHolder.getModuleFileName() + ")";
+            } else {
+                assertionType = "Custom";
+            }
+        } else if (assertion instanceof EncapsulatedAssertion) {
+            assertionType = "Encapsulated";
+        } else if (AssertionRegistry.isCoreAssertion(assertion.getClass())) {
+            assertionType = "Core";
+        } else {
+            assertionType = "Modular (" + assertion.meta().get(AssertionMetadata.MODULE_FILE_NAME) + ")";
+        }
+        return assertionType;
     }
 }

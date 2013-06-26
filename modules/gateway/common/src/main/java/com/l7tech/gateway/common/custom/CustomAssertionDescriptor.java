@@ -27,6 +27,7 @@ public class CustomAssertionDescriptor {
     private final Class assertion;
     private final Class serverAssertion;
     private final String name;
+    private final String moduleFileName;
     private final String description;
     private final String paletteNodeName;
     private final String policyNodeName;
@@ -64,13 +65,15 @@ public class CustomAssertionDescriptor {
                                      final String uiAllowedPackages,
                                      final String uiAllowedResources,
                                      final String paletteNodeName,
-                                     final String policyNodeName) {
+                                     final String policyNodeName,
+                                     final String moduleFileName) {
         this.name = name;
         this.description = optionalDescription;
         this.assertion = assertionClass;
         this.category = cat;
         this.paletteNodeName = paletteNodeName;
         this.policyNodeName = policyNodeName;
+        this.moduleFileName = moduleFileName;
 
         if (!CustomAssertion.class.isAssignableFrom(assertionClass)) {
             throw new IllegalArgumentException("Assertion " + assertionClass);
@@ -103,11 +106,11 @@ public class CustomAssertionDescriptor {
             this.uiAllowedPackages = new String[0];
         }
 
-        this.uiAllowedResources = new HashSet<String>();
+        this.uiAllowedResources = new HashSet<>();
         if (uiAllowedResources != null) {
             String[] split = uiAllowedResources.split(",");
-            for (int ix = 0; ix < split.length; ix++) {
-                this.uiAllowedResources.add(split[ix].trim());
+            for (String aSplit : split) {
+                this.uiAllowedResources.add(aSplit.trim());
             }
         }
     }
@@ -117,6 +120,10 @@ public class CustomAssertionDescriptor {
      */
     public String getName() {
         return name;
+    }
+
+    public String getModuleFileName() {
+        return moduleFileName;
     }
 
     public String getDescription() {
@@ -180,13 +187,8 @@ public class CustomAssertionDescriptor {
     }
 
     public String toString() {
-        return new StringBuffer("[")
-          .append("; name='").append(name).append("'")
-          .append("; category=").append(category)
-          .append("; assertion=").append(safeName(assertion))
-          .append("; serverAssertion=").append(safeName(serverAssertion))
-          .append("; editorClass=").append(safeName(uiClass))
-          .append("]").append(super.toString()).toString();
+        return "[" + "; name='" + name + "'" + "; category=" + category + "; assertion=" + safeName(assertion) + "; serverAssertion="
+                + safeName(serverAssertion) + "; editorClass=" + safeName(uiClass) + "]" + super.toString();
     }
 
     private String safeName(Class cl) {

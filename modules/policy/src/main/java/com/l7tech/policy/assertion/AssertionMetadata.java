@@ -683,6 +683,12 @@ public interface AssertionMetadata {
      */
     String GLOBAL_ACTIONS = "globalActions";
 
+    /**
+     * String.  SSM only.  File name of the module containing a Modular assertion (e.g. SshAssertion-8.0.aar).
+     * This key was introduced in SecureSpan Gateway version 8.0.
+     */
+    String MODULE_FILE_NAME = "moduleFileName";
+
     /** @return the concrete Assertion class.  Returned class is never null and is always assignable to Assertion. */
     <T extends Assertion> Class<T> getAssertionClass();
 

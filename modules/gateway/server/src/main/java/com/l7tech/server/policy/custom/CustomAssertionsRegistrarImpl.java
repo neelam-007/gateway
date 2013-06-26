@@ -18,6 +18,7 @@ import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.ResourceUtils;
 import org.apache.commons.lang.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.support.ApplicationObjectSupport;
 
@@ -230,7 +231,7 @@ public class CustomAssertionsRegistrarImpl extends ApplicationObjectSupport impl
      * Return the <code>CustomAssertionDescriptor</code> for a given assertion or
      * <b>null<b>
      * Note that this method may not be invoked from management console. Server
-     * classes may not deserialize into the ssm envirnoment.
+     * classes may not de-serialize into the ssm environment.
      *
      * @param a the assertion class
      * @return the custom assertion descriptor class or <b>null</b>
@@ -292,19 +293,19 @@ public class CustomAssertionsRegistrarImpl extends ApplicationObjectSupport impl
 
     private Collection asCustomAssertionHolders(final Set customAssertionDescriptors) {
         Collection result = new ArrayList();
-        Iterator it = customAssertionDescriptors.iterator();
-        while (it.hasNext()) {
+        for (Object customAssertionDescriptor : customAssertionDescriptors) {
             try {
-                CustomAssertionDescriptor cd = (CustomAssertionDescriptor)it.next();
+                CustomAssertionDescriptor cd = (CustomAssertionDescriptor) customAssertionDescriptor;
                 Class ca = cd.getAssertion();
                 CustomAssertionHolder ch = new CustomAssertionHolder();
-                final CustomAssertion cas = (CustomAssertion)ca.newInstance();
+                final CustomAssertion cas = (CustomAssertion) ca.newInstance();
                 ch.setCustomAssertion(cas);
                 ch.setCategory(cd.getCategory());
                 ch.setDescriptionText(cd.getDescription());
                 ch.setPaletteNodeName(cd.getPaletteNodeName());
                 ch.setPolicyNodeName(cd.getPolicyNodeName());
                 ch.setIsUiAutoOpen(cd.getIsUiAutoOpen());
+                ch.setModuleFileName(cd.getModuleFileName());
                 result.add(ch);
             } catch (Exception e) {
                 logger.log(Level.WARNING, "Unable to instantiate custom assertion", e);
@@ -351,7 +352,7 @@ public class CustomAssertionsRegistrarImpl extends ApplicationObjectSupport impl
             if (propfileUrls.hasMoreElements()) {
                 while(propfileUrls.hasMoreElements()) {
                     URL resourceUrl = (URL) propfileUrls.nextElement();
-                    if (initFromUrl(resourceUrl, caClassLoader))
+                    if (initFromUrl(resourceUrl, caClassLoader, parseModuleFileName(resourceUrl.getPath(), fileName)))
                         initialized = true;
                 }
             }
@@ -364,12 +365,12 @@ public class CustomAssertionsRegistrarImpl extends ApplicationObjectSupport impl
         }
     }
 
-    private boolean initFromUrl(URL customAssertionConfigUrl, ClassLoader classLoader) {
+    private boolean initFromUrl(URL customAssertionConfigUrl, ClassLoader classLoader, String moduleFileName) {
         boolean loaded = false;
         InputStream in = null;
         try {
             in = customAssertionConfigUrl.openStream();
-            loadCustomAssertions(in, classLoader);
+            loadCustomAssertions(in, classLoader, moduleFileName);
             loaded = true;
         }
         catch (FileNotFoundException e) {
@@ -385,7 +386,7 @@ public class CustomAssertionsRegistrarImpl extends ApplicationObjectSupport impl
         return loaded;
     }
 
-    private void loadCustomAssertions(InputStream in, ClassLoader classLoader) throws IOException {
+    private void loadCustomAssertions(InputStream in, ClassLoader classLoader, String moduleFileName) throws IOException {
         Properties props = new Properties();
         props.load(in);
         props.keys();
@@ -393,11 +394,10 @@ public class CustomAssertionsRegistrarImpl extends ApplicationObjectSupport impl
         ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
         try {
             if (contextClassLoader != null) Thread.currentThread().setContextClassLoader(null);
-            for (Iterator iterator = props.keySet().iterator(); iterator.hasNext();) {
-                Object o = iterator.next();
+            for (Object o : props.keySet()) {
                 String key = o.toString();
                 if (key.endsWith(".class")) {
-                    loadSingleCustomAssertion(key.substring(0, key.indexOf(".class")), props, classLoader);
+                    loadSingleCustomAssertion(key.substring(0, key.indexOf(".class")), props, classLoader, moduleFileName);
                 }
             }
         }
@@ -406,9 +406,9 @@ public class CustomAssertionsRegistrarImpl extends ApplicationObjectSupport impl
         }
     }
 
-    private void loadSingleCustomAssertion(String baseKey, Properties properties, ClassLoader classLoader) {
+    private void loadSingleCustomAssertion(String baseKey, Properties properties, ClassLoader classLoader, String moduleFileName) {
         String serverClass = null;
-        String assertionClass = null;
+        String assertionClass;
         String editorClass = null;
         String taskActionClass = null;
         String extensionInterfaceClassName = null;
@@ -456,9 +456,9 @@ public class CustomAssertionsRegistrarImpl extends ApplicationObjectSupport impl
         }
 
         if (serverClass == null || assertionClass == null) {
-            StringBuffer sb = new StringBuffer("Incomplete custom assertion, skipping\n");
-            sb.append("[ assertion class=" + assertionClass);
-            sb.append(",server class=" + serverClass + "]");
+            StringBuilder sb = new StringBuilder("Incomplete custom assertion, skipping\n");
+            sb.append("[ assertion class=").append(assertionClass);
+            sb.append(",server class=").append(serverClass).append("]");
             logger.warning(sb.toString());
             return;
         }
@@ -476,21 +476,22 @@ public class CustomAssertionsRegistrarImpl extends ApplicationObjectSupport impl
             }
 
             Class sa = Class.forName(serverClass, true, classLoader);
-            CustomAssertionDescriptor eh = new CustomAssertionDescriptor(baseKey, a, eClass, taClass, sa, category, optionalDescription, isUiAutoOpen, uiAllowedPackages, uiAllowedResources, paletteNodeName, policyNodeName);
+            CustomAssertionDescriptor eh = new CustomAssertionDescriptor(baseKey, a, eClass, taClass, sa, category, optionalDescription,
+                    isUiAutoOpen, uiAllowedPackages, uiAllowedResources, paletteNodeName, policyNodeName, moduleFileName);
             CustomAssertions.register(eh);
 
             registerCustomExtensionInterface(extensionInterfaceClassName, classLoader);
 
             logger.info("Registered custom assertion " + eh);
         } catch (ClassNotFoundException e) {
-            StringBuffer sb = new StringBuffer("Cannot load class(es) for custom assertion, skipping...\n");
-            sb.append("[ assertion class=" + assertionClass);
-            sb.append(",server class=" + serverClass + "]");
+            StringBuilder sb = new StringBuilder("Cannot load class(es) for custom assertion, skipping...\n");
+            sb.append("[ assertion class=").append(assertionClass);
+            sb.append(",server class=").append(serverClass).append("]");
             logger.log(Level.WARNING, sb.toString(), e);
         } catch (Exception e) {
-            StringBuffer sb = new StringBuffer("Invalid custom assertion, skipping...\n");
-            sb.append("[ assertion class=" + assertionClass);
-            sb.append(",server class=" + serverClass + "]");
+            StringBuilder sb = new StringBuilder("Invalid custom assertion, skipping...\n");
+            sb.append("[ assertion class=").append(assertionClass);
+            sb.append(",server class=").append(serverClass).append("]");
             logger.log(Level.WARNING, sb.toString(), e);
         }
     }
@@ -505,8 +506,8 @@ public class CustomAssertionsRegistrarImpl extends ApplicationObjectSupport impl
         boolean isCustomAssertionRes = false;
 
         Set descriptors = CustomAssertions.getAllDescriptors();
-        for (Iterator iterator = descriptors.iterator(); iterator.hasNext();) {
-            CustomAssertionDescriptor customAssertionDescriptor = (CustomAssertionDescriptor) iterator.next();
+        for (Object descriptor : descriptors) {
+            CustomAssertionDescriptor customAssertionDescriptor = (CustomAssertionDescriptor) descriptor;
 
             // only check classes relevant to the SSM (not SSB or SSG)
             Class beanClass = customAssertionDescriptor.getAssertion();
@@ -560,5 +561,19 @@ public class CustomAssertionsRegistrarImpl extends ApplicationObjectSupport impl
             CustomExtensionInterfaceBinding ceiBinding = (CustomExtensionInterfaceBinding) Class.forName(extensionInterfaceClassName, true, classLoader).newInstance();
             extensionInterfaceManager.registerInterface(ceiBinding.getInterfaceClass(), null, ceiBinding.getImplementationObject());
         }
+    }
+
+    protected final String parseModuleFileName(@NotNull final String configFileUrlPath, @NotNull final String configFileName) {
+        String moduleFileName = configFileUrlPath;
+        String fileSeparator = File.separator;
+        int index = moduleFileName.indexOf("!" + fileSeparator + configFileName);
+        if (index < 0) {
+            // handle Cygwin development environment
+            fileSeparator = "/";
+            index = moduleFileName.indexOf("!" + fileSeparator + configFileName);
+        }
+        moduleFileName = moduleFileName.substring(0, index);
+        moduleFileName = moduleFileName.substring(moduleFileName.lastIndexOf(fileSeparator) + 1);
+        return moduleFileName;
     }
 }

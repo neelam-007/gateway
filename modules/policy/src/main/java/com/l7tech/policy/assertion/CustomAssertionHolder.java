@@ -55,6 +55,7 @@ public class CustomAssertionHolder extends Assertion implements UsesVariables, S
     private String paletteNodeName;
     private String policyNodeName;
     private boolean isUiAutoOpen;
+    private String customModuleFileName;
 
     public CustomAssertionHolder() {
         this.parent = null;
@@ -84,7 +85,7 @@ public class CustomAssertionHolder extends Assertion implements UsesVariables, S
     }
 
     /**
-     * Set the custome assertion bean
+     * Set the custom assertion bean
      *
      * @param ca the new custom assertion bean
      */
@@ -98,6 +99,14 @@ public class CustomAssertionHolder extends Assertion implements UsesVariables, S
             return "[ CustomAssertion = null ]";
         }
         return "[ CustomAssertion = " + customAssertion.toString() + ", Category = " + category + " ]";
+    }
+
+    public String getModuleFileName() {
+        return customModuleFileName;
+    }
+
+    public void setModuleFileName(String moduleFileName) {
+        this.customModuleFileName = moduleFileName;
     }
 
     public String getDescriptionText() {

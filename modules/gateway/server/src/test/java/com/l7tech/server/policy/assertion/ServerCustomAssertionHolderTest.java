@@ -154,7 +154,8 @@ public class ServerCustomAssertionHolderTest
                 null, // for now do not use allowed packages
                 null, // for now do not use allowed resources
                 null, // for palette node name
-                null  // for policy node name
+                null, // for policy node name
+                null  // for module file name
         );
 
         // mock the new descriptors

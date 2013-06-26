@@ -20,6 +20,7 @@ import com.l7tech.policy.AssertionAccess;
 import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
+import com.l7tech.policy.assertion.DefaultAssertionMetadata;
 import com.l7tech.policy.assertion.MetadataFinder;
 import com.l7tech.policy.wsp.ClassLoaderUtil;
 import com.l7tech.util.*;
@@ -50,13 +51,13 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
     protected static final Logger logger = Logger.getLogger(ConsoleAssertionRegistry.class.getName());
 
     /** Prototype instances of assertions loaded from the server. */
-    private final Set<Assertion> modulePrototypes = new HashSet<Assertion>();
+    private final Set<Assertion> modulePrototypes = new HashSet<>();
 
     /** Base packages of every modular assertion, for recognizing NoClassDefFoundErrors due to module unload. */
-    private final Map<String, String> moduleNameByBasePackage = new ConcurrentHashMap<String, String>();
+    private final Map<String, String> moduleNameByBasePackage = new ConcurrentHashMap<>();
 
     /** Set of assertion classnames enabled for the current admin user. */
-    private final Map<String, AssertionAccess> permittedAssertionClasses = new ConcurrentHashMap<String, AssertionAccess>();
+    private final Map<String, AssertionAccess> permittedAssertionClasses = new ConcurrentHashMap<>();
 
     @Override
     public void afterPropertiesSet() throws Exception {
@@ -177,6 +178,7 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
                         if (!Assertion.class.isAssignableFrom(assclass))
                             throw new ClassCastException(assclass.getName());
                         Assertion prototype = (Assertion)assclass.newInstance();
+                        ((DefaultAssertionMetadata) (prototype.meta())).put(AssertionMetadata.MODULE_FILE_NAME, moduleFilename);
                         String basePackage = String.valueOf(prototype.meta().get(AssertionMetadata.BASE_PACKAGE));
 
                         logger.info("Registering remote assertion " + prototype.getClass().getName());
@@ -184,15 +186,11 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
                         registerAssertion(prototype.getClass());
                         if (basePackage.length() > 0)
                             moduleNameByBasePackage.put(basePackage, module.moduleFilename);
-                    } catch (NoClassDefFoundError e) {
-                        logger.log(Level.WARNING, "Unable to load remote class " + assertionClassname + " from module " + moduleFilename + ": " + ExceptionUtils.getMessage(e), e);
-                    } catch (ClassNotFoundException e) {
+                    } catch (NoClassDefFoundError | ClassNotFoundException e) {
                         logger.log(Level.WARNING, "Unable to load remote class " + assertionClassname + " from module " + moduleFilename + ": " + ExceptionUtils.getMessage(e), e);
                     } catch (ClassCastException e) {
                         logger.log(Level.WARNING, "Remote Assertion class does not extend Assertion: " + assertionClassname + " (from module " + moduleFilename + ")");
-                    } catch (IllegalAccessException e) {
-                        logger.log(Level.WARNING, "Unable to instantiate remote Assertion class " + assertionClassname + " from module " + moduleFilename + ": " + ExceptionUtils.getMessage(e), e);
-                    } catch (InstantiationException e) {
+                    } catch (IllegalAccessException | InstantiationException e) {
                         logger.log(Level.WARNING, "Unable to instantiate remote Assertion class " + assertionClassname + " from module " + moduleFilename + ": " + ExceptionUtils.getMessage(e), e);
                     }
                 }
@@ -406,7 +404,7 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
             factory = new Functions.Unary<AbstractAssertionPaletteNode, AT>() {
                 @Override
                 public AbstractAssertionPaletteNode call(AT assertion) {
-                    return new DefaultAssertionPaletteNode<AT>(assertion);
+                    return new DefaultAssertionPaletteNode<>(assertion);
                 }
             };
             return cache(meta, key, factory);
@@ -428,7 +426,7 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
             factory = new Functions.Unary< AssertionTreeNode, AT >() {
                 @Override
                 public AssertionTreeNode call(AT assertion) {
-                    return new DefaultAssertionPolicyNode<AT>(assertion);
+                    return new DefaultAssertionPolicyNode<>(assertion);
                 }
             };
             return cache(meta, key, factory);
@@ -460,10 +458,7 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
                 // Probably was just a generated-by-default classname that doesn't actually exist
                 logger.log(Level.FINEST, "Unable to load advice class", e);
                 // Fallthrough and return null
-            } catch (IllegalAccessException e) {
-                logger.log(Level.WARNING, "Unable to instantiate advice class for assertion " + assname, e);
-                // Fallthrough and return null
-            } catch (InstantiationException e) {
+            } catch (IllegalAccessException | InstantiationException e) {
                 logger.log(Level.WARNING, "Unable to instantiate advice class for assertion " + assname, e);
                 // Fallthrough and return null
             }
@@ -557,9 +552,7 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
                 public AbstractAssertionPaletteNode call(AT prototype) {
                     try {
                         return nullary.newInstance();
-                    } catch (InstantiationException e) {
-                        throw new RuntimeException(e); // can't happen
-                    } catch (IllegalAccessException e) {
+                    } catch (InstantiationException | IllegalAccessException e) {
                         throw new RuntimeException(e); // can't happen
                     } catch (InvocationTargetException e) {
                         throw new RuntimeException(e);
@@ -672,9 +665,7 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
                         try {
                             //noinspection unchecked
                             return ctorFrameAss.newInstance(parent, assertion);
-                        } catch (InstantiationException e) {
-                            throw new RuntimeException(e); // can't happen
-                        } catch (IllegalAccessException e) {
+                        } catch (InstantiationException | IllegalAccessException e) {
                             throw new RuntimeException(e); // can't happen
                         } catch (InvocationTargetException e) {
                             throw new RuntimeException(e);
@@ -700,9 +691,7 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
                             AssertionPropertiesEditor<AT> ape = ctorFrame.newInstance(parent);
                             ape.setData(assertion);
                             return ape;
-                        } catch (InstantiationException e) {
-                            throw new RuntimeException(e); // can't happen
-                        } catch (IllegalAccessException e) {
+                        } catch (InstantiationException | IllegalAccessException e) {
                             throw new RuntimeException(e); // can't happen
                         } catch (InvocationTargetException e) {
                             throw new RuntimeException(e);
@@ -726,9 +715,7 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
                         try {
                             //noinspection unchecked
                             return ctorAss.newInstance(assertion);
-                        } catch (InstantiationException e) {
-                            throw new RuntimeException(e); // can't happen
-                        } catch (IllegalAccessException e) {
+                        } catch (InstantiationException | IllegalAccessException e) {
                             throw new RuntimeException(e); // can't happen
                         } catch (InvocationTargetException e) {
                             throw new RuntimeException(e);
@@ -754,9 +741,7 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
                             AssertionPropertiesEditor<AT> ape =  ctorNullary.newInstance();
                             ape.setData(assertion);
                             return ape;
-                        } catch (InstantiationException e) {
-                            throw new RuntimeException(e); // can't happen
-                        } catch (IllegalAccessException e) {
+                        } catch (InstantiationException | IllegalAccessException e) {
                             throw new RuntimeException(e); // can't happen
                         } catch (InvocationTargetException e) {
                             throw new RuntimeException(e);
@@ -792,7 +777,7 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
         if (actionClassnames == null || actionClassnames.length < 1)
             return new Action[0];
 
-        Collection<Action> ret = new ArrayList<Action>();
+        Collection<Action> ret = new ArrayList<>();
         for (String actionClassname : actionClassnames) {
             try {
                 Object maybeAction = assclass.getClassLoader().loadClass(actionClassname).newInstance();
@@ -802,11 +787,7 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
                 } else {
                     logger.log(Level.WARNING, String.format("Unable to instantiate custom action for assertion %s: action class %s is not a subclass of Action", assclass, actionClassname));
                 }
-            } catch (ClassNotFoundException e) {
-                logger.log(Level.WARNING, String.format("Unable to instantiate custom action %s for assertion %s: %s", actionClassname, assclass, ExceptionUtils.getMessage(e)), e);
-            } catch (InstantiationException e) {
-                logger.log(Level.WARNING, String.format("Unable to instantiate custom action %s for assertion %s: %s", actionClassname, assclass, ExceptionUtils.getMessage(e)), e);
-            } catch (IllegalAccessException e) {
+            } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
                 logger.log(Level.WARNING, String.format("Unable to instantiate custom action %s for assertion %s: %s", actionClassname, assclass, ExceptionUtils.getMessage(e)), e);
             }
         }

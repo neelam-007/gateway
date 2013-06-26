@@ -1,19 +1,15 @@
 package com.l7tech.server.policy.custom;
 
-import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.gateway.common.custom.CustomAssertionDescriptor;
+import com.l7tech.gateway.common.custom.CustomAssertionsRegistrar;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
 import com.l7tech.policy.assertion.ext.Category;
-import com.l7tech.policy.assertion.ext.CustomAssertionUI;
 import com.l7tech.policy.assertion.ext.CustomAssertion;
+import com.l7tech.policy.assertion.ext.CustomAssertionUI;
 import com.l7tech.policy.assertion.ext.action.CustomTaskActionUI;
-import com.l7tech.policy.wsp.WspReader;
-import com.l7tech.gateway.common.custom.CustomAssertionsRegistrar;
-import com.l7tech.gateway.common.custom.CustomAssertionDescriptor;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -34,7 +30,7 @@ public class CustomAssertionsRegistrarStub implements CustomAssertionsRegistrar 
           new CustomAssertionDescriptor("Test.Assertion",
             TestAssertionProperties.class,
             null, null,
-            TestServiceInvocation.class, Category.ACCESS_CONTROL, "", false, "", "", null, null);
+            TestServiceInvocation.class, Category.ACCESS_CONTROL, "", false, "", "", null, null, null);
         CustomAssertions.register(eh);
     }
 
@@ -104,13 +100,12 @@ public class CustomAssertionsRegistrarStub implements CustomAssertionsRegistrar 
 
     private Collection asCustomAssertionHolders(final Set customAssertionDescriptors) {
         Collection result = new ArrayList();
-        Iterator it = customAssertionDescriptors.iterator();
-        while (it.hasNext()) {
+        for (Object customAssertionDescriptor : customAssertionDescriptors) {
             try {
-                CustomAssertionDescriptor cd = (CustomAssertionDescriptor)it.next();
+                CustomAssertionDescriptor cd = (CustomAssertionDescriptor) customAssertionDescriptor;
                 Class ca = cd.getAssertion();
                 CustomAssertionHolder ch = new CustomAssertionHolder();
-                final CustomAssertion cas = (CustomAssertion)ca.newInstance();
+                final CustomAssertion cas = (CustomAssertion) ca.newInstance();
                 ch.setCustomAssertion(cas);
                 ch.setCategory(cd.getCategory());
                 result.add(ch);

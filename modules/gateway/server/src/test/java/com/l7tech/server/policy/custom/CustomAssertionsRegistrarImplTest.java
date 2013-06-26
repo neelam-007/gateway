@@ -9,12 +9,12 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import static junit.framework.Assert.assertFalse;
-import static junit.framework.Assert.assertTrue;
+import static junit.framework.Assert.*;
+import static org.mockito.Mockito.mock;
 
 @RunWith(MockitoJUnitRunner.class)
 public class CustomAssertionsRegistrarImplTest {
-    @Mock @SuppressWarnings("unused")
+    @Mock
     private ServerAssertionRegistry serverAssertionRegistryMock;
 
     @Mock
@@ -47,5 +47,17 @@ public class CustomAssertionsRegistrarImplTest {
                 }
             });
         }
+    }
+
+    @Test
+    public void parseModuleFileName() throws Exception {
+        ExtensionInterfaceManager extensionInterfaceManager = mock(ExtensionInterfaceManager.class);
+        CustomAssertionsRegistrarImpl customAssertionsRegistrarImpl = new CustomAssertionsRegistrarImpl(serverAssertionRegistryMock, extensionInterfaceManager, securePasswordManagerMock);
+
+        String moduleFileName = "salesforce_poc.jar";
+        String configFileName = "custom_assertions.properties";
+        String configFileUrlPath = "file:/C:/trunk/build/deploy/Gateway/node/default/../../runtime/modules/lib/" + moduleFileName + "!/" + configFileName;
+
+        assertEquals(moduleFileName, customAssertionsRegistrarImpl.parseModuleFileName(configFileUrlPath, configFileName));
     }
 }
