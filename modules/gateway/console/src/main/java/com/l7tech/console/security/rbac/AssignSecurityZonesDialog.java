@@ -1,13 +1,17 @@
 package com.l7tech.console.security.rbac;
 
 import com.l7tech.console.panels.FilterPanel;
+import com.l7tech.console.policy.ConsoleAssertionRegistry;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.SecurityZoneUtil;
+import com.l7tech.console.util.TopComponents;
+import com.l7tech.gateway.common.security.rbac.RbacAdmin;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.comparator.NamedEntityComparator;
 import com.l7tech.objectmodel.folder.HasFolderOid;
+import com.l7tech.policy.AssertionAccess;
 import com.l7tech.policy.PolicyHeader;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.util.ExceptionUtils;
@@ -26,10 +30,8 @@ import javax.swing.table.TableRowSorter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.Comparator;
-import java.util.HashMap;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -288,7 +290,7 @@ public class AssignSecurityZonesDialog extends JDialog {
         if (selected != null) {
             selected = convertToBackingEntityType(selected);
             try {
-                final EntityHeaderSet<EntityHeader> entities = Registry.getDefault().getRbacAdmin().findEntities(selected);
+                final EntityHeaderSet<EntityHeader> entities = getEntities(selected);
                 boolean atLeastOnePath = false;
                 final EntityHeader[] headers = entities.toArray(new EntityHeader[entities.size()]);
                 for (int i = 0; i < headers.length; i++) {
@@ -330,6 +332,31 @@ public class AssignSecurityZonesDialog extends JDialog {
                 DialogDisplayer.showMessageDialog(this, error, "Error", JOptionPane.ERROR_MESSAGE, null);
             }
         }
+    }
+
+    private EntityHeaderSet<EntityHeader> getEntities(@NotNull final EntityType selected) throws FindException {
+        final EntityHeaderSet<EntityHeader> entities;
+        if (selected == EntityType.ASSERTION_ACCESS) {
+            // get assertion access from registry as they may not all be persisted in the database
+            entities = new EntityHeaderSet<>();
+            final ConsoleAssertionRegistry assertionRegistry = TopComponents.getInstance().getAssertionRegistry();
+            final Collection<AssertionAccess> assertions = assertionRegistry.getPermittedAssertions();
+            long nonPersistedAssertions = 0L;
+            for (final AssertionAccess assertionAccess : assertions) {
+                long oid = assertionAccess.getOid();
+                if (oid == PersistentEntity.DEFAULT_OID) {
+                    // this assertion access is not yet persisted
+                    // give it some negative dummy oid so that it won't be considered 'equal' to the other headers
+                    oid = --nonPersistedAssertions;
+                }
+                final ZoneableEntityHeader assertionHeader = new ZoneableEntityHeader(oid, EntityType.ASSERTION_ACCESS, assertionAccess.getName(), null, assertionAccess.getVersion());
+                assertionHeader.setSecurityZoneOid(assertionAccess.getSecurityZone() == null ? null : assertionAccess.getSecurityZone().getOid());
+                entities.add(assertionHeader);
+            }
+        } else {
+            entities = Registry.getDefault().getRbacAdmin().findEntities(selected);
+        }
+        return entities;
     }
 
     private EntityType convertToBackingEntityType(final EntityType selected) {
@@ -385,14 +412,48 @@ public class AssignSecurityZonesDialog extends JDialog {
             if (selectedZone != null && selectedZone.equals(SecurityZoneUtil.NULL_ZONE)) {
                 selectedZone = null;
             }
-            final Long securityZoneOid = selectedZone == null ? null : selectedZone.getOid();
             final Map<Integer, EntityHeader> selectedEntities = getSelectedEntities();
+            if (selectedEntityType == EntityType.ASSERTION_ACCESS) {
+                final Set<EntityHeader> assertionAccessToUpdate = new HashSet<>();
+                try {
+                    final RbacAdmin rbacAdmin = Registry.getDefault().getRbacAdmin();
+                    for (final Map.Entry<Integer, EntityHeader> entry : selectedEntities.entrySet()) {
+                        final EntityHeader header = entry.getValue();
+                        if (header.getOid() < 0) {
+                            // save a new assertion access
+                            final AssertionAccess assertionAccess = new AssertionAccess(header.getName());
+                            assertionAccess.setSecurityZone(selectedZone);
+                            final long savedOid = rbacAdmin.saveAssertionAccess(assertionAccess);
+                            header.setOid(savedOid);
+                            dataModel.setValueAt(header, entry.getKey(), HEADER_COL_INDEX);
+                        } else {
+                            // update an existing assertion access
+                            assertionAccessToUpdate.add(header);
+                        }
+                    }
+                    doBulkUpdate(EntityType.ASSERTION_ACCESS, selectedZone, selectedEntities.keySet(), assertionAccessToUpdate);
+                    TopComponents.getInstance().getAssertionRegistry().updateAssertionAccess();
+                } catch (final UpdateException ex) {
+                    DialogDisplayer.showMessageDialog(AssignSecurityZonesDialog.this, "Error", "Error assigning entities to zone.", ex);
+                }
+            } else {
+                doBulkUpdate(selectedEntityType, selectedZone, selectedEntities.keySet(), selectedEntities.values());
+            }
+        }
+
+        /**
+         * @param selectedEntityType the selected EntityType
+         * @param selectedZone       the selected SecurityZone or null if no zone selected
+         * @param tableRowIndices    the row indices which require zone value to be updated
+         * @param entitiesToUpdate   the entities to update in the database
+         */
+        private void doBulkUpdate(@NotNull final EntityType selectedEntityType, @Nullable final SecurityZone selectedZone, @NotNull final Collection<Integer> tableRowIndices, @NotNull final Collection<EntityHeader> entitiesToUpdate) {
+            final Long securityZoneOid = selectedZone == null ? null : selectedZone.getOid();
             try {
                 final BulkZoneUpdater updater = new BulkZoneUpdater(Registry.getDefault().getRbacAdmin(),
                         Registry.getDefault().getUDDIRegistryAdmin(), Registry.getDefault().getJmsManager(), Registry.getDefault().getPolicyAdmin());
-                updater.bulkUpdate(securityZoneOid, selectedEntityType, selectedEntities.values());
-                // update the table
-                for (final Integer selectedIndex : selectedEntities.keySet()) {
+                updater.bulkUpdate(securityZoneOid, selectedEntityType, entitiesToUpdate);
+                for (final Integer selectedIndex : tableRowIndices) {
                     dataModel.setValueAt(selectedZone == null ? SecurityZoneUtil.NULL_ZONE : selectedZone, selectedIndex, ZONE_COL_INDEX);
                 }
             } catch (final FindException ex) {
