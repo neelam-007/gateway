@@ -58,6 +58,16 @@ public class EntityNameResolverTest {
     public void getNameForServiceAlias() throws Exception {
         final PublishedService service = new PublishedService();
         service.setName(NAME);
+        service.setRoutingUri("/routingUri");
+        when(serviceAdmin.findByAlias(OID)).thenReturn(service);
+        assertEquals("test alias[/routingUri] (/test alias)", resolver.getNameForHeader(new EntityHeader(OID, EntityType.SERVICE_ALIAS, null, null)));
+    }
+
+    @Test
+    public void getNameForServiceAliasNullRoutingUri() throws Exception {
+        final PublishedService service = new PublishedService();
+        service.setName(NAME);
+        service.setRoutingUri(null);
         when(serviceAdmin.findByAlias(OID)).thenReturn(service);
         assertEquals("test alias (/test alias)", resolver.getNameForHeader(new EntityHeader(OID, EntityType.SERVICE_ALIAS, null, null)));
     }

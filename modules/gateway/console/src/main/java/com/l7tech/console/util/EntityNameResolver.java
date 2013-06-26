@@ -116,7 +116,7 @@ public class EntityNameResolver {
         if (includePath) {
             path = resolvePath(header, retrievedEntity);
         }
-        String uniqueInfo = getUniqueInfo(header);
+        String uniqueInfo = getUniqueInfo(header, retrievedEntity);
         if (StringUtils.isNotBlank(uniqueInfo)) {
             uniqueInfo = "[" + uniqueInfo + "]";
         }
@@ -139,14 +139,24 @@ public class EntityNameResolver {
     /**
      * Some entity types may require other info than its name and/or path to make it unique from others.
      */
-    private String getUniqueInfo(@NotNull final EntityHeader header) {
+    private String getUniqueInfo(@NotNull final EntityHeader header, @Nullable final Entity retrievedEntity) {
         String extraInfo = StringUtils.EMPTY;
         if (header.getType() != null) {
             switch (header.getType()) {
                 case SERVICE:
                     if (header instanceof ServiceHeader) {
                         final ServiceHeader serviceHeader = (ServiceHeader) header;
-                        extraInfo = serviceHeader.getRoutingUri();
+                        if (serviceHeader.getRoutingUri() != null) {
+                            extraInfo = serviceHeader.getRoutingUri();
+                        }
+                    }
+                    break;
+                case SERVICE_ALIAS:
+                    if (retrievedEntity instanceof PublishedService) {
+                        final PublishedService service = (PublishedService) retrievedEntity;
+                        if (service.getRoutingUri() != null) {
+                            extraInfo = service.getRoutingUri();
+                        }
                     }
                     break;
                 default:
