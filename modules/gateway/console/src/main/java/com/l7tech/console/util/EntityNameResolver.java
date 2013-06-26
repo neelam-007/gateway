@@ -12,11 +12,15 @@ import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.HasFolder;
 import com.l7tech.objectmodel.folder.HasFolderOid;
+import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.Policy;
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.AssertionMetadata;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -43,23 +47,26 @@ public class EntityNameResolver {
     private final TrustedCertAdmin trustedCertAdmin;
     private final ResourceAdmin resourceAdmin;
     private final FolderAdmin folderAdmin;
+    private final AssertionRegistry assertionRegistry;
 
     public EntityNameResolver(@NotNull final ServiceAdmin serviceAdmin,
                               @NotNull final PolicyAdmin policyAdmin,
                               @NotNull final TrustedCertAdmin trustedCertAdmin,
                               @NotNull final ResourceAdmin resourceAdmin,
-                              @NotNull final FolderAdmin folderAdmin) {
+                              @NotNull final FolderAdmin folderAdmin,
+                              @NotNull final AssertionRegistry assertionRegistry) {
         this.serviceAdmin = serviceAdmin;
         this.policyAdmin = policyAdmin;
         this.trustedCertAdmin = trustedCertAdmin;
         this.resourceAdmin = resourceAdmin;
         this.folderAdmin = folderAdmin;
+        this.assertionRegistry = assertionRegistry;
     }
 
     /**
      * Resolves a descriptive name for a given EntityHeader which may include a name and/or folder path and/or other unique info depending on the header type.
      * <p/>
-     * If there is a non-empty, non-oid name on the header, it will take precedence (this should happen in most cases).
+     * If there is a non-empty, non-oid name on the header, it will take precedence (this should happen in most cases) unless it is for an AssertionAccess entity.
      * <p/>
      * Otherwise the descriptive name will be resolved by looking up the entity that is referenced by the header (this is usually the case is for entities that don't have a name).
      *
@@ -71,7 +78,7 @@ public class EntityNameResolver {
      */
     @NotNull
     public String getNameForHeader(@NotNull final EntityHeader header, final boolean includePath) throws FindException {
-        final String nameOnHeader = header.getName();
+        final String nameOnHeader = header.getType() == EntityType.ASSERTION_ACCESS ? null : header.getName();
         String name = nameOnHeader == null ? StringUtils.EMPTY : nameOnHeader;
         Entity retrievedEntity = null;
         if (header.getType() != null && (StringUtils.isBlank(name) || String.valueOf(header.getOid()).equals(name))) {
@@ -105,6 +112,12 @@ public class EntityNameResolver {
                     validateFoundEntity(header, httpConfig);
                     name = httpConfig.getProtocol() + " " + httpConfig.getHost() + " " + httpConfig.getPort();
                     retrievedEntity = httpConfig;
+                    break;
+                case ASSERTION_ACCESS:
+                    if (header.getName() != null) {
+                        final Assertion assertion = assertionRegistry.findByClassName(header.getName());
+                        name = assertion ==  null ? header.getName() : String.valueOf(assertion.meta().get(AssertionMetadata.SHORT_NAME));
+                    }
                     break;
                 default:
                     logger.log(Level.WARNING, "Name on header is null or empty but entity type is not supported: " + header.getType());

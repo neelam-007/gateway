@@ -16,8 +16,11 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.HasFolder;
 import com.l7tech.objectmodel.folder.HasFolderOid;
+import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
+import com.l7tech.policy.assertion.composite.AllAssertion;
+import com.l7tech.test.BugId;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -43,10 +46,12 @@ public class EntityNameResolverTest {
     private ResourceAdmin resourceAdmin;
     @Mock
     private FolderAdmin folderAdmin;
+    @Mock
+    private AssertionRegistry assertionRegistry;
 
     @Before
     public void setup() {
-        resolver = new EntityNameResolver(serviceAdmin, policyAdmin, trustedCertAdmin, resourceAdmin, folderAdmin);
+        resolver = new EntityNameResolver(serviceAdmin, policyAdmin, trustedCertAdmin, resourceAdmin, folderAdmin, assertionRegistry);
     }
 
     @Test
@@ -244,6 +249,29 @@ public class EntityNameResolverTest {
         service.setName(NAME);
         service.setRoutingUri("/routingUri");
         assertEquals("test[/routingUri]", resolver.getNameForHeader(new ServiceHeader(service), false));
+    }
+
+    @BugId("SSG-7159")
+    @Test
+    public void getNameForAssertionAccess() throws Exception {
+        final String className = "com.l7tech.policy.assertion.composite.AllAssertion";
+        final EntityHeader assertionHeader = new EntityHeader(OID, EntityType.ASSERTION_ACCESS, className, null);
+        when(assertionRegistry.findByClassName(className)).thenReturn(new AllAssertion());
+        assertEquals("All assertions must evaluate to true", resolver.getNameForHeader(assertionHeader));
+    }
+
+    @Test
+    public void getNameForAssertionAccessNotFound() throws Exception {
+        final String className = "com.l7tech.policy.assertion.composite.AllAssertion";
+        final EntityHeader assertionHeader = new EntityHeader(OID, EntityType.ASSERTION_ACCESS, className, null);
+        when(assertionRegistry.findByClassName(className)).thenReturn(null);
+        assertEquals(className, resolver.getNameForHeader(assertionHeader));
+    }
+
+    @Test
+    public void getNameForAssertionAccessMissingClassNameOnHeader() throws Exception {
+        final EntityHeader assertionHeader = new EntityHeader(OID, EntityType.ASSERTION_ACCESS, null, null);
+        assertTrue(resolver.getNameForHeader(assertionHeader).isEmpty());
     }
 
     private class HasFolderStub implements HasFolder {

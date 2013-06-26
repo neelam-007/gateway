@@ -3,6 +3,7 @@ package com.l7tech.console.util.registry;
 import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.util.EntityNameResolver;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.admin.*;
 import com.l7tech.gateway.common.audit.AuditAdmin;
 import com.l7tech.gateway.common.audit.LogonEvent;
@@ -379,7 +380,7 @@ public final class RegistryImpl extends Registry
     public EntityNameResolver getEntityNameResolver() {
         checkAdminContext();
         if (entityNameResolver == null) {
-            entityNameResolver = new EntityNameResolver(getServiceManager(), getPolicyAdmin(), getTrustedCertManager(), getResourceAdmin(), getFolderAdmin());
+            entityNameResolver = new EntityNameResolver(getServiceManager(), getPolicyAdmin(), getTrustedCertManager(), getResourceAdmin(), getFolderAdmin(), TopComponents.getInstance().getAssertionRegistry());
         }
         return entityNameResolver;
     }

@@ -2,6 +2,7 @@ package com.l7tech.console.security.rbac;
 
 import com.l7tech.console.panels.FilterPanel;
 import com.l7tech.console.policy.ConsoleAssertionRegistry;
+import com.l7tech.console.util.EntityNameResolver;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.SecurityZoneUtil;
 import com.l7tech.console.util.TopComponents;
@@ -64,6 +65,8 @@ public class AssignSecurityZonesDialog extends JDialog {
     private EntitiesTableModel dataModel = new EntitiesTableModel(new String[]{"", "Name", "Current Zone", "Path"}, new Object[][]{});
     private Map<EntityType, List<SecurityZone>> entityTypes;
     private TableColumn pathColumn;
+    // key = assertion access oid, value = class name
+    private Map<Long, String> assertionNames = new HashMap<>();
 
     /**
      * @param owner       owner of this Dialog.
@@ -195,14 +198,7 @@ public class AssignSecurityZonesDialog extends JDialog {
         entitiesTable.getColumnModel().getColumn(HEADER_COL_INDEX).setCellRenderer(new DefaultTableCellRenderer() {
             @Override
             protected void setValue(final Object value) {
-                final EntityHeader header = (EntityHeader) value;
-                String name;
-                try {
-                    name = Registry.getDefault().getEntityNameResolver().getNameForHeader(header, false);
-                } catch (final FindException e) {
-                    name = "unknown entity";
-                }
-                setText(name);
+                setText(((EntityHeader) value).getName());
             }
         });
         entitiesTable.getColumnModel().getColumn(ZONE_COL_INDEX).setCellRenderer(new DefaultTableCellRenderer() {
@@ -289,6 +285,7 @@ public class AssignSecurityZonesDialog extends JDialog {
         EntityType selected = getSelectedEntityType();
         if (selected != null) {
             selected = convertToBackingEntityType(selected);
+            final EntityNameResolver entityNameResolver = Registry.getDefault().getEntityNameResolver();
             try {
                 final EntityHeaderSet<EntityHeader> entities = getEntities(selected);
                 boolean atLeastOnePath = false;
@@ -301,12 +298,17 @@ public class AssignSecurityZonesDialog extends JDialog {
                             // don't show service policies or non-zoneable policies
                             continue;
                         }
+                    } else if (header.getType() == EntityType.ASSERTION_ACCESS) {
+                        final String assertionClassName = header.getName();
+                        assertionNames.put(header.getOid(), assertionClassName);
                     }
+                    final String displayName = entityNameResolver.getNameForHeader(header, false);
+                    header.setName(displayName);
                     final Object[] data = new Object[4];
                     data[CHECK_BOX_COL_INDEX] = Boolean.FALSE;
                     data[HEADER_COL_INDEX] = header;
                     if (header instanceof HasFolderOid) {
-                        data[PATH_COL_INDEX] = Registry.getDefault().getEntityNameResolver().getPath((HasFolderOid) header);
+                        data[PATH_COL_INDEX] = entityNameResolver.getPath((HasFolderOid) header);
                         if (!atLeastOnePath) {
                             atLeastOnePath = true;
                         }
@@ -421,9 +423,12 @@ public class AssignSecurityZonesDialog extends JDialog {
                         final EntityHeader header = entry.getValue();
                         if (header.getOid() < 0) {
                             // save a new assertion access
-                            final AssertionAccess assertionAccess = new AssertionAccess(header.getName());
+                            final String assertionClassName = assertionNames.get(header.getOid());
+                            final AssertionAccess assertionAccess = new AssertionAccess(assertionClassName);
                             assertionAccess.setSecurityZone(selectedZone);
                             final long savedOid = rbacAdmin.saveAssertionAccess(assertionAccess);
+                            assertionNames.remove(header.getOid());
+                            assertionNames.put(savedOid, assertionClassName);
                             header.setOid(savedOid);
                             dataModel.setValueAt(header, entry.getKey(), HEADER_COL_INDEX);
                         } else {
