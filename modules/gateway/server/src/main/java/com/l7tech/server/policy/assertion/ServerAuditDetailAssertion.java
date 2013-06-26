@@ -46,7 +46,7 @@ public class ServerAuditDetailAssertion extends AbstractServerAssertion<AuditDet
         final String customLoggerSuffix = assertion.getCustomLoggerSuffix();
         String loggerName = customLoggerSuffix != null ? "com.l7tech.log.custom." + customLoggerSuffix : ServerAuditDetailAssertion.class.getName();
 
-        final String loggerNameVars[] = Syntax.getReferencedNames(loggerName);
+        final String loggerNameVars[] = Syntax.getReferencedNamesIndexedVarsNotOmitted(loggerName);
         final StringBuilder varsNotExisting = new StringBuilder(0);
         final StringBuilder varsWithInvalidPackageName = new StringBuilder(0);
 
