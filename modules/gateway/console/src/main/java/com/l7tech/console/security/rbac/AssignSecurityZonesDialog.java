@@ -15,6 +15,7 @@ import com.l7tech.objectmodel.folder.HasFolderOid;
 import com.l7tech.policy.AssertionAccess;
 import com.l7tech.policy.PolicyHeader;
 import com.l7tech.policy.PolicyType;
+import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.util.ExceptionUtils;
 import org.apache.commons.collections.ComparatorUtils;
 import org.apache.commons.lang.StringUtils;
@@ -298,7 +299,8 @@ public class AssignSecurityZonesDialog extends JDialog {
                             // don't show service policies or non-zoneable policies
                             continue;
                         }
-                    } else if (header.getType() == EntityType.ASSERTION_ACCESS) {
+                    }
+                    if (header.getType() == EntityType.ASSERTION_ACCESS) {
                         final String assertionClassName = header.getName();
                         assertionNames.put(header.getOid(), assertionClassName);
                     }
@@ -307,22 +309,12 @@ public class AssignSecurityZonesDialog extends JDialog {
                     final Object[] data = new Object[4];
                     data[CHECK_BOX_COL_INDEX] = Boolean.FALSE;
                     data[HEADER_COL_INDEX] = header;
-                    if (header instanceof HasFolderOid) {
-                        data[PATH_COL_INDEX] = entityNameResolver.getPath((HasFolderOid) header);
-                        if (!atLeastOnePath) {
-                            atLeastOnePath = true;
-                        }
-                    } else {
-                        data[PATH_COL_INDEX] = StringUtils.EMPTY;
+                    final String path = getPathForHeader(header);
+                    if (StringUtils.isNotBlank(path)) {
+                        data[PATH_COL_INDEX] = path;
+                        atLeastOnePath = true;
                     }
-                    SecurityZone zone = SecurityZoneUtil.NULL_ZONE;
-                    if (header instanceof HasSecurityZoneOid) {
-                        final Long securityZoneOid = ((HasSecurityZoneOid) header).getSecurityZoneOid();
-                        if (securityZoneOid != null) {
-                            zone = SecurityZoneUtil.getSecurityZoneByOid(securityZoneOid);
-                        }
-                    }
-                    data[ZONE_COL_INDEX] = zone;
+                    data[ZONE_COL_INDEX] = getZoneForHeader(header);
                     dataModel.addRow(data);
                 }
 
@@ -334,6 +326,32 @@ public class AssignSecurityZonesDialog extends JDialog {
                 DialogDisplayer.showMessageDialog(this, error, "Error", JOptionPane.ERROR_MESSAGE, null);
             }
         }
+    }
+
+    private SecurityZone getZoneForHeader(final EntityHeader header) {
+        SecurityZone zone = SecurityZoneUtil.NULL_ZONE;
+        if (header instanceof HasSecurityZoneOid) {
+            final Long securityZoneOid = ((HasSecurityZoneOid) header).getSecurityZoneOid();
+            if (securityZoneOid != null) {
+                zone = SecurityZoneUtil.getSecurityZoneByOid(securityZoneOid);
+            }
+        }
+        return zone;
+    }
+
+    private String getPathForHeader(final EntityHeader header) throws FindException {
+        String path = StringUtils.EMPTY;
+        final EntityNameResolver entityNameResolver = Registry.getDefault().getEntityNameResolver();
+        final ConsoleAssertionRegistry assertionRegistry = TopComponents.getInstance().getAssertionRegistry();
+        if (header instanceof HasFolderOid) {
+            path = entityNameResolver.getPath((HasFolderOid) header);
+        } else if (header.getType() == EntityType.ASSERTION_ACCESS) {
+            final Assertion assertion = assertionRegistry.findByClassName(assertionNames.get(header.getOid()));
+            if (assertion != null) {
+                path = entityNameResolver.getPath(assertion);
+            }
+        }
+        return path;
     }
 
     private EntityHeaderSet<EntityHeader> getEntities(@NotNull final EntityType selected) throws FindException {

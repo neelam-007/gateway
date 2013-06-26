@@ -1,5 +1,6 @@
 package com.l7tech.console.util;
 
+import com.l7tech.console.tree.PaletteFolderRegistry;
 import com.l7tech.gateway.common.admin.FolderAdmin;
 import com.l7tech.gateway.common.admin.PolicyAdmin;
 import com.l7tech.gateway.common.resources.HttpConfiguration;
@@ -19,7 +20,9 @@ import com.l7tech.objectmodel.folder.HasFolderOid;
 import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
+import com.l7tech.policy.assertion.ContentTypeAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
+import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
 import com.l7tech.test.BugId;
 import org.junit.Before;
 import org.junit.Test;
@@ -48,10 +51,12 @@ public class EntityNameResolverTest {
     private FolderAdmin folderAdmin;
     @Mock
     private AssertionRegistry assertionRegistry;
+    @Mock
+    private PaletteFolderRegistry folderRegistry;
 
     @Before
     public void setup() {
-        resolver = new EntityNameResolver(serviceAdmin, policyAdmin, trustedCertAdmin, resourceAdmin, folderAdmin, assertionRegistry);
+        resolver = new EntityNameResolver(serviceAdmin, policyAdmin, trustedCertAdmin, resourceAdmin, folderAdmin, assertionRegistry, folderRegistry);
     }
 
     @Test
@@ -272,6 +277,24 @@ public class EntityNameResolverTest {
     public void getNameForAssertionAccessMissingClassNameOnHeader() throws Exception {
         final EntityHeader assertionHeader = new EntityHeader(OID, EntityType.ASSERTION_ACCESS, null, null);
         assertTrue(resolver.getNameForHeader(assertionHeader).isEmpty());
+    }
+
+    @Test
+    public void getPathForAssertion() throws Exception {
+        when(folderRegistry.getPaletteFolderName("threatProtection")).thenReturn("Threat Protection");
+        when(folderRegistry.getPaletteFolderName("xml")).thenReturn("Message Validation/Transformation");
+        assertEquals("Threat Protection,Message Validation/Transformation", resolver.getPath(new ContentTypeAssertion()));
+    }
+
+    @Test
+    public void getPathForAssertionCannotFindFolderName() throws Exception {
+        when(folderRegistry.getPaletteFolderName("policyLogic")).thenReturn(null);
+        assertEquals("unknown folder", resolver.getPath(new AllAssertion()));
+    }
+
+    @Test
+    public void getPathForAssertionNoFolders() throws Exception {
+        assertTrue(resolver.getPath(new RequireWssSaml()).isEmpty());
     }
 
     private class HasFolderStub implements HasFolder {

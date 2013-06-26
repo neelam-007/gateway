@@ -380,7 +380,13 @@ public final class RegistryImpl extends Registry
     public EntityNameResolver getEntityNameResolver() {
         checkAdminContext();
         if (entityNameResolver == null) {
-            entityNameResolver = new EntityNameResolver(getServiceManager(), getPolicyAdmin(), getTrustedCertManager(), getResourceAdmin(), getFolderAdmin(), TopComponents.getInstance().getAssertionRegistry());
+            entityNameResolver = new EntityNameResolver(getServiceManager(),
+                    getPolicyAdmin(),
+                    getTrustedCertManager(),
+                    getResourceAdmin(),
+                    getFolderAdmin(),
+                    TopComponents.getInstance().getAssertionRegistry(),
+                    TopComponents.getInstance().getPaletteFolderRegistry());
         }
         return entityNameResolver;
     }

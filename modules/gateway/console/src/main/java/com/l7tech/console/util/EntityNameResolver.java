@@ -1,5 +1,6 @@
 package com.l7tech.console.util;
 
+import com.l7tech.console.tree.PaletteFolderRegistry;
 import com.l7tech.gateway.common.admin.FolderAdmin;
 import com.l7tech.gateway.common.admin.PolicyAdmin;
 import com.l7tech.gateway.common.resources.HttpConfiguration;
@@ -25,7 +26,9 @@ import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -48,19 +51,22 @@ public class EntityNameResolver {
     private final ResourceAdmin resourceAdmin;
     private final FolderAdmin folderAdmin;
     private final AssertionRegistry assertionRegistry;
+    private final PaletteFolderRegistry folderRegistry;
 
     public EntityNameResolver(@NotNull final ServiceAdmin serviceAdmin,
                               @NotNull final PolicyAdmin policyAdmin,
                               @NotNull final TrustedCertAdmin trustedCertAdmin,
                               @NotNull final ResourceAdmin resourceAdmin,
                               @NotNull final FolderAdmin folderAdmin,
-                              @NotNull final AssertionRegistry assertionRegistry) {
+                              @NotNull final AssertionRegistry assertionRegistry,
+                              @NotNull final PaletteFolderRegistry folderRegistry) {
         this.serviceAdmin = serviceAdmin;
         this.policyAdmin = policyAdmin;
         this.trustedCertAdmin = trustedCertAdmin;
         this.resourceAdmin = resourceAdmin;
         this.folderAdmin = folderAdmin;
         this.assertionRegistry = assertionRegistry;
+        this.folderRegistry = folderRegistry;
     }
 
     /**
@@ -116,7 +122,7 @@ public class EntityNameResolver {
                 case ASSERTION_ACCESS:
                     if (header.getName() != null) {
                         final Assertion assertion = assertionRegistry.findByClassName(header.getName());
-                        name = assertion ==  null ? header.getName() : String.valueOf(assertion.meta().get(AssertionMetadata.SHORT_NAME));
+                        name = assertion == null ? header.getName() : String.valueOf(assertion.meta().get(AssertionMetadata.SHORT_NAME));
                     }
                     break;
                 default:
@@ -195,6 +201,27 @@ public class EntityNameResolver {
             folder = folderAdmin.findByPrimaryKey(hasFolder.getFolderOid());
         }
         return getPathForFolder(folder);
+    }
+
+    @NotNull
+    public String getPath(@NotNull final Assertion assertion) {
+        String path = StringUtils.EMPTY;
+        final Object paletteFolders = assertion.meta().get(AssertionMetadata.PALETTE_FOLDERS);
+        if (paletteFolders instanceof String[]) {
+            final String[] folderIds = (String[]) paletteFolders;
+            final List<String> folderNames = new ArrayList<>(folderIds.length);
+            for (int i = 0; i < folderIds.length; i++) {
+                final String folderId = folderIds[i];
+                final String folderName = folderRegistry.getPaletteFolderName(folderId);
+                if (folderName != null) {
+                    folderNames.add(folderName);
+                } else {
+                    folderNames.add("unknown folder");
+                }
+            }
+            path = StringUtils.join(folderNames, ",");
+        }
+        return path;
     }
 
     /**
