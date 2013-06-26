@@ -24,7 +24,7 @@ public class PublishedServiceAlias extends Alias<PublishedService> {
 
     public PublishedServiceAlias( final PublishedService pService,
                                   final Folder folder) {
-        super(pService, folder, pService == null ? null : pService.getSecurityZone());
+        super(pService, folder, pService == null ? null : pService.getSecurityZone() == null || !pService.getSecurityZone().permitsEntityType(EntityType.SERVICE_ALIAS) ? null : pService.getSecurityZone());
     }
 
     public PublishedServiceAlias( final ServiceHeader pService,

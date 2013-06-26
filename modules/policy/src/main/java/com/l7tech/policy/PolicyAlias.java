@@ -23,7 +23,7 @@ public class PolicyAlias extends Alias<Policy> {
     protected PolicyAlias() { }
 
     public PolicyAlias( final Policy policy, final Folder folder ) {
-        super(policy, folder, policy.getSecurityZone());
+        super(policy, folder, policy.getSecurityZone() == null || !policy.getSecurityZone().permitsEntityType(EntityType.POLICY_ALIAS)? null : policy.getSecurityZone());
     }
 
     public PolicyAlias( final PolicyHeader policy, final Folder folder, @Nullable final SecurityZone securityZone) {

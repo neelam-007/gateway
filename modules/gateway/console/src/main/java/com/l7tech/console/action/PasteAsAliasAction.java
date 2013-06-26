@@ -135,11 +135,11 @@ public class PasteAsAliasAction extends SecureAction {
             try {
                 if ( eh instanceof ServiceHeader ) {
                     header = new ServiceHeader((ServiceHeader)eh);
-                    final PublishedServiceAlias psa = new PublishedServiceAlias((ServiceHeader)eh, parentFolder, getSecurityZoneFromHeader((ServiceHeader)eh));
+                    final PublishedServiceAlias psa = new PublishedServiceAlias((ServiceHeader)eh, parentFolder, getSecurityZoneFromHeader((ServiceHeader)eh, EntityType.SERVICE_ALIAS));
                     aliasOid = Registry.getDefault().getServiceManager().saveAlias(psa);
                 } else if ( eh instanceof PolicyHeader  ) {
                     header = new PolicyHeader((PolicyHeader)eh);
-                    final PolicyAlias pa = new PolicyAlias((PolicyHeader)eh, parentFolder, getSecurityZoneFromHeader((PolicyHeader)eh));
+                    final PolicyAlias pa = new PolicyAlias((PolicyHeader)eh, parentFolder, getSecurityZoneFromHeader((PolicyHeader)eh, EntityType.POLICY_ALIAS));
                     aliasOid = Registry.getDefault().getPolicyAdmin().saveAlias(pa);
                 } else {
                     throw new IllegalStateException("Referent was neither a Policy nor a Service");
@@ -164,13 +164,16 @@ public class PasteAsAliasAction extends SecureAction {
     }
 
     @Nullable
-    private SecurityZone getSecurityZoneFromHeader(@NotNull final HasSecurityZoneOid eh) {
-        SecurityZone securityZone = null;
-        final Long securityZoneOid = eh.getSecurityZoneOid();
+    private SecurityZone getSecurityZoneFromHeader(@NotNull final HasSecurityZoneOid header, @NotNull final EntityType aliasType) {
+        SecurityZone zone = null;
+        final Long securityZoneOid = header.getSecurityZoneOid();
         if (securityZoneOid != null) {
-            securityZone = SecurityZoneUtil.getSecurityZoneByOid(securityZoneOid);
+            final SecurityZone headerZone = SecurityZoneUtil.getSecurityZoneByOid(securityZoneOid);
+            if (headerZone != null && headerZone.permitsEntityType(aliasType)) {
+                zone = headerZone;
+            }
         }
-        return securityZone;
+        return zone;
     }
 
     private boolean aliasExistsInFolder( final NullaryThrows<Alias<?>,FindException> aliasLookup,
