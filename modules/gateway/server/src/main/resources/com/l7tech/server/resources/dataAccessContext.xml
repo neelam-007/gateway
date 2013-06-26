@@ -76,6 +76,7 @@
         <constructor-arg index="0">
             <map>
                 <entry key="layer7-generator" value="com.l7tech.server.util.ConfiguredSessionFactoryBean$ConfiguredHiLoGenerator"/>
+                <entry key="layer7-goid-generator" value="com.l7tech.server.util.ConfiguredSessionFactoryBean$ConfiguredGOIDGenerator"/>
             </map>
         </constructor-arg>
         <property name="mappingResources">
