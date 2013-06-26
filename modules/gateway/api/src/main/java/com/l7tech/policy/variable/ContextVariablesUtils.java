@@ -7,12 +7,14 @@ import java.util.regex.Pattern;
 
 /*
 * A utility class for context variables.
-*
-* Developer Notes:
-* - Do not change the signature of methods in this class. (backward compatibility)
-* - Do not add new methods to this class unnecessarily. Only add methods that are truly needed in the API.
 */
 public final class ContextVariablesUtils {
+
+    /**
+     * Developer Notes:
+     * - Do not change the signature of methods in this class. (backward compatibility)
+     * - Do not add new methods to this class unnecessarily. Only add methods that are truly needed in the API.
+     */
 
     private static final String REGEX_PREFIX = "(?:\\$\\{)";
     private static final String REGEX_SUFFIX = "(?:\\})";
