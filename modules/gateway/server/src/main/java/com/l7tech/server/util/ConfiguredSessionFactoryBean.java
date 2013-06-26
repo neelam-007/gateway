@@ -2,9 +2,6 @@ package com.l7tech.server.util;
 
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.GoidEntity;
-import com.l7tech.objectmodel.PersistentEntity;
-import com.l7tech.util.ArrayUtils;
-import com.l7tech.util.HexUtils;
 import com.l7tech.util.RandomUtil;
 import org.hibernate.HibernateException;
 import org.hibernate.MappingException;
@@ -20,9 +17,6 @@ import org.jetbrains.annotations.Nullable;
 import org.springframework.orm.hibernate3.annotation.AnnotationSessionFactoryBean;
 
 import java.io.Serializable;
-import java.nio.ByteBuffer;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -89,14 +83,16 @@ public class ConfiguredSessionFactoryBean extends AnnotationSessionFactoryBean {
                 hi.incrementAndGet();
             }
 
+            // use an existing goid if one is given.
             if (o instanceof GoidEntity &&
-                    ((GoidEntity) o).getGoid() != GoidEntity.DEFAULT_GOID) {
+                    !GoidEntity.DEFAULT_GOID.equals(((GoidEntity) o).getGoid())) {
                 return ((GoidEntity) o).getGoid();
             }
             return new Goid(hi.get(), low.getAndIncrement());
         }
 
         protected static long getRandomLong(){
+            //TODO: add nextLong to the RandomUtil
             return ((long) (RandomUtil.nextInt(Integer.MAX_VALUE)) << 32) + RandomUtil.nextInt(Integer.MAX_VALUE);
         }
     }
