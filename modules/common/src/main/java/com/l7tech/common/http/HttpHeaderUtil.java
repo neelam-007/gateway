@@ -1,7 +1,9 @@
 package com.l7tech.common.http;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.List;
 import java.util.regex.Pattern;
 
 /**
@@ -29,5 +31,64 @@ public class HttpHeaderUtil {
         // We'll deal with only the simplest subset of valid header values (no identity or qvalue preferences),
         // defaulting to false if there is any doubt.
         return header != null && ACCEPT_GZIP.matcher(header).find();
+    }
+
+    /**
+     * bug fix for SSG-6921
+     * searches one header value out of multiple according to search rules
+     * - Accepted values are: off, first, last, 0, 1, 2, 3, ...n,  -1, -2, -3, ...
+     * - Positive values define index from head
+     * - Negative values specify index from tail
+     * - When search rule is "off" or null, value is treated as a single header value
+     * and GenericHttpException is thrown if multiple headers found
+     * @param headers - HttpHeaders
+     * @param name - String header name
+     * @param searchRule- String see explanation above
+     * @return - String value of the header
+     * @throws GenericHttpException
+     */
+    public static String searchHeaderValue(@NotNull final HttpHeaders headers, @NotNull final String name, @Nullable final String searchRule) throws GenericHttpException {
+        String val = null;
+        //use header rules to get the proper header out of the multiple headers
+        if(searchRule != null && !searchRule.trim().equalsIgnoreCase("off")) {
+            List<String> vals = headers.getValues(name);
+            if(!vals.isEmpty()) {
+                String rule = searchRule.trim().toLowerCase();
+                try {
+                    final int lastIndex = vals.size() - 1;
+                    //get the first value
+                    if(rule.equals("first") || rule.equals("0")) {
+                        val = vals.get(0);
+                    }
+                    else {
+                        //get the last value
+                        if(rule.equals("last") || rule.equals(Integer.toString(lastIndex))) {
+                            val = vals.get(lastIndex);
+                        }
+                        else {
+                            //get numerical value of the header
+                            try {
+                                int i =  Integer.parseInt(rule);
+                                if(i > 0) {
+                                    val = vals.get(i);
+                                }
+                                else {
+                                    val = vals.get(lastIndex + i); //negative values means we searching from tail
+                                }
+                            } catch (NumberFormatException e) {
+                                throw new GenericHttpException("Cannot parse header " + name + " index " + rule);
+                            }
+                        }
+                    }
+                } catch (IndexOutOfBoundsException e) {
+                    throw new GenericHttpException("Incorrect header index (" + rule +  ") found for header " + name);
+                }
+            }
+        }
+        else {
+            val = headers.getOnlyOneValue(name);//default behavior does not expect more then one header value
+        }
+
+        return val;
     }
 }
