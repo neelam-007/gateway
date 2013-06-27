@@ -107,6 +107,9 @@ public class SecurityZoneEntitiesPanel extends JPanel {
                         } catch (final FindException e) {
                             logger.log(Level.WARNING, "Unable to determine name for entity: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
                             return "unknown entity";
+                        } catch (final PermissionDeniedException e) {
+                            logger.log(Level.WARNING, "Unable to determine name for entity: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                            return "name unavailable";
                         }
                     }
                 }),

@@ -81,6 +81,8 @@ public class EntityNameResolver {
      * @return a name for the given EntityHeader which may include a name and/or folder path and/or other unique info. Cannot be null.
      *         Can be empty if the name on the header is empty/null and the resolver does not know how to look up the referenced entity.
      * @throws FindException if a db error occurs or the entity referenced by the header does not exist.
+     * @throws com.l7tech.gateway.common.security.rbac.PermissionDeniedException
+     *                       if the user does not have permission to access an entity required to resolve the name
      */
     @NotNull
     public String getNameForHeader(@NotNull final EntityHeader header, final boolean includePath) throws FindException {
@@ -156,36 +158,6 @@ public class EntityNameResolver {
     }
 
     /**
-     * Some entity types may require other info than its name and/or path to make it unique from others.
-     */
-    private String getUniqueInfo(@NotNull final EntityHeader header, @Nullable final Entity retrievedEntity) {
-        String extraInfo = StringUtils.EMPTY;
-        if (header.getType() != null) {
-            switch (header.getType()) {
-                case SERVICE:
-                    if (header instanceof ServiceHeader) {
-                        final ServiceHeader serviceHeader = (ServiceHeader) header;
-                        if (serviceHeader.getRoutingUri() != null) {
-                            extraInfo = serviceHeader.getRoutingUri();
-                        }
-                    }
-                    break;
-                case SERVICE_ALIAS:
-                    if (retrievedEntity instanceof PublishedService) {
-                        final PublishedService service = (PublishedService) retrievedEntity;
-                        if (service.getRoutingUri() != null) {
-                            extraInfo = service.getRoutingUri();
-                        }
-                    }
-                    break;
-                default:
-                    extraInfo = StringUtils.EMPTY;
-            }
-        }
-        return extraInfo;
-    }
-
-    /**
      * Get the folder path for a HasFolderOid which can have a reference to a Folder.
      * <p/>
      * The path will always start with '/' to represent the root folder (even if the given HasFolderOid does not reference any Folder).
@@ -193,6 +165,8 @@ public class EntityNameResolver {
      * @param hasFolder the HasFolderOid which can have a reference to a Folder (most likely a header).
      * @return the folder path for the HasFolderOid or '/' if no Folder is referenced.
      * @throws FindException if there is an error looking up the Folder referenced by the HasFolderOid.
+     * @throws com.l7tech.gateway.common.security.rbac.PermissionDeniedException
+     *                       if the user does not have permission to access an entity required to resolve the path
      */
     @NotNull
     public String getPath(@NotNull final HasFolderOid hasFolder) throws FindException {
@@ -235,6 +209,36 @@ public class EntityNameResolver {
     @NotNull
     public String getPath(@NotNull final HasFolder hasFolder) {
         return getPathForFolder(hasFolder.getFolder());
+    }
+
+    /**
+     * Some entity types may require other info than its name and/or path to make it unique from others.
+     */
+    private String getUniqueInfo(@NotNull final EntityHeader header, @Nullable final Entity retrievedEntity) {
+        String extraInfo = StringUtils.EMPTY;
+        if (header.getType() != null) {
+            switch (header.getType()) {
+                case SERVICE:
+                    if (header instanceof ServiceHeader) {
+                        final ServiceHeader serviceHeader = (ServiceHeader) header;
+                        if (serviceHeader.getRoutingUri() != null) {
+                            extraInfo = serviceHeader.getRoutingUri();
+                        }
+                    }
+                    break;
+                case SERVICE_ALIAS:
+                    if (retrievedEntity instanceof PublishedService) {
+                        final PublishedService service = (PublishedService) retrievedEntity;
+                        if (service.getRoutingUri() != null) {
+                            extraInfo = service.getRoutingUri();
+                        }
+                    }
+                    break;
+                default:
+                    extraInfo = StringUtils.EMPTY;
+            }
+        }
+        return extraInfo;
     }
 
     private String resolvePath(@NotNull final EntityHeader header, @Nullable final Entity retrievedEntity) throws FindException {

@@ -6,6 +6,7 @@ import com.l7tech.console.util.EntityNameResolver;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.SecurityZoneUtil;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.gateway.common.security.rbac.RbacAdmin;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
@@ -304,18 +305,22 @@ public class AssignSecurityZonesDialog extends JDialog {
                         final String assertionClassName = header.getName();
                         assertionNames.put(header.getOid(), assertionClassName);
                     }
-                    final String displayName = entityNameResolver.getNameForHeader(header, false);
-                    header.setName(displayName);
-                    final Object[] data = new Object[4];
-                    data[CHECK_BOX_COL_INDEX] = Boolean.FALSE;
-                    data[HEADER_COL_INDEX] = header;
-                    final String path = getPathForHeader(header);
-                    if (StringUtils.isNotBlank(path)) {
-                        data[PATH_COL_INDEX] = path;
-                        atLeastOnePath = true;
+                    try {
+                        final String displayName = entityNameResolver.getNameForHeader(header, false);
+                        header.setName(displayName);
+                        final Object[] data = new Object[4];
+                        data[CHECK_BOX_COL_INDEX] = Boolean.FALSE;
+                        data[HEADER_COL_INDEX] = header;
+                        final String path = getPathForHeader(header);
+                        if (StringUtils.isNotBlank(path)) {
+                            data[PATH_COL_INDEX] = path;
+                            atLeastOnePath = true;
+                        }
+                        data[ZONE_COL_INDEX] = getZoneForHeader(header);
+                        dataModel.addRow(data);
+                    } catch (final PermissionDeniedException e) {
+                        logger.log(Level.WARNING, "Skipping row because unable to resolve display info for header " + header + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
                     }
-                    data[ZONE_COL_INDEX] = getZoneForHeader(header);
-                    dataModel.addRow(data);
                 }
 
                 showHidePathColumn(atLeastOnePath);
@@ -343,13 +348,18 @@ public class AssignSecurityZonesDialog extends JDialog {
         String path = StringUtils.EMPTY;
         final EntityNameResolver entityNameResolver = Registry.getDefault().getEntityNameResolver();
         final ConsoleAssertionRegistry assertionRegistry = TopComponents.getInstance().getAssertionRegistry();
-        if (header instanceof HasFolderOid) {
-            path = entityNameResolver.getPath((HasFolderOid) header);
-        } else if (header.getType() == EntityType.ASSERTION_ACCESS) {
-            final Assertion assertion = assertionRegistry.findByClassName(assertionNames.get(header.getOid()));
-            if (assertion != null) {
-                path = entityNameResolver.getPath(assertion);
+        try {
+            if (header instanceof HasFolderOid) {
+                path = entityNameResolver.getPath((HasFolderOid) header);
+            } else if (header.getType() == EntityType.ASSERTION_ACCESS) {
+                final Assertion assertion = assertionRegistry.findByClassName(assertionNames.get(header.getOid()));
+                if (assertion != null) {
+                    path = entityNameResolver.getPath(assertion);
+                }
             }
+        } catch (final PermissionDeniedException e) {
+            logger.log(Level.WARNING, "Unable to determine path for header: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            path = "path unavailable";
         }
         return path;
     }
