@@ -589,13 +589,16 @@ public class PolicyBundleInstallerTest {
 
         final List<String> missingAssertions = dryRunEvent.getMissingAssertions();
         assertFalse((missingAssertions.isEmpty()));
-        assertEquals(2, certificateConflict.size());
+        assertEquals(2, missingAssertions.size());
 
         final List<String> jdbcConnsThatDontExist = dryRunEvent.getJdbcConnsThatDontExist();
         assertFalse(jdbcConnsThatDontExist.isEmpty());
         assertEquals(1, jdbcConnsThatDontExist.size());
 
         assertTrue(jdbcConnsThatDontExist.contains("OAuth"));
+
+        context.setCheckingAssertionExistenceRequired(false);
+        installer.dryRunInstallBundle(dryRunEvent);
     }
 
     @Test

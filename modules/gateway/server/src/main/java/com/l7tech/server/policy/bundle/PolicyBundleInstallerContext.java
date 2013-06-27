@@ -87,6 +87,10 @@ public class PolicyBundleInstallerContext {
         return checkingAssertionExistenceRequired;
     }
 
+    public void setCheckingAssertionExistenceRequired(boolean checkingAssertionExistenceRequired) {
+        this.checkingAssertionExistenceRequired = checkingAssertionExistenceRequired;
+    }
+
     // - PRIVATE
 
     private static final long ROOT_FOLDER_OID = -5002L;
@@ -101,5 +105,5 @@ public class PolicyBundleInstallerContext {
     @NotNull
     final BundleResolver bundleResolver;
 
-    private final boolean checkingAssertionExistenceRequired;
+    private boolean checkingAssertionExistenceRequired;
 }
