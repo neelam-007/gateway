@@ -3,6 +3,7 @@ package com.l7tech.console.security.rbac;
 import com.l7tech.console.panels.FilterPanel;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.SecurityZoneUtil;
+import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.gateway.common.security.rbac.RbacAdmin;
 import com.l7tech.gui.SimpleTableModel;
 import com.l7tech.gui.util.DialogDisplayer;
@@ -119,6 +120,9 @@ public class SecurityZoneEntitiesPanel extends JPanel {
                             } catch (final FindException e) {
                                 logger.log(Level.WARNING, "Unable to determine path for entity: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
                                 return "unknown path";
+                            } catch (final PermissionDeniedException e) {
+                                logger.log(Level.WARNING, "Unable to determine path for entity: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                                return "path unavailable";
                             }
                         }
                         return path;
