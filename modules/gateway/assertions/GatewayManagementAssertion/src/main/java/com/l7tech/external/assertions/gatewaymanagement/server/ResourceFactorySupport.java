@@ -3,25 +3,16 @@ package com.l7tech.external.assertions.gatewaymanagement.server;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.identity.User;
-import com.l7tech.objectmodel.Entity;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.ObjectModelException;
-import com.l7tech.objectmodel.PersistentEntity;
+import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.folder.HasFolder;
 import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.security.rbac.SecurityFilter;
 import com.l7tech.server.util.JaasUtils;
 import com.l7tech.util.BeanUtils;
 import com.l7tech.util.ConfigFactory;
-import static com.l7tech.util.Eithers.isSuccess;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions.UnaryThrows;
 import com.l7tech.util.Option;
-import static com.l7tech.util.Option.none;
-import static com.l7tech.util.Option.optional;
-import static com.l7tech.util.Option.some;
-import static com.l7tech.util.TextUtils.trim;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.dao.DataAccessException;
@@ -39,6 +30,10 @@ import java.beans.PropertyDescriptor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
+
+import static com.l7tech.util.Eithers.isSuccess;
+import static com.l7tech.util.Option.*;
+import static com.l7tech.util.TextUtils.trim;
 
 /**
  *
@@ -190,6 +185,82 @@ abstract class ResourceFactorySupport<R> implements ResourceFactory<R> {
     }
 
     /**
+     * Get the properties map for the given object.
+     *
+     * @param bean The bean to extract properties from (required)
+     * @param beanClass The class of the bean (required)
+     * @return The map of property names to values (not null)
+     * @throws ResourceAccessException if the type of a property is not supported or an unknown property is found.
+     */
+    protected final <B extends GoidEntity> Map<String,Object> getProperties( final B bean, final Class<B> beanClass ) {
+        return getProperties( null, bean, beanClass );
+    }
+
+    /**
+     * Get the properties map for the given object.
+     *
+     * @param initialProperties The initial properties to use (optional)
+     * @param bean The bean to extract properties from (required)
+     * @param beanClass The class of the bean (required)
+     * @return The map of property names to values (not null)
+     * @throws ResourceAccessException if the type of a property is not supported or an unknown property is found.
+     */
+    protected final <B extends GoidEntity> Map<String,Object> getProperties( @Nullable final Map<String,Object> initialProperties,
+                                                                                   @NotNull  final B bean,
+                                                                                   @NotNull  final Class<B> beanClass ) {
+        final Map<String,Object> propertyMap = new HashMap<String,Object>();
+
+        if ( initialProperties != null ) {
+            propertyMap.putAll( initialProperties );
+        }
+
+        try {
+            final Collection<String> ignoredProperties = propertiesHelper.getIgnoredProperties(beanClass);
+            final Collection<String> writeOnlyProperties = propertiesHelper.getWriteOnlyProperties(beanClass);
+            final Map<String,String> propertyMapping = propertiesHelper.getPropertiesMap(beanClass);
+            final Set<PropertyDescriptor> properties = BeanUtils.omitProperties(
+                    BeanUtils.getProperties( beanClass ),
+                    ignoredProperties.toArray(new String[ignoredProperties.size()]));
+
+            for ( final PropertyDescriptor prop : properties ) {
+                if ( writeOnlyProperties.contains( prop.getName() ) ) {
+                    continue;
+                }
+                if ( !propertyMapping.containsKey(prop.getName()) ) {
+                    throw new ResourceAccessException( "Unknown entity property '"+prop.getName()+"'." );
+                }
+
+                final String mappedName = propertyMapping.get(prop.getName()) != null ? propertyMapping.get(prop.getName()) : prop.getName();
+                final Object value = prop.getReadMethod().invoke(bean);
+                if ( value == null ) {
+                    // skip null property
+                } else if ( value instanceof Boolean ||
+                        value instanceof Number ||
+                        value instanceof String ||
+                        value instanceof Date ) {
+                    propertyMap.put( mappedName, value );
+                } else if ( value instanceof Enum ) {
+                    propertyMap.put( mappedName, EntityPropertiesHelper.getEnumText( (Enum) value ) );
+                } else {
+                    throw new ResourceAccessException("Unsupported property type '" + value.getClass() + "'." );
+                }
+            }
+        } catch ( InvocationTargetException e ) {
+            throw new ResourceAccessException(e.getCause());
+        } catch ( IllegalAccessException e ) {
+            throw new ResourceAccessException(e);
+        } catch ( RuntimeException re ) {
+            if ( ExceptionUtils.causedBy( re, IntrospectionException.class )) {
+                throw new ResourceAccessException(re);
+            } else {
+                throw re;
+            }
+        }
+
+        return propertyMap;
+    }
+
+    /**
      * Set the properties for the given object from the given properties map.
      *
      * @param bean The bean to set the properties of (required)
@@ -199,6 +270,66 @@ abstract class ResourceFactorySupport<R> implements ResourceFactory<R> {
      */
     @SuppressWarnings({ "unchecked" })
     protected final <B extends PersistentEntity> void setProperties( final B bean,
+                                                                     final Map<String,Object> propertiesMap,
+                                                                     final Class<? extends B> beanClass ) throws InvalidResourceException {
+        try {
+            final Collection<String> ignoredProperties = propertiesHelper.getIgnoredProperties(beanClass);
+            final Map<String,String> propertyMapping = propertiesHelper.getPropertiesMap(beanClass);
+            final Map<String,Object> propertyDefaults = propertiesHelper.getPropertyDefaultsMap(beanClass);
+            final Set<PropertyDescriptor> properties = BeanUtils.omitProperties(
+                    BeanUtils.getProperties( beanClass ),
+                    ignoredProperties.toArray(new String[ignoredProperties.size()]));
+
+            for ( final PropertyDescriptor prop : properties ) {
+                final String mappedName;
+                if ( propertyMapping.containsKey( prop.getName() ) ) {
+                    mappedName = propertyMapping.get(prop.getName()) != null ? propertyMapping.get(prop.getName()) : prop.getName();
+                } else {
+                    throw new ResourceAccessException( "Unknown entity property '"+prop.getName()+"'." );
+                }
+
+                Object value = propertiesMap != null ? propertiesMap.get( mappedName ) : null;
+                if ( value == null ) {
+                    value = propertyDefaults.get( prop.getName() );
+                }
+                final Method setter = prop.getWriteMethod();
+
+                final Class<?> parameterType = setter.getParameterTypes()[0];
+                if ( value != null && !parameterType.isPrimitive() && !parameterType.isAssignableFrom( value.getClass() ) ) {
+                    if ( value instanceof String && Enum.class.isAssignableFrom( parameterType ) ) {
+                        value = EntityPropertiesHelper.getEnumValue( (Class<? extends Enum>) parameterType, (String) value );
+                    } else {
+                        throw new InvalidResourceException( InvalidResourceException.ExceptionType.UNEXPECTED_TYPE, "Unsupported type '" + value.getClass() + "' for property '"+mappedName+"' (requires '"+parameterType+"')" );
+                    }
+                } else if ( value == null && parameterType.isPrimitive() ) {
+                    throw new InvalidResourceException( InvalidResourceException.ExceptionType.MISSING_VALUES, "Missing required property '" + mappedName + "'" );
+                }
+
+                setter.invoke( bean, value );
+            }
+        } catch ( RuntimeException re ) {
+            if ( ExceptionUtils.causedBy( re, IntrospectionException.class )) {
+                throw new ResourceAccessException(re);
+            } else {
+                throw re;
+            }
+        } catch ( InvocationTargetException e ) {
+            throw new ResourceAccessException(e.getCause());
+        } catch ( IllegalAccessException e ) {
+            throw new ResourceAccessException(e);
+        }
+    }
+
+    /**
+     * Set the properties for the given object from the given properties map.
+     *
+     * @param bean The bean to set the properties of (required)
+     * @param propertiesMap The map of properties to set (may be null)
+     * @param beanClass The class of the bean (required)
+     * @throws InvalidResourceException if a property is invalid or required but missing
+     */
+    @SuppressWarnings({ "unchecked" })
+    protected final <B extends GoidEntity> void setProperties( final B bean,
                                                                      final Map<String,Object> propertiesMap,
                                                                      final Class<? extends B> beanClass ) throws InvalidResourceException {
         try {

@@ -1,7 +1,8 @@
 package com.l7tech.objectmodel;
 
 /**
- * This was created: 6/25/13 as 9:39 AM
+ * The goid entity is similar to the persistent entity and will replace it.
+ * A goid entity is one that will be stored in the database.
  *
  * @author Victor Kazakov
  */

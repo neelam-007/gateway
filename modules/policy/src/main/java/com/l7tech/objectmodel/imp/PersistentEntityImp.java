@@ -12,6 +12,7 @@ import java.io.Serializable;
 /**
  * @author alex
  */
+@Deprecated //deprecated by com.l7tech.objectmodel.imp.GoidEntityImp
 @MappedSuperclass
 public abstract class PersistentEntityImp implements PersistentEntity, Serializable {
     protected PersistentEntityImp() {

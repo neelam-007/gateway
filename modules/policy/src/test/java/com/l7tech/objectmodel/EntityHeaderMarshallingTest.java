@@ -10,6 +10,7 @@ import org.junit.Test;
 
 import javax.xml.bind.JAXB;
 import java.util.Collections;
+import java.util.Random;
 
 /** @author alex */
 public class EntityHeaderMarshallingTest {
@@ -22,5 +23,15 @@ public class EntityHeaderMarshallingTest {
     @Test
     public void testIdentityHeader() throws Exception {
         JAXB.marshal(new IdentityHeader(1, "2", EntityType.USER, "username", "some user", null, null), System.out);
+    }
+
+    @Test
+    public void testGoidEntityHeader() throws Exception {
+        Random random = new Random();
+        byte[] bytes = new byte[16];
+        random.nextBytes(bytes);
+        Goid goid = new Goid(bytes);
+
+        JAXB.marshal(new EntityHeader(goid, EntityType.ANY, "myEntity", "myDescription", 1), System.out);
     }
 }

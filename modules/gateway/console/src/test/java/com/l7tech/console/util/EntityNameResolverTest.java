@@ -61,7 +61,7 @@ public class EntityNameResolverTest {
 
     @Test
     public void getNameForHeaderUsesNameOnHeader() throws Exception {
-        assertEquals(NAME, resolver.getNameForHeader(new EntityHeader(null, null, "test", null)));
+        assertEquals(NAME, resolver.getNameForHeader(new EntityHeader("", null, "test", null)));
     }
 
     @Test
@@ -245,7 +245,7 @@ public class EntityNameResolverTest {
 
     @Test
     public void getNameForHeaderNullTypeAndName() throws Exception {
-        assertTrue(resolver.getNameForHeader(new EntityHeader(null, null, null, null)).isEmpty());
+        assertTrue(resolver.getNameForHeader(new EntityHeader("", null, null, null)).isEmpty());
     }
 
     @Test

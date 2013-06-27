@@ -1,15 +1,16 @@
 package com.l7tech.server.migration;
 
-import com.l7tech.objectmodel.*;
-import static com.l7tech.objectmodel.SearchableEntityManager.DEFAULT_SEARCH_NAME;
-import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.Identity;
+import com.l7tech.identity.IdentityProvider;
+import com.l7tech.objectmodel.*;
 import com.l7tech.server.identity.IdentityProviderFactory;
 
-import java.util.Collection;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
+
+import static com.l7tech.objectmodel.SearchableEntityManager.DEFAULT_SEARCH_NAME;
 
 /**
  * IdentityEntityManager provides a method to search Identity entities in a more generic way.
@@ -42,6 +43,11 @@ public class IdentityEntityManager implements ReadOnlyEntityManager<Identity, Id
         }
 
         return headers;
+    }
+
+    @Override
+    public Identity findByPrimaryKey(final Goid goid) throws FindException {
+        return null;
     }
 
     @Override

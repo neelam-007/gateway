@@ -3,17 +3,16 @@
  */
 package com.l7tech.console.policy;
 
-import com.l7tech.policy.Policy;
 import com.l7tech.console.util.Registry;
-import com.l7tech.objectmodel.*;
 import com.l7tech.gateway.common.audit.LogonEvent;
+import com.l7tech.objectmodel.*;
+import com.l7tech.policy.Policy;
+import org.springframework.context.ApplicationEvent;
+import org.springframework.context.ApplicationListener;
 
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-
-import org.springframework.context.ApplicationListener;
-import org.springframework.context.ApplicationEvent;
 
 /**
  * @author alex
@@ -23,6 +22,11 @@ public class ManagerPolicyCache implements EntityInvalidationListener, ReadOnlyE
     private final Map<String, Long> guidToOidMap = new ConcurrentHashMap<String, Long>();
 
     public ManagerPolicyCache() {
+    }
+
+    @Override
+    public Policy findByPrimaryKey(Goid goid) throws FindException {
+        throw new UnsupportedOperationException("Goids are not yet supported here.");
     }
 
     @Override

@@ -4,68 +4,64 @@
 package com.l7tech.server;
 
 import com.l7tech.objectmodel.*;
-import com.l7tech.objectmodel.folder.FolderedEntityManager;
 import com.l7tech.objectmodel.folder.Folder;
+import com.l7tech.objectmodel.folder.FolderedGoidEntityManager;
+import com.l7tech.objectmodel.imp.GoidEntityImp;
 
 import java.util.*;
 
 /**
  * Stub Entity Manager
  */
-public abstract class EntityManagerStub<ET extends PersistentEntity, EH extends EntityHeader> implements FolderedEntityManager<ET, EH>, RoleAwareEntityManager<ET> {
-    protected final Map<Long, ET> entities;
-    protected final Map<Long, EH> headers;
+public abstract class GoidEntityManagerStub<ET extends GoidEntity, EH extends EntityHeader> implements FolderedGoidEntityManager<ET, EH>, RoleAwareGoidEntityManager<ET> {
+    protected final Map<Goid, ET> entities;
+    protected final Map<Goid, EH> headers;
     private final boolean canHasNames = NamedEntity.class.isAssignableFrom(getImpClass());
-    
-    private long nextOid;
 
-    public EntityManagerStub() {
-        this.entities = new HashMap<Long, ET>();
-        this.headers = new HashMap<Long, EH>();
-        this.nextOid = 1;
+    public GoidEntityManagerStub() {
+        this.entities = new HashMap<Goid, ET>();
+        this.headers = new HashMap<Goid, EH>();
     }
 
-    public EntityManagerStub(ET... entitiesIn) {
+    public GoidEntityManagerStub(ET... entitiesIn) {
         long maxOid = 0;
-        Map<Long, ET> entities = new LinkedHashMap<Long, ET>();
-        Map<Long, EH> headers = new LinkedHashMap<Long, EH>();
+        Map<Goid, ET> entities = new LinkedHashMap<Goid, ET>();
+        Map<Goid, EH> headers = new LinkedHashMap<Goid, EH>();
         for (ET entity : entitiesIn) {
-            entities.put(entity.getOid(), entity);
-            headers.put(entity.getOid(), header(entity));
-            maxOid = Math.max(maxOid, entity.getOid());
+            entities.put(entity.getGoid(), entity);
+            headers.put(entity.getGoid(), header(entity));
         }
         this.entities = entities;
         this.headers = headers;
-        this.nextOid = ++maxOid;
     }
 
     @Override
     public ET findByPrimaryKey(long oid) throws FindException {
-        return entities.get(oid);
+        throw new UnsupportedOperationException("cannot find goidified entities by using oid's");
     }
 
     @Override
     public ET findByPrimaryKey(Goid goid) throws FindException {
-        return null;
+        return entities.get(goid);
     }
 
     @Override
     public ET findByHeader(EntityHeader header) throws FindException {
-        return findByPrimaryKey(header.getOid());
+        return findByPrimaryKey(header.getGoid());
     }
 
     @Override
-    public synchronized void delete(long oid) throws DeleteException, FindException {
-        entities.remove(oid);
-        headers.remove(oid);
+    public synchronized void delete(Goid goid) throws DeleteException, FindException {
+        entities.remove(goid);
+        headers.remove(goid);
     }
 
     @Override
     public synchronized void update(ET entity) throws UpdateException {
-        if (entity.getOid() == PersistentEntity.DEFAULT_OID || entity.getId() == null) throw new IllegalArgumentException();
+        if (GoidEntity.DEFAULT_GOID.equals(entity.getGoid()) || entity.getId() == null) throw new IllegalArgumentException();
         entity.setVersion( entity.getVersion() + 1 );
-        entities.put(entity.getOid(), entity);
-        headers.put(entity.getOid(), header(entity));
+        entities.put(entity.getGoid(), entity);
+        headers.put(entity.getGoid(), header(entity));
     }
 
     @Override
@@ -99,9 +95,9 @@ public abstract class EntityManagerStub<ET extends PersistentEntity, EH extends 
         if (!canHasNames) throw new FindException(getImpClass() + " has no name");
         ET got = null;
         for (ET et : entities.values()) {
-            if (!(et instanceof NamedEntity)) throw new FindException(String.format("I was told that I would get NamedEntities but I found a %s and I'm going to burn down the building", et.getClass().getSimpleName()));
+            if (!(et instanceof GoidNamedEntity)) throw new FindException(String.format("I was told that I would get NamedEntities but I found a %s and I'm going to burn down the building", et.getClass().getSimpleName()));
 
-            NamedEntity namedEntity = (NamedEntity)et;
+            GoidNamedEntity namedEntity = (GoidNamedEntity)et;
             if (name.equals(namedEntity.getName())) {
                 if (got != null) throw new FindException(String.format("Found two %s with name %s", getImpClass().getSimpleName(), name));
                 got = et;
@@ -116,34 +112,37 @@ public abstract class EntityManagerStub<ET extends PersistentEntity, EH extends 
     }
 
     @Override
-    public Integer getVersion(long oid) throws FindException {
-        ET ent = entities.get(oid);
+    public Integer getVersion(Goid goid) throws FindException {
+        ET ent = entities.get(goid);
         return ent == null ? null : ent.getVersion();
     }
 
     @Override
-    public synchronized Map<Long, Integer> findVersionMap() throws FindException {
-        Map<Long, Integer> versions = new HashMap<Long, Integer>();
-        for (Map.Entry<Long, ET> entry : entities.entrySet()) {
+    public synchronized Map<Goid, Integer> findVersionMap() throws FindException {
+        Map<Goid, Integer> versions = new HashMap<Goid, Integer>();
+        for (Map.Entry<Goid, ET> entry : entities.entrySet()) {
             versions.put(entry.getKey(), entry.getValue().getVersion());
         }
         return Collections.unmodifiableMap(versions);
     }
 
     @Override
-    public ET getCachedEntity(long o, int maxAge) throws FindException {
+    public ET getCachedEntity(Goid o, int maxAge) throws FindException {
         return entities.get(o);
     }
 
     @Override
-    public synchronized long save(ET entity) throws SaveException {
-        long oid = nextOid++;
-        entity.setOid(oid);
+    public synchronized Goid save(ET entity) throws SaveException {
+        Random random = new Random();
+        byte[] bytes = new byte[16];
+        random.nextBytes(bytes);
+        final Goid goid = new Goid(bytes);
+        entity.setGoid(goid);
 
-        entities.put(oid, entity);
-        headers.put(oid, header(entity));
+        entities.put(goid, entity);
+        headers.put(goid, header(entity));
 
-        return oid;
+        return goid;
     }
 
     private String name(ET entity) {
@@ -156,7 +155,7 @@ public abstract class EntityManagerStub<ET extends PersistentEntity, EH extends 
     }
 
     @Override
-    public void updateFolder( final long entityId, final Folder folder ) throws UpdateException {
+    public void updateFolder( final Goid entityId, final Folder folder ) throws UpdateException {
     }
 
     @Override
@@ -165,18 +164,18 @@ public abstract class EntityManagerStub<ET extends PersistentEntity, EH extends 
 
     @Override
     public synchronized void delete(ET entity) throws DeleteException {
-        entities.remove(entity.getOid());
-        headers.remove(entity.getOid());
+        entities.remove(entity.getGoid());
+        headers.remove(entity.getGoid());
     }
 
     @Override
-    public Class<? extends Entity> getImpClass() {
-        return PersistentEntity.class;
+    public Class<? extends GoidEntityImp> getImpClass() {
+        return GoidEntityImp.class;
     }
 
     @Override
-    public Class<? extends Entity> getInterfaceClass() {
-        return Entity.class;
+    public Class<? extends GoidEntity> getInterfaceClass() {
+        return GoidEntity.class;
     }
 
     @Override
@@ -198,6 +197,6 @@ public abstract class EntityManagerStub<ET extends PersistentEntity, EH extends 
     }
 
     @Override
-    public void deleteRoles( final long entityOid ) throws DeleteException {
+    public void deleteRoles( final Goid entityOid ) throws DeleteException {
     }
 }

@@ -256,6 +256,11 @@ public class EntityCrudImplTest {
         }
 
         @Override
+        public Policy findByPrimaryKey(Goid goid) throws FindException {
+            return policyEntityManager.findByPrimaryKey(goid);
+        }
+
+        @Override
         public Collection<EntityHeader> findAllHeaders() throws FindException {
             return policyEntityManager.findAllHeaders();
         }
@@ -344,6 +349,11 @@ public class EntityCrudImplTest {
         }
 
         @Override
+        public SecurityZone findByPrimaryKey(Goid goid) throws FindException {
+            return zoneEntityManager.findByPrimaryKey(goid);
+        }
+
+        @Override
         public Collection<EntityHeader> findAllHeaders() throws FindException {
             return zoneEntityManager.findAllHeaders();
         }
@@ -429,6 +439,11 @@ public class EntityCrudImplTest {
         @Override
         public PublishedService findByPrimaryKey(long oid) throws FindException {
             return serviceEntityManager.findByPrimaryKey(oid);
+        }
+
+        @Override
+        public PublishedService findByPrimaryKey(Goid goid) throws FindException {
+            return serviceEntityManager.findByPrimaryKey(goid);
         }
 
         @Override

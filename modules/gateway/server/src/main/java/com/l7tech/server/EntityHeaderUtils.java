@@ -117,6 +117,14 @@ public final class EntityHeaderUtils {
                     null,
                     entity.getVersion());
             return createZoneableHeaderIfPossible(e, entityHeader);
+        } else if (e instanceof GoidEntity) {
+            GoidEntity entity = (GoidEntity) e;
+            EntityHeader entityHeader = new EntityHeader(entity.getGoid(),
+                    EntityTypeRegistry.getEntityType(entity.getClass()),
+                    entity instanceof NamedEntity ? ((NamedEntity) entity).getName() : null,
+                    null,
+                    entity.getVersion());
+            return createZoneableHeaderIfPossible(e, entityHeader);
         } else {
             final EntityHeader entityHeader = new EntityHeader(e.getId(),
                     EntityTypeRegistry.getEntityType(e.getClass()),

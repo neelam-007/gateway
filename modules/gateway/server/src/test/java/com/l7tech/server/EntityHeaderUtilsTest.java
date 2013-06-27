@@ -5,18 +5,18 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.FolderHeader;
-import com.l7tech.objectmodel.imp.NamedEntityImp;
-import com.l7tech.objectmodel.imp.PersistentEntityImp;
-import com.l7tech.objectmodel.imp.ZoneableNamedEntityImp;
-import com.l7tech.objectmodel.imp.ZoneablePersistentEntityImp;
+import com.l7tech.objectmodel.imp.*;
 import com.l7tech.test.BugId;
 import org.junit.Before;
 import org.junit.Test;
+
+import java.util.Random;
 
 import static org.junit.Assert.*;
 
 public class EntityHeaderUtilsTest {
     private static final long OID = 1234L;
+    private static final Goid GOID = new Goid(new Random().nextLong(), new Random().nextLong());
     private static final Long ZONE_OID = 1111L;
     private static final String GUID = "abc123";
     private static final String NAME = "test";
@@ -200,6 +200,15 @@ public class EntityHeaderUtilsTest {
         assertEquals(OID, header.getOid());
         assertEquals(VERSION, header.getVersion());
         assertEquals(NAME, header.getName());
+        assertFalse(header instanceof ZoneableEntityHeader);
+    }
+
+    @Test
+    public void fromEntityGoidEntity() {
+        final GoidEntityImp entity = new GoidEntityImp(){{setGoid(GOID); setVersion(VERSION);}};
+        final EntityHeader header = EntityHeaderUtils.fromEntity(entity);
+        assertEquals(GOID, header.getGoid());
+        assertEquals(VERSION, header.getVersion());
         assertFalse(header instanceof ZoneableEntityHeader);
     }
 

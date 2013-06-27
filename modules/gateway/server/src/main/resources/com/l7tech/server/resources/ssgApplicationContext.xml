@@ -1679,6 +1679,15 @@
         <property name="timer" ref="entityVersionCheckerTimer"/>
     </bean>
 
+    <bean id="goidEntityInvalidator" class="com.l7tech.server.GoidEntityVersionChecker" depends-on="ssgBoot">
+        <property name="applicationEventProxy" ref="applicationEventProxy"/>
+        <property name="entityManagers">
+            <list>
+            </list>
+        </property>
+        <property name="timer" ref="entityVersionCheckerTimer"/>
+    </bean>
+
     <bean id="soapFaultManager" class="com.l7tech.server.util.SoapFaultManager" depends-on="clusterPropertyManager">
         <constructor-arg index="0" ref="serverConfig"/>
         <constructor-arg index="1">

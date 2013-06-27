@@ -307,18 +307,18 @@ public class EncapsulatedAssertionTest {
     @Test
     public void needsProvideEntityNullConfig() {
         assertion.config(null);
-        assertTrue(assertion.needsProvideEntity(new EntityHeader(null, EntityType.ENCAPSULATED_ASSERTION, null, null)));
+        assertTrue(assertion.needsProvideEntity(new EntityHeader("", EntityType.ENCAPSULATED_ASSERTION, null, null)));
     }
 
     @Test
     public void needsProvideEntityNonNullConfig() {
         assertion.config(config);
-        assertFalse(assertion.needsProvideEntity(new EntityHeader(null, EntityType.ENCAPSULATED_ASSERTION, null, null)));
+        assertFalse(assertion.needsProvideEntity(new EntityHeader("", EntityType.ENCAPSULATED_ASSERTION, null, null)));
     }
 
     @Test
     public void needsProvideEntityWrongType() {
-        assertFalse(assertion.needsProvideEntity(new EntityHeader(null, EntityType.POLICY, null, null)));
+        assertFalse(assertion.needsProvideEntity(new EntityHeader("", EntityType.POLICY, null, null)));
     }
 
     @Test

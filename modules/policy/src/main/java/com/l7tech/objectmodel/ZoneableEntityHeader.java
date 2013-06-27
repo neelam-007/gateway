@@ -14,7 +14,7 @@ public class ZoneableEntityHeader extends EntityHeader implements HasSecurityZon
     }
 
     public ZoneableEntityHeader(@NotNull final EntityHeader headerToCopy) {
-        this(headerToCopy.getOid(), headerToCopy.getType(), headerToCopy.getName(), headerToCopy.getDescription(), headerToCopy.getVersion());
+        this(headerToCopy.getStrId(), headerToCopy.getType(), headerToCopy.getName(), headerToCopy.getDescription(), headerToCopy.getVersion());
     }
 
     public ZoneableEntityHeader(final long oid, final EntityType type, final String name, final String description, final Integer version) {

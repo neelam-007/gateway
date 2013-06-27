@@ -1,14 +1,7 @@
 package com.l7tech.server.service;
 
+import com.l7tech.objectmodel.*;
 import com.l7tech.server.policy.PolicyVersionManager;
-import com.l7tech.objectmodel.Entity;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.DeleteException;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.UpdateException;
-import com.l7tech.objectmodel.ObjectModelException;
-import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceHeader;
@@ -94,6 +87,11 @@ public class PolicyVersioningServiceManager implements ServiceManager {
     @Override
     public PublishedService findByPrimaryKey(long oid) throws FindException {
         return processRevision( serviceManager.findByPrimaryKey(oid) );
+    }
+
+    @Override
+    public PublishedService findByPrimaryKey(Goid goid) throws FindException {
+        return processRevision( serviceManager.findByPrimaryKey(goid) );
     }
 
     @Override

@@ -17,8 +17,13 @@ public class Goid implements Serializable {
 
     //This is used to convert a goid to and from string representations.
     private static final Base64 base64 = new Base64(-1, null, true);
-    //The bytes of the goid
+    //The bytes of the goid. This hould always be a 16 byte array
     private byte[] goid;
+
+    /**
+     * This is needed for serialization
+     */
+    private Goid(){}
 
     /**
      * Creates a new goid from two long values
@@ -39,7 +44,7 @@ public class Goid implements Serializable {
      */
     public Goid(byte[] goid) {
         if (goid.length != 16) {
-            throw new IllegalArgumentException("Cannot create a goid from a byte array that is not 128 bytes long.");
+            throw new IllegalArgumentException("Cannot create a goid from a byte array that is not 16 bytes long.");
         }
         this.goid = Arrays.copyOf(goid, 16);
     }
@@ -54,7 +59,7 @@ public class Goid implements Serializable {
     public Goid(String goid) {
         byte[] goidFromString = base64.decode(goid);
         if (goidFromString.length != 16) {
-            throw new IllegalArgumentException("Cannot create a goid from this String, it does not decode to a 128 byte array.");
+            throw new IllegalArgumentException("Cannot create a goid from this String, it does not decode to a 16 byte array.");
         }
         this.goid = goidFromString;
     }

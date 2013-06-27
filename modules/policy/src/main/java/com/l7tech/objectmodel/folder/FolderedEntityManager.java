@@ -8,6 +8,7 @@ import com.l7tech.objectmodel.UpdateException;
 /**
  * Extension of EntityManager interface with Folder specific methods.
  */
+@Deprecated //to be replaced by com.l7tech.objectmodel.folder.FolderedGoidEntityManager
 public interface FolderedEntityManager<ET extends PersistentEntity, HT extends EntityHeader> extends EntityManager<ET,HT> {
 
     void updateFolder( long entityId, Folder folder ) throws UpdateException;

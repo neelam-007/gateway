@@ -23,6 +23,8 @@
         <param name="enumClass">com.l7tech.xml.soap.SoapVersion</param>
     </typedef>
 
+    <typedef class="com.l7tech.server.util.GoidType" name="goid"/>
+
     <class name="com.l7tech.gateway.common.service.PublishedService" table="published_service" lazy="false">
         <id name="oid" column="objectid" type="long" unsaved-value="-1">
             <generator class="layer7-generator"/>

@@ -106,6 +106,11 @@ public class GenericEntityManagerImpl extends HibernateEntityManager<GenericEnti
             }
 
             @Override
+            public ET findByPrimaryKey(Goid goid) throws FindException {
+                throw new UnsupportedOperationException("Generic entities do not support goids yet.");
+            }
+
+            @Override
             public Collection<GenericEntityHeader> findAllHeaders() throws FindException {
                 return gem.findAllHeaders(entityClass);
             }

@@ -17,8 +17,20 @@ public interface ReadOnlyEntityManager<ET extends Entity, HT extends EntityHeade
      * @throws FindException If an error occurs
      * @see ObjectNotFoundException Some implementations may throw this rather than returning null
      */
+    @Deprecated // replace by the goid version of this method
     @Nullable
     ET findByPrimaryKey(long oid) throws FindException;
+
+    /**
+     * Find an entity by object identifier.
+     *
+     * @param goid The identifier for the entity
+     * @return The entity or null if not found
+     * @throws FindException If an error occurs
+     * @see ObjectNotFoundException Some implementations may throw this rather than returning null
+     */
+    @Nullable
+    ET findByPrimaryKey(Goid goid) throws FindException;
 
     /**
      * Returns an unmodifiable collection of <code>EntityHeader</code> objects for all instances of the entity class corresponding to this Manager.

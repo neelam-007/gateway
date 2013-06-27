@@ -7,7 +7,6 @@ import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import org.hibernate.*;
 import org.hibernate.criterion.*;
-import org.hibernate.criterion.Restrictions;
 import org.hibernate.jdbc.Work;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.simple.SimpleJdbcTemplate;
@@ -46,61 +45,60 @@ import static org.springframework.transaction.annotation.Propagation.SUPPORTS;
  * Implementations only need to implement {@link #getInterfaceClass()}, {@link #getImpClass()} and
  * {@link #getTableName()}, although two of those are only for historical reasons.
  */
-@Deprecated // deprecated by com.l7tech.server.HibernateGoidEntityManager
 @Transactional(propagation=REQUIRED, rollbackFor=Throwable.class)
-public abstract class HibernateEntityManager<ET extends PersistentEntity, HT extends EntityHeader>
+public abstract class HibernateGoidEntityManager<ET extends GoidEntity, HT extends EntityHeader>
         extends HibernateDaoSupport
-        implements EntityManager<ET, HT>
+        implements GoidEntityManager<ET, HT>
 {
     public static final String EMPTY_STRING = "";
-    public static final String F_OID = "oid";
+    public static final String F_GOID = "goid";
     public static final String F_NAME = "name";
     public static final String F_VERSION = "version";
 
     public static final Object NULL = new Object();
     public static final Object NOTNULL = new Object();
 
-    private final String HQL_FIND_ALL_OIDS_AND_VERSIONS =
+    private final String HQL_FIND_ALL_GOIDS_AND_VERSIONS =
             "SELECT " +
-                    getTableName() + "." + F_OID + ", " +
+                    getTableName() + "." + F_GOID + ", " +
                     getTableName() + "." + F_VERSION +
             " FROM " + getTableName() +
             " IN CLASS " + getImpClass().getName();
 
-    private final String HQL_FIND_VERSION_BY_OID =
+    private final String HQL_FIND_VERSION_BY_GOID =
             "SELECT " + getTableName() + "." + F_VERSION +
             " FROM " + getTableName() +
             " IN CLASS " + getImpClass().getName() +
-            " WHERE " + getTableName() + "." + F_OID + " = ?";
+            " WHERE " + getTableName() + "." + F_GOID + " = ?";
 
-    private final String HQL_FIND_BY_OID =
+    private final String HQL_FIND_BY_GOID =
             "FROM " + getTableName() +
             " IN CLASS " + getImpClass().getName() +
-            " WHERE " + getTableName() + "." + F_OID + " = ?";
+            " WHERE " + getTableName() + "." + F_GOID + " = ?";
 
-    private final String HQL_DELETE_BY_OID =
+    private final String HQL_DELETE_BY_GOID =
             "FROM " + getTableName() +
             " IN CLASS " + getImpClass().getName() +
-            " WHERE " + getTableName() + "." + F_OID + " = ?";
+            " WHERE " + getTableName() + "." + F_GOID + " = ?";
 
     protected PlatformTransactionManager transactionManager; // required for TransactionTemplate
 
     @Override
     @Transactional(readOnly=true)
-    public ET findByPrimaryKey(final Goid oid) throws FindException {
-        throw new UnsupportedOperationException("Cannot find a non goid enabled entity using a Goid");
+    public ET findByPrimaryKey(final long oid) throws FindException {
+        throw new UnsupportedOperationException("Cannot find a goid enabled entity using a long oid");
     }
 
     @Override
     @Transactional(readOnly=true)
-    public ET findByPrimaryKey(final long oid) throws FindException {
+    public ET findByPrimaryKey(final Goid goid) throws FindException {
         try {
             return getHibernateTemplate().execute(new ReadOnlyHibernateCallback<ET>() {
                 @SuppressWarnings({ "unchecked" })
                 @Override
                 public ET doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
-                    Query q = session.createQuery(HQL_FIND_BY_OID);
-                    q.setLong(0, oid);
+                    Query q = session.createQuery(HQL_FIND_BY_GOID);
+                    q.setParameter(0, goid);
                     return (ET)q.uniqueResult();
                 }
             });
@@ -116,7 +114,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
      * the property from the Entity class without the 'get' prefix.
      * @param uniqueKey long value of the unique field
      * @return the entity by that name, or null if none was found.
-     * @throws FindException in the event of a database problem
+     * @throws com.l7tech.objectmodel.FindException in the event of a database problem
      */
     @Transactional(readOnly = true)
     protected ET findByUniqueKey(final String uniquePropertyName, final long uniqueKey) throws FindException {
@@ -162,7 +160,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
     @Override
     @Transactional(readOnly=true)
     public ET findByHeader(EntityHeader header) throws FindException {
-        return findByPrimaryKey(header.getOid());
+        return findByPrimaryKey(header.getGoid());
     }
 
     /**
@@ -170,7 +168,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
      *
      * @param restrictions The restrictions (e.g before / after dates)
      * @return The number of entities matched
-     * @throws FindException If an error occurs
+     * @throws com.l7tech.objectmodel.FindException If an error occurs
      */
     protected int findCount( final Class clazz, final Criterion... restrictions ) throws FindException {
         final Class targetClass = clazz==null ? getImpClass() : clazz;
@@ -220,7 +218,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
      * @param count The number of items to return
      * @param restrictions Additional restrictions (e.g before / after dates)
      * @return  The matching entities or an empty list if none found
-     * @throws FindException If an error occurs
+     * @throws com.l7tech.objectmodel.FindException If an error occurs
      */
     protected List<ET> findPage( final Class clazz, final String sortProperty, final boolean ascending, final int offset, final int count, final Criterion... restrictions ) throws FindException {
         try {
@@ -352,8 +350,8 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
      * If an entity person has a name and an age and the name must be unique then a Collection with a single map
      * with a single value of 'name' can be used. If however no two persons can have the same name and age, then
      * a single Map will contain two entries: name and age. If no two people can have the same name or the same age,
-     * then two maps are required, one with the value 'name' and another with the value 'age' 
-     * 
+     * then two maps are required, one with the value 'name' and another with the value 'age'
+     *
      * @return Uniqueness constraint specification, possibly immutable: entries in a map are ANDed, items in the collection are ORed.
      */
     protected Collection<Map<String, Object>> getUniqueConstraints(ET entity) {
@@ -376,7 +374,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
     }
 
     @Override
-    public long save(ET entity) throws SaveException {
+    public Goid save(ET entity) throws SaveException {
         if (logger.isLoggable(Level.FINE)) logger.log(Level.FINE, "Saving {0} ({1})", new Object[] { getImpClass().getSimpleName(), entity==null ? null : entity.toString() });
         try {
             if (getUniqueType() != UniqueType.NONE) {
@@ -392,10 +390,10 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
             }
 
             Object key = getHibernateTemplate().save(entity);
-            if (!(key instanceof Long))
-                throw new SaveException("Primary key was a " + key.getClass().getName() + ", not a Long");
+            if (!(key instanceof Goid))
+                throw new SaveException("Primary key was a " + key.getClass().getName() + ", not a Goid");
 
-            return ((Long)key);
+            return (Goid)key;
         } catch (RuntimeException e) {
             throw new SaveException("Couldn't save " + entity.getClass().getSimpleName(), e);
         }
@@ -446,9 +444,9 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
 
             // backwards compatibility - changed to only validate the version id on properties that already exist in the db
             try {
-                ET original = findByPrimaryKey(entity.getOid());                
+                ET original = findByPrimaryKey(entity.getGoid());
                 if (original != null && original.getVersion() != entity.getVersion()) {
-                    throw new StaleUpdateException("Entity " + entity.getOid() + ": version mismatch");
+                    throw new StaleUpdateException("Entity " + entity.getGoid() + ": version mismatch");
                 }
             } catch (FindException fe) {
                 throw new UpdateException("Couldn't find previous version to check for versioning");
@@ -463,19 +461,19 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
     /**
      * Returns the current version (in the database) of the entity with the specified OID.
      *
-     * @param oid the OID of the entity whose version should be retrieved
+     * @param goid the OID of the entity whose version should be retrieved
      * @return The version, or null if the entity does not exist.
-     * @throws FindException
+     * @throws com.l7tech.objectmodel.FindException
      */
     @Override
     @Transactional(readOnly=true)
-    public Integer getVersion(final long oid) throws FindException {
+    public Integer getVersion(final Goid goid) throws FindException {
         try {
             return getHibernateTemplate().execute(new ReadOnlyHibernateCallback<Integer>() {
                 @Override
                 public Integer doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
-                    Query q = session.createQuery(HQL_FIND_VERSION_BY_OID);
-                    q.setLong(0, oid);
+                    Query q = session.createQuery(HQL_FIND_VERSION_BY_GOID);
+                    q.setParameter(0, goid);
                     return (Integer) q.uniqueResult();
                 }
             });
@@ -486,9 +484,9 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
 
     @Override
     @Transactional(readOnly=true)
-    public Map<Long,Integer> findVersionMap() throws FindException {
-        Map<Long, Integer> result = new HashMap<Long, Integer>();
-        if (!PersistentEntity.class.isAssignableFrom(getImpClass())) throw new FindException("Can't find non-Entities!");
+    public Map<Goid,Integer> findVersionMap() throws FindException {
+        Map<Goid, Integer> result = new HashMap<Goid, Integer>();
+        if (!GoidEntity.class.isAssignableFrom(getImpClass())) throw new FindException("Can't find non-Entities!");
 
         Session s = null;
         FlushMode old = null;
@@ -496,13 +494,13 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
             s = getSession();
             old = s.getFlushMode();
             s.setFlushMode(FlushMode.MANUAL);
-            Query q = s.createQuery(HQL_FIND_ALL_OIDS_AND_VERSIONS);
+            Query q = s.createQuery(HQL_FIND_ALL_GOIDS_AND_VERSIONS);
             List results = q.list();
             if (results.size() > 0) {
                 for (Object result1 : results) {
                     Object[] row = (Object[]) result1;
-                    if (row[0]instanceof Long && row[1]instanceof Integer) {
-                        result.put((Long)row[0], (Integer)row[1]);
+                    if (row[0]instanceof Goid && row[1]instanceof Integer) {
+                        result.put((Goid)row[0], (Integer)row[1]);
                     } else {
                         throw new FindException("Got unexpected fields " + row[0] + " and " + row[1] + " from query!");
                     }
@@ -523,7 +521,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
     public EntityType getEntityType() {
         EntityType type = this.entityType;
         if ( type == null ) {
-            this.entityType = type = EntityType.findTypeByEntity( getInterfaceClass() );           
+            this.entityType = type = EntityType.findTypeByEntity( getInterfaceClass() );
         }
         if ( type == null ) {
             this.entityType = type = EntityType.ANY;
@@ -564,7 +562,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
     }
 
     /**
-     * Helper for implementing findHeaders in SearchableEntityProviders 
+     * Helper for implementing findHeaders in SearchableEntityProviders
      */
     protected EntityHeaderSet<HT> doFindHeaders( final int offset, final int windowSize, final Map<String,?> filters, final boolean disjunction ) {
         List<ET> entities = getHibernateTemplate().execute(new ReadOnlyHibernateCallback<List<ET>>() {
@@ -590,7 +588,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
                                 likeRestriction.add(Restrictions.like( filterProperty, filter.replace('*', '%').replace('?', '_')));
                             }
                         } else {
-                            likeRestriction.add( Restrictions.eq( filterProperty, filterObject ));   
+                            likeRestriction.add( Restrictions.eq( filterProperty, filterObject ));
                         }
                     }
 
@@ -617,15 +615,15 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
      *
      * @param criteria The criteria to update
      */
-    protected void doFindHeaderCriteria( final Criteria criteria ) {        
+    protected void doFindHeaderCriteria( final Criteria criteria ) {
     }
 
     /**
      * Override this method to customize how EntityHeaders get created
-     * (if {@link HT} is a subclass of {@link EntityHeader} it's mandatory)
+     * (if {@link HT} is a subclass of {@link com.l7tech.objectmodel.EntityHeader} it's mandatory)
      *
-     * @param entity the PersistentEntity
-     * @return a new EntityHeader based on the provided Entity ID and name 
+     * @param entity the GoidEntity
+     * @return a new EntityHeader based on the provided Entity ID and name
      */
     @SuppressWarnings({ "unchecked" })
     protected HT newHeader(ET entity) {
@@ -634,7 +632,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
         if (name == null) name = "";
 
         HT ht = (HT) new EntityHeader(
-                entity.getOid(),
+                entity.getGoid(),
                 getEntityType(),
                 name,
                 EMPTY_STRING,
@@ -653,7 +651,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
 
     /**
      * Override this method to add additional criteria to findAll(), findAllHeaders(), findByName() etc.
-     * @param allHeadersCriteria the Hibernate Criteria object that should be customized if some filtering is required 
+     * @param allHeadersCriteria the Hibernate Criteria object that should be customized if some filtering is required
      */
     protected void addFindAllCriteria(Criteria allHeadersCriteria) {
     }
@@ -701,20 +699,20 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
     }
 
     @Override
-    public void delete(final long oid) throws DeleteException, FindException {
+    public void delete(final Goid goid) throws DeleteException, FindException {
         try {
             getHibernateTemplate().execute(new HibernateCallback<Void>() {
                 @Override
                 public Void doInHibernate(Session session) throws HibernateException, SQLException {
-                    Query q = session.createQuery(HQL_DELETE_BY_OID);
-                    q.setLong(0, oid);
+                    Query q = session.createQuery(HQL_DELETE_BY_GOID);
+                    q.setParameter(0, goid);
                     List todelete = q.list();
                     if (todelete.size() == 0) {
                         // nothing to do
                     } else if (todelete.size() == 1) {
                         session.delete(todelete.get(0));
                     } else {
-                        throw new RuntimeException("More than one entity found with oid = " + oid);
+                        throw new RuntimeException("More than one entity found with oid = " + goid);
                     }
                     return null;
                 }
@@ -731,7 +729,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
                 @SuppressWarnings({ "unchecked" })
                 @Override
                 public Void doInHibernate(Session session) throws HibernateException, SQLException {
-                    ET entity = (ET)session.get(getImpClass(), et.getOid());
+                    ET entity = (ET)session.get(getImpClass(), et.getGoid());
                     if (entity == null) {
                         session.delete(et);
                     } else {
@@ -747,12 +745,12 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
     }
 
     @Transactional(propagation=SUPPORTS)
-    public boolean isCacheCurrent(long objectid, int maxAge) {
+    public boolean isCacheCurrent(Goid goid, int maxAge) {
         Lock read = cacheLock.readLock();
         CacheInfo cacheInfo;
         try {
             read.lock();
-            WeakReference<CacheInfo<ET>> ref = cacheInfoByOid.get(objectid);
+            WeakReference<CacheInfo<ET>> ref = cacheInfoByGoid.get(goid);
             read.unlock(); read = null;
             cacheInfo = ref == null ? null : ref.get();
             return cacheInfo != null && cacheInfo.timestamp + (long) maxAge >= System.currentTimeMillis();
@@ -825,27 +823,27 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
     }
 
     /**
-     * Gets the {@link PersistentEntity} with the specified name from a cache where possible.  If the
+     * Gets the {@link com.l7tech.objectmodel.PersistentEntity} with the specified name from a cache where possible.  If the
      * entity is not present in the cache, it will be retrieved from the database.  If the entity
      * is present in the cache but was cached too long ago, checks whether the cached entity
-     * is stale by looking up its {@link PersistentEntity#getVersion}.  If the cached entity has the same
+     * is stale by looking up its {@link com.l7tech.objectmodel.PersistentEntity#getVersion}.  If the cached entity has the same
      * version as the database, the cached version is marked fresh.
      *
-     * @param objectid the OID of the object to get
+     * @param goid the OID of the object to get
      * @param maxAge the age, in milliseconds, that a cached entity must attain before it is considered stale
      * @return the object with the specified ID, from a cache if possible.
-     * @throws FindException
+     * @throws com.l7tech.objectmodel.FindException
      */
     @Override
     @Transactional(propagation=SUPPORTS, readOnly=true)
-    public ET getCachedEntity(final long objectid, int maxAge) throws FindException {
+    public ET getCachedEntity(final Goid goid, int maxAge) throws FindException {
         ET entity;
 
         Lock read = cacheLock.readLock();
         CacheInfo<ET> cacheInfo;
         try {
             read.lock();
-            WeakReference<CacheInfo<ET>> ref = cacheInfoByOid.get(objectid);
+            WeakReference<CacheInfo<ET>> ref = cacheInfoByGoid.get(goid);
             read.unlock(); read = null;
             cacheInfo = ref == null ? null : ref.get();
             if (cacheInfo == null) {
@@ -854,7 +852,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
                     @Override
                     public ET doInTransaction(TransactionStatus transactionStatus) {
                         try {
-                            return findByPrimaryKey(objectid);
+                            return findByPrimaryKey(goid);
                         } catch (FindException e) {
 //                            transactionStatus.setRollbackOnly();
                             throw new RuntimeException(e);
@@ -877,14 +875,14 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
     private ET freshen(CacheInfo<ET> cacheInfo, int maxAge) throws FindException {
         if (cacheInfo.timestamp + (long) maxAge < System.currentTimeMillis()) {
             // Time for a version check (getVersion() always goes to the database)
-            Integer currentVersion = getVersion(cacheInfo.entity.getOid());
+            Integer currentVersion = getVersion(cacheInfo.entity.getGoid());
             if (currentVersion == null) {
                 // BALEETED
                 cacheRemove(cacheInfo.entity);
                 return null;
             } else if (currentVersion != cacheInfo.version) {
                 // Updated
-                ET thing = findByPrimaryKey(cacheInfo.entity.getOid());
+                ET thing = findByPrimaryKey(cacheInfo.entity.getGoid());
                 return thing == null ? null : checkAndCache(thing);
             }
         }
@@ -892,13 +890,13 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
         return cacheInfo.entity;
     }
 
-    protected void cacheRemove(PersistentEntity thing) {
+    protected void cacheRemove(GoidEntity thing) {
         final Lock write = cacheLock.writeLock();
         write.lock();
         try {
-            cacheInfoByOid.remove(thing.getOid());
-            if (thing instanceof NamedEntity) {
-                cacheInfoByName.remove(((NamedEntity)thing).getName());
+            cacheInfoByGoid.remove(thing.getGoid());
+            if (thing instanceof GoidNamedEntity) {
+                cacheInfoByName.remove(((GoidNamedEntity)thing).getName());
             }
             removedFromCache(thing);
         } finally {
@@ -914,7 +912,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
      * @param ent the Entity that has been removed
      */
     @SuppressWarnings({ "UnusedDeclaration" })
-    protected void removedFromCache(Entity ent) { }
+    protected void removedFromCache(GoidEntity ent) { }
 
     /**
      * Override this method to be notified when an Entity has been added to the cache.
@@ -924,7 +922,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
      * @param ent the Entity that has been added to the cache
      */
     @SuppressWarnings({ "UnusedDeclaration" })
-    protected void addedToCache(PersistentEntity ent) { }
+    protected void addedToCache(GoidEntity ent) { }
 
     /**
      * Perform some action while holding the cache write lock.
@@ -962,7 +960,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
     }
 
     protected ET checkAndCache(ET thing) throws FindException {
-        final Long oid = thing.getOid();
+        final Goid goid = thing.getGoid();
 
         CacheInfo<ET> info = null;
 
@@ -970,7 +968,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
         Lock read = cacheLock.readLock();
         try {
             read.lock();
-            WeakReference<CacheInfo<ET>> ref = cacheInfoByOid.get(oid);
+            WeakReference<CacheInfo<ET>> ref = cacheInfoByGoid.get(goid);
             info = ref == null ? null : ref.get();
         } finally {
             if (read != null) read.unlock();
@@ -985,13 +983,13 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
                 info = new CacheInfo<ET>();
                 WeakReference<CacheInfo<ET>> newref = new WeakReference<CacheInfo<ET>>(info);
 
-                cacheInfoByOid.put(oid, newref);
-                if (thing instanceof NamedEntity) {
-                    cacheInfoByName.put(((NamedEntity)thing).getName(), newref);
+                cacheInfoByGoid.put(goid, newref);
+                if (thing instanceof GoidNamedEntity) {
+                    cacheInfoByName.put(((GoidNamedEntity)thing).getName(), newref);
                 }
             }
 
-            // set cached info 
+            // set cached info
             info.entity = thing;
             info.version = thing.getVersion();
             info.timestamp = System.currentTimeMillis();
@@ -1010,17 +1008,17 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
      * object is not found returns <code>null</code>
      *
      * @param impClass the object class
-     * @param oid      the object id
+     * @param goid      the object id
      * @return the object instance or <code>null</code> if no instance has been found
-     * @throws FindException if there was an data access error
+     * @throws com.l7tech.objectmodel.FindException if there was an data access error
      */
-    protected ET findByPrimaryKey(final Class impClass, final long oid) throws FindException {
+    protected ET findByPrimaryKey(final Class impClass, final Goid goid) throws FindException {
         try {
             return getHibernateTemplate().execute(new ReadOnlyHibernateCallback<ET>() {
                 @SuppressWarnings({ "unchecked" })
                 @Override
                 public ET doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
-                    return (ET)session.get(impClass, oid);
+                    return (ET)session.get(impClass, goid);
                 }
             });
         } catch (Exception e) {
@@ -1035,15 +1033,15 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
     /**
      * Lookup the entity by oid and delete(ET) it.
      *
-     * @param oid The entity oid.
+     * @param goid The entity oid.
      * @return true if the entity was deleted; false otherwise
      * @throws com.l7tech.objectmodel.FindException if there is a problem finding the entity
      * @throws com.l7tech.objectmodel.DeleteException if there is a problem deleting the entity
      */
-    protected boolean findAndDelete(final long oid) throws FindException, DeleteException {
+    protected boolean findAndDelete(final Goid goid) throws FindException, DeleteException {
         boolean deleted = false;
 
-        ET entity = this.findByPrimaryKey( oid );
+        ET entity = this.findByPrimaryKey( goid );
         if ( entity != null ) {
             delete(entity);
             deleted = true;
@@ -1078,7 +1076,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
      * @param callback The connection callback.
      * @param <R> The result type
      * @return The result value as returned from the callback.
-     * @throws SQLException If an error occurs
+     * @throws java.sql.SQLException If an error occurs
      */
     protected final <R> R doReadOnlyWork( final Functions.UnaryThrows<? extends R, Connection, SQLException> callback ) throws SQLException {
         return getHibernateTemplate().execute( new ReadOnlyHibernateCallback<R>() {
@@ -1140,7 +1138,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
     private static final boolean useOptimizedCount = ConfigFactory.getBooleanProperty( "com.l7tech.server.hibernate.useOptimizedCount", true );
 
     private ReadWriteLock cacheLock = new ReentrantReadWriteLock();
-    private Map<Long, WeakReference<CacheInfo<ET>>> cacheInfoByOid = new HashMap<Long, WeakReference<CacheInfo<ET>>>();
+    private Map<Goid, WeakReference<CacheInfo<ET>>> cacheInfoByGoid = new HashMap<Goid, WeakReference<CacheInfo<ET>>>();
     private Map<String, WeakReference<CacheInfo<ET>>> cacheInfoByName = new HashMap<String, WeakReference<CacheInfo<ET>>>();
     private String tableName;
     private EntityType entityType;
@@ -1150,7 +1148,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
     }
 
     /** Holds information about a cached Entity. */
-    static class CacheInfo<ET extends PersistentEntity> {
+    static class CacheInfo<ET extends GoidEntity> {
         ET entity;
         long timestamp;
         int version;

@@ -1,7 +1,9 @@
 package com.l7tech.console.util;
 
+import com.l7tech.objectmodel.GoidEntity;
 import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
+import com.l7tech.objectmodel.imp.NamedGoidEntityImp;
 
 /**
  * Utility methods for entities
@@ -21,12 +23,32 @@ public class EntityUtils {
     }
 
     /**
+     * Configure an entity as a copy.
+     *
+     * @param entity The entity to update
+     */
+    public static void updateCopy( final NamedGoidEntityImp entity ) {
+        resetIdentity( entity );
+        entity.setName( getNameForCopy( entity.getName() ) );
+    }
+
+    /**
      * Remove identity information from an entity.
      *
      * @param entity The entity to update.
      */
     public static void resetIdentity( final PersistentEntity entity ) {
         entity.setOid( PersistentEntity.DEFAULT_OID);
+        entity.setVersion( 0 );
+    }
+
+    /**
+     * Remove identity information from an entity.
+     *
+     * @param entity The entity to update.
+     */
+    public static void resetIdentity( final GoidEntity entity ) {
+        entity.setGoid(GoidEntity.DEFAULT_GOID);
         entity.setVersion( 0 );
     }
 

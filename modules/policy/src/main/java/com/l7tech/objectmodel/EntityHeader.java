@@ -7,6 +7,7 @@ package com.l7tech.objectmodel;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlSeeAlso;
+import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 
 /**
  * Header objects are used to refer to objects in find methods
@@ -29,12 +30,22 @@ public class EntityHeader extends EntityHeaderRef {
         this.version = version;
     }
 
+    @Deprecated // oid's are being replaced by goids
     public EntityHeader(long oid, EntityType type, String name, String description, Integer version) {
         this(Long.toString(oid), type, name, description, version);
     }
 
+    @Deprecated // oid's are being replaced by goids
     public EntityHeader(long oid, EntityType type, String name, String description) {
         this(Long.toString(oid), type, name, description, null);
+    }
+
+    public EntityHeader(Goid goid, EntityType type, String name, String description, Integer version) {
+        this(goid.toString(), type, name, description, version);
+    }
+
+    public EntityHeader(Goid goid, EntityType type, String name, String description) {
+        this(goid.toString(), type, name, description, null);
     }
 
     public EntityHeader() {
@@ -50,17 +61,34 @@ public class EntityHeader extends EntityHeaderRef {
         this.name = name;
     }
 
+    @Deprecated // oid's are being replaced by goids
     @XmlAttribute
     public void setOid( long oid ) {
         strId = Long.toString(oid);
     }
 
+    @Deprecated // oid's are being replaced by goids
     public long getOid() {
-        if (strId == null || strId.isEmpty()) return DEFAULT_OID;
+        if (strId == null || strId.isEmpty()) return PersistentEntity.DEFAULT_OID;
         try {
             return Long.parseLong(strId);
         } catch (Exception e) {
-            return DEFAULT_OID;
+            return PersistentEntity.DEFAULT_OID;
+        }
+    }
+
+    @XmlAttribute
+    @XmlJavaTypeAdapter(GoidAdapter.class)
+    public void setGoid( Goid goid ) {
+        strId = goid.toString();
+    }
+
+    public Goid getGoid() {
+        if (strId == null || strId.isEmpty()) return GoidEntity.DEFAULT_GOID;
+        try {
+            return new Goid(strId);
+        } catch (Exception e) {
+            return GoidEntity.DEFAULT_GOID;
         }
     }
 
@@ -119,8 +147,6 @@ public class EntityHeader extends EntityHeaderRef {
     // ************************************************
 
     private static final long serialVersionUID = -1752153501322477805L;
-
-    private static final long DEFAULT_OID = -1;
 
     protected String name;
     private String description;

@@ -58,7 +58,7 @@ public class JdbcQueryManagerImplCacheTest {
         JdbcConnectionManager jdbcConnectionManager = Mockito.spy(new JdbcConnectionManagerImpl());
 
         Mockito.doReturn(Collections.emptyList()).when(jdbcConnectionManager).findAll();
-        Mockito.doReturn(new EntityHeaderSet<>((new EntityHeader(null, null, ConnectionName, null)))).when(jdbcConnectionManager).findAllHeaders();
+        Mockito.doReturn(new EntityHeaderSet<>((new EntityHeader("", null, ConnectionName, null)))).when(jdbcConnectionManager).findAllHeaders();
 
         jdbcConnectionPoolManager = Mockito.spy(new JdbcConnectionPoolManager(jdbcConnectionManager));
 

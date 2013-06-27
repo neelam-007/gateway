@@ -57,6 +57,11 @@ public class VersioningPolicyManager implements PolicyManager {
     }
 
     @Override
+    public Policy findByPrimaryKey(final Goid goid) throws FindException {
+        return processRevision( policyManager.findByPrimaryKey(goid) );
+    }
+
+    @Override
     public Policy findByPrimaryKey(long oid) throws FindException {
         return processRevision( policyManager.findByPrimaryKey(oid) );
     }
