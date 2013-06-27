@@ -53,6 +53,9 @@ public class CustomAssertionDescriptor {
      *                             the assertion is added to a policy
      * @param uiAllowedPackages    the allowed packages for use by the SSM (may be null)
      * @param uiAllowedResources   the allowed resources for use by the SSM (may be null)
+     * @param paletteNodeName      the display name for the node on the left palette
+     * @param policyNodeName       the display name for the node on the right policy editor
+     * @param moduleFileName       the module file name
      */
     public CustomAssertionDescriptor(final String name,
                                      final Class assertionClass,

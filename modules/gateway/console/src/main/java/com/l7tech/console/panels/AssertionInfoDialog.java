@@ -153,6 +153,7 @@ public class AssertionInfoDialog extends JDialog {
                 for (Object registeredAssertion : Registry.getDefault().getCustomAssertionsRegistrar().getAssertions()) {
                     if (customAssertionHolder.getCustomAssertion().getClass() == ((CustomAssertionHolder) registeredAssertion).getCustomAssertion().getClass()) {
                         registeredCustomAssertionPrototype = (CustomAssertionHolder) registeredAssertion;
+                        break;
                     }
                 }
             } catch (Exception e) {
