@@ -427,7 +427,7 @@ public class CustomAssertionsRegistrarImpl extends ApplicationObjectSupport impl
             if (key.startsWith(baseKey)) {
                 if (key.endsWith(".server")) {
                     serverClass = (String) properties.get(key);
-                } else if (key.endsWith("task.action.ui")) {
+                } else if (key.endsWith(".task.action.ui")) {
                     taskActionClass = (String) properties.get(key);
                 } else if (key.endsWith(".ui")) {
                     editorClass = (String) properties.get(key);
