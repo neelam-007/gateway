@@ -87,8 +87,8 @@
         <dependency org="org.apache.ftpserver" name="ftpserver-parent" rev="1.0-543677-20070601" force="true"
                     conf="core"/>
         <dependency org="org.apache.tomcat" name="annotations-api" rev="6.0.35" force="true" conf="core"/>
-        <dependency org="org.apache.tomcat" name="catalina" rev="6.0.35" force="true" conf="core"/>
-        <dependency org="org.apache.tomcat" name="coyote" rev="6.0.35" force="true" conf="core"/>
+        <dependency org="org.apache.tomcat" name="catalina" rev="6.0.35-l7p1" force="true" conf="core"/>
+        <dependency org="org.apache.tomcat" name="coyote" rev="6.0.35-l7p1" force="true" conf="core"/>
 
         <!-- Progress Data Direct JDBC Drivers -->
         <dependency org="com.l7tech.ddtek" name="L7db2" rev="5.0.1.patch" force="true" conf="core"/>

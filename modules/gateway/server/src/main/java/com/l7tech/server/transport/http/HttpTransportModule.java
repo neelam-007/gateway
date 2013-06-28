@@ -840,6 +840,8 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
                         c.setMaxPostSize(value);
                     }
                 } );
+            } else if ("trimContentType".equalsIgnoreCase(entry.getKey())) {
+                c.setTrimContentType(Boolean.valueOf(String.valueOf(entry.getValue())));
             } else {
                 c.setAttribute(entry.getKey(), entry.getValue());
             }
