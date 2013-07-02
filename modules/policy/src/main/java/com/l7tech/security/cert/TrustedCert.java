@@ -3,6 +3,7 @@ package com.l7tech.security.cert;
 import com.l7tech.objectmodel.NamedEntity;
 import com.l7tech.objectmodel.SecurityZone;
 import com.l7tech.objectmodel.ZoneableEntity;
+import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.util.Functions;
 import org.hibernate.annotations.Proxy;
 import org.jetbrains.annotations.Nullable;
@@ -352,6 +353,7 @@ public class TrustedCert extends X509Entity implements NamedEntity, Cloneable, Z
     @JoinColumn(name = "security_zone_oid")
     @XmlTransient
     @Nullable
+    @Migration(dependency = false)
     public SecurityZone getSecurityZone() {
         return securityZone;
     }

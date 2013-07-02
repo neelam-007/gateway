@@ -2,6 +2,7 @@ package com.l7tech.objectmodel.imp;
 
 import com.l7tech.objectmodel.SecurityZone;
 import com.l7tech.objectmodel.ZoneableEntity;
+import com.l7tech.objectmodel.migration.Migration;
 
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
@@ -26,6 +27,7 @@ public abstract class ZoneableNamedEntityImp extends NamedEntityImp implements Z
     @ManyToOne
     @JoinColumn(name = "security_zone_oid")
     @XmlTransient  // TODO remove XmlTransient and expose security zone in generated XML
+    @Migration(dependency = false)
     public SecurityZone getSecurityZone() {
         return securityZone;
     }

@@ -3,6 +3,7 @@ package com.l7tech.objectmodel.imp;
 import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.objectmodel.SecurityZone;
 import com.l7tech.objectmodel.ZoneableEntity;
+import com.l7tech.objectmodel.migration.Migration;
 import org.jetbrains.annotations.Nullable;
 
 import javax.persistence.JoinColumn;
@@ -29,6 +30,7 @@ public abstract class ZoneablePersistentEntityImp extends PersistentEntityImp im
     @ManyToOne
     @JoinColumn(name = "security_zone_oid")
     @XmlTransient
+    @Migration(dependency = false)
     public SecurityZone getSecurityZone() {
         return securityZone;
     }
