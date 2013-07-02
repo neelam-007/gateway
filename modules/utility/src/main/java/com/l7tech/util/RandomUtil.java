@@ -34,6 +34,21 @@ public class RandomUtil {
     /**
      * Generate a random integer using a default SecureRandom instance.
      *
+     * @return the next random int value, evenly distributed between among all 2^32 possible values
+     * @see SecureRandom#nextInt()
+     */
+    public static int nextInt() {
+        SecureRandom sr = getSecureRandom();
+        try {
+            return sr.nextInt();
+        } finally {
+            returnSecureRandom(sr);
+        }
+    }
+
+    /**
+     * Generate a random integer using a default SecureRandom instance.
+     *
      * @param n non-inclusive upper bound on integer to be generated.  Must be positive.
      * @return the next random int value, evenly distributed between (0,n]
      * @see SecureRandom#nextInt(int)

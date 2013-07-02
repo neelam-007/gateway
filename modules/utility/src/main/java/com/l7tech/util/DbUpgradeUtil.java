@@ -64,7 +64,37 @@ public final class DbUpgradeUtil {
             ResourceUtils.closeQuietly(reader);
         }
 
+        //This will replace any tokens in the sql tokens are Strings surrounded by # characters.
+        replaceTokens(statements);
         return statements;
+    }
+
+    /**
+     * Replaces any tokens in the sql statements. Tokens are string surrounded by # chars. For example
+     * <p/>
+     * select hex(char(#RANDOM_INT#));
+     * <p/>
+     * Here #RANDOM_INT# will be replaced by a random integer
+     *
+     * @param statements The statements to replace tokens in.
+     */
+    private static void replaceTokens(String[] statements) {
+        for (int i = 0; i < statements.length; i++) {
+            String statement = statements[i];
+            //This will contain the statement with all the tokens replaced.
+            StringBuffer parsedStatement = new StringBuffer();
+            Matcher matcher = TOKENS_PATTERN.matcher(statement);
+            while (matcher.find()) {
+                //replace the random int token.
+                if (RANDOM_INT_TOKEN_PATTERN.equals(matcher.group())) {
+                    int random = RandomUtil.nextInt();
+                    matcher.appendReplacement(parsedStatement, String.valueOf(random));
+                }
+            }
+            //add the rest of the statement
+            matcher.appendTail(parsedStatement);
+            statements[i] = parsedStatement.toString();
+        }
     }
 
     /**
@@ -139,4 +169,8 @@ public final class DbUpgradeUtil {
     public static final String UPGRADE_SUCCESS_SUFFIX = "success";
     private static final String UPGRADE_SQL_PATTERN = "^upgrade_(.*)-(.*).sql$";
     private static final String UPGRADE_SQL_PATTERN_OPTION = "^upgrade_(.*)-(.*)_("+ UPGRADE_TRY_SUFFIX +"|"+ UPGRADE_SUCCESS_SUFFIX +").sql$";
+
+    private static String RANDOM_INT_TOKEN_PATTERN = "#RANDOM_INT#";
+    //The tokens pattern should be an | of all the different token patterns For example "#TOKEN1#|#TOKEN2#|#TOKEN3#"
+    private static Pattern TOKENS_PATTERN = Pattern.compile(RANDOM_INT_TOKEN_PATTERN);
 }
