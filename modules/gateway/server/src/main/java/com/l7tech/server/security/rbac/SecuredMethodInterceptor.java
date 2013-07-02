@@ -196,7 +196,7 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationC
                 Entity entity = getEntityArg(check, args);
                 if (entity != null) {
                     String id = entity.getId();
-                    checkEntityBefore(check, args, id == null || DEFAULT_ID.equals(id) ? CREATE : UPDATE);
+                    checkEntityBefore(check, args, id == null || DEFAULT_ID.equals(id) || GoidEntity.DEFAULT_GOID.equals(id) ? CREATE : UPDATE);
                     break;
                 } else {
                     // this is incredibly ugly: Must have permission to update AND create ANY entity of all specified types; if so, we BYPASS any remaining checks
