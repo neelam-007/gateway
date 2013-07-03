@@ -9,16 +9,13 @@ import java.util.*;
 import java.util.logging.Logger;
 
 /**
- * The utility class, custom assertions holder that keeps track of the registered
- * custom assertions.
- *
- * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
+ * The utility class, custom assertions holder that keeps track of the registered custom assertions.
  */
 class CustomAssertions {
     static Logger logger = Logger.getLogger(CustomAssertions.class.getName());
 
     /**
-     * cannot instanitate
+     * cannot instantiate
      */
     private CustomAssertions() {}
 
@@ -28,15 +25,13 @@ class CustomAssertions {
     }
 
     /**
-     * Return the <code>CustomAssertionDescriptor</code> for a given assertion or
-     * <b>null<b>
+     * Return the <code>CustomAssertionDescriptor</code> for a given assertion or <b>null<b>
      *
      * @param a the assertion class
      * @return the custom assertion descriptor class or <b>null</b>
      */
     static CustomAssertionDescriptor getDescriptor(Class a) {
-        for (Iterator iterator = assertions.values().iterator(); iterator.hasNext();) {
-            CustomAssertionDescriptor cd = (CustomAssertionDescriptor)iterator.next();
+        for (CustomAssertionDescriptor cd : assertions.values()) {
             if (a.equals(cd.getAssertion())) {
                 return cd;
             }
@@ -45,22 +40,20 @@ class CustomAssertions {
     }
 
     /**
-   * Return the <code>CustomAssertionUI</code> for a given assertion or
-   * <b>null<b>
+   * Return the <code>CustomAssertionUI</code> for a given assertion or <b>null<b>
    *
    * @param assertionClassName the assertion class
    * @return the custom assertion UI class or <b>null</b>
    */
   static CustomAssertionUI getUI(String assertionClassName) {
-      for (Iterator iterator = assertions.values().iterator(); iterator.hasNext();) {
-          CustomAssertionDescriptor cd = (CustomAssertionDescriptor)iterator.next();
+      for (CustomAssertionDescriptor cd : assertions.values()) {
           if (assertionClassName.equals(cd.getAssertion().getName())) {
               try {
                   Class uiClass = cd.getUiClass();
                   if (uiClass == null) {
                       return null;
                   }
-                  return (CustomAssertionUI)uiClass.newInstance();
+                  return (CustomAssertionUI) uiClass.newInstance();
               } catch (Exception e) {
                   throw new RuntimeException(e);
               }
@@ -70,22 +63,20 @@ class CustomAssertions {
   }
 
     /**
-     * Return the <code>CustomAssertionUI</code> for a given assertion or
-     * <b>null<b>
+     * Return the <code>CustomAssertionUI</code> for a given assertion or <b>null<b>
      *
      * @param assertionClassName the assertion class
      * @return the task action UI class or <b>null</b>
      */
     static CustomTaskActionUI getTaskActionUI(String assertionClassName) {
-        for (Iterator iterator = assertions.values().iterator(); iterator.hasNext();) {
-            CustomAssertionDescriptor cd = (CustomAssertionDescriptor)iterator.next();
+        for (CustomAssertionDescriptor cd : assertions.values()) {
             if (assertionClassName.equals(cd.getAssertion().getName())) {
                 try {
                     Class takActionUiClass = cd.getTakActionUiClass();
                     if (takActionUiClass == null) {
                         return null;
                     }
-                    return (CustomTaskActionUI)takActionUiClass.newInstance();
+                    return (CustomTaskActionUI) takActionUiClass.newInstance();
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
@@ -100,9 +91,8 @@ class CustomAssertions {
      * @return the registered descriptors
      */
     static Set getAllDescriptors() {
-        Set descriptors = new HashSet();
-        for (Iterator iterator = assertions.values().iterator(); iterator.hasNext();) {
-            CustomAssertionDescriptor cd = (CustomAssertionDescriptor)iterator.next();
+        Set<CustomAssertionDescriptor> descriptors = new HashSet<>();
+        for (CustomAssertionDescriptor cd : assertions.values()) {
             descriptors.add(cd);
         }
         return descriptors;
@@ -112,7 +102,7 @@ class CustomAssertions {
      * @return the set of all descriptors
      */
     static Set getDescriptors() {
-        Set descriptors = new HashSet();
+        Set<CustomAssertionDescriptor> descriptors = new HashSet<>();
         descriptors.addAll(assertions.values());
         return descriptors;
     }
@@ -122,14 +112,28 @@ class CustomAssertions {
      * @return the set of all assertions registered
      */
     static Set getDescriptors( Category cat) {
-        Set descriptors = new HashSet();
-        for (Iterator iterator = assertions.values().iterator(); iterator.hasNext();) {
-            CustomAssertionDescriptor cd = (CustomAssertionDescriptor)iterator.next();
+        Set<CustomAssertionDescriptor> descriptors = new HashSet<>();
+        for (CustomAssertionDescriptor cd : assertions.values()) {
             if (cat.equals(cd.getCategory())) {
                 descriptors.add(cd);
             }
         }
         return descriptors;
+    }
+
+    /**
+     *  Return the <code>CustomAssertionDescriptor</code> for a given assertion or <b>null<b>
+     *
+     * @param assertionClassName the assertion class
+     * @return the first registered assertion matching the assertion class name
+     */
+    static CustomAssertionDescriptor getDescriptor(final String assertionClassName) {
+        for (CustomAssertionDescriptor cd : assertions.values()) {
+            if (cd.getAssertion().getName().equals(assertionClassName)) {
+                return cd;
+            }
+        }
+        return null;
     }
 
     /**
@@ -139,8 +143,7 @@ class CustomAssertions {
      * @return the server assertion class or <b>null</b>
      */
     static Class getServerAssertion(Class a) {
-        for (Iterator iterator = assertions.values().iterator(); iterator.hasNext();) {
-            CustomAssertionDescriptor eh = (CustomAssertionDescriptor)iterator.next();
+        for (CustomAssertionDescriptor eh : assertions.values()) {
             if (a.equals(eh.getAssertion())) {
                 return eh.getServerAssertion();
             }
@@ -152,9 +155,8 @@ class CustomAssertions {
      * @return the set of all assertions registered
      */
     static Set getAssertions() {
-        Set allAssertions = new HashSet();
-        for (Iterator iterator = assertions.values().iterator(); iterator.hasNext();) {
-            CustomAssertionDescriptor eh = (CustomAssertionDescriptor)iterator.next();
+        Set<Class> allAssertions = new HashSet<>();
+        for (CustomAssertionDescriptor eh : assertions.values()) {
             allAssertions.add(eh.getAssertion());
         }
         return allAssertions;
@@ -164,9 +166,8 @@ class CustomAssertions {
      * @return the set of all assertions registered
      */
     static Set getAssertions(Category cat) {
-        Set allAssertions = new HashSet();
-        for (Iterator iterator = assertions.values().iterator(); iterator.hasNext();) {
-            CustomAssertionDescriptor eh = (CustomAssertionDescriptor)iterator.next();
+        Set<Class> allAssertions = new HashSet<>();
+        for (CustomAssertionDescriptor eh : assertions.values()) {
             if (cat.equals(eh.getCategory())) {
                 allAssertions.add(eh.getAssertion());
             }
@@ -174,5 +175,5 @@ class CustomAssertions {
         return allAssertions;
     }
 
-    private static Map assertions = new HashMap();
+    private static Map<String, CustomAssertionDescriptor> assertions = new HashMap<>();
 }

@@ -1,5 +1,6 @@
 package com.l7tech.gateway.common.custom;
 
+import com.l7tech.policy.assertion.CustomAssertionHolder;
 import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.ext.CustomAssertionUI;
 import com.l7tech.gateway.common.admin.Administrative;
@@ -43,6 +44,14 @@ public interface CustomAssertionsRegistrar {
     AssertionResourceData getAssertionResourceData( final String name );
 
     /**
+     * Get the known registered assertion for a given class name.
+     * @param customAssertionClassName the custom assertion class name
+     * @return the custom assertion holder
+     */
+    @Administrative(licensed=false)
+    CustomAssertionHolder getAssertion(final String customAssertionClassName);
+
+    /**
      * @return the list of all assertions known to the runtime
      */
     @Administrative(licensed=false)
@@ -57,10 +66,9 @@ public interface CustomAssertionsRegistrar {
     Collection getAssertions( Category c);
 
     /**
-     * Return the <code>CustomAssertionDescriptor</code> for a given assertion or
-     * <b>null<b>
-     * Note that this method may not be invoked from management console. The descriptot
-     * may not deserialize into the ssm envirnoment since int contains server classes.
+     * Return the <code>CustomAssertionDescriptor</code> for a given assertion or <b>null<b>.
+     * Note that this method may not be invoked from management console. The descriptor
+     * may not de-serialize into the ssm environment since int contains server classes.
      *
      * @param a the assertion class
      * @return the custom assertion descriptor class or <b>null</b>
@@ -69,8 +77,7 @@ public interface CustomAssertionsRegistrar {
     CustomAssertionDescriptor getDescriptor(Class a);
 
     /**
-     * Return the <code>CustomAssertionUI</code> class for a given assertion or
-     * <b>null<b>
+     * Return the <code>CustomAssertionUI</code> class for a given assertion or <b>null<b>.
      *
      * @param assertionClassName the assertion class name
      * @return the custom assertion UI class or <b>null</b>
@@ -79,8 +86,7 @@ public interface CustomAssertionsRegistrar {
     CustomAssertionUI getUI(String assertionClassName);
 
     /**
-     * Return the <code>CustomTaskActionUI</code> class for a given assertion or
-     * <b>null<b>
+     * Return the <code>CustomTaskActionUI</code> class for a given assertion or <b>null<b>.
      *
      * @param assertionClassName the assertion class name
      * @return the task action UI class or <b>null</b>

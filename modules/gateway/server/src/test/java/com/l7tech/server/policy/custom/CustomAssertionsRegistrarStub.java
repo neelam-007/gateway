@@ -26,11 +26,10 @@ public class CustomAssertionsRegistrarStub implements CustomAssertionsRegistrar 
     }
 
     private static void loadTestCustomAssertions() {
-        CustomAssertionDescriptor eh =
-          new CustomAssertionDescriptor("Test.Assertion",
-            TestAssertionProperties.class,
-            null, null,
-            TestServiceInvocation.class, Category.ACCESS_CONTROL, "", false, "", "", null, null, null);
+        CustomAssertionDescriptor eh = new CustomAssertionDescriptor("Test.Assertion",
+                TestAssertionProperties.class,
+                TestServiceInvocation.class,
+                Category.ACCESS_CONTROL);
         CustomAssertions.register(eh);
     }
 
@@ -70,6 +69,15 @@ public class CustomAssertionsRegistrarStub implements CustomAssertionsRegistrar 
     }
 
     /**
+     * Get the assertion known to the runtime for a given custom assertion class name
+     * @param customAssertionClassName the custom assertion class name
+     * @return the custom assertion holder
+     */
+    public CustomAssertionHolder getAssertion(final String customAssertionClassName) {
+        return asCustomAssertionHolder(CustomAssertions.getDescriptor(customAssertionClassName));
+    }
+
+    /**
      * Return the <code>CustomAssertionUI</code> class for a given assertion or
      * <b>null<b>
      *
@@ -99,20 +107,32 @@ public class CustomAssertionsRegistrarStub implements CustomAssertionsRegistrar 
     }
 
     private Collection asCustomAssertionHolders(final Set customAssertionDescriptors) {
-        Collection result = new ArrayList();
+        Collection<CustomAssertionHolder> result = new ArrayList<>();
         for (Object customAssertionDescriptor : customAssertionDescriptors) {
-            try {
-                CustomAssertionDescriptor cd = (CustomAssertionDescriptor) customAssertionDescriptor;
-                Class ca = cd.getAssertion();
-                CustomAssertionHolder ch = new CustomAssertionHolder();
-                final CustomAssertion cas = (CustomAssertion) ca.newInstance();
-                ch.setCustomAssertion(cas);
-                ch.setCategory(cd.getCategory());
-                result.add(ch);
-            } catch (Exception e) {
-                logger.log(Level.WARNING, "Unable to instantiate custom assertion", e);
+            CustomAssertionHolder customAssertionHolder = asCustomAssertionHolder((CustomAssertionDescriptor) customAssertionDescriptor);
+            if (customAssertionHolder != null) {
+                result.add(customAssertionHolder);
             }
         }
         return result;
+    }
+
+    private CustomAssertionHolder asCustomAssertionHolder(final CustomAssertionDescriptor customAssertionDescriptor) {
+        CustomAssertionHolder customAssertionHolder = null;
+        try {
+            Class ca = customAssertionDescriptor.getAssertion();
+            customAssertionHolder = new CustomAssertionHolder();
+            final CustomAssertion cas = (CustomAssertion) ca.newInstance();
+            customAssertionHolder.setCustomAssertion(cas);
+            customAssertionHolder.setCategory(customAssertionDescriptor.getCategory());
+            customAssertionHolder.setDescriptionText(customAssertionDescriptor.getDescription());
+            customAssertionHolder.setPaletteNodeName(customAssertionDescriptor.getPaletteNodeName());
+            customAssertionHolder.setPolicyNodeName(customAssertionDescriptor.getPolicyNodeName());
+            customAssertionHolder.setIsUiAutoOpen(customAssertionDescriptor.getIsUiAutoOpen());
+            customAssertionHolder.setModuleFileName(customAssertionDescriptor.getModuleFileName());
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "Unable to instantiate custom assertion", e);
+        }
+        return customAssertionHolder;
     }
 }

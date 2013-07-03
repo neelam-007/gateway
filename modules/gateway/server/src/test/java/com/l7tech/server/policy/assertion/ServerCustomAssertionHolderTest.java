@@ -145,18 +145,10 @@ public class ServerCustomAssertionHolderTest
         final CustomAssertionDescriptor descriptorLegacy = new CustomAssertionDescriptor(
                 "Test.TestLegacyCustomAssertion",
                 TestLegacyCustomAssertion.class,
-                null, // for now do not use UI class
-                null, // for now do not use task action UI class
                 TestServiceInvocation.class,
-                Category.AUDIT_ALERT,
-                "Test CustomAssertion Description",
-                false, // for ui auto open
-                null, // for now do not use allowed packages
-                null, // for now do not use allowed resources
-                null, // for palette node name
-                null, // for policy node name
-                null  // for module file name
+                Category.AUDIT_ALERT
         );
+        descriptorLegacy.setDescription("Test CustomAssertion Description");
 
         // mock the new descriptors
         when(mockRegistrar.getDescriptor(TestLegacyCustomAssertion.class)).then(new Returns(descriptorLegacy));

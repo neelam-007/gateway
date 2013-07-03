@@ -150,12 +150,7 @@ public class AssertionInfoDialog extends JDialog {
             CustomAssertionHolder customAssertionHolder = (CustomAssertionHolder) assertion;
             CustomAssertionHolder registeredCustomAssertionPrototype = null;
             try {
-                for (Object registeredAssertion : Registry.getDefault().getCustomAssertionsRegistrar().getAssertions()) {
-                    if (customAssertionHolder.getCustomAssertion().getClass() == ((CustomAssertionHolder) registeredAssertion).getCustomAssertion().getClass()) {
-                        registeredCustomAssertionPrototype = (CustomAssertionHolder) registeredAssertion;
-                        break;
-                    }
-                }
+                registeredCustomAssertionPrototype = Registry.getDefault().getCustomAssertionsRegistrar().getAssertion(customAssertionHolder.getCustomAssertion().getClass().getName());
             } catch (Exception e) {
                 LOGGER.log(Level.WARNING, "Error retrieving registered custom assertion module file name from Custom Assertions Registrar: " + e.getMessage(), ExceptionUtils.getDebugException(e));
             }

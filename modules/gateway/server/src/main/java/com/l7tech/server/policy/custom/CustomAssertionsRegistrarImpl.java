@@ -208,6 +208,15 @@ public class CustomAssertionsRegistrarImpl extends ApplicationObjectSupport impl
     }
 
     /**
+     * Get the known registered assertion for a given class name.
+     * @param customAssertionClassName the custom assertion class name
+     * @return the custom assertion holder
+     */
+    public CustomAssertionHolder getAssertion(final String customAssertionClassName) {
+        return asCustomAssertionHolder(CustomAssertions.getDescriptor(customAssertionClassName));
+    }
+
+    /**
      * @return the list of all assertions known to the runtime
      */
     @Override
@@ -228,10 +237,9 @@ public class CustomAssertionsRegistrarImpl extends ApplicationObjectSupport impl
     }
 
     /**
-     * Return the <code>CustomAssertionDescriptor</code> for a given assertion or
-     * <b>null<b>
-     * Note that this method may not be invoked from management console. Server
-     * classes may not de-serialize into the ssm environment.
+     * Return the <code>CustomAssertionDescriptor</code> for a given assertion or <b>null<b>.
+     * Note that this method may not be invoked from management console.
+     * Server classes may not de-serialize into the ssm environment.
      *
      * @param a the assertion class
      * @return the custom assertion descriptor class or <b>null</b>
@@ -292,26 +300,33 @@ public class CustomAssertionsRegistrarImpl extends ApplicationObjectSupport impl
     private final SecurePasswordManager securePasswordManager;
 
     private Collection asCustomAssertionHolders(final Set customAssertionDescriptors) {
-        Collection result = new ArrayList();
+        Collection<CustomAssertionHolder> result = new ArrayList<>();
         for (Object customAssertionDescriptor : customAssertionDescriptors) {
-            try {
-                CustomAssertionDescriptor cd = (CustomAssertionDescriptor) customAssertionDescriptor;
-                Class ca = cd.getAssertion();
-                CustomAssertionHolder ch = new CustomAssertionHolder();
-                final CustomAssertion cas = (CustomAssertion) ca.newInstance();
-                ch.setCustomAssertion(cas);
-                ch.setCategory(cd.getCategory());
-                ch.setDescriptionText(cd.getDescription());
-                ch.setPaletteNodeName(cd.getPaletteNodeName());
-                ch.setPolicyNodeName(cd.getPolicyNodeName());
-                ch.setIsUiAutoOpen(cd.getIsUiAutoOpen());
-                ch.setModuleFileName(cd.getModuleFileName());
-                result.add(ch);
-            } catch (Exception e) {
-                logger.log(Level.WARNING, "Unable to instantiate custom assertion", e);
+            CustomAssertionHolder customAssertionHolder = asCustomAssertionHolder((CustomAssertionDescriptor) customAssertionDescriptor);
+            if (customAssertionHolder != null) {
+                result.add(customAssertionHolder);
             }
         }
         return result;
+    }
+
+    private CustomAssertionHolder asCustomAssertionHolder(final CustomAssertionDescriptor customAssertionDescriptor) {
+        CustomAssertionHolder customAssertionHolder = null;
+        try {
+            Class ca = customAssertionDescriptor.getAssertion();
+            customAssertionHolder = new CustomAssertionHolder();
+            final CustomAssertion cas = (CustomAssertion) ca.newInstance();
+            customAssertionHolder.setCustomAssertion(cas);
+            customAssertionHolder.setCategory(customAssertionDescriptor.getCategory());
+            customAssertionHolder.setDescriptionText(customAssertionDescriptor.getDescription());
+            customAssertionHolder.setPaletteNodeName(customAssertionDescriptor.getPaletteNodeName());
+            customAssertionHolder.setPolicyNodeName(customAssertionDescriptor.getPolicyNodeName());
+            customAssertionHolder.setIsUiAutoOpen(customAssertionDescriptor.getIsUiAutoOpen());
+            customAssertionHolder.setModuleFileName(customAssertionDescriptor.getModuleFileName());
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "Unable to instantiate custom assertion", e);
+        }
+        return customAssertionHolder;
     }
 
     /**
@@ -389,7 +404,6 @@ public class CustomAssertionsRegistrarImpl extends ApplicationObjectSupport impl
     private void loadCustomAssertions(InputStream in, ClassLoader classLoader, String moduleFileName) throws IOException {
         Properties props = new Properties();
         props.load(in);
-        props.keys();
 
         ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
         try {
@@ -407,53 +421,8 @@ public class CustomAssertionsRegistrarImpl extends ApplicationObjectSupport impl
     }
 
     private void loadSingleCustomAssertion(String baseKey, Properties properties, ClassLoader classLoader, String moduleFileName) {
-        String serverClass = null;
-        String assertionClass;
-        String editorClass = null;
-        String taskActionClass = null;
-        String extensionInterfaceClassName = null;
-        String optionalDescription = null;
-        boolean isUiAutoOpen = false;
-        String uiAllowedPackages = null;
-        String uiAllowedResources = null;
-        String paletteNodeName = null;
-        String policyNodeName = null;
-        Category category = Category.UNFILLED;
-
-        assertionClass = (String)properties.get(baseKey + ".class");
-
-        for (Object o : properties.keySet()) {
-            String key = (String) o;
-            if (key.startsWith(baseKey)) {
-                if (key.endsWith(".server")) {
-                    serverClass = (String) properties.get(key);
-                } else if (key.endsWith(".task.action.ui")) {
-                    taskActionClass = (String) properties.get(key);
-                } else if (key.endsWith(".ui")) {
-                    editorClass = (String) properties.get(key);
-                } else if (key.endsWith(".extension.interface")) {
-                    extensionInterfaceClassName = (String) properties.get(key);
-                } else if (key.endsWith(".category")) {
-                    Category c = Category.asCategory((String) properties.get(key));
-                    if (c != null) {
-                        category = c;
-                    }
-                } else if (key.endsWith(".description")) {
-                    optionalDescription = (String) properties.get(key);
-                } else if (key.endsWith(".ui.auto.open")) {
-                    isUiAutoOpen = Boolean.parseBoolean((String) properties.get(key));
-                }
-                else if (key.endsWith(".ui.allowed.packages")) {
-                    uiAllowedPackages = (String) properties.get(key);
-                } else if (key.endsWith(".ui.allowed.resources")) {
-                    uiAllowedResources = (String) properties.get(key);
-                } else if (key.endsWith(".palette.node.name")) {
-                    paletteNodeName = (String) properties.get(key);
-                } else if (key.endsWith(".policy.node.name")) {
-                    policyNodeName = (String) properties.get(key);
-                }
-            }
-        }
+        String assertionClass = (String)properties.get(baseKey + ".class");
+        String serverClass = (String) properties.get(baseKey + ".server");
 
         if (serverClass == null || assertionClass == null) {
             StringBuilder sb = new StringBuilder("Incomplete custom assertion, skipping\n");
@@ -465,22 +434,31 @@ public class CustomAssertionsRegistrarImpl extends ApplicationObjectSupport impl
 
         try {
             Class a = Class.forName(assertionClass, true, classLoader);
-            Class eClass = null;
-            if (editorClass != null && !"".equals(editorClass)) {
-                eClass = Class.forName(editorClass, true, classLoader);
-            }
-
-            Class taClass = null;
-            if (taskActionClass != null && !"".equals(taskActionClass)) {
-                taClass = Class.forName(taskActionClass, true, classLoader);
-            }
-
             Class sa = Class.forName(serverClass, true, classLoader);
-            CustomAssertionDescriptor eh = new CustomAssertionDescriptor(baseKey, a, eClass, taClass, sa, category, optionalDescription,
-                    isUiAutoOpen, uiAllowedPackages, uiAllowedResources, paletteNodeName, policyNodeName, moduleFileName);
+            Category category = Category.asCategory((String) properties.get(baseKey + ".category"));
+            category = category == null ? Category.UNFILLED : category;
+            CustomAssertionDescriptor eh = new CustomAssertionDescriptor(baseKey, a, sa, category);
+
+            String editorClass = (String) properties.get(baseKey + ".ui");
+            if (editorClass != null && !"".equals(editorClass)) {
+                eh.setUiClass(Class.forName(editorClass, true, classLoader));
+            }
+
+            String taskActionClass = (String) properties.get(baseKey + ".task.action.ui");
+            if (taskActionClass != null && !"".equals(taskActionClass)) {
+                eh.setTaskActionUiClass(Class.forName(taskActionClass, true, classLoader));
+            }
+
+            eh.setDescription((String) properties.get(baseKey + ".description"));
+            eh.setUiAutoOpen(Boolean.parseBoolean((String) properties.get(baseKey + ".ui.auto.open")));
+            eh.setUiAllowedPackages((String) properties.get(baseKey + ".ui.allowed.packages"));
+            eh.setUiAllowedResources((String) properties.get(baseKey + ".ui.allowed.resources"));
+            eh.setPaletteNodeName((String) properties.get(baseKey + ".palette.node.name"));
+            eh.setPolicyNodeName((String) properties.get(baseKey + ".policy.node.name"));
+            eh.setModuleFileName(moduleFileName);
             CustomAssertions.register(eh);
 
-            registerCustomExtensionInterface(extensionInterfaceClassName, classLoader);
+            registerCustomExtensionInterface((String) properties.get(baseKey + ".extension.interface"), classLoader);
 
             logger.info("Registered custom assertion " + eh);
         } catch (ClassNotFoundException e) {

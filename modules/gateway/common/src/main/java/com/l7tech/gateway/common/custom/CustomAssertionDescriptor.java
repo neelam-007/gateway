@@ -10,73 +10,59 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * The class <code>CustomAssertionDescriptor</code> contains the
- * runtime information that represent a custom assertion.
+ * The class <code>CustomAssertionDescriptor</code> contains the runtime information that represent a custom assertion.
+ * Required:
  * <ul>
- * <li> the assertion name
- * <li> the <code>CustomAssertion</code> bean with the properties
- * <li> the corresponding server side <code>ServiceInvocation</code> subclass
- * <li> the optional client side <code>ClientAssertion</code>
- * <li> an optional UI management side <code>CustomAssertionUI</code>
- * <li> the assertion <code>Category</code>
+ * <li> assertion name
+ * <li> <code>CustomAssertion</code> class
+ * <li> corresponding server side <code>ServiceInvocation</code> class
+ * <li> assertion <code>Category</code>
  * </ul>
- *
- * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
+ * Optional:
+ * <ul>
+ * <li> UI class, must be implementation of <code>CustomAssertionUI</code>
+ * <li> task action UI class, must be implementation of <code>CustomTaskActionUI</code>*
+ * <li> optional description
+ * <li> flag indicating whether or not the UI should be opened automatically when the assertion is added to a policy
+ * <li> white list allowed packages for use by the SSM
+ * <li> white list allowed resources for use by the SSM
+ * <li> display name for the node in the left palette
+ * <li> display name for the node in the right policy editor
+ * <li> display module file name in the Assertion View Info dialog
+ * </ul>
  */
 public class CustomAssertionDescriptor {
     private final Class assertion;
     private final Class serverAssertion;
     private final String name;
-    private final String moduleFileName;
-    private final String description;
-    private final String paletteNodeName;
-    private final String policyNodeName;
-    private final boolean isUiAutoOpen;
-    private final String[] uiAllowedPackages;
-    private final Set<String> uiAllowedResources;
     private final Category category;
-    private final Class uiClass;
-    private final Class taskActionUiClass;
+
+    private Class uiClass;
+    private Class taskActionUiClass;
+    private String moduleFileName;
+    private String description;
+    private String paletteNodeName;
+    private String policyNodeName;
+    private boolean isUiAutoOpen;
+    private String[] uiAllowedPackages = new String[0];
+    private Set<String> uiAllowedResources = new HashSet<>();
 
     /**
-     * Create the new extensibility holder instance with the assertion, server
-     * assertion, and the client (Bridge) asseriton class.
+     * Create the new extensibility holder instance with the assertion and server assertion class.
      *
      * @param name                 the assertion name
      * @param assertionClass       the assertion class
-     * @param uiClass              the UI class, must be implementation of <code>CustomAssertionUI</code>
-     * @param taskActionUiClass    the task action UI class, must be implementation of <code>CustomTaskActionUI</code>
      * @param serverAssertionClass the server side assertion class
      * @param cat                  the assertion category
-     * @param optionalDescription  the description (may be null)
-     * @param isUiAutoOpen         indicates whether or not the UI should be opened automatically when
-     *                             the assertion is added to a policy
-     * @param uiAllowedPackages    the allowed packages for use by the SSM (may be null)
-     * @param uiAllowedResources   the allowed resources for use by the SSM (may be null)
-     * @param paletteNodeName      the display name for the node on the left palette
-     * @param policyNodeName       the display name for the node on the right policy editor
-     * @param moduleFileName       the module file name
      */
     public CustomAssertionDescriptor(final String name,
                                      final Class assertionClass,
-                                     final Class uiClass,
-                                     final Class taskActionUiClass,
                                      final Class serverAssertionClass,
-                                     final Category cat,
-                                     final String optionalDescription,
-                                     final boolean isUiAutoOpen,
-                                     final String uiAllowedPackages,
-                                     final String uiAllowedResources,
-                                     final String paletteNodeName,
-                                     final String policyNodeName,
-                                     final String moduleFileName) {
+                                     final Category cat) {
+
         this.name = name;
-        this.description = optionalDescription;
         this.assertion = assertionClass;
         this.category = cat;
-        this.paletteNodeName = paletteNodeName;
-        this.policyNodeName = policyNodeName;
-        this.moduleFileName = moduleFileName;
 
         if (!CustomAssertion.class.isAssignableFrom(assertionClass)) {
             throw new IllegalArgumentException("Assertion " + assertionClass);
@@ -88,33 +74,8 @@ public class CustomAssertionDescriptor {
             throw new IllegalArgumentException("Server assertion " + serverAssertionClass);
         }
 
-        this.uiClass = uiClass;
         if (uiClass != null && !CustomAssertionUI.class.isAssignableFrom(uiClass)) {
             throw new IllegalArgumentException("Editor assertion " + uiClass);
-        }
-
-        this.taskActionUiClass = taskActionUiClass;
-        if (taskActionUiClass != null && !CustomTaskActionUI.class.isAssignableFrom(taskActionUiClass)) {
-            throw new IllegalArgumentException("Task Action UI " + taskActionUiClass);
-        }
-
-        this.isUiAutoOpen = isUiAutoOpen;
-
-        if (uiAllowedPackages != null) {
-            this.uiAllowedPackages = uiAllowedPackages.split(",");
-            for (int ix = 0; ix < this.uiAllowedPackages.length; ix++) {
-                this.uiAllowedPackages[ix] = this.uiAllowedPackages[ix].replace('.', '/').trim();
-            }
-        } else {
-            this.uiAllowedPackages = new String[0];
-        }
-
-        this.uiAllowedResources = new HashSet<>();
-        if (uiAllowedResources != null) {
-            String[] split = uiAllowedResources.split(",");
-            for (String aSplit : split) {
-                this.uiAllowedResources.add(aSplit.trim());
-            }
         }
     }
 
@@ -196,5 +157,54 @@ public class CustomAssertionDescriptor {
 
     private String safeName(Class cl) {
         return cl != null ? cl.getName() : "null";
+    }
+
+    public void setUiClass(Class uiClass) {
+        this.uiClass = uiClass;
+    }
+
+    public void setTaskActionUiClass(Class taskActionUiClass) {
+        this.taskActionUiClass = taskActionUiClass;
+        if (taskActionUiClass != null && !CustomTaskActionUI.class.isAssignableFrom(taskActionUiClass)) {
+            throw new IllegalArgumentException("Task Action UI " + taskActionUiClass);
+        }
+    }
+
+    public void setModuleFileName(String moduleFileName) {
+        this.moduleFileName = moduleFileName;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public void setPaletteNodeName(String paletteNodeName) {
+        this.paletteNodeName = paletteNodeName;
+    }
+
+    public void setPolicyNodeName(String policyNodeName) {
+        this.policyNodeName = policyNodeName;
+    }
+
+    public void setUiAutoOpen(boolean uiAutoOpen) {
+        isUiAutoOpen = uiAutoOpen;
+    }
+
+    public void setUiAllowedPackages(String uiAllowedPackages) {
+        if (uiAllowedPackages != null) {
+            this.uiAllowedPackages = uiAllowedPackages.split(",");
+            for (int ix = 0; ix < this.uiAllowedPackages.length; ix++) {
+                this.uiAllowedPackages[ix] = this.uiAllowedPackages[ix].replace('.', '/').trim();
+            }
+        }
+    }
+
+    public void setUiAllowedResources(String uiAllowedResources) {
+        if (uiAllowedResources != null) {
+            String[] split = uiAllowedResources.split(",");
+            for (String aSplit : split) {
+                this.uiAllowedResources.add(aSplit.trim());
+            }
+        }
     }
 }
