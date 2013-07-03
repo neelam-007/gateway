@@ -25,6 +25,7 @@ import org.jaxen.FunctionContext;
 import org.jaxen.JaxenException;
 import org.jaxen.XPathFunctionContext;
 import org.jaxen.dom.DOMXPath;
+import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -236,6 +237,11 @@ public class ServerXpathCredentialSource extends AbstractMessageTargetableServer
             Node n = (Node) o;
             int type = n.getNodeType();
             switch (type) {
+                case Node.ATTRIBUTE_NODE:
+                    // Got it
+                    value = n.getNodeValue();
+                    foundNode = n;
+                    break;
                 case Node.TEXT_NODE:
                     // Got it
                     value = n.getNodeValue();
@@ -270,12 +276,18 @@ public class ServerXpathCredentialSource extends AbstractMessageTargetableServer
             if (foundNode == null) {
                 logAndAudit(notElementMsg);
             } else {
-                Node parent = foundNode.getParentNode();
-                if (parent.getNodeType() == Node.ELEMENT_NODE) {
-                    Element el = (Element)parent;
-                    el.getParentNode().removeChild(el);
-                } else {
-                    logAndAudit(notElementMsg);
+                if(foundNode instanceof Attr){
+                    Attr attr = (Attr)foundNode;
+                    Element ownerEle = attr.getOwnerElement();
+                    ownerEle.removeAttributeNode(attr);
+                }else{
+                    Node parent = foundNode.getParentNode();
+                    if (parent.getNodeType() == Node.ELEMENT_NODE) {
+                        Element el = (Element)parent;
+                        el.getParentNode().removeChild(el);
+                    } else {
+                        logAndAudit(notElementMsg);
+                    }
                 }
             }
         }

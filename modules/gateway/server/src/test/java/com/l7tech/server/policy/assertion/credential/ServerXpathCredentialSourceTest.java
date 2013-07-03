@@ -10,11 +10,13 @@ import com.l7tech.gateway.common.audit.TestAudit;
 import com.l7tech.message.HttpRequestKnobStub;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.XpathCredentialSource;
 import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
+import com.l7tech.test.BugId;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.CollectionUtils;
@@ -150,6 +152,59 @@ public class ServerXpathCredentialSourceTest {
         assertNotNull("non-null password shall be gathered", pass);
         String passStr = new String(pass);
         assertEquals("password shall be from expression literal", "bloo", passStr);
+    }
+
+
+    @Test
+    @BugId("FR-297")
+    public void testSimpleCredsFromXmlTargetMessage() throws Exception {
+        XpathCredentialSource ass = new XpathCredentialSource();
+        ass.setXpathExpression(new XpathExpression("/foo/bar"));
+        ass.setPasswordExpression(new XpathExpression("/foo/blat"));
+        ass.setOtherTargetMessageVariable("in");
+        ass.setTarget(TargetMessageType.OTHER);
+        ServerXpathCredentialSource sass = new ServerXpathCredentialSource(ass);
+        final TestAudit testAudit = configureInjects(sass);
+        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message());
+        Message doc = new Message(DOC);
+        context.setVariable("in",doc);
+        AssertionStatus result = sass.checkRequest(context);
+        assertEquals("server assertion shall succeed", AssertionStatus.NONE, result);
+        assertFalse("No audits are expected.", testAudit.iterator().hasNext());
+
+        LoginCredentials creds = context.getAuthenticationContext(doc).getLastCredentials();
+        assertNotNull("credentials shall be gathered", creds);
+
+        assertEquals("login shall be from xml", "blah", creds.getLogin());
+        final char[] pass = creds.getCredentials();
+        assertNotNull("non-null password shall be gathered", pass);
+        String passStr = new String(pass);
+        assertEquals("password shall be from xml", "bloo", passStr);
+    }
+
+    @Test
+    @BugId("SSG-7208")
+    public void testSimpleCredsFromAttribute() throws Exception {
+        final Document DOC_ATTR = XmlUtil.stringAsDocument("<foo><bar user=\"me\">blah</bar><blat password=\"boo\">bloo</blat></foo>");
+
+        XpathCredentialSource ass = new XpathCredentialSource();
+        ass.setXpathExpression(new XpathExpression("/foo/bar/@user"));
+        ass.setPasswordExpression(new XpathExpression("/foo/blat/@password"));
+        ServerXpathCredentialSource sass = new ServerXpathCredentialSource(ass);
+        final TestAudit testAudit = configureInjects(sass);
+        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(DOC_ATTR), new Message());
+        AssertionStatus result = sass.checkRequest(context);
+        assertEquals("server assertion shall succeed", AssertionStatus.NONE, result);
+        assertFalse("No audits are expected.", testAudit.iterator().hasNext());
+
+        LoginCredentials creds = context.getAuthenticationContext(context.getRequest()).getLastCredentials();
+        assertNotNull("credentials shall be gathered", creds);
+
+        assertEquals("login shall be from xml", "me", creds.getLogin());
+        final char[] pass = creds.getCredentials();
+        assertNotNull("non-null password shall be gathered", pass);
+        String passStr = new String(pass);
+        assertEquals("password shall be from xml", "boo", passStr);
     }
 
     /**
