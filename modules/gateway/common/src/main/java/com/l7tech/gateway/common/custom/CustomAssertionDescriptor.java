@@ -59,7 +59,6 @@ public class CustomAssertionDescriptor {
                                      final Class assertionClass,
                                      final Class serverAssertionClass,
                                      final Category cat) {
-
         this.name = name;
         this.assertion = assertionClass;
         this.category = cat;
@@ -72,10 +71,6 @@ public class CustomAssertionDescriptor {
 
         if (!ServiceInvocation.class.isAssignableFrom(serverAssertionClass)) {
             throw new IllegalArgumentException("Server assertion " + serverAssertionClass);
-        }
-
-        if (uiClass != null && !CustomAssertionUI.class.isAssignableFrom(uiClass)) {
-            throw new IllegalArgumentException("Editor assertion " + uiClass);
         }
     }
 
@@ -185,6 +180,9 @@ public class CustomAssertionDescriptor {
      */
     public void setUiClass(Class uiClass) {
         this.uiClass = uiClass;
+        if (uiClass != null && !CustomAssertionUI.class.isAssignableFrom(uiClass)) {
+            throw new IllegalArgumentException("Editor assertion " + uiClass);
+        }
     }
 
     /**
