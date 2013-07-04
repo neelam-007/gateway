@@ -219,4 +219,16 @@ public interface JmsAdmin {
      */
     boolean isValidProperty(JmsMessagePropertyRule rule);
 
+    /**
+     * Validate the JMS dedicated pool size
+     * @param size The size of the pool
+     * @return True if the size is valid, False if not.
+     */
+    boolean isValidThreadPoolSize(String size);
+
+    /**
+     * Check to see if the dedicated thread pool is enabled
+     * @return True when enable.
+     */
+    boolean isDedicatedThreadPoolEnabled();
 }

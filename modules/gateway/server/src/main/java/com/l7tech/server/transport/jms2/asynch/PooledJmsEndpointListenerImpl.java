@@ -168,4 +168,16 @@ class PooledJmsEndpointListenerImpl extends AbstractJmsEndpointListener {
             }
         }
     }
+
+    @Override
+    public void stop() {
+        super.stop();    //To change body of overridden methods use File | Settings | File Templates.
+        if (JmsUtil.isDedicatedThreadPool(getEndpointConfig().getConnection())) {
+            threadPoolBean.shutdown();
+        }
+    }
+
+    protected ThreadPoolBean getThreadPoolBean() {
+        return this.threadPoolBean;
+    }
 }

@@ -345,6 +345,8 @@
 
     <bean id="jmsConnectionManager" class="com.l7tech.server.transport.jms.JmsConnectionManagerStub"/>
 
+    <bean id="jmsBlockPolicy" class="com.l7tech.server.transport.jms2.JmsBlockPolicy"/>
+
     <bean id="jmsThreadPool" class="com.l7tech.server.util.ThreadPoolBean">
         <constructor-arg index="0"  ref="serverConfig" />
         <constructor-arg index="1" value="JMS Thread Pool" />

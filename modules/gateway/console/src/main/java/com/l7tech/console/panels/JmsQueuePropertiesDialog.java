@@ -119,6 +119,10 @@ public class JmsQueuePropertiesDialog extends JDialog {
     private JLabel queuePasswordWarningLabel;
     private ByteLimitPanel byteLimitPanel;
     private SecurityZoneWidget zoneControl;
+    private JCheckBox dedicatedWorkerThreadPoolCheckBox;
+    private JTextField workerThreadPoolSizeTextField;
+    private JLabel threadPoolSizeLabel;
+    private JPanel dedicatedWorkerThreadPoolPanel;
 
 
     private JmsConnection connection = null;
@@ -305,7 +309,28 @@ public class JmsQueuePropertiesDialog extends JDialog {
         Utilities.enableGrayOnDisabled(jndiPasswordField);
 
         destinationTypeComboBox.setModel( new DefaultComboBoxModel( new String[]{ TYPE_QUEUE, TYPE_TOPIC } ) );
-        
+
+        destinationTypeComboBox.addItemListener( new ItemListener() {
+            @Override
+            public void itemStateChanged(ItemEvent e) {
+                enableOrDisableDedicatedWorkerThreadPool();
+            }
+
+        });
+
+        if (!Registry.getDefault().getJmsManager().isDedicatedThreadPoolEnabled()) {
+            dedicatedWorkerThreadPoolPanel.setVisible(false);
+        }
+
+        Utilities.enableGrayOnDisabled(threadPoolSizeLabel);
+        Utilities.enableGrayOnDisabled(workerThreadPoolSizeTextField);
+        workerThreadPoolSizeTextField.setEnabled(false);
+        threadPoolSizeLabel.setEnabled(false);
+
+        workerThreadPoolSizeTextField.getDocument().addDocumentListener(enableDisableListener);
+
+        dedicatedWorkerThreadPoolCheckBox.addItemListener(enableDisableListener);
+
         useQueueCredentialsCheckBox.addItemListener(new ItemListener() {
             @Override
             public void itemStateChanged(ItemEvent e) {
@@ -484,6 +509,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
         });
 
         saveButton.addActionListener(new ActionListener() {
+
             @Override
             public void actionPerformed(ActionEvent e) {
                 onSave();
@@ -794,6 +820,11 @@ public class JmsQueuePropertiesDialog extends JDialog {
         if (useJmsMsgPropAsSoapActionRadioButton.isSelected()) {
             properties.setProperty(JmsConnection.JMS_MSG_PROP_WITH_SOAPACTION, jmsMsgPropWithSoapActionTextField.getText());
         }
+
+        if (TYPE_QUEUE.equals(destinationTypeComboBox.getSelectedItem()) && dedicatedWorkerThreadPoolCheckBox.isSelected()) {
+            properties.setProperty(JmsConnection.PROP_IS_DEDICATED_POOL, Boolean.TRUE.toString());
+            properties.setProperty(JmsConnection.PROP_DEDICATED_POOL_SIZE, workerThreadPoolSizeTextField.getText());
+        }
         conn.properties(properties);
         conn.setSecurityZone(zoneControl.getSelectedZone());
         return conn;
@@ -999,6 +1030,14 @@ public class JmsQueuePropertiesDialog extends JDialog {
                 }
             }
             environmentPropertiesTableModel.setRows( environmentProperties );
+            String isDedicatedPool = props.getProperty(JmsConnection.PROP_IS_DEDICATED_POOL);
+            if (isDedicatedPool != null && Boolean.parseBoolean(isDedicatedPool)) {
+                dedicatedWorkerThreadPoolCheckBox.setSelected(true);
+                workerThreadPoolSizeTextField.setText(props.getProperty(JmsConnection.PROP_DEDICATED_POOL_SIZE, "5"));
+            } else {
+                dedicatedWorkerThreadPoolCheckBox.setSelected(false);
+                workerThreadPoolSizeTextField.setText("");
+            }
         } else {
             // No connection is set
             qcfTextField.setText("");
@@ -1182,6 +1221,13 @@ public class JmsQueuePropertiesDialog extends JDialog {
             return false;
         if (byteLimitPanel.validateFields()!=null)
             return false;
+        if (TYPE_QUEUE.equals(destinationTypeComboBox.getSelectedItem())) {
+            if (dedicatedWorkerThreadPoolCheckBox.isSelected()) {
+                if (!Registry.getDefault().getJmsManager().isValidThreadPoolSize(workerThreadPoolSizeTextField.getText())) {
+                    return false;
+                }
+            }
+        }
 
         return true;
     }
@@ -1194,6 +1240,16 @@ public class JmsQueuePropertiesDialog extends JDialog {
     private void enableOrDisableQueueCredentials() {
         queueUsernameTextField.setEnabled(useQueueCredentialsCheckBox.isSelected());
         queuePasswordField.setEnabled(useQueueCredentialsCheckBox.isSelected());
+    }
+
+    private void enableOrDisableDedicatedWorkerThreadPool() {
+        if (TYPE_TOPIC.equals(destinationTypeComboBox.getSelectedItem())) {
+            dedicatedWorkerThreadPoolCheckBox.setEnabled(false);
+            workerThreadPoolSizeTextField.setEnabled(false);
+        } else {
+            dedicatedWorkerThreadPoolCheckBox.setEnabled(true);
+            workerThreadPoolSizeTextField.setEnabled(true);
+        }
     }
 
     /**
@@ -1230,6 +1286,15 @@ public class JmsQueuePropertiesDialog extends JDialog {
         
         isTemplateQueue.setEnabled(canEdit && outboundRadioButton.isSelected());
         applyReset.setEnabled( canEdit && providerComboBox.getSelectedItem() != null );
+
+        if (dedicatedWorkerThreadPoolCheckBox.isSelected()) {
+            threadPoolSizeLabel.setEnabled(true);
+            workerThreadPoolSizeTextField.setEnabled(true);
+        } else {
+            threadPoolSizeLabel.setEnabled(false);
+            workerThreadPoolSizeTextField.setEnabled(false);
+        }
+
         final boolean valid = validateForm();
         saveButton.setEnabled(valid && canEdit);
         testButton.setEnabled(valid && !viewIsTemplate());

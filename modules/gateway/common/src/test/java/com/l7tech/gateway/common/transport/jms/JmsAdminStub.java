@@ -139,4 +139,14 @@ public class JmsAdminStub implements JmsAdmin {
     public boolean isValidProperty(JmsMessagePropertyRule rule) {
         return true;
     }
+
+    @Override
+    public boolean isValidThreadPoolSize(String size) {
+        return true;
+    }
+
+    @Override
+    public boolean isDedicatedThreadPoolEnabled() {
+        return true;
+    }
 }

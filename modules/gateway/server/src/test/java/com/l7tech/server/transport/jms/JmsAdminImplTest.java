@@ -31,4 +31,12 @@ public class JmsAdminImplTest {
         rule = new JmsMessagePropertyRule("NotPredefinedProperty", false, "string");
         assertTrue(jmsAdmin.isValidProperty(rule));
     }
+
+    @Test
+    public void testIsDedicatedThreadPool() {
+        assertFalse(jmsAdmin.isValidThreadPoolSize("A"));
+        assertFalse(jmsAdmin.isValidThreadPoolSize("1"));
+        assertFalse(jmsAdmin.isValidThreadPoolSize("100"));
+        assertTrue(jmsAdmin.isValidThreadPoolSize("10"));
+    }
 }

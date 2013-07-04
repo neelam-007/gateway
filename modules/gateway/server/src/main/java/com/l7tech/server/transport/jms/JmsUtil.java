@@ -118,7 +118,9 @@ public class JmsUtil {
         Session session = null;
 
         Properties props = new Properties();
-        props.setProperty( Context.PROVIDER_URL, url );
+        if (url != null) {
+            props.setProperty( Context.PROVIDER_URL, url );
+        }
         props.setProperty( Context.INITIAL_CONTEXT_FACTORY, icf );
         props.putAll( connection.properties() );
         if ( props.getProperty( Context.SECURITY_CREDENTIALS ) != null ) {
@@ -576,6 +578,19 @@ public class JmsUtil {
         appendCauses( exception, builder );
 
         return builder.toString();
+    }
+
+    /**
+     * Is the given connection with dedicated thread pool.
+     * @param connection The JMS Connection
+     * @return True when the thread pool is
+     */
+    public static boolean isDedicatedThreadPool(JmsConnection connection) {
+        String isDedicatedPool = connection.properties().getProperty(JmsConnection.PROP_IS_DEDICATED_POOL);
+        if (isDedicatedPool != null && Boolean.parseBoolean(isDedicatedPool)) {
+            return true;
+        }
+        return false;
     }
 
     /**

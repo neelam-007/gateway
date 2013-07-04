@@ -5,9 +5,11 @@ import com.l7tech.gateway.common.transport.jms.*;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.assertion.JmsMessagePropertyRule;
 import com.l7tech.policy.variable.Syntax;
+import com.l7tech.server.ServerConfig;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.policy.variable.GatewaySecurePasswordReferenceExpander;
 import com.l7tech.util.Config;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 
 import javax.jms.*;
@@ -22,6 +24,8 @@ import java.util.logging.Logger;
 
 public class JmsAdminImpl implements JmsAdmin {
     private static final Logger logger = Logger.getLogger(JmsAdminImpl.class.getName());
+    private final static int CORE_SIZE = 5;
+    private final static int DEFAULT_MAX_SIZE = 25;
 
     private final JmsConnectionManager jmsConnectionManager;
     private final JmsEndpointManager jmsEndpointManager;
@@ -377,6 +381,22 @@ public class JmsAdminImpl implements JmsAdmin {
         return true;
     }
 
+    @Override
+    public boolean isValidThreadPoolSize(String poolSize) {
+        if (poolSize == null) {
+            return false;
+        } else {
+            try {
+                int size = Integer.parseInt(poolSize);
+                if (size < CORE_SIZE) return false;
+                if (size > ServerConfig.getInstance().getIntProperty("jmsListenerThreadLimit", DEFAULT_MAX_SIZE)) return false;
+            } catch (NumberFormatException e) {
+                return false;
+            }
+            return true;
+        }
+    }
+
     protected void initDao() throws Exception {
         checkJmsConnectionManager();
         checkJmsEndpointManager();
@@ -416,6 +436,11 @@ public class JmsAdminImpl implements JmsAdmin {
                     "Couldn't close Message Producer '"+ExceptionUtils.getMessage(e)+"'.",
                     ExceptionUtils.getDebugException(e));
         }
+    }
+
+    @Override
+    public boolean isDedicatedThreadPoolEnabled() {
+        return ConfigFactory.getBooleanProperty("com.l7tech.server.transport.jms.dedicatedThreadPool.enabled", false);
     }
 
 }
