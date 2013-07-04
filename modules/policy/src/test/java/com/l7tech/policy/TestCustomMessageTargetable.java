@@ -8,10 +8,10 @@ import com.l7tech.policy.variable.VariableMetadata;
 import java.util.Map;
 
 /**
- * MessageTargetableCustomAssertion Testing class It's best to keep this class unmodified
- *
- * @author  tveninov
+ * MessageTargetableCustomAssertion Testing class.
+ * It's best to keep this class unmodified.
  */
+@SuppressWarnings("UnusedDeclaration")
 public class TestCustomMessageTargetable implements CustomAssertion, CustomMessageTargetable {
     private static final long serialVersionUID = -4151848438981589828L;
 
@@ -35,12 +35,16 @@ public class TestCustomMessageTargetable implements CustomAssertion, CustomMessa
     public TestCustomMessageTargetable(final String prop1, final int prop2, final boolean prop3, final Map prop4) {
         this(prop1, prop2, prop3, prop4,
                 new CustomMessageTargetableSupport(CustomMessageTargetableSupport.TARGET_REQUEST),
-                new CustomMessageTargetableSupport(CustomMessageTargetableSupport.TARGET_RESPONSE));
+                new CustomMessageTargetableSupport(CustomMessageTargetableSupport.TARGET_RESPONSE)
+        );
     }
 
-    @SuppressWarnings("UnusedDeclaration")
     public TestCustomMessageTargetable(final CustomMessageTargetableSupport sourceTarget, final CustomMessageTargetableSupport destinationTarget) {
         this(PROP1_DEFAULT_VALUE, PROP2_DEFAULT_VALUE, PROP3_DEFAULT_VALUE, null, sourceTarget, destinationTarget);
+    }
+
+    public TestCustomMessageTargetable(final String sourceTargetMessage, final String destinationTargetMessage) {
+        this(new CustomMessageTargetableSupport(sourceTargetMessage), new CustomMessageTargetableSupport(destinationTargetMessage));
     }
 
     public TestCustomMessageTargetable(final String prop1, final int prop2, final boolean prop3, final Map prop4,
@@ -102,7 +106,6 @@ public class TestCustomMessageTargetable implements CustomAssertion, CustomMessa
         return sourceTarget;
     }
 
-    @SuppressWarnings("UnusedDeclaration")
     public void setSourceTarget(final CustomMessageTargetableSupport  sourceTarget) {
         this.sourceTarget = sourceTarget;
     }
@@ -111,7 +114,6 @@ public class TestCustomMessageTargetable implements CustomAssertion, CustomMessa
         return destinationTarget;
     }
 
-    @SuppressWarnings("UnusedDeclaration")
     public void setDestinationTarget(final CustomMessageTargetableSupport destinationTarget) {
         this.destinationTarget = destinationTarget;
     }

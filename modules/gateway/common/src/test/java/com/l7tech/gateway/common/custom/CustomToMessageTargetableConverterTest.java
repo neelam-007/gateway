@@ -8,12 +8,10 @@ import org.junit.Test;
 
 import java.util.Arrays;
 
-import static junit.framework.Assert.*;
+import static org.junit.Assert.*;
 
 /**
  * Test CustomToMessageTargetableConverter
- *
- * @author tveninov
  */
 public class CustomToMessageTargetableConverterTest {
     

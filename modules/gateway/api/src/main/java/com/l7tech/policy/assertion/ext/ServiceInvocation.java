@@ -1,5 +1,7 @@
 package com.l7tech.policy.assertion.ext;
 
+import com.l7tech.policy.assertion.ext.message.CustomPolicyContext;
+
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 
@@ -78,23 +80,21 @@ public abstract class ServiceInvocation {
      *
      * This method replaces onRequest(...) and onResponse(...), which are obsolete and have been deprecated.
      *
-     * For backwards compatibility, ServiceResponse param is passed as well and is valid (not null) only after routing.
-     * For future implementations use only ServiceRequest.
+     * For backwards compatibility, the default request and response are now located into the context map.
+     * You can access them using the following keys; (defaultRequest and defaultResponse)
      *
-     * @param request request data associated with the service
-     * @param response response data associated with the service or null if before routing.
+     * @param customPolicyContext    the policy enforcement context
      * @return result status from processing the Custom Assertion
      *
      * @see #onRequest(ServiceRequest)
      * @see #onResponse(ServiceResponse)
      */
-    public CustomAssertionStatus checkRequest(final ServiceRequest request, final ServiceResponse response) {
+    public CustomAssertionStatus checkRequest(final CustomPolicyContext customPolicyContext) {
         try {
-            // request cannot be null
-            Object isPostRoutingObject = request.getContext().get("isPostRouting");
-            boolean isPostRouting = isPostRoutingObject != null && (Boolean) isPostRoutingObject;
+            final ServiceRequest request = (ServiceRequest)customPolicyContext.getContext().get("defaultRequest");
+            final ServiceResponse response = (ServiceResponse)customPolicyContext.getContext().get("defaultResponse");
 
-            if (isPostRouting && response != null) {
+            if (customPolicyContext.isPostRouting() && response != null) {
                 //noinspection deprecation
                 onResponse(response);
             } else {

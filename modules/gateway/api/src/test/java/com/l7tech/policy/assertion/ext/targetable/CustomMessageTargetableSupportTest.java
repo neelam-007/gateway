@@ -8,13 +8,11 @@ import org.junit.Test;
 
 import java.util.Arrays;
 
-import static junit.framework.Assert.*;
+import static org.junit.Assert.*;
 import static org.hamcrest.CoreMatchers.*;
-import static org.hamcrest.MatcherAssert.*;
 
 /**
  * Test CustomMessageTargetableSupport
- * @author tveninov
  */
 public class CustomMessageTargetableSupportTest {
 

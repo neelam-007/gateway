@@ -180,10 +180,16 @@ public class CustomAssertionDescriptor {
         return cl != null ? cl.getName() : "null";
     }
 
+    /**
+     * @param uiClass UI class, must be implementation of <code>CustomAssertionUI</code>
+     */
     public void setUiClass(Class uiClass) {
         this.uiClass = uiClass;
     }
 
+    /**
+     * @param taskActionUiClass task action UI class, must be implementation of <code>CustomTaskActionUI</code>
+     */
     public void setTaskActionUiClass(Class taskActionUiClass) {
         this.taskActionUiClass = taskActionUiClass;
         if (taskActionUiClass != null && !CustomTaskActionUI.class.isAssignableFrom(taskActionUiClass)) {

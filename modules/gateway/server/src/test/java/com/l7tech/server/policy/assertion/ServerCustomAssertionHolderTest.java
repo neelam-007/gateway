@@ -3,22 +3,17 @@ package com.l7tech.server.policy.assertion;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ByteArrayStashManager;
 import com.l7tech.common.mime.StashManager;
-import com.l7tech.gateway.common.custom.CustomAssertionDescriptor;
-import com.l7tech.gateway.common.custom.CustomAssertionsRegistrar;
-import com.l7tech.message.Message;
-import com.l7tech.policy.AssertionRegistry;
+import com.l7tech.message.*;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.ext.*;
+import com.l7tech.policy.assertion.ext.message.*;
 import com.l7tech.policy.assertion.ext.targetable.CustomMessageTargetable;
-import com.l7tech.security.cert.TrustedCertManager;
 import com.l7tech.server.StashManagerFactory;
-import com.l7tech.server.TestLicenseManager;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.ServerPolicyFactory;
 import com.l7tech.server.policy.assertion.composite.ServerAllAssertion;
-import com.l7tech.server.util.Injector;
+import com.l7tech.server.policy.custom.CustomAssertionsPolicyTestBase;
 import com.l7tech.util.HexUtils;
 
 import org.junit.Before;
@@ -26,110 +21,40 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.security.AccessControlException;
 import java.security.GeneralSecurityException;
 import java.util.*;
 
 import org.mockito.*;
 import org.mockito.invocation.InvocationOnMock;
-import org.mockito.internal.stubbing.answers.Returns;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
-import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 
 import javax.security.auth.login.FailedLoginException;
 import javax.xml.parsers.ParserConfigurationException;
 
 import static org.mockito.Mockito.*;
-import static junit.framework.Assert.*;
+import static org.junit.Assert.*;
 
 /**
  * Test ServerCustomAssertionHolder
- *
- * @author tveninov
  */
 @RunWith(MockitoJUnitRunner.class)
-public class ServerCustomAssertionHolderTest
+public class ServerCustomAssertionHolderTest extends CustomAssertionsPolicyTestBase
 {
     static private final String SAMPLE_XML_INPUT_MESSAGE = "<?xml version=\"1.0\" encoding=\"utf-8\"?><a><b>1</b><c>2</c></a>";
     static private final String SAMPLE_XML_OUT_MESSAGE = "<test>output message</test>";
 
-    /**
-     * Our ServiceInvocation implementation for testing
-     * added getCustomAssertion method so that we can have access to the customAssertion.
-     */
-    private class TestServiceInvocation extends ServiceInvocation {
-        public CustomAssertion getCustomAssertion() {
-            return (this.customAssertion);
-        }
-    }
-
-    /**
-     * Test Legacy CustomAssertion
-     */
-    public static class TestLegacyCustomAssertion implements CustomAssertion {
-        private static final long serialVersionUID = 7349491450019520261L;
-        @Override
-        public String getName() {
-            return "My Legacy CustomAssertion";
-        }
-    }
-
-    @Mock(name = "applicationContext")
-    private ApplicationContext mockApplicationContext;
-
-    @InjectMocks
-    private final ServerPolicyFactory serverPolicyFactory = new ServerPolicyFactory(new TestLicenseManager(), new Injector() {
-        @Override
-        public void inject( final Object target ) {
-            // Since we already have mocked ServiceInvocation object (serviceInvocation)
-            // we need to inject that instance into newly created ServerCustomAssertionHolder.
-            // for our test purposes
-            //
-            // !!!WARNING!!!
-            // In the future ServerCustomAssertionHolder.serviceInvocation field should not be renamed
-            // otherwise this unit test will fail
-            if (target instanceof ServerCustomAssertionHolder) {
-                try {
-                    Field field = target.getClass().getDeclaredField("serviceInvocation");
-                    field.setAccessible(true);
-                    field.set(target, serviceInvocation);
-                } catch (NoSuchFieldException | IllegalAccessException e) {
-                    fail("Failed to inject ServerCustomAssertionHolder#serviceInvocation field.");
-                }
-            }
-        }
-    });
-
-    @Spy
-    private final TestServiceInvocation serviceInvocation = new TestServiceInvocation();
-
-    @Mock
-    private CustomAssertionsRegistrar mockRegistrar;
-
-    @Mock
-    private TrustedCertManager mockTrustedCertManager;
-
-    private final AssertionRegistry assertionRegistry = new AssertionRegistry();
-
     @Before
     public void setUp() throws Exception
     {
-        // mock getBean to return appropriate mock classes for CustomAssertionRegistrar and TrustedCertManager
-        // which are used by ServerCustomAssertionHolder
-        when(mockApplicationContext.getBean("customAssertionRegistrar")).thenReturn(mockRegistrar);
-        when(mockApplicationContext.getBean("trustedCertManager")).thenReturn(mockTrustedCertManager);
+        // call base init
+        doInit();
 
         // mock getBean to return appropriate mock classes for policyFactory
         when(mockApplicationContext.getBean("policyFactory", ServerPolicyFactory.class)).thenReturn(serverPolicyFactory);
         when(mockApplicationContext.getBean("policyFactory")).thenReturn(serverPolicyFactory);
-
-        // mock getBean to return appropriate mock classes for assertionRegistry
-        assertionRegistry.afterPropertiesSet();
-        when(mockApplicationContext.getBean("assertionRegistry", AssertionRegistry.class)).thenReturn(assertionRegistry);
-        when(mockApplicationContext.getBean("assertionRegistry")).thenReturn(assertionRegistry);
 
         // mock getBean to return appropriate stashManagerFactory used for HardcodedResponseAssertion
         final StashManagerFactory stashManagerFactory = new StashManagerFactory() {
@@ -141,34 +66,9 @@ public class ServerCustomAssertionHolderTest
         when(mockApplicationContext.getBean("stashManagerFactory")).thenReturn(stashManagerFactory);
         when(mockApplicationContext.getBean("stashManagerFactory", StashManagerFactory.class)).thenReturn(stashManagerFactory);
 
-        // add sample Legacy descriptor
-        final CustomAssertionDescriptor descriptorLegacy = new CustomAssertionDescriptor(
-                "Test.TestLegacyCustomAssertion",
-                TestLegacyCustomAssertion.class,
-                TestServiceInvocation.class,
-                Category.AUDIT_ALERT
-        );
-        descriptorLegacy.setDescription("Test CustomAssertion Description");
-
-        // mock the new descriptors
-        when(mockRegistrar.getDescriptor(TestLegacyCustomAssertion.class)).then(new Returns(descriptorLegacy));
-
         // Register needed assertions here
         assertionRegistry.registerAssertion(SetVariableAssertion.class);
         assertionRegistry.registerAssertion(HardcodedResponseAssertion.class);
-        assertionRegistry.registerAssertion(CustomAssertionHolder.class);
-    }
-
-    private PolicyEnforcementContext makeContext(final Message request, final Message response) {
-        return PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
-    }
-
-    private Assertion makePolicy(final List<Assertion> assertions) {
-        final AllAssertion allAssertion = new AllAssertion();
-        for (Assertion assertion: assertions) {
-            allAssertion.addChild(assertion);
-        }
-        return allAssertion;
     }
 
     @Test
@@ -187,7 +87,7 @@ public class ServerCustomAssertionHolderTest
 
         final PolicyEnforcementContext context = makeContext(new Message(XmlUtil.stringToDocument(SAMPLE_XML_INPUT_MESSAGE)), new Message());
 
-        doReturn(null).when(serviceInvocation).checkRequest(Matchers.<ServiceRequest>any(), Matchers.<ServiceResponse>any());
+        doReturn(null).when(serviceInvocation).checkRequest(Matchers.<CustomPolicyContext>any());
         final AssertionStatus status = serverCustomAssertionHolder.checkRequest(context);
         assertEquals(AssertionStatus.FAILED, status);
     }
@@ -319,8 +219,7 @@ public class ServerCustomAssertionHolderTest
     }
 
     @Test
-    public void testLegacyBeforeRoute() throws Exception
-    {
+    public void testLegacyBeforeRoute() throws Exception {
         final CustomAssertionHolder customAssertionHolder = new CustomAssertionHolder();
         customAssertionHolder.setCategory(Category.AUDIT_ALERT);
         customAssertionHolder.setDescriptionText("Test Custom Assertion");
@@ -389,8 +288,7 @@ public class ServerCustomAssertionHolderTest
     }
 
     @Test
-    public void testLegacyAfterRoute() throws Exception
-    {
+    public void testLegacyAfterRoute() throws Exception {
         final HardcodedResponseAssertion responseAssertion = new HardcodedResponseAssertion();
         responseAssertion.setResponseContentType("text/xml; charset=UTF-8");
         responseAssertion.setResponseStatus(HardcodedResponseAssertion.DEFAULT_STATUS);
@@ -449,4 +347,5 @@ public class ServerCustomAssertionHolderTest
         AssertionStatus status = serverAllAssertion.checkRequest(context);
         assertEquals(AssertionStatus.NONE, status);
     }
+
 }

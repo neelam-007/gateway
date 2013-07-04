@@ -6,9 +6,18 @@ import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.*;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.custom.*;
+import com.l7tech.gateway.common.custom.ContentTypeHeaderToCustomConverter;
+import com.l7tech.policy.assertion.ext.message.format.CustomMessageFormatFactory;
+import com.l7tech.policy.assertion.ext.message.knob.CustomHttpHeadersKnob;
+import com.l7tech.policy.variable.Syntax;
+import com.l7tech.server.custom.CustomMessageImpl;
+import com.l7tech.gateway.common.custom.JsonDataToCustomConverter;
+import com.l7tech.gateway.common.custom.CustomToMessageTargetableConverter;
+import com.l7tech.server.custom.format.CustomMessageFormatRegistry;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.identity.AnonymousUserReference;
 import com.l7tech.identity.UserBean;
+import com.l7tech.json.JSONFactory;
 import com.l7tech.message.*;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
@@ -16,10 +25,14 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.ext.*;
+import com.l7tech.policy.assertion.ext.message.*;
+import com.l7tech.policy.assertion.ext.targetable.CustomMessageTargetable;
+import com.l7tech.policy.assertion.ext.targetable.CustomMessageTargetableSupport;
 import com.l7tech.policy.variable.NoSuchVariableException;
-import com.l7tech.policy.variable.Syntax;
+import com.l7tech.policy.variable.VariableNotSettableException;
 import com.l7tech.security.cert.TrustedCertManager;
 import com.l7tech.security.token.OpaqueSecurityToken;
+import com.l7tech.server.custom.knob.CustomHttpHeadersKnobImpl;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -44,13 +57,16 @@ import java.security.*;
 import java.util.*;
 import java.util.logging.Level;
 
+import com.sun.istack.Nullable;
+import org.jetbrains.annotations.NotNull;
+
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
 /**
  * The <code>ServerCustomAssertionHolder</code> class represents the server side of the
- * custom assertion. It implemets the <code>ServerAssertion</code> interface, and it
+ * custom assertion. It implements the <code>ServerAssertion</code> interface, and it
  * prepares the environment for executing the custom assertion <code>ServiceInvocation<code>.
  *
  * @author <a href="mailto:emarceta@layer7tech.com">Emil Marceta</a>
@@ -89,9 +105,7 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
             serviceInvocation = (ServiceInvocation) sa.newInstance();
             serviceInvocation.setCustomAssertion(customAssertion);
             new CustomAuditorImpl(getAudit()).register(serviceInvocation);
-        } catch (InstantiationException e) {
-            throw new PolicyAssertionException(data, "Custom assertion is misconfigured", e);
-        } catch (IllegalAccessException e) {
+        } catch (InstantiationException | IllegalAccessException e) {
             throw new PolicyAssertionException(data, "Custom assertion is misconfigured", e);
         }
     }
@@ -167,15 +181,20 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
                 Object retStatus = Subject.doAs(subject, new PrivilegedExceptionAction() {
                     @Override
                     public Object run() throws Exception {
+                        CustomAssertionStatus status = null;
+                        CustomPolicyContextImpl policyContext = null;
                         CustomServiceResponse customServiceResponse = null;
                         CustomServiceRequest customServiceRequest = null;
-                        CustomAssertionStatus status = null;
+                        Map defaultContextMap = createDefaultContextMap(context);
+
                         try {
-                            customServiceRequest = new CustomServiceRequest(context);
-                            if (context.getResponse().isInitialized() && context.getResponse().getKnob(MimeKnob.class) != null) {
-                                customServiceResponse = new CustomServiceResponse(context);
+                            if (isPostRouting(context) && context.getResponse().isInitialized() && context.getResponse().getKnob(MimeKnob.class) != null) {
+                                customServiceResponse = new CustomServiceResponse(context, defaultContextMap);
+                            } else {
+                                customServiceRequest = new CustomServiceRequest(context, defaultContextMap);
                             }
-                            status = serviceInvocation.checkRequest(customServiceRequest, customServiceResponse);
+                            policyContext = new CustomPolicyContextImpl(context, defaultContextMap, customServiceRequest, customServiceResponse);
+                            status = serviceInvocation.checkRequest(policyContext);
                         } catch (RuntimeException e) {
                             // ServiceInvocation.checkRequest(...) swallows IOException and GeneralSecurityException with RuntimeException
                             // so that those exceptions can be excluded from the function signature.
@@ -187,8 +206,7 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
                             }
                             throw e;
                         } finally {
-                            if (customServiceRequest != null) customServiceRequest.onCompletion();
-                            if (customServiceResponse != null) customServiceResponse.onCompletion();
+                            if (policyContext != null) policyContext.onCompletion();
                         }
                         return status;
                     }
@@ -370,14 +388,40 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
         }
     }
 
-    private class CustomServiceResponse extends CustomService implements ServiceResponse {
+    /**
+     * Use this function to initialize all common/shared context objects.
+     *
+     * @param pec    the policy enforcement context.
+     * @return hash-map containing the default list of context objects.
+     * @throws IOException if extractParts throws
+     */
+    private Map<String, Object> createDefaultContextMap(PolicyEnforcementContext pec) throws IOException {
+        final Map<String, Object> context = new HashMap<>();
+
+        // add HttpServletRequest, HttpServletRequest header values and HttpServletResponse.
+        saveServletKnobs(pec, context);
+
+        // plug in the message parts in here (needed for legacy code)
+        context.put("messageParts", extractParts(pec.getResponse()));
+
+        //add the ServiceFinder
+        final ServiceFinderImpl serviceFinder = new ServiceFinderImpl();
+        serviceFinder.setCertificateFinderImpl(new CertificateFinderImpl((TrustedCertManager) applicationContext.getBean("trustedCertManager")));
+        serviceFinder.setVariableServicesImpl(new VariableServicesImpl(getAudit()));
+        serviceFinder.setSecurePasswordServicesImpl(new SecurePasswordServicesImpl((SecurePasswordManager) applicationContext.getBean("securePasswordManager")));
+        context.put("serviceFinder", serviceFinder);
+
+        return context;
+    }
+
+    private class CustomServiceResponse implements ServiceResponse {
         private final PolicyEnforcementContext pec;
-        private final Map context = new HashMap();
+        private final Map context;
         private Document document;
         private Document requestDocument;
         private final SecurityContext securityContext;
 
-        public CustomServiceResponse(PolicyEnforcementContext pec) throws IOException, SAXException {
+        public CustomServiceResponse(PolicyEnforcementContext pec, final Map defaultContextMap) throws IOException, SAXException {
             this.pec = pec;
             try {
                 this.document = (Document) pec.getResponse().getXmlKnob().getDocumentReadOnly().cloneNode(true);
@@ -391,19 +435,8 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
                 this.requestDocument = null;
                 logger.log(Level.FINE, "cannot get request xml", e);
             }
-            saveServletKnobs(pec, context);
 
-            // plug in the message parts in here
-            context.put("messageParts", extractParts(pec.getResponse()));
-            //add the ServiceFinder
-            ServiceFinderImpl serviceFinder = new ServiceFinderImpl();
-            serviceFinder.setCertificateFinderImpl(new CertificateFinderImpl((TrustedCertManager) applicationContext.getBean("trustedCertManager")));
-            serviceFinder.setVariableServicesImpl(new VariableServicesImpl(getAudit()));
-            serviceFinder.setSecurePasswordServicesImpl(new SecurePasswordServicesImpl((SecurePasswordManager) applicationContext.getBean("securePasswordManager")));
-            context.put("serviceFinder", serviceFinder);
-
-            // set is it's post routing
-            context.put("isPostRouting", isPostRouting(pec));
+            this.context = defaultContextMap;
 
             securityContext = new SecurityContext() {
                 @Override
@@ -465,12 +498,7 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
          */
         @Override
         public Object getVariable(String name) {
-            try {
-                return pec.getVariable(name);
-            } catch (NoSuchVariableException e) {
-                logAndAudit(AssertionMessages.NO_SUCH_VARIABLE, name );
-            }
-            return null;
+            return ServerCustomAssertionHolder.this.getVariable(pec, name);
         }
 
         /**
@@ -478,7 +506,7 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
          */
         @Override
         public void setVariable(String name, Object value) {
-            pec.setVariable(name, value);
+            ServerCustomAssertionHolder.this.setVariable(pec, name, value);
         }
 
         @Override
@@ -501,14 +529,13 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
         }
     }
 
-    private class CustomServiceRequest extends CustomService implements ServiceRequest {
+    private class CustomServiceRequest implements ServiceRequest {
         private final PolicyEnforcementContext pec;
-        private final Map context = new HashMap();
+        private final Map context;
         private Document document;
         private final SecurityContext securityContext;
 
-        public CustomServiceRequest(PolicyEnforcementContext pec)
-                throws IOException, SAXException {
+        public CustomServiceRequest(PolicyEnforcementContext pec, Map defaultContextMap) throws IOException, SAXException {
             this.pec = pec;
             try {
                 this.document = (Document) pec.getRequest().getXmlKnob().getDocumentReadOnly().cloneNode(true);
@@ -516,23 +543,14 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
                 logger.log(Level.FINE, "This request may not be XML", e);
                 this.document = null;
             }
+
+            // get the context map initialized with default objects.
+            context = defaultContextMap;
+
+            // add context cookies
             Vector newCookies = toServletCookies(pec.getCookies());
-
-            saveServletKnobs(pec, context);
-
             context.put("updatedCookies", newCookies);
             context.put("originalCookies", Collections.unmodifiableCollection(new ArrayList(newCookies)));
-            // plug in the message parts in here
-            context.put("messageParts", extractParts(pec.getRequest()));
-            //add ServiceFinder
-            ServiceFinderImpl serviceFinder = new ServiceFinderImpl();
-            serviceFinder.setCertificateFinderImpl(new CertificateFinderImpl((TrustedCertManager) applicationContext.getBean("trustedCertManager")));
-            serviceFinder.setVariableServicesImpl(new VariableServicesImpl(getAudit()));
-            serviceFinder.setSecurePasswordServicesImpl(new SecurePasswordServicesImpl((SecurePasswordManager) applicationContext.getBean("securePasswordManager")));
-            context.put("serviceFinder", serviceFinder);
-
-            // set is it's post routing
-            context.put("isPostRouting", isPostRouting(pec));
 
             securityContext = new SecurityContext() {
                 @Override
@@ -585,37 +603,12 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
             return context;
         }
 
-        @Override
-        protected void onCompletion() {
-            Vector cookies = (Vector) context.get("updatedCookies");
-            Collection originals = (Collection) context.get("originalCookies");
-            for ( final Object cooky : cookies ) {
-                Cookie cookie = (Cookie) cooky;
-                if ( !originals.contains( cookie ) ) {
-                    // doesn't really matter if this has already been added
-                    pec.addCookie( CookieUtils.fromServletCookie( cookie, true ) );
-                }
-            }
-
-            try {
-                String[] cookieNames = (String[]) context.get("customAssertionsCookiesToOmit");
-                removeCookies(cookieNames, pec);
-            } catch (HttpCookie.IllegalFormatException e) {
-                throw new IllegalArgumentException("Invalid cookie format");
-            }
-        }
-
         /**
          * Access a context variable from the policy enforcement context
          */
         @Override
         public Object getVariable(String name) {
-            try {
-                return pec.getVariable(name);
-            } catch (NoSuchVariableException e) {
-                logAndAudit(AssertionMessages.NO_SUCH_VARIABLE, name );
-            }
-            return null;
+            return ServerCustomAssertionHolder.this.getVariable(pec, name);
         }
 
         /**
@@ -623,7 +616,7 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
          */
         @Override
         public void setVariable(String name, Object value) {
-            pec.setVariable(name, value);
+            ServerCustomAssertionHolder.this.setVariable(pec, name, value);
         }
 
         @Override
@@ -690,5 +683,194 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
                 }
             }
         }// for
+    }
+
+    /**
+     * A helper function for setting a context variable from the policy enforcement context.
+     *
+     * @param policyContext    the policy enforcement context, required.
+     * @param name             the name of the variable.
+     * @param value            the value of the variable.
+     */
+    private void setVariable(@NotNull final PolicyEnforcementContext policyContext,
+                             @Nullable final String name,
+                             @Nullable final Object value) {
+        policyContext.setVariable(name, value);
+    }
+
+    /**
+     * A helper function for accessing a context variable from the policy enforcement context.
+     *
+     * @param policyContext    the policy enforcement context, required.
+     * @param name             the name of the variable.
+     * @return object representing the value of the variable, or null if the variable with the name cannot be found
+     */
+    private Object getVariable(@NotNull final PolicyEnforcementContext policyContext,
+                               @Nullable final String name) {
+        try {
+            return policyContext.getVariable(name);
+        } catch (NoSuchVariableException e) {
+            logAndAudit(AssertionMessages.NO_SUCH_VARIABLE, name );
+        }
+        return null;
+    }
+
+    /**
+     * A helper function to go through all cookie updates and deletions from
+     * the CustomAssertion context map and apply them into the policy enforcement context.
+     *
+     * @param policyContext the policy enforcement context.
+     * @param contextMap    the CustomAssertion context map.
+     */
+    private void processUpdatedAndDeletedCookies(final PolicyEnforcementContext policyContext, final Map contextMap) {
+        final Vector cookies = (Vector) contextMap.get("updatedCookies");
+        final Collection originals = (Collection) contextMap.get("originalCookies");
+
+        if (cookies != null && originals != null) {
+            for ( final Object cooky : cookies ) {
+                final Cookie cookie = (Cookie) cooky;
+                if ( !originals.contains( cookie ) ) {
+                    // doesn't really matter if this has already been added
+                    policyContext.addCookie( CookieUtils.fromServletCookie( cookie, true ) );
+                }
+            }
+        }
+
+        try {
+            final String[] cookieNames = (String[]) contextMap.get("customAssertionsCookiesToOmit");
+            removeCookies(cookieNames, policyContext);
+        } catch (HttpCookie.IllegalFormatException e) {
+            throw new IllegalArgumentException("Invalid cookie format");
+        }
+    }
+
+    /**
+     * Attach New knobs here.
+     *
+     * @param customMessage    the message to attach the new knobs for.
+     */
+    public void doAttachKnobs(final CustomMessageImpl customMessage) {
+        // attach httpHeaders knob
+        customMessage.attachKnob(CustomHttpHeadersKnob.class, new CustomHttpHeadersKnobImpl(customMessage));
+    }
+
+    /**
+     * CustomPolicyContext implementation.
+     */
+    private class CustomPolicyContextImpl extends CustomService implements CustomPolicyContext
+    {
+        private final PolicyEnforcementContext policyContext;
+        private final SecurityContext securityContext;
+
+        private final boolean isPostRouting;
+        private final Map contextMap;
+
+        public CustomPolicyContextImpl(@NotNull final PolicyEnforcementContext policyContext,
+                                       @NotNull final Map defaultContextMap,
+                                       @Nullable final CustomServiceRequest customServiceRequest,
+                                       @Nullable final CustomServiceResponse customServiceResponse
+        ) throws IOException {
+            this.policyContext = policyContext;
+
+            this.isPostRouting = ServerCustomAssertionHolder.this.isPostRouting(policyContext);
+
+            // get the default context map initialized with default objects.
+            this.contextMap = defaultContextMap;
+
+            // add context cookies
+            Vector newCookies = toServletCookies(policyContext.getCookies());
+            contextMap.put("updatedCookies", newCookies);
+            contextMap.put("originalCookies", Collections.unmodifiableCollection(new ArrayList(newCookies)));
+
+            // add default Request and Response
+            if (customServiceRequest != null) {
+                contextMap.put("defaultRequest", customServiceRequest);
+            }
+            if (customServiceResponse != null) {
+                contextMap.put("defaultResponse", customServiceResponse);
+            }
+
+            securityContext = new SecurityContext() {
+                @Override
+                public Subject getSubject() {
+                    return Subject.getSubject(AccessController.getContext());
+                }
+
+                @Override
+                public boolean isAuthenticated() {
+                    return policyContext.getDefaultAuthenticationContext().isAuthenticated();
+                }
+
+                @Override
+                public void setAuthenticated() throws GeneralSecurityException {
+                    if (isPostRouting) {
+                        throw new GeneralSecurityException("Cannot authenticate in the response");
+                    }
+
+                    //not all existing custom assertions call this when authenticating
+                    //authentication is determined by a lack of exception instead
+                }
+            };
+        }
+
+        @Override
+        public void onCompletion() {
+            processUpdatedAndDeletedCookies(policyContext, contextMap);
+        }
+
+        @Override
+        public SecurityContext getSecurityContext() {
+            return securityContext;
+        }
+
+        @Override
+        public Map getContext() {
+            return contextMap;
+        }
+
+        @Override
+        public Object getVariable(final String name) {
+            return ServerCustomAssertionHolder.this.getVariable(policyContext, name);
+        }
+
+        @Override
+        public void setVariable(final String name, final Object value) {
+            ServerCustomAssertionHolder.this.setVariable(policyContext, name, value);
+        }
+
+        @Override
+        public CustomMessageFormatFactory getFormats() {
+            return CustomMessageFormatRegistry.getInstance().getMessageFormatFactory();
+        }
+
+        @Override
+        public CustomMessage getTargetMessage(final CustomMessageTargetable targetable) throws NoSuchVariableException, VariableNotSettableException {
+            if (targetable == null) {
+                throw new NoSuchVariableException("<NULL>", "Target name is null");
+            }
+
+            final CustomToMessageTargetableConverter converter = new CustomToMessageTargetableConverter(targetable);
+            final Message targetMessage = policyContext.getOrCreateTargetMessage(converter, false);
+            final CustomMessageImpl customMessage = new CustomMessageImpl(targetMessage);
+
+            doAttachKnobs(customMessage);
+
+            return customMessage;
+        }
+
+        @Override
+        public CustomMessage getMessage(final String targetMessageVariable) throws NoSuchVariableException, VariableNotSettableException {
+            return getTargetMessage(new CustomMessageTargetableSupport(targetMessageVariable));
+        }
+
+        @Override
+        public boolean isPostRouting() {
+            return this.isPostRouting;
+        }
+
+        @Override
+        public CustomContentType createContentType(String contentTypeValue) throws IOException {
+            return new ContentTypeHeaderToCustomConverter(ContentTypeHeader.parseValue(contentTypeValue));
+        }
     }
 }

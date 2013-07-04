@@ -14,8 +14,6 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Converts CustomMessageTargetable into MessageTargetable object.
- *
- * @author tveninov
  */
 public final class CustomToMessageTargetableConverter implements MessageTargetable {
 
@@ -23,7 +21,7 @@ public final class CustomToMessageTargetableConverter implements MessageTargetab
      * Input {@link CustomMessageTargetable} object
      */
     private final CustomMessageTargetable customMessageTargetable;
-    public CustomMessageTargetable getCustomMessageTargetable() {
+    final public CustomMessageTargetable getCustomMessageTargetable() {
         return customMessageTargetable;
     }
 

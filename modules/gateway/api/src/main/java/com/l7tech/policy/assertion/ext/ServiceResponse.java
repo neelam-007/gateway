@@ -24,8 +24,6 @@ public interface ServiceResponse {
      */
     void setDocument(Document document);
 
-    // TODO: For now only DOM is supported and extracting message targetable data is to come in the next milestone.
-
     /**
      * Get the copy of the document that is associated with the default request.
      *

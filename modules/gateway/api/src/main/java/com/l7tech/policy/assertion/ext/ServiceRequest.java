@@ -24,8 +24,6 @@ public interface ServiceRequest {
      */
     void setDocument(Document document);
 
-    // TODO: For now only DOM is supported and extracting message targetable data is to come in the next milestone.
-
     /**
      * Get the security context associated with the request
      *

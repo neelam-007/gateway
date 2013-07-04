@@ -24,7 +24,6 @@ import static junit.framework.Assert.assertEquals;
 
 /**
  * Test CustomAssertions backwards compatibility test
- * @author  tveninov
  */
 public class CustomAssertionBackwardsCompatibilityTest {
 
