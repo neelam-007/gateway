@@ -302,7 +302,12 @@ public class ChangePasswordDialog extends JDialog {
             public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
                 if (value instanceof Role) {
                     Role role = (Role) value;
-                    value = role.getDescriptiveName();
+                    try {
+                        value = Registry.getDefault().getEntityNameResolver().getNameForEntity(role, true);
+                    } catch (final FindException e) {
+                        logger.log(Level.WARNING, "Unable to resolve name for role: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                        value = role.getDescriptiveName();
+                    }
                 }
                 return super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
             }

@@ -1,8 +1,10 @@
 package com.l7tech.console.security.rbac;
 
 import com.l7tech.console.panels.FilterPanel;
+import com.l7tech.console.util.EntityNameResolver;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.SecurityZoneUtil;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.gateway.common.security.rbac.RbacAdmin;
 import com.l7tech.gui.SimpleTableModel;
@@ -16,6 +18,7 @@ import com.l7tech.objectmodel.SecurityZone;
 import com.l7tech.objectmodel.folder.HasFolderOid;
 import com.l7tech.policy.PolicyHeader;
 import com.l7tech.policy.PolicyType;
+import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import org.apache.commons.lang.StringUtils;
@@ -116,16 +119,22 @@ public class SecurityZoneEntitiesPanel extends JPanel {
                 column("Path", 60, 60, 99999, new Functions.Unary<String, EntityHeader>() {
                     @Override
                     public String call(final EntityHeader entityHeader) {
+                        final EntityNameResolver entityNameResolver = Registry.getDefault().getEntityNameResolver();
                         String path = StringUtils.EMPTY;
                         if (entityHeader instanceof HasFolderOid) {
                             try {
-                                path = Registry.getDefault().getEntityNameResolver().getPath((HasFolderOid) entityHeader);
+                                path = entityNameResolver.getPath((HasFolderOid) entityHeader);
                             } catch (final FindException e) {
                                 logger.log(Level.WARNING, "Unable to determine path for entity: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
                                 return "unknown path";
                             } catch (final PermissionDeniedException e) {
                                 logger.log(Level.WARNING, "Unable to determine path for entity: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
                                 return "path unavailable";
+                            }
+                        } else if (entityHeader.getType() == EntityType.ASSERTION_ACCESS) {
+                            final Assertion assertion = TopComponents.getInstance().getAssertionRegistry().findByClassName(entityHeader.getName());
+                            if (assertion != null) {
+                                path = entityNameResolver.getPaletteFolders(assertion);
                             }
                         }
                         return path;
@@ -216,9 +225,9 @@ public class SecurityZoneEntitiesPanel extends JPanel {
         final boolean pathColumnVisible = entitiesTable.getColumnCount() > 1;
         if (entitiesTableModel.getRowCount() > 0) {
             final EntityHeader firstHeader = entitiesTableModel.getRowObject(0);
-            if (firstHeader instanceof HasFolderOid && !pathColumnVisible) {
+            if (!pathColumnVisible && (firstHeader instanceof HasFolderOid || firstHeader.getType() == EntityType.ASSERTION_ACCESS)) {
                 entitiesTable.addColumn(pathColumn);
-            } else if (!(firstHeader instanceof HasFolderOid) && pathColumnVisible) {
+            } else if (pathColumnVisible && !(firstHeader instanceof HasFolderOid || firstHeader.getType() == EntityType.ASSERTION_ACCESS)) {
                 entitiesTable.removeColumn(pathColumn);
             }
         } else if (pathColumnVisible) {

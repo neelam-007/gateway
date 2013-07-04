@@ -8,18 +8,20 @@ import com.l7tech.gateway.common.resources.ResourceAdmin;
 import com.l7tech.gateway.common.resources.ResourceEntry;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gateway.common.security.keystore.SsgKeyMetadata;
+import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.gateway.common.service.PublishedServiceAlias;
 import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.gateway.common.service.ServiceHeader;
-import com.l7tech.objectmodel.Entity;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.HasFolder;
 import com.l7tech.objectmodel.folder.HasFolderOid;
+import com.l7tech.objectmodel.imp.NamedEntityImp;
+import com.l7tech.policy.AssertionAccess;
 import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.Policy;
+import com.l7tech.policy.PolicyAlias;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import org.apache.commons.lang.StringUtils;
@@ -82,44 +84,44 @@ public class EntityNameResolver {
      *         Can be empty if the name on the header is empty/null and the resolver does not know how to look up the referenced entity.
      * @throws FindException if a db error occurs or the entity referenced by the header does not exist.
      * @throws com.l7tech.gateway.common.security.rbac.PermissionDeniedException
-     *                       if the user does not have permission to access an entity required to resolve the name
+     *                       if the user does not have permission to access an entity required to resolve the name.
      */
     @NotNull
     public String getNameForHeader(@NotNull final EntityHeader header, final boolean includePath) throws FindException {
         final String nameOnHeader = header.getType() == EntityType.ASSERTION_ACCESS ? null : header.getName();
         String name = nameOnHeader == null ? StringUtils.EMPTY : nameOnHeader;
-        Entity retrievedEntity = null;
+        // entity referenced by the header
+        Entity entity = null;
+        // entity which is related to but not referenced by the header
+        Entity relatedEntity = null;
         if (header.getType() != null && (StringUtils.isBlank(name) || String.valueOf(header.getOid()).equals(name))) {
             switch (header.getType()) {
                 case SERVICE_ALIAS:
                     final PublishedService owningService = serviceAdmin.findByAlias(header.getOid());
                     validateFoundEntity(header, owningService);
                     name = owningService.getName() + " alias";
-                    retrievedEntity = owningService;
+                    relatedEntity = owningService;
                     break;
                 case POLICY_ALIAS:
                     final Policy owningPolicy = policyAdmin.findByAlias(header.getOid());
                     validateFoundEntity(header, owningPolicy);
                     name = owningPolicy.getName() + " alias";
-                    retrievedEntity = owningPolicy;
+                    relatedEntity = owningPolicy;
                     break;
                 case SSG_KEY_METADATA:
                     final SsgKeyMetadata metadata = trustedCertAdmin.findKeyMetadata(header.getOid());
                     validateFoundEntity(header, metadata);
-                    name = metadata.getAlias();
-                    retrievedEntity = metadata;
+                    entity = metadata;
                     break;
                 case RESOURCE_ENTRY:
                     final ResourceEntry resourceEntry = resourceAdmin.findResourceEntryByPrimaryKey(header.getOid());
                     validateFoundEntity(header, resourceEntry);
-                    name = resourceEntry.getUri();
-                    retrievedEntity = resourceEntry;
+                    entity = resourceEntry;
                     break;
                 case HTTP_CONFIGURATION:
                     final HttpConfiguration httpConfig = resourceAdmin.findHttpConfigurationByPrimaryKey(header.getOid());
                     validateFoundEntity(header, httpConfig);
-                    name = httpConfig.getProtocol() + " " + httpConfig.getHost() + " " + httpConfig.getPort();
-                    retrievedEntity = httpConfig;
+                    entity = httpConfig;
                     break;
                 case ASSERTION_ACCESS:
                     if (header.getName() != null) {
@@ -134,15 +136,18 @@ public class EntityNameResolver {
         }
 
         String path = null;
-        if (includePath) {
-            path = resolvePath(header, retrievedEntity);
-        }
-        String uniqueInfo = getUniqueInfo(header, retrievedEntity);
-        if (StringUtils.isNotBlank(uniqueInfo)) {
-            uniqueInfo = "[" + uniqueInfo + "]";
+        String uniqueInfo = null;
+        if (StringUtils.isBlank(name) && entity != null) {
+            // get the name and/or path using the full entity
+            name = getNameForEntity(entity, includePath);
+        } else if (entity == null) {
+            if (includePath) {
+                path = getPathForHeader(header);
+            }
+            uniqueInfo = getUniqueInfo(header, relatedEntity);
         }
 
-        return path == null ? name + uniqueInfo : name + uniqueInfo + " (" + path + name + ")";
+        return buildName(name, uniqueInfo, path);
     }
 
     /**
@@ -155,6 +160,73 @@ public class EntityNameResolver {
     @NotNull
     public String getNameForHeader(@NotNull final EntityHeader header) throws FindException {
         return getNameForHeader(header, true);
+    }
+
+    /**
+     * Resolves a descriptive name for a given Entity which may include a name and/or folder path and/or other unique info depending on the Entity.
+     *
+     * @param entity      the Entity for which to determine a descriptive name.
+     * @param includePath true if entities in folders should have their folder path included in the descriptive name.
+     * @return a descriptive name for a given Entity which may include a name and/or folder path and/or other unique info depending on the Entity.
+     * @throws FindException if a db error occurs when retrieving information needed to resolve a name for the entity.
+     * @throws com.l7tech.gateway.common.security.rbac.PermissionDeniedException
+     *                       if the user does not have permission to access an entity required to resolve the name.
+     */
+    @NotNull
+    public String getNameForEntity(@NotNull final Entity entity, final boolean includePath) throws FindException {
+        String name = StringUtils.EMPTY;
+        Object relatedEntity = null;
+        if (entity instanceof PublishedServiceAlias) {
+            final PublishedServiceAlias alias = (PublishedServiceAlias) entity;
+            final PublishedService owningService = serviceAdmin.findServiceByID(String.valueOf(alias.getEntityOid()));
+            validateFoundEntity(EntityType.SERVICE, alias.getOid(), owningService);
+            name = owningService.getName() + " alias";
+            relatedEntity = owningService;
+        } else if (entity instanceof PolicyAlias) {
+            final PolicyAlias alias = (PolicyAlias) entity;
+            final Policy owningPolicy = policyAdmin.findPolicyByPrimaryKey(alias.getEntityOid());
+            validateFoundEntity(EntityType.POLICY, alias.getOid(), owningPolicy);
+            name = owningPolicy.getName() + " alias";
+            relatedEntity = owningPolicy;
+        } else if (entity instanceof SsgKeyMetadata) {
+            final SsgKeyMetadata metadata = (SsgKeyMetadata) entity;
+            name = metadata.getAlias();
+        } else if (entity instanceof ResourceEntry) {
+            final ResourceEntry resource = (ResourceEntry) entity;
+            name = resource.getUri();
+        } else if (entity instanceof HttpConfiguration) {
+            final HttpConfiguration httpConfig = (HttpConfiguration) entity;
+            name = httpConfig.getProtocol() + " " + httpConfig.getHost() + " " + httpConfig.getPort();
+        } else if (entity instanceof AssertionAccess) {
+            final AssertionAccess assertionAccess = (AssertionAccess) entity;
+            final Assertion assertion = assertionRegistry.findByClassName(assertionAccess.getName());
+            name = assertion == null ? assertionAccess.getName() : String.valueOf(assertion.meta().get(AssertionMetadata.SHORT_NAME));
+            relatedEntity = assertion;
+        } else if (entity instanceof Role) {
+            final Role role = (Role) entity;
+            name = role.getDescriptiveName();
+            final Entity roleEntity = role.getCachedSpecificEntity();
+            if (includePath && roleEntity instanceof HasFolder && roleEntity instanceof NamedEntity) {
+                name = name + " (" + getPath((HasFolder) roleEntity) + ((NamedEntity) roleEntity).getName() + ")";
+            }
+        } else if (entity instanceof NamedEntityImp) {
+            final NamedEntityImp named = (NamedEntityImp) entity;
+            name = named.getName();
+        }
+        String path = null;
+        if (includePath) {
+            if (entity instanceof HasFolder) {
+                path = getPath((HasFolder) entity);
+            } else if (relatedEntity instanceof Assertion) {
+                path = getPaletteFolders((Assertion) relatedEntity) + "/";
+            }
+        }
+        String uniqueInfo = getUniqueInfo(entity);
+        if (StringUtils.isBlank(uniqueInfo) && relatedEntity instanceof Entity) {
+            uniqueInfo = getUniqueInfo((Entity) relatedEntity);
+        }
+
+        return buildName(name, uniqueInfo, path);
     }
 
     /**
@@ -177,8 +249,14 @@ public class EntityNameResolver {
         return getPathForFolder(folder);
     }
 
+    /**
+     * Retrieve a comma-separated list of palette folders that the assertion belongs to.
+     *
+     * @param assertion the Assertion for which to retrieve its palette folders.
+     * @return a comma-separated list of palette folders that the assertion belongs to.
+     */
     @NotNull
-    public String getPath(@NotNull final Assertion assertion) {
+    public String getPaletteFolders(@NotNull final Assertion assertion) {
         String path = StringUtils.EMPTY;
         final Object paletteFolders = assertion.meta().get(AssertionMetadata.PALETTE_FOLDERS);
         if (paletteFolders instanceof String[]) {
@@ -227,11 +305,8 @@ public class EntityNameResolver {
                     }
                     break;
                 case SERVICE_ALIAS:
-                    if (retrievedEntity instanceof PublishedService) {
-                        final PublishedService service = (PublishedService) retrievedEntity;
-                        if (service.getRoutingUri() != null) {
-                            extraInfo = service.getRoutingUri();
-                        }
+                    if (retrievedEntity != null) {
+                        extraInfo = getUniqueInfo(retrievedEntity);
                     }
                     break;
                 default:
@@ -241,22 +316,28 @@ public class EntityNameResolver {
         return extraInfo;
     }
 
-    private String resolvePath(@NotNull final EntityHeader header, @Nullable final Entity retrievedEntity) throws FindException {
-        String path = null;
-        if (retrievedEntity != null && retrievedEntity instanceof HasFolder) {
-            // no need to look up the entity to get the path
-            final HasFolder hasFolder = (HasFolder) retrievedEntity;
-            path = getPath(hasFolder);
+    private String getUniqueInfo(@NotNull final Entity entity) {
+        String extraInfo = StringUtils.EMPTY;
+        if (entity instanceof PublishedService) {
+            final PublishedService service = (PublishedService) entity;
+            if (service.getRoutingUri() != null) {
+                extraInfo = service.getRoutingUri();
+            }
         }
+        return extraInfo;
+    }
 
-        if (header instanceof HasFolderOid && path == null) {
-            // need to look up the entity to get the path
+    @NotNull
+    private String getPathForHeader(@NotNull final EntityHeader header) throws FindException {
+        String path = StringUtils.EMPTY;
+        if (header instanceof HasFolderOid) {
             final HasFolderOid hasFolder = (HasFolderOid) header;
             path = getPath(hasFolder);
         }
         return path;
     }
 
+    @NotNull
     private String getPathForFolder(@Nullable final Folder folder) {
         Folder f = folder;
         final LinkedList<String> folderPath = new LinkedList<>();
@@ -284,8 +365,28 @@ public class EntityNameResolver {
     }
 
     private void validateFoundEntity(final EntityHeader header, final Entity foundEntity) throws FindException {
+        validateFoundEntity(header.getType(), header.getOid(), foundEntity);
+    }
+
+    private void validateFoundEntity(final EntityType type, final long oid, final Entity foundEntity) throws FindException {
         if (foundEntity == null) {
-            throw new FindException("No entity found for type " + header.getType() + " and oid " + header.getOid());
+            throw new FindException("No entity found for type " + type + " and oid " + oid);
         }
+    }
+
+    private String buildName(String name, String uniqueInfo, String path) {
+        final StringBuilder stringBuilder = new StringBuilder(name);
+        if (StringUtils.isNotBlank(uniqueInfo)) {
+            stringBuilder.append("[");
+            stringBuilder.append(uniqueInfo);
+            stringBuilder.append("]");
+        }
+        if (StringUtils.isNotBlank(path)) {
+            stringBuilder.append(" (");
+            stringBuilder.append(path);
+            stringBuilder.append(name);
+            stringBuilder.append(")");
+        }
+        return stringBuilder.toString();
     }
 }

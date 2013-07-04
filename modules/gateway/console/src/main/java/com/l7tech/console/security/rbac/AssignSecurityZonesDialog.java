@@ -354,7 +354,7 @@ public class AssignSecurityZonesDialog extends JDialog {
             } else if (header.getType() == EntityType.ASSERTION_ACCESS) {
                 final Assertion assertion = assertionRegistry.findByClassName(assertionNames.get(header.getOid()));
                 if (assertion != null) {
-                    path = entityNameResolver.getPath(assertion);
+                    path = entityNameResolver.getPaletteFolders(assertion);
                 }
             }
         } catch (final PermissionDeniedException e) {

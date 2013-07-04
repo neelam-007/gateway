@@ -79,7 +79,11 @@ public class RbacAdminImpl implements RbacAdmin {
      */
     public Collection<Role> findRolesForUser(User user) throws FindException {
         if (user == null) throw new IllegalArgumentException("User cannot be null.");
-        return roleManager.getAssignedRoles(user, true, false);
+        final Collection<Role> assignedRoles = roleManager.getAssignedRoles(user, true, false);
+        for (final Role assignedRole : assignedRoles) {
+            attachEntities(assignedRole);
+        }
+        return assignedRoles;
     }
 
     private Role attachEntities(Role theRole) {

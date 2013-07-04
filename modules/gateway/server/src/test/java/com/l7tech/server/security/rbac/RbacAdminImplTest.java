@@ -1,5 +1,10 @@
 package com.l7tech.server.security.rbac;
 
+import com.l7tech.gateway.common.security.rbac.Role;
+import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.identity.User;
+import com.l7tech.identity.internal.InternalUser;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.SecurityZone;
 import com.l7tech.objectmodel.UpdateException;
@@ -15,6 +20,7 @@ import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
@@ -94,6 +100,23 @@ public class RbacAdminImplTest {
         admin.deleteSecurityZone(zone);
         verify(securityZoneManager).deleteRoles(OID);
         verify(securityZoneManager).delete(zone);
+    }
+
+    @Test
+    public void findRolesForUserAttachesEntities() throws Exception {
+        final Role role = new Role();
+        role.setName("Manage Test Service (#1234)");
+        role.setEntityType(EntityType.SERVICE);
+        role.setEntityOid(OID);
+        final User user = new InternalUser("test");
+        final PublishedService service = new PublishedService();
+        when(roleManager.getAssignedRoles(user, true, false)).thenReturn(Arrays.asList(role));
+        when(entityCrud.find(EntityType.SERVICE.getEntityClass(), OID)).thenReturn(service);
+
+        final Collection<Role> assignedRoles = admin.findRolesForUser(user);
+        assertEquals(1, assignedRoles.size());
+        final Role assignedRole = assignedRoles.iterator().next();
+        assertEquals(service, assignedRole.getCachedSpecificEntity());
     }
 
     private SecurityZone createSecurityZone(final long oid) {
