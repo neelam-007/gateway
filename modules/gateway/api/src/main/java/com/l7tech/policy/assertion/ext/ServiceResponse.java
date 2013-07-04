@@ -74,30 +74,4 @@ public interface ServiceResponse {
      * Set a context variable from the policy enforcement context
      */
     void setVariable(String name, Object value);
-
-    /**
-     * Process the input string and expand the variables using the default variables map.
-     *
-     * @param s the input string
-     * @return the string with expanded/resolved variables
-     */
-    String expandVariable(String s);
-
-    /**
-     * Process the input string and expand the variables using the supplied variables map.
-     *
-     * @param s the input string
-     * @param vars the variable map
-     * @return the string with expanded/resolved variables
-     */
-    String expandVariable(String s, Map<String, Object> vars);
-
-    /**
-     * Get variables map for named variables in a new mutable case-insensitive map.
-     *
-     * @param names variables to retrieve. The variable names must not be boxed in ${name} pattern. They must be
-     *              variable name only.
-     * @return a new mutable map of case-insensitive variable name to value. May be empty but never null.
-     */
-    Map<String, Object> getVariableMap(String[] names);
 }

@@ -5,12 +5,12 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/*
-* A utility class for context variables.
-*/
+/**
+ * A utility class for context variables.
+ */
 public final class ContextVariablesUtils {
 
-    /**
+    /*
      * Developer Notes:
      * - Do not change the signature of methods in this class. (backward compatibility)
      * - Do not add new methods to this class unnecessarily. Only add methods that are truly needed in the API.

@@ -11,13 +11,11 @@ import com.l7tech.policy.assertion.ext.message.format.CustomMessageFormatFactory
 import com.l7tech.policy.assertion.ext.message.knob.CustomHttpHeadersKnob;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.server.custom.CustomMessageImpl;
-import com.l7tech.gateway.common.custom.JsonDataToCustomConverter;
 import com.l7tech.gateway.common.custom.CustomToMessageTargetableConverter;
 import com.l7tech.server.custom.format.CustomMessageFormatRegistry;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.identity.AnonymousUserReference;
 import com.l7tech.identity.UserBean;
-import com.l7tech.json.JSONFactory;
 import com.l7tech.message.*;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
@@ -508,25 +506,6 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
         public void setVariable(String name, Object value) {
             ServerCustomAssertionHolder.this.setVariable(pec, name, value);
         }
-
-        @Override
-        public String expandVariable(String s) {
-            Map<String, Object> vars = this.getVariableMap(Syntax.getReferencedNames(s));
-            return this.expandVariable(s, vars);
-        }
-
-        @Override
-        public String expandVariable(String s, Map<String, Object> vars) {
-            if (s == null) {
-                return null;
-            }
-            return ExpandVariables.process(s, vars, getAudit());
-        }
-
-        @Override
-        public Map<String, Object> getVariableMap(String[] names) {
-            return pec.getVariableMap(names, getAudit());
-        }
     }
 
     private class CustomServiceRequest implements ServiceRequest {
@@ -617,25 +596,6 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
         @Override
         public void setVariable(String name, Object value) {
             ServerCustomAssertionHolder.this.setVariable(pec, name, value);
-        }
-
-        @Override
-        public String expandVariable(String s) {
-            Map<String, Object> vars = this.getVariableMap(Syntax.getReferencedNames(s));
-            return this.expandVariable(s, vars);
-        }
-
-        @Override
-        public String expandVariable(String s, Map<String, Object> vars) {
-            if (s == null) {
-                return null;
-            }
-            return ExpandVariables.process(s, vars, getAudit());
-        }
-
-        @Override
-        public Map<String, Object> getVariableMap(String[] names) {
-            return pec.getVariableMap(names, getAudit());
         }
     }
 
@@ -831,6 +791,25 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
         @Override
         public Object getVariable(final String name) {
             return ServerCustomAssertionHolder.this.getVariable(policyContext, name);
+        }
+
+        @Override
+        public String expandVariable(String s) {
+            Map<String, Object> vars = this.getVariableMap(Syntax.getReferencedNames(s));
+            return this.expandVariable(s, vars);
+        }
+
+        @Override
+        public String expandVariable(String s, Map<String, Object> vars) {
+            if (s == null) {
+                return null;
+            }
+            return ExpandVariables.process(s, vars, getAudit());
+        }
+
+        @Override
+        public Map<String, Object> getVariableMap(String[] names) {
+            return policyContext.getVariableMap(names, getAudit());
         }
 
         @Override
