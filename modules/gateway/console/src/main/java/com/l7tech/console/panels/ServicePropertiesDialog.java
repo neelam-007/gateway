@@ -857,14 +857,14 @@ public class ServicePropertiesDialog extends JDialog {
             if (!Registry.getDefault().getSecurityProvider().hasPermission(new AttemptedUpdate(EntityType.POLICY, servicePolicy))) {
                 DialogDisplayer.showMessageDialog(ServicePropertiesDialog.this, "Error", "You do not have permission to modify the Security Zone of the service policy.", null);
             } else {
-                doSave(documents);
+                doSave(documents, true);
             }
         } else {
-            doSave(documents);
+            doSave(documents, false);
         }
     }
 
-    private void doSave(Collection<ServiceDocument> documents) {
+    private void doSave(Collection<ServiceDocument> documents, boolean savePolicy) {
         //attempt to save the changes
         try {
             long newOid;
@@ -917,7 +917,9 @@ public class ServicePropertiesDialog extends JDialog {
                 Registry.getDefault().getUDDIRegistryAdmin().updateProxiedServiceOnly(uddiProxiedServiceInfo);
             }
 
-            savePolicyIfSecurityZoneDiffers(subject);
+            if (savePolicy) {
+                savePolicy(subject);
+            }
 
             //we are good to close the dialog
             wasoked = true;
@@ -947,15 +949,13 @@ public class ServicePropertiesDialog extends JDialog {
     /**
      * Service policy is hidden from the user so we assume the policy security zone should be the same as the service zone
      */
-    private void savePolicyIfSecurityZoneDiffers(final PublishedService subject) {
-    if (servicePolicyRequiresZoneUpdate(subject)) {
+    private void savePolicy(final PublishedService subject) {
         final Policy policy = subject.getPolicy();
         policy.setSecurityZone(subject.getSecurityZone());
-            try {
-                Registry.getDefault().getPolicyAdmin().savePolicy(policy);
-            } catch (final PolicyAssertionException | SaveException e) {
-                logger.log(Level.WARNING, "Unable to save security zone change for policy: " + e.getMessage(), ExceptionUtils.getDebugException(e));
-            }
+        try {
+            Registry.getDefault().getPolicyAdmin().savePolicy(policy);
+        } catch (final PolicyAssertionException | SaveException e) {
+            logger.log(Level.WARNING, "Unable to save security zone change for policy: " + e.getMessage(), ExceptionUtils.getDebugException(e));
         }
     }
 
