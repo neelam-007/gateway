@@ -20,6 +20,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.Serializable;
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.List;
@@ -149,9 +150,9 @@ public class SecurityZoneManagerWindow extends JDialog {
                             SecurityZone copy = new SecurityZone();
                             copy(zone, copy);
                             final SecurityZone data = dlg.getData(copy);
-                            final Map<EntityType, Collection<Long>> toRemoveFromZone = dlg.getEntitiesToRemoveFromZone();
+                            final Map<EntityType, Collection<Serializable>> toRemoveFromZone = dlg.getEntitiesToRemoveFromZone();
                             try {
-                                for (Map.Entry<EntityType, Collection<Long>> entry : toRemoveFromZone.entrySet()) {
+                                for (Map.Entry<EntityType, Collection<Serializable>> entry : toRemoveFromZone.entrySet()) {
                                     if (!entry.getValue().isEmpty()) {
                                         Registry.getDefault().getRbacAdmin().setSecurityZoneForEntities(null, entry.getKey(), entry.getValue());
                                     }

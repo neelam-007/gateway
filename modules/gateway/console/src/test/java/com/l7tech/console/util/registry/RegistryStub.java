@@ -42,6 +42,7 @@ import com.l7tech.util.Option;
 import org.jetbrains.annotations.NotNull;
 
 import javax.security.auth.login.LoginException;
+import java.io.Serializable;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
@@ -253,12 +254,12 @@ public class RegistryStub extends Registry {
             }
 
             @Override
-            public void setSecurityZoneForEntities(Long securityZoneOid, @NotNull EntityType entityType, @NotNull Collection<Long> entityOids) throws UpdateException {
+            public void setSecurityZoneForEntities(Long securityZoneOid, @NotNull EntityType entityType, @NotNull Collection<Serializable> entityIds) throws UpdateException {
                 throw new UpdateException("not impl in stub");
             }
 
             @Override
-            public void setSecurityZoneForEntities(Long securityZoneOid, @NotNull Map<EntityType, Collection<Long>> entityOids) throws UpdateException {
+            public void setSecurityZoneForEntities(Long securityZoneOid, @NotNull Map<EntityType, Collection<Serializable>> entityIds) throws UpdateException {
                 throw new UpdateException("not impl in stub");
             }
 

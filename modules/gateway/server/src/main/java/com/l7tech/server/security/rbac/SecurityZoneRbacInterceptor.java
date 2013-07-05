@@ -9,6 +9,7 @@ import org.apache.commons.lang.Validate;
 import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Inject;
+import java.io.Serializable;
 import java.util.Collection;
 import java.util.Map;
 
@@ -77,7 +78,7 @@ public class SecurityZoneRbacInterceptor implements CustomRbacInterceptor {
             final Object value = mapEntry.getValue();
             Validate.isTrue(key instanceof EntityType, "Expected a map key of EntityType. Received: " + key);
             Validate.isTrue(value instanceof Collection, "Expected a map value of Collection. Received: " + value);
-            validateCollectionOfLong((Collection) value);
+            validateCollectionOfSerializable((Collection) value);
         }
         zoneUpdateSecurityChecker.checkBulkUpdatePermitted(user, securityZoneOid, oidsMap);
     }
@@ -87,16 +88,16 @@ public class SecurityZoneRbacInterceptor implements CustomRbacInterceptor {
         Validate.isTrue(arguments[COLLECTION_ARG] instanceof Collection, "Expected a Collection. Received: " + arguments[COLLECTION_ARG]);
         final EntityType entityType = (EntityType) arguments[ENTITY_TYPE_ARG];
         final Collection oids = (Collection) arguments[COLLECTION_ARG];
-        validateCollectionOfLong(oids);
+        validateCollectionOfSerializable(oids);
         zoneUpdateSecurityChecker.checkBulkUpdatePermitted(user, securityZoneOid, entityType, oids);
     }
 
     /**
      * Ensure the collection only contains longs.
      */
-    private void validateCollectionOfLong(@NotNull final Collection oids) {
-        for (final Object oid : oids) {
-            Validate.isTrue(oid instanceof Long, "oid is not a Long: " + oid);
+    private void validateCollectionOfSerializable(@NotNull final Collection ids) {
+        for (final Object id : ids) {
+            Validate.isTrue(id instanceof Serializable, "oid is not a Serializable: " + id);
         }
     }
 }

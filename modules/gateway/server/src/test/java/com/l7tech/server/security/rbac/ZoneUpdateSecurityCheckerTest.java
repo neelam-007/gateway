@@ -19,6 +19,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
+import java.io.Serializable;
 import java.lang.reflect.Method;
 import java.util.*;
 
@@ -36,8 +37,8 @@ public class ZoneUpdateSecurityCheckerTest {
     private EntityFinder entityFinder;
     @Mock
     private RbacServices rbacServices;
-    private List<Long> oids;
-    private Map<EntityType, Collection<Long>> oidMap;
+    private List<Serializable> oids;
+    private Map<EntityType, Collection<Serializable>> oidMap;
     private InternalUser user;
     private SecurityZone zone;
     private Policy policy = new Policy(PolicyType.INCLUDE_FRAGMENT, "test", "test", false);
@@ -114,7 +115,7 @@ public class ZoneUpdateSecurityCheckerTest {
             checker.checkBulkUpdatePermitted(user, null, EntityType.POLICY, oids);
             fail("Expected IllegalArgumentException");
         } catch (final IllegalArgumentException e) {
-            assertEquals("Entity with oid 2 does not exist or is not Security Zoneable", e.getMessage());
+            assertEquals("Entity with id 2 does not exist or is not Security Zoneable", e.getMessage());
             throw e;
         }
     }
@@ -141,8 +142,8 @@ public class ZoneUpdateSecurityCheckerTest {
 
     @Test
     public void checkUpdatePermittedForMultipleEntityTypes() throws Throwable {
-        oidMap.put(EntityType.JMS_CONNECTION, Collections.singleton(1L));
-        oidMap.put(EntityType.JMS_ENDPOINT, Collections.singleton(2L));
+        oidMap.put(EntityType.JMS_CONNECTION, Collections.<Serializable>singleton(1L));
+        oidMap.put(EntityType.JMS_ENDPOINT, Collections.<Serializable>singleton(2L));
         when(entityFinder.find(JmsConnection.class, 1L)).thenReturn(connection);
         when(entityFinder.find(JmsEndpoint.class, 2L)).thenReturn(endpoint);
         when(rbacServices.isPermittedForEntity(eq(user), any(JmsConnection.class), eq(OperationType.UPDATE), eq((String) null))).thenReturn(true);
@@ -157,8 +158,8 @@ public class ZoneUpdateSecurityCheckerTest {
 
     @Test(expected = PermissionDeniedException.class)
     public void atLeastOnePermissionDeniedForUpdateMultipleEntityTypes() throws Throwable {
-        oidMap.put(EntityType.JMS_CONNECTION, Collections.singleton(1L));
-        oidMap.put(EntityType.JMS_ENDPOINT, Collections.singleton(2L));
+        oidMap.put(EntityType.JMS_CONNECTION, Collections.<Serializable>singleton(1L));
+        oidMap.put(EntityType.JMS_ENDPOINT, Collections.<Serializable>singleton(2L));
         when(entityFinder.find(JmsConnection.class, 1L)).thenReturn(connection);
         when(entityFinder.find(JmsEndpoint.class, 2L)).thenReturn(endpoint);
         when(rbacServices.isPermittedForEntity(eq(user), any(Entity.class), eq(OperationType.UPDATE), eq((String) null))).thenReturn(false);

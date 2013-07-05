@@ -10,6 +10,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.inject.Inject;
+import java.io.Serializable;
 import java.util.Collection;
 import java.util.Map;
 
@@ -20,7 +21,7 @@ public class ZoneUpdateSecurityCheckerImpl implements ZoneUpdateSecurityChecker 
     private RbacServices rbacServices;
 
     @Override
-    public void checkBulkUpdatePermitted(@NotNull final User user, @Nullable final Long securityZoneOid, @NotNull final EntityType entityType, @NotNull final Collection<Long> entityOids) throws FindException {
+    public void checkBulkUpdatePermitted(@NotNull final User user, @Nullable final Long securityZoneOid, @NotNull final EntityType entityType, @NotNull final Collection<Serializable> entityIds) throws FindException {
         Validate.isTrue(entityType.isSecurityZoneable(), "Entity type is not security zoneable: " + entityType);
         SecurityZone zoneToSet = null;
         if (securityZoneOid != null) {
@@ -29,22 +30,22 @@ public class ZoneUpdateSecurityCheckerImpl implements ZoneUpdateSecurityChecker 
             Validate.notNull(zoneToSet, "No security zone with oid " + securityZoneOid + " exists.");
         }
 
-        for (final Long oid : entityOids) {
-            final Entity entity = entityFinder.find(entityType.getEntityClass(), oid);
+        for (final Serializable id : entityIds) {
+            final Entity entity = entityFinder.find(entityType.getEntityClass(), id);
             if (entity instanceof ZoneableEntity) {
                 final ZoneableEntity zoneable = (ZoneableEntity) entity;
                 checkPermittedForEntity(user, entity);
                 zoneable.setSecurityZone(zoneToSet);
                 checkPermittedForEntity(user, entity);
             } else {
-                throw new IllegalArgumentException("Entity with oid " + oid + " does not exist or is not Security Zoneable");
+                throw new IllegalArgumentException("Entity with id " + id + " does not exist or is not Security Zoneable");
             }
         }
     }
 
     @Override
-    public void checkBulkUpdatePermitted(@NotNull User user, @Nullable Long securityZoneOid, @NotNull Map<EntityType, Collection<Long>> entityOids) throws FindException {
-        for (final Map.Entry<EntityType, Collection<Long>> entry : entityOids.entrySet()) {
+    public void checkBulkUpdatePermitted(@NotNull User user, @Nullable Long securityZoneOid, @NotNull Map<EntityType, Collection<Serializable>> entityIds) throws FindException {
+        for (final Map.Entry<EntityType, Collection<Serializable>> entry : entityIds.entrySet()) {
             checkBulkUpdatePermitted(user, securityZoneOid, entry.getKey(), entry.getValue());
         }
     }

@@ -12,6 +12,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
+import java.io.Serializable;
 import java.lang.reflect.Method;
 import java.util.*;
 
@@ -26,11 +27,12 @@ public class SecurityZoneRbacInterceptorTest {
     private ZoneUpdateSecurityChecker checker;
     @Mock
     private MockAdmin mockAdmin;
-    private List<Long> oids;
-    private Map<EntityType, Collection<Long>> oidsMap;
+    private List<Serializable> oids;
+    private Map<EntityType, Collection<Serializable>> oidsMap;
     private InternalUser user;
     private Method bulkUpdate;
     private Method bulkUpdateMap;
+    private Object notSerializable;
 
 
     @Before
@@ -45,6 +47,9 @@ public class SecurityZoneRbacInterceptorTest {
         interceptor.setUser(user);
         bulkUpdate = MockAdmin.class.getMethod("bulkUpdate", Long.class, EntityType.class, Collection.class);
         bulkUpdateMap = MockAdmin.class.getMethod("bulkUpdateMap", Long.class, Map.class);
+        notSerializable = new Object() {
+            public String toString(){return "not Serializable"; }
+        };
     }
 
     @Test
@@ -73,8 +78,8 @@ public class SecurityZoneRbacInterceptorTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void invalidCollectionType() throws Throwable {
-        invokeWithError(new StubMethodInvocation(bulkUpdate, new Object[]{null, EntityType.POLICY, Arrays.asList("notLong")}, null, mockAdmin),
-                "oid is not a Long: notLong");
+        invokeWithError(new StubMethodInvocation(bulkUpdate, new Object[]{null, EntityType.POLICY, Arrays.asList(notSerializable)}, null, mockAdmin),
+                "oid is not a Serializable: " + notSerializable.toString());
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -121,8 +126,8 @@ public class SecurityZoneRbacInterceptorTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void invalidMapValueCollectionType() throws Throwable {
-        invokeWithError(new StubMethodInvocation(bulkUpdateMap, new Object[]{null, Collections.singletonMap(EntityType.POLICY, Collections.singletonList("notLong"))}, null, mockAdmin),
-                "oid is not a Long: notLong");
+        invokeWithError(new StubMethodInvocation(bulkUpdateMap, new Object[]{null, Collections.singletonMap(EntityType.POLICY, Collections.singletonList(notSerializable))}, null, mockAdmin),
+                "oid is not a Serializable: "+notSerializable.toString());
     }
 
     private void invokeWithError(final StubMethodInvocation invocation, final String expectedError) throws Throwable {

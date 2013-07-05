@@ -15,6 +15,7 @@ import org.mockito.invocation.InvocationOnMock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
 
+import java.io.Serializable;
 import java.util.*;
 
 import static org.junit.Assert.*;
@@ -33,8 +34,8 @@ public class SecuredEntityCrudTest {
     private EntityCrud entityCrud;
     @Mock
     private ZoneUpdateSecurityChecker zoneUpdateSecurityChecker;
-    private List<Long> oids;
-    private Map<EntityType, Collection<Long>> oidsMap;
+    private List<Serializable> oids;
+    private Map<EntityType, Collection<Serializable>> oidsMap;
     private List<EntityHeader> entities;
 
     @Before

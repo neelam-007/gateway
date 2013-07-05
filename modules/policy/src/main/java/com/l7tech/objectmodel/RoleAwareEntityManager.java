@@ -1,10 +1,11 @@
 package com.l7tech.objectmodel;
 
 /**
- * Interface implemented by EntityManagers that support roles.
+ * Interface implemented by EntityManagers that support roles. Deprecated, use GoidRoleAwareEntityManager instead
  *
  * TODO this should probably just be a side effect of saving an Entity
  */
+@Deprecated
 public interface RoleAwareEntityManager<PET extends PersistentEntity> {
 
     /**

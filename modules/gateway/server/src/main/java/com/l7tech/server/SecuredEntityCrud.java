@@ -98,20 +98,20 @@ public class SecuredEntityCrud implements EntityCrud {
     }
 
     @Override
-    public void setSecurityZoneForEntities(@Nullable final Long securityZoneOid, @NotNull final EntityType entityType, @NotNull final Collection<Long> entityOids) throws UpdateException {
+    public void setSecurityZoneForEntities(@Nullable final Long securityZoneOid, @NotNull final EntityType entityType, @NotNull final Collection<Serializable> entityIds) throws UpdateException {
         try {
-            zoneUpdateSecurityChecker.checkBulkUpdatePermitted(getUser(), securityZoneOid, entityType, entityOids);
-            entityCrud.setSecurityZoneForEntities(securityZoneOid, entityType, entityOids);
+            zoneUpdateSecurityChecker.checkBulkUpdatePermitted(getUser(), securityZoneOid, entityType, entityIds);
+            entityCrud.setSecurityZoneForEntities(securityZoneOid, entityType, entityIds);
         } catch (final FindException e) {
             throw new UpdateException(ERROR_IN_PERMISSION_CHECK, e);
         }
     }
 
     @Override
-    public void setSecurityZoneForEntities(@Nullable Long securityZoneOid, @NotNull Map<EntityType, Collection<Long>> entityOids) throws UpdateException {
+    public void setSecurityZoneForEntities(@Nullable Long securityZoneOid, @NotNull Map<EntityType, Collection<Serializable>> entityIds) throws UpdateException {
         try {
-            zoneUpdateSecurityChecker.checkBulkUpdatePermitted(getUser(), securityZoneOid, entityOids);
-            entityCrud.setSecurityZoneForEntities(securityZoneOid, entityOids);
+            zoneUpdateSecurityChecker.checkBulkUpdatePermitted(getUser(), securityZoneOid, entityIds);
+            entityCrud.setSecurityZoneForEntities(securityZoneOid, entityIds);
         } catch (final FindException e) {
             throw new UpdateException(ERROR_IN_PERMISSION_CHECK, e);
         }

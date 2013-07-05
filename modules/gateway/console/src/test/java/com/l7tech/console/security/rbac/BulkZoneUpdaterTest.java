@@ -9,10 +9,7 @@ import com.l7tech.gateway.common.transport.jms.JmsAdmin;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
 import com.l7tech.gateway.common.uddi.UDDIProxiedServiceInfo;
 import com.l7tech.gateway.common.uddi.UDDIServiceControl;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.objectmodel.*;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
 import org.junit.Before;
@@ -21,6 +18,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
+import java.io.Serializable;
 import java.util.*;
 
 import static org.mockito.Matchers.anyLong;
@@ -52,7 +50,7 @@ public class BulkZoneUpdaterTest {
         headers.add(new EntityHeader(1L, EntityType.POLICY, "test", "test"));
         updater.bulkUpdate(ZONE_OID, EntityType.POLICY, headers);
         verify(rbacAdmin).setSecurityZoneForEntities(ZONE_OID,
-                Collections.<EntityType, Collection<Long>>singletonMap(EntityType.POLICY, Arrays.asList(1L)));
+                Collections.<EntityType, Collection<Serializable>>singletonMap(EntityType.POLICY, Arrays.<Serializable>asList(1L)));
     }
 
     @Test
@@ -83,11 +81,11 @@ public class BulkZoneUpdaterTest {
         when(policyAdmin.findPolicyByPrimaryKey(3L)).thenReturn(policy);
 
         updater.bulkUpdate(ZONE_OID, EntityType.SERVICE, headers);
-        final Map<EntityType, Collection<Long>> expected = new HashMap<>();
-        expected.put(EntityType.SERVICE, Arrays.asList(1L, 2L));
-        expected.put(EntityType.UDDI_PROXIED_SERVICE_INFO, Arrays.asList(4L));
-        expected.put(EntityType.UDDI_SERVICE_CONTROL, Arrays.asList(5L));
-        expected.put(EntityType.POLICY, Arrays.asList(3L));
+        final Map<EntityType, Collection<Serializable>> expected = new HashMap<>();
+        expected.put(EntityType.SERVICE, Arrays.<Serializable>asList(1L, 2L));
+        expected.put(EntityType.UDDI_PROXIED_SERVICE_INFO, Arrays.<Serializable>asList(4L));
+        expected.put(EntityType.UDDI_SERVICE_CONTROL, Arrays.<Serializable>asList(5L));
+        expected.put(EntityType.POLICY, Arrays.<Serializable>asList(3L));
         verify(rbacAdmin).setSecurityZoneForEntities(ZONE_OID, expected);
     }
 
@@ -102,9 +100,9 @@ public class BulkZoneUpdaterTest {
         when(jmsAdmin.getEndpointsForConnection(1L)).thenReturn(new JmsEndpoint[]{e1, e2});
 
         updater.bulkUpdate(ZONE_OID, EntityType.JMS_CONNECTION, headers);
-        final Map<EntityType, Collection<Long>> expected = new HashMap<>();
-        expected.put(EntityType.JMS_CONNECTION, Arrays.asList(1L, 4L));
-        expected.put(EntityType.JMS_ENDPOINT, Arrays.asList(2L, 3L));
+        final Map<EntityType, Collection<Serializable>> expected = new HashMap<>();
+        expected.put(EntityType.JMS_CONNECTION, Arrays.<Serializable>asList(1L, 4L));
+        expected.put(EntityType.JMS_ENDPOINT, Arrays.<Serializable>asList(2L, 3L));
         verify(rbacAdmin).setSecurityZoneForEntities(ZONE_OID, expected);
     }
 

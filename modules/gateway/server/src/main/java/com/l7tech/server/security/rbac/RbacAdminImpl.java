@@ -17,6 +17,7 @@ import com.l7tech.util.ExceptionUtils;
 import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Inject;
+import java.io.Serializable;
 import java.text.MessageFormat;
 import java.util.Collection;
 import java.util.HashSet;
@@ -199,13 +200,13 @@ public class RbacAdminImpl implements RbacAdmin {
     }
 
     @Override
-    public void setSecurityZoneForEntities(final Long securityZoneOid, @NotNull final EntityType entityType, @NotNull final Collection<Long> entityOids) throws UpdateException {
-        entityCrud.setSecurityZoneForEntities(securityZoneOid, entityType, entityOids);
+    public void setSecurityZoneForEntities(final Long securityZoneOid, @NotNull final EntityType entityType, @NotNull final Collection<Serializable> entityIds) throws UpdateException {
+        entityCrud.setSecurityZoneForEntities(securityZoneOid, entityType, entityIds);
     }
 
     @Override
-    public void setSecurityZoneForEntities(final Long securityZoneOid, @NotNull final Map<EntityType, Collection<Long>> entityOids) throws UpdateException {
-        entityCrud.setSecurityZoneForEntities(securityZoneOid, entityOids);
+    public void setSecurityZoneForEntities(final Long securityZoneOid, @NotNull final Map<EntityType, Collection<Serializable>> entityIds) throws UpdateException {
+        entityCrud.setSecurityZoneForEntities(securityZoneOid, entityIds);
     }
 
     @Override

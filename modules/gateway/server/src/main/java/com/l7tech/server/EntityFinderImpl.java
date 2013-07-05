@@ -101,7 +101,11 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
                     final ClassMetadata metadata = getSessionFactory().getClassMetadata(entityClass);
                     final Criteria criteria = session.createCriteria(entityClass);
                     final ProjectionList pl = Projections.projectionList();
-                    pl.add(Projections.property("oid"));
+                    if(GoidEntity.class.isAssignableFrom(entityClass)){
+                        pl.add(Projections.property("goid"));
+                    } else {
+                        pl.add(Projections.property("oid"));
+                    }
                     final boolean names = hasName(entityClass, metadata);
                     if (names) pl.add(Projections.property("name"));
                     criteria.setProjection(pl);
@@ -109,18 +113,18 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
                     List arrays = criteria.list();
                     EntityHeaderSet<EntityHeader> headers = new EntityHeaderSet<EntityHeader>();
                     for (Iterator i = arrays.iterator(); i.hasNext();) {
-                        Long oid;
+                        String id;
                         String name;
                         if (names) {
                             Object[] array = (Object[]) i.next();
-                            oid = (Long) array[0];
+                            id = array[0].toString();
                             name = (String) array[1];
                         } else {
-                            oid = (Long) i.next();
+                            id = i.next().toString();
                             name = null;
                         }
-                        if(name == null || name.isEmpty()) name = oid.toString();
-                        headers.add(new EntityHeader(oid.toString(), type, name, null));
+                        if(name == null || name.isEmpty()) name = id;
+                        headers.add(new EntityHeader(id, type, name, null));
                     }
 
                     if (arrays.size() >= MAX_RESULTS) headers.setMaxExceeded(MAX_RESULTS);
@@ -237,7 +241,9 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
                 return (ET) keyStoreManager.lookupKeyByKeyAlias(id.substring(sepIndex+1), Long.parseLong(id.substring(0,sepIndex)));
             } else if (EntityType.SSG_KEYSTORE == type) {
                 return (ET) keyStoreManager.findByPrimaryKey(Long.valueOf((String)pk));
-            } else if (pk instanceof String) {
+            } else if (GoidEntity.class.isAssignableFrom(clazz)) {
+                tempPk = (pk instanceof Goid)?(Goid)pk:Goid.parseGoid(pk.toString());
+            } else if(PersistentEntity.class.isAssignableFrom(clazz) && pk instanceof String) {
                 try {
                     tempPk = Long.valueOf((String)pk);
                 } catch (NumberFormatException nfe) {
@@ -273,6 +279,9 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
         String name = null;
         if (e instanceof NamedEntity) {
             NamedEntity ne = (NamedEntity) e;
+            name = ne.getName();
+        } else if(e instanceof GoidNamedEntity){
+            GoidNamedEntity ne = (GoidNamedEntity) e;
             name = ne.getName();
         }
         return new EntityHeader(e.getId(), etype, name, null);

@@ -10,6 +10,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
+import java.io.Serializable;
 import java.util.*;
 
 import static org.junit.Assert.*;
@@ -28,7 +29,7 @@ public class EntityCrudImplTest {
     private EntityManager<SecurityZone, EntityHeader> zoneEntityManager;
     @Mock
     private EntityManager<PublishedService, EntityHeader> serviceEntityManager;
-    private List<Long> oids;
+    private List<Serializable> oids;
     private SecurityZone zone;
     private Policy policy = new Policy(PolicyType.INCLUDE_FRAGMENT, "test", "test", false);
     private Policy policy2 = new Policy(PolicyType.INCLUDE_FRAGMENT, "test2", "test2", false);
@@ -57,7 +58,7 @@ public class EntityCrudImplTest {
 
     @Test
     public void setSecurityZoneForEntitiesNone() throws Exception {
-        entityCrud.setSecurityZoneForEntities(ZONE_OID, EntityType.POLICY, Collections.<Long>emptyList());
+        entityCrud.setSecurityZoneForEntities(ZONE_OID, EntityType.POLICY, Collections.<Serializable>emptyList());
         verify(zoneEntityManager, never()).findByPrimaryKey(anyLong());
         verify(policyEntityManager, never()).update(any(Policy.class));
     }
@@ -97,7 +98,7 @@ public class EntityCrudImplTest {
             entityCrud.setSecurityZoneForEntities(ZONE_OID, EntityType.POLICY, oids);
             fail("Expected UpdateException");
         } catch (final UpdateException e) {
-            assertEquals("Policy with oid 2 does not exist or is not security zoneable", e.getMessage());
+            assertEquals("Policy with id 2 does not exist or is not security zoneable", e.getMessage());
             throw e;
         }
     }
@@ -142,9 +143,9 @@ public class EntityCrudImplTest {
 
     @Test
     public void setSecurityZoneForEntitiesMultipleEntityTypes() throws Exception {
-        final Map<EntityType, Collection<Long>> entities = new HashMap<>();
-        entities.put(EntityType.POLICY, Arrays.asList(1L));
-        entities.put(EntityType.SERVICE, Arrays.asList(2L));
+        final Map<EntityType, Collection<Serializable>> entities = new HashMap<>();
+        entities.put(EntityType.POLICY, Arrays.<Serializable>asList(1L));
+        entities.put(EntityType.SERVICE, Arrays.<Serializable>asList(2L));
         when(zoneEntityManager.findByPrimaryKey(ZONE_OID)).thenReturn(zone);
         when(policyEntityManager.findByPrimaryKey(1L)).thenReturn(policy);
         when(serviceEntityManager.findByPrimaryKey(2L)).thenReturn(service);
@@ -157,15 +158,15 @@ public class EntityCrudImplTest {
 
     @Test
     public void setSecurityZoneForEntitiesMultipleEntityTypesNone() throws Exception {
-        entityCrud.setSecurityZoneForEntities(ZONE_OID, Collections.<EntityType, Collection<Long>>emptyMap());
+        entityCrud.setSecurityZoneForEntities(ZONE_OID, Collections.<EntityType, Collection<Serializable>>emptyMap());
         verify(zoneEntityManager, never()).findByPrimaryKey(anyLong());
     }
 
     @Test(expected = UpdateException.class)
     public void setSecurityZoneForEntitiesMultipleEntityTypesZoneNotFound() throws Exception {
-        final Map<EntityType, Collection<Long>> entities = new HashMap<>();
-        entities.put(EntityType.POLICY, Arrays.asList(1L));
-        entities.put(EntityType.SERVICE, Arrays.asList(2L));
+        final Map<EntityType, Collection<Serializable>> entities = new HashMap<>();
+        entities.put(EntityType.POLICY, Arrays.<Serializable>asList(1L));
+        entities.put(EntityType.SERVICE, Arrays.<Serializable>asList(2L));
         when(zoneEntityManager.findByPrimaryKey(ZONE_OID)).thenReturn(null);
 
         try {
@@ -179,9 +180,9 @@ public class EntityCrudImplTest {
 
     @Test(expected = UpdateException.class)
     public void setSecurityZoneForEntitiesMultipleEntityTypesErrorFindingZone() throws Exception {
-        final Map<EntityType, Collection<Long>> entities = new HashMap<>();
-        entities.put(EntityType.POLICY, Arrays.asList(1L));
-        entities.put(EntityType.SERVICE, Arrays.asList(2L));
+        final Map<EntityType, Collection<Serializable>> entities = new HashMap<>();
+        entities.put(EntityType.POLICY, Arrays.<Serializable>asList(1L));
+        entities.put(EntityType.SERVICE, Arrays.<Serializable>asList(2L));
         when(zoneEntityManager.findByPrimaryKey(ZONE_OID)).thenThrow(new FindException("mocking exception"));
         entityCrud.setSecurityZoneForEntities(ZONE_OID, entities);
     }

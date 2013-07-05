@@ -137,4 +137,15 @@ public class Goid implements Serializable {
     public String toString() {
         return base64.encodeToString(goid);
     }
+
+    /**
+     * Return a Goid from a string.
+     *
+     * @param goid The string representation of the goid.
+     * @return The goid represented by the string
+     * @throws IllegalArgumentException This is thrown if the string cannot be converted to a goid.
+     */
+    public static Goid parseGoid(String goid){
+        return new Goid(goid);
+    }
 }

@@ -21,6 +21,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.Serializable;
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.List;
@@ -51,7 +52,7 @@ public class SecurityZonePropertiesDialog extends JDialog {
     private boolean confirmed = false;
     private OperationType operation;
     private Set<EntityType> originalSupportedEntityTypes = new HashSet<>();
-    private Map<EntityType, Collection<Long>> entitiesToRemoveFromZone = new HashMap<>();
+    private Map<EntityType, Collection<Serializable>> entitiesToRemoveFromZone = new HashMap<>();
 
     public SecurityZonePropertiesDialog(@NotNull final Window owner, @NotNull final SecurityZone securityZone, final boolean readOnly) {
         super(owner, readOnly ? "Security Zone Properties" : securityZone.getOid() == SecurityZone.DEFAULT_OID ? "Create Security Zone" : "Edit Security Zone", DEFAULT_MODALITY_TYPE);
@@ -173,18 +174,18 @@ public class SecurityZonePropertiesDialog extends JDialog {
             }
             entitiesInZone.addAll(rbacAdmin.findEntitiesByTypeAndSecurityZoneOid(removedType, securityZone.getOid()));
             if (!entitiesInZone.isEmpty()) {
-                final List<Long> oids = new ArrayList<>(entitiesInZone.size());
+                final List<Serializable> ids = new ArrayList<>(entitiesInZone.size());
                 for (final EntityHeader entity : entitiesInZone) {
-                    oids.add(entity.getOid());
+                    ids.add(entity.getStrId());
                 }
-                this.entitiesToRemoveFromZone.put(removedType, oids);
+                this.entitiesToRemoveFromZone.put(removedType, ids);
             }
         }
     }
 
     private Map<EntityType, Integer> countEntitiesToRemoveFromZone() {
         final Map<EntityType, Integer> removeCount = new TreeMap<>(EntityType.NAME_COMPARATOR);
-        for (final Map.Entry<EntityType, Collection<Long>> entry : entitiesToRemoveFromZone.entrySet()) {
+        for (final Map.Entry<EntityType, Collection<Serializable>> entry : entitiesToRemoveFromZone.entrySet()) {
             removeCount.put(entry.getKey(), entry.getValue().size());
         }
         return removeCount;
@@ -251,7 +252,7 @@ public class SecurityZonePropertiesDialog extends JDialog {
         return zone;
     }
 
-    public Map<EntityType, Collection<Long>> getEntitiesToRemoveFromZone() {
+    public Map<EntityType, Collection<Serializable>> getEntitiesToRemoveFromZone() {
         return entitiesToRemoveFromZone;
     }
 
