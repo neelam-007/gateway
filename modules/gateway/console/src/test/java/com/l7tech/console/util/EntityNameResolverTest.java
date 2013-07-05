@@ -71,7 +71,7 @@ public class EntityNameResolverTest {
         final PublishedServiceAlias alias = createServiceAlias(OID, service, folder);
         when(serviceAdmin.findByAlias(OID)).thenReturn(service);
         when(folderAdmin.findByPrimaryKey(OID)).thenReturn(folder);
-        assertEquals("test alias[/routingUri] (/aliases/test alias)", resolver.getNameForHeader(new AliasHeader(alias)));
+        assertEquals("test alias [/routingUri] (/aliases/test alias)", resolver.getNameForHeader(new AliasHeader(alias)));
     }
 
     @Test
@@ -255,7 +255,7 @@ public class EntityNameResolverTest {
         final PublishedService service = new PublishedService();
         service.setName(NAME);
         service.setRoutingUri("/routingUri");
-        assertEquals("test[/routingUri] (/test)", resolver.getNameForHeader(new ServiceHeader(service)));
+        assertEquals("test [/routingUri] (/test)", resolver.getNameForHeader(new ServiceHeader(service)));
     }
 
     @Test
@@ -268,7 +268,7 @@ public class EntityNameResolverTest {
         final PublishedService service = new PublishedService();
         service.setName(NAME);
         service.setRoutingUri("/routingUri");
-        assertEquals("test[/routingUri]", resolver.getNameForHeader(new ServiceHeader(service), false));
+        assertEquals("test [/routingUri]", resolver.getNameForHeader(new ServiceHeader(service), false));
     }
 
     @BugId("SSG-7159")
@@ -318,7 +318,7 @@ public class EntityNameResolverTest {
         final Folder folder = createFolderInRoot(OID, "aliases");
         final PublishedServiceAlias alias = createServiceAlias(OID, service, folder);
         when(serviceAdmin.findServiceByID(String.valueOf(OID))).thenReturn(service);
-        assertEquals("test alias[/routingUri] (/aliases/test alias)", resolver.getNameForEntity(alias, true));
+        assertEquals("test alias [/routingUri] (/aliases/test alias)", resolver.getNameForEntity(alias, true));
     }
 
     @Test
@@ -327,7 +327,7 @@ public class EntityNameResolverTest {
         final Folder folder = createFolderInRoot(OID, "aliases");
         final PublishedServiceAlias alias = createServiceAlias(OID, service, folder);
         when(serviceAdmin.findServiceByID(String.valueOf(OID))).thenReturn(service);
-        assertEquals("test alias[/routingUri]", resolver.getNameForEntity(alias, false));
+        assertEquals("test alias [/routingUri]", resolver.getNameForEntity(alias, false));
     }
 
     @Test(expected = FindException.class)

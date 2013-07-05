@@ -377,7 +377,7 @@ public class EntityNameResolver {
     private String buildName(String name, String uniqueInfo, String path) {
         final StringBuilder stringBuilder = new StringBuilder(name);
         if (StringUtils.isNotBlank(uniqueInfo)) {
-            stringBuilder.append("[");
+            stringBuilder.append(" [");
             stringBuilder.append(uniqueInfo);
             stringBuilder.append("]");
         }
