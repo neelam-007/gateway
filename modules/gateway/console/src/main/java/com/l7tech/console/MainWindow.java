@@ -28,11 +28,14 @@ import com.l7tech.gateway.common.audit.LogonEvent;
 import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
 import com.l7tech.gateway.common.custom.CustomAssertionsRegistrar;
 import com.l7tech.gateway.common.security.rbac.AttemptedDeleteAll;
+import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.gui.util.*;
 import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.folder.Folder;
+import com.l7tech.objectmodel.folder.FolderHeader;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
@@ -1993,7 +1996,19 @@ public class MainWindow extends JFrame implements SheetHolder {
         identitiesTree.setModel(treeModel);
 
         final String url = getServiceUrl();
-        rootNode = new RootNode(url);
+        try {
+            final Folder rootFolder = Registry.getDefault().getFolderAdmin().findByPrimaryKey(RootNode.OID);
+            if (rootFolder != null) {
+                rootNode = new RootNode(url, new FolderHeader(rootFolder));
+            } else {
+                log.log(Level.WARNING, "Root folder not found with oid " + RootNode.OID);
+                rootNode = new RootNode(url);
+            }
+
+        } catch (final FindException | PermissionDeniedException e) {
+            log.log(Level.WARNING, "Unable to retrieve root folder: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            rootNode = new RootNode(url);
+        }
         rootNode.setSortComponents(((ServicesAndPoliciesTree) getServicesAndPoliciesTree()).getSortComponents());
 
         DefaultTreeModel servicesTreeModel = new FilteredTreeModel(null);

@@ -26,7 +26,7 @@ import static com.l7tech.policy.PolicyType.*;
 /**
  * This class IS the root node in the services and policies tree; it loads all children shown in this tree and has no
  * subclasses
- * 
+ *
  * @author darmstrong
  */
 public final class RootNode extends FolderNode {
@@ -62,12 +62,12 @@ public final class RootNode extends FolderNode {
         }
 
         private ServicesAndPoliciesNodeComparator(){
-            
+
         }
         /**
          * Services are shown before policies in a folder by default
          * As a result this method is called *descending* as this is the default
-         * If you want ascending you got to to supply false here 
+         * If you want ascending you got to to supply false here
          * @param descending
          */
         public void setTypeDescending(boolean descending){
@@ -130,7 +130,7 @@ public final class RootNode extends FolderNode {
                     if(typeDescending){
                         compVal = compVal * -1;
                     }
-                    
+
                     return compVal;
                 }
             }
@@ -151,7 +151,11 @@ public final class RootNode extends FolderNode {
      * a given service manager with the name.
      */
     public RootNode(String name) {
-        super(new FolderHeader(OID, name, null, 0, "/", null), null);
+        this(name, new FolderHeader(OID, name, null, 0, "/", null));
+    }
+
+    public RootNode(String name, @NotNull final FolderHeader rootFolderHeader) {
+        super(rootFolderHeader, null);
         this.serviceManager = Registry.getDefault().getServiceManager();
         this.policyAdmin = Registry.getDefault().getPolicyAdmin();
         this.title = name;
@@ -216,7 +220,7 @@ public final class RootNode extends FolderNode {
         new PasteAsAliasAction(this),
         new RefreshTreeNodeAction(this)
     };
-    
+
     /**
      * The only action you can take on the root node is to paste a new folder
      * @return actions appropriate to the root node
@@ -271,7 +275,7 @@ public final class RootNode extends FolderNode {
         }
 
         if(!aliases.remove(aliasNode)){
-            throw new RuntimeException("Aliases not found. Cannot remove");            
+            throw new RuntimeException("Aliases not found. Cannot remove");
         }
     }
 
