@@ -7,6 +7,7 @@ import com.l7tech.test.BugId;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.ByteArrayInputStream;
 import java.util.*;
 
 import static org.junit.Assert.*;
@@ -191,6 +192,33 @@ public class SecurityZoneUtilTest {
         final Collection<EntityType> inheritedFromJmsConnection = inheritanceMap.get(EntityType.JMS_CONNECTION);
         assertEquals(1, inheritedFromJmsConnection.size());
         assertTrue(inheritedFromJmsConnection.contains(EntityType.JMS_ENDPOINT));
+    }
+
+    @BugId("SSG-7175")
+    @Test
+    public void getSecurityZoneName() {
+        assertEquals("Tes...", SecurityZoneUtil.getSecurityZoneName(zone, 3));
+        assertEquals("Test", SecurityZoneUtil.getSecurityZoneName(zone, null));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void getSecurityZoneNameMaxCharsZero() {
+        SecurityZoneUtil.getSecurityZoneName(zone, 0);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void getSecurityZoneNameMaxCharsLessThanZero() {
+        SecurityZoneUtil.getSecurityZoneName(zone, -1);
+    }
+
+    @Test
+    public void getIntFromResource() throws Exception {
+        assertEquals(new Integer(1234), SecurityZoneUtil.getIntFromResource(new PropertyResourceBundle(new ByteArrayInputStream("test=1234".getBytes())), "test"));
+    }
+
+    @Test
+    public void getIntFromResourceNotInteger() throws Exception {
+        assertNull(SecurityZoneUtil.getIntFromResource(new PropertyResourceBundle(new ByteArrayInputStream("test=abc".getBytes())), "test"));
     }
 
     private Permission createPermission(final OperationType operation, final EntityType entityType, final SecurityZone... zones) {

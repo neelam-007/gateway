@@ -43,11 +43,13 @@ import java.util.logging.Logger;
  */
 public class AssignSecurityZonesDialog extends JDialog {
     private static final Logger logger = Logger.getLogger(AssignSecurityZonesDialog.class.getName());
+    private static ResourceBundle RESOURCES = ResourceBundle.getBundle(AssignSecurityZonesDialog.class.getName());
+    private static final String MAX_CHAR_NAME_DISPLAY = "max.char.name.display";
     private static final int HEADER_COL_INDEX = 1;
     private static final int ZONE_COL_INDEX = 2;
     private static final int CHECK_BOX_COL_INDEX = 0;
     private static final int PATH_COL_INDEX = 3;
-    private static final String NO_SECURITY_ZONE = "(no security zone)";
+    private static final String NO_SECURITY_ZONE = RESOURCES.getString("no.zone.label");
     private JPanel contentPanel;
     private JComboBox typeComboBox;
     private JPanel entitiesPanel;
@@ -143,7 +145,7 @@ public class AssignSecurityZonesDialog extends JDialog {
             @Override
             public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
                 if (value instanceof SecurityZone) {
-                    value = ((SecurityZone) value).getName();
+                    value = SecurityZoneUtil.getSecurityZoneName((SecurityZone) value, SecurityZoneUtil.getIntFromResource(RESOURCES, MAX_CHAR_NAME_DISPLAY));
                 }
                 return super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
             }

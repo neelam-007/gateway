@@ -9,6 +9,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SecurityZone;
 import com.l7tech.objectmodel.comparator.NamedEntityComparator;
 import com.l7tech.util.ExceptionUtils;
+import org.apache.commons.lang.Validate;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -26,6 +27,7 @@ public class SecurityZoneUtil {
     private static final AtomicReference<Map<Long, SecurityZone>> securityZones = new AtomicReference<>();
     private static final Map<EntityType, Collection<EntityType>> TYPES_WITH_INHERITED_ZONES;
     private static final Set<EntityType> HIDDEN_TYPES;
+    private static final String ELLIPSIS = "...";
 
     static {
         TYPES_WITH_INHERITED_ZONES = new HashMap<>();
@@ -169,6 +171,40 @@ public class SecurityZoneUtil {
      */
     public static Map<EntityType, Collection<EntityType>> getEntityTypesWithInheritedZones() {
         return TYPES_WITH_INHERITED_ZONES;
+    }
+
+    /**
+     * @param resource     the ResourceBundle.
+     * @param propertyName the name of the property which holds an integer.
+     * @return the Integer value of the property from the resource or null if the property is not an Integer.
+     */
+    @Nullable
+    public static Integer getIntFromResource(@NotNull ResourceBundle resource, @NotNull final String propertyName) {
+        Integer max = null;
+        final String maxStr = resource.getString(propertyName);
+        try {
+            max = Integer.valueOf(maxStr);
+        } catch (final NumberFormatException e) {
+            logger.log(Level.WARNING, "Invalid integer: " + maxStr);
+        }
+        return max;
+    }
+
+    /**
+     * Get the name of the given Security Zone, truncating with ellipsis if over a maximum length.
+     *
+     * @param securityZone the SecurityZone for which to get a name.
+     * @param maxChars     the max number of characters to return without truncating.
+     * @return the name of the given Security Zone which could be truncated with ellipsis.
+     */
+    @NotNull
+    public static String getSecurityZoneName(@NotNull final SecurityZone securityZone, @Nullable final Integer maxChars) {
+        Validate.isTrue(maxChars == null || maxChars > 0, "MaxChars must be null or greater than zero: " + maxChars);
+        String name = securityZone.getName();
+        if (maxChars != null && name.length() > maxChars) {
+            name = name.substring(0, maxChars) + ELLIPSIS;
+        }
+        return name;
     }
 
     /**

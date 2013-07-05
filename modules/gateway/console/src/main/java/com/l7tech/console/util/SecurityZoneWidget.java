@@ -25,7 +25,6 @@ import java.util.logging.Logger;
  */
 public class SecurityZoneWidget extends JPanel {
     private static final Logger logger = Logger.getLogger(SecurityZoneWidget.class.getName());
-    private static final String ELLIPSIS = "...";
     private static final String MAX_CHAR_NAME_DISPLAY = "max.char.name.display";
     private static ResourceBundle RESOURCES = ResourceBundle.getBundle(SecurityZoneWidget.class.getName());
     private Collection<EntityType> entityTypes = null;
@@ -52,14 +51,7 @@ public class SecurityZoneWidget extends JPanel {
             @Override
             public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
                 if (value instanceof SecurityZone) {
-                    final SecurityZone securityZone = (SecurityZone) value;
-                    final String name = securityZone.getName();
-                    final Integer maxChars = getMaxCharsForName();
-                    if (maxChars != null && name.length() > maxChars) {
-                        value = name.substring(0, maxChars) + ELLIPSIS;
-                    } else {
-                        value = name;
-                    }
+                    value = SecurityZoneUtil.getSecurityZoneName((SecurityZone) value, SecurityZoneUtil.getIntFromResource(RESOURCES, MAX_CHAR_NAME_DISPLAY));
                 }
                 return super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
             }
@@ -175,18 +167,6 @@ public class SecurityZoneWidget extends JPanel {
 
     public void addComboBoxActionListener(@NotNull final ActionListener actionListener) {
         zonesComboBox.addActionListener(actionListener);
-    }
-
-    @Nullable
-    private Integer getMaxCharsForName() {
-        Integer max = null;
-        final String maxStr = RESOURCES.getString(MAX_CHAR_NAME_DISPLAY);
-        try {
-            max = Integer.valueOf(maxStr);
-        } catch (final NumberFormatException e) {
-            logger.log(Level.WARNING, "Invalid max chars for name: " + maxStr);
-        }
-        return max;
     }
 
     /**
