@@ -2,17 +2,18 @@ package com.l7tech.console.tree.servicesAndPolicies;
 
 import com.l7tech.console.action.*;
 import com.l7tech.console.tree.*;
+import com.l7tech.console.util.EntitySaver;
 import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.admin.FolderAdmin;
 import com.l7tech.gateway.common.admin.PolicyAdmin;
 import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.gateway.common.service.ServiceHeader;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.OrganizationHeader;
+import com.l7tech.objectmodel.*;
+import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.FolderHeader;
 import com.l7tech.policy.PolicyHeader;
 import com.l7tech.policy.PolicyType;
+import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import javax.swing.tree.TreeNode;
@@ -198,6 +199,20 @@ public final class RootNode extends FolderNode {
         new PublishInternalServiceAction(),
         new CreatePolicyAction(),
         new CreateFolderAction(getFolder(), this, Registry.getDefault().getFolderAdmin()),
+        new ConfigureSecurityZoneAction<Folder>(getFolder(), new EntitySaver<Folder>() {
+                @Override
+                public Folder saveEntity(@NotNull final Folder entity) throws SaveException {
+                    // only want to save the security zone change
+                    try {
+                        final SecurityZone selectedZone = entity.getSecurityZone();
+                        Registry.getDefault().getRbacAdmin().setSecurityZoneForEntities(selectedZone == null ? null : selectedZone.getOid(),
+                                EntityType.FOLDER, Collections.<Serializable>singleton(entity.getId()));
+                    } catch (final UpdateException e) {
+                        throw new SaveException("Could not save root folder: " + e.getMessage(), e);
+                    }
+                    return entity;
+                }
+            }),
         new PasteAsAliasAction(this),
         new RefreshTreeNodeAction(this)
     };
