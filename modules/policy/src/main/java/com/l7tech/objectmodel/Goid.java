@@ -1,8 +1,10 @@
 package com.l7tech.objectmodel;
 
 import com.l7tech.util.ArrayUtils;
+import com.l7tech.util.HexUtils;
 import org.apache.commons.codec.binary.Base64;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -15,8 +17,6 @@ import java.util.Arrays;
  */
 public class Goid implements Serializable {
 
-    //This is used to convert a goid to and from string representations.
-    private static final Base64 base64 = new Base64(-1, null, true);
     //The bytes of the goid. This hould always be a 16 byte array
     private byte[] goid;
 
@@ -57,7 +57,14 @@ public class Goid implements Serializable {
      * @throws IllegalArgumentException This is thrown if the given string does not represent a goid
      */
     public Goid(String goid) {
-        byte[] goidFromString = base64.decode(goid);
+        byte[] goidFromString;
+
+        try {
+            goidFromString = HexUtils.unHexDump(goid);
+        } catch (IOException e) {
+            throw new IllegalArgumentException("Cannot create goid from this String.  Invalid hex data.");
+        }
+
         if (goidFromString.length != 16) {
             throw new IllegalArgumentException("Cannot create a goid from this String, it does not decode to a 16 byte array.");
         }
@@ -135,7 +142,7 @@ public class Goid implements Serializable {
 
     @Override
     public String toString() {
-        return base64.encodeToString(goid);
+        return HexUtils.hexDump(goid);
     }
 
     /**
