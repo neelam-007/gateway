@@ -380,7 +380,8 @@ public class CustomAssertionBackwardsCompatibilityTest {
             assertTrue("Removing Serializable from CustomAssertionHolder is an incompatible change", customAssertionHolder instanceof Serializable);
 
             assertFalse("Assertion is disabled", customAssertionHolder.isEnabled());
-            assertEquals("Category is ACCESS_CONTROL", customAssertionHolder.getCategory(), Category.ACCESS_CONTROL);
+            //noinspection serial
+            assertEquals("There is only one Category and it is ACCESS_CONTROL", customAssertionHolder.getCategories(), new HashSet<Category>(){{add(Category.ACCESS_CONTROL);}});
             assertTrue("Have both Comments property", customAssertionHolder.getAssertionComment() == null || customAssertionHolder.getAssertionComment() != null);
             assertEquals("Description is properly de-serialized", customAssertionHolder.getDescriptionText(), "Original CustomAssertion Desc");
             assertEquals("Message Target is properly de-serialized", customAssertionHolder.getTargetName(), "${" + TestCustomAssertionBackwardCompatibility.OTHER_VARIABLE + "}");

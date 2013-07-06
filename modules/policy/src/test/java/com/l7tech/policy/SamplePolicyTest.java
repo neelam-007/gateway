@@ -160,7 +160,7 @@ public class SamplePolicyTest {
         OneBean oneBean = new OneBean();
         oneBean.setValue("bu!");
         customAssertion.setCustomAssertion(oneBean);
-        customAssertion.setCategory(Category.ACCESS_CONTROL);
+        customAssertion.setCategories(Category.ACCESS_CONTROL);
         Assertion testin = new AllAssertion(Arrays.asList(new Assertion[]{
             new HttpBasic(),
             customAssertion

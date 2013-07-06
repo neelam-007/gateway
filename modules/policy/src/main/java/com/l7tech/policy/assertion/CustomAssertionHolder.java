@@ -8,8 +8,6 @@ package com.l7tech.policy.assertion;
 
 import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.ext.CustomAssertion;
-import static com.l7tech.policy.assertion.AssertionMetadata.*;
-
 import com.l7tech.policy.assertion.ext.targetable.CustomMessageTargetable;
 import com.l7tech.policy.assertion.ext.targetable.CustomMessageTargetableSupport;
 import com.l7tech.policy.assertion.ext.validator.CustomPolicyValidator;
@@ -19,15 +17,21 @@ import com.l7tech.util.ResourceUtils;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
-import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
+
+import org.jetbrains.annotations.NotNull;
 
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
+import static com.l7tech.policy.assertion.AssertionMetadata.*;
 
 /**
  * The custom assertion holder is a placeholder <code>Assertion</code>
@@ -50,15 +54,31 @@ public class CustomAssertionHolder extends Assertion implements UsesVariables, S
     protected static final String CUSTOM_ASSERTION = "Custom Assertion";
 
     private CustomAssertion customAssertion;
-    private Category category;
+    private Category category; // keep it for backwards compatibility (getter and setter are removed)
     private String descriptionText;
     private String paletteNodeName;
     private String policyNodeName;
     private boolean isUiAutoOpen;
     private String customModuleFileName;
 
+    // add categories set
+    private Set<Category> categories;
+
     public CustomAssertionHolder() {
         this.parent = null;
+    }
+
+    /**
+     * Override since we are changing the <tt>category</tt> field from type {@link Category}
+     * to {@link java.util.HashSet HashSet&lt;Category&gt;}
+     */
+    private void readObject( final ObjectInputStream in ) throws ClassNotFoundException, IOException {
+        in.defaultReadObject();
+
+        // for backwards compatibility create from category if null
+        if (categories == null) {
+            setCategories(category != null ? category : Category.UNFILLED);
+        }
     }
 
     /**
@@ -69,19 +89,45 @@ public class CustomAssertionHolder extends Assertion implements UsesVariables, S
     }
 
     /**
-     * @return the custom assertion category
+     * @return the set of categories this assertion is placed in.
      */
-    public Category getCategory() {
-        return category;
+    public Set<Category> getCategories() {
+        return categories;
     }
 
     /**
-     * Set the custom assertion category
+     * Set the categories set in which the assertion is placed.
      *
-     * @param category the new category
+     * @param categories    the set containing the new categories list. Cannot be null.
      */
-    public void setCategory(Category category) {
-        this.category = category;
+    public void setCategories(@NotNull Set<Category> categories) {
+        this.categories = new HashSet<>(categories); // copy construct
+    }
+
+    /**
+     * Convention function for setting the categories as an array.
+     *
+     * @param inCategories    the array by which the categories will be backed.
+     */
+    public void setCategories(@NotNull Category... inCategories) {
+        categories = new HashSet<>();
+        for (Category category : inCategories) {
+            if (category != null) { // skip nulls
+                categories.add(category);
+            }
+        }
+
+        // in case of empty array list add the default Category
+        if (categories.isEmpty()) {
+            categories.add(Category.UNFILLED);
+        }
+    }
+
+    /**
+     * @return true if the assertion is placed into the specified <code>category</code>.
+     */
+    public boolean hasCategory(Category category) {
+        return categories != null && categories.contains(category);
     }
 
     /**
@@ -98,7 +144,33 @@ public class CustomAssertionHolder extends Assertion implements UsesVariables, S
         if (customAssertion == null) {
             return "[ CustomAssertion = null ]";
         }
-        return "[ CustomAssertion = " + customAssertion.toString() + ", Category = " + category + " ]";
+        return "[ CustomAssertion = " + customAssertion.toString() + ", Categories = " + friendlyPrintCategories(categories) + " ]";
+    }
+
+    /**
+     * A helper function to build a string from a set of categories.
+     */
+    static public String friendlyPrintCategories(Set<Category> categories) {
+        if (categories == null) {
+            return "null";
+        }
+
+        int iLast = categories.size() - 1;
+        if (iLast < 0) {
+            return "[]";
+        }
+
+        int i = 0;
+        StringBuilder b = new StringBuilder();
+        b.append('[');
+        for (Category category : categories) {
+            b.append(String.valueOf(category));
+            if (iLast > i++) {
+                b.append(", ");
+            }
+        }
+
+        return b.append(']').toString();
     }
 
     public String getModuleFileName() {
@@ -167,6 +239,14 @@ public class CustomAssertionHolder extends Assertion implements UsesVariables, S
         clone.category = this.category;
         clone.descriptionText = this.descriptionText;
         clone.customAssertion = this.customAssertion; // in case deep copy fails
+
+        clone.paletteNodeName = this.paletteNodeName;
+        clone.policyNodeName = this.policyNodeName;
+        clone.isUiAutoOpen = this.isUiAutoOpen;
+        clone.customModuleFileName = this.customModuleFileName;
+
+        // do shallow copy, since Category instances are singletons.
+        clone.categories = this.categories != null ? new HashSet<>(this.categories) : null;
 
         if ( this.customAssertion != null ) {
             // Attempt serialization round trip to avoid returning the same instance

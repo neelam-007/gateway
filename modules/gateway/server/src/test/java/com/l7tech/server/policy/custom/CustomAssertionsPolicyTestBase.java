@@ -26,6 +26,7 @@ import org.mockito.internal.stubbing.answers.Returns;
 import org.springframework.context.ApplicationContext;
 
 import java.lang.reflect.Field;
+import java.util.HashSet;
 import java.util.List;
 
 import static org.junit.Assert.*;
@@ -97,20 +98,26 @@ public class CustomAssertionsPolicyTestBase {
         when(mockApplicationContext.getBean("customAssertionRegistrar")).thenReturn(mockRegistrar);
 
         // add sample Legacy descriptor
+        //noinspection serial
         final CustomAssertionDescriptor descriptorLegacy = new CustomAssertionDescriptor(
                 "Test.TestLegacyCustomAssertion",
                 TestLegacyCustomAssertion.class,
                 TestServiceInvocation.class,
-                Category.AUDIT_ALERT
+                new HashSet<Category>() {{
+                    add(Category.AUDIT_ALERT);
+                }}
         );
         descriptorLegacy.setDescription("TestLegacyCustomAssertion Description");
 
         // add message targetable descriptor
+        //noinspection serial
         final CustomAssertionDescriptor descriptorTargetable = new CustomAssertionDescriptor(
                 "Test.TestCustomMessageTargetable",
                 TestCustomMessageTargetable.class,
                 TestServiceInvocation.class,
-                Category.AUDIT_ALERT
+                new HashSet<Category>() {{
+                    add(Category.AUDIT_ALERT);
+                }}
         );
         descriptorLegacy.setDescription("TestCustomMessageTargetable Description");
 

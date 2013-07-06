@@ -224,7 +224,7 @@ public class CustomAssertionContextVariablesTest {
 
     private ServerCustomAssertionHolder createServerCustomAssertionHolder() {
         CustomAssertionHolder assertion = new CustomAssertionHolder();
-        assertion.setCategory(Category.AUDIT_ALERT);
+        assertion.setCategories(Category.AUDIT_ALERT);
         assertion.setDescriptionText("Test Custom Assertion");
         assertion.setCustomAssertion(new TestCustomAssertion());
 

@@ -2,6 +2,8 @@ package com.l7tech.policy.assertion.ext;
 
 import java.io.ObjectStreamException;
 import java.io.Serializable;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * The enum style class that describes custom assertions categories.
@@ -67,6 +69,26 @@ public class Category implements Serializable {
             }
         }
         return null;
+    }
+
+    /**
+     * Resolve a set of categories from the input string.
+     *
+     * @param inCategories the string containing the categories list
+     * @return a HashSet containing all categories resolved from the input string.  Could be empty but never null.
+     */
+    public static Set<Category> asCategorySet(String inCategories) {
+        Set<Category> categories = new HashSet<Category>();
+        if (inCategories != null) {
+            String[] categoriesSplit = inCategories.toLowerCase().split(",");
+            for (String catStr : categoriesSplit) {
+                Category category = asCategory(catStr.trim());
+                if (category != null) { // skip nulls
+                    categories.add(category);
+                }
+            }
+        }
+        return categories;
     }
 
     public String toString() {

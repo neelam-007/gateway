@@ -11,12 +11,12 @@ import com.l7tech.policy.assertion.ext.CustomAssertion;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.policy.wsp.WspWriter;
 
+import org.junit.Before;
+import org.junit.Test;
+
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-
-import org.junit.Before;
-import org.junit.Test;
 
 import static com.l7tech.policy.assertion.AssertionMetadata.*;
 import static com.l7tech.policy.assertion.CustomAssertionHolder.CUSTOM_ASSERTION;
@@ -207,12 +207,12 @@ public class CustomAssertionHolderTest {
     @Test
     public void assertionClone() throws Exception {
         final CustomAssertionHolder assertion = holder;
-        assertion.setCustomAssertion(new TestCustomMessageTargetable("param one", 1, true, TEST_CA_MAP_ELEMENTS));
 
+        assertion.setCustomAssertion(new TestCustomMessageTargetable("param one", 1, true, TEST_CA_MAP_ELEMENTS));
         assertion.setTarget(TargetMessageType.OTHER);
         assertion.setOtherTargetMessageVariable("other message variable");
         assertion.setDescriptionText(DESC);
-        assertion.setCategory(Category.AUDIT_ALERT);
+        assertion.setCategories(Category.LOGIC, Category.MESSAGE);
         assertion.setEnabled(false);
 
         // add left and right comment
@@ -264,11 +264,11 @@ public class CustomAssertionHolderTest {
                 assertion.getDescriptionText(), not(equalTo(cloneAssertion.getDescriptionText())));
 
         // test Category
-        assertEquals("Category is the same",
-                assertion.getCategory(), cloneAssertion.getCategory());
-        cloneAssertion.setCategory(Category.MESSAGE);
-        assertThat("Category is the different",
-                assertion.getCategory(), not(equalTo(cloneAssertion.getCategory())));
+        assertEquals("Categories are the same",
+                assertion.getCategories(), cloneAssertion.getCategories());
+        cloneAssertion.setCategories(Category.MESSAGE);
+        assertThat("Categories are different",
+                assertion.getCategories(), not(equalTo(cloneAssertion.getCategories())));
 
         // test isEnabled
         assertSame("Enabled is the same",
@@ -381,8 +381,8 @@ public class CustomAssertionHolderTest {
                 caOriginal.getOtherTargetMessageVariable(), caSerialized.getOtherTargetMessageVariable());
         assertEquals("Description is the same between original and serialized assertion",
                 caOriginal.getDescriptionText(), caSerialized.getDescriptionText());
-        assertEquals("Category is the same between original and serialized assertion",
-                caOriginal.getCategory(), caSerialized.getCategory());
+        assertEquals("Categories are the same between original and serialized assertion",
+                caOriginal.getCategories(), caSerialized.getCategories());
         assertEquals("Enabled is the same between original and serialized assertion",
                 caOriginal.isEnabled(), caSerialized.isEnabled());
         assertEquals("CustomAssertion is the same between original and serialized assertion",
@@ -418,7 +418,7 @@ public class CustomAssertionHolderTest {
     private Assertion makeTestPolicy() {
         // Custom Assertion
         final CustomAssertionHolder customAssertion = new CustomAssertionHolder();
-        customAssertion.setCategory(Category.ACCESS_CONTROL);
+        customAssertion.setCategories(Category.ACCESS_CONTROL);
         customAssertion.setCustomAssertion(new TestCustomMessageTargetable("test string", 11, false, TEST_CA_MAP_ELEMENTS));
         final Assertion.Comment customAssertionComment = new Assertion.Comment();
         customAssertionComment.setComment(CUSTOM_ASSERTION_LEFT_COMMENT, Assertion.Comment.LEFT_COMMENT);

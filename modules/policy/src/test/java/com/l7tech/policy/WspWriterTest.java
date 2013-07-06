@@ -233,7 +233,7 @@ public class WspWriterTest {
         rxa.setXpathExpression(new XpathExpression("//blee:blaz", foo));
 
         final CustomAssertionHolder custom = new CustomAssertionHolder();
-        custom.setCategory(Category.ACCESS_CONTROL);
+        custom.setCategories(Category.ACCESS_CONTROL);
         custom.setCustomAssertion(new TestCustomAssertion(22, "foo bar baz", new HashMap()));
         Assertion policy = new ExactlyOneAssertion(Arrays.asList(
             new AllAssertion(Arrays.asList(

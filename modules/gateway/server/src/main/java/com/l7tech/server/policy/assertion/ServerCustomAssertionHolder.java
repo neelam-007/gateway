@@ -87,7 +87,7 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
         this.data = ca;
         this.applicationContext = springContext;
         customAssertion = ca.getCustomAssertion(); // ignore hoder
-        isAuthAssertion = Category.ACCESS_CONTROL.equals(ca.getCategory());
+        isAuthAssertion = ca.hasCategory(Category.ACCESS_CONTROL);
     }
 
     private void initialize() throws PolicyAssertionException {

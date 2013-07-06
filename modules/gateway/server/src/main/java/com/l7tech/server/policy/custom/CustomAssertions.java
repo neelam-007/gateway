@@ -114,7 +114,7 @@ class CustomAssertions {
     static Set getDescriptors( Category cat) {
         Set<CustomAssertionDescriptor> descriptors = new HashSet<>();
         for (CustomAssertionDescriptor cd : assertions.values()) {
-            if (cat.equals(cd.getCategory())) {
+            if (cd.hasCategory(cat)) {
                 descriptors.add(cd);
             }
         }
@@ -168,7 +168,7 @@ class CustomAssertions {
     static Set getAssertions(Category cat) {
         Set<Class> allAssertions = new HashSet<>();
         for (CustomAssertionDescriptor eh : assertions.values()) {
-            if (cat.equals(eh.getCategory())) {
+            if (eh.hasCategory(cat)) {
                 allAssertions.add(eh.getAssertion());
             }
         }

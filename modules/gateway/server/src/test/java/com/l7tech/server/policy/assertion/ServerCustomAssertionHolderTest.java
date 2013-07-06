@@ -74,7 +74,7 @@ public class ServerCustomAssertionHolderTest extends CustomAssertionsPolicyTestB
     @Test
     public void testNullStatusReturn() throws Exception {
         final CustomAssertionHolder customAssertionHolder = new CustomAssertionHolder();
-        customAssertionHolder.setCategory(Category.ACCESS_CONTROL);
+        customAssertionHolder.setCategories(Category.ACCESS_CONTROL);
         customAssertionHolder.setDescriptionText("Test Custom Assertion");
         customAssertionHolder.setCustomAssertion(new TestLegacyCustomAssertion());
 
@@ -95,7 +95,7 @@ public class ServerCustomAssertionHolderTest extends CustomAssertionsPolicyTestB
     @Test
     public void test_onRequest_For_IOException_And_GeneralSecurityException() throws Exception {
         final CustomAssertionHolder customAssertionHolder = new CustomAssertionHolder();
-        customAssertionHolder.setCategory(Category.ACCESS_CONTROL);
+        customAssertionHolder.setCategories(Category.ACCESS_CONTROL);
         customAssertionHolder.setDescriptionText("Test Custom Assertion");
         customAssertionHolder.setCustomAssertion(new TestLegacyCustomAssertion());
 
@@ -163,7 +163,7 @@ public class ServerCustomAssertionHolderTest extends CustomAssertionsPolicyTestB
         responseAssertion.setBase64ResponseBody(HexUtils.encodeBase64(SAMPLE_XML_INPUT_MESSAGE.getBytes()));
 
         final CustomAssertionHolder customAssertionHolder = new CustomAssertionHolder();
-        customAssertionHolder.setCategory(Category.ACCESS_CONTROL);
+        customAssertionHolder.setCategories(Category.ACCESS_CONTROL);
         customAssertionHolder.setDescriptionText("Test Custom Assertion");
         customAssertionHolder.setCustomAssertion(new TestLegacyCustomAssertion());
 
@@ -221,7 +221,7 @@ public class ServerCustomAssertionHolderTest extends CustomAssertionsPolicyTestB
     @Test
     public void testLegacyBeforeRoute() throws Exception {
         final CustomAssertionHolder customAssertionHolder = new CustomAssertionHolder();
-        customAssertionHolder.setCategory(Category.AUDIT_ALERT);
+        customAssertionHolder.setCategories(Category.AUDIT_ALERT);
         customAssertionHolder.setDescriptionText("Test Custom Assertion");
         customAssertionHolder.setCustomAssertion(new TestLegacyCustomAssertion());
 
@@ -295,7 +295,7 @@ public class ServerCustomAssertionHolderTest extends CustomAssertionsPolicyTestB
         responseAssertion.setBase64ResponseBody(HexUtils.encodeBase64(SAMPLE_XML_INPUT_MESSAGE.getBytes()));
 
         final CustomAssertionHolder customAssertionHolder = new CustomAssertionHolder();
-        customAssertionHolder.setCategory(Category.AUDIT_ALERT);
+        customAssertionHolder.setCategories(Category.AUDIT_ALERT);
         customAssertionHolder.setDescriptionText("Test Custom Assertion");
         customAssertionHolder.setCustomAssertion(new TestLegacyCustomAssertion());
 

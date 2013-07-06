@@ -71,7 +71,7 @@ public class CustomMessageKnobTest extends CustomAssertionsPolicyTestBase {
 
         // create our assertion CustomAssertionHolder
         final CustomAssertionHolder customAssertionHolder = new CustomAssertionHolder();
-        customAssertionHolder.setCategory(Category.ACCESS_CONTROL);
+        customAssertionHolder.setCategories(Category.ACCESS_CONTROL);
         customAssertionHolder.setDescriptionText("Test Custom Assertion");
         customAssertionHolder.setCustomAssertion(new TestCustomMessageTargetable("request", "response"));
 
@@ -151,7 +151,7 @@ public class CustomMessageKnobTest extends CustomAssertionsPolicyTestBase {
 
         // create our assertion CustomAssertionHolder
         final CustomAssertionHolder customAssertionHolder = new CustomAssertionHolder();
-        customAssertionHolder.setCategory(Category.ACCESS_CONTROL);
+        customAssertionHolder.setCategories(Category.ACCESS_CONTROL);
         customAssertionHolder.setDescriptionText("Test Custom Assertion");
         customAssertionHolder.setCustomAssertion(new TestCustomMessageTargetable("request", "response"));
 
@@ -203,7 +203,7 @@ public class CustomMessageKnobTest extends CustomAssertionsPolicyTestBase {
 
         // create our assertion CustomAssertionHolder
         final CustomAssertionHolder customAssertionHolder = new CustomAssertionHolder();
-        customAssertionHolder.setCategory(Category.ACCESS_CONTROL);
+        customAssertionHolder.setCategories(Category.ACCESS_CONTROL);
         customAssertionHolder.setDescriptionText("Test Custom Assertion");
         customAssertionHolder.setCustomAssertion(new TestCustomMessageTargetable("request", "response"));
 

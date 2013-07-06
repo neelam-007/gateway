@@ -123,13 +123,13 @@ public class AssertionTest {
 
         holder.setCustomAssertion( holderAssertion );
         holder.setDescriptionText("Description");
-        holder.setCategory(Category.ACCESS_CONTROL);
+        holder.setCategories(Category.ACCESS_CONTROL);
 
         final CustomAssertionHolder cloneHolder = (CustomAssertionHolder) holder.getCopy();
         final TestCustomAssertion cloneHolderAssertion = (TestCustomAssertion)cloneHolder.getCustomAssertion();
 
         Assert.assertEquals("Assertion bean property", holderAssertion.getTestValue(), cloneHolderAssertion.getTestValue());
-        Assert.assertEquals("Assertion category", holder.getCategory(), cloneHolder.getCategory());
+        Assert.assertEquals("Assertion categories", holder.getCategories(), cloneHolder.getCategories());
         Assert.assertEquals("Assertion description", holder.getDescriptionText(), cloneHolder.getDescriptionText());
 
         // Test that we have a deep copy of the CAH (ensure the CustomAssertion instance is not the same in the clone)

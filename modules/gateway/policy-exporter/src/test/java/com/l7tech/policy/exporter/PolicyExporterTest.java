@@ -103,7 +103,7 @@ public class PolicyExporterTest {
 
         // CustomAssertionReference
         CustomAssertionHolder cahass = new CustomAssertionHolder();
-        cahass.setCategory(Category.MESSAGE);
+        cahass.setCategories(Category.MESSAGE);
         cahass.setCustomAssertion(new TestCustomAssertion());
         root.getChildren().add(cahass);
 

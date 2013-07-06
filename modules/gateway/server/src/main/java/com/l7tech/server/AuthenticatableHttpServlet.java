@@ -436,7 +436,7 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
                 Assertion ass = (Assertion)it.next();
                 if (ass instanceof CustomAssertionHolder) {
                     CustomAssertionHolder ch = (CustomAssertionHolder)ass;
-                    if (Category.ACCESS_CONTROL.equals(ch.getCategory())) { // bingo
+                    if (ch.hasCategory(Category.ACCESS_CONTROL)) { // bingo
                         UserBean user = new UserBean();
                         user.setProviderId(Long.MAX_VALUE);
                         user.setLogin(creds.getLogin());
@@ -572,7 +572,7 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
 
             if (a instanceof CustomAssertionHolder) {
                 CustomAssertionHolder ca = (CustomAssertionHolder)a;
-                if (Category.ACCESS_CONTROL.equals(ca.getCategory())) {
+                if (ca.hasCategory(Category.ACCESS_CONTROL)) {
                     return true;
                 }
             } else if (a instanceof IdentityAssertion) {

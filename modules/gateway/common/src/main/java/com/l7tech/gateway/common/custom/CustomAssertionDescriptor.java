@@ -1,13 +1,13 @@
 package com.l7tech.gateway.common.custom;
 
+import com.l7tech.policy.assertion.CustomAssertionHolder;
 import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.ext.CustomAssertion;
 import com.l7tech.policy.assertion.ext.ServiceInvocation;
 import com.l7tech.policy.assertion.ext.CustomAssertionUI;
 import com.l7tech.policy.assertion.ext.action.CustomTaskActionUI;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 /**
  * The class <code>CustomAssertionDescriptor</code> contains the runtime information that represent a custom assertion.
@@ -35,7 +35,9 @@ public class CustomAssertionDescriptor {
     private final Class assertion;
     private final Class serverAssertion;
     private final String name;
-    private final Category category;
+
+    private final Set<Category> categories;
+    private final String categoriesFriendlyPrintString;
 
     private Class uiClass;
     private Class taskActionUiClass;
@@ -53,15 +55,17 @@ public class CustomAssertionDescriptor {
      * @param name                 the assertion name
      * @param assertionClass       the assertion class
      * @param serverAssertionClass the server side assertion class
-     * @param cat                  the assertion category
+     * @param categories           the category list in which the assertion is placed
      */
     public CustomAssertionDescriptor(final String name,
                                      final Class assertionClass,
                                      final Class serverAssertionClass,
-                                     final Category cat) {
+                                     final Set<Category> categories) {
         this.name = name;
         this.assertion = assertionClass;
-        this.category = cat;
+
+        this.categories = categories;
+        this.categoriesFriendlyPrintString = CustomAssertionHolder.friendlyPrintCategories(this.categories);
 
         if (!CustomAssertion.class.isAssignableFrom(assertionClass)) {
             throw new IllegalArgumentException("Assertion " + assertionClass);
@@ -145,11 +149,17 @@ public class CustomAssertionDescriptor {
     }
 
     /**
-     * @return the category for this custom assertion
-     * @see Category
+     * @return the categories set in which the assertion is placed.
      */
-    public Category getCategory() {
-        return category;
+    public Set<Category> getCategories() {
+        return categories;
+    }
+
+    /**
+     * @return true if the assertion is placed into the specified <code>category</code>.
+     */
+    public boolean hasCategory(Category category) {
+        return categories.contains(category);
     }
 
     /**
@@ -167,8 +177,9 @@ public class CustomAssertionDescriptor {
     }
 
     public String toString() {
-        return "[" + "; name='" + name + "'" + "; category=" + category + "; assertion=" + safeName(assertion) + "; serverAssertion="
-                + safeName(serverAssertion) + "; editorClass=" + safeName(uiClass) + "]" + super.toString();
+        return "[" + "; name='" + name + "'" + "; categories=" + categoriesFriendlyPrintString + "; assertion=" +
+                safeName(assertion) + "; serverAssertion=" + safeName(serverAssertion) + "; editorClass=" +
+                safeName(uiClass) + "]" + super.toString();
     }
 
     private String safeName(Class cl) {

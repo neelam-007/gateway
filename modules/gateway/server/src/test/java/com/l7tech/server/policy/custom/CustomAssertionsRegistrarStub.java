@@ -10,6 +10,7 @@ import com.l7tech.policy.assertion.ext.action.CustomTaskActionUI;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -26,10 +27,14 @@ public class CustomAssertionsRegistrarStub implements CustomAssertionsRegistrar 
     }
 
     private static void loadTestCustomAssertions() {
+        //noinspection serial
         CustomAssertionDescriptor eh = new CustomAssertionDescriptor("Test.Assertion",
                 TestAssertionProperties.class,
                 TestServiceInvocation.class,
-                Category.ACCESS_CONTROL);
+                new HashSet<Category>() {{
+                    add(Category.ACCESS_CONTROL);
+                }}
+        );
         CustomAssertions.register(eh);
     }
 
@@ -124,7 +129,7 @@ public class CustomAssertionsRegistrarStub implements CustomAssertionsRegistrar 
             customAssertionHolder = new CustomAssertionHolder();
             final CustomAssertion cas = (CustomAssertion) ca.newInstance();
             customAssertionHolder.setCustomAssertion(cas);
-            customAssertionHolder.setCategory(customAssertionDescriptor.getCategory());
+            customAssertionHolder.setCategories(customAssertionDescriptor.getCategories());
             customAssertionHolder.setDescriptionText(customAssertionDescriptor.getDescription());
             customAssertionHolder.setPaletteNodeName(customAssertionDescriptor.getPaletteNodeName());
             customAssertionHolder.setPolicyNodeName(customAssertionDescriptor.getPolicyNodeName());

@@ -317,7 +317,7 @@ public class CustomAssertionsRegistrarImpl extends ApplicationObjectSupport impl
             customAssertionHolder = new CustomAssertionHolder();
             final CustomAssertion cas = (CustomAssertion) ca.newInstance();
             customAssertionHolder.setCustomAssertion(cas);
-            customAssertionHolder.setCategory(customAssertionDescriptor.getCategory());
+            customAssertionHolder.setCategories(customAssertionDescriptor.getCategories());
             customAssertionHolder.setDescriptionText(customAssertionDescriptor.getDescription());
             customAssertionHolder.setPaletteNodeName(customAssertionDescriptor.getPaletteNodeName());
             customAssertionHolder.setPolicyNodeName(customAssertionDescriptor.getPolicyNodeName());
@@ -435,9 +435,14 @@ public class CustomAssertionsRegistrarImpl extends ApplicationObjectSupport impl
         try {
             Class a = Class.forName(assertionClass, true, classLoader);
             Class sa = Class.forName(serverClass, true, classLoader);
-            Category category = Category.asCategory((String) properties.get(baseKey + ".category"));
-            category = category == null ? Category.UNFILLED : category;
-            CustomAssertionDescriptor eh = new CustomAssertionDescriptor(baseKey, a, sa, category);
+
+            // extract categories
+            final Set<Category> categories = Category.asCategorySet((String) properties.get(baseKey + ".category"));
+            if (categories.isEmpty()) {
+                categories.add(Category.UNFILLED); // it must have a category
+            }
+
+            CustomAssertionDescriptor eh = new CustomAssertionDescriptor(baseKey, a, sa, categories);
 
             String editorClass = (String) properties.get(baseKey + ".ui");
             if (editorClass != null && !"".equals(editorClass)) {

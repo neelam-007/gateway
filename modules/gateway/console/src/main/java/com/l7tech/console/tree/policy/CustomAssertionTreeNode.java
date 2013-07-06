@@ -47,14 +47,6 @@ public class CustomAssertionTreeNode extends LeafAssertionTreeNode {
     }
 
     /**
-     * @return the custom assertion category
-     */
-    public Category getCategory() {
-        CustomAssertionHolder cha = (CustomAssertionHolder)asAssertion();
-        return cha.getCategory();
-    }
-
-    /**
      * Gets the default action for this node.
      *
      * @return <code>null</code> indicating there should be none default action
