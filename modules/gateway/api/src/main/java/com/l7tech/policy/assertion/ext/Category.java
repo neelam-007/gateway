@@ -34,6 +34,8 @@ public class Category implements Serializable {
     public static final Category ROUTING = new Category(8, "MessageRouting");
     public static final Category AVAILABILITY = new Category(9, "ServiceAvailability");
     public static final Category LOGIC = new Category(10, "PolicyLogic");
+    // new categories introduced in 8.0
+    public static final Category CUSTOM_ASSERTIONS = new Category(11, "CustomAssertions");
 
     private final int myKey;
     private final String myName;
@@ -123,5 +125,5 @@ public class Category implements Serializable {
     }
 
     private static final Category[] VALUES = {ACCESS_CONTROL, MESSAGE, UNFILLED, THREAT_PROT, AUDIT_ALERT, TRANSPORT_SEC,
-                                              XML_SEC, MSG_VAL_XSLT, ROUTING, AVAILABILITY, LOGIC};
+                                              XML_SEC, MSG_VAL_XSLT, ROUTING, AVAILABILITY, LOGIC, CUSTOM_ASSERTIONS};
 }

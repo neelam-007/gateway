@@ -146,6 +146,7 @@ public class PaletteFolderRegistry {
         nodeList.add(new DefaultAssertionPaletteFolderNode("Policy Logic", "policyLogic", Category.LOGIC));
         nodeList.add(new DefaultAssertionPaletteFolderNode("Threat Protection", "threatProtection", Category.THREAT_PROT));
         nodeList.add(new DefaultAssertionPaletteFolderNode("Internal Assertions", "internalAssertions"));
+        nodeList.add(new DefaultAssertionPaletteFolderNode("Custom Assertions", "customAssertions", Category.CUSTOM_ASSERTIONS));
 
         for (Iterator i = nodeList.iterator(); i.hasNext();) {
             AbstractPaletteFolderNode node = (AbstractPaletteFolderNode)i.next();
