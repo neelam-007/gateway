@@ -229,9 +229,7 @@ public class UddiRegistryPropertiesDialog extends JDialog {
                 }
             }
         });
-        zoneControl.configure(EntityType.UDDI_REGISTRY,
-                uddiRegistry.getOid() == UDDIRegistry.DEFAULT_OID ? OperationType.CREATE : canEdit ? OperationType.UPDATE : OperationType.READ,
-                uddiRegistry.getSecurityZone());
+        zoneControl.configure(uddiRegistry.getOid() == UDDIRegistry.DEFAULT_OID ? OperationType.CREATE : canEdit ? OperationType.UPDATE : OperationType.READ, uddiRegistry);
 
         //field validation
         inputValidator.constrainTextFieldToBeNonEmpty("UDDI Registry Name", registryNameTextField, null);

@@ -188,7 +188,7 @@ public class JdbcConnectionPropertiesDialog extends JDialog {
         if (admin != null) {
             driverClassWhiteList = admin.getPropertySupportedDriverClass();
         }
-        zoneControl.configure(EntityType.JDBC_CONNECTION, JdbcConnection.DEFAULT_GOID.equals(connection.getGoid()) ? OperationType.CREATE : OperationType.UPDATE, connection.getSecurityZone());
+        zoneControl.configure(JdbcConnection.DEFAULT_GOID.equals(connection.getGoid()) ? OperationType.CREATE : OperationType.UPDATE, connection);
 
         modelToView();
         enableOrDisableButtons();

@@ -1,8 +1,11 @@
 package com.l7tech.console.util;
 
+import com.l7tech.console.security.SecurityProvider;
+import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.SecurityZone;
+import com.l7tech.objectmodel.ZoneableEntity;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -14,7 +17,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.ResourceBundle;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -35,6 +37,7 @@ public class SecurityZoneWidget extends JPanel {
     private java.util.List<SecurityZone> loadedZones = Collections.emptyList();
     private JComboBox<SecurityZone> zonesComboBox = new JComboBox<>();
     private JLabel securityZoneLabel = new JLabel("Security Zone:");
+    private ZoneableEntity specificEntity;
 
     public SecurityZoneWidget() {
         setLayout(new GridBagLayout());
@@ -83,24 +86,65 @@ public class SecurityZoneWidget extends JPanel {
     }
 
     /**
+     * Configure the widget for a specific ZoneableEntity. Configuration will determine which SecurityZones are available to the user.
+     *
+     * @param operation the operation being performed on the ZoneableEntity.
+     * @param entity    the ZoneableEntity being operated on.
+     */
+    public void configure(@NotNull final OperationType operation, @NotNull final ZoneableEntity entity) {
+        this.specificEntity = entity;
+        configure(EntityType.findTypeByEntity(entity.getClass()), operation, entity.getSecurityZone());
+    }
+
+    /**
      * Reload the list of zones from the server.
      */
     public void reloadZones() {
         zoneLoadAttempted = true;
         final Object oldSelection = zonesComboBox.getSelectedItem();
         loadedZones = new ArrayList<>();
-        if (operation == null || operation != OperationType.READ) {
-            loadedZones.addAll(SecurityZoneUtil.getSortedZonesForOperationAndEntityType(operation, entityTypes));
-            if (operation == OperationType.UPDATE && initialZone != null && !loadedZones.contains(initialZone)) {
-                loadedZones.add(0, SecurityZoneUtil.CURRENT_UNAVAILABLE_ZONE);
-            }
-        } else if (initialZone != null) {
-            // read only
+        final SecurityProvider securityProvider = Registry.getDefault().getSecurityProvider();
+
+        if (operation == null) {
+            // show all readable
+            loadedZones.addAll(SecurityZoneUtil.getSortedZonesForOperationAndEntityType(null, entityTypes));
+        } else if (operation == OperationType.READ) {
+            // show the zone set on the entity if possible
             if (initialZone.equals(SecurityZoneUtil.NULL_ZONE) || SecurityZoneUtil.getSortedReadableSecurityZones().contains(initialZone)) {
                 loadedZones.add(initialZone);
             } else {
                 loadedZones.add(SecurityZoneUtil.CURRENT_UNAVAILABLE_ZONE);
             }
+        } else if (operation == OperationType.UPDATE) {
+            if (specificEntity != null) {
+                // check security provider for each readable zone
+                final EntityType type = EntityType.findTypeByEntity(specificEntity.getClass());
+
+                // test each zone to see if it can be set on the entity
+                final SecurityZone originalZone = specificEntity.getSecurityZone();
+                specificEntity.setSecurityZone(null);
+                if (securityProvider.hasPermission(new AttemptedUpdate(type, specificEntity))) {
+                    loadedZones.add(SecurityZoneUtil.NULL_ZONE);
+                }
+                for (final SecurityZone zone : SecurityZoneUtil.getSortedReadableSecurityZones()) {
+                    specificEntity.setSecurityZone(zone);
+                    if (securityProvider.hasPermission(new AttemptedUpdate(type, specificEntity))) {
+                        loadedZones.add(zone);
+                    }
+                }
+                specificEntity.setSecurityZone(originalZone);
+
+                if (originalZone != null && !loadedZones.contains(initialZone)) {
+                    // user can't read the currently set zone
+                    loadedZones.add(0, SecurityZoneUtil.CURRENT_UNAVAILABLE_ZONE);
+                }
+            } else {
+                // guess by analyzing permissions
+                loadedZones.addAll(SecurityZoneUtil.getSortedZonesForOperationAndEntityType(operation, entityTypes));
+            }
+        } else {
+            // guess by analyzing permissions
+            loadedZones.addAll(SecurityZoneUtil.getSortedZonesForOperationAndEntityType(operation, entityTypes));
         }
 
         zonesComboBox.setModel(new DefaultComboBoxModel<>(loadedZones.toArray(new SecurityZone[loadedZones.size()])));

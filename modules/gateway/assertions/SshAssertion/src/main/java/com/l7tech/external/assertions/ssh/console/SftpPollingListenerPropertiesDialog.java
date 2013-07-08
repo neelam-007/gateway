@@ -267,9 +267,7 @@ public class SftpPollingListenerPropertiesDialog extends JDialog {
                 if (idx >= 0) propertyListModel.remove(idx);
             }
         });
-        zoneControl.configure(EntityType.SSG_ACTIVE_CONNECTOR,
-                connector.getOid() == SsgActiveConnector.DEFAULT_OID ? OperationType.CREATE : OperationType.UPDATE,
-                connector.getSecurityZone());
+        zoneControl.configure(connector.getOid() == SsgActiveConnector.DEFAULT_OID ? OperationType.CREATE : OperationType.UPDATE, connector);
 
         pack();
         modelToView( connector );

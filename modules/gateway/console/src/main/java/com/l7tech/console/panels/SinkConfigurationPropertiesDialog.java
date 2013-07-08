@@ -356,9 +356,7 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
         // Description field must not be longer than 1000 characters
         ((AbstractDocument)descriptionField.getDocument()).setDocumentFilter(new DocumentSizeFilter(1000));
 
-        zoneControl.configure(EntityType.LOG_SINK,
-                sinkConfiguration.getOid() == SinkConfiguration.DEFAULT_OID ? OperationType.CREATE : readOnly ? OperationType.READ : OperationType.UPDATE,
-                sinkConfiguration.getSecurityZone());
+        zoneControl.configure(sinkConfiguration.getOid() == SinkConfiguration.DEFAULT_OID ? OperationType.CREATE : readOnly ? OperationType.READ : OperationType.UPDATE, sinkConfiguration);
     }
 
     private void disableTabsForSSPC(){

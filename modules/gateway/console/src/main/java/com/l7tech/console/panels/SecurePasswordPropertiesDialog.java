@@ -236,9 +236,7 @@ public class SecurePasswordPropertiesDialog extends JDialog {
         Utilities.setMaxLength(confirmPasswordField.getDocument(), maxPasswordLength);
         Utilities.setMaxLength(pemPrivateKeyField.getDocument(), maxPasswordLength);
 
-        zoneControl.configure(EntityType.SECURE_PASSWORD,
-                securePassword.getOid() == SecurePassword.DEFAULT_OID ? OperationType.CREATE : readOnly ? OperationType.READ : OperationType.UPDATE,
-                securePassword.getSecurityZone());
+        zoneControl.configure(securePassword.getOid() == SecurePassword.DEFAULT_OID ? OperationType.CREATE : readOnly ? OperationType.READ : OperationType.UPDATE, securePassword);
 
         enableOrDisableComponents();
         modelToView();

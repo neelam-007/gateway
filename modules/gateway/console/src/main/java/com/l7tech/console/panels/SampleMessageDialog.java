@@ -137,9 +137,7 @@ public class SampleMessageDialog extends JDialog {
         });
 
         add(mainPanel);
-        zoneControl.configure(EntityType.SAMPLE_MESSAGE,
-                message.getOid() == SampleMessage.DEFAULT_OID ? OperationType.CREATE : OperationType.UPDATE,
-                message.getSecurityZone());
+        zoneControl.configure(message.getOid() == SampleMessage.DEFAULT_OID ? OperationType.CREATE : OperationType.UPDATE, message);
         enableButtons();
     }
 

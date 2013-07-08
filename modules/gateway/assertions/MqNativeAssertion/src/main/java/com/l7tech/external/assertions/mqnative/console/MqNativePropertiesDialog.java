@@ -527,9 +527,7 @@ public class MqNativePropertiesDialog extends JDialog {
         keystoreComboBox.setRenderer( TextListCellRenderer.<Object>basicComboBoxRenderer() );
         keystoreComboBox.selectDefaultSsl();
         keystoreComboBox.setEnabled(false);
-        zoneControl.configure(EntityType.SSG_ACTIVE_CONNECTOR,
-                mqNativeActiveConnector.getOid() == SsgActiveConnector.DEFAULT_OID ? OperationType.CREATE : OperationType.UPDATE,
-                mqNativeActiveConnector.getSecurityZone());
+        zoneControl.configure(mqNativeActiveConnector.getOid() == SsgActiveConnector.DEFAULT_OID ? OperationType.CREATE : OperationType.UPDATE, mqNativeActiveConnector);
 
         pack();
         initializeView();

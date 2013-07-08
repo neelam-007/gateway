@@ -110,6 +110,7 @@ public class CreatePolicyAction extends SecureAction {
                     }
                     newPolicy.setFolder( folder.orSome( ((RootNode) root).getFolder() ) );
                     oidAndGuid = Registry.getDefault().getPolicyAdmin().savePolicy(newPolicy);
+                    Registry.getDefault().getSecurityProvider().refreshPermissionCache();
                 } catch ( DuplicateObjectException doe) {
                     String message = "Unable to save the policy '" + newPolicy.getName() + "'.\n";
                     if ( newPolicy.getType() == PolicyType.GLOBAL_FRAGMENT ) {

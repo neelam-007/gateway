@@ -357,9 +357,7 @@ public class EmailListenerPropertiesDialog extends JDialog {
         checkInterval.setEditor(jsne);
         ((JSpinner.DefaultEditor) checkInterval.getEditor()).getTextField().setFocusLostBehavior(JFormattedTextField.PERSIST);  //we'll do our own checking
 
-        zoneControl.configure(EntityType.EMAIL_LISTENER,
-                emailListener.getOid() == EmailListener.DEFAULT_OID ? OperationType.CREATE : OperationType.UPDATE,
-                emailListener.getSecurityZone());
+        zoneControl.configure(emailListener.getOid() == EmailListener.DEFAULT_OID ? OperationType.CREATE : OperationType.UPDATE, emailListener);
     }
 
     private PublishedService getSelectedHardwiredService() {

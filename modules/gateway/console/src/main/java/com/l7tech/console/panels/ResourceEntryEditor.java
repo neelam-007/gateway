@@ -158,9 +158,7 @@ public class ResourceEntryEditor extends JDialog {
         Utilities.setButtonAccelerator(this, helpButton, KeyEvent.VK_F1);
         setMinimumSize( getContentPane().getMinimumSize() );
 
-        zoneControl.configure(EntityType.RESOURCE_ENTRY,
-                resourceEntry.getOid() == ResourceEntry.DEFAULT_OID ? OperationType.CREATE : canEdit ? OperationType.UPDATE : OperationType.READ,
-                resourceEntry.getSecurityZone());
+        zoneControl.configure(resourceEntry.getOid() == ResourceEntry.DEFAULT_OID ? OperationType.CREATE : canEdit ? OperationType.UPDATE : OperationType.READ, resourceEntry);
 
         enableDisableComponents();
 

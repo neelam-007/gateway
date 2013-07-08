@@ -190,9 +190,7 @@ public class PolicyPropertiesPanel extends ValidatedPanel {
         tagCombo.addItemListener(syntaxListener);
         nameField.getDocument().addDocumentListener(syntaxListener);
 
-        zoneControl.configure(EntityType.POLICY,
-                policy.getOid() == Policy.DEFAULT_OID ? OperationType.CREATE : canUpdate ? OperationType.UPDATE : OperationType.READ,
-                policy.getSecurityZone());
+        zoneControl.configure(policy.getOid() == Policy.DEFAULT_OID ? OperationType.CREATE : canUpdate ? OperationType.UPDATE : OperationType.READ, policy);
 
         typeCombo.addItemListener(new ItemListener() {
             @Override

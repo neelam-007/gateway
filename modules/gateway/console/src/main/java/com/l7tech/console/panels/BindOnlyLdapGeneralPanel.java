@@ -89,9 +89,9 @@ public class BindOnlyLdapGeneralPanel extends IdentityProviderStepPanel {
             if( config.getOid() == BindOnlyLdapIdentityProviderConfig.DEFAULT_OID) {
                 providerNameField.requestFocus();
                 providerNameField.selectAll();
-                zoneControl.configure(EntityType.ID_PROVIDER_CONFIG, OperationType.CREATE, null);
+                zoneControl.configure(OperationType.CREATE, config);
             } else {
-                zoneControl.configure(EntityType.ID_PROVIDER_CONFIG, isReadOnly() ? OperationType.READ : OperationType.UPDATE, config.getSecurityZone());
+                zoneControl.configure(isReadOnly() ? OperationType.READ : OperationType.UPDATE, config);
             }
         }
     }

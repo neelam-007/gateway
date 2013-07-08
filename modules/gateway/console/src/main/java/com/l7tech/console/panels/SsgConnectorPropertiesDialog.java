@@ -573,9 +573,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
                 return requestByteLimitPanel.validateFields();
             }
         });
-        zoneControl.configure(EntityType.SSG_CONNECTOR,
-                connector.getOid() == SsgConnector.DEFAULT_OID ? OperationType.CREATE : OperationType.UPDATE,
-                connector.getSecurityZone());
+        zoneControl.configure(connector.getOid() == SsgConnector.DEFAULT_OID ? OperationType.CREATE : OperationType.UPDATE, connector);
 
         Utilities.enableGrayOnDisabled(contentTypeComboBox);
         Utilities.enableGrayOnDisabled(serviceNameComboBox);

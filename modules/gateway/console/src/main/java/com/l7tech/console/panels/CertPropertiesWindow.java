@@ -202,9 +202,7 @@ public class CertPropertiesWindow extends JDialog {
         });
         revocationCheckPolicyComboBox.setRenderer(new Renderers.RevocationCheckPolicyRenderer());
 
-        zoneControl.configure(EntityType.TRUSTED_CERT,
-                trustedCert.getOid() == TrustedCert.DEFAULT_OID ? OperationType.CREATE : editable ? OperationType.UPDATE : OperationType.READ,
-                trustedCert.getSecurityZone());
+        zoneControl.configure(trustedCert.getOid() == TrustedCert.DEFAULT_OID ? OperationType.CREATE : editable ? OperationType.UPDATE : OperationType.READ, trustedCert);
 
         populateData();
         setRevocationCheckPolicyComboState(editable);

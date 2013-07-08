@@ -240,9 +240,9 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
                 {
                     providerNameTextField.requestFocus();
                     providerNameTextField.selectAll();
-                    zoneControl.configure(EntityType.ID_PROVIDER_CONFIG, OperationType.CREATE, null);
+                    zoneControl.configure(OperationType.CREATE, iProviderConfig);
                 } else {
-                    zoneControl.configure(EntityType.ID_PROVIDER_CONFIG, OperationType.UPDATE, iProviderConfig.getSecurityZone());
+                    zoneControl.configure(OperationType.UPDATE, iProviderConfig);
                 }
             }
         }

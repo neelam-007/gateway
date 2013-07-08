@@ -112,9 +112,9 @@ public class FederatedIPGeneralPanel extends IdentityProviderStepPanel {
         {
             providerNameTextField.requestFocus();
             providerNameTextField.selectAll();
-            zoneControl.configure(EntityType.ID_PROVIDER_CONFIG, OperationType.CREATE, null);
+            zoneControl.configure(OperationType.CREATE, iProviderConfig);
         } else {
-            zoneControl.configure(EntityType.ID_PROVIDER_CONFIG, isReadOnly() ? OperationType.READ : OperationType.UPDATE, iProviderConfig.getSecurityZone());
+            zoneControl.configure(isReadOnly() ? OperationType.READ : OperationType.UPDATE, iProviderConfig);
         }
     }
 

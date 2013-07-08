@@ -204,9 +204,7 @@ public class RevocationCheckPolicyPropertiesDialog extends JDialog {
         policyItemList.setCellRenderer(new TextListCellRenderer(new RevocationCheckPolicyItemAccessor()));
         policyItemList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         Utilities.setDoubleClickAction(policyItemList, editButton);
-        zoneControl.configure(EntityType.REVOCATION_CHECK_POLICY,
-                revocationCheckPolicy.getOid() == RevocationCheckPolicy.DEFAULT_OID ? OperationType.CREATE : readOnly ? OperationType.READ : OperationType.UPDATE,
-                revocationCheckPolicy.getSecurityZone());
+        zoneControl.configure(revocationCheckPolicy.getOid() == RevocationCheckPolicy.DEFAULT_OID ? OperationType.CREATE : readOnly ? OperationType.READ : OperationType.UPDATE, revocationCheckPolicy);
 
         // Set data
         nameTextField.setDocument(new FilterDocument(64, new FilterDocument.Filter(){

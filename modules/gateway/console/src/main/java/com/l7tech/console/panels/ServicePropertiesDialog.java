@@ -479,9 +479,7 @@ public class ServicePropertiesDialog extends JDialog {
             uddiServiceControl = null;
         }
 
-        zoneControl.configure(EntityType.SERVICE,
-                subject.getOid() == PublishedService.DEFAULT_OID ? OperationType.CREATE : canUpdate ? OperationType.UPDATE : OperationType.READ,
-                subject.getSecurityZone());
+        zoneControl.configure(subject.getOid() == PublishedService.DEFAULT_OID ? OperationType.CREATE : canUpdate ? OperationType.UPDATE : OperationType.READ, subject);
 
         updateURL();
 
