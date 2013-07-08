@@ -567,7 +567,7 @@ public class MqNativeModule extends ActiveTransportModule implements Application
                             public Void call( final ClientBag clientBag ) throws MQException {
                                 MQQueue replyToQueue = null;
                                 try {
-                                    replyToQueue = clientBag.getQueueManager().accessQueue(replyToQueueName, MQOO_OUTPUT);
+                                    replyToQueue = clientBag.getQueueManager().accessQueue(replyToQueueName, getTempOutboundPutMessageOption());
                                     logger.log(Level.FINER, "Sending response to {0} for request seqNum: {1}", new Object[] { replyToQueueName, requestMessage.messageSequenceNumber });
                                     setResponseCorrelationId(connector, requestMessage, responseMessage);
                                     replyToQueue.put( responseMessage, replyOptions );

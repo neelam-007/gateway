@@ -15,6 +15,7 @@ import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import com.l7tech.message.OutboundHeaderSupport;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.server.transport.http.AnonymousSslClientSocketFactory;
 import com.l7tech.server.transport.http.SslClientSocketFactory;
@@ -55,7 +56,6 @@ public class MqNativeUtils {
     public static final String PREIFX = "mqnative";
     public static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd-HH.mm.ss.SSSSSS");
     private static final Logger logger = Logger.getLogger(MqNativeUtils.class.getName());
-    private static final String SET_ALL_CONTEXT = "com.l7tech.external.assertions.mqnative.server.setAllContext";
 
     public static Pair<byte[], byte[]> parseHeaderPayload(@NotNull final MQMessage msg) throws IOException, MQDataException {
         byte[] headerBytes;
@@ -470,16 +470,26 @@ public class MqNativeUtils {
 
     public static int getOutboundPutMessageOption() {
         ServerConfig config = ServerConfig.getInstance();
-        if (config.getBooleanProperty(SET_ALL_CONTEXT, false)) {
+        if (config.getBooleanProperty(ServerConfigParams.PARAM_IO_MQ_SET_ALL_CONTEXT, false)) {
             return MqNativeConstants.QUEUE_OPEN_OPTIONS_OUTBOUND_PUT_SETALLCONTEXT;
         } else {
             return MqNativeConstants.QUEUE_OPEN_OPTIONS_OUTBOUND_PUT;
         }
     }
 
+    public static int getTempOutboundPutMessageOption() {
+        ServerConfig config = ServerConfig.getInstance();
+        if (config.getBooleanProperty(ServerConfigParams.PARAM_IO_MQ_SET_ALL_CONTEXT, false)) {
+            return MqNativeConstants.QUEUE_OPEN_OPTIONS_OUTBOUND_PUT_TEMP_SETALLCONTEXT;
+        } else {
+            return MqNativeConstants.QUEUE_OPEN_OPTIONS_OUTBOUND_PUT_TEMP;
+        }
+    }
+
+
     public static int getIntboundReplyMessageOption() {
         ServerConfig config = ServerConfig.getInstance();
-        if (config.getBooleanProperty(SET_ALL_CONTEXT, false)) {
+        if (config.getBooleanProperty(ServerConfigParams.PARAM_IO_MQ_SET_ALL_CONTEXT, false)) {
             return MqNativeConstants.QUEUE_OPEN_OPTIONS_INBOUND_REPLY_SPECIFIED_QUEUE_SETALLCONTEXT;
         } else {
             return MqNativeConstants.QUEUE_OPEN_OPTIONS_INBOUND_REPLY_SPECIFIED_QUEUE;
@@ -488,11 +498,7 @@ public class MqNativeUtils {
 
     public static boolean isOpenForSetAllContext() {
         ServerConfig config = ServerConfig.getInstance();
-        return config.getBooleanProperty(SET_ALL_CONTEXT, false);
+        return config.getBooleanProperty(ServerConfigParams.PARAM_IO_MQ_SET_ALL_CONTEXT, false);
     }
-
-
-
-
 
 }

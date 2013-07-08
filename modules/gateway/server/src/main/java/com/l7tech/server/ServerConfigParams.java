@@ -194,6 +194,7 @@ public interface ServerConfigParams {
     String PARAM_IO_HTTP_RESPONSE_STREAMING = "ioHttpResponseStreaming";
     String PARAM_IO_JMS_MESSAGE_MAX_BYTES = "ioJmsMessageMaxBytes";
     String PARAM_IO_MQ_MESSAGE_MAX_BYTES = "ioMqMessageMaxBytes";
+    String PARAM_IO_MQ_SET_ALL_CONTEXT = "ioMqRoutingSetAllContext";
     String PARAM_DATE_TIME_CUSTOM_FORMATS = "datetime.customFormats";
     String PARAM_DATE_TIME_AUTO_FORMATS = "datetime.autoFormats";
     String PARAM_THROUGHPUTQUOTA_ENFORCE_MAX_QUOTA = "throughputQuota.enforce_max_quota";
