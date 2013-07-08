@@ -695,7 +695,7 @@ abstract class GoidEntityManagerResourceFactory<R, E extends GoidEntity, EH exte
                                            final Goid updateId ) throws InvalidResourceException {
         if ( !GoidEntity.DEFAULT_GOID.equals(currentId) &&
              !GoidEntity.DEFAULT_GOID.equals(updateId) &&
-             currentId.equals(updateId) ) {
+             !currentId.equals(updateId) ) {
             throw new InvalidResourceException( InvalidResourceException.ExceptionType.INVALID_VALUES, "identifier mismatch" );
         }
     }

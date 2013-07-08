@@ -66,7 +66,8 @@ public class GatewaySanityChecker extends ApplicationObjectSupport implements In
                     "com.l7tech.server.upgrade.Upgrade61to615UpdateGatewayManagementWsdl",
                     "com.l7tech.server.upgrade.Upgrade61To615AddRoles",
                     "com.l7tech.server.upgrade.Upgrade62To70CanonicalizeFedUserSubjectDNs",
-                    "com.l7tech.server.upgrade.Upgrade70to71UpdateGatewayManagementWsdl") )
+                    "com.l7tech.server.upgrade.Upgrade70to71UpdateGatewayManagementWsdl",
+                    "com.l7tech.server.upgrade.Upgrade71To80DerbyOids") )
             .put(Starting.class, set(
                     "com.l7tech.server.upgrade.Upgrade365To37AddSampleMessagePermissions" ))
             .put(Started.class, set(
@@ -163,6 +164,10 @@ public class GatewaySanityChecker extends ApplicationObjectSupport implements In
                     throw e;
                 }
             }
+            // Remove cluster property upgrade tasks so that they are not run again.
+            for (Long id : startupTaskOrder) {
+                clusterPropertyManager.delete(id);
+            }
         }
 
         if (!taskOrder.isEmpty()) {
@@ -251,10 +256,6 @@ public class GatewaySanityChecker extends ApplicationObjectSupport implements In
                 protected void doInTransactionWithoutResult(TransactionStatus transactionStatus) {
                     boolean completedTask = false;
                     try {
-                        // If triggered by a cluster property, remove it so noone else repeats the work
-                        if (propToDelete != null)
-                            clusterPropertyManager.delete( propToDelete );
-
                         // Do the actual work
                         task.upgrade(getApplicationContext());
                         completedTask = true;
@@ -263,11 +264,6 @@ public class GatewaySanityChecker extends ApplicationObjectSupport implements In
                         transactionStatus.setRollbackOnly();
                     } catch (FatalUpgradeException e) {
                         efatal[0] = e;
-                        transactionStatus.setRollbackOnly();
-                    } catch (DeleteException e) {
-                        // Something has gone unexpectedly very wrong
-                        efatal[0] = new FatalUpgradeException("Unable to delete upgrade task property: " + propToDelete.getName() + ": " +
-                                ExceptionUtils.getMessage(e), e);
                         transactionStatus.setRollbackOnly();
                     } finally {
                         if (!completedTask) transactionStatus.setRollbackOnly();
@@ -330,6 +326,14 @@ public class GatewaySanityChecker extends ApplicationObjectSupport implements In
                         doUpgradeTask(prop);
                     } catch (FatalUpgradeException e) {
                         throw new IllegalStateException("Gateway sanity check failed: " + ExceptionUtils.getMessage(e), e);
+                    }
+                    // Remove cluster property upgrade tasks so that they are not run again.
+                    try {
+                        clusterPropertyManager.delete(prop);
+                    } catch (DeleteException e) {
+                        //if this exception is thrown something is very wrong!
+                        throw new RuntimeException("Unable to delete upgrade task property: " + prop.getName() + ": " +
+                                ExceptionUtils.getMessage(e));
                     }
                 }
             }

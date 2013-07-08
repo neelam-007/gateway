@@ -132,3 +132,18 @@ create table keystore_key_metadata (
 INSERT INTO cluster_properties
     (objectid, version, propkey, propvalue, properties)
     values (-800000, 0, 'upgrade.task.800000', 'com.l7tech.server.upgrade.Upgrade71To80UpdateRoles', null);
+
+--
+-- Register the derby oids upgrade task for changing oids to goids.
+-- Note this is only in the derby upgrade script because this is only supposed to run on derby databases.
+--
+INSERT INTO cluster_properties
+    (objectid, version, propkey, propvalue, properties)
+    values (-800001, 0, 'upgrade.task.800001', 'com.l7tech.server.upgrade.Upgrade71To80DerbyOids', null);
+
+--
+-- Goidification modification. These involve replacing the oid column with a goid column on entity tables.
+--
+
+--- JdbcConnection
+ALTER TABLE jdbc_connection ADD COLUMN goid CHAR(16) FOR BIT DATA;

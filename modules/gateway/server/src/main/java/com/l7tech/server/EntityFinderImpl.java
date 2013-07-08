@@ -280,9 +280,6 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
         if (e instanceof NamedEntity) {
             NamedEntity ne = (NamedEntity) e;
             name = ne.getName();
-        } else if(e instanceof GoidNamedEntity){
-            GoidNamedEntity ne = (GoidNamedEntity) e;
-            name = ne.getName();
         }
         return new EntityHeader(e.getId(), etype, name, null);
     }

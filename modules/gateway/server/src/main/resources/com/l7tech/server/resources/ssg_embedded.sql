@@ -441,7 +441,7 @@ create table internal_user_group (
 );
 
 create table jdbc_connection (
-    objectid bigint not null,
+    goid CHAR(16) FOR BIT DATA not null,
     name varchar(128) not null,
     version integer,
     driver_class varchar(1024) not null,
@@ -453,7 +453,7 @@ create table jdbc_connection (
     additional_properties clob(2147483647),
     user_name varchar(255) not null,
     security_zone_oid bigint references security_zone(objectid) on delete set null,
-    primary key (objectid)
+    primary key (goid)
 );
 
 create table jms_connection (

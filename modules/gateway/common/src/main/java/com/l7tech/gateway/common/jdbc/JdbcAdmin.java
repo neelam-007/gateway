@@ -1,21 +1,18 @@
 package com.l7tech.gateway.common.jdbc;
 
 import com.l7tech.gateway.common.AsyncAdminMethods;
+import com.l7tech.gateway.common.admin.Administrative;
+import com.l7tech.gateway.common.security.rbac.MethodStereotype;
+import com.l7tech.gateway.common.security.rbac.Secured;
+import com.l7tech.objectmodel.*;
 import com.l7tech.util.ConfigFactory;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 import static com.l7tech.gateway.common.security.rbac.MethodStereotype.FIND_ENTITIES;
 import static org.springframework.transaction.annotation.Propagation.REQUIRED;
-import com.l7tech.gateway.common.security.rbac.Secured;
-import com.l7tech.gateway.common.security.rbac.MethodStereotype;
-import com.l7tech.gateway.common.admin.Administrative;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.UpdateException;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.DeleteException;
-
-import java.util.List;
 
 /**
  * Admin interface for managing JDBC Connection Entities, JDBC Connection Pooling, and JDBC querying.
@@ -83,7 +80,7 @@ public interface JdbcAdmin extends AsyncAdminMethods{
      * @throws UpdateException: thrown when errors saving the JDBC Connection entity.
      */
     @Secured(types=EntityType.JDBC_CONNECTION, stereotype= MethodStereotype.SAVE_OR_UPDATE)
-    long saveJdbcConnection(JdbcConnection connection) throws UpdateException;
+    Goid saveJdbcConnection(JdbcConnection connection) throws UpdateException;
 
     /**
      * Delete a JDBC Connection entity from the database.

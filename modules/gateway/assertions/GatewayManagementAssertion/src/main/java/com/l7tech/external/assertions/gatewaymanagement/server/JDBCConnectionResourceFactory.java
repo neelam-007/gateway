@@ -16,7 +16,7 @@ import java.util.Map;
  * 
  */
 @ResourceFactory.ResourceType(type=JDBCConnectionMO.class)
-public class JDBCConnectionResourceFactory extends EntityManagerResourceFactory<JDBCConnectionMO, JdbcConnection, EntityHeader> {
+public class JDBCConnectionResourceFactory extends GoidEntityManagerResourceFactory<JDBCConnectionMO, JdbcConnection, EntityHeader> {
 
     //- PUBLIC
 

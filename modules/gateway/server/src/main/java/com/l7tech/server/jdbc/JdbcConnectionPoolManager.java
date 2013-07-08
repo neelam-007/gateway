@@ -6,6 +6,7 @@ import com.l7tech.gateway.common.audit.LoggingAudit;
 import com.l7tech.gateway.common.jdbc.InvalidPropertyException;
 import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.policy.variable.ServerVariables;
 import com.l7tech.util.Config;
@@ -45,7 +46,7 @@ public class JdbcConnectionPoolManager implements InitializingBean {
 
     private static final long MIN_CHECK_AGE = ConfigFactory.getLongProperty( "com.l7tech.server.jdbc.poolConnectionCheckMinAge", 30000L );
     private static final String[] CPDS_IGNORE_PROPS = new String[]{ "connectionPoolDataSource", "driverClass", "initialPoolSize", "jdbcUrl", "logWriter", "maxPoolSize", "minPoolSize", "password", "properties", "propertyCycle", "user", "userOverridesAsString" };
-    private static final HashMap<String, Long> oidNameMap = new HashMap<String, Long>();
+    private static final HashMap<String, Goid> goidNameMap = new HashMap<String, Goid>();
 
     private final Audit auditor = new LoggingAudit(logger);
     private final JdbcConnectionManager jdbcConnectionManager;
@@ -183,7 +184,7 @@ public class JdbcConnectionPoolManager implements InitializingBean {
                 // Rebind the data source
                 try {
                     context.rebind(connection.getName(), ds);
-                    oidNameMap.put(connection.getName(),connection.getOid());
+                    goidNameMap.put(connection.getName(), connection.getGoid());
                 } catch (NamingException e) {
                     String errMsg = "Error rebind a data source with a JDBC connection name, " + connection.getName();
                     auditor.logAndAudit(AssertionMessages.JDBC_CANNOT_CONFIG_CONNECTION_POOL, connection.getName(), errMsg);
@@ -217,7 +218,7 @@ public class JdbcConnectionPoolManager implements InitializingBean {
         if (! isForTesting) {
             try {
                 context.bind(connection.getName(), cpds);
-                oidNameMap.put(connection.getName(),connection.getOid());
+                goidNameMap.put(connection.getName(), connection.getGoid());
             } catch (NamingException e) {
                 String errMsg = "Error bind a data source with a JDBC connection name, " + connection.getName();
                 auditor.logAndAudit(AssertionMessages.JDBC_CANNOT_CONFIG_CONNECTION_POOL, connection.getName(), errMsg);
@@ -286,7 +287,7 @@ public class JdbcConnectionPoolManager implements InitializingBean {
 
         try {
             context.unbind(connectionName);
-            oidNameMap.remove(connectionName);
+            goidNameMap.remove(connectionName);
         } catch (NamingException e) {
             String errMsg = "Error unbind a data source with a JDBC connection name, " + connectionName;
             auditor.logAndAudit(AssertionMessages.JDBC_CANNOT_DELETE_CONNECTION_POOL, connectionName, errMsg);
@@ -386,9 +387,9 @@ public class JdbcConnectionPoolManager implements InitializingBean {
         context = new InitialContext(table);
     }
 
-    public String getConnectionName(long oid) {
-        for(String key: oidNameMap.keySet()){
-            if(oidNameMap.get(key) == oid)
+    public String getConnectionName(Goid goid) {
+        for(String key: goidNameMap.keySet()){
+            if(goidNameMap.get(key).equals(goid))
                 return key;
         }
         return null;

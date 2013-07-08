@@ -491,7 +491,7 @@ public class PolicyHelper {
 
         public JdbcConnection getJdbcConnectionById( final String id ) throws FindException {
             try {
-                return filter( jdbcConnectionManager.findByPrimaryKey( Long.parseLong( id ) ) );
+                return filter( jdbcConnectionManager.findByPrimaryKey( new Goid( id ) ) );
             } catch ( NumberFormatException nfe ) {
                 return null;
             }

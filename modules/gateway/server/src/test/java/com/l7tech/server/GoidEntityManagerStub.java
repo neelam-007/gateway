@@ -18,9 +18,12 @@ public abstract class GoidEntityManagerStub<ET extends GoidEntity, EH extends En
     protected final Map<Goid, EH> headers;
     private final boolean canHasNames = NamedEntity.class.isAssignableFrom(getImpClass());
 
+    private long nextOid;
+
     public GoidEntityManagerStub() {
         this.entities = new HashMap<Goid, ET>();
         this.headers = new HashMap<Goid, EH>();
+        nextOid = 1;
     }
 
     public GoidEntityManagerStub(ET... entitiesIn) {
@@ -30,9 +33,11 @@ public abstract class GoidEntityManagerStub<ET extends GoidEntity, EH extends En
         for (ET entity : entitiesIn) {
             entities.put(entity.getGoid(), entity);
             headers.put(entity.getGoid(), header(entity));
+            maxOid = Math.max(maxOid, entity.getGoid().getLow());
         }
         this.entities = entities;
         this.headers = headers;
+        this.nextOid = ++maxOid;
     }
 
     @Override
@@ -95,9 +100,9 @@ public abstract class GoidEntityManagerStub<ET extends GoidEntity, EH extends En
         if (!canHasNames) throw new FindException(getImpClass() + " has no name");
         ET got = null;
         for (ET et : entities.values()) {
-            if (!(et instanceof GoidNamedEntity)) throw new FindException(String.format("I was told that I would get NamedEntities but I found a %s and I'm going to burn down the building", et.getClass().getSimpleName()));
+            if (!(et instanceof NamedEntity)) throw new FindException(String.format("I was told that I would get NamedEntities but I found a %s and I'm going to burn down the building", et.getClass().getSimpleName()));
 
-            GoidNamedEntity namedEntity = (GoidNamedEntity)et;
+            NamedEntity namedEntity = (NamedEntity)et;
             if (name.equals(namedEntity.getName())) {
                 if (got != null) throw new FindException(String.format("Found two %s with name %s", getImpClass().getSimpleName(), name));
                 got = et;
@@ -133,10 +138,8 @@ public abstract class GoidEntityManagerStub<ET extends GoidEntity, EH extends En
 
     @Override
     public synchronized Goid save(ET entity) throws SaveException {
-        Random random = new Random();
-        byte[] bytes = new byte[16];
-        random.nextBytes(bytes);
-        final Goid goid = new Goid(bytes);
+        long id = nextOid++;
+        final Goid goid = new Goid(0,id);
         entity.setGoid(goid);
 
         entities.put(goid, entity);

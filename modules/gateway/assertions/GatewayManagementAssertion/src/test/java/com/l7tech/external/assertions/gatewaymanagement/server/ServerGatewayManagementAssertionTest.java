@@ -25,6 +25,7 @@ import com.l7tech.message.HttpServletRequestKnob;
 import com.l7tech.message.HttpServletResponseKnob;
 import com.l7tech.message.Message;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionArgumentDescriptor;
@@ -66,7 +67,6 @@ import com.l7tech.test.BugNumber;
 import com.l7tech.util.*;
 import com.l7tech.util.Functions.UnaryVoidThrows;
 import com.l7tech.xml.soap.SoapUtil;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Before;
 import org.junit.Test;
@@ -785,7 +785,7 @@ public class ServerGatewayManagementAssertionTest {
                 "        </ConnectionProperties>\n" +
                 "    </Extension>\n" +
                 "</JDBCConnection>";
-        doCreate( resourceUri, payload, "2", "3", "4" );
+        doCreate( resourceUri, payload, new Goid(0,2).toString(), new Goid(0,3).toString(), new Goid(0,4).toString());
     }
 
     @Test
@@ -1275,8 +1275,9 @@ public class ServerGatewayManagementAssertionTest {
 
     @Test
     public void testPutJdbcConnection() throws Exception {
-        final String message = "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\"><s:Header><wsa:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Put</wsa:Action><wsa:To s:mustUnderstand=\"true\">http://127.0.0.1:8080/wsman</wsa:To><wsman:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/jdbcConnections</wsman:ResourceURI><wsa:MessageID s:mustUnderstand=\"true\">uuid:afad2993-7d39-1d39-8002-481688002100</wsa:MessageID><wsa:ReplyTo><wsa:Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo><wsman:SelectorSet><wsman:Selector Name=\"id\">1</wsman:Selector></wsman:SelectorSet><wsman:RequestEPR/></s:Header><s:Body>" +
-              "<l7:JDBCConnection id=\"1\" version=\"0\">\n" +
+        final Goid goid = new Goid(0, 1);
+        final String message = "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\"><s:Header><wsa:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Put</wsa:Action><wsa:To s:mustUnderstand=\"true\">http://127.0.0.1:8080/wsman</wsa:To><wsman:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/jdbcConnections</wsman:ResourceURI><wsa:MessageID s:mustUnderstand=\"true\">uuid:afad2993-7d39-1d39-8002-481688002100</wsa:MessageID><wsa:ReplyTo><wsa:Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo><wsman:SelectorSet><wsman:Selector Name=\"id\">"+ goid.toString()+"</wsman:Selector></wsman:SelectorSet><wsman:RequestEPR/></s:Header><s:Body>" +
+              "<l7:JDBCConnection id=\""+ goid.toString()+"\" version=\"0\">\n" +
               "    <l7:Name>A Test Connection (updated)</l7:Name>\n" +
               "    <l7:Enabled>false</l7:Enabled>\n" +
               "    <l7:Properties>\n" +
@@ -1315,7 +1316,7 @@ public class ServerGatewayManagementAssertionTest {
                 final Element jdbcConnectionExtensionDriverClass = XmlUtil.findExactlyOneChildElementByName(jdbcConnectionExtension, NS_GATEWAY_MANAGEMENT, "DriverClass");
                 final Element jdbcConnectionExtensionJdbcUrl = XmlUtil.findExactlyOneChildElementByName(jdbcConnectionExtension, NS_GATEWAY_MANAGEMENT, "JdbcUrl");
 
-                assertEquals("JDBC connection id", "1", jdbcConnection.getAttribute( "id" ));
+                assertEquals("JDBC connection id", goid.toString(), jdbcConnection.getAttribute( "id" ));
                 assertEquals("JDBC connection version", Integer.toString( expectedVersion++ ), jdbcConnection.getAttribute( "version" ));
                 assertEquals("JDBC connection name", "A Test Connection (updated)", XmlUtil.getTextValue(jdbcConnectionName));
                 assertEquals("JDBC connection enabled", "false", XmlUtil.getTextValue(jdbcConnectionEnabled));
@@ -2503,8 +2504,8 @@ public class ServerGatewayManagementAssertionTest {
                 jmsEndpoint( 1L, 1L, "Test Endpoint"),
                 jmsEndpoint( 2L, 2L, "Test Endpoint 2")));
         beanFactory.addBean( "jdbcConnectionManager", new JdbcConnectionManagerStub(
-                connection( 1L, "A Test Connection"),
-                connection( 2L, "Test Connection") ) );
+                connection( new Goid(0,1), "A Test Connection"),
+                connection( new Goid(0,2), "Test Connection") ) );
         beanFactory.addBean( "ssgActiveConnectorManager", new SsgActiveConnectorManagerStub() );
         beanFactory.addBean( "policyExporterImporterManager", new PolicyExporterImporterManagerStub() );
         final Policy testPolicy1 = policy(1L, PolicyType.INCLUDE_FRAGMENT, "Test Policy", true, POLICY);
@@ -2624,9 +2625,9 @@ public class ServerGatewayManagementAssertionTest {
         return provider;
     }
 
-    private static JdbcConnection connection( final long oid, final String name ) {
+    private static JdbcConnection connection( final Goid goid, final String name ) {
         final JdbcConnection connection = new JdbcConnection();
-        connection.setOid( oid );
+        connection.setGoid(goid);
         connection.setName( name );
 
         // props must be non empty for resolution during import

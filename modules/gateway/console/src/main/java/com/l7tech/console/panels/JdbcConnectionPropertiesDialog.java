@@ -1,22 +1,20 @@
 package com.l7tech.console.panels;
 
-import static com.l7tech.console.util.AdminGuiUtils.doAsyncAdmin;
-
-import com.l7tech.console.util.SecurityZoneWidget;
-import com.l7tech.gateway.common.security.rbac.OperationType;
-import com.l7tech.gui.widgets.SquigglyTextField;
-import com.l7tech.util.MutablePair;
 import com.l7tech.console.util.PasswordGuiUtils;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.SecurityZoneWidget;
 import com.l7tech.gateway.common.jdbc.JdbcAdmin;
 import com.l7tech.gateway.common.jdbc.JdbcConnection;
+import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gui.MaxLengthDocument;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
+import com.l7tech.gui.widgets.SquigglyTextField;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.util.MutablePair;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
@@ -30,6 +28,8 @@ import java.text.MessageFormat;
 import java.util.*;
 import java.util.List;
 import java.util.logging.Logger;
+
+import static com.l7tech.console.util.AdminGuiUtils.doAsyncAdmin;
 
 /**
  * GUI for creating or editing properties of a JDBC Connection entity.
@@ -188,7 +188,7 @@ public class JdbcConnectionPropertiesDialog extends JDialog {
         if (admin != null) {
             driverClassWhiteList = admin.getPropertySupportedDriverClass();
         }
-        zoneControl.configure(EntityType.JDBC_CONNECTION, connection.getOid() == JdbcConnection.DEFAULT_OID ? OperationType.CREATE : OperationType.UPDATE, connection.getSecurityZone());
+        zoneControl.configure(EntityType.JDBC_CONNECTION, JdbcConnection.DEFAULT_GOID.equals(connection.getGoid()) ? OperationType.CREATE : OperationType.UPDATE, connection.getSecurityZone());
 
         modelToView();
         enableOrDisableButtons();

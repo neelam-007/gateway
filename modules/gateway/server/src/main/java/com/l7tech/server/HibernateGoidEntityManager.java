@@ -39,8 +39,8 @@ import static org.springframework.transaction.annotation.Propagation.REQUIRED;
 import static org.springframework.transaction.annotation.Propagation.SUPPORTS;
 
 /**
- * The default {@link com.l7tech.objectmodel.EntityManager} implementation for Hibernate-managed
- * {@link com.l7tech.objectmodel.PersistentEntity persistent entities}.
+ * The default {@link com.l7tech.objectmodel.GoidEntityManager} implementation for Hibernate-managed
+ * {@link com.l7tech.objectmodel.GoidEntityManager persistent entities}.
  *
  * Implementations only need to implement {@link #getInterfaceClass()}, {@link #getImpClass()} and
  * {@link #getTableName()}, although two of those are only for historical reasons.
@@ -895,8 +895,8 @@ public abstract class HibernateGoidEntityManager<ET extends GoidEntity, HT exten
         write.lock();
         try {
             cacheInfoByGoid.remove(thing.getGoid());
-            if (thing instanceof GoidNamedEntity) {
-                cacheInfoByName.remove(((GoidNamedEntity)thing).getName());
+            if (thing instanceof NamedEntity) {
+                cacheInfoByName.remove(((NamedEntity)thing).getName());
             }
             removedFromCache(thing);
         } finally {
@@ -984,8 +984,8 @@ public abstract class HibernateGoidEntityManager<ET extends GoidEntity, HT exten
                 WeakReference<CacheInfo<ET>> newref = new WeakReference<CacheInfo<ET>>(info);
 
                 cacheInfoByGoid.put(goid, newref);
-                if (thing instanceof GoidNamedEntity) {
-                    cacheInfoByName.put(((GoidNamedEntity)thing).getName(), newref);
+                if (thing instanceof NamedEntity) {
+                    cacheInfoByName.put(((NamedEntity)thing).getName(), newref);
                 }
             }
 

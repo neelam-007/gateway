@@ -367,7 +367,7 @@ class EntityPropertiesHelper {
             "id",
             "jdbcUrl",
             "name",
-            "oid",
+            "goid",
             "password",
             "serializedProps",
             "userName",            

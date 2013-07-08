@@ -1651,7 +1651,6 @@
                 <ref bean="identityProviderConfigManager"/>
                 <ref bean="jmsConnectionManager"/>
                 <ref bean="jmsEndpointManager"/>
-                <ref bean="jdbcConnectionManager"/>
                 <ref bean="trustedCertManager"/>
                 <ref bean="revocationCheckPolicyManager"/>
                 <ref bean="ssgActiveConnectorManager"/>
@@ -1683,6 +1682,7 @@
         <property name="applicationEventProxy" ref="applicationEventProxy"/>
         <property name="entityManagers">
             <list>
+                <ref bean="jdbcConnectionManager"/>
             </list>
         </property>
         <property name="timer" ref="entityVersionCheckerTimer"/>

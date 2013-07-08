@@ -1,14 +1,14 @@
 package com.l7tech.server.jdbc;
 
+import com.l7tech.gateway.common.jdbc.JdbcConnection;
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.GoidEntity;
+import com.l7tech.server.HibernateGoidEntityManager;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.ServerConfigParams;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.annotation.Propagation;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.Entity;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.server.HibernateEntityManager;
-import com.l7tech.gateway.common.jdbc.JdbcConnection;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,11 +21,11 @@ import java.util.StringTokenizer;
  */
 @Transactional(propagation= Propagation.REQUIRED, rollbackFor=Throwable.class)
 public class JdbcConnectionManagerImpl
-    extends HibernateEntityManager<JdbcConnection, EntityHeader>
+    extends HibernateGoidEntityManager<JdbcConnection, EntityHeader>
     implements JdbcConnectionManager {
 
     @Override
-    public Class<? extends Entity> getImpClass() {
+    public Class<? extends GoidEntity> getImpClass() {
         return JdbcConnection.class;
     }
 

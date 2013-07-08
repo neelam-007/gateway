@@ -5,6 +5,7 @@ import com.l7tech.gateway.common.jdbc.InvalidPropertyException;
 import com.l7tech.gateway.common.jdbc.JdbcAdmin;
 import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.server.ServerConfigParams;
@@ -87,13 +88,13 @@ public class JdbcAdminImpl extends AsyncAdminMethodsImpl implements JdbcAdmin {
      * Save a JDBC Connection entity into the database.
      *
      * @param connection: the JDBC Connection entity to be saved.
-     * @return a long, the saved entity object id.
+     * @return a Goid, the saved entity object id.
      * @throws UpdateException: thrown when errors saving the JDBC Connection entity.
      */
     @Override
-    public long saveJdbcConnection(JdbcConnection connection) throws UpdateException {
+    public Goid saveJdbcConnection(JdbcConnection connection) throws UpdateException {
         jdbcConnectionManager.update(connection);
-        return connection.getOid();
+        return connection.getGoid();
     }
 
     /**

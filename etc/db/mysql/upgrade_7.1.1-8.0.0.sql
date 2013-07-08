@@ -149,6 +149,21 @@ INSERT INTO cluster_properties
     (objectid, version, propkey, propvalue, properties)
     values (-800000, 0, 'upgrade.task.800000', 'com.l7tech.server.upgrade.Upgrade71To80UpdateRoles', null);
 
+
+--
+-- Goidification modification. These involve replacing the oid column with a goid column on entity tables.
+--
+
+-- JdbcConnection
+ALTER TABLE jdbc_connection ADD COLUMN objectid_backup BIGINT(20);
+update jdbc_connection set objectid_backup=objectid;
+ALTER TABLE jdbc_connection CHANGE COLUMN objectid goid VARBINARY(16);
+-- For manual runs use: set @jdbc_prefix=concat(lpad(char(floor(rand()*4294967296)),4,'\0'),lpad(char(floor(rand()*4294967296)),4,'\0'));
+set @jdbc_prefix=concat(lpad(char(#RANDOM_INT#),4,'\0'),lpad(char(#RANDOM_INT#),4,'\0'));
+update jdbc_connection set goid = concat(@jdbc_prefix,lpad(char(objectid_backup),8,'\0'));
+ALTER TABLE jdbc_connection DROP COLUMN objectid_backup;
+
+
 --
 -- Reenable FK at very end of script
 --
