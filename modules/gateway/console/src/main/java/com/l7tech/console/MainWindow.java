@@ -281,6 +281,8 @@ public class MainWindow extends JFrame implements SheetHolder {
     private static final String PATH_SEPARATOR = "/";
     private static final String ELLIPSIS = "...";
 
+    private List<Action> customAssertionActions = null;
+
     /**
      * MainWindow constructor comment.
      *
@@ -2129,21 +2131,36 @@ public class MainWindow extends JFrame implements SheetHolder {
     }
 
     private List<Action> getCustomAssertionActions() {
-        List<Action> result = new ArrayList<>();
+        if (customAssertionActions == null) {
+            // This method is called twice on login by this.updateCustomGlobalActionsMenu(...), which is triggered
+            // by LicenseListener.licenseChanged(...) and this.initalizeWorkspace(...).
+            // To improve performance initialize customAssertionActions once. Each call to CustomAssertionsRegistrar
+            // is going to the Gateway.
+            // Another way would be to store custom assertions in ConsoleAssertionRegistry, instead
+            // of store them here, similar to how module assertions are stored
+            // (ie. ConsoleAssertionRegistry.updateModularAssertions(...) and AssertionRegistry.getAssertions(...).
+            //
+            customAssertionActions = new ArrayList<>();
+            CustomAssertionsRegistrar registrar = Registry.getDefault().getCustomAssertionsRegistrar();
+            Collection customAssertions = registrar.getAssertions();
 
-        CustomAssertionsRegistrar registrar = Registry.getDefault().getCustomAssertionsRegistrar();
-        Collection customAssertions = registrar.getAssertions();
-
-        for (Object customAssertion : customAssertions) {
-            CustomAssertionHolder cah = (CustomAssertionHolder) customAssertion;
-            CustomAssertion ca = cah.getCustomAssertion();
-            CustomTaskActionUI taskActionUI = registrar.getTaskActionUI(ca.getClass().getName());
-            if (taskActionUI != null) {
-                result.add(new CustomAssertionHolderAction(taskActionUI));
+            for (Object customAssertion : customAssertions) {
+                CustomAssertionHolder cah = (CustomAssertionHolder) customAssertion;
+                CustomAssertion ca = cah.getCustomAssertion();
+                CustomTaskActionUI taskActionUI = registrar.getTaskActionUI(ca.getClass().getName());
+                if (taskActionUI != null) {
+                    customAssertionActions.add(new CustomAssertionHolderAction(taskActionUI));
+                }
             }
         }
 
-        return result;
+        if (Registry.getDefault().getLicenseManager().isAssertionEnabled(new CustomAssertionHolder())) {
+            // All custom assertions are stored in CustomAssertionHolder.
+            //
+            return customAssertionActions;
+        } else {
+            return Collections.emptyList();
+        }
     }
 
     /**
