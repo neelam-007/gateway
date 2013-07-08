@@ -850,9 +850,9 @@ public class ServicePropertiesDialog extends JDialog {
 
         if (servicePolicyRequiresZoneUpdate(subject)) {
             // ensure user has permission to update the service policy
-            final Policy servicePolicy = subject.getPolicy();
-            servicePolicy.setSecurityZone(subject.getSecurityZone());
-            if (!Registry.getDefault().getSecurityProvider().hasPermission(new AttemptedUpdate(EntityType.POLICY, servicePolicy))) {
+            final Policy copy = new Policy(subject.getPolicy());
+            copy.setSecurityZone(subject.getSecurityZone());
+            if (!Registry.getDefault().getSecurityProvider().hasPermission(new AttemptedUpdate(EntityType.POLICY, copy))) {
                 DialogDisplayer.showMessageDialog(ServicePropertiesDialog.this, "Error", "You do not have permission to modify the Security Zone of the service policy.", null);
             } else {
                 doSave(documents, true);
