@@ -1,6 +1,7 @@
 package com.l7tech.server;
 
 import com.l7tech.gateway.common.audit.AuditRecordHeader;
+import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.PublishedServiceAlias;
 import com.l7tech.objectmodel.*;
@@ -31,6 +32,7 @@ import static org.mockito.Mockito.when;
 @RunWith(MockitoJUnitRunner.class)
 public class EntityFinderImplTest {
     private static final long OID = 1234L;
+    private static final Goid GOID = new Goid(0,1234L);
     private static final Long ZONE_OID = 1111L;
     private static final String NAME = "test";
     private EntityFinderImpl finder;
@@ -86,6 +88,25 @@ public class EntityFinderImplTest {
         assertEquals(NAME, header.getName());
         assertEquals(EntityType.SERVICE, header.getType());
         assertEquals(NAME, header.getDescription());
+    }
+
+    @Test
+    public void findByGoidEntityTypeAndSecurityZoneOid() throws Exception {
+        final JdbcConnection jdbcConnection = new JdbcConnection();
+        jdbcConnection.setGoid(GOID);
+        jdbcConnection.setName(NAME);
+        jdbcConnection.setSecurityZone(zone);
+        entities.add(jdbcConnection);
+        when(hibernateTemplate.execute(any(HibernateCallback.class))).thenReturn(entities);
+
+        final Collection<EntityHeader> found = finder.findByEntityTypeAndSecurityZoneOid(EntityType.JDBC_CONNECTION, 1234L);
+
+        assertEquals(1, found.size());
+        final EntityHeader header = found.iterator().next();
+        assertEquals(ZONE_OID, ((HasSecurityZoneOid)header).getSecurityZoneOid());
+        assertEquals(GOID, header.getGoid());
+        assertEquals(NAME, header.getName());
+        assertEquals(EntityType.JDBC_CONNECTION, header.getType());
     }
 
     @Test

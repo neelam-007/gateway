@@ -54,6 +54,14 @@ public class BulkZoneUpdaterTest {
     }
 
     @Test
+    public void bulkUpdateGoidEntityTypeWithoutDependencies() throws Exception {
+        headers.add(new EntityHeader(new Goid(0,1), EntityType.JDBC_CONNECTION, "test", "test"));
+        updater.bulkUpdate(ZONE_OID, EntityType.JDBC_CONNECTION, headers);
+        verify(rbacAdmin).setSecurityZoneForEntities(ZONE_OID,
+                Collections.<EntityType, Collection<Serializable>>singletonMap(EntityType.JDBC_CONNECTION, Arrays.<Serializable>asList(new Goid(0,1))));
+    }
+
+    @Test
     public void bulkUpdateNoEntities() throws Exception {
         updater.bulkUpdate(ZONE_OID, EntityType.SERVICE, Collections.<EntityHeader>emptyList());
         verify(uddiAdmin, never()).findProxiedServiceInfoForPublishedService(anyLong());

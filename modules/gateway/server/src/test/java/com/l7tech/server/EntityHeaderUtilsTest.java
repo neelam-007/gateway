@@ -212,6 +212,16 @@ public class EntityHeaderUtilsTest {
         assertFalse(header instanceof ZoneableEntityHeader);
     }
 
+    @Test
+    public void fromEntityGoidNamedEntity() {
+        final NamedGoidEntityImp entity = new NamedGoidEntityImp(){{setGoid(GOID); setVersion(VERSION); setName(NAME);}};
+        final EntityHeader header = EntityHeaderUtils.fromEntity(entity);
+        assertEquals(GOID, header.getGoid());
+        assertEquals(VERSION, header.getVersion());
+        assertEquals(NAME, header.getName());
+        assertFalse(header instanceof ZoneableEntityHeader);
+    }
+
     private EncapsulatedAssertionConfig createEncapsulatedAssertionConfig(final long oid, final String guid, final String name, final Integer version, final SecurityZone zone) {
         final EncapsulatedAssertionConfig encassConfig = new EncapsulatedAssertionConfig();
         encassConfig.setOid(oid);

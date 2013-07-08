@@ -41,6 +41,7 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationC
     private final RbacServices rbacServices;
     private final EntityFinder entityFinder;
     private static final String DEFAULT_ID = Long.toString(PersistentEntity.DEFAULT_OID);
+    private static final String DEFAULT_GOID = GoidEntity.DEFAULT_GOID.toString();
 
     private ApplicationContext applicationContext;
 
@@ -196,7 +197,7 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationC
                 Entity entity = getEntityArg(check, args);
                 if (entity != null) {
                     String id = entity.getId();
-                    checkEntityBefore(check, args, id == null || DEFAULT_ID.equals(id) || GoidEntity.DEFAULT_GOID.equals(id) ? CREATE : UPDATE);
+                    checkEntityBefore(check, args, id == null || DEFAULT_ID.equals(id) || DEFAULT_GOID.equals(id) ? CREATE : UPDATE);
                     break;
                 } else {
                     // this is incredibly ugly: Must have permission to update AND create ANY entity of all specified types; if so, we BYPASS any remaining checks
@@ -308,7 +309,7 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationC
                 entity = getEntityArg(check, args);
                 if (entity != null) {
                     String id = entity.getId();
-                    if (!DEFAULT_ID.equals(id))
+                    if (!(DEFAULT_ID.equals(id) || DEFAULT_GOID.equals(id)))
                         throw new PermissionDeniedException(OTHER, entity, "re-create existing");
                     checkEntityBefore(check, args, CREATE);
                     break;
