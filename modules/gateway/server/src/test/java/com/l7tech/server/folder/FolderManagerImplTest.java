@@ -5,6 +5,7 @@ import com.l7tech.gateway.common.security.rbac.Permission;
 import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.folder.Folder;
+import com.l7tech.server.RoleMatchingTestUtil;
 import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.test.BugId;
 import org.junit.Before;
@@ -42,6 +43,20 @@ public class FolderManagerImplTest {
     public void addReadonlyFolderRoleCanReadEncapsulatedAssertions() throws Exception {
         manager.addReadonlyFolderRole(folder);
         verify(roleManager).save(argThat(canReadEncapsulatedAssertions()));
+    }
+
+    @BugId("SSG-7101")
+    @Test
+    public void addReadonlyFolderRoleCanReadAllAssertions() throws Exception {
+        manager.addReadonlyFolderRole(folder);
+        verify(roleManager).save(argThat(RoleMatchingTestUtil.canReadAllAssertions()));
+    }
+
+    @BugId("SSG-7101")
+    @Test
+    public void addManageFolderRoleCanReadAllAssertions() throws Exception {
+        manager.addManageFolderRole(folder);
+        verify(roleManager).save(argThat(RoleMatchingTestUtil.canReadAllAssertions()));
     }
 
     private RoleWithReadEncapsulatedAssertionPermission canReadEncapsulatedAssertions() {

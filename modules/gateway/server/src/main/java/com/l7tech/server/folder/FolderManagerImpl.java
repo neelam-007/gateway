@@ -39,7 +39,7 @@ public class FolderManagerImpl extends FolderSupportHibernateEntityManager<Folde
     private final RoleManager roleManager;
 
     public FolderManagerImpl( final RoleManager roleManager ) {
-        this.roleManager = roleManager;    
+        this.roleManager = roleManager;
     }
 
     @Override
@@ -244,6 +244,9 @@ public class FolderManagerImpl extends FolderSupportHibernateEntityManager<Folde
         // Read all Encapsulated Assertion configs
         role.addEntityPermission(READ, ENCAPSULATED_ASSERTION, null);
 
+        // use all assertions in policy
+        role.addEntityPermission(READ, ASSERTION_ACCESS, null);
+
         // Set role as entity-specific
         role.setEntityType(FOLDER);
         role.setEntityOid(folder.getOid());
@@ -294,6 +297,9 @@ public class FolderManagerImpl extends FolderSupportHibernateEntityManager<Folde
 
         // Read all Encapsulated Assertion configs
         role.addEntityPermission(READ, ENCAPSULATED_ASSERTION, null);
+
+        // use all assertions in policy
+        role.addEntityPermission(READ, ASSERTION_ACCESS, null);
 
         // Set role as entity-specific
         role.setEntityType(FOLDER);

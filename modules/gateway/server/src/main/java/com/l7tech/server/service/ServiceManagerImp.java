@@ -320,6 +320,9 @@ public class ServiceManagerImp
         //use encapsulated assertions in a policy
         newRole.addEntityPermission(READ, ENCAPSULATED_ASSERTION, null);
 
+        // use all assertions in a policy
+        newRole.addEntityPermission(READ, ASSERTION_ACCESS, null);
+
         if (currentUser != null) {
             // See if we should give the current user admin permission for this service
             boolean omnipotent;

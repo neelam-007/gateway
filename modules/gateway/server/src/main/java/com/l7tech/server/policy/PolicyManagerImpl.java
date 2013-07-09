@@ -294,6 +294,9 @@ public class PolicyManagerImpl extends FolderSupportHibernateEntityManager<Polic
         // Use encapsulated assertion within a policy
         newRole.addEntityPermission(READ, ENCAPSULATED_ASSERTION, null);
 
+        // Use all assertions within a policy
+        newRole.addEntityPermission(READ, ASSERTION_ACCESS, null);
+
         if (currentUser != null) {
             // See if we should give the current user admin permission for this policy
             boolean omnipotent;
