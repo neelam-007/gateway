@@ -318,8 +318,9 @@ public class JmsQueuePropertiesDialog extends JDialog {
 
         });
 
-        if (!Registry.getDefault().getJmsManager().isDedicatedThreadPoolEnabled()) {
-            dedicatedWorkerThreadPoolPanel.setVisible(false);
+        dedicatedWorkerThreadPoolPanel.setVisible(false);
+        if (Registry.getDefault().getJmsManager().isDedicatedThreadPoolEnabled()) {
+            dedicatedWorkerThreadPoolPanel.setVisible(true);
         }
 
         Utilities.enableGrayOnDisabled(threadPoolSizeLabel);
