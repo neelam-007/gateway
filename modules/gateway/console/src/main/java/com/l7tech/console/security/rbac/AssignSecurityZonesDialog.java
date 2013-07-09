@@ -36,6 +36,8 @@ import javax.swing.table.TableRowSorter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.util.*;
 import java.util.List;
 import java.util.logging.Level;
@@ -215,6 +217,33 @@ public class AssignSecurityZonesDialog extends JDialog {
                     final SecurityZone zone = (SecurityZone) value;
                     setText(zone.equals(SecurityZoneUtil.NULL_ZONE) ? NO_SECURITY_ZONE : zone.getName());
                 }
+            }
+        });
+        entitiesTable.addMouseListener(new MouseListener() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+            }
+
+            @Override
+            public void mousePressed(MouseEvent e) {
+            }
+
+            @Override
+            public void mouseReleased(final MouseEvent e) {
+                final int rowIndex = entitiesTable.rowAtPoint(e.getPoint());
+                if (rowIndex >= 0) {
+                    final int modelIndex = entitiesTable.convertRowIndexToModel(rowIndex);
+                    final Boolean selected = (Boolean) dataModel.getValueAt(modelIndex, CHECK_BOX_COL_INDEX);
+                    dataModel.setValueAt(!selected, modelIndex, CHECK_BOX_COL_INDEX);
+                }
+            }
+
+            @Override
+            public void mouseEntered(MouseEvent e) {
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
             }
         });
         setColumnWidths(CHECK_BOX_COL_INDEX, 30, 30);
@@ -430,7 +459,8 @@ public class AssignSecurityZonesDialog extends JDialog {
 
         @Override
         public boolean isCellEditable(final int row, final int col) {
-            return col == CHECK_BOX_COL_INDEX;
+            // check box toggle handled by mouse listener
+            return false;
         }
 
         @Override
