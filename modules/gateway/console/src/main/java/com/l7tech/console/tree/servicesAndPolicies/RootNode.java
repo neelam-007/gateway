@@ -4,6 +4,7 @@ import com.l7tech.console.action.*;
 import com.l7tech.console.tree.*;
 import com.l7tech.console.util.EntitySaver;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.SecurityZoneUtil;
 import com.l7tech.gateway.common.admin.FolderAdmin;
 import com.l7tech.gateway.common.admin.PolicyAdmin;
 import com.l7tech.gateway.common.service.ServiceAdmin;
@@ -151,7 +152,7 @@ public final class RootNode extends FolderNode {
      * a given service manager with the name.
      */
     public RootNode(String name) {
-        this(name, new FolderHeader(OID, name, null, 0, "/", null));
+        this(name, new FolderHeader(OID, name, null, 0, "/", SecurityZoneUtil.CURRENT_UNAVAILABLE_ZONE.getOid()));
     }
 
     public RootNode(String name, @NotNull final FolderHeader rootFolderHeader) {

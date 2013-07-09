@@ -42,7 +42,15 @@ public class FolderNode extends AbstractTreeNode implements FolderNodeBase {
         folder = new Folder(folderHeader.getName(), parentFolder);
         folder.setOid(folderHeader.getOid());
         folder.setVersion(folderHeader.getVersion());
-        folder.setSecurityZone(folderHeader.getSecurityZoneOid() ==  null ? null : SecurityZoneUtil.getSecurityZoneByOid(folderHeader.getSecurityZoneOid()));
+        SecurityZone zone = null;
+        final Long securityZoneOid = folderHeader.getSecurityZoneOid();
+        if (securityZoneOid != null) {
+            zone = SecurityZoneUtil.getSecurityZoneByOid(securityZoneOid);
+            if (zone == null) {
+                zone = SecurityZoneUtil.CURRENT_UNAVAILABLE_ZONE;
+            }
+        }
+        folder.setSecurityZone(zone);
 
         allActions = new Action[]{
             new PublishServiceAction(folder, this),
