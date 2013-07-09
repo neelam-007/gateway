@@ -136,7 +136,7 @@ public class ServerSshRouteAssertionTest {
         MockitoAnnotations.initMocks(this);
         Mockito.when(sshSession.getScpClient()).thenReturn(scpClient);
         Mockito.when(sshSession.getSftpClient()).thenReturn(sftpClient);
-        Mockito.when(sshSession.getKey()).thenReturn(new SshSessionKey("TestUser", "testHost", 22, Either.<String, String>left("testPassword"), 0, 0, null, Arrays.asList("encryptAlgo"), Arrays.asList("macAlgorithms"), Arrays.asList("compressionAlgorithms")));
+        Mockito.when(sshSession.getKey()).thenReturn(key);
         SecurePassword password = new SecurePassword();
         password.setEncodedPassword("drowssap");
         Mockito.when(securePasswordManager.findByPrimaryKey(Matchers.eq(passwordOid))).thenReturn(password);
