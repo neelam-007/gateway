@@ -15,6 +15,7 @@ import com.l7tech.objectmodel.folder.FolderHeader;
 import com.l7tech.policy.PolicyHeader;
 import com.l7tech.policy.PolicyType;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import javax.swing.tree.TreeNode;
@@ -302,6 +303,10 @@ public final class RootNode extends FolderNode {
             throw new RuntimeException("Cannot find entity");
         }
         return atn;
+    }
+
+    public void setSecurityZone(@Nullable final SecurityZone zone) {
+        getFolder().setSecurityZone(zone);
     }
 
     /**

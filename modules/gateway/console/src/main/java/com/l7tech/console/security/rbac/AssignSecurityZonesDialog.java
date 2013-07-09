@@ -2,6 +2,9 @@ package com.l7tech.console.security.rbac;
 
 import com.l7tech.console.panels.FilterPanel;
 import com.l7tech.console.policy.ConsoleAssertionRegistry;
+import com.l7tech.console.tree.ServicesAndPoliciesTree;
+import com.l7tech.console.tree.identity.IdentityProvidersTree;
+import com.l7tech.console.tree.servicesAndPolicies.RootNode;
 import com.l7tech.console.util.EntityNameResolver;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.SecurityZoneUtil;
@@ -467,7 +470,6 @@ public class AssignSecurityZonesDialog extends JDialog {
                         }
                     }
                     doBulkUpdate(EntityType.ASSERTION_ACCESS, selectedZone, selectedEntities.keySet(), assertionAccessToUpdate);
-                    TopComponents.getInstance().getAssertionRegistry().updateAssertionAccess();
                 } catch (final UpdateException ex) {
                     DialogDisplayer.showMessageDialog(AssignSecurityZonesDialog.this, "Error", "Error assigning entities to zone.", ex);
                 }
@@ -488,8 +490,38 @@ public class AssignSecurityZonesDialog extends JDialog {
                 final BulkZoneUpdater updater = new BulkZoneUpdater(Registry.getDefault().getRbacAdmin(),
                         Registry.getDefault().getUDDIRegistryAdmin(), Registry.getDefault().getJmsManager(), Registry.getDefault().getPolicyAdmin());
                 updater.bulkUpdate(securityZoneOid, selectedEntityType, entitiesToUpdate);
+
                 for (final Integer selectedIndex : tableRowIndices) {
                     dataModel.setValueAt(selectedZone == null ? SecurityZoneUtil.NULL_ZONE : selectedZone, selectedIndex, ZONE_COL_INDEX);
+                }
+
+                if (!entitiesToUpdate.isEmpty()) {
+                    final RootNode rootNode = TopComponents.getInstance().getRootNode();
+                    switch (selectedEntityType) {
+                        case ASSERTION_ACCESS:
+                            TopComponents.getInstance().getAssertionRegistry().updateAssertionAccess();
+                            break;
+                        case ID_PROVIDER_CONFIG:
+                            IdentityProvidersTree providersTree = (IdentityProvidersTree) TopComponents.getInstance().getComponent(IdentityProvidersTree.NAME);
+                            providersTree.refresh(providersTree.getRootNode());
+                            break;
+                        case ENCAPSULATED_ASSERTION:
+                            TopComponents.getInstance().getEncapsulatedAssertionRegistry().updateEncapsulatedAssertions();
+                            break;
+                        case FOLDER:
+                            for (final EntityHeader header : entitiesToUpdate) {
+                                if (header.getOid() == RootNode.OID) {
+                                    rootNode.setSecurityZone(selectedZone);
+                                    break;
+                                }
+                            }
+                        case SERVICE:
+                        case POLICY:
+                            final ServicesAndPoliciesTree servicesAndPoliciesTree = (ServicesAndPoliciesTree) TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME);
+                            servicesAndPoliciesTree.refresh(rootNode);
+                        default:
+                            // no reload necessary
+                    }
                 }
             } catch (final FindException ex) {
                 DialogDisplayer.showMessageDialog(AssignSecurityZonesDialog.this, "Error", "Error assigning entities to zone.", ex);
