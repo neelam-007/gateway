@@ -8,6 +8,7 @@ import com.l7tech.policy.TestCustomMessageTargetable;
 import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
 import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.ext.CustomAssertion;
+import com.l7tech.policy.assertion.ext.CustomCredentialSource;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.policy.wsp.WspWriter;
 
@@ -408,6 +409,65 @@ public class CustomAssertionHolderTest {
         assertEquals("right comment is properly de-serialized",
                 caOriginal.getAssertionComment().getAssertionComment(Assertion.Comment.RIGHT_COMMENT),
                 CUSTOM_ASSERTION_RIGHT_COMMENT);
+    }
+
+    @Test
+    public void testIsCustomCredentialSource() throws Exception {
+        // default constructor
+        holder = new CustomAssertionHolder();
+        assertFalse(holder.isCustomCredentialSource());
+
+        // add to non credential source category (null custom assertion)
+        holder = new CustomAssertionHolder();
+        holder.setCategories(Category.LOGIC,  Category.MESSAGE);
+        assertFalse(holder.isCustomCredentialSource());
+
+        // add to non credential source category
+        holder = new CustomAssertionHolder();
+        holder.setCustomAssertion(new StubCustomAssertion());
+        assertFalse(holder.isCustomCredentialSource());
+
+        // add to non credential source category
+        holder = new CustomAssertionHolder();
+        holder.setCustomAssertion(new StubCustomAssertion());
+        holder.setCategories(Category.LOGIC,  Category.MESSAGE);
+        assertFalse(holder.isCustomCredentialSource());
+
+        // add to credential source category (ACCESS_CONTROL) (null custom assertion)
+        holder = new CustomAssertionHolder();
+        holder.setCategories(Category.LOGIC,  Category.ACCESS_CONTROL);
+        assertTrue(holder.isCustomCredentialSource());
+
+        // add to credential source category (ACCESS_CONTROL)
+        holder = new CustomAssertionHolder();
+        holder.setCustomAssertion(new StubCustomAssertion());
+        holder.setCategories(Category.LOGIC,  Category.ACCESS_CONTROL);
+        assertTrue(holder.isCustomCredentialSource());
+
+        //noinspection serial
+        class TestCustomCredentialSourceAssertion implements CustomAssertion, CustomCredentialSource {
+            @Override
+            public String getName() {
+                return "Test CustomCredentialSource Assertion";
+            }
+        }
+
+        // add custom assertion implementing CustomCredentialSource interface (empty Categories)
+        holder = new CustomAssertionHolder();
+        holder.setCustomAssertion(new TestCustomCredentialSourceAssertion());
+        assertTrue(holder.isCustomCredentialSource());
+
+        // add custom assertion implementing CustomCredentialSource interface
+        holder = new CustomAssertionHolder();
+        holder.setCustomAssertion(new TestCustomCredentialSourceAssertion());
+        holder.setCategories(Category.LOGIC,  Category.CUSTOM_ASSERTIONS);
+        assertTrue(holder.isCustomCredentialSource());
+
+        // add custom assertion implementing CustomCredentialSource interface and credential source category (ACCESS_CONTROL)
+        holder = new CustomAssertionHolder();
+        holder.setCustomAssertion(new TestCustomCredentialSourceAssertion());
+        holder.setCategories(Category.LOGIC,  Category.ACCESS_CONTROL);
+        assertTrue(holder.isCustomCredentialSource());
     }
 
     /**

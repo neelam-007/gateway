@@ -8,6 +8,7 @@ package com.l7tech.policy.assertion;
 
 import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.ext.CustomAssertion;
+import com.l7tech.policy.assertion.ext.CustomCredentialSource;
 import com.l7tech.policy.assertion.ext.targetable.CustomMessageTargetable;
 import com.l7tech.policy.assertion.ext.targetable.CustomMessageTargetableSupport;
 import com.l7tech.policy.assertion.ext.validator.CustomPolicyValidator;
@@ -124,10 +125,15 @@ public class CustomAssertionHolder extends Assertion implements UsesVariables, S
     }
 
     /**
-     * @return true if the assertion is placed into the specified <code>category</code>.
+     * Checks if the CustomAssertion either implements the {@link CustomCredentialSource} interface or
+     * is placed into {@link Category#ACCESS_CONTROL ACCESS_CONTROL} category.
+     *
+     * @return true if the CustomAssertion is credential source, false otherwise.
      */
-    public boolean hasCategory(Category category) {
-        return categories != null && categories.contains(category);
+    public boolean isCustomCredentialSource() {
+        return ( (customAssertion != null && customAssertion instanceof CustomCredentialSource) ||  // the new way
+                 (categories != null && categories.contains(Category.ACCESS_CONTROL))               // or the old way
+        );
     }
 
     /**

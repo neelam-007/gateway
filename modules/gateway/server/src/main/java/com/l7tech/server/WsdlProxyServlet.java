@@ -860,7 +860,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
             return false;
         } else if (assertion instanceof CustomAssertionHolder) {
             CustomAssertionHolder ch = (CustomAssertionHolder)assertion;
-            return ch.hasCategory(Category.ACCESS_CONTROL);
+            return ch.isCustomCredentialSource();
         } else if (assertion instanceof CompositeAssertion) {
             CompositeAssertion root = (CompositeAssertion)assertion;
             Iterator i = root.getChildren().iterator();

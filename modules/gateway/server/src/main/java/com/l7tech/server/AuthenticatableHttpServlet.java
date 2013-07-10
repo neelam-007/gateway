@@ -383,7 +383,8 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
      * First do the the standard user check {@link AuthenticatableHttpServlet#authenticateRequestBasic(javax.servlet.http.HttpServletRequest)},
      * and if non empty list has been returned stop there. If the list of users is empty, retrieve
      * custom assertions and check if there is a custom assertion in the service policy. If true,
-     * and the assertion is registered as <code>Category</code> {@link com.l7tech.policy.assertion.ext.Category#ACCESS_CONTROL}
+     * and the assertion is either registered as <code>Category</code> {@link com.l7tech.policy.assertion.ext.Category#ACCESS_CONTROL}
+     * or implements {@link com.l7tech.policy.assertion.ext.CustomCredentialSource CustomCredentialSource} interface
      * then we let that request through, since the custom assertion is responsible for validating the credentials.
      * If no custom assertion is found throws <code>BadCredentialsException</code>.
      * <p/>
@@ -436,7 +437,7 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
                 Assertion ass = (Assertion)it.next();
                 if (ass instanceof CustomAssertionHolder) {
                     CustomAssertionHolder ch = (CustomAssertionHolder)ass;
-                    if (ch.hasCategory(Category.ACCESS_CONTROL)) { // bingo
+                    if (ch.isCustomCredentialSource()) { // bingo
                         UserBean user = new UserBean();
                         user.setProviderId(Long.MAX_VALUE);
                         user.setLogin(creds.getLogin());
@@ -572,7 +573,7 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
 
             if (a instanceof CustomAssertionHolder) {
                 CustomAssertionHolder ca = (CustomAssertionHolder)a;
-                if (ca.hasCategory(Category.ACCESS_CONTROL)) {
+                if (ca.isCustomCredentialSource()) {
                     return true;
                 }
             } else if (a instanceof IdentityAssertion) {

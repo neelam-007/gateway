@@ -237,6 +237,31 @@ public class CustomAssertionsRegistrarImpl extends ApplicationObjectSupport impl
     }
 
     /**
+     * Checks if there is a CustomAssertion registered which either implements the
+     * {@link com.l7tech.policy.assertion.ext.CustomCredentialSource CustomCredentialSource} interface
+     * or is placed into {@link Category#ACCESS_CONTROL ACCESS_CONTROL} category.
+     *
+     * @return true if there is a CustomAssertion registered which is credential source, false otherwise.
+     */
+    @Override
+    public boolean hasCustomCredentialSource() {
+        try
+        {
+            //noinspection unchecked
+            Set<CustomAssertionDescriptor> descriptors = CustomAssertions.getDescriptors();
+            for (CustomAssertionDescriptor descriptor : descriptors) {
+                if (descriptor.hasCategory(Category.ACCESS_CONTROL) || CustomCredentialSource.class.isAssignableFrom(descriptor.getAssertion())) {
+                    return true;
+                }
+            }
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "Error while determining if there is a CustomAssertion registered which is credential source.", e);
+        }
+
+        return false;
+    }
+
+    /**
      * Return the <code>CustomAssertionDescriptor</code> for a given assertion or <b>null<b>.
      * Note that this method may not be invoked from management console.
      * Server classes may not de-serialize into the ssm environment.

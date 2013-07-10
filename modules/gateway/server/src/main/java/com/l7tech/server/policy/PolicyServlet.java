@@ -525,7 +525,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
         }
         // we smelt something (maybe netegrity?)
         CustomAssertionsRegistrar car = (CustomAssertionsRegistrar)getApplicationContext().getBean("customAssertionRegistrar");
-        if (sawUncheckableUser || car != null && !car.getAssertions(Category.ACCESS_CONTROL).isEmpty()) {
+        if (sawUncheckableUser || car != null && car.hasCustomCredentialSource()) {
             ret.add(new CertificateCheck2Info(DUMMY_ID_PROVIDER_OID, "", SecureSpanConstants.NOPASS, "").asHttpHeader());
         }
 

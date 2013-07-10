@@ -6,6 +6,7 @@ import com.l7tech.policy.assertion.CustomAssertionHolder;
 import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.ext.CustomAssertion;
 import com.l7tech.policy.assertion.ext.CustomAssertionUI;
+import com.l7tech.policy.assertion.ext.CustomCredentialSource;
 import com.l7tech.policy.assertion.ext.action.CustomTaskActionUI;
 
 import java.util.ArrayList;
@@ -71,6 +72,32 @@ public class CustomAssertionsRegistrarStub implements CustomAssertionsRegistrar 
     public Collection getAssertions(Category c) {
         final Set customAssertionDescriptors = CustomAssertions.getDescriptors(c);
         return asCustomAssertionHolders(customAssertionDescriptors);
+    }
+
+
+    /**
+     * Checks if there is a CustomAssertion registered which either implements the
+     * {@link com.l7tech.policy.assertion.ext.CustomCredentialSource CustomCredentialSource} interface
+     * or is placed into {@link Category#ACCESS_CONTROL ACCESS_CONTROL} category.
+     *
+     * @return true if there is a CustomAssertion registered which is credential source, false otherwise.
+     */
+    @Override
+    public boolean hasCustomCredentialSource() {
+        try
+        {
+            //noinspection unchecked
+            Set<CustomAssertionDescriptor> descriptors = CustomAssertions.getDescriptors();
+            for (CustomAssertionDescriptor descriptor : descriptors) {
+                if (descriptor.hasCategory(Category.ACCESS_CONTROL) || CustomCredentialSource.class.isAssignableFrom(descriptor.getAssertion())) {
+                    return true;
+                }
+            }
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "Error while determining if there is a CustomAssertion registered which is credential source.", e);
+        }
+
+        return false;
     }
 
     /**

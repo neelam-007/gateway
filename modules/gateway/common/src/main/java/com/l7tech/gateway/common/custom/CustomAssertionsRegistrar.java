@@ -66,6 +66,16 @@ public interface CustomAssertionsRegistrar {
     Collection getAssertions( Category c);
 
     /**
+     * Checks if there is a CustomAssertion registered which either implements the
+     * {@link com.l7tech.policy.assertion.ext.CustomCredentialSource CustomCredentialSource} interface
+     * or is placed into {@link Category#ACCESS_CONTROL ACCESS_CONTROL} category.
+     *
+     * @return true if there is a CustomAssertion registered which is credential source, false otherwise.
+     */
+    @Administrative(licensed=false)
+    boolean hasCustomCredentialSource();
+
+    /**
      * Return the <code>CustomAssertionDescriptor</code> for a given assertion or <b>null<b>.
      * Note that this method may not be invoked from management console. The descriptor
      * may not de-serialize into the ssm environment since int contains server classes.

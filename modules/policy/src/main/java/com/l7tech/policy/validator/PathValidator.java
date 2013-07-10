@@ -352,7 +352,7 @@ public class PathValidator {
     private void processCustom(Assertion a) {
         final String targetName = AssertionUtils.getTargetName(a);
         final CustomAssertionHolder csh = (CustomAssertionHolder)a;
-        if (csh.hasCategory(Category.ACCESS_CONTROL)) {
+        if (csh.isCustomCredentialSource()) {
             if (!seenCredentials(a)) {
                 result.addError(new PolicyValidatorResult.Error(a, bundle.getString("accesscontrol.noauthscheme"), null));
             }
