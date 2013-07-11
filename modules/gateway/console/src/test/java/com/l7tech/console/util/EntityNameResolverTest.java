@@ -21,6 +21,7 @@ import com.l7tech.objectmodel.folder.HasFolderOid;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.policy.*;
 import com.l7tech.policy.assertion.ContentTypeAssertion;
+import com.l7tech.policy.assertion.CustomAssertionHolder;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
 import com.l7tech.test.BugId;
@@ -294,22 +295,37 @@ public class EntityNameResolverTest {
         assertTrue(resolver.getNameForHeader(assertionHeader).isEmpty());
     }
 
+    @BugId("SSG-7267")
     @Test
-    public void getPathForAssertion() throws Exception {
+    public void getNameForCustomAssertionAccessHeader() throws Exception {
+        final String className = CustomAssertionHolder.class.getName();
+        final EntityHeader assertionHeader = new EntityHeader(OID, EntityType.ASSERTION_ACCESS, className, null);
+        when(assertionRegistry.findByClassName(className)).thenReturn(new CustomAssertionHolder());
+        assertEquals(CustomAssertionHolder.CUSTOM_ASSERTION, resolver.getNameForHeader(assertionHeader));
+    }
+
+    @Test
+    public void getPaletteFolderName() throws Exception {
         when(folderRegistry.getPaletteFolderName("threatProtection")).thenReturn("Threat Protection");
         when(folderRegistry.getPaletteFolderName("xml")).thenReturn("Message Validation/Transformation");
         assertEquals("Threat Protection,Message Validation/Transformation", resolver.getPaletteFolders(new ContentTypeAssertion()));
     }
 
     @Test
-    public void getPathForAssertionCannotFindFolderName() throws Exception {
+    public void getPaletteFolderNameCannotFindFolderName() throws Exception {
         when(folderRegistry.getPaletteFolderName("policyLogic")).thenReturn(null);
         assertEquals("unknown folder", resolver.getPaletteFolders(new AllAssertion()));
     }
 
     @Test
-    public void getPathForAssertionNoFolders() throws Exception {
+    public void getPaletteFolderNameNoFolders() throws Exception {
         assertTrue(resolver.getPaletteFolders(new RequireWssSaml()).isEmpty());
+    }
+
+    @BugId("SSM-4366")
+    @Test
+    public void getPaletteFolderNameForCustomAssertion() throws Exception {
+        assertEquals("--", resolver.getPaletteFolders(new CustomAssertionHolder()));
     }
 
     @Test
@@ -395,8 +411,7 @@ public class EntityNameResolverTest {
     public void getNameForAssertionAccess() throws Exception {
         final AssertionAccess assertionAccess = new AssertionAccess(AllAssertion.class.getName());
         when(assertionRegistry.findByClassName(AllAssertion.class.getName())).thenReturn(new AllAssertion());
-        when(folderRegistry.getPaletteFolderName("policyLogic")).thenReturn("Policy Logic");
-        assertEquals("All assertions must evaluate to true (Policy Logic/All assertions must evaluate to true)", resolver.getNameForEntity(assertionAccess, true));
+        assertEquals("All assertions must evaluate to true", resolver.getNameForEntity(assertionAccess, true));
     }
 
     @Test
@@ -414,12 +429,12 @@ public class EntityNameResolverTest {
         assertEquals(AllAssertion.class.getName(), resolver.getNameForEntity(assertionAccess, true));
     }
 
+    @BugId("SSG-7267")
     @Test
-    public void getNameForAssertionAccessUnknownPaletteFolder() throws Exception {
-        final AssertionAccess assertionAccess = new AssertionAccess(AllAssertion.class.getName());
-        when(assertionRegistry.findByClassName(AllAssertion.class.getName())).thenReturn(new AllAssertion());
-        when(folderRegistry.getPaletteFolderName("policyLogic")).thenReturn(null);
-        assertEquals("All assertions must evaluate to true (unknown folder/All assertions must evaluate to true)", resolver.getNameForEntity(assertionAccess, true));
+    public void getNameForCustomAssertionAccess() throws Exception {
+        final AssertionAccess assertionAccess = new AssertionAccess(CustomAssertionHolder.class.getName());
+        when(assertionRegistry.findByClassName(CustomAssertionHolder.class.getName())).thenReturn(new CustomAssertionHolder());
+        assertEquals(CustomAssertionHolder.CUSTOM_ASSERTION, resolver.getNameForEntity(assertionAccess, true));
     }
 
     @Test

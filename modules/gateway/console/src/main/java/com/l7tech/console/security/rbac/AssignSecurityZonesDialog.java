@@ -20,6 +20,8 @@ import com.l7tech.policy.AssertionAccess;
 import com.l7tech.policy.PolicyHeader;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.CustomAssertionHolder;
+import com.l7tech.policy.assertion.EncapsulatedAssertion;
 import com.l7tech.util.ExceptionUtils;
 import org.apache.commons.collections.ComparatorUtils;
 import org.apache.commons.lang.StringUtils;
@@ -337,6 +339,10 @@ public class AssignSecurityZonesDialog extends JDialog {
                     }
                     if (header.getType() == EntityType.ASSERTION_ACCESS) {
                         final String assertionClassName = header.getName();
+                        if (EncapsulatedAssertion.class.getName().equals(assertionClassName)) {
+                            // encapsulated assertions are handled by their config entity type
+                            continue;
+                        }
                         assertionNames.put(header.getOid(), assertionClassName);
                     }
                     try {
@@ -406,7 +412,12 @@ public class AssignSecurityZonesDialog extends JDialog {
             final ConsoleAssertionRegistry assertionRegistry = TopComponents.getInstance().getAssertionRegistry();
             final Collection<AssertionAccess> assertions = assertionRegistry.getPermittedAssertions();
             long nonPersistedAssertions = 0L;
+            boolean customAssertionProcessed = false;
             for (final AssertionAccess assertionAccess : assertions) {
+                if (CustomAssertionHolder.class.getName().equals(assertionAccess.getName()) && customAssertionProcessed) {
+                    // bundle all CustomAssertions as one
+                    continue;
+                }
                 long oid = assertionAccess.getOid();
                 if (oid == PersistentEntity.DEFAULT_OID) {
                     // this assertion access is not yet persisted

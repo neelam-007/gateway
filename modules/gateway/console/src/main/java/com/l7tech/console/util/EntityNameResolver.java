@@ -24,6 +24,7 @@ import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyAlias;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
+import com.l7tech.policy.assertion.CustomAssertionHolder;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -46,6 +47,8 @@ public class EntityNameResolver {
     private static final int MIN_FOLDER_PATH = 1;
     private static final int FIRST_FOLDER_INDEX = 0;
     private static final int SECOND_LAST_FOLDER_INDEX = 3;
+    private static final String NO_PATH = "--";
+    private static final String UNKNOWN_FOLDER = "unknown folder";
 
     private final ServiceAdmin serviceAdmin;
     private final PolicyAdmin policyAdmin;
@@ -126,7 +129,7 @@ public class EntityNameResolver {
                 case ASSERTION_ACCESS:
                     if (header.getName() != null) {
                         final Assertion assertion = assertionRegistry.findByClassName(header.getName());
-                        name = assertion == null ? header.getName() : String.valueOf(assertion.meta().get(AssertionMetadata.SHORT_NAME));
+                        name = getNameForAssertion(assertion, header.getName());
                     }
                     break;
                 default:
@@ -141,8 +144,8 @@ public class EntityNameResolver {
             // get the name and/or path using the full entity
             name = getNameForEntity(entity, includePath);
         } else if (entity == null) {
-            if (includePath) {
-                path = getPathForHeader(header);
+            if (includePath && header instanceof HasFolderOid) {
+                path = getPath((HasFolderOid) header);
             }
             uniqueInfo = getUniqueInfo(header, relatedEntity);
         }
@@ -200,7 +203,7 @@ public class EntityNameResolver {
         } else if (entity instanceof AssertionAccess) {
             final AssertionAccess assertionAccess = (AssertionAccess) entity;
             final Assertion assertion = assertionRegistry.findByClassName(assertionAccess.getName());
-            name = assertion == null ? assertionAccess.getName() : String.valueOf(assertion.meta().get(AssertionMetadata.SHORT_NAME));
+            name = getNameForAssertion(assertion, assertionAccess.getName());
             relatedEntity = assertion;
         } else if (entity instanceof Role) {
             final Role role = (Role) entity;
@@ -214,12 +217,8 @@ public class EntityNameResolver {
             name = named.getName();
         }
         String path = null;
-        if (includePath) {
-            if (entity instanceof HasFolder) {
-                path = getPath((HasFolder) entity);
-            } else if (relatedEntity instanceof Assertion) {
-                path = getPaletteFolders((Assertion) relatedEntity) + "/";
-            }
+        if (includePath && entity instanceof HasFolder) {
+            path = getPath((HasFolder) entity);
         }
         String uniqueInfo = getUniqueInfo(entity);
         if (StringUtils.isBlank(uniqueInfo) && relatedEntity instanceof Entity) {
@@ -257,23 +256,25 @@ public class EntityNameResolver {
      */
     @NotNull
     public String getPaletteFolders(@NotNull final Assertion assertion) {
-        String path = StringUtils.EMPTY;
-        final Object paletteFolders = assertion.meta().get(AssertionMetadata.PALETTE_FOLDERS);
-        if (paletteFolders instanceof String[]) {
-            final String[] folderIds = (String[]) paletteFolders;
-            final List<String> folderNames = new ArrayList<>(folderIds.length);
-            for (int i = 0; i < folderIds.length; i++) {
-                final String folderId = folderIds[i];
-                final String folderName = folderRegistry.getPaletteFolderName(folderId);
-                if (folderName != null) {
-                    folderNames.add(folderName);
-                } else {
-                    folderNames.add("unknown folder");
+        final List<String> folderNames = new ArrayList<>();
+        if (assertion instanceof CustomAssertionHolder) {
+            folderNames.add(NO_PATH);
+        } else {
+            final Object paletteFolders = assertion.meta().get(AssertionMetadata.PALETTE_FOLDERS);
+            if (paletteFolders instanceof String[]) {
+                final String[] folderIds = (String[]) paletteFolders;
+                for (int i = 0; i < folderIds.length; i++) {
+                    final String folderId = folderIds[i];
+                    final String folderName = folderRegistry.getPaletteFolderName(folderId);
+                    if (folderName != null) {
+                        folderNames.add(folderName);
+                    } else {
+                        folderNames.add(UNKNOWN_FOLDER);
+                    }
                 }
             }
-            path = StringUtils.join(folderNames, ",");
         }
-        return path;
+        return StringUtils.join(folderNames, ",");
     }
 
     /**
@@ -287,6 +288,18 @@ public class EntityNameResolver {
     @NotNull
     public String getPath(@NotNull final HasFolder hasFolder) {
         return getPathForFolder(hasFolder.getFolder());
+    }
+
+    private String getNameForAssertion(final Assertion assertion, final String defaultName) {
+        final String name;
+        if (assertion instanceof CustomAssertionHolder) {
+            name = CustomAssertionHolder.CUSTOM_ASSERTION;
+        } else if (assertion != null) {
+            name = String.valueOf(assertion.meta().get(AssertionMetadata.SHORT_NAME));
+        } else {
+            name = defaultName;
+        }
+        return name;
     }
 
     /**
@@ -325,16 +338,6 @@ public class EntityNameResolver {
             }
         }
         return extraInfo;
-    }
-
-    @NotNull
-    private String getPathForHeader(@NotNull final EntityHeader header) throws FindException {
-        String path = StringUtils.EMPTY;
-        if (header instanceof HasFolderOid) {
-            final HasFolderOid hasFolder = (HasFolderOid) header;
-            path = getPath(hasFolder);
-        }
-        return path;
     }
 
     @NotNull

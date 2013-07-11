@@ -52,7 +52,7 @@ public class CustomAssertionHolder extends Assertion implements UsesVariables, S
     private static final long serialVersionUID = 7410439507802944818L;
 
     private static final Logger logger = Logger.getLogger(CustomAssertionHolder.class.getName());
-    protected static final String CUSTOM_ASSERTION = "Custom Assertion";
+    public static final String CUSTOM_ASSERTION = "Custom Assertion";
 
     private CustomAssertion customAssertion;
     private Category category; // keep it for backwards compatibility (getter and setter are removed)
