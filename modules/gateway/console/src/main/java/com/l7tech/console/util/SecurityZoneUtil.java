@@ -46,28 +46,28 @@ public class SecurityZoneUtil {
     }
 
     /**
-     * Semaphore used internally that represents a null security zone.
+     * Represents a null security zone.
      */
-    public static final SecurityZone NULL_ZONE = new SecurityZone() {
-        {
-            setOid(-1);
-            setName("no security zone");
-            setDescription("%%%NULL_ZONE%%%");
-            setPermittedEntityTypes(Collections.singleton(EntityType.ANY));
-        }
-    };
+    public static final SecurityZone getNullZone() {
+        final SecurityZone nullZone = new SecurityZone();
+        nullZone.setOid(-1);
+        nullZone.setName("no security zone");
+        nullZone.setDescription("%%%NULL_ZONE%%%");
+        nullZone.setPermittedEntityTypes(Collections.singleton(EntityType.ANY));
+        return nullZone;
+    }
 
     /**
-     * Use this if the currently set zone is not readable by the user.
+     * Represents a currently set zone which is is not readable by the user.
      */
-    public static final SecurityZone CURRENT_UNAVAILABLE_ZONE = new SecurityZone() {
-        {
-            setOid(-2);
-            setName("Current zone (zone details are unavailable)");
-            setDescription("%%%UNAVAILABLE_ZONE%%%");
-            setPermittedEntityTypes(Collections.singleton(EntityType.ANY));
-        }
-    };
+    public static final SecurityZone getCurrentUnavailableZone() {
+        final SecurityZone unavailable = new SecurityZone();
+        unavailable.setOid(-2);
+        unavailable.setName("Current zone (zone details are unavailable)");
+        unavailable.setDescription("%%%UNAVAILABLE_ZONE%%%");
+        unavailable.setPermittedEntityTypes(Collections.singleton(EntityType.ANY));
+        return unavailable;
+    }
 
     /**
      * Check if any security zones exist and are visible to the current admin user.
@@ -120,8 +120,8 @@ public class SecurityZoneUtil {
     public static List<SecurityZone> getSortedZonesForOperationAndEntityType(@Nullable final OperationType operation, @Nullable final Collection<EntityType> types) {
         final Collection<Permission> userPermissions = Registry.getDefault().getSecurityProvider().getUserPermissions();
         final List<SecurityZone> validZones = new ArrayList<>();
-        if (operation == null || types == null || SecurityZoneUtil.isZoneValidForOperation(SecurityZoneUtil.NULL_ZONE, types, operation, userPermissions)) {
-            validZones.add(SecurityZoneUtil.NULL_ZONE);
+        if (operation == null || types == null || SecurityZoneUtil.isZoneValidForOperation(SecurityZoneUtil.getNullZone(), types, operation, userPermissions)) {
+            validZones.add(SecurityZoneUtil.getNullZone());
         }
         for (final SecurityZone zone : SecurityZoneUtil.getSortedReadableSecurityZones()) {
             if (operation == null || types == null || SecurityZoneUtil.isZoneValidForOperation(zone, types, operation, userPermissions)) {
@@ -250,7 +250,7 @@ public class SecurityZoneUtil {
                     hasZonePredicate = true;
                     final SecurityZonePredicate zonePredicate = (SecurityZonePredicate) predicate;
                     final SecurityZone requiredZone = zonePredicate.getRequiredZone();
-                    if (zone.equals(NULL_ZONE) && requiredZone == null || zone.equals(requiredZone)) {
+                    if (zone.equals(getNullZone()) && requiredZone == null || zone.equals(requiredZone)) {
                         match = true;
                         break;
                     }

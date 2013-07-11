@@ -215,7 +215,7 @@ public class AssignSecurityZonesDialog extends JDialog {
             protected void setValue(final Object value) {
                 if (value instanceof SecurityZone) {
                     final SecurityZone zone = (SecurityZone) value;
-                    setText(zone.equals(SecurityZoneUtil.NULL_ZONE) ? NO_SECURITY_ZONE : zone.getName());
+                    setText(zone.equals(SecurityZoneUtil.getNullZone()) ? NO_SECURITY_ZONE : zone.getName());
                 }
             }
         });
@@ -368,7 +368,7 @@ public class AssignSecurityZonesDialog extends JDialog {
     }
 
     private SecurityZone getZoneForHeader(final EntityHeader header) {
-        SecurityZone zone = SecurityZoneUtil.NULL_ZONE;
+        SecurityZone zone = SecurityZoneUtil.getNullZone();
         if (header instanceof HasSecurityZoneOid) {
             final Long securityZoneOid = ((HasSecurityZoneOid) header).getSecurityZoneOid();
             if (securityZoneOid != null) {
@@ -474,7 +474,7 @@ public class AssignSecurityZonesDialog extends JDialog {
         public void actionPerformed(final ActionEvent e) {
             final EntityType selectedEntityType = convertToBackingEntityType(getSelectedEntityType());
             SecurityZone selectedZone = getSelectedZone();
-            if (selectedZone != null && selectedZone.equals(SecurityZoneUtil.NULL_ZONE)) {
+            if (selectedZone != null && selectedZone.equals(SecurityZoneUtil.getNullZone())) {
                 selectedZone = null;
             }
             final Map<Integer, EntityHeader> selectedEntities = getSelectedEntities();
@@ -522,7 +522,7 @@ public class AssignSecurityZonesDialog extends JDialog {
                 updater.bulkUpdate(securityZoneOid, selectedEntityType, entitiesToUpdate);
 
                 for (final Integer selectedIndex : tableRowIndices) {
-                    dataModel.setValueAt(selectedZone == null ? SecurityZoneUtil.NULL_ZONE : selectedZone, selectedIndex, ZONE_COL_INDEX);
+                    dataModel.setValueAt(selectedZone == null ? SecurityZoneUtil.getNullZone() : selectedZone, selectedIndex, ZONE_COL_INDEX);
                 }
 
                 if (!entitiesToUpdate.isEmpty()) {

@@ -15,7 +15,7 @@ import java.awt.*;
  * A reusable panel, suitable for use with OkCancelDialog, that shows the SecurityZoneWidget.
  * <p/>
  * Since ValidatedPanel can't return null as a valid value,
- * this panel will return {@link SecurityZoneUtil#NULL_ZONE}
+ * this panel will return {@link SecurityZoneUtil#getNullZone()}
  * as the value if the user selects "none" as the zone.
  */
 public class SecurityZoneValidatedPanel extends ValidatedPanel<SecurityZone> {
@@ -33,7 +33,7 @@ public class SecurityZoneValidatedPanel extends ValidatedPanel<SecurityZone> {
             return null;
         SecurityZone zone = zoneWidget.getSelectedZone();
         if (zone == null)
-            zone = SecurityZoneUtil.NULL_ZONE;
+            zone = SecurityZoneUtil.getNullZone();
         return zone;
     }
 
@@ -63,6 +63,6 @@ public class SecurityZoneValidatedPanel extends ValidatedPanel<SecurityZone> {
      * @return true if the zone is null or is SecurityZoneWidget.NULL_ZONE
      */
     public static boolean isNull(SecurityZone zone) {
-        return zone == null || zone == SecurityZoneUtil.NULL_ZONE;
+        return zone == null || zone == SecurityZoneUtil.getNullZone();
     }
 }

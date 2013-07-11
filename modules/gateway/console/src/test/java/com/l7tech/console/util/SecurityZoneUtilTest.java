@@ -70,7 +70,7 @@ public class SecurityZoneUtilTest {
         entityTypes.add(EntityType.SERVICE);
         zone.setPermittedEntityTypes(entityTypes);
         permissions.add(createPermission(OperationType.CREATE, EntityType.SERVICE, (SecurityZone) null));
-        assertTrue(SecurityZoneUtil.isZoneValidForOperation(SecurityZoneUtil.NULL_ZONE, entityTypes, OperationType.CREATE, permissions));
+        assertTrue(SecurityZoneUtil.isZoneValidForOperation(SecurityZoneUtil.getNullZone(), entityTypes, OperationType.CREATE, permissions));
     }
 
     @Test
@@ -162,7 +162,7 @@ public class SecurityZoneUtilTest {
     public void invalidNullZoneMismatchSecurityZonePredicate() {
         entityTypes.add(EntityType.SERVICE);
         permissions.add(createPermission(OperationType.CREATE, EntityType.SERVICE, zone));
-        assertFalse(SecurityZoneUtil.isZoneValidForOperation(SecurityZoneUtil.NULL_ZONE, entityTypes, OperationType.CREATE, permissions));
+        assertFalse(SecurityZoneUtil.isZoneValidForOperation(SecurityZoneUtil.getNullZone(), entityTypes, OperationType.CREATE, permissions));
     }
 
     @Test

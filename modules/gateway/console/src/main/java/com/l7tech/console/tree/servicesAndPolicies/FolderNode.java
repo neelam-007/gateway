@@ -47,7 +47,7 @@ public class FolderNode extends AbstractTreeNode implements FolderNodeBase {
         if (securityZoneOid != null) {
             zone = SecurityZoneUtil.getSecurityZoneByOid(securityZoneOid);
             if (zone == null) {
-                zone = SecurityZoneUtil.CURRENT_UNAVAILABLE_ZONE;
+                zone = SecurityZoneUtil.getCurrentUnavailableZone();
             }
         }
         folder.setSecurityZone(zone);

@@ -73,7 +73,7 @@ public class SecurityZoneWidget extends JPanel {
     public void configure(@Nullable final Collection<EntityType> entityTypes, @Nullable final OperationType operation, @Nullable SecurityZone initialZone) {
         this.operation = operation;
         setEntityTypes(entityTypes);
-        this.initialZone = initialZone == null ? SecurityZoneUtil.NULL_ZONE : initialZone;
+        this.initialZone = initialZone == null ? SecurityZoneUtil.getNullZone() : initialZone;
         reloadZones();
         setSelectedZone(initialZone);
     }
@@ -110,10 +110,10 @@ public class SecurityZoneWidget extends JPanel {
             loadedZones.addAll(SecurityZoneUtil.getSortedZonesForOperationAndEntityType(null, entityTypes));
         } else if (operation == OperationType.READ) {
             // show the zone set on the entity if possible
-            if (initialZone.equals(SecurityZoneUtil.NULL_ZONE) || SecurityZoneUtil.getSortedReadableSecurityZones().contains(initialZone)) {
+            if (initialZone.equals(SecurityZoneUtil.getNullZone()) || SecurityZoneUtil.getSortedReadableSecurityZones().contains(initialZone)) {
                 loadedZones.add(initialZone);
             } else {
-                loadedZones.add(SecurityZoneUtil.CURRENT_UNAVAILABLE_ZONE);
+                loadedZones.add(SecurityZoneUtil.getCurrentUnavailableZone());
             }
         } else if (operation == OperationType.UPDATE) {
             if (specificEntity != null) {
@@ -124,7 +124,7 @@ public class SecurityZoneWidget extends JPanel {
                 final SecurityZone originalZone = specificEntity.getSecurityZone();
                 specificEntity.setSecurityZone(null);
                 if (securityProvider.hasPermission(new AttemptedUpdate(type, specificEntity))) {
-                    loadedZones.add(SecurityZoneUtil.NULL_ZONE);
+                    loadedZones.add(SecurityZoneUtil.getNullZone());
                 }
                 for (final SecurityZone zone : SecurityZoneUtil.getSortedReadableSecurityZones()) {
                     specificEntity.setSecurityZone(zone);
@@ -136,7 +136,7 @@ public class SecurityZoneWidget extends JPanel {
 
                 if (originalZone != null && !loadedZones.contains(initialZone)) {
                     // user can't read the currently set zone
-                    loadedZones.add(0, SecurityZoneUtil.CURRENT_UNAVAILABLE_ZONE);
+                    loadedZones.add(0, SecurityZoneUtil.getCurrentUnavailableZone());
                 }
             } else {
                 // guess by analyzing permissions
@@ -171,10 +171,10 @@ public class SecurityZoneWidget extends JPanel {
     @Nullable
     public SecurityZone getSelectedZone() {
         SecurityZone ret = (SecurityZone) zonesComboBox.getSelectedItem();
-        if (SecurityZoneUtil.NULL_ZONE == ret) {
+        if (SecurityZoneUtil.getNullZone() == ret) {
             ret = null;
         }
-        if (SecurityZoneUtil.CURRENT_UNAVAILABLE_ZONE == ret) {
+        if (SecurityZoneUtil.getCurrentUnavailableZone().equals(ret)) {
             // don't change the current zone
             ret = initialZone;
         }
@@ -183,13 +183,13 @@ public class SecurityZoneWidget extends JPanel {
 
     public void setSelectedZone(@Nullable SecurityZone zone) {
         if (zone == null) {
-            zone = SecurityZoneUtil.NULL_ZONE;
+            zone = SecurityZoneUtil.getNullZone();
         }
         if (loadedZones.contains(zone)) {
             zonesComboBox.setSelectedItem(zone);
         } else {
             // selected zone is not available
-            zonesComboBox.setSelectedItem(SecurityZoneUtil.CURRENT_UNAVAILABLE_ZONE);
+            zonesComboBox.setSelectedItem(SecurityZoneUtil.getCurrentUnavailableZone());
         }
     }
 

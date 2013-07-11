@@ -153,7 +153,7 @@ public final class RootNode extends FolderNode {
      * a given service manager with the name.
      */
     public RootNode(String name) {
-        this(name, new FolderHeader(OID, name, null, 0, "/", SecurityZoneUtil.CURRENT_UNAVAILABLE_ZONE.getOid()));
+        this(name, new FolderHeader(OID, name, null, 0, "/", SecurityZoneUtil.getCurrentUnavailableZone().getOid()));
     }
 
     public RootNode(String name, @NotNull final FolderHeader rootFolderHeader) {
