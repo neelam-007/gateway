@@ -1,6 +1,7 @@
 package com.l7tech.gateway.common.service;
 
-import com.l7tech.objectmodel.imp.PersistentEntityImp;
+import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.imp.GoidEntityImp;
 
 /**
  * A statistical bin for collected service metrics.
@@ -11,16 +12,16 @@ import com.l7tech.objectmodel.imp.PersistentEntityImp;
  * Each bin contains details that break down the higher level information
  * contained in the parent metrics bin.
  */
-public class MetricsBinDetail extends PersistentEntityImp {
+public class MetricsBinDetail extends GoidEntityImp {
 
     //- PUBLIC
 
-    public long getMetricsBinOid() {
-        return metricsBinOid;
+    public Goid getMetricsBinGoid() {
+        return metricsBinGoid;
     }
 
-    public void setMetricsBinOid(long metricsBinOid) {
-        this.metricsBinOid = metricsBinOid;
+    public void setMetricsBinGoid(Goid metricsBinGoid) {
+        this.metricsBinGoid = metricsBinGoid;
     }
 
     public long getMappingValuesOid() {
@@ -113,7 +114,7 @@ public class MetricsBinDetail extends PersistentEntityImp {
         MetricsBinDetail that = (MetricsBinDetail) o;
 
         if (mappingValuesOid != that.mappingValuesOid) return false;
-        if (metricsBinOid != that.metricsBinOid) return false;
+        if (metricsBinGoid != that.metricsBinGoid) return false;
 
         return true;
     }
@@ -121,14 +122,14 @@ public class MetricsBinDetail extends PersistentEntityImp {
     @Override
     public int hashCode() {
         int result = super.hashCode();
-        result = 31 * result + (int) (metricsBinOid ^ (metricsBinOid >>> 32));
+        result = 31 * result + metricsBinGoid.hashCode();
         result = 31 * result + (int) (mappingValuesOid ^ (mappingValuesOid >>> 32));
         return result;
     }
 
     //- PRIVATE
 
-    private long metricsBinOid;
+    private Goid metricsBinGoid;
     private long mappingValuesOid;
 
     private int numAttemptedRequest;

@@ -147,3 +147,16 @@ INSERT INTO cluster_properties
 
 --- JdbcConnection
 ALTER TABLE jdbc_connection ADD COLUMN goid CHAR(16) FOR BIT DATA;
+
+-- MetricsBin, MetricsBinDetail  - metrics are not enabled for derby, no data to upgrade
+ALTER TABLE service_metrics DROP PRIMARY KEY;
+ALTER TABLE service_metrics ADD COLUMN goid CHAR(16) FOR BIT DATA;
+ALTER TABLE service_metrics ALTER COLUMN goid NOT NULL;
+ALTER TABLE service_metrics DROP COLUMN objectid;
+ALTER TABLE service_metrics ADD PRIMARY KEY (goid);
+
+ALTER TABLE service_metrics_details DROP PRIMARY KEY;
+ALTER TABLE service_metrics_details ADD COLUMN service_metrics_goid CHAR(16) FOR BIT DATA;
+ALTER TABLE service_metrics_details ALTER COLUMN service_metrics_goid NOT NULL;
+ALTER TABLE service_metrics_details DROP COLUMN service_metrics_goid;
+ALTER TABLE service_metrics_details ADD PRIMARY KEY (service_metrics_oid, mapping_values_oid);

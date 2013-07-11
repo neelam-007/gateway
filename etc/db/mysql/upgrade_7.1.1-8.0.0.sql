@@ -163,6 +163,24 @@ set @jdbc_prefix=concat(lpad(char(#RANDOM_INT#),4,'\0'),lpad(char(#RANDOM_INT#),
 update jdbc_connection set goid = concat(@jdbc_prefix,lpad(char(objectid_backup),8,'\0'));
 ALTER TABLE jdbc_connection DROP COLUMN objectid_backup;
 
+-- MetricsBin, MetricsBinDetail
+ALTER TABLE service_metrics_details DROP FOREIGN KEY service_metrics_details_ibfk_1;
+
+ALTER TABLE service_metrics ADD COLUMN objectid_backup BIGINT(20);
+UPDATE service_metrics SET objectid_backup=objectid;
+ALTER TABLE service_metrics CHANGE COLUMN objectid goid VARBINARY(16);
+-- For manual runs use: set @metrics_prefix=concat(lpad(char(floor(rand()*4294967296)),4,'\0'),lpad(char(floor(rand()*4294967296)),4,'\0'));
+SET @metrics_prefix=concat(lpad(char(#RANDOM_INT#),4,'\0'),lpad(char(#RANDOM_INT#),4,'\0'));
+UPDATE service_metrics SET goid = concat(@metrics_prefix,lpad(char(objectid_backup),8,'\0'));
+ALTER TABLE service_metrics DROP COLUMN objectid_backup;
+
+ALTER TABLE service_metrics_details ADD COLUMN service_metrics_oid_backup BIGINT(20);
+UPDATE service_metrics_details SET service_metrics_oid_backup=service_metrics_oid;
+ALTER TABLE service_metrics_details CHANGE COLUMN service_metrics_oid service_metrics_goid VARBINARY(16);
+UPDATE service_metrics_details SET service_metrics_goid = concat(@metrics_prefix,lpad(char(service_metrics_oid_backup),8,'\0'));
+ALTER TABLE service_metrics_details DROP COLUMN service_metrics_oid_backup;
+
+ALTER TABLE service_metrics_details  ADD FOREIGN KEY (service_metrics_goid) REFERENCES service_metrics (goid) ON DELETE CASCADE;
 
 --
 -- Reenable FK at very end of script

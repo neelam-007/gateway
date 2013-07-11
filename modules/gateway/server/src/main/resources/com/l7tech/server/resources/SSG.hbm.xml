@@ -145,8 +145,8 @@
     </class>
 
     <class name="com.l7tech.gateway.common.service.MetricsBin" table="service_metrics">
-        <id name="oid" column="objectid" type="long" unsaved-value="-1">
-            <generator class="layer7-generator"/>
+        <id name="goid" column="goid" type="goid">
+            <generator class="layer7-goid-generator"/>
         </id>
 
         <property name="clusterNodeId" column="nodeid" type="string"/>
@@ -176,7 +176,7 @@
 
     <class name="com.l7tech.gateway.common.service.MetricsBinDetail" table="service_metrics_details">
         <composite-id>
-            <key-property name="metricsBinOid" column="service_metrics_oid" type="long"/>
+            <key-property name="metricsBinGoid" column="service_metrics_goid" type="goid"/>
             <key-property name="mappingValuesOid" column="mapping_values_oid" type="long"/>
         </composite-id>        
 

@@ -9,6 +9,7 @@ import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.mapping.MessageContextMappingManager;
@@ -315,8 +316,8 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport implements Se
                     criteria.add(Restrictions.eq("periodStart", bin.getPeriodStart()));
                     final MetricsBin existing = (MetricsBin) criteria.uniqueResult();
                     if (existing == null) {
-                        Long id = (Long) session.save(bin);
-                        saveDetails(session, id, metricsSet.getDetailMetrics());
+                        Goid goid = (Goid) session.save(bin);
+                        saveDetails(session, goid, metricsSet.getDetailMetrics());
                     } else {
                         if (_logger.isLoggable(Level.FINE)) {
                             _logger.log(Level.FINE, "Merging contents of duplicate MetricsBin [ClusterNodeId={0}; ServiceOid={1}; Resolution={2}; PeriodStart={3}]",
@@ -332,7 +333,7 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport implements Se
                                 PreparedStatement statement = null;
                                 try {
                                     statement = connection.prepareStatement( SQL_DELETE_DETAILS );
-                                    statement.setLong( 1, existing.getOid() );
+                                    statement.setBytes(1, existing.getGoid().getBytes());
                                     int count = statement.executeUpdate();
                                     if (_logger.isLoggable(Level.FINE)) {
                                         _logger.log(Level.FINE, "Deleted {4} detail metrics bins [ClusterNodeId={0}; ServiceOid={1}; Resolution={2}; PeriodStart={3}]",
@@ -344,7 +345,7 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport implements Se
                             }
                         } );
 
-                        saveDetails(session, existing.getOid(), metricsSet.getDetailMetrics());
+                        saveDetails(session, existing.getGoid(), metricsSet.getDetailMetrics());
                     }
                     return null;
                 }
@@ -370,11 +371,11 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport implements Se
     }
 
     private static final String HQL_DELETE = "DELETE FROM " + MetricsBin.class.getName() + " WHERE periodStart < ? AND resolution = ?";
-    private static final String SQL_DELETE_DETAILS = "DELETE FROM service_metrics_details WHERE service_metrics_oid = ?";
+    private static final String SQL_DELETE_DETAILS = "DELETE FROM service_metrics_details WHERE service_metrics_goid = ?";
 
     private static final String SQL_INSERT_OR_UPDATE_BIN =
         "INSERT INTO service_metrics\n" +
-        "    (objectid,nodeid,published_service_oid,resolution,period_start,interval_size,service_state,\n" +
+        "    (goid,nodeid,published_service_oid,resolution,period_start,interval_size,service_state,\n" +
         "     start_time,end_time,attempted,authorized,completed,back_min,back_max,back_sum,front_min,front_max,front_sum)\n" +
         "SELECT ?,?,?,?,?,?,?,\n" +
         "    min(start_time),\n" +
@@ -411,10 +412,10 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport implements Se
 
     private static final String SQL_INSERT_OR_UPDATE_DETAILS =
         "INSERT INTO service_metrics_details\n" +
-        "    (service_metrics_oid,mapping_values_oid,attempted,authorized,completed,back_min,back_max,back_sum,front_min,front_max,front_sum)\n" +
+        "    (service_metrics_goid,mapping_values_oid,attempted,authorized,completed,back_min,back_max,back_sum,front_min,front_max,front_sum)\n" +
         "SELECT\n" +
         "    (\n" +
-        "        SELECT objectid FROM service_metrics WHERE\n" +
+        "        SELECT goid FROM service_metrics WHERE\n" +
         "        nodeid=? AND\n" +
         "        published_service_oid=? AND\n" +
         "        resolution=? AND\n" +
@@ -432,7 +433,7 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport implements Se
         "    IF(coalesce(sum(smd.front_sum),0)>2147483647,2147483647,coalesce(sum(smd.front_sum),0))\n" +
         "FROM service_metrics sm, service_metrics_details smd\n"+
         "WHERE " +
-        "    sm.objectid = smd.service_metrics_oid AND\n"+
+        "    sm.goid = smd.service_metrics_goid AND\n"+
         "    sm.nodeid=? AND\n" +
         "    sm.published_service_oid=? AND\n" +
         "    sm.resolution=? AND\n" +
@@ -489,7 +490,7 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport implements Se
                 @SuppressWarnings({"deprecation"})
                 public Object doInHibernate(final Session session) throws HibernateException {
                     final MetricsBin bin = new MetricsBin(startTime, getFineInterval(), binResolution, _clusterNodeId, serviceOid);
-                    final Long id = (Long) ((SessionImplementor) session).getEntityPersister(null, bin).getIdentifierGenerator().generate(((SessionImplementor) session), bin);
+                    final Goid goid = (Goid) ((SessionImplementor) session).getEntityPersister(null, bin).getIdentifierGenerator().generate(((SessionImplementor) session), bin);
 
                     session.doWork(new Work() {
                         @Override
@@ -500,7 +501,7 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport implements Se
 
                                 int i = 0;
                                 // INSERT PARAMS
-                                statement.setLong(++i, id);
+                                statement.setBytes(++i, goid.getBytes());
                                 statement.setString(++i, _clusterNodeId);
                                 statement.setLong(++i, serviceOid);
                                 statement.setInt(++i, binResolution);
@@ -554,11 +555,11 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport implements Se
         }
     }
 
-    private void saveDetails( final Session session, final Long id, final Map<ServiceMetrics.MetricsDetailKey,ServiceMetrics.MetricsCollector> detailMap ) {
+    private void saveDetails( final Session session, final Goid goid, final Map<ServiceMetrics.MetricsDetailKey,ServiceMetrics.MetricsCollector> detailMap ) {
         if ( detailMap != null ) {
             for ( Map.Entry<ServiceMetrics.MetricsDetailKey,ServiceMetrics.MetricsCollector> entry : detailMap.entrySet() ) {
                 MetricsBinDetail details = new MetricsBinDetail();
-                details.setMetricsBinOid( id );
+                details.setMetricsBinGoid(goid);
                 details.setMappingValuesOid( saveMessageContextMapping( entry.getKey() ) );
 
                 if ( entry.getValue().getNumAttemptedRequest() > 0 ) {

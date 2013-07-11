@@ -1,6 +1,6 @@
 package com.l7tech.gateway.common.service;
 
-import com.l7tech.objectmodel.imp.PersistentEntityImp;
+import com.l7tech.objectmodel.imp.GoidEntityImp;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -20,7 +20,7 @@ import java.util.logging.Logger;
  *
  * @author rmak
  */
-public class MetricsBin extends PersistentEntityImp implements Comparable {
+public class MetricsBin extends GoidEntityImp implements Comparable {
     public static final String ATTR_SERVICE_OID = "serviceOid";
 
     /** The value to be used for {@link MetricsBin#getResolution()} to indicate that this bin is fine resolution */

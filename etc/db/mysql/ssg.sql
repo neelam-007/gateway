@@ -835,7 +835,7 @@ CREATE TABLE sample_messages (
 
 DROP TABLE IF EXISTS service_metrics;
 CREATE TABLE service_metrics (
-  objectid bigint(20) NOT NULL,
+  goid VARBINARY(16) NOT NULL,
   nodeid VARCHAR(32) NOT NULL,
   published_service_oid BIGINT(20) NOT NULL,
   resolution INTEGER NOT NULL,
@@ -856,13 +856,13 @@ CREATE TABLE service_metrics (
   INDEX i_sm_nodeid (nodeid),
   INDEX i_sm_serviceoid (published_service_oid),
   INDEX i_sm_pstart (period_start),
-  PRIMARY KEY (objectid),
+  PRIMARY KEY (goid),
   UNIQUE (nodeid, published_service_oid, resolution, period_start)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
 DROP TABLE IF EXISTS service_metrics_details;
 CREATE TABLE service_metrics_details (
-  service_metrics_oid BIGINT(20) NOT NULL,
+  service_metrics_goid VARBINARY(16) NOT NULL,
   mapping_values_oid BIGINT(20) NOT NULL,
   attempted INTEGER NOT NULL,
   authorized INTEGER NOT NULL,
@@ -873,8 +873,8 @@ CREATE TABLE service_metrics_details (
   front_min INTEGER,
   front_max INTEGER,
   front_sum INTEGER NOT NULL,
-  PRIMARY KEY (service_metrics_oid, mapping_values_oid),
-  FOREIGN KEY (service_metrics_oid) REFERENCES service_metrics (objectid) ON DELETE CASCADE,
+  PRIMARY KEY (service_metrics_goid, mapping_values_oid),
+  CONSTRAINT service_metrics_goid FOREIGN KEY (service_metrics_goid) REFERENCES service_metrics (goid) ON DELETE CASCADE,
   FOREIGN KEY (mapping_values_oid) REFERENCES message_context_mapping_values (objectid)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 

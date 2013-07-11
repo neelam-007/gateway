@@ -777,7 +777,7 @@ create table service_documents (
 );
 
 create table service_metrics (
-    objectid bigint not null,
+    goid CHAR(16) FOR BIT DATA not null,
     nodeid varchar(255),
     published_service_oid bigint,
     resolution integer,
@@ -799,7 +799,7 @@ create table service_metrics (
 );
 
 create table service_metrics_details (
-    service_metrics_oid bigint not null,
+    service_metrics_goid CHAR(16) FOR BIT DATA not null,
     mapping_values_oid bigint not null,
     attempted integer,
     authorized integer,
@@ -810,7 +810,7 @@ create table service_metrics_details (
     front_min integer,
     front_sum bigint,
     front_max integer,
-    primary key (service_metrics_oid, mapping_values_oid)
+    primary key (service_metrics_goid, mapping_values_oid)
 );
 
 create table service_usage (
