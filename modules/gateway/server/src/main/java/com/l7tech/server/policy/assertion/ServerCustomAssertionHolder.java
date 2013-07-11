@@ -183,12 +183,14 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
                         CustomPolicyContextImpl policyContext = null;
                         CustomServiceResponse customServiceResponse = null;
                         CustomServiceRequest customServiceRequest = null;
-                        Map defaultContextMap = createDefaultContextMap(context);
 
                         try {
+                            Map defaultContextMap;
                             if (isPostRouting(context) && context.getResponse().isInitialized() && context.getResponse().getKnob(MimeKnob.class) != null) {
+                                defaultContextMap = createDefaultContextMap(context, context.getResponse());
                                 customServiceResponse = new CustomServiceResponse(context, defaultContextMap);
                             } else {
+                                defaultContextMap = createDefaultContextMap(context, context.getRequest());
                                 customServiceRequest = new CustomServiceRequest(context, defaultContextMap);
                             }
                             policyContext = new CustomPolicyContextImpl(context, defaultContextMap, customServiceRequest, customServiceResponse);
@@ -393,14 +395,14 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
      * @return hash-map containing the default list of context objects.
      * @throws IOException if extractParts throws
      */
-    private Map<String, Object> createDefaultContextMap(PolicyEnforcementContext pec) throws IOException {
+    private Map<String, Object> createDefaultContextMap(PolicyEnforcementContext pec, Message msg) throws IOException {
         final Map<String, Object> context = new HashMap<>();
 
         // add HttpServletRequest, HttpServletRequest header values and HttpServletResponse.
         saveServletKnobs(pec, context);
 
         // plug in the message parts in here (needed for legacy code)
-        context.put("messageParts", extractParts(pec.getResponse()));
+        context.put("messageParts", extractParts(msg));
 
         //add the ServiceFinder
         final ServiceFinderImpl serviceFinder = new ServiceFinderImpl();

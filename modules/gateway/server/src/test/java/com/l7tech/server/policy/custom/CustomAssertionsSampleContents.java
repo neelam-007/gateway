@@ -51,8 +51,9 @@ public class CustomAssertionsSampleContents {
 
     // app/octet
     static public final String MULTIPART_APP_OCTET_PART_CONTENT_ID = "102";
+    static public final String MULTIPART_APP_OCTET_PART_CONTENT_TYPE = "application/octet-stream";
     static public final String MULTIPART_APP_OCTET_PART_HEADER = "Content-Transfer-Encoding: 8bit" + CRLF +
-            "Content-Type: application/octet-stream" + CRLF +
+            "Content-Type: " + MULTIPART_APP_OCTET_PART_CONTENT_TYPE + CRLF +
             "Content-ID: " + MULTIPART_APP_OCTET_PART_CONTENT_ID + CRLF;
     static public final String MULTIPART_APP_OCTET_PART_CONTENT = "require 'soap/rpc/driver'\n" +
             "require 'soap/attachment'\n" +
@@ -76,22 +77,25 @@ public class CustomAssertionsSampleContents {
 
     // SOAP/XML
     static public final String MULTIPART_SOAP_PART_CONTENT_ID = "101";
+    static public final String MULTIPART_SOAP_PART_CONTENT_TYPE = "application/soap+xml; charset=utf-8";
     static public final String MULTIPART_SOAP_PART_HEADER = "Content-Transfer-Encoding: 8bit" + CRLF +
-            "Content-Type: application/soap+xml; charset=utf-8" + CRLF +
+            "Content-Type: " + MULTIPART_SOAP_PART_CONTENT_TYPE + CRLF +
             "Content-ID: " + MULTIPART_SOAP_PART_CONTENT_ID + CRLF;
     static public final String MULTIPART_SOAP_PART_CONTENT = SOAP_CONTENT + "\n";
 
     // json
     static public final String MULTIPART_JSON_PART_CONTENT_ID = "103";
+    static public final String MULTIPART_JSON_PART_CONTENT_TYPE = "application/json; charset=utf-8";
     static public final String MULTIPART_JSON_PART_HEADER = "Content-Transfer-Encoding: 8bit" + CRLF +
-            "Content-Type: application/json; charset=utf-8" + CRLF +
+            "Content-Type: " + MULTIPART_JSON_PART_CONTENT_TYPE + CRLF +
             "Content-ID: " + MULTIPART_JSON_PART_CONTENT_ID + CRLF;
     static public final String MULTIPART_JSON_PART_CONTENT = JSON_CONTENT + "\n";
 
     // xml
     static public final String MULTIPART_XML_PART_CONTENT_ID = "104";
+    static public final String MULTIPART_XML_PART_CONTENT_TYPE = "text/xml; charset=utf-8";
     static public final String MULTIPART_XML_PART_HEADER = "Content-Transfer-Encoding: 8bit" + CRLF +
-            "Content-Type: text/xml; charset=utf-8" + CRLF +
+            "Content-Type: " + MULTIPART_XML_PART_CONTENT_TYPE + CRLF +
             "Content-ID: " + MULTIPART_XML_PART_CONTENT_ID + CRLF;
     static public final String MULTIPART_XML_PART_CONTENT = XML_CONTENT + "\n";
     

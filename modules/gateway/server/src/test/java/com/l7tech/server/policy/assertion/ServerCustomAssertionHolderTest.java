@@ -1,7 +1,10 @@
 package com.l7tech.server.policy.assertion;
 
+import com.l7tech.common.http.CookieUtils;
+import com.l7tech.common.http.HttpCookie;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ByteArrayStashManager;
+import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.StashManager;
 import com.l7tech.message.*;
 import com.l7tech.policy.assertion.*;
@@ -12,8 +15,10 @@ import com.l7tech.policy.assertion.ext.targetable.CustomMessageTargetable;
 import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.ServerPolicyFactory;
+import com.l7tech.server.policy.ServiceFinderImpl;
 import com.l7tech.server.policy.assertion.composite.ServerAllAssertion;
 import com.l7tech.server.policy.custom.CustomAssertionsPolicyTestBase;
+import com.l7tech.server.policy.custom.CustomAssertionsSampleContents;
 import com.l7tech.util.HexUtils;
 
 import org.junit.Before;
@@ -29,9 +34,13 @@ import org.mockito.*;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpServletResponse;
 import org.w3c.dom.Document;
 
 import javax.security.auth.login.FailedLoginException;
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletResponseWrapper;
 import javax.xml.parsers.ParserConfigurationException;
 
 import static org.mockito.Mockito.*;
@@ -348,4 +357,384 @@ public class ServerCustomAssertionHolderTest extends CustomAssertionsPolicyTestB
         assertEquals(AssertionStatus.NONE, status);
     }
 
+    /**
+     * Simple utility function to check if two cookies of type {@link javax.servlet.http.Cookie javax.servlet.http.Cookie} are equal.
+     * The function only compares against the cookie name, value, version, path and domain,
+     * since these are the only values we set in the unbit-test
+     *
+     * @param cookie1 the first cookie
+     * @param cookie2 the second cookie
+     * @return true if <tt>cookie1</tt> equals <tt>cookie2</tt>
+     */
+    private boolean compareCookie(Cookie cookie1, Cookie cookie2) {
+        return cookie1.getName().equals(cookie2.getName()) &&
+                cookie1.getValue().equals(cookie2.getValue()) &&
+                cookie1.getVersion() == cookie2.getVersion() &&
+                cookie1.getPath().equals(cookie2.getPath()) &&
+                cookie1.getDomain().equals(cookie2.getDomain());
+    }
+
+    /**
+     * Creates a sample before routing policy having a custom assertion and hardcoded response, in that order.
+     * @return AllAssertion object having a custom assertion and hardcoded response as child's.
+     */
+    private Assertion createBeforeRoutingPolicy() {
+        final CustomAssertionHolder customAssertionHolder = new CustomAssertionHolder();
+        customAssertionHolder.setCategories(Category.AUDIT_ALERT);
+        customAssertionHolder.setDescriptionText("Test Custom Assertion");
+        customAssertionHolder.setCustomAssertion(new TestLegacyCustomAssertion());
+
+        final HardcodedResponseAssertion responseAssertion = new HardcodedResponseAssertion();
+        responseAssertion.setResponseContentType("text/xml; charset=UTF-8");
+        responseAssertion.setResponseStatus(HardcodedResponseAssertion.DEFAULT_STATUS);
+        responseAssertion.setBase64ResponseBody(HexUtils.encodeBase64(SAMPLE_XML_OUT_MESSAGE.getBytes()));
+
+        return makePolicy(Arrays.<Assertion>asList(customAssertionHolder, responseAssertion));
+    }
+
+    /**
+     * Creates a sample after routing policy having a hardcoded response and a custom assertion, in that order.
+     * @return AllAssertion object having a hardcoded response and a custom assertion as child's.
+     */
+    private Assertion createAfterRoutingPolicy() {
+        final HardcodedResponseAssertion responseAssertion = new HardcodedResponseAssertion();
+        responseAssertion.setResponseContentType(CustomAssertionsSampleContents.MULTIPART_FIRST_PART_APP_OCTET_CONTENT_TYPE);
+        responseAssertion.setResponseStatus(HardcodedResponseAssertion.DEFAULT_STATUS);
+        responseAssertion.setBase64ResponseBody(HexUtils.encodeBase64(CustomAssertionsSampleContents.MULTIPART_FIRST_PART_APP_OCTET_CONTENT.getBytes()));
+
+        final CustomAssertionHolder customAssertionHolder = new CustomAssertionHolder();
+        customAssertionHolder.setCategories(Category.AUDIT_ALERT);
+        customAssertionHolder.setDescriptionText("Test Custom Assertion");
+        customAssertionHolder.setCustomAssertion(new TestLegacyCustomAssertion());
+
+        return makePolicy(Arrays.<Assertion>asList(responseAssertion, customAssertionHolder));
+    }
+
+    // test http cookies
+    private final HttpCookie[] testHttpCookies = {
+            new HttpCookie("cookie1", "cookie1_value", 1, "path1", "domain1"),
+            new HttpCookie("cookie2", "cookie2_value", 2, "path2", "domain2")
+    };
+
+    // test HttpServletRequest
+    private MockHttpServletRequest httpServletRequest = null;
+
+    // test HttpServletResponse
+    private MockHttpServletResponse httpServletResponse = null;
+
+    /**
+     * Creates a PolicyEnforcementContext with empty request and empty response,
+     * with attached HttpRequestKnob and HttpResponseKnob respectively.
+     *
+     * @return the PolicyEnforcementContext object
+     */
+    private PolicyEnforcementContext createPolicyContext() throws Exception {
+        // build the request
+        final Message request = new Message();
+        httpServletRequest = new MockHttpServletRequest();
+        httpServletRequest.setMethod("GET");
+        httpServletRequest.addHeader("request_header1", "request_header1_value");
+        httpServletRequest.addHeader("request_header2", new String[] {"request_header2_value1", "request_header2_value2"});
+        request.attachHttpRequestKnob(new HttpServletRequestKnob(httpServletRequest));
+
+        // build the response
+        final Message response = new Message();
+        httpServletResponse = new MockHttpServletResponse();
+        httpServletResponse.addHeader("response_header1", "response_header1_value");
+        httpServletResponse.addHeader("response_header2", "response_header2_value1");
+        response.attachHttpResponseKnob(new HttpServletResponseKnob(httpServletResponse));
+
+        // build the context
+        final PolicyEnforcementContext context = makeContext(request, response);
+        context.addCookie(testHttpCookies[0]);
+        context.addCookie(testHttpCookies[1]);
+
+        return context;
+    }
+
+    /**
+     * Do the actual context map tests for legacy
+     */
+    private void doTestLegacyContextMap(Map<String, Object> contextMap) {
+
+        //noinspection unchecked
+        Vector<Cookie> updatedCookies = (Vector<Cookie>)contextMap.get("updatedCookies"); // let it throw if its not of type Vector<Cookie>
+        //noinspection unchecked
+        Collection<Cookie> originalCookies = (Collection<Cookie>)contextMap.get("originalCookies"); // let it throw if its not of type Collection<Cookie>
+
+        // verify the cookies are properly set
+        assertTrue(compareCookie(updatedCookies.get(0), CookieUtils.toServletCookie(testHttpCookies[0])));
+        assertTrue(compareCookie(updatedCookies.get(1), CookieUtils.toServletCookie(testHttpCookies[1])));
+        // originalCookies should be the same as updatedCookies
+        assertTrue(Arrays.equals(updatedCookies.toArray(), originalCookies.toArray()));
+
+        // verify messageParts
+        assertTrue(contextMap.get("messageParts") instanceof Object[][]);
+        Object[][] messageParts = (Object[][])contextMap.get("messageParts");
+
+        assertSame(4, messageParts.length);
+
+        assertTrue(messageParts[0][0] instanceof String);
+        assertTrue(messageParts[0][1] instanceof byte[]);
+        assertEquals(messageParts[0][0], CustomAssertionsSampleContents.MULTIPART_APP_OCTET_PART_CONTENT_TYPE);
+        assertTrue(Arrays.equals((byte[])messageParts[0][1], CustomAssertionsSampleContents.MULTIPART_APP_OCTET_PART_CONTENT.getBytes()));
+
+        assertTrue(messageParts[1][0] instanceof String);
+        assertTrue(messageParts[1][1] instanceof byte[]);
+        assertEquals(messageParts[1][0], CustomAssertionsSampleContents.MULTIPART_XML_PART_CONTENT_TYPE);
+        assertTrue(Arrays.equals((byte[])messageParts[1][1], CustomAssertionsSampleContents.MULTIPART_XML_PART_CONTENT.getBytes()));
+
+        assertTrue(messageParts[2][0] instanceof String);
+        assertTrue(messageParts[2][1] instanceof byte[]);
+        assertEquals(messageParts[2][0], CustomAssertionsSampleContents.MULTIPART_JSON_PART_CONTENT_TYPE);
+        assertTrue(Arrays.equals((byte[])messageParts[2][1], CustomAssertionsSampleContents.MULTIPART_JSON_PART_CONTENT.getBytes()));
+
+        assertTrue(messageParts[3][0] instanceof String);
+        assertTrue(messageParts[3][1] instanceof byte[]);
+        assertEquals(messageParts[3][0], CustomAssertionsSampleContents.MULTIPART_SOAP_PART_CONTENT_TYPE);
+        assertTrue(Arrays.equals((byte[])messageParts[3][1], CustomAssertionsSampleContents.MULTIPART_SOAP_PART_CONTENT.getBytes()));
+
+        // verify serviceFinder
+        assertTrue(contextMap.get("serviceFinder") instanceof ServiceFinderImpl);
+
+        // verify servlet knobs
+        assertTrue(Arrays.equals((String[])contextMap.get("request.http.headerValues.request_header1"), new String[] {"request_header1_value"}));
+        assertTrue(Arrays.equals((String[])contextMap.get("request.http.headerValues.request_header2"), new String[] {"request_header2_value1", "request_header2_value2"}));
+        assertEquals(contextMap.get("httpRequest"), httpServletRequest);
+        assertNull("no response http headers", contextMap.get("request.http.headerValues.response_header1"));
+        assertNull("no response http headers", contextMap.get("request.http.headerValues.response_header2"));
+        assertEquals(((HttpServletResponseWrapper)contextMap.get("httpResponse")).getResponse(), httpServletResponse);
+    }
+
+    @Test
+    public void testLegacyContextMapBeforeRouting() throws Exception {
+        final Assertion ass = createBeforeRoutingPolicy();
+        assertTrue("Is AllAssertion", ass instanceof AllAssertion);
+        final AllAssertion allAssertion = (AllAssertion)ass;
+
+        assertTrue(allAssertion.getChildren().get(0) instanceof CustomAssertionHolder);
+        serviceInvocation.setCustomAssertion(((CustomAssertionHolder) allAssertion.getChildren().get(0)).getCustomAssertion());
+
+        // build the context (creates empty request and response)
+        final PolicyEnforcementContext context = createPolicyContext();
+        // initialize the request
+        context.getRequest().initialize(
+                ContentTypeHeader.parseValue(CustomAssertionsSampleContents.MULTIPART_FIRST_PART_APP_OCTET_CONTENT_TYPE),
+                CustomAssertionsSampleContents.MULTIPART_FIRST_PART_APP_OCTET_CONTENT.getBytes()
+        );
+
+        //noinspection deprecation
+        doAnswer(new Answer<Void>() {
+            @Override
+            public Void answer(final InvocationOnMock invocation) throws Throwable {
+                assertTrue("there is only one parameter for onRequest", invocation.getArguments().length == 1);
+
+                Object param1 = invocation.getArguments()[0];
+                assertTrue("Param is ServiceRequest", param1 instanceof ServiceRequest);
+                ServiceRequest request = (ServiceRequest) param1;
+
+                //noinspection unchecked
+                doTestLegacyContextMap(request.getContext()); // let it throw if its not of type Map<String, Object>
+
+                return null;
+            }
+        }).when(serviceInvocation).onRequest(Matchers.<ServiceRequest>any());
+
+        //noinspection deprecation
+        doAnswer(new Answer<Void>() {
+            @Override
+            public Void answer(final InvocationOnMock invocation) throws Throwable {
+                fail("onResponse should not be called when policy is before routing assertion!");
+                return null;
+            }
+        }).when(serviceInvocation).onResponse(Matchers.<ServiceResponse>any());
+
+        final ServerAssertion serverAssertion = serverPolicyFactory.compilePolicy(allAssertion, false);
+        assertTrue("Is instance of ServerAllAssertion", serverAssertion instanceof ServerAllAssertion);
+        final ServerAllAssertion serverAllAssertion = (ServerAllAssertion)serverAssertion;
+
+        AssertionStatus status = serverAllAssertion.checkRequest(context);
+        assertEquals(AssertionStatus.NONE, status);
+
+        // just to be persistent make sure response is properly set
+        final Document outDoc = XmlUtil.stringToDocument(SAMPLE_XML_OUT_MESSAGE);
+        outDoc.normalizeDocument();
+        final Document resDoc = context.getResponse().getXmlKnob().getDocumentReadOnly();
+        assertNotNull("Response is not NULL", resDoc);
+        resDoc.normalizeDocument();
+        assertTrue("Source Target Message Document is same as TargetMessage document", outDoc.isEqualNode(resDoc));
+    }
+
+    @Test
+    public void testLegacyContextMapAfterRouting() throws Exception {
+        final Assertion ass = createAfterRoutingPolicy();
+        assertTrue("Is AllAssertion", ass instanceof AllAssertion);
+        final AllAssertion allAssertion = (AllAssertion)ass;
+
+        assertTrue(allAssertion.getChildren().get(1) instanceof CustomAssertionHolder);
+        serviceInvocation.setCustomAssertion(((CustomAssertionHolder) allAssertion.getChildren().get(1)).getCustomAssertion());
+
+        // build the context
+        final PolicyEnforcementContext context = createPolicyContext();
+
+        //noinspection deprecation
+        doAnswer(new Answer<Void>() {
+            @Override
+            public Void answer(final InvocationOnMock invocation) throws Throwable {
+                assertTrue("there is only one parameter for onResponse", invocation.getArguments().length == 1);
+
+                Object param1 = invocation.getArguments()[0];
+                assertTrue("Param is ServiceResponse", param1 instanceof ServiceResponse);
+                ServiceResponse response = (ServiceResponse)param1;
+
+                //noinspection unchecked
+                doTestLegacyContextMap(response.getContext()); // let it throw if its not of type Map<String, Object>
+
+                return null;
+            }
+        }).when(serviceInvocation).onResponse(Matchers.<ServiceResponse>any());
+
+        //noinspection deprecation
+        doAnswer(new Answer<Void>() {
+            @Override
+            public Void answer(final InvocationOnMock invocation) throws Throwable {
+                fail("onRequest should not be called when policy is after routing assertion!");
+                return null;
+            }
+        }).when(serviceInvocation).onRequest(Matchers.<ServiceRequest>any());
+
+        final ServerAssertion serverAssertion = serverPolicyFactory.compilePolicy(allAssertion, false);
+        assertTrue("Is instance of ServerAllAssertion", serverAssertion instanceof ServerAllAssertion);
+        final ServerAllAssertion serverAllAssertion = (ServerAllAssertion)serverAssertion;
+
+        AssertionStatus status = serverAllAssertion.checkRequest(context);
+        assertEquals(AssertionStatus.NONE, status);
+    }
+
+    @Test
+    public void testContextMapBeforeRouting() throws Exception {
+        final Assertion ass = createBeforeRoutingPolicy();
+        assertTrue("Is AllAssertion", ass instanceof AllAssertion);
+        final AllAssertion allAssertion = (AllAssertion)ass;
+
+        assertTrue(allAssertion.getChildren().get(0) instanceof CustomAssertionHolder);
+        serviceInvocation.setCustomAssertion(((CustomAssertionHolder) allAssertion.getChildren().get(0)).getCustomAssertion());
+
+        // build the context (creates empty request and response)
+        final PolicyEnforcementContext context = createPolicyContext();
+        // initialize the request
+        context.getRequest().initialize(
+                ContentTypeHeader.parseValue(CustomAssertionsSampleContents.MULTIPART_FIRST_PART_APP_OCTET_CONTENT_TYPE),
+                CustomAssertionsSampleContents.MULTIPART_FIRST_PART_APP_OCTET_CONTENT.getBytes()
+        );
+
+        doAnswer(new Answer<CustomAssertionStatus>() {
+            @Override
+            public CustomAssertionStatus answer(InvocationOnMock invocation) throws Throwable {
+                assertTrue("there is only one parameter for onRequest", invocation.getArguments().length == 1);
+
+                final Object param1 = invocation.getArguments()[0];
+                assertTrue("Param is CustomPolicyContext", param1 instanceof CustomPolicyContext);
+                final CustomPolicyContext policyContext = (CustomPolicyContext) param1;
+
+                //noinspection unchecked
+                doTestLegacyContextMap(policyContext.getContext()); // let it throw if its not of type Map<String, Object>
+
+                assertNotNull(policyContext.getContext().get("defaultRequest"));
+                assertNull(policyContext.getContext().get("defaultResponse"));
+
+                return CustomAssertionStatus.NONE;
+            }
+        }).when(serviceInvocation).checkRequest(Matchers.<CustomPolicyContext>any());
+
+        //noinspection deprecation
+        doAnswer(new Answer<Void>() {
+            @Override
+            public Void answer(final InvocationOnMock invocation) throws Throwable {
+                fail("onRequest should not be called when checkRequest is implemented!");
+                return null;
+            }
+        }).when(serviceInvocation).onRequest(Matchers.<ServiceRequest>any());
+
+        //noinspection deprecation
+        doAnswer(new Answer<Void>() {
+            @Override
+            public Void answer(final InvocationOnMock invocation) throws Throwable {
+                fail("onResponse should not be called when checkRequest is implemented!");
+                return null;
+            }
+        }).when(serviceInvocation).onResponse(Matchers.<ServiceResponse>any());
+
+        final ServerAssertion serverAssertion = serverPolicyFactory.compilePolicy(allAssertion, false);
+        assertTrue("Is instance of ServerAllAssertion", serverAssertion instanceof ServerAllAssertion);
+        final ServerAllAssertion serverAllAssertion = (ServerAllAssertion)serverAssertion;
+
+        AssertionStatus status = serverAllAssertion.checkRequest(context);
+        assertEquals(AssertionStatus.NONE, status);
+
+        // just to be persistent make sure response is properly set
+        final Document outDoc = XmlUtil.stringToDocument(SAMPLE_XML_OUT_MESSAGE);
+        outDoc.normalizeDocument();
+        final Document resDoc = context.getResponse().getXmlKnob().getDocumentReadOnly();
+        assertNotNull("Response is not NULL", resDoc);
+        resDoc.normalizeDocument();
+        assertTrue("Source Target Message Document is same as TargetMessage document", outDoc.isEqualNode(resDoc));
+    }
+
+    @Test
+    public void testContextMapAfterRouting() throws Exception {
+        final Assertion ass = createAfterRoutingPolicy();
+        assertTrue("Is AllAssertion", ass instanceof AllAssertion);
+        final AllAssertion allAssertion = (AllAssertion)ass;
+
+        assertTrue(allAssertion.getChildren().get(1) instanceof CustomAssertionHolder);
+        serviceInvocation.setCustomAssertion(((CustomAssertionHolder) allAssertion.getChildren().get(1)).getCustomAssertion());
+
+        // build the context
+        final PolicyEnforcementContext context = createPolicyContext();
+
+        doAnswer(new Answer<CustomAssertionStatus>() {
+            @Override
+            public CustomAssertionStatus answer(InvocationOnMock invocation) throws Throwable {
+                assertTrue("there is only one parameter for onRequest", invocation.getArguments().length == 1);
+
+                final Object param1 = invocation.getArguments()[0];
+                assertTrue("Param is CustomPolicyContext", param1 instanceof CustomPolicyContext);
+                final CustomPolicyContext policyContext = (CustomPolicyContext) param1;
+
+                //noinspection unchecked
+                doTestLegacyContextMap(policyContext.getContext()); // let it throw if its not of type Map<String, Object>
+
+                assertNull(policyContext.getContext().get("defaultRequest"));
+                assertNotNull(policyContext.getContext().get("defaultResponse"));
+
+                return CustomAssertionStatus.NONE;
+            }
+        }).when(serviceInvocation).checkRequest(Matchers.<CustomPolicyContext>any());
+
+        //noinspection deprecation
+        doAnswer(new Answer<Void>() {
+            @Override
+            public Void answer(final InvocationOnMock invocation) throws Throwable {
+                fail("onRequest should not be called when checkRequest is implemented!");
+                return null;
+            }
+        }).when(serviceInvocation).onRequest(Matchers.<ServiceRequest>any());
+
+        //noinspection deprecation
+        doAnswer(new Answer<Void>() {
+            @Override
+            public Void answer(final InvocationOnMock invocation) throws Throwable {
+                fail("onResponse should not be called when checkRequest is implemented!");
+                return null;
+            }
+        }).when(serviceInvocation).onResponse(Matchers.<ServiceResponse>any());
+
+        final ServerAssertion serverAssertion = serverPolicyFactory.compilePolicy(allAssertion, false);
+        assertTrue("Is instance of ServerAllAssertion", serverAssertion instanceof ServerAllAssertion);
+        final ServerAllAssertion serverAllAssertion = (ServerAllAssertion)serverAssertion;
+
+        AssertionStatus status = serverAllAssertion.checkRequest(context);
+        assertEquals(AssertionStatus.NONE, status);
+    }
 }
