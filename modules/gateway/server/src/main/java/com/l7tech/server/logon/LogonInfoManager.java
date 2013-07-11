@@ -1,11 +1,7 @@
 package com.l7tech.server.logon;
 
 import com.l7tech.identity.LogonInfo;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.UpdateException;
-import com.l7tech.objectmodel.DeleteException;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityManager;
+import com.l7tech.objectmodel.*;
 
 /**
  * Interface that handles the logon information object between the application and database layers.
@@ -13,7 +9,7 @@ import com.l7tech.objectmodel.EntityManager;
  * User: dlee
  * Date: Jun 27, 2008
  */
-public interface LogonInfoManager extends EntityManager<LogonInfo, EntityHeader> {
+public interface LogonInfoManager extends GoidEntityManager<LogonInfo, EntityHeader> {
 
     /**
      * Finds a the logon information object based on the composite keys.

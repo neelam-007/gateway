@@ -160,3 +160,6 @@ ALTER TABLE service_metrics_details ADD COLUMN service_metrics_goid CHAR(16) FOR
 ALTER TABLE service_metrics_details ALTER COLUMN service_metrics_goid NOT NULL;
 ALTER TABLE service_metrics_details DROP COLUMN service_metrics_goid;
 ALTER TABLE service_metrics_details ADD PRIMARY KEY (service_metrics_oid, mapping_values_oid);
+
+--- LogonInfo
+ALTER TABLE logon_info ADD COLUMN goid CHAR(16) FOR BIT DATA;

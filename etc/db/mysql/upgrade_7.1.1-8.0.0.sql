@@ -159,7 +159,7 @@ ALTER TABLE jdbc_connection ADD COLUMN objectid_backup BIGINT(20);
 update jdbc_connection set objectid_backup=objectid;
 ALTER TABLE jdbc_connection CHANGE COLUMN objectid goid VARBINARY(16);
 -- For manual runs use: set @jdbc_prefix=concat(lpad(char(floor(rand()*4294967296)),4,'\0'),lpad(char(floor(rand()*4294967296)),4,'\0'));
-set @jdbc_prefix=concat(lpad(char(#RANDOM_INT#),4,'\0'),lpad(char(#RANDOM_INT#),4,'\0'));
+set @jdbc_prefix=concat(lpad(char(#RANDOM_LONG#),4,'\0'),lpad(char(#RANDOM_LONG#),4,'\0'));
 update jdbc_connection set goid = concat(@jdbc_prefix,lpad(char(objectid_backup),8,'\0'));
 ALTER TABLE jdbc_connection DROP COLUMN objectid_backup;
 
@@ -170,7 +170,7 @@ ALTER TABLE service_metrics ADD COLUMN objectid_backup BIGINT(20);
 UPDATE service_metrics SET objectid_backup=objectid;
 ALTER TABLE service_metrics CHANGE COLUMN objectid goid VARBINARY(16);
 -- For manual runs use: set @metrics_prefix=concat(lpad(char(floor(rand()*4294967296)),4,'\0'),lpad(char(floor(rand()*4294967296)),4,'\0'));
-SET @metrics_prefix=concat(lpad(char(#RANDOM_INT#),4,'\0'),lpad(char(#RANDOM_INT#),4,'\0'));
+SET @metrics_prefix=concat(lpad(char(#RANDOM_LONG#),4,'\0'),lpad(char(#RANDOM_LONG#),4,'\0'));
 UPDATE service_metrics SET goid = concat(@metrics_prefix,lpad(char(objectid_backup),8,'\0'));
 ALTER TABLE service_metrics DROP COLUMN objectid_backup;
 
@@ -181,6 +181,15 @@ UPDATE service_metrics_details SET service_metrics_goid = concat(@metrics_prefix
 ALTER TABLE service_metrics_details DROP COLUMN service_metrics_oid_backup;
 
 ALTER TABLE service_metrics_details  ADD FOREIGN KEY (service_metrics_goid) REFERENCES service_metrics (goid) ON DELETE CASCADE;
+
+-- Logon info
+ALTER TABLE logon_info ADD COLUMN objectid_backup BIGINT(20);
+update logon_info set objectid_backup=objectid;
+ALTER TABLE logon_info CHANGE COLUMN objectid goid VARBINARY(16);
+-- For manual runs use: set @logonInfo_prefix=concat(lpad(char(floor(rand()*4294967296)),4,'\0'),lpad(char(floor(rand()*4294967296)),4,'\0'));
+SET @logonInfo_prefix=concat(lpad(char(#RANDOM_LONG#),4,'\0'),lpad(char(#RANDOM_LONG#),4,'\0'));
+UPDATE logon_info SET goid = concat(@logonInfo_prefix,lpad(char(objectid_backup),8,'\0'));
+ALTER TABLE logon_info DROP COLUMN objectid_backup;
 
 --
 -- Reenable FK at very end of script

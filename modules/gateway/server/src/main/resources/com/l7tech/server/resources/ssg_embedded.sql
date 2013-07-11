@@ -519,7 +519,7 @@ create table keystore_key_metadata (
 );
 
 create table logon_info (
-    objectid bigint not null,
+    goid CHAR(16) FOR BIT DATA not null,
     fail_count integer,
     last_activity bigint,
     last_attempted bigint,
@@ -527,7 +527,7 @@ create table logon_info (
     provider_oid bigint,
     state varchar(255),
     version integer,
-    primary key (objectid)
+    primary key (goid)
 );
 
 create table message_id (

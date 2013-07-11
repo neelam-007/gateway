@@ -23,7 +23,7 @@ public class Upgrade71To80DerbyOids implements UpgradeTask {
             "UPDATE %s SET goid = ? where objectid = ?";
 
     //This is the list of tables to update.
-    private static final String[] tables = new String[]{"jdbc_connection"};
+    private static final String[] tables = new String[]{"jdbc_connection", "logon_info"};
 
     @Override
     public void upgrade(ApplicationContext applicationContext) throws NonfatalUpgradeException, FatalUpgradeException {

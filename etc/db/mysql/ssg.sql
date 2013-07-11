@@ -179,7 +179,7 @@ INSERT INTO folder VALUES (-5002, 0, 'Root Node', NULL, NULL);
 --
 DROP TABLE IF EXISTS logon_info;
 CREATE TABLE logon_info (
-  objectid bigint(20) NOT NULL,
+  goid VARBINARY(16) NOT NULL,
   version int(11) NOT NULL,
   provider_oid bigint(20) NOT NULL,
   login varchar(255) NOT NULL,
@@ -187,7 +187,7 @@ CREATE TABLE logon_info (
   last_attempted bigint(20) NOT NULL,
   last_activity bigint(20) NOT NULL,
   state varchar(32) NOT NULL DEFAULT 'ACTIVE',
-  PRIMARY KEY (objectid),
+  PRIMARY KEY (goid),
   UNIQUE KEY unique_provider_login (provider_oid, login),
   CONSTRAINT logon_info_provider FOREIGN KEY (provider_oid) REFERENCES identity_provider(objectid) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;

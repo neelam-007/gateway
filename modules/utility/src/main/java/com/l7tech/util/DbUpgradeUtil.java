@@ -170,7 +170,7 @@ public final class DbUpgradeUtil {
     private static final String UPGRADE_SQL_PATTERN = "^upgrade_(.*)-(.*).sql$";
     private static final String UPGRADE_SQL_PATTERN_OPTION = "^upgrade_(.*)-(.*)_("+ UPGRADE_TRY_SUFFIX +"|"+ UPGRADE_SUCCESS_SUFFIX +").sql$";
 
-    private static String RANDOM_INT_TOKEN_PATTERN = "#RANDOM_INT#";
+    private static String RANDOM_INT_TOKEN_PATTERN = "#RANDOM_LONG#";
     //The tokens pattern should be an | of all the different token patterns For example "#TOKEN1#|#TOKEN2#|#TOKEN3#"
     private static Pattern TOKENS_PATTERN = Pattern.compile(RANDOM_INT_TOKEN_PATTERN);
 }

@@ -56,13 +56,13 @@ public class DbUpgradeUtilTest {
 
     @Test
     public void getStatementsFromFileContainingRandomIntToken() throws Exception {
-        final URL resource = DbUpgradeUtilTest.class.getClassLoader().getResource("com/l7tech/util/db/upgrade_randomInt.sql");
+        final URL resource = DbUpgradeUtilTest.class.getClassLoader().getResource("com/l7tech/util/db/upgrade_randomLong.sql");
         final String[] statements = DbUpgradeUtil.getStatementsFromFile(resource.getPath());
         assertEquals(3, statements.length);
         final List<String> statementsAsList = Arrays.asList(statements);
         assertTrue(statementsAsList.contains("update some_table set some_column = 'some_value'"));
         assertTrue(statementsAsList.contains("update ssg_version set current_version = 'y'"));
-        assertFalse(statementsAsList.get(1).contains("#RANDON_INT#"));
+        assertFalse(statementsAsList.get(1).contains("#RANDON_LONG#"));
         assertTrue(statementsAsList.get(1).matches("select hex\\(char\\((-?\\d+)\\)\\)"));
     }
 
