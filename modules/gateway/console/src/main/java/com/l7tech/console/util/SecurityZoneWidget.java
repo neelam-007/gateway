@@ -171,7 +171,7 @@ public class SecurityZoneWidget extends JPanel {
     @Nullable
     public SecurityZone getSelectedZone() {
         SecurityZone ret = (SecurityZone) zonesComboBox.getSelectedItem();
-        if (SecurityZoneUtil.getNullZone() == ret) {
+        if (SecurityZoneUtil.getNullZone().equals(ret)) {
             ret = null;
         }
         if (SecurityZoneUtil.getCurrentUnavailableZone().equals(ret)) {
