@@ -795,7 +795,7 @@ create table service_metrics (
     front_max integer,
     interval_size integer,
     service_state varchar(16),
-    primary key (objectid)
+    primary key (goid)
 );
 
 create table service_metrics_details (
