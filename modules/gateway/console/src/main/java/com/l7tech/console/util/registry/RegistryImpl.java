@@ -386,7 +386,8 @@ public final class RegistryImpl extends Registry
                     getResourceAdmin(),
                     getFolderAdmin(),
                     TopComponents.getInstance().getAssertionRegistry(),
-                    TopComponents.getInstance().getPaletteFolderRegistry());
+                    TopComponents.getInstance().getPaletteFolderRegistry(),
+                    TopComponents.getInstance().getRootNode().getName());
         }
         return entityNameResolver;
     }

@@ -1,6 +1,7 @@
 package com.l7tech.console.util;
 
 import com.l7tech.console.tree.PaletteFolderRegistry;
+import com.l7tech.console.tree.servicesAndPolicies.RootNode;
 import com.l7tech.gateway.common.admin.FolderAdmin;
 import com.l7tech.gateway.common.admin.PolicyAdmin;
 import com.l7tech.gateway.common.resources.HttpConfiguration;
@@ -49,6 +50,7 @@ public class EntityNameResolver {
     private static final int SECOND_LAST_FOLDER_INDEX = 3;
     private static final String NO_PATH = "--";
     private static final String UNKNOWN_FOLDER = "unknown folder";
+    private static final String ROOT = "(root)";
 
     private final ServiceAdmin serviceAdmin;
     private final PolicyAdmin policyAdmin;
@@ -57,6 +59,7 @@ public class EntityNameResolver {
     private final FolderAdmin folderAdmin;
     private final AssertionRegistry assertionRegistry;
     private final PaletteFolderRegistry folderRegistry;
+    private final String rootFolderName;
 
     public EntityNameResolver(@NotNull final ServiceAdmin serviceAdmin,
                               @NotNull final PolicyAdmin policyAdmin,
@@ -64,7 +67,8 @@ public class EntityNameResolver {
                               @NotNull final ResourceAdmin resourceAdmin,
                               @NotNull final FolderAdmin folderAdmin,
                               @NotNull final AssertionRegistry assertionRegistry,
-                              @NotNull final PaletteFolderRegistry folderRegistry) {
+                              @NotNull final PaletteFolderRegistry folderRegistry,
+                              @NotNull final String rootFolderName) {
         this.serviceAdmin = serviceAdmin;
         this.policyAdmin = policyAdmin;
         this.trustedCertAdmin = trustedCertAdmin;
@@ -72,6 +76,7 @@ public class EntityNameResolver {
         this.folderAdmin = folderAdmin;
         this.assertionRegistry = assertionRegistry;
         this.folderRegistry = folderRegistry;
+        this.rootFolderName = rootFolderName;
     }
 
     /**
@@ -136,6 +141,10 @@ public class EntityNameResolver {
                     logger.log(Level.WARNING, "Name on header is null or empty but entity type is not supported: " + header.getType());
                     name = StringUtils.EMPTY;
             }
+        }
+
+        if (isRootFolder(header)) {
+            name = rootFolderName;
         }
 
         String path = null;
@@ -212,6 +221,8 @@ public class EntityNameResolver {
             if (includePath && roleEntity instanceof HasFolder && roleEntity instanceof NamedEntity) {
                 name = name + " (" + getPath((HasFolder) roleEntity) + ((NamedEntity) roleEntity).getName() + ")";
             }
+        } else if (entity instanceof Folder && isRootFolder((Folder) entity)) {
+            name = rootFolderName;
         } else if (entity instanceof NamedEntityImp) {
             final NamedEntityImp named = (NamedEntityImp) entity;
             name = named.getName();
@@ -241,11 +252,17 @@ public class EntityNameResolver {
      */
     @NotNull
     public String getPath(@NotNull final HasFolderOid hasFolder) throws FindException {
-        Folder folder = null;
-        if (hasFolder.getFolderOid() != null) {
-            folder = folderAdmin.findByPrimaryKey(hasFolder.getFolderOid());
+        final String path;
+        if (hasFolder instanceof EntityHeader && isRootFolder((EntityHeader) hasFolder)) {
+            path = ROOT;
+        } else {
+            Folder folder = null;
+            if (hasFolder.getFolderOid() != null) {
+                folder = folderAdmin.findByPrimaryKey(hasFolder.getFolderOid());
+            }
+            path = getPathForFolder(folder);
         }
-        return getPathForFolder(folder);
+        return path;
     }
 
     /**
@@ -287,7 +304,21 @@ public class EntityNameResolver {
      */
     @NotNull
     public String getPath(@NotNull final HasFolder hasFolder) {
-        return getPathForFolder(hasFolder.getFolder());
+        final String path;
+        if (hasFolder instanceof Folder && isRootFolder((Folder) hasFolder)) {
+            path = ROOT;
+        } else {
+            path = getPathForFolder(hasFolder.getFolder());
+        }
+        return path;
+    }
+
+    private boolean isRootFolder(@NotNull final EntityHeader header) {
+        return EntityType.FOLDER == header.getType() && RootNode.OID == header.getOid();
+    }
+
+    private boolean isRootFolder(@NotNull final Folder folder) {
+        return RootNode.OID == folder.getOid();
     }
 
     private String getNameForAssertion(final Assertion assertion, final String defaultName) {
@@ -385,10 +416,14 @@ public class EntityNameResolver {
             stringBuilder.append("]");
         }
         if (StringUtils.isNotBlank(path)) {
-            stringBuilder.append(" (");
-            stringBuilder.append(path);
-            stringBuilder.append(name);
-            stringBuilder.append(")");
+            if (!ROOT.equals(path)) {
+                stringBuilder.append(" (");
+                stringBuilder.append(path);
+                stringBuilder.append(name);
+                stringBuilder.append(")");
+            } else {
+                stringBuilder.append(" " + path);
+            }
         }
         return stringBuilder.toString();
     }

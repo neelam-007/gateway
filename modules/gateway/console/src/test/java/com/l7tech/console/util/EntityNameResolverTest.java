@@ -1,6 +1,7 @@
 package com.l7tech.console.util;
 
 import com.l7tech.console.tree.PaletteFolderRegistry;
+import com.l7tech.console.tree.servicesAndPolicies.RootNode;
 import com.l7tech.gateway.common.admin.FolderAdmin;
 import com.l7tech.gateway.common.admin.PolicyAdmin;
 import com.l7tech.gateway.common.resources.HttpConfiguration;
@@ -16,6 +17,7 @@ import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.folder.Folder;
+import com.l7tech.objectmodel.folder.FolderHeader;
 import com.l7tech.objectmodel.folder.HasFolder;
 import com.l7tech.objectmodel.folder.HasFolderOid;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
@@ -57,7 +59,7 @@ public class EntityNameResolverTest {
 
     @Before
     public void setup() {
-        resolver = new EntityNameResolver(serviceAdmin, policyAdmin, trustedCertAdmin, resourceAdmin, folderAdmin, assertionRegistry, folderRegistry);
+        resolver = new EntityNameResolver(serviceAdmin, policyAdmin, trustedCertAdmin, resourceAdmin, folderAdmin, assertionRegistry, folderRegistry, "localhost");
     }
 
     @Test
@@ -193,6 +195,13 @@ public class EntityNameResolverTest {
         assertEquals(" (/folder1/folder2/)", name);
     }
 
+    @BugId("SSG-7239")
+    @Test
+    public void getNameForRootHasFolderOidHeader() throws Exception {
+        final FolderHeader rootFolderHeader = new FolderHeader(createRootFolder());
+        assertEquals("localhost (root)", resolver.getNameForHeader(rootFolderHeader));
+    }
+
     @Test
     public void getPathNoFolder() throws Exception {
         assertEquals("/", resolver.getPath(new HasFolderStub(null)));
@@ -225,6 +234,12 @@ public class EntityNameResolverTest {
         assertEquals("/folder1/.../folder4/", path);
     }
 
+    @BugId("SSG-7239")
+    @Test
+    public void getPathFromRootFolder() throws Exception {
+        assertEquals("(root)", resolver.getPath(createRootFolder()));
+    }
+
     @Test
     public void getPathFromFolderOid() throws Exception {
         when(folderAdmin.findByPrimaryKey(OID)).thenReturn(new Folder("folder2", new Folder("folder1", new Folder("Root Node", null))));
@@ -249,6 +264,12 @@ public class EntityNameResolverTest {
     public void getPathFromFolderOidFindException() throws Exception {
         when(folderAdmin.findByPrimaryKey(OID)).thenThrow(new FindException("mocking exception"));
         resolver.getPath(new HasFolderOidStub(OID));
+    }
+
+    @BugId("SSG-7239")
+    @Test
+    public void getPathFromRootFolderHeader() throws Exception {
+        assertEquals("(root)", resolver.getPath(new FolderHeader(createRootFolder())));
     }
 
     @Test
@@ -521,6 +542,34 @@ public class EntityNameResolverTest {
         }, true));
     }
 
+    @Test
+    public void getNameForNonNamedEntity() throws Exception {
+        assertTrue(resolver.getNameForEntity(new Entity() {
+            @Override
+            public String getId() {
+                return null;
+            }
+        }, true).isEmpty());
+    }
+
+    @BugId("SSG-7239")
+    @Test
+    public void getNameForRootFolder() throws Exception {
+        assertEquals("localhost (root)", resolver.getNameForEntity(createRootFolder(), true));
+    }
+
+    @BugId("SSG-7239")
+    @Test
+    public void getNameForRootFolderWithoutPath() throws Exception {
+        assertEquals("localhost", resolver.getNameForEntity(createRootFolder(), false));
+    }
+
+    private Folder createRootFolder() {
+        final Folder rootFolder = new Folder("Root Node", null);
+        rootFolder.setOid(RootNode.OID);
+        return rootFolder;
+    }
+
     private Role createRole(final String name, final Entity roleEntity) {
         final Role role = new Role();
         role.setName(name);
@@ -543,7 +592,7 @@ public class EntityNameResolverTest {
     }
 
     private Folder createFolderInRoot(final Long oid, final String name) {
-        final Folder folder = new Folder(name, new Folder("Root Node", null));
+        final Folder folder = new Folder(name, createRootFolder());
         folder.setOid(oid);
         return folder;
     }
