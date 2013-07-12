@@ -133,8 +133,8 @@
     </class>
 
     <class name="com.l7tech.gateway.common.service.SampleMessage" table="sample_messages" lazy="false">
-        <id name="oid" column="objectid" type="long" unsaved-value="-1">
-            <generator class="layer7-generator"/>
+        <id name="goid" column="goid" type="goid">
+            <generator class="layer7-goid-generator"/>
         </id>
 
         <property name="name" type="string"/>

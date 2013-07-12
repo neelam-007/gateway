@@ -1,13 +1,14 @@
 package com.l7tech.console.panels;
 
 import com.japisoft.xmlpad.XMLContainer;
+import com.l7tech.common.io.XmlUtil;
 import com.l7tech.console.util.SecurityZoneWidget;
 import com.l7tech.console.util.XMLContainerFactory;
 import com.l7tech.gateway.common.security.rbac.OperationType;
+import com.l7tech.gateway.common.service.SampleMessage;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
-import com.l7tech.common.io.XmlUtil;
-import com.l7tech.gateway.common.service.SampleMessage;
+import org.w3c.dom.*;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -15,12 +16,9 @@ import javax.swing.event.DocumentListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.Map;
 import java.util.HashMap;
 import java.util.HashSet;
-
-import com.l7tech.objectmodel.EntityType;
-import org.w3c.dom.*;
+import java.util.Map;
 
 /**
  * Used to edit {@link com.l7tech.gateway.common.service.SampleMessage}s.
@@ -137,7 +135,7 @@ public class SampleMessageDialog extends JDialog {
         });
 
         add(mainPanel);
-        zoneControl.configure(message.getOid() == SampleMessage.DEFAULT_OID ? OperationType.CREATE : OperationType.UPDATE, message);
+        zoneControl.configure(SampleMessage.DEFAULT_GOID.equals(message.getGoid()) ? OperationType.CREATE : OperationType.UPDATE, message);
         enableButtons();
     }
 

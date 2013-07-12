@@ -319,13 +319,13 @@ public interface ServiceAdmin extends AsyncAdminMethods, AliasAdmin<PublishedSer
     UDDINamedEntity[] findPoliciesFromUDDIRegistry(long registryOid, String namePattern) throws FindException;
 
     /**
-     * Finds the {@link SampleMessage} instance with the specified OID, or null if it does not exist.
-     * @return the {@link SampleMessage} instance with the specified OID.  May be null if not present.
+     * Finds the {@link SampleMessage} instance with the specified GOID, or null if it does not exist.
+     * @return the {@link SampleMessage} instance with the specified GOID.  May be null if not present.
      */
     @Secured(types=EntityType.SAMPLE_MESSAGE, stereotype=FIND_ENTITY)
     @Transactional(readOnly=true)
     @Administrative(licensed=false)
-    SampleMessage findSampleMessageById(long oid) throws FindException;
+    SampleMessage findSampleMessageById(Goid goid) throws FindException;
 
     /**
      * Finds any {@link EntityHeader}s belonging to the {@link PublishedService}
@@ -340,7 +340,7 @@ public interface ServiceAdmin extends AsyncAdminMethods, AliasAdmin<PublishedSer
     EntityHeader[] findSampleMessageHeaders(long serviceOid, String operationName) throws FindException;
 
     @Secured(types=EntityType.SAMPLE_MESSAGE, stereotype=SAVE_OR_UPDATE)
-    long saveSampleMessage(SampleMessage sm) throws SaveException;
+    Goid saveSampleMessage(SampleMessage sm) throws SaveException;
 
     @Secured(types=EntityType.SAMPLE_MESSAGE, stereotype=DELETE_ENTITY)
     void deleteSampleMessage(SampleMessage message) throws DeleteException;

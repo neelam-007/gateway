@@ -1,9 +1,11 @@
 package com.l7tech.server.service;
 
-import com.l7tech.objectmodel.*;
-import com.l7tech.server.util.ReadOnlyHibernateCallback;
-import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.gateway.common.service.SampleMessage;
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.server.HibernateGoidEntityManager;
+import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import org.hibernate.Criteria;
 import org.hibernate.HibernateException;
 import org.hibernate.Session;
@@ -21,7 +23,7 @@ import java.util.List;
  */
 @Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
 public class SampleMessageManagerImp
-        extends HibernateEntityManager<SampleMessage, EntityHeader>
+        extends HibernateGoidEntityManager<SampleMessage, EntityHeader>
         implements SampleMessageManager
 {
     private static final String PROP_SERVICE_OID = "serviceOid";
@@ -52,7 +54,7 @@ public class SampleMessageManagerImp
                     ArrayList<EntityHeader> out = new ArrayList<EntityHeader>();
                     for (Object result : results) {
                         SampleMessage sm = (SampleMessage) result;
-                        out.add(new EntityHeader(sm.getOid(), EntityType.SAMPLE_MESSAGE, sm.getName(), null, sm.getVersion()));
+                        out.add(new EntityHeader(sm.getGoid(), EntityType.SAMPLE_MESSAGE, sm.getName(), null, sm.getVersion()));
                     }
                     return out.toArray(new EntityHeader[0]);
                 }

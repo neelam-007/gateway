@@ -743,13 +743,13 @@ create table revocation_check_policy (
 );
 
 create table sample_messages (
-    objectid bigint not null,
+    goid CHAR(16) FOR BIT DATA not null,
     name varchar(255),
     operation_name varchar(255),
     published_service_oid bigint,
     "xml" clob(2147483647),
     security_zone_oid bigint references security_zone(objectid) on delete set null,
-    primary key (objectid)
+    primary key (goid)
 );
 
 create table secure_password (

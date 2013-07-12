@@ -22,10 +22,7 @@ import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.gui.util.*;
 import com.l7tech.gui.widgets.SpeedIndicator;
 import com.l7tech.gui.widgets.SquigglyField;
-import com.l7tech.objectmodel.DeleteException;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.SaveException;
+import com.l7tech.objectmodel.*;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.wsp.WspConstants;
@@ -306,7 +303,7 @@ public class SignResponseElementAssertionPropertiesDialog extends JDialog {
         }
         messageViewerToolBar.getxpathField().setText(initialvalue);
 
-        populateSampleMessages(null, 0);
+        populateSampleMessages(null, null);
         enableSampleButtons();
 
         addSampleButton.addActionListener(new ActionListener() {
@@ -331,8 +328,8 @@ public class SignResponseElementAssertionPropertiesDialog extends JDialog {
                     public void call(SampleMessageDialog smd) {
                         if (smd.isOk()) {
                             try {
-                                long oid = Registry.getDefault().getServiceManager().saveSampleMessage(sm);
-                                populateSampleMessages(currentOperation == null ? null : currentOperation.getName(), oid);
+                                Goid goid = Registry.getDefault().getServiceManager().saveSampleMessage(sm);
+                                populateSampleMessages(currentOperation == null ? null : currentOperation.getName(), goid);
                             } catch (SaveException ex) {
                                 throw new RuntimeException("Couldn't save SampleMessage", ex);
                             }
@@ -429,7 +426,7 @@ public class SignResponseElementAssertionPropertiesDialog extends JDialog {
         });
     }
 
-    private void populateSampleMessages(String operationName, long whichToSelect) {
+    private void populateSampleMessages(String operationName, Goid whichToSelect) {
         EntityHeader[] sampleMessages;
         ArrayList<SampleMessageComboEntry> messageEntries = new ArrayList<SampleMessageComboEntry>();
         messageEntries.add(USE_AUTOGEN);
@@ -439,9 +436,9 @@ public class SignResponseElementAssertionPropertiesDialog extends JDialog {
             long objectId = (policyNode instanceof ServiceNode)? policyNode.getEntityOid() : -1;
             sampleMessages = serviceManager.findSampleMessageHeaders(objectId, operationName);
             for (EntityHeader sampleMessage : sampleMessages) {
-                long thisOid = sampleMessage.getOid();
-                SampleMessageComboEntry entry = new SampleMessageComboEntry(serviceManager.findSampleMessageById(thisOid));
-                if (thisOid == whichToSelect) whichEntryToSelect = entry;
+                Goid thisGoid = sampleMessage.getGoid();
+                SampleMessageComboEntry entry = new SampleMessageComboEntry(serviceManager.findSampleMessageById(thisGoid));
+                if (thisGoid.equals(whichToSelect)) whichEntryToSelect = entry;
                 messageEntries.add(entry);
             }
         } catch (Exception e) {
@@ -794,7 +791,7 @@ public class SignResponseElementAssertionPropertiesDialog extends JDialog {
         public void valueChanged(TreeSelectionEvent e) {
             TreePath path = e.getNewLeadSelectionPath();
             if (path == null) {
-                populateSampleMessages(null, 0);
+                populateSampleMessages(null, null);
                 displayMessage(blankMessage);
                 currentOperation = null;
             } else {
@@ -818,7 +815,7 @@ public class SignResponseElementAssertionPropertiesDialog extends JDialog {
                 if (lpc instanceof BindingOperationTreeNode) {
                     BindingOperationTreeNode boperation = (BindingOperationTreeNode) lpc;
                     currentOperation = boperation.getOperation();
-                    populateSampleMessages(currentOperation.getName(), 0);
+                    populateSampleMessages(currentOperation.getName(), null);
                     Message sreq = forOperation(boperation.getOperation());
                     if (sreq != null) {
                         try {
@@ -832,7 +829,7 @@ public class SignResponseElementAssertionPropertiesDialog extends JDialog {
                         }
                     }
                 } else {
-                    populateSampleMessages(null, 0);
+                    populateSampleMessages(null, null);
                     displayMessage(blankMessage);
                     currentOperation = null;
                 }

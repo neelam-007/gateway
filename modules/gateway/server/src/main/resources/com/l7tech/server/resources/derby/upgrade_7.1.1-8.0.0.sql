@@ -163,3 +163,6 @@ ALTER TABLE service_metrics_details ADD PRIMARY KEY (service_metrics_oid, mappin
 
 --- LogonInfo
 ALTER TABLE logon_info ADD COLUMN goid CHAR(16) FOR BIT DATA;
+
+--- SampleMessage
+ALTER TABLE sample_messages ADD COLUMN goid CHAR(16) FOR BIT DATA;

@@ -27,7 +27,6 @@ import com.l7tech.server.uddi.UDDIHelper;
 import com.l7tech.server.uddi.UDDITemplateManager;
 import com.l7tech.uddi.*;
 import com.l7tech.util.*;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.beans.factory.DisposableBean;
 
@@ -593,8 +592,8 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
     }
 
     @Override
-    public SampleMessage findSampleMessageById(long oid) throws FindException {
-        return sampleMessageManager.findByPrimaryKey(oid);
+    public SampleMessage findSampleMessageById(Goid goid) throws FindException {
+        return sampleMessageManager.findByPrimaryKey(goid);
     }
 
     @Override
@@ -603,10 +602,10 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
     }
 
     @Override
-    public long saveSampleMessage(SampleMessage sm) throws SaveException {
-        long oid = sm.getOid();
-        if (sm.getOid() == SampleMessage.DEFAULT_OID) {
-            oid = sampleMessageManager.save(sm);
+    public Goid saveSampleMessage(SampleMessage sm) throws SaveException {
+        Goid goid = sm.getGoid();
+        if (SampleMessage.DEFAULT_GOID.equals(sm.getGoid())) {
+            goid = sampleMessageManager.save(sm);
         } else {
             try {
                 sampleMessageManager.update(sm);
@@ -614,7 +613,7 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
                 throw new SaveException("Couldn't update existing SampleMessage", e.getCause());
             }
         }
-        return oid;
+        return goid;
     }
 
     @Override

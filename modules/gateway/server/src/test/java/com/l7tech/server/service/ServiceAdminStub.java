@@ -17,7 +17,6 @@ import com.l7tech.uddi.WsdlPortInfo;
 import com.l7tech.util.CollectionUpdate;
 import com.l7tech.util.CollectionUpdateProducer;
 import com.l7tech.util.ExceptionUtils;
-import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.support.ApplicationObjectSupport;
 
@@ -265,7 +264,7 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
     }
 
     @Override
-    public SampleMessage findSampleMessageById(long oid) throws FindException {
+    public SampleMessage findSampleMessageById(Goid goid) throws FindException {
         return null;
     }
 
@@ -275,8 +274,8 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
     }
 
     @Override
-    public long saveSampleMessage(SampleMessage sm) throws SaveException {
-        return 0;
+    public Goid saveSampleMessage(SampleMessage sm) throws SaveException {
+        return GoidEntity.DEFAULT_GOID;
     }
 
     @Override
