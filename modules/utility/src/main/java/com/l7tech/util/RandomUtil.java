@@ -63,6 +63,21 @@ public class RandomUtil {
     }
 
     /**
+     * Generate a random long using a default SecureRandom instance.
+     *
+     * @return the next random long value, evenly distributed between among all 2^64 possible values
+     * @see SecureRandom#nextLong()
+     */
+    public static long nextLong() {
+        SecureRandom sr = getSecureRandom();
+        try {
+            return sr.nextLong();
+        } finally {
+            returnSecureRandom(sr);
+        }
+    }
+
+    /**
      * Get a default SecureRandom instance, creating a new one if necessary.
      *
      * @return a SecureRandom instance.  Never null.

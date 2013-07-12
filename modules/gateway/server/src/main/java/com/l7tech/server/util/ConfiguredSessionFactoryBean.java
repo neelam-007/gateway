@@ -65,35 +65,32 @@ public class ConfiguredSessionFactoryBean extends AnnotationSessionFactoryBean {
     public static final class ConfiguredGOIDGenerator implements IdentifierGenerator {
         private static AtomicLong hi;
         private static AtomicLong low;
+        private static final int MAX_GOID_RESERVED_PREFIX = 65536;
 
         public ConfiguredGOIDGenerator() {
 
-            // make sure hi cannot be zero and clash with default GOID value
-            long random = getRandomLong();
-            hi = new AtomicLong(random == 0 ? random + 1 : random);
-            random = getRandomLong();
-            low = new AtomicLong(random);
+            long random;
+            do {
+                random = RandomUtil.nextLong();
+                // make sure hi cannot be in the range of default prefixes 0 - 2^16
+            } while (random >= 0 && random < MAX_GOID_RESERVED_PREFIX);
+
+            hi = new AtomicLong(random);
+            low = new AtomicLong(RandomUtil.nextLong());
         }
 
         @Override
         public Serializable generate(SessionImplementor sessionImplementor, Object o) throws HibernateException {
-            // increment hi on low rollover
-            if (low.get() == Long.MAX_VALUE) {
-                low.set(0);
-                hi.incrementAndGet();
-            }
+            //Do not need to increment hi on low rollover. Preforming the increment could lead to race conditions without proper locking.
+            // Also it is extremely unlikely a gateway will create 2^64 entities without restarting.
 
             // use an existing goid if one is given.
             if (o instanceof GoidEntity &&
                     !GoidEntity.DEFAULT_GOID.equals(((GoidEntity) o).getGoid())) {
                 return ((GoidEntity) o).getGoid();
             }
+            //TODO: is there a more efficient way of creating a new goid?
             return new Goid(hi.get(), low.getAndIncrement());
-        }
-
-        protected static long getRandomLong(){
-            //TODO: add nextLong to the RandomUtil
-            return ((long) (RandomUtil.nextInt(Integer.MAX_VALUE)) << 32) + RandomUtil.nextInt(Integer.MAX_VALUE);
         }
     }
 

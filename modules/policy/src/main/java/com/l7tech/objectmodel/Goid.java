@@ -1,8 +1,6 @@
 package com.l7tech.objectmodel;
 
-import com.l7tech.util.ArrayUtils;
 import com.l7tech.util.HexUtils;
-import org.apache.commons.codec.binary.Base64;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -17,12 +15,13 @@ import java.util.Arrays;
  */
 public class Goid implements Serializable {
 
-    //The bytes of the goid. This hould always be a 16 byte array
+    //The bytes of the goid. This should always be a 16 byte array
     private byte[] goid;
 
     /**
      * This is needed for serialization
      */
+    @SuppressWarnings("UnusedDeclaration")
     private Goid(){}
 
     /**
@@ -32,7 +31,7 @@ public class Goid implements Serializable {
      * @param low  The low long will be the last 8 bytes of the goid
      */
     public Goid(long high, long low) {
-        goid = ArrayUtils.concat(ByteBuffer.allocate(8).putLong(high).array(), ByteBuffer.allocate(8).putLong(low).array());
+        goid = ByteBuffer.allocate(16).putLong(high).putLong(low).array();
     }
 
     /**
