@@ -127,8 +127,8 @@ public class SalesforceInstallerAdminImpl extends AsyncAdminMethodsImpl implemen
                 } catch (SalesforceInstallationException e) {
                     final SalesforceInstallationAuditEvent problemEvent = new SalesforceInstallationAuditEvent(this, "Problem during pre installation check of the Toolkit", Level.WARNING);
                     problemEvent.setAuditDetails(Arrays.asList(
-                        new AuditDetail(AssertionMessages.OTK_INSTALLER_ERROR,
-                            new String[]{ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e))));
+                        new AuditDetail(AssertionMessages.POLICY_BUNDLE_INSTALLER_ERROR,
+                            new String[]{"Salesforce Services", ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e))));
                     appEventPublisher.publishEvent(problemEvent);
                     throw e;
                 } finally {
@@ -173,8 +173,8 @@ public class SalesforceInstallerAdminImpl extends AsyncAdminMethodsImpl implemen
                 } catch(SalesforceInstallationException e) {
                     final SalesforceInstallationAuditEvent problemEvent = new SalesforceInstallationAuditEvent(this, "Problem during installation of the Toolkit", Level.WARNING);
                     problemEvent.setAuditDetails(Arrays.asList(
-                        new AuditDetail(AssertionMessages.OTK_INSTALLER_ERROR,
-                            new String[]{ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e))));
+                        new AuditDetail(AssertionMessages.POLICY_BUNDLE_INSTALLER_ERROR,
+                            new String[]{"Salesforce Services", ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e))));
                     appEventPublisher.publishEvent(problemEvent);
                     throw e;
                 } finally {
@@ -320,7 +320,7 @@ public class SalesforceInstallerAdminImpl extends AsyncAdminMethodsImpl implemen
                     if (!urlPatternWithConflict.isEmpty()) {
                         details.add(
                             new AuditDetail(
-                                AssertionMessages.OTK_DRY_RUN_CONFLICT,
+                                AssertionMessages.POLICY_BUNDLE_INSTALLER_DRY_RUN_CONFLICT,
                                 bundleInfo.getName(),
                                 "Services",
                                 urlPatternWithConflict.toString()));
@@ -330,7 +330,7 @@ public class SalesforceInstallerAdminImpl extends AsyncAdminMethodsImpl implemen
                     if (!policyWithNameConflict.isEmpty()) {
                         details.add(
                             new AuditDetail(
-                                AssertionMessages.OTK_DRY_RUN_CONFLICT,
+                                AssertionMessages.POLICY_BUNDLE_INSTALLER_DRY_RUN_CONFLICT,
                                 bundleInfo.getName(),
                                 "Policies",
                                 policyWithNameConflict.toString()));
@@ -340,7 +340,7 @@ public class SalesforceInstallerAdminImpl extends AsyncAdminMethodsImpl implemen
                     if (!certificateWithConflict.isEmpty()) {
                         details.add(
                             new AuditDetail(
-                                AssertionMessages.OTK_DRY_RUN_CONFLICT,
+                                AssertionMessages.POLICY_BUNDLE_INSTALLER_DRY_RUN_CONFLICT,
                                 bundleInfo.getName(),
                                 "Certificates",
                                 certificateWithConflict.toString()));
@@ -350,27 +350,16 @@ public class SalesforceInstallerAdminImpl extends AsyncAdminMethodsImpl implemen
                     if (! missingRequiredAssertions.isEmpty()) {
                         details.add(
                             new AuditDetail(
-                                AssertionMessages.OTK_DRY_RUN_CONFLICT,
+                                AssertionMessages.POLICY_BUNDLE_INSTALLER_DRY_RUN_CONFLICT,
                                 bundleInfo.getName(),
                                 "Missing Assertions",
                                 missingRequiredAssertions.toString()));
-                    }
-
-                    final List<String> jdbcConnsThatDontExist = dryRunEvent.getJdbcConnsThatDontExist();
-                    if (!jdbcConnsThatDontExist.isEmpty()) {
-                        details.add(
-                            new AuditDetail(
-                                AssertionMessages.OTK_DRY_RUN_CONFLICT,
-                                bundleInfo.getName(),
-                                "Missing JDBC Connections",
-                                jdbcConnsThatDontExist.toString()));
                     }
 
                     final Map<PolicyBundleDryRunResult.DryRunItem, List<String>> itemToConflicts = new HashMap<PolicyBundleDryRunResult.DryRunItem, List<String>>();
                     itemToConflicts.put(PolicyBundleDryRunResult.DryRunItem.SERVICES, urlPatternWithConflict);
                     itemToConflicts.put(PolicyBundleDryRunResult.DryRunItem.POLICIES, policyWithNameConflict);
                     itemToConflicts.put(PolicyBundleDryRunResult.DryRunItem.CERTIFICATES, certificateWithConflict);
-                    itemToConflicts.put(PolicyBundleDryRunResult.DryRunItem.JDBC_CONNECTIONS, jdbcConnsThatDontExist);
                     itemToConflicts.put(PolicyBundleDryRunResult.DryRunItem.ASSERTIONS, missingRequiredAssertions);
 
                     bundleToConflicts.put(bundleId, itemToConflicts);

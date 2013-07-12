@@ -1207,6 +1207,8 @@ public class AssertionMessages extends Messages {
 
     public static final M OTK_INSTALLER_ERROR = m(9920, Level.WARNING, "OTK Installation Problem: {0}");
     public static final M OTK_DRY_RUN_CONFLICT = m(9921, Level.INFO, "Component {0} conflicts for {1}: {2}");
+    public static final M POLICY_BUNDLE_INSTALLER_ERROR = m(9922, Level.WARNING, "{0} Installation Problem: {1}"); // {0}: installer type;  {1}: problem detail
+    public static final M POLICY_BUNDLE_INSTALLER_DRY_RUN_CONFLICT = m(9923, Level.INFO, "Component {0} conflicts for {1}: {2}");
 
     // ValidateCertificate assertion
     public static final M CERT_NOT_FOUND = m(10000, Level.WARNING, "No certificate found for variable: {0}");
