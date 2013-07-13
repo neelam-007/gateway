@@ -638,11 +638,15 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
             }
 
             // Also remove the cookies with the same cookie name from pec context
+            List<HttpCookie> toDelete = new ArrayList<>();
             Set<HttpCookie> contextCookies = pec.getCookies();
             for (HttpCookie cookie: contextCookies) {
                 if (cookie.getCookieName().equals(cookieName)) {
-                    pec.deleteCookie(cookie);
+                    toDelete.add(cookie);
                 }
+            }
+            for (HttpCookie cookie: toDelete) {
+                pec.deleteCookie(cookie);
             }
         }// for
     }

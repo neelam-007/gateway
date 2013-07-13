@@ -358,20 +358,44 @@ public class ServerCustomAssertionHolderTest extends CustomAssertionsPolicyTestB
     }
 
     /**
-     * Simple utility function to check if two cookies of type {@link javax.servlet.http.Cookie javax.servlet.http.Cookie} are equal.
+     * Simple utility function to check if two cookies of type {@link Cookie} or {@link HttpCookie} are equal.
      * The function only compares against the cookie name, value, version, path and domain,
-     * since these are the only values we set in the unbit-test
+     * since these are the only values we set in the unit-test
      *
-     * @param cookie1 the first cookie
-     * @param cookie2 the second cookie
+     * @param inCookie1 the first cookie
+     * @param inCookie2 the second cookie
      * @return true if <tt>cookie1</tt> equals <tt>cookie2</tt>
      */
-    private boolean compareCookie(Cookie cookie1, Cookie cookie2) {
-        return cookie1.getName().equals(cookie2.getName()) &&
-                cookie1.getValue().equals(cookie2.getValue()) &&
-                cookie1.getVersion() == cookie2.getVersion() &&
-                cookie1.getPath().equals(cookie2.getPath()) &&
-                cookie1.getDomain().equals(cookie2.getDomain());
+    private <T> boolean compareCookie(T inCookie1, T inCookie2)
+    {
+        assertTrue("verify that input cookie pair is of type Cookie or HttpCookie",
+                (inCookie1 instanceof Cookie && inCookie2 instanceof Cookie) ||
+                (inCookie1 instanceof HttpCookie && inCookie2 instanceof HttpCookie)
+        );
+
+        if (inCookie1 instanceof Cookie)
+        {
+            Cookie cookie1 = (Cookie)inCookie1;
+            Cookie cookie2 = (Cookie)inCookie2;
+            //noinspection StringEquality
+            return ((cookie1.getName() == cookie2.getName()) || cookie1.getName().equals(cookie2.getName())) &&
+                   ((cookie1.getValue() == cookie2.getValue()) || cookie1.getValue().equals(cookie2.getValue())) &&
+                    cookie1.getVersion() == cookie2.getVersion() &&
+                   ((cookie1.getPath() == cookie2.getPath()) || cookie1.getPath().equals(cookie2.getPath())) &&
+                   ((cookie1.getDomain() == cookie2.getDomain()) || cookie1.getDomain().equals(cookie2.getDomain()));
+        }
+        else
+        {
+            HttpCookie cookie1 = (HttpCookie)inCookie1;
+            HttpCookie cookie2 = (HttpCookie)inCookie2;
+            //noinspection StringEquality
+            return ((cookie1.getCookieName() == cookie2.getCookieName()) || cookie1.getCookieName().equals(cookie2.getCookieName())) &&
+                   ((cookie1.getCookieValue() == cookie2.getCookieValue()) || cookie1.getCookieValue().equals(cookie2.getCookieValue())) &&
+                    cookie1.getVersion() == cookie2.getVersion() &&
+                   ((cookie1.getPath() == cookie2.getPath()) || cookie1.getPath().equals(cookie2.getPath())) &&
+                   ((cookie1.getDomain() == cookie2.getDomain()) || cookie1.getDomain().equals(cookie2.getDomain()));
+
+        }
     }
 
     /**
@@ -416,6 +440,18 @@ public class ServerCustomAssertionHolderTest extends CustomAssertionsPolicyTestB
             new HttpCookie("cookie2", "cookie2_value", 2, "path2", "domain2")
     };
 
+    // test cookies to add to updatedCookies context map vector
+    private final Cookie[] newCookies = {
+            new Cookie("newCookie1", "newCookie1_value"),
+            new Cookie("newCookie2", "newCookie2_value"),
+            new Cookie("newCookie3", "newCookie3_value"),
+            new Cookie("newCookie4", "newCookie4_value"),
+            new Cookie("newCookie5", "newCookie5_value")
+    };
+
+    // test cookies to remove from the policy context
+    private final String[] deleteCookieNames = {"cookie2", "newCookie1", "newCookie5"};
+
     // test HttpServletRequest
     private MockHttpServletRequest httpServletRequest = null;
 
@@ -450,6 +486,22 @@ public class ServerCustomAssertionHolderTest extends CustomAssertionsPolicyTestB
         context.addCookie(testHttpCookies[1]);
 
         return context;
+    }
+
+    /**
+     * Do the actual test for updatedCookies and customAssertionsCookiesToOmit context-map
+     */
+    private void doTestUpdateAndDeletedCookies(final PolicyEnforcementContext context) {
+        Object[] cookies = context.getCookies().toArray();
+
+        final int totalNumCookies = testHttpCookies.length + newCookies.length - deleteCookieNames.length;
+        assertSame(4, totalNumCookies);
+        assertSame(totalNumCookies, cookies.length);
+
+        compareCookie(cookies[0], testHttpCookies[0]);
+        compareCookie(cookies[1], CookieUtils.fromServletCookie(newCookies[1], false));
+        compareCookie(cookies[2], CookieUtils.fromServletCookie(newCookies[2], false));
+        compareCookie(cookies[3], CookieUtils.fromServletCookie(newCookies[3], false));
     }
 
     /**
@@ -736,5 +788,132 @@ public class ServerCustomAssertionHolderTest extends CustomAssertionsPolicyTestB
 
         AssertionStatus status = serverAllAssertion.checkRequest(context);
         assertEquals(AssertionStatus.NONE, status);
+    }
+
+    @Test
+    public void testUpdateAndDeleteCookies() throws Exception {
+        final CustomAssertionHolder customAssertionHolder = new CustomAssertionHolder();
+        customAssertionHolder.setCategories(Category.AUDIT_ALERT);
+        customAssertionHolder.setDescriptionText("Test Custom Assertion");
+        customAssertionHolder.setCustomAssertion(new TestLegacyCustomAssertion());
+
+        assertNotNull("CustomAssertion cannot be null.", customAssertionHolder.getCustomAssertion());
+        serviceInvocation.setCustomAssertion(customAssertionHolder.getCustomAssertion());
+
+        // build the context
+        final PolicyEnforcementContext context = createPolicyContext();
+
+        doAnswer(new Answer<CustomAssertionStatus>() {
+            @Override
+            public CustomAssertionStatus answer(InvocationOnMock invocation) throws Throwable {
+                assertTrue("there is only one parameter for onRequest", invocation.getArguments().length == 1);
+
+                final Object param1 = invocation.getArguments()[0];
+                assertTrue("Param is CustomPolicyContext", param1 instanceof CustomPolicyContext);
+                final CustomPolicyContext policyContext = (CustomPolicyContext) param1;
+
+                //noinspection unchecked
+                Map<String, Object> contextMap = policyContext.getContext(); // let it throw if not of type Map<String, Object>
+                assertNotNull("context-map cannot be null", contextMap);
+
+                //noinspection unchecked
+                Vector<Cookie> updatedCookies = (Vector<Cookie>)contextMap.get("updatedCookies"); // let it throw if its not of type Vector<Cookie>
+
+                // add new cookies
+                Collections.addAll(updatedCookies, newCookies);
+
+                // add delete cookies
+                contextMap.put("customAssertionsCookiesToOmit", deleteCookieNames);
+
+                return CustomAssertionStatus.NONE;
+            }
+        }).when(serviceInvocation).checkRequest(Matchers.<CustomPolicyContext>any());
+
+        //noinspection deprecation
+        doAnswer(new Answer<Void>() {
+            @Override
+            public Void answer(final InvocationOnMock invocation) throws Throwable {
+                fail("onRequest should not be called when checkRequest is implemented!");
+                return null;
+            }
+        }).when(serviceInvocation).onRequest(Matchers.<ServiceRequest>any());
+
+        //noinspection deprecation
+        doAnswer(new Answer<Void>() {
+            @Override
+            public Void answer(final InvocationOnMock invocation) throws Throwable {
+                fail("onResponse should not be called when checkRequest is implemented!");
+                return null;
+            }
+        }).when(serviceInvocation).onResponse(Matchers.<ServiceResponse>any());
+
+        final ServerAssertion serverAssertion = serverPolicyFactory.compilePolicy(customAssertionHolder, false);
+        assertTrue("Is instance of ServerCustomAssertionHolder", serverAssertion instanceof ServerCustomAssertionHolder);
+        final ServerCustomAssertionHolder serverCustomAssertionHolder = (ServerCustomAssertionHolder)serverAssertion;
+
+        AssertionStatus status = serverCustomAssertionHolder.checkRequest(context);
+        assertEquals(AssertionStatus.NONE, status);
+
+        doTestUpdateAndDeletedCookies(context);
+    }
+
+
+    @Test
+    public void testLegacyUpdateAndDeleteCookies() throws Exception {
+        final CustomAssertionHolder customAssertionHolder = new CustomAssertionHolder();
+        customAssertionHolder.setCategories(Category.AUDIT_ALERT);
+        customAssertionHolder.setDescriptionText("Test Custom Assertion");
+        customAssertionHolder.setCustomAssertion(new TestLegacyCustomAssertion());
+
+        assertNotNull("CustomAssertion cannot be null.", customAssertionHolder.getCustomAssertion());
+        serviceInvocation.setCustomAssertion(customAssertionHolder.getCustomAssertion());
+
+        // build the context
+        final PolicyEnforcementContext context = createPolicyContext();
+
+        //noinspection deprecation
+        doAnswer(new Answer<Void>() {
+            @Override
+            public Void answer(final InvocationOnMock invocation) throws Throwable {
+                assertTrue("there is only one parameter for onRequest", invocation.getArguments().length == 1);
+
+                Object param1 = invocation.getArguments()[0];
+                assertTrue("Param is ServiceRequest", param1 instanceof ServiceRequest);
+                ServiceRequest request = (ServiceRequest) param1;
+
+                //noinspection unchecked
+                Map<String, Object> contextMap = request.getContext(); // let it throw if not of type Map<String, Object>
+                assertNotNull("context-map cannot be null", contextMap);
+
+                //noinspection unchecked
+                Vector<Cookie> updatedCookies = (Vector<Cookie>)contextMap.get("updatedCookies"); // let it throw if its not of type Vector<Cookie>
+
+                // add new cookies
+                Collections.addAll(updatedCookies, newCookies);
+
+                // add delete cookies
+                contextMap.put("customAssertionsCookiesToOmit", deleteCookieNames);
+
+                return null;
+            }
+        }).when(serviceInvocation).onRequest(Matchers.<ServiceRequest>any());
+
+        //noinspection deprecation
+        doAnswer(new Answer<Void>() {
+            @Override
+            public Void answer(final InvocationOnMock invocation) throws Throwable {
+                fail("onResponse should not be called when checkRequest is implemented!");
+                return null;
+            }
+        }).when(serviceInvocation).onResponse(Matchers.<ServiceResponse>any());
+
+        final ServerAssertion serverAssertion = serverPolicyFactory.compilePolicy(customAssertionHolder, false);
+        assertTrue("Is instance of ServerCustomAssertionHolder", serverAssertion instanceof ServerCustomAssertionHolder);
+        final ServerCustomAssertionHolder serverCustomAssertionHolder = (ServerCustomAssertionHolder)serverAssertion;
+
+        AssertionStatus status = serverCustomAssertionHolder.checkRequest(context);
+        assertEquals(AssertionStatus.NONE, status);
+
+        doTestUpdateAndDeletedCookies(context);
     }
 }
