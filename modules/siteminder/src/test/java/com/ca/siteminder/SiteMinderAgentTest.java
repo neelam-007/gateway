@@ -76,12 +76,12 @@ public class SiteMinderAgentTest {
         assertTrue(hla.checkProtected("aw80", "127.0.0.1", "/resfilter*", "POST", context));
 
         SiteMinderCredentials testCredentials = new SiteMinderCredentials("wssker_tacoma", "7layer");
-        assertEquals(1, hla.processAuthRequest(testCredentials, "127.0.0.1", null, context));
+        assertEquals(1, hla.processAuthenticationRequest(testCredentials, "127.0.0.1", null, context));
         for(Pair<String, Object> attr : context.getAttrList()) {
             System.out.println(attr.getKey() + ": " + attr.getValue());
         }
         String smsession = context.getSsoToken();
-        assertEquals(1, hla.processAuthRequest(new SiteMinderCredentials(), "127.0.0.1", smsession, context));
+        assertEquals(1, hla.processAuthenticationRequest(new SiteMinderCredentials(), "127.0.0.1", smsession, context));
         System.out.println("SMSESSION=" + context.getSsoToken());
     }
 

@@ -49,7 +49,7 @@ public class ServerSiteMinderCheckProtectedAssertion extends AbstractServerAsser
      * package level constructor used for unit tests
      * initializes the SM HLA with the configuration read fromm the smAgentConfigProperty
      * TODO: this should be changed to allow configuration read from
-     * @param assertion SiteMinderAssertion
+     * @param assertion SiteMinderAuthenticateAssertion
      * @param agent  SiteMInderHighLevelAgent
      * @throws PolicyAssertionException
      */

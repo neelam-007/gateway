@@ -160,6 +160,16 @@ public class SiteMinderHighLevelAgent {
         context.setAuthSchemes(new ArrayList<SiteMinderContext.AuthenticationScheme>(authSchemes));
     }
 
+    public int processAuthorizationRequest(final String userIp, final String ssoCookie,final SiteMinderContext context) throws SiteMinderApiClassException {
+        if(context == null) throw new SiteMinderApiClassException("SiteMinderContext object is null!");//should never happen
+
+        if(agent == null) throw new SiteMinderApiClassException("Unable to find SiteMinder Agent with id=" + context.getAgentId());
+
+        return agent.authorize(ssoCookie, userIp, context.getTransactionId(), context);
+
+
+    }
+
     /**
      * Perform authentication if required, and authorize the session against the specified resource.
      *
@@ -170,10 +180,10 @@ public class SiteMinderHighLevelAgent {
      * @return the value of new (or updated) SiteMinder SSO Token cookie
      * @throws SiteMinderApiClassException
      */
-    public int processAuthRequest(SiteMinderCredentials credentials,
-                                  final String userIp,
-                                  final String ssoCookie,
-                                  final SiteMinderContext context)
+    public int processAuthenticationRequest(SiteMinderCredentials credentials,
+                                            final String userIp,
+                                            final String ssoCookie,
+                                            final SiteMinderContext context)
         throws SiteMinderApiClassException {
         if(context == null) throw new SiteMinderApiClassException("SiteMinderContext object is null!");//should never happen
 
@@ -217,7 +227,6 @@ public class SiteMinderHighLevelAgent {
             // authenticate and authorize
             result = agent.authenticate( userCreds, userIp, context.getTransactionId(), context);
             if(result == AgentAPI.SUCCESS ){
-                //TODO: authorize method should use attrMap internally
                 newSsoCookie = context.getSsoToken();
                 if(newSsoCookie != null) {
                     result = agent.authorize(newSsoCookie, userIp, context.getTransactionId(), context);

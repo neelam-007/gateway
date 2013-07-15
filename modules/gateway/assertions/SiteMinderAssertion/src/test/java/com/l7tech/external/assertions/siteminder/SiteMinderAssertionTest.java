@@ -8,7 +8,7 @@ import org.junit.Test;
 import java.util.logging.Logger;
 
 /**
- * Test the SiteMinderAssertion.
+ * Test the SiteMinderAuthenticateAssertion.
  */
 public class SiteMinderAssertionTest {
 
@@ -16,7 +16,7 @@ public class SiteMinderAssertionTest {
 
     @Test
     public void testCloneIsDeepCopy() throws Exception {
-        AllAssertionsTest.checkCloneIsDeepCopy(new SiteMinderAssertion());
+        AllAssertionsTest.checkCloneIsDeepCopy(new SiteMinderAuthenticateAssertion());
     }
 
 }

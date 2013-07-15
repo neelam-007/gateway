@@ -8,6 +8,7 @@ import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
@@ -15,20 +16,96 @@ import java.util.logging.Logger;
 import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 
 /**
- * Copyright: Layer 7 Technologies, 2013
- * User: ymoiseyenko
- * Date: 7/12/13
+ * 
  */
-public class SiteMinderCheckProtectedAssertion extends Assertion implements UsesVariables, SetsVariables {
+public class SiteMinderAuthenticateAssertion extends Assertion implements UsesVariables, SetsVariables {
     protected static final Logger logger = Logger.getLogger(SiteMinderAuthenticateAssertion.class.getName());
 
+    public static final String DEFAULT_SMSESSION_NAME = "SMSESSION";
     public static final String DEFAULT_PREFIX = "siteminder";
+    public static final String SMCONTEXT = "smcontext";
 
     private String agentID;
-
-    private String protectedResource;
-    private String action;
+    private String cookieNameVariable;
+    private boolean useVarAsCookieSource;
+    private String cookieSourceVar;
+    private boolean useSMCookie;
+    private boolean useCustomCookieName;
     private String prefix;
+    private boolean isLastCredential;
+    private String login;
+    private String cookieDomain;
+    private String cookiePath;
+    private String cookieComment;
+    private String cookieSecure;
+    private String cookieVersion;
+    private String cookieMaxAge;
+
+    public String getLogin() {
+        return login;
+    }
+
+    public void setLogin(String login) {
+        this.login = login;
+    }
+
+    public String getCookieDomain() {
+        return cookieDomain;
+    }
+
+    public void setCookieDomain(String cookieDomain) {
+        this.cookieDomain = cookieDomain;
+    }
+
+    public String getCookiePath() {
+        return cookiePath;
+    }
+
+    public void setCookiePath(String cookiePath) {
+        this.cookiePath = cookiePath;
+    }
+
+    public String isCookieSecure() {
+        return cookieSecure;
+    }
+
+    public void setCookieSecure(String cookieSecure) {
+        this.cookieSecure = cookieSecure;
+    }
+
+    public String getCookieComment() {
+        return cookieComment;
+    }
+
+    public void setCookieComment(String cookieComment) {
+        this.cookieComment = cookieComment;
+    }
+
+    public String getCookieVersion() {
+        return cookieVersion;
+    }
+
+    public void setCookieVersion(String cookieVersion) {
+        this.cookieVersion = cookieVersion;
+    }
+
+
+
+    public String getCookieMaxAge() {
+        return cookieMaxAge;
+    }
+
+    public void setCookieMaxAge(String s) {
+        cookieMaxAge = s;
+    }
+
+    public boolean isLastCredential() {
+        return isLastCredential;
+    }
+
+    public void setLastCredential(boolean lastCredential) {
+        isLastCredential = lastCredential;
+    }
 
     public String getAgentID() {
         return agentID;
@@ -38,20 +115,45 @@ public class SiteMinderCheckProtectedAssertion extends Assertion implements Uses
         this.agentID = agentID;
     }
 
-    public String getProtectedResource() {
-        return protectedResource;
+
+    public String getCookieNameVariable() {
+        return cookieNameVariable;
     }
 
-    public void setProtectedResource(String protectedResource) {
-        this.protectedResource = protectedResource;
+    public void setCookieNameVariable(String cookieNameVariable) {
+        this.cookieNameVariable = cookieNameVariable;
     }
 
-    public String getAction() {
-        return action;
+    public boolean isUseVarAsCookieSource() {
+        return useVarAsCookieSource;
     }
 
-    public void setAction(String action) {
-        this.action = action;
+    public void setUseVarAsCookieSource(boolean useVarAsCookieSource) {
+        this.useVarAsCookieSource = useVarAsCookieSource;
+    }
+
+    public String getCookieSourceVar() {
+        return cookieSourceVar;
+    }
+
+    public void setCookieSourceVar(String cookieSourceVar) {
+        this.cookieSourceVar = cookieSourceVar;
+    }
+
+    public boolean isUseSMCookie() {
+        return useSMCookie;
+    }
+
+    public void setUseSMCookie(boolean useSMCookie) {
+        this.useSMCookie = useSMCookie;
+    }
+
+    public boolean isUseCustomCookieName() {
+        return useCustomCookieName;
+    }
+
+    public void setUseCustomCookieName(boolean useCustomCookieName) {
+        this.useCustomCookieName = useCustomCookieName;
     }
 
     public String getPrefix() {
@@ -65,13 +167,13 @@ public class SiteMinderCheckProtectedAssertion extends Assertion implements Uses
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     @Override
     public String[] getVariablesUsed() {
-        return Syntax.getReferencedNames(action, protectedResource, prefix);
+        return Syntax.getReferencedNames(cookieNameVariable, cookieSourceVar, cookieDomain, cookieComment, cookiePath, cookieSecure, cookieVersion, prefix);
     }
 
     //
     // Metadata
     //
-    private static final String META_INITIALIZED = SiteMinderCheckProtectedAssertion.class.getName() + ".metadataInitialized";
+    private static final String META_INITIALIZED = SiteMinderAuthenticateAssertion.class.getName() + ".metadataInitialized";
 
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = super.defaultMeta();
@@ -87,8 +189,8 @@ public class SiteMinderCheckProtectedAssertion extends Assertion implements Uses
         meta.put(AssertionMetadata.CLUSTER_PROPERTIES, props);
 
         // Set description for GUI
-        meta.put(AssertionMetadata.SHORT_NAME, "Check Protected Resource with SiteMinder Policy Server");
-        meta.put(AssertionMetadata.LONG_NAME, "Check if resource is protected with CA SiteMinder Policy Server");
+        meta.put(AssertionMetadata.SHORT_NAME, "Authenticate/Authorize with SiteMinder Policy Server");
+        meta.put(AssertionMetadata.LONG_NAME, "Authenticate and Authorize user with CA SiteMinder Policy Server");
 
         // Add to palette folder
         //   accessControl,
@@ -104,8 +206,8 @@ public class SiteMinderCheckProtectedAssertion extends Assertion implements Uses
         // request default feature set name for our class name, since we are a known optional module
         // that is, we want our required feature set to be "assertion:SiteMinder" rather than "set:modularAssertions"
         meta.put(AssertionMetadata.FEATURE_SET_NAME, "set:modularAssertions");
-        meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.siteminder.console.SiteMinderCheckProtectedPropertiesDialog");
-        meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "SiteMinder Check Protected Resource Properties");
+        meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.siteminder.console.SiteMinderAuthenticationPropertiesDialog");
+        meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "Authenticate via SiteMinder Properties");
 
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;
@@ -144,6 +246,6 @@ public class SiteMinderCheckProtectedAssertion extends Assertion implements Uses
      */
     @Override
     public VariableMetadata[] getVariablesSet() {
-        return new VariableMetadata[] {new VariableMetadata(getPrefix() + "." + "smcontext", true, false, null, false, DataType.BINARY)};
+        return new VariableMetadata[] {new VariableMetadata(getPrefix() + "." + SMCONTEXT, true, false, null, false, DataType.BINARY)};
     }
 }

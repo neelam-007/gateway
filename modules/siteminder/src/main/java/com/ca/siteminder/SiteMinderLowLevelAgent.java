@@ -204,6 +204,7 @@ public class SiteMinderLowLevelAgent {
 
         storeAttributes(attributes, attrList);
 
+
         if (retCode != AgentAPI.YES) {
             logger.log(Level.FINE, "SiteMinder authorization attempt: User: '" + userCreds.name + "' Resource: '" + SiteMinderUtil.safeNull(resCtxDef.resource) + "' Access Mode: '" + SiteMinderUtil.safeNull(resCtxDef.action) + "'");
             attributes.add(new Pair<String, Object>(SiteMinderAgentConstants.SESS_DEF_REASON, getSessionDefReasonCodeAsString(sessionDef)));
@@ -213,6 +214,10 @@ public class SiteMinderLowLevelAgent {
             logger.log(Level.FINE, "Authenticated - principal '" + userCreds.name + "'" + " resource '" + SiteMinderUtil.safeNull(resCtxDef.resource) + "'");
             retCode = getSsoToken(userCreds, resCtxDef.resource, sessionDef, attrList, context);
         }
+
+        //finally, set SessionDef in the SiteMinder context. This might be useful for the authorization
+        context.setSessionDef(sessionDef);
+
         return retCode;
     }
 
@@ -232,36 +237,31 @@ public class SiteMinderLowLevelAgent {
             throws SiteMinderApiClassException {
 
         if(context == null) throw new SiteMinderApiClassException("SiteMinderContext object is null!");
+        int result = 0;
 
         List<Pair<String, Object>> attributes = context.getAttrList();
         ResourceContextDef resCtxDef = context.getResContextDef();
         RealmDef realmDef = context.getRealmDef();
+        SessionDef sd = context.getSessionDef();// get SessionDef object from the context
 
-        AttributeList attrList = new AttributeList();
-        //TODO: why version is set to 0?
-        //since this is a 3rd party cookie should the last parameter set to true?
-        TokenDescriptor td = new TokenDescriptor(0, false);
-        StringBuffer sb = new StringBuffer();
+        if(ssoToken != null) {
+            AttributeList attrList = new AttributeList();
 
-        int result = agentApi.decodeSSOToken(ssoToken, td, attrList, updateCookie, sb);
+            result = decodeSsoToken(ssoToken, context, attrList);
 
-        String newToken = updateCookie? sb.toString():ssoToken;
+            if (result != AgentAPI.SUCCESS) {
+                logger.log(Level.FINE, "SiteMinder authorization attempt - SiteMinder is unable to decode the token '" + SiteMinderUtil.safeNull(ssoToken) + "'");
+                return result;
+            }
 
-        if (result != AgentAPI.SUCCESS) {
-            logger.log(Level.FINE, "SiteMinder authorization attempt - SiteMinder is unable to decode the token '" + SiteMinderUtil.safeNull(ssoToken) + "'");
-            return result;
+            sd = createSmSessionFromAttributes(attrList);
         }
 
-        if (logger.isLoggable(Level.FINE)) {
-            logger.log(Level.FINE,"Third party token? '" + td.bThirdParty + "'; Version '" + td.ver + "'.");
-        }
-
-        SessionDef sd = createSmSessionFromAttributes(attrList);
-        //TODO: creating attribute list for the second time? should we simply reuse existing one?
-        attrList = new AttributeList();
-        result = agentApi.authorize(getClientIp(userIp), transactionId, resCtxDef, realmDef, sd, attrList);
+        AttributeList attributeList = new AttributeList();
+        //TODO: use authorizeEx and return a list of SM variables for processing
+        result = agentApi.authorize(getClientIp(userIp), transactionId, resCtxDef, realmDef, sd, attributeList);
         //might be some other context variables that needs to be set
-        storeAttributes(attributes, attrList);
+        storeAttributes(attributes, attributeList);
 
         if (result != AgentAPI.YES) {
             logger.log(Level.FINE, "SiteMinder authorization attempt - Unauthorized session = '" + ssoToken + "', resource '" + SiteMinderUtil.safeNull(resCtxDef.resource) + "', result code '" + result + "'.");
@@ -269,8 +269,25 @@ public class SiteMinderLowLevelAgent {
             return result;
         }
 
-        logger.log(Level.FINE, "Authorized - against" + " resource '" + SiteMinderUtil.safeNull(resCtxDef.resource) + "'new SSO token : " + newToken);
-        context.setSsoToken(newToken);
+        logger.log(Level.FINE, "Authorized - against" + " resource '" + SiteMinderUtil.safeNull(resCtxDef.resource) + "'SSO token : " + context.getSsoToken());
+
+        return result;
+    }
+
+    private int decodeSsoToken(String ssoToken, SiteMinderContext context, AttributeList attrList) {
+        //TODO: why version is set to 0?
+        //since this is a 3rd party cookie should the last parameter set to true?
+        TokenDescriptor td = new TokenDescriptor(0, false);
+        StringBuffer sb = new StringBuffer();
+
+        int result = agentApi.decodeSSOToken(ssoToken, td, attrList, updateCookie, sb);
+
+        if (result ==  AgentAPI.SUCCESS) {
+            logger.log(Level.FINE,"Third party token? '" + td.bThirdParty + "'; Version '" + td.ver + "'.");
+            if(updateCookie) {
+                context.setSsoToken(sb.toString());//set only if the token is successfully decoded
+            }
+        }
 
         return result;
     }
@@ -530,7 +547,7 @@ public class SiteMinderLowLevelAgent {
             context.setSsoToken(token);
         } else {
             logger.log(Level.FINE, "Could not obtain SSO Token - result code " + retCode);
-
+            context.setSsoToken(null);
         }
         return retCode;
     }

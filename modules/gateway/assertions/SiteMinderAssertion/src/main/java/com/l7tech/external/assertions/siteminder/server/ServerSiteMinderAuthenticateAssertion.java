@@ -2,7 +2,7 @@ package com.l7tech.external.assertions.siteminder.server;
 
 import com.ca.siteminder.*;
 import com.l7tech.common.http.HttpCookie;
-import com.l7tech.external.assertions.siteminder.SiteMinderAssertion;
+import com.l7tech.external.assertions.siteminder.SiteMinderAuthenticateAssertion;
 import com.l7tech.external.assertions.siteminder.util.SiteMinderAssertionUtil;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.message.HttpRequestKnob;
@@ -29,17 +29,17 @@ import java.util.*;
 import java.util.logging.Level;
 
 /**
- * Server side implementation of the SiteMinderAssertion.
+ * Server side implementation of the SiteMinderAuthenticateAssertion.
  *
- * @see com.l7tech.external.assertions.siteminder.SiteMinderAssertion
+ * @see com.l7tech.external.assertions.siteminder.SiteMinderAuthenticateAssertion
  */
-public class ServerSiteMinderAssertion extends AbstractServerAssertion<SiteMinderAssertion> {
+public class ServerSiteMinderAuthenticateAssertion extends AbstractServerAssertion<SiteMinderAuthenticateAssertion> {
     private final String[] variablesUsed;
 
     private SiteMinderHighLevelAgent hla;
     private Config config;
 
-    public ServerSiteMinderAssertion(final SiteMinderAssertion assertion, ApplicationContext springContext) throws PolicyAssertionException {
+    public ServerSiteMinderAuthenticateAssertion(final SiteMinderAuthenticateAssertion assertion, ApplicationContext springContext) throws PolicyAssertionException {
         super(assertion);
         this.config = springContext.getBean("serverConfig", com.l7tech.util.Config.class);
         this.variablesUsed = assertion.getVariablesUsed();
@@ -59,11 +59,11 @@ public class ServerSiteMinderAssertion extends AbstractServerAssertion<SiteMinde
      * package level constructor used for unit tests
      * initializes the SM HLA with the configuration read fromm the smAgentConfigProperty
      * TODO: this should be changed to allow configuration read from
-     * @param assertion SiteMinderAssertion
+     * @param assertion SiteMinderAuthenticateAssertion
      * @param agent  SiteMInderHighLevelAgent
      * @throws PolicyAssertionException
      */
-    ServerSiteMinderAssertion( final SiteMinderAssertion assertion, final SiteMinderHighLevelAgent agent ) throws PolicyAssertionException {
+    ServerSiteMinderAuthenticateAssertion(final SiteMinderAuthenticateAssertion assertion, final SiteMinderHighLevelAgent agent) throws PolicyAssertionException {
         super(assertion);
         this.variablesUsed = assertion.getVariablesUsed();
         this.hla = agent;
@@ -80,8 +80,6 @@ public class ServerSiteMinderAssertion extends AbstractServerAssertion<SiteMinde
         final Map<String, Object> variableMap = context.getVariableMap(variablesUsed, getAudit());
         String varPrefix = SiteMinderAssertionUtil.extractContextVarValue(assertion.getPrefix(), variableMap, getAudit());
         String smCookieName = SiteMinderAssertionUtil.extractContextVarValue(assertion.getCookieNameVariable(), variableMap, getAudit());
-        String resource = SiteMinderAssertionUtil.extractContextVarValue(assertion.getProtectedResource(), variableMap, getAudit());
-        String action = SiteMinderAssertionUtil.extractContextVarValue(assertion.getAction(), variableMap, getAudit());
 
         //TODO: replace with real siteMinder config from layer7-siteminder module
         checkSmAgentConfig();
@@ -91,19 +89,20 @@ public class ServerSiteMinderAssertion extends AbstractServerAssertion<SiteMinde
         SiteMinderContext smContext = null;
         try {
             try {
-                smContext = (SiteMinderContext) context.getVariable(varPrefix + "." + "smcontext");
+                smContext = (SiteMinderContext) context.getVariable(varPrefix + "." + SiteMinderAuthenticateAssertion.SMCONTEXT);
             } catch (NoSuchVariableException e) {
-                final String msg = "No SiteMinder context variable ${" + varPrefix + "." + "smcontext" + "} found in the Policy Enforcement Context";
+                final String msg = "No SiteMinder context variable ${" + varPrefix + "." + SiteMinderAuthenticateAssertion.SMCONTEXT + "} found in the Policy Enforcement Context";
                 logger.log(Level.SEVERE, msg, ExceptionUtils.getDebugException(e));
                 logAndAudit(AssertionMessages.SITEMINDER_ERROR, msg);
+                return AssertionStatus.FALSIFIED;
             }
 
             //first check what credentials are accepted by the policy server
             SiteMinderCredentials credentials = collectCredentials(context, variableMap, smContext);
-            int result = hla.processAuthRequest(credentials, getClientIp(context), ssoToken, smContext);
+            int result = hla.processAuthenticationRequest(credentials, getClientIp(context), ssoToken, smContext);
             if(result == 1) {
                 context.setVariable(varPrefix + "." + smCookieName, smContext.getSsoToken());
-                setSessionCookie(context, smContext, variableMap);
+//                setSessionCookie(context, smContext, variableMap);
                 status = AssertionStatus.NONE;
             }
             populateContextVariables(context, varPrefix, smContext);
@@ -154,7 +153,7 @@ public class ServerSiteMinderAssertion extends AbstractServerAssertion<SiteMinde
 
 
     private void populateContextVariables(PolicyEnforcementContext pac, String prefix, SiteMinderContext context) {
-        pac.setVariable(prefix + "." + "smcontext", context);
+        pac.setVariable(prefix + "." + SiteMinderAuthenticateAssertion.SMCONTEXT, context);
 /*        List<Pair<String, Object>> attrList = context.getAttrList();
         for(Pair<String, Object> attr : attrList){
             pac.setVariable(prefix + "." + attr.left, attr.right);

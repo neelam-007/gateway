@@ -3,6 +3,7 @@ package com.ca.siteminder;
 import com.l7tech.util.Pair;
 import netegrity.siteminder.javaagent.RealmDef;
 import netegrity.siteminder.javaagent.ResourceContextDef;
+import netegrity.siteminder.javaagent.SessionDef;
 
 import java.util.*;
 
@@ -12,7 +13,6 @@ import java.util.*;
  * Date: 7/9/13
  */
 public class SiteMinderContext {
-
 
 
     public enum AuthenticationScheme {
@@ -25,12 +25,13 @@ public class SiteMinderContext {
            return null;
         }
 
-
-
     }
-    private ResourceContextDef resContextDef;
 
+
+
+    private ResourceContextDef resContextDef;
     private RealmDef realmDef;
+    private SessionDef sessionDef;
     private  String transactionId = null;
     private List<Pair<String, Object>> attrList = new ArrayList<Pair<String,Object>>();
     List<AuthenticationScheme> authSchemes = new ArrayList<AuthenticationScheme>();
@@ -71,6 +72,14 @@ public class SiteMinderContext {
 
     public void setRealmDef(RealmDef realmDef) {
         this.realmDef = realmDef;
+    }
+
+    public SessionDef getSessionDef() {
+        return sessionDef;
+    }
+
+    public void setSessionDef(SessionDef sessionDef) {
+        this.sessionDef = sessionDef;
     }
 
     public String getTransactionId() {
