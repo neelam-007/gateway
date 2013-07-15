@@ -1220,5 +1220,8 @@ public class AssertionMessages extends Messages {
     // Encapsulated Assertion
     public static final M ENCASS_INVALID_BACKING_POLICY = m(10050, Level.WARNING, "Underlying policy fragment is invalid for Encapsulated Assertion: {0}");
 
+    //SiteMinder Assertion
+    public static final M SITEMINDER_ERROR = m(10100, Level.WARNING, "SiteMinder Policy Server Error: {0}");
+
     // Highest ID reserved for AssertionMessages = 99999
 }

@@ -1,0 +1,5 @@
+<project name="layer7-siteminder" default="compile">
+    <property name="module.package.root" value="com/ca/siteminder"/>
+    <import file="../../etc/build/build-common.xml"/>
+</project>
+

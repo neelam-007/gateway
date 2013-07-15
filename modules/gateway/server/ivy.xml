@@ -37,6 +37,11 @@
         <dependency name="layer7-gateway-management" rev="latest.integration" conf="core"/>
         <dependency name="layer7-gateway-reporting" rev="latest.integration" conf="core"/>
         <dependency name="layer7-gateway-sca-common" rev="latest.integration" conf="core"/>
+        <dependency name="layer7-siteminder" rev="latest.integration" conf="core">
+            <exclude module="SmJavaApi" org="com.ca.siteminder" type="*" name="*" ext="*" conf="core,test" matcher="exact"/>
+            <exclude module="cryptoj" org="com.ca.siteminder" type="*" name="*" ext="*" conf="core,test" matcher="exact"/>
+            <exclude module="smjavasdk2" org="com.ca.siteminder" type="*" name="*" ext="*" conf="core,test" matcher="exact"/>
+        </dependency>
         <dependency name="layer7-test" rev="latest.integration" conf="test"/>
 
         <!-- Dependencies -->
