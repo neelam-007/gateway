@@ -1,6 +1,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.console.util.Registry;
+import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.gateway.common.service.ServiceHeader;
@@ -22,16 +23,18 @@ public class ServiceComboBox extends JComboBox {
     private static Logger logger = Logger.getLogger(ServiceComboBox.class.getName());
 
     /**
-     * @return the selected PublishedService instance, freshly loaded from the Gateway, or null if none selected or the selected service ID is unknown to the Gateway.
+     * @return the selected PublishedService instance, freshly loaded from the Gateway if possible, or null if none selected or the selected service ID is unknown to the Gateway.
+     * If the user does not have permission to read the selected service, a dummy PublishedService with only default values except its OID is returned.
      */
     public PublishedService getSelectedPublishedService() {
         return getSelectedPublishedService(this);
     }
 
     /**
-     * Get the selected PublishedService, loading it from the Gateway, or null.
+     * Get the selected PublishedService, loading it from the Gateway if possible, or null.
      * @param serviceCombo a JComboBox (not necessary a ServiceComboBox) that uses ServiceComboItem instances in its model.
      * @return the PublishedService currently selected in the combo box, or null if none is selected or the selected service ID is unknown to the Gateway.
+     * If the user does not have permission to read the selected service, a dummy PublishedService with only default values except its OID is returned.
      */
     public static PublishedService getSelectedPublishedService(JComboBox serviceCombo) {
         PublishedService svc = null;
@@ -43,6 +46,11 @@ public class ServiceComboBox extends JComboBox {
             svc = sa.findServiceByID(Long.toString(item.serviceID));
         } catch (FindException e) {
             logger.severe("Can not find service with id " + item.serviceID);
+        } catch (final PermissionDeniedException e) {
+            // service exists but user does not have permission to read it
+            logger.log(Level.WARNING, "User does not have permission to read selected service. Returning default service with selected oid.");
+            svc = new PublishedService();
+            svc.setOid(item.serviceID);
         }
         return svc;
     }
@@ -113,6 +121,12 @@ public class ServiceComboBox extends JComboBox {
             serviceCombo.setModel(new DefaultComboBoxModel(comboItems.toArray()));
             if (selectMe != null) {
                 serviceCombo.setSelectedItem(selectMe);
+                selected = true;
+            } else if (selectService) {
+                // oid not found in available services - may not be readable by the current user
+                comboItems.add(0, new ServiceComboItem("Service " + serviceIdToSelect + " is selected, but cannot be displayed.", serviceIdToSelect));
+                serviceCombo.setModel(new DefaultComboBoxModel(comboItems.toArray()));
+                serviceCombo.setSelectedIndex(0);
                 selected = true;
             } else {
                 selected = false;
