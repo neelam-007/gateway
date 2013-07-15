@@ -64,11 +64,25 @@ public class SecurePasswordComboBox extends JComboBox {
     }
 
     public void setSelectedSecurePassword(long oid) {
+        Integer selectedIndex = null;
         for (int i = 0; i < securePasswords.size(); i++) {
             SecurePassword securePassword = securePasswords.get(i);
             if (oid == securePassword.getOid()) {
-                setSelectedIndex(i);
+                selectedIndex = i;
+                break;
             }
+        }
+        if (selectedIndex != null) {
+            setSelectedIndex(selectedIndex);
+        } else {
+            // oid not found in available passwords - could be not readable by current user
+            logger.log(Level.WARNING, "Password oid not available to current user");
+            final SecurePassword unavailablePassword = new SecurePassword();
+            unavailablePassword.setOid(oid);
+            unavailablePassword.setName("Current password (password details are unavailable)");
+            securePasswords.add(0, unavailablePassword);
+            setModel(new DefaultComboBoxModel(securePasswords.toArray()));
+            setSelectedIndex(0);
         }
     }
 
