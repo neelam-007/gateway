@@ -19,6 +19,7 @@
 		<artifact name="ApiPortalIntegrationAssertion" type="aar" ext="aar" conf="master"/>
 	</publications>
 	<dependencies>
+        <dependency name="layer7-gateway-api" rev="latest.integration" force="true" conf="core->master"/>
         <dependency name="layer7-modular-assertions" rev="latest.integration" force="true"
                     conf="compile->compile;runtime->runtime;test->test"/>
         <dependency org="org.mockito" name="mockito-core" rev="1.9.0" force="true" conf="test"/>
