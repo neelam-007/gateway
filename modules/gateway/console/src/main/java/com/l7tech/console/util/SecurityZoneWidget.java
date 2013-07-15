@@ -127,9 +127,11 @@ public class SecurityZoneWidget extends JPanel {
                     loadedZones.add(SecurityZoneUtil.getNullZone());
                 }
                 for (final SecurityZone zone : SecurityZoneUtil.getSortedReadableSecurityZones()) {
-                    specificEntity.setSecurityZone(zone);
-                    if (securityProvider.hasPermission(new AttemptedUpdate(type, specificEntity))) {
-                        loadedZones.add(zone);
+                    if (zone.permitsEntityType(type)) {
+                        specificEntity.setSecurityZone(zone);
+                        if (securityProvider.hasPermission(new AttemptedUpdate(type, specificEntity))) {
+                            loadedZones.add(zone);
+                        }
                     }
                 }
                 specificEntity.setSecurityZone(originalZone);
