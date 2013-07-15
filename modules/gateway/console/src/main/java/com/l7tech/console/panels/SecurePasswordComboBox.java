@@ -63,6 +63,10 @@ public class SecurePasswordComboBox extends JComboBox {
         return (SecurePassword)getSelectedItem();
     }
 
+    /**
+     * @param oid the oid of the SecurePassword to select in the dropdown or #SecurePassword.DEFAULT_OID if none should be selected.
+     *            If the oid does not correspond to an available SecurePassword, the selected item will be shown as 'password details are unavailable'.
+     */
     public void setSelectedSecurePassword(long oid) {
         Integer selectedIndex = null;
         for (int i = 0; i < securePasswords.size(); i++) {
@@ -74,7 +78,7 @@ public class SecurePasswordComboBox extends JComboBox {
         }
         if (selectedIndex != null) {
             setSelectedIndex(selectedIndex);
-        } else {
+        } else if (SecurePassword.DEFAULT_OID != oid) {
             // oid not found in available passwords - could be not readable by current user
             logger.log(Level.WARNING, "Password oid not available to current user");
             final SecurePassword unavailablePassword = new SecurePassword();
@@ -83,6 +87,9 @@ public class SecurePasswordComboBox extends JComboBox {
             securePasswords.add(0, unavailablePassword);
             setModel(new DefaultComboBoxModel(securePasswords.toArray()));
             setSelectedIndex(0);
+        } else {
+            // password does not yet exist in the database
+            setSelectedItem(null);
         }
     }
 

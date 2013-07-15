@@ -138,7 +138,7 @@ public class LdapNtlmConfigurationPanel extends IdentityProviderStepPanel {
             } catch (NumberFormatException e) {
                 //this shouldn't happen; swallow the exception
             }
-            if(oid != -1L && securePasswordComboBox.containsItem(oid)) {
+            if(oid != -1L) {
                 securePasswordComboBox.setSelectedSecurePassword(oid);
             }
             else {

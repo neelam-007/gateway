@@ -161,12 +161,7 @@ public class KerberosAuthenticationDialog extends AssertionPropertiesOkCancelSup
         useGatewayKeytabRadioButton.setSelected(assertion.isKrbUseGatewayKeytab());
         useConfiguredCredentialsRadioButton.setSelected(!assertion.isKrbUseGatewayKeytab());
         gatewayAccountName.setText(assertion.getKrbConfiguredAccount());
-        if(securePasswordComboBox.containsItem(assertion.getKrbSecurePasswordReference())) {
-            securePasswordComboBox.setSelectedSecurePassword(assertion.getKrbSecurePasswordReference());
-        }
-        else {
-            securePasswordComboBox.setSelectedItem(null);
-        }
+        securePasswordComboBox.setSelectedSecurePassword(assertion.getKrbSecurePasswordReference());
         protocolTransitionRadioButton.setSelected(assertion.isS4U2Self());
         constrainedProxyRadioButton.setSelected(assertion.isS4U2Proxy());
         lastAuthenticatedUserRadioButton.setSelected(assertion.isLastAuthenticatedUser());
