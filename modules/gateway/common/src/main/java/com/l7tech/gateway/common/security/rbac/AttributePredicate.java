@@ -46,6 +46,7 @@ public class AttributePredicate extends ScopePredicate implements ScopeEvaluator
         AttributePredicate copy = new AttributePredicate(null, this.attribute, this.value);
         copy.setOid(this.getOid());
         copy.setMode(this.mode);
+        copy.getter = this.getter;
         return copy;
     }
 
@@ -180,8 +181,7 @@ public class AttributePredicate extends ScopePredicate implements ScopeEvaluator
 
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        if (permission != null)
-            sb.append(permission.getEntityType().getPluralName());
+        sb.append(permission.getEntityType().getPluralName());
         String oper = "sw".equals(mode) ? " starting with " : " = ";
         sb.append(" with ").append(attribute).append(oper).append(value);
         return sb.toString(); 
@@ -196,6 +196,7 @@ public class AttributePredicate extends ScopePredicate implements ScopeEvaluator
         AttributePredicate that = (AttributePredicate) o;
 
         if (attribute != null ? !attribute.equals(that.attribute) : that.attribute != null) return false;
+        if (getter != null ? !getter.equals(that.getter) : that.getter != null) return false;
         if (value != null ? !value.equals(that.value) : that.value != null) return false;
         if (mode != null ? !mode.equals(that.mode) : that.mode != null) return false;
 
@@ -206,6 +207,7 @@ public class AttributePredicate extends ScopePredicate implements ScopeEvaluator
         int result = super.hashCode();
         result = 31 * result + (attribute != null ? attribute.hashCode() : 0);
         result = 31 * result + (value != null ? value.hashCode() : 0);
+        result = 31 * result + (getter != null ? getter.hashCode() : 0);
         result = 31 * result + (mode != null ? mode.hashCode() : 0);
         return result;
     }

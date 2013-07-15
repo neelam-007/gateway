@@ -53,7 +53,7 @@ public class EditRoleDialog extends JDialog {
     private JTable roleAssigneeTable;
     private RoleAssignmentTableModel roleAssignmentTableModel;
 
-    private SimpleTableModel<PermissionGroup> permissionsTableModel;
+    private SimpleTableModel<Permission> permissionsTableModel;
 
     private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.RbacGui");
 
@@ -86,7 +86,7 @@ public class EditRoleDialog extends JDialog {
         this.permissionsTableModel = TableUtil.configureTable(permissionsTable,
             TableUtil.column("Operation", 20, 70, 120, operationCellGetter),
             TableUtil.column("Applies To", 150, 300, 99999, appliesToCellGetter));
-        permissionsTableModel.setRows(new ArrayList<PermissionGroup>(PermissionGroup.groupPermissions(role.getPermissions())));
+        permissionsTableModel.setRows(new ArrayList<Permission>(role.getPermissions()));
         permissionsTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         Utilities.setRowSorter(permissionsTable, permissionsTableModel, new int[] {0}, new boolean[] {true}, null);
 
@@ -196,21 +196,21 @@ public class EditRoleDialog extends JDialog {
         removeAssignment.setEnabled(validRowSelected && hasEditPermission);
     }
 
-    private Functions.Unary<String, PermissionGroup> operationCellGetter = new Functions.Unary<String, PermissionGroup>() {
+
+    private Functions.Unary<String, Permission> operationCellGetter = new Functions.Unary<String, Permission>() {
         @Override
-        public String call(PermissionGroup group) {
-            return group == null ? "<Null>" : group.getOperationString();
+        public String call(Permission perm) {
+            if (perm.getOperation() == OperationType.OTHER) {
+                return perm.getOtherOperationName();
+            } else {
+                return perm.getOperation().getName();
+            }
         }
     };
 
-    private Functions.Unary<String, PermissionGroup> appliesToCellGetter = new Functions.Unary<String, PermissionGroup>() {
+    private Functions.Unary<String, Permission> appliesToCellGetter = new Functions.Unary<String, Permission>() {
         @Override
-        public String call(PermissionGroup group) {
-            Set<Permission> perms = group.getPermissions();
-            if (perms.isEmpty())
-                return "<Unknown>";
-
-            Permission perm = group.getPermissions().iterator().next();
+        public String call(Permission perm) {
             EntityType etype = perm.getEntityType();
             switch(perm.getScope().size()) {
                 case 0:
@@ -380,15 +380,7 @@ public class EditRoleDialog extends JDialog {
             Permission p = showEditPermissionDialog(perm, true);
             if (p != null) {
                 perm.copyFrom(p);
-                PermissionGroup group = PermissionGroup.findGroup(permissionsTableModel.getRows(), p);
-                if (group != null) {
-                    group.addPermission(perm);
-                    permissionsTableModel.fireTableDataChanged();
-                } else {
-                    group = new PermissionGroup();
-                    group.addPermission(perm);
-                    permissionsTableModel.addRow(group);
-                }
+                permissionsTableModel.addRow(perm);
             }
             return;
         }
@@ -403,16 +395,13 @@ public class EditRoleDialog extends JDialog {
                 permissionsTableModel.fireTableDataChanged();
             }
         } else if (srcButton == removePermission) {
-            final PermissionGroup group = getSelectedPermissionGroup();
-            if (group == null)
-                return;
             Utilities.doWithConfirmation(EditRoleDialog.this,
                 resources.getString("manageRoles.removePermissionTitle"),
                 resources.getString("manageRoles.removePermissionMessage"),
                 new Runnable() {
                     @Override
                     public void run() {
-                        permissionsTableModel.removeRow(group);
+                        permissionsTableModel.removeRow(perm);
                     }
                 });
         }
@@ -429,24 +418,12 @@ public class EditRoleDialog extends JDialog {
         return dlg.getPermission();
     }
 
-    private PermissionGroup getSelectedPermissionGroup() {
+    private Permission getSelectedPermission() {
         int row = permissionsTable.getSelectedRow();
         if (row == -1)
             return null;
         row = permissionsTable.convertRowIndexToModel(row);
         return permissionsTableModel.getRowObject(row);
-    }
-
-    private Permission getSelectedPermission() {
-        // TODO remove this method and replace with one that works with entire groups
-        int row = permissionsTable.getSelectedRow();
-        if (row == -1)
-            return null;
-        row = permissionsTable.convertRowIndexToModel(row);
-        PermissionGroup group = permissionsTableModel.getRowObject(row);
-        if (group == null || group.getPermissions().isEmpty())
-            return null;
-        return group.getPermissions().iterator().next();
     }
 
     private void onOK() {
@@ -457,10 +434,8 @@ public class EditRoleDialog extends JDialog {
             }
             Set<Permission> perms = role.getPermissions();
             perms.clear();
-            for (PermissionGroup group : permissionsTableModel.getRows()) {
-                for (Permission perm : group.getPermissions()) {
-                    perms.add(perm);
-                }
+            for (Permission perm : permissionsTableModel.getRows()) {
+                perms.add(perm);
             }
 
             role.getRoleAssignments().clear();
