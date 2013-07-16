@@ -157,7 +157,7 @@ INSERT INTO cluster_properties
 -- JdbcConnection
 ALTER TABLE jdbc_connection ADD COLUMN objectid_backup BIGINT(20);
 update jdbc_connection set objectid_backup=objectid;
-ALTER TABLE jdbc_connection CHANGE COLUMN objectid goid VARBINARY(16);
+ALTER TABLE jdbc_connection CHANGE COLUMN objectid goid BINARY(16);
 -- For manual runs use: set @jdbc_prefix=concat(lpad(char(floor(rand()*4294967295)+1),4,'\0'),lpad(char(floor(rand()*4294967296)),4,'\0'));
 set @jdbc_prefix=lpad(char(#RANDOM_LONG_NOT_RESERVED#),8,'\0');
 update jdbc_connection set goid = concat(@jdbc_prefix,lpad(char(objectid_backup),8,'\0'));
@@ -168,7 +168,7 @@ ALTER TABLE service_metrics_details DROP FOREIGN KEY service_metrics_details_ibf
 
 ALTER TABLE service_metrics ADD COLUMN objectid_backup BIGINT(20);
 UPDATE service_metrics SET objectid_backup=objectid;
-ALTER TABLE service_metrics CHANGE COLUMN objectid goid VARBINARY(16);
+ALTER TABLE service_metrics CHANGE COLUMN objectid goid BINARY(16);
 -- For manual runs use: set @metrics_prefix=concat(lpad(char(floor(rand()*4294967295)+1),4,'\0'),lpad(char(floor(rand()*4294967296)),4,'\0'));
 SET @metrics_prefix=lpad(char(#RANDOM_LONG_NOT_RESERVED#),8,'\0');
 UPDATE service_metrics SET goid = concat(@metrics_prefix,lpad(char(objectid_backup),8,'\0'));
@@ -176,7 +176,7 @@ ALTER TABLE service_metrics DROP COLUMN objectid_backup;
 
 ALTER TABLE service_metrics_details ADD COLUMN service_metrics_oid_backup BIGINT(20);
 UPDATE service_metrics_details SET service_metrics_oid_backup=service_metrics_oid;
-ALTER TABLE service_metrics_details CHANGE COLUMN service_metrics_oid service_metrics_goid VARBINARY(16);
+ALTER TABLE service_metrics_details CHANGE COLUMN service_metrics_oid service_metrics_goid BINARY(16);
 UPDATE service_metrics_details SET service_metrics_goid = concat(@metrics_prefix,lpad(char(service_metrics_oid_backup),8,'\0'));
 ALTER TABLE service_metrics_details DROP COLUMN service_metrics_oid_backup;
 
@@ -185,7 +185,7 @@ ALTER TABLE service_metrics_details  ADD FOREIGN KEY (service_metrics_goid) REFE
 -- Logon info
 ALTER TABLE logon_info ADD COLUMN objectid_backup BIGINT(20);
 update logon_info set objectid_backup=objectid;
-ALTER TABLE logon_info CHANGE COLUMN objectid goid VARBINARY(16);
+ALTER TABLE logon_info CHANGE COLUMN objectid goid BINARY(16);
 -- For manual runs use: set @logonInfo_prefix=concat(lpad(char(floor(rand()*4294967295)+1),4,'\0'),lpad(char(floor(rand()*4294967296)),4,'\0'));
 SET @logonInfo_prefix=lpad(char(#RANDOM_LONG_NOT_RESERVED#),8,'\0');
 UPDATE logon_info SET goid = concat(@logonInfo_prefix,lpad(char(objectid_backup),8,'\0'));
@@ -194,7 +194,7 @@ ALTER TABLE logon_info DROP COLUMN objectid_backup;
 -- SampleMessage
 ALTER TABLE sample_messages ADD COLUMN objectid_backup BIGINT(20);
 update sample_messages set objectid_backup=objectid;
-ALTER TABLE sample_messages CHANGE COLUMN objectid goid VARBINARY(16);
+ALTER TABLE sample_messages CHANGE COLUMN objectid goid BINARY(16);
 -- For manual runs use: set @sample_messages_prefix=concat(lpad(char(floor(rand()*4294967295)+1),4,'\0'),lpad(char(floor(rand()*4294967296)),4,'\0'));
 set @sample_messages_prefix=lpad(char(#RANDOM_LONG_NOT_RESERVED#),8,'\0');
 update sample_messages set goid = concat(@sample_messages_prefix,lpad(char(objectid_backup),8,'\0'));
@@ -203,7 +203,7 @@ ALTER TABLE sample_messages DROP COLUMN objectid_backup;
 -- ClusterProperty
 ALTER TABLE cluster_properties ADD COLUMN objectid_backup BIGINT(20);
 update cluster_properties set objectid_backup=objectid;
-ALTER TABLE cluster_properties CHANGE COLUMN objectid goid VARBINARY(16);
+ALTER TABLE cluster_properties CHANGE COLUMN objectid goid BINARY(16);
 -- For manual runs use: set @cluster_properties_prefix=concat(lpad(char(floor(rand()*4294967295)+1),4,'\0'),lpad(char(floor(rand()*4294967296)),4,'\0'));
 set @cluster_properties_prefix=lpad(char(#RANDOM_LONG_NOT_RESERVED#),8,'\0');
 update cluster_properties set goid = concat(@cluster_properties_prefix,lpad(char(objectid_backup),8,'\0'));

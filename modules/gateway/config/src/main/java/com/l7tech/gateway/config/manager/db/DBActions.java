@@ -1118,7 +1118,7 @@ public class DBActions {
             stmt.execute("SET FOREIGN_KEY_CHECKS = 0");
             getDbDataStatements(privSourceConn, skipAudits, new StatementUser() {
                 @Override
-                public void useStatement(String tableName, List<String> rowData) throws SQLException {
+                public void useStatement(String tableName, List<Object> rowData) throws SQLException {
                     int size = rowData.size();
                     StringBuilder sql = new StringBuilder(512);
                     sql.append("insert into ").append(tableName).append(
@@ -1129,7 +1129,7 @@ public class DBActions {
                     try {
                         pStmt = privDestConn.prepareStatement(sql.toString());
                         for (int i = 0; i < size; i++) {
-                            pStmt.setString(i+1 , rowData.get(i));
+                            pStmt.setObject(i+1 , rowData.get(i));
                         }
                         pStmt.addBatch();
                         pStmt.executeUpdate();
@@ -1286,7 +1286,7 @@ public class DBActions {
     }
 
     private interface StatementUser {
-        void useStatement(String tableName, List<String> rowData) throws SQLException;
+        void useStatement(String tableName, List<Object> rowData) throws SQLException;
     }
 
     private void getDbDataStatements(Connection connection, boolean skipAudits, StatementUser statementUser) throws SQLException {
@@ -1301,9 +1301,9 @@ public class DBActions {
                 ResultSet dataRs = stmt.executeQuery("select * from " + tableName);
                 ResultSetMetaData meta = dataRs.getMetaData();
                 while (dataRs.next()) {
-                    List<String> rowData = new ArrayList<String>();
+                    List<Object> rowData = new ArrayList<Object>();
                     for (int i = 1; i <= meta.getColumnCount(); i++) {
-                        rowData.add(dataRs.getString(i));
+                        rowData.add(dataRs.getObject(i));
                     }
                     statementUser.useStatement(tableName, rowData);
                 }

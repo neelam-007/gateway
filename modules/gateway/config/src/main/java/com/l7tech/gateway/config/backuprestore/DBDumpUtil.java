@@ -318,6 +318,8 @@ class DBDumpUtil {
                     if (i < rowInfo.getColumnCount()) insertStatementToRecord.append(", ");
                     break;
                 case Types.LONGVARBINARY: // medium blob
+                case Types.VARBINARY:
+                case Types.BINARY: //GOID
                     final byte[] tmpBytes = resultSet.getBytes(i);
                     if (tmpBytes == null) {
                         insertStatementToRecord.append("NULL");
