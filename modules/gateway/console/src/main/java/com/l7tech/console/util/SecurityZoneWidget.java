@@ -112,8 +112,6 @@ public class SecurityZoneWidget extends JPanel {
             // show the zone set on the entity if possible
             if (initialZone.equals(SecurityZoneUtil.getNullZone()) || SecurityZoneUtil.getSortedReadableSecurityZones().contains(initialZone)) {
                 loadedZones.add(initialZone);
-            } else {
-                loadedZones.add(SecurityZoneUtil.getCurrentUnavailableZone());
             }
         } else if (operation == OperationType.UPDATE) {
             if (specificEntity != null) {
@@ -135,11 +133,6 @@ public class SecurityZoneWidget extends JPanel {
                     }
                 }
                 specificEntity.setSecurityZone(originalZone);
-
-                if (originalZone != null && !loadedZones.contains(initialZone)) {
-                    // user can't read the currently set zone
-                    loadedZones.add(0, SecurityZoneUtil.getCurrentUnavailableZone());
-                }
             } else {
                 // guess by analyzing permissions
                 loadedZones.addAll(SecurityZoneUtil.getSortedZonesForOperationAndEntityType(operation, entityTypes));
@@ -147,6 +140,11 @@ public class SecurityZoneWidget extends JPanel {
         } else {
             // guess by analyzing permissions
             loadedZones.addAll(SecurityZoneUtil.getSortedZonesForOperationAndEntityType(operation, entityTypes));
+        }
+
+        if (initialZone != null && !initialZone.equals(SecurityZoneUtil.getNullZone()) && !loadedZones.contains(initialZone)) {
+            // user can't read the currently set zone
+            loadedZones.add(0, SecurityZoneUtil.getCurrentUnavailableZone());
         }
 
         zonesComboBox.setModel(new DefaultComboBoxModel<>(loadedZones.toArray(new SecurityZone[loadedZones.size()])));
