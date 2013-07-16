@@ -672,7 +672,7 @@ public class KerberosClient {
     private static Map<String, Boolean> acceptPrincipalCache = new ConcurrentHashMap<String, Boolean>();
 
     static {
-        KerberosConfig.checkConfig( null, null, true );
+        KerberosConfig.checkConfig( null, null, true, false );
         ticketCache = KerberosTicketRepository.getInstance();
         ticketCache.setKerberosTicketLifetime(KERBEROS_LIFETIME * 1000L);
     }

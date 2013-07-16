@@ -104,7 +104,7 @@ public class KerberosConfigTest {
     @Test
     public void testConfigurePrincipal() throws IOException, KerberosException {
         writeKeyTab(MULTIPLE_PRINCIPAL_KEYTAB, false);
-        KerberosConfig.checkConfig("10.0.0.1, 10.0.0.2", "LOCALHOST.COM", false);
+        KerberosConfig.checkConfig("10.0.0.1, 10.0.0.2", "LOCALHOST.COM", false, false);
         assertTrue(hasRealm("LOCALHOST.COM"));
     }
 
@@ -174,7 +174,7 @@ public class KerberosConfigTest {
         lastModified = lastModified + 1000;
         file.setLastModified(lastModified);
         if (checkConfig) {
-            KerberosConfig.checkConfig(null, null, false);
+            KerberosConfig.checkConfig(null, null, false, false);
         }
     }
 

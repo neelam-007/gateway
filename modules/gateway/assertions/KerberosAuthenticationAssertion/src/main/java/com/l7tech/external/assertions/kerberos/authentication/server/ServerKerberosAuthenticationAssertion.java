@@ -16,17 +16,20 @@ import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.security.token.KerberosAuthenticationSecurityToken;
 import com.l7tech.security.token.SecurityToken;
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.server.policy.variable.ServerVariables;
+import com.l7tech.util.Config;
 import org.apache.commons.lang.StringUtils;
 import sun.security.krb5.PrincipalName;
 import sun.security.krb5.RealmException;
 import sun.security.krb5.internal.Ticket;
 
+import javax.inject.Inject;
 import java.io.IOException;
 import java.util.Map;
 import java.util.logging.Level;
@@ -42,6 +45,8 @@ public class ServerKerberosAuthenticationAssertion extends AbstractServerAsserti
     private static final Logger logger = Logger.getLogger(ServerKerberosAuthenticationAssertion.class.getName());
 
     private final String[] variablesUsed;
+    @Inject
+    private Config config;
 
     public ServerKerberosAuthenticationAssertion(final KerberosAuthenticationAssertion assertion) throws PolicyAssertionException {
         super(assertion);
@@ -79,6 +84,10 @@ public class ServerKerberosAuthenticationAssertion extends AbstractServerAsserti
         String serviceType = getServiceFromServicePrincipalName(assertion.getServicePrincipalName());
         String realm = ExpandVariables.process(assertion.getRealm(), variableMap, getAudit()).toUpperCase();//realm should always be in upper case
         String spn = ExpandVariables.process(assertion.getServicePrincipalName(), variableMap, getAudit());
+        String userRealm = null;
+        if (assertion.getUserRealm() != null && assertion.getUserRealm().trim().length() > 0) {
+            userRealm = ExpandVariables.process(assertion.getUserRealm(), variableMap, getAudit());
+        }
         String krbServiceAccount = !assertion.isKrbUseGatewayKeytab()?ExpandVariables.process(assertion.getKrbConfiguredAccount(), variableMap, getAudit()):null;
         
         String svcPrincipal = null;
@@ -136,11 +145,22 @@ public class ServerKerberosAuthenticationAssertion extends AbstractServerAsserti
 
                 if (assertion.isKrbUseGatewayKeytab()) {
                     svcPrincipal = getServicePrincipal(serviceType, realm);
-                    kerberosServiceTicket = client.getKerberosProxyServiceTicket(targetPrincipalName.getName(), svcPrincipal, authenticatedUserAccount);
+                    //Check for referral, if user realm != service realm, get referral service ticket.
+                    if (userRealm == null || userRealm.trim().length() == 0 || userRealm.equalsIgnoreCase(realm)) {
+                        kerberosServiceTicket = client.getKerberosProxyServiceTicket(targetPrincipalName.getName(), svcPrincipal, authenticatedUserAccount);
+                    } else {
+                        int maxReferral = config.getIntProperty(ServerConfigParams.PARAM_KERBEROS_REFERRAL_LIMIT, 1);
+                        kerberosServiceTicket = client.getKerberosProxyServiceTicketWithReferral(targetPrincipalName.getName(), svcPrincipal, authenticatedUserAccount, userRealm, maxReferral);
+                    }
                 } else {
                     PrincipalName userPrincipal = new PrincipalName(krbServiceAccount, realm);
                     String plaintextPassword = ServerVariables.getSecurePasswordByOid(new LoggingAudit(logger), assertion.getKrbSecurePasswordReference());
-                    kerberosServiceTicket = client.getKerberosProxyServiceTicket(targetPrincipalName.getName(), userPrincipal.getName(), plaintextPassword, authenticatedUserAccount);
+                    if (userRealm == null || userRealm.trim().length() == 0 || userRealm.equalsIgnoreCase(realm)) {
+                        kerberosServiceTicket = client.getKerberosProxyServiceTicket(targetPrincipalName.getName(), userPrincipal.getName(), plaintextPassword, authenticatedUserAccount);
+                    } else {
+                        int maxReferral = config.getIntProperty(ServerConfigParams.PARAM_KERBEROS_REFERRAL_LIMIT, 1);
+                        kerberosServiceTicket = client.getKerberosProxyServiceTicketWithReferral(targetPrincipalName.getName(), userPrincipal.getName(), plaintextPassword, authenticatedUserAccount, userRealm, maxReferral);
+                    }
                 }
             }
             else if(assertion.isS4U2Proxy()) {

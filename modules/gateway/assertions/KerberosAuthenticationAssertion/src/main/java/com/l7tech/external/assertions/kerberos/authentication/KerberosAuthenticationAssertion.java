@@ -43,6 +43,7 @@ public class KerberosAuthenticationAssertion extends Assertion implements UsesVa
     protected long krbSecurePasswordReference = -1L;
     protected boolean s4U2Self;
     protected boolean s4U2Proxy;
+    protected String userRealm;
 
     public boolean isLastAuthenticatedUser() {
         return lastAuthenticatedUser;
@@ -125,11 +126,18 @@ public class KerberosAuthenticationAssertion extends Assertion implements UsesVa
         this.s4U2Proxy = s4U2Proxy;
     }
 
+    public String getUserRealm() {
+        return userRealm;
+    }
+
+    public void setUserRealm(String userRealm) {
+        this.userRealm = userRealm;
+    }
 
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     @Override
     public String[] getVariablesUsed() {
-        return Syntax.getReferencedNames(servicePrincipalName, authenticatedUser, realm, krbConfiguredAccount);
+        return Syntax.getReferencedNames(servicePrincipalName, authenticatedUser, realm, krbConfiguredAccount, userRealm);
     }
 
     //

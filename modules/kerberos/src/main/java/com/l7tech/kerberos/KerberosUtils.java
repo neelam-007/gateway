@@ -81,11 +81,11 @@ public class KerberosUtils {
      * @param keytab The keytab data to use
      * @throws KerberosException if an error occurs
      */
-    public static void configureKerberos(boolean deleteIfMissing, byte[] keytab, String kdc, String realm ) throws KerberosException {
+    public static void configureKerberos(boolean deleteIfMissing, byte[] keytab, String kdc, String realm, boolean overwriteKrb5Conf ) throws KerberosException {
         if ( deleteIfMissing && keytab==null ) {
             KerberosConfig.deleteKerberosKeytab();
         }
-        KerberosConfig.generateKerberosConfig(keytab, kdc, realm);
+        KerberosConfig.generateKerberosConfig(keytab, kdc, realm, overwriteKrb5Conf);
         KerberosClient.reset();
     }
 

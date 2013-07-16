@@ -128,12 +128,12 @@ public class KerberosConfig implements KerberosConfigConstants {
      * On the SSG these files go in the conf directory, on the SSB in the ".l7tech"
      * directory.
      */
-    static void checkConfig( final String kdc, final String realm, final boolean isInit ) {
+    static void checkConfig( final String kdc, final String realm, final boolean isInit, final boolean overwriteKrb5Conf ) {
         if (!isInit || !initialized) {
             initialized = true;
 
             if ( SyspropUtil.getProperty( SYSPROP_SSG_HOME ) != null) {
-                configSsg( kdc, realm );
+                configSsg( kdc, realm, overwriteKrb5Conf);
             }
             else if ( SyspropUtil.getProperty( SYSPROP_LOGINCFG_PATH ) != null &&
                     SyspropUtil.getProperty( SYSPROP_KRB5CFG_PATH ) == null) {
@@ -145,7 +145,7 @@ public class KerberosConfig implements KerberosConfigConstants {
     /**
      * Can be called by a user to configure Kerberos info.
      */
-    static void generateKerberosConfig(byte[] keytabData, String kdc, String realm) throws KerberosException {
+    static void generateKerberosConfig(byte[] keytabData, String kdc, String realm, boolean overwriteKrb5Conf) throws KerberosException {
         if ( keytabData != null ) {
             File keytab = getKeytabFile();
 
@@ -162,7 +162,7 @@ public class KerberosConfig implements KerberosConfigConstants {
             }
         }
 
-        checkConfig( kdc, realm, false );
+        checkConfig( kdc, realm, false, overwriteKrb5Conf );
     }
 
     /**
@@ -190,7 +190,7 @@ public class KerberosConfig implements KerberosConfigConstants {
     /**
      * Initialize Kerberos configuration for the SSG.
      */
-    private static void configSsg( final String kdc, final String realm ) {
+    private static void configSsg( final String kdc, final String realm, final boolean overwriteKrb5Conf ) {
 
         try {
             //Clean up the cache
@@ -204,7 +204,7 @@ public class KerberosConfig implements KerberosConfigConstants {
             kerberosFiles.createLoginFile();
 
             // create the krb5.conf file
-            kerberosFiles.createKrb5ConfigFile();
+            kerberosFiles.createKrb5ConfigFile(overwriteKrb5Conf);
 
             if  (kerberosFiles.getKeytab() != null) {
                 KeyTabEntry[] keyTabEntries = kerberosFiles.getKeytab().getEntries();

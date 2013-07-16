@@ -3,7 +3,6 @@ package com.l7tech.kerberos;
 import com.l7tech.util.FileUtils;
 import org.apache.commons.codec.binary.Base64;
 import org.ietf.jgss.*;
-import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -198,7 +197,7 @@ public class KerberosClientTest {
      * we can use the captured data to mock the response from the KDC.
      */
     public void captureLoginStaticData() throws Exception {
-        KerberosConfig.checkConfig(null, null, true);
+        KerberosConfig.checkConfig(null, null, true, false);
 
         Subject subject = new Subject();
         LoginContext loginContext = new LoginContext(LOGIN_CONTEXT_OUT_KEYTAB, subject, getServerCallbackHandler(SERVICE_PRINCIPAL_NAME));

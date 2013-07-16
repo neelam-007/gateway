@@ -57,11 +57,13 @@ class KerberosConfigFiles implements KerberosConfigConstants {
     /**
      * Creates the krb5.conf file on the filesystem.
      */
-    public void createKrb5ConfigFile() {
+    public void createKrb5ConfigFile(boolean overwriteKrb5Conf) {
         // only valid if we have sufficient information
         if (krb5Prop.canWrite()) {
             File krb5ConfFile = new File( ConfigFactory.getProperty( SYSPROP_SSG_HOME ) + PATH_KRB5CFG);
-            writeConfigFile(krb5ConfFile, formatKrb5ConfContents());
+            if (!krb5ConfFile.exists() || overwriteKrb5Conf) {
+                writeConfigFile(krb5ConfFile, formatKrb5ConfContents());
+            }
         }
     }
 

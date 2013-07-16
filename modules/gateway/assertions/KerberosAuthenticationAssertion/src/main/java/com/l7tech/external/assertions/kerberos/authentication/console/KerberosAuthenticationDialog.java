@@ -43,6 +43,7 @@ public class KerberosAuthenticationDialog extends AssertionPropertiesOkCancelSup
     private JLabel servicePrincipalLabel;
     private JLabel passwordLabel;
     private JLabel realmLabel;
+    private JTextField userRealmTextField;
     private final InputValidator inputValidator;
 
     public KerberosAuthenticationDialog(final Frame owner, final KerberosAuthenticationAssertion assertion){
@@ -120,6 +121,7 @@ public class KerberosAuthenticationDialog extends AssertionPropertiesOkCancelSup
         specifyUserRadioButton.setEnabled(protocolTransitionRadioButton.isSelected());
         authenticatedUserTextField.setEnabled(specifyUserRadioButton.isSelected() && protocolTransitionRadioButton.isSelected());
         authenticatedUserPanel.setEnabled(protocolTransitionRadioButton.isSelected());
+        userRealmTextField.setEnabled(protocolTransitionRadioButton.isSelected());
 
     }
 
@@ -167,6 +169,7 @@ public class KerberosAuthenticationDialog extends AssertionPropertiesOkCancelSup
         lastAuthenticatedUserRadioButton.setSelected(assertion.isLastAuthenticatedUser());
         specifyUserRadioButton.setSelected(!assertion.isLastAuthenticatedUser());
         authenticatedUserTextField.setText(assertion.isLastAuthenticatedUser()? "":assertion.getAuthenticatedUser());
+        userRealmTextField.setText(assertion.getUserRealm());
 
         enableDisableComponents();
 
@@ -197,6 +200,7 @@ public class KerberosAuthenticationDialog extends AssertionPropertiesOkCancelSup
         assertion.setLastAuthenticatedUser(lastAuthenticatedUserRadioButton.isSelected());
         String authenticatedUser = !lastAuthenticatedUserRadioButton.isSelected()? authenticatedUserTextField.getText():null;
         assertion.setAuthenticatedUser(authenticatedUser);
+        assertion.setUserRealm(userRealmTextField.getText());
 
         return assertion;
     }

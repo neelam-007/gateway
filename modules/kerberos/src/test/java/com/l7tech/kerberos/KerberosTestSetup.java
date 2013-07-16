@@ -37,12 +37,12 @@ public class KerberosTestSetup {
      */
     private static void setupKeytab() throws IOException, KerberosException {
         String keytab = KerberosConfigTest.MULTIPLE_PRINCIPAL_KEYTAB;
-        KerberosConfig.generateKerberosConfig(Base64.decodeBase64(keytab), null, null);
+        KerberosConfig.generateKerberosConfig(Base64.decodeBase64(keytab), null, null, false);
     }
 
     public static void setupInvalidKeytab() throws KerberosException {
         String keytab = KerberosConfigTest.INVALID_KEYTAB;
-        KerberosConfig.generateKerberosConfig(Base64.decodeBase64(keytab), null, null);
+        KerberosConfig.generateKerberosConfig(Base64.decodeBase64(keytab), null, null, false);
     }
 
     /**

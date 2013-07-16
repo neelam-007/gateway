@@ -1,11 +1,11 @@
 package com.l7tech.external.assertions.kerberos.authentication.server;
 
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 import com.l7tech.external.assertions.kerberos.authentication.KerberosAuthenticationAssertion;
+import com.l7tech.gateway.common.audit.LoggingAudit;
 import com.l7tech.identity.ldap.LdapUser;
 import com.l7tech.kerberos.KerberosException;
 import com.l7tech.kerberos.KerberosGSSAPReqTicket;
@@ -23,14 +23,24 @@ import com.l7tech.security.token.http.HttpBasicToken;
 import com.l7tech.security.token.http.HttpNegotiateToken;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.message.AuthenticationContext;
+import com.l7tech.server.util.MockInjector;
 import com.l7tech.util.FileUtils;
+import com.l7tech.util.MockConfig;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.runners.MockitoJUnitRunner;
+import org.springframework.beans.factory.config.ConstructorArgumentValues;
+import org.springframework.beans.factory.support.AutowireCandidateQualifier;
+import org.springframework.beans.factory.support.RootBeanDefinition;
+import org.springframework.context.annotation.AnnotationConfigUtils;
+import org.springframework.context.support.GenericApplicationContext;
 import sun.security.krb5.internal.Ticket;
 
+import javax.inject.Inject;
 import java.io.File;
 import java.util.*;
 import java.util.logging.Logger;
@@ -54,15 +64,33 @@ public class ServerKerberosAuthenticationAssertionTest {
 
     TestServerKerberosAuthenticationAssertion fixture;
     KerberosAuthenticationAssertion assertion;
+    private GenericApplicationContext applicationContext;
 
 
     @Before
     public void setUp() throws Exception {
+        applicationContext = new GenericApplicationContext();
+        ConstructorArgumentValues cavs = new ConstructorArgumentValues();
+        cavs.addGenericArgumentValue(new Properties());
+        RootBeanDefinition config = new RootBeanDefinition(MockConfig.class, cavs, null);
+        applicationContext.registerBeanDefinition("config", config);
+
+        ConstructorArgumentValues assertionConstructors = new ConstructorArgumentValues();
+        assertion = new KerberosAuthenticationAssertion();
+        assertionConstructors.addGenericArgumentValue(assertion);
+        RootBeanDefinition serverKerberosAuthenticationAssertion = new RootBeanDefinition(TestServerKerberosAuthenticationAssertion.class, assertionConstructors, null);
+        serverKerberosAuthenticationAssertion.addQualifier(new AutowireCandidateQualifier(Inject.class));
+
+        AnnotationConfigUtils.registerAnnotationConfigProcessors(applicationContext);
+        applicationContext.registerBeanDefinition("auditFactory", new RootBeanDefinition(LoggingAudit.LoggingAuditFactory.class));
+        applicationContext.registerBeanDefinition("injector", new RootBeanDefinition(MockInjector.class));
+        applicationContext.registerBeanDefinition("serverKerberosAuthenticationAssertion", serverKerberosAuthenticationAssertion);
+        applicationContext.refresh();
+
         File tmpDir = FileUtils.createTempDirectory("kerberos", null, null, true);
         KerberosTestSetup.init(tmpDir);
         KerberosTestSetup.setUp(tmpDir);
-       assertion = new KerberosAuthenticationAssertion();
-       fixture = new TestServerKerberosAuthenticationAssertion(assertion);
+       fixture = (TestServerKerberosAuthenticationAssertion) applicationContext.getBean("serverKerberosAuthenticationAssertion");
 
     }
 

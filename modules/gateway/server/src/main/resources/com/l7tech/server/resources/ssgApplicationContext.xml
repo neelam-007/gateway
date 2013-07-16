@@ -419,6 +419,7 @@
                                 <value>krb5Keytab</value>
                                 <value>krb5Realm</value>
                                 <value>krb5KDC</value>
+                                <value>kerberos.krb5Config.overwrite</value>
                             </list>
                         </entry>
                         <entry key="pollingEmailListenerFactory">

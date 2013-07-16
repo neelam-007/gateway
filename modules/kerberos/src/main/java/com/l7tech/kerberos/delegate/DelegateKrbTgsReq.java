@@ -55,7 +55,7 @@ public class DelegateKrbTgsReq {
         return o;
     }
 
-    private DelegateKrbTgsReq(
+    protected DelegateKrbTgsReq(
             KDCOptions options,
             Credentials tgtCreds,
             PrincipalName sname,
@@ -153,7 +153,7 @@ public class DelegateKrbTgsReq {
         //If uname is provided, construct S4U2Self message
         if (uname != null) {
             tgsPAData = new PAData[2];
-            S4U2SelfData s4U2SelfData = new S4U2SelfData(uname, crealm, key);
+            S4U2SelfData s4U2SelfData = new S4U2SelfData(uname, uname.getRealm(), key);
             tgsPAData[1] = s4U2SelfData.getPAData();
         } else {
             tgsPAData = new PAData[1];
