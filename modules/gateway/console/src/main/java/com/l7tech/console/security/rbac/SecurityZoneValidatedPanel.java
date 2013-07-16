@@ -63,6 +63,6 @@ public class SecurityZoneValidatedPanel extends ValidatedPanel<SecurityZone> {
      * @return true if the zone is null or is SecurityZoneWidget.NULL_ZONE
      */
     public static boolean isNull(SecurityZone zone) {
-        return zone == null || zone == SecurityZoneUtil.getNullZone();
+        return zone == null || zone.equals(SecurityZoneUtil.getNullZone());
     }
 }
