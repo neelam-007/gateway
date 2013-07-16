@@ -27,6 +27,7 @@ public class LookupApiKeyAssertion extends Assertion implements UsesVariables, S
     public static final String OAUTH_SCOPE_SUFFIX = "oauthScope";
     public static final String OAUTH_TYPE_SUFFIX = "oauthType";
     public static final String VERSION_SUFFIX = "version";
+    public static final String ACCOUNT_PLAN_MAPPING_ID_SUFFIX = "accountPlanMappingId";
 
     /**
      * The API key to look up.
@@ -86,7 +87,8 @@ public class LookupApiKeyAssertion extends Assertion implements UsesVariables, S
         final VariableMetadata scope = new VariableMetadata(getVariableName(variablePrefix, OAUTH_SCOPE_SUFFIX), true, false, getVariableName(variablePrefix, OAUTH_SCOPE_SUFFIX), false, DataType.STRING);
         final VariableMetadata type = new VariableMetadata(getVariableName(variablePrefix, OAUTH_TYPE_SUFFIX), true, false, getVariableName(variablePrefix, OAUTH_TYPE_SUFFIX), false, DataType.STRING);
         final VariableMetadata version = new VariableMetadata(getVariableName(variablePrefix, VERSION_SUFFIX), true, false, getVariableName(variablePrefix, VERSION_SUFFIX), false, DataType.STRING);
-        return new VariableMetadata[]{key, found, status, secret, service, plan, xml, label, platform, callbackUrl, scope, type, version};
+        final VariableMetadata accountId = new VariableMetadata(getVariableName(variablePrefix, ACCOUNT_PLAN_MAPPING_ID_SUFFIX), true, false, getVariableName(variablePrefix, ACCOUNT_PLAN_MAPPING_ID_SUFFIX), false, DataType.STRING);
+        return new VariableMetadata[]{key, found, status, secret, service, plan, xml, label, platform, callbackUrl, scope, type, version, accountId};
     }
 
     private String getVariableName(final String prefix, final String suffix) {

@@ -117,6 +117,10 @@ public abstract class AbstractResourceHandler<R extends Resource, E extends Abst
         }
         return outputList;
     }
+    
+    public int getCacheItems(){
+        return manager.getCacheItem();
+    }
 
     protected AbstractResourceHandler(@NotNull final PortalGenericEntityManager manager, @NotNull final ResourceTransformer transformer) {
         this.manager = manager;

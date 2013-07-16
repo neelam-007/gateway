@@ -94,7 +94,7 @@ public class ModuleLoadListenerTest {
         when(applicationContext.getBean("folderManager", FolderManager.class)).thenReturn(folderManager);
         when(applicationContext.getBean("clusterPropertyManager", ClusterPropertyManager.class)).thenReturn(clusterPropertyManager);
         listener = new ModuleLoadListener(applicationContext, apiKeyManager, portalManagedServiceManager,
-                ModuleLoadListener.API_KEY_MANAGEMENT_SERVICE_POLICY_XML, ModuleLoadListener.RELOAD_API_PLANS_SERVICE_POLICY_XML, ModuleLoadListener.API_PORTAL_INTEGRATION_POLICY_XML);
+                ModuleLoadListener.API_KEY_MANAGEMENT_SERVICE_POLICY_XML, ModuleLoadListener.API_PORTAL_INTEGRATION_POLICY_XML);
         portalManagedServices = new ArrayList<PortalManagedService>();
     }
 
@@ -107,7 +107,7 @@ public class ModuleLoadListenerTest {
 
         verify(applicationEventProxy).removeApplicationListener(any(ApplicationListener.class));
         verify(serviceTemplateManager).unregister(argThat(new ServiceTemplateWithName(ModuleLoadListener.API_KEY_MANAGEMENT_INTERNAL_SERVICE_NAME)));
-        verify(serviceTemplateManager).unregister(argThat(new ServiceTemplateWithName(ModuleLoadListener.RELOAD_API_PLANS_INTERNAL_SERVICE_NAME)));
+        verify(serviceTemplateManager).unregister(argThat(new ServiceTemplateWithName(ModuleLoadListener.API_PORTAL_INTEGRATION_INTERNAL_SERVICE_NAME)));
     }
 
     @Test
@@ -245,7 +245,7 @@ public class ModuleLoadListenerTest {
 
         verify(licenseManager).isFeatureEnabled(featureSetName);
         verify(serviceTemplateManager).register(argThat(new ServiceTemplateWithName(ModuleLoadListener.API_KEY_MANAGEMENT_INTERNAL_SERVICE_NAME)));
-        verify(serviceTemplateManager).register(argThat(new ServiceTemplateWithName(ModuleLoadListener.RELOAD_API_PLANS_INTERNAL_SERVICE_NAME)));
+        verify(serviceTemplateManager).register(argThat(new ServiceTemplateWithName(ModuleLoadListener.API_PORTAL_INTEGRATION_INTERNAL_SERVICE_NAME)));
     }
 
     @Test
@@ -266,7 +266,7 @@ public class ModuleLoadListenerTest {
     @Test
     public void onApplicationEventLicenseEventExceptionReadingKeyPolicyFile() {
         listener = new ModuleLoadListener(applicationContext, apiKeyManager, portalManagedServiceManager,
-                "doesnotexist", ModuleLoadListener.RELOAD_API_PLANS_SERVICE_POLICY_XML, "doesnotexist");
+                "doesnotexist", ModuleLoadListener.API_PORTAL_INTEGRATION_POLICY_XML);
         event = new LicenseEvent("", Level.INFO, "", "");
         final String featureSetName = new ApiPortalIntegrationAssertion().getFeatureSetName();
         when(licenseManager.isFeatureEnabled(featureSetName)).thenReturn(true);
@@ -275,13 +275,13 @@ public class ModuleLoadListenerTest {
 
         verify(licenseManager).isFeatureEnabled(featureSetName);
         verify(serviceTemplateManager, never()).register(argThat(new ServiceTemplateWithName(ModuleLoadListener.API_KEY_MANAGEMENT_INTERNAL_SERVICE_NAME)));
-        verify(serviceTemplateManager).register(argThat(new ServiceTemplateWithName(ModuleLoadListener.RELOAD_API_PLANS_INTERNAL_SERVICE_NAME)));
+        verify(serviceTemplateManager).register(argThat(new ServiceTemplateWithName(ModuleLoadListener.API_PORTAL_INTEGRATION_INTERNAL_SERVICE_NAME)));
     }
 
     @Test
     public void onApplicationEventLicenseEventExceptionReadingPlansPolicyFile() {
         listener = new ModuleLoadListener(applicationContext, apiKeyManager, portalManagedServiceManager,
-                ModuleLoadListener.API_KEY_MANAGEMENT_SERVICE_POLICY_XML, "doesnotexist", "doesnotexist");
+                ModuleLoadListener.API_KEY_MANAGEMENT_SERVICE_POLICY_XML, "doesnotexist");
         event = new LicenseEvent("", Level.INFO, "", "");
         final String featureSetName = new ApiPortalIntegrationAssertion().getFeatureSetName();
         when(licenseManager.isFeatureEnabled(featureSetName)).thenReturn(true);
@@ -290,13 +290,13 @@ public class ModuleLoadListenerTest {
 
         verify(licenseManager).isFeatureEnabled(featureSetName);
         verify(serviceTemplateManager).register(argThat(new ServiceTemplateWithName(ModuleLoadListener.API_KEY_MANAGEMENT_INTERNAL_SERVICE_NAME)));
-        verify(serviceTemplateManager, never()).register(argThat(new ServiceTemplateWithName(ModuleLoadListener.RELOAD_API_PLANS_INTERNAL_SERVICE_NAME)));
+        verify(serviceTemplateManager, never()).register(argThat(new ServiceTemplateWithName(ModuleLoadListener.API_PORTAL_INTEGRATION_INTERNAL_SERVICE_NAME)));
     }
 
     @Test
     public void onApplicationEventLicenseEventExceptionReadingApiIntegrationPolicyFile() {
         listener = new ModuleLoadListener(applicationContext, apiKeyManager, portalManagedServiceManager,
-                "doesnotexist", "doesnotexist", ModuleLoadListener.API_PORTAL_INTEGRATION_POLICY_XML);
+                "doesnotexist", ModuleLoadListener.API_PORTAL_INTEGRATION_POLICY_XML);
         event = new LicenseEvent("", Level.INFO, "", "");
         final String featureSetName = new ApiPortalIntegrationAssertion().getFeatureSetName();
         when(licenseManager.isFeatureEnabled(featureSetName)).thenReturn(true);
@@ -305,7 +305,7 @@ public class ModuleLoadListenerTest {
 
         verify(licenseManager).isFeatureEnabled(featureSetName);
         verify(serviceTemplateManager).register(argThat(new ServiceTemplateWithName(ModuleLoadListener.API_PORTAL_INTEGRATION_INTERNAL_SERVICE_NAME)));
-        verify(serviceTemplateManager, never()).register(argThat(new ServiceTemplateWithName(ModuleLoadListener.RELOAD_API_PLANS_INTERNAL_SERVICE_NAME)));
+        verify(serviceTemplateManager, never()).register(argThat(new ServiceTemplateWithName(ModuleLoadListener.API_KEY_MANAGEMENT_INTERNAL_SERVICE_NAME)));
     }
 
     @Test
@@ -598,22 +598,6 @@ public class ModuleLoadListenerTest {
     }
 
     @Test
-    public void onApplicationEventReloadApiPlans() throws Exception {
-        final PublishedService service = new PublishedService();
-        service.setName(ModuleLoadListener.RELOAD_API_PLANS_INTERNAL_SERVICE_NAME);
-        event = new EntityInvalidationEvent(service, PublishedService.class, new long[]{1234L}, new char[]{EntityInvalidationEvent.CREATE});
-        when(serviceManager.findByPrimaryKey(1234L)).thenReturn(service);
-        when(policyManager.findByUniqueName(ModuleLoadListener.API_PLANS_FRAGMENT_POLICY_NAME)).thenReturn(null);
-
-        listener.onApplicationEvent(event);
-
-        verify(policyManager).findByUniqueName(ModuleLoadListener.API_PLANS_FRAGMENT_POLICY_NAME);
-        final PolicyWithName matchesPolicyFragment = new PolicyWithName(ModuleLoadListener.API_PLANS_FRAGMENT_POLICY_NAME);
-        verify(policyManager).save(argThat(matchesPolicyFragment));
-        verify(policyVersionManager).checkpointPolicy(argThat(matchesPolicyFragment), Matchers.eq(true), Matchers.eq(true));
-    }
-
-    @Test
     public void onApplicationEventApiPortalIntegrationCreateClusterProperty() throws Exception {
         final PublishedService service = new PublishedService();
         service.setName(ModuleLoadListener.API_PORTAL_INTEGRATION_INTERNAL_SERVICE_NAME);
@@ -653,6 +637,8 @@ public class ModuleLoadListenerTest {
         policyOAuth2.setGuid("policyOAuth2");
         final Policy policyApiPlans = new Policy(PolicyType.INCLUDE_FRAGMENT, ModuleLoadListener.API_PLANS_FRAGMENT_POLICY_NAME, "<policy></policy>", false);
         policyApiPlans.setGuid("policyApiPlans");
+        final Policy policyAccountPlans = new Policy(PolicyType.INCLUDE_FRAGMENT, ModuleLoadListener.ACCOUNT_PLANS_FRAGMENT_POLICY_NAME, "<policy></policy>", false);
+        policyAccountPlans.setGuid("policyAccountPlans");
 
         final Folder folder = new Folder(ModuleLoadListener.API_DELETED_FOLDER_NAME, null);
         folder.setOid(4444L);
@@ -660,17 +646,20 @@ public class ModuleLoadListenerTest {
         when(policyManager.findByUniqueName(ModuleLoadListener.OAUTH1X_FRAGMENT_POLICY_NAME)).thenReturn(policyOAuth1);
         when(policyManager.findByUniqueName(ModuleLoadListener.OAUTH20_FRAGMENT_POLICY_NAME)).thenReturn(policyOAuth2);
         when(policyManager.findByUniqueName(ModuleLoadListener.API_PLANS_FRAGMENT_POLICY_NAME)).thenReturn(policyApiPlans);
+        when(policyManager.findByUniqueName(ModuleLoadListener.ACCOUNT_PLANS_FRAGMENT_POLICY_NAME)).thenReturn(policyAccountPlans);
         when(folderManager.findByUniqueName(ModuleLoadListener.API_DELETED_FOLDER_NAME)).thenReturn(folder);
 
         ClusterProperty folderProperty = new ClusterProperty(ModuleConstants.API_DELETED_FOLDER_ID, String.valueOf(folder.getId()));
         ClusterProperty oauth1xProperty = new ClusterProperty(ModuleConstants.OAUTH1X_FRAGMENT_GUID, policyOAuth1.getGuid());
         ClusterProperty oautn20Property = new ClusterProperty(ModuleConstants.OAUTH20_FRAGMENT_GUID, policyOAuth2.getGuid());
         ClusterProperty policyApiProperty = new ClusterProperty(ModuleConstants.API_PLANS_FRAGMENT_GUID, policyApiPlans.getGuid());
+        ClusterProperty policyAccountProperty = new ClusterProperty(ModuleConstants.ACCOUNT_PLANS_FRAGMENT_GUID, policyAccountPlans.getGuid());
 
         when(clusterPropertyManager.findByUniqueName(ModuleConstants.API_DELETED_FOLDER_ID)).thenReturn(folderProperty);
         when(clusterPropertyManager.findByUniqueName(ModuleConstants.OAUTH1X_FRAGMENT_GUID)).thenReturn(oauth1xProperty);
         when(clusterPropertyManager.findByUniqueName(ModuleConstants.OAUTH20_FRAGMENT_GUID)).thenReturn(oautn20Property);
         when(clusterPropertyManager.findByUniqueName(ModuleConstants.API_PLANS_FRAGMENT_GUID)).thenReturn(policyApiProperty);
+        when(clusterPropertyManager.findByUniqueName(ModuleConstants.ACCOUNT_PLANS_FRAGMENT_GUID)).thenReturn(policyAccountProperty);
 
         listener.onApplicationEvent(event);
 
@@ -693,8 +682,8 @@ public class ModuleLoadListenerTest {
 
         listener.onApplicationEvent(event);
 
-        verify(clusterPropertyManager, atLeast(4)).save(Matchers.<ClusterProperty>any());
-        verify(clusterPropertyManager, atMost(4)).save(Matchers.<ClusterProperty>any());
+        verify(clusterPropertyManager, atLeast(5)).save(Matchers.<ClusterProperty>any());
+        verify(clusterPropertyManager, atMost(5)).save(Matchers.<ClusterProperty>any());
 
         ClusterProperty notInstalled = new ClusterProperty(ModuleConstants.NOT_INSTALLED_VALUE, ModuleConstants.NOT_INSTALLED_VALUE);
 
@@ -702,11 +691,13 @@ public class ModuleLoadListenerTest {
         when(clusterPropertyManager.findByUniqueName(ModuleConstants.OAUTH1X_FRAGMENT_GUID)).thenReturn(notInstalled);
         when(clusterPropertyManager.findByUniqueName(ModuleConstants.OAUTH20_FRAGMENT_GUID)).thenReturn(notInstalled);
         when(clusterPropertyManager.findByUniqueName(ModuleConstants.API_PLANS_FRAGMENT_GUID)).thenReturn(notInstalled);
+        when(clusterPropertyManager.findByUniqueName(ModuleConstants.ACCOUNT_PLANS_FRAGMENT_GUID)).thenReturn(notInstalled);
         
         assertEquals(ModuleConstants.NOT_INSTALLED_VALUE, clusterPropertyManager.findByUniqueName(ModuleConstants.API_DELETED_FOLDER_ID).getValue());
         assertEquals(ModuleConstants.NOT_INSTALLED_VALUE, clusterPropertyManager.findByUniqueName(ModuleConstants.OAUTH1X_FRAGMENT_GUID).getValue());
         assertEquals(ModuleConstants.NOT_INSTALLED_VALUE, clusterPropertyManager.findByUniqueName(ModuleConstants.OAUTH20_FRAGMENT_GUID).getValue());
         assertEquals(ModuleConstants.NOT_INSTALLED_VALUE, clusterPropertyManager.findByUniqueName(ModuleConstants.API_PLANS_FRAGMENT_GUID).getValue());
+        assertEquals(ModuleConstants.NOT_INSTALLED_VALUE, clusterPropertyManager.findByUniqueName(ModuleConstants.ACCOUNT_PLANS_FRAGMENT_GUID).getValue());
 
         verify(clusterPropertyManager, never()).update(Matchers.<ClusterProperty>any());
 
@@ -725,16 +716,17 @@ public class ModuleLoadListenerTest {
     }
 
     @Test
-    public void onApplicationEventReloadApiPlansFragmentAlreadyExists() throws Exception {
+    public void onApplicationEventApiPlansFragmentAlreadyExists() throws Exception {
         final PublishedService service = new PublishedService();
-        service.setName(ModuleLoadListener.RELOAD_API_PLANS_INTERNAL_SERVICE_NAME);
+        service.setName(ModuleLoadListener.API_PORTAL_INTEGRATION_INTERNAL_SERVICE_NAME);
         event = new EntityInvalidationEvent(service, PublishedService.class, new long[]{1234L}, new char[]{EntityInvalidationEvent.CREATE});
         when(serviceManager.findByPrimaryKey(1234L)).thenReturn(service);
         when(policyManager.findByUniqueName(ModuleLoadListener.API_PLANS_FRAGMENT_POLICY_NAME)).thenReturn(new Policy(PolicyType.INCLUDE_FRAGMENT, ModuleLoadListener.API_PLANS_FRAGMENT_POLICY_NAME, "", false));
+        when(policyManager.findByUniqueName(ModuleLoadListener.ACCOUNT_PLANS_FRAGMENT_POLICY_NAME)).thenReturn(new Policy(PolicyType.INCLUDE_FRAGMENT, ModuleLoadListener.ACCOUNT_PLANS_FRAGMENT_POLICY_NAME, "", false));
 
         listener.onApplicationEvent(event);
 
-        verify(policyManager).findByUniqueName(ModuleLoadListener.API_PLANS_FRAGMENT_POLICY_NAME);
+        verify(policyManager, times(6)).findByUniqueName(anyString());
         verify(policyManager, never()).save(Matchers.<Policy>any());
         verify(policyVersionManager, never()).checkpointPolicy(any(Policy.class), any(Boolean.class), any(Boolean.class));
     }
@@ -743,16 +735,20 @@ public class ModuleLoadListenerTest {
      * Don't let the exception bubble up.
      */
     @Test
-    public void onApplicationEventReloadApiPlansExceptionFindingPolicy() throws Exception {
+    public void onApplicationEventApiPlansExceptionFindingPolicy() throws Exception {
         final PublishedService service = new PublishedService();
-        service.setName(ModuleLoadListener.RELOAD_API_PLANS_INTERNAL_SERVICE_NAME);
+        service.setName(ModuleLoadListener.API_PORTAL_INTEGRATION_INTERNAL_SERVICE_NAME);
         event = new EntityInvalidationEvent(service, PublishedService.class, new long[]{1234L}, new char[]{EntityInvalidationEvent.CREATE});
         when(serviceManager.findByPrimaryKey(1234L)).thenReturn(service);
-        when(policyManager.findByUniqueName(ModuleLoadListener.API_PLANS_FRAGMENT_POLICY_NAME)).thenThrow(new FindException("cannot find policy"));
+        when(policyManager.findByUniqueName(anyString())).thenThrow(new FindException("cannot find policy"));
 
         listener.onApplicationEvent(event);
 
-        verify(policyManager).findByUniqueName(ModuleLoadListener.API_PLANS_FRAGMENT_POLICY_NAME);
+        verify(policyManager, times(6)).findByUniqueName(anyString());
+        verify(policyManager, atMost(4)).findByUniqueName(ModuleLoadListener.API_PLANS_FRAGMENT_POLICY_NAME);
+        verify(policyManager, atMost(4)).findByUniqueName(ModuleLoadListener.ACCOUNT_PLANS_FRAGMENT_POLICY_NAME);
+        verify(policyManager, atLeast(1)).findByUniqueName(ModuleLoadListener.OAUTH1X_FRAGMENT_POLICY_NAME);
+        verify(policyManager, atLeast(1)).findByUniqueName(ModuleLoadListener.OAUTH20_FRAGMENT_POLICY_NAME);
         verify(policyManager, never()).save(Matchers.<Policy>any());
         verify(policyVersionManager, never()).checkpointPolicy(any(Policy.class), any(Boolean.class), any(Boolean.class));
     }
@@ -761,17 +757,21 @@ public class ModuleLoadListenerTest {
      * Don't let the exception bubble up.
      */
     @Test
-    public void onApplicationEventReloadApiPlansExceptionSavingPolicy() throws Exception {
+    public void onApplicationEventApiPlansExceptionSavingPolicy() throws Exception {
         final PublishedService service = new PublishedService();
-        service.setName(ModuleLoadListener.RELOAD_API_PLANS_INTERNAL_SERVICE_NAME);
+        service.setName(ModuleLoadListener.API_PORTAL_INTEGRATION_INTERNAL_SERVICE_NAME);
         event = new EntityInvalidationEvent(service, PublishedService.class, new long[]{1234L}, new char[]{EntityInvalidationEvent.CREATE});
         when(serviceManager.findByPrimaryKey(1234L)).thenReturn(service);
-        when(policyManager.findByUniqueName(ModuleLoadListener.API_PLANS_FRAGMENT_POLICY_NAME)).thenReturn(null);
+        when(policyManager.findByUniqueName(anyString())).thenReturn(null);
         when(policyManager.save(any(Policy.class))).thenThrow(new SaveException("cannot save policy"));
 
         listener.onApplicationEvent(event);
 
-        verify(policyManager).findByUniqueName(ModuleLoadListener.API_PLANS_FRAGMENT_POLICY_NAME);
+        verify(policyManager, times(6)).findByUniqueName(anyString());
+        verify(policyManager, atMost(4)).findByUniqueName(ModuleLoadListener.API_PLANS_FRAGMENT_POLICY_NAME);
+        verify(policyManager, atMost(4)).findByUniqueName(ModuleLoadListener.ACCOUNT_PLANS_FRAGMENT_POLICY_NAME);
+        verify(policyManager, atLeast(1)).findByUniqueName(ModuleLoadListener.OAUTH1X_FRAGMENT_POLICY_NAME);
+        verify(policyManager, atLeast(1)).findByUniqueName(ModuleLoadListener.OAUTH20_FRAGMENT_POLICY_NAME);
         final PolicyWithName matchesPolicyFragment = new PolicyWithName(ModuleLoadListener.API_PLANS_FRAGMENT_POLICY_NAME);
         verify(policyManager).save(argThat(matchesPolicyFragment));
         verify(policyVersionManager, never()).checkpointPolicy(any(Policy.class), any(Boolean.class), any(Boolean.class));
@@ -781,19 +781,107 @@ public class ModuleLoadListenerTest {
      * Don't let the exception bubble up.
      */
     @Test
-    public void onApplicationEventReloadApiPlansExceptionActivatingPolicy() throws Exception {
+    public void onApplicationEventApiPlansExceptionActivatingPolicy() throws Exception {
         final PublishedService service = new PublishedService();
-        service.setName(ModuleLoadListener.RELOAD_API_PLANS_INTERNAL_SERVICE_NAME);
+        service.setName(ModuleLoadListener.API_PORTAL_INTEGRATION_INTERNAL_SERVICE_NAME);
         event = new EntityInvalidationEvent(service, PublishedService.class, new long[]{1234L}, new char[]{EntityInvalidationEvent.CREATE});
-        when(serviceManager.findByPrimaryKey(1234L)).thenReturn(service);
-        when(policyManager.findByUniqueName(ModuleLoadListener.API_PLANS_FRAGMENT_POLICY_NAME)).thenReturn(null);
+        when(serviceManager.findByPrimaryKey(1234L)).thenReturn(service).thenReturn(null);
+        when(policyManager.findByUniqueName(anyString())).thenReturn(null);
         when(policyVersionManager.checkpointPolicy(any(Policy.class), any(Boolean.class), any(Boolean.class))).thenThrow(new ObjectModelException("cannot activate policy"));
 
         listener.onApplicationEvent(event);
 
-        verify(policyManager).findByUniqueName(ModuleLoadListener.API_PLANS_FRAGMENT_POLICY_NAME);
+        verify(policyManager, times(6)).findByUniqueName(anyString());
+        verify(policyManager, atMost(4)).findByUniqueName(ModuleLoadListener.API_PLANS_FRAGMENT_POLICY_NAME);
+        verify(policyManager, atMost(4)).findByUniqueName(ModuleLoadListener.ACCOUNT_PLANS_FRAGMENT_POLICY_NAME);
+        verify(policyManager, atLeast(1)).findByUniqueName(ModuleLoadListener.OAUTH1X_FRAGMENT_POLICY_NAME);
+        verify(policyManager, atLeast(1)).findByUniqueName(ModuleLoadListener.OAUTH20_FRAGMENT_POLICY_NAME);
         final PolicyWithName matchesPolicyFragment = new PolicyWithName(ModuleLoadListener.API_PLANS_FRAGMENT_POLICY_NAME);
         verify(policyManager).save(argThat(matchesPolicyFragment));
+        verify(policyVersionManager).checkpointPolicy(argThat(matchesPolicyFragment), Matchers.eq(true), Matchers.eq(true));
+    }
+
+    //Account Plans
+
+    @Test
+    public void onApplicationEventAccountPlansFragmentAlreadyExists() throws Exception {
+        final PublishedService service = new PublishedService();
+        service.setName(ModuleLoadListener.API_PORTAL_INTEGRATION_INTERNAL_SERVICE_NAME);
+        event = new EntityInvalidationEvent(service, PublishedService.class, new long[]{1234L}, new char[]{EntityInvalidationEvent.CREATE});
+        when(serviceManager.findByPrimaryKey(1234L)).thenReturn(service);
+        when(policyManager.findByUniqueName(ModuleLoadListener.ACCOUNT_PLANS_FRAGMENT_POLICY_NAME)).thenReturn(new Policy(PolicyType.INCLUDE_FRAGMENT, ModuleLoadListener.ACCOUNT_PLANS_FRAGMENT_POLICY_NAME, "", false));
+        when(policyManager.findByUniqueName(ModuleLoadListener.API_PLANS_FRAGMENT_POLICY_NAME)).thenReturn(new Policy(PolicyType.INCLUDE_FRAGMENT, ModuleLoadListener.API_PLANS_FRAGMENT_POLICY_NAME, "", false));
+
+        listener.onApplicationEvent(event);
+
+        verify(policyManager, times(6)).findByUniqueName(anyString());
+        verify(policyManager, atMost(4)).findByUniqueName(ModuleLoadListener.ACCOUNT_PLANS_FRAGMENT_POLICY_NAME);
+        verify(policyManager, never()).save(Matchers.<Policy>any());
+        verify(policyVersionManager, never()).checkpointPolicy(any(Policy.class), any(Boolean.class), any(Boolean.class));
+    }
+
+    /**
+     * Don't let the exception bubble up.
+     */
+    @Test
+    public void onApplicationEventAccountPlansExceptionFindingPolicy() throws Exception {
+        final PublishedService service = new PublishedService();
+        service.setName(ModuleLoadListener.API_PORTAL_INTEGRATION_INTERNAL_SERVICE_NAME);
+        event = new EntityInvalidationEvent(service, PublishedService.class, new long[]{1234L}, new char[]{EntityInvalidationEvent.CREATE});
+        when(serviceManager.findByPrimaryKey(1234L)).thenReturn(service);
+        when(policyManager.findByUniqueName(anyString())).thenThrow(new FindException("cannot find policy"));
+
+        listener.onApplicationEvent(event);
+
+        verify(policyManager, times(6)).findByUniqueName(anyString());
+        verify(policyManager, atMost(4)).findByUniqueName(ModuleLoadListener.ACCOUNT_PLANS_FRAGMENT_POLICY_NAME);
+        verify(policyManager, never()).save(Matchers.<Policy>any());
+        verify(policyVersionManager, never()).checkpointPolicy(any(Policy.class), any(Boolean.class), any(Boolean.class));
+    }
+
+    /**
+     * Don't let the exception bubble up.
+     */
+    @Test
+    public void onApplicationEventAccountPlansExceptionSavingPolicy() throws Exception {
+        final PublishedService service = new PublishedService();
+        service.setName(ModuleLoadListener.API_PORTAL_INTEGRATION_INTERNAL_SERVICE_NAME);
+        event = new EntityInvalidationEvent(service, PublishedService.class, new long[]{1234L}, new char[]{EntityInvalidationEvent.CREATE});
+        when(serviceManager.findByPrimaryKey(1234L)).thenReturn(service);
+        when(policyManager.findByUniqueName(anyString())).thenReturn(null);
+        when(policyManager.save(any(Policy.class))).thenThrow(new SaveException("cannot save policy"));
+
+        listener.onApplicationEvent(event);
+
+        verify(policyManager, times(6)).findByUniqueName(anyString());
+        verify(policyManager, atMost(4)).findByUniqueName(ModuleLoadListener.ACCOUNT_PLANS_FRAGMENT_POLICY_NAME);
+        final PolicyWithName matchesPolicyFragment = new PolicyWithName(ModuleLoadListener.API_PLANS_FRAGMENT_POLICY_NAME);
+        verify(policyManager).save(argThat(matchesPolicyFragment));
+        //final PolicyWithName matchesPolicyFragment2 = new PolicyWithName(ModuleLoadListener.ACCOUNT_PLANS_FRAGMENT_POLICY_NAME);
+        //verify(policyManager).save(argThat(matchesPolicyFragment2));
+        verify(policyVersionManager, never()).checkpointPolicy(any(Policy.class), any(Boolean.class), any(Boolean.class));
+    }
+
+    /**
+     * Don't let the exception bubble up.
+     */
+    @Test
+    public void onApplicationEventAccountPlansExceptionActivatingPolicy() throws Exception {
+        final PublishedService service = new PublishedService();
+        service.setName(ModuleLoadListener.API_PORTAL_INTEGRATION_INTERNAL_SERVICE_NAME);
+        event = new EntityInvalidationEvent(service, PublishedService.class, new long[]{1234L}, new char[]{EntityInvalidationEvent.CREATE});
+        when(serviceManager.findByPrimaryKey(1234L)).thenReturn(service);
+        when(policyManager.findByUniqueName(anyString())).thenReturn(null);
+        when(policyVersionManager.checkpointPolicy(any(Policy.class), any(Boolean.class), any(Boolean.class))).thenThrow(new ObjectModelException("cannot activate policy"));
+
+        listener.onApplicationEvent(event);
+
+        verify(policyManager, times(6)).findByUniqueName(anyString());
+        verify(policyManager, atMost(4)).findByUniqueName(ModuleLoadListener.ACCOUNT_PLANS_FRAGMENT_POLICY_NAME);
+        final PolicyWithName matchesPolicyFragment = new PolicyWithName(ModuleLoadListener.API_PLANS_FRAGMENT_POLICY_NAME);
+        verify(policyManager).save(argThat(matchesPolicyFragment));
+        //final PolicyWithName matchesPolicyFragment2 = new PolicyWithName(ModuleLoadListener.ACCOUNT_PLANS_FRAGMENT_POLICY_NAME);
+        //verify(policyManager).save(argThat(matchesPolicyFragment2));
         verify(policyVersionManager).checkpointPolicy(argThat(matchesPolicyFragment), Matchers.eq(true), Matchers.eq(true));
     }
 

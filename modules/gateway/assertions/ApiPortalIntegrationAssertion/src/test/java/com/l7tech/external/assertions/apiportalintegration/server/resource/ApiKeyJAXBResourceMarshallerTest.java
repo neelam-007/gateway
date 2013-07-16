@@ -190,6 +190,8 @@ public class ApiKeyJAXBResourceMarshallerTest {
         stringBuilder.append("<l7:ApiKey xmlns:l7=\"http://ns.l7tech.com/2012/04/api-management\">");
         stringBuilder.append(buildExpectedXmlForElement("Key", key.getKey()));
         stringBuilder.append(buildExpectedXmlForElement("Status", key.getStatus()));
+        stringBuilder.append(buildExpectedXmlForElement("AccountPlanMappingId", key.getAccountPlanMappingId()));
+        stringBuilder.append(buildExpectedXmlForElement("CustomMetaData", key.getCustomMetaData()));
         if (key.getApis().isEmpty()) {
             stringBuilder.append("<l7:Apis/>");
         } else {

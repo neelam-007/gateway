@@ -4,7 +4,7 @@ import com.l7tech.external.assertions.apiportalintegration.server.ApiKeyData;
 import com.l7tech.external.assertions.apiportalintegration.server.PortalGenericEntityManager;
 
 /**
- * Holds the ApiKeyManager instance, until we find a way to stash it in the application context.
+ * Holds the ApiKeyManager instance for legacy API Key, until we find a way to stash it in the application context.
  */
 public class ApiKeyManagerFactory {
     private static PortalGenericEntityManager<ApiKeyData> instance;

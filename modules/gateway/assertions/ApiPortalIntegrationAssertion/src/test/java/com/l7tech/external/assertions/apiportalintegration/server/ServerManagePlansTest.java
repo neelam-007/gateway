@@ -7,10 +7,14 @@ import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.policy.AssertionLicense;
+import com.l7tech.policy.PolicyValidator;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
+import com.l7tech.server.policy.PolicyManager;
+import com.l7tech.server.policy.PolicyVersionManager;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -18,6 +22,7 @@ import org.mockito.ArgumentMatcher;
 import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
+import org.springframework.transaction.PlatformTransactionManager;
 
 import javax.xml.bind.JAXBException;
 import java.util.*;
@@ -25,7 +30,8 @@ import java.util.*;
 import static com.l7tech.external.assertions.apiportalintegration.ManagePortalResourceAssertion.*;
 import static com.l7tech.external.assertions.apiportalintegration.server.ServerManagePortalResourceAssertion.ROOT_URI;
 import static com.l7tech.external.assertions.apiportalintegration.server.ServerManagePortalResourceAssertion.SUCCESS;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.argThat;
 import static org.mockito.Mockito.*;
@@ -50,12 +56,31 @@ public class ServerManagePlansTest {
     private ApiPlanResourceHandler planResourceHandler;
     @Mock
     private ApiKeyResourceHandler keyResourceHandler;
+    @Mock
+    private ApiKeyDataResourceHandler keyLegacyResourceHandler;
+    @Mock
+    private AccountPlanResourceHandler accountPlanResourceHandler;
+    @Mock
+    private PolicyManager policyManager;
+    @Mock
+    private PolicyVersionManager policyVersionManager;
+    @Mock
+    private PlatformTransactionManager transactionManager;
+    @Mock
+    private AssertionLicense licenseManager;
+    @Mock
+    private PolicyValidator policyValidator;
+    @Mock
+    private PolicyValidationMarshaller policyValidationMarshaller;
+    private PolicyHelper policyHelper;
 
     @Before
     public void setup() throws Exception {
         assertion = new ManagePortalResourceAssertion();
+        policyHelper = new PolicyHelper(policyManager,policyVersionManager,transactionManager,licenseManager,policyValidator);
         serverAssertion = new ServerManagePortalResourceAssertion(assertion,
-                resourceMarshaller, resourceUnmarshaller, apiResourceHandler, planResourceHandler, keyResourceHandler);
+                resourceMarshaller, resourceUnmarshaller, apiResourceHandler, planResourceHandler, keyResourceHandler,
+                keyLegacyResourceHandler, accountPlanResourceHandler, policyHelper, policyValidationMarshaller);
         policyContext = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message());
         apiPlanResources = new ArrayList<ApiPlanResource>();
         expectedFilters = new HashMap<String, String>();

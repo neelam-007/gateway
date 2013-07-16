@@ -22,6 +22,8 @@ public final class ModuleConstants {
     public static final String OAUTHCALLBACKURL_ATTRIBUTE_NAME = "callbackUrl";
     public static final String OAUTHSCOPE_ATTRIBUTE_NAME = "scope";
     public static final String OAUTHTYPE_ATTRIBUTE_NAME = "type";
+    public static final String ACCOUNTPLANMAPPINGID_ELEMENT_NAME = "AccountPlanMappingId";
+    public static final String CUSTOMMETADATA_ELEMENT_NAME = "CustomMetaData";
 
     public static final String PORTAL_API_PLANS_UI_PROPERTY = "portal.apiplans"; // should really be portal.api.plans
     public static final String TEMP_PORTAL_MANAGED_SERVICE_INDICATOR = "L7p:ApiPortalManagedServiceAssertion";
@@ -33,6 +35,7 @@ public final class ModuleConstants {
     public static final String OAUTH1X_FRAGMENT_GUID = "portal.oauth1.fragment.guid";
     public static final String OAUTH20_FRAGMENT_GUID = "portal.oauth2.fragment.guid";
     public static final String API_PLANS_FRAGMENT_GUID = "portal.api.plans.fragment.guid";
+    public static final String ACCOUNT_PLANS_FRAGMENT_GUID = "portal.account.plans.fragment.guid";
     public static final String NOT_INSTALLED_VALUE = "not installed";
 }
 //

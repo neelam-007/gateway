@@ -2,11 +2,9 @@ package com.l7tech.external.assertions.apiportalintegration.server.resource;
 
 import org.apache.commons.lang.StringUtils;
 
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.*;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -20,6 +18,13 @@ public class ApiKeyResource extends Resource {
     private String key = StringUtils.EMPTY;
     @XmlElement(name = "Status", namespace = JAXBResourceMarshaller.NAMESPACE)
     private String status = StringUtils.EMPTY;
+    @XmlElement(name = "AccountPlanMappingId", namespace = JAXBResourceMarshaller.NAMESPACE)
+    private String accountPlanMappingId = StringUtils.EMPTY;
+    @XmlElement(name = "LastUpdate", namespace = JAXBResourceMarshaller.NAMESPACE)
+    @XmlSchemaType(name = "timestamp")
+    private Date lastUpdate;
+    @XmlElement(name = "CustomMetaData", namespace = JAXBResourceMarshaller.NAMESPACE)
+    private String customMetaData = StringUtils.EMPTY;
 
     /**
      * Key = api id, Value = plan id.
@@ -121,6 +126,38 @@ public class ApiKeyResource extends Resource {
             this.security = new SecurityDetails();
         } else {
             this.security = security;
+        }
+    }
+
+    public Date getLastUpdate() {
+        return lastUpdate;
+    }
+
+    public void setLastUpdate(final Date lastUpdate) {
+        this.lastUpdate = lastUpdate;
+    }
+
+    public String getAccountPlanMappingId() {
+        return accountPlanMappingId;
+    }
+
+    public void setAccountPlanMappingId(final String accountPlanMappingId) {
+        if (accountPlanMappingId != null) {
+            this.accountPlanMappingId = accountPlanMappingId;
+        } else {
+            this.accountPlanMappingId = StringUtils.EMPTY;
+        }
+    }
+
+    public String getCustomMetaData() {
+        return customMetaData;
+    }
+
+    public void setCustomMetaData(final String customMetaData) {
+        if (customMetaData != null) {
+            this.customMetaData = customMetaData;
+        } else {
+            this.customMetaData = StringUtils.EMPTY;
         }
     }
 

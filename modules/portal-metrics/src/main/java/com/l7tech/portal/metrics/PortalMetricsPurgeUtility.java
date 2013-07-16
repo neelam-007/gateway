@@ -29,6 +29,7 @@ public class PortalMetricsPurgeUtility {
     private static final String COUNT_SERVICE_METRICS_QUERY = "SELECT COUNT(*) AS C FROM " + SERVICE_METRICS + " WHERE PERIOD_START <= ? AND RESOLUTION = ?";
     private static final String SELECT_SERVICE_METRICS_QUERY = "SELECT OBJECTID FROM " + SERVICE_METRICS + " WHERE PERIOD_START <= ? AND RESOLUTION = ? LIMIT ?";
     private static final String DELETE_SERVICE_METRICS_QUERY = "DELETE FROM " + SERVICE_METRICS + " WHERE OBJECTID IN ";
+    private static final String DELETE_SERVICE_METRICS_DETAIL_QUERY = "DELETE FROM " + SERVICE_METRICS_DETAILS + " WHERE SERVICE_METRICS_OID IN ";
     private static final String DELETE_MAPPING_VALUES_QUERY = "DELETE FROM " + MAPPING_VALUES + " WHERE OBJECTID NOT IN (SELECT MAPPING_VALUES_OID FROM " + SERVICE_METRICS_DETAILS + ")";
     private static final String DELETE_MAPPING_KEYS_QUERY = "DELETE FROM " + MAPPING_KEYS + " WHERE OBJECTID NOT IN (SELECT MAPPING_KEYS_OID FROM " + MAPPING_VALUES + ")";
     private static final String DELETE_PUBLISHED_SERVICE_QUERY = "DELETE FROM " + PUBLISHED_SERVICE + " WHERE OBJECTID NOT IN (SELECT PUBLISHED_SERVICE_OID FROM " + SERVICE_METRICS + ")";
@@ -147,6 +148,8 @@ public class PortalMetricsPurgeUtility {
         final Statement delete = connection.createStatement();
         final int numDeletedServiceMetrics = delete.executeUpdate(DELETE_SERVICE_METRICS_QUERY + params);
         LOGGER.info("Deleted " + numDeletedServiceMetrics + " row(s) from " + SERVICE_METRICS + " table.");
+        final int numDeletedServiceMetricsDetail = delete.executeUpdate(DELETE_SERVICE_METRICS_DETAIL_QUERY + params);
+        LOGGER.info("Deleted " + numDeletedServiceMetricsDetail + " row(s) from " + DELETE_SERVICE_METRICS_DETAIL_QUERY + " table.");
         delete.close();
     }
 

@@ -1,8 +1,11 @@
 package com.l7tech.external.assertions.apiportalintegration.server;
 
 import com.l7tech.external.assertions.apiportalintegration.ManageApiKeyAssertion;
+import com.l7tech.external.assertions.apiportalintegration.server.resource.ApiKeyDataResourceHandler;
+import com.l7tech.external.assertions.apiportalintegration.server.resource.ApiKeyResource;
+import com.l7tech.external.assertions.apiportalintegration.server.resource.ApiKeyResourceHandler;
 import com.l7tech.message.Message;
-import com.l7tech.objectmodel.DuplicateObjectException;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -11,9 +14,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.invocation.InvocationOnMock;
 import org.mockito.runners.MockitoJUnitRunner;
-import org.mockito.stubbing.Answer;
 import org.springframework.context.ApplicationContext;
 
 import java.text.MessageFormat;
@@ -31,6 +32,10 @@ public class ServerManageApiKeyAssertionTest {
     private ApplicationContext applicationContext;
     @Mock
     private PortalGenericEntityManager<ApiKeyData> apiKeyManager;
+    @Mock
+    private ApiKeyResourceHandler keyResourceHandler;
+    @Mock
+    private ApiKeyDataResourceHandler keyLegacyResourceHandler;
 
     private PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message());
 
@@ -45,6 +50,7 @@ public class ServerManageApiKeyAssertionTest {
             "<l7:ApiKey status=\"active\" xmlns:l7=\"http://ns.l7tech.com/2011/08/portal-api-keys\">\n" +
             "  <l7:Value>vctest-key-{0}</l7:Value><l7:Service>{1}</l7:Service><l7:Plan>{2}</l7:Plan>\n" +
             "  <l7:Secret>{3}</l7:Secret>\n" +
+            "  <l7:OrgId>l7org</l7:OrgId>\n" +
             "</l7:ApiKey>";
 
     public String generateTestData() {
@@ -70,6 +76,7 @@ public class ServerManageApiKeyAssertionTest {
             "    <l7:S id=\"12345\" plan=\"default\" />\n" +
             "  </l7:Services>\n" +
             "  <l7:Secret>shhh</l7:Secret>\n" +
+            "  <l7:OrgId>l7org</l7:OrgId>\n" +
             "</l7:ApiKey>";
 
     private void assertNoSuchVariable(PolicyEnforcementContext context, String var) {
@@ -87,12 +94,12 @@ public class ServerManageApiKeyAssertionTest {
         ass.setApiKey("mykey");
         ass.setVariablePrefix("prefix");
         ass.setApiKeyElement(TEST_RECORD_XML);
-        ServerManageApiKeyAssertion sass = new ServerManageApiKeyAssertion(ass, applicationContext, apiKeyManager);
+        ServerManageApiKeyAssertion sass = new ServerManageApiKeyAssertion(ass, applicationContext, apiKeyManager, keyResourceHandler, keyLegacyResourceHandler);
 
         AssertionStatus result = sass.checkRequest(context);
 
         assertEquals(AssertionStatus.NONE, result);
-        verify(apiKeyManager).add(any(ApiKeyData.class));
+        verify(apiKeyManager, never()).add(any(ApiKeyData.class));
         assertEquals("mykey", context.getVariable("prefix.key"));
     }
 
@@ -102,7 +109,7 @@ public class ServerManageApiKeyAssertionTest {
         ass.setApiKey(null);
         ass.setVariablePrefix("prefix");
         ass.setApiKeyElement(TEST_RECORD_XML);
-        ServerManageApiKeyAssertion sass = new ServerManageApiKeyAssertion(ass, applicationContext, apiKeyManager);
+        ServerManageApiKeyAssertion sass = new ServerManageApiKeyAssertion(ass, applicationContext, apiKeyManager, keyResourceHandler, keyLegacyResourceHandler);
 
         AssertionStatus result = sass.checkRequest(context);
 
@@ -116,7 +123,7 @@ public class ServerManageApiKeyAssertionTest {
         ass.setApiKey("");
         ass.setVariablePrefix("prefix");
         ass.setApiKeyElement(TEST_RECORD_XML);
-        ServerManageApiKeyAssertion sass = new ServerManageApiKeyAssertion(ass, applicationContext, apiKeyManager);
+        ServerManageApiKeyAssertion sass = new ServerManageApiKeyAssertion(ass, applicationContext, apiKeyManager, keyResourceHandler, keyLegacyResourceHandler);
 
         AssertionStatus result = sass.checkRequest(context);
 
@@ -130,7 +137,7 @@ public class ServerManageApiKeyAssertionTest {
         ass.setApiKey("mykey");
         ass.setVariablePrefix("prefix");
         ass.setApiKeyElement(null);
-        ServerManageApiKeyAssertion sass = new ServerManageApiKeyAssertion(ass, applicationContext, apiKeyManager);
+        ServerManageApiKeyAssertion sass = new ServerManageApiKeyAssertion(ass, applicationContext, apiKeyManager, keyResourceHandler, keyLegacyResourceHandler);
 
         AssertionStatus result = sass.checkRequest(context);
 
@@ -144,7 +151,7 @@ public class ServerManageApiKeyAssertionTest {
         ass.setApiKey("mykey");
         ass.setVariablePrefix("prefix");
         ass.setApiKeyElement("");
-        ServerManageApiKeyAssertion sass = new ServerManageApiKeyAssertion(ass, applicationContext, apiKeyManager);
+        ServerManageApiKeyAssertion sass = new ServerManageApiKeyAssertion(ass, applicationContext, apiKeyManager, keyResourceHandler, keyLegacyResourceHandler);
 
         AssertionStatus result = sass.checkRequest(context);
 
@@ -154,23 +161,232 @@ public class ServerManageApiKeyAssertionTest {
 
     @Test
     public void testAddKey_dupe() throws Exception {
-        doAnswer(new Answer<Void>() {
-            @Override
-            public Void answer(InvocationOnMock invocationOnMock) throws Throwable {
-                throw new DuplicateObjectException();
-            }
-        }).when(apiKeyManager).add(any(ApiKeyData.class));
+        when(keyResourceHandler.get(anyString())).thenReturn(new ApiKeyResource());
+        when(keyLegacyResourceHandler.get(anyString())).thenReturn(new ApiKeyResource());
         
         ass.setAction("Add");
         ass.setApiKey("mykey");
         ass.setVariablePrefix("prefix");
         ass.setApiKeyElement(TEST_RECORD_XML);
-        ServerManageApiKeyAssertion sass = new ServerManageApiKeyAssertion(ass, applicationContext, apiKeyManager);
+        ServerManageApiKeyAssertion sass = new ServerManageApiKeyAssertion(ass, applicationContext, apiKeyManager, keyResourceHandler, keyLegacyResourceHandler);
 
         AssertionStatus result = sass.checkRequest(context);
 
         assertEquals(AssertionStatus.FALSIFIED, result);
-        verify(apiKeyManager).add(any(ApiKeyData.class));
+        verify(apiKeyManager, never()).add(any(ApiKeyData.class));
         assertNoSuchVariable(context, "prefix.key");
     }
+
+    @Test
+    public void testDeleteKey() throws Exception {
+        ass.setAction("Remove");
+        ass.setApiKey("mykey");
+        ass.setVariablePrefix("prefix");
+        ass.setApiKeyElement(TEST_RECORD_XML);
+        when(keyResourceHandler.get(anyString())).thenReturn(new ApiKeyResource());
+        ServerManageApiKeyAssertion sass = new ServerManageApiKeyAssertion(ass, applicationContext, apiKeyManager, keyResourceHandler, keyLegacyResourceHandler);
+
+        AssertionStatus result = sass.checkRequest(context);
+
+        assertEquals(AssertionStatus.NONE, result);
+        verify(keyResourceHandler).get(anyString());
+        verify(keyLegacyResourceHandler).get(anyString());
+        verify(keyResourceHandler).delete(anyString());
+    }
+
+    @Test
+    public void testDeleteLegacyKey() throws Exception {
+        ass.setAction("Remove");
+        ass.setApiKey("mykey");
+        ass.setVariablePrefix("prefix");
+        ass.setApiKeyElement(TEST_RECORD_XML);
+        when(keyLegacyResourceHandler.get(anyString())).thenReturn(new ApiKeyResource());
+        ServerManageApiKeyAssertion sass = new ServerManageApiKeyAssertion(ass, applicationContext, apiKeyManager, keyResourceHandler, keyLegacyResourceHandler);
+
+        AssertionStatus result = sass.checkRequest(context);
+
+        assertEquals(AssertionStatus.NONE, result);
+        verify(keyResourceHandler).get(anyString());
+        verify(keyLegacyResourceHandler).get(anyString());
+        verify(keyLegacyResourceHandler).delete(anyString());
+    }
+
+    @Test
+    public void testUpdateKey() throws Exception {
+        ass.setAction("Update");
+        ass.setApiKey("mykey");
+        ass.setVariablePrefix("prefix");
+        ass.setApiKeyElement(TEST_RECORD_XML);
+        when(keyResourceHandler.get(anyString())).thenReturn(new ApiKeyResource());
+        ServerManageApiKeyAssertion sass = new ServerManageApiKeyAssertion(ass, applicationContext, apiKeyManager, keyResourceHandler, keyLegacyResourceHandler);
+
+        AssertionStatus result = sass.checkRequest(context);
+        assertEquals(AssertionStatus.NONE, result);
+        verify(keyResourceHandler).get(anyString());
+        verify(keyLegacyResourceHandler).get(anyString());
+        verify(keyLegacyResourceHandler, never()).put(any(ApiKeyResource.class));
+        verify(keyResourceHandler).put(any(ApiKeyResource.class));
+    }
+
+    @Test
+     public void testUpdateLegacyKey() throws Exception {
+        ass.setAction("Update");
+        ass.setApiKey("mykey");
+        ass.setVariablePrefix("prefix");
+        ass.setApiKeyElement(TEST_RECORD_XML);
+        when(keyLegacyResourceHandler.get(anyString())).thenReturn(new ApiKeyResource());
+        when(keyResourceHandler.get(anyString())).thenReturn(null).thenReturn(new ApiKeyResource());
+        ServerManageApiKeyAssertion sass = new ServerManageApiKeyAssertion(ass, applicationContext, apiKeyManager, keyResourceHandler, keyLegacyResourceHandler);
+
+        AssertionStatus result = sass.checkRequest(context);
+        assertEquals(AssertionStatus.NONE, result);
+        verify(keyResourceHandler, times(2)).get(anyString());
+        verify(keyLegacyResourceHandler).get(anyString());
+        verify(keyResourceHandler, times(2)).put(any(ApiKeyResource.class));
+        verify(keyLegacyResourceHandler).delete(anyString());
+    }
+
+    @Test
+    public void testUpdateLegacyKeyButWithException() throws Exception {
+        ass.setAction("Update");
+        ass.setApiKey("mykey");
+        ass.setVariablePrefix("prefix");
+        ass.setApiKeyElement(TEST_RECORD_XML);
+        when(keyLegacyResourceHandler.get(anyString())).thenReturn(new ApiKeyResource());
+        when(keyResourceHandler.get(anyString())).thenReturn(null).thenReturn(null);
+        ServerManageApiKeyAssertion sass = new ServerManageApiKeyAssertion(ass, applicationContext, apiKeyManager, keyResourceHandler, keyLegacyResourceHandler);
+
+        AssertionStatus result = sass.checkRequest(context);
+        assertEquals(AssertionStatus.FALSIFIED, result);
+        verify(keyResourceHandler, times(2)).get(anyString());
+        verify(keyLegacyResourceHandler).get(anyString());
+        verify(keyResourceHandler).put(any(ApiKeyResource.class));
+        verify(keyLegacyResourceHandler).delete(anyString());
+    }
+
+    @Test
+    public void testUpdateKey_AssignApis() throws Exception {
+        ass.setAction("Update");
+        ass.setApiKey("mykey");
+        ass.setVariablePrefix("prefix");
+        ass.setApiKeyElement(TEST_RECORD_XML);
+        when(keyResourceHandler.get(anyString())).thenReturn(new ApiKeyResource());
+        ServerManageApiKeyAssertion sass = new ServerManageApiKeyAssertion(ass, applicationContext, apiKeyManager, keyResourceHandler, keyLegacyResourceHandler);
+
+        context.setVariable("pman.options.assignApis","apiId;planId");
+        AssertionStatus result = sass.checkRequest(context);
+        assertEquals(AssertionStatus.NONE, result);
+        verify(keyResourceHandler).get(anyString());
+        verify(keyLegacyResourceHandler).get(anyString());
+        verify(keyLegacyResourceHandler, never()).put(any(ApiKeyResource.class));
+        verify(keyResourceHandler).put(any(ApiKeyResource.class));
+    }
+
+    @Test
+    public void testUpdateKey_KeyStatus() throws Exception {
+        ass.setAction("Update");
+        ass.setApiKey("mykey");
+        ass.setVariablePrefix("prefix");
+        ass.setApiKeyElement(TEST_RECORD_XML);
+        when(keyResourceHandler.get(anyString())).thenReturn(new ApiKeyResource());
+        ServerManageApiKeyAssertion sass = new ServerManageApiKeyAssertion(ass, applicationContext, apiKeyManager, keyResourceHandler, keyLegacyResourceHandler);
+
+        context.setVariable("pman.options.apikeyStatus","suspend");
+        AssertionStatus result = sass.checkRequest(context);
+        assertEquals(AssertionStatus.NONE, result);
+        verify(keyResourceHandler).get(anyString());
+        verify(keyLegacyResourceHandler).get(anyString());
+        verify(keyLegacyResourceHandler, never()).put(any(ApiKeyResource.class));
+        verify(keyResourceHandler).put(any(ApiKeyResource.class));
+    }
+
+    @Test
+    public void testUpdateKey_KeySecret() throws Exception {
+        ass.setAction("Update");
+        ass.setApiKey("mykey");
+        ass.setVariablePrefix("prefix");
+        ass.setApiKeyElement(TEST_RECORD_XML);
+        when(keyResourceHandler.get(anyString())).thenReturn(new ApiKeyResource());
+        ServerManageApiKeyAssertion sass = new ServerManageApiKeyAssertion(ass, applicationContext, apiKeyManager, keyResourceHandler, keyLegacyResourceHandler);
+
+        context.setVariable("pman.options.apikeySecret","newSecretKey");
+        AssertionStatus result = sass.checkRequest(context);
+        assertEquals(AssertionStatus.NONE, result);
+        verify(keyResourceHandler).get(anyString());
+        verify(keyLegacyResourceHandler).get(anyString());
+        verify(keyLegacyResourceHandler, never()).put(any(ApiKeyResource.class));
+        verify(keyResourceHandler).put(any(ApiKeyResource.class));
+    }
+
+    @Test
+    public void testUpdateKey_norecords() throws Exception {
+        ass.setAction("Update");
+        ass.setApiKey("mykey");
+        ass.setVariablePrefix("prefix");
+        ass.setApiKeyElement(TEST_RECORD_XML);
+        ServerManageApiKeyAssertion sass = new ServerManageApiKeyAssertion(ass, applicationContext, apiKeyManager, keyResourceHandler, keyLegacyResourceHandler);
+
+        AssertionStatus result = sass.checkRequest(context);
+        assertEquals(AssertionStatus.FALSIFIED, result);
+        verify(keyResourceHandler).get(anyString());
+        verify(keyLegacyResourceHandler).get(anyString());
+        verify(keyResourceHandler, never()).put(any(ApiKeyResource.class));
+        verify(keyLegacyResourceHandler, never()).put(any(ApiKeyResource.class));
+    }
+
+    @Test
+     public void testRemoveKey_norecords() throws Exception {
+        ass.setAction("Remove");
+        ass.setApiKey("mykey");
+        ass.setVariablePrefix("prefix");
+        ass.setApiKeyElement(TEST_RECORD_XML);
+        when(keyResourceHandler.get(anyString())).thenReturn(null);
+        when(keyLegacyResourceHandler.get(anyString())).thenReturn(null);
+        ServerManageApiKeyAssertion sass = new ServerManageApiKeyAssertion(ass, applicationContext, apiKeyManager, keyResourceHandler, keyLegacyResourceHandler);
+
+        AssertionStatus result = sass.checkRequest(context);
+        assertEquals(AssertionStatus.NONE, result);
+        verify(keyResourceHandler).get(anyString());
+        verify(keyLegacyResourceHandler).get(anyString());
+        verify(keyResourceHandler, never()).put(any(ApiKeyResource.class));
+        verify(keyLegacyResourceHandler, never()).put(any(ApiKeyResource.class));
+    }
+
+    @Test
+    public void testInvalidAction() throws Exception {
+        ass.setAction("duh");
+        ass.setApiKey("mykey");
+        ass.setVariablePrefix("prefix");
+        ass.setApiKeyElement(TEST_RECORD_XML);
+        when(keyResourceHandler.get(anyString())).thenReturn(null);
+        when(keyLegacyResourceHandler.get(anyString())).thenReturn(null);
+        ServerManageApiKeyAssertion sass = new ServerManageApiKeyAssertion(ass, applicationContext, apiKeyManager, keyResourceHandler, keyLegacyResourceHandler);
+
+        AssertionStatus result = sass.checkRequest(context);
+        assertEquals(AssertionStatus.NONE, result);
+        verify(keyResourceHandler).get(anyString());
+        verify(keyLegacyResourceHandler).get(anyString());
+        verify(keyResourceHandler, never()).put(any(ApiKeyResource.class));
+        verify(keyLegacyResourceHandler, never()).put(any(ApiKeyResource.class));
+    }
+
+    @Test
+    public void testWithException() throws Exception {
+        ass.setAction("duh");
+        ass.setApiKey("mykey");
+        ass.setVariablePrefix("prefix");
+        ass.setApiKeyElement(TEST_RECORD_XML);
+        when(keyLegacyResourceHandler.get(anyString())).thenThrow(new FindException("Dummy FindException"));
+        when(keyResourceHandler.get(anyString())).thenReturn(null);
+        ServerManageApiKeyAssertion sass = new ServerManageApiKeyAssertion(ass, applicationContext, apiKeyManager, keyResourceHandler, keyLegacyResourceHandler);
+
+        AssertionStatus result = sass.checkRequest(context);
+        assertEquals(AssertionStatus.FAILED, result);
+        verify(keyLegacyResourceHandler).get(anyString());
+        verify(keyResourceHandler, never()).get(anyString());
+        verify(keyResourceHandler, never()).put(any(ApiKeyResource.class));
+        verify(keyLegacyResourceHandler, never()).put(any(ApiKeyResource.class));
+    }
+
+
 }

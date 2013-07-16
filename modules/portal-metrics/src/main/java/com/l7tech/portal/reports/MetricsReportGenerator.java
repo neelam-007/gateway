@@ -234,6 +234,32 @@ public class MetricsReportGenerator {
     }
 
     /**
+     * Generates data for an application (API key) usage report.
+     *
+     * @param params            the input parameters used to generate the report.
+     * @return the application usage report data formatted as a String.
+     * @throws SQLException              if an error occurs opening or closing a connection to the database.
+     * @throws ReportGenerationException if an unexpected error occurs attempting to generate the report data.
+     */
+    public String generateUsageSummaryReport(@NotNull final UsageSummaryReportParameters params) throws SQLException {
+        return generateUsageSummaryReport(params, null, null);
+    }
+
+    /**
+     * Generates data for an application (API key) usage report.
+     *
+     * @param params                     the input parameters used to generate the report.
+     * @param millisecondIntervalForDate the regular date interval in milliseconds that the report is expected to have data for. If any data is detected as missing, empty data will be added.
+     * @param defaultValues              a map of default values to insert if missing data is detected. Key = name, value = value to insert.
+     * @return the application usage report data formatted as a String.
+     * @throws SQLException              if an error occurs opening or closing a connection to the database.
+     * @throws ReportGenerationException if an unexpected error occurs attempting to generate the report data.
+     */
+    public String generateUsageSummaryReport(@NotNull final UsageSummaryReportParameters params, @Nullable final Long millisecondIntervalForDate, @Nullable final Map<String, Object> defaultValues) throws SQLException {
+            return doReport(new UsageSummaryReportDefinition(params), null, null, BIN_START_TIME, millisecondIntervalForDate, defaultValues);
+    }
+
+    /**
      * This is extracted to a restricted method which can be overridden in unit tests (to avoid time-sensitive unit tests).
      */
     ApiQuotaUsageReportParameters getQuotaParameters(ApiQuotaUsageReportParameters params, HashMap<DefaultReportParameters.QuotaRange, List<String>> temp_api_ranges) {

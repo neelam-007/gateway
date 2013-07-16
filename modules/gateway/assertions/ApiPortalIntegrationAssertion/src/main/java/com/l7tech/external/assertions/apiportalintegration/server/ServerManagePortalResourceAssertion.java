@@ -18,6 +18,8 @@ import org.springframework.context.ApplicationContext;
 
 import javax.xml.bind.JAXBException;
 import java.io.IOException;
+import java.security.Principal;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,7 +35,11 @@ public class ServerManagePortalResourceAssertion extends AbstractServerAssertion
                 DefaultJAXBResourceUnmarshaller.getInstance(),
                 ApiResourceHandler.getInstance(context),
                 ApiPlanResourceHandler.getInstance(context),
-                ApiKeyResourceHandler.getInstance(context));
+                ApiKeyResourceHandler.getInstance(context),
+                ApiKeyDataResourceHandler.getInstance(context),
+                AccountPlanResourceHandler.getInstance(context),
+                new PolicyHelper(context),
+                PolicyValidationMarshaller.getInstance());
     }
 
     /**
@@ -53,6 +59,14 @@ public class ServerManagePortalResourceAssertion extends AbstractServerAssertion
                 handlePlans(context, manageOperation);
             } else if (KEYS_URI.equals(manageOperation.resourceType)) {
                 handleKeys(context, manageOperation);
+            } else if (GATEWAY_URI.equals(manageOperation.resourceType)) {
+                handleGateway(context, manageOperation);
+            } else if (ACCOUNT_PLANS_URI.equals(manageOperation.resourceType)) {
+                handleAccountPlans(context, manageOperation);
+            } else if (POLICY_UPDATE_URI.equals(manageOperation.resourceType)) {
+                assertionStatus = handlePolicyUpdate(context, manageOperation, false);
+            } else if (POLICY_VALIDATE_URI.equals(manageOperation.resourceType)) {
+                assertionStatus = handlePolicyUpdate(context, manageOperation, true);
             }
         } catch (final IllegalArgumentException e) {
             assertionStatus = handleInvalidRequest(context, e.getMessage());
@@ -74,19 +88,31 @@ public class ServerManagePortalResourceAssertion extends AbstractServerAssertion
     static final String APIS_URI = "apis";
     static final String PLANS_URI = "api/plans";
     static final String KEYS_URI = "api/keys";
+    static final String GATEWAY_URI = "gateway";
+    static final String ACCOUNT_PLANS_URI = "account/plans";
+    static final String POLICY_UPDATE_URI = "policy/update";
+    static final String POLICY_VALIDATE_URI = "policy/validate";
 
     ServerManagePortalResourceAssertion(@NotNull final ManagePortalResourceAssertion assertion,
                                         @NotNull final JAXBResourceMarshaller resourceMarshaller,
                                         @NotNull final JAXBResourceUnmarshaller resourceUnmarshaller,
                                         @NotNull final ApiResourceHandler apiResourceHandler,
                                         @NotNull final ApiPlanResourceHandler planResourceHandler,
-                                        @NotNull final ApiKeyResourceHandler keyResourceHandler) {
+                                        @NotNull final ApiKeyResourceHandler keyResourceHandler,
+                                        @NotNull final ApiKeyDataResourceHandler keyLegacyResourceHandler,
+                                        @NotNull final AccountPlanResourceHandler accountPlanResourceHandler,
+                                        @NotNull final PolicyHelper policyHelper,
+                                        @NotNull final PolicyValidationMarshaller policyValidationMarshaller) {
         super(assertion);
         this.resourceMarshaller = resourceMarshaller;
         this.resourceUnmarshaller = resourceUnmarshaller;
         this.apiResourceHandler = apiResourceHandler;
         this.planResourceHandler = planResourceHandler;
         this.keyResourceHandler = keyResourceHandler;
+        this.keyLegacyResourceHandler = keyLegacyResourceHandler;
+        this.accountPlanResourceHandler = accountPlanResourceHandler;
+        this.policyHelper = policyHelper;
+        this.policyValidationMarshaller = policyValidationMarshaller;
     }
 
     private final JAXBResourceMarshaller resourceMarshaller;
@@ -94,6 +120,10 @@ public class ServerManagePortalResourceAssertion extends AbstractServerAssertion
     private final ApiResourceHandler apiResourceHandler;
     private final ApiPlanResourceHandler planResourceHandler;
     private final ApiKeyResourceHandler keyResourceHandler;
+    private final ApiKeyDataResourceHandler keyLegacyResourceHandler;
+    private final AccountPlanResourceHandler accountPlanResourceHandler;
+    private final PolicyHelper policyHelper;
+    private final PolicyValidationMarshaller policyValidationMarshaller;
 
     /**
      * If the parameters are valid, returns an appropriate ManageOperation.
@@ -158,12 +188,69 @@ public class ServerManagePortalResourceAssertion extends AbstractServerAssertion
                     break;
                 }
                 case GET:
+                    // get may or may not have a resource id
+                    if (StringUtils.isBlank(stripped)) {
+                        manageOperation = new ManageOperation(httpMethod, KEYS_URI, null);
+                    } else if (isValidResourceId(stripped)) {
+                        manageOperation = new ManageOperation(httpMethod, KEYS_URI, stripped.replaceFirst("/", ""));
+                    }
+                    break;
                 case DELETE: {
-                    // get and delete MUST have a resource id
+                    //delete MUST have a resource id
                     if (isValidResourceId(stripped)) {
                         manageOperation = new ManageOperation(httpMethod, KEYS_URI, stripped.replaceFirst("/", ""));
                     }
                     break;
+                }
+            }
+        } else if (resourceUri.startsWith(ROOT_URI + GATEWAY_URI)) {
+            final String stripped = resourceUri.replaceFirst(ROOT_URI + GATEWAY_URI, "");
+            if(httpMethod == HttpMethod.GET){//we only support GET
+                // must NOT have a resource id
+                if (StringUtils.isBlank(stripped)) {
+                    manageOperation = new ManageOperation(httpMethod, GATEWAY_URI, null);
+                }
+            }
+        } else if (resourceUri.startsWith(ROOT_URI + ACCOUNT_PLANS_URI)) {
+            final String stripped = resourceUri.replaceFirst(ROOT_URI + ACCOUNT_PLANS_URI, "");
+            switch (httpMethod) {
+                case DELETE: {
+                    // delete MUST have a resource id
+                    if (isValidResourceId(stripped)) {
+                        manageOperation = new ManageOperation(httpMethod, ACCOUNT_PLANS_URI, stripped.replaceFirst("/", ""));
+                    }
+                    break;
+                }
+                case PUT: {
+                    // put must NOT have a resource id
+                    if (StringUtils.isBlank(stripped)) {
+                        manageOperation = new ManageOperation(httpMethod, ACCOUNT_PLANS_URI, null);
+                    }
+                    break;
+                }
+                case GET: {
+                    // get may or may not have a resource id
+                    if (StringUtils.isBlank(stripped)) {
+                        manageOperation = new ManageOperation(httpMethod, ACCOUNT_PLANS_URI, null);
+                    } else if (isValidResourceId(stripped)) {
+                        manageOperation = new ManageOperation(httpMethod, ACCOUNT_PLANS_URI, stripped.replaceFirst("/", ""));
+                    }
+                }
+            }
+        } else if (resourceUri.startsWith(ROOT_URI + POLICY_UPDATE_URI)) {
+            final String stripped = resourceUri.replaceFirst(ROOT_URI + POLICY_UPDATE_URI, "");
+            if(httpMethod == HttpMethod.PUT){//we only support PUT
+                // must NOT have a resource id
+                if (StringUtils.isBlank(stripped)) {
+                    manageOperation = new ManageOperation(httpMethod, POLICY_UPDATE_URI, null);
+                }
+            }
+        } else if (resourceUri.startsWith(ROOT_URI + POLICY_VALIDATE_URI)) {
+            final String stripped = resourceUri.replaceFirst(ROOT_URI + POLICY_VALIDATE_URI, "");
+            if(httpMethod == HttpMethod.PUT){//we only support PUT
+                // must NOT have a resource id
+                if (StringUtils.isBlank(stripped)) {
+                    manageOperation = new ManageOperation(httpMethod, POLICY_VALIDATE_URI, null);
                 }
             }
         }
@@ -238,26 +325,75 @@ public class ServerManagePortalResourceAssertion extends AbstractServerAssertion
         }
     }
 
-    private void handleKeys(final PolicyEnforcementContext context, final ManageOperation manageOperation) throws FindException, JAXBException, UpdateException, SaveException, DeleteException {
+    private void handleKeys(final PolicyEnforcementContext context, final ManageOperation manageOperation) throws FindException, JAXBException, UpdateException, SaveException, DeleteException, ObjectModelException {
         switch (manageOperation.httpMethod) {
             case GET: {
-                final ApiKeyResource key = keyResourceHandler.get(manageOperation.resourceId);
-                if (key != null) {
-                    final String xml = resourceMarshaller.marshal(key);
-                    setContextVariables(context, 200, SUCCESS, xml);
-                } else {
+                final List<ApiKeyResource> resources = keyResourceHandler.get(createFiltersForApiKeys(context, manageOperation));
+                final List<ApiKeyResource> resourcesLegacy = keyLegacyResourceHandler.get(createFiltersForApiKeys(context, manageOperation));
+                if (manageOperation.resourceId != null && resources.isEmpty() && resourcesLegacy.isEmpty()) {
                     final String message = "Cannot find ApiKey with key=" + manageOperation.resourceId;
                     setContextVariables(context, 404, message, null);
                     logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[]{message});
+                } else {
+                    List<ApiKeyResource> mergedList = new ArrayList<ApiKeyResource>();
+                    if(!resources.isEmpty()){
+                        mergedList.addAll(resources);
+                    }
+                    if(!resourcesLegacy.isEmpty()){
+                        mergedList.addAll(resourcesLegacy);
+                    }
+                    final String xml = resourceMarshaller.marshal(new ApiKeyListResource(mergedList));
+                    setContextVariables(context, 200, SUCCESS, xml);
                 }
                 break;
             }
             case PUT: {
                 final String resourceXml = ExpandVariables.process("${" + RESOURCE + "}", context.getVariableMap(assertion.getVariablesUsed(), getAudit()), getAudit());
-                final ApiKeyResource key = (ApiKeyResource) resourceUnmarshaller.unmarshal(resourceXml, ApiKeyResource.class);
-                Validate.notEmpty(key.getKey(), "Resource id missing");
-                final ApiKeyResource result = keyResourceHandler.put(key);
-                setContextVariables(context, 200, SUCCESS, resourceMarshaller.marshal(result));
+                final ApiKeyListResource inputList = (ApiKeyListResource) resourceUnmarshaller.unmarshal(resourceXml, ApiKeyListResource.class);
+                final String deleteOmittedString = ExpandVariables.process("${" + OPTION_REMOVE_OMITTED + "}", context.getVariableMap(assertion.getVariablesUsed(), getAudit()), getAudit());
+                boolean removeOmitted = Boolean.valueOf(deleteOmittedString).booleanValue();
+                if (!inputList.getApis().isEmpty()) {
+                    // ensure all ids are present
+                    final Map<String, String> filters = new HashMap<String, String>();
+                    //validate that the list has the id/key & secret
+                    for (final ApiKeyResource api : inputList.getApis()) {
+                        Validate.notEmpty(api.getKey(), "API Key missing");
+                        Validate.notEmpty(api.getSecret(), "API Secret missing");
+                    }
+                    if(!removeOmitted){
+                        //now moved all legacyKey in the request to the new format
+                        for (final ApiKeyResource api : inputList.getApis()) {
+                            final String id = api.getKey();
+                            filters.put(AbstractResourceHandler.ID, id);
+                            try{
+                                ApiKeyResource keyLegacy = keyLegacyResourceHandler.get(id);
+                                if(keyLegacy!=null){//if a legacy key, move it to new format
+                                    keyLegacyResourceHandler.doDelete(id);
+                                    keyResourceHandler.put(keyLegacy);//save it to the new format
+                                }
+                            }catch(FindException e){
+                                //probably not a legacy
+                            }
+                        }//end of for
+                    } else { //if removeOmitted=true, move all legacyKey to new format
+                        for (final ApiKeyResource api : keyLegacyResourceHandler.doGet(new HashMap<String, String>())) {
+                            keyLegacyResourceHandler.doDelete(api.getKey());
+                            keyResourceHandler.put(api);//save it to the new format
+                        }
+                    }
+                    final List<ApiKeyResource> result = keyResourceHandler.put(inputList.getApis(), removeOmitted);
+                    String updatedResourceXml = "N/A";
+                    try {
+                        updatedResourceXml = resourceMarshaller.marshal(new ApiKeyListResource(result));
+                    } catch (final JAXBException e) {
+                        // resource has been persisted already so
+                        // we don't want to fail the assertion just because we can't return the resource xml
+                        logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[]{"Error marshalling portal resource"}, ExceptionUtils.getDebugException(e));
+                    }
+                    setContextVariables(context, 200, SUCCESS, updatedResourceXml);
+                } else {
+                    setContextVariables(context, 200, SUCCESS, resourceMarshaller.marshal(new ApiKeyListResource()));
+                }
                 break;
             }
             case DELETE: {
@@ -271,6 +407,120 @@ public class ServerManagePortalResourceAssertion extends AbstractServerAssertion
                 }
             }
         }
+    }
+
+    private void handleGateway(final PolicyEnforcementContext context, final ManageOperation manageOperation) throws JAXBException, ObjectModelException {
+        if(manageOperation.httpMethod==HttpMethod.GET){
+            GatewayResource gatewayResource = new GatewayResource();
+            GatewayStatResource apiStat = new GatewayStatResource();
+                apiStat.setCount(String.valueOf(apiResourceHandler.get(new HashMap<String, String>()).size()));
+                apiStat.setCacheItems(String.valueOf(apiResourceHandler.getCacheItems()));
+            GatewayStatResource apiPlanStat = new GatewayStatResource();
+                apiPlanStat.setCount(String.valueOf(planResourceHandler.get(new HashMap<String, String>()).size()));
+                apiPlanStat.setCacheItems(String.valueOf(planResourceHandler.getCacheItems()));
+            GatewayStatResource apiKeyStat = new GatewayStatResource();
+                apiKeyStat.setCount(String.valueOf(keyResourceHandler.get(new HashMap<String, String>()).size()));
+                apiKeyStat.setCacheItems(String.valueOf(keyResourceHandler.getCacheItems()));
+            GatewayStatResource apiLegacyKeyStat = new GatewayStatResource();
+                apiLegacyKeyStat.setCount(String.valueOf(keyLegacyResourceHandler.get(new HashMap<String, String>()).size()));
+                apiLegacyKeyStat.setCacheItems(String.valueOf(keyLegacyResourceHandler.getCacheItems()));
+            GatewayStatResource accountPlanStat = new GatewayStatResource();
+                accountPlanStat.setCount(String.valueOf(accountPlanResourceHandler.get(new HashMap<String, String>()).size()));
+                accountPlanStat.setCacheItems(String.valueOf(accountPlanResourceHandler.getCacheItems()));
+            gatewayResource.setApi(apiStat);
+            gatewayResource.setApiKey(apiKeyStat);
+            gatewayResource.setApiPlan(apiPlanStat);
+            gatewayResource.setApiLegacyKey(apiLegacyKeyStat);
+            gatewayResource.setAccountPlan(accountPlanStat);
+            setContextVariables(context, 200, SUCCESS, resourceMarshaller.marshal(gatewayResource));
+        }
+    }
+
+    private void handleAccountPlans(final PolicyEnforcementContext context, final ManageOperation manageOperation) throws JAXBException, ObjectModelException {
+        switch (manageOperation.httpMethod) {
+            case GET: {
+                final List<AccountPlanResource> resources = accountPlanResourceHandler.get(createCommonFilters(manageOperation));
+                if (manageOperation.resourceId != null && resources.isEmpty()) {
+                    final String message = "Cannot find AccountPlan with planId=" + manageOperation.resourceId;
+                    setContextVariables(context, 404, message, null);
+                    logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[]{message});
+                } else {
+                    final String xml = resourceMarshaller.marshal(new AccountPlanListResource(resources));
+                    setContextVariables(context, 200, SUCCESS, xml);
+                }
+                break;
+            }
+            case PUT: {
+                final String resourceXml = ExpandVariables.process("${" + RESOURCE + "}", context.getVariableMap(assertion.getVariablesUsed(), getAudit()), getAudit());
+                final AccountPlanListResource inputList = (AccountPlanListResource) resourceUnmarshaller.unmarshal(resourceXml, AccountPlanListResource.class);
+                if (!inputList.getAccountPlans().isEmpty()) {
+                    // ensure all ids are present
+                    for (final AccountPlanResource plan : inputList.getAccountPlans()) {
+                        Validate.notEmpty(plan.getPlanId(), "Resource id missing");
+                    }
+                    final String deleteOmittedString = ExpandVariables.process("${" + OPTION_REMOVE_OMITTED + "}", context.getVariableMap(assertion.getVariablesUsed(), getAudit()), getAudit());
+                    final List<AccountPlanResource> result = accountPlanResourceHandler.put(inputList.getAccountPlans(), Boolean.valueOf(deleteOmittedString).booleanValue());
+                    String updatedResourceXml = "N/A";
+                    try {
+                        updatedResourceXml = resourceMarshaller.marshal(new AccountPlanListResource(result));
+                    } catch (final JAXBException e) {
+                        // resource has been persisted already so
+                        // we don't want to fail the assertion just because we can't return the resource xml
+                        logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[]{"Error marshalling portal resource"}, ExceptionUtils.getDebugException(e));
+                    }
+                    setContextVariables(context, 200, SUCCESS, updatedResourceXml);
+                } else {
+                    setContextVariables(context, 200, SUCCESS, resourceMarshaller.marshal(new AccountPlanListResource()));
+                }
+                break;
+            }
+            case DELETE: {
+                try {
+                    accountPlanResourceHandler.delete(manageOperation.resourceId);
+                    setContextVariables(context, 200, SUCCESS, null);
+                } catch (final FindException e) {
+                    final String message = "Cannot find AccountPlan with planId=" + manageOperation.resourceId;
+                    setContextVariables(context, 404, message, null);
+                    logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[]{message});
+                }
+                break;
+            }
+        }
+    }
+
+    private AssertionStatus handlePolicyUpdate(final PolicyEnforcementContext context, final ManageOperation manageOperation, final boolean validateOnly) {
+        final PolicyUpdateResult status = new PolicyUpdateResult(AssertionStatus.FAILED);
+        if (manageOperation.httpMethod == HttpMethod.PUT) {
+            final String resourceXml = ExpandVariables.process("${" + RESOURCE + "}", context.getVariableMap(assertion.getVariablesUsed(), getAudit()), getAudit());
+            final String guid = ExpandVariables.process("${" + OPTION_POLICY_GUID + "}", context.getVariableMap(assertion.getVariablesUsed(), getAudit()), getAudit());
+            Validate.notEmpty(guid, "GUID is missing");
+            Validate.notEmpty(resourceXml, "Policy resource XML is missing");
+            try {
+                final PolicyHelper.OperationResult result;
+                if(validateOnly){
+                    result = policyHelper.validatePolicy(guid, resourceXml);
+                } else {
+                    String userLogin=null;
+                    if(context.getDefaultAuthenticationContext()!=null){
+                        final Principal user = context.getDefaultAuthenticationContext().getLastAuthenticatedUser();
+                        if(user!=null){
+                            userLogin = user.getName() != null ? user.getName() : "";
+                        }
+                    }
+                    result = policyHelper.updatePolicy(guid, resourceXml, userLogin);
+                }
+                if (result.hasError()) {
+                    setContextVariables(context, 500, result.getResult(), policyValidationMarshaller.marshal(result.getPolicyValidationResult()));
+                } else {
+                    setContextVariables(context, 200, SUCCESS, policyValidationMarshaller.marshal(result.getPolicyValidationResult()));
+                    status.setStatus(AssertionStatus.NONE);
+                }
+            } catch (Exception e) {
+                final String message = "Error Updating Policy : "+e.getMessage();
+                setContextVariables(context, 500, message, null);
+            }
+        }
+        return status.getStatus();
     }
 
     private boolean isValidResourceId(final String toValidate) {
@@ -315,6 +565,16 @@ public class ServerManagePortalResourceAssertion extends AbstractServerAssertion
         return filters;
     }
 
+    private Map<String, String> createFiltersForApiKeys(final PolicyEnforcementContext context, final ManageOperation manageOperation) {
+        final Map<String, String> filters = createCommonFilters(manageOperation);
+        final String apiKeyStatus = ExpandVariables.process("${" + OPTION_API_KEY_STATUS + "}", context.getVariableMap(assertion.getVariablesUsed(), getAudit()), getAudit());
+        if (StringUtils.isNotBlank(apiKeyStatus)) {
+            filters.put(ApiKeyResourceHandler.APIKEY_STATUS, apiKeyStatus);
+            filters.put(ApiKeyDataResourceHandler.APIKEY_STATUS, apiKeyStatus);
+        }
+        return filters;
+    }
+
     private class ManageOperation {
         HttpMethod httpMethod;
         String resourceType;
@@ -325,5 +585,21 @@ public class ServerManagePortalResourceAssertion extends AbstractServerAssertion
             this.resourceType = resourceType;
             this.resourceId = resourceId;
         }
+    }
+
+    private class PolicyUpdateResult {
+        public PolicyUpdateResult(AssertionStatus status) {
+            this.status = status;
+        }
+
+        public AssertionStatus getStatus() {
+            return status;
+        }
+
+        public void setStatus(AssertionStatus status) {
+            this.status = status;
+        }
+
+        private AssertionStatus status = AssertionStatus.FAILED;
     }
 }

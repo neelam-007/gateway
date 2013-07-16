@@ -162,13 +162,28 @@ public abstract class AbstractPortalGenericEntityManager<T extends AbstractPorta
 
     @Override
     public T find(final String name) throws FindException {
-        final T cached = (T) cache.get(name);
-        if (cached != null) {
-            // protect the cache
-            return (T) cached.getReadOnlyCopy();
+        return find(name, false);
+    }
+
+    @Override
+    public T find(final String name, final boolean nocache) throws FindException {
+        /**
+         * if nocache=true:
+         * - don't use cache, always retrieve from the db
+         * - clears cache for the particular name if any
+         * - will not store the result into cache
+         */
+        if (!nocache) {
+            final T cached = (T) cache.get(name);
+            if (cached != null) {
+                // protect the cache
+                return (T) cached.getReadOnlyCopy();
+            }
+        } else {
+            cache.remove(name);//this make sure cache is cleaned up just in case the find below fails
         }
         final T found = findByUniqueName(name);
-        if (found != null) {
+        if (found != null && !nocache) {
             nameCache.put(found.getOid(), name);
             cache.put(name, found.getReadOnlyCopy());
         }
@@ -199,6 +214,11 @@ public abstract class AbstractPortalGenericEntityManager<T extends AbstractPorta
                 }
             }
         }
+    }
+    
+    @Override
+    public int getCacheItem(){
+        return cache.size();
     }
 
     /**
@@ -245,7 +265,7 @@ public abstract class AbstractPortalGenericEntityManager<T extends AbstractPorta
             if (e.getMessage().contains("generic entity is not of expected class")) {
                 // temporary workaround for bug
                 // see http://sarek.l7tech.com/bugzilla/show_bug.cgi?id=12334
-                LOGGER.log(Level.FINE, "Generic entity with name=" + name + " was found but has different classname.", ExceptionUtils.getDebugException(e));
+                LOGGER.log(Level.FINE, "Generic entity with name=" + name + " was found but has the different classname.", ExceptionUtils.getDebugException(e));
             } else {
                 throw e;
             }

@@ -1,0 +1,357 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy" xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy">
+    <wsp:All wsp:Usage="Required">
+        <wsp:All wsp:Usage="Required">
+            <wsp:OneOrMore wsp:Usage="Required">
+                <L7p:ComparisonAssertion>
+                    <L7p:CaseSensitive booleanValue="false"/>
+                    <L7p:Expression1 stringValue="${fallback_flag}"/>
+                    <L7p:Expression2 stringValue="true"/>
+                    <L7p:Predicates predicates="included">
+                        <L7p:item binary="included">
+                            <L7p:CaseSensitive booleanValue="false"/>
+                            <L7p:RightValue stringValue="true"/>
+                        </L7p:item>
+                    </L7p:Predicates>
+                </L7p:ComparisonAssertion>
+                <L7p:ComparisonAssertion>
+                    <L7p:CaseSensitive booleanValue="false"/>
+                    <L7p:Expression1 stringValue="${provider}"/>
+                    <L7p:Expression2 stringValue="openldap1"/>
+                    <L7p:Predicates predicates="included">
+                        <L7p:item binary="included">
+                            <L7p:CaseSensitive booleanValue="false"/>
+                            <L7p:RightValue stringValue="openldap1"/>
+                        </L7p:item>
+                    </L7p:Predicates>
+                </L7p:ComparisonAssertion>
+            </wsp:OneOrMore>
+            <L7p:SetVariable>
+                <L7p:AssertionComment assertionComment="included">
+                    <L7p:Properties mapValue="included">
+                        <L7p:entry>
+                            <L7p:key stringValue="LEFT.COMMENT"/>
+                            <L7p:value stringValue="open_ldap_user_search_filter"/>
+                        </L7p:entry>
+                    </L7p:Properties>
+                </L7p:AssertionComment>
+                <L7p:Base64Expression stringValue="KGNuPX4p"/>
+                <L7p:VariableToSet stringValue="open_ldap_user_search_filter"/>
+            </L7p:SetVariable>
+            <L7p:SetVariable>
+                <L7p:AssertionComment assertionComment="included">
+                    <L7p:Properties mapValue="included">
+                        <L7p:entry>
+                            <L7p:key stringValue="LEFT.COMMENT"/>
+                            <L7p:value stringValue="open_ldap_group_search_filter"/>
+                        </L7p:entry>
+                    </L7p:Properties>
+                </L7p:AssertionComment>
+                <L7p:Base64Expression stringValue="KHVuaXF1ZU1lbWJlcj11aWQ9fixPVT1wb3J0YWxVc2VycyxkYz1sN3RlY2gsZGM9Y29tKQ=="/>
+                <L7p:VariableToSet stringValue="open_ldap_group_search_filter"/>
+            </L7p:SetVariable>
+            <L7p:Authentication>
+                <L7p:IdentityProviderOid longValue="27262976"/>
+            </L7p:Authentication>
+            <wsp:OneOrMore wsp:Usage="Required">
+                <wsp:All wsp:Usage="Required">
+                    <L7p:Regex>
+                        <L7p:AutoTarget booleanValue="false"/>
+                        <L7p:OtherTargetMessageVariable stringValue="open_ldap_user_search_filter"/>
+                        <L7p:Regex stringValue="~"/>
+                        <L7p:RegexName stringValue="build search filter"/>
+                        <L7p:Replace booleanValue="true"/>
+                        <L7p:Replacement stringValue="${username}"/>
+                        <L7p:Target target="OTHER"/>
+                    </L7p:Regex>
+                    <L7p:LDAPQuery>
+                        <L7p:AssertionComment assertionComment="included">
+                            <L7p:Properties mapValue="included">
+                                <L7p:entry>
+                                    <L7p:key stringValue="LEFT.COMMENT"/>
+                                    <L7p:value stringValue="query_ldap_auth1"/>
+                                </L7p:entry>
+                            </L7p:Properties>
+                        </L7p:AssertionComment>
+                        <L7p:AttrNames stringArrayValue="included">
+                            <L7p:item stringValue="mail"/>
+                            <L7p:item stringValue="givenName"/>
+                            <L7p:item stringValue="sn"/>
+                            <L7p:item stringValue="objectclass"/>
+                            <L7p:item stringValue="cn"/>
+                            <L7p:item stringValue="organization"/>
+                        </L7p:AttrNames>
+                        <L7p:CacheSize intValue="100"/>
+                        <L7p:EnableCache booleanValue="false"/>
+                        <L7p:LdapProviderOid longValue="27262976"/>
+                        <L7p:QueryMappings queryAttributeMappings="included">
+                            <L7p:item mapping="included">
+                                <L7p:AttributeName stringValue="mail"/>
+                                <L7p:JoinMultivalued booleanValue="false"/>
+                                <L7p:MatchingContextVariableName stringValue="mail"/>
+                            </L7p:item>
+                            <L7p:item mapping="included">
+                                <L7p:AttributeName stringValue="givenName"/>
+                                <L7p:JoinMultivalued booleanValue="false"/>
+                                <L7p:MatchingContextVariableName stringValue="givenName"/>
+                            </L7p:item>
+                            <L7p:item mapping="included">
+                                <L7p:AttributeName stringValue="sn"/>
+                                <L7p:JoinMultivalued booleanValue="false"/>
+                                <L7p:MatchingContextVariableName stringValue="sn"/>
+                            </L7p:item>
+                            <L7p:item mapping="included">
+                                <L7p:AttributeName stringValue="objectclass"/>
+                                <L7p:JoinMultivalued booleanValue="false"/>
+                                <L7p:MatchingContextVariableName stringValue="objectclass"/>
+                                <L7p:Multivalued booleanValue="true"/>
+                            </L7p:item>
+                            <L7p:item mapping="included">
+                                <L7p:AttributeName stringValue="cn"/>
+                                <L7p:JoinMultivalued booleanValue="false"/>
+                                <L7p:MatchingContextVariableName stringValue="cn"/>
+                                <L7p:Multivalued booleanValue="true"/>
+                            </L7p:item>
+                            <L7p:item mapping="included">
+                                <L7p:AttributeName stringValue="organization"/>
+                                <L7p:JoinMultivalued booleanValue="false"/>
+                                <L7p:MatchingContextVariableName stringValue="organization"/>
+                            </L7p:item>
+                        </L7p:QueryMappings>
+                        <L7p:SearchFilter stringValue="${open_ldap_user_search_filter}"/>
+                    </L7p:LDAPQuery>
+                </wsp:All>
+                <L7p:TrueAssertion/>
+                <L7p:assertionComment>
+                    <L7p:Properties mapValue="included">
+                        <L7p:entry>
+                            <L7p:key stringValue="RIGHT.COMMENT"/>
+                            <L7p:value stringValue="//user info query"/>
+                        </L7p:entry>
+                    </L7p:Properties>
+                </L7p:assertionComment>
+            </wsp:OneOrMore>
+            <wsp:OneOrMore wsp:Usage="Required">
+                <wsp:All wsp:Usage="Required">
+                    <L7p:Regex>
+                        <L7p:AutoTarget booleanValue="false"/>
+                        <L7p:OtherTargetMessageVariable stringValue="open_ldap_group_search_filter"/>
+                        <L7p:Regex stringValue="~"/>
+                        <L7p:RegexName stringValue="build search filter"/>
+                        <L7p:Replace booleanValue="true"/>
+                        <L7p:Replacement stringValue="${username}"/>
+                        <L7p:Target target="OTHER"/>
+                    </L7p:Regex>
+                    <L7p:LDAPQuery>
+                        <L7p:AssertionComment assertionComment="included">
+                            <L7p:Properties mapValue="included">
+                                <L7p:entry>
+                                    <L7p:key stringValue="LEFT.COMMENT"/>
+                                    <L7p:value stringValue="query_ldap_auth2"/>
+                                </L7p:entry>
+                            </L7p:Properties>
+                        </L7p:AssertionComment>
+                        <L7p:AttrNames stringArrayValue="included">
+                            <L7p:item stringValue="cn"/>
+                        </L7p:AttrNames>
+                        <L7p:CacheSize intValue="100"/>
+                        <L7p:LdapProviderOid longValue="27262976"/>
+                        <L7p:QueryMappings queryAttributeMappings="included">
+                            <L7p:item mapping="included">
+                                <L7p:AttributeName stringValue="cn"/>
+                                <L7p:JoinMultivalued booleanValue="false"/>
+                                <L7p:MatchingContextVariableName stringValue="group"/>
+                                <L7p:Multivalued booleanValue="true"/>
+                            </L7p:item>
+                        </L7p:QueryMappings>
+                        <L7p:SearchFilter stringValue="${open_ldap_group_search_filter}"/>
+                    </L7p:LDAPQuery>
+                </wsp:All>
+                <L7p:TrueAssertion/>
+                <L7p:assertionComment>
+                    <L7p:Properties mapValue="included">
+                        <L7p:entry>
+                            <L7p:key stringValue="RIGHT.COMMENT"/>
+                            <L7p:value stringValue="//group info query"/>
+                        </L7p:entry>
+                    </L7p:Properties>
+                </L7p:assertionComment>
+            </wsp:OneOrMore>
+            <L7p:SetVariable>
+                <L7p:Base64Expression stringValue=""/>
+                <L7p:VariableToSet stringValue="xml.objectclasses"/>
+            </L7p:SetVariable>
+            <L7p:ForEachLoop L7p:Usage="Required"
+                             loopVariable="objectclass" variablePrefix="o">
+                <L7p:SetVariable>
+                    <L7p:Base64Expression stringValue="JHt4bWwub2JqZWN0Y2xhc3Nlc30NCjxMN2dpbXM6YXR0cj4NCiAgICA8TDdnaW1zOmF0dHItbmFtZT5vYmplY3RDbGFzczwvTDdnaW1zOmF0dHItbmFtZT4NCiAgICA8TDdnaW1zOmF0dHItdmFsdWU+PCFbQ0RBVEFbJHtvLmN1cnJlbnR9XV0+PC9MN2dpbXM6YXR0ci12YWx1ZT4NCjwvTDdnaW1zOmF0dHI+"/>
+                    <L7p:VariableToSet stringValue="xml.objectclasses"/>
+                </L7p:SetVariable>
+            </L7p:ForEachLoop>
+            <wsp:OneOrMore wsp:Usage="Required">
+                <wsp:All wsp:Usage="Required">
+                    <L7p:ComparisonAssertion>
+                        <L7p:CaseSensitive booleanValue="false"/>
+                        <L7p:Expression1 stringValue="${organization}"/>
+                        <L7p:Expression2 stringValue="openldap"/>
+                        <L7p:Operator operator="EMPTY"/>
+                        <L7p:Predicates predicates="included">
+                            <L7p:item binary="included">
+                                <L7p:CaseSensitive booleanValue="false"/>
+                                <L7p:Operator operator="EMPTY"/>
+                                <L7p:RightValue stringValue="openldap"/>
+                            </L7p:item>
+                        </L7p:Predicates>
+                    </L7p:ComparisonAssertion>
+                    <L7p:ComparisonAssertion>
+                        <L7p:CaseSensitive booleanValue="false"/>
+                        <L7p:Expression1 stringValue="${default_org}"/>
+                        <L7p:Expression2 stringValue="openldap"/>
+                        <L7p:Negate booleanValue="true"/>
+                        <L7p:Operator operator="EMPTY"/>
+                        <L7p:Predicates predicates="included">
+                            <L7p:item binary="included">
+                                <L7p:CaseSensitive booleanValue="false"/>
+                                <L7p:Negated booleanValue="true"/>
+                                <L7p:Operator operator="EMPTY"/>
+                                <L7p:RightValue stringValue="openldap"/>
+                            </L7p:item>
+                        </L7p:Predicates>
+                    </L7p:ComparisonAssertion>
+                    <L7p:SetVariable>
+                        <L7p:Base64Expression stringValue="PEw3Z2ltczphdHRyPg0KCSAgIDxMN2dpbXM6YXR0ci1uYW1lPm9yZ2FuaXphdGlvbjwvTDdnaW1zOmF0dHItbmFtZT4NCgkgICA8TDdnaW1zOmF0dHItdmFsdWU+PCFbQ0RBVEFbJHtkZWZhdWx0X29yZ31dXT48L0w3Z2ltczphdHRyLXZhbHVlPg0KPC9MN2dpbXM6YXR0cj4="/>
+                        <L7p:VariableToSet stringValue="organization"/>
+                    </L7p:SetVariable>
+                    <L7p:assertionComment>
+                        <L7p:Properties mapValue="included">
+                            <L7p:entry>
+                                <L7p:key stringValue="RIGHT.COMMENT"/>
+                                <L7p:value stringValue="//if ${default_org} is set and org not found on ldap"/>
+                            </L7p:entry>
+                        </L7p:Properties>
+                    </L7p:assertionComment>
+                </wsp:All>
+                <wsp:All wsp:Usage="Required">
+                    <L7p:ComparisonAssertion>
+                        <L7p:CaseSensitive booleanValue="false"/>
+                        <L7p:Expression1 stringValue="${organization}"/>
+                        <L7p:Expression2 stringValue="openldap"/>
+                        <L7p:Negate booleanValue="true"/>
+                        <L7p:Operator operator="EMPTY"/>
+                        <L7p:Predicates predicates="included">
+                            <L7p:item binary="included">
+                                <L7p:CaseSensitive booleanValue="false"/>
+                                <L7p:Negated booleanValue="true"/>
+                                <L7p:Operator operator="EMPTY"/>
+                                <L7p:RightValue stringValue="openldap"/>
+                            </L7p:item>
+                        </L7p:Predicates>
+                    </L7p:ComparisonAssertion>
+                    <L7p:SetVariable>
+                        <L7p:Base64Expression stringValue="PEw3Z2ltczphdHRyPg0KCSAgIDxMN2dpbXM6YXR0ci1uYW1lPm9yZ2FuaXphdGlvbjwvTDdnaW1zOmF0dHItbmFtZT4NCgkgICA8TDdnaW1zOmF0dHItdmFsdWU+PCFbQ0RBVEFbJHtvcmdhbml6YXRpb259XV0+PC9MN2dpbXM6YXR0ci12YWx1ZT4NCjwvTDdnaW1zOmF0dHI+"/>
+                        <L7p:VariableToSet stringValue="organization"/>
+                    </L7p:SetVariable>
+                </wsp:All>
+                <L7p:TrueAssertion/>
+                <L7p:assertionComment>
+                    <L7p:Properties mapValue="included">
+                        <L7p:entry>
+                            <L7p:key stringValue="RIGHT.COMMENT"/>
+                            <L7p:value stringValue="//process org"/>
+                        </L7p:entry>
+                    </L7p:Properties>
+                </L7p:assertionComment>
+            </wsp:OneOrMore>
+            <wsp:OneOrMore wsp:Usage="Required">
+                <wsp:All wsp:Usage="Required">
+                    <L7p:ComparisonAssertion>
+                        <L7p:CaseSensitive booleanValue="false"/>
+                        <L7p:Expression1 stringValue="${dn}"/>
+                        <L7p:Expression2 stringValue="openldap"/>
+                        <L7p:Operator operator="EMPTY"/>
+                        <L7p:Predicates predicates="included">
+                            <L7p:item binary="included">
+                                <L7p:CaseSensitive booleanValue="false"/>
+                                <L7p:Operator operator="EMPTY"/>
+                                <L7p:RightValue stringValue="openldap"/>
+                            </L7p:item>
+                        </L7p:Predicates>
+                    </L7p:ComparisonAssertion>
+                    <L7p:SetVariable>
+                        <L7p:Base64Expression stringValue="Y249JHt1c2VybmFtZX0="/>
+                        <L7p:VariableToSet stringValue="dn"/>
+                    </L7p:SetVariable>
+                    <L7p:assertionComment>
+                        <L7p:Properties mapValue="included">
+                            <L7p:entry>
+                                <L7p:key stringValue="RIGHT.COMMENT"/>
+                                <L7p:value stringValue="//fallback to simple dn, if ldap doesn't have an explicit attribute for dn"/>
+                            </L7p:entry>
+                        </L7p:Properties>
+                    </L7p:assertionComment>
+                </wsp:All>
+                <L7p:TrueAssertion/>
+                <L7p:assertionComment>
+                    <L7p:Properties mapValue="included">
+                        <L7p:entry>
+                            <L7p:key stringValue="RIGHT.COMMENT"/>
+                            <L7p:value stringValue="/process dn"/>
+                        </L7p:entry>
+                    </L7p:Properties>
+                </L7p:assertionComment>
+            </wsp:OneOrMore>
+            <wsp:OneOrMore wsp:Usage="Required">
+                <wsp:All wsp:Usage="Required">
+                    <L7p:ComparisonAssertion>
+                        <L7p:CaseSensitive booleanValue="false"/>
+                        <L7p:Expression1 stringValue="${group}"/>
+                        <L7p:Expression2 stringValue="CN="/>
+                        <L7p:Negate booleanValue="true"/>
+                        <L7p:Operator operator="CONTAINS"/>
+                        <L7p:Predicates predicates="included">
+                            <L7p:item binary="included">
+                                <L7p:CaseSensitive booleanValue="false"/>
+                                <L7p:Negated booleanValue="true"/>
+                                <L7p:Operator operator="CONTAINS"/>
+                                <L7p:RightValue stringValue="CN="/>
+                            </L7p:item>
+                        </L7p:Predicates>
+                    </L7p:ComparisonAssertion>
+                    <L7p:SetVariable>
+                        <L7p:Base64Expression stringValue="Q049JHtncm91cH0="/>
+                        <L7p:VariableToSet stringValue="group"/>
+                    </L7p:SetVariable>
+                    <L7p:assertionComment>
+                        <L7p:Properties mapValue="included">
+                            <L7p:entry>
+                                <L7p:key stringValue="RIGHT.COMMENT"/>
+                                <L7p:value stringValue="//if group doesnt have cn, put one"/>
+                            </L7p:entry>
+                        </L7p:Properties>
+                    </L7p:assertionComment>
+                </wsp:All>
+                <L7p:TrueAssertion/>
+                <L7p:assertionComment>
+                    <L7p:Properties mapValue="included">
+                        <L7p:entry>
+                            <L7p:key stringValue="RIGHT.COMMENT"/>
+                            <L7p:value stringValue="/process group"/>
+                        </L7p:entry>
+                    </L7p:Properties>
+                </L7p:assertionComment>
+            </wsp:OneOrMore>
+            <L7p:SetVariable>
+                <L7p:Base64Expression stringValue="PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4NCjxMN2dpbXM6c2VydmljZSAgeG1sbnM6TDdnaW1zPSJodHRwOi8vd3d3LmxheWVyN3RlY2guY29tLzIwMTIvMTIvZ2ltcyI+DQo8TDdnaW1zOnVzZXI+DQogICA8TDdnaW1zOnZlcnNpb24+JHtWRVJTSU9OfTwvTDdnaW1zOnZlcnNpb24+DQogICA8TDdnaW1zOmRuPjwhW0NEQVRBWyR7ZG59XV0+PC9MN2dpbXM6ZG4+DQogICAke3htbC5vYmplY3RjbGFzc2VzfSAgDQogICA8TDdnaW1zOmF0dHI+DQoJPEw3Z2ltczphdHRyLW5hbWU+bG9naW48L0w3Z2ltczphdHRyLW5hbWU+DQoJPEw3Z2ltczphdHRyLXZhbHVlPjwhW0NEQVRBWyR7dXNlcm5hbWV9XV0+PC9MN2dpbXM6YXR0ci12YWx1ZT4NCiAgIDwvTDdnaW1zOmF0dHI+DQogICA8TDdnaW1zOmF0dHI+DQoJICAgPEw3Z2ltczphdHRyLW5hbWU+Z2l2ZW5OYW1lPC9MN2dpbXM6YXR0ci1uYW1lPg0KCSAgIDxMN2dpbXM6YXR0ci12YWx1ZT48IVtDREFUQVske2dpdmVuTmFtZX1dXT48L0w3Z2ltczphdHRyLXZhbHVlPg0KICAgPC9MN2dpbXM6YXR0cj4NCiAgIDxMN2dpbXM6YXR0cj4NCgkgICA8TDdnaW1zOmF0dHItbmFtZT5zbjwvTDdnaW1zOmF0dHItbmFtZT4NCgkgICA8TDdnaW1zOmF0dHItdmFsdWU+PCFbQ0RBVEFbJHtzbn1dXT48L0w3Z2ltczphdHRyLXZhbHVlPg0KICAgPC9MN2dpbXM6YXR0cj4NCiAgIDxMN2dpbXM6YXR0cj4NCgkgICA8TDdnaW1zOmF0dHItbmFtZT5tYWlsPC9MN2dpbXM6YXR0ci1uYW1lPg0KCSAgIDxMN2dpbXM6YXR0ci12YWx1ZT48IVtDREFUQVske21haWx9XV0+PC9MN2dpbXM6YXR0ci12YWx1ZT4NCiAgIDwvTDdnaW1zOmF0dHI+DQogICA8TDdnaW1zOmF0dHI+DQoJICAgPEw3Z2ltczphdHRyLW5hbWU+bWVtYmVyT2Y8L0w3Z2ltczphdHRyLW5hbWU+DQoJICAgPEw3Z2ltczphdHRyLXZhbHVlPjwhW0NEQVRBWyR7Z3JvdXB9XV0+PC9MN2dpbXM6YXR0ci12YWx1ZT4NCiAgIDwvTDdnaW1zOmF0dHI+IA0KICAgJHtvcmdhbml6YXRpb259DQo8L0w3Z2ltczp1c2VyPg0KPC9MN2dpbXM6c2VydmljZT4="/>
+                <L7p:VariableToSet stringValue="output"/>
+            </L7p:SetVariable>
+            <L7p:assertionComment>
+                <L7p:Properties mapValue="included">
+                    <L7p:entry>
+                        <L7p:key stringValue="LEFT.COMMENT"/>
+                        <L7p:value stringValue="OpenLDAP"/>
+                    </L7p:entry>
+                </L7p:Properties>
+            </L7p:assertionComment>
+        </wsp:All>
+    </wsp:All>
+</wsp:Policy>

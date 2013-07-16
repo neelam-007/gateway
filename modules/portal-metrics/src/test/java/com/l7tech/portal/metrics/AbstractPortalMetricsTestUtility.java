@@ -168,6 +168,24 @@ public abstract class AbstractPortalMetricsTestUtility {
                 ");");
     }
 
+    protected void createServiceMetricDetailsTableNoConstraints(Connection connection) throws SQLException {
+        connection.createStatement().execute("CREATE TABLE " + AbstractPortalMetricsUtility.SERVICE_METRICS_DETAILS + " (\n" +
+                "  service_metrics_oid BIGINT NOT NULL,\n" +
+                "  mapping_values_oid BIGINT NOT NULL,\n" +
+                "  attempted INTEGER NOT NULL,\n" +
+                "  authorized INTEGER NOT NULL,\n" +
+                "  completed INTEGER NOT NULL,\n" +
+                "  back_min INTEGER,\n" +
+                "  back_max INTEGER,\n" +
+                "  back_sum INTEGER NOT NULL,\n" +
+                "  front_min INTEGER,\n" +
+                "  front_max INTEGER,\n" +
+                "  front_sum INTEGER NOT NULL,\n" +
+                "  uuid VARCHAR(48) NULL,\n" +
+                "  PRIMARY KEY (service_metrics_oid, mapping_values_oid)\n" +
+                ");");
+    }
+
     protected void dropTables(final Connection connection) throws Exception {
         connection.createStatement().execute("DROP TABLE " + AbstractPortalMetricsUtility.GENERIC_ENTITY);
         connection.createStatement().execute("DROP TABLE " + AbstractPortalMetricsUtility.SERVICE_METRICS_DETAILS);

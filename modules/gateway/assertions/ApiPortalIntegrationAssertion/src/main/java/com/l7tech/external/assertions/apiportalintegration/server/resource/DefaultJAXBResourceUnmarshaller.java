@@ -28,7 +28,9 @@ public class DefaultJAXBResourceUnmarshaller implements JAXBResourceUnmarshaller
     }
 
     DefaultJAXBResourceUnmarshaller() throws JAXBException {
-        this.jaxbContext = JAXBContext.newInstance(ApiPlanResource.class, ApiPlanListResource.class, ApiKeyResource.class);
+        this.jaxbContext = JAXBContext.newInstance(ApiPlanResource.class, ApiPlanListResource.class,
+                ApiKeyResource.class, ApiKeyListResource.class, AccountPlanResource.class,
+                AccountPlanListResource.class);
     }
 
     final JAXBContext jaxbContext;

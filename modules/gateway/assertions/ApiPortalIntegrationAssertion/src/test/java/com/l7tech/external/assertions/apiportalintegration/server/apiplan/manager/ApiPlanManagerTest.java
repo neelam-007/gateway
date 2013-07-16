@@ -425,7 +425,7 @@ public class ApiPlanManagerTest {
         final ApiPlan found = createApiPlan(1234L, "p1", PLAN_NAME, DATE, POLICY_XML);
         when(entityManager.findByUniqueName("p1")).thenReturn(found);
 
-        final ApiPlan apiPlan = manager.find("p1");
+        final ApiPlan apiPlan = manager.find("p1", false);
 
         assertEquals(1234L, apiPlan.getOid());
         assertEquals("p1", apiPlan.getName());
@@ -501,7 +501,7 @@ public class ApiPlanManagerTest {
         manager.getCache().put("p1", createApiPlan(1234L, "p1", PLAN_NAME, DATE, POLICY_XML));
         manager.getNameCache().put(1234L, "p1");
 
-        final ApiPlan plan = manager.find("p1");
+        final ApiPlan plan = manager.find("p1", false);
 
         assertEquals(1234L, plan.getOid());
         assertEquals("p1", plan.getName());
@@ -525,7 +525,7 @@ public class ApiPlanManagerTest {
         manager.getCache().put("p1", createApiPlan(1234L, "p1", PLAN_NAME, DATE, POLICY_XML));
         manager.getNameCache().put(1234L, "p1");
 
-        final ApiPlan plan = manager.find("p1");
+        final ApiPlan plan = manager.find("p1", false);
 
         assertEquals(1234L, plan.getOid());
         verify(entityManager, never()).findByUniqueName("p1");

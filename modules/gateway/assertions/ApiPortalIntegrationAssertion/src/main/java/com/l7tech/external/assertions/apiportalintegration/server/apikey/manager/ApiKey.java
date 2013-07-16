@@ -2,6 +2,7 @@ package com.l7tech.external.assertions.apiportalintegration.server.apikey.manage
 
 import com.l7tech.external.assertions.apiportalintegration.server.AbstractPortalGenericEntity;
 
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -20,6 +21,11 @@ public class ApiKey extends AbstractPortalGenericEntity {
     private String oauthCallbackUrl;
     private String oauthScope;
     private String oauthType;
+
+    private Date lastUpdate;
+    private String accountPlanMappingId;
+    //private String xmlRepresentation;
+    private String customMetaData;
 
     public Map<String, String> getServiceIds() {
         return serviceIds;
@@ -85,6 +91,38 @@ public class ApiKey extends AbstractPortalGenericEntity {
         this.oauthType = oauthType;
     }
 
+    public Date getLastUpdate() {
+        return lastUpdate;
+    }
+
+    public void setLastUpdate(Date lastUpdate) {
+        this.lastUpdate = lastUpdate;
+    }
+
+    public String getAccountPlanMappingId() {
+        return accountPlanMappingId;
+    }
+
+    public void setAccountPlanMappingId(final String accountPlanMappingId) {
+        this.accountPlanMappingId = accountPlanMappingId;
+    }
+
+//    public String getXmlRepresentation() {
+//        return xmlRepresentation;
+//    }
+//
+//    public void setXmlRepresentation(String xmlRepresentation) {
+//        this.xmlRepresentation = xmlRepresentation;
+//    }
+
+    public String getCustomMetaData() {
+        return customMetaData;
+    }
+
+    public void setCustomMetaData(String customMetaData) {
+        this.customMetaData = customMetaData;
+    }
+
     @Override
     public ApiKey getReadOnlyCopy() {
         final ApiKey readOnly = new ApiKey();
@@ -98,6 +136,10 @@ public class ApiKey extends AbstractPortalGenericEntity {
         readOnly.setOauthCallbackUrl(this.getOauthCallbackUrl());
         readOnly.setOauthScope(this.getOauthScope());
         readOnly.setOauthType(this.getOauthType());
+        readOnly.setLastUpdate(this.getLastUpdate());
+        readOnly.setAccountPlanMappingId(this.getAccountPlanMappingId());
+//        readOnly.setXmlRepresentation(this.getXmlRepresentation());
+        readOnly.setCustomMetaData(this.getCustomMetaData());
         readOnly.lock();
         return readOnly;
     }

@@ -2,9 +2,11 @@ package com.l7tech.external.assertions.apiportalintegration.server.apiplan.manag
 
 import com.l7tech.external.assertions.apiportalintegration.server.AbstractPortalGenericEntity;
 import com.l7tech.external.assertions.apiportalintegration.server.AbstractPortalGenericEntityManager;
+import com.l7tech.external.assertions.apiportalintegration.server.accountplan.AccountPlan;
 import com.l7tech.external.assertions.apiportalintegration.server.apiplan.ApiPlan;
 import com.l7tech.external.assertions.apiportalintegration.server.portalmanagedservices.manager.PortalManagedServiceManager;
 import com.l7tech.objectmodel.EntityManager;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.GenericEntityHeader;
 import com.l7tech.server.entity.GenericEntityManager;
 import com.l7tech.util.ConfigFactory;
@@ -41,6 +43,11 @@ public class ApiPlanManager extends AbstractPortalGenericEntityManager<ApiPlan> 
     @Override
     public Object[] getUpdateLocks() {
         return updateLocks;
+    }
+
+    @Override
+    public ApiPlan find(final String name) throws FindException {
+        return find(name, true);//we don't want to cache api plans
     }
 
     /**

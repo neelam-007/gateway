@@ -50,7 +50,7 @@ import java.util.logging.Logger;
 public class ModuleLoadListener implements ApplicationListener {
     public ModuleLoadListener(final ApplicationContext context) {
         this(context, ApiKeyManagerFactory.getInstance() == null ? new ApiKeyManagerImpl(context) : ApiKeyManagerFactory.getInstance(),
-                PortalManagedServiceManagerImpl.getInstance(context), API_KEY_MANAGEMENT_SERVICE_POLICY_XML, RELOAD_API_PLANS_SERVICE_POLICY_XML, API_PORTAL_INTEGRATION_POLICY_XML);
+                PortalManagedServiceManagerImpl.getInstance(context), API_KEY_MANAGEMENT_SERVICE_POLICY_XML, API_PORTAL_INTEGRATION_POLICY_XML);
         if (ApiKeyManagerFactory.getInstance() == null) {
             ApiKeyManagerFactory.setInstance(apiKeysManager);
         }
@@ -100,7 +100,7 @@ public class ModuleLoadListener implements ApplicationListener {
      * Constructor for mocked unit tests.
      */
     ModuleLoadListener(final ApplicationContext context, final PortalGenericEntityManager<ApiKeyData> apiKeyManager,
-                       final PortalManagedServiceManager portalManagedServiceManager, final String apiKeyManagementPolicyXmlFile, final String apiPlansPolicyXmlFile, final String apiPortalIntegrationPolicyXmlFile) {
+                       final PortalManagedServiceManager portalManagedServiceManager, final String apiKeyManagementPolicyXmlFile, final String apiPortalIntegrationPolicyXmlFile) {
         serviceTemplateManager = getBean(context, "serviceTemplateManager", ServiceTemplateManager.class);
         licenseManager = getBean(context, "licenseManager", LicenseManager.class);
         serverConfig = getBean(context, "serverConfig", ServerConfig.class);
@@ -113,7 +113,6 @@ public class ModuleLoadListener implements ApplicationListener {
         applicationEventProxy = getBean(context, "applicationEventProxy", ApplicationEventProxy.class);
         applicationEventProxy.addApplicationListener(this);
         apiKeyManagementServiceTemplate = createServiceTemplate(apiKeyManagementPolicyXmlFile, API_KEY_MANAGEMENT_INTERNAL_SERVICE_NAME, API_KEY_MANAGEMENT_INTERNAL_SERVICE_URI_PREFIX);
-        apiPlansServiceTemplate = createServiceTemplate(apiPlansPolicyXmlFile, RELOAD_API_PLANS_INTERNAL_SERVICE_NAME, RELOAD_API_PLANS_INTERNAL_SERVICE_URI_PREFIX);
         apiPortalIntegrationServiceTemplate = createServiceTemplate(apiPortalIntegrationPolicyXmlFile, API_PORTAL_INTEGRATION_INTERNAL_SERVICE_NAME, API_PORTAL_INTEGRATION_INTERNAL_SERVICE_URI_PREFIX);
         this.apiKeysManager = apiKeyManager;
         this.portalManagedServiceManager = portalManagedServiceManager;
@@ -122,15 +121,14 @@ public class ModuleLoadListener implements ApplicationListener {
     static final String API_KEY_MANAGEMENT_SERVICE_POLICY_XML = "APIKeyManagementServicePolicy.xml";
     static final String API_KEY_MANAGEMENT_INTERNAL_SERVICE_NAME = "API Key Management Service";
     static final String API_PORTAL_INTEGRATION_INTERNAL_SERVICE_NAME = "API Portal Integration Service";
-    static final String RELOAD_API_PLANS_SERVICE_POLICY_XML = "ReloadAPIPlansServicePolicy.xml";
-    static final String RELOAD_API_PLANS_INTERNAL_SERVICE_NAME = "Reload API Plans Service";
     static final String API_PLANS_FRAGMENT_POLICY_NAME = "API Plans Fragment";
     static final String API_PORTAL_INTEGRATION_POLICY_XML = "APIPortalIntegration.xml";
     private static final Logger logger = Logger.getLogger(ModuleLoadListener.class.getName());
     private static final String API_KEY_MANAGEMENT_INTERNAL_SERVICE_URI_PREFIX = "/api/keys/*";
-    private static final String RELOAD_API_PLANS_INTERNAL_SERVICE_URI_PREFIX = "/api/plans/reload";
     private static final String API_PLANS_FRAGMENT_POLICY_XML = "APIPlansFragment.xml";
     private static final String API_PORTAL_INTEGRATION_INTERNAL_SERVICE_URI_PREFIX = "/portalman/*";
+    static final String ACCOUNT_PLANS_FRAGMENT_POLICY_NAME = "Account Plans Fragment";
+    private static final String ACCOUNT_PLANS_FRAGMENT_POLICY_XML = "AccountPlansFragment.xml";
     static final String ROOT_FOLDER_NAME = "Root Node";
     static final String API_DELETED_FOLDER_NAME = "APIs Deleted from Portal";
     static final String OAUTH1X_FRAGMENT_POLICY_NAME = "Require OAuth 1.0 Token";
@@ -157,12 +155,8 @@ public class ModuleLoadListener implements ApplicationListener {
      * Can be null if the policy template xml is invalid.
      */
     @Nullable
-    private final ServiceTemplate apiPlansServiceTemplate;
-    /**
-     * Can be null if the policy template xml is invalid.
-     */
-    @Nullable
     private final ServiceTemplate apiPortalIntegrationServiceTemplate;
+
 
     private void handlePublishedServiceInvalidationEvent(final EntityInvalidationEvent event) {
         final long[] entityIds = event.getEntityIds();
@@ -224,11 +218,8 @@ public class ModuleLoadListener implements ApplicationListener {
 
     private void handleCreate(final long entityId) throws FindException, SaveException, UpdateException {
         final PublishedService service = serviceManager.findByPrimaryKey(entityId);
-        if (RELOAD_API_PLANS_INTERNAL_SERVICE_NAME.equals(service.getName())) {
-            // the reload api plans internal service was created so need to create the plans fragment
-            createPolicyFragment();
-        } else if (API_PORTAL_INTEGRATION_INTERNAL_SERVICE_NAME.equals(service.getName())) {
-            createPolicyFragment();//eventually reload api plans will be remove so this needs to be in API Portal Integration Internal Service
+        if (API_PORTAL_INTEGRATION_INTERNAL_SERVICE_NAME.equals(service.getName())) {
+            createPolicyFragments();
             processClusterProperties();
         }
         final PortalManagedService portalManagedService = portalManagedServiceManager.fromService(service);
@@ -258,9 +249,9 @@ public class ModuleLoadListener implements ApplicationListener {
     }
 
     /**
-     * Only creates the fragment if it doesn't exist.
+     * Only creates the fragments if it doesn't exist.
      */
-    private void createPolicyFragment() {
+    private void createPolicyFragments() {
         try {
             final Policy found = policyManager.findByUniqueName(API_PLANS_FRAGMENT_POLICY_NAME);
             if (found == null) {
@@ -283,6 +274,28 @@ public class ModuleLoadListener implements ApplicationListener {
         } catch (final Exception e) {
             logger.log(Level.WARNING, "Error creating policy fragment. " + API_PLANS_FRAGMENT_POLICY_NAME + " will not be available.", ExceptionUtils.getDebugException(e));
         }
+        try {
+            final Policy found = policyManager.findByUniqueName(ACCOUNT_PLANS_FRAGMENT_POLICY_NAME);
+            if (found == null) {
+                final String policyXml = readPolicyFile(ACCOUNT_PLANS_FRAGMENT_POLICY_XML);
+                final Policy policy = new Policy(PolicyType.INCLUDE_FRAGMENT, ACCOUNT_PLANS_FRAGMENT_POLICY_NAME, policyXml, false);
+                policy.setGuid(UUID.randomUUID().toString());
+                new TransactionTemplate(transactionManager).execute(new TransactionCallbackWithoutResult() {
+                    @Override
+                    protected void doInTransactionWithoutResult(final TransactionStatus transactionStatus) {
+                        try {
+                            policyManager.save(policy);
+                            policyVersionManager.checkpointPolicy(policy, true, true);
+                        } catch (final ObjectModelException e) {
+                            transactionStatus.setRollbackOnly();
+                            logger.log(Level.WARNING, "Error persisting policy fragment. " + ACCOUNT_PLANS_FRAGMENT_POLICY_NAME + " will not be available.", ExceptionUtils.getDebugException(e));
+                        }
+                    }
+                });
+            }
+        } catch (final Exception e) {
+            logger.log(Level.WARNING, "Error creating policy fragment. " + ACCOUNT_PLANS_FRAGMENT_POLICY_NAME + " will not be available.", ExceptionUtils.getDebugException(e));
+        }
     }
 
     /**
@@ -300,6 +313,17 @@ public class ModuleLoadListener implements ApplicationListener {
             }
         } catch (final Exception e) {
             logger.log(Level.WARNING, "Error retrieving policy fragment. " + API_PLANS_FRAGMENT_POLICY_NAME + ". It's guid will not be available.", ExceptionUtils.getDebugException(e));
+        }
+        try {
+            final Policy found = policyManager.findByUniqueName(ACCOUNT_PLANS_FRAGMENT_POLICY_NAME);
+            if (found != null) {
+                createClusterPropertyIfNotExist(ModuleConstants.ACCOUNT_PLANS_FRAGMENT_GUID, found.getGuid());
+            } else {
+                createClusterPropertyIfNotExist(ModuleConstants.ACCOUNT_PLANS_FRAGMENT_GUID, ModuleConstants.NOT_INSTALLED_VALUE);
+                logger.log(Level.WARNING, "Error retrieving policy fragment. " + ACCOUNT_PLANS_FRAGMENT_POLICY_NAME + ". defaulting to " + ModuleConstants.NOT_INSTALLED_VALUE);
+            }
+        } catch (final Exception e) {
+            logger.log(Level.WARNING, "Error retrieving policy fragment. " + ACCOUNT_PLANS_FRAGMENT_POLICY_NAME + ". It's guid will not be available.", ExceptionUtils.getDebugException(e));
         }
         try {
             final Policy found = policyManager.findByUniqueName(OAUTH1X_FRAGMENT_POLICY_NAME);
@@ -402,9 +426,6 @@ public class ModuleLoadListener implements ApplicationListener {
             if (apiKeyManagementServiceTemplate != null) {
                 serviceTemplateManager.register(apiKeyManagementServiceTemplate);
             }
-            if (apiPlansServiceTemplate != null) {
-                serviceTemplateManager.register(apiPlansServiceTemplate);
-            }
             if (apiPortalIntegrationServiceTemplate != null) {
                 serviceTemplateManager.register(apiPortalIntegrationServiceTemplate);
             }
@@ -414,7 +435,6 @@ public class ModuleLoadListener implements ApplicationListener {
     private void destroy() throws Exception {
         applicationEventProxy.removeApplicationListener(this);
         serviceTemplateManager.unregister(apiKeyManagementServiceTemplate);
-        serviceTemplateManager.unregister(apiPlansServiceTemplate);
         serviceTemplateManager.unregister(apiPortalIntegrationServiceTemplate);
     }
 

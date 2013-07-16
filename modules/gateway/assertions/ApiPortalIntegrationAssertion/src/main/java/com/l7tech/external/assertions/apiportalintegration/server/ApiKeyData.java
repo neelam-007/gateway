@@ -18,6 +18,8 @@ public class ApiKeyData extends AbstractPortalGenericEntity {
     private String oauthCallbackUrl;
     private String oauthScope;
     private String oauthType;
+    private String accountPlanMappingId;
+    private String customMetaData;
 
     public ApiKeyData() {
         this(null);
@@ -108,6 +110,22 @@ public class ApiKeyData extends AbstractPortalGenericEntity {
         this.oauthType = oauthType;
     }
 
+    public String getAccountPlanMappingId() {
+        return accountPlanMappingId;
+    }
+
+    public void setAccountPlanMappingId(final String accountPlanMappingId) {
+        this.accountPlanMappingId = accountPlanMappingId;
+    }
+
+    public String getCustomMetaData() {
+        return customMetaData;
+    }
+
+    public void setCustomMetaData(String customMetaData) {
+        this.customMetaData = customMetaData;
+    }
+
     @Override
     public ApiKeyData getReadOnlyCopy() {
         final ApiKeyData readOnly = new ApiKeyData();
@@ -122,6 +140,8 @@ public class ApiKeyData extends AbstractPortalGenericEntity {
         readOnly.setOauthCallbackUrl(this.getOauthCallbackUrl());
         readOnly.setOauthScope(this.getOauthScope());
         readOnly.setOauthType(this.getOauthType());
+        readOnly.setAccountPlanMappingId(this.getAccountPlanMappingId());
+        readOnly.setCustomMetaData(this.getCustomMetaData());
         readOnly.lock();
         return readOnly;
     }
@@ -146,6 +166,8 @@ public class ApiKeyData extends AbstractPortalGenericEntity {
         if (status != null ? !status.equals(that.status) : that.status != null) return false;
         if (xmlRepresentation != null ? !xmlRepresentation.equals(that.xmlRepresentation) : that.xmlRepresentation != null)
             return false;
+        if (accountPlanMappingId != null ? !accountPlanMappingId.equals(that.accountPlanMappingId) : that.accountPlanMappingId != null) return false;
+        if (customMetaData != null ? !customMetaData.equals(that.customMetaData) : that.customMetaData != null) return false;
 
         return true;
     }
@@ -163,6 +185,8 @@ public class ApiKeyData extends AbstractPortalGenericEntity {
         result = 31 * result + (oauthCallbackUrl != null ? oauthCallbackUrl.hashCode() : 0);
         result = 31 * result + (oauthScope != null ? oauthScope.hashCode() : 0);
         result = 31 * result + (oauthType != null ? oauthType.hashCode() : 0);
+        result = 31 * result + (accountPlanMappingId != null ? accountPlanMappingId.hashCode() : 0);
+        result = 31 * result + (customMetaData != null ? customMetaData.hashCode() : 0);
         return result;
     }
 }

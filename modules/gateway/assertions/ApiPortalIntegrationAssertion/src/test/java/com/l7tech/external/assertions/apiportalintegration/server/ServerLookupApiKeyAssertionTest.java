@@ -6,13 +6,11 @@ import com.l7tech.external.assertions.apiportalintegration.server.resource.*;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.message.Message;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.policy.InvalidGenericEntityException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.assertion.AssertionStatusException;
-import com.l7tech.test.BugNumber;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -46,6 +44,7 @@ public class ServerLookupApiKeyAssertionTest {
     private static final String OAUTH_CALLBACK = "someOauthCallBackUrl";
     private static final String OAUTH_SCOPE = "someOauthScope";
     private static final String OAUTH_TYPE = "someOauthType";
+    private static final String ACCOUNT_ID = "someOrgId";
     private static final String KEY_CV = LookupApiKeyAssertion.DEFAULT_PREFIX + "." + LookupApiKeyAssertion.KEY_SUFFIX;
     private static final String FOUND_CV = LookupApiKeyAssertion.DEFAULT_PREFIX + "." + LookupApiKeyAssertion.FOUND_SUFFIX;
     private static final String SERVICE_CV = LookupApiKeyAssertion.DEFAULT_PREFIX + "." + LookupApiKeyAssertion.SERVICE_SUFFIX;
@@ -59,6 +58,7 @@ public class ServerLookupApiKeyAssertionTest {
     private static final String OAUTH_SCOPE_CV = LookupApiKeyAssertion.DEFAULT_PREFIX + "." + LookupApiKeyAssertion.OAUTH_SCOPE_SUFFIX;
     private static final String OAUTH_TYPE_CV = LookupApiKeyAssertion.DEFAULT_PREFIX + "." + LookupApiKeyAssertion.OAUTH_TYPE_SUFFIX;
     private static final String VERSION_CV = LookupApiKeyAssertion.DEFAULT_PREFIX + "." + LookupApiKeyAssertion.VERSION_SUFFIX;
+    private static final String ACCOUNT_ID_CV = LookupApiKeyAssertion.DEFAULT_PREFIX + "." + LookupApiKeyAssertion.ACCOUNT_PLAN_MAPPING_ID_SUFFIX;
     private LookupApiKeyAssertion assertion;
     private ServerLookupApiKeyAssertion serverAssertion;
     private PolicyEnforcementContext policyContext;
@@ -111,7 +111,7 @@ public class ServerLookupApiKeyAssertionTest {
 
     @Test
     public void checkRequestKeyFound() throws Exception {
-        final ApiKey key = createKey(API_KEY_CV_VALUE, SECRET, STATUS, serviceIdPlans, LABEL, PLATFORM, OAUTH_CALLBACK, OAUTH_SCOPE, OAUTH_TYPE, VERSION);
+        final ApiKey key = createKey(API_KEY_CV_VALUE, SECRET, STATUS, serviceIdPlans, LABEL, PLATFORM, OAUTH_CALLBACK, OAUTH_SCOPE, OAUTH_TYPE, VERSION, ACCOUNT_ID);
         final ApiKeyResource resource = createResource(key);
         serverAssertion = new ServerLookupApiKeyAssertion(assertion, legacyApiKeyManager, apiKeyManager, transformer, marshaller);
         when(apiKeyManager.find(API_KEY_CV_VALUE)).thenReturn(key);
@@ -146,7 +146,7 @@ public class ServerLookupApiKeyAssertionTest {
     public void checkRequestLegacyKeyFound() throws Exception {
         serverAssertion = new ServerLookupApiKeyAssertion(assertion, legacyApiKeyManager, apiKeyManager, transformer, marshaller);
 
-        when(legacyApiKeyManager.find(API_KEY_CV_VALUE)).thenReturn(createLegacyKey(API_KEY_CV_VALUE, SECRET, STATUS, serviceIdPlans, LABEL, PLATFORM, OAUTH_CALLBACK, OAUTH_SCOPE, OAUTH_TYPE, VERSION));
+        when(legacyApiKeyManager.find(API_KEY_CV_VALUE)).thenReturn(createLegacyKey(API_KEY_CV_VALUE, SECRET, STATUS, serviceIdPlans, LABEL, PLATFORM, OAUTH_CALLBACK, OAUTH_SCOPE, OAUTH_TYPE, VERSION, ACCOUNT_ID));
 
         final AssertionStatus assertionStatus = serverAssertion.checkRequest(policyContext);
 
@@ -170,7 +170,7 @@ public class ServerLookupApiKeyAssertionTest {
 
     @Test
     public void checkRequestKeyFoundNoServiceIdOnAssertion() throws Exception {
-        final ApiKey key = createKey(API_KEY_CV_VALUE, SECRET, STATUS, serviceIdPlans, LABEL, PLATFORM, OAUTH_CALLBACK, OAUTH_SCOPE, OAUTH_TYPE, VERSION);
+        final ApiKey key = createKey(API_KEY_CV_VALUE, SECRET, STATUS, serviceIdPlans, LABEL, PLATFORM, OAUTH_CALLBACK, OAUTH_SCOPE, OAUTH_TYPE, VERSION, ACCOUNT_ID);
         final ApiKeyResource resource = createResource(key);
         assertion.setServiceId(null);
         serverAssertion = new ServerLookupApiKeyAssertion(assertion, legacyApiKeyManager, apiKeyManager, transformer, marshaller);
@@ -201,7 +201,7 @@ public class ServerLookupApiKeyAssertionTest {
 
         serverAssertion = new ServerLookupApiKeyAssertion(assertion, legacyApiKeyManager, apiKeyManager, transformer, marshaller);
 
-        when(legacyApiKeyManager.find(API_KEY_CV_VALUE)).thenReturn(createLegacyKey(API_KEY_CV_VALUE, SECRET, STATUS, serviceIdPlans, LABEL, PLATFORM, OAUTH_CALLBACK, OAUTH_SCOPE, OAUTH_TYPE, VERSION));
+        when(legacyApiKeyManager.find(API_KEY_CV_VALUE)).thenReturn(createLegacyKey(API_KEY_CV_VALUE, SECRET, STATUS, serviceIdPlans, LABEL, PLATFORM, OAUTH_CALLBACK, OAUTH_SCOPE, OAUTH_TYPE, VERSION, ACCOUNT_ID));
 
         final AssertionStatus assertionStatus = serverAssertion.checkRequest(policyContext);
 
@@ -220,7 +220,7 @@ public class ServerLookupApiKeyAssertionTest {
     public void checkRequestKeyFoundBlankServiceIdOnAssertion() throws Exception {
         assertion.setServiceId("");
         serverAssertion = new ServerLookupApiKeyAssertion(assertion, legacyApiKeyManager, apiKeyManager, transformer, marshaller);
-        final ApiKey key = createKey(API_KEY_CV_VALUE, SECRET, STATUS, serviceIdPlans, LABEL, PLATFORM, OAUTH_CALLBACK, OAUTH_SCOPE, OAUTH_TYPE, VERSION);
+        final ApiKey key = createKey(API_KEY_CV_VALUE, SECRET, STATUS, serviceIdPlans, LABEL, PLATFORM, OAUTH_CALLBACK, OAUTH_SCOPE, OAUTH_TYPE, VERSION, ACCOUNT_ID);
         final ApiKeyResource resource = createResource(key);
         when(apiKeyManager.find(API_KEY_CV_VALUE)).thenReturn(key);
         when(transformer.entityToResource(key)).thenReturn(resource);
@@ -255,7 +255,7 @@ public class ServerLookupApiKeyAssertionTest {
 
         serverAssertion = new ServerLookupApiKeyAssertion(assertion, legacyApiKeyManager, apiKeyManager, transformer, marshaller);
 
-        when(legacyApiKeyManager.find(API_KEY_CV_VALUE)).thenReturn(createLegacyKey(API_KEY_CV_VALUE, SECRET, STATUS, serviceIdPlans, LABEL, PLATFORM, OAUTH_CALLBACK, OAUTH_SCOPE, OAUTH_TYPE, VERSION));
+        when(legacyApiKeyManager.find(API_KEY_CV_VALUE)).thenReturn(createLegacyKey(API_KEY_CV_VALUE, SECRET, STATUS, serviceIdPlans, LABEL, PLATFORM, OAUTH_CALLBACK, OAUTH_SCOPE, OAUTH_TYPE, VERSION, ACCOUNT_ID));
 
         final AssertionStatus assertionStatus = serverAssertion.checkRequest(policyContext);
 
@@ -278,7 +278,7 @@ public class ServerLookupApiKeyAssertionTest {
 
     @Test
     public void checkRequestKeyFoundFromKeyContextVariable() throws Exception {
-        final ApiKey key = createKey(API_KEY_CV_VALUE, SECRET, STATUS, serviceIdPlans, LABEL, PLATFORM, OAUTH_CALLBACK, OAUTH_SCOPE, OAUTH_TYPE, VERSION);
+        final ApiKey key = createKey(API_KEY_CV_VALUE, SECRET, STATUS, serviceIdPlans, LABEL, PLATFORM, OAUTH_CALLBACK, OAUTH_SCOPE, OAUTH_TYPE, VERSION, ACCOUNT_ID);
         final ApiKeyResource resource = createResource(key);
         assertion.setApiKey("${" + API_KEY_CV + "}");
         serverAssertion = new ServerLookupApiKeyAssertion(assertion, legacyApiKeyManager, apiKeyManager, transformer, marshaller);
@@ -317,7 +317,7 @@ public class ServerLookupApiKeyAssertionTest {
         serverAssertion = new ServerLookupApiKeyAssertion(assertion, legacyApiKeyManager, apiKeyManager, transformer, marshaller);
         policyContext.setVariable(API_KEY_CV, API_KEY_CV_VALUE);
 
-        when(legacyApiKeyManager.find(API_KEY_CV_VALUE)).thenReturn(createLegacyKey(API_KEY_CV_VALUE, SECRET, STATUS, serviceIdPlans, LABEL, PLATFORM, OAUTH_CALLBACK, OAUTH_SCOPE, OAUTH_TYPE, VERSION));
+        when(legacyApiKeyManager.find(API_KEY_CV_VALUE)).thenReturn(createLegacyKey(API_KEY_CV_VALUE, SECRET, STATUS, serviceIdPlans, LABEL, PLATFORM, OAUTH_CALLBACK, OAUTH_SCOPE, OAUTH_TYPE, VERSION, ACCOUNT_ID));
 
         final AssertionStatus assertionStatus = serverAssertion.checkRequest(policyContext);
 
@@ -347,7 +347,7 @@ public class ServerLookupApiKeyAssertionTest {
         service.setOid(Long.valueOf(SERVICE_ID));
         policyContext.setService(service);
 
-        final ApiKey key = createKey(API_KEY_CV_VALUE, SECRET, STATUS, serviceIdPlans, LABEL, PLATFORM, OAUTH_CALLBACK, OAUTH_SCOPE, OAUTH_TYPE, VERSION);
+        final ApiKey key = createKey(API_KEY_CV_VALUE, SECRET, STATUS, serviceIdPlans, LABEL, PLATFORM, OAUTH_CALLBACK, OAUTH_SCOPE, OAUTH_TYPE, VERSION, ACCOUNT_ID);
         final ApiKeyResource resource = createResource(key);
         when(apiKeyManager.find(API_KEY_CV_VALUE)).thenReturn(key);
         when(transformer.entityToResource(key)).thenReturn(resource);
@@ -385,7 +385,7 @@ public class ServerLookupApiKeyAssertionTest {
         service.setOid(Long.valueOf(SERVICE_ID));
         policyContext.setService(service);
 
-        when(legacyApiKeyManager.find(API_KEY_CV_VALUE)).thenReturn(createLegacyKey(API_KEY_CV_VALUE, SECRET, STATUS, serviceIdPlans, LABEL, PLATFORM, OAUTH_CALLBACK, OAUTH_SCOPE, OAUTH_TYPE, VERSION));
+        when(legacyApiKeyManager.find(API_KEY_CV_VALUE)).thenReturn(createLegacyKey(API_KEY_CV_VALUE, SECRET, STATUS, serviceIdPlans, LABEL, PLATFORM, OAUTH_CALLBACK, OAUTH_SCOPE, OAUTH_TYPE, VERSION, ACCOUNT_ID));
 
         final AssertionStatus assertionStatus = serverAssertion.checkRequest(policyContext);
 
@@ -444,7 +444,7 @@ public class ServerLookupApiKeyAssertionTest {
 
     @Test
     public void checkRequestKeyServiceIdDoesNotMatch() throws Exception {
-        final ApiKey key = createKey(API_KEY_CV_VALUE, SECRET, STATUS, serviceIdPlans, LABEL, PLATFORM, OAUTH_CALLBACK, OAUTH_SCOPE, OAUTH_TYPE, VERSION);
+        final ApiKey key = createKey(API_KEY_CV_VALUE, SECRET, STATUS, serviceIdPlans, LABEL, PLATFORM, OAUTH_CALLBACK, OAUTH_SCOPE, OAUTH_TYPE, VERSION, ACCOUNT_ID);
         final ApiKeyResource resource = createResource(key);
         assertion.setServiceId(SERVICE_ID + "x");
         serverAssertion = new ServerLookupApiKeyAssertion(assertion, legacyApiKeyManager, apiKeyManager, transformer, marshaller);
@@ -471,7 +471,7 @@ public class ServerLookupApiKeyAssertionTest {
         assertion.setServiceId(SERVICE_ID + "x");
         serverAssertion = new ServerLookupApiKeyAssertion(assertion, legacyApiKeyManager, apiKeyManager, transformer, marshaller);
 
-        when(legacyApiKeyManager.find(API_KEY_CV_VALUE)).thenReturn(createLegacyKey(API_KEY_CV_VALUE, SECRET, STATUS, serviceIdPlans, LABEL, PLATFORM, OAUTH_CALLBACK, OAUTH_SCOPE, OAUTH_TYPE, VERSION));
+        when(legacyApiKeyManager.find(API_KEY_CV_VALUE)).thenReturn(createLegacyKey(API_KEY_CV_VALUE, SECRET, STATUS, serviceIdPlans, LABEL, PLATFORM, OAUTH_CALLBACK, OAUTH_SCOPE, OAUTH_TYPE, VERSION, ACCOUNT_ID));
 
         final AssertionStatus assertionStatus = serverAssertion.checkRequest(policyContext);
 
@@ -541,7 +541,7 @@ public class ServerLookupApiKeyAssertionTest {
 
     @Test(expected = AssertionStatusException.class)
     public void checkRequestJAXBException() throws Exception {
-        final ApiKey key = createKey(API_KEY_CV_VALUE, SECRET, STATUS, serviceIdPlans, LABEL, PLATFORM, OAUTH_CALLBACK, OAUTH_SCOPE, OAUTH_TYPE, VERSION);
+        final ApiKey key = createKey(API_KEY_CV_VALUE, SECRET, STATUS, serviceIdPlans, LABEL, PLATFORM, OAUTH_CALLBACK, OAUTH_SCOPE, OAUTH_TYPE, VERSION, ACCOUNT_ID);
         final ApiKeyResource resource = createResource(key);
         serverAssertion = new ServerLookupApiKeyAssertion(assertion, legacyApiKeyManager, apiKeyManager, transformer, marshaller);
         when(apiKeyManager.find(API_KEY_CV_VALUE)).thenReturn(key);
@@ -556,7 +556,7 @@ public class ServerLookupApiKeyAssertionTest {
      */
     @Deprecated
     private ApiKeyData createLegacyKey(final String key, final String secret, final String status, final Map<String, String> serviceIdPlans,
-                                       String label, String platform, String oauthCallBack, String oauthScope, String oauthType, int version) {
+                                       String label, String platform, String oauthCallBack, String oauthScope, String oauthType, int version, String accountId) {
         final ApiKeyData data = new ApiKeyData();
         data.setKey(key);
         data.setSecret(secret);
@@ -569,11 +569,12 @@ public class ServerLookupApiKeyAssertionTest {
         data.setOauthScope(oauthScope);
         data.setOauthType(oauthType);
         data.setVersion(version);
+        data.setAccountPlanMappingId(accountId);
         return data;
     }
 
     private ApiKey createKey(final String key, final String secret, final String status, final Map<String, String> serviceIdPlans,
-                             String label, String platform, String oauthCallBack, String oauthScope, String oauthType, int version) {
+                             String label, String platform, String oauthCallBack, String oauthScope, String oauthType, int version, String accountId) {
         final ApiKey apiKey = new ApiKey();
         apiKey.setName(key);
         apiKey.setSecret(secret);
@@ -585,6 +586,7 @@ public class ServerLookupApiKeyAssertionTest {
         apiKey.setOauthScope(oauthScope);
         apiKey.setOauthType(oauthType);
         apiKey.setVersion(version);
+        apiKey.setAccountPlanMappingId(accountId);
         return apiKey;
     }
 
@@ -596,6 +598,7 @@ public class ServerLookupApiKeyAssertionTest {
         resource.setSecret(key.getSecret());
         resource.setStatus(key.getStatus());
         resource.setApis(key.getServiceIds());
+        resource.setAccountPlanMappingId(key.getAccountPlanMappingId());
         resource.setSecurity(new SecurityDetails(new OAuthDetails(key.getOauthCallbackUrl(), key.getOauthScope(), key.getOauthType())));
         return resource;
     }

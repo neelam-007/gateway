@@ -11,11 +11,13 @@ public class ManagePortalResourceAssertion extends Assertion implements UsesVari
     public static final String OPERATION = "pman.operation";
     public static final String RESOURCE_URI = "pman.resUri";
     public static final String OPTION_API_GROUP = "pman.options.apiGroup";
+    public static final String OPTION_API_KEY_STATUS = "pman.options.status";
     public static final String OPTION_REMOVE_OMITTED = "pman.options.removeOmitted";
     public static final String RESOURCE = "pman.resource";
     public static final String RESPONSE_RESOURCE = "pman.resp.resource";
     public static final String RESPONSE_STATUS = "pman.resp.status";
     public static final String RESPONSE_DETAIL = "pman.resp.detail";
+    public static final String OPTION_POLICY_GUID = "pman.options.policyGUID";
 
     @Override
     public VariableMetadata[] getVariablesSet() {
@@ -25,7 +27,7 @@ public class ManagePortalResourceAssertion extends Assertion implements UsesVari
 
     @Override
     public String[] getVariablesUsed() {
-        return new String[]{OPERATION, RESOURCE_URI, RESOURCE, OPTION_API_GROUP, OPTION_REMOVE_OMITTED};
+        return new String[]{OPERATION, RESOURCE_URI, RESOURCE, OPTION_API_GROUP, OPTION_REMOVE_OMITTED, OPTION_API_KEY_STATUS, OPTION_POLICY_GUID};
     }
 
     public AssertionMetadata meta() {

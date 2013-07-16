@@ -13,7 +13,7 @@ import java.util.GregorianCalendar;
 
 import static junit.framework.Assert.fail;
 
-public class PortalMetricsPurgeUtilityTest extends AbstractPortalMetricsTestUtility {
+public class     PortalMetricsPurgeUtilityTest extends AbstractPortalMetricsTestUtility {
     private static final String CONNECTION_URL = "jdbc:hsqldb:mem:mydb";
     private static final String USERNAME = "sa";
     private static final String PASSWORD = "";
@@ -292,5 +292,22 @@ public class PortalMetricsPurgeUtilityTest extends AbstractPortalMetricsTestUtil
 
         // nothing should have been purged
         assertNumRows(connection, 1, 1, 1);
+    }
+
+    @Test
+    public void testNoForeignKey() throws Exception {
+        connection.createStatement().execute("DROP TABLE " + AbstractPortalMetricsUtility.SERVICE_METRICS_DETAILS);
+        createServiceMetricDetailsTableNoConstraints(connection);
+        insertPublishedService(connection, 1);
+        final long periodStart = DateUtils.addDays(calendar.getTime(), NUM_DAYS * -1).getTime() - 1;
+        final long generatedKey = insertServiceMetric(connection, 1, periodStart);
+        insertMappingKey(connection, 1);
+        insertMappingValue(connection, 1, 1);
+        insertServiceMetricDetail(connection, generatedKey, 1);
+        assertNumRows(connection, 1, 1, 1);
+
+        purger.purge(NUM_DAYS, calendar.getTime(), RESOLUTION);
+
+        assertNumRows(connection, 0, 0, 0);
     }
 }

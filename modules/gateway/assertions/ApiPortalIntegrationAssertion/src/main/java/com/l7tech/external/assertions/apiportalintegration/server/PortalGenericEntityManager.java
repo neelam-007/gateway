@@ -22,5 +22,9 @@ public interface PortalGenericEntityManager<T extends AbstractPortalGenericEntit
 
     T find(@NotNull final String name) throws FindException;
 
+    T find(@NotNull final String name, @NotNull final boolean nocache) throws FindException;
+
     List<T> findAll() throws FindException;
+
+    int getCacheItem();
 }
