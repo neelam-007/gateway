@@ -10,6 +10,35 @@
 -- See Core_Dev_Useful_Info#Database_Changes on Layer 7 wiki
 --
 
+--
+-- FUNCTION --
+--
+-- These are helper functions used by derby. Derby's built in functions are ver limited. These help deal with goid's
+
+-- converts a high and a low bigint to a goid
+CREATE FUNCTION toGoid(high bigint, low bigint) RETURNS char(16) for bit data
+    PARAMETER STYLE JAVA NO SQL LANGUAGE JAVA
+    EXTERNAL NAME 'com.l7tech.server.upgrade.DerbyFunctions.toGoid';
+
+-- returns a random long using our random long utils
+CREATE FUNCTION randomLong() RETURNS bigint
+    PARAMETER STYLE JAVA NO SQL LANGUAGE JAVA
+    EXTERNAL NAME 'com.l7tech.server.upgrade.DerbyFunctions.randomLong';
+
+-- returns a random long using our random long utils. This long is guaranteed to not be 0
+CREATE FUNCTION randomLongNotReserved() RETURNS bigint
+    PARAMETER STYLE JAVA NO SQL LANGUAGE JAVA
+    EXTERNAL NAME 'com.l7tech.server.upgrade.DerbyFunctions.randomLongNotReserved';
+
+CREATE procedure setVariable(keyParam CHAR(128), valueParam CHAR(128))
+    PARAMETER STYLE JAVA NO SQL LANGUAGE JAVA
+    EXTERNAL NAME 'com.l7tech.server.upgrade.DerbyFunctions.setVariable';
+
+CREATE FUNCTION getVariable(keyParam CHAR(128)) RETURNS CHAR(128)
+    PARAMETER STYLE JAVA NO SQL LANGUAGE JAVA
+    EXTERNAL NAME 'com.l7tech.server.upgrade.DerbyFunctions.getVariable';
+
+
 create table security_zone (
   objectid bigint not null,
   version integer not null,

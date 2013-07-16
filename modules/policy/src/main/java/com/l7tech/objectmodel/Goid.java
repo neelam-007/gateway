@@ -141,6 +141,10 @@ public class Goid implements Serializable {
 
     @Override
     public String toString() {
+        return toHexString();
+    }
+
+    public String toHexString(){
         return HexUtils.hexDump(goid);
     }
 

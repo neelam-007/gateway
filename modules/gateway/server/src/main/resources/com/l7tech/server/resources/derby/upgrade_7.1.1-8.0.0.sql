@@ -133,20 +133,40 @@ INSERT INTO cluster_properties
     (objectid, version, propkey, propvalue, properties)
     values (-800000, 0, 'upgrade.task.800000', 'com.l7tech.server.upgrade.Upgrade71To80UpdateRoles', null);
 
---
--- Register the derby oids upgrade task for changing oids to goids.
--- Note this is only in the derby upgrade script because this is only supposed to run on derby databases.
---
-INSERT INTO cluster_properties
-    (objectid, version, propkey, propvalue, properties)
-    values (-800001, 0, 'upgrade.task.800001', 'com.l7tech.server.upgrade.Upgrade71To80DerbyOids', null);
 
 --
 -- Goidification modification. These involve replacing the oid column with a goid column on entity tables.
 --
 
+-- adding in helper functions for derby:
+CREATE FUNCTION toGoid(high bigint, low bigint) RETURNS char(16) for bit data
+    PARAMETER STYLE JAVA NO SQL LANGUAGE JAVA
+    EXTERNAL NAME 'com.l7tech.server.upgrade.DerbyFunctions.toGoid';
+
+CREATE FUNCTION randomLong() RETURNS bigint
+    PARAMETER STYLE JAVA NO SQL LANGUAGE JAVA
+    EXTERNAL NAME 'com.l7tech.server.upgrade.DerbyFunctions.randomLong';
+
+CREATE FUNCTION randomLongNotReservered() RETURNS bigint
+    PARAMETER STYLE JAVA NO SQL LANGUAGE JAVA
+    EXTERNAL NAME 'com.l7tech.server.upgrade.DerbyFunctions.randomLongNotReserved';
+
+CREATE procedure setVariable(keyParam CHAR(128), valueParam CHAR(128))
+    PARAMETER STYLE JAVA NO SQL LANGUAGE JAVA
+    EXTERNAL NAME 'com.l7tech.server.upgrade.DerbyFunctions.setVariable';
+
+CREATE FUNCTION getVariable(keyParam CHAR(128)) RETURNS CHAR(128)
+    PARAMETER STYLE JAVA NO SQL LANGUAGE JAVA
+    EXTERNAL NAME 'com.l7tech.server.upgrade.DerbyFunctions.getVariable';
+
 --- JdbcConnection
 ALTER TABLE jdbc_connection ADD COLUMN goid CHAR(16) FOR BIT DATA;
+call setVariable('jdbc_connection_prefix', cast(randomLongNotReservered() as char(21)));
+update jdbc_connection set goid = toGoid(cast(getVariable('jdbc_connection_prefix') as bigint), objectid);
+ALTER TABLE jdbc_connection ALTER COLUMN goid NOT NULL;
+ALTER TABLE jdbc_connection DROP PRIMARY KEY;
+ALTER TABLE jdbc_connection DROP COLUMN objectid;
+ALTER TABLE jdbc_connection ADD PRIMARY KEY (goid);
 
 -- MetricsBin, MetricsBinDetail  - metrics are not enabled for derby, no data to upgrade
 ALTER TABLE service_metrics DROP PRIMARY KEY;
@@ -163,6 +183,18 @@ ALTER TABLE service_metrics_details ADD PRIMARY KEY (service_metrics_oid, mappin
 
 --- LogonInfo
 ALTER TABLE logon_info ADD COLUMN goid CHAR(16) FOR BIT DATA;
+call setVariable('logon_info_prefix', cast(randomLongNotReservered() as char(21)));
+update logon_info set goid = toGoid(cast(getVariable('logon_info_prefix') as bigint), objectid);
+ALTER TABLE logon_info ALTER COLUMN goid NOT NULL;
+ALTER TABLE logon_info DROP PRIMARY KEY;
+ALTER TABLE logon_info DROP COLUMN objectid;
+ALTER TABLE logon_info ADD PRIMARY KEY (goid);
 
 --- SampleMessage
 ALTER TABLE sample_messages ADD COLUMN goid CHAR(16) FOR BIT DATA;
+call setVariable('sample_messages_prefix', cast(randomLongNotReservered() as char(21)));
+update sample_messages set goid = toGoid(cast(getVariable('sample_messages_prefix') as bigint), objectid);
+ALTER TABLE sample_messages ALTER COLUMN goid NOT NULL;
+ALTER TABLE sample_messages DROP PRIMARY KEY;
+ALTER TABLE sample_messages DROP COLUMN objectid;
+ALTER TABLE sample_messages ADD PRIMARY KEY (goid);

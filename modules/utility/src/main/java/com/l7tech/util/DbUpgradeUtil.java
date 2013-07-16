@@ -86,9 +86,20 @@ public final class DbUpgradeUtil {
             Matcher matcher = TOKENS_PATTERN.matcher(statement);
             while (matcher.find()) {
                 //replace the random int token.
-                if (RANDOM_INT_TOKEN_PATTERN.equals(matcher.group())) {
-                    int random = RandomUtil.nextInt();
-                    matcher.appendReplacement(parsedStatement, String.valueOf(random));
+                switch(matcher.group()){
+                    case RANDOM_LONG_TOKEN_PATTERN: {
+                        long random = RandomUtil.nextLong();
+                        matcher.appendReplacement(parsedStatement, String.valueOf(random));
+                        break;
+                    }
+                    case RANDOM_LONG_NOT_RESERVED_TOKEN_PATTERN:{
+                        long random;
+                        do{
+                            random = RandomUtil.nextLong();
+                        } while(random >= 0 && random < 65536);
+                        matcher.appendReplacement(parsedStatement, String.valueOf(random));
+                        break;
+                    }
                 }
             }
             //add the rest of the statement
@@ -170,7 +181,8 @@ public final class DbUpgradeUtil {
     private static final String UPGRADE_SQL_PATTERN = "^upgrade_(.*)-(.*).sql$";
     private static final String UPGRADE_SQL_PATTERN_OPTION = "^upgrade_(.*)-(.*)_("+ UPGRADE_TRY_SUFFIX +"|"+ UPGRADE_SUCCESS_SUFFIX +").sql$";
 
-    private static String RANDOM_INT_TOKEN_PATTERN = "#RANDOM_LONG#";
+    private static final String RANDOM_LONG_TOKEN_PATTERN = "#RANDOM_LONG#";
+    private static final String RANDOM_LONG_NOT_RESERVED_TOKEN_PATTERN = "#RANDOM_LONG_NOT_RESERVED#";
     //The tokens pattern should be an | of all the different token patterns For example "#TOKEN1#|#TOKEN2#|#TOKEN3#"
-    private static Pattern TOKENS_PATTERN = Pattern.compile(RANDOM_INT_TOKEN_PATTERN);
+    private static Pattern TOKENS_PATTERN = Pattern.compile(RANDOM_LONG_TOKEN_PATTERN + "|" + RANDOM_LONG_NOT_RESERVED_TOKEN_PATTERN);
 }
