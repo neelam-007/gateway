@@ -16,6 +16,7 @@ import java.awt.event.ActionListener;
 public class BasicPropertiesPanel extends JPanel {
     private static final ImageIcon VALID = ImageCache.getInstance().getIconAsIcon("com/l7tech/console/resources/DigitalSignatureStateValid16.png");
     private static final ImageIcon INVALID = ImageCache.getInstance().getIconAsIcon("com/l7tech/console/resources/Warning16.png");
+    private static final String VALID_MSG = "All field values are ok.";
     private static final String NAME = "name";
     private static final String DESCRIPTION = "description";
     private JPanel contentPanel;
@@ -71,7 +72,7 @@ public class BasicPropertiesPanel extends JPanel {
                     validationLabel.setText(errors.length > 0 ? errors[0] : StringUtils.EMPTY);
                     validationLabel.setIcon(INVALID);
                 } else {
-                    validationLabel.setText(StringUtils.EMPTY);
+                    validationLabel.setText(VALID_MSG);
                     validationLabel.setIcon(VALID);
                 }
                 return valid;

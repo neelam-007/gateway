@@ -98,9 +98,10 @@ public class EntityCrudController<ET> {
                 if (entityCreator != null) {
                     ET entity = entityCreator.createNewEntity();
                     if (entity != null && entityEditor != null) {
-                        entityEditor.displayEditDialog(entity, new Functions.UnaryVoid<ET>() {
+                        entityEditor.displayEditDialog(entity, new Functions.Unary<Boolean, ET>() {
                             @Override
-                            public void call(ET editedEntity) {
+                            public Boolean call(ET editedEntity) {
+                                boolean successful = true;
                                 if (editedEntity != null) {
                                     if (null != (editedEntity = doSave(editedEntity))) {
                                         entityTableModel.addRow(0, editedEntity);
@@ -108,8 +109,11 @@ public class EntityCrudController<ET> {
                                         final int selectIndex = entityTable.convertRowIndexToView(0);
                                         entityTable.setRowSelectionInterval(selectIndex, selectIndex);
                                         entityTable.scrollRectToVisible(new Rectangle(entityTable.getCellRect(selectIndex, 0, true)));
+                                    } else {
+                                        successful = false;
                                     }
                                 }
+                                return successful;
                             }
                         });
                     } else if (entity != null) {
@@ -131,13 +135,18 @@ public class EntityCrudController<ET> {
                         final int modelIndex = entityTable.convertRowIndexToModel(rowIndex);
                         final ET entity = entityTableModel.getRowObject(modelIndex);
                         if (entity != null) {
-                            entityEditor.displayEditDialog(entity, new Functions.UnaryVoid<ET>() {
+                            entityEditor.displayEditDialog(entity, new Functions.Unary<Boolean, ET>() {
                                 @Override
-                                public void call(ET editedEntity) {
+                                public Boolean call(ET editedEntity) {
+                                    boolean successful = true;
                                     if (editedEntity != null) {
-                                        if (null != (editedEntity = doSave(editedEntity)))
+                                        if (null != (editedEntity = doSave(editedEntity))) {
                                             entityTableModel.setRowObject(rowIndex, editedEntity);
+                                        } else {
+                                            successful = false;
+                                        }
                                     }
+                                    return successful;
                                 }
                             });
                         }

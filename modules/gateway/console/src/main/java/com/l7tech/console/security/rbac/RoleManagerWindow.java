@@ -28,12 +28,14 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.text.MessageFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.l7tech.gui.util.TableUtil.column;
-import static com.l7tech.util.Functions.propertyTransform;
 
 /**
  * CRUD dialog for Roles.
@@ -130,7 +132,7 @@ public class RoleManagerWindow extends JDialog {
         });
         crudController.setEntityEditor(new EntityEditor<Role>() {
             @Override
-            public void displayEditDialog(@NotNull final Role role, @NotNull final Functions.UnaryVoid<Role> afterEditListener) {
+            public void displayEditDialog(@NotNull final Role role, @NotNull final Functions.Unary<Boolean, Role> afterEditListener) {
                 boolean create = Role.DEFAULT_OID == role.getOid();
                 AttemptedOperation operation = create
                         ? new AttemptedCreateSpecific(EntityType.RBAC_ROLE, role)
@@ -145,20 +147,10 @@ public class RoleManagerWindow extends JDialog {
                         }
                     }
                 }
-                final RolePropertiesDialog dlg = new RolePropertiesDialog(RoleManagerWindow.this, role, readOnly, roleNames);
+                final RolePropertiesDialog dlg = new RolePropertiesDialog(RoleManagerWindow.this, role, readOnly, roleNames, afterEditListener);
                 dlg.pack();
                 Utilities.centerOnParentWindow(dlg);
-                DialogDisplayer.display(dlg, new Runnable() {
-                    @Override
-                    public void run() {
-                        if (dlg.isConfirmed()) {
-                            dlg.setDataOnRole(role);
-                            afterEditListener.call(role);
-                        } else {
-                            afterEditListener.call(null);
-                        }
-                    }
-                });
+                DialogDisplayer.display(dlg);
             }
         });
     }
@@ -176,7 +168,12 @@ public class RoleManagerWindow extends JDialog {
 
     private void initTable() {
         rolesTableModel = TableUtil.configureTable(rolesTable,
-                column("Name", 80, 400, 99999, propertyTransform(Role.class, "contextualDescriptiveName")),
+                column("Name", 80, 400, 99999, new Functions.Unary<String, Role>() {
+                    @Override
+                    public String call(final Role role) {
+                        return getNameForRole(role);
+                    }
+                }),
                 column("Type", 40, 80, 99999, new Functions.Unary<String, Role>() {
                     @Override
                     public String call(final Role role) {
@@ -188,9 +185,9 @@ public class RoleManagerWindow extends JDialog {
             public void run() {
                 final Role selectedRole = getSelectedRole();
                 if (selectedRole != null) {
-                    roleTextField.setText(selectedRole.getName());
+                    roleTextField.setText(getNameForRole(selectedRole));
                     typeTextField.setText(selectedRole.isUserCreated() ? CUSTOM : SYSTEM);
-                    descriptionTextPane.setText(getDescription(selectedRole));
+                    descriptionTextPane.setText(RbacUtilities.getDescriptionString(selectedRole, true));
                 } else {
                     roleTextField.setText(StringUtils.EMPTY);
                     typeTextField.setText(StringUtils.EMPTY);
@@ -203,56 +200,15 @@ public class RoleManagerWindow extends JDialog {
         loadTable();
     }
 
-    private String getDescription(@NotNull final Role role) {
-        String roleDescription = role.getDescription();
-
-        StringBuilder sb = new StringBuilder();
-        sb.append("<html>");
-
-        if (StringUtils.isNotEmpty(roleDescription)) {
-            sb.append(RbacUtilities.getDescriptionString(role, true));
-            sb.append("<br>");
-        } else {
-            sb.append("Users assigned to the ");
-            sb.append(role.getName());
-            sb.append(" role have the ability to ");
-            Set<String> sorted = new TreeSet<String>();
-            for (Permission p : role.getPermissions()) {
-                StringBuilder sb1 = new StringBuilder();
-                sb1.append(p.getOperation().toString());
-
-                EntityType etype = p.getEntityType();
-                switch (p.getScope().size()) {
-                    case 0:
-                        sb1.append("[Any");
-                        if (etype == EntityType.ANY)
-                            sb1.append(" Object");
-                        else {
-                            sb1.append(" ").append(etype.getName());
-                        }
-                        sb1.append("]");
-                        break;
-                    case 1:
-                        break;
-                    default:
-                        sb1.append("[Complex Scope]");
-                }
-                sorted.add(sb1.toString());
-            }
-            String[] p = sorted.toArray(new String[sorted.size()]);
-            for (int i = 0; i < p.length; i++) {
-                if (i == p.length - 1) {
-                    sb.append(" and ");
-                } else if (i != 0) {
-                    sb.append(", ");
-                }
-                sb.append(p[i]);
-            }
-            sb.append(" the ").append(role.getName());
+    private String getNameForRole(Role role) {
+        String name = "name unavailable";
+        try {
+            name = Registry.getDefault().getEntityNameResolver().getNameForEntity(role, true);
+            return name;
+        } catch (final FindException e) {
+            logger.log(Level.WARNING, "Unable to retrieve name for role: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
         }
-
-        sb.append("</html>");
-        return sb.toString();
+        return name;
     }
 
     private void initButtons() {

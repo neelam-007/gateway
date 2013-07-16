@@ -20,7 +20,6 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.Serializable;
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.List;
@@ -134,39 +133,16 @@ public class SecurityZoneManagerWindow extends JDialog {
         });
         ecc.setEntityEditor(new EntityEditor<SecurityZone>() {
             @Override
-            public void displayEditDialog(final SecurityZone zone, final Functions.UnaryVoid<SecurityZone> afterEditListener) {
+            public void displayEditDialog(final SecurityZone zone, final Functions.Unary<Boolean, SecurityZone> afterEditListener) {
                 boolean create = PersistentEntity.DEFAULT_OID == zone.getOid();
                 AttemptedOperation operation = create
                         ? new AttemptedCreateSpecific(EntityType.SECURITY_ZONE, zone)
                         : new AttemptedUpdate(EntityType.SECURITY_ZONE, zone);
                 boolean readOnly = !securityProvider.hasPermission(operation);
-                final SecurityZonePropertiesDialog dlg = new SecurityZonePropertiesDialog(SecurityZoneManagerWindow.this, zone, readOnly);
+                final SecurityZonePropertiesDialog dlg = new SecurityZonePropertiesDialog(SecurityZoneManagerWindow.this, zone, readOnly, afterEditListener);
                 dlg.pack();
                 Utilities.centerOnParentWindow(dlg);
-                DialogDisplayer.display(dlg, new Runnable() {
-                    @Override
-                    public void run() {
-                        if (dlg.isConfirmed()) {
-                            SecurityZone copy = new SecurityZone();
-                            copy(zone, copy);
-                            final SecurityZone data = dlg.getData(copy);
-                            final Map<EntityType, Collection<Serializable>> toRemoveFromZone = dlg.getEntitiesToRemoveFromZone();
-                            try {
-                                for (Map.Entry<EntityType, Collection<Serializable>> entry : toRemoveFromZone.entrySet()) {
-                                    if (!entry.getValue().isEmpty()) {
-                                        Registry.getDefault().getRbacAdmin().setSecurityZoneForEntities(null, entry.getKey(), entry.getValue());
-                                    }
-                                }
-                                afterEditListener.call(data);
-                                reloadTabbedPanels();
-                            } catch (final UpdateException e) {
-                                DialogDisplayer.showMessageDialog(SecurityZoneManagerWindow.this, "Error", "Unable to remove entities from this zone.", e);
-                            }
-                        } else {
-                            afterEditListener.call(null);
-                        }
-                    }
-                });
+                DialogDisplayer.display(dlg);
             }
         });
 
@@ -220,13 +196,6 @@ public class SecurityZoneManagerWindow extends JDialog {
 
     private static void flushCachedZones() {
         SecurityZoneUtil.flushCachedSecurityZones();
-    }
-
-    private static void copy(SecurityZone src, SecurityZone dest) {
-        dest.setOid(src.getOid());
-        dest.setVersion(src.getVersion());
-        dest.setName(src.getName());
-        dest.setDescription(src.getDescription());
     }
 
     private void loadSecurityZonesTable() {

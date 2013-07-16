@@ -17,5 +17,5 @@ public interface EntityEditor<ET> {
      *                          when the edit is complete with either the edited entity or null if the edit was cancelled.
      *
      */
-    void displayEditDialog(ET entity, Functions.UnaryVoid<ET> afterEditListener);
+    void displayEditDialog(ET entity, Functions.Unary<Boolean, ET> afterEditListener);
 }

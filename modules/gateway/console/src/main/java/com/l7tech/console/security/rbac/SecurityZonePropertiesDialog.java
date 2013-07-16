@@ -11,10 +11,7 @@ import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.JCheckBoxListModel;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.SecurityZone;
+import com.l7tech.objectmodel.*;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import org.apache.commons.collections.CollectionUtils;
@@ -50,13 +47,14 @@ public class SecurityZonePropertiesDialog extends JDialog {
     private Set<String> reservedNames = new HashSet<>();
     private SecurityZone securityZone;
     private boolean readOnly;
-    private boolean confirmed = false;
     private OperationType operation;
     private Set<EntityType> originalSupportedEntityTypes = new HashSet<>();
     private Map<EntityType, Collection<Serializable>> entitiesToRemoveFromZone = new HashMap<>();
+    private Functions.Unary<Boolean, SecurityZone> afterEditListener;
 
-    public SecurityZonePropertiesDialog(@NotNull final Window owner, @NotNull final SecurityZone securityZone, final boolean readOnly) {
+    public SecurityZonePropertiesDialog(@NotNull final Window owner, @NotNull final SecurityZone securityZone, final boolean readOnly, @NotNull final Functions.Unary<Boolean, SecurityZone> afterEditListener) {
         super(owner, readOnly ? "Security Zone Properties" : securityZone.getOid() == SecurityZone.DEFAULT_OID ? "Create Security Zone" : "Edit Security Zone", DEFAULT_MODALITY_TYPE);
+        this.afterEditListener = afterEditListener;
         setContentPane(contentPane);
         getRootPane().setDefaultButton(okCancelPanel.getOkButton());
         Utilities.setEscAction(this, okCancelPanel.getCancelButton());
@@ -87,7 +85,13 @@ public class SecurityZonePropertiesDialog extends JDialog {
         } else if (OperationType.UPDATE == operation) {
             okCancelPanel.setOkButtonText(OperationType.UPDATE.getName());
         }
-        okCancelPanel.getCancelButton().addActionListener(Utilities.createDisposeAction(this));
+        okCancelPanel.getCancelButton().addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(final ActionEvent e) {
+                afterEditListener.call(null);
+                dispose();
+            }
+        });
         if (readOnly || basicPropertiesPanel.getNameField().getText().trim().isEmpty()) {
             okCancelPanel.getOkButton().setEnabled(false);
         }
@@ -131,9 +135,23 @@ public class SecurityZonePropertiesDialog extends JDialog {
         return removeCount;
     }
 
-    private void confirm() {
-        confirmed = true;
-        dispose();
+    private void save() {
+        SecurityZone copy = new SecurityZone();
+        copy(securityZone, copy);
+        final SecurityZone data = getData(copy);
+        try {
+            for (Map.Entry<EntityType, Collection<Serializable>> entry : entitiesToRemoveFromZone.entrySet()) {
+                if (!entry.getValue().isEmpty()) {
+                    Registry.getDefault().getRbacAdmin().setSecurityZoneForEntities(null, entry.getKey(), entry.getValue());
+                }
+            }
+            final boolean successful = afterEditListener.call(data);
+            if (successful) {
+                dispose();
+            }
+        } catch (final UpdateException e) {
+            DialogDisplayer.showMessageDialog(SecurityZonePropertiesDialog.this, "Error", "Unable to remove entities from this zone.", e);
+        }
     }
 
     /**
@@ -192,10 +210,6 @@ public class SecurityZonePropertiesDialog extends JDialog {
         return zone;
     }
 
-    public Map<EntityType, Collection<Serializable>> getEntitiesToRemoveFromZone() {
-        return entitiesToRemoveFromZone;
-    }
-
     private Set<EntityType> getSelectedEntityTypes() {
         Set<EntityType> permittedTypes;
         if (allEntityTypesRadio.isSelected()) {
@@ -225,8 +239,11 @@ public class SecurityZonePropertiesDialog extends JDialog {
         return permittedTypes;
     }
 
-    public boolean isConfirmed() {
-        return confirmed;
+    private void copy(final SecurityZone src, final SecurityZone dest) {
+        dest.setOid(src.getOid());
+        dest.setVersion(src.getVersion());
+        dest.setName(src.getName());
+        dest.setDescription(src.getDescription());
     }
 
     private Integer getResourceInt(final String property) {
@@ -281,18 +298,18 @@ public class SecurityZonePropertiesDialog extends JDialog {
                                 @Override
                                 public void run() {
                                     if (confirmRemove.isConfirmed()) {
-                                        confirm();
+                                        save();
                                     }
                                 }
                             });
                         } else {
-                            confirm();
+                            save();
                         }
                     } catch (final FindException ex) {
                         DialogDisplayer.showMessageDialog(SecurityZonePropertiesDialog.this, "Error", "Unable to retrieve entities which must be removed from this zone.", ex);
                     }
                 } else {
-                    confirm();
+                    save();
                 }
             }
         }

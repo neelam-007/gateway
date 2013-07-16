@@ -7,6 +7,7 @@ import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Functions;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
@@ -31,25 +32,23 @@ public class RolePropertiesDialog extends JDialog {
     private Role role;
     private boolean readOnly;
     private InputValidator inputValidator;
-    private boolean confirmed;
     private Set<String> reservedNames;
     private String operation;
+    private Functions.Unary<Boolean, Role> afterEditListener;
 
-    public RolePropertiesDialog(@NotNull final Window owner, @NotNull final Role role, final boolean readOnly, @NotNull final Set<String> reservedNames) {
+    public RolePropertiesDialog(@NotNull final Window owner, @NotNull final Role role, final boolean readOnly, @NotNull final Set<String> reservedNames, @NotNull final Functions.Unary<Boolean, Role> afterEditListener) {
         super(owner, readOnly ? "Role Properties" : role.getOid() == Role.DEFAULT_OID ? "Create Role" : "Edit Role", DEFAULT_MODALITY_TYPE);
+        this.role = role;
         this.operation = role.getOid() == Role.DEFAULT_OID ? "Create" : "Edit";
         this.reservedNames = reservedNames;
         this.role = role;
         this.readOnly = readOnly;
+        this.afterEditListener = afterEditListener;
         setContentPane(contentPanel);
         getRootPane().setDefaultButton(okCancelPanel.getOkButton());
         Utilities.setEscAction(this, okCancelPanel.getCancelButton());
         initComponents();
         initValidation();
-    }
-
-    public boolean isConfirmed() {
-        return confirmed;
     }
 
     public void setDataOnRole(@NotNull final Role role) {
@@ -59,7 +58,13 @@ public class RolePropertiesDialog extends JDialog {
 
     private void initComponents() {
         okCancelPanel.setOkButtonText(operation);
-        okCancelPanel.getCancelButton().addActionListener(Utilities.createDisposeAction(this));
+        okCancelPanel.getCancelButton().addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(final ActionEvent e) {
+                afterEditListener.call(null);
+                dispose();
+            }
+        });
         if (readOnly || basicPropertiesPanel.getNameField().getText().trim().isEmpty()) {
             okCancelPanel.getOkButton().setEnabled(false);
         }
@@ -82,9 +87,12 @@ public class RolePropertiesDialog extends JDialog {
         return ret;
     }
 
-    private void confirm() {
-        confirmed = true;
-        dispose();
+    private void save() {
+        setDataOnRole(role);
+        final boolean successful = afterEditListener.call(role);
+        if (successful) {
+            dispose();
+        }
     }
 
     private class OkButtonActionListener implements ActionListener {
@@ -93,9 +101,9 @@ public class RolePropertiesDialog extends JDialog {
             if (reservedNames.contains(basicPropertiesPanel.getNameField().getText().trim().toLowerCase())) {
                 final String error = MessageFormat.format(RESOURCES.getString(ERROR_UNIQUE_NAME), operation.toLowerCase());
                 DialogDisplayer.showMessageDialog(RolePropertiesDialog.this, error,
-                        operation, JOptionPane.ERROR_MESSAGE, null);
+                        operation + " Role", JOptionPane.ERROR_MESSAGE, null);
             } else {
-                confirm();
+                save();
             }
         }
     }
