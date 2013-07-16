@@ -8,7 +8,9 @@ import javax.persistence.Version;
 import javax.validation.constraints.NotNull;
 import javax.xml.bind.annotation.XmlElement;
 
+//use NamedGoidEntityImp instead
 @MappedSuperclass
+@Deprecated
 public abstract class NamedEntityImp extends PersistentEntityImp implements NamedEntity {
 
     public NamedEntityImp() {

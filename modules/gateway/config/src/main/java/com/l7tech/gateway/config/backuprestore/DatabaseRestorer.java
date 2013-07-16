@@ -6,21 +6,21 @@
  */
 package com.l7tech.gateway.config.backuprestore;
 
-import com.l7tech.server.management.config.node.DatabaseConfig;
-import com.l7tech.gateway.config.manager.db.DBActions;
 import com.l7tech.gateway.config.manager.ClusterPassphraseManager;
+import com.l7tech.gateway.config.manager.db.DBActions;
+import com.l7tech.objectmodel.Goid;
+import com.l7tech.server.management.config.node.DatabaseConfig;
 import com.l7tech.util.ResourceUtils;
+import org.apache.commons.lang.StringUtils;
 
 import java.io.*;
 import java.sql.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.List;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.zip.GZIPInputStream;
-
-import org.apache.commons.lang.StringUtils;
 
 /**
  * Copyright (C) 2009, Layer 7 Technologies Inc.
@@ -352,16 +352,16 @@ class DatabaseRestorer {
         ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, "\tRestoring license from image..",
                 verbose, printStream, false);
         // get the id to use
-        final byte[] buf = new byte[64];
+        final byte[] buf = new byte[128];
         final FileInputStream fis = new FileInputStream(originalLicenseIdFile);
-        final int read = fis.read(buf);
+        fis.read(buf);
         fis.close();
-        final long licenseObjectId = Long.parseLong(new String(buf, 0, read));
+        final Goid licenseObjectId = new Goid(buf);
         final Connection c = (new DBActions()).getConnection(dbConfig, false);
         try {
             final PreparedStatement ps =
-                    c.prepareStatement("insert into cluster_properties values (?, 1, \'license\', ?)");
-            ps.setLong(1, licenseObjectId);
+                    c.prepareStatement("insert into cluster_properties (goid,version,propkey,propvalue,properties) values (?, 1, \'license\', ?, null)");
+            ps.setBytes(1, licenseObjectId.getBytes());
             ps.setString(2, originalLicense);
             ps.executeUpdate();
             ps.close();

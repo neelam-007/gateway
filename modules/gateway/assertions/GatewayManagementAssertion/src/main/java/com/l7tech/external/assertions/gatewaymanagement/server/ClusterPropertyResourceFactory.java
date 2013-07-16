@@ -16,7 +16,7 @@ import java.util.Collection;
  * 
  */
 @ResourceFactory.ResourceType(type=ClusterPropertyMO.class)
-public class ClusterPropertyResourceFactory extends EntityManagerResourceFactory<ClusterPropertyMO, ClusterProperty, EntityHeader> {
+public class ClusterPropertyResourceFactory extends GoidEntityManagerResourceFactory<ClusterPropertyMO, ClusterProperty, EntityHeader> {
 
     //- PUBLIC
 

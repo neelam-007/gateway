@@ -8,7 +8,7 @@ import com.l7tech.server.cluster.ClusterPropertyManager;
  * Mock CPM, not very functional, should probably use serverconfig.properties to get default values.
  */
 public class MockClusterPropertyManager
-        extends EntityManagerStub<ClusterProperty,EntityHeader>
+        extends GoidEntityManagerStub<ClusterProperty,EntityHeader>
         implements ClusterPropertyManager
 {
     public MockClusterPropertyManager() {
@@ -34,8 +34,8 @@ public class MockClusterPropertyManager
         ClusterProperty prop = findByUniqueName(key);
         if (prop == null) {
             prop = new ClusterProperty(key, value);
-            long oid = save(prop);
-            if (oid != prop.getOid()) prop.setOid(oid);
+            Goid goid = save(prop);
+            if (!goid.equals(prop.getGoid())) prop.setGoid(goid);
             return prop;
         }
 

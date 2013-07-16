@@ -268,15 +268,15 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin, ApplicationCon
     }
 
     @Override
-    public long saveProperty(ClusterProperty clusterProperty) throws SaveException, UpdateException, DeleteException {
+    public Goid saveProperty(ClusterProperty clusterProperty) throws SaveException, UpdateException, DeleteException {
         if (!("license".equals(clusterProperty.getName())))
             checkLicense();
-        long oid = clusterProperty.getOid();
-        if (oid == ClusterProperty.DEFAULT_OID) {
+        Goid goid = clusterProperty.getGoid();
+        if (ClusterProperty.DEFAULT_GOID.equals(goid)) {
             return clusterPropertyManager.save(clusterProperty);
         } else {
             clusterPropertyManager.update(clusterProperty);
-            return oid;
+            return goid;
         }
     }
 

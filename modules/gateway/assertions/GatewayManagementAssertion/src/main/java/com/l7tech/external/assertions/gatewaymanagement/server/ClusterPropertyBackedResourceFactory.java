@@ -2,33 +2,20 @@ package com.l7tech.external.assertions.gatewaymanagement.server;
 
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.security.rbac.OperationType;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityManager;
-import com.l7tech.objectmodel.ObjectModelException;
-import com.l7tech.objectmodel.PersistentEntity;
+import com.l7tech.objectmodel.*;
 import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.security.rbac.SecurityFilter;
-import com.l7tech.util.Either;
-import com.l7tech.util.Eithers.E2;
-import static com.l7tech.util.Eithers.extract;
-import static com.l7tech.util.Eithers.extract2;
-import static com.l7tech.util.Either.left;
-import static com.l7tech.util.Eithers.right2;
-import static com.l7tech.util.Either.right;
-import static com.l7tech.util.Eithers.left2_1;
-import static com.l7tech.util.Eithers.left2_2;
-import com.l7tech.util.Functions.Unary;
-import com.l7tech.util.Functions.UnaryThrows;
-import static com.l7tech.util.Functions.grep;
-import static com.l7tech.util.Functions.map;
-import static com.l7tech.util.Functions.partial;
-import com.l7tech.util.Option;
-import static com.l7tech.util.Option.optional;
-import com.l7tech.util.Pair;
+import com.l7tech.util.*;
+import com.l7tech.util.Eithers.*;
+import com.l7tech.util.Functions.*;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import java.util.*;
+
+import static com.l7tech.util.Either.left;
+import static com.l7tech.util.Either.right;
+import static com.l7tech.util.Option.optional;
 
 /**
  * Abstract resource factory for resources stored as a cluster property.
@@ -36,13 +23,13 @@ import java.util.*;
  * @param <R> The "user visible" resource type
  * @param <RI> The internal representation for the resource type
  */
-abstract class ClusterPropertyBackedResourceFactory<R,RI> extends EntityManagerResourceFactory<R, ClusterProperty, EntityHeader> {
+abstract class ClusterPropertyBackedResourceFactory<R,RI> extends GoidEntityManagerResourceFactory<R, ClusterProperty, EntityHeader> {
 
     //- PUBLIC
 
     @Override
     public final Map<String, String> createResource( final Object resource ) throws InvalidResourceException {
-        final String id = extract(transactional( new TransactionalCallback<Either<InvalidResourceException,String>>(){
+        final String id = Eithers.extract(transactional(new TransactionalCallback<Either<InvalidResourceException, String>>() {
             @Override
             public Either<InvalidResourceException,String> execute() throws ObjectModelException {
                 try {
@@ -70,7 +57,7 @@ abstract class ClusterPropertyBackedResourceFactory<R,RI> extends EntityManagerR
                 try {
                     final ClusterProperty property = getClusterPropertyForRead();
                     final Collection<RI> internalValues = parseProperty( property );
-                    return map( internalValues, new Unary<Map<String, String>, RI>() {
+                    return Functions.map(internalValues, new Unary<Map<String, String>, RI>() {
                         @Override
                         public Map<String, String> call( final RI ri ) {
                             return Collections.singletonMap( IDENTITY_SELECTOR, getIdentifier( ri ) );
@@ -85,7 +72,7 @@ abstract class ClusterPropertyBackedResourceFactory<R,RI> extends EntityManagerR
 
     @Override
     public final R getResource( final Map<String, String> selectorMap ) throws ResourceNotFoundException {
-        return extract(transactional(new TransactionalCallback<Either<ResourceNotFoundException,R>>() {
+        return Eithers.extract(transactional(new TransactionalCallback<Either<ResourceNotFoundException,R>>() {
             @Override
             public Either<ResourceNotFoundException,R> execute() throws ObjectModelException {
                 try {
@@ -103,7 +90,7 @@ abstract class ClusterPropertyBackedResourceFactory<R,RI> extends EntityManagerR
     @Override
     public final R putResource( final Map<String, String> selectorMap,
                                 final Object resource ) throws ResourceNotFoundException, InvalidResourceException {
-        extract2( transactional( new TransactionalCallback<E2<InvalidResourceException, ResourceNotFoundException, Option<Void>>>() {
+        Eithers.extract2( transactional( new TransactionalCallback<E2<InvalidResourceException, ResourceNotFoundException, Option<Void>>>() {
             @Override
             public E2<InvalidResourceException, ResourceNotFoundException, Option<Void>> execute() throws ObjectModelException {
                 try {
@@ -113,11 +100,11 @@ abstract class ClusterPropertyBackedResourceFactory<R,RI> extends EntityManagerR
                     final Collection<RI> internalValues = parseProperty( property );
                     final Collection<RI> updatedInternalValues = putInternal( internalValue.left, internalValues );
                     saveOrUpdateClusterProperty( property, formatProperty( updatedInternalValues ) );
-                    return right2( Option.<Void>none() );
+                    return Eithers.right2( Option.<Void>none() );
                 } catch ( InvalidResourceException e ) {
-                    return left2_1( e );
+                    return Eithers.left2_1( e );
                 } catch ( ResourceNotFoundException e ) {
-                    return left2_2( e );
+                    return Eithers.left2_2( e );
                 }
             }
         }, false ) ).isSome(); // Call isSome to verify fully extracted
@@ -127,7 +114,7 @@ abstract class ClusterPropertyBackedResourceFactory<R,RI> extends EntityManagerR
 
     @Override
     public final String deleteResource( final Map<String, String> selectorMap ) throws ResourceNotFoundException {
-        return extract(transactional( new TransactionalCallback<Either<ResourceNotFoundException,String>>(){
+        return Eithers.extract(transactional( new TransactionalCallback<Either<ResourceNotFoundException,String>>(){
             @Override
             public Either<ResourceNotFoundException,String> execute() throws ObjectModelException {
                 try {
@@ -151,7 +138,7 @@ abstract class ClusterPropertyBackedResourceFactory<R,RI> extends EntityManagerR
                                           final RbacServices rbacServices,
                                           final SecurityFilter securityFilter,
                                           final PlatformTransactionManager transactionManager,
-                                          final EntityManager<ClusterProperty, EntityHeader> clusterPropertyEntityHeaderEntityManager,
+                                          final GoidEntityManager<ClusterProperty, EntityHeader> clusterPropertyEntityHeaderEntityManager,
                                           final String propertyName ) {
         super(readOnly, true, rbacServices, securityFilter, transactionManager, clusterPropertyEntityHeaderEntityManager);
         this.propertyName = propertyName;
@@ -231,7 +218,7 @@ abstract class ClusterPropertyBackedResourceFactory<R,RI> extends EntityManagerR
         } );
 
         try {
-            return internal.orElse( partial( Option.<RI,String>map(), name, new Unary<RI, String>() {
+            return internal.orElse( Functions.partial( Option.<RI,String>map(), name, new Unary<RI, String>() {
                 @Override
                 public RI call( final String name ) {
                     return selectInternalByName( name, internalValues ).toNull();
@@ -343,7 +330,7 @@ abstract class ClusterPropertyBackedResourceFactory<R,RI> extends EntityManagerR
             throw new ResourceNotFoundException( "Resource not found: " + selectorMap );
         }
 
-        return grep( internalValues, new Unary<Boolean, RI>() {
+        return Functions.grep( internalValues, new Unary<Boolean, RI>() {
             @Override
             public Boolean call( final RI ri ) {
                 return ri != internalValue.some();
@@ -437,7 +424,7 @@ abstract class ClusterPropertyBackedResourceFactory<R,RI> extends EntityManagerR
             }
         }
 
-        if ( property.getOid() == PersistentEntity.DEFAULT_OID ) {
+        if ( GoidEntity.DEFAULT_GOID.equals(property.getGoid()) ) {
             checkPermitted( OperationType.CREATE, null, property );
         } else {
             checkPermitted( OperationType.UPDATE, null, property );
@@ -458,19 +445,19 @@ abstract class ClusterPropertyBackedResourceFactory<R,RI> extends EntityManagerR
             throw new ResourceAccessException( "Updated cluster property value is invalid", e);
         }
 
-        final long id = doWithManager(new UnaryThrows<Long, EntityManager<ClusterProperty, EntityHeader>, ObjectModelException>() {
+        final Goid id = doWithManager(new UnaryThrows<Goid, GoidEntityManager<ClusterProperty, EntityHeader>, ObjectModelException>() {
             @Override
-            public Long call(final EntityManager<ClusterProperty, EntityHeader> manager) throws ObjectModelException {
-                if ( property.getOid() == PersistentEntity.DEFAULT_OID ) {
+            public Goid call(final GoidEntityManager<ClusterProperty, EntityHeader> manager) throws ObjectModelException {
+                if ( GoidEntity.DEFAULT_GOID.equals(property.getGoid()) ) {
                     return manager.save(property);
                 } else {
                     manager.update(property);
-                    return property.getOid();
+                    return property.getGoid();
                 }
             }
         });
 
-        EntityContext.setEntityInfo(getType(), Long.toString(id));
+        EntityContext.setEntityInfo(getType(), id.toHexString());
     }
 
     private static final class NameSelectionNotSupported extends RuntimeException {

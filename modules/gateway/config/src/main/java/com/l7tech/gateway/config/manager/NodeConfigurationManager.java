@@ -4,6 +4,7 @@ import com.l7tech.common.password.PasswordHasher;
 import com.l7tech.common.password.Sha512CryptPasswordHasher;
 import com.l7tech.gateway.config.manager.db.ClusterPropertyUtil;
 import com.l7tech.gateway.config.manager.db.DBActions;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.management.SoftwareVersion;
 import com.l7tech.server.management.config.node.DatabaseConfig;
 import com.l7tech.server.management.config.node.DatabaseType;
@@ -59,7 +60,7 @@ public class NodeConfigurationManager {
     private static final String NODEPROPERTIES_DB_TYPE_FORMAT = "node.db.config.{0}.type";
 
     private static final String CLUSTER_PROP_CLUSTERHOSTNAME = "cluster.hostname";
-    private static final Long CLUSTER_PROP_CLUSTERHOSTNAME_OID = -700001L;
+    private static final Goid CLUSTER_PROP_CLUSTERHOSTNAME_GOID = new Goid(0,-700001L);
 
     private static final DBActions dbActions = new DBActions();
 
@@ -330,7 +331,7 @@ public class NodeConfigurationManager {
 
             AccountReset.resetAccount(databaseConfig.some(), adminLogin, adminPassword);
             if ( clusterHostname != null ) {
-                ClusterPropertyUtil.addClusterProperty( dbActions, databaseConfig.some(), CLUSTER_PROP_CLUSTERHOSTNAME_OID, CLUSTER_PROP_CLUSTERHOSTNAME, clusterHostname );
+                ClusterPropertyUtil.addClusterProperty( dbActions, databaseConfig.some(), CLUSTER_PROP_CLUSTERHOSTNAME_GOID, CLUSTER_PROP_CLUSTERHOSTNAME, clusterHostname );
             }
         } else {
             // create temp sql script for updates required after derby db is created
@@ -539,7 +540,7 @@ public class NodeConfigurationManager {
         }
         if (clusterHostname != null) {
             stringBuilder.append("UPDATE cluster_properties set propvalue='" + derbyEscape(clusterHostname) +
-                    "',version=1 where objectid=" + CLUSTER_PROP_CLUSTERHOSTNAME_OID + " and propkey='cluster.hostname';");
+                    "',version=1 where goid=X'" + CLUSTER_PROP_CLUSTERHOSTNAME_GOID.toHexString() + "' and propkey='cluster.hostname';");
         }
         return stringBuilder.toString();
     }

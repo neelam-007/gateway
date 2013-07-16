@@ -1313,56 +1313,6 @@ public class DBActions {
         }
     }
 
-    /**
-     * Get the next DB identifier.
-     *
-     * <p>This method must not be used if more than one DB connection is in use.</p>
-     *
-     * @param connection The connection to use
-     * @retun the next DB identifier 
-     */
-    public synchronized long nextIdentifier( final Connection connection ) throws SQLException {
-        if ( lo > MAX_LOW ) {
-            long hival = nextHigh( connection );
-            lo = (hival == 0) ? 1 : 0;
-            hi = hival * (MAX_LOW+1);
-        }
-
-        return hi + lo++;
-    }
-
-    /**
-     * Fetch and increment the high value.
-     */
-    private long nextHigh( final Connection connection ) throws SQLException {
-        long nextHi = -1;
-
-        PreparedStatement statement = null;
-        ResultSet resultSet = null;
-        try {
-            statement = connection.prepareStatement( "SELECT " + HILO_COLUMN_NAME + " FROM " + HILO_TABLE_NAME + " FOR UPDATE");
-            resultSet = statement.executeQuery();
-            if ( resultSet.next() ) {
-                nextHi = resultSet.getLong(1);
-            } else {
-                throw new IllegalStateException( "HILO table is not populated." );
-            }
-        } finally {
-            ResourceUtils.closeQuietly( resultSet );
-            ResourceUtils.closeQuietly( statement );
-        }
-
-        statement = null;
-        try {
-            statement = connection.prepareStatement( "UPDATE " + HILO_TABLE_NAME + " SET " + HILO_COLUMN_NAME + " = ?");
-            statement.setLong(1, nextHi + 1);
-            statement.executeUpdate();
-        } finally {
-            ResourceUtils.closeQuietly( statement );
-        }
-        return nextHi;
-    }
-
     public class WrongDbVersionException extends Exception {
         String dbVersionMessage = null;
         private String dbVersion;

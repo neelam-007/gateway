@@ -198,3 +198,14 @@ ALTER TABLE sample_messages ALTER COLUMN goid NOT NULL;
 ALTER TABLE sample_messages DROP PRIMARY KEY;
 ALTER TABLE sample_messages DROP COLUMN objectid;
 ALTER TABLE sample_messages ADD PRIMARY KEY (goid);
+
+-- ClusterProperty
+ALTER TABLE cluster_properties ADD COLUMN goid CHAR(16) FOR BIT DATA;
+call setVariable('cluster_properties_prefix', cast(randomLongNotReservered() as char(21)));
+update cluster_properties set goid = toGoid(cast(getVariable('cluster_properties_prefix') as bigint), objectid);
+update cluster_properties set goid = toGoid(0, objectid) where propkey = 'cluster.hostname';
+update cluster_properties set goid = toGoid(0, objectid) where propkey like 'upgrade.task.%';
+ALTER TABLE cluster_properties ALTER COLUMN goid NOT NULL;
+ALTER TABLE cluster_properties DROP PRIMARY KEY;
+ALTER TABLE cluster_properties DROP COLUMN objectid;
+ALTER TABLE cluster_properties ADD PRIMARY KEY (goid);

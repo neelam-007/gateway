@@ -2,10 +2,7 @@ package com.l7tech.server.ems.monitoring;
 
 import com.l7tech.common.io.NonCloseableOutputStream;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
-import com.l7tech.objectmodel.DeleteException;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.objectmodel.*;
 import com.l7tech.server.ems.EsmConfigParams;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.util.Config;
@@ -32,25 +29,25 @@ public class SystemMonitoringSetupSettingsManagerImpl implements SystemMonitorin
     }
 
     @Override
-    public long saveSetupSettings(Map<String, Object> setupSettings) throws FindException, SaveException, IOException, UpdateException {
+    public Goid saveSetupSettings(Map<String, Object> setupSettings) throws FindException, SaveException, IOException, UpdateException {
         ClusterProperty setupClusterProperty = clusterPropertyManager.findByUniqueName(EsmConfigParams.PARAM_SYSTEM_MONITORING_SETUP_SETTINGS);
-        long oid;
+        Goid goid;
         if (setupClusterProperty == null) {
-            oid = clusterPropertyManager.save(new ClusterProperty(EsmConfigParams.PARAM_SYSTEM_MONITORING_SETUP_SETTINGS, convertMapToString(setupSettings)));
+            goid = clusterPropertyManager.save(new ClusterProperty(EsmConfigParams.PARAM_SYSTEM_MONITORING_SETUP_SETTINGS, convertMapToString(setupSettings)));
         } else {
-            oid = setupClusterProperty.getOid();
+            goid = setupClusterProperty.getGoid();
             setupClusterProperty.setValue(convertMapToString(setupSettings));
             clusterPropertyManager.update(setupClusterProperty);
         }
 
-        return oid;
+        return goid;
     }
 
     @Override
     public void deleteSetupSettings() throws FindException, DeleteException {
         ClusterProperty setupSettings = clusterPropertyManager.findByUniqueName(EsmConfigParams.PARAM_SYSTEM_MONITORING_SETUP_SETTINGS);
         if (setupSettings != null) {
-            clusterPropertyManager.delete(setupSettings.getOid());
+            clusterPropertyManager.delete(setupSettings.getGoid());
         }
     }
 

@@ -804,19 +804,19 @@ INSERT INTO resource_entry (objectid, version, uri, uri_hash, type, content_type
 
 DROP TABLE IF EXISTS cluster_properties;
 CREATE TABLE cluster_properties (
-  objectid bigint(20) NOT NULL,
+  goid binary(16) NOT NULL,
   version integer NOT NULL,
   propkey varchar(128) NOT NULL,
   propvalue MEDIUMTEXT NOT NULL,
   properties MEDIUMTEXT,
-  PRIMARY KEY (objectid),
+  PRIMARY KEY (goid),
   UNIQUE(propkey)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --
--- Reserve -700001 objectid for cluster.hostname and insert default
+-- Reserve Goid(0,-700001) id for cluster.hostname and insert default
 --
-INSERT INTO cluster_properties VALUES (-700001,0,'cluster.hostname','',null);
+INSERT INTO cluster_properties VALUES (lpad(char(-700001),16,'\0'),0,'cluster.hostname','',null);
 
 DROP TABLE IF EXISTS sample_messages;
 CREATE TABLE sample_messages (

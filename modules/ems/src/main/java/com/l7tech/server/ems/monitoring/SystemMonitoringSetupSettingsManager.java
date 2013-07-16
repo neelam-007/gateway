@@ -1,14 +1,10 @@
 package com.l7tech.server.ems.monitoring;
 
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.DeleteException;
-import com.l7tech.objectmodel.UpdateException;
-
-import java.util.Map;
-import java.io.IOException;
-
+import com.l7tech.objectmodel.*;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.io.IOException;
+import java.util.Map;
 
 /**
  * This manager managing the system monitoring setup settings.
@@ -39,7 +35,7 @@ public interface SystemMonitoringSetupSettingsManager {
      * @throws IOException if an error occurs when converting a map to a serialized string.
      * @throws UpdateException if an error occurs when updating the new settings in the DB.
      */
-    long saveSetupSettings(Map<String, Object> setupSettings) throws FindException, SaveException, IOException, UpdateException;
+    Goid saveSetupSettings(Map<String, Object> setupSettings) throws FindException, SaveException, IOException, UpdateException;
 
     /**
      * Delete system monitoring setup settings as a cluster propperty from the DB table cluster_properties.

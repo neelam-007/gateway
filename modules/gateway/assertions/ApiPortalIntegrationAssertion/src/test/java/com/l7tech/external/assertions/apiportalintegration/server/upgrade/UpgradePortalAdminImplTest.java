@@ -10,6 +10,7 @@ import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.server.cluster.ClusterPropertyManager;
@@ -381,17 +382,19 @@ public class UpgradePortalAdminImplTest {
 
     @Test
     public void deleteClusterProperties() throws Exception {
+        Goid goid1 = new Goid(0,1);
+        Goid goid2 = new Goid(0,2);
         final ClusterProperty planProperty = new ClusterProperty();
-        planProperty.setOid(1L);
+        planProperty.setGoid(goid1);
         final ClusterProperty pmsProperty = new ClusterProperty();
-        pmsProperty.setOid(2L);
+        pmsProperty.setGoid(goid2);
         when(clusterPropertyManager.findByUniqueName(ModuleConstants.PORTAL_API_PLANS_UI_PROPERTY)).thenReturn(planProperty);
         when(clusterPropertyManager.findByUniqueName(ModuleConstants.PORTAL_MANAGED_SERVICES_UI_PROPERTY)).thenReturn(pmsProperty);
 
         admin.deleteUnusedClusterProperties();
 
-        verify(clusterPropertyManager).delete(1L);
-        verify(clusterPropertyManager).delete(2L);
+        verify(clusterPropertyManager).delete(goid1);
+        verify(clusterPropertyManager).delete(goid2);
     }
 
     @Test
@@ -401,7 +404,7 @@ public class UpgradePortalAdminImplTest {
 
         admin.deleteUnusedClusterProperties();
 
-        verify(clusterPropertyManager, never()).delete(anyLong());
+        verify(clusterPropertyManager, never()).delete(any(Goid.class));
     }
 
     @Test(expected = UpgradeClusterPropertyException.class)

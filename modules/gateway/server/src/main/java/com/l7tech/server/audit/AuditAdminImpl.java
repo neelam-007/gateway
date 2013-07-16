@@ -331,7 +331,7 @@ public class AuditAdminImpl extends AsyncAdminMethodsImpl implements AuditAdmin,
         }
 
         if (cp != null) {
-            prop.setOid(cp.getOid());
+            prop.setGoid(cp.getGoid());
             clusterPropertyManager.update(prop);
         } else {
             try {

@@ -1,5 +1,6 @@
 package com.l7tech.server;
 
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.MasterPasswordManager;
@@ -122,8 +123,8 @@ public class KerberosAdminImpl implements KerberosAdmin {
             }
             property.setValue( clusterEncryptionManager.encryptPassword(HexUtils.encodeBase64(data).toCharArray()) );
 
-            long oid = property.getOid();
-            if ( oid == ClusterProperty.DEFAULT_OID ) {
+            Goid goid = property.getGoid();
+            if ( ClusterProperty.DEFAULT_GOID.equals(goid) ) {
                 clusterPropertyManager.save(property);
             } else {
                 clusterPropertyManager.update(property);
@@ -158,8 +159,8 @@ public class KerberosAdminImpl implements KerberosAdmin {
             }
             property.setValue(Boolean.toString(validate));
 
-            long oid = property.getOid();
-            if ( oid == ClusterProperty.DEFAULT_OID ) {
+            Goid goid = property.getGoid();
+            if ( ClusterProperty.DEFAULT_GOID.equals(goid) ) {
                 clusterPropertyManager.save(property);
             } else {
                 clusterPropertyManager.update(property);

@@ -1,20 +1,20 @@
 package com.l7tech.server.cluster;
 
-import java.util.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.concurrent.atomic.AtomicReference;
-
-import com.l7tech.server.util.PostStartupApplicationListener;
-import org.springframework.context.ApplicationEvent;
-import org.springframework.jmx.export.annotation.ManagedResource;
-import org.springframework.jmx.export.annotation.ManagedAttribute;
-import org.springframework.jmx.export.annotation.ManagedOperation;
-
-import com.l7tech.server.event.EntityInvalidationEvent;
-import com.l7tech.objectmodel.FindException;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.cluster.ImmutableClusterProperty;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
+import com.l7tech.server.event.GoidEntityInvalidationEvent;
+import com.l7tech.server.util.PostStartupApplicationListener;
+import org.springframework.context.ApplicationEvent;
+import org.springframework.jmx.export.annotation.ManagedAttribute;
+import org.springframework.jmx.export.annotation.ManagedOperation;
+import org.springframework.jmx.export.annotation.ManagedResource;
+
+import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Caching for ClusterProperties
@@ -87,8 +87,8 @@ public class ClusterPropertyCache implements PostStartupApplicationListener {
 
     @Override
     public void onApplicationEvent(ApplicationEvent event) {
-        if (event instanceof EntityInvalidationEvent) {
-            EntityInvalidationEvent eiEvent = (EntityInvalidationEvent) event;
+        if (event instanceof GoidEntityInvalidationEvent) {
+            GoidEntityInvalidationEvent eiEvent = (GoidEntityInvalidationEvent) event;
             if (ClusterProperty.class.equals(eiEvent.getEntityClass())) {
                 ClusterPropertyManager cpm;
                 ClusterPropertyListener cpl;
@@ -101,8 +101,8 @@ public class ClusterPropertyCache implements PostStartupApplicationListener {
                     return;
                 }
 
-                long[] updatedOids = eiEvent.getEntityIds();
-                if (updatedOids != null && updatedOids.length > 0) {
+                Goid[] updatedIds = eiEvent.getEntityIds();
+                if (updatedIds != null && updatedIds.length > 0) {
                     Map<String, ClusterProperty> currentProps = clusterPropertyCacheRef.get();
                     Map<String, ClusterProperty> updatedProps = new TreeMap<String, ClusterProperty>(String.CASE_INSENSITIVE_ORDER);
                     if (currentProps != null) {
@@ -111,9 +111,9 @@ public class ClusterPropertyCache implements PostStartupApplicationListener {
 
                     List<ClusterProperty[]> updatedList = new ArrayList<ClusterProperty[]>();
                     List<ClusterProperty> deletedList = new ArrayList<ClusterProperty>();
-                    for (long oid : updatedOids) {
+                    for (Goid goid : updatedIds) {
                         try {
-                            ClusterProperty updated = cpm.findByPrimaryKey(oid);
+                            ClusterProperty updated = cpm.findByPrimaryKey(goid);
                             if (updated != null && updated.getName() != null) {
                                 logger.log(Level.FINE, "Property ''{0}'', updated.", updated.getName());
                                 updated = new ImmutableClusterProperty(updated);
@@ -122,7 +122,7 @@ public class ClusterPropertyCache implements PostStartupApplicationListener {
                             } else if (updated == null) {
                                 for (Iterator<ClusterProperty> propIter = updatedProps.values().iterator(); propIter.hasNext();) {
                                     ClusterProperty property = propIter.next();
-                                    if (property.getOid() == oid) {
+                                    if (property.getGoid().equals(goid)) {
                                         propIter.remove();
                                         deletedList.add(property);
                                         break;

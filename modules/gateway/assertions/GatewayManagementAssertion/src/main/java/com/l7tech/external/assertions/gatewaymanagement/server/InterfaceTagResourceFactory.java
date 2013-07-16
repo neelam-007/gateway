@@ -5,14 +5,13 @@ import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.transport.InterfaceTag;
 import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityManager;
+import com.l7tech.objectmodel.GoidEntityManager;
 import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.security.rbac.SecurityFilter;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Option;
 import com.l7tech.util.Pair;
-import static com.l7tech.util.Pair.pair;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.transaction.PlatformTransactionManager;
 
@@ -21,6 +20,7 @@ import java.util.*;
 
 import static com.l7tech.util.CollectionUtils.foreach;
 import static com.l7tech.util.Option.optional;
+import static com.l7tech.util.Pair.pair;
 
 /**
  * Resource factory for interface tags.
@@ -33,7 +33,7 @@ public class InterfaceTagResourceFactory extends ClusterPropertyBackedResourceFa
     InterfaceTagResourceFactory( final RbacServices rbacServices,
                                  final SecurityFilter securityFilter,
                                  final PlatformTransactionManager transactionManager,
-                                 final EntityManager<ClusterProperty, EntityHeader> clusterPropertyEntityHeaderEntityManager ) {
+                                 final GoidEntityManager<ClusterProperty, EntityHeader> clusterPropertyEntityHeaderEntityManager ) {
         super( false, rbacServices, securityFilter, transactionManager, clusterPropertyEntityHeaderEntityManager, "interfaceTags" );
     }
 

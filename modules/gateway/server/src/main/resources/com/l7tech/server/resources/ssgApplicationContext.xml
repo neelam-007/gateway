@@ -1647,7 +1647,6 @@
             <list>
                 <ref bean="resourceEntryManager"/>
                 <ref bean="roleManager"/>
-                <ref bean="clusterPropertyManager"/>
                 <ref bean="identityProviderConfigManager"/>
                 <ref bean="jmsConnectionManager"/>
                 <ref bean="jmsEndpointManager"/>
@@ -1682,6 +1681,7 @@
         <property name="applicationEventProxy" ref="applicationEventProxy"/>
         <property name="entityManagers">
             <list>
+                <ref bean="clusterPropertyManager"/>
                 <ref bean="jdbcConnectionManager"/>
             </list>
         </property>

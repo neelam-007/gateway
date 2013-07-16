@@ -200,6 +200,17 @@ set @sample_messages_prefix=lpad(char(#RANDOM_LONG_NOT_RESERVED#),8,'\0');
 update sample_messages set goid = concat(@sample_messages_prefix,lpad(char(objectid_backup),8,'\0'));
 ALTER TABLE sample_messages DROP COLUMN objectid_backup;
 
+-- ClusterProperty
+ALTER TABLE cluster_properties ADD COLUMN objectid_backup BIGINT(20);
+update cluster_properties set objectid_backup=objectid;
+ALTER TABLE cluster_properties CHANGE COLUMN objectid goid VARBINARY(16);
+-- For manual runs use: set @cluster_properties_prefix=concat(lpad(char(floor(rand()*4294967295)+1),4,'\0'),lpad(char(floor(rand()*4294967296)),4,'\0'));
+set @cluster_properties_prefix=lpad(char(#RANDOM_LONG_NOT_RESERVED#),8,'\0');
+update cluster_properties set goid = concat(@cluster_properties_prefix,lpad(char(objectid_backup),8,'\0'));
+update cluster_properties set goid = concat(lpad(char(0),8,'\0'),lpad(char(objectid_backup),8,'\0')) where propkey = 'cluster.hostname';
+update cluster_properties set goid = concat(lpad(char(0),8,'\0'),lpad(char(objectid_backup),8,'\0')) where propkey like 'upgrade.task.%';
+ALTER TABLE cluster_properties DROP COLUMN objectid_backup;
+
 --
 -- Reenable FK at very end of script
 --

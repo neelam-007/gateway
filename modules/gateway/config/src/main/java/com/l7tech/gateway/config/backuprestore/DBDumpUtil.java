@@ -1,5 +1,6 @@
 package com.l7tech.gateway.config.backuprestore;
 
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.*;
 import com.l7tech.gateway.config.manager.db.DBActions;
 import com.l7tech.server.management.config.node.DatabaseConfig;
@@ -75,11 +76,11 @@ class DBDumpUtil {
                         // we dont include the license, however, we will record the object id
                         // in order to be able to put back same id when we restore the original
                         // target license. this will avoid clashing object id
-                        final long licenseobjectid = resultSet.getLong(1);
+                        final Goid licenseobjectid = new Goid(resultSet.getBytes(1));
                         final File parentFile = (new File(outputDirectory)).getParentFile();
                         final FileOutputStream licenseFos =
                                 new FileOutputStream(new File(parentFile, licenseStorageFileName));
-                        licenseFos.write(Long.toString(licenseobjectid).getBytes());
+                        licenseFos.write(licenseobjectid.getBytes());
                         licenseFos.close();
                         return true;
                     }

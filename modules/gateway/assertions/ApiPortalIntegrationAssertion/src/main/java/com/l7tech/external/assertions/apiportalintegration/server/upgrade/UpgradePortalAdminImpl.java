@@ -134,11 +134,11 @@ public class UpgradePortalAdminImpl implements UpgradePortalAdmin {
         try {
             final ClusterProperty plansProperty = clusterPropertyManager.findByUniqueName(ModuleConstants.PORTAL_API_PLANS_UI_PROPERTY);
             if (plansProperty != null) {
-                clusterPropertyManager.delete(plansProperty.getOid());
+                clusterPropertyManager.delete(plansProperty.getGoid());
             }
             final ClusterProperty portalManagedServicesProperty = clusterPropertyManager.findByUniqueName(ModuleConstants.PORTAL_MANAGED_SERVICES_UI_PROPERTY);
             if (portalManagedServicesProperty != null) {
-                clusterPropertyManager.delete(portalManagedServicesProperty.getOid());
+                clusterPropertyManager.delete(portalManagedServicesProperty.getGoid());
             }
         } catch (final Exception e) {
             final String error = "Error deleting cluster properties: " + e.getMessage();

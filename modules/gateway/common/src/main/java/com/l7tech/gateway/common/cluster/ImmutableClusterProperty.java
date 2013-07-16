@@ -1,5 +1,7 @@
 package com.l7tech.gateway.common.cluster;
 
+import com.l7tech.objectmodel.Goid;
+
 /**
  * Immutable extension of ClusterProperty class.
  *
@@ -16,18 +18,18 @@ public final class ImmutableClusterProperty extends ClusterProperty {
      * @throws IllegalArgumentException if the name of the given property is null.
      */
     public ImmutableClusterProperty(ClusterProperty clusterProperty) {
-        _oid = clusterProperty.getOid();
-        _version = clusterProperty.getVersion();
+        super.setGoid(clusterProperty.getGoid());
+        super.setVersion(clusterProperty.getVersion());
         _name = clusterProperty.getName();
         super.setValue(clusterProperty.getValue()==null ? "" : clusterProperty.getValue());
         super.setXmlProperties(clusterProperty.getXmlProperties());
 
         if (_name == null)
-            throw new IllegalArgumentException("Null name for cluster property with oid '" + _oid + "'.");
+            throw new IllegalArgumentException("Null name for cluster property with goid '" + getGoid().toString() + "'.");
     }
 
     @Override
-    public void setOid(long oid) {
+    public void setGoid(Goid goid) {
         throw new UnsupportedOperationException();
     }
 

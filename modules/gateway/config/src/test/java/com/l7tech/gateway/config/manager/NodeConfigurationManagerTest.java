@@ -112,7 +112,7 @@ public class NodeConfigurationManagerTest {
         final String query = NodeConfigurationManager.createDerbyQueries("pmadmin", "7layer", "nodeconfigmantest.l7tech.com");
         assertTrue(query.contains("UPDATE internal_user set name='pmadmin',login='pmadmin',password='"));
         assertTrue(query.contains("',version=1 where objectid=3;"));
-        assertTrue(query.contains("UPDATE cluster_properties set propvalue='nodeconfigmantest.l7tech.com',version=1 where objectid=-700001 and propkey='cluster.hostname';"));
+        assertTrue(query.contains("UPDATE cluster_properties set propvalue='nodeconfigmantest.l7tech.com',version=1 where goid=X'0000000000000000fffffffffff5519f' and propkey='cluster.hostname';"));
     }
 
     @Test
@@ -120,21 +120,21 @@ public class NodeConfigurationManagerTest {
         final String query = NodeConfigurationManager.createDerbyQueries("pm'admin'", "7layer", "node'configman'test.l7tech.com");
         assertTrue(query.contains("UPDATE internal_user set name='pm''admin''',login='pm''admin''',password='"));
         assertTrue(query.contains("',version=1 where objectid=3;"));
-        assertTrue(query.contains("UPDATE cluster_properties set propvalue='node''configman''test.l7tech.com',version=1 where objectid=-700001 and propkey='cluster.hostname';"));
+        assertTrue(query.contains("UPDATE cluster_properties set propvalue='node''configman''test.l7tech.com',version=1 where goid=X'0000000000000000fffffffffff5519f' and propkey='cluster.hostname';"));
     }
 
     @Test
     public void createDerbyQueriesNoAdminLogin(){
         final String query = NodeConfigurationManager.createDerbyQueries(null, "7layer", "nodeconfigmantest.l7tech.com");
         assertFalse(query.contains("UPDATE internal_user"));
-        assertTrue(query.contains("UPDATE cluster_properties set propvalue='nodeconfigmantest.l7tech.com',version=1 where objectid=-700001 and propkey='cluster.hostname';"));
+        assertTrue(query.contains("UPDATE cluster_properties set propvalue='nodeconfigmantest.l7tech.com',version=1 where goid=X'0000000000000000fffffffffff5519f' and propkey='cluster.hostname';"));
     }
 
     @Test
     public void createDerbyQueriesNoAdminPassword(){
         final String query = NodeConfigurationManager.createDerbyQueries("pmadmin", null, "nodeconfigmantest.l7tech.com");
         assertFalse(query.contains("UPDATE internal_user"));
-        assertTrue(query.contains("UPDATE cluster_properties set propvalue='nodeconfigmantest.l7tech.com',version=1 where objectid=-700001 and propkey='cluster.hostname';"));
+        assertTrue(query.contains("UPDATE cluster_properties set propvalue='nodeconfigmantest.l7tech.com',version=1 where goid=X'0000000000000000fffffffffff5519f' and propkey='cluster.hostname';"));
     }
 
     @Test

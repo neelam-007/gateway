@@ -6,13 +6,13 @@
  */
 package com.l7tech.server.cluster;
 
+import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.objectmodel.*;
+import com.l7tech.server.HibernateGoidEntityManager;
 import com.l7tech.server.ServerConfig;
-import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.event.admin.AuditSigningStatusChange;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
-import com.l7tech.gateway.common.cluster.ClusterProperty;
 import org.hibernate.HibernateException;
 import org.hibernate.Query;
 import org.hibernate.Session;
@@ -34,7 +34,7 @@ import java.util.logging.Logger;
  */
 @Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
 public class ClusterPropertyManagerImpl
-        extends HibernateEntityManager<ClusterProperty, EntityHeader>
+        extends HibernateGoidEntityManager<ClusterProperty, EntityHeader>
         implements ClusterPropertyManager, ApplicationContextAware {
     private final Logger logger = Logger.getLogger(ClusterPropertyManagerImpl.class.getName());
     private ApplicationContext applicationContext;
@@ -74,8 +74,8 @@ public class ClusterPropertyManagerImpl
         ClusterProperty prop = findByKey(key);
         if (prop == null) {
             prop = new ClusterProperty(key, value);
-            long oid = save(prop);
-            if (oid != prop.getOid()) prop.setOid(oid);
+            Goid goid = save(prop);
+            if (!goid.equals(prop.getGoid())) prop.setGoid(goid);
             return prop;
         }
 
@@ -85,7 +85,7 @@ public class ClusterPropertyManagerImpl
     }
 
     @Override
-    public long save(ClusterProperty p) throws SaveException {
+    public Goid save(ClusterProperty p) throws SaveException {
         // monitor certain property changes
         propertyChangeMonitor(p);
         return super.save(p);
@@ -148,10 +148,14 @@ public class ClusterPropertyManagerImpl
         }
 
         ClusterProperty cp = null;
+        Goid goid = null;
         try {
-            cp = super.findByPrimaryKey(EntityTypeRegistry.getEntityClass(EntityType.CLUSTER_PROPERTY), Long.parseLong(header.getStrId()));
-        } catch (NumberFormatException e) {
+            goid = Goid.parseGoid(header.getStrId());
+        } catch (IllegalArgumentException e) {
             // do nothing
+        }
+        if(goid != null) {
+            cp = super.findByPrimaryKey(EntityTypeRegistry.getEntityClass(EntityType.CLUSTER_PROPERTY), goid);
         }
 
         // fallback to name lookup

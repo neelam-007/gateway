@@ -1,9 +1,6 @@
 package com.l7tech.server.ems.monitoring;
 
-import com.l7tech.objectmodel.DeleteException;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.objectmodel.*;
 import com.l7tech.util.Pair;
 
 import java.io.IOException;
@@ -29,10 +26,10 @@ public class MockSystemMonitoringSetupSettingsManager implements SystemMonitorin
         this.settings = settings;
     }
 
-    public long saveSetupSettings(Map<String, Object> setupSettings) throws FindException, SaveException, IOException, UpdateException {
+    public Goid saveSetupSettings(Map<String, Object> setupSettings) throws FindException, SaveException, IOException, UpdateException {
         if (setupSettings == null) throw new NullPointerException();
         settings = setupSettings;
-        return 1;
+        return new Goid(0,1);
     }
 
     public void deleteSetupSettings() throws FindException, DeleteException {

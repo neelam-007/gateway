@@ -740,13 +740,12 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
             throw new ResourceAccessException( "Updated cluster property value is invalid", e);
         }
 
-        if ( property.getOid() == PersistentEntity.DEFAULT_OID ) {
+        if ( GoidEntity.DEFAULT_GOID.equals(property.getGoid()) ) {
             checkPermitted( OperationType.CREATE, null, property );
             clusterPropertyManager.save(property);
         } else {
             checkPermitted( OperationType.UPDATE, null, property );
             clusterPropertyManager.update(property);
-            property.getOid();
         }
     }
 

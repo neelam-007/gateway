@@ -174,8 +174,8 @@ public interface ClusterStatusAdmin {
      * @param clusterProperty The property to save
      */
     @Secured(types=EntityType.CLUSTER_PROPERTY, stereotype=MethodStereotype.SAVE_OR_UPDATE)
-    @Administrative(licensed=false)            
-    long saveProperty(ClusterProperty clusterProperty) throws SaveException, UpdateException, DeleteException;
+    @Administrative(licensed=false)
+    Goid saveProperty(ClusterProperty clusterProperty) throws SaveException, UpdateException, DeleteException;
 
     @Secured(types=EntityType.CLUSTER_PROPERTY, stereotype=MethodStereotype.DELETE_ENTITY)
     @Administrative(licensed=false)
