@@ -196,7 +196,10 @@ public class AssignSecurityZonesDialog extends JDialog {
             @Override
             public void actionPerformed(final ActionEvent e) {
                 for (int i = 0; i < dataModel.getRowCount(); i++) {
-                    dataModel.setValueAt(false, i, CHECK_BOX_COL_INDEX);
+                    // un-check all visible rows
+                    if (!filterPanel.isFiltered() || entitiesTable.getRowSorter().convertRowIndexToView(i) >= 0) {
+                        dataModel.setValueAt(false, i, CHECK_BOX_COL_INDEX);
+                    }
                 }
             }
         });
@@ -262,6 +265,7 @@ public class AssignSecurityZonesDialog extends JDialog {
                 } else {
                     selectedLabel.setText(StringUtils.EMPTY);
                 }
+                enableDisable();
             }
         });
         final Comparator<EntityHeader> headerComparator = new Comparator<EntityHeader>() {
@@ -454,7 +458,7 @@ public class AssignSecurityZonesDialog extends JDialog {
     private void enableDisable() {
         final boolean hasRows = entitiesTable.getModel().getRowCount() > 0;
         scrollPane.setVisible(hasRows);
-        setBtn.setEnabled(hasRows && getSelectedZone() != null);
+        setBtn.setEnabled(hasRows && getSelectedZone() != null && !getSelectedEntities().isEmpty());
         filterPanel.allowFiltering(hasRows);
         noEntitiesPanel.setVisible(!hasRows);
         if (noEntitiesPanel.isVisible()) {
