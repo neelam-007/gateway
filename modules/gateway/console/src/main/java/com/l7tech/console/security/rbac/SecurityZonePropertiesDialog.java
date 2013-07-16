@@ -1,5 +1,6 @@
 package com.l7tech.console.security.rbac;
 
+import com.l7tech.console.panels.BasicPropertiesPanel;
 import com.l7tech.console.panels.OkCancelPanel;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.SecurityZoneUtil;
@@ -10,11 +11,13 @@ import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.JCheckBoxListModel;
-import com.l7tech.objectmodel.*;
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.SecurityZone;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
@@ -36,15 +39,13 @@ public class SecurityZonePropertiesDialog extends JDialog {
     private static final String DESCRIPTION_MAX_CHARS = "description.max.chars";
     private static final String ERROR_UNIQUE_NAME = "error.unique.name";
     private JPanel contentPane;
-    private JTextField nameField;
-    private JTextArea descriptionTextArea;
     private JList<JCheckBox> entityTypesList;
     private JRadioButton allEntityTypesRadio;
     private JRadioButton specifiedEntityTypesRadio;
     private OkCancelPanel okCancelPanel;
     private JButton selectAllButton;
     private JButton selectNoneButton;
-    private JLabel errorLabel;
+    private BasicPropertiesPanel basicPropertiesPanel;
     private InputValidator inputValidator;
     private Set<String> reservedNames = new HashSet<>();
     private SecurityZone securityZone;
@@ -65,9 +66,9 @@ public class SecurityZonePropertiesDialog extends JDialog {
         if (operation == OperationType.UPDATE) {
             originalSupportedEntityTypes.addAll(securityZone.getPermittedEntityTypes().contains(EntityType.ANY) ? SecurityZoneUtil.getNonHiddenZoneableEntityTypes() : securityZone.getPermittedEntityTypes());
         }
-        initValidation();
         initComponents();
         setData();
+        initValidation();
     }
 
     private void initComponents() {
@@ -87,81 +88,20 @@ public class SecurityZonePropertiesDialog extends JDialog {
             okCancelPanel.setOkButtonText(OperationType.UPDATE.getName());
         }
         okCancelPanel.getCancelButton().addActionListener(Utilities.createDisposeAction(this));
-        if (readOnly || nameField.getText().trim().isEmpty()) {
+        if (readOnly || basicPropertiesPanel.getNameField().getText().trim().isEmpty()) {
             okCancelPanel.getOkButton().setEnabled(false);
         }
         Utilities.buttonToLink(selectAllButton);
         Utilities.buttonToLink(selectNoneButton);
         selectAllButton.addActionListener(new SelectActionListener(true));
         selectNoneButton.addActionListener(new SelectActionListener(false));
-        errorLabel.setVisible(false);
     }
 
     private void initValidation() {
         initReservedNames();
-        inputValidator = new InputValidator(this, getTitle()) {
-            @Override
-            public boolean isValid() {
-                // dynamic error message - shows first error if there are errors
-                final boolean valid = super.isValid();
-                if (!valid) {
-                    final String[] errors = getAllValidationErrors();
-                    errorLabel.setText(errors.length > 0 ? errors[0] : StringUtils.EMPTY);
-                    errorLabel.setVisible(true);
-                } else {
-                    errorLabel.setText(StringUtils.EMPTY);
-                    errorLabel.setVisible(false);
-                }
-                return valid;
-            }
-        };
-        inputValidator.disableButtonWhenInvalid(okCancelPanel.getOkButton());
-        inputValidator.constrainTextFieldToBeNonEmpty("name", nameField, null);
-        final Integer maxNameChars = getResourceInt(NAME_MAX_CHARS);
-        if (maxNameChars != null) {
-            inputValidator.constrainTextFieldToMaxChars("name", nameField, maxNameChars, null);
-        }
-        final Integer maxDescChars = getResourceInt(DESCRIPTION_MAX_CHARS);
-        if (maxDescChars != null) {
-            inputValidator.constrainTextFieldToMaxChars("description", descriptionTextArea, maxDescChars, null);
-        }
-        inputValidator.attachToButton(okCancelPanel.getOkButton(), new ActionListener() {
-            public void actionPerformed(final ActionEvent e) {
-                // don't display name validation errors until after user clicks ok
-                if (reservedNames.contains(nameField.getText().trim().toLowerCase())) {
-                    final String error = MessageFormat.format(RESOURCES.getString(ERROR_UNIQUE_NAME), operation.getName().toLowerCase());
-                    DialogDisplayer.showMessageDialog(SecurityZonePropertiesDialog.this, error,
-                            operation.getName() + " Security Zone", JOptionPane.ERROR_MESSAGE, null);
-                } else {
-                    final Set<EntityType> selected = getSelectedEntityTypes();
-                    if (operation == OperationType.UPDATE && !selected.contains(EntityType.ANY)) {
-                        final Collection<EntityType> removedEntityTypes = CollectionUtils.subtract(originalSupportedEntityTypes, selected);
-                        try {
-                            loadEntitiesToRemoveFromZone(removedEntityTypes);
-                            if (!entitiesToRemoveFromZone.isEmpty()) {
-                                final Map<EntityType, Integer> removeCount = countEntitiesToRemoveFromZone();
-                                final EntityTypeRemovalDialog confirmRemove = new EntityTypeRemovalDialog(SecurityZonePropertiesDialog.this, removeCount);
-                                confirmRemove.pack();
-                                DialogDisplayer.display(confirmRemove, new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        if (confirmRemove.isConfirmed()) {
-                                            confirm();
-                                        }
-                                    }
-                                });
-                            } else {
-                                confirm();
-                            }
-                        } catch (final FindException ex) {
-                            DialogDisplayer.showMessageDialog(SecurityZonePropertiesDialog.this, "Error", "Unable to retrieve entities which must be removed from this zone.", ex);
-                        }
-                    } else {
-                        confirm();
-                    }
-                }
-            }
-        });
+        inputValidator = basicPropertiesPanel.configureValidation(this, getTitle(), okCancelPanel.getOkButton(),
+                new OkButtonActionListener(), getResourceInt(NAME_MAX_CHARS), getResourceInt(DESCRIPTION_MAX_CHARS));
+        inputValidator.isValid();
     }
 
     private void loadEntitiesToRemoveFromZone(final Collection<EntityType> removedEntityTypes) throws FindException {
@@ -218,8 +158,8 @@ public class SecurityZonePropertiesDialog extends JDialog {
     }
 
     void setData() {
-        nameField.setText(securityZone.getName());
-        descriptionTextArea.setText(securityZone.getDescription());
+        basicPropertiesPanel.getNameField().setText(securityZone.getName());
+        basicPropertiesPanel.getDescriptionTextArea().setText(securityZone.getDescription());
 
         final Set<EntityType> permittedTypes = securityZone.getPermittedEntityTypes();
         final List<JCheckBox> entries = new ArrayList<JCheckBox>();
@@ -243,8 +183,8 @@ public class SecurityZonePropertiesDialog extends JDialog {
     }
 
     public SecurityZone getData(@NotNull final SecurityZone zone) {
-        zone.setName(nameField.getText().trim());
-        zone.setDescription(descriptionTextArea.getText().trim());
+        zone.setName(basicPropertiesPanel.getNameField().getText().trim());
+        zone.setDescription(basicPropertiesPanel.getDescriptionTextArea().getText().trim());
 
         final Set<EntityType> permittedTypes = getSelectedEntityTypes();
         zone.setPermittedEntityTypes(permittedTypes);
@@ -317,6 +257,44 @@ public class SecurityZonePropertiesDialog extends JDialog {
                     return selectAll;
                 }
             });
+        }
+    }
+
+    private class OkButtonActionListener implements ActionListener {
+        public void actionPerformed(final ActionEvent e) {
+            // don't display name validation errors until after user clicks ok
+            if (reservedNames.contains(basicPropertiesPanel.getNameField().getText().trim().toLowerCase())) {
+                final String error = MessageFormat.format(RESOURCES.getString(ERROR_UNIQUE_NAME), operation.getName().toLowerCase());
+                DialogDisplayer.showMessageDialog(SecurityZonePropertiesDialog.this, error,
+                        operation.getName() + " Security Zone", JOptionPane.ERROR_MESSAGE, null);
+            } else {
+                final Set<EntityType> selected = getSelectedEntityTypes();
+                if (operation == OperationType.UPDATE && !selected.contains(EntityType.ANY)) {
+                    final Collection<EntityType> removedEntityTypes = CollectionUtils.subtract(originalSupportedEntityTypes, selected);
+                    try {
+                        loadEntitiesToRemoveFromZone(removedEntityTypes);
+                        if (!entitiesToRemoveFromZone.isEmpty()) {
+                            final Map<EntityType, Integer> removeCount = countEntitiesToRemoveFromZone();
+                            final EntityTypeRemovalDialog confirmRemove = new EntityTypeRemovalDialog(SecurityZonePropertiesDialog.this, removeCount);
+                            confirmRemove.pack();
+                            DialogDisplayer.display(confirmRemove, new Runnable() {
+                                @Override
+                                public void run() {
+                                    if (confirmRemove.isConfirmed()) {
+                                        confirm();
+                                    }
+                                }
+                            });
+                        } else {
+                            confirm();
+                        }
+                    } catch (final FindException ex) {
+                        DialogDisplayer.showMessageDialog(SecurityZonePropertiesDialog.this, "Error", "Unable to retrieve entities which must be removed from this zone.", ex);
+                    }
+                } else {
+                    confirm();
+                }
+            }
         }
     }
 }

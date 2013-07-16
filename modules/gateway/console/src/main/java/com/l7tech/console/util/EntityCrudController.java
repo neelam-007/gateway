@@ -9,6 +9,7 @@ import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 
 import javax.swing.*;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.logging.Level;
@@ -101,8 +102,13 @@ public class EntityCrudController<ET> {
                             @Override
                             public void call(ET editedEntity) {
                                 if (editedEntity != null) {
-                                    if (null != (editedEntity = doSave(editedEntity)))
-                                        entityTableModel.addRow(editedEntity);
+                                    if (null != (editedEntity = doSave(editedEntity))) {
+                                        entityTableModel.addRow(0, editedEntity);
+                                        // select and scroll to created row
+                                        final int selectIndex = entityTable.convertRowIndexToView(0);
+                                        entityTable.setRowSelectionInterval(selectIndex, selectIndex);
+                                        entityTable.scrollRectToVisible(new Rectangle(entityTable.getCellRect(selectIndex, 0, true)));
+                                    }
                                 }
                             }
                         });
