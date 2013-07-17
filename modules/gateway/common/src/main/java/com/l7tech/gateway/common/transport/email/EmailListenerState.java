@@ -1,11 +1,14 @@
 package com.l7tech.gateway.common.transport.email;
 
+import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.GoidEntity;
 import com.l7tech.objectmodel.PersistentEntity;
 
 import javax.persistence.*;
 import javax.persistence.Entity;
 import javax.persistence.Table;
 
+import com.l7tech.objectmodel.imp.GoidEntityImp;
 import org.hibernate.annotations.*;
 
 import java.io.Serializable;
@@ -16,9 +19,7 @@ import java.io.Serializable;
 @Entity
 @Proxy(lazy=false)
 @Table(name="email_listener_state")
-public class EmailListenerState implements PersistentEntity, Serializable {
-    private Long Id;
-    private int version;
+public class EmailListenerState  extends GoidEntityImp implements  Serializable{
     private String ownerNodeId;
     private long lastPollTime;
     private Long lastMessageId;
@@ -39,7 +40,7 @@ public class EmailListenerState implements PersistentEntity, Serializable {
     }
 
     @OneToOne(optional=false)
-    @JoinColumn(name="email_listener_id", nullable=false)
+    @JoinColumn(name="email_listener_goid", nullable=false)
     public EmailListener getEmailListener() {
         return emailListener;
     }
@@ -52,46 +53,7 @@ public class EmailListenerState implements PersistentEntity, Serializable {
     @Version
     @Column(name="version")
     public int getVersion() {
-        return version;
-    }
-
-    @Override
-    public void setVersion(int version) {
-        this.version = version;
-    }
-
-    @Override
-    @Transient
-    public long getOid() {
-        return (Id == null) ? DEFAULT_OID : Id;
-    }
-
-    @Override
-    public void setOid(long oid) {
-        setObjectId(oid == DEFAULT_OID ? null : oid);
-    }
-
-    @Id
-    @Column(name="objectid", nullable=false, updatable=false)
-    @GenericGenerator( name="generator", strategy = "layer7-generator" )
-    @GeneratedValue( generator = "generator")
-    public Long getObjectId() {
-        return Id;
-    }
-
-    public void setObjectId(Long id) {
-        Id = id;
-    }
-
-    @Transient
-    public Long getOidAsLong() {
-        return getOid();
-    }
-
-    @Override
-    @Transient
-    public String getId() {
-        return Long.toString(getOid());
+        return super.getVersion();
     }
 
     @Column(name="owner_node_id", length=36)

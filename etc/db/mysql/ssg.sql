@@ -1826,7 +1826,7 @@ CREATE TABLE wsdm_subscription (
 
 DROP TABLE IF EXISTS email_listener;
 CREATE TABLE email_listener (
-  objectid bigint(20) NOT NULL,
+  goid VARBINARY(16) NOT NULL,
   version integer NOT NULL,
   name varchar(128) NOT NULL,
   host varchar(128) NOT NULL,
@@ -1841,19 +1841,19 @@ CREATE TABLE email_listener (
   active tinyint(1) NOT NULL default 1,
   properties mediumtext,
   security_zone_oid bigint(20),
-  PRIMARY KEY  (objectid),
+  PRIMARY KEY  (goid),
   CONSTRAINT email_listener_security_zone FOREIGN KEY (security_zone_oid) REFERENCES security_zone (objectid) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
 DROP TABLE IF EXISTS email_listener_state;
 CREATE TABLE email_listener_state (
-  objectid bigint(20) NOT NULL,
+  goid VARBINARY(16) NOT NULL,
   version integer NOT NULL,
   owner_node_id varchar(36),
   last_poll_time bigint(20),
   last_message_id bigint(20),
-  email_listener_id bigint(20) NOT NULL,
-  PRIMARY KEY  (objectid)
+  email_listener_goid VARBINARY(16) NOT NULL,
+  PRIMARY KEY  (goid)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
 DROP TABLE IF EXISTS active_connector;

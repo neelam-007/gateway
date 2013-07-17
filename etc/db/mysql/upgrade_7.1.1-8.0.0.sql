@@ -211,6 +211,37 @@ update cluster_properties set goid = concat(lpad(char(0),8,'\0'),lpad(char(objec
 update cluster_properties set goid = concat(lpad(char(0),8,'\0'),lpad(char(objectid_backup),8,'\0')) where propkey like 'upgrade.task.%';
 ALTER TABLE cluster_properties DROP COLUMN objectid_backup;
 
+-- EmailListener
+ALTER TABLE email_listener ADD COLUMN objectid_backup BIGINT(20);
+UPDATE email_listener SET objectid_backup=objectid;
+ALTER TABLE email_listener CHANGE COLUMN objectid goid VARBINARY(16);
+-- For manual runs use: set @email_prefix=concat(lpad(char(floor(rand()*4294967296)+1),4,'\0'),lpad(char(floor(rand()*4294967296)),4,'\0'));
+SET @email_prefix=concat(lpad(char(#RANDOM_LONG#),4,'\0'),lpad(char(#RANDOM_LONG#),4,'\0'));
+UPDATE email_listener SET goid = concat(@email_prefix,lpad(char(objectid_backup),8,'\0'));
+ALTER TABLE email_listener DROP COLUMN objectid_backup;
+
+ALTER TABLE email_listener_state ADD COLUMN email_listener_id_backup BIGINT(20);
+UPDATE email_listener_state SET email_listener_id_backup=email_listener_id;
+ALTER TABLE email_listener_state CHANGE COLUMN email_listener_id email_listener_goid VARBINARY(16);
+UPDATE email_listener_state SET email_listener_goid = concat(@email_prefix,lpad(char(email_listener_id_backup),8,'\0'));
+ALTER TABLE email_listener_state DROP COLUMN email_listener_id_backup;
+
+ALTER TABLE email_listener_state ADD COLUMN objectid_backup BIGINT(20);
+UPDATE email_listener_state SET objectid_backup=objectid;
+ALTER TABLE email_listener_state CHANGE COLUMN objectid goid VARBINARY(16);
+-- For manual runs use: set @emailState_prefix=concat(lpad(char(floor(rand()*4294967296)+1),4,'\0'),lpad(char(floor(rand()*4294967296)),4,'\0'));
+SET @emailState_prefix=concat(lpad(char(#RANDOM_LONG#),4,'\0'),lpad(char(#RANDOM_LONG#),4,'\0'));
+UPDATE email_listener_state SET goid = concat(@emailState_prefix,lpad(char(objectid_backup),8,'\0'));
+ALTER TABLE email_listener_state DROP COLUMN objectid_backup;
+
+
+--
+-- Register upgrade task for upgrading sink configuration references to GOIDs
+--
+INSERT INTO cluster_properties
+    (goid, version, propkey, propvalue, properties)
+    values (concat(lpad(char(0),8,'\0'),lpad(char(-800001),8,'\0')), 0, 'upgrade.task.800001', 'com.l7tech.server.upgrade.Upgrade71To80SinkConfig', null);
+
 --
 -- Reenable FK at very end of script
 --

@@ -181,7 +181,7 @@ public class EmailListenerPropertiesDialog extends JDialog {
         Utilities.equalizeButtonSizes(new AbstractButton[] { okButton, cancelButton });
 
         final Authorizer authorizer = Registry.getDefault().getSecurityProvider();
-        okButton.setEnabled(emailListener == null || emailListener.getOid() == EmailListener.DEFAULT_OID ?
+        okButton.setEnabled(emailListener == null || emailListener.getGoid().equals(EmailListener.DEFAULT_GOID) ?
             authorizer.hasPermission(new AttemptedCreate(EntityType.EMAIL_LISTENER)) :
             authorizer.hasPermission(new AttemptedUpdate(EntityType.EMAIL_LISTENER, emailListener)));
 
@@ -357,7 +357,9 @@ public class EmailListenerPropertiesDialog extends JDialog {
         checkInterval.setEditor(jsne);
         ((JSpinner.DefaultEditor) checkInterval.getEditor()).getTextField().setFocusLostBehavior(JFormattedTextField.PERSIST);  //we'll do our own checking
 
-        zoneControl.configure(emailListener.getOid() == EmailListener.DEFAULT_OID ? OperationType.CREATE : OperationType.UPDATE, emailListener);
+        zoneControl.configure(EntityType.EMAIL_LISTENER,
+                emailListener.getGoid().equals(EmailListener.DEFAULT_GOID) ? OperationType.CREATE : OperationType.UPDATE,
+                emailListener.getSecurityZone());
     }
 
     private PublishedService getSelectedHardwiredService() {

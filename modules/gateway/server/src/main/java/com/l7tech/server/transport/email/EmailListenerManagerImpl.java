@@ -4,7 +4,7 @@ import com.l7tech.gateway.common.transport.email.EmailListener;
 import com.l7tech.gateway.common.transport.email.EmailListenerState;
 import com.l7tech.gateway.common.transport.email.EmailServerType;
 import com.l7tech.objectmodel.*;
-import com.l7tech.server.HibernateEntityManager;
+import com.l7tech.server.HibernateGoidEntityManager;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import org.hibernate.Criteria;
 import org.hibernate.HibernateException;
@@ -26,14 +26,14 @@ import java.util.logging.Logger;
  * Manages EmailListener objects. Can persist them and look them up.
  */
 public class EmailListenerManagerImpl
-        extends HibernateEntityManager<EmailListener, EntityHeader>
+        extends HibernateGoidEntityManager<EmailListener, EntityHeader>
         implements EmailListenerManager, InitializingBean
 {
     protected static final Logger logger = Logger.getLogger(EmailListenerManagerImpl.class.getName());
 
     private static final String COLUMN_NODEID = "ownerNodeId";
     private static final String COLUMN_LAST_POLL_TIME = "lastPollTime";
-    private static final String COLUMN_EMAIL_LISTENER_ID = "email_listener_id";
+    private static final String COLUMN_EMAIL_LISTENER_ID = "email_listener_goid";
 
     private static final String HQL_UPDATE_TIME_BY_ID = "UPDATE VERSIONED " + EmailListenerState.class.getName() +
                     " set " + COLUMN_LAST_POLL_TIME + " = :"+COLUMN_LAST_POLL_TIME+" where " + COLUMN_EMAIL_LISTENER_ID + " = :"+ COLUMN_EMAIL_LISTENER_ID;
@@ -56,17 +56,17 @@ public class EmailListenerManagerImpl
     }
 
     public void updateState(final EmailListenerState state) throws UpdateException {
-        long emailListenerOid = state.getEmailListener().getOid();
+        Goid emailListenerGoid = state.getEmailListener().getGoid();
         try {
-            EmailListener emailListener = findByPrimaryKey(emailListenerOid);
+            EmailListener emailListener = findByPrimaryKey(emailListenerGoid);
             if (emailListener != null) {
                 EmailListenerState updateState = emailListener.getEmailListenerState();
                 updateState.copyTo(state);
                 getHibernateTemplate().update(updateState);
             }
         } catch (FindException fe) {
-            logger.log(Level.WARNING, "Unable to update email listener state for listener '" + emailListenerOid + "'");
-            throw new UpdateException("Unable to update email listener state for listener '" + emailListenerOid + "'");
+            logger.log(Level.WARNING, "Unable to update email listener state for listener '" + emailListenerGoid + "'");
+            throw new UpdateException("Unable to update email listener state for listener '" + emailListenerGoid + "'");
         }
     }
 
@@ -138,13 +138,13 @@ public class EmailListenerManagerImpl
         return stolenEmailListeners;
     }
 
-    public void updateLastPolled( final long emailListenerOid ) throws UpdateException {
+    public void updateLastPolled( final Goid emailListenerOid ) throws UpdateException {
         final long now = System.currentTimeMillis();
         getHibernateTemplate().execute( new HibernateCallback(){
             public Object doInHibernate( final Session session ) throws HibernateException, SQLException {
                 session.createQuery( HQL_UPDATE_TIME_BY_ID )
                         .setLong(COLUMN_LAST_POLL_TIME, now )
-                        .setLong(COLUMN_EMAIL_LISTENER_ID, emailListenerOid )
+                        .setBinary(COLUMN_EMAIL_LISTENER_ID, emailListenerOid.getBytes() )
                         .executeUpdate();
                 return null;
             }
@@ -156,7 +156,7 @@ public class EmailListenerManagerImpl
         //need to determine we need to reset the email listener state because the same email listerner ID
         //was changed to poll a different email server, account, or folder depending on POP/IMAP
         try {
-            EmailListener oldEmailListener = findByPrimaryKey(entity.getOid());
+            EmailListener oldEmailListener = findByPrimaryKey(entity.getGoid());
             if (oldEmailListener == null) throw new UpdateException("Cannot find updating email listener from database.");
 
             //decide if we need to update the email listener state
@@ -176,7 +176,7 @@ public class EmailListenerManagerImpl
             }
             if (isNewListener) {
                 entity.getEmailListenerState().setLastMessageId(0L);
-                logger.log(Level.FINE, "EmailListener " + entity.getOid() + " state got updated");
+                logger.log(Level.FINE, "EmailListener " + entity.getGoid() + " state got updated");
             }
             super.update(entity);
         } catch (FindException fe) {

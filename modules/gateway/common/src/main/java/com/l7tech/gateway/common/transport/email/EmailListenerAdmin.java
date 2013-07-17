@@ -2,10 +2,7 @@ package com.l7tech.gateway.common.transport.email;
 
 import com.l7tech.gateway.common.admin.Administrative;
 import com.l7tech.gateway.common.security.rbac.Secured;
-import com.l7tech.objectmodel.DeleteException;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.objectmodel.*;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.Serializable;
@@ -76,26 +73,26 @@ public interface EmailListenerAdmin {
 
     /**
      * Store the specified new or existing EmailListener. If the specified {@link EmailListener} contains a
-     * unique object ID that already exists, this will replace the objects current configuration with the new configuration.
+     * unique GOID that already exists, this will replace the objects current configuration with the new configuration.
      * Otherwise, a new object will be created.
      *
      * @param emailListener  the email listener to save.  Required.
-     * @return the unique object ID that was updated or created.
+     * @return the unique global object ID that was updated or created.
      * @throws com.l7tech.objectmodel.SaveException   if the requested information could not be saved
      * @throws com.l7tech.objectmodel.UpdateException if the requested information could not be updated for some other reason
      */
     @Secured(stereotype=SAVE_OR_UPDATE)
-    long saveEmailListener(EmailListener emailListener) throws SaveException, UpdateException;
+    Goid saveEmailListener(EmailListener emailListener) throws SaveException, UpdateException;
 
     /**
      * Delete a specific email listener instance identified by its primary key.
      *
-     * @param oid the object ID of the email listener instance to delete.  Required.
+     * @param goid the global object ID of the email listener instance to delete.  Required.
      * @throws com.l7tech.objectmodel.DeleteException if there is some other problem deleting the object
      * @throws FindException if the object cannot be found
      */
     @Secured(stereotype=DELETE_BY_ID)
-    void deleteEmailListener(long oid) throws DeleteException, FindException;
+    void deleteEmailListener(Goid goid) throws DeleteException, FindException;
 
     @Secured(stereotype=SAVE)
     boolean testEmailAccount(EmailServerType serverType,

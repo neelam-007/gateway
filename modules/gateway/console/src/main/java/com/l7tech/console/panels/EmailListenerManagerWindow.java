@@ -1,12 +1,8 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.console.util.EntityUtils;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.UpdateException;
-import com.l7tech.objectmodel.DeleteException;
+import com.l7tech.objectmodel.*;
 import com.l7tech.console.util.Registry;
-import com.l7tech.objectmodel.EntityType;
 import com.l7tech.gateway.common.transport.email.EmailListener;
 import com.l7tech.gateway.common.transport.email.EmailListenerAdmin;
 import com.l7tech.gateway.common.transport.email.EmailServerType;
@@ -161,7 +157,7 @@ public class EmailListenerManagerWindow extends JDialog {
         if (emailListenerAdmin == null)
             return;
         try {
-            emailListenerAdmin.deleteEmailListener(emailListener.getOid());
+            emailListenerAdmin.deleteEmailListener(emailListener.getGoid());
             loadEmailListeners();
         } catch (DeleteException e) {
             showErrorMessage(resources.getString("errors.removalFailed.title"),
@@ -211,8 +207,8 @@ public class EmailListenerManagerWindow extends JDialog {
                     };
 
                     try {
-                        long oid = getEmailListenerAdmin().saveEmailListener(emailListener);
-                        if (oid != emailListener.getOid()) emailListener.setOid(oid);
+                        Goid goid = getEmailListenerAdmin().saveEmailListener(emailListener);
+                        if (goid.equals(emailListener.getGoid())) emailListener.setGoid(goid);
                         reedit = null;
                         loadEmailListeners();
                         emailListenerTable.setSelectedConnector(emailListener);
@@ -351,7 +347,7 @@ public class EmailListenerManagerWindow extends JDialog {
         }
 
         public void setSelectedConnector(EmailListener emailListener) {
-            int rowNum = model.findRowBySinkConfigurationOid(emailListener.getOid());
+            int rowNum = model.findRowBySinkConfigurationGoid(emailListener.getGoid());
             if (rowNum >= 0)
                 getSelectionModel().setSelectionInterval(rowNum, rowNum);
             else
@@ -360,7 +356,7 @@ public class EmailListenerManagerWindow extends JDialog {
     }
 
     private static class EmailListenerTableModel extends AbstractTableModel {
-        private Map<Long, Integer> rowMap;
+        private Map<Goid, Integer> rowMap;
 
         private abstract class Col {
             final String name;
@@ -476,24 +472,24 @@ public class EmailListenerManagerWindow extends JDialog {
         }
 
         /** @return a Map of Connector OID -> row number */
-        private Map<Long, Integer> getRowMap() {
+        private Map<Goid, Integer> getRowMap() {
             if (rowMap != null)
                 return rowMap;
-            Map<Long, Integer> ret = new LinkedHashMap<Long, Integer>();
+            Map<Goid, Integer> ret = new LinkedHashMap<Goid, Integer>();
             for (int i = 0; i < rows.size(); i++) {
                 EmailListenerTableRow row = rows.get(i);
-                final long oid = row.getEmailListener().getOid();
-                ret.put(oid, i);
+                final Goid goid = row.getEmailListener().getGoid();
+                ret.put(goid, i);
             }
             return rowMap = ret;
         }
 
         /**
-         * @param oid OID of connector whose row to find
+         * @param goid GOID of connector whose row to find
          * @return the row number of the connector with a matching oid, or -1 if no match found
          */
-        public int findRowBySinkConfigurationOid(long oid) {
-            return getRowMap().containsKey(oid) ? getRowMap().get(oid) : -1;
+        public int findRowBySinkConfigurationGoid(Goid goid) {
+            return getRowMap().containsKey(goid) ? getRowMap().get(goid) : -1;
         }
     }
 }

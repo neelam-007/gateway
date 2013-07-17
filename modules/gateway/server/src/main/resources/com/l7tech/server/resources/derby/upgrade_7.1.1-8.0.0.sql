@@ -209,3 +209,38 @@ ALTER TABLE cluster_properties ALTER COLUMN goid NOT NULL;
 ALTER TABLE cluster_properties DROP PRIMARY KEY;
 ALTER TABLE cluster_properties DROP COLUMN objectid;
 ALTER TABLE cluster_properties ADD PRIMARY KEY (goid);
+
+-- EmailListener
+ALTER TABLE email_listener_state DROP CONSTRAINT FK5A708C492FC43EC3;
+ALTER TABLE email_listener ADD COLUMN goid CHAR(16) FOR BIT DATA;
+call setVariable('email_listener_prefix', cast(randomLongNotReserved() as char(21)));
+update email_listener set goid = toGoid(cast(getVariable('email_listener_prefix') as bigint), objectid);
+ALTER TABLE email_listener ALTER COLUMN goid NOT NULL;
+ALTER TABLE email_listener DROP PRIMARY KEY;
+ALTER TABLE email_listener DROP COLUMN objectid;
+ALTER TABLE email_listener ADD PRIMARY KEY (goid);
+
+ALTER TABLE email_listener_state ADD COLUMN email_listener_goid CHAR(16) FOR BIT DATA;
+update email_listener_state set email_listener_goid = toGoid(cast(getVariable('email_listener_prefix') as bigint), email_listener_id);
+ALTER TABLE email_listener_state ALTER COLUMN email_listener_goid NOT NULL;
+ALTER TABLE email_listener_state DROP COLUMN email_listener_id;
+ALTER TABLE email_listener_state ADD UNIQUE (email_listener_goid);
+
+ALTER TABLE email_listener_state ADD COLUMN goid CHAR(16) FOR BIT DATA;
+call setVariable('email_listener_state_prefix', cast(randomLongNotReserved() as char(21)));
+update email_listener_state set goid = toGoid(cast(getVariable('email_listener_state_prefix') as bigint), objectid);
+ALTER TABLE email_listener_state ALTER COLUMN goid NOT NULL;
+ALTER TABLE email_listener_state DROP PRIMARY KEY;
+ALTER TABLE email_listener_state DROP COLUMN objectid;
+ALTER TABLE email_listener_state ADD PRIMARY KEY (goid);
+alter table email_listener_state ADD CONSTRAINT FK5A708C492FC43EC3 foreign key (email_listener_goid) references email_listener on delete cascade;
+
+
+--
+-- Register upgrade task for upgrading sink configuration references to GOIDs
+--
+INSERT INTO cluster_properties
+    (goid, version, propkey, propvalue, properties)
+    values (toGoid(0,-800001), 0, 'upgrade.task.800001', 'com.l7tech.server.upgrade.Upgrade71To80SinkConfig', null);
+
+

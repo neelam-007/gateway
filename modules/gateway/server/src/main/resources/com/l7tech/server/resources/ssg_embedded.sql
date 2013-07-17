@@ -313,7 +313,7 @@ create table counters (
 );
 
 create table email_listener (
-    objectid bigint not null,
+    goid CHAR(16) FOR BIT DATA not null,
     name varchar(128) not null,
     version integer,
     active smallint not null,
@@ -328,18 +328,18 @@ create table email_listener (
     use_ssl smallint not null,
     username varchar(255) not null,
     security_zone_oid bigint references security_zone(objectid) on delete set null,
-    primary key (objectid)
+    primary key (goid)
 );
 
 create table email_listener_state (
-    objectid bigint not null,
+    goid CHAR(16) FOR BIT DATA not null,
     last_message_id bigint,
     last_poll_time bigint,
     owner_node_id varchar(36),
     version integer,
-    email_listener_id bigint not null,
-    primary key (objectid),
-    unique (email_listener_id)
+    email_listener_goid CHAR(16) FOR BIT DATA not null,
+    primary key (goid),
+    unique (email_listener_goid)
 );
 
 create table fed_group (
@@ -1089,7 +1089,7 @@ alter table connector_property
 
 alter table email_listener_state
     add constraint FK5A708C492FC43EC3
-    foreign key (email_listener_id)
+    foreign key (email_listener_goid)
     references email_listener
     on delete cascade;
 

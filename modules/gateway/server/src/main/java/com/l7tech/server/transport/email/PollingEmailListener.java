@@ -1,5 +1,6 @@
 package com.l7tech.server.transport.email;
 
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.LifecycleException;
 
 import java.beans.PropertyChangeListener;
@@ -26,11 +27,11 @@ public interface PollingEmailListener{
     public void ensureStopped();
 
     /**
-     * Returns the listener's EmailListener Oid.
+     * Returns the listener's EmailListener Goid.
      *
-     * @return oid value
+     * @return goid value
      */
-    public long getEmailListenerOid();
+    public Goid getEmailListenerGoid();
 
     // need to add methods to handle updates/deletes to EmailListener.
 }

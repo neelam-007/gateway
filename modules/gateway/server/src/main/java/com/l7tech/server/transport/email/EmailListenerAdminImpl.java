@@ -3,10 +3,7 @@ package com.l7tech.server.transport.email;
 import com.l7tech.gateway.common.transport.email.EmailListenerAdmin;
 import com.l7tech.gateway.common.transport.email.EmailListener;
 import com.l7tech.gateway.common.transport.email.EmailServerType;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.UpdateException;
-import com.l7tech.objectmodel.DeleteException;
+import com.l7tech.objectmodel.*;
 import com.l7tech.server.transport.http.SslClientHostnameAwareSocketFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.sun.mail.pop3.POP3Store;
@@ -48,19 +45,19 @@ public class EmailListenerAdminImpl implements EmailListenerAdmin {
     }
 
     @Override
-    public long saveEmailListener(EmailListener emailListener) throws SaveException, UpdateException {
-        if (emailListener.getOid() == EmailListener.DEFAULT_OID) {
+    public Goid saveEmailListener(EmailListener emailListener) throws SaveException, UpdateException {
+        if (emailListener.getGoid().equals(EmailListener.DEFAULT_GOID)) {
             emailListener.createEmailListenerState(clusterNodeId, System.currentTimeMillis(), 0);
             return emailListenerManager.save(emailListener);
         } else {
             emailListenerManager.update(emailListener);
-            return emailListener.getOid();
+            return emailListener.getGoid();
         }
     }
 
     @Override
-    public void deleteEmailListener(long oid) throws DeleteException, FindException {
-        emailListenerManager.delete(oid);
+    public void deleteEmailListener(Goid goid) throws DeleteException, FindException {
+        emailListenerManager.delete(goid);
     }
 
     @Override

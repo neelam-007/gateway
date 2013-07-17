@@ -80,7 +80,7 @@ public class EmailTask implements Runnable {
         // call the request handler to invoke the MessageProcessor
         HybridDiagnosticContext.put(
                 GatewayDiagnosticContextKeys.EMAIL_LISTENER_ID,
-                Long.toString( emailListenerCfg.getEmailListener().getOid() ) );
+                emailListenerCfg.getEmailListener().getGoid().toString() );
         try {
             handler.onMessage(emailListenerCfg, message);
         } finally {

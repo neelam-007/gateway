@@ -54,6 +54,7 @@ import java.util.Collection;
 import java.util.Map;
 
 import static com.l7tech.util.Option.none;
+import static com.l7tech.util.Option.optional;
 
 
 /**
@@ -299,8 +300,8 @@ public class RegistryStub extends Registry {
 
             @Override
             public SsgConnector findSsgConnectorByPrimaryKey(long oid) throws FindException {
-                if (stubAdminConnection.getOid() == oid)
-                    return stubAdminConnection;
+                 if (stubAdminConnection.getOid() == oid)
+                   return stubAdminConnection;
                 throw new FindException("no connector found with id " + oid);
             }
 
@@ -414,7 +415,7 @@ public class RegistryStub extends Registry {
     @Override
     public EmailListenerAdmin getEmailListenerAdmin() {
         return new EmailListenerAdmin() {
-            private final EmailListener emailListener = new EmailListener(2468L,
+            private final EmailListener emailListener = new EmailListener(new Goid(0L,2468L),
                                                                           "testuser@layer7tech.com",
                                                                           "mail.layer7tech.com",
                                                                           143,
@@ -446,12 +447,12 @@ public class RegistryStub extends Registry {
             }
 
             @Override
-            public long saveEmailListener(EmailListener emailListener) throws SaveException, UpdateException {
+            public Goid saveEmailListener(EmailListener emailListener) throws SaveException, UpdateException {
                 throw new SaveException("Unable to save any email listeners in stub mode");
             }
 
             @Override
-            public void deleteEmailListener(long oid) throws DeleteException, FindException {
+            public void deleteEmailListener(Goid goid) throws DeleteException, FindException {
                 throw new DeleteException("Unable to delete any email listeners in stub mode");
             }
 

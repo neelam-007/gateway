@@ -3,6 +3,7 @@ package com.l7tech.server.transport.email.asynch;
 import com.l7tech.gateway.common.audit.LoggingAudit;
 import com.l7tech.gateway.common.transport.email.EmailServerType;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.LifecycleException;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.event.system.EmailEvent;
@@ -256,8 +257,8 @@ public class PooledPollingEmailListenerImpl implements PollingEmailListener {
     }
 
     @Override
-    public long getEmailListenerOid() {
-        return this.emailListenerCfg.getEmailListener().getOid();
+    public Goid getEmailListenerGoid() {
+        return this.emailListenerCfg.getEmailListener().getGoid();
     }
 
     /**
@@ -324,7 +325,7 @@ public class PooledPollingEmailListenerImpl implements PollingEmailListener {
                         PooledPollingEmailListenerImpl.this.ensureConnectionStarted();
 
                         messages = emailFolder.search(new FlagTerm(new Flags(Flags.Flag.SEEN), false));
-                       emailListenerManager.updateLastPolled(emailListenerCfg.getEmailListener().getOid());
+                       emailListenerManager.updateLastPolled(emailListenerCfg.getEmailListener().getGoid());
                         long minMessageId = emailListenerCfg.getEmailListener().getEmailListenerState().getLastMessageId() == null ? 0L : emailListenerCfg.getEmailListener().getEmailListenerState().getLastMessageId();
                         for(Message m : messages) {
                             try {
