@@ -70,6 +70,7 @@ public class SecurityZoneManagerWindow extends JDialog {
         securityZonesTableModel = TableUtil.configureTable(securityZonesTable,
                 column("Name", 40, 140, 99999, propertyTransform(SecurityZone.class, "name")),
                 column("Description", 80, 300, 99999, propertyTransform(SecurityZone.class, "description")));
+        securityZonesTableModel.addTableModelListener(enableOrDisableListener);
         Utilities.setRowSorter(securityZonesTable, securityZonesTableModel);
         loadSecurityZonesTable();
 

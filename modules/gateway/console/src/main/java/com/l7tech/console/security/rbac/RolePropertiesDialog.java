@@ -20,6 +20,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.text.MessageFormat;
+import java.util.HashSet;
 import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.logging.Level;
@@ -46,7 +47,11 @@ public class RolePropertiesDialog extends JDialog {
         super(owner, readOnly ? "Role Properties" : role.getOid() == Role.DEFAULT_OID ? "Create Role" : "Edit Role", DEFAULT_MODALITY_TYPE);
         this.role = role;
         this.operation = role.getOid() == Role.DEFAULT_OID ? "Create" : "Edit";
-        this.reservedNames = reservedNames;
+        this.reservedNames = new HashSet<>();
+        for (final String reservedName : reservedNames) {
+            // for case-insensitive checks
+            this.reservedNames.add(reservedName.toLowerCase());
+        }
         this.role = role;
         this.readOnly = readOnly;
         this.afterEditListener = afterEditListener;
@@ -78,6 +83,8 @@ public class RolePropertiesDialog extends JDialog {
         if (readOnly || basicPropertiesPanel.getNameField().getText().trim().isEmpty()) {
             okCancelPanel.getOkButton().setEnabled(false);
         }
+        basicPropertiesPanel.getNameField().setText(role.getName());
+        basicPropertiesPanel.getDescriptionTextArea().setText(role.getDescription());
     }
 
     private void initValidation() {

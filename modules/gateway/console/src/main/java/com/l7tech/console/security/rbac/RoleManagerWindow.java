@@ -58,6 +58,8 @@ public class RoleManagerWindow extends JDialog {
     private JTextField roleTextField;
     private JTextField typeTextField;
     private JTextPane descriptionTextPane;
+    private JButton editButton;
+    private RoleAssignmentsPanel assignmentsPanel;
     private SimpleTableModel<Role> rolesTableModel;
     private EntityCrudController<Role> crudController;
 
@@ -69,6 +71,7 @@ public class RoleManagerWindow extends JDialog {
         initTabs();
         initCrudController();
         initButtons();
+        handleTableChange();
     }
 
     private void initTabs() {
@@ -146,7 +149,7 @@ public class RoleManagerWindow extends JDialog {
                 if (!readOnly) {
                     for (int i = 0; i < rolesTableModel.getRowCount() - 1; i++) {
                         final Object value = rolesTableModel.getValueAt(i, 0);
-                        if (value instanceof String) {
+                        if (value instanceof String && !value.equals(role.getName())) {
                             roleNames.add((String) value);
                         }
                     }
@@ -184,24 +187,33 @@ public class RoleManagerWindow extends JDialog {
                         return role.isUserCreated() ? CUSTOM : SYSTEM;
                     }
                 }));
-        final RunOnChangeListener enableOrDisableListener = new RunOnChangeListener(new Runnable() {
+        final RunOnChangeListener tableListener = new RunOnChangeListener(new Runnable() {
             @Override
             public void run() {
-                final Role selectedRole = getSelectedRole();
-                if (selectedRole != null) {
-                    roleTextField.setText(getNameForRole(selectedRole));
-                    typeTextField.setText(selectedRole.isUserCreated() ? CUSTOM : SYSTEM);
-                    descriptionTextPane.setText(RbacUtilities.getDescriptionString(selectedRole, true));
-                } else {
-                    roleTextField.setText(StringUtils.EMPTY);
-                    typeTextField.setText(StringUtils.EMPTY);
-                    descriptionTextPane.setText(StringUtils.EMPTY);
-                }
+                handleTableChange();
             }
         });
-        rolesTable.getSelectionModel().addListSelectionListener(enableOrDisableListener);
+        rolesTable.getSelectionModel().addListSelectionListener(tableListener);
+        rolesTableModel.addTableModelListener(tableListener);
         Utilities.setRowSorter(rolesTable, rolesTableModel);
         loadTable();
+    }
+
+    private void handleTableChange() {
+        final Role selectedRole = getSelectedRole();
+        if (selectedRole != null) {
+            roleTextField.setText(getNameForRole(selectedRole));
+            typeTextField.setText(selectedRole.isUserCreated() ? CUSTOM : SYSTEM);
+            descriptionTextPane.setText(RbacUtilities.getDescriptionString(selectedRole, true));
+        } else {
+            roleTextField.setText(StringUtils.EMPTY);
+            typeTextField.setText(StringUtils.EMPTY);
+            descriptionTextPane.setText(StringUtils.EMPTY);
+        }
+        assignmentsPanel.configure(selectedRole);
+        editButton.setEnabled(selectedRole != null && selectedRole.isUserCreated() &&
+                Registry.getDefault().getSecurityProvider().hasPermission(new AttemptedUpdate(EntityType.RBAC_ROLE, selectedRole)));
+        loadCount();
     }
 
     private String getNameForRole(Role role) {
@@ -217,6 +229,9 @@ public class RoleManagerWindow extends JDialog {
 
     private void initButtons() {
         createButton.addActionListener(crudController.createCreateAction());
+        createButton.setEnabled(Registry.getDefault().getSecurityProvider().hasPermission(new AttemptedCreate(EntityType.RBAC_ROLE)));
+        editButton.addActionListener(crudController.createEditAction());
+        Utilities.setDoubleClickAction(rolesTable, editButton);
         closeButton.addActionListener(Utilities.createDisposeAction(this));
         Utilities.setEscAction(this, closeButton);
         helpButton.addActionListener(new ActionListener() {

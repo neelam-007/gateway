@@ -110,8 +110,10 @@ public class EntityCrudController<ET> {
                                             entityTableModel.addRow(0, editedEntity);
                                             // select and scroll to created row
                                             final int selectIndex = entityTable.convertRowIndexToView(0);
-                                            entityTable.setRowSelectionInterval(selectIndex, selectIndex);
-                                            entityTable.scrollRectToVisible(new Rectangle(entityTable.getCellRect(selectIndex, 0, true)));
+                                            if (selectIndex >= 0) {
+                                                entityTable.setRowSelectionInterval(selectIndex, selectIndex);
+                                                entityTable.scrollRectToVisible(new Rectangle(entityTable.getCellRect(selectIndex, 0, true)));
+                                            }
                                         }
                                     } catch (final SaveException e) {
                                         if (e.getCause() instanceof PermissionDeniedException && (((PermissionDeniedException) e.getCause()).getOperation() == OperationType.READ)) {
@@ -158,7 +160,7 @@ public class EntityCrudController<ET> {
                                         try {
                                             final ET savedEntity = doSave(editedEntity);
                                             if (savedEntity != null) {
-                                                entityTableModel.setRowObject(rowIndex, savedEntity);
+                                                entityTableModel.setRowObject(modelIndex, savedEntity);
                                             }
                                         } catch (final SaveException e) {
                                             if (e.getCause() instanceof PermissionDeniedException && (((PermissionDeniedException) e.getCause()).getOperation() == OperationType.READ)) {
