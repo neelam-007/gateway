@@ -147,7 +147,7 @@ CREATE FUNCTION randomLong() RETURNS bigint
     PARAMETER STYLE JAVA NO SQL LANGUAGE JAVA
     EXTERNAL NAME 'com.l7tech.server.upgrade.DerbyFunctions.randomLong';
 
-CREATE FUNCTION randomLongNotReservered() RETURNS bigint
+CREATE FUNCTION randomLongNotReserved() RETURNS bigint
     PARAMETER STYLE JAVA NO SQL LANGUAGE JAVA
     EXTERNAL NAME 'com.l7tech.server.upgrade.DerbyFunctions.randomLongNotReserved';
 
