@@ -161,7 +161,7 @@ CREATE FUNCTION getVariable(keyParam CHAR(128)) RETURNS CHAR(128)
 
 --- JdbcConnection
 ALTER TABLE jdbc_connection ADD COLUMN goid CHAR(16) FOR BIT DATA;
-call setVariable('jdbc_connection_prefix', cast(randomLongNotReservered() as char(21)));
+call setVariable('jdbc_connection_prefix', cast(randomLongNotReserved() as char(21)));
 update jdbc_connection set goid = toGoid(cast(getVariable('jdbc_connection_prefix') as bigint), objectid);
 ALTER TABLE jdbc_connection ALTER COLUMN goid NOT NULL;
 ALTER TABLE jdbc_connection DROP PRIMARY KEY;
@@ -183,7 +183,7 @@ ALTER TABLE service_metrics_details ADD PRIMARY KEY (service_metrics_oid, mappin
 
 --- LogonInfo
 ALTER TABLE logon_info ADD COLUMN goid CHAR(16) FOR BIT DATA;
-call setVariable('logon_info_prefix', cast(randomLongNotReservered() as char(21)));
+call setVariable('logon_info_prefix', cast(randomLongNotReserved() as char(21)));
 update logon_info set goid = toGoid(cast(getVariable('logon_info_prefix') as bigint), objectid);
 ALTER TABLE logon_info ALTER COLUMN goid NOT NULL;
 ALTER TABLE logon_info DROP PRIMARY KEY;
@@ -192,7 +192,7 @@ ALTER TABLE logon_info ADD PRIMARY KEY (goid);
 
 --- SampleMessage
 ALTER TABLE sample_messages ADD COLUMN goid CHAR(16) FOR BIT DATA;
-call setVariable('sample_messages_prefix', cast(randomLongNotReservered() as char(21)));
+call setVariable('sample_messages_prefix', cast(randomLongNotReserved() as char(21)));
 update sample_messages set goid = toGoid(cast(getVariable('sample_messages_prefix') as bigint), objectid);
 ALTER TABLE sample_messages ALTER COLUMN goid NOT NULL;
 ALTER TABLE sample_messages DROP PRIMARY KEY;
@@ -201,7 +201,7 @@ ALTER TABLE sample_messages ADD PRIMARY KEY (goid);
 
 -- ClusterProperty
 ALTER TABLE cluster_properties ADD COLUMN goid CHAR(16) FOR BIT DATA;
-call setVariable('cluster_properties_prefix', cast(randomLongNotReservered() as char(21)));
+call setVariable('cluster_properties_prefix', cast(randomLongNotReserved() as char(21)));
 update cluster_properties set goid = toGoid(cast(getVariable('cluster_properties_prefix') as bigint), objectid);
 update cluster_properties set goid = toGoid(0, objectid) where propkey = 'cluster.hostname';
 update cluster_properties set goid = toGoid(0, objectid) where propkey like 'upgrade.task.%';
