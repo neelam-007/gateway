@@ -12,6 +12,7 @@ import com.l7tech.gui.util.TableUtil;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.comparator.NamedEntityComparator;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import org.apache.commons.lang.WordUtils;
 import org.jetbrains.annotations.Nullable;
@@ -23,6 +24,7 @@ import java.awt.event.ActionListener;
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.l7tech.gui.util.TableUtil.column;
@@ -52,7 +54,7 @@ public class SecurityZoneManagerWindow extends JDialog {
         setContentPane(contentPane);
         setModal(true);
         securityProvider = Registry.getDefault().getSecurityProvider();
-        canCreate = securityProvider.hasPermission(new AttemptedCreateSpecific(EntityType.SECURITY_ZONE, new SecurityZone()));
+        canCreate = securityProvider.hasPermission(new AttemptedCreate(EntityType.SECURITY_ZONE));
 
         closeButton.addActionListener(Utilities.createDisposeAction(this));
         Utilities.setEscAction(this, closeButton);
@@ -126,14 +128,18 @@ public class SecurityZoneManagerWindow extends JDialog {
                 refreshTrees();
                 try {
                     return Registry.getDefault().getRbacAdmin().findSecurityZoneByPrimaryKey(oid);
-                } catch (FindException e) {
-                    throw new SaveException(e);
+                } catch (final FindException e) {
+                    logger.log(Level.WARNING, "Unable to retrieve saved entity: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                    entity.setOid(oid);
+                    return entity;
+                } catch (final PermissionDeniedException e) {
+                    throw new SaveException("Cannot retrieve saved entity: " + ExceptionUtils.getMessage(e), e);
                 }
             }
         });
         ecc.setEntityEditor(new EntityEditor<SecurityZone>() {
             @Override
-            public void displayEditDialog(final SecurityZone zone, final Functions.Unary<Boolean, SecurityZone> afterEditListener) {
+            public void displayEditDialog(final SecurityZone zone, final Functions.UnaryVoidThrows<SecurityZone, SaveException> afterEditListener) {
                 boolean create = PersistentEntity.DEFAULT_OID == zone.getOid();
                 AttemptedOperation operation = create
                         ? new AttemptedCreateSpecific(EntityType.SECURITY_ZONE, zone)

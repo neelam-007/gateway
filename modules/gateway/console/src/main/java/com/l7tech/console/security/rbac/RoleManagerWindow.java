@@ -126,13 +126,17 @@ public class RoleManagerWindow extends JDialog {
                 try {
                     return Registry.getDefault().getRbacAdmin().findRoleByPrimaryKey(oid);
                 } catch (final FindException e) {
-                    throw new SaveException(e);
+                    logger.log(Level.WARNING, "Unable to retrieve saved role: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                    entity.setOid(oid);
+                    return entity;
+                } catch (final PermissionDeniedException e) {
+                    throw new SaveException("Cannot retrieve saved entity: " + ExceptionUtils.getMessage(e), e);
                 }
             }
         });
         crudController.setEntityEditor(new EntityEditor<Role>() {
             @Override
-            public void displayEditDialog(@NotNull final Role role, @NotNull final Functions.Unary<Boolean, Role> afterEditListener) {
+            public void displayEditDialog(@NotNull final Role role, @NotNull final Functions.UnaryVoidThrows<Role, SaveException> afterEditListener) {
                 boolean create = Role.DEFAULT_OID == role.getOid();
                 AttemptedOperation operation = create
                         ? new AttemptedCreateSpecific(EntityType.RBAC_ROLE, role)

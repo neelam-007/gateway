@@ -5,6 +5,7 @@ import com.l7tech.console.panels.OkCancelPanel;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.SecurityZoneUtil;
 import com.l7tech.gateway.common.security.rbac.OperationType;
+import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.gateway.common.security.rbac.RbacAdmin;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.InputValidator;
@@ -15,6 +16,7 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
@@ -50,9 +52,9 @@ public class SecurityZonePropertiesDialog extends JDialog {
     private OperationType operation;
     private Set<EntityType> originalSupportedEntityTypes = new HashSet<>();
     private Map<EntityType, Collection<Serializable>> entitiesToRemoveFromZone = new HashMap<>();
-    private Functions.Unary<Boolean, SecurityZone> afterEditListener;
+    private Functions.UnaryVoidThrows<SecurityZone, SaveException> afterEditListener;
 
-    public SecurityZonePropertiesDialog(@NotNull final Window owner, @NotNull final SecurityZone securityZone, final boolean readOnly, @NotNull final Functions.Unary<Boolean, SecurityZone> afterEditListener) {
+    public SecurityZonePropertiesDialog(@NotNull final Window owner, @NotNull final SecurityZone securityZone, final boolean readOnly, @NotNull final Functions.UnaryVoidThrows<SecurityZone, SaveException> afterEditListener) {
         super(owner, readOnly ? "Security Zone Properties" : securityZone.getOid() == SecurityZone.DEFAULT_OID ? "Create Security Zone" : "Edit Security Zone", DEFAULT_MODALITY_TYPE);
         this.afterEditListener = afterEditListener;
         setContentPane(contentPane);
@@ -88,7 +90,11 @@ public class SecurityZonePropertiesDialog extends JDialog {
         okCancelPanel.getCancelButton().addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(final ActionEvent e) {
-                afterEditListener.call(null);
+                try {
+                    afterEditListener.call(null);
+                } catch (final SaveException ex) {
+                    logger.log(Level.WARNING, "Error cancelling save: " + ExceptionUtils.getMessage(ex), ExceptionUtils.getDebugException(ex));
+                }
                 dispose();
             }
         });
@@ -145,12 +151,17 @@ public class SecurityZonePropertiesDialog extends JDialog {
                     Registry.getDefault().getRbacAdmin().setSecurityZoneForEntities(null, entry.getKey(), entry.getValue());
                 }
             }
-            final boolean successful = afterEditListener.call(data);
-            if (successful) {
-                dispose();
-            }
+            afterEditListener.call(data);
+            dispose();
         } catch (final UpdateException e) {
             DialogDisplayer.showMessageDialog(SecurityZonePropertiesDialog.this, "Error", "Unable to remove entities from this zone.", e);
+        } catch (final SaveException e) {
+            if (e instanceof DuplicateObjectException && StringUtils.containsIgnoreCase(e.getMessage(), "name")) {
+                // name conflict with zone that the user cannot read
+                showDuplicateNameError();
+            } else {
+                DialogDisplayer.showMessageDialog(this, "Unable to save.", "Error", JOptionPane.ERROR_MESSAGE, null);
+            }
         }
     }
 
@@ -281,9 +292,7 @@ public class SecurityZonePropertiesDialog extends JDialog {
         public void actionPerformed(final ActionEvent e) {
             // don't display name validation errors until after user clicks ok
             if (reservedNames.contains(basicPropertiesPanel.getNameField().getText().trim().toLowerCase())) {
-                final String error = MessageFormat.format(RESOURCES.getString(ERROR_UNIQUE_NAME), operation.getName().toLowerCase());
-                DialogDisplayer.showMessageDialog(SecurityZonePropertiesDialog.this, error,
-                        operation.getName() + " Security Zone", JOptionPane.ERROR_MESSAGE, null);
+                showDuplicateNameError();
             } else {
                 final Set<EntityType> selected = getSelectedEntityTypes();
                 if (operation == OperationType.UPDATE && !selected.contains(EntityType.ANY)) {
@@ -313,5 +322,11 @@ public class SecurityZonePropertiesDialog extends JDialog {
                 }
             }
         }
+    }
+
+    private void showDuplicateNameError() {
+        final String error = MessageFormat.format(RESOURCES.getString(ERROR_UNIQUE_NAME), operation.getName().toLowerCase());
+        DialogDisplayer.showMessageDialog(this, error,
+                operation.getName() + " Security Zone", JOptionPane.ERROR_MESSAGE, null);
     }
 }

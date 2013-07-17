@@ -2,12 +2,17 @@ package com.l7tech.console.security.rbac;
 
 import com.l7tech.console.panels.BasicPropertiesPanel;
 import com.l7tech.console.panels.OkCancelPanel;
+import com.l7tech.gateway.common.security.rbac.OperationType;
+import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.Utilities;
+import com.l7tech.objectmodel.DuplicateObjectException;
+import com.l7tech.objectmodel.SaveException;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
@@ -34,9 +39,10 @@ public class RolePropertiesDialog extends JDialog {
     private InputValidator inputValidator;
     private Set<String> reservedNames;
     private String operation;
-    private Functions.Unary<Boolean, Role> afterEditListener;
+    private Functions.UnaryVoidThrows<Role, SaveException> afterEditListener;
 
-    public RolePropertiesDialog(@NotNull final Window owner, @NotNull final Role role, final boolean readOnly, @NotNull final Set<String> reservedNames, @NotNull final Functions.Unary<Boolean, Role> afterEditListener) {
+    public RolePropertiesDialog(@NotNull final Window owner, @NotNull final Role role, final boolean readOnly, @NotNull final Set<String> reservedNames, @NotNull final Functions.UnaryVoidThrows<Role, SaveException> afterEditListener) {
+
         super(owner, readOnly ? "Role Properties" : role.getOid() == Role.DEFAULT_OID ? "Create Role" : "Edit Role", DEFAULT_MODALITY_TYPE);
         this.role = role;
         this.operation = role.getOid() == Role.DEFAULT_OID ? "Create" : "Edit";
@@ -61,7 +67,11 @@ public class RolePropertiesDialog extends JDialog {
         okCancelPanel.getCancelButton().addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(final ActionEvent e) {
-                afterEditListener.call(null);
+                try {
+                    afterEditListener.call(null);
+                } catch (final SaveException ex) {
+                    logger.log(Level.WARNING, "Error cancelling save: " + ExceptionUtils.getMessage(ex), ExceptionUtils.getDebugException(ex));
+                }
                 dispose();
             }
         });
@@ -89,9 +99,16 @@ public class RolePropertiesDialog extends JDialog {
 
     private void save() {
         setDataOnRole(role);
-        final boolean successful = afterEditListener.call(role);
-        if (successful) {
+        try {
+            afterEditListener.call(role);
             dispose();
+        } catch (final SaveException e) {
+            if (e instanceof DuplicateObjectException && StringUtils.containsIgnoreCase(e.getMessage(), "name")) {
+                // name conflict with role that the user cannot read
+                showDuplicateNameError();
+            } else {
+                DialogDisplayer.showMessageDialog(this, "Unable to save.", "Error", JOptionPane.ERROR_MESSAGE, null);
+            }
         }
     }
 
@@ -99,12 +116,16 @@ public class RolePropertiesDialog extends JDialog {
         public void actionPerformed(final ActionEvent e) {
             // don't display name validation errors until after user clicks ok
             if (reservedNames.contains(basicPropertiesPanel.getNameField().getText().trim().toLowerCase())) {
-                final String error = MessageFormat.format(RESOURCES.getString(ERROR_UNIQUE_NAME), operation.toLowerCase());
-                DialogDisplayer.showMessageDialog(RolePropertiesDialog.this, error,
-                        operation + " Role", JOptionPane.ERROR_MESSAGE, null);
+                showDuplicateNameError();
             } else {
                 save();
             }
         }
+    }
+
+    private void showDuplicateNameError() {
+        final String error = MessageFormat.format(RESOURCES.getString(ERROR_UNIQUE_NAME), operation.toLowerCase());
+        DialogDisplayer.showMessageDialog(this, error,
+                operation + " Role", JOptionPane.ERROR_MESSAGE, null);
     }
 }

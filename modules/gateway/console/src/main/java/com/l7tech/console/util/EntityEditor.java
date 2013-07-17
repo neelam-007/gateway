@@ -1,5 +1,6 @@
 package com.l7tech.console.util;
 
+import com.l7tech.objectmodel.SaveException;
 import com.l7tech.util.Functions;
 
 /**
@@ -17,5 +18,5 @@ public interface EntityEditor<ET> {
      *                          when the edit is complete with either the edited entity or null if the edit was cancelled.
      *
      */
-    void displayEditDialog(ET entity, Functions.Unary<Boolean, ET> afterEditListener);
+    void displayEditDialog(ET entity, Functions.UnaryVoidThrows<ET, SaveException> afterEditListener);
 }

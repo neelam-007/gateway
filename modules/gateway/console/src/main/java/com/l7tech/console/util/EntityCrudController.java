@@ -1,5 +1,7 @@
 package com.l7tech.console.util;
 
+import com.l7tech.gateway.common.security.rbac.OperationType;
+import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.gui.SimpleTableModel;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.TableUtil;
@@ -94,31 +96,45 @@ public class EntityCrudController<ET> {
     public ActionListener createCreateAction() {
         return new ActionListener() {
             @Override
-            public void actionPerformed(ActionEvent e) {
+            public void actionPerformed(final ActionEvent e) {
                 if (entityCreator != null) {
-                    ET entity = entityCreator.createNewEntity();
+                    final ET entity = entityCreator.createNewEntity();
                     if (entity != null && entityEditor != null) {
-                        entityEditor.displayEditDialog(entity, new Functions.Unary<Boolean, ET>() {
+                        entityEditor.displayEditDialog(entity, new Functions.UnaryVoidThrows<ET, SaveException>() {
                             @Override
-                            public Boolean call(ET editedEntity) {
-                                boolean successful = true;
+                            public void call(final ET editedEntity) throws SaveException {
                                 if (editedEntity != null) {
-                                    if (null != (editedEntity = doSave(editedEntity))) {
-                                        entityTableModel.addRow(0, editedEntity);
-                                        // select and scroll to created row
-                                        final int selectIndex = entityTable.convertRowIndexToView(0);
-                                        entityTable.setRowSelectionInterval(selectIndex, selectIndex);
-                                        entityTable.scrollRectToVisible(new Rectangle(entityTable.getCellRect(selectIndex, 0, true)));
-                                    } else {
-                                        successful = false;
+                                    try {
+                                        final ET savedEntity = doSave(editedEntity);
+                                        if (savedEntity != null) {
+                                            entityTableModel.addRow(0, editedEntity);
+                                            // select and scroll to created row
+                                            final int selectIndex = entityTable.convertRowIndexToView(0);
+                                            entityTable.setRowSelectionInterval(selectIndex, selectIndex);
+                                            entityTable.scrollRectToVisible(new Rectangle(entityTable.getCellRect(selectIndex, 0, true)));
+                                        }
+                                    } catch (final SaveException e) {
+                                        if (e.getCause() instanceof PermissionDeniedException && (((PermissionDeniedException) e.getCause()).getOperation() == OperationType.READ)) {
+                                            DialogDisplayer.showMessageDialog(entityTable, "You do not have permission to view the saved entity.", "Error", JOptionPane.ERROR_MESSAGE, null);
+                                        } else {
+                                            throw e;
+                                        }
                                     }
                                 }
-                                return successful;
                             }
                         });
                     } else if (entity != null) {
-                        if (null != (entity = doSave(entity)))
-                            entityTableModel.addRow(entity);
+                        logger.log(Level.WARNING, "Entity Editor not configured. Saving entity without user input.");
+                        try {
+                            final ET savedEntity = doSave(entity);
+                            if (savedEntity != null) {
+                                entityTableModel.addRow(entity);
+                            }
+                        } catch (final SaveException ex) {
+                            final String mess = "Unable to save: " + ExceptionUtils.getMessage(ex);
+                            logger.log(Level.WARNING, mess, e);
+                            DialogDisplayer.showMessageDialog(entityTable, mess, null);
+                        }
                     }
                 }
             }
@@ -135,18 +151,24 @@ public class EntityCrudController<ET> {
                         final int modelIndex = entityTable.convertRowIndexToModel(rowIndex);
                         final ET entity = entityTableModel.getRowObject(modelIndex);
                         if (entity != null) {
-                            entityEditor.displayEditDialog(entity, new Functions.Unary<Boolean, ET>() {
+                            entityEditor.displayEditDialog(entity, new Functions.UnaryVoidThrows<ET, SaveException>() {
                                 @Override
-                                public Boolean call(ET editedEntity) {
-                                    boolean successful = true;
+                                public void call(final ET editedEntity) throws SaveException {
                                     if (editedEntity != null) {
-                                        if (null != (editedEntity = doSave(editedEntity))) {
-                                            entityTableModel.setRowObject(rowIndex, editedEntity);
-                                        } else {
-                                            successful = false;
+                                        try {
+                                            final ET savedEntity = doSave(editedEntity);
+                                            if (savedEntity != null) {
+                                                entityTableModel.setRowObject(rowIndex, savedEntity);
+                                            }
+                                        } catch (final SaveException e) {
+                                            if (e.getCause() instanceof PermissionDeniedException && (((PermissionDeniedException) e.getCause()).getOperation() == OperationType.READ)) {
+                                                entityTableModel.removeRowAt(modelIndex);
+                                                DialogDisplayer.showMessageDialog(entityTable, "You do not have permission to view the saved entity.", "Error", JOptionPane.ERROR_MESSAGE, null);
+                                            } else {
+                                                throw e;
+                                            }
                                         }
                                     }
-                                    return successful;
                                 }
                             });
                         }
@@ -190,17 +212,11 @@ public class EntityCrudController<ET> {
     // Protected
     //
 
-    protected ET doSave(ET entity) {
+    protected ET doSave(ET entity) throws SaveException {
+        ET savedEntity = null;
         if (entitySaver != null) {
-            try {
-                return entitySaver.saveEntity(entity);
-            } catch (SaveException e) {
-                final String mess = "Unable to save: " + ExceptionUtils.getMessage(e);
-                logger.log(Level.WARNING, mess, e);
-                DialogDisplayer.showMessageDialog(entityTable, mess, null);
-                return null;
-            }
+            savedEntity = entitySaver.saveEntity(entity);
         }
-        return null;
+        return savedEntity;
     }
 }
