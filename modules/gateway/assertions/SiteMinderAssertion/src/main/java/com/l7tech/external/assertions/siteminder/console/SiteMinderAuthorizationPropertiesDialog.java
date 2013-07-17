@@ -28,7 +28,6 @@ public class SiteMinderAuthorizationPropertiesDialog extends AssertionProperties
 
     private static final Pattern AGENTID_PATTERN = Pattern.compile("^\\s*([a-zA-Z0-9]+).name\\s*=",Pattern.CASE_INSENSITIVE|Pattern.MULTILINE);
 
-    private JComboBox agentComboBox;
     private JRadioButton useCookieFromSmContextRadioButton;
     private JRadioButton useCookieFromContextRadioButton;
     private TargetVariablePanel cookieVariablePanel;
@@ -58,10 +57,6 @@ public class SiteMinderAuthorizationPropertiesDialog extends AssertionProperties
         initAdminConnection();
         siteminderPrefixVariablePanel.setVariable(SiteMinderAuthenticateAssertion.DEFAULT_PREFIX);
         siteminderPrefixVariablePanel.setDefaultVariableOrPrefix(SiteMinderAuthenticateAssertion.DEFAULT_PREFIX);
-        DefaultComboBoxModel<String> agentComboBoxModel = new DefaultComboBoxModel<>();
-        populateAgentComboBoxModel(agentComboBoxModel);
-        agentComboBox.setModel(agentComboBoxModel);
-        agentComboBox.setSelectedIndex(0);
 
         useCookieFromSmContextRadioButton.setSelected(true);
         useCookieFromSmContextRadioButton.addActionListener(new ActionListener() {
@@ -175,7 +170,6 @@ public class SiteMinderAuthorizationPropertiesDialog extends AssertionProperties
      */
     @Override
     public void setData(SiteMinderAuthorizeAssertion assertion) {
-        agentComboBox.setSelectedItem(assertion.getAgentID());
         useCookieFromSmContextRadioButton.setSelected(assertion.isUseCustomCookieName());
         useCookieFromContextRadioButton.setSelected(assertion.isUseVarAsCookieSource());
         cookieVariablePanel.setVariable(assertion.getCookieSourceVar());
@@ -215,7 +209,6 @@ public class SiteMinderAuthorizationPropertiesDialog extends AssertionProperties
      */
     @Override
     public SiteMinderAuthorizeAssertion getData(SiteMinderAuthorizeAssertion assertion) throws ValidationException {
-        assertion.setAgentID((String)agentComboBox.getSelectedItem());
         assertion.setUseCustomCookieName(useCookieFromSmContextRadioButton.isSelected());
         assertion.setUseVarAsCookieSource(useCookieFromContextRadioButton.isSelected());
         assertion.setCookieSourceVar(cookieVariablePanel.getVariable());

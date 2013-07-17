@@ -70,7 +70,7 @@ public class SiteMinderAgentTest {
     @Test
     public void testSiteMinderHighLevelAgent() throws Exception {
         SiteMinderHighLevelAgent hla = new SiteMinderHighLevelAgent(AGENT_CONFIG, "aw80");
-//        hla.initializeAgent(AGENT_CONFIG, "aw80");
+//        hla.checkAndInitialize(AGENT_CONFIG, "aw80");
         SiteMinderContext context = new SiteMinderContext();
 
         assertTrue(hla.checkProtected("aw80", "127.0.0.1", "/resfilter*", "POST", context));

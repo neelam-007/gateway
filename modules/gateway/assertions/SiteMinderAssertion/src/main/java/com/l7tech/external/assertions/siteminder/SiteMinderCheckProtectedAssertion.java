@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.siteminder;
 
+import com.l7tech.external.assertions.siteminder.util.SiteMinderAssertionUtil;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
@@ -144,6 +145,6 @@ public class SiteMinderCheckProtectedAssertion extends Assertion implements Uses
      */
     @Override
     public VariableMetadata[] getVariablesSet() {
-        return new VariableMetadata[] {new VariableMetadata(getPrefix() + "." + "smcontext", true, false, null, false, DataType.BINARY)};
+        return new VariableMetadata[] {new VariableMetadata(getPrefix() + "." + SiteMinderAssertionUtil.SMCONTEXT, true, false, null, false, DataType.BINARY)};
     }
 }

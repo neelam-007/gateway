@@ -309,10 +309,6 @@ public class SiteMinderLowLevelAgent {
 
     /**
      * Validate the use session using the sessionDef extracted from the DecodeSSOToken()
-     *
-     *
-     *
-     *
      * @param userCreds user credential to validate
      * @param userIp    the ip address of the client
      * @param ssoToken  ssoToken which contains sessionDef after decoded
@@ -363,20 +359,25 @@ public class SiteMinderLowLevelAgent {
            */ }
         }
 
-        SessionDef sd = createSmSessionFromAttributes(attrList);
+        SessionDef sessionDef = createSmSessionFromAttributes(attrList);
 
-        result = agentApi.loginEx(getClientIp(userIp), resCtxDef, realmDef, userCreds, sd, attrList, transactionId);
+        result = agentApi.loginEx(getClientIp(userIp), resCtxDef, realmDef, userCreds, sessionDef, attrList, transactionId);
 
         storeAttributes(attributes, attrList);//Populate context variable even if apiLogin failed
 
         if (result != AgentAPI.YES) {
             logger.log(Level.FINE, "SiteMinder authorization attempt - Unauthorized session = '" + ssoToken + "', resource '" + SiteMinderUtil.safeNull(resCtxDef.resource) + "', result code '" + result + "'.");
-            //TODO: change to detouch from context variables
-            attributes.add(new Pair<String, Object>(SiteMinderAgentConstants.SESS_DEF_REASON, getSessionDefReasonCodeAsString(sd)));
-            if (result == AgentAPI.NO)
+            attributes.add(new Pair<String, Object>(SiteMinderAgentConstants.SESS_DEF_REASON, getSessionDefReasonCodeAsString(sessionDef)));
+            if (result == AgentAPI.NO) {//should we also check the reason code as well?
                 logger.log(Level.WARNING,"Session Cookie expired!");
-
+                //TODO: logout session?
+            }
         }
+        else {
+            context.setSsoToken(ssoToken);
+        }
+        //finally set the session def
+        context.setSessionDef(sessionDef);
 
         return result;
     }
@@ -406,7 +407,43 @@ public class SiteMinderLowLevelAgent {
                 //fill in the session spec
                 sd.spec = new String(att.value);
             }
-            //TODO: fill in other session fields such as, idleTimeout, maxTimeout, sessionLastTime, sessionStartTime
+            else if (AgentAPI.ATTR_STARTSESSIONTIME == attrId) {
+                try {
+                    sd.sessionStartTime = Integer.parseInt(new String(att.value));
+                    sd.currentServerTime = sd.sessionStartTime;
+                } catch (NumberFormatException e) {
+                    sd.sessionStartTime = -1;
+                    sd.currentServerTime = -1;
+                }
+            }
+            else if(AgentAPI.ATTR_LASTSESSIONTIME == attrId) {
+                try {
+                    sd.sessionLastTime = Integer.parseInt(new String(att.value));
+                } catch (NumberFormatException e) {
+                    sd.sessionLastTime = -1;
+                }
+            }
+            else if(AgentAPI.ATTR_LASTSESSIONTIME == attrId) {
+                try {
+                    sd.sessionLastTime = Integer.parseInt(new String(att.value));
+                } catch (NumberFormatException e) {
+                    sd.sessionLastTime = -1;
+                }
+            }
+            else if(AgentAPI.ATTR_IDLESESSIONTIMEOUT == attrId) {
+                try {
+                    sd.idleTimeout = Integer.parseInt(new String(att.value));
+                } catch (NumberFormatException e) {
+                    sd.idleTimeout = -1;
+                }
+            }
+            else if(AgentAPI.ATTR_MAXSESSIONTIMEOUT == attrId) {
+                try {
+                    sd.maxTimeout = Integer.parseInt(new String(att.value));
+                } catch (NumberFormatException e) {
+                    sd.maxTimeout = -1;
+                }
+            }
         }
 
         return sd;
@@ -545,6 +582,7 @@ public class SiteMinderLowLevelAgent {
             token = sb.toString();
             logger.log(Level.FINE, "Authenticated - principal '" + userCreds.name + "'" + " resource '" + SiteMinderUtil.safeNull(resource) + "' obtained SSO token : " + token);
             context.setSsoToken(token);
+            retCode = AgentAPI.YES;//set for consistency
         } else {
             logger.log(Level.FINE, "Could not obtain SSO Token - result code " + retCode);
             context.setSsoToken(null);

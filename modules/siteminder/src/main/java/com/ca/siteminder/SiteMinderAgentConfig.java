@@ -369,7 +369,7 @@ public class SiteMinderAgentConfig {
         if (agentID != null ? !agentID.equals(that.agentID) : that.agentID != null) return false;
         if (agentName != null ? !agentName.equals(that.agentName) : that.agentName != null) return false;
         if (agentSecret != null ? !agentSecret.equals(that.agentSecret) : that.agentSecret != null) return false;
-        if (clusters != null ? !clusters.equals(that.clusters) : that.clusters != null) return false;
+//        if (clusters != null ? !clusters.equals(that.clusters) : that.clusters != null) return false;
         if (fipsMode != null ? !fipsMode.equals(that.fipsMode) : that.fipsMode != null) return false;
         if (hostname != null ? !hostname.equals(that.hostname) : that.hostname != null) return false;
 
@@ -388,7 +388,7 @@ public class SiteMinderAgentConfig {
         result = 31 * result + clusterFailOverThreshold;
         result = 31 * result + (hostname != null ? hostname.hashCode() : 0);
         result = 31 * result + (fipsMode != null ? fipsMode.hashCode() : 0);
-        result = 31 * result + (clusters != null ? clusters.hashCode() : 0);
+//        result = 31 * result + (clusters != null ? clusters.hashCode() : 0);
         return result;
     }
 

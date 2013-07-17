@@ -8,6 +8,8 @@ import java.util.Map;
 
 public class SiteMinderAssertionUtil {
 
+    public static final String SMCONTEXT = "smcontext";
+
     //private constructor
     private  SiteMinderAssertionUtil() {
 

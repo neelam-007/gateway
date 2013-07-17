@@ -13,34 +13,39 @@ import netegrity.siteminder.javaagent.*;
  */
 public class SiteMinderHighLevelAgent {
     private static final Logger logger = Logger.getLogger(SiteMinderHighLevelAgent.class.getName());
-    //private Map<String, SiteMinderLowLevelAgent> agentMap = new ConcurrentHashMap<>();
-    private final SiteMinderLowLevelAgent agent;
-    private SiteMinderAgentConfig agentConfig;
+    private static Map<String, SiteMinderLowLevelAgent> agentMap = new ConcurrentHashMap<>();
+//    private final SiteMinderLowLevelAgent agent;
+//    private SiteMinderAgentConfig agentConfig;
 
 
     public SiteMinderHighLevelAgent(String currentConfig, final String agentId) throws SiteMinderAgentConfigurationException,
             SiteMinderApiClassException {
-        Config config = new Config(currentConfig);
-        agentConfig = config.getAgentConfig(agentId);
-        agent = new SiteMinderLowLevelAgent(agentConfig);
+//        Config config = new Config(currentConfig);
+//        agentConfig = config.getAgentConfig(agentId);
+
+//        checkAndInitialize(currentConfig, agentId);
     }
 
-    public boolean checkConfigModified(String currentConfig, String agentId) throws SiteMinderAgentConfigurationException {
-        Config config = new Config(currentConfig);
-        return !agentConfig.equals(config.getAgentConfig(agentId));
+    public SiteMinderHighLevelAgent() {
+
     }
+
+/*    public boolean checkConfigModified(String currentConfig, String agentId) throws SiteMinderAgentConfigurationException, SiteMinderApiClassException {
+
+        return checkAndInitialize(currentConfig, agentId);
+    }*/
     //TODO: modify to user generic entity instead of simple text
-/*    public void initializeAgent(String currentConfig, final String agentId)
+    public static boolean checkAndInitialize(String currentConfig, final String agentId)
             throws SiteMinderAgentConfigurationException, SiteMinderApiClassException {
 
-        boolean modified = false;
+        boolean modified = true;
         SiteMinderLowLevelAgent agent = null;
         Config config = new Config(currentConfig);
         SiteMinderAgentConfig agentConfig = config.getAgentConfig(agentId);
 
         if(agentMap.containsKey(agentId)){
            agent = agentMap.get(agentId);
-           modified = agentConfig.equals(agent.getConfig());
+           modified = !agentConfig.equals(agent.getConfig());
         }
 
 
@@ -51,7 +56,9 @@ public class SiteMinderHighLevelAgent {
 
         }
 
-    }*/
+        return modified;
+
+    }
 
     /**
      *
@@ -67,7 +74,7 @@ public class SiteMinderHighLevelAgent {
                               final String resource,
                               final String action,
                               SiteMinderContext context) throws SiteMinderApiClassException {
-//        SiteMinderLowLevelAgent agent = agentMap.get(agentName);
+        SiteMinderLowLevelAgent agent = agentMap.get(agentName);
         if(agent == null) throw new SiteMinderApiClassException("Unable to find SiteMinder Agent with id=" + agentName);
 
         if(context == null) throw new SiteMinderApiClassException("SiteMinderContext object is null!");//should never happen
@@ -163,6 +170,8 @@ public class SiteMinderHighLevelAgent {
     public int processAuthorizationRequest(final String userIp, final String ssoCookie,final SiteMinderContext context) throws SiteMinderApiClassException {
         if(context == null) throw new SiteMinderApiClassException("SiteMinderContext object is null!");//should never happen
 
+        SiteMinderLowLevelAgent agent = agentMap.get(context.getAgentId());
+
         if(agent == null) throw new SiteMinderApiClassException("Unable to find SiteMinder Agent with id=" + context.getAgentId());
 
         return agent.authorize(ssoCookie, userIp, context.getTransactionId(), context);
@@ -186,6 +195,8 @@ public class SiteMinderHighLevelAgent {
                                             final SiteMinderContext context)
         throws SiteMinderApiClassException {
         if(context == null) throw new SiteMinderApiClassException("SiteMinderContext object is null!");//should never happen
+
+        SiteMinderLowLevelAgent agent = agentMap.get(context.getAgentId());
 
         if(agent == null) throw new SiteMinderApiClassException("Unable to find SiteMinder Agent with id=" + context.getAgentId());
 
@@ -216,22 +227,22 @@ public class SiteMinderHighLevelAgent {
                 logger.log(Level.WARNING, "Unable to validate user session!");
                 //TODO: should we logout the session?
             }
-            else {
-                result=agent.authorize(ssoCookie, userIp, context.getTransactionId(), context);
-                if(result != AgentAPI.YES) {
-                    logger.log(Level.WARNING, "SiteMinder SSO Token cannot be authorized!");
-                }
-            }
+//            else {
+//                result=agent.authorize(ssoCookie, userIp, context.getTransactionId(), context);
+//                if(result != AgentAPI.YES) {
+//                    logger.log(Level.WARNING, "SiteMinder SSO Token cannot be authorized!");
+//                }
+//            }
         }
         else {
             // authenticate and authorize
             result = agent.authenticate( userCreds, userIp, context.getTransactionId(), context);
-            if(result == AgentAPI.SUCCESS ){
-                newSsoCookie = context.getSsoToken();
-                if(newSsoCookie != null) {
-                    result = agent.authorize(newSsoCookie, userIp, context.getTransactionId(), context);
-                }
-            }
+//            if(result == AgentAPI.SUCCESS ){
+//                newSsoCookie = context.getSsoToken();
+//                if(newSsoCookie != null) {
+//                    result = agent.authorize(newSsoCookie, userIp, context.getTransactionId(), context);
+//                }
+//            }
         }
         return result;
     }

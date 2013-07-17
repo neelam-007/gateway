@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.siteminder;
 
+import com.l7tech.external.assertions.siteminder.util.SiteMinderAssertionUtil;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
@@ -24,7 +25,6 @@ public class SiteMinderAuthorizeAssertion extends Assertion implements UsesVaria
 
     public static final String DEFAULT_SMSESSION_NAME = "SMSESSION";
     public static final String DEFAULT_PREFIX = "siteminder";
-    public static final String SMCONTEXT = "smcontext";
 
     private String agentID;
     private boolean useVarAsCookieSource;
@@ -151,7 +151,7 @@ public class SiteMinderAuthorizeAssertion extends Assertion implements UsesVaria
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     @Override
     public String[] getVariablesUsed() {
-        return Syntax.getReferencedNames(cookieSourceVar, cookieDomain, cookieComment, cookiePath, cookieSecure, cookieVersion, prefix, prefix + "." + SMCONTEXT);
+        return Syntax.getReferencedNames(cookieSourceVar, cookieDomain, cookieComment, cookiePath, cookieSecure, cookieVersion, prefix, prefix + "." + SiteMinderAssertionUtil.SMCONTEXT);
     }
 
     //
@@ -179,13 +179,13 @@ public class SiteMinderAuthorizeAssertion extends Assertion implements UsesVaria
         // Add to palette folder
         //   accessControl,
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { "accessControl" });
-        meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/authentication.gif");
+        meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/user16.png");
 
         // Enable automatic policy advice (default is no advice unless a matching Advice subclass exists)
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
 
         // Set up smart Getter for nice, informative policy node name, for GUI
-        meta.put(AssertionMetadata.POLICY_NODE_ICON, "com/l7tech/console/resources/authentication.gif");
+        meta.put(AssertionMetadata.POLICY_NODE_ICON, "com/l7tech/console/resources/user16.png");
 
         // request default feature set name for our class name, since we are a known optional module
         // that is, we want our required feature set to be "assertion:SiteMinder" rather than "set:modularAssertions"
@@ -230,6 +230,6 @@ public class SiteMinderAuthorizeAssertion extends Assertion implements UsesVaria
      */
     @Override
     public VariableMetadata[] getVariablesSet() {
-        return new VariableMetadata[] {new VariableMetadata(getPrefix() + "." + SMCONTEXT, true, false, null, false, DataType.BINARY)};
+        return new VariableMetadata[] {new VariableMetadata(getPrefix() + "." + SiteMinderAssertionUtil.SMCONTEXT, true, false, null, false, DataType.BINARY)};
     }
 }

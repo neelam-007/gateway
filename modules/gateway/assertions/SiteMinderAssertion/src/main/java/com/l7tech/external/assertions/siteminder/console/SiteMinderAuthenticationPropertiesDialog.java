@@ -29,7 +29,6 @@ public class SiteMinderAuthenticationPropertiesDialog extends AssertionPropertie
     private static final Pattern AGENTID_PATTERN = Pattern.compile("^\\s*([a-zA-Z0-9]+).name\\s*=",Pattern.CASE_INSENSITIVE|Pattern.MULTILINE);
     
     private JPanel propertyPanel;
-    private JComboBox agentComboBox;
     private JRadioButton useLastCredentialsRadioButton;
     private JRadioButton specifyCredentialsRadioButton;
     private JTextField credentialsTextField;
@@ -55,10 +54,6 @@ public class SiteMinderAuthenticationPropertiesDialog extends AssertionPropertie
         initAdminConnection();
         siteminderPrefixVariablePanel.setVariable(SiteMinderAuthenticateAssertion.DEFAULT_PREFIX);
         siteminderPrefixVariablePanel.setDefaultVariableOrPrefix(SiteMinderAuthenticateAssertion.DEFAULT_PREFIX);
-        DefaultComboBoxModel<String> agentComboBoxModel = new DefaultComboBoxModel<>();
-        populateAgentComboBoxModel(agentComboBoxModel);
-        agentComboBox.setModel(agentComboBoxModel);
-        agentComboBox.setSelectedIndex(0);
 
 
         smCookieNameTextField.setText(SiteMinderAuthenticateAssertion.DEFAULT_SMSESSION_NAME);
@@ -129,7 +124,6 @@ public class SiteMinderAuthenticationPropertiesDialog extends AssertionPropertie
      */
     @Override
     public void setData(SiteMinderAuthenticateAssertion assertion) {
-        agentComboBox.setSelectedItem(assertion.getAgentID());
         authenticateViaSiteMinderCookieCheckBox.setSelected(assertion.isUseSMCookie());
         useCookieFromRequestRadioButton.setSelected(assertion.isUseCustomCookieName());
         if(assertion.getCookieNameVariable() != null && !assertion.getCookieNameVariable().isEmpty()) {
@@ -163,7 +157,6 @@ public class SiteMinderAuthenticationPropertiesDialog extends AssertionPropertie
      */
     @Override
     public SiteMinderAuthenticateAssertion getData(SiteMinderAuthenticateAssertion assertion) throws ValidationException {
-        assertion.setAgentID((String)agentComboBox.getSelectedItem());
         assertion.setUseSMCookie(authenticateViaSiteMinderCookieCheckBox.isSelected());
         assertion.setUseCustomCookieName(useCookieFromRequestRadioButton.isSelected());
         assertion.setCookieNameVariable(smCookieNameTextField.getText());
