@@ -790,7 +790,7 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
                 }
 
                 @Override
-                public void addParameter(String paramName, String paramValue) throws IllegalArgumentException, IllegalStateException {
+                public void addParameters(List<String[]> parameters) throws IllegalArgumentException, IllegalStateException {
                     throw new IllegalStateException("The bridge currently does not support form posts");
                 }
 

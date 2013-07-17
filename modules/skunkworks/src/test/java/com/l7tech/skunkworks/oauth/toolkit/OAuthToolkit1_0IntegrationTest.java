@@ -5,6 +5,7 @@ import com.l7tech.common.http.prov.apache.CommonsHttpClient;
 import com.l7tech.common.http.prov.apache.components.HttpComponentsClient;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.test.BugNumber;
+import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.junit.Before;
@@ -15,7 +16,9 @@ import java.io.UnsupportedEncodingException;
 import java.net.PasswordAuthentication;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.*;
@@ -212,7 +215,10 @@ public class OAuthToolkit1_0IntegrationTest {
     @Test
     public void requestTokenEndpointDuplicateParameter() throws Exception {
         final GenericHttpRequest request = createRequestTokenEndpointRequest(createDefaultRequestTokenParameters());
-        request.addParameter("oauth_callback", "duplicateCallback");
+        List<String[]> params = new ArrayList<String[]>();
+        String[] param = new String[] {"oauth_callback", "duplicateCallback"};
+        params.add(param);
+        request.addParameters(params);
         final GenericHttpResponse response = request.getResponse();
         final String responseBody = new String(IOUtils.slurpStream(response.getInputStream()));
         assertEquals(400, response.getStatus());
@@ -309,7 +315,10 @@ public class OAuthToolkit1_0IntegrationTest {
     @Test
     public void accessTokenEndpointDuplicateParameter() throws Exception {
         final GenericHttpRequest request = createAccessTokenEndpointRequest(createDefaultAccessTokenParameters());
-        request.addParameter("oauth_token", "testTokenDuplicate");
+        List<String[]> params = new ArrayList<String[]>();
+        String[] param = new String[] {"oauth_token", "testTokenDuplicate"};
+        params.add(param);
+        request.addParameters(params);
         final GenericHttpResponse response = request.getResponse();
         final String responseBody = new String(IOUtils.slurpStream(response.getInputStream()));
         assertEquals(400, response.getStatus());
@@ -624,9 +633,14 @@ public class OAuthToolkit1_0IntegrationTest {
         requestParams.setSslSocketFactory(getSSLSocketFactory());
         requestParams.setContentType(ContentTypeHeader.APPLICATION_X_WWW_FORM_URLENCODED);
         final GenericHttpRequest request = client.createRequest(HttpMethod.POST, requestParams);
+        List<String[]> postParams = new ArrayList<String[]>();
         for (final Map.Entry<String, String> entry : createDefaultAccessTokenParameters().entrySet()) {
-            request.addParameter(entry.getKey(), entry.getValue());
+            String[] postParam = new String[2];
+            postParam[0] = entry.getKey();
+            postParam[1] = entry.getValue();
+            postParams.add(postParam);
         }
+        request.addParameters(postParams);
         final GenericHttpResponse response = request.getResponse();
         final String responseBody = new String(IOUtils.slurpStream(response.getInputStream()));
         assertEquals(400, response.getStatus());
@@ -639,9 +653,14 @@ public class OAuthToolkit1_0IntegrationTest {
         params.setPasswordAuthentication(passwordAuthentication);
         params.setExtraHeaders(new HttpHeader[]{new GenericHttpHeader("Content-Type", "application/x-www-form-urlencoded")});
         final GenericHttpRequest request = client.createRequest(HttpMethod.POST, params);
+        List<String[]> postParams = new ArrayList<String[]>();
         for (final Map.Entry<String, String> entry : parameters.entrySet()) {
-            request.addParameter(entry.getKey(), entry.getValue());
+            String[] postParam = new String[2];
+            postParam[0] = entry.getKey();
+            postParam[1] = entry.getValue();
+            postParams.add(postParam);
         }
+        request.addParameters(postParams);
         return request;
     }
 
@@ -694,9 +713,14 @@ public class OAuthToolkit1_0IntegrationTest {
         requestParams.setSslSocketFactory(getSSLSocketFactory());
         requestParams.setContentType(ContentTypeHeader.APPLICATION_X_WWW_FORM_URLENCODED);
         final GenericHttpRequest request = client.createRequest(HttpMethod.POST, requestParams);
+        List<String[]> postParams = new ArrayList<String[]>();
         for (final Map.Entry<String, String> entry : parameters.entrySet()) {
-            request.addParameter(entry.getKey(), entry.getValue());
+            String[] postParam = new String[2];
+            postParam[0] = entry.getKey();
+            postParam[1] = entry.getValue();
+            postParams.add(postParam);
         }
+        request.addParameters(postParams);
         return request;
     }
 
@@ -706,9 +730,14 @@ public class OAuthToolkit1_0IntegrationTest {
         requestParams.setSslSocketFactory(getSSLSocketFactory());
         requestParams.setContentType(ContentTypeHeader.APPLICATION_X_WWW_FORM_URLENCODED);
         final GenericHttpRequest request = client.createRequest(HttpMethod.POST, requestParams);
+        List<String[]> postParams = new ArrayList<String[]>();
         for (final Map.Entry<String, String> entry : parameters.entrySet()) {
-            request.addParameter(entry.getKey(), entry.getValue());
+            String[] postParam = new String[2];
+            postParam[0] = entry.getKey();
+            postParam[1] = entry.getValue();
+            postParams.add(postParam);
         }
+        request.addParameters(postParams);
         return request;
     }
 

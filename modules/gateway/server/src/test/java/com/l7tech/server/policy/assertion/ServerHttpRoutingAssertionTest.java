@@ -413,8 +413,10 @@ public class ServerHttpRoutingAssertionTest {
             public MockGenericHttpClient.MockGenericHttpRequest onCreateRequest(HttpMethod method, GenericHttpRequestParams params, MockGenericHttpClient.MockGenericHttpRequest request) {
                 return mockClient.new MockGenericHttpRequest(){
                     @Override
-                    public void addParameter(final String paramName, final String paramValue) throws IllegalArgumentException, IllegalStateException {
-                        actualParameters.put(paramName, paramValue);
+                    public void addParameters(List<String[]> parameters) throws IllegalArgumentException, IllegalStateException {
+                        for (String[] parameter: parameters) {
+                            actualParameters.put(parameter[0], parameter[1]);
+                        }
                     }
                 };
             }
@@ -470,8 +472,10 @@ public class ServerHttpRoutingAssertionTest {
             public MockGenericHttpClient.MockGenericHttpRequest onCreateRequest(HttpMethod method, GenericHttpRequestParams params, MockGenericHttpClient.MockGenericHttpRequest request) {
                 return mockClient.new MockGenericHttpRequest(){
                     @Override
-                    public void addParameter(final String paramName, final String paramValue) throws IllegalArgumentException, IllegalStateException {
-                        actualParameters.put(paramName, paramValue);
+                    public void addParameters(List<String[]> parameters) throws IllegalArgumentException, IllegalStateException {
+                        for (String[] parameter: parameters) {
+                            actualParameters.put(parameter[0], parameter[1]);
+                        }
                     }
                 };
             }
@@ -507,8 +511,10 @@ public class ServerHttpRoutingAssertionTest {
             public MockGenericHttpClient.MockGenericHttpRequest onCreateRequest(HttpMethod method, GenericHttpRequestParams params, MockGenericHttpClient.MockGenericHttpRequest request) {
                 return mockClient.new MockGenericHttpRequest(){
                     @Override
-                    public void addParameter(final String paramName, final String paramValue) throws IllegalArgumentException, IllegalStateException {
-                        actualParameters.put(paramName, paramValue);
+                    public void addParameters(List<String[]> parameters) throws IllegalArgumentException, IllegalStateException {
+                        for (String[] parameter: parameters) {
+                            actualParameters.put(parameter[0], parameter[1]);
+                        }
                     }
                 };
             }

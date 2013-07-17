@@ -24,6 +24,7 @@ import org.xml.sax.EntityResolver;
 import java.io.IOException;
 import java.io.InputStream;
 import java.text.ParseException;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
 
@@ -197,8 +198,8 @@ public class HttpSchemaSourceResolver implements PostStartupApplicationListener,
                     }
 
                     @Override
-                    public void addParameter(String name, String value) throws IllegalArgumentException, IllegalStateException {
-                        request.addParameter(name, value);
+                    public void addParameters(List<String[]> parameters) throws IllegalArgumentException, IllegalStateException {
+                        request.addParameters(parameters);
                     }
 
                     @Override

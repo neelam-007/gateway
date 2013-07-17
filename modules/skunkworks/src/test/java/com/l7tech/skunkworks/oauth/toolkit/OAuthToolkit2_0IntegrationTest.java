@@ -20,10 +20,7 @@ import java.io.ByteArrayInputStream;
 import java.net.PasswordAuthentication;
 import java.net.URL;
 import java.net.URLEncoder;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 import static com.l7tech.skunkworks.oauth.toolkit.OAuthToolkitTestUtility.getSSLSocketFactory;
 import static org.junit.Assert.*;
@@ -481,9 +478,14 @@ public class OAuthToolkit2_0IntegrationTest extends OAuthToolkitSupport {
         final GenericHttpRequestParams tokenParams = new GenericHttpRequestParams(new URL("https://" + BASE_URL + ":8443/auth/oauth/v2/token"));
         tokenParams.setSslSocketFactory(getSSLSocketFactory());
         final GenericHttpRequest request = client.createRequest(HttpMethod.POST, tokenParams);
+        List<String[]> postParams = new ArrayList<String[]>();
         for (final Map.Entry<String, String> entry : params.entrySet()) {
-            request.addParameter(entry.getKey(), entry.getValue());
+            String[] postParam = new String[2];
+            postParam[0] = entry.getKey();
+            postParam[1] = entry.getValue();
+            postParams.add(postParam);
         }
+        request.addParameters(postParams);
         return request.getResponse();
     }
 

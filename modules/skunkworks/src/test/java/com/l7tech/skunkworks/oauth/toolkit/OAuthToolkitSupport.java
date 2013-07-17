@@ -58,9 +58,15 @@ public abstract class OAuthToolkitSupport {
         params.setPasswordAuthentication(passwordAuthentication);
         params.setContentType(ContentTypeHeader.APPLICATION_X_WWW_FORM_URLENCODED);
         final GenericHttpRequest request = client.createRequest(HttpMethod.POST, params);
+        List<String[]> postParams = new ArrayList<String[]>();
         for (final Map.Entry<String, String> entry : parameters.entrySet()) {
-            request.addParameter(entry.getKey(), entry.getValue());
+            String[] param = new String[2];
+            param[0] = entry.getKey();
+            param[1] = entry.getValue();
+            postParams.add(param);
         }
+        request.addParameters(postParams);
+
         final GenericHttpResponse response = request.getResponse();
         assertEquals(200, response.getStatus());
         assertEquals("persisted", new String(IOUtils.slurpStream(response.getInputStream())));
@@ -71,7 +77,12 @@ public abstract class OAuthToolkitSupport {
         params.setSslSocketFactory(getSSLSocketFactoryWithKeyManager());
         params.setPasswordAuthentication(passwordAuthentication);
         final GenericHttpRequest request = client.createRequest(HttpMethod.POST, params);
-        request.addParameter(paramName, paramValue);
+        List<String[]> postParams = new ArrayList<String[]>();
+        String[] param = new String[2];
+        param[0] = paramName;
+        param[1] = paramValue;
+        postParams.add(param);
+        request.addParameters(postParams);
 
         final GenericHttpResponse response = request.getResponse();
 
@@ -199,7 +210,12 @@ public abstract class OAuthToolkitSupport {
         params.setSslSocketFactory(getSSLSocketFactoryWithKeyManager());
         params.setPasswordAuthentication(passwordAuthentication);
         final GenericHttpRequest request = client.createRequest(HttpMethod.POST, params);
-        request.addParameter(paramName, paramValue);
+        List<String[]> postParams = new ArrayList<String[]>();
+        String[] param = new String[2];
+        param[0] = paramName;
+        param[1] = paramValue;
+        postParams.add(param);
+        request.addParameters(postParams);
 
         final GenericHttpResponse response = request.getResponse();
 
@@ -213,7 +229,12 @@ public abstract class OAuthToolkitSupport {
         revokeParams.setPasswordAuthentication(passwordAuthentication);
         revokeParams.setContentType(ContentTypeHeader.APPLICATION_X_WWW_FORM_URLENCODED);
         final GenericHttpRequest revokeRequest = client.createRequest(HttpMethod.POST, revokeParams);
-        revokeRequest.addParameter(paramName, paramValue);
+        List<String[]> postParams = new ArrayList<String[]>();
+        String[] param = new String[2];
+        param[0] = paramName;
+        param[1] = paramValue;
+        postParams.add(param);
+        revokeRequest.addParameters(postParams);
         final GenericHttpResponse revokeResponse = revokeRequest.getResponse();
         assertEquals(200, revokeResponse.getStatus());
         final String revokeResponseBody = new String(IOUtils.slurpStream(revokeResponse.getInputStream()));
@@ -225,7 +246,12 @@ public abstract class OAuthToolkitSupport {
         params.setSslSocketFactory(getSSLSocketFactoryWithKeyManager());
         params.setPasswordAuthentication(passwordAuthentication);
         final GenericHttpRequest request = client.createRequest(HttpMethod.POST, params);
-        request.addParameter(paramName, paramValue);
+        List<String[]> postParams = new ArrayList<String[]>();
+        String[] param = new String[2];
+        param[0] = paramName;
+        param[1] = paramValue;
+        postParams.add(param);
+        request.addParameters(postParams);
         final GenericHttpResponse response = request.getResponse();
         assertEquals(200, response.getStatus());
         assertEquals("1 token(s) disabled", new String(IOUtils.slurpStream(response.getInputStream())));

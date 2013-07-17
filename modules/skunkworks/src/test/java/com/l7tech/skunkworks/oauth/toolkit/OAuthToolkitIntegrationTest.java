@@ -14,10 +14,7 @@ import org.junit.Test;
 import org.w3c.dom.Document;
 
 import java.net.URL;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 import static com.l7tech.skunkworks.oauth.toolkit.OAuthToolkitTestUtility.getSSLSocketFactoryWithKeyManager;
 import static org.junit.Assert.*;
@@ -757,9 +754,13 @@ public class OAuthToolkitIntegrationTest extends OAuthToolkitSupport {
         params.setSslSocketFactory(getSSLSocketFactoryWithKeyManager());
         params.setContentType(ContentTypeHeader.APPLICATION_X_WWW_FORM_URLENCODED);
         final GenericHttpRequest request = client.createRequest(HttpMethod.POST, params);
+        List<String[]> postParams = new ArrayList<String[]>();
         for (final Map.Entry<String, String> entry : parameters.entrySet()) {
-            request.addParameter(entry.getKey(), entry.getValue());
+            String[] postParam = new String[2];
+            postParam[0] = entry.getKey();
+            postParam[1] = entry.getValue();
         }
+        request.addParameters(postParams);
         return request.getResponse();
     }
 
@@ -793,9 +794,13 @@ public class OAuthToolkitIntegrationTest extends OAuthToolkitSupport {
         params.setPasswordAuthentication(passwordAuthentication);
         params.setContentType(ContentTypeHeader.APPLICATION_X_WWW_FORM_URLENCODED);
         final GenericHttpRequest request = client.createRequest(HttpMethod.POST, params);
+        List<String[]> postParams = new ArrayList<String[]>();
         for (final Map.Entry<String, String> entry : parameters.entrySet()) {
-            request.addParameter(entry.getKey(), entry.getValue());
+            String[] postParam = new String[2];
+            postParam[0] = entry.getKey();
+            postParam[1] = entry.getValue();
         }
+        request.addParameters(postParams);
         final GenericHttpResponse response = request.getResponse();
         assertEquals(200, response.getStatus());
         // yes there is a typo in the policy

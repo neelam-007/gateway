@@ -17,6 +17,8 @@ import java.net.PasswordAuthentication;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
+import java.util.ArrayList;
+import java.util.List;
 
 import static com.l7tech.skunkworks.oauth.toolkit.OAuthToolkitTestUtility.getSSLSocketFactory;
 import static com.l7tech.skunkworks.oauth.toolkit.OAuthToolkitTestUtility.getSessionIdFromHtmlForm;
@@ -126,7 +128,12 @@ public class Layer720Api extends DefaultApi20 {
         params.setSslSocketFactory(getSSLSocketFactory());
         params.setPasswordAuthentication(clientCredentials);
         final GenericHttpRequest request = client.createRequest(HttpMethod.POST, params);
-        request.addParameter("grant_type", "client_credentials");
+
+        List<String[]> postParams = new ArrayList<String[]>();
+        String[] postParam = new String[]{"grant_type", "client_credentials"};
+        postParams.add(postParam);
+        request.addParameters(postParams);
+
         final GenericHttpResponse response = request.getResponse();
         assertEquals(200, response.getStatus());
         return response;
@@ -139,9 +146,12 @@ public class Layer720Api extends DefaultApi20 {
         params.setSslSocketFactory(getSSLSocketFactory());
         params.setPasswordAuthentication(clientCredentials);
         final GenericHttpRequest request = client.createRequest(HttpMethod.POST, params);
-        request.addParameter("grant_type", "password");
-        request.addParameter("username", username);
-        request.addParameter("password", password);
+        List<String[]> postParams = new ArrayList<String[]>();
+        postParams.add(new String[]{"grant_type", "password"});
+        postParams.add(new String[]{"username", username});
+        postParams.add(new String[]{"password", password});
+        request.addParameters(postParams);
+
         final GenericHttpResponse response = request.getResponse();
         assertEquals(200, response.getStatus());
         return response;
@@ -168,8 +178,11 @@ public class Layer720Api extends DefaultApi20 {
         params.setSslSocketFactory(getSSLSocketFactory());
         params.setPasswordAuthentication(clientCredentials);
         final GenericHttpRequest request = client.createRequest(HttpMethod.POST, params);
-        request.addParameter("grant_type", "urn:ietf:params:oauth:grant-type:saml2-bearer");
-        request.addParameter("assertion", base64EncodedToken);
+
+        List<String[]> postParams = new ArrayList<String[]>();
+        postParams.add(new String[]{"grant_type", "urn:ietf:params:oauth:grant-type:saml2-bearer"});
+        postParams.add(new String[]{"assertion", base64EncodedToken});
+        request.addParameters(postParams);
         final GenericHttpResponse response = request.getResponse();
         assertEquals(200, response.getStatus());
         return response;

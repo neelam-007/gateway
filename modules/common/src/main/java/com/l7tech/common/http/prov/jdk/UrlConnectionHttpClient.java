@@ -6,6 +6,7 @@ import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.MimeUtil;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.HexUtils;
+import org.apache.http.NameValuePair;
 
 import javax.mail.internet.MimeUtility;
 import javax.net.ssl.HttpsURLConnection;
@@ -101,7 +102,7 @@ public class UrlConnectionHttpClient implements GenericHttpClient {
                 }
 
                 @Override
-                public void addParameter(String paramName, String paramValue) throws IllegalArgumentException, IllegalStateException {
+                public void addParameters(List<String[]> parameters) throws IllegalArgumentException, IllegalStateException {
                     throw new IllegalStateException("this implementation of the GenericHttpRequest does not support addParameter");
                 }
 

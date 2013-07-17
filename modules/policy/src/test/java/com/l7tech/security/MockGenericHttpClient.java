@@ -7,6 +7,7 @@ import com.l7tech.common.http.*;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.io.IOException;
+import java.util.List;
 
 /**
  * Mock implementation of the GenericHttpClient. Used for testing.
@@ -213,7 +214,7 @@ public class MockGenericHttpClient implements GenericHttpClient {
         }
 
         @Override
-        public void addParameter(String paramName, String paramValue) throws IllegalArgumentException, IllegalStateException {
+        public void addParameters(List<String[]> parameters) throws IllegalArgumentException, IllegalStateException {
             throw new IllegalStateException("this impl does not support addParameter");
         }
 

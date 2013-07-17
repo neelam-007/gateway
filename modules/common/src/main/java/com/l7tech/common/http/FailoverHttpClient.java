@@ -134,10 +134,7 @@ public class FailoverHttpClient implements GenericHttpClient {
 
                     if (params.needsRequestBody(method)) {
                         if (paramList != null && paramList.size() > 0) {
-                            for (String[] strings : paramList) {
-                                request.addParameter(strings[0], strings[1]);
-                            }
-
+                            request.addParameters(paramList);
                         } else {
                             final InputStreamFactory factory; // must find one or fail
 
@@ -227,8 +224,8 @@ public class FailoverHttpClient implements GenericHttpClient {
             throw new GenericHttpException("Too many failures; giving up.");
         }
 
-        public void addParameter(String paramName, String paramValue) throws IllegalArgumentException, IllegalStateException {
-            paramList.add(new String[] {paramName, paramValue});
+        public void addParameters(List<String[]> parameters) throws IllegalArgumentException, IllegalStateException {
+            paramList.addAll(parameters);
         }
 
         public void close() {

@@ -13,6 +13,7 @@ import com.l7tech.common.mime.MimeHeader;
 import com.l7tech.common.mime.MimeUtil;
 import com.l7tech.util.*;
 import org.apache.http.*;
+import org.apache.http.NameValuePair;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.NTCredentials;
 import org.apache.http.auth.UsernamePasswordCredentials;
@@ -21,6 +22,7 @@ import org.apache.http.client.AuthCache;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.*;
 import org.apache.http.client.params.AuthPolicy;
 import org.apache.http.client.params.ClientPNames;
@@ -42,6 +44,7 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.client.DefaultHttpRequestRetryHandler;
 import org.apache.http.impl.conn.PoolingClientConnectionManager;
 import org.apache.http.message.BasicHeader;
+import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.params.*;
 import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.HttpContext;
@@ -359,14 +362,23 @@ public class HttpComponentsClient implements RerunnableGenericHttpClient{
             }
 
             @Override
-            public void addParameter(String paramName, String paramValue) throws IllegalArgumentException, IllegalStateException {
+            public void addParameters(List<String[]> parameters) throws IllegalArgumentException, IllegalStateException {
                 if (method == null) {
                     logger.warning("addParam is called before method is assigned");
                     throw new IllegalStateException("the http method object is not yet assigned");
                 }
                 if (method instanceof HttpPost) {
                     HttpPost post = (HttpPost) method;
-                    post.getParams().setParameter(paramName, paramValue);
+                    List<NameValuePair> formParams = new ArrayList<NameValuePair>();
+                    for (String[] parameter : parameters) {
+                        formParams.add(new BasicNameValuePair(parameter[0], parameter[1]));
+                    }
+                    try {
+                        UrlEncodedFormEntity entity = new UrlEncodedFormEntity(formParams);
+                        post.setEntity(entity);
+                    } catch (UnsupportedEncodingException e) {
+                        throw new IllegalArgumentException(e);
+                    }
                 } else {
                     logger.warning("addParam is called but the internal method is not post : " +
                             method.getClass().getName());

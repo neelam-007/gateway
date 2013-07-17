@@ -628,9 +628,16 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                     handleRequestParameters(context, requestMessage, assertion.getRequestParamRules(), getAudit(), vars, varNames);
 
             if (!assertion.getRequestParamRules().isForwardAll() && paramRes != null) {
+                List<String[]> parameters = new ArrayList<String[]>();
+
                 for (HttpForwardingRuleEnforcer.Param p : paramRes) {
-                    routedRequest.addParameter(p.name, p.value);
+                    String[] parameter = new String[2];
+                    parameter[0] = p.name;
+                    parameter[1] = p.value;
+                    parameters.add(parameter);
                 }
+                routedRequest.addParameters(parameters);
+
             } else {
                 // only include payload if the method requires one (PUT or POST, or something else but with forced-body-inclusion turned on)
                 if (routedRequestParams.needsRequestBody(method)) {

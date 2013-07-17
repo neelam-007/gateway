@@ -9,6 +9,7 @@ import com.l7tech.common.mime.ContentTypeHeader;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.HostnameVerifier;
 import java.io.InputStream;
+import java.util.List;
 
 /**
  * Http client wrapper that always sets thread-local {@link CurrentSslPeer} to a given value when creating
@@ -108,7 +109,8 @@ public class SslPeerHttpClient implements GenericHttpClient {
                 };
             }
 
-            public void addParameter(String paramName, String paramValue) throws IllegalArgumentException, IllegalStateException {
+            @Override
+            public void addParameters(List<String[]> parameters) throws IllegalArgumentException, IllegalStateException {
                 throw new IllegalStateException("this implementation of the GenericHttpRequest does not support addParameter");
             }
 

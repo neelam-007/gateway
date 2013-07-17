@@ -8,6 +8,7 @@ package com.l7tech.common.http;
 
 import java.io.InputStream;
 import java.io.Closeable;
+import java.util.List;
 
 /**
  * Represents a generic HTTP request.
@@ -41,12 +42,12 @@ public interface GenericHttpRequest extends Closeable {
 
     /**
      * Adds a new parameter to be used in the POST request body.
-     * @param paramName The parameter name to add.
-     * @param paramValue The parameter value to add.
+     * @param parameters The parameter name and value to add. The String[] should contains the name (String[0])
+     *                   and value (String[1]) pair
      * @throws IllegalArgumentException if either argument is null
      * @throws IllegalStateException if the request is not in a state to receive http post parameters
      */
-    public void addParameter(String paramName, String paramValue) throws IllegalArgumentException, IllegalStateException;
+    public void addParameters(List<String[]> parameters) throws IllegalArgumentException, IllegalStateException;
 
     /**
      * Release all resources used by an in-progress request.  If {@link #getResponse} has been called,
