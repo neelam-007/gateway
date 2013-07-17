@@ -63,7 +63,7 @@ public class RESTGatewayManagementAssertion extends Assertion implements UsesVar
         meta.put(SHORT_NAME, "REST Manage Gateway");
         meta.put(DESCRIPTION, "Manage the Gateway with a RESTful interface." );
         meta.put(PROPERTIES_ACTION_NAME, "REST Gateway Management Properties");
-        meta.put(PALETTE_FOLDERS, new String[] { "internalAssertions" });
+        //meta.put(PALETTE_FOLDERS, new String[] { "internalAssertions" });
         meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/server16.gif");
         meta.put(FEATURE_SET_NAME, "set:modularAssertions");      // todo  add to which feature set?
         meta.put(MODULE_LOAD_LISTENER_CLASSNAME, "com.l7tech.external.assertions.gatewaymanagement.server.GatewayManagementModuleLifecycle");
