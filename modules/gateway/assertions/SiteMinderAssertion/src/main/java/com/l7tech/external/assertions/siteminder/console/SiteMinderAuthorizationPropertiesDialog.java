@@ -42,7 +42,7 @@ public class SiteMinderAuthorizationPropertiesDialog extends AssertionProperties
     private JCheckBox setSiteMinderCookieCheckBox;
     private JTextField cookieNameTextField;
     private final InputValidator inputValidator;
-    private ClusterStatusAdmin clusterStatusAdmin;
+//    private ClusterStatusAdmin clusterStatusAdmin;
 
     public SiteMinderAuthorizationPropertiesDialog(final Frame owner, final SiteMinderAuthorizeAssertion assertion) {
         super(SiteMinderAuthorizeAssertion.class, owner, assertion, true);
@@ -54,7 +54,7 @@ public class SiteMinderAuthorizationPropertiesDialog extends AssertionProperties
     @Override
     protected void initComponents() {
         super.initComponents();
-        initAdminConnection();
+//        initAdminConnection();
         siteminderPrefixVariablePanel.setVariable(SiteMinderAuthenticateAssertion.DEFAULT_PREFIX);
         siteminderPrefixVariablePanel.setDefaultVariableOrPrefix(SiteMinderAuthenticateAssertion.DEFAULT_PREFIX);
 
@@ -132,9 +132,8 @@ public class SiteMinderAuthorizationPropertiesDialog extends AssertionProperties
     /**
      * populates agent combo box with agent IDs
      * TODO: move to generic entity model instead of cluster properties
-     * @param agentComboBoxModel
      */
-    private void populateAgentComboBoxModel(DefaultComboBoxModel<String> agentComboBoxModel) {
+/*    private void populateAgentComboBoxModel(DefaultComboBoxModel<String> agentComboBoxModel) {
         try {
             ClusterProperty smConfigProperty = clusterStatusAdmin.findPropertyByName("siteminder12.agent.configuration");
             String smConfig = smConfigProperty.getValue();
@@ -149,7 +148,7 @@ public class SiteMinderAuthorizationPropertiesDialog extends AssertionProperties
         } catch (FindException e) {
             //do not throw any exceptions at this point. leave agent combo box empty
         }
-    }
+    }*/
 
     private void enableDisableComponents() {
         cookieVariablePanel.setEnabled(useCookieFromContextRadioButton.isSelected());
@@ -241,8 +240,8 @@ public class SiteMinderAuthorizationPropertiesDialog extends AssertionProperties
         return new RunOnChangeListener();
     }
 
-    private void initAdminConnection() {
+/*    private void initAdminConnection() {
         clusterStatusAdmin = Registry.getDefault().getClusterStatusAdmin();
-    }
+    }*/
 
 }

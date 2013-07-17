@@ -7,7 +7,6 @@ import netegrity.siteminder.javaagent.*;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -223,12 +222,7 @@ public class SiteMinderLowLevelAgent {
 
     /**
      * Authorize the session against the resource
-     *
-     *
-     *
-     *
-     * @param ssoToken  the SSO token obtained previously by
-     *                  {@link com.ca.siteminder.SiteMinderAgent#authenticate(Object, String, String, Object, Object, String, java.util.Map)}
+     * @param ssoToken  the SSO token obtained previously by authenticate method
      * @param transactionId
      * @param context SiteMinderContext
      * @throws java.security.AccessControlException on access control error

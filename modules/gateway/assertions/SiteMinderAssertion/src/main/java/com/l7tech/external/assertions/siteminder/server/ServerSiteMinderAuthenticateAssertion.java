@@ -15,6 +15,7 @@ import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.util.*;
+import com.l7tech.util.Config;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.context.ApplicationContext;
 
@@ -47,8 +48,9 @@ public class ServerSiteMinderAuthenticateAssertion extends AbstractServerSiteMin
      * @param agent  SiteMInderHighLevelAgent
      * @throws PolicyAssertionException
      */
-    ServerSiteMinderAuthenticateAssertion(final SiteMinderAuthenticateAssertion assertion, final SiteMinderHighLevelAgent agent) throws PolicyAssertionException {
-        super(assertion, agent);
+    ServerSiteMinderAuthenticateAssertion(final SiteMinderAuthenticateAssertion assertion, final SiteMinderHighLevelAgent agent, final Config config) throws PolicyAssertionException {
+        super(assertion, agent, config);
+        this.config = config;
         this.variablesUsed = assertion.getVariablesUsed();
     }
 
@@ -234,6 +236,10 @@ public class ServerSiteMinderAuthenticateAssertion extends AbstractServerSiteMin
 
     }
 
+    @Override
+    protected void initSmAgentFromContext(SiteMinderContext context) throws PolicyAssertionException {
+        super.initSmAgentFromContext(context);
+    }
     /*
 * Called reflectively by module class loader when module is unloaded, to ask us to clean up any globals
 * that would otherwise keep our instances from getting collected.

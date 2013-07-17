@@ -39,7 +39,7 @@ public class SiteMinderAuthenticationPropertiesDialog extends AssertionPropertie
     private TargetVariablePanel siteminderPrefixVariablePanel;
     private TargetVariablePanel cookieVariablePanel;
     private final InputValidator inputValidator;
-    private ClusterStatusAdmin clusterStatusAdmin;
+//    private ClusterStatusAdmin clusterStatusAdmin;
 
     public SiteMinderAuthenticationPropertiesDialog(final Frame owner, final SiteMinderAuthenticateAssertion assertion) {
         super(SiteMinderAuthenticateAssertion.class, owner, assertion, true);
@@ -51,7 +51,7 @@ public class SiteMinderAuthenticationPropertiesDialog extends AssertionPropertie
     @Override
     protected void initComponents() {
         super.initComponents();
-        initAdminConnection();
+//        initAdminConnection();
         siteminderPrefixVariablePanel.setVariable(SiteMinderAuthenticateAssertion.DEFAULT_PREFIX);
         siteminderPrefixVariablePanel.setDefaultVariableOrPrefix(SiteMinderAuthenticateAssertion.DEFAULT_PREFIX);
 
@@ -83,6 +83,19 @@ public class SiteMinderAuthenticationPropertiesDialog extends AssertionPropertie
                 enableDisableComponents();
             }
         });
+        useLastCredentialsRadioButton.setSelected(true);
+        useLastCredentialsRadioButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                enableDisableComponents();
+            }
+        });
+        specifyCredentialsRadioButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                enableDisableComponents();
+            }
+        });
         inputValidator.attachToButton(getOkButton(), super.createOkAction());
 
     }
@@ -90,9 +103,8 @@ public class SiteMinderAuthenticationPropertiesDialog extends AssertionPropertie
     /**
      * populates agent combo box with agent IDs
      * TODO: move to generic entity model instead of cluster properties
-     * @param agentComboBoxModel
      */
-    private void populateAgentComboBoxModel(DefaultComboBoxModel<String> agentComboBoxModel) {
+/*    private void populateAgentComboBoxModel(DefaultComboBoxModel<String> agentComboBoxModel) {
         try {
             ClusterProperty smConfigProperty = clusterStatusAdmin.findPropertyByName("siteminder12.agent.configuration");
             String smConfig = smConfigProperty.getValue();
@@ -107,13 +119,14 @@ public class SiteMinderAuthenticationPropertiesDialog extends AssertionPropertie
         } catch (FindException e) {
             //do not throw any exceptions at this point. leave agent combo box empty
         }
-    }
+    }*/
 
     private void enableDisableComponents() {
         useCookieFromRequestRadioButton.setEnabled(authenticateViaSiteMinderCookieCheckBox.isSelected());
         useCookieFromContextRadioButton.setEnabled(authenticateViaSiteMinderCookieCheckBox.isSelected());
         smCookieNameTextField.setEnabled(useCookieFromRequestRadioButton.isSelected());
         cookieVariablePanel.setEnabled(useCookieFromContextRadioButton.isSelected());
+        credentialsTextField.setEnabled(specifyCredentialsRadioButton.isSelected());
         getOkButton().setEnabled(siteminderPrefixVariablePanel.isEntryValid());
     }
     /**
@@ -141,6 +154,7 @@ public class SiteMinderAuthenticationPropertiesDialog extends AssertionPropertie
             siteminderPrefixVariablePanel.setVariable(SiteMinderAuthenticateAssertion.DEFAULT_PREFIX);
         }
         useLastCredentialsRadioButton.setSelected(assertion.isLastCredential());
+        specifyCredentialsRadioButton.setSelected(!assertion.isLastCredential());
         credentialsTextField.setText(assertion.getLogin());
     }
 
@@ -186,8 +200,8 @@ public class SiteMinderAuthenticationPropertiesDialog extends AssertionPropertie
         return new RunOnChangeListener();
     }
 
-    private void initAdminConnection() {
+/*    private void initAdminConnection() {
         clusterStatusAdmin = Registry.getDefault().getClusterStatusAdmin();
-    }
+    }*/
 
 }

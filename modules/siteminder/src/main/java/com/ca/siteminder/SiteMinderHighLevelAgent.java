@@ -35,7 +35,7 @@ public class SiteMinderHighLevelAgent {
         return checkAndInitialize(currentConfig, agentId);
     }*/
     //TODO: modify to user generic entity instead of simple text
-    public static boolean checkAndInitialize(String currentConfig, final String agentId)
+    public boolean checkAndInitialize(String currentConfig, final String agentId)
             throws SiteMinderAgentConfigurationException, SiteMinderApiClassException {
 
         boolean modified = true;

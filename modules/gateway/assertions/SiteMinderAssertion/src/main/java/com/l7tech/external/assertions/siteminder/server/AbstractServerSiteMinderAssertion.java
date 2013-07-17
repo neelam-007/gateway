@@ -28,19 +28,20 @@ public abstract class AbstractServerSiteMinderAssertion<AT extends Assertion> ex
 
     public AbstractServerSiteMinderAssertion(@NotNull final AT assertion) {
         super(assertion);
-        hla = new SiteMinderHighLevelAgent();
+        this.hla = new SiteMinderHighLevelAgent();
     }
 
-    public AbstractServerSiteMinderAssertion(@NotNull final AT assertion, SiteMinderHighLevelAgent agent) {
+    public AbstractServerSiteMinderAssertion(@NotNull final AT assertion, SiteMinderHighLevelAgent agent, Config config) {
         super(assertion);
-        hla = agent;
+        this.hla = agent;
+        this.config = config;
     }
 
     protected void initSmAgentFromContext(SiteMinderContext context) throws PolicyAssertionException {
         //TODO: we need to use a pool of configured agents that will be available to every assertion
         try {
 //            return new SiteMinderHighLevelAgent(config.getProperty("smAgentConfig"), getAgentIdOrDefault(context));
-             SiteMinderHighLevelAgent.checkAndInitialize(config.getProperty("smAgentConfig"), getAgentIdOrDefault(context));
+             hla.checkAndInitialize(config.getProperty("smAgentConfig"), getAgentIdOrDefault(context));
         } catch (SiteMinderAgentConfigurationException e) {
             throw new PolicyAssertionException(assertion, "SiteMinder agent configuration is invalid", ExceptionUtils.getDebugException(e));
         } catch (SiteMinderApiClassException e) {
