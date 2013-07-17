@@ -235,6 +235,14 @@ ALTER TABLE email_listener_state DROP COLUMN objectid;
 ALTER TABLE email_listener_state ADD PRIMARY KEY (goid);
 alter table email_listener_state ADD CONSTRAINT FK5A708C492FC43EC3 foreign key (email_listener_goid) references email_listener on delete cascade;
 
+--- GenericEntity
+ALTER TABLE generic_entity ADD COLUMN goid CHAR(16) FOR BIT DATA;
+call setVariable('generic_entity_prefix', cast(randomLongNotReserved() as char(21)));
+update generic_entity set goid = toGoid(cast(getVariable('generic_entity_prefix') as bigint), objectid);
+ALTER TABLE generic_entity ALTER COLUMN goid NOT NULL;
+ALTER TABLE generic_entity DROP PRIMARY KEY;
+ALTER TABLE generic_entity DROP COLUMN objectid;
+ALTER TABLE generic_entity ADD PRIMARY KEY (goid);
 
 --
 -- Register upgrade task for upgrading sink configuration references to GOIDs

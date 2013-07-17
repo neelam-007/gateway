@@ -1,6 +1,6 @@
 package com.l7tech.policy;
 
-import com.l7tech.objectmodel.imp.NamedEntityImp;
+import com.l7tech.objectmodel.imp.NamedGoidEntityImp;
 import org.hibernate.annotations.Proxy;
 
 import javax.persistence.*;
@@ -16,7 +16,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 @Proxy(lazy=false)
 @Inheritance(strategy=InheritanceType.SINGLE_TABLE)
 @Table(name="generic_entity")
-public class GenericEntity extends NamedEntityImp {
+public class GenericEntity extends NamedGoidEntityImp {
     private String description;
     private String entityClassName;
     private String valueXml;
@@ -34,7 +34,7 @@ public class GenericEntity extends NamedEntityImp {
      * @param dest entity to copy to.  Required.
      */
     public static void copyBaseFields(GenericEntity source, GenericEntity dest) {
-        dest.setOid(source.getOid());
+        dest.setGoid(source.getGoid());
         dest.setVersion(source.getVersion());
         dest.setName(source.getName());
         dest.setDescription(source.getDescription());

@@ -18,7 +18,7 @@ import java.util.Collections;
 public class GenericEntityManagerDemoServerSupport {
     private static GenericEntityManagerDemoServerSupport instance;
 
-    private EntityManager<DemoGenericEntity, GenericEntityHeader> demoGenericEntityManager;
+    private GoidEntityManager<DemoGenericEntity, GenericEntityHeader> demoGenericEntityManager;
 
     public static synchronized GenericEntityManagerDemoServerSupport getInstance(final ApplicationContext context) {
         if (instance == null) {
@@ -43,12 +43,12 @@ public class GenericEntityManagerDemoServerSupport {
             }
 
             @Override
-            public long save(DemoGenericEntity entity) throws SaveException, UpdateException {
-                if (entity.getOid() == DemoGenericEntity.DEFAULT_OID) {
+            public Goid save(DemoGenericEntity entity) throws SaveException, UpdateException {
+                if (DemoGenericEntity.DEFAULT_GOID.equals(entity.getGoid())) {
                     return demoGenericEntityManager.save(entity);
                 } else {
                     demoGenericEntityManager.update(entity);
-                    return entity.getOid();
+                    return entity.getGoid();
                 }
             }
 

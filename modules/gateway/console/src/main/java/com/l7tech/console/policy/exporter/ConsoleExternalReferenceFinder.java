@@ -220,7 +220,7 @@ public class ConsoleExternalReferenceFinder implements ExternalReferenceFinder, 
     }
 
     @Override
-    public <ET extends GenericEntity> EntityManager<ET, GenericEntityHeader> getGenericEntityManager(@NotNull Class<ET> entityClass) throws FindException {
+    public <ET extends GenericEntity> GoidEntityManager<ET, GenericEntityHeader> getGenericEntityManager(@NotNull Class<ET> entityClass) throws FindException {
         return null; //Intentionally null, meant to support interface only. Not to be called in this context.
     }
 

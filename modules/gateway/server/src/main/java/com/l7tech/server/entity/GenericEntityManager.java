@@ -14,7 +14,7 @@ import java.util.Map;
  * Users should not use this manager directly except to call {@link #getEntityManager(Class)}
  * to get a more-specific entity manager for concrete generic entity class they are working with.
  */
-public interface GenericEntityManager extends EntityManager<GenericEntity, GenericEntityHeader> {
+public interface GenericEntityManager extends GoidEntityManager<GenericEntity, GenericEntityHeader> {
     /**
      * Register a generic entity class with the generic entity manager subsystem.
      * <p/>
@@ -51,10 +51,10 @@ public interface GenericEntityManager extends EntityManager<GenericEntity, Gener
      * @return an EntityManager that provides access to the specified concrete entity type.
      */
     <ET extends GenericEntity>
-    EntityManager<ET, GenericEntityHeader> getEntityManager(@NotNull Class<ET> entityClass);
+    GoidEntityManager<ET, GenericEntityHeader> getEntityManager(@NotNull Class<ET> entityClass);
 
     <ET extends GenericEntity>
-    ET findByGenericClassAndPrimaryKey(@NotNull Class<ET> entityClass, long oid) throws FindException;
+    ET findByGenericClassAndPrimaryKey(@NotNull Class<ET> entityClass, Goid goid) throws FindException;
 
     <ET extends GenericEntity>
     Collection<ET> findAll(Class<ET> entityClass) throws FindException;
@@ -64,19 +64,19 @@ public interface GenericEntityManager extends EntityManager<GenericEntity, Gener
     Collection<GenericEntityHeader> findAllHeaders(@NotNull Class<? extends GenericEntity> entityClass, int offset, int windowSize) throws FindException;
 
     <ET extends GenericEntity>
-    long save(@NotNull Class<ET> entityClass, ET entity) throws SaveException;
+    Goid save(@NotNull Class<ET> entityClass, ET entity) throws SaveException;
 
     <ET extends GenericEntity>
-    Integer getVersion(@NotNull Class<ET> entityClass, long oid) throws FindException;
+    Integer getVersion(@NotNull Class<ET> entityClass, Goid goid) throws FindException;
 
     <ET extends GenericEntity>
-    Map<Long,Integer> findVersionMap(@NotNull Class<ET> entityClass) throws FindException;
+    Map<Goid,Integer> findVersionMap(@NotNull Class<ET> entityClass) throws FindException;
 
     <ET extends GenericEntity>
     void delete(@NotNull Class<ET> entityClass, ET entity) throws DeleteException;
 
     <ET extends GenericEntity>
-    ET getCachedEntity(@NotNull Class<ET> entityClass, long o, int maxAge) throws FindException;
+    ET getCachedEntity(@NotNull Class<ET> entityClass, Goid goid, int maxAge) throws FindException;
 
     <ET extends GenericEntity>
     ET findByUniqueName(@NotNull Class<ET> entityClass, String name) throws FindException;
@@ -84,7 +84,7 @@ public interface GenericEntityManager extends EntityManager<GenericEntity, Gener
     GenericEntity findByUniqueName(@NotNull String entityClass, String name) throws FindException;
 
     <ET extends GenericEntity>
-    void delete(@NotNull Class<ET> entityClass, long oid) throws DeleteException, FindException;
+    void delete(@NotNull Class<ET> entityClass, Goid goid) throws DeleteException, FindException;
 
     <ET extends GenericEntity>
     void update(@NotNull Class<ET> entityClass, ET entity) throws UpdateException;

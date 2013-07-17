@@ -13,6 +13,7 @@ import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.server.entity.GenericEntityManager;
 import com.l7tech.server.event.EntityInvalidationEvent;
+import com.l7tech.server.event.GoidEntityInvalidationEvent;
 import com.l7tech.server.service.ServiceManager;
 import com.l7tech.server.util.ApplicationEventProxy;
 import com.l7tech.test.BugNumber;
@@ -48,7 +49,7 @@ public class PortalManagedServiceManagerImplTest {
     @Mock
     private GenericEntityManager genericEntityManager;
     @Mock
-    private EntityManager entityManager;
+    private GoidEntityManager entityManager;
     @Mock
     private ApplicationEventProxy applicationEventProxy;
 
@@ -65,28 +66,28 @@ public class PortalManagedServiceManagerImplTest {
     @Test
     public void add() throws Exception {
         final PortalManagedService portalManagedService = createPortalManagedService(null, "a1", SERVICE_A, "group1");
-        when(entityManager.save(portalManagedService)).thenReturn(1234L);
+        when(entityManager.save(portalManagedService)).thenReturn(new Goid(0,1234L));
 
         final PortalManagedService result = manager.add(portalManagedService);
 
         assertEquals(1, manager.getCache().size());
         final PortalManagedService cached = (PortalManagedService) manager.getCache().get("a1");
-        assertEquals(1234L, cached.getOid());
+        assertEquals(new Goid(0,1234L), cached.getGoid());
         assertEquals("a1", cached.getName());
         assertEquals(SERVICE_A_STRING, cached.getDescription());
         assertEquals("group1", cached.getApiGroup());
         assertNotSame(portalManagedService, cached);
         assertEquals(1, manager.getNameCache().size());
-        assertEquals("a1", manager.getNameCache().get(1234L));
+        assertEquals("a1", manager.getNameCache().get(new Goid(0,1234L)));
         assertSame(portalManagedService, result);
-        assertEquals(1234L, result.getOid());
+        assertEquals(new Goid(0,1234L), result.getGoid());
         verify(entityManager).save(portalManagedService);
     }
 
     @Test(expected = SaveException.class)
     public void addNonDefaultOid() throws Exception {
         final PortalManagedService portalManagedService = createPortalManagedService(null, "a1", SERVICE_A, "group1");
-        portalManagedService.setOid(1L);
+        portalManagedService.setGoid(new Goid(0,1L));
         try {
             manager.add(portalManagedService);
         } catch (final SaveException e) {
@@ -119,9 +120,9 @@ public class PortalManagedServiceManagerImplTest {
     public void update() throws Exception {
         final PortalManagedService toUpdate = createPortalManagedService(null, "a1", SERVICE_A, "group1");
         toUpdate.setVersion(1);
-        final PortalManagedService existing = createPortalManagedService(1234L, "a1", SERVICE_B, "group2");
+        final PortalManagedService existing = createPortalManagedService(new Goid(0,1234L), "a1", SERVICE_B, "group2");
         existing.setVersion(5);
-        final PortalManagedService expected = createPortalManagedService(1234L, "a1", SERVICE_A, "group1");
+        final PortalManagedService expected = createPortalManagedService(new Goid(0,1234L), "a1", SERVICE_A, "group1");
         expected.setVersion(5);
         when(entityManager.findByUniqueName("a1")).thenReturn(existing);
 
@@ -129,15 +130,15 @@ public class PortalManagedServiceManagerImplTest {
 
         assertEquals(1, manager.getCache().size());
         final PortalManagedService cached = (PortalManagedService) manager.getCache().get("a1");
-        assertEquals(1234L, cached.getOid());
+        assertEquals(new Goid(0,1234L), cached.getGoid());
         assertEquals("a1", cached.getName());
         assertEquals(SERVICE_A_STRING, cached.getDescription());
         assertEquals("group1", cached.getApiGroup());
         assertNotSame(toUpdate, cached);
         assertEquals(1, manager.getNameCache().size());
-        assertEquals("a1", manager.getNameCache().get(1234L));
+        assertEquals("a1", manager.getNameCache().get(new Goid(0,1234L)));
         assertSame(toUpdate, result);
-        assertEquals(1234L, result.getOid());
+        assertEquals(new Goid(0,1234L), result.getGoid());
         verify(entityManager).findByUniqueName("a1");
         verify(entityManager).update(expected);
     }
@@ -215,9 +216,9 @@ public class PortalManagedServiceManagerImplTest {
     public void updateUpdateException() throws Exception {
         final PortalManagedService toUpdate = createPortalManagedService(null, "a1", SERVICE_A, "group1");
         toUpdate.setVersion(1);
-        final PortalManagedService existing = createPortalManagedService(1234L, "a2", SERVICE_A, "group2");
+        final PortalManagedService existing = createPortalManagedService(new Goid(0,1234L), "a2", SERVICE_A, "group2");
         existing.setVersion(5);
-        final PortalManagedService expected = createPortalManagedService(1234L, "a1", SERVICE_A, "group1");
+        final PortalManagedService expected = createPortalManagedService(new Goid(0,1234L), "a1", SERVICE_A, "group1");
         expected.setVersion(5);
         when(entityManager.findByUniqueName("a1")).thenReturn(existing);
         doThrow(new UpdateException("mocking exception")).when(entityManager).update(any(PortalManagedService.class));
@@ -256,29 +257,29 @@ public class PortalManagedServiceManagerImplTest {
     public void updateCache() throws Exception {
         final PortalManagedService toUpdate = createPortalManagedService(null, "a1", SERVICE_A, "group1");
         toUpdate.setVersion(1);
-        final PortalManagedService existing = createPortalManagedService(1234L, "a2", SERVICE_A, "group2");
+        final PortalManagedService existing = createPortalManagedService(new Goid(0,1234L), "a2", SERVICE_A, "group2");
         existing.setVersion(5);
-        final PortalManagedService expected = createPortalManagedService(1234L, "a1", SERVICE_A, "group1");
+        final PortalManagedService expected = createPortalManagedService(new Goid(0,1234L), "a1", SERVICE_A, "group1");
         expected.setVersion(5);
         when(entityManager.findByUniqueName("a1")).thenReturn(existing);
 
         manager.getCache().put("a1", existing);
-        manager.getNameCache().put(1234L, "a1");
+        manager.getNameCache().put(new Goid(0,1234L), "a1");
 
         final PortalManagedService result = manager.update(toUpdate);
 
         assertEquals(1, manager.getCache().size());
         // cache should be updated
         final PortalManagedService cached = (PortalManagedService) manager.getCache().get("a1");
-        assertEquals(1234L, cached.getOid());
+        assertEquals(new Goid(0,1234L), cached.getGoid());
         assertEquals("a1", cached.getName());
         assertEquals(SERVICE_A_STRING, cached.getDescription());
         assertEquals("group1", cached.getApiGroup());
         assertNotSame(toUpdate, cached);
         assertEquals(1, manager.getNameCache().size());
-        assertEquals("a1", manager.getNameCache().get(1234L));
+        assertEquals("a1", manager.getNameCache().get(new Goid(0,1234L)));
         assertSame(toUpdate, result);
-        assertEquals(1234L, result.getOid());
+        assertEquals(new Goid(0,1234L), result.getGoid());
         verify(entityManager).findByUniqueName("a1");
         verify(entityManager).update(expected);
     }
@@ -290,19 +291,19 @@ public class PortalManagedServiceManagerImplTest {
     public void addOrUpdateNotFound() throws Exception {
         final PortalManagedService portalManagedService = createPortalManagedService(null, "a1", SERVICE_A, "group1");
         when(entityManager.findByUniqueName("a1")).thenReturn(null);
-        when(entityManager.save(any(PortalManagedService.class))).thenReturn(1234L);
+        when(entityManager.save(any(PortalManagedService.class))).thenReturn(new Goid(0,1234L));
 
         final PortalManagedService result = manager.addOrUpdate(portalManagedService);
 
         assertEquals(1, manager.getCache().size());
         final PortalManagedService cached = (PortalManagedService) manager.getCache().get("a1");
-        assertEquals(1234L, cached.getOid());
+        assertEquals(new Goid(0,1234L), cached.getGoid());
         assertEquals("a1", cached.getName());
         assertEquals(SERVICE_A_STRING, cached.getDescription());
         assertEquals("group1", cached.getApiGroup());
         assertNotSame(portalManagedService, cached);
         assertEquals(1, manager.getNameCache().size());
-        assertEquals("a1", manager.getNameCache().get(1234L));
+        assertEquals("a1", manager.getNameCache().get(new Goid(0,1234L)));
         assertEquals(cached, result);
         verify(entityManager).findByUniqueName("a1");
         verify(entityManager).save(portalManagedService);
@@ -315,21 +316,21 @@ public class PortalManagedServiceManagerImplTest {
     @Test
     public void addOrUpdateFound() throws Exception {
         final PortalManagedService toUpdate = createPortalManagedService(null, "a1", SERVICE_A, "group1");
-        final PortalManagedService existing = createPortalManagedService(1234L, "a2", SERVICE_A, "group2");
-        final PortalManagedService expected = createPortalManagedService(1234L, "a1", SERVICE_A, "group1");
+        final PortalManagedService existing = createPortalManagedService(new Goid(0,1234L), "a2", SERVICE_A, "group2");
+        final PortalManagedService expected = createPortalManagedService(new Goid(0,1234L), "a1", SERVICE_A, "group1");
         when(entityManager.findByUniqueName("a1")).thenReturn(existing);
 
         final PortalManagedService result = manager.addOrUpdate(toUpdate);
 
         assertEquals(1, manager.getCache().size());
         final PortalManagedService cached = (PortalManagedService) manager.getCache().get("a1");
-        assertEquals(1234L, cached.getOid());
+        assertEquals(new Goid(0,1234L), cached.getGoid());
         assertEquals("a1", cached.getName());
         assertEquals(SERVICE_A_STRING, cached.getDescription());
         assertEquals("group1", cached.getApiGroup());
         assertNotSame(toUpdate, cached);
         assertEquals(1, manager.getNameCache().size());
-        assertEquals("a1", manager.getNameCache().get(1234L));
+        assertEquals("a1", manager.getNameCache().get(new Goid(0,1234L)));
         assertEquals(cached, result);
         verify(entityManager).findByUniqueName("a1");
         verify(entityManager).update(expected);
@@ -372,19 +373,19 @@ public class PortalManagedServiceManagerImplTest {
     public void addOrUpdateInvalidGenericEntityExceptionNotOfExpectedClass() throws Exception {
         final PortalManagedService portalManagedService = createPortalManagedService(null, "a1", SERVICE_A, "group1");
         when(entityManager.findByUniqueName("a1")).thenThrow(new InvalidGenericEntityException("generic entity is not of expected class"));
-        when(entityManager.save(any(PortalManagedService.class))).thenReturn(1234L);
+        when(entityManager.save(any(PortalManagedService.class))).thenReturn(new Goid(0,1234L));
 
         final PortalManagedService result = manager.addOrUpdate(portalManagedService);
 
         assertEquals(1, manager.getCache().size());
         final PortalManagedService cached = (PortalManagedService) manager.getCache().get("a1");
-        assertEquals(1234L, cached.getOid());
+        assertEquals(new Goid(0,1234L), cached.getGoid());
         assertEquals("a1", cached.getName());
         assertEquals(SERVICE_A_STRING, cached.getDescription());
         assertEquals("group1", cached.getApiGroup());
         assertNotSame(portalManagedService, cached);
         assertEquals(1, manager.getNameCache().size());
-        assertEquals("a1", manager.getNameCache().get(1234L));
+        assertEquals("a1", manager.getNameCache().get(new Goid(0,1234L)));
         assertEquals(cached, result);
         verify(entityManager).findByUniqueName("a1");
         verify(entityManager).save(portalManagedService);
@@ -393,7 +394,7 @@ public class PortalManagedServiceManagerImplTest {
 
     @Test
     public void delete() throws Exception {
-        final PortalManagedService found = createPortalManagedService(1234L, "a1", SERVICE_A, "group1");
+        final PortalManagedService found = createPortalManagedService(new Goid(0,1234L), "a1", SERVICE_A, "group1");
         when(entityManager.findByUniqueName("a1")).thenReturn(found);
 
         manager.delete("a1");
@@ -475,7 +476,7 @@ public class PortalManagedServiceManagerImplTest {
 
     @Test(expected = DeleteException.class)
     public void deleteDeleteException() throws Exception {
-        final PortalManagedService found = createPortalManagedService(1234L, "a1", SERVICE_A, "group1");
+        final PortalManagedService found = createPortalManagedService(new Goid(0,1234L), "a1", SERVICE_A, "group1");
         when(entityManager.findByUniqueName("a1")).thenReturn(found);
         doThrow(new DeleteException("mocking exception")).when(entityManager).delete(any(PortalManagedService.class));
 
@@ -494,41 +495,41 @@ public class PortalManagedServiceManagerImplTest {
 
     @Test
     public void deleteRemovesFromCache() throws Exception {
-        final PortalManagedService found = createPortalManagedService(1234L, "a1", SERVICE_A, "group1");
+        final PortalManagedService found = createPortalManagedService(new Goid(0,1234L), "a1", SERVICE_A, "group1");
         when(entityManager.findByUniqueName("a1")).thenReturn(found);
         manager.getCache().put("a1", found);
-        manager.getNameCache().put(1234L, "a1");
+        manager.getNameCache().put(new Goid(0,1234L), "a1");
 
         manager.delete("a1");
 
         assertTrue(manager.getCache().isEmpty());
         // named cache entry should not be removed
         assertEquals(1, manager.getNameCache().size());
-        assertEquals("a1", manager.getNameCache().get(1234L));
+        assertEquals("a1", manager.getNameCache().get(new Goid(0,1234L)));
         verify(entityManager).findByUniqueName("a1");
         verify(entityManager).delete(found);
     }
 
     @Test
     public void find() throws Exception {
-        final PortalManagedService found = createPortalManagedService(1234L, "a1", SERVICE_A, "group1");
+        final PortalManagedService found = createPortalManagedService(new Goid(0,1234L), "a1", SERVICE_A, "group1");
         when(entityManager.findByUniqueName("a1")).thenReturn(found);
 
         final PortalManagedService portalManagedService = manager.find("a1");
 
-        assertEquals(1234L, portalManagedService.getOid());
+        assertEquals(new Goid(0,1234L), portalManagedService.getGoid());
         assertEquals("a1", portalManagedService.getName());
         assertEquals(SERVICE_A_STRING, portalManagedService.getDescription());
         assertEquals("group1", portalManagedService.getApiGroup());
         assertEquals(1, manager.getCache().size());
         final PortalManagedService cached = (PortalManagedService) manager.getCache().get("a1");
-        assertEquals(1234L, cached.getOid());
+        assertEquals(new Goid(0,1234L), cached.getGoid());
         assertEquals("a1", cached.getName());
         assertEquals(SERVICE_A_STRING, cached.getDescription());
         assertEquals("group1", cached.getApiGroup());
         assertNotSame(found, cached);
         assertEquals(1, manager.getNameCache().size());
-        assertEquals("a1", manager.getNameCache().get(1234L));
+        assertEquals("a1", manager.getNameCache().get(new Goid(0,1234L)));
         verify(entityManager).findByUniqueName("a1");
     }
 
@@ -589,34 +590,34 @@ public class PortalManagedServiceManagerImplTest {
 
     @Test
     public void findFromCache() throws Exception {
-        manager.getCache().put("a1", createPortalManagedService(1234L, "a1", SERVICE_A, "group1"));
-        manager.getNameCache().put(1234L, "a1");
+        manager.getCache().put("a1", createPortalManagedService(new Goid(0,1234L), "a1", SERVICE_A, "group1"));
+        manager.getNameCache().put(new Goid(0,1234L), "a1");
 
         final PortalManagedService portalManagedService = manager.find("a1");
 
-        assertEquals(1234L, portalManagedService.getOid());
+        assertEquals(new Goid(0,1234L), portalManagedService.getGoid());
         assertEquals("a1", portalManagedService.getName());
         assertEquals(SERVICE_A_STRING, portalManagedService.getDescription());
         assertEquals("group1", portalManagedService.getApiGroup());
         assertEquals(1, manager.getCache().size());
         final PortalManagedService cached = (PortalManagedService) manager.getCache().get("a1");
-        assertEquals(1234L, cached.getOid());
+        assertEquals(new Goid(0,1234L), cached.getGoid());
         assertEquals("a1", cached.getName());
         assertEquals(SERVICE_A_STRING, cached.getDescription());
         assertEquals("group1", cached.getApiGroup());
         assertEquals(1, manager.getNameCache().size());
-        assertEquals("a1", manager.getNameCache().get(1234L));
+        assertEquals("a1", manager.getNameCache().get(new Goid(0,1234L)));
         verify(entityManager, never()).findByUniqueName("a1");
     }
 
     @Test(expected = IllegalStateException.class)
     public void findFromCacheReadOnly() throws Exception {
-        manager.getCache().put("a1", createPortalManagedService(1234L, "a1", SERVICE_A, "group1"));
-        manager.getNameCache().put(1234L, "a1");
+        manager.getCache().put("a1", createPortalManagedService(new Goid(0,1234L), "a1", SERVICE_A, "group1"));
+        manager.getNameCache().put(new Goid(0,1234L), "a1");
 
         final PortalManagedService portalManagedService = manager.find("a1");
 
-        assertEquals(1234L, portalManagedService.getOid());
+        assertEquals(new Goid(0,1234L), portalManagedService.getGoid());
         verify(entityManager, never()).findByUniqueName("a1");
         try {
             portalManagedService.setApiGroup("readonly?");
@@ -629,8 +630,8 @@ public class PortalManagedServiceManagerImplTest {
 
     @Test
     public void findAll() throws Exception {
-        when(entityManager.findAll()).thenReturn(Arrays.asList(createPortalManagedService(1L, "a1", 1L, "group1"),
-                createPortalManagedService(2L, "a2", 2L, "group2")));
+        when(entityManager.findAll()).thenReturn(Arrays.asList(createPortalManagedService(new Goid(0,1L), "a1", 1L, "group1"),
+                createPortalManagedService(new Goid(0,2L), "a2", 2L, "group2")));
 
         final List<PortalManagedService> portalManagedServices = manager.findAll();
 
@@ -960,10 +961,10 @@ public class PortalManagedServiceManagerImplTest {
 
     @Test
     public void onApplicationEventGenericEntity() throws Exception {
-        final PortalManagedService portalManagedService = createPortalManagedService(1234L, "a1", SERVICE_A, "group1");
+        final PortalManagedService portalManagedService = createPortalManagedService(new Goid(0,1234L), "a1", SERVICE_A, "group1");
         manager.getCache().put("a1", portalManagedService);
-        manager.getNameCache().put(1234L, "a1");
-        final EntityInvalidationEvent event = new EntityInvalidationEvent(portalManagedService, GenericEntity.class, new long[]{1234L}, new char[]{EntityInvalidationEvent.CREATE});
+        manager.getNameCache().put(new Goid(0,1234L), "a1");
+        final GoidEntityInvalidationEvent event = new GoidEntityInvalidationEvent(portalManagedService, GenericEntity.class, new Goid[]{new Goid(0,1234L)}, new char[]{GoidEntityInvalidationEvent.CREATE});
 
         manager.onApplicationEvent(event);
 
@@ -973,8 +974,8 @@ public class PortalManagedServiceManagerImplTest {
 
     @Test
     public void onApplicationEventNotGenericEntity() throws Exception {
-        manager.getCache().put("a1", createPortalManagedService(1234L, "a1", SERVICE_A, "group1"));
-        manager.getNameCache().put(1234L, "a1");
+        manager.getCache().put("a1", createPortalManagedService(new Goid(0,1234L), "a1", SERVICE_A, "group1"));
+        manager.getNameCache().put(new Goid(0,1234L), "a1");
         final EntityInvalidationEvent event = new EntityInvalidationEvent(new PublishedService(), PublishedService.class, new long[]{1234L}, new char[]{EntityInvalidationEvent.CREATE});
 
         manager.onApplicationEvent(event);
@@ -985,9 +986,9 @@ public class PortalManagedServiceManagerImplTest {
 
     @Test
     public void onApplicationEventNotEntityInvalidationEvent() throws Exception {
-        final PortalManagedService portalManagedService = createPortalManagedService(1234L, "a1", SERVICE_A, "group1");
+        final PortalManagedService portalManagedService = createPortalManagedService(new Goid(0,1234L), "a1", SERVICE_A, "group1");
         manager.getCache().put("a1", portalManagedService);
-        manager.getNameCache().put(1234L, "a1");
+        manager.getNameCache().put(new Goid(0,1234L), "a1");
 
         manager.onApplicationEvent(new LogonEvent("", LogonEvent.LOGOFF));
 
@@ -997,10 +998,10 @@ public class PortalManagedServiceManagerImplTest {
 
     @Test
     public void onApplicationEventGenericEntityWrongId() throws Exception {
-        final PortalManagedService portalManagedService = createPortalManagedService(1234L, "a1", SERVICE_A, "group1");
+        final PortalManagedService portalManagedService = createPortalManagedService(new Goid(0,1234L), "a1", SERVICE_A, "group1");
         manager.getCache().put("a1", portalManagedService);
-        manager.getNameCache().put(1234L, "a1");
-        final EntityInvalidationEvent event = new EntityInvalidationEvent(portalManagedService, GenericEntity.class, new long[]{5678L}, new char[]{EntityInvalidationEvent.CREATE});
+        manager.getNameCache().put(new Goid(0,1234L), "a1");
+        final GoidEntityInvalidationEvent event = new GoidEntityInvalidationEvent(portalManagedService, GenericEntity.class, new Goid[]{new Goid(0,5678L)}, new char[]{GoidEntityInvalidationEvent.CREATE});
 
         manager.onApplicationEvent(event);
 
@@ -1055,10 +1056,10 @@ public class PortalManagedServiceManagerImplTest {
         return service;
     }
 
-    private PortalManagedService createPortalManagedService(final Long oid, final String apiId, final Long serviceOid, final String apiGroup) {
+    private PortalManagedService createPortalManagedService(final Goid goid, final String apiId, final Long serviceOid, final String apiGroup) {
         final PortalManagedService portalManagedService = new PortalManagedService();
-        if (oid != null) {
-            portalManagedService.setOid(oid);
+        if (goid != null) {
+            portalManagedService.setGoid(goid);
         }
         portalManagedService.setName(apiId);
         portalManagedService.setDescription(String.valueOf(serviceOid));

@@ -5,7 +5,7 @@ import com.l7tech.policy.GenericEntity;
 import com.l7tech.policy.GenericEntityHeader;
 import com.l7tech.policy.InvalidGenericEntityException;
 import com.l7tech.server.audit.AuditContextUtils;
-import com.l7tech.server.event.EntityInvalidationEvent;
+import com.l7tech.server.event.GoidEntityInvalidationEvent;
 import com.l7tech.server.util.ApplicationEventProxy;
 import com.l7tech.util.Background;
 import com.l7tech.util.ConfigFactory;
@@ -34,7 +34,7 @@ public abstract class AbstractPortalGenericEntityManager<T extends AbstractPorta
     /**
      * @return the EntityManager to use for CRUD operations.
      */
-    public abstract EntityManager<T, GenericEntityHeader> getEntityManager();
+    public abstract GoidEntityManager<T, GenericEntityHeader> getEntityManager();
 
     /**
      * @return an array of objects to use for update locking (minimize race conditions when updating a generic entity).
@@ -63,17 +63,17 @@ public abstract class AbstractPortalGenericEntityManager<T extends AbstractPorta
 
     @Override
     public T add(final T genericEntity) throws SaveException {
-        if (genericEntity.getOid() != AbstractPortalGenericEntity.DEFAULT_OID) {
-            throw new SaveException("Specified GenericEntity has already been saved (it has oid " + genericEntity.getOid() + ")");
+        if (!AbstractPortalGenericEntity.DEFAULT_GOID.equals(genericEntity.getGoid())) {
+            throw new SaveException("Specified GenericEntity has already been saved (it has goid " + genericEntity.getGoid() + ")");
         }
         final String name = genericEntity.getName();
         try {
             doAsSystem(new Callable<Void>() {
                 @Override
                 public Void call() throws Exception {
-                    final long oid = getEntityManager().save(genericEntity);
-                    nameCache.put(oid, name);
-                    genericEntity.setOid(oid);
+                    final Goid goid = getEntityManager().save(genericEntity);
+                    nameCache.put(goid, name);
+                    genericEntity.setGoid(goid);
                     cache.put(name, genericEntity.getReadOnlyCopy());
                     return null;
                 }
@@ -105,15 +105,15 @@ public abstract class AbstractPortalGenericEntityManager<T extends AbstractPorta
                             // only update if it's necessary
                             if (!found.equals(genericEntity)) {
                                 //we want to keep the original oid and version
-                                genericEntity.setOid(found.getOid());
+                                genericEntity.setGoid(found.getGoid());
                                 genericEntity.setVersion(found.getVersion());
                                 getEntityManager().update(genericEntity);
-                                nameCache.put(genericEntity.getOid(), name);
+                                nameCache.put(genericEntity.getGoid(), name);
                                 cache.put(name, genericEntity.getReadOnlyCopy());
                             } else {
-                                genericEntity.setOid(found.getOid());
+                                genericEntity.setGoid(found.getGoid());
                                 genericEntity.setVersion(found.getVersion());
-                                nameCache.put(found.getOid(), name);
+                                nameCache.put(found.getGoid(), name);
                                 cache.put(name, found.getReadOnlyCopy());
                                 LOGGER.log(Level.FINE, "Skipping update of generic entity with name=" + genericEntity.getName() +
                                         " because it is equal to an existing generic entity.");
@@ -184,7 +184,7 @@ public abstract class AbstractPortalGenericEntityManager<T extends AbstractPorta
         }
         final T found = findByUniqueName(name);
         if (found != null && !nocache) {
-            nameCache.put(found.getOid(), name);
+            nameCache.put(found.getGoid(), name);
             cache.put(name, found.getReadOnlyCopy());
         }
         return found;
@@ -202,11 +202,11 @@ public abstract class AbstractPortalGenericEntityManager<T extends AbstractPorta
     @Override
     public void onApplicationEvent(final ApplicationEvent event) {
         // if a PortalManagedService has been modified, remove it from the cache
-        if (event instanceof EntityInvalidationEvent) {
-            final EntityInvalidationEvent entityInvalidationEvent = (EntityInvalidationEvent) event;
+        if (event instanceof GoidEntityInvalidationEvent) {
+            final GoidEntityInvalidationEvent entityInvalidationEvent = (GoidEntityInvalidationEvent) event;
             if (GenericEntity.class.equals(entityInvalidationEvent.getEntityClass())) {
-                final long[] ids = entityInvalidationEvent.getEntityIds();
-                for (final long id : ids) {
+                final Goid[] ids = entityInvalidationEvent.getEntityIds();
+                for (final Goid id : ids) {
                     final String name = nameCache.get(id);
                     if (name != null) {
                         cache.remove(name);
@@ -232,7 +232,7 @@ public abstract class AbstractPortalGenericEntityManager<T extends AbstractPorta
      * <p/>
      * Value = entity name.
      */
-    protected final ConcurrentMap<Long, String> nameCache = new ConcurrentHashMap<Long, String>();
+    protected final ConcurrentMap<Goid, String> nameCache = new ConcurrentHashMap<Goid, String>();
     protected static final int DEFAULT_NUM_UPDATE_LOCKS = 1000;
 
     /**

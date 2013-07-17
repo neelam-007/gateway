@@ -8,6 +8,7 @@ import com.l7tech.policy.GenericEntityHeader;
 import com.l7tech.policy.InvalidGenericEntityException;
 import com.l7tech.server.entity.GenericEntityManager;
 import com.l7tech.server.event.EntityInvalidationEvent;
+import com.l7tech.server.event.GoidEntityInvalidationEvent;
 import com.l7tech.server.util.ApplicationEventProxy;
 import com.l7tech.test.BugNumber;
 import org.junit.Before;
@@ -36,7 +37,7 @@ public class ApiKeyManagerTest {
     @Mock
     private GenericEntityManager genericEntityManager;
     @Mock
-    private EntityManager<ApiKey, GenericEntityHeader> entityManager;
+    private GoidEntityManager<ApiKey, GenericEntityHeader> entityManager;
     @Mock
     private ApplicationEventProxy applicationEventProxy;
 
@@ -65,7 +66,7 @@ public class ApiKeyManagerTest {
 
     @Test
     public void testAddApiKey() throws Exception {
-        when(entityManager.save(isA(ApiKey.class))).thenReturn(3L);
+        when(entityManager.save(isA(ApiKey.class))).thenReturn(new Goid(0,3L));
 
         ApiKey key = new ApiKey();
         key.setName("fookey");
@@ -81,7 +82,7 @@ public class ApiKeyManagerTest {
         final ApiKey result = apiKeyManager.add(key);
 
         verify(entityManager).save(isA(ApiKey.class));
-        key.setOid(3L);
+        key.setGoid(new Goid(0, 3L));
         assertCacheContains(key);
         assertMatches(key, result);
     }
@@ -89,7 +90,7 @@ public class ApiKeyManagerTest {
     @Test(expected = SaveException.class)
     public void testAddApiKey_alreadySavedBefore() throws Exception {
         ApiKey key = new ApiKey();
-        key.setOid(88);
+        key.setGoid(new Goid(0, 88));
         key.setName("fookey");
         apiKeyManager.add(key);
     }
@@ -99,7 +100,7 @@ public class ApiKeyManagerTest {
         when(entityManager.save(isA(ApiKey.class))).thenThrow(new DuplicateObjectException());
 
         ApiKey key = new ApiKey();
-        key.setOid(-1); // Try to save a new one with colliding name
+        key.setGoid(new Goid(0,-1)); // Try to save a new one with colliding name
         key.setName("fookey");
         apiKeyManager.add(key);
     }
@@ -112,7 +113,7 @@ public class ApiKeyManagerTest {
         existing.setServiceIds(serviceIds);
         existing.setStatus("prevstatus");
         existing.setVersion(2);
-        existing.setOid(1234L);
+        existing.setGoid(new Goid(0, 1234L));
         when(entityManager.findByUniqueName(anyString())).thenReturn(existing);
 
         ApiKey key = new ApiKey();
@@ -120,7 +121,7 @@ public class ApiKeyManagerTest {
         key.setSecret("sekrit");
         key.setServiceIds(serviceIds);
         key.setStatus("somestatus");
-        key.setOid(-1L);
+        key.setGoid(new Goid(0, -1L));
 
         final ApiKey result = apiKeyManager.update(key);
 
@@ -131,7 +132,7 @@ public class ApiKeyManagerTest {
         mergedkey.setServiceIds(serviceIds);
         mergedkey.setStatus("somestatus");
         mergedkey.setVersion(2);
-        mergedkey.setOid(1234L);
+        mergedkey.setGoid(new Goid(0, 1234L));
 
         verify(entityManager).findByUniqueName("fookey");
         verify(entityManager).update(argThat(new MatchesApiKey(mergedkey)));
@@ -179,13 +180,13 @@ public class ApiKeyManagerTest {
         ApiKey existing = makeExisting();
         when(entityManager.findByUniqueName("fookey")).thenReturn(existing);
         apiKeyManager.getCache().put("fookey", existing);
-        apiKeyManager.getNameCache().put(7L, "fookey");
+        apiKeyManager.getNameCache().put(new Goid(0,7L), "fookey");
 
         apiKeyManager.delete("fookey");
 
         verify(entityManager).delete(existing);
         assertTrue("entries are immediately removed from the cache when they are removed on this node", apiKeyManager.getCache().isEmpty());
-        assertTrue("oids are permitted to remain in name cache for the full cleanup period, to avoid races", apiKeyManager.getNameCache().containsKey(7L));
+        assertTrue("oids are permitted to remain in name cache for the full cleanup period, to avoid races", apiKeyManager.getNameCache().containsKey(new Goid(0,7L)));
     }
 
     @Test(expected = ObjectNotFoundException.class)
@@ -277,7 +278,7 @@ public class ApiKeyManagerTest {
     public void testGetApiKey_fromCache() throws Exception {
         ApiKey existing = makeExisting();
         apiKeyManager.getCache().put(existing.getName(), existing);
-        apiKeyManager.getNameCache().put(existing.getOidAsLong(), existing.getName());
+        apiKeyManager.getNameCache().put(existing.getGoid(), existing.getName());
 
         ApiKey found = apiKeyManager.find("fookey");
 
@@ -298,21 +299,21 @@ public class ApiKeyManagerTest {
     public void testCacheEvictedWhenEntityUpdated() throws Exception {
         ApiKey existing = makeExisting();
         apiKeyManager.getCache().put(existing.getName(), existing);
-        apiKeyManager.getNameCache().put(existing.getOidAsLong(), existing.getName());
+        apiKeyManager.getNameCache().put(existing.getGoid(), existing.getName());
 
         ApiKey decoy = makeExisting();
         decoy.setName("otherkeyunrelated");
-        decoy.setOid(9833);
+        decoy.setGoid(new Goid(0, 9833));
         apiKeyManager.getCache().put(decoy.getName(), decoy);
-        apiKeyManager.getNameCache().put(decoy.getOidAsLong(), decoy.getName());
+        apiKeyManager.getNameCache().put(decoy.getGoid(), decoy.getName());
 
         // Event should be ignored (oid doesn't match anything in cache)
-        apiKeyManagerEventListener.onApplicationEvent(new EntityInvalidationEvent(new Object(), GenericEntity.class, new long[]{222L}, new char[]{'U'}));
+        apiKeyManagerEventListener.onApplicationEvent(new GoidEntityInvalidationEvent(new Object(), GenericEntity.class, new Goid[]{new Goid(0,222L)}, new char[]{'U'}));
         assertCacheContains(existing);
         assertCacheContains(decoy);
 
         // Event should cause cache entry to be removed (matches)
-        apiKeyManagerEventListener.onApplicationEvent(new EntityInvalidationEvent(new Object(), GenericEntity.class, new long[]{existing.getOid()}, new char[]{'U'}));
+        apiKeyManagerEventListener.onApplicationEvent(new GoidEntityInvalidationEvent(new Object(), GenericEntity.class, new Goid[]{existing.getGoid()}, new char[]{'U'}));
         assertCacheDoesNotContain(existing, false);
         assertCacheContains(decoy);
     }
@@ -321,8 +322,8 @@ public class ApiKeyManagerTest {
     public void onApplicationEventGenericEntity() throws Exception {
         ApiKey existing = makeExisting();
         apiKeyManager.getCache().put("fookey", existing);
-        apiKeyManager.getNameCache().put(1234L, "fookey");
-        final EntityInvalidationEvent event = new EntityInvalidationEvent(existing, GenericEntity.class, new long[]{1234L}, new char[]{EntityInvalidationEvent.CREATE});
+        apiKeyManager.getNameCache().put(new Goid(0,1234L), "fookey");
+        final GoidEntityInvalidationEvent event = new GoidEntityInvalidationEvent(existing, GenericEntity.class, new Goid[]{new Goid(0,1234L)}, new char[]{GoidEntityInvalidationEvent.CREATE});
 
         apiKeyManager.onApplicationEvent(event);
 
@@ -333,8 +334,8 @@ public class ApiKeyManagerTest {
     @Test
     public void onApplicationEventNotGenericEntity() throws Exception {
         apiKeyManager.getCache().put("fookey", makeExisting());
-        apiKeyManager.getNameCache().put(1234L, "fookey");
-        final EntityInvalidationEvent event = new EntityInvalidationEvent(new PublishedService(), PublishedService.class, new long[]{1234L}, new char[]{EntityInvalidationEvent.CREATE});
+        apiKeyManager.getNameCache().put(new Goid(0,1234L), "fookey");
+        final EntityInvalidationEvent event = new EntityInvalidationEvent(new PublishedService(), PublishedService.class, new long[]{1234L}, new char[]{EntityInvalidationEvent.CREATE});;
 
         apiKeyManager.onApplicationEvent(event);
 
@@ -346,7 +347,7 @@ public class ApiKeyManagerTest {
     public void onApplicationEventNotEntityInvalidationEvent() throws Exception {
         ApiKey existing = makeExisting();
         apiKeyManager.getCache().put("fookey", existing);
-        apiKeyManager.getNameCache().put(1234L, "fookey");
+        apiKeyManager.getNameCache().put(new Goid(0,1234L), "fookey");
 
         apiKeyManager.onApplicationEvent(new LogonEvent("", LogonEvent.LOGOFF));
 
@@ -358,8 +359,8 @@ public class ApiKeyManagerTest {
     public void onApplicationEventGenericEntityWrongId() throws Exception {
         ApiKey existing = makeExisting();
         apiKeyManager.getCache().put("fookey", existing);
-        apiKeyManager.getNameCache().put(1234L, "fookey");
-        final EntityInvalidationEvent event = new EntityInvalidationEvent(existing, GenericEntity.class, new long[]{5678L}, new char[]{EntityInvalidationEvent.CREATE});
+        apiKeyManager.getNameCache().put(new Goid(0,1234L), "fookey");
+        final GoidEntityInvalidationEvent event = new GoidEntityInvalidationEvent(existing, GenericEntity.class, new Goid[]{new Goid(0,5678L)}, new char[]{GoidEntityInvalidationEvent.CREATE});
 
         apiKeyManager.onApplicationEvent(event);
 
@@ -370,19 +371,19 @@ public class ApiKeyManagerTest {
      private void assertCacheDoesNotContain(ApiKey key, boolean checkNameCache) {
         assertFalse(apiKeyManager.getCache().containsKey(key.getName()));
         if (checkNameCache)
-            assertFalse(apiKeyManager.getNameCache().containsKey(key.getOidAsLong()));
+            assertFalse(apiKeyManager.getNameCache().containsKey(key.getGoid()));
     }
 
     private void assertCacheContains(ApiKey key) {
         assertTrue(apiKeyManager.getCache().containsKey(key.getName()));
-        assertTrue(apiKeyManager.getNameCache().containsKey(key.getOidAsLong()));
-        assertEquals(key.getName(), apiKeyManager.getNameCache().get(key.getOidAsLong()));
+        assertTrue(apiKeyManager.getNameCache().containsKey(key.getGoid()));
+        assertEquals(key.getName(), apiKeyManager.getNameCache().get(key.getGoid()));
         ApiKey cached = (ApiKey) apiKeyManager.getCache().get(key.getName());
         assertMatches(key, cached);
     }
 
     private void assertMatches(ApiKey expected, ApiKey actual) {
-        assertEquals(expected.getOid(), actual.getOid());
+        assertEquals(expected.getGoid(), actual.getGoid());
         assertEquals(expected.getName(), actual.getName());
         assertEquals(expected.getSecret(), actual.getSecret());
         assertEquals(expected.getServiceIds(), actual.getServiceIds());
@@ -391,7 +392,7 @@ public class ApiKeyManagerTest {
 
     private ApiKey makeExisting() {
         ApiKey existing = new ApiKey();
-        existing.setOid(7L);
+        existing.setGoid(new Goid(0,7L));
         existing.setName("fookey");
         existing.setSecret("oldsecret");
         existing.setServiceIds(serviceIds);
@@ -418,7 +419,7 @@ public class ApiKeyManagerTest {
         @Override
         public boolean matches(final Object o) {
             final ApiKey key = (ApiKey) o;
-            if (toMatch.getOid() != key.getOid()) {
+            if (!toMatch.getGoid().equals(key.getGoid())) {
                 return false;
             }
             if (!toMatch.getName().equals(key.getName())) {

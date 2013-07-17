@@ -328,7 +328,7 @@ public class ServerGatewayManagementAssertionTest {
                 "    <a:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Get</a:Action> \n" +
                 "    <w:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/genericEntities</w:ResourceURI> \n" +
                 "    <w:SelectorSet>\n" +
-                "      <w:Selector Name=\"id\">1</w:Selector> \n" +
+                "      <w:Selector Name=\"id\">"+new Goid(0,1).toHexString()+"</w:Selector> \n" +
                 "    </w:SelectorSet>\n" +
                 "    <w:OperationTimeout>PT60.000S</w:OperationTimeout> \n" +
                 "  </s:Header>\n" +
@@ -552,7 +552,7 @@ public class ServerGatewayManagementAssertionTest {
         String resourceUri = "http://ns.l7tech.com/2010/04/gateway-management/genericEntities";
         String payload = "<l7:GenericEntity xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\"><l7:Name>My Test Entity</l7:Name><l7:Description>My test entity description</l7:Description><l7:EntityClassName>com.l7tech.external.assertions.gatewaymanagement.server.ServerGatewayManagementAssertionTest</l7:EntityClassName><l7:Enabled>true</l7:Enabled><l7:ValueXml>&lt;xml&gt;xml value&lt;/xml&gt;</l7:ValueXml></l7:GenericEntity>";
         // id will be 1 or 2 depending on when the test is ran
-        doCreate( resourceUri, payload, "1", "2" );
+        doCreate( resourceUri, payload, new Goid(0,1).toHexString(), new Goid(0,2).toHexString() );
     }
 
     @Test
@@ -1149,7 +1149,7 @@ public class ServerGatewayManagementAssertionTest {
     @BugId("SSG-5572")
     @Test
     public void testPutGenericEntity() throws Exception {
-        final String message = "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns:n1=\"http://ns.l7tech.com/2010/04/gateway-management\"><s:Header><wsa:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Put</wsa:Action><wsa:To s:mustUnderstand=\"true\">http://127.0.0.1:8080/wsman</wsa:To><wsman:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/genericEntities</wsman:ResourceURI><wsa:MessageID s:mustUnderstand=\"true\">uuid:afad2993-7d39-1d39-8002-481688002100</wsa:MessageID><wsa:ReplyTo><wsa:Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo><wsman:SelectorSet><wsman:Selector Name=\"id\">1</wsman:Selector></wsman:SelectorSet><wsman:RequestEPR/></s:Header><s:Body> <n1:GenericEntity ><n1:Name>My Test Entity UPDATED</n1:Name><n1:Description>My test entity description UPDATED</n1:Description><n1:EntityClassName>com.l7tech.external.assertions.gatewaymanagement.server.ServerGatewayManagementAssertionTestUPDATED</n1:EntityClassName><n1:Enabled>false</n1:Enabled><n1:ValueXml>&lt;xml&gt;xml valueUPDATED&lt;/xml&gt;</n1:ValueXml></n1:GenericEntity>  </s:Body></s:Envelope>";
+        final String message = "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns:n1=\"http://ns.l7tech.com/2010/04/gateway-management\"><s:Header><wsa:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Put</wsa:Action><wsa:To s:mustUnderstand=\"true\">http://127.0.0.1:8080/wsman</wsa:To><wsman:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/genericEntities</wsman:ResourceURI><wsa:MessageID s:mustUnderstand=\"true\">uuid:afad2993-7d39-1d39-8002-481688002100</wsa:MessageID><wsa:ReplyTo><wsa:Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo><wsman:SelectorSet><wsman:Selector Name=\"id\">"+new Goid(0,1).toHexString()+"</wsman:Selector></wsman:SelectorSet><wsman:RequestEPR/></s:Header><s:Body> <n1:GenericEntity ><n1:Name>My Test Entity UPDATED</n1:Name><n1:Description>My test entity description UPDATED</n1:Description><n1:EntityClassName>com.l7tech.external.assertions.gatewaymanagement.server.ServerGatewayManagementAssertionTestUPDATED</n1:EntityClassName><n1:Enabled>false</n1:Enabled><n1:ValueXml>&lt;xml&gt;xml valueUPDATED&lt;/xml&gt;</n1:ValueXml></n1:GenericEntity>  </s:Body></s:Envelope>";
 
         final UnaryVoidThrows<Document,Exception> verifier = new UnaryVoidThrows<Document,Exception>(){
             @Override
@@ -1633,7 +1633,7 @@ public class ServerGatewayManagementAssertionTest {
     @Test
     public void testDeleteGenericEntity() throws Exception {
         String message = "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\"><s:Header><wsa:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Delete</wsa:Action><wsa:To s:mustUnderstand=\"true\">http://127.0.0.1:8080/wsman</wsa:To><wsman:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/genericEntities</wsman:ResourceURI><wsa:MessageID s:mustUnderstand=\"true\">uuid:b2794ffb-7d39-1d39-8002-481688002100</wsa:MessageID><wsa:ReplyTo><wsa:Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo>" +
-                "<wsman:SelectorSet><wsman:Selector Name=\"id\">1</wsman:Selector></wsman:SelectorSet></s:Header><s:Body/></s:Envelope>";
+                "<wsman:SelectorSet><wsman:Selector Name=\"id\">"+new Goid(0,1).toHexString()+"</wsman:Selector></wsman:SelectorSet></s:Header><s:Body/></s:Envelope>";
 
         final Document result = processRequest( "http://schemas.xmlsoap.org/ws/2004/09/transfer/Delete", message );
 
@@ -2535,7 +2535,7 @@ public class ServerGatewayManagementAssertionTest {
         ) );
 
         final GenericEntity genericEntity = new GenericEntity();
-        genericEntity.setId("1");
+        genericEntity.setGoid(new Goid(0,1));
         genericEntity.setName("My Test Entity");
         genericEntity.setDescription("My test entity description");
         genericEntity.setEnabled(true);

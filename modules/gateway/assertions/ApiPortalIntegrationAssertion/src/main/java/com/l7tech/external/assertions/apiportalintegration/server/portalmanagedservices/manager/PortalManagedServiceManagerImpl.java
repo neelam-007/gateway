@@ -60,7 +60,7 @@ public class PortalManagedServiceManagerImpl extends AbstractPortalGenericEntity
     }
 
     @Override
-    public EntityManager<PortalManagedService, GenericEntityHeader> getEntityManager() {
+    public GoidEntityManager<PortalManagedService, GenericEntityHeader> getEntityManager() {
         return entityManager;
     }
 
@@ -132,7 +132,7 @@ public class PortalManagedServiceManagerImpl extends AbstractPortalGenericEntity
     /**
      * Provide restricted access to the name cache for unit tests.
      */
-    ConcurrentMap<Long, String> getNameCache() {
+    ConcurrentMap<Goid, String> getNameCache() {
         return nameCache;
     }
 
@@ -150,7 +150,7 @@ public class PortalManagedServiceManagerImpl extends AbstractPortalGenericEntity
     private static final String L7P_ENABLED = "L7p:Enabled";
     private static final String STRING_VALUE = "stringValue";
     private static final String BOOLEAN_VALUE = "booleanValue";
-    private final EntityManager<PortalManagedService, GenericEntityHeader> entityManager;
+    private final GoidEntityManager<PortalManagedService, GenericEntityHeader> entityManager;
     private final ServiceManager serviceManager;
     private final ApplicationEventProxy applicationEventProxy;
     private static PortalManagedServiceManager instance;

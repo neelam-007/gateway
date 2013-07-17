@@ -3,21 +3,13 @@ package com.l7tech.external.assertions.apiportalintegration.server.apikey.manage
 import com.l7tech.external.assertions.apiportalintegration.server.AbstractPortalGenericEntity;
 import com.l7tech.external.assertions.apiportalintegration.server.AbstractPortalGenericEntityManager;
 import com.l7tech.external.assertions.apiportalintegration.server.ApiKeyData;
-import com.l7tech.objectmodel.EntityManager;
-import com.l7tech.policy.GenericEntity;
+import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.GoidEntityManager;
 import com.l7tech.policy.GenericEntityHeader;
 import com.l7tech.server.entity.GenericEntityManager;
-import com.l7tech.server.event.EntityInvalidationEvent;
-import com.l7tech.server.util.ApplicationEventProxy;
-import com.l7tech.util.Background;
 import com.l7tech.util.ConfigFactory;
-import com.l7tech.util.TimeUnit;
 import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationEvent;
-import org.springframework.context.ApplicationListener;
 
-import java.util.TimerTask;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 /**
@@ -37,7 +29,7 @@ public class ApiKeyManagerImpl extends AbstractPortalGenericEntityManager<ApiKey
     }
 
     @Override
-    public EntityManager<ApiKeyData, GenericEntityHeader> getEntityManager() {
+    public GoidEntityManager<ApiKeyData, GenericEntityHeader> getEntityManager() {
         return entityManager;
     }
 
@@ -54,7 +46,7 @@ public class ApiKeyManagerImpl extends AbstractPortalGenericEntityManager<ApiKey
     /**
      * Provide restricted access to the name cache for unit tests.
      */
-    ConcurrentMap<Long, String> getNameCache() {
+    ConcurrentMap<Goid, String> getNameCache() {
         return nameCache;
     }
 
@@ -65,7 +57,7 @@ public class ApiKeyManagerImpl extends AbstractPortalGenericEntityManager<ApiKey
         return cache;
     }
 
-    private final EntityManager<ApiKeyData, GenericEntityHeader> entityManager;
+    private final GoidEntityManager<ApiKeyData, GenericEntityHeader> entityManager;
     private static final int NUM_UPDATE_LOCKS = ConfigFactory.getIntProperty("com.l7tech.apiportal.ApiKeyManager.numUpdateLocks", DEFAULT_NUM_UPDATE_LOCKS);
 
     private static final Object[] updateLocks = new Object[NUM_UPDATE_LOCKS];

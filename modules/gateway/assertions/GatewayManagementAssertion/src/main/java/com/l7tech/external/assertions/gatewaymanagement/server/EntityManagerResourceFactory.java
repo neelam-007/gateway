@@ -5,33 +5,18 @@ import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.security.rbac.SecurityFilter;
-import com.l7tech.util.Either;
-import com.l7tech.util.Eithers.E2;
-import static com.l7tech.util.Eithers.extract;
-import static com.l7tech.util.Eithers.extract2;
-import static com.l7tech.util.Either.left;
-import static com.l7tech.util.Eithers.right2;
-import static com.l7tech.util.Either.right;
-import static com.l7tech.util.Eithers.left2_1;
-import static com.l7tech.util.Eithers.left2_2;
-
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.Functions;
-import com.l7tech.util.Option;
-import static com.l7tech.util.Option.optional;
+import com.l7tech.util.*;
+import com.l7tech.util.Eithers.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
+
+import static com.l7tech.util.Either.left;
+import static com.l7tech.util.Either.right;
+import static com.l7tech.util.Option.optional;
 
 /**
  * ResourceFactory implementation that uses an EntityManager to access Entity resources.
@@ -42,6 +27,7 @@ import java.util.Set;
  * Custom methods should call <code>checkPermitted</code> or <code>accessFilter</code>
  * to enforce access controls.</p>
  */
+@Deprecated
 abstract class EntityManagerResourceFactory<R, E extends PersistentEntity, EH extends EntityHeader> extends ResourceFactorySupport<R> {
 
     //- PUBLIC
@@ -74,7 +60,7 @@ abstract class EntityManagerResourceFactory<R, E extends PersistentEntity, EH ex
     public Map<String, String> createResource( final Object resource ) throws InvalidResourceException {
         checkReadOnly();
         
-        final long id = extract( transactional( new TransactionalCallback<Either<InvalidResourceException,Long>> (){
+        final long id = Eithers.extract( transactional( new TransactionalCallback<Either<InvalidResourceException,Long>> (){
             @SuppressWarnings({ "unchecked" })
             @Override
             public Either<InvalidResourceException,Long> execute() throws ObjectModelException {
@@ -120,7 +106,7 @@ abstract class EntityManagerResourceFactory<R, E extends PersistentEntity, EH ex
 
     @Override
     public R getResource( final Map<String, String> selectorMap ) throws ResourceNotFoundException {
-        return extract( transactional( new TransactionalCallback<Either<ResourceNotFoundException,R>>(){
+        return Eithers.extract( transactional( new TransactionalCallback<Either<ResourceNotFoundException,R>>(){
             @Override
             public Either<ResourceNotFoundException,R> execute() throws ObjectModelException {
                 try {
@@ -159,7 +145,7 @@ abstract class EntityManagerResourceFactory<R, E extends PersistentEntity, EH ex
     public R putResource( final Map<String, String> selectorMap, final Object resource ) throws ResourceNotFoundException, InvalidResourceException {
         checkReadOnly();
 
-        final String id = extract2( transactional( new TransactionalCallback<E2<ResourceNotFoundException, InvalidResourceException, String>>() {
+        final String id = Eithers.extract2( transactional( new TransactionalCallback<E2<ResourceNotFoundException, InvalidResourceException, String>>() {
             @SuppressWarnings({ "unchecked" })
             @Override
             public E2<ResourceNotFoundException, InvalidResourceException, String> execute() throws ObjectModelException {
@@ -195,11 +181,11 @@ abstract class EntityManagerResourceFactory<R, E extends PersistentEntity, EH ex
                     manager.update( oldEntityBag.getEntity() );
                     afterUpdateEntity( oldEntityBag );
 
-                    return right2( oldEntityBag.getEntity().getId() );
+                    return Eithers.right2( oldEntityBag.getEntity().getId() );
                 } catch ( ResourceNotFoundException e ) {
-                    return left2_1( e );
+                    return Eithers.left2_1( e );
                 } catch ( InvalidResourceException e ) {
-                    return left2_2( e );
+                    return Eithers.left2_2( e );
                 }
             }
         }, false ) );
@@ -211,7 +197,7 @@ abstract class EntityManagerResourceFactory<R, E extends PersistentEntity, EH ex
     public String deleteResource( final Map<String, String> selectorMap ) throws ResourceNotFoundException {
         checkReadOnly();
 
-        return extract( transactional( new TransactionalCallback<Either<ResourceNotFoundException, String>>() {
+        return Eithers.extract( transactional( new TransactionalCallback<Either<ResourceNotFoundException, String>>() {
             @SuppressWarnings({ "unchecked" })
             @Override
             public Either<ResourceNotFoundException, String> execute() throws ObjectModelException {

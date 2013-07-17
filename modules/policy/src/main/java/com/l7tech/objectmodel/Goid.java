@@ -61,7 +61,7 @@ public class Goid implements Serializable {
         try {
             goidFromString = HexUtils.unHexDump(goid);
         } catch (IOException e) {
-            throw new IllegalArgumentException("Cannot create goid from this String.  Invalid hex data.");
+            throw new IllegalArgumentException("Cannot create goid from this String. Invalid hex data: " + goid);
         }
 
         if (goidFromString.length != 16) {

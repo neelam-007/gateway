@@ -9,6 +9,7 @@ import com.l7tech.policy.GenericEntityHeader;
 import com.l7tech.policy.InvalidGenericEntityException;
 import com.l7tech.server.entity.GenericEntityManager;
 import com.l7tech.server.event.EntityInvalidationEvent;
+import com.l7tech.server.event.GoidEntityInvalidationEvent;
 import com.l7tech.server.util.ApplicationEventProxy;
 import com.l7tech.test.BugNumber;
 import org.junit.Before;
@@ -46,7 +47,7 @@ public class AccountPlanManagerTest {
     @Mock
     private GenericEntityManager genericEntityManager;
     @Mock
-    private EntityManager<AccountPlan, GenericEntityHeader> entityManager;
+    private GoidEntityManager<AccountPlan, GenericEntityHeader> entityManager;
     @Mock
     private ApplicationEventProxy applicationEventProxy;
 
@@ -62,13 +63,13 @@ public class AccountPlanManagerTest {
     public void add() throws Exception {
         final AccountPlan plan = createAccountPlan(null, "p1", PLAN_NAME, DATE, POLICY_XML,
                 DEFAULT_PLAN_ENABLED, THROUGHPUT_QUOTA_ENABLED, QUOTA_10, TIME_UNIT_1, COUNTER_STRATEGY_1, ORG_IDS);
-        when(entityManager.save(plan)).thenReturn(1234L);
+        when(entityManager.save(plan)).thenReturn(new Goid(0,1234L));
 
         final AccountPlan result = manager.add(plan);
 
         assertEquals(1, manager.getCache().size());
         final AccountPlan cached = (AccountPlan) manager.getCache().get("p1");
-        assertEquals(1234L, cached.getOid());
+        assertEquals(new Goid(0,1234L), cached.getGoid());
         assertEquals("p1", cached.getName());
         assertEquals(PLAN_NAME, cached.getDescription());
         assertEquals(DATE, cached.getLastUpdate());
@@ -81,15 +82,15 @@ public class AccountPlanManagerTest {
         assertEquals(ORG_IDS, cached.getIds());
         assertNotSame(plan, cached);
         assertEquals(1, manager.getNameCache().size());
-        assertEquals("p1", manager.getNameCache().get(1234L));
+        assertEquals("p1", manager.getNameCache().get(new Goid(0,1234L)));
         assertEquals(plan, result);
-        assertEquals(1234L, result.getOid());
+        assertEquals(new Goid(0,1234L), result.getGoid());
         verify(entityManager).save(plan);
     }
 
     @Test(expected = SaveException.class)
     public void addNonDefaultOid() throws Exception {
-        final AccountPlan plan = createAccountPlan(1L, "p1", PLAN_NAME, DATE, POLICY_XML,
+        final AccountPlan plan = createAccountPlan(new Goid(0,1L), "p1", PLAN_NAME, DATE, POLICY_XML,
                 DEFAULT_PLAN_ENABLED, THROUGHPUT_QUOTA_ENABLED, QUOTA_10, TIME_UNIT_1, COUNTER_STRATEGY_1, ORG_IDS);
         try {
             manager.add(plan);
@@ -126,10 +127,10 @@ public class AccountPlanManagerTest {
                 !DEFAULT_PLAN_ENABLED, !THROUGHPUT_QUOTA_ENABLED, QUOTA_10 - 1, TIME_UNIT_1 + 1, COUNTER_STRATEGY_1 + 1,
                 ORG_IDS.subList(0, 1));
         toUpdate.setVersion(1);
-        final AccountPlan existing = createAccountPlan(1234L, "p1", PLAN_NAME, DATE, POLICY_XML,
+        final AccountPlan existing = createAccountPlan(new Goid(0,1234L), "p1", PLAN_NAME, DATE, POLICY_XML,
                 DEFAULT_PLAN_ENABLED, THROUGHPUT_QUOTA_ENABLED, QUOTA_10, TIME_UNIT_1, COUNTER_STRATEGY_1, ORG_IDS);
         existing.setVersion(5);
-        final AccountPlan expected = createAccountPlan(1234L, "p1", PLAN_NAME, DATE, POLICY_XML + "updated",
+        final AccountPlan expected = createAccountPlan(new Goid(0,1234L), "p1", PLAN_NAME, DATE, POLICY_XML + "updated",
                 !DEFAULT_PLAN_ENABLED, !THROUGHPUT_QUOTA_ENABLED, QUOTA_10 - 1, TIME_UNIT_1 + 1, COUNTER_STRATEGY_1 + 1,
                 ORG_IDS.subList(0, 1));
         expected.setVersion(5);
@@ -139,7 +140,7 @@ public class AccountPlanManagerTest {
 
         assertEquals(1, manager.getCache().size());
         final AccountPlan cached = (AccountPlan) manager.getCache().get("p1");
-        assertEquals(1234L, cached.getOid());
+        assertEquals(new Goid(0,1234L), cached.getGoid());
         assertEquals("p1", cached.getName());
         assertEquals(PLAN_NAME, cached.getDescription());
         assertEquals(DATE, cached.getLastUpdate());
@@ -153,9 +154,9 @@ public class AccountPlanManagerTest {
         assertEquals(ORG_IDS.subList(0, 1), cached.getIds());
         assertNotSame(toUpdate, cached);
         assertEquals(1, manager.getNameCache().size());
-        assertEquals("p1", manager.getNameCache().get(1234L));
+        assertEquals("p1", manager.getNameCache().get(new Goid(0,1234L)));
         assertEquals(expected, result);
-        assertEquals(1234L, result.getOid());
+        assertEquals(new Goid(0,1234L), result.getGoid());
         verify(entityManager).findByUniqueName("p1");
         verify(entityManager).update(expected);
     }
@@ -239,10 +240,10 @@ public class AccountPlanManagerTest {
                 !DEFAULT_PLAN_ENABLED, !THROUGHPUT_QUOTA_ENABLED, QUOTA_10 - 1, TIME_UNIT_1 + 1, COUNTER_STRATEGY_1 + 1,
                 ORG_IDS.subList(0, 1));
         toUpdate.setVersion(1);
-        final AccountPlan existing = createAccountPlan(1234L, "p1", PLAN_NAME, DATE, POLICY_XML,
+        final AccountPlan existing = createAccountPlan(new Goid(0,1234L), "p1", PLAN_NAME, DATE, POLICY_XML,
                 DEFAULT_PLAN_ENABLED, THROUGHPUT_QUOTA_ENABLED, QUOTA_10, TIME_UNIT_1, COUNTER_STRATEGY_1, ORG_IDS);
         existing.setVersion(5);
-        final AccountPlan expected = createAccountPlan(1234L, "p1", PLAN_NAME, DATE, POLICY_XML + "updated",
+        final AccountPlan expected = createAccountPlan(new Goid(0,1234L), "p1", PLAN_NAME, DATE, POLICY_XML + "updated",
                 !DEFAULT_PLAN_ENABLED, !THROUGHPUT_QUOTA_ENABLED, QUOTA_10 - 1, TIME_UNIT_1 + 1, COUNTER_STRATEGY_1 + 1,
                 ORG_IDS.subList(0, 1));
         expected.setVersion(5);
@@ -287,7 +288,7 @@ public class AccountPlanManagerTest {
         final AccountPlan toUpdate = createAccountPlan(null, "p1", PLAN_NAME, new Date(), POLICY_XML,
                 DEFAULT_PLAN_ENABLED, THROUGHPUT_QUOTA_ENABLED, QUOTA_10, TIME_UNIT_1, COUNTER_STRATEGY_1, ORG_IDS);
         toUpdate.setVersion(1);
-        final AccountPlan existing = createAccountPlan(1234L, "p1", PLAN_NAME, DATE, POLICY_XML,
+        final AccountPlan existing = createAccountPlan(new Goid(0,1234L), "p1", PLAN_NAME, DATE, POLICY_XML,
                 DEFAULT_PLAN_ENABLED, THROUGHPUT_QUOTA_ENABLED, QUOTA_10, TIME_UNIT_1, COUNTER_STRATEGY_1, ORG_IDS);
         existing.setVersion(5);
         when(entityManager.findByUniqueName("p1")).thenReturn(existing);
@@ -296,7 +297,7 @@ public class AccountPlanManagerTest {
 
         assertEquals(1, manager.getCache().size());
         final AccountPlan cached = (AccountPlan) manager.getCache().get("p1");
-        assertEquals(1234L, cached.getOid());
+        assertEquals(new Goid(0,1234L), cached.getGoid());
         assertEquals("p1", cached.getName());
         assertEquals(PLAN_NAME, cached.getDescription());
         // date should not have changed
@@ -310,9 +311,9 @@ public class AccountPlanManagerTest {
         assertEquals(ORG_IDS, cached.getIds());
         assertNotSame(toUpdate, cached);
         assertEquals(1, manager.getNameCache().size());
-        assertEquals("p1", manager.getNameCache().get(1234L));
+        assertEquals("p1", manager.getNameCache().get(new Goid(0,1234L)));
         assertEquals(existing, result);
-        assertEquals(1234L, result.getOid());
+        assertEquals(new Goid(0,1234L), result.getGoid());
         verify(entityManager).findByUniqueName("p1");
         verify(entityManager, never()).update(Matchers.<AccountPlan>any());
     }
@@ -323,24 +324,24 @@ public class AccountPlanManagerTest {
                 !DEFAULT_PLAN_ENABLED, !THROUGHPUT_QUOTA_ENABLED, QUOTA_10 - 1, TIME_UNIT_1 + 1, COUNTER_STRATEGY_1 + 1,
                 ORG_IDS.subList(0, 1));
         toUpdate.setVersion(1);
-        final AccountPlan existing = createAccountPlan(1234L, "p1", PLAN_NAME, DATE, POLICY_XML,
+        final AccountPlan existing = createAccountPlan(new Goid(0,1234L), "p1", PLAN_NAME, DATE, POLICY_XML,
                 DEFAULT_PLAN_ENABLED, THROUGHPUT_QUOTA_ENABLED, QUOTA_10, TIME_UNIT_1, COUNTER_STRATEGY_1, ORG_IDS);
         existing.setVersion(5);
-        final AccountPlan expected = createAccountPlan(1234L, "p1", PLAN_NAME, DATE, POLICY_XML + "updated",
+        final AccountPlan expected = createAccountPlan(new Goid(0,1234L), "p1", PLAN_NAME, DATE, POLICY_XML + "updated",
                 !DEFAULT_PLAN_ENABLED, !THROUGHPUT_QUOTA_ENABLED, QUOTA_10 - 1, TIME_UNIT_1 + 1, COUNTER_STRATEGY_1 + 1,
                 ORG_IDS.subList(0, 1));
         expected.setVersion(5);
         when(entityManager.findByUniqueName("p1")).thenReturn(existing);
 
         manager.getCache().put("p1", existing);
-        manager.getNameCache().put(1234L, "p1");
+        manager.getNameCache().put(new Goid(0,1234L), "p1");
 
         final AccountPlan result = manager.update(toUpdate);
 
         assertEquals(1, manager.getCache().size());
         // cache should be updated
         final AccountPlan cached = (AccountPlan) manager.getCache().get("p1");
-        assertEquals(1234L, cached.getOid());
+        assertEquals(new Goid(0,1234L), cached.getGoid());
         assertEquals("p1", cached.getName());
         assertEquals(PLAN_NAME, cached.getDescription());
         assertEquals(DATE, cached.getLastUpdate());
@@ -353,16 +354,16 @@ public class AccountPlanManagerTest {
         assertEquals(ORG_IDS.subList(0, 1), cached.getIds());
         assertNotSame(toUpdate, cached);
         assertEquals(1, manager.getNameCache().size());
-        assertEquals("p1", manager.getNameCache().get(1234L));
+        assertEquals("p1", manager.getNameCache().get(new Goid(0,1234L)));
         assertEquals(expected, result);
-        assertEquals(1234L, result.getOid());
+        assertEquals(new Goid(0,1234L), result.getGoid());
         verify(entityManager).findByUniqueName("p1");
         verify(entityManager).update(expected);
     }
 
     @Test
     public void delete() throws Exception {
-        final AccountPlan found = createAccountPlan(1234L, "p1", PLAN_NAME, DATE, POLICY_XML,
+        final AccountPlan found = createAccountPlan(new Goid(0,1234L), "p1", PLAN_NAME, DATE, POLICY_XML,
                 DEFAULT_PLAN_ENABLED, THROUGHPUT_QUOTA_ENABLED, QUOTA_10, TIME_UNIT_1, COUNTER_STRATEGY_1, ORG_IDS);
         when(entityManager.findByUniqueName("p1")).thenReturn(found);
 
@@ -445,7 +446,7 @@ public class AccountPlanManagerTest {
 
     @Test(expected = DeleteException.class)
     public void deleteDeleteException() throws Exception {
-        final AccountPlan found = createAccountPlan(1234L, "p1", PLAN_NAME, DATE, POLICY_XML,
+        final AccountPlan found = createAccountPlan(new Goid(0,1234L), "p1", PLAN_NAME, DATE, POLICY_XML,
                 DEFAULT_PLAN_ENABLED, THROUGHPUT_QUOTA_ENABLED, QUOTA_10, TIME_UNIT_1, COUNTER_STRATEGY_1, ORG_IDS);
         when(entityManager.findByUniqueName("p1")).thenReturn(found);
         doThrow(new DeleteException("mocking exception")).when(entityManager).delete(any(AccountPlan.class));
@@ -465,38 +466,38 @@ public class AccountPlanManagerTest {
 
     @Test
     public void deleteRemovesFromCache() throws Exception {
-        final AccountPlan found = createAccountPlan(1234L, "p1", PLAN_NAME, DATE, POLICY_XML,
+        final AccountPlan found = createAccountPlan(new Goid(0,1234L), "p1", PLAN_NAME, DATE, POLICY_XML,
                 DEFAULT_PLAN_ENABLED, THROUGHPUT_QUOTA_ENABLED, QUOTA_10, TIME_UNIT_1, COUNTER_STRATEGY_1, ORG_IDS);
         when(entityManager.findByUniqueName("p1")).thenReturn(found);
         manager.getCache().put("p1", found);
-        manager.getNameCache().put(1234L, "p1");
+        manager.getNameCache().put(new Goid(0,1234L), "p1");
 
         manager.delete("p1");
 
         assertTrue(manager.getCache().isEmpty());
         // named cache entry should not be removed
         assertEquals(1, manager.getNameCache().size());
-        assertEquals("p1", manager.getNameCache().get(1234L));
+        assertEquals("p1", manager.getNameCache().get(new Goid(0,1234L)));
         verify(entityManager).findByUniqueName("p1");
         verify(entityManager).delete(found);
     }
 
     @Test
     public void find() throws Exception {
-        final AccountPlan found = createAccountPlan(1234L, "p1", PLAN_NAME, DATE, POLICY_XML,
+        final AccountPlan found = createAccountPlan(new Goid(0,1234L), "p1", PLAN_NAME, DATE, POLICY_XML,
                 DEFAULT_PLAN_ENABLED, THROUGHPUT_QUOTA_ENABLED, QUOTA_10, TIME_UNIT_1, COUNTER_STRATEGY_1, ORG_IDS);
         when(entityManager.findByUniqueName("p1")).thenReturn(found);
 
         final AccountPlan AccountPlan = manager.find("p1", false);
 
-        assertEquals(1234L, AccountPlan.getOid());
+        assertEquals(new Goid(0,1234L), AccountPlan.getGoid());
         assertEquals("p1", AccountPlan.getName());
         assertEquals(PLAN_NAME, AccountPlan.getDescription());
         assertEquals(DATE, AccountPlan.getLastUpdate());
         assertEquals(POLICY_XML, AccountPlan.getPolicyXml());
         assertEquals(1, manager.getCache().size());
         final AccountPlan cached = (AccountPlan) manager.getCache().get("p1");
-        assertEquals(1234L, cached.getOid());
+        assertEquals(new Goid(0,1234L), cached.getGoid());
         assertEquals("p1", cached.getName());
         assertEquals(PLAN_NAME, cached.getDescription());
         assertEquals(DATE, cached.getLastUpdate());
@@ -509,7 +510,7 @@ public class AccountPlanManagerTest {
         assertEquals(ORG_IDS, cached.getIds());
         assertNotSame(found, cached);
         assertEquals(1, manager.getNameCache().size());
-        assertEquals("p1", manager.getNameCache().get(1234L));
+        assertEquals("p1", manager.getNameCache().get(new Goid(0,1234L)));
         verify(entityManager).findByUniqueName("p1");
     }
 
@@ -566,20 +567,20 @@ public class AccountPlanManagerTest {
 
     @Test
     public void findFromCache() throws Exception {
-        manager.getCache().put("p1", createAccountPlan(1234L, "p1", PLAN_NAME, DATE, POLICY_XML,
+        manager.getCache().put("p1", createAccountPlan(new Goid(0,1234L), "p1", PLAN_NAME, DATE, POLICY_XML,
                 DEFAULT_PLAN_ENABLED, THROUGHPUT_QUOTA_ENABLED, QUOTA_10, TIME_UNIT_1, COUNTER_STRATEGY_1, ORG_IDS));
-        manager.getNameCache().put(1234L, "p1");
+        manager.getNameCache().put(new Goid(0,1234L), "p1");
 
         final AccountPlan plan = manager.find("p1", false);
 
-        assertEquals(1234L, plan.getOid());
+        assertEquals(new Goid(0,1234L), plan.getGoid());
         assertEquals("p1", plan.getName());
         assertEquals(PLAN_NAME, plan.getDescription());
         assertEquals(DATE, plan.getLastUpdate());
         assertEquals(POLICY_XML, plan.getPolicyXml());
         assertEquals(1, manager.getCache().size());
         final AccountPlan cached = (AccountPlan) manager.getCache().get("p1");
-        assertEquals(1234L, cached.getOid());
+        assertEquals(new Goid(0,1234L), cached.getGoid());
         assertEquals("p1", cached.getName());
         assertEquals(PLAN_NAME, cached.getDescription());
         assertEquals(DATE, cached.getLastUpdate());
@@ -591,19 +592,19 @@ public class AccountPlanManagerTest {
         assertEquals(COUNTER_STRATEGY_1, cached.getCounterStrategy());
         assertEquals(ORG_IDS, cached.getIds());
         assertEquals(1, manager.getNameCache().size());
-        assertEquals("p1", manager.getNameCache().get(1234L));
+        assertEquals("p1", manager.getNameCache().get(new Goid(0,1234L)));
         verify(entityManager, never()).findByUniqueName("p1");
     }
 
     @Test(expected = IllegalStateException.class)
     public void findFromCacheReadOnly() throws Exception {
-        manager.getCache().put("p1", createAccountPlan(1234L, "p1", PLAN_NAME, DATE, POLICY_XML,
+        manager.getCache().put("p1", createAccountPlan(new Goid(0,1234L), "p1", PLAN_NAME, DATE, POLICY_XML,
                 DEFAULT_PLAN_ENABLED, THROUGHPUT_QUOTA_ENABLED, QUOTA_10, TIME_UNIT_1, COUNTER_STRATEGY_1, ORG_IDS));
-        manager.getNameCache().put(1234L, "p1");
+        manager.getNameCache().put(new Goid(0,1234L), "p1");
 
         final AccountPlan plan = manager.find("p1", false);
 
-        assertEquals(1234L, plan.getOid());
+        assertEquals(new Goid(0,1234L), plan.getGoid());
         verify(entityManager, never()).findByUniqueName("p1");
         try {
             plan.setPolicyXml("readonly?");
@@ -616,9 +617,9 @@ public class AccountPlanManagerTest {
 
     @Test
     public void findAll() throws Exception {
-        when(entityManager.findAll()).thenReturn(Arrays.asList(createAccountPlan(1L, "p1", PLAN_NAME + "1", DATE, POLICY_XML,
+        when(entityManager.findAll()).thenReturn(Arrays.asList(createAccountPlan(new Goid(0,1L), "p1", PLAN_NAME + "1", DATE, POLICY_XML,
                 DEFAULT_PLAN_ENABLED, THROUGHPUT_QUOTA_ENABLED, QUOTA_10, TIME_UNIT_1, COUNTER_STRATEGY_1, ORG_IDS),
-                createAccountPlan(2L, "p2", PLAN_NAME + "2", DATE, POLICY_XML,
+                createAccountPlan(new Goid(0,2L), "p2", PLAN_NAME + "2", DATE, POLICY_XML,
                         DEFAULT_PLAN_ENABLED, THROUGHPUT_QUOTA_ENABLED, QUOTA_10, TIME_UNIT_1, COUNTER_STRATEGY_1, ORG_IDS)));
 
         final List<AccountPlan> plans = manager.findAll();
@@ -650,11 +651,11 @@ public class AccountPlanManagerTest {
 
     @Test
     public void onApplicationEventGenericEntity() throws Exception {
-        final AccountPlan plan = createAccountPlan(1234L, "p1", PLAN_NAME, DATE, POLICY_XML,
+        final AccountPlan plan = createAccountPlan(new Goid(0,1234L), "p1", PLAN_NAME, DATE, POLICY_XML,
                 DEFAULT_PLAN_ENABLED, THROUGHPUT_QUOTA_ENABLED, QUOTA_10, TIME_UNIT_1, COUNTER_STRATEGY_1, ORG_IDS);
         manager.getCache().put("p1", plan);
-        manager.getNameCache().put(1234L, "p1");
-        final EntityInvalidationEvent event = new EntityInvalidationEvent(plan, GenericEntity.class, new long[]{1234L}, new char[]{EntityInvalidationEvent.CREATE});
+        manager.getNameCache().put(new Goid(0,1234L), "p1");
+        final GoidEntityInvalidationEvent event = new GoidEntityInvalidationEvent(plan, GenericEntity.class, new Goid[]{new Goid(0,1234L)}, new char[]{GoidEntityInvalidationEvent.CREATE});
 
         manager.onApplicationEvent(event);
 
@@ -664,9 +665,9 @@ public class AccountPlanManagerTest {
 
     @Test
     public void onApplicationEventNotGenericEntity() throws Exception {
-        manager.getCache().put("p1", createAccountPlan(1234L, "p1", PLAN_NAME, DATE, POLICY_XML,
+        manager.getCache().put("p1", createAccountPlan(new Goid(0,1234L), "p1", PLAN_NAME, DATE, POLICY_XML,
                 DEFAULT_PLAN_ENABLED, THROUGHPUT_QUOTA_ENABLED, QUOTA_10, TIME_UNIT_1, COUNTER_STRATEGY_1, ORG_IDS));
-        manager.getNameCache().put(1234L, "p1");
+        manager.getNameCache().put(new Goid(0,1234L), "p1");
         final EntityInvalidationEvent event = new EntityInvalidationEvent(new PublishedService(), PublishedService.class, new long[]{1234L}, new char[]{EntityInvalidationEvent.CREATE});
 
         manager.onApplicationEvent(event);
@@ -677,10 +678,10 @@ public class AccountPlanManagerTest {
 
     @Test
     public void onApplicationEventNotEntityInvalidationEvent() throws Exception {
-        final AccountPlan plan = createAccountPlan(1234L, "p1", PLAN_NAME, DATE, POLICY_XML,
+        final AccountPlan plan = createAccountPlan(new Goid(0,1234L), "p1", PLAN_NAME, DATE, POLICY_XML,
                 DEFAULT_PLAN_ENABLED, THROUGHPUT_QUOTA_ENABLED, QUOTA_10, TIME_UNIT_1, COUNTER_STRATEGY_1, ORG_IDS);
         manager.getCache().put("p1", plan);
-        manager.getNameCache().put(1234L, "p1");
+        manager.getNameCache().put(new Goid(0,1234L), "p1");
 
         manager.onApplicationEvent(new LogonEvent("", LogonEvent.LOGOFF));
 
@@ -690,11 +691,11 @@ public class AccountPlanManagerTest {
 
     @Test
     public void onApplicationEventGenericEntityWrongId() throws Exception {
-        final AccountPlan plan = createAccountPlan(1234L, "p1", PLAN_NAME, DATE, POLICY_XML,
+        final AccountPlan plan = createAccountPlan(new Goid(0,1234L), "p1", PLAN_NAME, DATE, POLICY_XML,
                 DEFAULT_PLAN_ENABLED, THROUGHPUT_QUOTA_ENABLED, QUOTA_10, TIME_UNIT_1, COUNTER_STRATEGY_1, ORG_IDS);
         manager.getCache().put("p1", plan);
-        manager.getNameCache().put(1234L, "p1");
-        final EntityInvalidationEvent event = new EntityInvalidationEvent(plan, GenericEntity.class, new long[]{5678L}, new char[]{EntityInvalidationEvent.CREATE});
+        manager.getNameCache().put(new Goid(0,1234L), "p1");
+        final GoidEntityInvalidationEvent event = new GoidEntityInvalidationEvent(plan, GenericEntity.class, new Goid[]{new Goid(0,5678L)}, new char[]{GoidEntityInvalidationEvent.CREATE});
 
         manager.onApplicationEvent(event);
 
@@ -702,13 +703,13 @@ public class AccountPlanManagerTest {
         assertEquals(1, manager.getNameCache().size());
     }
 
-    private AccountPlan createAccountPlan(final Long oid, final String planId, final String planName,
+    private AccountPlan createAccountPlan(final Goid goid, final String planId, final String planName,
                                           final Date lastUpdate, final String policyXml, final boolean defaultPlan,
                                           final boolean throughputQuotaEnabled, final int quota, final int timeUnit,
                                           final int counterStrategy, final List<String> organizationIds) {
         final AccountPlan plan = new AccountPlan();
-        if (oid != null) {
-            plan.setOid(oid);
+        if (goid != null) {
+            plan.setGoid(goid);
         }
         plan.setName(planId);
         plan.setDescription(planName);

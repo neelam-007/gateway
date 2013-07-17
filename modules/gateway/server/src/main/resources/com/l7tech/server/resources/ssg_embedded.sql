@@ -1606,14 +1606,14 @@ INSERT INTO sink_config VALUES (-811,0,'sspc','Process Controller Log','FILE',0,
 -- Table for generic (runtime) entity types
 --
 create table generic_entity (
-  objectid bigint not null,
+  goid CHAR(16) FOR BIT DATA not null,
   version integer,
   name varchar(255),
   description clob(8388607),
   classname varchar(1024) not null,
   enabled smallint default 1,
   value_xml clob(8388607),
-  primary key (objectid),
+  primary key (goid),
   unique (classname, name)
 );
 

@@ -1,9 +1,9 @@
 package com.l7tech.server.entity;
 
 import com.l7tech.objectmodel.*;
-import com.l7tech.policy.GenericEntityHeader;
 import com.l7tech.policy.GenericEntity;
-import com.l7tech.server.EntityManagerStub;
+import com.l7tech.policy.GenericEntityHeader;
+import com.l7tech.server.GoidEntityManagerStub;
 import com.l7tech.util.Functions;
 import org.jetbrains.annotations.NotNull;
 
@@ -12,7 +12,7 @@ import java.util.*;
 /**
  *
  */
-public class GenericEntityManagerStub extends EntityManagerStub<GenericEntity, GenericEntityHeader> implements GenericEntityManager {
+public class GenericEntityManagerStub extends GoidEntityManagerStub<GenericEntity, GenericEntityHeader> implements GenericEntityManager {
 
     private List<GenericEntity> entities;
 
@@ -41,14 +41,14 @@ public class GenericEntityManagerStub extends EntityManagerStub<GenericEntity, G
     }
 
     @Override
-    public <ET extends GenericEntity> EntityManager<ET, GenericEntityHeader> getEntityManager(@NotNull Class<ET> entityClass) {
+    public <ET extends GenericEntity> GoidEntityManager<ET, GenericEntityHeader> getEntityManager(@NotNull Class<ET> entityClass) {
         throw new UnsupportedOperationException("Not yet implemented for stub");
     }
 
     @Override
-    public <ET extends GenericEntity> ET findByGenericClassAndPrimaryKey(@NotNull Class<ET> entityClass, long oid) throws FindException {
+    public <ET extends GenericEntity> ET findByGenericClassAndPrimaryKey(@NotNull Class<ET> entityClass, Goid goid) throws FindException {
         for (GenericEntity entity : entities) {
-            if (entity.getEntityClassName().equals(entityClass.getName()) && Long.valueOf(entity.getId()) == oid) {
+            if (entity.getEntityClassName().equals(entityClass.getName()) && entity.getGoid().equals(goid)) {
                 return (ET) entity;
             }
         }
@@ -76,17 +76,17 @@ public class GenericEntityManagerStub extends EntityManagerStub<GenericEntity, G
     }
 
     @Override
-    public <ET extends GenericEntity> long save(@NotNull Class<ET> entityClass, ET entity) throws SaveException {
+    public <ET extends GenericEntity> Goid save(@NotNull Class<ET> entityClass, ET entity) throws SaveException {
         throw new UnsupportedOperationException("Not yet implemented for stub");
     }
 
     @Override
-    public <ET extends GenericEntity> Integer getVersion(@NotNull Class<ET> entityClass, long oid) throws FindException {
+    public <ET extends GenericEntity> Integer getVersion(@NotNull Class<ET> entityClass, Goid goid) throws FindException {
         throw new UnsupportedOperationException("Not yet implemented for stub");
     }
 
     @Override
-    public <ET extends GenericEntity> Map<Long, Integer> findVersionMap(@NotNull Class<ET> entityClass) throws FindException {
+    public <ET extends GenericEntity> Map<Goid, Integer> findVersionMap(@NotNull Class<ET> entityClass) throws FindException {
         throw new UnsupportedOperationException("Not yet implemented for stub");
     }
 
@@ -96,7 +96,7 @@ public class GenericEntityManagerStub extends EntityManagerStub<GenericEntity, G
     }
 
     @Override
-    public <ET extends GenericEntity> ET getCachedEntity(@NotNull Class<ET> entityClass, long o, int maxAge) throws FindException {
+    public <ET extends GenericEntity> ET getCachedEntity(@NotNull Class<ET> entityClass, Goid o, int maxAge) throws FindException {
         throw new UnsupportedOperationException("Not yet implemented for stub");
     }
 
@@ -121,7 +121,7 @@ public class GenericEntityManagerStub extends EntityManagerStub<GenericEntity, G
     }
 
     @Override
-    public <ET extends GenericEntity> void delete(@NotNull Class<ET> entityClass, long oid) throws DeleteException, FindException {
+    public <ET extends GenericEntity> void delete(@NotNull Class<ET> entityClass, Goid goid) throws DeleteException, FindException {
         throw new UnsupportedOperationException("Not yet implemented for stub");
     }
 

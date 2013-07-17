@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.apiportalintegration.server.accountplan;
 
 
+import com.l7tech.objectmodel.Goid;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -43,8 +44,8 @@ public class AccountPlanTest {
         plan2.setIds(new ArrayList<String>());
 
         // these fields shouldn't matter
-        plan1.setOid(1234L);
-        plan2.setOid(5678L);
+        plan1.setGoid(new Goid(0,1234L));
+        plan2.setGoid(new Goid(0,5678L));
         plan1.setLastUpdate(new Date());
         plan2.setLastUpdate(new Date());
         plan1.setVersion(1);
@@ -216,8 +217,8 @@ public class AccountPlanTest {
         plan2.setDefaultPlan(true);
 
         // these fields shouldn't matter
-        plan1.setOid(1234L);
-        plan2.setOid(5678L);
+        plan1.setGoid(new Goid(0,1234L));
+        plan2.setGoid(new Goid(0,5678L));
         plan1.setLastUpdate(new Date());
         plan2.setLastUpdate(new Date());
         plan1.setVersion(1);

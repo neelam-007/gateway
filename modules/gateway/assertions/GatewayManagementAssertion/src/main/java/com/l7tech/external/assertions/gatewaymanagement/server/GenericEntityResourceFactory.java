@@ -16,7 +16,7 @@ import java.util.Map;
 import java.util.Set;
 
 @ResourceFactory.ResourceType(type=GenericEntityMO.class)
-public class GenericEntityResourceFactory extends EntityManagerResourceFactory<GenericEntityMO, GenericEntity, GenericEntityHeader> {
+public class GenericEntityResourceFactory extends GoidEntityManagerResourceFactory<GenericEntityMO, GenericEntity, GenericEntityHeader> {
 
     //- PUBLIC
 

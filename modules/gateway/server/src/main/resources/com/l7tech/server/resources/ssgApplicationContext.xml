@@ -1671,7 +1671,6 @@
                 <ref bean="passwordPolicyManger"/>
                 <ref bean="policyVersionManager"/>
                 <ref bean="folderManager"/>
-                <ref bean="genericEntityManager"/>
                 <ref bean="encapsulatedAssertionConfigManager"/>
             </list>
         </property>
@@ -1684,6 +1683,7 @@
             <list>
                 <ref bean="clusterPropertyManager"/>
                 <ref bean="jdbcConnectionManager"/>
+                <ref bean="genericEntityManager"/>
             </list>
         </property>
         <property name="timer" ref="entityVersionCheckerTimer"/>

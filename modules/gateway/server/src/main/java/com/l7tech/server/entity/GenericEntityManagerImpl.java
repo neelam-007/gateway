@@ -5,7 +5,7 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.policy.GenericEntity;
 import com.l7tech.policy.GenericEntityHeader;
 import com.l7tech.policy.InvalidGenericEntityException;
-import com.l7tech.server.HibernateEntityManager;
+import com.l7tech.server.HibernateGoidEntityManager;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.ExceptionUtils;
@@ -35,24 +35,24 @@ import static org.springframework.transaction.annotation.Propagation.REQUIRED;
  * Implementation of GenericEntityManager.
  */
 @Transactional(propagation=REQUIRED, rollbackFor=Throwable.class)
-public class GenericEntityManagerImpl extends HibernateEntityManager<GenericEntity, GenericEntityHeader> implements GenericEntityManager, ApplicationContextAware {
+public class GenericEntityManagerImpl extends HibernateGoidEntityManager<GenericEntity, GenericEntityHeader> implements GenericEntityManager, ApplicationContextAware {
     private static final Logger logger = Logger.getLogger(GenericEntityManagerImpl.class.getName());
 
     public static final String F_CLASSNAME = "entityClassName";
 
-    private final String HQL_FIND_ALL_OIDS_AND_VERSIONS_BY_CLASSNAME =
+    private final String HQL_FIND_ALL_GOIDS_AND_VERSIONS_BY_CLASSNAME =
             "SELECT " +
-                    getTableName() + "." + F_OID + ", " +
+                    getTableName() + "." + F_GOID + ", " +
                     getTableName() + "." + F_VERSION +
             " FROM " + getTableName() +
             " IN CLASS " + getImpClass().getName() +
             " WHERE " + getTableName() + "." + F_CLASSNAME + " = ?";
 
-    private final String HQL_FIND_VERSION_BY_OID_AND_CLASSNAME =
+    private final String HQL_FIND_VERSION_BY_GOID_AND_CLASSNAME =
             "SELECT " + getTableName() + "." + F_VERSION +
             " FROM " + getTableName() +
             " IN CLASS " + getImpClass().getName() +
-            " WHERE " + getTableName() + "." + F_OID + " = ?" +
+            " WHERE " + getTableName() + "." + F_GOID + " = ?" +
             "   AND " + getTableName() + "." + F_CLASSNAME + " = ?";
 
     private final ConcurrentMap<String, Class<? extends GenericEntity>> registeredClasses = new ConcurrentHashMap<String, Class<? extends GenericEntity>>();
@@ -96,18 +96,18 @@ public class GenericEntityManagerImpl extends HibernateEntityManager<GenericEnti
 
     @Override
     @Transactional(readOnly=true)
-    public <ET extends GenericEntity> EntityManager<ET, GenericEntityHeader> getEntityManager(@NotNull final Class<ET> entityClass) {
+    public <ET extends GenericEntity> GoidEntityManager<ET, GenericEntityHeader> getEntityManager(@NotNull final Class<ET> entityClass) {
         // Get delegate from Spring so it has tx wrappers
         final GenericEntityManager gem = applicationContext.getBean("genericEntityManager", GenericEntityManager.class);
-        return new EntityManager<ET, GenericEntityHeader>() {
+        return new GoidEntityManager<ET, GenericEntityHeader>() {
             @Override
             public ET findByPrimaryKey(long oid) throws FindException {
-                return gem.findByGenericClassAndPrimaryKey(entityClass, oid);
+                throw new UnsupportedOperationException("Generic entities do not support oids anymore.");
             }
 
             @Override
             public ET findByPrimaryKey(Goid goid) throws FindException {
-                throw new UnsupportedOperationException("Generic entities do not support goids yet.");
+                return gem.findByGenericClassAndPrimaryKey(entityClass, goid);
             }
 
             @Override
@@ -126,17 +126,17 @@ public class GenericEntityManagerImpl extends HibernateEntityManager<GenericEnti
             }
 
             @Override
-            public long save(ET entity) throws SaveException {
+            public Goid save(ET entity) throws SaveException {
                 return gem.save(entityClass, entity);
             }
 
             @Override
-            public Integer getVersion(long oid) throws FindException {
-                return gem.getVersion(entityClass, oid);
+            public Integer getVersion(Goid goid) throws FindException {
+                return gem.getVersion(entityClass, goid);
             }
 
             @Override
-            public Map<Long, Integer> findVersionMap() throws FindException {
+            public Map<Goid, Integer> findVersionMap() throws FindException {
                 return gem.findVersionMap(entityClass);
             }
 
@@ -146,8 +146,8 @@ public class GenericEntityManagerImpl extends HibernateEntityManager<GenericEnti
             }
 
             @Override
-            public ET getCachedEntity(long o, int maxAge) throws FindException {
-                return gem.getCachedEntity(entityClass, o, maxAge);
+            public ET getCachedEntity(Goid goid, int maxAge) throws FindException {
+                return gem.getCachedEntity(entityClass, goid, maxAge);
             }
 
             @Override
@@ -171,8 +171,8 @@ public class GenericEntityManagerImpl extends HibernateEntityManager<GenericEnti
             }
 
             @Override
-            public void delete(long oid) throws DeleteException, FindException {
-                gem.delete(entityClass, oid);
+            public void delete(Goid goid) throws DeleteException, FindException {
+                gem.delete(entityClass, goid);
             }
 
             @Override
@@ -274,7 +274,7 @@ public class GenericEntityManagerImpl extends HibernateEntityManager<GenericEnti
     }
 
     @Override
-    public <ET extends GenericEntity> long save(@NotNull Class<ET> entityClass, ET entity) throws SaveException {
+    public <ET extends GenericEntity> Goid save(@NotNull Class<ET> entityClass, ET entity) throws SaveException {
         if (!isRegistered(entityClass))
             throw new SaveException(regmsg(entityClass));
         if (!entityClass.getName().equals(entity.getEntityClassName()))
@@ -288,7 +288,7 @@ public class GenericEntityManagerImpl extends HibernateEntityManager<GenericEnti
 
     @Override
     @Transactional(readOnly=true)
-    public <ET extends GenericEntity> Integer getVersion(final @NotNull Class<ET> entityClass, final long oid) throws FindException {
+    public <ET extends GenericEntity> Integer getVersion(final @NotNull Class<ET> entityClass, final Goid goid) throws FindException {
         if (!isRegistered(entityClass))
             throw new FindException(regmsg(entityClass));
 
@@ -296,8 +296,8 @@ public class GenericEntityManagerImpl extends HibernateEntityManager<GenericEnti
             return getHibernateTemplate().execute(new ReadOnlyHibernateCallback<Integer>() {
                 @Override
                 public Integer doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
-                    Query q = session.createQuery(HQL_FIND_VERSION_BY_OID_AND_CLASSNAME);
-                    q.setLong(0, oid);
+                    Query q = session.createQuery(HQL_FIND_VERSION_BY_GOID_AND_CLASSNAME);
+                    q.setParameter(0, goid);
                     q.setString(1, entityClass.getName());
                     return (Integer) q.uniqueResult();
                 }
@@ -313,12 +313,12 @@ public class GenericEntityManagerImpl extends HibernateEntityManager<GenericEnti
 
     @Override
     @Transactional(readOnly=true)
-    public <ET extends GenericEntity> Map<Long, Integer> findVersionMap(@NotNull Class<ET> entityClass) throws FindException {
+    public <ET extends GenericEntity> Map<Goid, Integer> findVersionMap(@NotNull Class<ET> entityClass) throws FindException {
         if (!isRegistered(entityClass))
             throw new FindException(regmsg(entityClass));
 
-        Map<Long, Integer> result = new HashMap<Long, Integer>();
-        if (!PersistentEntity.class.isAssignableFrom(getImpClass())) throw new FindException("Can't find non-Entities!");
+        Map<Goid, Integer> result = new HashMap<Goid, Integer>();
+        if (!GoidEntity.class.isAssignableFrom(getImpClass())) throw new FindException("Can't find non-Entities!");
 
         Session s = null;
         FlushMode old = null;
@@ -326,14 +326,14 @@ public class GenericEntityManagerImpl extends HibernateEntityManager<GenericEnti
             s = getSession();
             old = s.getFlushMode();
             s.setFlushMode(FlushMode.MANUAL);
-            Query q = s.createQuery(HQL_FIND_ALL_OIDS_AND_VERSIONS_BY_CLASSNAME);
+            Query q = s.createQuery(HQL_FIND_ALL_GOIDS_AND_VERSIONS_BY_CLASSNAME);
             q.setString(0, entityClass.getName());
             List results = q.list();
             if (results.size() > 0) {
                 for (Object result1 : results) {
                     Object[] row = (Object[]) result1;
-                    if (row[0]instanceof Long && row[1]instanceof Integer) {
-                        result.put((Long)row[0], (Integer)row[1]);
+                    if (row[0]instanceof Goid && row[1]instanceof Integer) {
+                        result.put((Goid)row[0], (Integer)row[1]);
                     } else {
                         throw new FindException("Got unexpected fields " + row[0] + " and " + row[1] + " from query!");
                     }
@@ -376,11 +376,11 @@ public class GenericEntityManagerImpl extends HibernateEntityManager<GenericEnti
 
     @Override
     @Transactional(readOnly=true)
-    public <ET extends GenericEntity> ET getCachedEntity(@NotNull Class<ET> entityClass, long o, int maxAge) throws FindException {
+    public <ET extends GenericEntity> ET getCachedEntity(@NotNull Class<ET> entityClass, Goid goid, int maxAge) throws FindException {
         if (!isRegistered(entityClass))
             throw new FindException(regmsg(entityClass));
 
-        GenericEntity ret = super.getCachedEntity(o, maxAge);
+        GenericEntity ret = super.getCachedEntity(goid, maxAge);
         if (ret == null)
             return null;
 
@@ -430,15 +430,15 @@ public class GenericEntityManagerImpl extends HibernateEntityManager<GenericEnti
     }
 
     @Override
-    public <ET extends GenericEntity> void delete(@NotNull Class<ET> entityClass, long oid) throws DeleteException, FindException {
+    public <ET extends GenericEntity> void delete(@NotNull Class<ET> entityClass, Goid goid) throws DeleteException, FindException {
         if (!isRegistered(entityClass))
             throw new DeleteException(regmsg(entityClass));
 
-        GenericEntity got = findByPrimaryKey(oid);
+        GenericEntity got = findByPrimaryKey(goid);
         if (got != null && !entityClass.getName().equals(got.getEntityClassName()))
-            throw new DeleteException("Generic entity with oid " + oid + " cannot be deleted as a " + entityClass.getName() + " because it is actually a " + got.getEntityClassName());
+            throw new DeleteException("Generic entity with goid " + goid.toString() + " cannot be deleted as a " + entityClass.getName() + " because it is actually a " + got.getEntityClassName());
 
-        delete(oid);
+        delete(goid);
     }
 
     @Override
@@ -447,10 +447,10 @@ public class GenericEntityManagerImpl extends HibernateEntityManager<GenericEnti
             throw new UpdateException(regmsg(entityClass));
 
         try {
-            final long oid = entity.getOid();
-            GenericEntity got = findByPrimaryKey(oid);
+            final Goid goid = entity.getGoid();
+            GenericEntity got = findByPrimaryKey(goid);
             if (got != null && !entityClass.getName().equals(got.getEntityClassName()))
-                throw new UpdateException("Generic entity with oid " + oid + " cannot be updated as a " + entityClass.getName() + " because it is actually a " + got.getEntityClassName());
+                throw new UpdateException("Generic entity with oid " + goid.toString() + " cannot be updated as a " + entityClass.getName() + " because it is actually a " + got.getEntityClassName());
         } catch (FindException e) {
             throw new UpdateException("Unable to update generic entity: " + ExceptionUtils.getMessage(e), e);
         }
@@ -478,11 +478,11 @@ public class GenericEntityManagerImpl extends HibernateEntityManager<GenericEnti
 
     @Override
     @Transactional(readOnly=true)
-    public <ET extends GenericEntity> ET findByGenericClassAndPrimaryKey(@NotNull Class<ET> entityClass, long oid) throws FindException {
+    public <ET extends GenericEntity> ET findByGenericClassAndPrimaryKey(@NotNull Class<ET> entityClass, Goid goid) throws FindException {
         if (!isRegistered(entityClass))
             throw new FindException(regmsg(entityClass));
 
-        GenericEntity ret = findByPrimaryKey(oid);
+        GenericEntity ret = findByPrimaryKey(goid);
         if (ret == null)
             return null;
         if (!entityClass.getName().equals(ret.getEntityClassName()))

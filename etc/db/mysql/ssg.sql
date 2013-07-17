@@ -1904,14 +1904,14 @@ CREATE TABLE wssc_session (
 --
 DROP TABLE IF EXISTS generic_entity;
 CREATE TABLE generic_entity (
-  objectid bigint(20) NOT NULL,
+  goid binary(16) NOT NULL,
   version int(11) NOT NULL,
   name varchar(255),
   description mediumtext,
   classname varchar(255) NOT NULL,
   enabled boolean DEFAULT TRUE,
   value_xml mediumtext,
-  PRIMARY KEY (objectid),
+  PRIMARY KEY (goid),
   UNIQUE KEY i_classname_name (classname, name)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 

@@ -1,10 +1,7 @@
 package com.l7tech.external.assertions.whichmodule;
 
 import com.l7tech.gateway.common.security.rbac.Secured;
-import com.l7tech.objectmodel.DeleteException;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.objectmodel.*;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collection;
@@ -36,7 +33,7 @@ public interface DemoGenericEntityAdmin {
      * @throws UpdateException if there is a problem updating an existing entity
      */
     @Secured(stereotype=SAVE_OR_UPDATE)
-    long save(DemoGenericEntity entity) throws SaveException, UpdateException;
+    Goid save(DemoGenericEntity entity) throws SaveException, UpdateException;
 
     /**
      * Delete a DemoGenericEntity.

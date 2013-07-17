@@ -234,6 +234,14 @@ SET @emailState_prefix=concat(lpad(char(#RANDOM_LONG#),4,'\0'),lpad(char(#RANDOM
 UPDATE email_listener_state SET goid = concat(@emailState_prefix,lpad(char(objectid_backup),8,'\0'));
 ALTER TABLE email_listener_state DROP COLUMN objectid_backup;
 
+-- GenericEntity
+ALTER TABLE generic_entity ADD COLUMN objectid_backup BIGINT(20);
+update generic_entity set objectid_backup=objectid;
+ALTER TABLE generic_entity CHANGE COLUMN objectid goid BINARY(16);
+-- For manual runs use: set @generic_entity_prefix=concat(lpad(char(floor(rand()*4294967295)+1),4,'\0'),lpad(char(floor(rand()*4294967296)),4,'\0'));
+set @generic_entity_prefix=lpad(char(#RANDOM_LONG_NOT_RESERVED#),8,'\0');
+update generic_entity set goid = concat(@generic_entity_prefix,lpad(char(objectid_backup),8,'\0'));
+ALTER TABLE generic_entity DROP COLUMN objectid_backup;
 
 --
 -- Register upgrade task for upgrading sink configuration references to GOIDs
