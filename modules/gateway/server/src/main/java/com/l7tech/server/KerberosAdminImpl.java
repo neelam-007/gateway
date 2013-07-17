@@ -1,6 +1,7 @@
 package com.l7tech.server;
 
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.MasterPasswordManager;
@@ -182,6 +183,11 @@ public class KerberosAdminImpl implements KerberosAdmin {
         } catch ( ObjectModelException ome ) {
             throw new KerberosException( "Error retrieving " + KEYTAB_VALIDATE, ome );
         }
+    }
+
+    @Override
+    public boolean isReferralEnabled() {
+        return ConfigFactory.getBooleanProperty("kerberos.referral.enabled", false);
     }
 
     //- PRIVATE

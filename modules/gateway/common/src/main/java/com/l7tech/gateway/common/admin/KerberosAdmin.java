@@ -100,6 +100,12 @@ public interface KerberosAdmin  {
      */
     public boolean getKeytabValidate() throws KerberosException;
 
+    /**
+     * Check to see if the referral is enabled
+     * @return True when enable.
+     */
+    boolean isReferralEnabled();
+
 
 
 

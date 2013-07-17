@@ -3,7 +3,9 @@ package com.l7tech.external.assertions.kerberos.authentication.console;
 import com.l7tech.console.panels.AssertionPropertiesOkCancelSupport;
 import com.l7tech.console.panels.SecurePasswordComboBox;
 import com.l7tech.console.panels.SecurePasswordManagerWindow;
+import com.l7tech.console.util.Registry;
 import com.l7tech.external.assertions.kerberos.authentication.KerberosAuthenticationAssertion;
+import com.l7tech.gateway.common.admin.KerberosAdmin;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.InputValidator;
@@ -44,6 +46,7 @@ public class KerberosAuthenticationDialog extends AssertionPropertiesOkCancelSup
     private JLabel passwordLabel;
     private JLabel realmLabel;
     private JTextField userRealmTextField;
+    private JLabel userRealmLabel;
     private final InputValidator inputValidator;
 
     public KerberosAuthenticationDialog(final Frame owner, final KerberosAuthenticationAssertion assertion){
@@ -108,6 +111,14 @@ public class KerberosAuthenticationDialog extends AssertionPropertiesOkCancelSup
         specifyUserRadioButton.addChangeListener(enableDisableListener);
         protocolTransitionRadioButton.addChangeListener(enableDisableListener);
 
+
+        KerberosAdmin kerberosAdmin = Registry.getDefault().getKerberosAdmin();
+        userRealmLabel.setVisible(false);
+        userRealmTextField.setVisible(false);
+        if (kerberosAdmin.isReferralEnabled()) {
+            userRealmLabel.setVisible(true);
+            userRealmTextField.setVisible(true);
+        }
     }
 
     private void enableDisableComponents() {
