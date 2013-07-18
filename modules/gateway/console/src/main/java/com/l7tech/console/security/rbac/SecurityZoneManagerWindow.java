@@ -165,7 +165,15 @@ public class SecurityZoneManagerWindow extends JDialog {
                     final AssignSecurityZonesDialog assignDialog = new AssignSecurityZonesDialog(SecurityZoneManagerWindow.this, modifiableEntityTypes);
                     assignDialog.pack();
                     Utilities.centerOnParentWindow(assignDialog);
-                    DialogDisplayer.display(assignDialog);
+                    DialogDisplayer.display(assignDialog, new Runnable() {
+                        @Override
+                        public void run() {
+                            if (getSelectedSecurityZone() != null) {
+                                // currently selected zone's entities may have changed
+                                reloadTabbedPanels();
+                            }
+                        }
+                    });
                 }
             });
         } else {
