@@ -35,7 +35,7 @@ public class RoleAssignment extends PersistentEntityImp {
     private String entityType;
 
     public RoleAssignment(Role role, long providerId, String identityId, EntityType entityType) {
-        if (role == null) throw new NullPointerException();
+        if (role == null) throw new IllegalArgumentException("Role cannot be null");
         this.role = role;
         this.providerId = providerId;
         this.identityId = identityId;
@@ -90,7 +90,7 @@ public class RoleAssignment extends PersistentEntityImp {
         RoleAssignment that = (RoleAssignment) o;
 
         if (providerId != that.providerId) return false;
-        if (role != null ? !role.equals(that.role) : that.role != null) return false;
+        if (role != null ? (that.role == null || role.getOid() != that.role.getOid()) : that.role != null) return false;
         if (identityId != null ? !identityId.equals(that.identityId) : that.identityId != null) return false;
 
         return true;
@@ -100,7 +100,7 @@ public class RoleAssignment extends PersistentEntityImp {
         int result = super.hashCode();
         result = 31 * result + (int) (providerId ^ (providerId >>> 32));
         result = 31 * result + (identityId != null ? identityId.hashCode() : 0);
-        result = 31 * result + (role != null ? role.hashCode() : 0);
+        result = 31 * result + (role != null ? (int)(role.getOid() ^ (role.getOid() >>> 32)) : 0);
         return result;
     }
 }

@@ -18,6 +18,7 @@ import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
 import org.hibernate.annotations.Proxy;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.persistence.*;
@@ -193,6 +194,10 @@ public class Role extends NamedEntityImp implements Comparable<Role> {
      */
     public void addAssignedUser(User user) {
         roleAssignments.add(new RoleAssignment(this, user.getProviderId(), user.getId(), EntityType.USER));
+    }
+
+    public void addAssignedGroup(@NotNull final Group group) {
+        roleAssignments.add(new RoleAssignment(this, group.getProviderId(), group.getId(), EntityType.GROUP));
     }
 
     /**

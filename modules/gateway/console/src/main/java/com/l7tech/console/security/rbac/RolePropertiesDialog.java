@@ -114,6 +114,7 @@ public class RolePropertiesDialog extends JDialog {
                 // name conflict with role that the user cannot read
                 showDuplicateNameError();
             } else {
+                logger.log(Level.WARNING, "Unable to save role: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
                 DialogDisplayer.showMessageDialog(this, "Unable to save.", "Error", JOptionPane.ERROR_MESSAGE, null);
             }
         }

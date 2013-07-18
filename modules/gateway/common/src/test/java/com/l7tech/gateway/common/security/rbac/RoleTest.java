@@ -1,6 +1,7 @@
 package com.l7tech.gateway.common.security.rbac;
 
 import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.identity.GroupBean;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderType;
 import com.l7tech.objectmodel.EntityType;
@@ -51,5 +52,19 @@ public class RoleTest {
 
         System.out.println(role.getDescriptiveName());
         assertEquals("Manage identity provider role description", "Manage TestIP Identity Provider", role.getDescriptiveName());
+    }
+
+    @Test
+    public void addAssignedGroup() {
+        final GroupBean group = new GroupBean();
+        group.setProviderId(1L);
+        group.setUniqueIdentifier("abc123");
+        final Role role = new Role();
+        role.addAssignedGroup(group);
+        assertEquals(1, role.getRoleAssignments().size());
+        final RoleAssignment assignment = role.getRoleAssignments().iterator().next();
+        assertEquals(EntityType.GROUP.getName(), assignment.getEntityType());
+        assertEquals(1L, assignment.getProviderId());
+        assertEquals("abc123", assignment.getIdentityId());
     }
 }
