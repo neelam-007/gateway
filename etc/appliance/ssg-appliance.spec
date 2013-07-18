@@ -328,11 +328,6 @@ if [ "$1" = "0" ] ; then
 	
 	# SSG-5875
 	alias rm=rm
-	rm /etc/init/layer7-tty* > /dev/null
-	rm /etc/modprobe.d/ssg-appliance.conf > /dev/null
-
-	# SSG-5875
-	alias rm=rm
 	rm /etc/init/layer7-tty* &> /dev/null
 	rm /etc/modprobe.d/ssg-appliance.conf &> /dev/null
 
