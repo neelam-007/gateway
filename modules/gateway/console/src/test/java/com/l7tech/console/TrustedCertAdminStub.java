@@ -216,6 +216,11 @@ public class TrustedCertAdminStub implements TrustedCertAdmin {
     }
 
     @Override
+    public long saveOrUpdateMetadata(@NotNull SsgKeyMetadata metadata) throws SaveException {
+        return 0;
+    }
+
+    @Override
     public <OUT extends Serializable> String getJobStatus(JobId<OUT> jobId) {
         return null;
     }

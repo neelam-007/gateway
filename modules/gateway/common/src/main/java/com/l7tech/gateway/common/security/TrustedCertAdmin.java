@@ -15,6 +15,7 @@ import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.security.rbac.Secured;
 import com.l7tech.objectmodel.*;
 import com.l7tech.security.cert.TrustedCert;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -566,5 +567,21 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
     @PrivateKeySecured(preChecks={CHECK_ARG_OPERATION}, argOp=OperationType.READ)
     boolean isShortSigningKey(long keystoreId, String alias) throws FindException, KeyStoreException;
 
+    /**
+     * @param metadataOid the oid of the SsgKeyMetadata to retrieve.
+     * @return an SsgKeyMetadata identified by the given oid or null if it does not exist.
+     * @throws FindException if an error occurs retrieving the SsgKeyMetadata.
+     */
+    @Secured(types=SSG_KEY_METADATA, stereotype = FIND_ENTITY)
     SsgKeyMetadata findKeyMetadata(final long metadataOid) throws FindException;
+
+    /**
+     * Save a new SsgKeyMetadata or update an existing SsgKeyMetadata.
+     *
+     * @param metadata the SsgKeyMetadata to save or update.
+     * @return the oid of the saved SsgKeyMetadata.
+     * @throws SaveException if an error occurs saving/updating the SsgKeyMetadata.
+     */
+    @Secured(types=SSG_KEY_METADATA, stereotype = SAVE_OR_UPDATE, relevantArg = 0)
+    long saveOrUpdateMetadata(@NotNull final SsgKeyMetadata metadata) throws SaveException;
 }

@@ -126,6 +126,13 @@ public class EntityNameResolverTest {
         assertEquals(NAME, resolver.getNameForHeader(new EntityHeader(OID, EntityType.SSG_KEY_METADATA, null, null)));
     }
 
+    @BugId("SSG-7314")
+    @Test
+    public void getNameForKeyMetadataHeaderNotYetPersisted() throws Exception {
+        when(trustedCertAdmin.findKeyMetadata(anyLong())).thenReturn(null);
+        assertEquals(NAME, resolver.getNameForHeader(new KeyMetadataHeaderWrapper(new SsgKeyMetadata(1L, NAME, null))));
+    }
+
     @Test
     public void getNameForResourceEntryHeader() throws Exception {
         final String uri = "http://localhost:8080";

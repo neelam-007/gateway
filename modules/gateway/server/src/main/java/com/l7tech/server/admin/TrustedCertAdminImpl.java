@@ -791,6 +791,20 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
         return ssgKeyMetadataManager.findByPrimaryKey(metadataOid);
     }
 
+    @Override
+    public long saveOrUpdateMetadata(@NotNull SsgKeyMetadata metadata) throws SaveException {
+        if (metadata.getOid() == SsgKeyMetadata.DEFAULT_OID) {
+            return ssgKeyMetadataManager.save(metadata);
+        } else {
+            try {
+                ssgKeyMetadataManager.update(metadata);
+            } catch (final UpdateException e) {
+                throw new SaveException(e);
+            }
+            return metadata.getOid();
+        }
+    }
+
 
     private TrustedCertManager getManager() {
         return trustedCertManager;

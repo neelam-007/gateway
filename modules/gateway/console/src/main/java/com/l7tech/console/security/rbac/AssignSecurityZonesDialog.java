@@ -5,10 +5,11 @@ import com.l7tech.console.policy.ConsoleAssertionRegistry;
 import com.l7tech.console.tree.ServicesAndPoliciesTree;
 import com.l7tech.console.tree.identity.IdentityProvidersTree;
 import com.l7tech.console.tree.servicesAndPolicies.RootNode;
-import com.l7tech.console.util.EntityNameResolver;
-import com.l7tech.console.util.Registry;
-import com.l7tech.console.util.SecurityZoneUtil;
-import com.l7tech.console.util.TopComponents;
+import com.l7tech.console.util.*;
+import com.l7tech.gateway.common.security.TrustedCertAdmin;
+import com.l7tech.gateway.common.security.keystore.KeystoreFileEntityHeader;
+import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
+import com.l7tech.gateway.common.security.keystore.SsgKeyMetadata;
 import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.gateway.common.security.rbac.RbacAdmin;
 import com.l7tech.gui.util.DialogDisplayer;
@@ -40,6 +41,9 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.io.IOException;
+import java.security.KeyStoreException;
+import java.security.cert.CertificateException;
 import java.util.*;
 import java.util.List;
 import java.util.logging.Level;
@@ -432,6 +436,27 @@ public class AssignSecurityZonesDialog extends JDialog {
                 assertionHeader.setSecurityZoneOid(assertionAccess.getSecurityZone() == null ? null : assertionAccess.getSecurityZone().getOid());
                 entities.add(assertionHeader);
             }
+        } else if (selected == EntityType.SSG_KEY_METADATA) {
+            entities = new EntityHeaderSet<>();
+            long nonPersistedMetadatas = 0L;
+            try {
+                final TrustedCertAdmin trustedCertManager = Registry.getDefault().getTrustedCertManager();
+                final List<KeystoreFileEntityHeader> keystores = trustedCertManager.findAllKeystores(true);
+                for (final KeystoreFileEntityHeader keystore : keystores) {
+                    final List<SsgKeyEntry> keys = trustedCertManager.findAllKeys(keystore.getOid(), true);
+                    for (final SsgKeyEntry key : keys) {
+                        SsgKeyMetadata keyMetadata = key.getKeyMetadata();
+                        if (keyMetadata == null) {
+                            // this key metadata is not yet persisted
+                            keyMetadata = new SsgKeyMetadata(key.getKeystoreId(), key.getAlias(), null);
+                            keyMetadata.setOid(--nonPersistedMetadatas);
+                        }
+                        entities.add(new KeyMetadataHeaderWrapper(keyMetadata));
+                    }
+                }
+            } catch (final IOException | KeyStoreException | CertificateException e) {
+                throw new FindException("Error retrieving private key metadata.", e);
+            }
         } else {
             entities = Registry.getDefault().getRbacAdmin().findEntities(selected);
         }
@@ -516,6 +541,30 @@ public class AssignSecurityZonesDialog extends JDialog {
                     }
                     doBulkUpdate(EntityType.ASSERTION_ACCESS, selectedZone, selectedEntities.keySet(), assertionAccessToUpdate);
                 } catch (final UpdateException ex) {
+                    DialogDisplayer.showMessageDialog(AssignSecurityZonesDialog.this, "Error", "Error assigning entities to zone.", ex);
+                }
+            } else if (selectedEntityType == EntityType.SSG_KEY_METADATA) {
+                final Set<EntityHeader> metadataToUpdate = new HashSet<>();
+                try {
+                    final TrustedCertAdmin trustedCertManager = Registry.getDefault().getTrustedCertManager();
+                    for (final Map.Entry<Integer, EntityHeader> entry : selectedEntities.entrySet()) {
+                        final EntityHeader header = entry.getValue();
+                        if (header.getOid() < 0) {
+                            // save new key metadata
+                            if (header instanceof KeyMetadataHeaderWrapper) {
+                                final KeyMetadataHeaderWrapper keyHeader = (KeyMetadataHeaderWrapper) header;
+                                final SsgKeyMetadata metadata = new SsgKeyMetadata(keyHeader.getKeystoreOid(), keyHeader.getAlias(), selectedZone);
+                                final long savedOid = trustedCertManager.saveOrUpdateMetadata(metadata);
+                                header.setOid(savedOid);
+                                dataModel.setValueAt(header, entry.getKey(), HEADER_COL_INDEX);
+                            }
+                        } else {
+                            // update an existing key metadata
+                            metadataToUpdate.add(header);
+                        }
+                    }
+                    doBulkUpdate(EntityType.SSG_KEY_METADATA, selectedZone, selectedEntities.keySet(), metadataToUpdate);
+                } catch (final SaveException ex) {
                     DialogDisplayer.showMessageDialog(AssignSecurityZonesDialog.this, "Error", "Error assigning entities to zone.", ex);
                 }
             } else {

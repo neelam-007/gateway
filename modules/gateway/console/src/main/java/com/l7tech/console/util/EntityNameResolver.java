@@ -1,5 +1,6 @@
 package com.l7tech.console.util;
 
+import com.l7tech.console.security.rbac.AssignSecurityZonesDialog;
 import com.l7tech.console.tree.PaletteFolderRegistry;
 import com.l7tech.console.tree.servicesAndPolicies.RootNode;
 import com.l7tech.gateway.common.admin.FolderAdmin;
@@ -117,7 +118,14 @@ public class EntityNameResolver {
                     relatedEntity = owningPolicy;
                     break;
                 case SSG_KEY_METADATA:
-                    final SsgKeyMetadata metadata = trustedCertAdmin.findKeyMetadata(header.getOid());
+                    SsgKeyMetadata metadata = trustedCertAdmin.findKeyMetadata(header.getOid());
+                    if (metadata == null) {
+                        // may not have been persisted yet
+                        if (header instanceof KeyMetadataHeaderWrapper) {
+                            final KeyMetadataHeaderWrapper keyHeader = (KeyMetadataHeaderWrapper) header;
+                            metadata = new SsgKeyMetadata(keyHeader.getKeystoreOid(), keyHeader.getAlias(), null);
+                        }
+                    }
                     validateFoundEntity(header, metadata);
                     entity = metadata;
                     break;

@@ -5,9 +5,7 @@ import com.l7tech.gateway.common.AsyncAdminMethods;
 import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.security.keystore.SsgKeyMetadata;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.SecurityZone;
-import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.objectmodel.*;
 import com.l7tech.security.cert.TestCertificateGenerator;
 import com.l7tech.security.cert.TrustedCertManager;
 import com.l7tech.server.DefaultKey;
@@ -183,6 +181,27 @@ public class TrustedCertAdminImplTest {
         when(adminHelper.doFindKeyEntry(ALIAS, KEYSTORE_ID)).thenReturn(new SsgKeyEntry(KEYSTORE_ID, ALIAS, chain, privateKey));
         doThrow(new UpdateException("mocking exception")).when(adminHelper).doUpdateKeyMetadata(anyLong(), anyString(), any(SsgKeyMetadata.class));
         admin.updateKeyEntry(keyEntry);
+    }
+
+    @Test
+    public void saveOrUpdateMetadataCreate() throws Exception {
+        metadata.setOid(PersistentEntity.DEFAULT_OID);
+        admin.saveOrUpdateMetadata(metadata);
+        verify(ssgKeyMetadataManager).save(metadata);
+    }
+
+    @Test
+    public void saveOrUpdateMetadataUpdate() throws Exception {
+        metadata.setOid(1L);
+        admin.saveOrUpdateMetadata(metadata);
+        verify(ssgKeyMetadataManager).update(metadata);
+    }
+
+    @Test(expected=SaveException.class)
+    public void saveOrUpdateMetadataUpdateException() throws Exception {
+        metadata.setOid(1L);
+        doThrow(new UpdateException("mocking exception")).when(ssgKeyMetadataManager).update(metadata);
+        admin.saveOrUpdateMetadata(metadata);
     }
 
     private X509Certificate[] generateCertChain() throws Exception {
