@@ -368,7 +368,7 @@ public class SalesforceInstallerAdminImpl extends AsyncAdminMethodsImpl implemen
                     if (!details.isEmpty()) {
                         final SalesforceInstallationAuditEvent problemEvent =
                             new SalesforceInstallationAuditEvent(this,
-                                MessageFormat.format("OAuth Toolkit pre installation check conflicts for component {0} found.", bundleInfo.getName()),
+                                MessageFormat.format("Pre installation check conflicts for component {0} found.", bundleInfo.getName()),
                                 Level.INFO);
                         problemEvent.setAuditDetails(details);
                         appEventPublisher.publishEvent(problemEvent);
