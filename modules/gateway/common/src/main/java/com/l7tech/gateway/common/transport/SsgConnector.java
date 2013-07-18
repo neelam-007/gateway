@@ -2,7 +2,9 @@ package com.l7tech.gateway.common.transport;
 
 import com.l7tech.common.io.PortOwner;
 import com.l7tech.common.io.PortRange;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.imp.ZoneableNamedEntityImp;
+import com.l7tech.objectmodel.imp.ZoneableNamedGoidEntityImp;
 import com.l7tech.search.Dependencies;
 import com.l7tech.search.Dependency;
 import com.l7tech.util.BeanUtils;
@@ -30,7 +32,7 @@ import java.util.regex.Pattern;
 @Entity
 @Proxy(lazy=false)
 @Table(name="connector")
-public class SsgConnector extends ZoneableNamedEntityImp implements PortOwner {
+public class SsgConnector extends ZoneableNamedGoidEntityImp implements PortOwner {
     protected static final Logger logger = Logger.getLogger(SsgConnector.class.getName());
 
     /** Indicates that a client certificate challenge will never be sent. */
@@ -244,8 +246,8 @@ public class SsgConnector extends ZoneableNamedEntityImp implements PortOwner {
     public SsgConnector() {
     }
 
-    public SsgConnector(long oid, String name, int port, String scheme, boolean secure, String endpoints, int clientAuth, Long keystoreOid, String keyAlias) {
-        setOid(oid);
+    public SsgConnector(Goid goid, String name, int port, String scheme, boolean secure, String endpoints, int clientAuth, Long keystoreOid, String keyAlias) {
+        setGoid(goid);
         setName(name);
         this.port = port;
         this.scheme = scheme;
@@ -590,7 +592,7 @@ public class SsgConnector extends ZoneableNamedEntityImp implements PortOwner {
     @Fetch(FetchMode.SUBSELECT)
     @ElementCollection(fetch=FetchType.EAGER)
     @JoinTable(name="connector_property",
-               joinColumns=@JoinColumn(name="connector_oid", referencedColumnName="objectid"))
+               joinColumns=@JoinColumn(name="connector_goid", referencedColumnName="goid"))
     @MapKeyColumn(name="name",length=128)
     @Column(name="value", nullable=false, length=32672)
     protected Map<String,String> getProperties() {
@@ -641,7 +643,7 @@ public class SsgConnector extends ZoneableNamedEntityImp implements PortOwner {
                 throw new IllegalArgumentException("Invalid port count: " + count);
             return new PortRange(start, start + count -1, false, getProperty(PROP_BIND_ADDRESS));
         } catch (IllegalArgumentException e) {
-            logger.log(Level.WARNING, "Ignoring invalid port range settings for connector oid #" + getOid() + ": " + ExceptionUtils.getMessage(e), e);
+            logger.log(Level.WARNING, "Ignoring invalid port range settings for connector goid #" + getGoid() + ": " + ExceptionUtils.getMessage(e), e);
             return null;
         }
     }

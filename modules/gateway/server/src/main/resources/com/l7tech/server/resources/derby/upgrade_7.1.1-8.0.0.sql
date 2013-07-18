@@ -244,6 +244,42 @@ ALTER TABLE generic_entity DROP PRIMARY KEY;
 ALTER TABLE generic_entity DROP COLUMN objectid;
 ALTER TABLE generic_entity ADD PRIMARY KEY (goid);
 
+
+-- Connector
+ALTER TABLE connector_property DROP CONSTRAINT FK7EC2A187BA66EE5C;
+
+ALTER TABLE connector ADD COLUMN goid CHAR(16) FOR BIT DATA;
+call setVariable('connector_prefix', cast(randomLongNotReserved() as char(21)));
+update connector set goid = toGoid(cast(getVariable('connector_prefix') as bigint), objectid);
+ALTER TABLE connector ALTER COLUMN goid NOT NULL;
+ALTER TABLE connector DROP PRIMARY KEY;
+ALTER TABLE connector DROP COLUMN objectid;
+ALTER TABLE connector ADD PRIMARY KEY (goid);
+
+ALTER TABLE connector_property ADD COLUMN connector_goid CHAR(16) FOR BIT DATA;
+update connector_property set connector_goid = toGoid(cast(getVariable('connector_prefix') as bigint), connector_oid);
+ALTER TABLE connector_property ALTER COLUMN connector_goid NOT NULL;
+ALTER TABLE connector_property DROP COLUMN connector_oid;
+ALTER TABLE connector_property add constraint FK7EC2A187BA66EE5C foreign key (connector_goid) references connector on delete cascade;
+
+-- Firewall rule
+
+ALTER TABLE firewall_rule ADD COLUMN objectid_backup bigint;
+update firewall_rule set objectid_backup = objectid;
+ALTER TABLE firewall_rule DROP COLUMN objectid;
+ALTER TABLE firewall_rule ADD COLUMN goid CHAR(16) FOR BIT DATA;
+call setVariable('firewall_rule_prefix', cast(randomLongNotReserved() as char(21)));
+update firewall_rule set goid = toGoid(cast(getVariable('firewall_rule_prefix') as bigint), objectid_backup);
+ALTER TABLE firewall_rule ALTER COLUMN goid NOT NULL;
+ALTER TABLE firewall_rule DROP COLUMN objectid_backup;
+ALTER TABLE firewall_rule ADD PRIMARY KEY (goid);
+
+ALTER TABLE firewall_rule_property ADD COLUMN firewall_rule_goid CHAR(16) FOR BIT DATA;
+update firewall_rule_property set firewall_rule_goid = toGoid(cast(getVariable('firewall_rule_prefix') as bigint), firewall_rule_oid);
+ALTER TABLE firewall_rule_property ALTER COLUMN firewall_rule_goid NOT NULL;
+ALTER TABLE firewall_rule_property DROP COLUMN firewall_rule_oid;
+ALTER TABLE firewall_rule_property add constraint FK_FIREWALL_PROPERTY_GOID foreign key (firewall_rule_goid) references firewall_rule on delete cascade;
+
 --
 -- Register upgrade task for upgrading sink configuration references to GOIDs
 --

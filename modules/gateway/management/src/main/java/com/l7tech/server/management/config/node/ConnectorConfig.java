@@ -23,7 +23,7 @@ public class ConnectorConfig extends SsgConnector {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder("      <connector ");
-        sb.append("id=\"").append(_oid).append("\" ");
+        sb.append("id=\"").append(getGoid()).append("\" ");
         if (_name != null) sb.append("name=\"").append(_name).append("\" ");
         sb.append("port=\"").append(getPort()).append("\" ");
         sb.append("protocol=\"").append(getScheme()).append("\"");
@@ -45,7 +45,7 @@ public class ConnectorConfig extends SsgConnector {
     }
 
     public void copyFrom(SsgConnector sc) {
-        setOid(sc.getOid());
+        setGoid(sc.getGoid());
         setName(sc.getName());
         setVersion(sc.getVersion());
         setEnabled(sc.isEnabled());

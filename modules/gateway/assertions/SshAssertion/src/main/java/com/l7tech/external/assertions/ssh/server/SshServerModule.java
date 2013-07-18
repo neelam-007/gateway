@@ -11,6 +11,7 @@ import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.gateway.common.transport.TransportDescriptor;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.security.keys.PemUtils;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.server.DefaultKey;
@@ -166,7 +167,7 @@ public class SshServerModule extends TransportModule implements ApplicationListe
     private final ThreadPoolBean sftpMessageProcessingThreadPool;
     private final ThreadPoolBean sshResponseDownloadThreadPool;
     private final Injector injector;
-    private final Map<Long, Pair<SsgConnector, SshServer>> activeConnectors = new ConcurrentHashMap<Long, Pair<SsgConnector, SshServer>>();
+    private final Map<Goid, Pair<SsgConnector, SshServer>> activeConnectors = new ConcurrentHashMap<Goid, Pair<SsgConnector, SshServer>>();
 
     @Inject
     public SshServerModule( final ApplicationEventProxy applicationEventProxy,
@@ -218,9 +219,9 @@ public class SshServerModule extends TransportModule implements ApplicationListe
     }
 
     @Override
-    public void reportMisconfiguredConnector(long connectorOid) {
+    public void reportMisconfiguredConnector(Goid connectorGoid) {
         // Ignore, can't currently happen for SSH
-        logger.log(Level.WARNING, "SSH connector reported misconfigured: OID " + connectorOid);
+        logger.log(Level.WARNING, "SSH connector reported misconfigured: OID " + connectorGoid);
     }
 
     private void startInitialConnectors() throws FindException {
@@ -261,9 +262,9 @@ public class SshServerModule extends TransportModule implements ApplicationListe
     @Override
     protected void doStop() throws LifecycleException {
         try {
-            final List<Long> oidsToStop = new ArrayList<Long>(activeConnectors.keySet());
-            for ( final Long oid : oidsToStop) {
-                removeConnector(oid);
+            final List<Goid> oidsToStop = new ArrayList<Goid>(activeConnectors.keySet());
+            for ( final Goid goid : oidsToStop) {
+                removeConnector(goid);
             }
         }
         catch(Exception e) {
@@ -299,10 +300,10 @@ public class SshServerModule extends TransportModule implements ApplicationListe
     }
 
     @Override
-    protected boolean isCurrent( long oid, int version ) {
+    protected boolean isCurrent( Goid goid, int version ) {
         boolean current;
 
-        Pair<SsgConnector, SshServer> entry = activeConnectors.get(oid);
+        Pair<SsgConnector, SshServer> entry = activeConnectors.get(goid);
         current = entry != null && entry.left.getVersion()==version;
 
         return current;
@@ -310,13 +311,13 @@ public class SshServerModule extends TransportModule implements ApplicationListe
 
     @Override
     protected void addConnector(SsgConnector connector) throws ListenerException {
-        if ( connector.getOid() == SsgConnector.DEFAULT_OID )
+        if ( connector.getGoid().equals( SsgConnector.DEFAULT_GOID ))
             throw new ListenerException("Connector must be persistent.");
 
-        if (isCurrent(connector.getOid(), connector.getVersion()))
+        if (isCurrent(connector.getGoid(), connector.getVersion()))
             return;
 
-        removeConnector(connector.getOid());
+        removeConnector(connector.getGoid());
         if (!connectorIsOwnedByThisModule(connector))
             return;
 
@@ -339,7 +340,7 @@ public class SshServerModule extends TransportModule implements ApplicationListe
             final SshServer sshd = buildSshServer( connector );
             auditStart( connector.getScheme(), describe( connector ) );
             sshd.start();
-            activeConnectors.put(connector.getOid(), new Pair<SsgConnector, SshServer>(connector, sshd));
+            activeConnectors.put(connector.getGoid(), new Pair<SsgConnector, SshServer>(connector, sshd));
         } catch (IllegalArgumentException iae) {
             throw new ListenerException(getMessage( iae ), getDebugException ( iae ));
         } catch (Exception e) {
@@ -349,9 +350,9 @@ public class SshServerModule extends TransportModule implements ApplicationListe
     }
 
     @Override
-    protected void removeConnector(long oid) {
+    protected void removeConnector(Goid goid) {
         final Pair<SsgConnector, SshServer> entry;
-        entry = activeConnectors.remove(oid);
+        entry = activeConnectors.remove(goid);
         if (entry == null) return;
         SshServer sshd = entry.right;
         if (sshd != null) {

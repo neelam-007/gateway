@@ -1654,8 +1654,6 @@
                 <ref bean="trustedCertManager"/>
                 <ref bean="revocationCheckPolicyManager"/>
                 <ref bean="ssgActiveConnectorManager"/>
-                <ref bean="ssgConnectorManager"/>
-                <ref bean="ssgFirewallRuleManager"/>
                 <ref bean="sinkManager"/>
                 <ref bean="policyManager"/>
                 <ref bean="keystoreFileManager"/>
@@ -1684,6 +1682,8 @@
                 <ref bean="clusterPropertyManager"/>
                 <ref bean="jdbcConnectionManager"/>
                 <ref bean="genericEntityManager"/>
+                <ref bean="ssgConnectorManager"/>
+                <ref bean="ssgFirewallRuleManager"/>
             </list>
         </property>
         <property name="timer" ref="entityVersionCheckerTimer"/>

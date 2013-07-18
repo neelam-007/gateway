@@ -4,6 +4,7 @@ import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.gateway.common.transport.TransportDescriptor;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.LifecycleException;
@@ -95,7 +96,7 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
 
     private final ServerConfig serverConfig;
     private final MasterPasswordManager masterPasswordManager;
-    private final Map<Long, Pair<SsgConnector, Connector>> activeConnectors = new ConcurrentHashMap<Long, Pair<SsgConnector, Connector>>();
+    private final Map<Goid, Pair<SsgConnector, Connector>> activeConnectors = new ConcurrentHashMap<Goid, Pair<SsgConnector, Connector>>();
     private final Set<SsgConnectorActivationListener> endpointListeners;
 
     private Embedded embedded;
@@ -395,9 +396,9 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
             return;
 
         try {
-            final List<Long> oidsToStop = new ArrayList<Long>(activeConnectors.keySet());
-            for ( final Long oid : oidsToStop) {
-                removeConnector(oid);
+            final List<Goid> oidsToStop = new ArrayList<Goid>(activeConnectors.keySet());
+            for ( final Goid goid : oidsToStop) {
+                removeConnector(goid);
             }
         }
         catch(Exception e) {
@@ -528,13 +529,13 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
 
     @Override
     protected void addConnector(SsgConnector connector) throws ListenerException {
-        if ( connector.getOid() == SsgConnector.DEFAULT_OID )
+        if ( connector.getGoid() == SsgConnector.DEFAULT_GOID )
             throw new ListenerException("Connector must be persistent.");
         
-        if (isCurrent(connector.getOid(), connector.getVersion()))
+        if (isCurrent(connector.getGoid(), connector.getVersion()))
             return;
 
-        removeConnector(connector.getOid());
+        removeConnector(connector.getGoid());
         if (!connectorIsOwnedByThisModule(connector))
             return;
 
@@ -555,10 +556,10 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
     }
 
     @Override
-    protected boolean isCurrent( long oid, int version ) {
+    protected boolean isCurrent( Goid goid, int version ) {
         boolean current;
 
-        Pair<SsgConnector, Connector> entry = activeConnectors.get(oid);
+        Pair<SsgConnector, Connector> entry = activeConnectors.get(goid);
         current = entry != null && entry.left.getVersion()==version;
 
         return current;
@@ -581,7 +582,7 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
         }
 
         m.put(CONNECTOR_ATTR_TRANSPORT_MODULE_ID, Long.toString(instanceId));
-        m.put(CONNECTOR_ATTR_CONNECTOR_OID, Long.toString(c.getOid()));
+        m.put(CONNECTOR_ATTR_CONNECTOR_OID, c.getGoid().toString());
 
         if ( SCHEME_HTTPS.equals(c.getScheme())) {
             // SSL
@@ -619,9 +620,9 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
     }
 
     @Override
-    protected void removeConnector(long oid) {
+    protected void removeConnector(Goid goid) {
         final Pair<SsgConnector, Connector> entry;
-        entry = activeConnectors.remove(oid);
+        entry = activeConnectors.remove(goid);
         if (entry == null) return;
         Connector connector = entry.right;
         auditStop( entry.left.getScheme(), describe(entry.left) );
@@ -761,7 +762,7 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
             }
         }
         builder.append("-");
-        builder.append(connector.getOid());
+        builder.append(connector.getGoid());
         builder.append("-executor");
 
         return builder.toString();
@@ -809,7 +810,7 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
     }
 
     private void activateConnector(SsgConnector connector, Connector c) throws ListenerException {
-        activeConnectors.put(connector.getOid(), new Pair<SsgConnector, Connector>(connector, c));
+        activeConnectors.put(connector.getGoid(), new Pair<SsgConnector, Connector>(connector, c));
         embedded.addConnector(c);
         try {
             auditStart( connector.getScheme(), describe( connector ) );
@@ -880,8 +881,8 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
     public static SsgConnector getConnector( ServletRequest req) {
         if (testMode) return testConnector;
 
-        Long connectorOid = (Long)req.getAttribute(ConnectionIdValve.ATTRIBUTE_CONNECTOR_OID);
-        if (connectorOid == null) {
+        Goid connectorGoid = (Goid)req.getAttribute(ConnectionIdValve.ATTRIBUTE_CONNECTOR_OID);
+        if (connectorGoid == null) {
             logger.log(Level.WARNING, "Request lacks valid attribute " + ConnectionIdValve.ATTRIBUTE_CONNECTOR_OID);
             return null;
         }
@@ -893,10 +894,10 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
             return null;
         }
 
-        Pair<SsgConnector, Connector> pair = htm.activeConnectors.get(connectorOid);
+        Pair<SsgConnector, Connector> pair = htm.activeConnectors.get(connectorGoid);
         if (pair == null) {
             logger.log(Level.WARNING, "Request lacks valid attribute " + ConnectionIdValve.ATTRIBUTE_CONNECTOR_OID +
-                                      ": No active connector with oid " + connectorOid);
+                                      ": No active connector with oid " + connectorGoid);
             return null;
         }
         return pair.left;
@@ -922,19 +923,19 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
     }
 
     /**
-     * Look up an active SsgConnector instance by its OID.
+     * Look up an active SsgConnector instance by its GOID.
      * <p/>
      * This can be used by transport drivers instantiated by reflection by third-party code to
      * find their way back to their owning SsgConnector instance.
      *
-     * @param oid the OID of the SsgConnector to locate.
+     * @param goid the GOID of the SsgConnector to locate.
      * @return the specified SsgConnector instance.   Never null.
      * @throws ListenerException if there is no active connector with this OID.
      */
-    public SsgConnector getActiveConnectorByOid(long oid) throws ListenerException {
-        Pair<SsgConnector, Connector> got = activeConnectors.get( oid );
+    public SsgConnector getActiveConnectorByGoid(Goid goid) throws ListenerException {
+        Pair<SsgConnector, Connector> got = activeConnectors.get( goid );
         if (got == null)
-            throw new ListenerException("No active connector exists with oid " + oid);
+            throw new ListenerException("No active connector exists with oid " + goid);
         return got.left;
     }
 
@@ -994,11 +995,11 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
     }
 
     @Override
-    public void reportMisconfiguredConnector(long connectorOid) {
-        Pair<SsgConnector, Connector> got = activeConnectors.get( connectorOid );
+    public void reportMisconfiguredConnector(Goid connectorGoid) {
+        Pair<SsgConnector, Connector> got = activeConnectors.get( connectorGoid );
         String desc = got == null ? null : got.left == null ? null : " (port " + got.left.getPort() + ")";
-        logger.log(Level.WARNING, "Shutting down HTTP connector OID " + connectorOid + desc + " because it cannot be opened with its current configuration");
-        removeConnector(connectorOid);
+        logger.log(Level.WARNING, "Shutting down HTTP connector OID " + connectorGoid + desc + " because it cannot be opened with its current configuration");
+        removeConnector(connectorGoid);
     }
 
     public static final class WebappClassLoaderEx extends WebappClassLoader {

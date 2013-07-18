@@ -2,14 +2,11 @@ package com.l7tech.server.transport.firewall;
 
 import com.l7tech.gateway.common.transport.InterfaceTag;
 import com.l7tech.gateway.common.transport.firewall.SsgFirewallRule;
-import com.l7tech.objectmodel.Entity;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.server.HibernateEntityManager;
+import com.l7tech.objectmodel.*;
+import com.l7tech.server.HibernateGoidEntityManager;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.ServerConfigParams;
-import com.l7tech.server.event.EntityInvalidationEvent;
+import com.l7tech.server.event.GoidEntityInvalidationEvent;
 import com.l7tech.server.transport.ListenerException;
 import com.l7tech.server.util.ApplicationEventProxy;
 import com.l7tech.server.util.FirewallUtils;
@@ -31,13 +28,13 @@ import java.util.logging.Logger;
  * <p>An implementation of the {@link SsgFirewallRuleManager}.</p>
  * @author K.Diep
  */
-public class SsgFirewallRuleManagerImpl extends HibernateEntityManager<SsgFirewallRule, EntityHeader>
+public class SsgFirewallRuleManagerImpl extends HibernateGoidEntityManager<SsgFirewallRule, EntityHeader>
         implements SsgFirewallRuleManager, DisposableBean {
 
     private static final Logger logger = Logger.getLogger(SsgFirewallRuleManagerImpl.class.getName());
 
     private final ServerConfig serverConfig;
-    private final Map<Long, SsgFirewallRule> knownFirewallRules = new LinkedHashMap<Long, SsgFirewallRule>();
+    private final Map<Goid, SsgFirewallRule> knownFirewallRules = new LinkedHashMap<Goid, SsgFirewallRule>();
     private final AtomicReference<Pair<String, Set<InterfaceTag>>> interfaceTags = new AtomicReference<Pair<String, Set<InterfaceTag>>>(null);
 
     public SsgFirewallRuleManagerImpl(ServerConfig serverConfig, ApplicationEventProxy eventProxy) {
@@ -70,7 +67,7 @@ public class SsgFirewallRuleManagerImpl extends HibernateEntityManager<SsgFirewa
     protected void initDao() throws Exception {
         super.initDao();
         for(SsgFirewallRule rule : findAll()){
-            knownFirewallRules.put(rule.getOid(), rule);
+            knownFirewallRules.put(rule.getGoid(), rule);
         }
         openFirewallForRule();
     }
@@ -82,38 +79,38 @@ public class SsgFirewallRuleManagerImpl extends HibernateEntityManager<SsgFirewa
     }
 
     private void handleEvent(ApplicationEvent event) {
-        if (!(event instanceof EntityInvalidationEvent))
+        if (!(event instanceof GoidEntityInvalidationEvent))
             return;
-        EntityInvalidationEvent evt = (EntityInvalidationEvent)event;
+        GoidEntityInvalidationEvent evt = (GoidEntityInvalidationEvent)event;
         if (!SsgFirewallRule.class.isAssignableFrom(evt.getEntityClass()))
             return;
-        long[] ids = evt.getEntityIds();
+        Goid[] ids = evt.getEntityIds();
         char[] ops = evt.getEntityOperations();
         for (int i = 0; i < ops.length; i++) {
             char op = ops[i];
-            long id = ids[i];
+            Goid goid = ids[i];
 
             switch (op) {
-                case EntityInvalidationEvent.DELETE:
+                case GoidEntityInvalidationEvent.DELETE:
                     logger.warning("deleting firewall rule");
-                    knownFirewallRules.remove(id);
+                    knownFirewallRules.remove(goid);
                     break;
                 default:
-                    onFirewallRuleChanged(id);
+                    onFirewallRuleChanged(goid);
             }
         }
         openFirewallForRule();
     }
 
-    private void onFirewallRuleChanged(long id) {
+    private void onFirewallRuleChanged(Goid goid) {
         try {
-            SsgFirewallRule rule = findByPrimaryKey(id);
+            SsgFirewallRule rule = findByPrimaryKey(goid);
             if (rule != null && rule.isEnabled())
-                knownFirewallRules.put(id, rule);
+                knownFirewallRules.put(goid, rule);
             else
-                knownFirewallRules.remove(id);
+                knownFirewallRules.remove(goid);
         } catch (FindException e) {
-            logger.log(Level.WARNING, "Unable to find just-added or -updated firewall with oid " + id + ": " + ExceptionUtils.getMessage(e), e);
+            logger.log(Level.WARNING, "Unable to find just-added or -updated firewall with goid " + goid + ": " + ExceptionUtils.getMessage(e), e);
         }
     }
 

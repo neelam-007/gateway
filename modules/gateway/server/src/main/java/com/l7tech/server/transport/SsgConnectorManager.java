@@ -1,18 +1,17 @@
 package com.l7tech.server.transport;
 
-import com.l7tech.common.io.PortRange;
 import com.l7tech.common.io.PortRanges;
 import com.l7tech.gateway.common.transport.TransportDescriptor;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityManager;
+import com.l7tech.objectmodel.GoidEntityManager;
 
 import java.util.Collection;
 
 /**
  * Interface that provides the ability to do CRUD operations on SsgConnector rows in the database.
  */
-public interface SsgConnectorManager extends EntityManager<SsgConnector, EntityHeader> {
+public interface SsgConnectorManager extends GoidEntityManager<SsgConnector, EntityHeader> {
     /**
      * Translate a bind address that references an interface tag into a concrete IP address.
      *

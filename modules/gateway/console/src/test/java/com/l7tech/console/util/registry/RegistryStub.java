@@ -280,7 +280,7 @@ public class RegistryStub extends Registry {
     public TransportAdmin getTransportAdmin() {
         return new TransportAdmin() {
             private final SsgConnector stubAdminConnection = new SsgConnector(
-                    2323L,
+                    new Goid(0,2323L),
                     "stub mode admin connector",
                     8443,
                     "https",
@@ -299,19 +299,19 @@ public class RegistryStub extends Registry {
             }
 
             @Override
-            public SsgConnector findSsgConnectorByPrimaryKey(long oid) throws FindException {
-                 if (stubAdminConnection.getOid() == oid)
+            public SsgConnector findSsgConnectorByPrimaryKey(Goid goid) throws FindException {
+                 if (stubAdminConnection.getGoid().equals(goid))
                    return stubAdminConnection;
-                throw new FindException("no connector found with id " + oid);
+                throw new FindException("no connector found with id " + goid);
             }
 
             @Override
-            public long saveSsgConnector(SsgConnector connector) throws SaveException, UpdateException {
+            public Goid saveSsgConnector(SsgConnector connector) throws SaveException, UpdateException {
                 throw new SaveException("Unable to save any connectors in stub mode");
             }
 
             @Override
-            public void deleteSsgConnector(long oid) throws DeleteException, FindException {
+            public void deleteSsgConnector(Goid oid) throws DeleteException, FindException {
                 throw new DeleteException("Unable to delete any connectors in stub mode");
             }
 
@@ -401,12 +401,12 @@ public class RegistryStub extends Registry {
             }
 
             @Override
-            public void deleteFirewallRule(final long oid) throws DeleteException, FindException, CurrentAdminConnectionException {
+            public void deleteFirewallRule(final Goid oid) throws DeleteException, FindException, CurrentAdminConnectionException {
                 throw new DeleteException("Unable to delete any firewall rules in stub mode");
             }
 
             @Override
-            public long saveFirewallRule(final SsgFirewallRule firewallRule) throws SaveException, UpdateException, CurrentAdminConnectionException {
+            public Goid saveFirewallRule(final SsgFirewallRule firewallRule) throws SaveException, UpdateException, CurrentAdminConnectionException {
                 throw new SaveException("Unable to save any firewall rules in stub mode");
             }
         };

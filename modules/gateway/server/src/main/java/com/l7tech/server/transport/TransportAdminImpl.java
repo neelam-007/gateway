@@ -4,6 +4,7 @@ import com.l7tech.gateway.common.transport.ResolutionConfiguration;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import com.l7tech.gateway.common.transport.firewall.SsgFirewallRule;
 import com.l7tech.message.Message;
+import com.l7tech.objectmodel.*;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.transport.firewall.SsgFirewallRuleManager;
 import com.l7tech.util.Config;
@@ -12,10 +13,6 @@ import com.l7tech.common.io.PortRanges;
 import com.l7tech.gateway.common.transport.TransportDescriptor;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.gateway.common.transport.TransportAdmin;
-import com.l7tech.objectmodel.DeleteException;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.tomcat.ConnectionIdValve;
@@ -69,38 +66,38 @@ public class TransportAdminImpl implements TransportAdmin {
     }
 
     @Override
-    public SsgConnector findSsgConnectorByPrimaryKey(long oid) throws FindException {
-        return connectorManager.findByPrimaryKey(oid);
+    public SsgConnector findSsgConnectorByPrimaryKey(Goid goid) throws FindException {
+        return connectorManager.findByPrimaryKey(goid);
     }
 
     /**
      * Check if the specified connector represents the current admin connection.
      *
-     * @param oid  the oid of the connector to examine.
+     * @param goid  the goid of the connector to examine.
      * @return true if this appears to match the current thread's active admin connection
      */
-    private boolean isCurrentAdminConnection(long oid) {
-        long currentConnection = ConnectionIdValve.getConnectorOid();
-        return oid == currentConnection;
+    private boolean isCurrentAdminConnection(Goid goid) {
+        Goid currentConnection = ConnectionIdValve.getConnectorGoid();
+        return goid.equals(currentConnection);
     }
 
     @Override
-    public long saveSsgConnector(SsgConnector connector) throws SaveException, UpdateException, CurrentAdminConnectionException {
-        if (isCurrentAdminConnection(connector.getOid()))
+    public Goid saveSsgConnector(SsgConnector connector) throws SaveException, UpdateException, CurrentAdminConnectionException {
+        if (isCurrentAdminConnection(connector.getGoid()))
             throw new CurrentAdminConnectionException("Unable to modify connector for current admin connection");
-        if (connector.getOid() == SsgConnector.DEFAULT_OID) {
+        if (connector.getGoid() == SsgConnector.DEFAULT_GOID) {
             return connectorManager.save(connector);
         } else {
             connectorManager.update(connector);
-            return connector.getOid();
+            return connector.getGoid();
         }
     }
 
     @Override
-    public void deleteSsgConnector(long oid) throws DeleteException, FindException, CurrentAdminConnectionException {
-        if (isCurrentAdminConnection(oid))
+    public void deleteSsgConnector(Goid goid) throws DeleteException, FindException, CurrentAdminConnectionException {
+        if (isCurrentAdminConnection(goid))
             throw new CurrentAdminConnectionException("Unable to delete connector for current admin connection");
-        connectorManager.delete(oid);
+        connectorManager.delete(goid);
     }
 
     @Override
@@ -260,19 +257,19 @@ public class TransportAdminImpl implements TransportAdmin {
     }
 
     @Override
-    public void deleteFirewallRule(final long oid) throws DeleteException, FindException, CurrentAdminConnectionException {
-        firewallRuleManager.delete(oid);
+    public void deleteFirewallRule(final Goid goid) throws DeleteException, FindException, CurrentAdminConnectionException {
+        firewallRuleManager.delete(goid);
     }
 
     @Override
-    public long saveFirewallRule(final SsgFirewallRule firewallRule) throws SaveException, UpdateException, CurrentAdminConnectionException {
-        if (isCurrentAdminConnection(firewallRule.getOid()))
+    public Goid saveFirewallRule(final SsgFirewallRule firewallRule) throws SaveException, UpdateException, CurrentAdminConnectionException {
+        if (isCurrentAdminConnection(firewallRule.getGoid()))
             throw new CurrentAdminConnectionException("Unable to modify connector for current admin connection");
-        if (firewallRule.getOid() == SsgFirewallRule.DEFAULT_OID) {
+        if (firewallRule.getGoid() == SsgFirewallRule.DEFAULT_GOID) {
             return firewallRuleManager.save(firewallRule);
         } else {
             firewallRuleManager.update(firewallRule);
-            return firewallRule.getOid();
+            return firewallRule.getGoid();
         }
     }
 }

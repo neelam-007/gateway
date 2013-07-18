@@ -4,6 +4,7 @@ import com.l7tech.common.io.SSLSocketWrapper;
 import com.l7tech.common.io.SocketWrapper;
 import com.l7tech.common.io.SocketWrapper.TraceSupport;
 import com.l7tech.gateway.common.transport.SsgConnector;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.transport.ListenerException;
 import com.l7tech.server.transport.http.HttpTransportModule;
 import com.l7tech.util.ResourceUtils;
@@ -31,7 +32,7 @@ import java.util.logging.Logger;
  */
 public class SsgServerSocketFactory extends ServerSocketFactory {
     private long transportModuleId = -1L;
-    private long connectorOid = -1L;
+    private Goid connectorGoid = null;
 
     //- PUBLIC
 
@@ -85,14 +86,14 @@ public class SsgServerSocketFactory extends ServerSocketFactory {
         }
     }
 
-    private long getConnectorOid() {
+    private Goid getConnectorOid() {
         synchronized (this) {
-            if (connectorOid != -1L )
-                return connectorOid;
+            if (connectorGoid != null )
+                return connectorGoid;
             Object oid = attributes.get(HttpTransportModule.CONNECTOR_ATTR_CONNECTOR_OID);
             if (oid == null)
-                return -1L;
-            return connectorOid = Long.parseLong(oid.toString());
+                return null;
+            return connectorGoid = new Goid(oid.toString());
         }
     }
 
@@ -112,7 +113,7 @@ public class SsgServerSocketFactory extends ServerSocketFactory {
         };
     }
 
-    public static Socket wrapSocket(final long transportModuleId, final long connectorOid, final Socket accepted) {
+    public static Socket wrapSocket(final long transportModuleId, final Goid connectorGoid, final Socket accepted) {
         final Socket wrapped;
 
         if (accepted instanceof SSLSocket) {
@@ -123,7 +124,7 @@ public class SsgServerSocketFactory extends ServerSocketFactory {
             HttpTransportModule module = HttpTransportModule.getInstance(transportModuleId);
             if (module != null) {
                 try {
-                    SsgConnector connector = module.getActiveConnectorByOid(connectorOid);
+                    SsgConnector connector = module.getActiveConnectorByGoid(connectorGoid);
                     if (connector.getBooleanProperty(SsgConnector.PROP_TLS_ALLOW_UNSAFE_LEGACY_RENEGOTIATION))
                         allowRenegotiation = true;
                 } catch (ListenerException e) {
@@ -146,7 +147,7 @@ public class SsgServerSocketFactory extends ServerSocketFactory {
             }
 
             wrapped = new SSLSocketWrapper(sslSocket) {
-                private final DispatchSupport ds = new DispatchSupport(transportModuleId, connectorOid, accepted);
+                private final DispatchSupport ds = new DispatchSupport(transportModuleId, connectorGoid, accepted);
                 private final TraceSupport ts = new TraceSupport(accepted, "http", traceLogger);
 
                 @Override
@@ -188,7 +189,7 @@ public class SsgServerSocketFactory extends ServerSocketFactory {
             };
         } else {
             wrapped = new SocketWrapper(accepted) {
-                private final DispatchSupport ds = new DispatchSupport(transportModuleId, connectorOid, accepted);
+                private final DispatchSupport ds = new DispatchSupport(transportModuleId, connectorGoid, accepted);
                 private final TraceSupport ts = new TraceSupport(accepted, "http", traceLogger);
 
                 @Override
@@ -276,7 +277,7 @@ public class SsgServerSocketFactory extends ServerSocketFactory {
      * Invokes delegate
      */
     public static interface Listener {
-        public void onGetInputStream(long transportModuleInstanceId, long connectorOid, Socket accepted);
+        public void onGetInputStream(long transportModuleInstanceId, Goid connectorGoid, Socket accepted);
     }
 
     //- PRIVATE
@@ -299,10 +300,10 @@ public class SsgServerSocketFactory extends ServerSocketFactory {
         }
 
         @Override
-        public void onGetInputStream(long transportModuleInstanceId, long connectorOid, Socket accepted) {
+        public void onGetInputStream(long transportModuleInstanceId, Goid connectorGoid, Socket accepted) {
             for (Listener listener : listeners) {
                 try {
-                    listener.onGetInputStream(transportModuleInstanceId, connectorOid, accepted);
+                    listener.onGetInputStream(transportModuleInstanceId, connectorGoid, accepted);
                 }
                 catch (Exception e) {
                     logger.log(Level.WARNING, "Unexpected exception in listener.", e);
@@ -313,20 +314,20 @@ public class SsgServerSocketFactory extends ServerSocketFactory {
 
     private static class DispatchSupport {
         private final long transportModuleId;
-        private final long connectorOid;
+        private final Goid connectorGoid;
         private final Socket accepted;
         private final AtomicBoolean dispatched = new AtomicBoolean(false);
 
-        private DispatchSupport(long transportModuleId, long connectorOid, Socket accepted) {
+        private DispatchSupport(long transportModuleId, Goid connectorGoid, Socket accepted) {
             this.transportModuleId = transportModuleId;
-            this.connectorOid = connectorOid;
+            this.connectorGoid = connectorGoid;
             this.accepted = accepted;
         }
 
         public void maybeDispatch() {
             final boolean wasDispatched = dispatched.getAndSet(true);
             if (!wasDispatched)
-                dispatchingListener.onGetInputStream(transportModuleId, connectorOid, accepted);
+                dispatchingListener.onGetInputStream(transportModuleId, connectorGoid, accepted);
         }
 
         public void onClose() {

@@ -46,7 +46,7 @@ import java.util.Set;
  *
  */
 @ResourceFactory.ResourceType(type=ListenPortMO.class)
-public class ListenPortResourceFactory extends EntityManagerResourceFactory<ListenPortMO, SsgConnector, EntityHeader> {
+public class ListenPortResourceFactory extends GoidEntityManagerResourceFactory<ListenPortMO, SsgConnector, EntityHeader> {
 
     //- PUBLIC
 

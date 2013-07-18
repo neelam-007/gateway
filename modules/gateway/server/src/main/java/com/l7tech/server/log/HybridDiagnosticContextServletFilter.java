@@ -40,7 +40,7 @@ public class HybridDiagnosticContextServletFilter implements Filter {
             // populate connector / IP info
             final SsgConnector connector = HttpTransportModule.getConnector( servletRequest );
             if ( connector != null ) {
-                HybridDiagnosticContext.put( GatewayDiagnosticContextKeys.LISTEN_PORT_ID, Long.toString( connector.getOid() ) );
+                HybridDiagnosticContext.put( GatewayDiagnosticContextKeys.LISTEN_PORT_ID, connector.getGoid().toString());
             }
             HybridDiagnosticContext.put( GatewayDiagnosticContextKeys.CLIENT_IP, servletRequest.getRemoteAddr() );
         }

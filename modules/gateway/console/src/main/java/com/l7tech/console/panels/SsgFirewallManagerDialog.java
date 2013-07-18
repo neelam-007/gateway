@@ -206,7 +206,7 @@ public class SsgFirewallManagerDialog extends JDialog {
 
                 int rowIndex = firewallRulesTable.getSelectedRow();
                 try {
-                    Registry.getDefault().getTransportAdmin().deleteFirewallRule(rule.getOid());
+                    Registry.getDefault().getTransportAdmin().deleteFirewallRule(rule.getGoid());
                     firewallTableModel.removeRowAt(rowIndex);
                     for(int i = 0; i < firewallTableModel.getRowCount(); i++){
                         SsgFirewallRule r = firewallTableModel.getRowObject(i);
@@ -215,7 +215,7 @@ public class SsgFirewallManagerDialog extends JDialog {
                     }
                     loadFirewallRules();
                 } catch (Exception e1) {
-                    logger.warning("Unable to remove the firewall rule with oid of " + rule.getOid());
+                    logger.warning("Unable to remove the firewall rule with oid of " + rule.getGoid());
                 }
             }
         });
@@ -373,7 +373,7 @@ public class SsgFirewallManagerDialog extends JDialog {
                                 try {
                                     final Collection<SsgFirewallRule> rules = findAllFirewallRules();
                                     for(final SsgFirewallRule c : rules){
-                                        Registry.getDefault().getTransportAdmin().deleteFirewallRule(c.getOid());
+                                        Registry.getDefault().getTransportAdmin().deleteFirewallRule(c.getGoid());
                                     }
                                     loadFirewallRules();
                                 } catch (FindException e1) {

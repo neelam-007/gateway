@@ -1,6 +1,7 @@
 package com.l7tech.server.tomcat;
 
 import com.l7tech.gateway.common.transport.SsgConnector;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.transport.http.HttpTransportModule;
 import com.l7tech.server.transport.tls.SsgConnectorSslHelper;
 import com.l7tech.util.ConfigFactory;
@@ -80,7 +81,7 @@ public class SsgJSSESocketFactory extends org.apache.tomcat.util.net.ServerSocke
         protected final ServerSocketFactory socketFactory = ServerSocketFactory.getDefault();
         protected SsgConnectorSslHelper sslHelper = null;
         protected long transportModuleId = -1L;
-        protected long connectorOid = -1L;
+        protected Goid connectorGoid = null ;
 
         protected SocketStrategy( final Hashtable attributes ) {
             this.attributes = attributes;
@@ -101,15 +102,15 @@ public class SsgJSSESocketFactory extends org.apache.tomcat.util.net.ServerSocke
             HttpTransportModule httpTransportModule = null;
             try {
                 transportModuleId = getRequiredLongAttr(HttpTransportModule.CONNECTOR_ATTR_TRANSPORT_MODULE_ID);
-                connectorOid = getRequiredLongAttr(HttpTransportModule.CONNECTOR_ATTR_CONNECTOR_OID);
+                connectorGoid = new Goid(getRequiredStringAttr(HttpTransportModule.CONNECTOR_ATTR_CONNECTOR_OID));
                 httpTransportModule = HttpTransportModule.getInstance(transportModuleId);
                 if (httpTransportModule == null)
                     throw new IllegalStateException("No HttpTransportModule with ID " + transportModuleId + " was found");
-                SsgConnector ssgConnector = httpTransportModule.getActiveConnectorByOid(connectorOid);
+                SsgConnector ssgConnector = httpTransportModule.getActiveConnectorByGoid(connectorGoid);
                 sslHelper = new SsgConnectorSslHelper(httpTransportModule, ssgConnector);
             } catch (Exception e) {
                 if (httpTransportModule != null)
-                    httpTransportModule.reportMisconfiguredConnector(connectorOid);
+                    httpTransportModule.reportMisconfiguredConnector(connectorGoid);
                 delay(TimeUnit.SECONDS.toMillis(30));
                 throw new IOException("Unable to initialize TLS socket factory: " + ExceptionUtils.getMessage(e), e);
             }
@@ -170,7 +171,7 @@ public class SsgJSSESocketFactory extends org.apache.tomcat.util.net.ServerSocke
         @Override
         protected Socket acceptSocket( final ServerSocket socket ) throws IOException {
             SSLSocket asock = (SSLSocket) socket.accept();
-            return SsgServerSocketFactory.wrapSocket(transportModuleId, connectorOid, asock);
+            return SsgServerSocketFactory.wrapSocket(transportModuleId, connectorGoid, asock);
         }
     }
 
@@ -201,7 +202,7 @@ public class SsgJSSESocketFactory extends org.apache.tomcat.util.net.ServerSocke
         @Override
         protected Socket acceptSocket( final ServerSocket socket ) throws IOException {
             if (sslHelper == null) initialize();
-            return wrapSocket( transportModuleId, connectorOid, sslHelper.wrapAndConfigureSocketForSsl( wrapSocket( socket.accept() ), false ) );
+            return wrapSocket( transportModuleId, connectorGoid, sslHelper.wrapAndConfigureSocketForSsl( wrapSocket( socket.accept() ), false ) );
         }
     }
 }

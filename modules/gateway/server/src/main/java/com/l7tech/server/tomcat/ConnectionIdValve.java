@@ -1,5 +1,6 @@
 package com.l7tech.server.tomcat;
 
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.transport.http.HttpTransportModule;
 import org.apache.catalina.connector.Request;
 import org.apache.catalina.connector.Response;
@@ -42,7 +43,7 @@ public class ConnectionIdValve extends ValveBase {
         this.httpTransportModule = transportModule;
         final long transportId = httpTransportModule.getInstanceId();
         SsgServerSocketFactory.addListener(new SsgServerSocketFactory.Listener(){
-            public void onGetInputStream(long transportModuleInstanceId, long connectorOid, Socket accepted) {
+            public void onGetInputStream(long transportModuleInstanceId, Goid connectorGoid, Socket accepted) {
                 if (transportModuleInstanceId != transportId)
                     // not for us
                     return;
@@ -51,7 +52,7 @@ public class ConnectionIdValve extends ValveBase {
                 if (logger.isLoggable(Level.FINE))
                     logger.log(Level.FINE, "Setting id for connection '{0}'", id);
                 connectionId.set(id);
-                ssgConnectorOid.set(connectorOid);
+                ssgConnectorGoid.set(connectorGoid);
             }
         });
     }
@@ -70,9 +71,9 @@ public class ConnectionIdValve extends ValveBase {
     public void invoke(Request req, Response res) throws IOException, ServletException {
         // Set the connection id for the request
         final Long cid = connectionId.get();
-        final Long connectorOid = ssgConnectorOid.get();
+        final Goid connectorGoid = ssgConnectorGoid.get();
         req.setAttribute(ATTRIBUTE_CONNECTION_ID, cid);
-        req.setAttribute(ATTRIBUTE_CONNECTOR_OID, connectorOid);
+        req.setAttribute(ATTRIBUTE_CONNECTOR_OID, connectorGoid);
         req.setAttribute(ATTRIBUTE_TRANSPORT_MODULE_INSTANCE_ID, httpTransportModule.getInstanceId());
 
         // Let servlet do it's thing
@@ -80,19 +81,19 @@ public class ConnectionIdValve extends ValveBase {
     }
 
     /**
-     * Get the current thread's connector OID, if known.
+     * Get the current thread's connector GOID, if known.
      *
-     * @return the thread-local connector OID, or -1 if not known.
+     * @return the thread-local connector GOID, or null if not known.
      */
-    public static long getConnectorOid() {
-        Long oid = ssgConnectorOid.get();
-        return oid == null ? -1 : oid;
+    public static Goid getConnectorGoid() {
+        Goid oid = ssgConnectorGoid.get();
+        return oid == null ? null : oid;
     }
 
     //- PRIVATE
 
     private static final Logger logger = Logger.getLogger(ConnectionIdValve.class.getName());
-    private static final ThreadLocal<Long> ssgConnectorOid = new ThreadLocal<Long>();
+    private static final ThreadLocal<Goid> ssgConnectorGoid = new ThreadLocal<Goid>();
     private final HttpTransportModule httpTransportModule;
     private final ThreadLocal<Long> connectionId = new ThreadLocal<Long>();
     private final AtomicLong connectionSequence = new AtomicLong(0);

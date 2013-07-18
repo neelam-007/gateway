@@ -2,13 +2,16 @@ package com.l7tech.gateway.config.manager.db;
 
 
 import com.l7tech.gateway.common.transport.SsgConnector;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.RandomUtil;
 import com.l7tech.util.TextUtils;
 
 import java.lang.reflect.Method;
 import java.sql.*;
 import java.sql.Date;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
 
 /**
@@ -33,12 +36,12 @@ public class SsgConnectorSql {
     public static Collection<SsgConnector> loadAll(Connection c) throws SQLException {
         Collection<SsgConnector> connectors =
                 doLoadAll(c, "connector", SsgConnector.class,
-                        "objectid", "enabled", "name", "port", "scheme", "secure", "endpoints", "client_auth", "keystore_oid", "key_alias");
+                        "goid", "name","enabled", "port", "scheme", "secure", "endpoints", "client_auth", "keystore_oid", "key_alias");
 
         // Fill in properties
         for (final SsgConnector connector : connectors) {
-            long oid = connector.getOid();
-            DBActions.query(c, "select name,value from connector_property where connector_oid=" + oid, new DBActions.ResultVisitor() {
+            Goid goid = connector.getGoid();
+            DBActions.query(c, "select name,value from connector_property where connector_goid=?" , new Object[]{goid.getBytes()},new DBActions.ResultVisitor() {
                 public void visit(ResultSet rs) throws SQLException {
                     String name = rs.getString(1);
                     String value = rs.getString(2);
@@ -63,9 +66,6 @@ public class SsgConnectorSql {
     }
 
     private static String toMethodName(String columnName) {
-        if (columnName.equals("objectid"))
-            return "Oid"; // TODO express this nonstandard mapping declaratively
-
         StringBuilder ret = new StringBuilder();
         char[] chars = columnName.toCharArray();
         boolean ucNext = true;
@@ -119,6 +119,9 @@ public class SsgConnectorSql {
         for (int i = 0; i < setters.length; i++) {
             Method method = setters[i];
             Object value = getColumnValue(row, i + 1, setterType(method));
+            if(row.getMetaData().getColumnName(i+1).equals("goid")){
+                value = new Goid((byte[])value);
+            }
 
             try {
                 method.invoke(target, value);
@@ -176,17 +179,17 @@ public class SsgConnectorSql {
      */
     public void save(Connection c) throws SQLException {
 
-        long oid = connector.getOid();
-        if (oid == SsgConnector.DEFAULT_OID) {
-            oid = allocateOid(c, -1200, "connector");
-            connector.setOid(oid);
+        Goid goid = connector.getGoid();
+        if (goid == SsgConnector.DEFAULT_GOID) {
+            goid = allocateOid();
+            connector.setGoid(goid);
         }
 
-        DBActions.delete(c, "delete from connector_property where connector_oid=" + oid, null);
-        DBActions.delete(c, "delete from connector where objectid=" + oid, null);
+        DBActions.delete(c, "delete from connector_property where connector_goid=?" ,new Object[]{goid.getBytes()});
+        DBActions.delete(c, "delete from connector where goid=?" ,new Object[]{goid.getBytes()});
 
         DBActions.insert(c, "connector", null,
-               oid,
+               goid.getBytes(),
                connector.getVersion(),
                connector.getName(),
                connector.isEnabled(),
@@ -196,17 +199,15 @@ public class SsgConnectorSql {
                connector.isSecure(),
                connector.getClientAuth(),
                connector.getKeystoreOid(),
-               connector.getKeyAlias());
+               connector.getKeyAlias(),
+                null);
 
         List<String> propNames = connector.getPropertyNames();
         for (String propName : propNames) {
             String value = connector.getProperty(propName);
-            long poid = allocateOid(c, -1250, "connector_property");
-            DBActions.insert(c, "connector_property", 
-                   new String[] { "objectid", "version", "connector_oid", "name", "value" },
-                   poid,
-                   1,
-                   oid,
+            DBActions.insert(c, "connector_property",
+                   new String[] { "connector_goid", "name", "value" },
+                   goid.getBytes(),
                    propName,
                    value);
         }
@@ -214,21 +215,11 @@ public class SsgConnectorSql {
 
     /**
      * Allocate an unused OID that is less than def from the table named table.
-     *
-     * @param c  open DB connection
-     * @param def default oid, ie -1200
-     * @param table table name, ie "connector"
      * @return an OID currently unused by this table and less than def
      * @throws SQLException if db troubles
      */
-    private long allocateOid(Connection c, int def, String table) throws SQLException {
-        final long[] smallestUsed = { def };
-        DBActions.query(c, "select objectid from " + table + " where objectid < 0", new DBActions.ResultVisitor() {
-            public void visit(ResultSet rs) throws SQLException {
-                long used = rs.getLong(1);
-                if (used <= smallestUsed[0]) smallestUsed[0] = used;
-            }
-        });
-        return --smallestUsed[0];
+
+    private Goid allocateOid() throws SQLException {
+        return new Goid( RandomUtil.nextLong(), RandomUtil.nextLong());
     }
 }

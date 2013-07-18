@@ -2,6 +2,7 @@ package com.l7tech.server.transport.ftp;
 
 import com.l7tech.common.log.HybridDiagnosticContext;
 import com.l7tech.gateway.common.log.GatewayDiagnosticContextKeys;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.InetAddressUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
@@ -57,7 +58,7 @@ class MessageProcessingFtplet extends DefaultFtplet {
                              final ContentTypeHeader overriddenContentType,
                              final long hardwiredServiceOid,
                              final long maxRequestSize,
-                             final long connectorId ) {
+                             final Goid connectorGoid ) {
         this.ftpServerManager = ftpServerManager;
         this.messageProcessor = messageProcessor;
         this.soapFaultManager = soapFaultManager;
@@ -66,7 +67,7 @@ class MessageProcessingFtplet extends DefaultFtplet {
         this.overriddenContentType = overriddenContentType;
         this.hardwiredServiceOid = hardwiredServiceOid;
         this.maxRequestSize = maxRequestSize;
-        this.connectorId = connectorId;
+        this.connectorGoid = connectorGoid;
     }
 
     /**
@@ -133,7 +134,7 @@ class MessageProcessingFtplet extends DefaultFtplet {
     private final ContentTypeHeader overriddenContentType;
     private final long hardwiredServiceOid;
     private final long maxRequestSize;
-    private final long connectorId;
+    private final Goid connectorGoid;
 
     /*
      * Process a file upload 
@@ -161,7 +162,7 @@ class MessageProcessingFtplet extends DefaultFtplet {
                 // request data
                 ftpReplyOutput.write(new DefaultFtpReply(FtpReply.REPLY_150_FILE_STATUS_OKAY, "File status okay; about to open data connection."));
                 DataConnectionFactory dataConnectionFactory = null;
-                HybridDiagnosticContext.put( GatewayDiagnosticContextKeys.LISTEN_PORT_ID, Long.toString( connectorId ) );
+                HybridDiagnosticContext.put( GatewayDiagnosticContextKeys.LISTEN_PORT_ID, connectorGoid.toString() );
                 HybridDiagnosticContext.put( GatewayDiagnosticContextKeys.CLIENT_IP, ftpSession.getClientAddress().getHostAddress() );
                 try {
                     dataConnectionFactory = ftpSession.getDataConnection();

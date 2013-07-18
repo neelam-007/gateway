@@ -182,7 +182,7 @@ public class SsgConnectorManagerWindow extends JDialog {
         if (ta == null)
             return;
         try {
-            ta.deleteSsgConnector(connector.getOid());
+            ta.deleteSsgConnector(connector.getGoid());
             loadConnectors();
         } catch (DeleteException e) {
             showErrorMessage("Remove Failed", "Failed to remove listen port: " + ExceptionUtils.getMessage(e), e);
@@ -258,8 +258,8 @@ public class SsgConnectorManagerWindow extends JDialog {
                     }
 
                     try {
-                        long oid = getTransportAdmin().saveSsgConnector(connector);
-                        if (oid != connector.getOid()) connector.setOid(oid);
+                        Goid goid = getTransportAdmin().saveSsgConnector(connector);
+                        if (goid != connector.getGoid()) connector.setGoid(goid);
                         reedit = null;
                         loadConnectors();
                         connectorTable.setSelectedConnector(connector);
@@ -498,7 +498,7 @@ public class SsgConnectorManagerWindow extends JDialog {
         }
 
         public void setSelectedConnector(SsgConnector connector) {
-            int rowNum = model.findRowByConnectorOid(connector.getOid());
+            int rowNum = model.findRowByConnectorOid(connector.getGoid());
             rowNum = rowNum>=0 ? convertRowIndexToView( rowNum ) : rowNum;
             if (rowNum >= 0)
                 getSelectionModel().setSelectionInterval(rowNum, rowNum);
@@ -507,8 +507,8 @@ public class SsgConnectorManagerWindow extends JDialog {
         }
     }
 
-    private static class ConnectorTableModel extends AbstractTableModel {
-        private Map<Long, Integer> rowMap;
+    static class ConnectorTableModel extends AbstractTableModel {
+        private Map<Goid, Integer> rowMap;
 
         private abstract class Col {
             private final String name;
@@ -648,24 +648,24 @@ public class SsgConnectorManagerWindow extends JDialog {
         }
 
         /** @return a Map of Connector OID -> row number */
-        private Map<Long, Integer> getRowMap() {
+        private Map<Goid, Integer> getRowMap() {
             if (rowMap != null)
                 return rowMap;
-            Map<Long, Integer> ret = new LinkedHashMap<Long, Integer>();
+            Map<Goid, Integer> ret = new LinkedHashMap<Goid, Integer>();
             for (int i = 0; i < rows.size(); i++) {
                 ConnectorTableRow row = rows.get(i);
-                final long oid = row.getConnector().getOid();
-                ret.put(oid, i);
+                final Goid goid = row.getConnector().getGoid();
+                ret.put(goid, i);
             }
             return rowMap = ret;
         }
 
         /**
-         * @param oid OID of connector whose row to find
+         * @param goid GOID of connector whose row to find
          * @return the row number of the connector with a matching oid, or -1 if no match found
          */
-        public int findRowByConnectorOid(long oid) {
-            return getRowMap().containsKey(oid) ? getRowMap().get(oid) : -1;
+        public int findRowByConnectorOid(Goid goid) {
+            return getRowMap().containsKey(goid) ? getRowMap().get(goid) : -1;
         }
 
         /**
@@ -681,7 +681,7 @@ public class SsgConnectorManagerWindow extends JDialog {
                     if ( onlyEnabled && !row.getConnector().isEnabled() )
                         continue;
 
-                    if (connector.getOid() == row.getConnector().getOid())
+                    if (connector.getGoid().equals( row.getConnector().getGoid()))
                         continue;
 
                     SsgConnector maybeConflictingConnector = row.getConnector();

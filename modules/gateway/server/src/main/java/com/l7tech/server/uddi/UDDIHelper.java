@@ -8,6 +8,7 @@ import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.gateway.common.uddi.UDDIRegistry;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.policy.variable.ServerVariables;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
@@ -88,9 +89,9 @@ public class UDDIHelper implements SsgConnectorActivationListener {
      */
     public EndpointPair getEndpointForScheme(final UDDIRegistryAdmin.EndpointScheme scheme,
                                              final long serviceOid) throws EndpointNotDefinedException{
-        final Map<Long,String> connectorProtocols;
+        final Map<Goid,String> connectorProtocols;
         synchronized (activeConnectorProtocols) {
-            connectorProtocols = new HashMap<Long,String>( activeConnectorProtocols );
+            connectorProtocols = new HashMap<Goid,String>( activeConnectorProtocols );
         }
 
         switch (scheme){
@@ -133,9 +134,9 @@ public class UDDIHelper implements SsgConnectorActivationListener {
     public Set<EndpointPair> getAllExternalEndpointAndWsdlUrls( long serviceOid ){
         final Set<EndpointPair> endpointsAndWsdlUrls = new HashSet<EndpointPair>();
 
-        final Map<Long,String> connectorProtocols;
+        final Map<Goid,String> connectorProtocols;
         synchronized (activeConnectorProtocols) {
-            connectorProtocols = new HashMap<Long,String>( activeConnectorProtocols );
+            connectorProtocols = new HashMap<Goid,String>( activeConnectorProtocols );
         }
 
         final EndpointPair httpPair = new EndpointPair(
@@ -385,7 +386,7 @@ public class UDDIHelper implements SsgConnectorActivationListener {
     public void notifyActivated( final SsgConnector connector ) {
         if ( connector.offersEndpoint( SsgConnector.Endpoint.MESSAGE_INPUT ) ) {
             synchronized( activeConnectorProtocols ) {
-                activeConnectorProtocols.put( connector.getOid(), connector.getScheme() );
+                activeConnectorProtocols.put( connector.getGoid(), connector.getScheme() );
             }
         }
     }
@@ -393,7 +394,7 @@ public class UDDIHelper implements SsgConnectorActivationListener {
     @Override
     public void notifyDeactivated( final SsgConnector connector ) {
         synchronized( activeConnectorProtocols ) {
-            activeConnectorProtocols.remove( connector.getOid() );
+            activeConnectorProtocols.remove( connector.getGoid() );
         }
     }
 
@@ -436,7 +437,7 @@ public class UDDIHelper implements SsgConnectorActivationListener {
     private final UDDITemplateManager uddiTemplateManager;
     private final int defaultResultRowsMax;
     private final int defaultResultBatchSize;
-    private final Map<Long,String> activeConnectorProtocols = new HashMap<Long,String>();
+    private final Map<Goid,String> activeConnectorProtocols = new HashMap<Goid,String>();
 
     private int getResultRowsMax() {
         return serverConfig.getIntProperty( PROP_RESULT_ROWS_MAX, defaultResultRowsMax );

@@ -1008,7 +1008,7 @@ CREATE TABLE http_configuration (
 
 DROP TABLE IF EXISTS connector;
 CREATE TABLE connector (
-  objectid bigint(20) NOT NULL,
+  goid binary(16) NOT NULL,
   version integer NOT NULL,
   name varchar(128) NOT NULL,
   enabled tinyint(1) NOT NULL DEFAULT 0,
@@ -1020,16 +1020,16 @@ CREATE TABLE connector (
   keystore_oid bigint(20) NULL,
   key_alias varchar(255) NULL,
   security_zone_oid bigint(20),
-  PRIMARY KEY (objectid),
+  PRIMARY KEY (goid),
   CONSTRAINT connector_security_zone FOREIGN KEY (security_zone_oid) REFERENCES security_zone (objectid) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
 DROP TABLE IF EXISTS connector_property;
 CREATE TABLE connector_property (
-  connector_oid bigint(20) NOT NULL,
+  connector_goid binary(16)) NOT NULL,
   name varchar(128) NOT NULL,
   value MEDIUMTEXT NOT NULL,
-  FOREIGN KEY (connector_oid) REFERENCES connector (objectid) ON DELETE CASCADE
+  FOREIGN KEY (connector_goid) REFERENCES connector (goid) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --
@@ -1966,7 +1966,7 @@ CREATE TABLE encapsulated_assertion_result (
 -- Firewall Rules table structure --
 DROP TABLE IF EXISTS firewall_rule;
 CREATE TABLE firewall_rule (
-  objectid bigint(20) NOT NULL,
+  goid binary(16) NOT NULL,
   version integer NOT NULL,
   ordinal integer NOT NULL,
   name varchar(128) NOT NULL,
@@ -1976,10 +1976,10 @@ CREATE TABLE firewall_rule (
 
 DROP TABLE IF EXISTS firewall_rule_property;
 CREATE TABLE firewall_rule_property (
-  firewall_rule_oid bigint(20) NOT NULL,
+  firewall_rule_goid binary(16) NOT NULL,
   name varchar(128) NOT NULL,
   value MEDIUMTEXT NOT NULL,
-  FOREIGN KEY (firewall_rule_oid) REFERENCES firewall_rule (objectid) ON DELETE CASCADE
+  FOREIGN KEY (firewall_rule_goid) REFERENCES firewall_rule (goid) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
 DROP TABLE IF EXISTS ssg_version;

@@ -12,6 +12,7 @@ import com.l7tech.message.HasServiceOidImpl;
 import com.l7tech.message.Message;
 import com.l7tech.message.MimeKnob;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.*;
 import com.l7tech.server.audit.AuditContextUtils;
@@ -75,7 +76,7 @@ public class AsyncHttpTransportModule extends TransportModule implements Applica
     private final MessageProcessor messageProcessor;
     private final StashManagerFactory stashManagerFactory;
     private final Config config;
-    private final Map<Long, Pair<SsgConnector, AsyncHttpListenerInfo>> activeConnectors = new ConcurrentHashMap<Long, Pair<SsgConnector, AsyncHttpListenerInfo>>();
+    private final Map<Goid, Pair<SsgConnector, AsyncHttpListenerInfo>> activeConnectors = new ConcurrentHashMap<Goid, Pair<SsgConnector, AsyncHttpListenerInfo>>();
 
     private static final Map<String, PendingAsyncRequest> activeAsyncRequests = new ConcurrentHashMap<String, PendingAsyncRequest>(2048, 0.75f, 256);
 
@@ -168,9 +169,9 @@ public class AsyncHttpTransportModule extends TransportModule implements Applica
     @Override
     protected void doStop() throws LifecycleException {
         try {
-            final List<Long> oidsToStop = new ArrayList<Long>(activeConnectors.keySet());
-            for ( final Long oid : oidsToStop) {
-                removeConnector(oid);
+            final List<Goid> oidsToStop = new ArrayList<Goid>(activeConnectors.keySet());
+            for ( final Goid goid : oidsToStop) {
+                removeConnector(goid);
             }
         }
         catch (Exception e) {
@@ -191,10 +192,10 @@ public class AsyncHttpTransportModule extends TransportModule implements Applica
     }
 
     @Override
-    protected boolean isCurrent( long oid, int version ) {
+    protected boolean isCurrent( Goid goid, int version ) {
         boolean current;
 
-        Pair<SsgConnector, AsyncHttpListenerInfo> entry = activeConnectors.get(oid);
+        Pair<SsgConnector, AsyncHttpListenerInfo> entry = activeConnectors.get(goid);
         current = entry != null && entry.left.getVersion()==version;
 
         return current;
@@ -202,13 +203,13 @@ public class AsyncHttpTransportModule extends TransportModule implements Applica
 
     @Override
     protected void addConnector(SsgConnector connector) throws ListenerException {
-        if ( connector.getOid() == SsgConnector.DEFAULT_OID )
+        if ( connector.getGoid().equals(SsgConnector.DEFAULT_GOID ))
             throw new ListenerException("Connector must be persistent.");
 
-        if (isCurrent(connector.getOid(), connector.getVersion()))
+        if (isCurrent(connector.getGoid(), connector.getVersion()))
             return;
 
-        removeConnector(connector.getOid());
+        removeConnector(connector.getGoid());
         if (!connectorIsOwnedByThisModule(connector))
             return;
 
@@ -238,7 +239,7 @@ public class AsyncHttpTransportModule extends TransportModule implements Applica
             final AsyncHttpListenerInfo listenerInfo = new AsyncHttpListenerInfo(this, connector, bindSockAddr);
             auditStart( SCHEME_ASYNC_HTTP, describe(connector) );
             listenerInfo.start();
-            activeConnectors.put(connector.getOid(), new Pair<SsgConnector, AsyncHttpListenerInfo>(connector, listenerInfo));
+            activeConnectors.put(connector.getGoid(), new Pair<SsgConnector, AsyncHttpListenerInfo>(connector, listenerInfo));
 
         } catch (Exception e) {
             throw new ListenerException("Unable to create server socket: " + ExceptionUtils.getMessage(e), e);
@@ -246,9 +247,9 @@ public class AsyncHttpTransportModule extends TransportModule implements Applica
     }
 
     @Override
-    protected void removeConnector(long oid) {
+    protected void removeConnector(Goid goid) {
         final Pair<SsgConnector, AsyncHttpListenerInfo> entry;
-        entry = activeConnectors.remove(oid);
+        entry = activeConnectors.remove(goid);
         if (entry == null) return;
         AsyncHttpListenerInfo listenerInfo = entry.right;
         auditStop( SCHEME_ASYNC_HTTP, describe( entry.left ) );
@@ -272,7 +273,7 @@ public class AsyncHttpTransportModule extends TransportModule implements Applica
         String idToCleanup = null;
         PolicyEnforcementContext context = null;
         InputStream responseStream = null;
-        HybridDiagnosticContext.put(GatewayDiagnosticContextKeys.LISTEN_PORT_ID, Long.toString(connector.getOid()));
+        HybridDiagnosticContext.put(GatewayDiagnosticContextKeys.LISTEN_PORT_ID, connector.getGoid().toString());
         HybridDiagnosticContext.put( GatewayDiagnosticContextKeys.CLIENT_IP, clientAddress==null ? "" : clientAddress.getAddress().getHostAddress() );
         try {
 
@@ -373,9 +374,9 @@ public class AsyncHttpTransportModule extends TransportModule implements Applica
     }
 
     @Override
-    public void reportMisconfiguredConnector(long connectorOid) {
-        logger.log(Level.WARNING, "Shutting down async HTTP connector OID " + connectorOid + " because it cannot be opened in its current configuration");
-        removeConnector(connectorOid);
+    public void reportMisconfiguredConnector(Goid connectorGoid) {
+        logger.log(Level.WARNING, "Shutting down async HTTP connector OID " + connectorGoid + " because it cannot be opened in its current configuration");
+        removeConnector(connectorGoid);
     }
 
     static AsyncHttpTransportModule createModule( final ApplicationContext appContext ) {

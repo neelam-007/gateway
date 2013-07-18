@@ -473,7 +473,7 @@ public class SsgConnectorSslHelper {
 
         // Auto-select a TLS provider depending on whether TLS 1.1 or TLS 1.2 is enabled.
         if (logger.isLoggable(Level.FINE))
-            logger.log(Level.FINE, "Connector " + ssgConnector.getOid() + " TLS versions: " + desiredTlsVersions);
+            logger.log(Level.FINE, "Connector " + ssgConnector.getGoid() + " TLS versions: " + desiredTlsVersions);
 
         String sslContextService =
                 desiredTlsVersions != null && (desiredTlsVersions.contains("TLSv1.1") || desiredTlsVersions.contains("TLSv1.2"))
@@ -514,7 +514,7 @@ public class SsgConnectorSslHelper {
         try {
             return Integer.parseInt(getStringProperty(name, Integer.toString(defaultValue)));
         } catch (NumberFormatException nfe) {
-            logger.warning("Connector property must be numeric for connector oid " + ssgConnector.getOid() + ": " + name);
+            logger.warning("Connector property must be numeric for connector oid " + ssgConnector.getGoid() + ": " + name);
             return defaultValue;
         }
     }
@@ -537,7 +537,7 @@ public class SsgConnectorSslHelper {
             socket.accept();
             /* NEVER REACHED */
         } catch (SSLException e) {
-            transportModule.reportMisconfiguredConnector(ssgConnector.getOid());
+            transportModule.reportMisconfiguredConnector(ssgConnector.getGoid());
             throw new IOException(e);
         } catch (Exception e) {
             // Ignore it; it's either the expected SocketTimeoutException, or else something that will recur and

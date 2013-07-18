@@ -6,6 +6,7 @@ import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.gateway.common.transport.TransportDescriptor;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.*;
 import com.l7tech.server.event.system.ReadyForMessages;
 import com.l7tech.server.identity.cert.TrustedCertServices;
@@ -114,37 +115,37 @@ public class FtpServerManager extends TransportModule {
             return false;
         if (!connector.offersEndpoint(SsgConnector.Endpoint.MESSAGE_INPUT)) {
             // The GUI isn't supposed to allow saving enabled FTP connectors without MESSAGE_INPUT checked
-            logger.log(Level.WARNING, "FTP connector OID " + connector.getOid() + " does not allow published service message input");
+            logger.log(Level.WARNING, "FTP connector OID " + connector.getGoid() + " does not allow published service message input");
             return false;
         }
         return true;
     }
 
     @Override
-    public void reportMisconfiguredConnector(long connectorOid) {
-        logger.log(Level.WARNING, "Shutting down FTP connector for control port of connector OID " + connectorOid + " because it cannot be opened with its current configuration");
-        removeConnector(connectorOid);
+    public void reportMisconfiguredConnector(Goid connectorGoid) {
+        logger.log(Level.WARNING, "Shutting down FTP connector for control port of connector GOID " + connectorGoid + " because it cannot be opened with its current configuration");
+        removeConnector(connectorGoid);
     }
 
     @Override
     protected void addConnector(SsgConnector connector) throws ListenerException {
         connector = connector.getReadOnlyCopy();
-        removeConnector(connector.getOid());
+        removeConnector(connector.getGoid());
         if (!connectorIsOwnedByThisModule(connector))
             return;
         final FtpServer ftpServer = createFtpServer(connector);
         auditStart( connector.getScheme(), describe( connector ) );
         try {
             ftpServer.start();
-            ftpServers.put(connector.getOid(), pair(connector,ftpServer));
+            ftpServers.put(connector.getGoid(), pair(connector,ftpServer));
         } catch (Exception e) {
             throw new ListenerException("Unable to start FTP server " + describe( connector ) + ": " + ExceptionUtils.getMessage(e), e);
         }
     }
 
     @Override
-    protected void removeConnector(long oid) {
-        Pair<SsgConnector,FtpServer> ftpServer = ftpServers.remove(oid);
+    protected void removeConnector(Goid goid) {
+        Pair<SsgConnector,FtpServer> ftpServer = ftpServers.remove(goid);
         if (ftpServer == null)
             return;
 
@@ -180,10 +181,10 @@ public class FtpServerManager extends TransportModule {
     protected void doStop() throws LifecycleException {
         try {
             unregisterProtocols();
-            List<Long> oidsToStop;
-            oidsToStop = new ArrayList<Long>(ftpServers.keySet());
-            for (Long oid : oidsToStop) {
-                removeConnector(oid);
+            List<Goid> oidsToStop;
+            oidsToStop = new ArrayList<Goid>(ftpServers.keySet());
+            for (Goid goid : oidsToStop) {
+                removeConnector(goid);
             }
         }
         catch(Exception e) {
@@ -206,7 +207,7 @@ public class FtpServerManager extends TransportModule {
     private final StashManagerFactory stashManagerFactory;
     private final EventChannel messageProcessingEventChannel;
     private final Timer timer;
-    private final Map<Long, Pair<SsgConnector,FtpServer>> ftpServers = new ConcurrentHashMap<Long, Pair<SsgConnector,FtpServer>>();
+    private final Map<Goid, Pair<SsgConnector,FtpServer>> ftpServers = new ConcurrentHashMap<Goid, Pair<SsgConnector,FtpServer>>();
 
     private int toInt(String str, String name) throws ListenerException {
         try {
@@ -298,7 +299,7 @@ public class FtpServerManager extends TransportModule {
                 overrideContentType,
                 hardwiredServiceOid,
                 maxRequestSize,
-                connector.getOid());
+                connector.getGoid());
 
         Properties props = asFtpProperties(connector);
 
@@ -359,7 +360,7 @@ public class FtpServerManager extends TransportModule {
                     addConnector(connector);
                 } catch (ListenerException e) {
                     //noinspection ThrowableResultOfMethodCallIgnored
-                    logger.log(Level.WARNING, "Unable to start FTP connector OID " + connector.getOid() +
+                    logger.log(Level.WARNING, "Unable to start FTP connector GOID " + connector.getGoid() +
                                               " (using control port " + connector.getPort() + "): " + ExceptionUtils.getMessage(e),
                                ExceptionUtils.getDebugException(e));
                 }
@@ -380,7 +381,7 @@ public class FtpServerManager extends TransportModule {
 
     @Override
     protected String describe( final SsgConnector connector ) {
-        return connector.getName() + " (#" +connector.getOid() + ",v" + connector.getVersion() + ") on control port " + connector.getPort();
+        return connector.getName() + " (#" +connector.getGoid() + ",v" + connector.getVersion() + ") on control port " + connector.getPort();
     }
 
     private void registerProtocols() {

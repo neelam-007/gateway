@@ -1,5 +1,6 @@
 package com.l7tech.gateway.common.transport;
 
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.SecurityZone;
 import com.l7tech.test.BugNumber;
 import org.junit.Before;
@@ -56,9 +57,9 @@ public class SsgConnectorTest {
 
     @Test
     public void testEquals() {
-        SsgConnector a = new SsgConnector(1, "foo bar", 8080, "http", false, "MESSAGE_INPUT", CLIENT_AUTH_NEVER, null, null);
+        SsgConnector a = new SsgConnector(new Goid(0,1), "foo bar", 8080, "http", false, "MESSAGE_INPUT", CLIENT_AUTH_NEVER, null, null);
         a.putProperty("foo", "bar");
-        SsgConnector b = new SsgConnector(1, "foo bar", 8080, "http", false, "MESSAGE_INPUT", CLIENT_AUTH_NEVER, null, null);
+        SsgConnector b = new SsgConnector(new Goid(0,1), "foo bar", 8080, "http", false, "MESSAGE_INPUT", CLIENT_AUTH_NEVER, null, null);
         b.putProperty("foo", "bar");
         eq(a, b);
 

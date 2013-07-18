@@ -1,9 +1,8 @@
 package com.l7tech.server.transport.firewall;
 
 import com.l7tech.gateway.common.transport.firewall.SsgFirewallRule;
-import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.server.EntityManagerStub;
+import com.l7tech.server.GoidEntityManagerStub;
 
 /**
  * <p>
@@ -11,14 +10,14 @@ import com.l7tech.server.EntityManagerStub;
  * </p>
  * @author K.Diep
  */
-public class SsgFirewallRulesManagerStub extends EntityManagerStub<SsgFirewallRule, EntityHeader> implements SsgFirewallRuleManager {
+public class SsgFirewallRulesManagerStub extends GoidEntityManagerStub<SsgFirewallRule, EntityHeader> implements SsgFirewallRuleManager {
 
     public SsgFirewallRulesManagerStub(final SsgFirewallRule ... entitiesIn){
         super(entitiesIn);
     }
 
     @Override
-    public Class<? extends Entity> getImpClass() {
+    public Class<? extends SsgFirewallRule> getImpClass() {
         return SsgFirewallRule.class;
     }
 

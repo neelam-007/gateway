@@ -2,6 +2,7 @@ package com.l7tech.server.upgrade;
 
 import com.l7tech.gateway.common.log.GatewayDiagnosticContextKeys;
 import com.l7tech.gateway.common.log.SinkConfiguration;
+import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.gateway.common.transport.email.EmailListener;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.Functions;
@@ -29,6 +30,7 @@ public class Upgrade71To80SinkConfig implements UpgradeTask {
     protected ApplicationContext applicationContext;
     protected SessionFactory sessionFactory;
     protected Long emailPrefix = null;
+    protected Long listenPortPrefix = null;
 
     @Override
     public void upgrade(ApplicationContext applicationContext) throws NonfatalUpgradeException, FatalUpgradeException {
@@ -56,9 +58,13 @@ public class Upgrade71To80SinkConfig implements UpgradeTask {
                                 updateLogSinkOids(GatewayDiagnosticContextKeys.EMAIL_LISTENER_ID, emailPrefix, filters);
                             }
 
+                            // update email listener oids to GOIDs
+                            if (listenPortPrefix != null) {
+                                updateLogSinkOids(GatewayDiagnosticContextKeys.LISTEN_PORT_ID, listenPortPrefix, filters);
+                            }
+
                             // todo update for
                             // todo handle hard coded values ( admin user...)
-//                            GatewayDiagnosticContextKeys.LISTEN_PORT_ID
 //                            GatewayDiagnosticContextKeys.SERVICE_ID
 //                            GatewayDiagnosticContextKeys.USER_ID
 //                            GatewayDiagnosticContextKeys.JMS_LISTENER_ID
@@ -100,6 +106,20 @@ public class Upgrade71To80SinkConfig implements UpgradeTask {
                 for (Object schemaCriteriaObj : schemaCriteria.list()) {
                     if (schemaCriteriaObj instanceof EmailListener) {
                         Long prefix = ((EmailListener) schemaCriteriaObj).getGoid().getHi();
+                        return prefix;
+                    }
+                }
+                return null;
+            }
+        });
+
+        listenPortPrefix= new HibernateTemplate(sessionFactory).execute(new HibernateCallback<Long>() {
+            @Override
+            public Long doInHibernate(final Session session) throws HibernateException, SQLException {
+                Criteria schemaCriteria = session.createCriteria(SsgConnector.class);
+                for (Object schemaCriteriaObj : schemaCriteria.list()) {
+                    if (schemaCriteriaObj instanceof SsgConnector) {
+                        Long prefix = ((SsgConnector) schemaCriteriaObj).getGoid().getHi();
                         return prefix;
                     }
                 }

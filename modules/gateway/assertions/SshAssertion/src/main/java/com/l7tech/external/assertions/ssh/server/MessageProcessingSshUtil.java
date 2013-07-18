@@ -335,7 +335,7 @@ public class MessageProcessingSshUtil {
         }
 
         try {
-            HybridDiagnosticContext.put(GatewayDiagnosticContextKeys.LISTEN_PORT_ID, Long.toString(connector.getOid()));
+            HybridDiagnosticContext.put(GatewayDiagnosticContextKeys.LISTEN_PORT_ID, connector.getGoid().toString());
             HybridDiagnosticContext.put(GatewayDiagnosticContextKeys.CLIENT_IP, MessageProcessingSshUtil.getRemoteAddress(session));
 
             //create the output stream for the virtual ssh file. Writing to the output stream of the virtual ssh file will pipe the data to the input stream of the request message

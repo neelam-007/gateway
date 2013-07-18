@@ -10,6 +10,7 @@ import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.gateway.common.transport.TransportDescriptor;
 import com.l7tech.message.*;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.*;
 import com.l7tech.server.audit.AuditContextUtils;
@@ -153,7 +154,7 @@ public class SimpleRawTransportModule extends TransportModule implements Applica
     private final GatewayState gatewayState;
     private final MessageProcessor messageProcessor;
     private final StashManagerFactory stashManagerFactory;
-    private final Map<Long, Pair<SsgConnector, ServerSock>> activeConnectors = new ConcurrentHashMap<Long, Pair<SsgConnector, ServerSock>>();
+    private final Map<Goid, Pair<SsgConnector, ServerSock>> activeConnectors = new ConcurrentHashMap<Goid, Pair<SsgConnector, ServerSock>>();
 
     public SimpleRawTransportModule(ApplicationEventProxy applicationEventProxy,
                                     LicenseManager licenseManager,
@@ -209,7 +210,7 @@ public class SimpleRawTransportModule extends TransportModule implements Applica
     }
 
     @Override
-    public void reportMisconfiguredConnector(long connectorOid) {
+    public void reportMisconfiguredConnector(Goid connectorOid) {
         // Ignore, can't currently happen for simple raw
         logger.log(Level.WARNING, "Raw connector reported misconfigured: OID " + connectorOid);
     }
@@ -274,9 +275,9 @@ public class SimpleRawTransportModule extends TransportModule implements Applica
     @Override
     protected void doStop() throws LifecycleException {
         try {
-            final List<Long> oidsToStop = new ArrayList<Long>(activeConnectors.keySet());
-            for ( final Long oid : oidsToStop) {
-                removeConnector(oid);
+            final List<Goid> oidsToStop = new ArrayList<Goid>(activeConnectors.keySet());
+            for ( final Goid goid : oidsToStop) {
+                removeConnector(goid);
             }
         }
         catch(Exception e) {
@@ -297,10 +298,10 @@ public class SimpleRawTransportModule extends TransportModule implements Applica
     }
 
     @Override
-    protected boolean isCurrent( long oid, int version ) {
+    protected boolean isCurrent( Goid goid, int version ) {
         boolean current;
 
-        Pair<SsgConnector, ServerSock> entry = activeConnectors.get(oid);
+        Pair<SsgConnector, ServerSock> entry = activeConnectors.get(goid);
         current = entry != null && entry.left.getVersion()==version;
 
         return current;
@@ -308,13 +309,13 @@ public class SimpleRawTransportModule extends TransportModule implements Applica
 
     @Override
     protected void addConnector(SsgConnector connector) throws ListenerException {
-        if ( connector.getOid() == SsgConnector.DEFAULT_OID )
+        if ( connector.getGoid().equals( SsgConnector.DEFAULT_GOID ))
             throw new ListenerException("Connector must be persistent.");
 
-        if (isCurrent(connector.getOid(), connector.getVersion()))
+        if (isCurrent(connector.getGoid(), connector.getVersion()))
             return;
 
-        removeConnector(connector.getOid());
+        removeConnector(connector.getGoid());
         if (!connectorIsOwnedByThisModule(connector))
             return;
 
@@ -356,7 +357,7 @@ public class SimpleRawTransportModule extends TransportModule implements Applica
             final ServerSock serverSock = new ServerSock(connector, serverSocket, executor, executorNeedsClose);
             auditStart( SCHEME_RAW_TCP, describe(connector) );
             serverSock.start();
-            activeConnectors.put(connector.getOid(), new Pair<SsgConnector, ServerSock>(connector, serverSock));
+            activeConnectors.put(connector.getGoid(), new Pair<SsgConnector, ServerSock>(connector, serverSock));
 
         } catch (IOException e) {
             throw new ListenerException("Unable to create server socket: " + ExceptionUtils.getMessage(e), e);
@@ -364,9 +365,9 @@ public class SimpleRawTransportModule extends TransportModule implements Applica
     }
 
     @Override
-    protected void removeConnector(long oid) {
+    protected void removeConnector(Goid goid) {
         final Pair<SsgConnector, ServerSock> entry;
-        entry = activeConnectors.remove(oid);
+        entry = activeConnectors.remove(goid);
         if (entry == null) return;
         ServerSock serverSock = entry.right;
         auditStop( SCHEME_RAW_TCP, describe( entry.left ) );
@@ -388,7 +389,7 @@ public class SimpleRawTransportModule extends TransportModule implements Applica
         PolicyEnforcementContext context = null;
         InputStream responseStream = null;
         InetAddress address = sock.getInetAddress();
-        HybridDiagnosticContext.put( GatewayDiagnosticContextKeys.LISTEN_PORT_ID, Long.toString( connector.getOid() ) );
+        HybridDiagnosticContext.put( GatewayDiagnosticContextKeys.LISTEN_PORT_ID, connector.getGoid().toString() );
         HybridDiagnosticContext.put( GatewayDiagnosticContextKeys.CLIENT_IP, address==null ? "" : address.getHostAddress() );
         try {
 

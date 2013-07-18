@@ -8,11 +8,12 @@ import com.l7tech.gateway.common.audit.AuditDetailMessage;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.LifecycleBean;
-import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.event.FaultProcessed;
+import com.l7tech.server.event.GoidEntityInvalidationEvent;
 import com.l7tech.server.event.MessageProcessed;
 import com.l7tech.server.event.system.TransportEvent;
 import com.l7tech.server.identity.cert.TrustedCertServices;
@@ -73,12 +74,12 @@ public abstract class TransportModule extends LifecycleBean {
      * This method always returns false.  Subclasses that cache active connector entities can override this
      * method with a cleverer implementation.
      *
-     * @param oid      the SsgConnector object ID.
+     * @param goid      the SsgConnector object GOID.
      * @param version  the SsgConnector entity version.
      * @return true if this connector version is already current, and any associated entity update event should be ignored.
      *         false if this connector version may not be current and the connector should be removed and re-added.
      */
-    protected boolean isCurrent( long oid, int version ) {
+    protected boolean isCurrent( Goid goid, int version ) {
         return false;
     }
 
@@ -91,14 +92,14 @@ public abstract class TransportModule extends LifecycleBean {
     protected abstract void addConnector(SsgConnector connector) throws ListenerException;
 
     /**
-     * Shut down and remove any connector from this transport module with the specified oid.
+     * Shut down and remove any connector from this transport module with the specified goid.
      * <p/>
-     * If the specified oid is not recognized as a previously-added connector,
+     * If the specified goid is not recognized as a previously-added connector,
      * this method silently does nothing.
      *
-     * @param oid the oid of the connector to remove.
+     * @param goid the goid of the connector to remove.
      */
-    protected abstract void removeConnector(long oid);
+    protected abstract void removeConnector(Goid goid);
 
     /**
      * Get the set of scheme names recognized by this transport module.
@@ -165,8 +166,8 @@ public abstract class TransportModule extends LifecycleBean {
         if (!isStarted())
             return;
 
-        if (applicationEvent instanceof EntityInvalidationEvent) {
-            final EntityInvalidationEvent event = (EntityInvalidationEvent)applicationEvent;
+        if (applicationEvent instanceof GoidEntityInvalidationEvent) {
+            final GoidEntityInvalidationEvent event = (GoidEntityInvalidationEvent)applicationEvent;
             if (SsgConnector.class.equals(event.getEntityClass())) {
                 Background.scheduleOneShot( new TimerTask() {
                     @Override
@@ -180,9 +181,9 @@ public abstract class TransportModule extends LifecycleBean {
         }
     }
 
-    private void handleSsgConnectorInvalidationEvent(EntityInvalidationEvent event) {
+    private void handleSsgConnectorInvalidationEvent(GoidEntityInvalidationEvent event) {
         synchronized ( invalidationSync ) {
-            long[] ids = event.getEntityIds();
+            Goid[] ids = event.getEntityIds();
             char[] operations = event.getEntityOperations();
             for (int i = 0; i < ids.length; i++) {
                 handleSsgConnectorOperation(operations[i], ids[i]);
@@ -190,27 +191,27 @@ public abstract class TransportModule extends LifecycleBean {
         }
     }
 
-    private void handleSsgConnectorOperation(char operation, long connectorId) {
+    private void handleSsgConnectorOperation(char operation, Goid connectorGoid) {
         try {
             switch (operation) {
-                case EntityInvalidationEvent.CREATE:
-                case EntityInvalidationEvent.UPDATE:
-                    createOrUpdateConnector(connectorId);
+                case GoidEntityInvalidationEvent.CREATE:
+                case GoidEntityInvalidationEvent.UPDATE:
+                    createOrUpdateConnector(connectorGoid);
                     break;
-                case EntityInvalidationEvent.DELETE:
-                    removeConnector(connectorId);
+                case GoidEntityInvalidationEvent.DELETE:
+                    removeConnector(connectorGoid);
                     break;
                 default:
                     logger.warning("Unrecognized entity operation: " + operation);
                     break;
             }
         } catch (Throwable t) {
-            logger.log(Level.WARNING, "Error processing change for connector oid " + connectorId + ": " + ExceptionUtils.getMessage(t), t);
+            logger.log(Level.WARNING, "Error processing change for connector oid " + connectorGoid + ": " + ExceptionUtils.getMessage(t), t);
         }
     }
 
-    private void createOrUpdateConnector(long connectorId) throws FindException, ListenerException {
-        SsgConnector c = ssgConnectorManager.findByPrimaryKey(connectorId);
+    private void createOrUpdateConnector(Goid connectorGoid) throws FindException, ListenerException {
+        SsgConnector c = ssgConnectorManager.findByPrimaryKey(connectorGoid);
         if (c == null) {
             // Already removed
             return;
@@ -218,10 +219,10 @@ public abstract class TransportModule extends LifecycleBean {
 
         // If this module keeps track of active entities, and can tell this update has already been processed,
         // skip the expensive removal and re-add.
-        if (isCurrent(c.getOid(), c.getVersion()))
+        if (isCurrent(c.getGoid(), c.getVersion()))
             return;
 
-        removeConnector(connectorId);
+        removeConnector(connectorGoid);
         if (c.isEnabled() && connectorIsOwnedByThisModule(c) && isValidConnectorConfig(c)) {
             final SsgConnector roc = c.getReadOnlyCopy();
             // TODO replace this background timer hack with something that won't fail if a foreign transport module takes longer than 200ms to relinquish the socket
@@ -320,13 +321,13 @@ public abstract class TransportModule extends LifecycleBean {
     /**
      * Called by transport level code to notify that a particular connector has a configuration problem that prevents it from being opened in its current configuration.
      *
-     * @param connectorOid the OID of the connector that won't open.
+     * @param connectorGoid the GOID of the connector that won't open.
      */
-    public abstract void reportMisconfiguredConnector(long connectorOid);
+    public abstract void reportMisconfiguredConnector(Goid connectorGoid);
     
 
     protected String describe( final SsgConnector connector ) {
-        return connector.getName() + " (#" + connector.getOid() + ",v" + connector.getVersion() + ") on port " + connector.getPort();
+        return connector.getName() + " (#" + connector.getGoid() + ",v" + connector.getVersion() + ") on port " + connector.getPort();
     }
 
     protected final void auditStart( final String scheme, final String connectorDescription ) {

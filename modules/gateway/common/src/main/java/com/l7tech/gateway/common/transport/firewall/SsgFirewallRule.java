@@ -1,6 +1,6 @@
 package com.l7tech.gateway.common.transport.firewall;
 
-import com.l7tech.objectmodel.imp.NamedEntityImp;
+import com.l7tech.objectmodel.imp.NamedGoidEntityImp;
 import com.l7tech.util.BeanUtils;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
@@ -24,7 +24,7 @@ import java.util.logging.Logger;
 @Entity
 @Proxy(lazy=false)
 @Table(name="firewall_rule")
-public class SsgFirewallRule extends NamedEntityImp {
+public class SsgFirewallRule extends NamedGoidEntityImp {
     protected static final Logger logger = Logger.getLogger(SsgFirewallRule.class.getName());
 
     private int ordinal;
@@ -62,7 +62,7 @@ public class SsgFirewallRule extends NamedEntityImp {
 
     @Fetch(FetchMode.SUBSELECT)
     @ElementCollection(fetch= FetchType.EAGER)
-    @JoinTable(name="firewall_rule_property", joinColumns=@JoinColumn(name="firewall_rule_oid", referencedColumnName="objectid"))
+    @JoinTable(name="firewall_rule_property", joinColumns=@JoinColumn(name="firewall_rule_goid", referencedColumnName="goid"))
     @MapKeyColumn(name="name",length=128)
     @Column(name="value", nullable=false, length=32672)
     protected Map<String,String> getProperties() {

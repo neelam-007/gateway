@@ -233,7 +233,7 @@ ALTER TABLE email_listener_state CHANGE COLUMN objectid goid VARBINARY(16);
 SET @emailState_prefix=concat(lpad(char(#RANDOM_LONG#),4,'\0'),lpad(char(#RANDOM_LONG#),4,'\0'));
 UPDATE email_listener_state SET goid = concat(@emailState_prefix,lpad(char(objectid_backup),8,'\0'));
 ALTER TABLE email_listener_state DROP COLUMN objectid_backup;
-
+                
 -- GenericEntity
 ALTER TABLE generic_entity ADD COLUMN objectid_backup BIGINT(20);
 update generic_entity set objectid_backup=objectid;
@@ -243,6 +243,43 @@ set @generic_entity_prefix=lpad(char(#RANDOM_LONG_NOT_RESERVED#),8,'\0');
 update generic_entity set goid = concat(@generic_entity_prefix,lpad(char(objectid_backup),8,'\0'));
 ALTER TABLE generic_entity DROP COLUMN objectid_backup;
 
+
+-- Connector
+ALTER TABLE connector_property drop foreign key connector_property_ibfk_1;
+
+ALTER TABLE connector ADD COLUMN objectid_backup BIGINT(20);
+UPDATE connector SET objectid_backup=objectid;
+ALTER TABLE connector CHANGE COLUMN objectid goid binary(16);
+-- For manual runs use: set @connector_prefix=concat(lpad(char(floor(rand()*4294967296)+1),4,'\0'),lpad(char(floor(rand()*4294967296)),4,'\0'));
+SET @connector_prefix=concat(lpad(char(#RANDOM_LONG#),4,'\0'),lpad(char(#RANDOM_LONG#),4,'\0'));
+UPDATE connector SET goid = concat(@connector_prefix,lpad(char(objectid_backup),8,'\0'));
+ALTER TABLE connector DROP COLUMN objectid_backup;
+
+ALTER TABLE connector_property ADD COLUMN connector_oid_backup BIGINT(20);
+UPDATE connector_property SET connector_oid_backup=connector_oid;
+ALTER TABLE connector_property CHANGE COLUMN connector_oid connector_goid binary(16);
+UPDATE connector_property SET connector_goid = concat(@connector_prefix,lpad(char(connector_oid_backup),8,'\0'));
+ALTER TABLE connector_property DROP COLUMN connector_oid_backup;
+ALTER TABLE connector_property ADD FOREIGN KEY (connector_goid) REFERENCES connector (goid) ON DELETE CASCADE;
+
+-- Firewall rule
+
+alter table firewall_rule_property drop foreign key firewall_rule_property_ibfk_1;
+
+ALTER TABLE firewall_rule ADD COLUMN objectid_backup BIGINT(20);
+update firewall_rule set objectid_backup=objectid;
+ALTER TABLE firewall_rule CHANGE COLUMN objectid goid binary(16);
+-- For manual runs use: set @firewall_prefix=concat(lpad(char(floor(rand()*4294967296)+1),4,'\0'),lpad(char(floor(rand()*4294967296)),4,'\0'));
+SET @firewall_prefix=concat(lpad(char(#RANDOM_LONG#),4,'\0'),lpad(char(#RANDOM_LONG#),4,'\0'));
+update firewall_rule set goid = concat(@firewall_prefix,lpad(char(objectid_backup),8,'\0'));
+ALTER TABLE firewall_rule DROP COLUMN objectid_backup;
+
+ALTER TABLE firewall_rule_property ADD COLUMN firewall_rule_oid_backup BIGINT(20);
+UPDATE  firewall_rule_property SET firewall_rule_oid_backup = firewall_rule_oid;
+ALTER TABLE firewall_rule_property CHANGE COLUMN firewall_rule_oid firewall_rule_goid binary(16);
+UPDATE firewall_rule_property SET firewall_rule_goid = concat(@firewall_prefix,lpad(char(firewall_rule_oid_backup),8,'\0'));
+ALTER TABLE firewall_rule_property DROP COLUMN firewall_rule_oid_backup;
+ALTER TABLE firewall_rule_property  ADD FOREIGN KEY (firewall_rule_goid) REFERENCES firewall_rule (goid) ON DELETE CASCADE;
 --
 -- Register upgrade task for upgrading sink configuration references to GOIDs
 --

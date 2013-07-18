@@ -39,14 +39,14 @@ public interface TransportAdmin {
     /**
      * Download a specific SsgConnector instance identified by its primary key.
      *
-     * @param oid the object ID of the SsgConnector instance to download.  Required.
+     * @param goid the object ID of the SsgConnector instance to download.  Required.
      * @return the requested SsgConnector instance.  Never null.
      * @throws FindException if no SsgConnector is found on this cluster with the specified oid, or
      *                       if there is a problem reading from the database
      */
     @Transactional(readOnly=true)
     @Secured(types=SSG_CONNECTOR, stereotype=FIND_ENTITY)
-    SsgConnector findSsgConnectorByPrimaryKey(long oid) throws FindException;
+    SsgConnector findSsgConnectorByPrimaryKey(Goid goid) throws FindException;
 
     /**
      * Exception thrown when an attempt is made to update or delete the admin connection
@@ -67,13 +67,13 @@ public interface TransportAdmin {
      * you are currently using to access this API.
      *
      * @param connector  the connector to save.  Required.
-     * @return the unique object ID that was updated or created.
+     * @return the unique global object ID that was updated or created.
      * @throws SaveException   if the requested information could not be saved
      * @throws UpdateException if the requested information could not be updated for some other reason
      * @throws CurrentAdminConnectionException if the specified SsgConnector owns the current admin connection
      */
     @Secured(stereotype=SAVE_OR_UPDATE)
-    long saveSsgConnector(SsgConnector connector) throws SaveException, UpdateException, CurrentAdminConnectionException;
+    Goid saveSsgConnector(SsgConnector connector) throws SaveException, UpdateException, CurrentAdminConnectionException;
 
     /**
      * Delete a specific SsgConnector instance identified by its primary key.
@@ -81,13 +81,13 @@ public interface TransportAdmin {
      * You will not be permitted to delete the SsgConnector that owns
      * the admin connection you are currently using to access this API.
      *
-     * @param oid the object ID of the SsgConnector instance to delete.  Required.
+     * @param goid the object ID of the SsgConnector instance to delete.  Required.
      * @throws DeleteException if there is some other problem deleting the object
      * @throws FindException if the object cannot be found
      * @throws CurrentAdminConnectionException if the specified SsgConnector owns the current admin connection
      */
     @Secured(stereotype=DELETE_BY_ID)
-    void deleteSsgConnector(long oid) throws DeleteException, FindException, CurrentAdminConnectionException;
+    void deleteSsgConnector(Goid goid) throws DeleteException, FindException, CurrentAdminConnectionException;
 
     /**
      * Finds a particular {@link SsgActiveConnector} with the specified OID, or null if no such connector can be found.
@@ -237,23 +237,23 @@ public interface TransportAdmin {
     Collection<SsgFirewallRule> findAllFirewallRules() throws FindException;
 
     /**
-     * Remove a firewall rule from the system with the given oid.  This method require the user to have the {@link com.l7tech.gateway.common.security.rbac.MethodStereotype#DELETE_BY_ID} permission.
-     * @param oid the rule oid to delete
+     * Remove a firewall rule from the system with the given goid.  This method require the user to have the {@link com.l7tech.gateway.common.security.rbac.MethodStereotype#DELETE_BY_ID} permission.
+     * @param goid the rule goid to delete
      * @throws DeleteException if it is unable to delete the rule.
      * @throws FindException if it is unable to locate the rule to be deleted.
      * @throws CurrentAdminConnectionException if the specified {@link SsgFirewallRule} owns the current admin connection.
      */
     @Secured(types=FIREWALL_RULE, stereotype=DELETE_BY_ID)
-    void deleteFirewallRule(long oid) throws DeleteException, FindException, CurrentAdminConnectionException;
+    void deleteFirewallRule(Goid goid) throws DeleteException, FindException, CurrentAdminConnectionException;
 
     /**
      * Save a firewall rule to the system.  This method require the user to have the {@link com.l7tech.gateway.common.security.rbac.MethodStereotype#SAVE_OR_UPDATE} permission.
      * @param firewallRule the firewall rule to save.
-     * @return the oid of the newly saved firewall rule or the oid an existing rule that was updated.
+     * @return the goid of the newly saved firewall rule or the oid an existing rule that was updated.
      * @throws SaveException if the rule can not be saved.
      * @throws UpdateException if the rule can not be updated
      * @throws CurrentAdminConnectionException if the specified {@link SsgFirewallRule} owns the current admin connection.
      */
     @Secured(types=FIREWALL_RULE, stereotype=SAVE_OR_UPDATE)
-    long saveFirewallRule(final SsgFirewallRule firewallRule) throws SaveException, UpdateException, CurrentAdminConnectionException;
+    Goid saveFirewallRule(final SsgFirewallRule firewallRule) throws SaveException, UpdateException, CurrentAdminConnectionException;
 }

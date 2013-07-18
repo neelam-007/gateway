@@ -277,7 +277,7 @@ create table cluster_properties (
 );
 
 create table connector (
-    objectid bigint not null,
+    goid CHAR(16) FOR BIT DATA not null,
     name varchar(128) not null,
     version integer,
     client_auth integer,
@@ -289,14 +289,14 @@ create table connector (
     scheme varchar(128) not null,
     secure smallint,
     security_zone_oid bigint references security_zone(objectid) on delete set null,
-    primary key (objectid)
+    primary key (goid)
 );
 
 create table connector_property (
-    connector_oid bigint not null,
+    connector_goid CHAR(16) FOR BIT DATA  not null,
     value varchar(32672) not null,
     name varchar(128) not null,
-    primary key (connector_oid, name)
+    primary key (connector_goid, name)
 );
 
 create table counters (
@@ -1083,7 +1083,7 @@ alter table active_connector_property
 
 alter table connector_property
     add constraint FK7EC2A187BA66EE5C
-    foreign key (connector_oid)
+    foreign key (connector_goid)
     references connector
     on delete cascade;
 
@@ -1705,19 +1705,25 @@ alter table encapsulated_assertion_result
     on delete cascade;
 
 CREATE TABLE firewall_rule (
-  objectid bigint NOT NULL,
+  goid CHAR(16) FOR BIT DATA NOT NULL,
   version integer NOT NULL,
   ordinal integer NOT NULL,
   name varchar(128) NOT NULL,
   enabled smallint NOT NULL DEFAULT 0,
-  PRIMARY KEY (objectid)
+  PRIMARY KEY (goid)
 );
 
 CREATE TABLE firewall_rule_property (
-  firewall_rule_oid bigint not null references firewall_rule(objectid) on delete cascade,
+  firewall_rule_goid CHAR(16) FOR BIT DATA not null,
   name varchar(128) NOT NULL,
   value clob(2147483647) NOT NULL
 );
+
+alter table firewall_rule_property
+    add constraint FK_FIREWALL_PROPERTY_GOID
+    foreign key (firewall_rule_goid)
+    references firewall_rule
+    on delete cascade;
 
 -- create new RBAC role for Manage Firewall Rules --
 INSERT INTO rbac_role (objectid, version, name, entity_type, description, user_created) VALUES (-1400, 0, 'Manage Firewall Rules', 'FIREWALL_RULE', 'Users assigned to the {0} role have the ability to read, create, update and delete Firewall rules.', 0);

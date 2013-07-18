@@ -1,6 +1,9 @@
 package com.l7tech.server.transport;
 
+import com.l7tech.objectmodel.*;
+import com.l7tech.server.HibernateGoidEntityManager;
 import com.l7tech.server.ServerConfigParams;
+import com.l7tech.server.event.GoidEntityInvalidationEvent;
 import com.l7tech.util.InetAddressUtil;
 import com.l7tech.common.io.PortRange;
 import com.l7tech.common.io.PortRanges;
@@ -8,10 +11,6 @@ import com.l7tech.gateway.common.transport.InterfaceTag;
 import com.l7tech.gateway.common.transport.TransportDescriptor;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.gateway.common.transport.SsgConnector.Endpoint;
-import com.l7tech.objectmodel.Entity;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.event.EntityInvalidationEvent;
@@ -42,14 +41,14 @@ import java.util.logging.Logger;
  * Implementation of {@link SsgConnectorManager}.
  */
 public class SsgConnectorManagerImpl
-        extends HibernateEntityManager<SsgConnector, EntityHeader>
+        extends HibernateGoidEntityManager<SsgConnector, EntityHeader>
         implements SsgConnectorManager, InitializingBean, DisposableBean, PropertyChangeListener, ApplicationContextAware
 {
     protected static final Logger logger = Logger.getLogger(SsgConnectorManagerImpl.class.getName());
     private static final String PROP_RESERVED_PORTS = "com.l7tech.server.transport.reservedPorts";
 
     private final ServerConfig serverConfig;
-    private final Map<Long, SsgConnector> knownConnectors = new LinkedHashMap<Long, SsgConnector>();
+    private final Map<Goid, SsgConnector> knownConnectors = new LinkedHashMap<Goid, SsgConnector>();
     private final Map<Endpoint, SsgConnector> httpConnectorsByService = Collections.synchronizedMap(new HashMap<Endpoint, SsgConnector>());
     private final Map<Endpoint, SsgConnector> httpsConnectorsByService = Collections.synchronizedMap(new HashMap<Endpoint, SsgConnector>());
     private final ConcurrentMap<String, Pair<TransportDescriptor, TransportModule>> modularTransportsByScheme =
@@ -310,17 +309,17 @@ public class SsgConnectorManagerImpl
         if (applicationEventPublisher == null)
             return;
 
-        List<Long> oids = new ArrayList<Long>();
+        List<Goid> goids = new ArrayList<Goid>();
         try {
             for (SsgConnector connector : findAll()) {
                 if (looksLikeInterfaceTagName(connector.getProperty(SsgConnector.PROP_BIND_ADDRESS)))
-                    oids.add(connector.getOid());
+                    goids.add(connector.getGoid());
             }
         } catch (FindException e) {
             logger.log(Level.WARNING, "Unable to update connectors using interface definitions: unable to fetch list of connectors: " + ExceptionUtils.getMessage(e), ExceptionUtils.getMessage(e));
         }
 
-        EntityInvalidationEvent eie = new EntityInvalidationEvent(this, SsgConnector.class, ArrayUtils.unbox(oids), ArrayUtils.fill(new char[oids.size()], 'U'));
+        GoidEntityInvalidationEvent eie = new GoidEntityInvalidationEvent(this, SsgConnector.class, goids.toArray(new Goid[goids.size()]), ArrayUtils.fill(new char[goids.size()], 'U'));
         applicationEventPublisher.publishEvent(eie);
     }
 
@@ -335,7 +334,7 @@ public class SsgConnectorManagerImpl
 
         // Initialize known connections
         for (SsgConnector connector : findAll())
-            if (connector.isEnabled()) knownConnectors.put(connector.getOid(), connector);
+            if (connector.isEnabled()) knownConnectors.put(connector.getGoid(), connector);
 
         updateDefaultPorts();
 
@@ -379,23 +378,23 @@ public class SsgConnectorManagerImpl
     }
 
     private void handleEvent(ApplicationEvent event) {
-        if (!(event instanceof EntityInvalidationEvent))
+        if (!(event instanceof GoidEntityInvalidationEvent))
             return;
-        EntityInvalidationEvent evt = (EntityInvalidationEvent)event;
+        GoidEntityInvalidationEvent evt = (GoidEntityInvalidationEvent)event;
         if (!SsgConnector.class.isAssignableFrom(evt.getEntityClass()))
             return;
-        long[] ids = evt.getEntityIds();
+        Goid[] ids = evt.getEntityIds();
         char[] ops = evt.getEntityOperations();
         for (int i = 0; i < ops.length; i++) {
             char op = ops[i];
-            long id = ids[i];
+            Goid goid = ids[i];
 
             switch (op) {
                 case EntityInvalidationEvent.DELETE:
-                    knownConnectors.remove(id);
+                    knownConnectors.remove(goid);
                     break;
                 default:
-                    onConnectorChanged(id);
+                    onConnectorChanged(goid);
             }
         }
         httpConnectorsByService.clear();
@@ -404,15 +403,15 @@ public class SsgConnectorManagerImpl
         openFirewallForConnectors();
     }
 
-    private void onConnectorChanged(long id) {
+    private void onConnectorChanged(Goid goid) {
         try {
-            SsgConnector connector = findByPrimaryKey(id);
+            SsgConnector connector = findByPrimaryKey(goid);
             if (connector != null && connector.isEnabled())
-                knownConnectors.put(id, connector);
+                knownConnectors.put(goid, connector);
             else
-                knownConnectors.remove(id);
+                knownConnectors.remove(goid);
         } catch (FindException e) {
-            logger.log(Level.WARNING, "Unable to find just-added or -updated connector with oid " + id + ": " + ExceptionUtils.getMessage(e), e);
+            logger.log(Level.WARNING, "Unable to find just-added or -updated connector with oid " + goid + ": " + ExceptionUtils.getMessage(e), e);
         }
     }
 }
