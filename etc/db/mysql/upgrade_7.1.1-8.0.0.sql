@@ -251,7 +251,7 @@ ALTER TABLE connector ADD COLUMN objectid_backup BIGINT(20);
 UPDATE connector SET objectid_backup=objectid;
 ALTER TABLE connector CHANGE COLUMN objectid goid binary(16);
 -- For manual runs use: set @connector_prefix=concat(lpad(char(floor(rand()*4294967296)+1),4,'\0'),lpad(char(floor(rand()*4294967296)),4,'\0'));
-SET @connector_prefix=concat(lpad(char(#RANDOM_LONG#),4,'\0'),lpad(char(#RANDOM_LONG#),4,'\0'));
+SET @connector_prefix=lpad(char(#RANDOM_LONG_NOT_RESERVED#),8,'\0');
 UPDATE connector SET goid = concat(@connector_prefix,lpad(char(objectid_backup),8,'\0'));
 ALTER TABLE connector DROP COLUMN objectid_backup;
 
@@ -270,7 +270,7 @@ ALTER TABLE firewall_rule ADD COLUMN objectid_backup BIGINT(20);
 update firewall_rule set objectid_backup=objectid;
 ALTER TABLE firewall_rule CHANGE COLUMN objectid goid binary(16);
 -- For manual runs use: set @firewall_prefix=concat(lpad(char(floor(rand()*4294967296)+1),4,'\0'),lpad(char(floor(rand()*4294967296)),4,'\0'));
-SET @firewall_prefix=concat(lpad(char(#RANDOM_LONG#),4,'\0'),lpad(char(#RANDOM_LONG#),4,'\0'));
+SET @firewall_prefix=lpad(char(#RANDOM_LONG_NOT_RESERVED#),8,'\0');
 update firewall_rule set goid = concat(@firewall_prefix,lpad(char(objectid_backup),8,'\0'));
 ALTER TABLE firewall_rule DROP COLUMN objectid_backup;
 
