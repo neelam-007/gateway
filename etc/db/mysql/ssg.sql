@@ -1026,7 +1026,7 @@ CREATE TABLE connector (
 
 DROP TABLE IF EXISTS connector_property;
 CREATE TABLE connector_property (
-  connector_goid binary(16)) NOT NULL,
+  connector_goid binary(16) NOT NULL,
   name varchar(128) NOT NULL,
   value MEDIUMTEXT NOT NULL,
   FOREIGN KEY (connector_goid) REFERENCES connector (goid) ON DELETE CASCADE
@@ -1971,7 +1971,7 @@ CREATE TABLE firewall_rule (
   ordinal integer NOT NULL,
   name varchar(128) NOT NULL,
   enabled tinyint(1) NOT NULL DEFAULT 0,
-  PRIMARY KEY (objectid)
+  PRIMARY KEY (goid)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
 DROP TABLE IF EXISTS firewall_rule_property;
