@@ -14,13 +14,14 @@
         <jar-include-verify
                 file="../console/ivy.xml"
                 module="layer7-gateway-console"
-                whitelist="layer7-gateway-common|layer7-kerberos|layer7-ntlm|layer7-policy|layer7-policy-exporter|layer7-identity|layer7-common|layer7-gui|layer7-uddi|layer7-utility|layer7-wsdl|layer7-json"/>
+                whitelist="layer7-gateway-common|layer7-kerberos|layer7-ntlm|layer7-siteminder|layer7-policy|layer7-policy-exporter|layer7-identity|layer7-common|layer7-gui|layer7-uddi|layer7-utility|layer7-wsdl|layer7-json"/>
 
         <!-- Add dependencies here and to this modules IVY file when added to the console or a dependency -->
         <jar-include name="layer7-gateway-console"/>
         <jar-include name="layer7-gateway-common"/>
         <jar-include name="layer7-kerberos"/>
         <jar-include name="layer7-ntlm"/>
+        <jar-include name="layer7-siteminder"/>
         <jar-include name="layer7-policy"/>
         <jar-include name="layer7-policy-exporter"/>
         <jar-include name="layer7-identity"/>

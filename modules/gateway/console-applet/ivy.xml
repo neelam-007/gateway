@@ -25,6 +25,7 @@
         <dependency name="layer7-gateway-console" rev="latest.integration" conf="core"/>
         <dependency name="layer7-gateway-common" rev="latest.integration" conf="core"/>
         <dependency name="layer7-kerberos" rev="latest.integration" conf="core"/>
+        <dependency name="layer7-siteminder" rev="latest.integration" conf="core"/>
         <dependency name="layer7-ntlm" rev="latest.integration" conf="core"/>
         <dependency name="layer7-policy" rev="latest.integration" conf="core"/>
         <dependency name="layer7-identity" rev="latest.integration" conf="core"/>
