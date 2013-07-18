@@ -46,7 +46,7 @@ public class CustomConsoleContext {
         } else {
             dataTypeClass = inDataTypeClass;
         }
-        return dataTypeClass.isPrimitive() || String.class.getName().equals(dataTypeClass.getName());
+        return dataTypeClass.isPrimitive() || String.class.getName().equals(dataTypeClass.getName()) || Map.class.getName().equals(inDataTypeClass.getName());
         // add support for more data types here (e.g. Collection types)
     }
 }
