@@ -38,20 +38,18 @@ public class SiteMinderLowLevelAgent {
 
 
     public SiteMinderLowLevelAgent(SiteMinderAgentConfig config) throws SiteMinderApiClassException {
-        this.agentConfig = config;
-        initialize(agentConfig);
+        agentConfig = config;
+        if(!initialize(agentConfig)) throw new SiteMinderApiClassException("Unable to initialize SiteMinder Agent API");
     }
 
-    private int initialize(SiteMinderAgentConfig agentConfig) throws SiteMinderApiClassException {
-        int retcode = 0;
+    public boolean initialize(SiteMinderAgentConfig agentConfig) throws SiteMinderApiClassException {
+        initialized = false;
         try {
             agentConfig.validate();
             agentName = agentConfig.getAgentName();
             agentIP = agentConfig.getAgentAddress();
             agentCheckSessionIP = agentConfig.isAgentIpCheck();
             updateCookie = agentConfig.isUpdateCookie();
-
-
 
             InitDef initDef = null;
             agentApi = new AgentAPI();
@@ -72,9 +70,7 @@ public class SiteMinderLowLevelAgent {
                 ServerDef serverDef = (ServerDef)iter.next();
                 if (0 == serverDef.clusterSeq) {
                     initDef.addServerDef(serverDef);
-                    //classHelper.initDefAddServerDef(initDef,serverDef);
                 } else {
-                    // no InitDef.addServerDef(ServerDef, clusterSeq)
                     initDef.addServerDef(serverDef.serverIpAddress,
                             serverDef.connectionMin,
                             serverDef.connectionMax,
@@ -84,13 +80,6 @@ public class SiteMinderLowLevelAgent {
                             serverDef.authenticationPort,
                             serverDef.accountingPort,
                             serverDef.clusterSeq);
-
-/*                    classHelper.initDefAddServerDef(initDef,
-                            classHelper.getServerDef_serverIpAddress(serverDef),
-                            classHelper.getServerDef_connectionMin(serverDef), classHelper.getServerDef_connectionMax(serverDef), classHelper.getServerDef_connectionStep(serverDef),
-                            classHelper.getServerDef_timeout(serverDef),
-                            classHelper.getServerDef_authorizationPort(serverDef), classHelper.getServerDef_authenticationPort(serverDef), classHelper.getServerDef_accountingPort(serverDef),
-                            classHelper.getServerDef_clusterSeq(serverDef));*/
                 }
             }
 
@@ -99,73 +88,62 @@ public class SiteMinderLowLevelAgent {
 
             if (FIPS_MODE_COMPAT.equals(fipsMode)) {
                 cryptoOpMode = InitDef.CRYPTO_OP_COMPAT;
-//                cryptoOpMode = classHelper.getInitDef_CRYPTO_OP_COMPAT();
             } else if(FIPS_MODE_MIGRATE.equals(fipsMode)) {
                 cryptoOpMode = InitDef.CRYPTO_OP_MIGRATE_F1402;
-//                cryptoOpMode = classHelper.getInitDef_CRYPTO_OP_MIGRATE_F1402();
             } else if(FIPS_MODE_ONLY.equals(fipsMode)) {
                 cryptoOpMode = InitDef.CRYPTO_OP_F1402;
-//                cryptoOpMode = classHelper.getInitDef_CRYPTO_OP_F1402();
             } else {
                 logger.log(Level.SEVERE, "Unexpected FIPS mode: " + fipsMode);
-                return AgentAPI.FAILURE;
+                return false;
             }
             initDef.setCryptoOpMode(cryptoOpMode);
-//            classHelper.initDefSetCryptoOpMode(initDef, cryptoOpMode);
             agentApi.getConfig(initDef, agentName, null); //the last parameter is used to configure ACO
-//            classHelper.agentApiGetConfig(agentApi, initDef, agentName, null); //the last parameter is used to configure ACO
 
-            retcode = agentApi.init(initDef);
-//            int retcode = classHelper.agentApiInit(agentApi, initDef);
+            int retcode = agentApi.init(initDef);
 
-//            if (retcode != classHelper.getAgentApi_SUCCESS()) {
-            if (retcode != AgentAPI.SUCCESS) {
+            if (retcode == AgentAPI.SUCCESS) {
+                //TODO: check if the management info is correct and if we need to put it into the cluster property
+                ManagementContextDef mgtCtxDef = new ManagementContextDef(ManagementContextDef.MANAGEMENT_SET_AGENT_INFO, "Product=sdk,Platform=WinNT/Solaris,Version=12.5,Update=0,Label=160");
+                AttributeList attrList = new AttributeList();
+                agentApi.doManagement(mgtCtxDef, attrList);
+               mgtCtxDef = new ManagementContextDef(ManagementContextDef.MANAGEMENT_GET_AGENT_COMMANDS, "");//TODO: why do we call create management context for the second time? is it really necessary?
+                attrList.removeAllAttributes();//TODO: this is very suspicious code why do we need to remove all attributes?
+               retcode = agentApi.doManagement(mgtCtxDef, attrList);// what the hack? do management again?
+
+                switch(retcode) {
+                    case AgentAPI.NOCONNECTION:
+                    case AgentAPI.TIMEOUT:
+                    case AgentAPI.FAILURE:
+                        logger.log(Level.SEVERE, "Unable to connect to the SiteMinder Policy Server.");
+                        initialized = false;
+                        break;
+                    case AgentAPI.INVALID_MGMTCTXDEF:
+                        logger.log(Level.SEVERE, "Management Context is invalid");
+                        initialized = false;
+                        break;
+                    case AgentAPI.INVALID_ATTRLIST:
+                        initialized = false;
+                        logger.log(Level.SEVERE,"Attribute List is invalid"); //this should never happen!
+                        break;
+                    default:
+                        initialized = true;
+                }
+            }
+            else {
                 if(retcode == AgentAPI.NOCONNECTION) {
                     logger.log(Level.SEVERE, "The SiteMinder Agent " + agentName + " cannot connect to the Policy Server");
                 }
                 else {
                     logger.log(Level.SEVERE, "The SiteMinder Agent name and/or the secret is incorrect.");
                 }
-                return retcode;
-            }
-            //TODO: check if the management info is correct and if we need to put it into the cluster property
-            ManagementContextDef mgtCtxDef = new ManagementContextDef(ManagementContextDef.MANAGEMENT_SET_AGENT_INFO, "Product=sdk,Platform=WinNT/Solaris,Version=12.5,Update=0,Label=160");
-//            Object mgtCtxDef = classHelper.createManagementContextDefClass(classHelper.getManagementContextDef_MANAGEMENT_SET_AGENT_INFO(),
-//                    "Product=sdk,Platform=WinNT/Solaris,Version=4,Update=0,Label=160");
-            AttributeList attrList = new AttributeList();
-//            Object attrList = classHelper.createAttributeListClass();
-            agentApi.doManagement(mgtCtxDef, attrList);
-//            classHelper.agentApiDoManagement(agentApi, mgtCtxDef, attrList);
-            mgtCtxDef = new ManagementContextDef(ManagementContextDef.MANAGEMENT_GET_AGENT_COMMANDS, "");//TODO: why do we call create management context for the second time? is it really necessary?
-//            mgtCtxDef = classHelper.createManagementContextDefClass(classHelper.getManagementContextDef_MANAGEMENT_GET_AGENT_COMMANDS(), "");
-            attrList.removeAllAttributes();//TODO: this is very suspicious code why do we need to remove all attributes?
-//            classHelper.attributeListRemoveAllAttributes(attrList);
-            retcode = agentApi.doManagement(mgtCtxDef, attrList);// what the hack? do management again?
-//            retcode = classHelper.agentApiDoManagement(agentApi,mgtCtxDef, attrList);
-
-            switch(retcode) {
-                case AgentAPI.NOCONNECTION:
-                case AgentAPI.TIMEOUT:
-                case AgentAPI.FAILURE:
-                    logger.log(Level.WARNING, "Unable to connect to the SiteMinder Policy Server.");
-                    initialized = false;
-                    break;
-                case AgentAPI.INVALID_MGMTCTXDEF:
-                    logger.log(Level.WARNING, "Management Context is invalid");
-                    initialized = false;
-                    break;
-                case AgentAPI.INVALID_ATTRLIST:
-                    throw new SiteMinderApiClassException("Attribute List is invalid"); //this should never happen!
-                default:
-                    initialized = true;
-
             }
 
         } catch (Exception e) {
             logger.log(Level.SEVERE, "Failed initialization", e);
+            throw new SiteMinderApiClassException("Unable to initialize SiteMinder Agent API", e);
         }
 
-        return retcode;
+        return initialized;
     }
 
     public boolean isInitialized() {

@@ -25,7 +25,7 @@ public class SiteMinderAgentTest {
 
     static String AGENT_CONFIG = "#Annie's host on 10.7.34.32 - COMPAT\n" +
             "aw80.name = layer7-agent\n" +
-            "aw80.secret = {RC2}LwXoqG3BnL8PDQqoTcOk7WGgkKRCKxOBoVon4b9ofNMzd8L9OpHc4djGUEzueLb80+341xujT/n+jC1wS9DKizZ9og6NkMbepYtDnPEp7G738n10EY0LWctk/2pBHTwu/RQVeaU3NrilxuO2pdLa9rle5rn3TVczPQvnUrQLu9SFnZC4e9l2mhMq/lEA3H2g\n" +
+            "aw80.secret = {RC2}kZiLwNZObmPrkGIxDIr+wjLr92OMIXTySRn0YWaQ8uMEHNgyN6BqDYMDq434h37fVCRBGT/nM1gDWZDq9SG/TAx12EAJbItKxyj7SH4Obq25R8gwxXl/Xh2WvoYOfpX0SbxyYAdiWyE1rwZVhpnmm1ToIEZjypTbNtM3VQS7PflzMeoXDMkNlP0Na9PGxB+X\n" +
             "aw80.address = 127.0.0.1\n" +
             "aw80.ipcheck = false\n" +
             "aw80.hostname = aw80Compat\n" +

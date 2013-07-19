@@ -51,8 +51,13 @@ public class SiteMinderHighLevelAgent {
 
         if (modified || ! agentMap.containsKey(agentId)) {
             logger.log(Level.FINE, "Initializing SiteMinder agent: " + agentId);
-             agent = new SiteMinderLowLevelAgent(agentConfig);
-            agentMap.put(agentId, agent);
+            agent = new SiteMinderLowLevelAgent(agentConfig);
+            if(agent.isInitialized()) {
+                agentMap.put(agentId, agent);
+            }
+            else {
+                throw new SiteMinderApiClassException("SiteMinder agent ID=" + agentId+ " is not initialized!");
+            }
 
         }
 

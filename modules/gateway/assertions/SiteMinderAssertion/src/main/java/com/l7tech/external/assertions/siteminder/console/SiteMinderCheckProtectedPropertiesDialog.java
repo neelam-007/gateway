@@ -56,7 +56,6 @@ public class SiteMinderCheckProtectedPropertiesDialog extends AssertionPropertie
         DefaultComboBoxModel<String> agentComboBoxModel = new DefaultComboBoxModel<>();
         populateAgentComboBoxModel(agentComboBoxModel);
         agentComboBox.setModel(agentComboBoxModel);
-        agentComboBox.setSelectedIndex(0);
 
         DefaultComboBoxModel<String> actionComboBoxModel = new DefaultComboBoxModel<>(new String[]{"GET","POST","PUT"});
         actionComboBox.setModel(actionComboBoxModel);
@@ -87,17 +86,19 @@ public class SiteMinderCheckProtectedPropertiesDialog extends AssertionPropertie
      * @param agentComboBoxModel
      */
     private void populateAgentComboBoxModel(DefaultComboBoxModel<String> agentComboBoxModel) {
+        //TODO: this will be gone when the new SiteMinder agent configuration is implemented
         try {
             ClusterProperty smConfigProperty = clusterStatusAdmin.findPropertyByName("siteminder12.agent.configuration");
-            String smConfig = smConfigProperty.getValue();
-            //search for agent name in the cluster property file
-            String agentId = null;
-            Matcher m = AGENTID_PATTERN.matcher(smConfig);
-            while (m.find()) {
-                agentId = m.group(1);
-                agentComboBoxModel.addElement(agentId);
+            if(smConfigProperty != null){
+                String smConfig = smConfigProperty.getValue();
+                //search for agent name in the cluster property file
+                String agentId = null;
+                Matcher m = AGENTID_PATTERN.matcher(smConfig);
+                while (m.find()) {
+                    agentId = m.group(1);
+                    agentComboBoxModel.addElement(agentId);
+                }
             }
-
         } catch (FindException e) {
             //do not throw any exceptions at this point. leave agent combo box empty
         }
