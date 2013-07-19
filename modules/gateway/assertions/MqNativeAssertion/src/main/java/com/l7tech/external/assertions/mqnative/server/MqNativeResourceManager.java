@@ -7,6 +7,7 @@ import com.l7tech.external.assertions.mqnative.server.MqNativeEndpointConfig.MqN
 import static com.l7tech.external.assertions.mqnative.server.MqNativeUtils.closeQuietly;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.server.event.EntityInvalidationEvent;
+import com.l7tech.server.event.GoidEntityInvalidationEvent;
 import com.l7tech.server.util.ApplicationEventProxy;
 import com.l7tech.server.util.ManagedTimer;
 import com.l7tech.util.Config;
@@ -150,8 +151,8 @@ class MqNativeResourceManager implements ApplicationListener {
 
     @Override
     public void onApplicationEvent( final ApplicationEvent event ) {
-        if ( event instanceof EntityInvalidationEvent ) {
-            final EntityInvalidationEvent entityInvalidationEvent = (EntityInvalidationEvent) event;
+        if ( event instanceof GoidEntityInvalidationEvent) {
+            final GoidEntityInvalidationEvent entityInvalidationEvent = (GoidEntityInvalidationEvent) event;
             if ( ClusterProperty.class.isAssignableFrom(entityInvalidationEvent.getEntityClass() ) ) {
                 updateConfig();
             }

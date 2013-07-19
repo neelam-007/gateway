@@ -16,6 +16,7 @@ import com.l7tech.gateway.common.uddi.UDDIProxiedService;
 import com.l7tech.identity.GroupMembership;
 import com.l7tech.identity.cert.CertEntryRow;
 import com.l7tech.objectmodel.Entity;
+import com.l7tech.objectmodel.GoidEntity;
 import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.policy.PolicyVersion;
 import com.l7tech.server.audit.AuditContextUtils;
@@ -91,7 +92,7 @@ public class PersistenceEventInterceptor extends ApplicationObjectSupport implem
     private final Set<String> noAuditClassNames; // fire an event, but mark it "system" so it doesn't get audited
 
     private boolean ignored(Object entity) {
-        return !(entity instanceof PersistentEntity) || ignoredClassNames.contains(entity.getClass().getName());
+        return !(entity instanceof PersistentEntity || entity instanceof GoidEntity)  || ignoredClassNames.contains(entity.getClass().getName());
     }
 
     public Set<String> getIgnoredClassNames() {

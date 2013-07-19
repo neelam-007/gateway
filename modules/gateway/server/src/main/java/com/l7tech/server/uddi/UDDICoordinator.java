@@ -8,14 +8,12 @@ import com.l7tech.gateway.common.audit.SystemMessages;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.uddi.*;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.ObjectModelException;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.objectmodel.*;
 import com.l7tech.server.audit.AuditContextUtils;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.cluster.ClusterMaster;
 import com.l7tech.server.event.EntityInvalidationEvent;
+import com.l7tech.server.event.GoidEntityInvalidationEvent;
 import com.l7tech.server.event.system.ReadyForMessages;
 import com.l7tech.server.event.system.UDDISystemEvent;
 import com.l7tech.server.service.ServiceCache;
@@ -204,7 +202,21 @@ public class UDDICoordinator implements ApplicationContextAware, InitializingBea
                 }
             }
 
-        } else if ( applicationEvent instanceof ReadyForMessages  ) {
+        }else if ( applicationEvent instanceof GoidEntityInvalidationEvent) {
+            GoidEntityInvalidationEvent goidEntityInvalidationEvent = (GoidEntityInvalidationEvent) applicationEvent;
+            if (ClusterProperty.class.equals(goidEntityInvalidationEvent.getEntityClass())){
+                final Object source = goidEntityInvalidationEvent.getSource();
+                if(source instanceof ClusterProperty){
+                    ClusterProperty cp = (ClusterProperty) source;
+                    if (cp.getName().equals("cluster.hostname") ||
+                            cp.getName().equals("cluster.httpPort") ||
+                            cp.getName().equals("cluster.httpsPort")) {
+                        timer.schedule(new CheckPublishedEndpointsTimerTask(this), 0);
+                    }
+                }
+            }
+        }
+        else if ( applicationEvent instanceof ReadyForMessages  ) {
             if (clusterMaster.isMaster()){
                 checkSubscriptions( Collections.<Long,UDDIRegistryRuntime>emptyMap(), registryRuntimes.get(), true );
             }
