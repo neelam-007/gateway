@@ -14,6 +14,7 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.comparator.NamedEntityComparator;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
+import com.l7tech.util.TextUtils;
 import org.apache.commons.lang.WordUtils;
 import org.jetbrains.annotations.Nullable;
 
@@ -32,7 +33,9 @@ import static com.l7tech.util.Functions.propertyTransform;
 
 public class SecurityZoneManagerWindow extends JDialog {
     private static final Logger logger = Logger.getLogger(SecurityZoneManagerWindow.class.getName());
-    private static final String DELETE_CONFIRMATION_FORMAT = "Are you sure you want to remove the security zone {0}? All entities currently assigned to this zone will switch to the \"no security zone\" state if you continue. This action cannot be undone.";
+    private static final ResourceBundle RESOURCES = ResourceBundle.getBundle(SecurityZoneManagerWindow.class.getName());
+    private static final String DELETE_CONFIRMATION_PROERPTY = "delete.confirmation";
+    private static final String DELETE_CONFIRMATION_NAME_MAX_CHARS = "delete.confirmation.name.max.chars";
 
     private JPanel contentPane;
     private JButton closeButton;
@@ -97,7 +100,10 @@ public class SecurityZoneManagerWindow extends JDialog {
 
             @Override
             public void displayDeleteDialog(final SecurityZone zone, final Functions.UnaryVoid<SecurityZone> afterDeleteListener) {
-                final String msg = MessageFormat.format(DELETE_CONFIRMATION_FORMAT, zone.getName());
+                final Integer maxNameChars = Integer.valueOf(RESOURCES.getString(DELETE_CONFIRMATION_NAME_MAX_CHARS));
+                final String displayName = TextUtils.truncateStringAtEnd(zone.getName(), maxNameChars);
+                final String confirmation = RESOURCES.getString(DELETE_CONFIRMATION_PROERPTY);
+                final String msg = MessageFormat.format(confirmation, displayName);
                 DialogDisplayer.showOptionDialog(
                         SecurityZoneManagerWindow.this,
                         WordUtils.wrap(msg, DeleteEntityNodeAction.LINE_CHAR_LIMIT, null, true),
@@ -105,7 +111,7 @@ public class SecurityZoneManagerWindow extends JDialog {
                         JOptionPane.DEFAULT_OPTION,
                         JOptionPane.WARNING_MESSAGE,
                         null,
-                        new Object[]{"Remove " + zone.getName(), "Cancel"},
+                        new Object[]{"Remove " + displayName, "Cancel"},
                         null,
                         new DialogDisplayer.OptionListener() {
                             @Override

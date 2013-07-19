@@ -213,6 +213,7 @@ public class RoleManagerWindow extends JDialog {
         assignmentsPanel.configure(selectedRole);
         editButton.setEnabled(selectedRole != null && selectedRole.isUserCreated() &&
                 Registry.getDefault().getSecurityProvider().hasPermission(new AttemptedUpdate(EntityType.RBAC_ROLE, selectedRole)));
+        filterPanel.allowFiltering(rolesTableModel.getRowCount() > 0);
         loadCount();
     }
 

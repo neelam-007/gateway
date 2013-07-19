@@ -26,6 +26,8 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.regex.Matcher;
 
 /**
@@ -42,7 +44,7 @@ import java.util.regex.Matcher;
 @Table(name="rbac_role")
 public class Role extends NamedEntityImp implements Comparable<Role> {
     public static enum Tag { ADMIN }
-
+    private static final Logger logger = Logger.getLogger(Role.class.getName());
     private Set<Permission> permissions = new HashSet<Permission>();
     private Set<RoleAssignment> roleAssignments = new HashSet<RoleAssignment>();
     private String description;
@@ -193,11 +195,22 @@ public class Role extends NamedEntityImp implements Comparable<Role> {
      * Creates and adds a new {@link RoleAssignment} assigning the provided {@link User} to this Role.
      */
     public void addAssignedUser(User user) {
-        roleAssignments.add(new RoleAssignment(this, user.getProviderId(), user.getId(), EntityType.USER));
+        if (user != null && !isUserAssigned(user)) {
+            roleAssignments.add(new RoleAssignment(this, user.getProviderId(), user.getId(), EntityType.USER));
+        } else {
+            logger.log(Level.FINE, "User is null or already assigned: " + user);
+        }
     }
 
+    /**
+     * Creates and adds a new {@link RoleAssignment} assigning the provided {@link Group} to this Role.
+     */
     public void addAssignedGroup(@NotNull final Group group) {
-        roleAssignments.add(new RoleAssignment(this, group.getProviderId(), group.getId(), EntityType.GROUP));
+        if (!isGroupAssigned(group)) {
+            roleAssignments.add(new RoleAssignment(this, group.getProviderId(), group.getId(), EntityType.GROUP));
+        } else {
+            logger.log(Level.FINE, "Group is already assigned: " + group);
+        }
     }
 
     /**
@@ -206,11 +219,12 @@ public class Role extends NamedEntityImp implements Comparable<Role> {
      * @param user  The user that will be used to remove the user's assignment roles.
      */
     public void removeAssignedUser(User user) {
-        for (Iterator<RoleAssignment> i = roleAssignments.iterator(); i.hasNext();) {
-            RoleAssignment roleAssignment = i.next();
-            if (roleAssignment.getIdentityId().equals(user.getId()) && roleAssignment.getProviderId() == user.getProviderId()
-                    && roleAssignment.getEntityType().equals(EntityType.USER.getName())) {
-                i.remove();
+        if (user != null) {
+            for (Iterator<RoleAssignment> i = roleAssignments.iterator(); i.hasNext();) {
+                RoleAssignment roleAssignment = i.next();
+                if (assignmentMatchesUser(roleAssignment, user)) {
+                    i.remove();
+                }
             }
         }
     }
@@ -221,11 +235,12 @@ public class Role extends NamedEntityImp implements Comparable<Role> {
      * @param group  The user that will be used to remove the user's assignment roles.
      */
     public void removeAssignedGroup(Group group) {
-        for (Iterator<RoleAssignment> i = roleAssignments.iterator(); i.hasNext();) {
-            RoleAssignment roleAssignment = i.next();
-            if (roleAssignment.getIdentityId().equals(group.getId()) && roleAssignment.getProviderId() == group.getProviderId()
-                    && roleAssignment.getEntityType().equals(EntityType.GROUP.getName())) {
-                i.remove();
+        if (group != null) {
+            for (Iterator<RoleAssignment> i = roleAssignments.iterator(); i.hasNext();) {
+                RoleAssignment roleAssignment = i.next();
+                if (assignmentMatchesGroup(roleAssignment, group)) {
+                    i.remove();
+                }
             }
         }
     }
@@ -401,5 +416,39 @@ public class Role extends NamedEntityImp implements Comparable<Role> {
             // can extend later to create contextual descriptive names for other entity types
             return getDescriptiveName();
         }
+    }
+
+    private boolean assignmentMatchesUser(@NotNull final RoleAssignment roleAssignment, @NotNull final User user) {
+        return roleAssignment.getIdentityId().equals(user.getId()) && roleAssignment.getProviderId() == user.getProviderId()
+                            && roleAssignment.getEntityType().equals(EntityType.USER.getName());
+    }
+
+    private boolean assignmentMatchesGroup(@NotNull final RoleAssignment roleAssignment, @NotNull final Group group) {
+        return roleAssignment.getIdentityId().equals(group.getId()) && roleAssignment.getProviderId() == group.getProviderId()
+                            && roleAssignment.getEntityType().equals(EntityType.GROUP.getName());
+    }
+
+    private boolean isUserAssigned(@NotNull final User user) {
+        boolean assigned = false;
+        for (Iterator<RoleAssignment> i = roleAssignments.iterator(); i.hasNext();) {
+            final RoleAssignment roleAssignment = i.next();
+            if(assignmentMatchesUser(roleAssignment, user)) {
+                assigned = true;
+                break;
+            }
+        }
+        return assigned;
+    }
+
+    private boolean isGroupAssigned(@NotNull final Group group) {
+        boolean assigned = false;
+            for (Iterator<RoleAssignment> i = roleAssignments.iterator(); i.hasNext();) {
+                final RoleAssignment roleAssignment = i.next();
+                if(assignmentMatchesGroup(roleAssignment, group)) {
+                    assigned = true;
+                    break;
+                }
+            }
+            return assigned;
     }
 }
