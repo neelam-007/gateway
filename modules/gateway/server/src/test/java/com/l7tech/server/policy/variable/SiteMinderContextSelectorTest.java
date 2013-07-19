@@ -11,10 +11,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 import org.springframework.mock.jndi.ExpectedLookupTemplate;
 import org.springframework.test.annotation.ExpectedException;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertTrue;
@@ -31,6 +28,7 @@ public class SiteMinderContextSelectorTest {
     public static final String AGENT_ID = "agent1";
     SiteMinderContext context;
     SiteMinderContextSelector fixture;
+    List<SiteMinderContext.AuthenticationScheme> authschemes;
 
     @Mock
     Syntax.SyntaxErrorHandler mockSyntaxErrorHandler;
@@ -44,7 +42,7 @@ public class SiteMinderContextSelectorTest {
         context.setAttrList(attrs);
         context.setSsoToken(SSO_TOKEN);
         context.setAgentId(AGENT_ID);
-        List<SiteMinderContext.AuthenticationScheme> authschemes = new ArrayList<>();
+        authschemes = new ArrayList<>();
         authschemes.add(SiteMinderContext.AuthenticationScheme.FORM);
         authschemes.add(SiteMinderContext.AuthenticationScheme.X509CERT);
         authschemes.add(SiteMinderContext.AuthenticationScheme.BASIC);
@@ -85,6 +83,14 @@ public class SiteMinderContextSelectorTest {
         ExpandVariables.Selector.Selection actual = fixture.select("siteminder.smcontext", context, "agent", mockSyntaxErrorHandler, false);
         assertEquals(AGENT_ID, actual.getSelectedValue());
         assertTrue(actual.getRemainingName() == null);
+    }
+
+    @Test
+    public void shouldReturnAuthenticationSchemeList() throws Exception {
+        ExpandVariables.Selector.Selection actual = fixture.select("siteminder.smcontext", context, "authschemes", mockSyntaxErrorHandler, false);
+
+        assertEquals(Arrays.asList(new String[] {"FORM", "X509CERT", "BASIC","NTCHALLENGE"}), actual.getSelectedValue());
+        assertTrue(actual.getRemainingName() != null);
     }
 
     @Test

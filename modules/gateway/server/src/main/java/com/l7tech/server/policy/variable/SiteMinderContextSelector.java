@@ -5,6 +5,7 @@ import com.l7tech.policy.variable.Syntax;
 import com.l7tech.util.Pair;
 import org.apache.commons.lang.StringUtils;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -45,13 +46,22 @@ public class SiteMinderContextSelector implements ExpandVariables.Selector<SiteM
                     }
                }
                else if (lname.equals("attributes.length")){
-                   if(context.getAttrList() != null) {
+                  if(context.getAttrList() != null) {
                     return new Selection(Integer.toString(context.getAttrList().size()));
-                   }
-
+                  }
                }
-               else if (lname.equals("attributes")) {
-                   return new Selection(context.getAttrList());
+               else if(lname.equals("attributes")) {
+                  return new Selection(context.getAttrList(), name.substring("attributes".length()));
+               }
+               else {
+                   if(lname.length() > "attributes".length() + 1){
+                       String remaining = lname.substring("attributes".length() + 1);
+                       for(Pair<String, Object> attribute : context.getAttrList()) {
+                           if(remaining.equalsIgnoreCase(attribute.left)){
+                               return new Selection(attribute.right);
+                           }
+                       }
+                   }
                }
             }
         }
@@ -73,15 +83,23 @@ public class SiteMinderContextSelector implements ExpandVariables.Selector<SiteM
                         SiteMinderContext.AuthenticationScheme scheme = getElement(authSchemeList, m, handler);
                         return new Selection(scheme.toString());
                     }
-                }
-                else if(StringUtils.isEmpty(m.group(1))){
-                    //TODO: return all possible auth schemes
+                    else if(StringUtils.isEmpty(m.group(1))){
+                        return getAuthenticationSchemesAsStrings(lname, authSchemeList);
+                    }
                 }
             }
         }
 
 
         return null;
+    }
+
+    private Selection getAuthenticationSchemesAsStrings(String lname, List<SiteMinderContext.AuthenticationScheme> authSchemeList) {
+        List<String> sAuthSchemeList = new ArrayList<>(authSchemeList.size());
+        for(SiteMinderContext.AuthenticationScheme scheme : authSchemeList){
+            sAuthSchemeList.add(scheme.toString());
+        }
+        return new Selection(sAuthSchemeList, lname.substring("authschemes".length()));
     }
 
     private static <T> T getElement(List<T> list, Matcher matcher, Syntax.SyntaxErrorHandler handler){

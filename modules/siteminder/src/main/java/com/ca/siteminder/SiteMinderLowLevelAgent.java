@@ -325,7 +325,12 @@ public class SiteMinderLowLevelAgent {
         TokenDescriptor td = new TokenDescriptor(0, false);
         StringBuffer newToken = new StringBuffer();
 
-        int result = agentApi.decodeSSOToken(ssoToken, td, attrList, false, newToken); //validation does not change the token
+        int result = 0; //validation does not change the token
+        try {
+            result = agentApi.decodeSSOToken(ssoToken, td, attrList, false, newToken);
+        } catch (Exception e) {
+            result =  AgentAPI.FAILURE; //this should never happen but it does
+        }
 
         if (result != AgentAPI.SUCCESS) {
             if (result == AgentAPI.FAILURE) {
