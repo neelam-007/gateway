@@ -1918,49 +1918,49 @@ CREATE TABLE generic_entity (
 
 DROP TABLE IF EXISTS encapsulated_assertion;
 CREATE TABLE encapsulated_assertion (
-  objectid bigint(20) NOT NULL,
+  goid binary(16) NOT NULL,
   version integer NOT NULL,
   name varchar(128) NOT NULL,
   guid varchar(255) NOT NULL,
   policy_oid bigint(20) NOT NULL,
   security_zone_oid bigint(20),
   FOREIGN KEY (policy_oid) REFERENCES policy (objectid),
-  PRIMARY KEY (objectid),
+  PRIMARY KEY (goid),
   UNIQUE KEY i_guid (guid),
   CONSTRAINT encass_security_zone FOREIGN KEY (security_zone_oid) REFERENCES security_zone (objectid) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
 DROP TABLE IF EXISTS encapsulated_assertion_property;
 CREATE TABLE encapsulated_assertion_property (
-  encapsulated_assertion_oid bigint(20) NOT NULL,
+  encapsulated_assertion_goid binary(16) NOT NULL,
   name varchar(128) NOT NULL,
   value MEDIUMTEXT NOT NULL,
-  FOREIGN KEY (encapsulated_assertion_oid) REFERENCES encapsulated_assertion (objectid) ON DELETE CASCADE
+  FOREIGN KEY (encapsulated_assertion_goid) REFERENCES encapsulated_assertion (goid) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
 DROP TABLE IF EXISTS encapsulated_assertion_argument;
 CREATE TABLE encapsulated_assertion_argument (
-  objectid bigint(20) NOT NULL,
+  goid binary(16) NOT NULL,
   version integer NOT NULL,
-  encapsulated_assertion_oid bigint(20) NOT NULL,
+  encapsulated_assertion_goid binary(16) NOT NULL,
   argument_name varchar(128) NOT NULL,
   argument_type varchar(128) NOT NULL,
   gui_prompt tinyint(1) NOT NULL,
   gui_label varchar(255),
   ordinal int(20) NOT NULL,
-  FOREIGN KEY (encapsulated_assertion_oid) REFERENCES encapsulated_assertion (objectid) ON DELETE CASCADE,
-  PRIMARY KEY (objectid)
+  FOREIGN KEY (encapsulated_assertion_goid) REFERENCES encapsulated_assertion (goid) ON DELETE CASCADE,
+  PRIMARY KEY (goid)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
 DROP TABLE IF EXISTS encapsulated_assertion_result;
 CREATE TABLE encapsulated_assertion_result (
-  objectid bigint(20) NOT NULL,
+  goid binary(16) NOT NULL,
   version integer NOT NULL,
-  encapsulated_assertion_oid bigint(20) NOT NULL,
+  encapsulated_assertion_goid binary(16) NOT NULL,
   result_name varchar(128) NOT NULL,
   result_type varchar(128) NOT NULL,
-  FOREIGN KEY (encapsulated_assertion_oid) REFERENCES encapsulated_assertion (objectid) ON DELETE CASCADE,
-  PRIMARY KEY (objectid)
+  FOREIGN KEY (encapsulated_assertion_goid) REFERENCES encapsulated_assertion (goid) ON DELETE CASCADE,
+  PRIMARY KEY (goid)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
 -- Firewall Rules table structure --

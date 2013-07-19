@@ -5,7 +5,7 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.GuidEntityHeader;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
-import com.l7tech.server.HibernateEntityManager;
+import com.l7tech.server.HibernateGoidEntityManager;
 import com.l7tech.server.policy.EncapsulatedAssertionConfigManager;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import org.hibernate.Criteria;
@@ -20,7 +20,7 @@ import java.util.Collection;
 /**
  * Entity manager for {@link EncapsulatedAssertionConfig}.
  */
-public class EncapsulatedAssertionConfigManagerImpl extends HibernateEntityManager<EncapsulatedAssertionConfig,GuidEntityHeader> implements EncapsulatedAssertionConfigManager {
+public class EncapsulatedAssertionConfigManagerImpl extends HibernateGoidEntityManager<EncapsulatedAssertionConfig,GuidEntityHeader> implements EncapsulatedAssertionConfigManager {
 
     private static final String HQL_FIND_ENCASS_CONFIGS_REFERENCING_POLICY_OID =
         "from encapsulated_assertion" +

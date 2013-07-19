@@ -34,16 +34,16 @@ public interface EncapsulatedAssertionAdmin {
     Collection<EncapsulatedAssertionConfig> findAllEncapsulatedAssertionConfigs() throws FindException;
 
     /**
-     * Find specified encapsulated assertion template by its oid.
+     * Find specified encapsulated assertion template by its goid.
      *
-     * @param oid encapsulated assertion OID to look up.
+     * @param goid encapsulated assertion GOID to look up.
      * @return the requested config.  Never null.
      * @throws FindException if not found, or there was an error performing the lookup
      */
     @NotNull
     @Transactional(readOnly=true)
     @Secured(stereotype=FIND_ENTITY)
-    EncapsulatedAssertionConfig findByPrimaryKey(long oid) throws FindException;
+    EncapsulatedAssertionConfig findByPrimaryKey(Goid goid) throws FindException;
 
     /**
      * Find specified encapsulated assertion template by its GUID.
@@ -85,22 +85,22 @@ public interface EncapsulatedAssertionAdmin {
     /**
      * Saves a new or existing encapsulated assertion templates.
      * @param config the {@link EncapsulatedAssertionConfig} to save.  Required.
-     * @return the object id (oid) of the newly saved config
+     * @return the global object id (goid) of the newly saved config
      * @throws com.l7tech.objectmodel.SaveException if there was a server-side problem saving the config
      * @throws com.l7tech.objectmodel.UpdateException if there was a server-side problem updating the cconfig
      * @throws com.l7tech.objectmodel.VersionException if the updated config was not up-to-date (updating an old version)
      */
     @Secured(stereotype=SAVE_OR_UPDATE)
-    public long saveEncapsulatedAssertionConfig(@NotNull EncapsulatedAssertionConfig config) throws SaveException, UpdateException, VersionException;
+    public Goid saveEncapsulatedAssertionConfig(@NotNull EncapsulatedAssertionConfig config) throws SaveException, UpdateException, VersionException;
 
     /**
      * Removes the specified {@link EncapsulatedAssertionConfig} from the database.
-     * @param oid the oid of the config to be deleted
+     * @param goid the goid of the config to be deleted
      * @throws FindException if the config cannot be found
      * @throws DeleteException if the config cannot be deleted
      * @throws ConstraintViolationException if the config cannot be deleted
      */
     @Secured(stereotype= DELETE_BY_ID)
-    public void deleteEncapsulatedAssertionConfig(long oid) throws FindException, DeleteException, ConstraintViolationException;
+    public void deleteEncapsulatedAssertionConfig(Goid goid) throws FindException, DeleteException, ConstraintViolationException;
 
 }

@@ -23,7 +23,7 @@ import java.util.*;
  *
  */
 @ResourceFactory.ResourceType(type=EncapsulatedAssertionMO.class)
-public class EncapsulatedAssertionResourceFactory extends EntityManagerResourceFactory<EncapsulatedAssertionMO, EncapsulatedAssertionConfig,GuidEntityHeader> {
+public class EncapsulatedAssertionResourceFactory extends GoidEntityManagerResourceFactory<EncapsulatedAssertionMO, EncapsulatedAssertionConfig,GuidEntityHeader> {
 
     //- PUBLIC
 

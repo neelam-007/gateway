@@ -72,7 +72,7 @@ public class ConsoleEntityFinderImplTest {
 
     @Test(expected = UnsupportedEntityTypeException.class)
     public void findByRegularHeader() throws Exception {
-        when(encapAdmin.findByPrimaryKey(1L)).thenReturn(config);
+        when(encapAdmin.findByPrimaryKey(new Goid(0,1L))).thenReturn(config);
         final EntityHeader header = new EntityHeader("1", EntityType.ENCAPSULATED_ASSERTION, null, null);
         entityFinder.find(header);
     }

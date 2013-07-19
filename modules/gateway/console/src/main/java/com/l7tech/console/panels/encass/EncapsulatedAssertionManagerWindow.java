@@ -106,7 +106,7 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
                 if (selected != null) {
                     final EncapsulatedAssertionConfig clone = selected.getCopy();
                     clone.setGuid(null);
-                    clone.setOid(Long.valueOf(PersistentEntity.DEFAULT_OID));
+                    clone.setGoid(GoidEntity.DEFAULT_GOID);
                     clone.setName(EntityUtils.getNameForCopy(selected.getName()));
                     doProperties(clone, false);
                 }
@@ -210,7 +210,7 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
                                 try {
                                     EncapsulatedAssertionConsoleUtil.attachPolicies(Collections.singletonList(sameGuid));
                                     // update existing config
-                                    config.setOid(sameGuid.getOid());
+                                    config.setGoid(sameGuid.getGoid());
                                     config.setVersion(sameGuid.getVersion());
                                     // avoid naming conflicts by using the existing name
                                     config.setName(sameGuid.getName());
@@ -346,9 +346,9 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
 
         // update/create config
         config.setPolicy(policy);
-        long oid = Registry.getDefault().getEncapsulatedAssertionAdmin().saveEncapsulatedAssertionConfig(config);
+        Goid goid = Registry.getDefault().getEncapsulatedAssertionAdmin().saveEncapsulatedAssertionConfig(config);
         loadEncapsulatedAssertionConfigs(true);
-        selectConfigByOid(oid);
+        selectConfigByOid(goid);
     }
 
     private void doExport(final EncapsulatedAssertionConfig config) {
@@ -376,7 +376,7 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
      * @param promptForAutoPopulateOnNew whether the user should be asked if they want to auto-populate inputs and outputs if this is a new config.
      */
     private void doProperties(@NotNull final EncapsulatedAssertionConfig config, final boolean promptForAutoPopulateOnNew) {
-        final boolean isNew = Long.valueOf(PersistentEntity.DEFAULT_OID).equals(config.getOid());
+        final boolean isNew = GoidEntity.DEFAULT_GOID.equals(config.getGoid());
         AbstractEncapsulatedAssertionAction action = null;
         if (isNew) {
             action = new CreateEncapsulatedAssertionAction(config, new ConfigChangeWindowUpdater(config), promptForAutoPopulateOnNew);
@@ -394,11 +394,11 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
         }
     }
 
-    private void selectConfigByOid(final long oid) {
+    private void selectConfigByOid(final Goid goid) {
         int row = eacTableModel.findFirstRow(new Functions.Unary<Boolean, EncapsulatedAssertionConfig>() {
             @Override
             public Boolean call(EncapsulatedAssertionConfig encapsulatedAssertionConfig) {
-                return oid == encapsulatedAssertionConfig.getOid();
+                return goid.equals(encapsulatedAssertionConfig.getGoid());
             }
         });
         final ListSelectionModel sm = eacTable.getSelectionModel();
@@ -505,7 +505,7 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
 
     private void doDeleteEncapsulatedAssertionConfig(EncapsulatedAssertionConfig config) {
         try {
-            Registry.getDefault().getEncapsulatedAssertionAdmin().deleteEncapsulatedAssertionConfig(config.getOid());
+            Registry.getDefault().getEncapsulatedAssertionAdmin().deleteEncapsulatedAssertionConfig(config.getGoid());
             loadEncapsulatedAssertionConfigs(true);
         } catch (FindException e1) {
             showError("Unable to delete encapsulated assertion config", e1);
@@ -556,7 +556,7 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
         @Override
         public void run() {
             loadEncapsulatedAssertionConfigs(false);
-            selectConfigByOid(config.getOid());
+            selectConfigByOid(config.getGoid());
         }
     }
 }

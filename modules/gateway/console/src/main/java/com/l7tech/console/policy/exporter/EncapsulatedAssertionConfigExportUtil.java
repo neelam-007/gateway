@@ -98,19 +98,19 @@ public class EncapsulatedAssertionConfigExportUtil {
             for (final EncapsulatedAssertionArgumentDescriptor arg : config.getArgumentDescriptors()) {
                 arg.setEncapsulatedAssertionConfig(config);
                 if (resetOidsAndVersions) {
-                    arg.setOid(EncapsulatedAssertionArgumentDescriptor.DEFAULT_OID);
+                    arg.setGoid(EncapsulatedAssertionArgumentDescriptor.DEFAULT_GOID);
                     arg.setVersion(0);
                 }
             }
             for (final EncapsulatedAssertionResultDescriptor result : config.getResultDescriptors()) {
                 result.setEncapsulatedAssertionConfig(config);
                 if (resetOidsAndVersions) {
-                    result.setOid(EncapsulatedAssertionResultDescriptor.DEFAULT_OID);
+                    result.setGoid(EncapsulatedAssertionResultDescriptor.DEFAULT_GOID);
                     result.setVersion(0);
                 }
             }
             if (resetOidsAndVersions) {
-                config.setOid(EncapsulatedAssertionConfig.DEFAULT_OID);
+                config.setGoid(EncapsulatedAssertionConfig.DEFAULT_GOID);
                 config.setVersion(0);
             }
             return config;

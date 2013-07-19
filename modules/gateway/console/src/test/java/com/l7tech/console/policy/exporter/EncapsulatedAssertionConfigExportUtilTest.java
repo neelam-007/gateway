@@ -1,6 +1,7 @@
 package com.l7tech.console.policy.exporter;
 
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionArgumentDescriptor;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionResultDescriptor;
@@ -156,14 +157,14 @@ public class EncapsulatedAssertionConfigExportUtilTest {
     @Test
     public void importFromNodeResetOidsAndVersions() throws Exception {
         final EncapsulatedAssertionConfig imported = util.importFromNode(XmlUtil.parse(xmlFromConfig(config, false, true)), true);
-        assertEquals(EncapsulatedAssertionConfig.DEFAULT_OID, imported.getOid());
+        assertEquals(EncapsulatedAssertionConfig.DEFAULT_GOID, imported.getGoid());
         assertEquals(0, imported.getVersion());
         for (final EncapsulatedAssertionArgumentDescriptor in : imported.getArgumentDescriptors()) {
-            assertEquals(EncapsulatedAssertionArgumentDescriptor.DEFAULT_OID, in.getOid());
+            assertEquals(EncapsulatedAssertionArgumentDescriptor.DEFAULT_GOID, in.getGoid());
             assertEquals(0, in.getVersion());
         }
         for (final EncapsulatedAssertionResultDescriptor out : imported.getResultDescriptors()) {
-            assertEquals(EncapsulatedAssertionResultDescriptor.DEFAULT_OID, out.getOid());
+            assertEquals(EncapsulatedAssertionResultDescriptor.DEFAULT_GOID, out.getGoid());
             assertEquals(0, out.getVersion());
         }
     }
@@ -177,7 +178,7 @@ public class EncapsulatedAssertionConfigExportUtilTest {
     private void setupConfig() {
         config.setGuid("abc123");
         config.setName("MyEncapsulatedAssertion");
-        config.setOid(1234L);
+        config.setGoid(new Goid(0,1234L));
         config.setVersion(0);
         config.setPolicy(policy);
         config.setArgumentDescriptors(ins);
@@ -190,7 +191,7 @@ public class EncapsulatedAssertionConfigExportUtilTest {
         out.setResultName("output1");
         out.setResultType(DataType.STRING.getShortName());
         out.setEncapsulatedAssertionConfig(config);
-        out.setOid(1L);
+        out.setGoid(new Goid(0, 1L));
         out.setVersion(0);
         return out;
     }
@@ -203,7 +204,7 @@ public class EncapsulatedAssertionConfigExportUtilTest {
         in.setEncapsulatedAssertionConfig(config);
         in.setGuiPrompt(true);
         in.setOrdinal(1);
-        in.setOid(1L);
+        in.setGoid(new Goid(0,1L));
         in.setVersion(0);
         return in;
     }

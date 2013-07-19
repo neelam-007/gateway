@@ -25,7 +25,6 @@ import static com.l7tech.policy.assertion.AssertionMetadata.*;
  * Assertion bean representing an invocation of server behavior for an EncapsulatedAssertionConfig.
  */
 public class EncapsulatedAssertion extends Assertion implements UsesEntitiesAtDesignTime, UsesVariables, SetsVariables {
-    static final String DEFAULT_OID_STR = Long.toString(EncapsulatedAssertionConfig.DEFAULT_OID);
 
     private GuidEntityHeader configHeader = new GuidEntityHeader();
     private Map<String,String> parameters = new TreeMap<String,String>(String.CASE_INSENSITIVE_ORDER);
@@ -84,11 +83,11 @@ public class EncapsulatedAssertion extends Assertion implements UsesEntitiesAtDe
     public void config(@Nullable EncapsulatedAssertionConfig config) {
         this.encapsulatedAssertionConfig = config;
         if (config == null) {
-            configHeader.setOid(-1);
+            configHeader.setGoid(EncapsulatedAssertionConfig.DEFAULT_GOID);
             configHeader.setGuid(null);
             configHeader.setName(null);
         } else {
-            configHeader.setOid(config.getOid());
+            configHeader.setGoid(config.getGoid());
             configHeader.setGuid(config.getGuid());
             configHeader.setName(config.getName());
         }
@@ -216,7 +215,7 @@ public class EncapsulatedAssertion extends Assertion implements UsesEntitiesAtDe
     }
 
     private GuidEntityHeader makeConfigHeader() {
-        GuidEntityHeader ret = new GuidEntityHeader(configHeader.getOid(), EntityType.ENCAPSULATED_ASSERTION, configHeader.getName(), null);
+        GuidEntityHeader ret = new GuidEntityHeader(configHeader.getGoid().toString(), EntityType.ENCAPSULATED_ASSERTION, configHeader.getName(), null);
         ret.setGuid(configHeader.getGuid());
         return ret;
     }
@@ -296,7 +295,7 @@ public class EncapsulatedAssertion extends Assertion implements UsesEntitiesAtDe
 
     private static EncapsulatedAssertionConfig newConfigFromHeader(GuidEntityHeader header) {
         EncapsulatedAssertionConfig ret = new EncapsulatedAssertionConfig();
-        ret.setOid(header.getOid());
+        ret.setGoid(header.getGoid());
         ret.setGuid(header.getGuid());
         ret.setName(header.getName());
         return ret;

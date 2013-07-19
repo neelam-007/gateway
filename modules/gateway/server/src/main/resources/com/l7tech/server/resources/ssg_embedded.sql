@@ -1644,13 +1644,13 @@ INSERT INTO cluster_properties VALUES (toGoid(0,-700001),'cluster.hostname',0,''
 -- Encapsulated Assertions
 --
 CREATE TABLE encapsulated_assertion (
-  objectid bigint not null,
+  goid CHAR(16) FOR BIT DATA not null,
   version integer,
   name varchar(255),
   guid varchar(255) not null unique,
   policy_oid bigint NOT NULL,
   security_zone_oid bigint references security_zone(objectid) on delete set null,
-  PRIMARY KEY (objectid)
+  PRIMARY KEY (goid)
 );
 
 alter table encapsulated_assertion
@@ -1659,48 +1659,47 @@ alter table encapsulated_assertion
     references policy;
 
 CREATE TABLE encapsulated_assertion_property (
-  encapsulated_assertion_oid bigint NOT NULL,
+  encapsulated_assertion_goid CHAR(16) FOR BIT DATA NOT NULL,
   name varchar(255) NOT NULL,
   value clob(2147483647) NOT NULL
 );
 
 alter table encapsulated_assertion_property
     add constraint FK_ENCASSPROP_ENCASS
-    foreign key (encapsulated_assertion_oid)
+    foreign key (encapsulated_assertion_goid)
     references encapsulated_assertion
     on delete cascade;
 
 CREATE TABLE encapsulated_assertion_argument (
-  objectid bigint not null,
+  goid CHAR(16) FOR BIT DATA not null,
   version integer,
-  encapsulated_assertion_oid bigint NOT NULL,
+  encapsulated_assertion_goid CHAR(16) FOR BIT DATA NOT NULL,
   argument_name varchar(255) NOT NULL,
   argument_type varchar(255) NOT NULL,
   gui_prompt smallint NOT NULL,
   gui_label varchar(255),
   ordinal integer NOT NULL,
-  PRIMARY KEY (objectid)
+  PRIMARY KEY (goid)
 );
 
 alter table encapsulated_assertion_argument
     add constraint FK_ENCASSARG_ENCASS
-    foreign key (encapsulated_assertion_oid)
+    foreign key (encapsulated_assertion_goid)
     references encapsulated_assertion
     on delete cascade;
 
 CREATE TABLE encapsulated_assertion_result (
-  objectid bigint not null,
+  goid CHAR(16) FOR BIT DATA not null,
   version integer,
-  encapsulated_assertion_oid bigint NOT NULL,
+  encapsulated_assertion_goid CHAR(16) FOR BIT DATA NOT NULL,
   result_name varchar(255) NOT NULL,
   result_type varchar(255) NOT NULL,
-  FOREIGN KEY (encapsulated_assertion_oid) REFERENCES encapsulated_assertion (objectid) ON DELETE CASCADE,
-  PRIMARY KEY (objectid)
+  PRIMARY KEY (goid)
 );
 
 alter table encapsulated_assertion_result
     add constraint FK_ENCASSRES_ENCASS
-    foreign key (encapsulated_assertion_oid)
+    foreign key (encapsulated_assertion_goid)
     references encapsulated_assertion
     on delete cascade;
 

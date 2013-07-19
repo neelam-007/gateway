@@ -1,8 +1,6 @@
 package com.l7tech.policy.assertion;
 
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.GuidEntityHeader;
+import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionArgumentDescriptor;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionResultDescriptor;
@@ -22,8 +20,8 @@ import static org.junit.Assert.*;
 
 @SuppressWarnings("deprecation")
 public class EncapsulatedAssertionTest {
-    private static final long CONFIG_ID = 1L;
-    private static final String CONFIG_ID_STR = String.valueOf(CONFIG_ID);
+    private static final Goid CONFIG_ID = new Goid(0L,1L);
+    private static final String CONFIG_ID_STR = CONFIG_ID.toString();
     private static final String CONFIG_GUID = UUID.randomUUID().toString();
     private static final String CONFIG_NAME = "My Special Encass";
     private EncapsulatedAssertion assertion;
@@ -35,7 +33,7 @@ public class EncapsulatedAssertionTest {
         config = new EncapsulatedAssertionConfig();
         config.setGuid(CONFIG_GUID);
         config.setName(CONFIG_NAME);
-        config.setOid(CONFIG_ID);
+        config.setGoid(CONFIG_ID);
     }
 
     @Test
@@ -297,7 +295,7 @@ public class EncapsulatedAssertionTest {
         assertEquals(1, assertion.getEntitiesUsedAtDesignTime().length);
         assertArrayEquals(assertion.getEntitiesUsed(), assertion.getEntitiesUsedAtDesignTime());
         final EntityHeader header = assertion.getEntitiesUsedAtDesignTime()[0];
-        assertEquals("-1", header.getStrId());
+        assertEquals(GoidEntity.DEFAULT_GOID.toString(), header.getStrId());
         assertEquals(CONFIG_GUID, ((GuidEntityHeader) header).getGuid());
         assertEquals(EntityType.ENCAPSULATED_ASSERTION, header.getType());
         assertNull(header.getName());

@@ -239,7 +239,7 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
         selectIconButton.setVerticalTextPosition(SwingConstants.BOTTOM);
         selectIconButton.setHorizontalTextPosition(SwingConstants.CENTER);
 
-        zoneControl.configure(config.getOid() == EncapsulatedAssertionConfig.DEFAULT_OID ? OperationType.CREATE : readOnly ? OperationType.READ : OperationType.UPDATE, config);
+        zoneControl.configure(config.getGoid().equals(EncapsulatedAssertionConfig.DEFAULT_GOID) ? OperationType.CREATE : readOnly ? OperationType.READ : OperationType.UPDATE, config);
 
         Utilities.enableDefaultFocusTraversal(descriptionTextArea);
 

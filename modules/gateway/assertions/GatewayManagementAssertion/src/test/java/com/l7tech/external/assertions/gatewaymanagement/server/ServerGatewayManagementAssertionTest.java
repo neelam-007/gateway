@@ -496,7 +496,7 @@ public class ServerGatewayManagementAssertionTest {
             "    </l7:Properties>\n" +
             "</l7:EncapsulatedAssertion>";
 
-        String expectedId = "2";
+        String expectedId = new Goid(0,2).toString();
         doCreate( resourceUri, payload, expectedId );
     }
 
@@ -1015,23 +1015,25 @@ public class ServerGatewayManagementAssertionTest {
 
     @Test
     public void testPutEncapsulatedAssertion() throws Exception {
+
+        String id = new Goid(0,1).toString();
         // Try basic successful update of existing encass config
-        putAndVerify(makeEncassPutMess("id=\"1\"", "version=\"0\"", "<l7:Guid>ABCD-0001</l7:Guid>", "id=\"1\"", 1), verifyEncassUpdate(1, null), false );
+        putAndVerify(makeEncassPutMess("id=\""+id+"\"", "version=\"0\"", "<l7:Guid>ABCD-0001</l7:Guid>", "id=\"1\"", 1), verifyEncassUpdate(1, null), false );
 
         // Try omitting OID and ver (can't just pass "true" for removeVersionAndId arg because it kills the policy OID in the crossfire and we need it)
         putAndVerify(makeEncassPutMess("", "", "<l7:Guid>ABCD-0001</l7:Guid>", "id=\"1\"", 2), verifyEncassUpdate(2, null), false );
 
         // Try leaving out the GUID (should fail)
-        putAndVerify(makeEncassPutMess("id=\"1\"", "version=\"2\"", "", "id=\"1\"", 3), verifyEncassUpdate(3, "unable to change GUID of existing encapsulated assertion config"), false );
+        putAndVerify(makeEncassPutMess("id=\""+id+"\"", "version=\"2\"", "", "id=\"1\"", 3), verifyEncassUpdate(3, "unable to change GUID of existing encapsulated assertion config"), false );
 
         // Try changing the encass GUID (should fail)
-        putAndVerify(makeEncassPutMess("id=\"1\"", "version=\"2\"", "<l7:Guid>ABCD-EXTRA-0001</l7:Guid>", "id=\"1\"", 4), verifyEncassUpdate(4, "unable to change GUID of existing encapsulated assertion config"), false );
+        putAndVerify(makeEncassPutMess("id=\""+id+"\"", "version=\"2\"", "<l7:Guid>ABCD-EXTRA-0001</l7:Guid>", "id=\"1\"", 4), verifyEncassUpdate(4, "unable to change GUID of existing encapsulated assertion config"), false );
 
         // Try leaving out the backing policy OID (should work OK)
-        putAndVerify(makeEncassPutMess("id=\"1\"", "version=\"2\"", "<l7:Guid>ABCD-0001</l7:Guid>", "id=\"1\"", 5), verifyEncassUpdate(5, null), false );
+        putAndVerify(makeEncassPutMess("id=\""+id+"\"", "version=\"2\"", "<l7:Guid>ABCD-0001</l7:Guid>", "id=\"1\"", 5), verifyEncassUpdate(5, null), false );
 
         // Try changing the backing policy OID (should fail)
-        putAndVerify(makeEncassPutMess("id=\"1\"", "version=\"2\"", "<l7:Guid>ABCD-0001</l7:Guid>", "id=\"2\"", 6), verifyEncassUpdate(6, "unable to change backing policy of an existing encapsulated assertion config"), false );
+        putAndVerify(makeEncassPutMess("id=\""+id+"\"", "version=\"2\"", "<l7:Guid>ABCD-0001</l7:Guid>", "id=\"2\"", 6), verifyEncassUpdate(6, "unable to change backing policy of an existing encapsulated assertion config"), false );
     }
 
     private UnaryVoidThrows<Document, Exception> verifyEncassUpdate(final int updateNum, @Nullable final String expectedFaultSubstring) {
@@ -1059,7 +1061,7 @@ public class ServerGatewayManagementAssertionTest {
 
     private static String makeEncassPutMess(String oidStr, String versionStr, String guidStr, String policyOidStr, int updateNum) {
         return "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns:n1=\"http://ns.l7tech.com/2010/04/gateway-management\"><s:Header><wsa:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Put</wsa:Action><wsa:To s:mustUnderstand=\"true\">http://127.0.0.1:8080/wsman</wsa:To>\n" +
-            "<wsman:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/encapsulatedAssertions</wsman:ResourceURI><wsa:MessageID s:mustUnderstand=\"true\">uuid:afad2993-7d39-1d39-8002-481688002100</wsa:MessageID><wsa:ReplyTo><wsa:Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo><wsman:SelectorSet><wsman:Selector Name=\"id\">1</wsman:Selector></wsman:SelectorSet><wsman:RequestEPR/></s:Header><s:Body>\n" +
+            "<wsman:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/encapsulatedAssertions</wsman:ResourceURI><wsa:MessageID s:mustUnderstand=\"true\">uuid:afad2993-7d39-1d39-8002-481688002100</wsa:MessageID><wsa:ReplyTo><wsa:Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo><wsman:SelectorSet><wsman:Selector Name=\"id\">00000000000000000000000000000001</wsman:Selector></wsman:SelectorSet><wsman:RequestEPR/></s:Header><s:Body>\n" +
             "<l7:EncapsulatedAssertion xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\" " + oidStr + " " + versionStr + ">\n" +
             "    <l7:Name>Test Encass Config 1 (updated #" + updateNum + ")</l7:Name>\n" +
             "    " + guidStr + "\n" +
@@ -2531,7 +2533,7 @@ public class ServerGatewayManagementAssertionTest {
                 securePassword(1L, "test", "password", true, SecurePassword.SecurePasswordType.PASSWORD)
         ) );
         beanFactory.addBean( "encapsulatedAssertionConfigManager", new EncapsulatedAssertionConfigManagerStub(
-                encapsulatedAssertion( 1L, "Test Encass Config 1", "ABCD-0001", testPolicy1, null, null, null)
+                encapsulatedAssertion( new Goid(0,1L), "Test Encass Config 1", "ABCD-0001", testPolicy1, null, null, null)
         ) );
 
         final GenericEntity genericEntity = new GenericEntity();
@@ -2699,13 +2701,13 @@ public class ServerGatewayManagementAssertionTest {
         return service;
     }
 
-    private static EncapsulatedAssertionConfig encapsulatedAssertion(final long oid, final String name, final String guid, final Policy policy,
+    private static EncapsulatedAssertionConfig encapsulatedAssertion(final Goid goid, final String name, final String guid, final Policy policy,
                                                                      final Set<EncapsulatedAssertionArgumentDescriptor> args,
                                                                      final Set<EncapsulatedAssertionResultDescriptor> results,
                                                                      final Map<String, String> properties)
     {
         final EncapsulatedAssertionConfig config = new EncapsulatedAssertionConfig();
-        config.setOid( oid );
+        config.setGoid(goid);
         config.setName( name );
         config.setGuid( guid );
         config.setPolicy( policy );

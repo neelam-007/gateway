@@ -3,6 +3,7 @@ package com.l7tech.server.policy.assertion;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.audit.AuditFactory;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionArgumentDescriptor;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionResultDescriptor;
@@ -12,7 +13,7 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.EncapsulatedAssertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.variable.NoSuchVariableException;
-import com.l7tech.server.event.EntityInvalidationEvent;
+import com.l7tech.server.event.GoidEntityInvalidationEvent;
 import com.l7tech.server.message.HasOutputVariables;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
@@ -88,8 +89,8 @@ public class ServerEncapsulatedAssertion extends AbstractServerAssertion<Encapsu
         updateListener = new ApplicationListener() {
             @Override
             public void onApplicationEvent(ApplicationEvent event) {
-                if (event instanceof EntityInvalidationEvent) {
-                    final EntityInvalidationEvent eie = (EntityInvalidationEvent) event;
+                if (event instanceof GoidEntityInvalidationEvent) {
+                    final GoidEntityInvalidationEvent eie = (GoidEntityInvalidationEvent) event;
                     if (eie.getEntityClass().equals(EncapsulatedAssertionConfig.class)) {
                         if (configOrError.isLeft()) {
                             // error may have been fixed through an import, so try to reload the config
@@ -97,9 +98,9 @@ public class ServerEncapsulatedAssertion extends AbstractServerAssertion<Encapsu
                             updateConfig(loadConfig());
                         } else {
                             // check that relevant config has changed before reloading
-                            final long ourConfigId = configOrError.right().getOid();
-                            for (long id : eie.getEntityIds()) {
-                                if (id == ourConfigId) {
+                            final Goid ourConfigId = configOrError.right().getGoid();
+                            for (Goid id : eie.getEntityIds()) {
+                                if (id.equals(ourConfigId)) {
                                     logger.log(Level.FINE, "Reloading encapsulated assertion config for OID " + ourConfigId);
                                     updateConfig(loadConfig());
                                     break;

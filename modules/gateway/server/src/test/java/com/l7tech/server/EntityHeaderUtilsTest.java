@@ -15,6 +15,7 @@ import java.util.Random;
 import static org.junit.Assert.*;
 
 public class EntityHeaderUtilsTest {
+    private static final Goid goid_OID = new Goid(0L,1234L);
     private static final long OID = 1234L;
     private static final Goid GOID = new Goid(new Random().nextLong(), new Random().nextLong());
     private static final Long ZONE_OID = 1111L;
@@ -33,9 +34,9 @@ public class EntityHeaderUtilsTest {
     @BugId("EM-914")
     @Test
     public void fromEntityEncapsulatedAssertionConfig() {
-        final ZoneableGuidEntityHeader header = (ZoneableGuidEntityHeader) EntityHeaderUtils.fromEntity(createEncapsulatedAssertionConfig(OID, GUID, NAME, VERSION, zone));
+        final ZoneableGuidEntityHeader header = (ZoneableGuidEntityHeader) EntityHeaderUtils.fromEntity(createEncapsulatedAssertionConfig(goid_OID, GUID, NAME, VERSION, zone));
         assertEquals(GUID, header.getGuid());
-        assertEquals(OID, header.getOid());
+        assertEquals(goid_OID, header.getGoid());
         assertEquals(EntityType.ENCAPSULATED_ASSERTION, header.getType());
         assertEquals(NAME, header.getName());
         assertEquals(VERSION, header.getVersion());
@@ -45,10 +46,10 @@ public class EntityHeaderUtilsTest {
 
     @Test
     public void fromEntityEncapsulatedAssertionConfigNullValues() {
-        final ZoneableGuidEntityHeader header = (ZoneableGuidEntityHeader) EntityHeaderUtils.fromEntity(createEncapsulatedAssertionConfig(OID, null, null, VERSION, null));
+        final ZoneableGuidEntityHeader header = (ZoneableGuidEntityHeader) EntityHeaderUtils.fromEntity(createEncapsulatedAssertionConfig(goid_OID, null, null, VERSION, null));
         assertNull(header.getGuid());
         assertNull(header.getName());
-        assertEquals(OID, header.getOid());
+        assertEquals(goid_OID, header.getGoid());
         assertNull(header.getSecurityZoneOid());
     }
 
@@ -222,9 +223,9 @@ public class EntityHeaderUtilsTest {
         assertFalse(header instanceof ZoneableEntityHeader);
     }
 
-    private EncapsulatedAssertionConfig createEncapsulatedAssertionConfig(final long oid, final String guid, final String name, final Integer version, final SecurityZone zone) {
+    private EncapsulatedAssertionConfig createEncapsulatedAssertionConfig(final Goid goid, final String guid, final String name, final Integer version, final SecurityZone zone) {
         final EncapsulatedAssertionConfig encassConfig = new EncapsulatedAssertionConfig();
-        encassConfig.setOid(oid);
+        encassConfig.setGoid(goid);
         encassConfig.setGuid(guid);
         encassConfig.setName(name);
         encassConfig.setVersion(version);

@@ -280,6 +280,58 @@ ALTER TABLE firewall_rule_property CHANGE COLUMN firewall_rule_oid firewall_rule
 UPDATE firewall_rule_property SET firewall_rule_goid = concat(@firewall_prefix,lpad(char(firewall_rule_oid_backup),8,'\0'));
 ALTER TABLE firewall_rule_property DROP COLUMN firewall_rule_oid_backup;
 ALTER TABLE firewall_rule_property  ADD FOREIGN KEY (firewall_rule_goid) REFERENCES firewall_rule (goid) ON DELETE CASCADE;
+
+-- Encapsulated assertion
+
+ALTER TABLE encapsulated_assertion_property DROP FOREIGN KEY encapsulated_assertion_property_ibfk_1;
+ALTER TABLE encapsulated_assertion_argument DROP FOREIGN KEY encapsulated_assertion_argument_ibfk_1;
+ALTER TABLE encapsulated_assertion_result DROP FOREIGN KEY encapsulated_assertion_result_ibfk_1;
+
+ALTER TABLE encapsulated_assertion ADD COLUMN objectid_backup BIGINT(20);
+update encapsulated_assertion set objectid_backup=objectid;
+ALTER TABLE encapsulated_assertion CHANGE COLUMN objectid goid binary(16);
+-- For manual runs use: set @encapsulated_assertion_prefix=concat(lpad(char(floor(rand()*4294967296)+1),4,'\0'),lpad(char(floor(rand()*4294967296)),4,'\0'));
+SET @encapsulated_assertion_prefix=lpad(char(#RANDOM_LONG_NOT_RESERVED#),8,'\0');
+update encapsulated_assertion set goid = concat(@encapsulated_assertion_prefix,lpad(char(objectid_backup),8,'\0'));
+ALTER TABLE encapsulated_assertion DROP COLUMN objectid_backup;
+
+ALTER TABLE encapsulated_assertion_property ADD COLUMN encapsulated_assertion_oid_backup BIGINT(20);
+UPDATE  encapsulated_assertion_property SET encapsulated_assertion_oid_backup = encapsulated_assertion_oid;
+ALTER TABLE encapsulated_assertion_property CHANGE COLUMN encapsulated_assertion_oid encapsulated_assertion_goid binary(16);
+UPDATE encapsulated_assertion_property SET encapsulated_assertion_goid = concat(@encapsulated_assertion_prefix,lpad(char(encapsulated_assertion_oid_backup),8,'\0'));
+ALTER TABLE encapsulated_assertion_property DROP COLUMN encapsulated_assertion_oid_backup;
+ALTER TABLE encapsulated_assertion_property  ADD FOREIGN KEY (encapsulated_assertion_goid) REFERENCES encapsulated_assertion (goid) ON DELETE CASCADE;
+
+ALTER TABLE encapsulated_assertion_argument ADD COLUMN objectid_backup BIGINT(20);
+update encapsulated_assertion_argument set objectid_backup=objectid;
+ALTER TABLE encapsulated_assertion_argument CHANGE COLUMN objectid goid binary(16);
+-- For manual runs use: set @encapsulated_assertion_argument_prefix=concat(lpad(char(floor(rand()*4294967296)+1),4,'\0'),lpad(char(floor(rand()*4294967296)),4,'\0'));
+SET @encapsulated_assertion_argument_prefix=lpad(char(#RANDOM_LONG_NOT_RESERVED#),8,'\0');
+update encapsulated_assertion_argument set goid = concat(@encapsulated_assertion_argument_prefix,lpad(char(objectid_backup),8,'\0'));
+ALTER TABLE encapsulated_assertion_argument DROP COLUMN objectid_backup;
+
+ALTER TABLE encapsulated_assertion_argument ADD COLUMN encapsulated_assertion_oid_backup BIGINT(20);
+UPDATE  encapsulated_assertion_argument SET encapsulated_assertion_oid_backup = encapsulated_assertion_oid;
+ALTER TABLE encapsulated_assertion_argument CHANGE COLUMN encapsulated_assertion_oid encapsulated_assertion_goid binary(16);
+UPDATE encapsulated_assertion_argument SET encapsulated_assertion_goid = concat(@encapsulated_assertion_prefix,lpad(char(encapsulated_assertion_oid_backup),8,'\0'));
+ALTER TABLE encapsulated_assertion_argument DROP COLUMN encapsulated_assertion_oid_backup;
+ALTER TABLE encapsulated_assertion_argument  ADD FOREIGN KEY (encapsulated_assertion_goid) REFERENCES encapsulated_assertion (goid) ON DELETE CASCADE;
+
+ALTER TABLE encapsulated_assertion_result ADD COLUMN objectid_backup BIGINT(20);
+update encapsulated_assertion_result set objectid_backup=objectid;
+ALTER TABLE encapsulated_assertion_result CHANGE COLUMN objectid goid binary(16);
+-- For manual runs use: set @encapsulated_assertion_result_prefix=concat(lpad(char(floor(rand()*4294967296)+1),4,'\0'),lpad(char(floor(rand()*4294967296)),4,'\0'));
+SET @encapsulated_assertion_result_prefix=lpad(char(#RANDOM_LONG_NOT_RESERVED#),8,'\0');
+update encapsulated_assertion_result set goid = concat(@encapsulated_assertion_result_prefix,lpad(char(objectid_backup),8,'\0'));
+ALTER TABLE encapsulated_assertion_result DROP COLUMN objectid_backup;
+
+ALTER TABLE encapsulated_assertion_result ADD COLUMN encapsulated_assertion_oid_backup BIGINT(20);
+UPDATE  encapsulated_assertion_result SET encapsulated_assertion_oid_backup = encapsulated_assertion_oid;
+ALTER TABLE encapsulated_assertion_result CHANGE COLUMN encapsulated_assertion_oid encapsulated_assertion_goid binary(16);
+UPDATE encapsulated_assertion_result SET encapsulated_assertion_goid = concat(@encapsulated_assertion_prefix,lpad(char(encapsulated_assertion_oid_backup),8,'\0'));
+ALTER TABLE encapsulated_assertion_result DROP COLUMN encapsulated_assertion_oid_backup;
+ALTER TABLE encapsulated_assertion_result  ADD FOREIGN KEY (encapsulated_assertion_goid) REFERENCES encapsulated_assertion (goid) ON DELETE CASCADE;
+
 --
 -- Register upgrade task for upgrading sink configuration references to GOIDs
 --

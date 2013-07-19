@@ -280,6 +280,50 @@ ALTER TABLE firewall_rule_property ALTER COLUMN firewall_rule_goid NOT NULL;
 ALTER TABLE firewall_rule_property DROP COLUMN firewall_rule_oid;
 ALTER TABLE firewall_rule_property add constraint FK_FIREWALL_PROPERTY_GOID foreign key (firewall_rule_goid) references firewall_rule on delete cascade;
 
+-- Encapsulated Assertion
+ALTER TABLE encapsulated_assertion ADD COLUMN objectid_backup bigint;
+update encapsulated_assertion set objectid_backup = objectid;
+ALTER TABLE encapsulated_assertion DROP COLUMN objectid;
+ALTER TABLE encapsulated_assertion ADD COLUMN goid CHAR(16) FOR BIT DATA;
+call setVariable('encass_prefix', cast(randomLongNotReserved() as char(21)));
+update encapsulated_assertion set goid = toGoid(cast(getVariable('encass_prefix') as bigint), objectid_backup);
+ALTER TABLE encapsulated_assertion ALTER COLUMN goid NOT NULL;
+ALTER TABLE encapsulated_assertion DROP COLUMN objectid_backup;
+ALTER TABLE encapsulated_assertion ADD PRIMARY KEY (goid);
+
+ALTER TABLE encapsulated_assertion_property ADD COLUMN encapsulated_assertion_goid CHAR(16) FOR BIT DATA;
+update encapsulated_assertion_property set encapsulated_assertion_goid = toGoid(cast(getVariable('encass_prefix') as bigint), encapsulated_assertion_oid);
+ALTER TABLE encapsulated_assertion_property ALTER COLUMN encapsulated_assertion_goid NOT NULL;
+ALTER TABLE encapsulated_assertion_property DROP COLUMN encapsulated_assertion_oid;
+ALTER TABLE encapsulated_assertion_property add constraint FK_ENCASSPROP_ENCASS foreign key (encapsulated_assertion_goid) references encapsulated_assertion on delete cascade;
+
+ALTER TABLE encapsulated_assertion_argument ADD COLUMN goid CHAR(16) FOR BIT DATA;
+call setVariable('encass_argument_prefix', cast(randomLongNotReserved() as char(21)));
+update encapsulated_assertion_argument set goid = toGoid(cast(getVariable('encass_argument_prefix') as bigint), objectid);
+ALTER TABLE encapsulated_assertion_argument ALTER COLUMN goid NOT NULL;
+ALTER TABLE encapsulated_assertion_argument DROP COLUMN objectid;
+ALTER TABLE encapsulated_assertion_argument ADD PRIMARY KEY (goid);
+
+ALTER TABLE encapsulated_assertion_argument ADD COLUMN encapsulated_assertion_goid CHAR(16) FOR BIT DATA;
+update encapsulated_assertion_argument set encapsulated_assertion_goid = toGoid(cast(getVariable('encass_prefix') as bigint), encapsulated_assertion_oid);
+ALTER TABLE encapsulated_assertion_argument ALTER COLUMN encapsulated_assertion_goid NOT NULL;
+ALTER TABLE encapsulated_assertion_argument DROP COLUMN encapsulated_assertion_oid;
+ALTER TABLE encapsulated_assertion_argument add constraint FK_ENCASSARG_ENCASS foreign key (encapsulated_assertion_goid) references encapsulated_assertion on delete cascade;
+
+ALTER TABLE encapsulated_assertion_result ADD COLUMN goid CHAR(16) FOR BIT DATA;
+call setVariable('encass_result_prefix', cast(randomLongNotReserved() as char(21)));
+update encapsulated_assertion_result set goid = toGoid(cast(getVariable('encass_result_prefix') as bigint), objectid);
+ALTER TABLE encapsulated_assertion_result ALTER COLUMN goid NOT NULL;
+ALTER TABLE encapsulated_assertion_result DROP COLUMN objectid;
+ALTER TABLE encapsulated_assertion_result ADD PRIMARY KEY (goid);
+
+ALTER TABLE encapsulated_assertion_result ADD COLUMN encapsulated_assertion_goid CHAR(16) FOR BIT DATA;
+update encapsulated_assertion_result set encapsulated_assertion_goid = toGoid(cast(getVariable('encass_prefix') as bigint), encapsulated_assertion_oid);
+ALTER TABLE encapsulated_assertion_result ALTER COLUMN encapsulated_assertion_goid NOT NULL;
+ALTER TABLE encapsulated_assertion_result DROP COLUMN encapsulated_assertion_oid;
+ALTER TABLE encapsulated_assertion_result add constraint FK_ENCASSRES_ENCASS foreign key (encapsulated_assertion_goid) references encapsulated_assertion on delete cascade;
+
+
 --
 -- Register upgrade task for upgrading sink configuration references to GOIDs
 --

@@ -1,10 +1,8 @@
 package com.l7tech.objectmodel.encass;
 
 import com.l7tech.objectmodel.JaxbMapType;
-import com.l7tech.objectmodel.imp.NamedEntityImp;
-import com.l7tech.objectmodel.imp.ZoneableNamedEntityImp;
+import com.l7tech.objectmodel.imp.ZoneableNamedGoidEntityImp;
 import com.l7tech.objectmodel.migration.Migration;
-import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.Policy;
 import com.l7tech.util.BeanUtils;
 import com.l7tech.util.Functions;
@@ -38,7 +36,7 @@ import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
 @Proxy(lazy=false)
 @Inheritance(strategy= InheritanceType.SINGLE_TABLE)
 @Table(name="encapsulated_assertion")
-public class EncapsulatedAssertionConfig extends ZoneableNamedEntityImp {
+public class EncapsulatedAssertionConfig extends ZoneableNamedGoidEntityImp {
     /** ID of palette folder in which to offer the encapsulated assertion. */
     public static final String PROP_PALETTE_FOLDER = "paletteFolder";
 
@@ -223,7 +221,7 @@ public class EncapsulatedAssertionConfig extends ZoneableNamedEntityImp {
     @Fetch(FetchMode.SUBSELECT)
     @ElementCollection(fetch=FetchType.EAGER)
     @JoinTable(name="encapsulated_assertion_property",
-        joinColumns=@JoinColumn(name="encapsulated_assertion_oid", referencedColumnName="objectid"))
+        joinColumns=@JoinColumn(name="encapsulated_assertion_goid", referencedColumnName="goid"))
     @MapKeyColumn(name="name",length=128)
     @Column(name="value", nullable=false, length=32672)
     @XmlElement(name = "Properties")
@@ -363,7 +361,7 @@ public class EncapsulatedAssertionConfig extends ZoneableNamedEntityImp {
     @Override
     public String toString() {
         return "EncapsulatedAssertionConfig{" +
-            "oid=" + getOid() +
+            "goid=" + getGoid() +
             ", guid='" + getGuid() + "'" +
             ", name='" + getName() + "'" +
             ", policy=" + policy + "\n" +

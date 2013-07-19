@@ -1,5 +1,6 @@
 package com.l7tech.objectmodel.encass;
 
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.SecurityZone;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
@@ -13,7 +14,7 @@ import static org.junit.Assert.*;
 
 public class EncapsulatedAssertionConfigTest {
     private static final String NAME = "testName";
-    private static final long OID = 1234;
+    private static final Goid GOID = new Goid(0L,1234L);
     private static final String POLICY_GUID = "policyguid";
     private static final int VERSION = 1;
     private static final String GUID = "abc123";
@@ -50,7 +51,7 @@ public class EncapsulatedAssertionConfigTest {
         config.setPolicy(policy);
         config.setResultDescriptors(outs);
         config.setName(NAME);
-        config.setOid(OID);
+        config.setGoid(GOID);
         config.setVersion(VERSION);
         config.setSecurityZone(zone);
     }
@@ -154,7 +155,7 @@ public class EncapsulatedAssertionConfigTest {
         assertEquals(out, copy.getResultDescriptors().iterator().next());
         assertNotSame(out, copy.getResultDescriptors().iterator().next());
         assertEquals(NAME, copy.getName());
-        assertEquals(OID, copy.getOid());
+        assertEquals(GOID, copy.getGoid());
         assertEquals(VERSION, copy.getVersion());
         assertEquals(zone, copy.getSecurityZone());
     }

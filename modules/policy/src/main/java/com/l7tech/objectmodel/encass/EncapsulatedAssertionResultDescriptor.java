@@ -1,6 +1,6 @@
 package com.l7tech.objectmodel.encass;
 
-import com.l7tech.objectmodel.imp.PersistentEntityImp;
+import com.l7tech.objectmodel.imp.GoidEntityImp;
 import org.hibernate.annotations.Proxy;
 
 import javax.persistence.*;
@@ -19,13 +19,13 @@ import javax.xml.bind.annotation.XmlTransient;
 @Table(name="encapsulated_assertion_result")
 @Inheritance(strategy= InheritanceType.SINGLE_TABLE)
 @XmlRootElement(name = "EncapsulatedAssertionResult")
-public class EncapsulatedAssertionResultDescriptor extends PersistentEntityImp {
+public class EncapsulatedAssertionResultDescriptor extends GoidEntityImp {
     private EncapsulatedAssertionConfig encapsulatedAssertionConfig;
     private String resultName;
     private String resultType;
 
     @ManyToOne(optional=false)
-    @JoinColumn(name="encapsulated_assertion_oid", nullable=false)
+    @JoinColumn(name="encapsulated_assertion_goid", nullable=false)
     @XmlTransient
     public EncapsulatedAssertionConfig getEncapsulatedAssertionConfig() {
         return encapsulatedAssertionConfig;
@@ -116,7 +116,7 @@ public class EncapsulatedAssertionResultDescriptor extends PersistentEntityImp {
     @Override
     public String toString() {
         return "EncapsulatedAssertionResultDescriptor{" +
-            "eacOid=" + (encapsulatedAssertionConfig == null ? null : encapsulatedAssertionConfig.getOid()) +
+            "eacGoid=" + (encapsulatedAssertionConfig == null ? null : encapsulatedAssertionConfig.getGoid()) +
             ", resultName='" + resultName + '\'' +
             ", resultType='" + resultType + '\'' +
             '}';

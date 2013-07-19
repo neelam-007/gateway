@@ -1,6 +1,7 @@
 package com.l7tech.server.encass;
 
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
@@ -22,7 +23,7 @@ import static org.mockito.Mockito.when;
 @RunWith(MockitoJUnitRunner.class)
 public class EncapsulatedAssertionAdminImplTest {
     private static final Long POLICY_OID = 1234L;
-    private static final Long CONFIG_OID = 12345L;
+    private static final Goid CONFIG_GOID = new Goid(0L,12345L);
     private static final String CONFIG_GUID = "abc123";
     private static final String POLICY_GUID = "abc";
     private static final String NAME = "Test";
@@ -40,7 +41,7 @@ public class EncapsulatedAssertionAdminImplTest {
         policy = new Policy(PolicyType.INCLUDE_FRAGMENT, NAME, "policyXml", false);
         policy.setGuid(POLICY_GUID);
         config = new EncapsulatedAssertionConfig();
-        config.setOid(CONFIG_OID);
+        config.setGoid(CONFIG_GOID);
         config.setName(NAME);
         config.setPolicy(policy);
         configs = new ArrayList<EncapsulatedAssertionConfig>();
@@ -55,8 +56,8 @@ public class EncapsulatedAssertionAdminImplTest {
 
     @Test
     public void findByPrimaryKeyDetachesPolicy() throws Exception {
-        when(manager.findByPrimaryKey(CONFIG_OID)).thenReturn(config);
-        assertPolicyDetached(admin.findByPrimaryKey(CONFIG_OID));
+        when(manager.findByPrimaryKey(CONFIG_GOID)).thenReturn(config);
+        assertPolicyDetached(admin.findByPrimaryKey(CONFIG_GOID));
     }
 
     @Test
@@ -86,7 +87,7 @@ public class EncapsulatedAssertionAdminImplTest {
     @Test(expected = FindException.class)
     public void findByPrimaryKeyNull() throws Exception {
         when(manager.findByPrimaryKey(anyLong())).thenReturn(null);
-        admin.findByPrimaryKey(CONFIG_OID);
+        admin.findByPrimaryKey(CONFIG_GOID);
     }
 
     @Test(expected = FindException.class)

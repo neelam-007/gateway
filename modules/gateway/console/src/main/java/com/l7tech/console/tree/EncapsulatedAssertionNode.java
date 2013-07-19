@@ -4,10 +4,7 @@ import com.l7tech.console.action.ConfigureSecurityZoneAction;
 import com.l7tech.console.util.EntitySaver;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.UpdateException;
-import com.l7tech.objectmodel.VersionException;
+import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.EncapsulatedAssertion;
@@ -34,9 +31,9 @@ public class EncapsulatedAssertionNode extends DefaultAssertionPaletteNode<Encap
                     @Override
                     public EncapsulatedAssertionConfig saveEntity(final EncapsulatedAssertionConfig entity) throws SaveException {
                         try {
-                            final long oid = Registry.getDefault().getEncapsulatedAssertionAdmin().saveEncapsulatedAssertionConfig(entity);
+                            final Goid goid = Registry.getDefault().getEncapsulatedAssertionAdmin().saveEncapsulatedAssertionConfig(entity);
                             TopComponents.getInstance().getEncapsulatedAssertionRegistry().updateEncapsulatedAssertions();
-                            entity.setOid(oid);
+                            entity.setGoid(goid);
                         } catch (final UpdateException | VersionException e) {
                             throw new SaveException("Unable to save EncapsulatedAssertionConfig", e);
                         } catch (final FindException e) {

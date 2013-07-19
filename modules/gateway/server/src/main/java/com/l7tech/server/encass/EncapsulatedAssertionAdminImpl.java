@@ -50,10 +50,10 @@ public class EncapsulatedAssertionAdminImpl implements EncapsulatedAssertionAdmi
      */
     @NotNull
     @Override
-    public EncapsulatedAssertionConfig findByPrimaryKey(long oid) throws FindException {
-        EncapsulatedAssertionConfig ret = encapsulatedAssertionConfigManager.findByPrimaryKey(oid);
+    public EncapsulatedAssertionConfig findByPrimaryKey(Goid goid) throws FindException {
+        EncapsulatedAssertionConfig ret = encapsulatedAssertionConfigManager.findByPrimaryKey(goid);
         if (ret == null)
-            throw new FindException("No encapsulated assertion config found with oid " + oid);
+            throw new FindException("No encapsulated assertion config found with oid " + goid);
         ret.detachPolicy();
         return ret;
     }
@@ -99,28 +99,28 @@ public class EncapsulatedAssertionAdminImpl implements EncapsulatedAssertionAdmi
     }
 
     @Override
-    public long saveEncapsulatedAssertionConfig(@NotNull EncapsulatedAssertionConfig config) throws SaveException, UpdateException, VersionException {
+    public Goid saveEncapsulatedAssertionConfig(@NotNull EncapsulatedAssertionConfig config) throws SaveException, UpdateException, VersionException {
         checkLicenseEncAss();
-        long oid;
+        Goid goid;
 
-        if (config.getOid() == EncapsulatedAssertionConfig.DEFAULT_OID) {
+        if (config.getGoid().equals(EncapsulatedAssertionConfig.DEFAULT_GOID)) {
             if (config.getGuid() == null) {
                 config.setGuid(UUID.randomUUID().toString());
             }
-            oid = encapsulatedAssertionConfigManager.save(config);
+            goid = encapsulatedAssertionConfigManager.save(config);
         } else {
             if (config.getGuid() == null)
                 throw new UpdateException("Unable to update existing encapsulated assertion to have a null GUID");
             encapsulatedAssertionConfigManager.update(config);
-            oid = config.getOid();
+            goid = config.getGoid();
         }
-        return oid;
+        return goid;
     }
 
     @Override
-    public void deleteEncapsulatedAssertionConfig(long oid) throws FindException, DeleteException, ConstraintViolationException {
+    public void deleteEncapsulatedAssertionConfig(Goid goid) throws FindException, DeleteException, ConstraintViolationException {
         checkLicenseEncAss();
-        encapsulatedAssertionConfigManager.delete(oid);
+        encapsulatedAssertionConfigManager.delete(goid);
     }
 
     void setEncapsulatedAssertionConfigManager(@NotNull final EncapsulatedAssertionConfigManager encapsulatedAssertionConfigManager) {

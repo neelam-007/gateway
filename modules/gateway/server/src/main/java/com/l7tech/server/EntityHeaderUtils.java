@@ -105,7 +105,7 @@ public final class EntityHeaderUtils {
             return new SsgActiveConnectorHeader((SsgActiveConnector) e);
         } else if (e instanceof EncapsulatedAssertionConfig) {
             final EncapsulatedAssertionConfig config = (EncapsulatedAssertionConfig) e;
-            final ZoneableGuidEntityHeader guidEntityHeader = new ZoneableGuidEntityHeader(String.valueOf(config.getOid()), ENCAPSULATED_ASSERTION, config.getName(), null, config.getVersion());
+            final ZoneableGuidEntityHeader guidEntityHeader = new ZoneableGuidEntityHeader(config.getGoid().toString(), ENCAPSULATED_ASSERTION, config.getName(), null, config.getVersion());
             guidEntityHeader.setGuid(config.getGuid());
             guidEntityHeader.setSecurityZoneOid(config.getSecurityZone() == null ? null : config.getSecurityZone().getOid());
             return guidEntityHeader;

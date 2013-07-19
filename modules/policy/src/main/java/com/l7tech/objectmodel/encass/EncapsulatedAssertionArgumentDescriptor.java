@@ -1,6 +1,6 @@
 package com.l7tech.objectmodel.encass;
 
-import com.l7tech.objectmodel.imp.PersistentEntityImp;
+import com.l7tech.objectmodel.imp.GoidEntityImp;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.Syntax;
 import org.hibernate.annotations.Proxy;
@@ -31,7 +31,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 @Table(name="encapsulated_assertion_argument")
 @Inheritance(strategy=InheritanceType.SINGLE_TABLE)
 @XmlRootElement(name = "EncapsulatedAssertionArgument")
-public class EncapsulatedAssertionArgumentDescriptor extends PersistentEntityImp {
+public class EncapsulatedAssertionArgumentDescriptor extends GoidEntityImp {
     private EncapsulatedAssertionConfig encapsulatedAssertionConfig;
     private int ordinal;
     private String argumentName;
@@ -40,7 +40,7 @@ public class EncapsulatedAssertionArgumentDescriptor extends PersistentEntityImp
     private boolean guiPrompt;
 
     @ManyToOne(optional=false)
-    @JoinColumn(name="encapsulated_assertion_oid", nullable=false)
+    @JoinColumn(name="encapsulated_assertion_goid", nullable=false)
     public EncapsulatedAssertionConfig getEncapsulatedAssertionConfig() {
         return encapsulatedAssertionConfig;
     }
@@ -250,7 +250,7 @@ public class EncapsulatedAssertionArgumentDescriptor extends PersistentEntityImp
     @Override
     public String toString() {
         return "EncapsulatedAssertionArgumentDescriptor{" +
-            "eacOid=" + (encapsulatedAssertionConfig == null ? null : encapsulatedAssertionConfig.getOid()) +
+            "eacGoid=" + (encapsulatedAssertionConfig == null ? null : encapsulatedAssertionConfig.getGuid()) +
             ", ordinal=" + ordinal +
             ", argumentName='" + argumentName + '\'' +
             ", argumentType='" + argumentType + '\'' +

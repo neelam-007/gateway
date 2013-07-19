@@ -1,6 +1,6 @@
 package com.l7tech.server.policy;
 
-import com.l7tech.objectmodel.EntityManager;
+import com.l7tech.objectmodel.GoidEntityManager;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.GuidBasedEntityManager;
 import com.l7tech.objectmodel.GuidEntityHeader;
@@ -12,7 +12,7 @@ import java.util.Collection;
 /**
  * Entity manager for EncapsulatedAssertionConfig.
  */
-public interface EncapsulatedAssertionConfigManager extends EntityManager<EncapsulatedAssertionConfig,GuidEntityHeader>,GuidBasedEntityManager<EncapsulatedAssertionConfig> {
+public interface EncapsulatedAssertionConfigManager extends GoidEntityManager<EncapsulatedAssertionConfig,GuidEntityHeader>,GuidBasedEntityManager<EncapsulatedAssertionConfig> {
     /**
      * Find all active/enabled encapsulated assertion configs that reference the specified policy OID as the
      * backing policy.
