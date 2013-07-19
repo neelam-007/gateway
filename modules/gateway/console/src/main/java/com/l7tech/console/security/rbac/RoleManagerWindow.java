@@ -1,8 +1,8 @@
 package com.l7tech.console.security.rbac;
 
 import com.l7tech.console.action.Actions;
-import com.l7tech.console.action.DeleteEntityNodeAction;
 import com.l7tech.console.panels.FilterPanel;
+import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.util.*;
 import com.l7tech.gateway.common.security.rbac.*;
 import com.l7tech.gui.SimpleTableModel;
@@ -17,8 +17,8 @@ import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.comparator.NamedEntityComparator;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
+import com.l7tech.util.TextUtils;
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.WordUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -28,10 +28,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -42,9 +39,11 @@ import static com.l7tech.gui.util.TableUtil.column;
  */
 public class RoleManagerWindow extends JDialog {
     private static final Logger logger = Logger.getLogger(RoleManagerWindow.class.getName());
+    private static final ResourceBundle RESOURCES = ResourceBundle.getBundle(RoleManagerWindow.class.getName());
+    private static final String DELETE_CONFIRMATION = "delete.confirmation";
+    private static final String DELETE_CONFIRMATION_NAME_MAX_CHARS = "delete.confirmation.name.max.chars";
     private static final String CUSTOM = "Custom";
     private static final String SYSTEM = "System";
-    private static final String DELETE_CONFIRMATION_FORMAT = "Are you sure you want to remove the role {0}? This action cannot be undone.";
     private JPanel contentPanel;
     private JTable rolesTable;
     private JButton closeButton;
@@ -60,6 +59,7 @@ public class RoleManagerWindow extends JDialog {
     private JTextPane descriptionTextPane;
     private JButton editButton;
     private RoleAssignmentsPanel assignmentsPanel;
+    private JButton removeButton;
     private SimpleTableModel<Role> rolesTableModel;
     private EntityCrudController<Role> crudController;
 
@@ -98,15 +98,17 @@ public class RoleManagerWindow extends JDialog {
 
             @Override
             public void displayDeleteDialog(@NotNull final Role role, @NotNull final Functions.UnaryVoid<Role> afterDeleteListener) {
-                final String msg = MessageFormat.format(DELETE_CONFIRMATION_FORMAT, role.getName());
+                final Integer nameMaxChars = Integer.valueOf(RESOURCES.getString(DELETE_CONFIRMATION_NAME_MAX_CHARS));
+                final String displayName = TextUtils.truncateStringAtEnd(role.getName(), nameMaxChars);
+                final String confirmation = MessageFormat.format(RESOURCES.getString(DELETE_CONFIRMATION), displayName, role.getRoleAssignments().size());
                 DialogDisplayer.showOptionDialog(
                         RoleManagerWindow.this,
-                        WordUtils.wrap(msg, DeleteEntityNodeAction.LINE_CHAR_LIMIT, null, true),
-                        "Remove " + role.getName(),
+                        confirmation,
+                        "Remove Role",
                         JOptionPane.DEFAULT_OPTION,
                         JOptionPane.WARNING_MESSAGE,
                         null,
-                        new Object[]{"Remove " + role.getName(), "Cancel"},
+                        new Object[]{"Remove Role", "Cancel"},
                         null,
                         new DialogDisplayer.OptionListener() {
                             @Override
@@ -119,8 +121,6 @@ public class RoleManagerWindow extends JDialog {
                             }
                         });
             }
-
-
         });
         crudController.setEntitySaver(new EntitySaver<Role>() {
             @Override
@@ -211,8 +211,11 @@ public class RoleManagerWindow extends JDialog {
             descriptionTextPane.setText(StringUtils.EMPTY);
         }
         assignmentsPanel.configure(selectedRole);
+        final SecurityProvider securityProvider = Registry.getDefault().getSecurityProvider();
         editButton.setEnabled(selectedRole != null && selectedRole.isUserCreated() &&
-                Registry.getDefault().getSecurityProvider().hasPermission(new AttemptedUpdate(EntityType.RBAC_ROLE, selectedRole)));
+                securityProvider.hasPermission(new AttemptedUpdate(EntityType.RBAC_ROLE, selectedRole)));
+        removeButton.setEnabled(selectedRole != null && selectedRole.isUserCreated() &&
+                securityProvider.hasPermission(new AttemptedDeleteSpecific(EntityType.RBAC_ROLE, selectedRole)));
         filterPanel.allowFiltering(rolesTableModel.getRowCount() > 0);
         loadCount();
     }
@@ -233,6 +236,7 @@ public class RoleManagerWindow extends JDialog {
         createButton.setEnabled(Registry.getDefault().getSecurityProvider().hasPermission(new AttemptedCreate(EntityType.RBAC_ROLE)));
         editButton.addActionListener(crudController.createEditAction());
         Utilities.setDoubleClickAction(rolesTable, editButton);
+        removeButton.addActionListener(crudController.createDeleteAction());
         closeButton.addActionListener(Utilities.createDisposeAction(this));
         Utilities.setEscAction(this, closeButton);
         helpButton.addActionListener(new ActionListener() {
