@@ -123,7 +123,7 @@ public class Utilities {
 
     private final static String mappingJoin = " FROM service_metrics sm, published_service p, service_metrics_details smd," +
             " message_context_mapping_values mcmv, message_context_mapping_keys mcmk WHERE p.objectid = sm.published_service_oid " +
-            "AND sm.objectid = smd.service_metrics_oid AND smd.mapping_values_oid = mcmv.objectid AND mcmv.mapping_keys_oid = mcmk.objectid ";
+            "AND sm.goid = smd.service_metrics_goid AND smd.mapping_values_oid = mcmv.objectid AND mcmv.mapping_keys_oid = mcmk.objectid ";
 
     private final static String noMappingJoin = " FROM service_metrics sm, published_service p WHERE " +
             "p.objectid = sm.published_service_oid ";
