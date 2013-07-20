@@ -642,7 +642,7 @@ public abstract class HibernateGoidEntityManager<ET extends GoidEntity, HT exten
             final ZoneableEntity zoneableEntity = (ZoneableEntity) entity;
             final SecurityZone zone = zoneableEntity.getSecurityZone();
             final ZoneableEntityHeader zoneableHeader = new ZoneableEntityHeader(ht);
-            zoneableHeader.setSecurityZoneOid(zone == null ? null : zone.getOid());
+            zoneableHeader.setSecurityZoneGoid(zone == null ? null : zone.getGoid());
             ht = (HT) zoneableHeader;
         }
 

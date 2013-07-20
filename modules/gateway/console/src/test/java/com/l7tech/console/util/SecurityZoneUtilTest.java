@@ -2,6 +2,7 @@ package com.l7tech.console.util;
 
 import com.l7tech.gateway.common.security.rbac.*;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.SecurityZone;
 import com.l7tech.test.BugId;
 import org.junit.Before;
@@ -21,7 +22,7 @@ public class SecurityZoneUtilTest {
     public void setup() {
         zone = new SecurityZone();
         zone.setName("Test");
-        zone.setOid(1234L);
+        zone.setGoid(new Goid(0,1234L));
         entityTypes = new HashSet<>();
         permissions = new ArrayList<>();
     }

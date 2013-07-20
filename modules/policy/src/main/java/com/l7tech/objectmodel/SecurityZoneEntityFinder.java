@@ -9,13 +9,13 @@ import java.util.Collection;
  */
 public interface SecurityZoneEntityFinder {
     /**
-     * Retrieves a collection of ZoneableEntityHeader by type and security zone oid.
+     * Retrieves a collection of ZoneableEntityHeader by type and security zone goid.
      *
      * @param type            the EntityType to retrieve.
-     * @param securityZoneOid the oid of the SecurityZone that the entities must be in.
-     * @return a collection of EntityHeader of the given EntityType which are in a SecurityZone identified by the given oid.
+     * @param securityZoneGoid the goid of the SecurityZone that the entities must be in.
+     * @return a collection of EntityHeader of the given EntityType which are in a SecurityZone identified by the given goid.
      * @throws FindException            if a db error occurs.
      * @throws IllegalArgumentException if the given EntityType is not security zoneable.
      */
-    public Collection<EntityHeader> findByEntityTypeAndSecurityZoneOid(@NotNull final EntityType type, final long securityZoneOid) throws FindException;
+    public Collection<EntityHeader> findByEntityTypeAndSecurityZoneGoid(@NotNull final EntityType type, final Goid securityZoneGoid) throws FindException;
 }

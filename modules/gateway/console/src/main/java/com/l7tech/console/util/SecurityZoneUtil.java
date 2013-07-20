@@ -6,6 +6,7 @@ import com.l7tech.gateway.common.security.rbac.ScopePredicate;
 import com.l7tech.gateway.common.security.rbac.SecurityZonePredicate;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.SecurityZone;
 import com.l7tech.objectmodel.comparator.NamedEntityComparator;
 import com.l7tech.util.ExceptionUtils;
@@ -24,7 +25,7 @@ import java.util.logging.Logger;
 public class SecurityZoneUtil {
     private static final Logger logger = Logger.getLogger(SecurityZoneUtil.class.getName());
 
-    private static final AtomicReference<Map<Long, SecurityZone>> securityZones = new AtomicReference<>();
+    private static final AtomicReference<Map<Goid, SecurityZone>> securityZones = new AtomicReference<>();
     private static final Map<EntityType, Collection<EntityType>> TYPES_WITH_INHERITED_ZONES;
     private static final Set<EntityType> HIDDEN_TYPES;
     private static final String ELLIPSIS = "...";
@@ -50,7 +51,7 @@ public class SecurityZoneUtil {
      */
     public static final SecurityZone getNullZone() {
         final SecurityZone nullZone = new SecurityZone();
-        nullZone.setOid(-1);
+        nullZone.setGoid(new Goid (0, -1));
         nullZone.setName("no security zone");
         nullZone.setDescription("%%%NULL_ZONE%%%");
         nullZone.setPermittedEntityTypes(Collections.singleton(EntityType.ANY));
@@ -62,7 +63,7 @@ public class SecurityZoneUtil {
      */
     public static final SecurityZone getCurrentUnavailableZone() {
         final SecurityZone unavailable = new SecurityZone();
-        unavailable.setOid(-2);
+        unavailable.setGoid(new Goid (0, -2));
         unavailable.setName("Current zone (zone details are unavailable)");
         unavailable.setDescription("%%%UNAVAILABLE_ZONE%%%");
         unavailable.setPermittedEntityTypes(Collections.singleton(EntityType.ANY));
@@ -87,7 +88,7 @@ public class SecurityZoneUtil {
      */
     @NotNull
     public static Set<SecurityZone> getSecurityZones() {
-        final Map<Long, SecurityZone> ret = loadMap();
+        final Map<Goid, SecurityZone> ret = loadMap();
         return ret != null ? new HashSet<>(ret.values()) : Collections.<SecurityZone>emptySet();
     }
 
@@ -102,8 +103,8 @@ public class SecurityZoneUtil {
     }
 
     @Nullable
-    public static SecurityZone getSecurityZoneByOid(final long oid) {
-        return loadMap().get(oid);
+    public static SecurityZone getSecurityZoneByGoid(final Goid goid) {
+        return loadMap().get(goid);
     }
 
     /**
@@ -277,15 +278,15 @@ public class SecurityZoneUtil {
         return match;
     }
 
-    private static Map<Long, SecurityZone> loadMap() {
-        Map<Long, SecurityZone> ret = securityZones.get();
+    private static Map<Goid, SecurityZone> loadMap() {
+        Map<Goid, SecurityZone> ret = securityZones.get();
         if (ret == null) {
             try {
                 if (Registry.getDefault().isAdminContextPresent()) {
                     final Collection<SecurityZone> zones = Registry.getDefault().getRbacAdmin().findAllSecurityZones();
                     ret = new HashMap<>(zones.size());
                     for (final SecurityZone zone : zones) {
-                        ret.put(zone.getOid(), zone);
+                        ret.put(zone.getGoid(), zone);
                     }
                     securityZones.set(ret);
                 }

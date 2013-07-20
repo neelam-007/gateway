@@ -1,9 +1,8 @@
 package com.l7tech.gateway.common.service;
 
 import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.HasSecurityZoneOid;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.OrganizationHeader;
-import org.jetbrains.annotations.Nullable;
 
 /**
  * Extension of EntityHeader with some service information.
@@ -28,7 +27,7 @@ public class ServiceHeader extends OrganizationHeader {
               svc.getRoutingUri(),
               svc.isTracingEnabled(),
               svc.getPolicy() == null ? false : svc.getPolicy().isDisabled(),
-              svc.getSecurityZone() == null ? null : svc.getSecurityZone().getOid(),
+              svc.getSecurityZone() == null ? null : svc.getSecurityZone().getGoid(),
               svc.getPolicy() == null ? null : svc.getPolicy().getOid());
     }
 
@@ -46,7 +45,7 @@ public class ServiceHeader extends OrganizationHeader {
              serviceHeader.getRoutingUri(),
              serviceHeader.isTracingEnabled(),
              serviceHeader.isPolicyDisabled(),
-             serviceHeader.getSecurityZoneOid(),
+             serviceHeader.getSecurityZoneGoid(),
              serviceHeader.getPolicyOid());
     }
     
@@ -63,7 +62,7 @@ public class ServiceHeader extends OrganizationHeader {
                          final String routingUri,
                          final boolean tracingEnabled,
                          final boolean isPolicyDisabled,
-                         final Long securityZoneOid,
+                         final Goid securityZoneGoid,
                          final Long policyOid) {
         super(serviceOid == null ? -1 : serviceOid, EntityType.SERVICE, name, description, version);
         this.isSoap = isSoap;
@@ -75,7 +74,7 @@ public class ServiceHeader extends OrganizationHeader {
         this.routingUri = routingUri;
         this.tracingEnabled = tracingEnabled;
         this.isPolicyDisabled = isPolicyDisabled;
-        this.securityZoneOid = securityZoneOid;
+        this.securityZoneGoid = securityZoneGoid;
         this.policyOid = policyOid;
     }
 

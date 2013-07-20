@@ -9,7 +9,7 @@ import static org.junit.Assert.*;
 public class HibernateGoidEntityManagerTest {
     private static final Goid GOID = new Goid(0,1234L);
     private static final Integer VER = 1;
-    private static final Long ZONE_OID = 1111L;
+    private static final Goid ZONE_GOID = new Goid(0,1111L);
     private HibernateGoidEntityManager<GoidEntity, EntityHeader> genericHeaderManager;
     private SecurityZone zone;
 
@@ -17,7 +17,7 @@ public class HibernateGoidEntityManagerTest {
     public void setup() {
         genericHeaderManager = new TestableHibernateEntityManager();
         zone = new SecurityZone();
-        zone.setOid(ZONE_OID);
+        zone.setGoid(ZONE_GOID);
     }
 
     @Test
@@ -33,7 +33,7 @@ public class HibernateGoidEntityManagerTest {
     @Test
     public void newHeaderEntityZoneable() {
         final ZoneableEntityHeader header = (ZoneableEntityHeader) genericHeaderManager.newHeader(new StubZoneableEntity(GOID, VER, zone));
-        assertEquals(ZONE_OID, header.getSecurityZoneOid());
+        assertEquals(ZONE_GOID, header.getSecurityZoneGoid());
         assertEquals(GOID, header.getGoid());
         assertEquals(VER, header.getVersion());
         assertTrue(header.getDescription().isEmpty());
@@ -43,7 +43,7 @@ public class HibernateGoidEntityManagerTest {
     @Test
     public void newHeaderEntityZoneableNullZone() {
         final ZoneableEntityHeader header = (ZoneableEntityHeader) genericHeaderManager.newHeader(new StubZoneableEntity(GOID, VER, null));
-        assertNull(header.getSecurityZoneOid());
+        assertNull(header.getSecurityZoneGoid());
     }
 
     private class TestableHibernateEntityManager extends HibernateGoidEntityManager<GoidEntity, EntityHeader> {

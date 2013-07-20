@@ -8,6 +8,7 @@ import com.l7tech.identity.Group;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
+import com.l7tech.objectmodel.imp.NamedGoidEntityImp;
 import com.l7tech.util.Pair;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -62,7 +63,19 @@ public interface RoleManager extends EntityManager<Role, EntityHeader>, RbacServ
      * to find a match.
      */
     @Transactional(readOnly=true)
+    @Deprecated
     Collection<Role> findEntitySpecificRoles(EntityType etype, long entityOid) throws FindException;
+
+    /**
+     * Finds all roles that are marked as being scoped to a particular entity instance of a particular type,
+     * using the metadata in {@link com.l7tech.gateway.common.security.rbac.Role#getEntityGoid()} and
+     * {@link com.l7tech.gateway.common.security.rbac.Role#getEntityType()}.
+     * <p/>
+     * This method does <b>not</b> actually check the scopes of all permissions of all roles in order
+     * to find a match.
+     */
+    @Transactional(readOnly=true)
+    Collection<Role> findEntitySpecificRoles(EntityType etype, Goid entityOid) throws FindException;
 
     /**
      * Deletes all roles that are marked as being scoped to a particular entity instance (which is presumably being deleted),
@@ -76,7 +89,22 @@ public interface RoleManager extends EntityManager<Role, EntityHeader>, RbacServ
      * @param etype type of entity whose roles are to be deleted, eg Folder.  Required.
      * @param entityOid OID of entity instnace whose roles are to be deleted.  Required.
      */
+    @Deprecated
     void deleteEntitySpecificRoles(EntityType etype, long entityOid) throws DeleteException;
+
+    /**
+     * Deletes all roles that are marked as being scoped to a particular entity instance (which is presumably being deleted),
+     * using the metadata in {@link com.l7tech.gateway.common.security.rbac.Role#getEntityGoid()} and
+     * {@link com.l7tech.gateway.common.security.rbac.Role#getEntityType()}.
+     * <p/>
+     * This method also scans for and UPDATES any roles (that aren't being deleted outright) that contain permissions
+     * with at least one scope dependent upon the specified entity.  Any affected permissions will be removed from the
+     * affected roles.  It is possible that this may leave roles that contain no permissions.
+     *
+     * @param etype type of entity whose roles are to be deleted, eg Folder.  Required.
+     * @param entityGoid GOID of entity instnace whose roles are to be deleted.  Required.
+     */
+    void deleteEntitySpecificRoles(EntityType etype, Goid entityGoid) throws DeleteException;
 
     /**
      * Updates the Roles corresponding to the provided Entity to match a new name, if it's different
@@ -85,7 +113,17 @@ public interface RoleManager extends EntityManager<Role, EntityHeader>, RbacServ
      * @param replacePattern a Pattern that finds the name component in the entity name
      * @throws com.l7tech.objectmodel.UpdateException
      */
+    @Deprecated
     void renameEntitySpecificRoles(EntityType entityType, NamedEntityImp entity, Pattern replacePattern) throws FindException, UpdateException;
+
+    /**
+     * Updates the Roles corresponding to the provided Entity to match a new name, if it's different
+     * @param entityType the RBAC type of the Entity being updated
+     * @param entity the entity being updated
+     * @param replacePattern a Pattern that finds the name component in the entity name
+     * @throws com.l7tech.objectmodel.UpdateException
+     */
+    void renameEntitySpecificRoles(EntityType entityType, NamedGoidEntityImp entity, Pattern replacePattern) throws FindException, UpdateException;
 
     /**
      * Ensure that the assignment of a users to roles is acceptable.

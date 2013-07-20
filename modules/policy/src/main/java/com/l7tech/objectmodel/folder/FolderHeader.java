@@ -1,7 +1,7 @@
 package com.l7tech.objectmodel.folder;
 
-import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.ZoneableEntityHeader;
 
 /**
@@ -19,7 +19,7 @@ public class FolderHeader extends ZoneableEntityHeader implements HasFolderOid {
               folder.getFolder() == null ? null : folder.getFolder().getOid(),
               folder.getVersion(),
               folder.getPath(),
-              folder.getSecurityZone() == null ? null : folder.getSecurityZone().getOid());
+              folder.getSecurityZone() == null ? null : folder.getSecurityZone().getGoid());
     }
 
     public FolderHeader( final long objectid,
@@ -27,11 +27,11 @@ public class FolderHeader extends ZoneableEntityHeader implements HasFolderOid {
                          final Long parentFolderOid,
                          final Integer version,
                          final String path,
-                         final Long securityZoneOid) {
+                         final Goid securityZoneGoid) {
         super(objectid, EntityType.FOLDER, name, path, version);
         this.parentFolderOid = parentFolderOid;
         this.path = path;
-        this.securityZoneOid = securityZoneOid;
+        this.securityZoneGoid = securityZoneGoid;
     }
 
     public Long getParentFolderOid() {

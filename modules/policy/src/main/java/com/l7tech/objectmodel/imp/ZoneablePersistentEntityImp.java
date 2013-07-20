@@ -28,7 +28,7 @@ public abstract class ZoneablePersistentEntityImp extends PersistentEntityImp im
 
     @Override
     @ManyToOne
-    @JoinColumn(name = "security_zone_oid")
+    @JoinColumn(name = "security_zone_goid")
     @XmlTransient
     @Migration(dependency = false)
     public SecurityZone getSecurityZone() {

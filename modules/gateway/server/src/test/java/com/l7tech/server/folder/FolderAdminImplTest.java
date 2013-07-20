@@ -1,11 +1,11 @@
 package com.l7tech.server.folder;
 
+import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.PersistentEntity;
-import com.l7tech.objectmodel.SecurityZone;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.FolderedEntityManager;
@@ -25,7 +25,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.*;
@@ -49,7 +49,7 @@ public class FolderAdminImplTest {
     public void setup() {
         entityManagerMap = new HashMap<>();
         entityManagerMap.put(Policy.class, folderedEntityManager);
-        entityManagerMap.put(SecurityZone.class, folderedEntityManager);
+        entityManagerMap.put(SecurePassword.class, folderedEntityManager);
         folderAdmin = new FolderAdminImpl(folderManager, entityManagerMap, rbacServices);
         user = new InternalUser("test");
         rootFolder = new Folder("root", null);
@@ -146,7 +146,7 @@ public class FolderAdminImplTest {
 
     @Test
     public void moveEntityToFolderEntityDoesNotHaveFolder() throws Exception {
-        final SecurityZone doesNotHaveFolder = new SecurityZone();
+        final SecurePassword doesNotHaveFolder = new SecurePassword();
         doesNotHaveFolder.setOid(1234L);
         when(rbacServices.isPermittedForEntity(user, toFolder, OperationType.UPDATE, null)).thenReturn(true);
         when(rbacServices.isPermittedForEntity(user, doesNotHaveFolder, OperationType.UPDATE, null)).thenReturn(true);

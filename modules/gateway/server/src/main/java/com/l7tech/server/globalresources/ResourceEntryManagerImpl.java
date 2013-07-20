@@ -94,7 +94,7 @@ public class ResourceEntryManagerImpl extends HibernateEntityManager<ResourceEnt
     @Override
     protected ResourceEntryHeader newHeader( final ResourceEntry entity ) {
         final ResourceEntryHeader header = new ResourceEntryHeader(entity);
-        header.setSecurityZoneOid(entity.getSecurityZone() == null ? null : entity.getSecurityZone().getOid());
+        header.setSecurityZoneGoid(entity.getSecurityZone() == null ? null : entity.getSecurityZone().getGoid());
         return header;
     }
 

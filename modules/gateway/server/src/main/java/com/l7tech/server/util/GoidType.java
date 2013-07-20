@@ -69,7 +69,7 @@ public class GoidType implements UserType {
 
     @Override
     public Object deepCopy(Object value) throws HibernateException {
-        return ((Goid) value).clone();
+        return value == null ? null : ((Goid) value).clone();
     }
 
     @Override

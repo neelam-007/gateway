@@ -250,15 +250,15 @@ public class EntityCrudImpl extends HibernateDaoSupport implements EntityCrud {
     }
 
     @Override
-    public Collection<EntityHeader> findByEntityTypeAndSecurityZoneOid(@NotNull final EntityType type, final long securityZoneOid) throws FindException {
-        return entityFinder.findByEntityTypeAndSecurityZoneOid(type, securityZoneOid);
+    public Collection<EntityHeader> findByEntityTypeAndSecurityZoneGoid(@NotNull final EntityType type, final Goid securityZoneGoid) throws FindException {
+        return entityFinder.findByEntityTypeAndSecurityZoneGoid(type, securityZoneGoid);
     }
 
     @Override
-    public void setSecurityZoneForEntities(@Nullable final Long securityZoneOid, @NotNull final EntityType entityType, @NotNull final Collection<Serializable> entityIds) throws UpdateException {
+    public void setSecurityZoneForEntities(@Nullable final Goid securityZoneGoid, @NotNull final EntityType entityType, @NotNull final Collection<Serializable> entityIds) throws UpdateException {
         if (!entityIds.isEmpty()) {
             try {
-                setSecurityZoneForEntities(findSecurityZone(securityZoneOid), entityType, entityIds);
+                setSecurityZoneForEntities(findSecurityZone(securityZoneGoid), entityType, entityIds);
             } catch (final FindException e) {
                 throw new UpdateException("Unable to set security zone for entities: " + e.getMessage(), e);
             }
@@ -266,10 +266,10 @@ public class EntityCrudImpl extends HibernateDaoSupport implements EntityCrud {
     }
 
     @Override
-    public void setSecurityZoneForEntities(@Nullable final Long securityZoneOid, @NotNull Map<EntityType, Collection<Serializable>> entityIds) throws UpdateException {
+    public void setSecurityZoneForEntities(@Nullable final Goid securityZoneGoid, @NotNull Map<EntityType, Collection<Serializable>> entityIds) throws UpdateException {
         if (!entityIds.isEmpty()) {
             try {
-                final SecurityZone securityZone = findSecurityZone(securityZoneOid);
+                final SecurityZone securityZone = findSecurityZone(securityZoneGoid);
                 for (final Map.Entry<EntityType, Collection<Serializable>> entry : entityIds.entrySet()) {
                     setSecurityZoneForEntities(securityZone, entry.getKey(), entry.getValue());
                 }
@@ -279,10 +279,10 @@ public class EntityCrudImpl extends HibernateDaoSupport implements EntityCrud {
         }
     }
 
-    private SecurityZone findSecurityZone(@Nullable final Long securityZoneOid) throws FindException {
-        final SecurityZone securityZone = securityZoneOid != null ? find(SecurityZone.class, securityZoneOid) : null;
-        if (securityZone == null && securityZoneOid != null) {
-            throw new FindException("Security zone with oid " + securityZoneOid + " does not exist");
+    private SecurityZone findSecurityZone(@Nullable final Goid securityZoneGoid) throws FindException {
+        final SecurityZone securityZone = securityZoneGoid != null ? find(SecurityZone.class, securityZoneGoid) : null;
+        if (securityZone == null && securityZoneGoid != null) {
+            throw new FindException("Security zone with goid " + securityZoneGoid + " does not exist");
         }
         return securityZone;
     }

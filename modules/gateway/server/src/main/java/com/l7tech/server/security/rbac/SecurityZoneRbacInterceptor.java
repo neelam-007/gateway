@@ -4,6 +4,7 @@ import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import org.aopalliance.intercept.MethodInvocation;
 import org.apache.commons.lang.Validate;
 import org.jetbrains.annotations.NotNull;
@@ -19,7 +20,7 @@ import java.util.Map;
  * Can potentially be adapted to apply to other bulk operation scenarios.
  */
 public class SecurityZoneRbacInterceptor implements CustomRbacInterceptor {
-    private static final int ZONE_OID_ARG = 0;
+    private static final int ZONE_GOID_ARG = 0;
     private static final int MIN_ARG_LENGTH = 2;
     private static final int MAX_ARG_LENGTH = 3;
 
@@ -58,17 +59,17 @@ public class SecurityZoneRbacInterceptor implements CustomRbacInterceptor {
     public Object invoke(@NotNull final MethodInvocation invocation) throws Throwable {
         final Object[] arguments = invocation.getArguments();
         Validate.isTrue(arguments.length == MIN_ARG_LENGTH || arguments.length == MAX_ARG_LENGTH, "Expected two or three arguments. Received: " + arguments.length);
-        Validate.isTrue(arguments[ZONE_OID_ARG] == null || arguments[0] instanceof Long, "Expected a Long or null. Received: " + arguments[ZONE_OID_ARG]);
-        final Long securityZoneOid = (Long) arguments[ZONE_OID_ARG];
+        Validate.isTrue(arguments[ZONE_GOID_ARG] == null || arguments[0] instanceof Goid, "Expected a Goid or null. Received: " + arguments[ZONE_GOID_ARG]);
+        final Goid securityZoneGoid = (Goid) arguments[ZONE_GOID_ARG];
         if (arguments.length == MAX_ARG_LENGTH) {
-            checkBulkUpdateSingleEntityType(arguments, securityZoneOid);
+            checkBulkUpdateSingleEntityType(arguments, securityZoneGoid);
         } else {
-            checkBulkUpdateMultipleEntityTypes(arguments, securityZoneOid);
+            checkBulkUpdateMultipleEntityTypes(arguments, securityZoneGoid);
         }
         return invocation.proceed();
     }
 
-    private void checkBulkUpdateMultipleEntityTypes(final Object[] arguments, final Long securityZoneOid) throws FindException {
+    private void checkBulkUpdateMultipleEntityTypes(final Object[] arguments, final Goid securityZoneGoid) throws FindException {
         Validate.isTrue(arguments[MAP_ARG] instanceof Map, "Expected a Map. Received: " + arguments[1]);
         final Map oidsMap = (Map) arguments[MAP_ARG];
         for (final Object entry : oidsMap.entrySet()) {
@@ -80,16 +81,16 @@ public class SecurityZoneRbacInterceptor implements CustomRbacInterceptor {
             Validate.isTrue(value instanceof Collection, "Expected a map value of Collection. Received: " + value);
             validateCollectionOfSerializable((Collection) value);
         }
-        zoneUpdateSecurityChecker.checkBulkUpdatePermitted(user, securityZoneOid, oidsMap);
+        zoneUpdateSecurityChecker.checkBulkUpdatePermitted(user, securityZoneGoid, oidsMap);
     }
 
-    private void checkBulkUpdateSingleEntityType(final Object[] arguments, final Long securityZoneOid) throws FindException {
+    private void checkBulkUpdateSingleEntityType(final Object[] arguments, final Goid securityZoneGoid) throws FindException {
         Validate.isTrue(arguments[ENTITY_TYPE_ARG] instanceof EntityType, "Expected an EntityType. Received: " + arguments[ENTITY_TYPE_ARG]);
         Validate.isTrue(arguments[COLLECTION_ARG] instanceof Collection, "Expected a Collection. Received: " + arguments[COLLECTION_ARG]);
         final EntityType entityType = (EntityType) arguments[ENTITY_TYPE_ARG];
         final Collection oids = (Collection) arguments[COLLECTION_ARG];
         validateCollectionOfSerializable(oids);
-        zoneUpdateSecurityChecker.checkBulkUpdatePermitted(user, securityZoneOid, entityType, oids);
+        zoneUpdateSecurityChecker.checkBulkUpdatePermitted(user, securityZoneGoid, entityType, oids);
     }
 
     /**
@@ -97,7 +98,7 @@ public class SecurityZoneRbacInterceptor implements CustomRbacInterceptor {
      */
     private void validateCollectionOfSerializable(@NotNull final Collection ids) {
         for (final Object id : ids) {
-            Validate.isTrue(id instanceof Serializable, "oid is not a Serializable: " + id);
+            Validate.isTrue(id instanceof Serializable, "goid is not a Serializable: " + id);
         }
     }
 }

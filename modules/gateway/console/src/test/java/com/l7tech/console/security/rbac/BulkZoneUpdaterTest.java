@@ -27,7 +27,7 @@ import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
 public class BulkZoneUpdaterTest {
-    private static final Long ZONE_OID = 1234L;
+    private static final Goid ZONE_GOID = new Goid(0,1234L);
     private BulkZoneUpdater updater;
     @Mock
     private RbacAdmin rbacAdmin;
@@ -48,25 +48,25 @@ public class BulkZoneUpdaterTest {
     @Test
     public void bulkUpdateEntityTypeWithoutDependencies() throws Exception {
         headers.add(new EntityHeader(1L, EntityType.POLICY, "test", "test"));
-        updater.bulkUpdate(ZONE_OID, EntityType.POLICY, headers);
-        verify(rbacAdmin).setSecurityZoneForEntities(ZONE_OID,
+        updater.bulkUpdate(ZONE_GOID, EntityType.POLICY, headers);
+        verify(rbacAdmin).setSecurityZoneForEntities(ZONE_GOID,
                 Collections.<EntityType, Collection<Serializable>>singletonMap(EntityType.POLICY, Arrays.<Serializable>asList(1L)));
     }
 
     @Test
     public void bulkUpdateGoidEntityTypeWithoutDependencies() throws Exception {
         headers.add(new EntityHeader(new Goid(0,1), EntityType.JDBC_CONNECTION, "test", "test"));
-        updater.bulkUpdate(ZONE_OID, EntityType.JDBC_CONNECTION, headers);
-        verify(rbacAdmin).setSecurityZoneForEntities(ZONE_OID,
+        updater.bulkUpdate(ZONE_GOID, EntityType.JDBC_CONNECTION, headers);
+        verify(rbacAdmin).setSecurityZoneForEntities(ZONE_GOID,
                 Collections.<EntityType, Collection<Serializable>>singletonMap(EntityType.JDBC_CONNECTION, Arrays.<Serializable>asList(new Goid(0,1))));
     }
 
     @Test
     public void bulkUpdateNoEntities() throws Exception {
-        updater.bulkUpdate(ZONE_OID, EntityType.SERVICE, Collections.<EntityHeader>emptyList());
+        updater.bulkUpdate(ZONE_GOID, EntityType.SERVICE, Collections.<EntityHeader>emptyList());
         verify(uddiAdmin, never()).findProxiedServiceInfoForPublishedService(anyLong());
         verify(uddiAdmin, never()).getUDDIServiceControl(anyLong());
-        verify(rbacAdmin, never()).setSecurityZoneForEntities(anyLong(), anyMap());
+        verify(rbacAdmin, never()).setSecurityZoneForEntities(any(Goid.class), anyMap());
     }
 
     @Test
@@ -88,13 +88,13 @@ public class BulkZoneUpdaterTest {
         when(uddiAdmin.getUDDIServiceControl(1L)).thenReturn(control);
         when(policyAdmin.findPolicyByPrimaryKey(3L)).thenReturn(policy);
 
-        updater.bulkUpdate(ZONE_OID, EntityType.SERVICE, headers);
+        updater.bulkUpdate(ZONE_GOID, EntityType.SERVICE, headers);
         final Map<EntityType, Collection<Serializable>> expected = new HashMap<>();
         expected.put(EntityType.SERVICE, Arrays.<Serializable>asList(1L, 2L));
         expected.put(EntityType.UDDI_PROXIED_SERVICE_INFO, Arrays.<Serializable>asList(4L));
         expected.put(EntityType.UDDI_SERVICE_CONTROL, Arrays.<Serializable>asList(5L));
         expected.put(EntityType.POLICY, Arrays.<Serializable>asList(3L));
-        verify(rbacAdmin).setSecurityZoneForEntities(ZONE_OID, expected);
+        verify(rbacAdmin).setSecurityZoneForEntities(ZONE_GOID, expected);
     }
 
     @Test
@@ -107,31 +107,31 @@ public class BulkZoneUpdaterTest {
         headers.add(new EntityHeader(4L, EntityType.JMS_CONNECTION, "testWithoutEndpoint", "testWithoutEndpoint"));
         when(jmsAdmin.getEndpointsForConnection(1L)).thenReturn(new JmsEndpoint[]{e1, e2});
 
-        updater.bulkUpdate(ZONE_OID, EntityType.JMS_CONNECTION, headers);
+        updater.bulkUpdate(ZONE_GOID, EntityType.JMS_CONNECTION, headers);
         final Map<EntityType, Collection<Serializable>> expected = new HashMap<>();
         expected.put(EntityType.JMS_CONNECTION, Arrays.<Serializable>asList(1L, 4L));
         expected.put(EntityType.JMS_ENDPOINT, Arrays.<Serializable>asList(2L, 3L));
-        verify(rbacAdmin).setSecurityZoneForEntities(ZONE_OID, expected);
+        verify(rbacAdmin).setSecurityZoneForEntities(ZONE_GOID, expected);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void bulkUpdatePrivateKeys() throws Exception {
         headers.add(new EntityHeader(1L, EntityType.SSG_KEY_ENTRY, "privateKeysAreNotPersisted", "privateKeysAreNotPersisted"));
-        updater.bulkUpdate(ZONE_OID, EntityType.SSG_KEY_ENTRY, headers);
+        updater.bulkUpdate(ZONE_GOID, EntityType.SSG_KEY_ENTRY, headers);
     }
 
     @Test(expected = UpdateException.class)
     public void bulkUpdateError() throws Exception {
         headers.add(new EntityHeader(1L, EntityType.POLICY, "test", "test"));
-        doThrow(new UpdateException("mocking exception")).when(rbacAdmin).setSecurityZoneForEntities(anyLong(), anyMap());
-        updater.bulkUpdate(ZONE_OID, EntityType.POLICY, headers);
+        doThrow(new UpdateException("mocking exception")).when(rbacAdmin).setSecurityZoneForEntities(any(Goid.class), anyMap());
+        updater.bulkUpdate(ZONE_GOID, EntityType.POLICY, headers);
     }
 
     @Test(expected = FindException.class)
     public void bulkUpdateFindError() throws Exception {
         headers.add(new EntityHeader(1L, EntityType.SERVICE, "testWithUddi", "testWithUddi"));
         when(uddiAdmin.findProxiedServiceInfoForPublishedService(anyLong())).thenThrow(new FindException("mocking exception"));
-        updater.bulkUpdate(ZONE_OID, EntityType.SERVICE, headers);
+        updater.bulkUpdate(ZONE_GOID, EntityType.SERVICE, headers);
     }
 
 }

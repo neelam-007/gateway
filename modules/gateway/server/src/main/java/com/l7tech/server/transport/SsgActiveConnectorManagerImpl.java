@@ -58,7 +58,7 @@ public class SsgActiveConnectorManagerImpl
     @Override
     protected SsgActiveConnectorHeader newHeader( final SsgActiveConnector entity ) {
         final SsgActiveConnectorHeader header = new SsgActiveConnectorHeader(entity);
-        header.setSecurityZoneOid(entity.getSecurityZone() == null ? null : entity.getSecurityZone().getOid());
+        header.setSecurityZoneGoid(entity.getSecurityZone() == null ? null : entity.getSecurityZone().getGoid());
         return header;
     }
 

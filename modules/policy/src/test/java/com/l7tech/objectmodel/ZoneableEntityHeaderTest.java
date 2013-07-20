@@ -22,7 +22,7 @@ public class ZoneableEntityHeaderTest {
         assertEquals(DESC, zoneableHeader.getDescription());
         assertEquals(VER, zoneableHeader.getVersion());
         assertEquals(EntityType.POLICY, zoneableHeader.getType());
-        assertNull(zoneableHeader.getSecurityZoneOid());
+        assertNull(zoneableHeader.getSecurityZoneGoid());
     }
 
     @Test
@@ -34,6 +34,6 @@ public class ZoneableEntityHeaderTest {
         assertEquals(DESC, zoneableHeader.getDescription());
         assertEquals(VER, zoneableHeader.getVersion());
         assertEquals(EntityType.POLICY, zoneableHeader.getType());
-        assertNull(zoneableHeader.getSecurityZoneOid());
+        assertNull(zoneableHeader.getSecurityZoneGoid());
     }
 }

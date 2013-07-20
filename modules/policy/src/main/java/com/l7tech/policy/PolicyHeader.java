@@ -1,7 +1,7 @@
 package com.l7tech.policy;
 
 import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.HasSecurityZoneOid;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.OrganizationHeader;
 import org.jetbrains.annotations.Nullable;
 
@@ -35,7 +35,7 @@ public class PolicyHeader extends OrganizationHeader {
              policyRevision,
              policy.getVersion(),
              policy.isDisabled(),
-             policy.getSecurityZone() == null ? null : policy.getSecurityZone().getOid());
+             policy.getSecurityZone() == null ? null : policy.getSecurityZone().getGoid());
     }
 
     @Override
@@ -56,7 +56,7 @@ public class PolicyHeader extends OrganizationHeader {
              policyHeader.getPolicyRevision(),
              policyHeader.getVersion(),
              policyHeader.isPolicyDisabled(),
-             policyHeader.getSecurityZoneOid());
+             policyHeader.getSecurityZoneGoid());
     }
 
     public PolicyHeader(final long oid,
@@ -70,7 +70,7 @@ public class PolicyHeader extends OrganizationHeader {
                         final long policyRevision,
                         final int version,
                         final boolean isPolicyDisabled,
-                        @Nullable final Long securityZoneOid)
+                        @Nullable final Goid securityZoneGoid)
     {
         super(oid, EntityType.POLICY, name, description, version);
 
@@ -81,7 +81,7 @@ public class PolicyHeader extends OrganizationHeader {
         this.aliasOid = aliasOid;
         this.policyRevision = policyRevision;
         this.isPolicyDisabled = isPolicyDisabled;
-        this.securityZoneOid = securityZoneOid;
+        this.securityZoneGoid = securityZoneGoid;
     }
 
     public boolean isSoap() {

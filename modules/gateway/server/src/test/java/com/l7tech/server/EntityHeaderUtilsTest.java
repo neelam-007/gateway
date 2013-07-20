@@ -18,7 +18,7 @@ public class EntityHeaderUtilsTest {
     private static final Goid goid_OID = new Goid(0L,1234L);
     private static final long OID = 1234L;
     private static final Goid GOID = new Goid(new Random().nextLong(), new Random().nextLong());
-    private static final Long ZONE_OID = 1111L;
+    private static final Goid ZONE_GOID = new Goid(0,1111L);
     private static final String GUID = "abc123";
     private static final String NAME = "test";
     private static final String DESCRIPTION = "description";
@@ -28,7 +28,7 @@ public class EntityHeaderUtilsTest {
     @Before
     public void setup() {
         zone = new SecurityZone();
-        zone.setOid(ZONE_OID);
+        zone.setGoid(ZONE_GOID);
     }
 
     @BugId("EM-914")
@@ -41,7 +41,7 @@ public class EntityHeaderUtilsTest {
         assertEquals(NAME, header.getName());
         assertEquals(VERSION, header.getVersion());
         assertNull(header.getDescription());
-        assertEquals(ZONE_OID, header.getSecurityZoneOid());
+        assertEquals(ZONE_GOID, header.getSecurityZoneGoid());
     }
 
     @Test
@@ -50,7 +50,7 @@ public class EntityHeaderUtilsTest {
         assertNull(header.getGuid());
         assertNull(header.getName());
         assertEquals(goid_OID, header.getGoid());
-        assertNull(header.getSecurityZoneOid());
+        assertNull(header.getSecurityZoneGoid());
     }
 
     @BugId("EM-914")
@@ -103,10 +103,10 @@ public class EntityHeaderUtilsTest {
     public void fromEntityFolderSetsSecurityZoneOid() {
         final Folder folder = new Folder("testFolder", null);
         final SecurityZone zone = new SecurityZone();
-        zone.setOid(1234L);
+        zone.setGoid(new Goid(0,1234L));
         folder.setSecurityZone(zone);
         final FolderHeader header = (FolderHeader) EntityHeaderUtils.fromEntity(folder);
-        assertEquals(new Long(1234), header.getSecurityZoneOid());
+        assertEquals(new Goid(0,1234L), header.getSecurityZoneGoid());
     }
 
     @Test
@@ -114,7 +114,7 @@ public class EntityHeaderUtilsTest {
         final Folder folder = new Folder("testFolder", null);
         folder.setSecurityZone(null);
         final FolderHeader header = (FolderHeader) EntityHeaderUtils.fromEntity(folder);
-        assertNull(header.getSecurityZoneOid());
+        assertNull(header.getSecurityZoneGoid());
     }
 
     @Test
@@ -122,7 +122,7 @@ public class EntityHeaderUtilsTest {
         final JmsEndpoint endpoint = new JmsEndpoint();
         endpoint.setSecurityZone(zone);
         final JmsEndpointHeader header = (JmsEndpointHeader) EntityHeaderUtils.fromEntity(endpoint);
-        assertEquals(ZONE_OID, header.getSecurityZoneOid());
+        assertEquals(ZONE_GOID, header.getSecurityZoneGoid());
     }
 
     @Test
@@ -130,14 +130,14 @@ public class EntityHeaderUtilsTest {
         final JmsEndpoint endpoint = new JmsEndpoint();
         endpoint.setSecurityZone(null);
         final JmsEndpointHeader header = (JmsEndpointHeader) EntityHeaderUtils.fromEntity(endpoint);
-        assertNull(header.getSecurityZoneOid());
+        assertNull(header.getSecurityZoneGoid());
     }
 
     @Test
     public void fromEntityZoneablePersistentEntitySetsSecurityZoneOid() {
         final StubZoneablePersistentEntity entity = new StubZoneablePersistentEntity(OID, VERSION, zone);
         final ZoneableEntityHeader header = (ZoneableEntityHeader) EntityHeaderUtils.fromEntity(entity);
-        assertEquals(ZONE_OID, header.getSecurityZoneOid());
+        assertEquals(ZONE_GOID, header.getSecurityZoneGoid());
         assertEquals(OID, header.getOid());
         assertNull(header.getName());
         assertNull(header.getDescription());
@@ -149,14 +149,14 @@ public class EntityHeaderUtilsTest {
     public void fromEntityZoneablePersistentEntitySetsNullSecurityZoneOid() {
         final StubZoneablePersistentEntity entity = new StubZoneablePersistentEntity(OID, VERSION, null);
         final ZoneableEntityHeader header = (ZoneableEntityHeader) EntityHeaderUtils.fromEntity(entity);
-        assertNull(header.getSecurityZoneOid());
+        assertNull(header.getSecurityZoneGoid());
     }
 
     @Test
     public void fromEntityZoneableNamedEntitySetsSecurityZoneOid() {
         final StubZoneableNamedEntity entity = new StubZoneableNamedEntity(OID, VERSION, NAME, zone);
         final ZoneableEntityHeader header = (ZoneableEntityHeader) EntityHeaderUtils.fromEntity(entity);
-        assertEquals(ZONE_OID, header.getSecurityZoneOid());
+        assertEquals(ZONE_GOID, header.getSecurityZoneGoid());
         assertEquals(OID, header.getOid());
         assertEquals(NAME, header.getName());
         assertNull(header.getDescription());
@@ -167,14 +167,14 @@ public class EntityHeaderUtilsTest {
     public void fromEntityZoneableNamedEntitySetsNullSecurityZoneOid() {
         final StubZoneableNamedEntity entity = new StubZoneableNamedEntity(OID, VERSION, NAME, null);
         final ZoneableEntityHeader header = (ZoneableEntityHeader) EntityHeaderUtils.fromEntity(entity);
-        assertNull(header.getSecurityZoneOid());
+        assertNull(header.getSecurityZoneGoid());
     }
 
     @Test
     public void fromEntityZoneableNonPersistentEntitySetsSecurityZoneOid() {
         final StubZoneableNonPersistentEntity entity = new StubZoneableNonPersistentEntity(String.valueOf(OID), zone);
         final ZoneableEntityHeader header = (ZoneableEntityHeader) EntityHeaderUtils.fromEntity(entity);
-        assertEquals(ZONE_OID, header.getSecurityZoneOid());
+        assertEquals(ZONE_GOID, header.getSecurityZoneGoid());
         assertEquals(OID, header.getOid());
     }
 
@@ -182,7 +182,7 @@ public class EntityHeaderUtilsTest {
     public void fromEntityZoneableNonPersistentEntitySetsNullSecurityZoneOid() {
         final StubZoneableNonPersistentEntity entity = new StubZoneableNonPersistentEntity(String.valueOf(OID), null);
         final ZoneableEntityHeader header = (ZoneableEntityHeader) EntityHeaderUtils.fromEntity(entity);
-        assertNull(header.getSecurityZoneOid());
+        assertNull(header.getSecurityZoneGoid());
     }
 
     @Test

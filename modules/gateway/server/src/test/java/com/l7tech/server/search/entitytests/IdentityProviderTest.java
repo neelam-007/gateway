@@ -5,10 +5,7 @@ import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.fed.FederatedIdentityProviderConfig;
 import com.l7tech.identity.ldap.BindOnlyLdapIdentityProviderConfig;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.SecurityZone;
+import com.l7tech.objectmodel.*;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.server.search.objects.DependencySearchResults;
 import com.l7tech.server.search.objects.DependentEntity;
@@ -32,9 +29,9 @@ public class IdentityProviderTest extends DependencyTestBaseClass {
     public void test() throws FindException {
 
         SecurityZone securityZone = new SecurityZone();
-        long securityZoneOid = idCount.getAndIncrement();
-        securityZone.setOid(securityZoneOid);
-        mockEntity(securityZone, new EntityHeader(securityZoneOid, EntityType.SECURITY_ZONE, null, null));
+        Goid securityZoneGoid = new Goid(0,idCount.getAndIncrement());
+        securityZone.setGoid(securityZoneGoid);
+        mockEntity(securityZone, new EntityHeader(securityZoneGoid, EntityType.SECURITY_ZONE, null, null));
 
         IdentityProviderConfig identityProviderConfig = new IdentityProviderConfig();
         final long identityProviderOid = idCount.getAndIncrement();
@@ -51,7 +48,7 @@ public class IdentityProviderTest extends DependencyTestBaseClass {
         Assert.assertEquals(identityProviderOid, Long.parseLong(((DependentEntity) result.getDependent()).getInternalID()));
         Assert.assertEquals(EntityType.ID_PROVIDER_CONFIG, ((DependentEntity) result.getDependent()).getEntityType());
         Assert.assertNotNull(result.getDependencies());
-        Assert.assertEquals(securityZoneOid, Long.parseLong(((DependentEntity) result.getDependencies().get(0).getDependent()).getInternalID()));
+        Assert.assertEquals(securityZoneGoid.toHexString(), ((DependentEntity) result.getDependencies().get(0).getDependent()).getInternalID());
         Assert.assertEquals(EntityType.SECURITY_ZONE, ((DependentEntity) result.getDependencies().get(0).getDependent()).getEntityType());
     }
 

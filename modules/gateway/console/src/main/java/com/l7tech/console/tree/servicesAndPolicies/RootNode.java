@@ -153,7 +153,7 @@ public final class RootNode extends FolderNode {
      * a given service manager with the name.
      */
     public RootNode(String name) {
-        this(name, new FolderHeader(OID, name, null, 0, "/", SecurityZoneUtil.getCurrentUnavailableZone().getOid()));
+        this(name, new FolderHeader(OID, name, null, 0, "/", SecurityZoneUtil.getCurrentUnavailableZone().getGoid()));
     }
 
     public RootNode(String name, @NotNull final FolderHeader rootFolderHeader) {
@@ -211,7 +211,7 @@ public final class RootNode extends FolderNode {
                     // only want to save the security zone change
                     try {
                         final SecurityZone selectedZone = entity.getSecurityZone();
-                        Registry.getDefault().getRbacAdmin().setSecurityZoneForEntities(selectedZone == null ? null : selectedZone.getOid(),
+                        Registry.getDefault().getRbacAdmin().setSecurityZoneForEntities(selectedZone == null ? null : selectedZone.getGoid(),
                                 EntityType.FOLDER, Collections.<Serializable>singleton(entity.getId()));
                     } catch (final UpdateException e) {
                         throw new SaveException("Could not save root folder: " + e.getMessage(), e);

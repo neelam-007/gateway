@@ -1,11 +1,10 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.SecurityZoneUtil;
 import com.l7tech.console.util.SecurityZoneWidget;
 import com.l7tech.gateway.common.security.rbac.OperationType;
-import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.EntityUtil;
 import com.l7tech.objectmodel.SecurityZone;
@@ -14,16 +13,16 @@ import com.l7tech.objectmodel.folder.FolderHeader;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
-import javax.swing.text.PlainDocument;
-import javax.swing.text.BadLocationException;
 import javax.swing.text.AttributeSet;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.PlainDocument;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.util.ResourceBundle;
 import java.util.Locale;
-import java.awt.*;
-import java.awt.event.ActionListener;
-import java.awt.event.ActionEvent;
+import java.util.ResourceBundle;
 
 /**
  * Dialog for setting the properties of a service/policy folder.
@@ -100,7 +99,7 @@ public class PolicyFolderPropertiesDialog extends JDialog {
         nameField.setText(header.getName());
         zoneControl.configure(EntityType.FOLDER,
                 header.getOid() == Folder.DEFAULT_OID ? OperationType.CREATE : readOnly ? OperationType.READ : OperationType.UPDATE,
-                header.getSecurityZoneOid() == null ? null : SecurityZoneUtil.getSecurityZoneByOid(header.getSecurityZoneOid()));
+                header.getSecurityZoneGoid() == null ? null : SecurityZoneUtil.getSecurityZoneByGoid(header.getSecurityZoneGoid()));
 
         addWindowListener(new WindowAdapter() {
             @Override

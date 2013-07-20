@@ -350,7 +350,7 @@ public class TrustedCert extends X509Entity implements NamedEntity, Cloneable, Z
 
     @Override
     @ManyToOne
-    @JoinColumn(name = "security_zone_oid")
+    @JoinColumn(name = "security_zone_goid")
     @XmlTransient
     @Nullable
     @Migration(dependency = false)

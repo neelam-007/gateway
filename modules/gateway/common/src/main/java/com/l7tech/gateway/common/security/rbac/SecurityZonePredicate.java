@@ -32,7 +32,7 @@ public class SecurityZonePredicate extends ScopePredicate implements ScopeEvalua
      * @return the SecurityZone that an entity must belong to in order to match this predicate. If null, an entity must be zoneable but not in a SecurityZone.
      */
     @ManyToOne(optional=false)
-    @JoinColumn(name = "security_zone_oid")
+    @JoinColumn(name = "security_zone_goid")
     public SecurityZone getRequiredZone() {
         return requiredZone;
     }

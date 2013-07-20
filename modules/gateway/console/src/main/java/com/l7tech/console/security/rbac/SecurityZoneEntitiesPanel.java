@@ -195,7 +195,7 @@ public class SecurityZoneEntitiesPanel extends JPanel {
                     if (EntityType.SSG_KEY_ENTRY == selected) {
                         selected = EntityType.SSG_KEY_METADATA;
                     }
-                    entities.addAll(rbacAdmin.findEntitiesByTypeAndSecurityZoneOid(selected, securityZone.getOid()));
+                    entities.addAll(rbacAdmin.findEntitiesByTypeAndSecurityZoneGoid(selected, securityZone.getGoid()));
                     final List<EntityHeader> servicePolicies = new ArrayList<>();
                     if (EntityType.POLICY == selected) {
                         for (final EntityHeader entity : entities) {

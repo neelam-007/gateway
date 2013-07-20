@@ -285,11 +285,11 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
     }
 
     @Override
-    public Collection<EntityHeader> findByEntityTypeAndSecurityZoneOid(@NotNull final EntityType type, final long securityZoneOid) throws FindException {
+    public Collection<EntityHeader> findByEntityTypeAndSecurityZoneGoid(@NotNull final EntityType type, final Goid securityZoneGoid) throws FindException {
         if (!type.isSecurityZoneable()) {
             throw new IllegalArgumentException("EntityType must be support security zones.");
         }
-        final Collection<? extends Entity> found = findByClassAndSecurityZoneOid(type.getEntityClass(), securityZoneOid);
+        final Collection<? extends Entity> found = findByClassAndSecurityZoneGoid(type.getEntityClass(), securityZoneGoid);
         final Collection<EntityHeader> headers = new ArrayList<>();
         for (final Entity entity : found) {
             headers.add(EntityHeaderUtils.fromEntity(entity));
@@ -298,7 +298,7 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
     }
 
     @SuppressWarnings({"unchecked"})
-    private <ET extends Entity> Collection<ET> findByClassAndSecurityZoneOid(@NotNull final Class<ET> clazz, final long securityZoneOid) throws FindException {
+    private <ET extends Entity> Collection<ET> findByClassAndSecurityZoneGoid(@NotNull final Class<ET> clazz, final Goid securityZoneGoid) throws FindException {
         if (!ZoneableEntity.class.isAssignableFrom(clazz)) {
             throw new IllegalArgumentException("Class must be a ZoneableEntity.");
         }
@@ -307,14 +307,14 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
                 @Override
                 public Collection doInHibernateReadOnly(Session session) throws HibernateException {
                     final Criteria criteria = session.createCriteria(clazz);
-                    criteria.add(Restrictions.eq("securityZone.oid", securityZoneOid));
+                    criteria.add(Restrictions.eq("securityZone.goid", securityZoneGoid));
                     return criteria.list();
                 }
             });
             return results;
         } catch (final HibernateException e) {
             // can happen if the class doesn't store its security zone in the database
-            throw new FindException("Unable to retrieve entities with class " + clazz.getName() + " and security zone oid " + securityZoneOid, e);
+            throw new FindException("Unable to retrieve entities with class " + clazz.getName() + " and security zone oid " + securityZoneGoid, e);
         }
     }
 

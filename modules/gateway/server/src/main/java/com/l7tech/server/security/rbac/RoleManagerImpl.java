@@ -5,6 +5,7 @@ import com.l7tech.identity.Group;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
+import com.l7tech.objectmodel.imp.NamedGoidEntityImp;
 import com.l7tech.server.EntityFinder;
 import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
@@ -38,24 +39,24 @@ public class RoleManagerImpl extends HibernateEntityManager<Role, EntityHeader> 
 
     private RbacServices rbacServices;
 
-    private static final String HQL_FIND_ALL_SECURITY_ZONE_PREDICATES_REFERENCING_SECURITY_ZONE_OID =
+    private static final String HQL_FIND_ALL_SECURITY_ZONE_PREDICATES_REFERENCING_SECURITY_ZONE_ID =
         "from rbac_predicate_security_zone" +
             " in class " + SecurityZonePredicate.class.getName() +
-            " where rbac_predicate_security_zone.requiredZone.oid = ?";
+            " where rbac_predicate_security_zone.requiredZone.goid = ?";
 
-    private static final String HQL_FIND_ALL_FOLDER_PREDICATES_REFERENCING_FOLDER_OID =
+    private static final String HQL_FIND_ALL_FOLDER_PREDICATES_REFERENCING_FOLDER_ID =
         "from rbac_predicate_folder" +
             " in class " + FolderPredicate.class.getName() +
             " where rbac_predicate_folder.folder.oid = ?";
 
     // Finds scopes with this entity OID for ALL entity types; result will need to be further filtered
     // based on the owning Permission's entityType.
-    private static final String HQL_FIND_ALL_OBJECT_IDENTITY_PREDICATES_REFERENCING_ENTITY_OID =
+    private static final String HQL_FIND_ALL_OBJECT_IDENTITY_PREDICATES_REFERENCING_ENTITY_ID =
         "from rbac_predicate_oid" +
             " in class " + ObjectIdentityPredicate.class.getName() +
             " where rbac_predicate_oid.targetEntityId = ?";
 
-    private static final String HQL_FIND_ALL_FOLDER_ANCESTRY_PREDICATES_REFERENCING_ENTITY_OID_AND_TYPE =
+    private static final String HQL_FIND_ALL_FOLDER_ANCESTRY_PREDICATES_REFERENCING_ENTITY_ID_AND_TYPE =
         "from rbac_predicate_entityfolder" +
             " in class " + EntityFolderAncestryPredicate.class.getName() +
             " where rbac_predicate_entityfolder.entityId = ?" +
@@ -327,6 +328,7 @@ public class RoleManagerImpl extends HibernateEntityManager<Role, EntityHeader> 
     @SuppressWarnings({"unchecked"})
     @Override
     @Transactional(readOnly=true)
+    @Deprecated
     public Collection<Role> findEntitySpecificRoles(final EntityType etype, final long entityId) throws FindException {
         return (Collection<Role>) getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
             @Override
@@ -339,7 +341,23 @@ public class RoleManagerImpl extends HibernateEntityManager<Role, EntityHeader> 
         });
     }
 
+    @SuppressWarnings({"unchecked"})
     @Override
+    @Transactional(readOnly=true)
+    public Collection<Role> findEntitySpecificRoles(final EntityType etype, final Goid entityId) throws FindException {
+        return (Collection<Role>) getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
+            @Override
+            protected Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
+                Criteria crit = session.createCriteria(Role.class);
+                crit.add(Restrictions.eq("entityTypeName", etype.name()));
+                crit.add(Restrictions.eq("entityGoid", entityId));
+                return crit.list();
+            }
+        });
+    }
+
+    @Override
+    @Deprecated
     public void deleteEntitySpecificRoles(EntityType etype, final long entityOid) throws DeleteException {
         try {
             Collection<Role> roles = findEntitySpecificRoles(etype, entityOid);
@@ -356,9 +374,27 @@ public class RoleManagerImpl extends HibernateEntityManager<Role, EntityHeader> 
 
     }
 
+    @Override
+    public void deleteEntitySpecificRoles(EntityType etype, final Goid entityGoid) throws DeleteException {
+        try {
+            Collection<Role> roles = findEntitySpecificRoles(etype, entityGoid);
+            if (roles == null) return;
+            for ( Role role : roles ) {
+                logger.info("Deleting obsolete Role #" + role.getOid() + " (" + role.getName() + ")");
+                delete(role);
+            }
+
+            deleteEntitySpecificPermissions(new HashSet<Role>(roles), etype, entityGoid);
+        } catch (FindException e) {
+            throw new DeleteException("Couldn't find Roles for this Entity", e);
+        }
+
+    }
+
     // Scan all roles for permissions with scopes that will never again match if the specified entity is deleted, and remove
     // the affected permissions from their owning roles (leaving the roles behind, possibly with no permissions;
     // note that auto-created roles will have been already deleted by this point so only custom roles may be left in this state.)
+    @Deprecated
     private void deleteEntitySpecificPermissions(Set<Role> rolesAlreadyDeleted, EntityType etype, final long entityOid) throws DeleteException {
         Set<Permission> permissionsToDelete = new HashSet<Permission>();
 
@@ -368,7 +404,7 @@ public class RoleManagerImpl extends HibernateEntityManager<Role, EntityHeader> 
             permissionsToDelete.addAll(findFolderPredicatePermissionsForFolder(entityOid));
         }
         if (EntityType.SECURITY_ZONE.equals(etype)) {
-            permissionsToDelete.addAll(findSecurityZonePredicatePermissionsForSecurityZone(entityOid));
+            throw new UnsupportedOperationException("SecurityZone entities are no longer supported here");
         }
 
         Set<Role> rolesToUpdate = new HashSet<Role>();
@@ -390,10 +426,45 @@ public class RoleManagerImpl extends HibernateEntityManager<Role, EntityHeader> 
         }
     }
 
+    // Scan all roles for permissions with scopes that will never again match if the specified entity is deleted, and remove
+    // the affected permissions from their owning roles (leaving the roles behind, possibly with no permissions;
+    // note that auto-created roles will have been already deleted by this point so only custom roles may be left in this state.)
+    private void deleteEntitySpecificPermissions(Set<Role> rolesAlreadyDeleted, EntityType etype, final Goid entityGoid) throws DeleteException {
+        Set<Permission> permissionsToDelete = new HashSet<Permission>();
+
+        permissionsToDelete.addAll(findObjectIdentityPredicatePermissionsForEntity(etype, entityGoid));
+        permissionsToDelete.addAll(findEntityFolderAncestryPredicatePermissionsForEntity(etype, entityGoid));
+        if (EntityType.FOLDER.equals(etype)) {
+            throw new UnsupportedOperationException("Folder Entities are not yet supported here.");
+        }
+        if (EntityType.SECURITY_ZONE.equals(etype)) {
+            permissionsToDelete.addAll(findSecurityZonePredicatePermissionsForSecurityZone(entityGoid));
+        }
+
+        Set<Role> rolesToUpdate = new HashSet<Role>();
+        for (Permission permission : permissionsToDelete) {
+            final Role role = permission.getRole();
+            if (!rolesAlreadyDeleted.contains(role)) {
+                role.getPermissions().remove(permission);
+                rolesToUpdate.add(role);
+            }
+        }
+
+        for (Role role : rolesToUpdate) {
+            try {
+                logger.info("Removing obsolete permissions from Role #" + role.getOid() + " (" + role.getName() + ")");
+                update(role);
+            } catch (UpdateException e) {
+                logger.log(Level.SEVERE, "Unable to remove obsolete permissions from Role #" + role.getOid() + " (" + role.getName() + "): " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            }
+        }
+    }
+
+    @Deprecated
     private Set<Permission> findObjectIdentityPredicatePermissionsForEntity(EntityType etype, long entityOid) {
         Set<Permission> ret = new HashSet<Permission>();
 
-        List predicates = getHibernateTemplate().find(HQL_FIND_ALL_OBJECT_IDENTITY_PREDICATES_REFERENCING_ENTITY_OID, String.valueOf(entityOid));
+        List predicates = getHibernateTemplate().find(HQL_FIND_ALL_OBJECT_IDENTITY_PREDICATES_REFERENCING_ENTITY_ID, String.valueOf(entityOid));
         for (Object predicate : predicates) {
             if (!(predicate instanceof ObjectIdentityPredicate))
                 throw new HibernateException("Got unexpected return value type of " + predicate.getClass() + " while finding object identity predicates by entity oid");
@@ -407,10 +478,28 @@ public class RoleManagerImpl extends HibernateEntityManager<Role, EntityHeader> 
         return ret;
     }
 
+    private Set<Permission> findObjectIdentityPredicatePermissionsForEntity(EntityType etype, Goid entityGoid) {
+        Set<Permission> ret = new HashSet<Permission>();
+
+        List predicates = getHibernateTemplate().find(HQL_FIND_ALL_OBJECT_IDENTITY_PREDICATES_REFERENCING_ENTITY_ID, entityGoid.toHexString());
+        for (Object predicate : predicates) {
+            if (!(predicate instanceof ObjectIdentityPredicate))
+                throw new HibernateException("Got unexpected return value type of " + predicate.getClass() + " while finding object identity predicates by entity goid");
+
+            ObjectIdentityPredicate oip = (ObjectIdentityPredicate) predicate;
+            if (etype.equals(oip.getPermission().getEntityType())) {
+                ret.add(oip.getPermission());
+            }
+        }
+
+        return ret;
+    }
+
+    @Deprecated
     private Set<Permission> findEntityFolderAncestryPredicatePermissionsForEntity(EntityType etype, long entityOid) {
         Set<Permission> ret = new HashSet<Permission>();
 
-        List predicates = getHibernateTemplate().find(HQL_FIND_ALL_FOLDER_ANCESTRY_PREDICATES_REFERENCING_ENTITY_OID_AND_TYPE, String.valueOf(entityOid), etype);
+        List predicates = getHibernateTemplate().find(HQL_FIND_ALL_FOLDER_ANCESTRY_PREDICATES_REFERENCING_ENTITY_ID_AND_TYPE, String.valueOf(entityOid), etype);
         for (Object predicate : predicates) {
             if (!(predicate instanceof EntityFolderAncestryPredicate))
                 throw new HibernateException("Got unexpected return value type of " + predicate.getClass() + " while finding entity folder ancestry predicates by entity oid and type");
@@ -422,10 +511,25 @@ public class RoleManagerImpl extends HibernateEntityManager<Role, EntityHeader> 
         return ret;
     }
 
+    private Set<Permission> findEntityFolderAncestryPredicatePermissionsForEntity(EntityType etype, Goid entityGoid) {
+        Set<Permission> ret = new HashSet<Permission>();
+
+        List predicates = getHibernateTemplate().find(HQL_FIND_ALL_FOLDER_ANCESTRY_PREDICATES_REFERENCING_ENTITY_ID_AND_TYPE, entityGoid.toHexString(), etype);
+        for (Object predicate : predicates) {
+            if (!(predicate instanceof EntityFolderAncestryPredicate))
+                throw new HibernateException("Got unexpected return value type of " + predicate.getClass() + " while finding entity folder ancestry predicates by entity goid and type");
+
+            EntityFolderAncestryPredicate efap = (EntityFolderAncestryPredicate) predicate;
+            ret.add(efap.getPermission());
+        }
+
+        return ret;
+    }
+
     private Set<Permission> findFolderPredicatePermissionsForFolder(long folderOid) {
         Set<Permission> ret = new HashSet<Permission>();
 
-        List predicates = getHibernateTemplate().find(HQL_FIND_ALL_FOLDER_PREDICATES_REFERENCING_FOLDER_OID, folderOid);
+        List predicates = getHibernateTemplate().find(HQL_FIND_ALL_FOLDER_PREDICATES_REFERENCING_FOLDER_ID, folderOid);
         for (Object predicate : predicates) {
             if (!(predicate instanceof FolderPredicate))
                 throw new HibernateException("Got unexpected return value type of " + predicate.getClass() + " while finding folder predicates by folder oid");
@@ -437,10 +541,10 @@ public class RoleManagerImpl extends HibernateEntityManager<Role, EntityHeader> 
         return ret;
     }
 
-    private Set<Permission> findSecurityZonePredicatePermissionsForSecurityZone(long securtiyZoneOid) {
+    private Set<Permission> findSecurityZonePredicatePermissionsForSecurityZone(Goid securtiyZoneGoid) {
         Set<Permission> ret = new HashSet<Permission>();
 
-        List predicates = getHibernateTemplate().find(HQL_FIND_ALL_SECURITY_ZONE_PREDICATES_REFERENCING_SECURITY_ZONE_OID, securtiyZoneOid);
+        List predicates = getHibernateTemplate().find(HQL_FIND_ALL_SECURITY_ZONE_PREDICATES_REFERENCING_SECURITY_ZONE_ID, securtiyZoneGoid);
         for (Object predicate : predicates) {
             if (!(predicate instanceof ScopePredicate))
                 throw new HibernateException("Got unexpected return value type of " + predicate.getClass() + " while finding folder predicates by security zone oid");
@@ -453,10 +557,30 @@ public class RoleManagerImpl extends HibernateEntityManager<Role, EntityHeader> 
     }
 
     @Override
+    @Deprecated
     public void renameEntitySpecificRoles(EntityType entityType, NamedEntityImp entity, Pattern replacePattern) throws FindException, UpdateException {
         Collection<Role> roles = findEntitySpecificRoles(entityType, entity.getOid());
         if (roles == null) {
             logger.warning(MessageFormat.format("No entity-specific role was found for {0} ''{1}'' (#{2})", entity.getName(), entityType.getName(), entity.getOid()));
+            return;
+        }
+        for ( Role role : roles ) {
+            String name = role.getName();
+            Matcher matcher = replacePattern.matcher(name);
+            String newName = matcher.replaceAll(entity.getName().replace("\\", "\\\\").replace("$", "\\$"));
+            if (!newName.equals(name)) {
+                logger.info(MessageFormat.format("Updating ''{0}'' Role with new name: ''{1}''", role.getName(), newName));
+                role.setName(newName);
+                update(role);
+            }
+        }
+    }
+
+    @Override
+    public void renameEntitySpecificRoles(EntityType entityType, NamedGoidEntityImp entity, Pattern replacePattern) throws FindException, UpdateException {
+        Collection<Role> roles = findEntitySpecificRoles(entityType, entity.getGoid());
+        if (roles == null) {
+            logger.warning(MessageFormat.format("No entity-specific role was found for {0} ''{1}'' (#{2})", entity.getName(), entityType.getName(), entity.getGoid()));
             return;
         }
         for ( Role role : roles ) {

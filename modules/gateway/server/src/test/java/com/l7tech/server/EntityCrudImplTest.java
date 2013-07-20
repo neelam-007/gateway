@@ -20,14 +20,14 @@ import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
 public class EntityCrudImplTest {
-    private static final long ZONE_OID = 1234L;
+    private static final Goid ZONE_GOID = new Goid(0,1234L);
     private EntityCrud entityCrud;
     @Mock
     private EntityFinder entityFinder;
     @Mock
     private EntityManager<Policy, EntityHeader> policyEntityManager;
     @Mock
-    private EntityManager<SecurityZone, EntityHeader> zoneEntityManager;
+    private GoidEntityManager<SecurityZone, EntityHeader> zoneEntityManager;
     @Mock
     private EntityManager<PublishedService, EntityHeader> serviceEntityManager;
     @Mock
@@ -56,11 +56,11 @@ public class EntityCrudImplTest {
     public void setSecurityZoneForEntities() throws Exception {
         ids.add(1L);
         ids.add(2L);
-        when(zoneEntityManager.findByPrimaryKey(ZONE_OID)).thenReturn(zone);
+        when(zoneEntityManager.findByPrimaryKey(ZONE_GOID)).thenReturn(zone);
         when(policyEntityManager.findByPrimaryKey(1L)).thenReturn(policy);
         when(policyEntityManager.findByPrimaryKey(2L)).thenReturn(policy2);
 
-        entityCrud.setSecurityZoneForEntities(ZONE_OID, EntityType.POLICY, ids);
+        entityCrud.setSecurityZoneForEntities(ZONE_GOID, EntityType.POLICY, ids);
         verify(policyEntityManager).update(policy);
         verify(policyEntityManager).update(policy2);
     }
@@ -71,18 +71,18 @@ public class EntityCrudImplTest {
         Goid goid2 = new Goid(0,2);
         ids.add(goid1);
         ids.add(goid2);
-        when(zoneEntityManager.findByPrimaryKey(ZONE_OID)).thenReturn(zone);
+        when(zoneEntityManager.findByPrimaryKey(ZONE_GOID)).thenReturn(zone);
         when(jdbcConnectionEntityManager.findByPrimaryKey(goid1)).thenReturn(jdbcConnection1);
         when(jdbcConnectionEntityManager.findByPrimaryKey(goid2)).thenReturn(jdbcConnection2);
 
-        entityCrud.setSecurityZoneForEntities(ZONE_OID, EntityType.JDBC_CONNECTION, ids);
+        entityCrud.setSecurityZoneForEntities(ZONE_GOID, EntityType.JDBC_CONNECTION, ids);
         verify(jdbcConnectionEntityManager).update(jdbcConnection1);
         verify(jdbcConnectionEntityManager).update(jdbcConnection2);
     }
 
     @Test
     public void setSecurityZoneForEntitiesNone() throws Exception {
-        entityCrud.setSecurityZoneForEntities(ZONE_OID, EntityType.POLICY, Collections.<Serializable>emptyList());
+        entityCrud.setSecurityZoneForEntities(ZONE_GOID, EntityType.POLICY, Collections.<Serializable>emptyList());
         verify(zoneEntityManager, never()).findByPrimaryKey(anyLong());
         verify(policyEntityManager, never()).update(any(Policy.class));
     }
@@ -100,12 +100,12 @@ public class EntityCrudImplTest {
     @Test(expected = UpdateException.class)
     public void setSecurityZoneForEntitiesZoneNotFound() throws Exception {
         ids.add(1L);
-        when(zoneEntityManager.findByPrimaryKey(ZONE_OID)).thenReturn(null);
+        when(zoneEntityManager.findByPrimaryKey(ZONE_GOID)).thenReturn(null);
         try {
-            entityCrud.setSecurityZoneForEntities(ZONE_OID, EntityType.POLICY, ids);
+            entityCrud.setSecurityZoneForEntities(ZONE_GOID, EntityType.POLICY, ids);
             fail("Expected UpdateException");
         } catch (final UpdateException e) {
-            assertEquals("Unable to set security zone for entities: Security zone with oid 1234 does not exist", e.getMessage());
+            assertEquals("Unable to set security zone for entities: Security zone with goid "+new Goid(0,1234).toHexString()+" does not exist", e.getMessage());
             throw e;
         }
     }
@@ -114,12 +114,12 @@ public class EntityCrudImplTest {
     public void setSecurityZoneForEntitiesAtLeastOneEntityNotFound() throws Exception {
         ids.add(1L);
         ids.add(2L);
-        when(zoneEntityManager.findByPrimaryKey(ZONE_OID)).thenReturn(zone);
+        when(zoneEntityManager.findByPrimaryKey(ZONE_GOID)).thenReturn(zone);
         when(policyEntityManager.findByPrimaryKey(1L)).thenReturn(policy);
         when(policyEntityManager.findByPrimaryKey(2L)).thenReturn(null);
 
         try {
-            entityCrud.setSecurityZoneForEntities(ZONE_OID, EntityType.POLICY, ids);
+            entityCrud.setSecurityZoneForEntities(ZONE_GOID, EntityType.POLICY, ids);
             fail("Expected UpdateException");
         } catch (final UpdateException e) {
             assertEquals("Policy with id 2 does not exist or is not security zoneable", e.getMessage());
@@ -131,24 +131,24 @@ public class EntityCrudImplTest {
     public void setSecurityZoneForEntitiesErrorFindingZone() throws Exception {
         ids.add(1L);
         when(zoneEntityManager.findByPrimaryKey(anyLong())).thenThrow(new FindException("mocking exception"));
-        entityCrud.setSecurityZoneForEntities(ZONE_OID, EntityType.POLICY, ids);
+        entityCrud.setSecurityZoneForEntities(ZONE_GOID, EntityType.POLICY, ids);
     }
 
     @Test(expected = UpdateException.class)
     public void setSecurityZoneForEntitiesErrorFindingEntity() throws Exception {
         ids.add(1L);
-        when(zoneEntityManager.findByPrimaryKey(ZONE_OID)).thenReturn(zone);
+        when(zoneEntityManager.findByPrimaryKey(ZONE_GOID)).thenReturn(zone);
         when(policyEntityManager.findByPrimaryKey(anyLong())).thenThrow(new FindException("mocking exception"));
-        entityCrud.setSecurityZoneForEntities(ZONE_OID, EntityType.POLICY, ids);
+        entityCrud.setSecurityZoneForEntities(ZONE_GOID, EntityType.POLICY, ids);
     }
 
     @Test(expected = UpdateException.class)
     public void setSecurityZoneForEntitiesErrorUpdatingEntity() throws Exception {
         ids.add(1L);
-        when(zoneEntityManager.findByPrimaryKey(ZONE_OID)).thenReturn(zone);
+        when(zoneEntityManager.findByPrimaryKey(ZONE_GOID)).thenReturn(zone);
         when(policyEntityManager.findByPrimaryKey(1L)).thenReturn(policy);
         doThrow(new UpdateException("mocking exception")).when(policyEntityManager).update(any(Policy.class));
-        entityCrud.setSecurityZoneForEntities(ZONE_OID, EntityType.POLICY, ids);
+        entityCrud.setSecurityZoneForEntities(ZONE_GOID, EntityType.POLICY, ids);
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -171,13 +171,13 @@ public class EntityCrudImplTest {
         entities.put(EntityType.POLICY, Arrays.<Serializable>asList(1L));
         entities.put(EntityType.SERVICE, Arrays.<Serializable>asList(2L));
         entities.put(EntityType.JDBC_CONNECTION, Arrays.<Serializable>asList(new Goid(0,3)));
-        when(zoneEntityManager.findByPrimaryKey(ZONE_OID)).thenReturn(zone);
+        when(zoneEntityManager.findByPrimaryKey(ZONE_GOID)).thenReturn(zone);
         when(policyEntityManager.findByPrimaryKey(1L)).thenReturn(policy);
         when(serviceEntityManager.findByPrimaryKey(2L)).thenReturn(service);
         when(jdbcConnectionEntityManager.findByPrimaryKey(new Goid(0,3))).thenReturn(jdbcConnection1);
 
-        entityCrud.setSecurityZoneForEntities(ZONE_OID, entities);
-        verify(zoneEntityManager, times(1)).findByPrimaryKey(ZONE_OID);
+        entityCrud.setSecurityZoneForEntities(ZONE_GOID, entities);
+        verify(zoneEntityManager, times(1)).findByPrimaryKey(ZONE_GOID);
         verify(policyEntityManager).update(policy);
         verify(serviceEntityManager).update(service);
         verify(jdbcConnectionEntityManager).update(jdbcConnection1);
@@ -185,7 +185,7 @@ public class EntityCrudImplTest {
 
     @Test
     public void setSecurityZoneForEntitiesMultipleEntityTypesNone() throws Exception {
-        entityCrud.setSecurityZoneForEntities(ZONE_OID, Collections.<EntityType, Collection<Serializable>>emptyMap());
+        entityCrud.setSecurityZoneForEntities(ZONE_GOID, Collections.<EntityType, Collection<Serializable>>emptyMap());
         verify(zoneEntityManager, never()).findByPrimaryKey(anyLong());
     }
 
@@ -194,13 +194,13 @@ public class EntityCrudImplTest {
         final Map<EntityType, Collection<Serializable>> entities = new HashMap<>();
         entities.put(EntityType.POLICY, Arrays.<Serializable>asList(1L));
         entities.put(EntityType.SERVICE, Arrays.<Serializable>asList(2L));
-        when(zoneEntityManager.findByPrimaryKey(ZONE_OID)).thenReturn(null);
+        when(zoneEntityManager.findByPrimaryKey(ZONE_GOID)).thenReturn(null);
 
         try {
-            entityCrud.setSecurityZoneForEntities(ZONE_OID, entities);
+            entityCrud.setSecurityZoneForEntities(ZONE_GOID, entities);
             fail("Expected UpdateException");
         } catch (final UpdateException e) {
-            assertEquals("Unable to set security zone for entities: Security zone with oid 1234 does not exist", e.getMessage());
+            assertEquals("Unable to set security zone for entities: Security zone with goid "+new Goid(0,1234).toHexString()+" does not exist", e.getMessage());
             throw e;
         }
     }
@@ -210,8 +210,8 @@ public class EntityCrudImplTest {
         final Map<EntityType, Collection<Serializable>> entities = new HashMap<>();
         entities.put(EntityType.POLICY, Arrays.<Serializable>asList(1L));
         entities.put(EntityType.SERVICE, Arrays.<Serializable>asList(2L));
-        when(zoneEntityManager.findByPrimaryKey(ZONE_OID)).thenThrow(new FindException("mocking exception"));
-        entityCrud.setSecurityZoneForEntities(ZONE_OID, entities);
+        when(zoneEntityManager.findByPrimaryKey(ZONE_GOID)).thenThrow(new FindException("mocking exception"));
+        entityCrud.setSecurityZoneForEntities(ZONE_GOID, entities);
     }
 
     /**
@@ -309,20 +309,20 @@ public class EntityCrudImplTest {
         }
     }
 
-    private class StubSecurityZoneEntityManager implements ReadOnlyEntityManager<SecurityZone, EntityHeader>, EntityManager<SecurityZone, EntityHeader> {
+    private class StubSecurityZoneEntityManager implements ReadOnlyEntityManager<SecurityZone, EntityHeader>, GoidEntityManager<SecurityZone, EntityHeader> {
 
         @Override
-        public long save(SecurityZone entity) throws SaveException {
+        public Goid save(SecurityZone entity) throws SaveException {
             return zoneEntityManager.save(entity);
         }
 
         @Override
-        public Integer getVersion(long oid) throws FindException {
-            return zoneEntityManager.getVersion(oid);
+        public Integer getVersion(Goid goid) throws FindException {
+            return zoneEntityManager.getVersion(goid);
         }
 
         @Override
-        public Map<Long, Integer> findVersionMap() throws FindException {
+        public Map<Goid, Integer> findVersionMap() throws FindException {
             return zoneEntityManager.findVersionMap();
         }
 
@@ -332,7 +332,7 @@ public class EntityCrudImplTest {
         }
 
         @Override
-        public SecurityZone getCachedEntity(long o, int maxAge) throws FindException {
+        public SecurityZone getCachedEntity(Goid o, int maxAge) throws FindException {
             return zoneEntityManager.getCachedEntity(o, maxAge);
         }
 
@@ -357,8 +357,8 @@ public class EntityCrudImplTest {
         }
 
         @Override
-        public void delete(long oid) throws DeleteException, FindException {
-            zoneEntityManager.delete(oid);
+        public void delete(Goid goid) throws DeleteException, FindException {
+            zoneEntityManager.delete(goid);
         }
 
         @Override

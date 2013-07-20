@@ -50,7 +50,7 @@
                      name="policy" lazy="false" column="policy_oid" unique="true" cascade="persist,merge,save-update,delete"/>
 
         <many-to-one name="folder" column="folder_oid"/>
-        <many-to-one name="securityZone" column="security_zone_oid"/>
+        <many-to-one name="securityZone" column="security_zone_goid"/>
     </class>
 
     <class name="com.l7tech.gateway.common.service.PublishedServiceAlias" table="published_service_alias" lazy="false">
@@ -62,7 +62,7 @@
         <property name="entityOid" column="published_service_oid" type="long"/>
 
         <many-to-one name="folder" column="folder_oid"/>
-        <many-to-one name="securityZone" column="security_zone_oid"/>
+        <many-to-one name="securityZone" column="security_zone_goid"/>
     </class>
 
     <class name="com.l7tech.policy.Policy" table="policy" lazy="false">
@@ -78,7 +78,7 @@
         <property name="internalTag" column="internal_tag" type="string" length="64"/>
 
         <many-to-one name="folder" column="folder_oid"/>
-        <many-to-one name="securityZone" column="security_zone_oid"/>
+        <many-to-one name="securityZone" column="security_zone_goid"/>
     </class>
 
     <class name="com.l7tech.policy.PolicyVersion" table="policy_version" lazy="false">
@@ -106,7 +106,7 @@
         <property name="entityOid" column="policy_oid" type="long"/>
 
         <many-to-one name="folder" column="folder_oid"/>
-        <many-to-one name="securityZone" column="security_zone_oid"/>
+        <many-to-one name="securityZone" column="security_zone_goid"/>
     </class>
 
     <class name="com.l7tech.objectmodel.folder.Folder" table="folder" lazy="false">
@@ -119,7 +119,7 @@
         <property name="name" column="name" type="string"/>
 
         <many-to-one class="com.l7tech.objectmodel.folder.Folder" name="folder" lazy="false" column="parent_folder_oid"/>
-        <many-to-one name="securityZone" column="security_zone_oid"/>
+        <many-to-one name="securityZone" column="security_zone_goid"/>
     </class>
   
     <class name="com.l7tech.gateway.common.cluster.ServiceUsage" table="service_usage" lazy="false">
@@ -141,7 +141,7 @@
         <property name="operationName" column="operation_name" type="string"/>
         <property name="serviceOid" column="published_service_oid" type="long"/>
         <property name="xml" column="`xml`" type="text"/>
-        <many-to-one name="securityZone" column="security_zone_oid"/>
+        <many-to-one name="securityZone" column="security_zone_goid"/>
     </class>
 
     <class name="com.l7tech.gateway.common.service.MetricsBin" table="service_metrics">

@@ -2,6 +2,7 @@ package com.l7tech.server.service;
 
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.PublishedServiceAlias;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.SecurityZone;
 import org.junit.Before;
 import org.junit.Test;
@@ -10,24 +11,24 @@ import static org.junit.Assert.*;
 
 public class ServiceAliasManagerImplTest {
     private ServiceAliasManagerImpl manager;
-    private static final Long ZONE_OID = 1234L;
+    private static final Goid ZONE_GOID = new Goid(0,1234L);
     private SecurityZone zone;
 
     @Before
     public void setup() {
         manager = new ServiceAliasManagerImpl();
         zone = new SecurityZone();
-        zone.setOid(ZONE_OID);
+        zone.setGoid(ZONE_GOID);
     }
 
     @Test
     public void newHeaderSetsSecurityZoneOid() {
-        assertEquals(ZONE_OID, manager.newHeader(create(zone)).getSecurityZoneOid());
+        assertEquals(ZONE_GOID, manager.newHeader(create(zone)).getSecurityZoneGoid());
     }
 
     @Test
     public void newHeaderSetsNullSecurityZoneOid() {
-        assertNull(manager.newHeader(create(null)).getSecurityZoneOid());
+        assertNull(manager.newHeader(create(null)).getSecurityZoneGoid());
     }
 
     private PublishedServiceAlias create(final SecurityZone zone) {

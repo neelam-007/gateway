@@ -36,7 +36,7 @@ public class SecurityZoneManagerImplTest {
         manager.setFolderManager(folderManager);
         zone = new SecurityZone();
         zone.setName("Test");
-        zone.setOid(1234L);
+        zone.setGoid(new Goid(0,1234L));
         rootFolder = new Folder("RootFolder", null);
         rootFolder.setOid(1111L);
         when(folderManager.findRootFolder()).thenReturn(rootFolder);
@@ -125,14 +125,14 @@ public class SecurityZoneManagerImplTest {
 
     @Test
     public void deleteRoles() throws Exception {
-        manager.deleteRoles(zone.getOid());
-        verify(roleManager).deleteEntitySpecificRoles(EntityType.SECURITY_ZONE, zone.getOid());
+        manager.deleteRoles(zone.getGoid());
+        verify(roleManager).deleteEntitySpecificRoles(EntityType.SECURITY_ZONE, zone.getGoid());
     }
 
     @Test(expected = DeleteException.class)
     public void deleteRolesDeleteException() throws Exception {
-        doThrow(new DeleteException("mocking exception")).when(roleManager).deleteEntitySpecificRoles(EntityType.SECURITY_ZONE, zone.getOid());
-        manager.deleteRoles(zone.getOid());
+        doThrow(new DeleteException("mocking exception")).when(roleManager).deleteEntitySpecificRoles(EntityType.SECURITY_ZONE, zone.getGoid());
+        manager.deleteRoles(zone.getGoid());
     }
 
     private ZoneRoleMatcher isReadZoneRole(final String zoneName) {
@@ -158,9 +158,9 @@ public class SecurityZoneManagerImplTest {
             String roleType = readOnly ? "View" : "Manage";
             if (o != null) {
                 final Role role = (Role) o;
-                if (role.getName().equals(roleType + " " + expectedZoneName + " Zone (#1,234)")
+                if (role.getName().equals(roleType + " " + expectedZoneName + " Zone (#"+new Goid(0,1234L).toHexString()+")")
                         && role.getEntityType() == EntityType.SECURITY_ZONE
-                        && role.getEntityOid() == zone.getOid()
+                        && role.getEntityGoid().equals(zone.getGoid())
                         // common permissions
                         && hasEntitySpecificPermission(role, OperationType.READ, EntityType.SECURITY_ZONE, zone.getId())
                         && hasSecurityZonePermission(role, OperationType.READ)

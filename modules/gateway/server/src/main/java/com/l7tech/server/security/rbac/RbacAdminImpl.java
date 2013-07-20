@@ -127,12 +127,27 @@ public class RbacAdminImpl implements RbacAdmin {
         }
 
         Long entityOid = theRole.getEntityOid();
+        Goid entityGoid = theRole.getEntityGoid();
         EntityType entityType = theRole.getEntityType();
-        if (entityOid != null && entityType != null) {
-            try {
-                theRole.setCachedSpecificEntity(entityCrud.find(entityType.getEntityClass(), entityOid));
-            } catch (FindException e) {
-                logger.log( Level.WARNING, MessageFormat.format( "Couldn''t find {0} (# {1}) to attach to ''{2}'' Role", entityType.name(), entityOid, theRole.getName() ), ExceptionUtils.getDebugException( e ) );
+        if(entityType != null && PersistentEntity.class.isAssignableFrom(entityType.getEntityClass())) {
+            if(entityOid != null ) {
+                try {
+                    theRole.setCachedSpecificEntity(entityCrud.find(entityType.getEntityClass(), entityOid));
+                } catch (FindException e) {
+                    logger.log( Level.WARNING, MessageFormat.format( "Couldn't find {0} (# {1}) to attach to ''{2}'' Role", entityType.name(), entityOid, theRole.getName() ), ExceptionUtils.getDebugException( e ) );
+                }
+            } else if(entityGoid != null){
+                logger.log( Level.WARNING, MessageFormat.format( "Couldn't find {0} by goid({1}), needed oid to attach to ''{2}'' Role", entityType.name(), entityGoid, theRole.getName() ));
+            }
+        } else if (entityType != null && GoidEntity.class.isAssignableFrom(entityType.getEntityClass())) {
+            if(entityGoid != null) {
+                try {
+                    theRole.setCachedSpecificEntity(entityCrud.find(entityType.getEntityClass(), entityGoid));
+                } catch (FindException e) {
+                    logger.log(Level.WARNING, MessageFormat.format("Couldn't find {0} (# {1}) to attach to ''{2}'' Role", entityType.name(), entityGoid, theRole.getName()), ExceptionUtils.getDebugException(e));
+                }
+            } else if (entityOid != null) {
+                logger.log(Level.WARNING, MessageFormat.format("Couldn't find {0} by oid({1}), needed goid to attach to ''{2}'' Role", entityType.name(), entityOid, theRole.getName()));
             }
         }
         return theRole;
@@ -166,47 +181,47 @@ public class RbacAdminImpl implements RbacAdmin {
     }
 
     @Override
-    public SecurityZone findSecurityZoneByPrimaryKey(long oid) throws FindException {
-        return securityZoneManager.findByPrimaryKey(oid);
+    public SecurityZone findSecurityZoneByPrimaryKey(Goid goid) throws FindException {
+        return securityZoneManager.findByPrimaryKey(goid);
     }
 
     @Override
-    public long saveSecurityZone(SecurityZone securityZone) throws SaveException {
-        if (SecurityZone.DEFAULT_OID == securityZone.getOid()) {
-            final long oid = securityZoneManager.save(securityZone);
+    public Goid saveSecurityZone(SecurityZone securityZone) throws SaveException {
+        if (SecurityZone.DEFAULT_GOID.equals(securityZone.getGoid())) {
+            final Goid goid = securityZoneManager.save(securityZone);
             securityZoneManager.createRoles(securityZone);
-            return oid;
+            return goid;
         } else {
-            long oid = securityZone.getOid();
+            Goid goid = securityZone.getGoid();
             try {
                 securityZoneManager.update(securityZone);
                 securityZoneManager.updateRoles(securityZone);
             } catch (UpdateException e) {
                 throw new SaveException(ExceptionUtils.getMessage(e), e);
             }
-            return oid;
+            return goid;
         }
     }
 
     @Override
     public void deleteSecurityZone(SecurityZone securityZone) throws DeleteException {
-        securityZoneManager.deleteRoles(securityZone.getOid());
+        securityZoneManager.deleteRoles(securityZone.getGoid());
         securityZoneManager.delete(securityZone);
     }
 
     @Override
-    public Collection<EntityHeader> findEntitiesByTypeAndSecurityZoneOid(@NotNull final EntityType type, final long securityZoneOid) throws FindException {
-        return entityCrud.findByEntityTypeAndSecurityZoneOid(type, securityZoneOid);
+    public Collection<EntityHeader> findEntitiesByTypeAndSecurityZoneGoid(@NotNull final EntityType type, final Goid securityZoneGoid) throws FindException {
+        return entityCrud.findByEntityTypeAndSecurityZoneGoid(type, securityZoneGoid);
     }
 
     @Override
-    public void setSecurityZoneForEntities(final Long securityZoneOid, @NotNull final EntityType entityType, @NotNull final Collection<Serializable> entityIds) throws UpdateException {
-        entityCrud.setSecurityZoneForEntities(securityZoneOid, entityType, entityIds);
+    public void setSecurityZoneForEntities(final Goid securityZoneGoid, @NotNull final EntityType entityType, @NotNull final Collection<Serializable> entityIds) throws UpdateException {
+        entityCrud.setSecurityZoneForEntities(securityZoneGoid, entityType, entityIds);
     }
 
     @Override
-    public void setSecurityZoneForEntities(final Long securityZoneOid, @NotNull final Map<EntityType, Collection<Serializable>> entityIds) throws UpdateException {
-        entityCrud.setSecurityZoneForEntities(securityZoneOid, entityIds);
+    public void setSecurityZoneForEntities(final Goid securityZoneGoid, @NotNull final Map<EntityType, Collection<Serializable>> entityIds) throws UpdateException {
+        entityCrud.setSecurityZoneForEntities(securityZoneGoid, entityIds);
     }
 
     @Override

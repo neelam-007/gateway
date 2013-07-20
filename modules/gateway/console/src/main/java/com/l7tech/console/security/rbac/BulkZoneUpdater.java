@@ -40,16 +40,16 @@ public class BulkZoneUpdater {
      * Performs bulk SecurityZone updates for the given entities in one admin call.
      * If the given entities have other entities which should share the same security zone, these 'zone dependent' entities will also have their zone updated to the given zone.
      *
-     * @param securityZoneOid the oid of the SecurityZone to set on the entities.
+     * @param securityZoneGoid the oid of the SecurityZone to set on the entities.
      * @param entityType      the EntityType of the entities to update.
      * @param entities        a collection of EntityHeader which represent entities to update.
      * @throws FindException   if an error occurs looking up 'zone dependencies'
      * @throws UpdateException if an error occurs updating the SecurityZones on the entities.
      */
-    public void bulkUpdate(@Nullable final Long securityZoneOid, @NotNull final EntityType entityType, @NotNull final Collection<EntityHeader> entities) throws FindException, UpdateException {
+    public void bulkUpdate(@Nullable final Goid securityZoneGoid, @NotNull final EntityType entityType, @NotNull final Collection<EntityHeader> entities) throws FindException, UpdateException {
         if (!entities.isEmpty()) {
             final Map<EntityType, Collection<Serializable>> entitiesToUpdate = collectEntitiesToUpdate(entityType, entities);
-            rbacAdmin.setSecurityZoneForEntities(securityZoneOid, entitiesToUpdate);
+            rbacAdmin.setSecurityZoneForEntities(securityZoneGoid, entitiesToUpdate);
         }
     }
 

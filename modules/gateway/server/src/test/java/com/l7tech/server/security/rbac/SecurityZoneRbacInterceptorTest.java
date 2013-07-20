@@ -79,7 +79,7 @@ public class SecurityZoneRbacInterceptorTest {
     @Test(expected = IllegalArgumentException.class)
     public void invalidCollectionType() throws Throwable {
         invokeWithError(new StubMethodInvocation(bulkUpdate, new Object[]{null, EntityType.POLICY, Arrays.asList(notSerializable)}, null, mockAdmin),
-                "oid is not a Serializable: " + notSerializable.toString());
+                "goid is not a Serializable: " + notSerializable.toString());
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -95,9 +95,9 @@ public class SecurityZoneRbacInterceptorTest {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void firstArgNotLong() throws Throwable {
-        invokeWithError(new StubMethodInvocation(bulkUpdate, new Object[]{"notLong", EntityType.POLICY, oids}, null, mockAdmin),
-                "Expected a Long or null. Received: notLong");
+    public void firstArgNotGoid() throws Throwable {
+        invokeWithError(new StubMethodInvocation(bulkUpdate, new Object[]{"notGoid", EntityType.POLICY, oids}, null, mockAdmin),
+                "Expected a Goid or null. Received: notGoid");
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -127,7 +127,7 @@ public class SecurityZoneRbacInterceptorTest {
     @Test(expected = IllegalArgumentException.class)
     public void invalidMapValueCollectionType() throws Throwable {
         invokeWithError(new StubMethodInvocation(bulkUpdateMap, new Object[]{null, Collections.singletonMap(EntityType.POLICY, Collections.singletonList(notSerializable))}, null, mockAdmin),
-                "oid is not a Serializable: "+notSerializable.toString());
+                "goid is not a Serializable: "+notSerializable.toString());
     }
 
     private void invokeWithError(final StubMethodInvocation invocation, final String expectedError) throws Throwable {

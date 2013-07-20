@@ -1,9 +1,6 @@
 package com.l7tech.gateway.common.transport;
 
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.SecurityZone;
-import com.l7tech.objectmodel.ZoneableEntityHeader;
+import com.l7tech.objectmodel.*;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -20,12 +17,12 @@ public class SsgActiveConnectorHeader extends ZoneableEntityHeader {
                                      final int version,
                                      final boolean enabled,
                                      final boolean inbound,
-                                     @Nullable final Long securityZoneOid) {
+                                     @Nullable final Goid securityZoneGoid) {
         super(id, EntityType.SSG_ACTIVE_CONNECTOR, name, null, version);
         this.connectorType = connectorType;
         this.enabled = enabled;
         this.inbound = inbound;
-        this.securityZoneOid = securityZoneOid;
+        this.securityZoneGoid = securityZoneGoid;
     }
 
     public SsgActiveConnectorHeader( final SsgActiveConnector connector ) {
@@ -35,7 +32,7 @@ public class SsgActiveConnectorHeader extends ZoneableEntityHeader {
                 connector.getVersion(),
                 connector.isEnabled(),
                 connector.getBooleanProperty( SsgActiveConnector.PROPERTIES_KEY_IS_INBOUND, true ),
-                connector.getSecurityZone() == null ? null : connector.getSecurityZone().getOid());
+                connector.getSecurityZone() == null ? null : connector.getSecurityZone().getGoid());
     }
 
     public String getConnectorType() {

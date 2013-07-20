@@ -383,10 +383,10 @@ public class AssignSecurityZonesDialog extends JDialog {
 
     private SecurityZone getZoneForHeader(final EntityHeader header) {
         SecurityZone zone = SecurityZoneUtil.getNullZone();
-        if (header instanceof HasSecurityZoneOid) {
-            final Long securityZoneOid = ((HasSecurityZoneOid) header).getSecurityZoneOid();
-            if (securityZoneOid != null) {
-                zone = SecurityZoneUtil.getSecurityZoneByOid(securityZoneOid);
+        if (header instanceof HasSecurityZoneGoid) {
+            final Goid securityZoneGoid = ((HasSecurityZoneGoid) header).getSecurityZoneGoid();
+            if (securityZoneGoid != null) {
+                zone = SecurityZoneUtil.getSecurityZoneByGoid(securityZoneGoid);
             }
         }
         return zone;
@@ -433,7 +433,7 @@ public class AssignSecurityZonesDialog extends JDialog {
                     oid = --nonPersistedAssertions;
                 }
                 final ZoneableEntityHeader assertionHeader = new ZoneableEntityHeader(oid, EntityType.ASSERTION_ACCESS, assertionAccess.getName(), null, assertionAccess.getVersion());
-                assertionHeader.setSecurityZoneOid(assertionAccess.getSecurityZone() == null ? null : assertionAccess.getSecurityZone().getOid());
+                assertionHeader.setSecurityZoneGoid(assertionAccess.getSecurityZone() == null ? null : assertionAccess.getSecurityZone().getGoid());
                 entities.add(assertionHeader);
             }
         } else if (selected == EntityType.SSG_KEY_METADATA) {
@@ -579,11 +579,11 @@ public class AssignSecurityZonesDialog extends JDialog {
          * @param entitiesToUpdate   the entities to update in the database
          */
         private void doBulkUpdate(@NotNull final EntityType selectedEntityType, @Nullable final SecurityZone selectedZone, @NotNull final Collection<Integer> tableRowIndices, @NotNull final Collection<EntityHeader> entitiesToUpdate) {
-            final Long securityZoneOid = selectedZone == null ? null : selectedZone.getOid();
+            final Goid securityZoneGoid = selectedZone == null ? null : selectedZone.getGoid();
             try {
                 final BulkZoneUpdater updater = new BulkZoneUpdater(Registry.getDefault().getRbacAdmin(),
                         Registry.getDefault().getUDDIRegistryAdmin(), Registry.getDefault().getJmsManager(), Registry.getDefault().getPolicyAdmin());
-                updater.bulkUpdate(securityZoneOid, selectedEntityType, entitiesToUpdate);
+                updater.bulkUpdate(securityZoneGoid, selectedEntityType, entitiesToUpdate);
 
                 for (final Integer selectedIndex : tableRowIndices) {
                     dataModel.setValueAt(selectedZone == null ? SecurityZoneUtil.getNullZone() : selectedZone, selectedIndex, ZONE_COL_INDEX);

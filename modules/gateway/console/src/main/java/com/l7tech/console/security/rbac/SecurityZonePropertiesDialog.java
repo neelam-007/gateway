@@ -5,7 +5,6 @@ import com.l7tech.console.panels.OkCancelPanel;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.SecurityZoneUtil;
 import com.l7tech.gateway.common.security.rbac.OperationType;
-import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.gateway.common.security.rbac.RbacAdmin;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.InputValidator;
@@ -55,14 +54,14 @@ public class SecurityZonePropertiesDialog extends JDialog {
     private Functions.UnaryVoidThrows<SecurityZone, SaveException> afterEditListener;
 
     public SecurityZonePropertiesDialog(@NotNull final Window owner, @NotNull final SecurityZone securityZone, final boolean readOnly, @NotNull final Functions.UnaryVoidThrows<SecurityZone, SaveException> afterEditListener) {
-        super(owner, readOnly ? "Security Zone Properties" : securityZone.getOid() == SecurityZone.DEFAULT_OID ? "Create Security Zone" : "Edit Security Zone", DEFAULT_MODALITY_TYPE);
+        super(owner, readOnly ? "Security Zone Properties" : SecurityZone.DEFAULT_GOID.equals(securityZone.getGoid()) ? "Create Security Zone" : "Edit Security Zone", DEFAULT_MODALITY_TYPE);
         this.afterEditListener = afterEditListener;
         setContentPane(contentPane);
         getRootPane().setDefaultButton(okCancelPanel.getOkButton());
         Utilities.setEscAction(this, okCancelPanel.getCancelButton());
         this.securityZone = securityZone;
         this.readOnly = readOnly;
-        operation = readOnly ? OperationType.READ : securityZone.getOid() == SecurityZone.DEFAULT_OID ? OperationType.CREATE : OperationType.UPDATE;
+        operation = readOnly ? OperationType.READ : SecurityZone.DEFAULT_GOID.equals(securityZone.getGoid()) ? OperationType.CREATE : OperationType.UPDATE;
         if (operation == OperationType.UPDATE) {
             originalSupportedEntityTypes.addAll(securityZone.getPermittedEntityTypes().contains(EntityType.ANY) ? SecurityZoneUtil.getNonHiddenZoneableEntityTypes() : securityZone.getPermittedEntityTypes());
         }
@@ -122,7 +121,7 @@ public class SecurityZonePropertiesDialog extends JDialog {
             if (removedType == EntityType.SSG_KEY_ENTRY) {
                 removedType = EntityType.SSG_KEY_METADATA;
             }
-            entitiesInZone.addAll(rbacAdmin.findEntitiesByTypeAndSecurityZoneOid(removedType, securityZone.getOid()));
+            entitiesInZone.addAll(rbacAdmin.findEntitiesByTypeAndSecurityZoneGoid(removedType, securityZone.getGoid()));
             if (!entitiesInZone.isEmpty()) {
                 final List<Serializable> ids = new ArrayList<>(entitiesInZone.size());
                 for (final EntityHeader entity : entitiesInZone) {
@@ -172,7 +171,7 @@ public class SecurityZonePropertiesDialog extends JDialog {
         for (final SecurityZone zone : SecurityZoneUtil.getSecurityZones()) {
             reservedNames.add(zone.getName().toLowerCase());
         }
-        if (securityZone.getOid() != SecurityZone.DEFAULT_OID) {
+        if (!SecurityZone.DEFAULT_GOID.equals(securityZone.getGoid())) {
             reservedNames.remove(securityZone.getName().toLowerCase());
         }
     }
@@ -251,7 +250,7 @@ public class SecurityZonePropertiesDialog extends JDialog {
     }
 
     private void copy(final SecurityZone src, final SecurityZone dest) {
-        dest.setOid(src.getOid());
+        dest.setGoid(src.getGoid());
         dest.setVersion(src.getVersion());
         dest.setName(src.getName());
         dest.setDescription(src.getDescription());

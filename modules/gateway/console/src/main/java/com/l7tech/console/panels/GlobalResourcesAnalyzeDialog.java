@@ -8,8 +8,6 @@ import com.l7tech.gateway.common.resources.ResourceAdmin;
 import com.l7tech.gateway.common.resources.ResourceEntry;
 import com.l7tech.gateway.common.resources.ResourceEntryHeader;
 import com.l7tech.gateway.common.resources.ResourceType;
-import static com.l7tech.console.panels.GlobalResourceImportContext.*;
-import static com.l7tech.console.panels.GlobalResourceImportWizard.*;
 import com.l7tech.gui.SimpleTableModel;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.RunOnChangeListener;
@@ -19,11 +17,7 @@ import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.Functions;
-import com.l7tech.util.LSInputImpl;
-import com.l7tech.util.Pair;
-import com.l7tech.util.TextUtils;
+import com.l7tech.util.*;
 import org.w3c.dom.ls.LSInput;
 import org.w3c.dom.ls.LSResourceResolver;
 import org.xml.sax.SAXException;
@@ -42,15 +36,13 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.ResourceBundle;
-import java.util.Set;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static com.l7tech.console.panels.GlobalResourceImportContext.*;
+import static com.l7tech.console.panels.GlobalResourceImportWizard.DependencySummaryListCellRenderer;
+import static com.l7tech.console.panels.GlobalResourceImportWizard.describe;
 
 /**
  * Global resource analysis dialog.
@@ -703,7 +695,7 @@ public class GlobalResourcesAnalyzeDialog extends JDialog {
                         header.getResourceKey2(),
                         header.getResourceKey3(),
                         header.getVersion(),
-                        header.getSecurityZoneOid()
+                        header.getSecurityZoneGoid()
                 );
 
                 break;

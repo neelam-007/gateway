@@ -6,22 +6,19 @@ import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.identity.Group;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.User;
+import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.Entity;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.NamedEntity;
-import com.l7tech.objectmodel.SecurityZone;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.HasFolder;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.util.TextUtils;
-import org.hibernate.annotations.Cascade;
-import org.hibernate.annotations.Fetch;
-import org.hibernate.annotations.FetchMode;
-import org.hibernate.annotations.Proxy;
+import org.hibernate.annotations.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.persistence.*;
+import javax.persistence.CascadeType;
+import javax.persistence.Table;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -50,7 +47,9 @@ public class Role extends NamedEntityImp implements Comparable<Role> {
     private String description;
 
     private EntityType entityType;
+    @Deprecated
     private Long entityOid;
+    private Goid entityGoid;
     private Entity cachedSpecificEntity;
     private Tag tag;
     private boolean userCreated = false;
@@ -302,13 +301,29 @@ public class Role extends NamedEntityImp implements Comparable<Role> {
      * If this Role is scoped to a particular entity, this property will contain the OID of that entity.
      * Otherwise, it will be null.
      */
+    @Deprecated
     @Column(name="entity_oid")
     public Long getEntityOid() {
         return entityOid;
     }
 
+    @Deprecated
     public void setEntityOid(Long entityOid) {
         this.entityOid = entityOid;
+    }
+
+    /**
+     * If this Role is scoped to a particular entity, this property will contain the OID of that entity.
+     * Otherwise, it will be null.
+     */
+    @Column(name="entity_goid")
+    @Type(type = "com.l7tech.server.util.GoidType")
+    public Goid getEntityGoid() {
+        return entityGoid;
+    }
+
+    public void setEntityGoid(Goid entityGoid) {
+        this.entityGoid = entityGoid;
     }
 
     /**

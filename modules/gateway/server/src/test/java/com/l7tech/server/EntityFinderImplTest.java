@@ -33,7 +33,7 @@ import static org.mockito.Mockito.when;
 public class EntityFinderImplTest {
     private static final long OID = 1234L;
     private static final Goid GOID = new Goid(0,1234L);
-    private static final Long ZONE_OID = 1111L;
+    private static final Goid ZONE_GOID = new Goid(0,1111L);
     private static final String NAME = "test";
     private EntityFinderImpl finder;
     @Mock
@@ -57,7 +57,7 @@ public class EntityFinderImplTest {
         finder.setHibernateTemplate(hibernateTemplate);
         entities = new ArrayList<>();
         zone = new SecurityZone();
-        zone.setOid(ZONE_OID);
+        zone.setGoid(ZONE_GOID);
 
         when(hibernateTemplate.getSessionFactory()).thenReturn(sessionFactory);
         when(sessionFactory.getClassMetadata(any(Class.class))).thenReturn(metadata);
@@ -71,7 +71,7 @@ public class EntityFinderImplTest {
     }
 
     @Test
-    public void findByEntityTypeAndSecurityZoneOid() throws Exception {
+    public void findByEntityTypeAndSecurityZoneGoid() throws Exception {
         final PublishedService service = new PublishedService();
         service.setOid(OID);
         service.setName(NAME);
@@ -79,11 +79,11 @@ public class EntityFinderImplTest {
         entities.add(service);
         when(hibernateTemplate.execute(any(HibernateCallback.class))).thenReturn(entities);
 
-        final Collection<EntityHeader> found = finder.findByEntityTypeAndSecurityZoneOid(EntityType.SERVICE, 1234L);
+        final Collection<EntityHeader> found = finder.findByEntityTypeAndSecurityZoneGoid(EntityType.SERVICE, new Goid(0,1234L));
 
         assertEquals(1, found.size());
         final EntityHeader header = found.iterator().next();
-        assertEquals(ZONE_OID, ((HasSecurityZoneOid)header).getSecurityZoneOid());
+        assertEquals(ZONE_GOID, ((HasSecurityZoneGoid)header).getSecurityZoneGoid());
         assertEquals(OID, header.getOid());
         assertEquals(NAME, header.getName());
         assertEquals(EntityType.SERVICE, header.getType());
@@ -91,7 +91,7 @@ public class EntityFinderImplTest {
     }
 
     @Test
-    public void findByGoidEntityTypeAndSecurityZoneOid() throws Exception {
+    public void findByGoidEntityTypeAndSecurityZoneGoid() throws Exception {
         final JdbcConnection jdbcConnection = new JdbcConnection();
         jdbcConnection.setGoid(GOID);
         jdbcConnection.setName(NAME);
@@ -99,29 +99,29 @@ public class EntityFinderImplTest {
         entities.add(jdbcConnection);
         when(hibernateTemplate.execute(any(HibernateCallback.class))).thenReturn(entities);
 
-        final Collection<EntityHeader> found = finder.findByEntityTypeAndSecurityZoneOid(EntityType.JDBC_CONNECTION, 1234L);
+        final Collection<EntityHeader> found = finder.findByEntityTypeAndSecurityZoneGoid(EntityType.JDBC_CONNECTION, new Goid(0,1234L));
 
         assertEquals(1, found.size());
         final EntityHeader header = found.iterator().next();
-        assertEquals(ZONE_OID, ((HasSecurityZoneOid)header).getSecurityZoneOid());
+        assertEquals(ZONE_GOID, ((HasSecurityZoneGoid)header).getSecurityZoneGoid());
         assertEquals(GOID, header.getGoid());
         assertEquals(NAME, header.getName());
         assertEquals(EntityType.JDBC_CONNECTION, header.getType());
     }
 
     @Test
-    public void findByEntityTypeAndSecurityZoneOidNotNamedEntity() throws Exception {
+    public void findByEntityTypeAndSecurityZoneGoidNotNamedEntity() throws Exception {
         final PublishedServiceAlias alias = new PublishedServiceAlias(new PublishedService(), null);
         alias.setOid(OID);
         alias.setSecurityZone(zone);
         entities.add(alias);
         when(hibernateTemplate.execute(any(HibernateCallback.class))).thenReturn(entities);
 
-        final Collection<EntityHeader> found = finder.findByEntityTypeAndSecurityZoneOid(EntityType.SERVICE_ALIAS, 1234L);
+        final Collection<EntityHeader> found = finder.findByEntityTypeAndSecurityZoneGoid(EntityType.SERVICE_ALIAS, new Goid(0,1234L));
 
         assertEquals(1, found.size());
         final EntityHeader header = found.iterator().next();
-        assertEquals(ZONE_OID, ((HasSecurityZoneOid)header).getSecurityZoneOid());
+        assertEquals(ZONE_GOID, ((HasSecurityZoneGoid)header).getSecurityZoneGoid());
         assertEquals(OID, header.getOid());
         assertNull(header.getName());
         assertEquals(EntityType.SERVICE_ALIAS, header.getType());
@@ -129,13 +129,13 @@ public class EntityFinderImplTest {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void findByEntityTypeAndSecurityZoneOidNotZoneable() throws Exception {
-        finder.findByEntityTypeAndSecurityZoneOid(EntityType.ANY, 1234L);
+    public void findByEntityTypeAndSecurityZoneGoidNotZoneable() throws Exception {
+        finder.findByEntityTypeAndSecurityZoneGoid(EntityType.ANY, new Goid(0,1234L));
     }
 
     @Test(expected = FindException.class)
-    public void findByEntityTypeAndSecurityZoneOidHibernateException() throws Exception {
+    public void findByEntityTypeAndSecurityZoneGoidHibernateException() throws Exception {
         when(hibernateTemplate.execute(any(HibernateCallback.class))).thenThrow(new HibernateException("mocking exception"));
-        finder.findByEntityTypeAndSecurityZoneOid(EntityType.SSG_KEY_ENTRY, 1234L);
+        finder.findByEntityTypeAndSecurityZoneGoid(EntityType.SSG_KEY_ENTRY, new Goid(0,1234L));
     }
 }

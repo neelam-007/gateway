@@ -21,7 +21,7 @@ public class AliasHeader<ET extends PersistentEntity> extends ZoneableEntityHead
         aliasedEntityType = alias.getEntityType();
         aliasedEntityId = alias.getEntityOid();
         folderOid = alias.getFolder() != null ? alias.getFolder().getOid() : null;
-        securityZoneOid = alias.getSecurityZone() == null ? null : alias.getSecurityZone().getOid();
+        securityZoneGoid = alias.getSecurityZone() == null ? null : alias.getSecurityZone().getGoid();
     }
 
     public EntityType getAliasedEntityType() {

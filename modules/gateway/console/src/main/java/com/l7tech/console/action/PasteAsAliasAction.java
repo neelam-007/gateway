@@ -164,11 +164,11 @@ public class PasteAsAliasAction extends SecureAction {
     }
 
     @Nullable
-    private SecurityZone getSecurityZoneFromHeader(@NotNull final HasSecurityZoneOid header, @NotNull final EntityType aliasType) {
+    private SecurityZone getSecurityZoneFromHeader(@NotNull final HasSecurityZoneGoid header, @NotNull final EntityType aliasType) {
         SecurityZone zone = null;
-        final Long securityZoneOid = header.getSecurityZoneOid();
-        if (securityZoneOid != null) {
-            final SecurityZone headerZone = SecurityZoneUtil.getSecurityZoneByOid(securityZoneOid);
+        final Goid securityZoneGoid = header.getSecurityZoneGoid();
+        if (securityZoneGoid != null) {
+            final SecurityZone headerZone = SecurityZoneUtil.getSecurityZoneByGoid(securityZoneGoid);
             if (headerZone != null && headerZone.permitsEntityType(aliasType)) {
                 zone = headerZone;
             }

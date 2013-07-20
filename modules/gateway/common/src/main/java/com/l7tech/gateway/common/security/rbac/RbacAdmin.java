@@ -86,53 +86,53 @@ public interface RbacAdmin {
 
     @Transactional(readOnly=true)
     @Secured(types=EntityType.SECURITY_ZONE, stereotype=FIND_ENTITY)
-    SecurityZone findSecurityZoneByPrimaryKey(long oid) throws FindException;
+    SecurityZone findSecurityZoneByPrimaryKey(Goid goid) throws FindException;
 
     /**
      * Save a new or updated security zone.
      *
      * @param securityZone the zone to save.  Required.
-     * @return the OID assigned to the zone.
+     * @return the GOID assigned to the zone.
      * @throws SaveException if the save fails.
      */
     @Secured(types=EntityType.SECURITY_ZONE, stereotype=SAVE_OR_UPDATE)
-    long saveSecurityZone(SecurityZone securityZone) throws SaveException;
+    Goid saveSecurityZone(SecurityZone securityZone) throws SaveException;
 
     @Secured(types=EntityType.SECURITY_ZONE, stereotype=DELETE_ENTITY)
     void deleteSecurityZone(SecurityZone securityZone) throws DeleteException;
 
     /**
-     * Retrieves a collection of ZoneableEntityHeader by type and security zone oid.
+     * Retrieves a collection of ZoneableEntityHeader by type and security zone goid.
      *
-     * @param type            the EntityType to retrieve.
-     * @param securityZoneOid the oid of the SecurityZone that the entities must be in.
-     * @return a collection of EntityHeader of the given EntityType which are in a SecurityZone identified by the given oid.
+     * @param type             the EntityType to retrieve.
+     * @param securityZoneGoid the goid of the SecurityZone that the entities must be in.
+     * @return a collection of EntityHeader of the given EntityType which are in a SecurityZone identified by the given goid.
      * @throws FindException            if a db error occurs.
      * @throws IllegalArgumentException if the given EntityType is not security zoneable.
      */
     @Secured(stereotype = FIND_ENTITIES)
-    Collection<EntityHeader> findEntitiesByTypeAndSecurityZoneOid(@NotNull final EntityType type, final long securityZoneOid) throws FindException;
+    Collection<EntityHeader> findEntitiesByTypeAndSecurityZoneGoid(@NotNull final EntityType type, final Goid securityZoneGoid) throws FindException;
 
     /**
      * Sets the given SecurityZone on a collection of entities.
      *
-     * @param securityZoneOid the oid of the SecurityZone to set on the entities or null to remove the entities from their current SecurityZone.
-     * @param entityType      the EntityType of the entities. Must be a zoneable EntityType.
-     * @param entityIds      a collection of object ids that identify the entities to update.
+     * @param securityZoneGoid the goid of the SecurityZone to set on the entities or null to remove the entities from their current SecurityZone.
+     * @param entityType       the EntityType of the entities. Must be a zoneable EntityType.
+     * @param entityIds        a collection of object ids that identify the entities to update.
      * @throws UpdateException if a db error occurs or any of the object ids provided do not identify existing entities.
      */
     @Secured(customInterceptor = "com.l7tech.server.security.rbac.SecurityZoneRbacInterceptor")
-    public void setSecurityZoneForEntities(final Long securityZoneOid, @NotNull final EntityType entityType, @NotNull final Collection<Serializable> entityIds) throws UpdateException;
+    public void setSecurityZoneForEntities(final Goid securityZoneGoid, @NotNull final EntityType entityType, @NotNull final Collection<Serializable> entityIds) throws UpdateException;
 
     /**
      * Sets the given SecurityZone on a map of entities.
      *
-     * @param securityZoneOid the oid of the SecurityZone to set on the entities or null to remove the entities from their current SecurityZone.
-     * @param entityIds      a map where key = entity type of the entities to update and value = collection of oids which represent the entities to update.
+     * @param securityZoneGoid the goid of the SecurityZone to set on the entities or null to remove the entities from their current SecurityZone.
+     * @param entityIds        a map where key = entity type of the entities to update and value = collection of oids which represent the entities to update.
      * @throws UpdateException if a db error occurs or any of the object ids provided do not identify existing entities.
      */
     @Secured(customInterceptor = "com.l7tech.server.security.rbac.SecurityZoneRbacInterceptor")
-    public void setSecurityZoneForEntities(final Long securityZoneOid, @NotNull Map<EntityType, Collection<Serializable>> entityIds) throws UpdateException;
+    public void setSecurityZoneForEntities(final Goid securityZoneGoid, @NotNull Map<EntityType, Collection<Serializable>> entityIds) throws UpdateException;
 
     /**
      * Obtain information about the list of assertions classnames that the current admin user is permitted to make use of.

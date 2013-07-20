@@ -5,8 +5,8 @@ import org.jetbrains.annotations.Nullable;
 /**
  * A GuidEntityHeader which also has a reference to a SecurityZone.
  */
-public class ZoneableGuidEntityHeader extends GuidEntityHeader implements HasSecurityZoneOid {
-    protected Long securityZoneOid;
+public class ZoneableGuidEntityHeader extends GuidEntityHeader implements HasSecurityZoneGoid {
+    protected Goid securityZoneGoid;
 
     protected ZoneableGuidEntityHeader(final long oid, final EntityType type, final String name, final String description, final int version) {
         super(oid, type, name, description, version);
@@ -18,12 +18,12 @@ public class ZoneableGuidEntityHeader extends GuidEntityHeader implements HasSec
 
     @Nullable
     @Override
-    public Long getSecurityZoneOid() {
-        return securityZoneOid;
+    public Goid getSecurityZoneGoid() {
+        return securityZoneGoid;
     }
 
     @Override
-    public void setSecurityZoneOid(@Nullable final Long securityZoneOid) {
-        this.securityZoneOid = securityZoneOid;
+    public void setSecurityZoneGoid(@Nullable final Goid securityZoneGoid) {
+        this.securityZoneGoid = securityZoneGoid;
     }
 }

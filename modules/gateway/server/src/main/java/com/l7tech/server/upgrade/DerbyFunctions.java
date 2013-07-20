@@ -27,6 +27,26 @@ public final class DerbyFunctions {
     }
 
     /**
+     * Returns a hex string representation of the given goid bytes
+     *
+     * @param bytes The bytes of the goid
+     * @return The hex string representation of the goid
+     */
+    public static String goidToString(byte[] bytes) {
+        return new Goid(bytes).toHexString();
+    }
+
+    /**
+     * The if null function returns the first parameter if it is not null. If the first parameter is null the second parameter is returned.
+     * @param v1 The first parameter
+     * @param v2 The second parameter
+     * @return The first parameter if it is not null, otherwise the second parameter.
+     */
+    public static String ifNull(String v1, String v2) {
+        return v1 != null ? v1 : v2;
+    }
+
+    /**
      * Returns a random long value using the internal random utils.
      *
      * @return A random long value

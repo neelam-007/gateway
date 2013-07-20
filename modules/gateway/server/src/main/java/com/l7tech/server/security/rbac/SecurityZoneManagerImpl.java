@@ -5,7 +5,7 @@ import com.l7tech.gateway.common.security.rbac.RbacAdmin;
 import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.folder.Folder;
-import com.l7tech.server.HibernateEntityManager;
+import com.l7tech.server.HibernateGoidEntityManager;
 import com.l7tech.server.folder.FolderManager;
 import com.l7tech.util.TextUtils;
 import org.jetbrains.annotations.NotNull;
@@ -18,7 +18,7 @@ import java.util.regex.Pattern;
 /**
  * Gateway server implementation of Hibernate entity manager for the entities representing Security Zones.
  */
-public class SecurityZoneManagerImpl extends HibernateEntityManager<SecurityZone, EntityHeader> implements SecurityZoneManager {
+public class SecurityZoneManagerImpl extends HibernateGoidEntityManager<SecurityZone, EntityHeader> implements SecurityZoneManager {
     @Override
     public Class<? extends Entity> getImpClass() {
         return SecurityZone.class;
@@ -51,8 +51,8 @@ public class SecurityZoneManagerImpl extends HibernateEntityManager<SecurityZone
     }
 
     @Override
-    public void deleteRoles(long entityOid) throws DeleteException {
-        roleManager.deleteEntitySpecificRoles(EntityType.SECURITY_ZONE, entityOid);
+    public void deleteRoles(Goid entityGoid) throws DeleteException {
+        roleManager.deleteEntitySpecificRoles(EntityType.SECURITY_ZONE, entityGoid);
     }
 
     void setRoleManager(final RoleManager roleManager) {
@@ -87,27 +87,27 @@ public class SecurityZoneManagerImpl extends HibernateEntityManager<SecurityZone
         return rootFolder;
     }
 
-    private Role createBaseSecurityZoneRole(@NotNull final String name, @NotNull final String description, final long zoneOid) {
+    private Role createBaseSecurityZoneRole(@NotNull final String name, @NotNull final String description, final Goid zoneGoid) {
         logger.info("Creating new Role: " + name);
         final Role role = new Role();
         role.setName(name);
         role.setDescription(description);
         // entity specific (required for auto-update/deletion of roles)
         role.setEntityType(EntityType.SECURITY_ZONE);
-        role.setEntityOid(zoneOid);
+        role.setEntityGoid(zoneGoid);
         return role;
     }
 
     private void addReadSecurityZoneRole(@NotNull final SecurityZone zone, @NotNull final Folder rootFolder) throws SaveException {
-        final String name = MessageFormat.format(ROLE_READ_NAME_PATTERN, TextUtils.truncStringMiddle(zone.getName(), MAX_CHAR_ZONE_NAME), zone.getOid());
-        final Role readRole = createBaseSecurityZoneRole(name, READ_ZONE_ROLE_DESCRIPTION_FORMAT, zone.getOid());
+        final String name = MessageFormat.format(ROLE_READ_NAME_PATTERN, TextUtils.truncStringMiddle(zone.getName(), MAX_CHAR_ZONE_NAME), zone.getGoid().toHexString());
+        final Role readRole = createBaseSecurityZoneRole(name, READ_ZONE_ROLE_DESCRIPTION_FORMAT, zone.getGoid());
         addReadPermissions(zone, readRole, rootFolder);
         roleManager.save(readRole);
     }
 
     private void addManageSecurityZoneRole(@NotNull final SecurityZone zone, @NotNull final Folder rootFolder) throws SaveException {
-        final String name = MessageFormat.format(ROLE_ADMIN_NAME_PATTERN, TextUtils.truncStringMiddle(zone.getName(), MAX_CHAR_ZONE_NAME), zone.getOid());
-        final Role manageRole = createBaseSecurityZoneRole(name, MANAGE_ZONE_ROLE_DESCRIPTION_FORMAT, zone.getOid());
+        final String name = MessageFormat.format(ROLE_ADMIN_NAME_PATTERN, TextUtils.truncStringMiddle(zone.getName(), MAX_CHAR_ZONE_NAME), zone.getGoid().toHexString());
+        final Role manageRole = createBaseSecurityZoneRole(name, MANAGE_ZONE_ROLE_DESCRIPTION_FORMAT, zone.getGoid());
         addReadPermissions(zone, manageRole, rootFolder);
         manageRole.addSecurityZonePermission(OperationType.CREATE, EntityType.ANY, zone);
         manageRole.addSecurityZonePermission(OperationType.UPDATE, EntityType.ANY, zone);

@@ -5,7 +5,7 @@ import com.l7tech.objectmodel.*;
 /**
  * Entity manager for SecurityZone.
  */
-public interface SecurityZoneManager extends EntityManager<SecurityZone, EntityHeader>, RoleAwareEntityManager<SecurityZone> {
+public interface SecurityZoneManager extends GoidEntityManager<SecurityZone, EntityHeader>, RoleAwareGoidEntityManager<SecurityZone> {
     /**
      * Create a read-only role for the given SecurityZone.
      *

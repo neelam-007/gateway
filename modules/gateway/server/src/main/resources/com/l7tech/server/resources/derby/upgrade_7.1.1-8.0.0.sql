@@ -6,24 +6,27 @@
 
 UPDATE ssg_version SET current_version = '8.0.0';
 
+-- ****************************************************************************************************************** --
+-- ********************************* OID'S NO LONGER EXIST AFTER THIS POINT ***************************************** --
+-- ****************************************************************************************************************** --
+
 -- TODO fix FR-473 by renumbering rbac_permission -440 to -441 and inserting CREATE ANY POLICY as new -440
 
 --
 -- Security Zones
 --
 create table security_zone (
-  objectid bigint not null,
+  goid CHAR(16) FOR BIT DATA not null,
   version integer not null,
   name varchar(128) not null unique,
   description varchar(255) not null,
   entity_types varchar(4096) not null,
-  primary key (objectid)
+  primary key (goid)
 );
 
 create table rbac_predicate_security_zone (
   objectid bigint not null references rbac_predicate(objectid) on delete cascade,
-  security_zone_oid bigint references security_zone(objectid) on delete cascade,
-  transitive smallint not null,
+  security_zone_goid CHAR(16) FOR BIT DATA references security_zone(goid) on delete cascade,
   primary key (objectid)
 );
 
@@ -31,75 +34,77 @@ create table assertion_access (
   objectid bigint not null,
   version integer,
   name varchar(255) not null unique,
-  security_zone_oid bigint references security_zone(objectid) on delete set null,
+  security_zone_goid CHAR(16) FOR BIT DATA references security_zone(goid) on delete set null,
   primary key (objectid)
 );
 
-alter table policy add column security_zone_oid bigint;
-alter table policy add foreign key (security_zone_oid) references security_zone (objectid) on delete set null;
+alter table rbac_role add column entity_goid CHAR(16) FOR BIT DATA;
 
-alter table policy_alias add column security_zone_oid bigint;
-alter table policy_alias add foreign key (security_zone_oid) references security_zone (objectid) on delete set null;
+alter table policy add column security_zone_goid CHAR(16) FOR BIT DATA;
+alter table policy add foreign key (security_zone_goid) references security_zone (goid) on delete set null;
 
-alter table published_service add column security_zone_oid bigint;
-alter table published_service add foreign key (security_zone_oid) references security_zone (objectid) on delete set null;
+alter table policy_alias add column security_zone_goid CHAR(16) FOR BIT DATA;
+alter table policy_alias add foreign key (security_zone_goid) references security_zone (goid) on delete set null;
 
-alter table published_service_alias add column security_zone_oid bigint;
-alter table published_service_alias add foreign key (security_zone_oid) references security_zone (objectid) on delete set null;
+alter table published_service add column security_zone_goid CHAR(16) FOR BIT DATA;
+alter table published_service add foreign key (security_zone_goid) references security_zone (goid) on delete set null;
 
-alter table folder add column security_zone_oid bigint;
-alter table folder add foreign key (security_zone_oid) references security_zone (objectid) on delete set null;
+alter table published_service_alias add column security_zone_goid CHAR(16) FOR BIT DATA;
+alter table published_service_alias add foreign key (security_zone_goid) references security_zone (goid) on delete set null;
 
-alter table identity_provider add column security_zone_oid bigint;
-alter table identity_provider add foreign key (security_zone_oid) references security_zone (objectid) on delete set null;
+alter table folder add column security_zone_goid CHAR(16) FOR BIT DATA;
+alter table folder add foreign key (security_zone_goid) references security_zone (goid) on delete set null;
 
-alter table jdbc_connection add column security_zone_oid bigint;
-alter table jdbc_connection add foreign key (security_zone_oid) references security_zone (objectid) on delete set null;
+alter table identity_provider add column security_zone_goid CHAR(16) FOR BIT DATA;
+alter table identity_provider add foreign key (security_zone_goid) references security_zone (goid) on delete set null;
 
-alter table trusted_cert add column security_zone_oid bigint;
-alter table trusted_cert add foreign key (security_zone_oid) references security_zone (objectid) on delete set null;
+alter table jdbc_connection add column security_zone_goid CHAR(16) FOR BIT DATA;
+alter table jdbc_connection add foreign key (security_zone_goid) references security_zone (goid) on delete set null;
 
-alter table sink_config add column security_zone_oid bigint;
-alter table sink_config add foreign key (security_zone_oid) references security_zone (objectid) on delete set null;
+alter table trusted_cert add column security_zone_goid CHAR(16) FOR BIT DATA;
+alter table trusted_cert add foreign key (security_zone_goid) references security_zone (goid) on delete set null;
 
-alter table secure_password add column security_zone_oid bigint;
-alter table secure_password add foreign key (security_zone_oid) references security_zone (objectid) on delete set null;
+alter table sink_config add column security_zone_goid CHAR(16) FOR BIT DATA;
+alter table sink_config add foreign key (security_zone_goid) references security_zone (goid) on delete set null;
 
-alter table email_listener add column security_zone_oid bigint;
-alter table email_listener add foreign key (security_zone_oid) references security_zone (objectid) on delete set null;
+alter table secure_password add column security_zone_goid CHAR(16) FOR BIT DATA;
+alter table secure_password add foreign key (security_zone_goid) references security_zone (goid) on delete set null;
 
-alter table resource_entry add column security_zone_oid bigint;
-alter table resource_entry add foreign key (security_zone_oid) references security_zone (objectid) on delete set null;
+alter table email_listener add column security_zone_goid CHAR(16) FOR BIT DATA;
+alter table email_listener add foreign key (security_zone_goid) references security_zone (goid) on delete set null;
 
-alter table http_configuration add column security_zone_oid bigint;
-alter table http_configuration add foreign key (security_zone_oid) references security_zone (objectid) on delete set null;
+alter table resource_entry add column security_zone_goid CHAR(16) FOR BIT DATA;
+alter table resource_entry add foreign key (security_zone_goid) references security_zone (goid) on delete set null;
 
-alter table connector add column security_zone_oid bigint;
-alter table connector add foreign key (security_zone_oid) references security_zone (objectid) on delete set null;
+alter table http_configuration add column security_zone_goid CHAR(16) FOR BIT DATA;
+alter table http_configuration add foreign key (security_zone_goid) references security_zone (goid) on delete set null;
 
-alter table encapsulated_assertion add column security_zone_oid bigint;
-alter table encapsulated_assertion add foreign key (security_zone_oid) references security_zone (objectid) on delete set null;
+alter table connector add column security_zone_goid CHAR(16) FOR BIT DATA;
+alter table connector add foreign key (security_zone_goid) references security_zone (goid) on delete set null;
 
-alter table active_connector add column security_zone_oid bigint;
-alter table active_connector add foreign key (security_zone_oid) references security_zone (objectid) on delete set null;
+alter table encapsulated_assertion add column security_zone_goid CHAR(16) FOR BIT DATA;
+alter table encapsulated_assertion add foreign key (security_zone_goid) references security_zone (goid) on delete set null;
 
-alter table revocation_check_policy add column security_zone_oid bigint;
-alter table revocation_check_policy add foreign key (security_zone_oid) references security_zone (objectid) on delete set null;
+alter table active_connector add column security_zone_goid CHAR(16) FOR BIT DATA;
+alter table active_connector add foreign key (security_zone_goid) references security_zone (goid) on delete set null;
 
-alter table uddi_registries add column security_zone_oid bigint;
-alter table uddi_registries add foreign key (security_zone_oid) references security_zone (objectid) on delete set null;
-alter table uddi_proxied_service_info add column security_zone_oid bigint;
-alter table uddi_proxied_service_info add foreign key (security_zone_oid) references security_zone (objectid) on delete set null;
-alter table uddi_service_control add column security_zone_oid bigint;
-alter table uddi_service_control add foreign key (security_zone_oid) references security_zone (objectid) on delete set null;
+alter table revocation_check_policy add column security_zone_goid CHAR(16) FOR BIT DATA;
+alter table revocation_check_policy add foreign key (security_zone_goid) references security_zone (goid) on delete set null;
 
-alter table sample_messages add column security_zone_oid bigint;
-alter table sample_messages add foreign key (security_zone_oid) references security_zone (objectid) on delete set null;
+alter table uddi_registries add column security_zone_goid CHAR(16) FOR BIT DATA;
+alter table uddi_registries add foreign key (security_zone_goid) references security_zone (goid) on delete set null;
+alter table uddi_proxied_service_info add column security_zone_goid CHAR(16) FOR BIT DATA;
+alter table uddi_proxied_service_info add foreign key (security_zone_goid) references security_zone (goid) on delete set null;
+alter table uddi_service_control add column security_zone_goid CHAR(16) FOR BIT DATA;
+alter table uddi_service_control add foreign key (security_zone_goid) references security_zone (goid) on delete set null;
 
-alter table jms_endpoint add column security_zone_oid bigint;
-alter table jms_endpoint add foreign key (security_zone_oid) references security_zone (objectid) on delete set null;
-alter table jms_connection add column security_zone_oid bigint;
-alter table jms_connection add foreign key (security_zone_oid) references security_zone (objectid) on delete set null;
+alter table sample_messages add column security_zone_goid CHAR(16) FOR BIT DATA;
+alter table sample_messages add foreign key (security_zone_goid) references security_zone (goid) on delete set null;
+
+alter table jms_endpoint add column security_zone_goid CHAR(16) FOR BIT DATA;
+alter table jms_endpoint add foreign key (security_zone_goid) references security_zone (goid) on delete set null;
+alter table jms_connection add column security_zone_goid CHAR(16) FOR BIT DATA;
+alter table jms_connection add foreign key (security_zone_goid) references security_zone (goid) on delete set null;
 --
 -- RBAC for Assertions: Update "Publish Webservices" and "Manage Webservices" canned roles so they can still use policy assertions in 8.0
 --
@@ -121,7 +126,7 @@ create table keystore_key_metadata (
   version integer,
   keystore_file_oid bigint not null references keystore_file(objectid) on delete cascade,
   alias varchar(255) not null,
-  security_zone_oid bigint references security_zone(objectid) on delete set null,
+  security_zone_goid CHAR(16) FOR BIT DATA references security_zone(goid) on delete set null,
   primary key (objectid),
   unique (keystore_file_oid, alias)
 );
@@ -142,6 +147,14 @@ INSERT INTO cluster_properties
 CREATE FUNCTION toGoid(high bigint, low bigint) RETURNS char(16) for bit data
     PARAMETER STYLE JAVA NO SQL LANGUAGE JAVA
     EXTERNAL NAME 'com.l7tech.server.upgrade.DerbyFunctions.toGoid';
+
+CREATE FUNCTION goidToString(bytes char(16) for bit data) RETURNS CHAR(32)
+    PARAMETER STYLE JAVA NO SQL LANGUAGE JAVA
+    EXTERNAL NAME 'com.l7tech.server.upgrade.DerbyFunctions.goidToString';
+
+CREATE FUNCTION ifNull(v1 VARCHAR(128), v2 VARCHAR(128)) RETURNS VARCHAR(128)
+    PARAMETER STYLE JAVA NO SQL LANGUAGE JAVA
+    EXTERNAL NAME 'com.l7tech.server.upgrade.DerbyFunctions.ifNull';
 
 CREATE FUNCTION randomLong() RETURNS bigint
     PARAMETER STYLE JAVA NO SQL LANGUAGE JAVA
@@ -167,6 +180,8 @@ ALTER TABLE jdbc_connection ALTER COLUMN goid NOT NULL;
 ALTER TABLE jdbc_connection DROP PRIMARY KEY;
 ALTER TABLE jdbc_connection DROP COLUMN objectid;
 ALTER TABLE jdbc_connection ADD PRIMARY KEY (goid);
+update rbac_role set entity_goid = toGoid(cast(getVariable('jdbc_connection_prefix') as bigint),entity_oid) where entity_oid is not null and entity_type='JDBC_CONNECTION';
+update rbac_predicate_oid oid1 set oid1.entity_id = ifnull((select goidToString(toGoid(cast(getVariable('jdbc_connection_prefix') as bigint),cast(oid1.entity_id as bigint))) from rbac_predicate left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid where rbac_predicate.objectid = oid1.objectid and rbac_permission.entity_type = 'SERVICE'), oid1.entity_id);
 
 -- MetricsBin, MetricsBinDetail  - metrics are not enabled for derby, no data to upgrade
 ALTER TABLE service_metrics DROP PRIMARY KEY;
@@ -199,6 +214,9 @@ ALTER TABLE sample_messages DROP PRIMARY KEY;
 ALTER TABLE sample_messages DROP COLUMN objectid;
 ALTER TABLE sample_messages ADD PRIMARY KEY (goid);
 
+update rbac_role set entity_goid = toGoid(cast(getVariable('sample_messages_prefix') as bigint),entity_oid) where entity_oid is not null and entity_type='SAMPLE_MESSAGE';
+update rbac_predicate_oid oid1 set oid1.entity_id = ifnull((select goidToString(toGoid(cast(getVariable('sample_messages_prefix') as bigint),cast(oid1.entity_id as bigint))) from rbac_predicate left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid where rbac_predicate.objectid = oid1.objectid and rbac_permission.entity_type = 'SAMPLE_MESSAGE'), oid1.entity_id);
+
 -- ClusterProperty
 ALTER TABLE cluster_properties ADD COLUMN goid CHAR(16) FOR BIT DATA;
 call setVariable('cluster_properties_prefix', cast(randomLongNotReserved() as char(21)));
@@ -209,6 +227,9 @@ ALTER TABLE cluster_properties ALTER COLUMN goid NOT NULL;
 ALTER TABLE cluster_properties DROP PRIMARY KEY;
 ALTER TABLE cluster_properties DROP COLUMN objectid;
 ALTER TABLE cluster_properties ADD PRIMARY KEY (goid);
+
+update rbac_role set entity_goid = toGoid(cast(getVariable('cluster_properties_prefix') as bigint),entity_oid) where entity_oid is not null and entity_type='CLUSTER_PROPERTY';
+update rbac_predicate_oid oid1 set oid1.entity_id = ifnull((select goidToString(toGoid(cast(getVariable('cluster_properties_prefix') as bigint),cast(oid1.entity_id as bigint))) from rbac_predicate left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid where rbac_predicate.objectid = oid1.objectid and rbac_permission.entity_type = 'CLUSTER_PROPERTY'), oid1.entity_id);
 
 -- EmailListener
 ALTER TABLE email_listener_state DROP CONSTRAINT FK5A708C492FC43EC3;
@@ -235,6 +256,9 @@ ALTER TABLE email_listener_state DROP COLUMN objectid;
 ALTER TABLE email_listener_state ADD PRIMARY KEY (goid);
 alter table email_listener_state ADD CONSTRAINT FK5A708C492FC43EC3 foreign key (email_listener_goid) references email_listener on delete cascade;
 
+update rbac_role set entity_goid = toGoid(cast(getVariable('email_listener_prefix') as bigint),entity_oid) where entity_oid is not null and entity_type='EMAIL_LISTENER';
+update rbac_predicate_oid oid1 set oid1.entity_id = ifnull((select goidToString(toGoid(cast(getVariable('email_listener_prefix') as bigint),cast(oid1.entity_id as bigint))) from rbac_predicate left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid where rbac_predicate.objectid = oid1.objectid and rbac_permission.entity_type = 'EMAIL_LISTENER'), oid1.entity_id);
+
 --- GenericEntity
 ALTER TABLE generic_entity ADD COLUMN goid CHAR(16) FOR BIT DATA;
 call setVariable('generic_entity_prefix', cast(randomLongNotReserved() as char(21)));
@@ -244,6 +268,8 @@ ALTER TABLE generic_entity DROP PRIMARY KEY;
 ALTER TABLE generic_entity DROP COLUMN objectid;
 ALTER TABLE generic_entity ADD PRIMARY KEY (goid);
 
+update rbac_role set entity_goid = toGoid(cast(getVariable('generic_entity_prefix') as bigint),entity_oid) where entity_oid is not null and entity_type='GENERIC';
+update rbac_predicate_oid oid1 set oid1.entity_id = ifnull((select goidToString(toGoid(cast(getVariable('generic_entity_prefix') as bigint),cast(oid1.entity_id as bigint))) from rbac_predicate left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid where rbac_predicate.objectid = oid1.objectid and rbac_permission.entity_type = 'GENERIC'), oid1.entity_id);
 
 -- Connector
 ALTER TABLE connector_property DROP CONSTRAINT FK7EC2A187BA66EE5C;
@@ -262,6 +288,9 @@ ALTER TABLE connector_property ALTER COLUMN connector_goid NOT NULL;
 ALTER TABLE connector_property DROP COLUMN connector_oid;
 ALTER TABLE connector_property add constraint FK7EC2A187BA66EE5C foreign key (connector_goid) references connector on delete cascade;
 
+update rbac_role set entity_goid = toGoid(cast(getVariable('connector_prefix') as bigint),entity_oid) where entity_oid is not null and entity_type='SSG_CONNECTOR';
+update rbac_predicate_oid oid1 set oid1.entity_id = ifnull((select goidToString(toGoid(cast(getVariable('connector_prefix') as bigint),cast(oid1.entity_id as bigint))) from rbac_predicate left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid where rbac_predicate.objectid = oid1.objectid and rbac_permission.entity_type = 'SSG_CONNECTOR'), oid1.entity_id);
+
 -- Firewall rule
 
 ALTER TABLE firewall_rule ADD COLUMN objectid_backup bigint;
@@ -279,6 +308,9 @@ update firewall_rule_property set firewall_rule_goid = toGoid(cast(getVariable('
 ALTER TABLE firewall_rule_property ALTER COLUMN firewall_rule_goid NOT NULL;
 ALTER TABLE firewall_rule_property DROP COLUMN firewall_rule_oid;
 ALTER TABLE firewall_rule_property add constraint FK_FIREWALL_PROPERTY_GOID foreign key (firewall_rule_goid) references firewall_rule on delete cascade;
+
+update rbac_role set entity_goid = toGoid(cast(getVariable('firewall_rule_prefix') as bigint),entity_oid) where entity_oid is not null and entity_type='FIREWALL_RULE';
+update rbac_predicate_oid oid1 set oid1.entity_id = ifnull((select goidToString(toGoid(cast(getVariable('firewall_rule_prefix') as bigint),cast(oid1.entity_id as bigint))) from rbac_predicate left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid where rbac_predicate.objectid = oid1.objectid and rbac_permission.entity_type = 'FIREWALL_RULE'), oid1.entity_id);
 
 -- Encapsulated Assertion
 ALTER TABLE encapsulated_assertion ADD COLUMN objectid_backup bigint;
@@ -323,6 +355,8 @@ ALTER TABLE encapsulated_assertion_result ALTER COLUMN encapsulated_assertion_go
 ALTER TABLE encapsulated_assertion_result DROP COLUMN encapsulated_assertion_oid;
 ALTER TABLE encapsulated_assertion_result add constraint FK_ENCASSRES_ENCASS foreign key (encapsulated_assertion_goid) references encapsulated_assertion on delete cascade;
 
+update rbac_role set entity_goid = toGoid(cast(getVariable('encass_prefix') as bigint),entity_oid) where entity_oid is not null and entity_type='ENCAPSULATED_ASSERTION';
+update rbac_predicate_oid oid1 set oid1.entity_id = ifnull((select goidToString(toGoid(cast(getVariable('encass_prefix') as bigint),cast(oid1.entity_id as bigint))) from rbac_predicate left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid where rbac_predicate.objectid = oid1.objectid and rbac_permission.entity_type = 'ENCAPSULATED_ASSERTION'), oid1.entity_id);
 
 --
 -- Register upgrade task for upgrading sink configuration references to GOIDs

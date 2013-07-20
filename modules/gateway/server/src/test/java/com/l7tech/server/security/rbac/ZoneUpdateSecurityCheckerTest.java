@@ -32,7 +32,7 @@ import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ZoneUpdateSecurityCheckerTest {
-    private static final long ZONE_OID = 1234L;
+    private static final Goid ZONE_GOID = new Goid(0,1234L);
     private ZoneUpdateSecurityChecker checker;
     @Mock
     private EntityFinder entityFinder;
@@ -101,13 +101,13 @@ public class ZoneUpdateSecurityCheckerTest {
     @Test
     public void nonNullSecurityZoneOidLooksUpZone() throws Throwable {
         ids.add(1L);
-        when(entityFinder.find(SecurityZone.class, ZONE_OID)).thenReturn(zone);
+        when(entityFinder.find(SecurityZone.class, ZONE_GOID)).thenReturn(zone);
         when(entityFinder.find(Policy.class, 1L)).thenReturn(policy);
         when(rbacServices.isPermittedForEntity(eq(user), any(Policy.class), eq(OperationType.UPDATE), eq((String) null))).thenReturn(true);
 
-        checker.checkBulkUpdatePermitted(user, ZONE_OID, EntityType.POLICY, ids);
+        checker.checkBulkUpdatePermitted(user, ZONE_GOID, EntityType.POLICY, ids);
 
-        verify(entityFinder).find(SecurityZone.class, ZONE_OID);
+        verify(entityFinder).find(SecurityZone.class, ZONE_GOID);
         // once for pre-edit check, once for after edit check
         verify(rbacServices, times(2)).isPermittedForEntity(user, policy, OperationType.UPDATE, null);
     }
@@ -116,13 +116,13 @@ public class ZoneUpdateSecurityCheckerTest {
     public void nonNullSecurityZoneOidLooksUpZoneGoid() throws Throwable {
         Goid goid1 = new Goid(0,1);
         ids.add(goid1);
-        when(entityFinder.find(SecurityZone.class, ZONE_OID)).thenReturn(zone);
+        when(entityFinder.find(SecurityZone.class, ZONE_GOID)).thenReturn(zone);
         when(entityFinder.find(Policy.class, goid1)).thenReturn(policy);
         when(rbacServices.isPermittedForEntity(eq(user), any(Policy.class), eq(OperationType.UPDATE), eq((String) null))).thenReturn(true);
 
-        checker.checkBulkUpdatePermitted(user, ZONE_OID, EntityType.POLICY, ids);
+        checker.checkBulkUpdatePermitted(user, ZONE_GOID, EntityType.POLICY, ids);
 
-        verify(entityFinder).find(SecurityZone.class, ZONE_OID);
+        verify(entityFinder).find(SecurityZone.class, ZONE_GOID);
         // once for pre-edit check, once for after edit check
         verify(rbacServices, times(2)).isPermittedForEntity(user, policy, OperationType.UPDATE, null);
     }
@@ -134,8 +134,8 @@ public class ZoneUpdateSecurityCheckerTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void securityZoneDoesNotExist() throws Throwable {
-        when(entityFinder.find(SecurityZone.class, ZONE_OID)).thenReturn(null);
-        checker.checkBulkUpdatePermitted(user, ZONE_OID, EntityType.POLICY, ids);
+        when(entityFinder.find(SecurityZone.class, ZONE_GOID)).thenReturn(null);
+        checker.checkBulkUpdatePermitted(user, ZONE_GOID, EntityType.POLICY, ids);
     }
 
     @Test(expected = IllegalArgumentException.class)

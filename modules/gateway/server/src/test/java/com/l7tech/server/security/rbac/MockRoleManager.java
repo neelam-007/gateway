@@ -8,6 +8,7 @@ import com.l7tech.identity.GroupManager;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
+import com.l7tech.objectmodel.imp.NamedGoidEntityImp;
 import com.l7tech.server.EntityFinder;
 import com.l7tech.server.EntityManagerStub;
 import com.l7tech.util.Pair;
@@ -94,12 +95,30 @@ public class MockRoleManager extends EntityManagerStub<Role,EntityHeader> implem
     }
 
     @Override
+    public Collection<Role> findEntitySpecificRoles(EntityType etype, Goid entityGoid) throws FindException {
+        for (Role role : entities.values()) {
+            if (role.getEntityType() == etype && role.getEntityGoid().equals(entityGoid)) return Collections.singletonList(role);
+        }
+        return null;
+    }
+
+    @Override
     public void deleteEntitySpecificRoles(EntityType etype, long entityOid) throws DeleteException {
         throw new UnsupportedOperationException();
     }
 
     @Override
+    public void deleteEntitySpecificRoles(EntityType etype, Goid entityGoid) throws DeleteException {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public void renameEntitySpecificRoles(EntityType entityType, NamedEntityImp entity, Pattern replacePattern) throws FindException, UpdateException {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void renameEntitySpecificRoles(EntityType entityType, NamedGoidEntityImp entity, Pattern replacePattern) throws FindException, UpdateException {
         throw new UnsupportedOperationException();
     }
 

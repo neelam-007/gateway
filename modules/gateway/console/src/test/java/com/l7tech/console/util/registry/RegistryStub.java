@@ -54,7 +54,6 @@ import java.util.Collection;
 import java.util.Map;
 
 import static com.l7tech.util.Option.none;
-import static com.l7tech.util.Option.optional;
 
 
 /**
@@ -235,12 +234,12 @@ public class RegistryStub extends Registry {
             }
 
             @Override
-            public SecurityZone findSecurityZoneByPrimaryKey(long oid) throws FindException {
+            public SecurityZone findSecurityZoneByPrimaryKey(Goid goid) throws FindException {
                 throw new FindException("not impl in stub");
             }
 
             @Override
-            public long saveSecurityZone(SecurityZone securityZone) throws SaveException {
+            public Goid saveSecurityZone(SecurityZone securityZone) throws SaveException {
                 throw new SaveException("not impl in stub");
             }
 
@@ -250,17 +249,17 @@ public class RegistryStub extends Registry {
             }
 
             @Override
-            public Collection<EntityHeader> findEntitiesByTypeAndSecurityZoneOid(@NotNull EntityType type, long securityZoneOid) throws FindException {
+            public Collection<EntityHeader> findEntitiesByTypeAndSecurityZoneGoid(@NotNull EntityType type, Goid securityZoneGoid) throws FindException {
                 throw new FindException("not impl in stub");
             }
 
             @Override
-            public void setSecurityZoneForEntities(Long securityZoneOid, @NotNull EntityType entityType, @NotNull Collection<Serializable> entityIds) throws UpdateException {
+            public void setSecurityZoneForEntities(Goid securityZoneGoid, @NotNull EntityType entityType, @NotNull Collection<Serializable> entityIds) throws UpdateException {
                 throw new UpdateException("not impl in stub");
             }
 
             @Override
-            public void setSecurityZoneForEntities(Long securityZoneOid, @NotNull Map<EntityType, Collection<Serializable>> entityIds) throws UpdateException {
+            public void setSecurityZoneForEntities(Goid securityZoneGoid, @NotNull Map<EntityType, Collection<Serializable>> entityIds) throws UpdateException {
                 throw new UpdateException("not impl in stub");
             }
 

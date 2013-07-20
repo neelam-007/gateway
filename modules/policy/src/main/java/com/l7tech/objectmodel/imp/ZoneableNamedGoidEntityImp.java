@@ -25,7 +25,7 @@ public abstract class ZoneableNamedGoidEntityImp extends NamedGoidEntityImp impl
 
     @Override
     @ManyToOne
-    @JoinColumn(name = "security_zone_oid")
+    @JoinColumn(name = "security_zone_goid")
     @XmlTransient  // TODO remove XmlTransient and expose security zone in generated XML
     @Migration(dependency = false)
     public SecurityZone getSecurityZone() {

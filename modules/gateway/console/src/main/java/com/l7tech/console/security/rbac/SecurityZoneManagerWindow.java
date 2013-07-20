@@ -130,14 +130,14 @@ public class SecurityZoneManagerWindow extends JDialog {
         ecc.setEntitySaver(new EntitySaver<SecurityZone>() {
             @Override
             public SecurityZone saveEntity(SecurityZone entity) throws SaveException {
-                long oid = Registry.getDefault().getRbacAdmin().saveSecurityZone(entity);
+                Goid goid = Registry.getDefault().getRbacAdmin().saveSecurityZone(entity);
                 flushCachedZones();
                 refreshTrees();
                 try {
-                    return Registry.getDefault().getRbacAdmin().findSecurityZoneByPrimaryKey(oid);
+                    return Registry.getDefault().getRbacAdmin().findSecurityZoneByPrimaryKey(goid);
                 } catch (final FindException e) {
                     logger.log(Level.WARNING, "Unable to retrieve saved entity: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-                    entity.setOid(oid);
+                    entity.setGoid(goid);
                     return entity;
                 } catch (final PermissionDeniedException e) {
                     throw new SaveException("Cannot retrieve saved entity: " + ExceptionUtils.getMessage(e), e);
@@ -147,7 +147,7 @@ public class SecurityZoneManagerWindow extends JDialog {
         ecc.setEntityEditor(new EntityEditor<SecurityZone>() {
             @Override
             public void displayEditDialog(final SecurityZone zone, final Functions.UnaryVoidThrows<SecurityZone, SaveException> afterEditListener) {
-                boolean create = PersistentEntity.DEFAULT_OID == zone.getOid();
+                boolean create = GoidEntity.DEFAULT_GOID.equals(zone.getGoid());
                 AttemptedOperation operation = create
                         ? new AttemptedCreateSpecific(EntityType.SECURITY_ZONE, zone)
                         : new AttemptedUpdate(EntityType.SECURITY_ZONE, zone);

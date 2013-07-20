@@ -1,6 +1,6 @@
 package com.l7tech.objectmodel;
 
-import com.l7tech.objectmodel.imp.NamedEntityImp;
+import com.l7tech.objectmodel.imp.NamedGoidEntityImp;
 import org.hibernate.annotations.Parameter;
 import org.hibernate.annotations.Proxy;
 import org.hibernate.annotations.Type;
@@ -26,7 +26,7 @@ import java.util.Set;
 @Proxy(lazy=false)
 @Inheritance(strategy=InheritanceType.SINGLE_TABLE)
 @Table(name="security_zone")
-public class SecurityZone extends NamedEntityImp {
+public class SecurityZone extends NamedGoidEntityImp {
     private String description = "";
     private Set<EntityType> permittedEntityTypes = EnumSet.noneOf(EntityType.class);
 
@@ -90,7 +90,7 @@ public class SecurityZone extends NamedEntityImp {
     @Override
     public String toString() {
         return "SecurityZone{" +
-            "oid=" + getOid() +
+            "oid=" + getGoid().toHexString() +
             ", name='" + getName() + "'" +
             ", description='" + description + '\'' +
             '}';
