@@ -107,7 +107,7 @@ public class EntityCrudController<ET> {
                                     try {
                                         final ET savedEntity = doSave(editedEntity);
                                         if (savedEntity != null) {
-                                            entityTableModel.addRow(0, editedEntity);
+                                            entityTableModel.addRow(0, savedEntity);
                                             // select and scroll to created row
                                             final int selectIndex = entityTable.convertRowIndexToView(0);
                                             if (selectIndex >= 0) {
