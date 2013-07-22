@@ -4,14 +4,13 @@ import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.gateway.common.custom.ContentTypeHeaderToCustomConverter;
 import com.l7tech.json.InvalidJsonException;
 import com.l7tech.message.Message;
+import com.l7tech.message.MimeKnob;
 import com.l7tech.policy.assertion.ext.message.*;
 import com.l7tech.policy.assertion.ext.message.format.CustomMessageFormat;
 import com.l7tech.policy.assertion.ext.message.format.CustomMessageFormatFactory;
 import com.l7tech.policy.assertion.ext.message.format.NoSuchMessageFormatException;
 import com.l7tech.policy.assertion.ext.message.knob.CustomMessageKnob;
 import com.l7tech.policy.assertion.ext.message.knob.NoSuchKnobException;
-import com.l7tech.server.custom.format.CustomMessageFormatRegistry;
-import com.l7tech.server.message.PolicyEnforcementContext;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -44,15 +43,30 @@ public class CustomMessageImpl implements CustomMessage {
     private final CustomMessageFormatFactory messageFormatFactory;
     private final Map<Class<? extends CustomMessageKnob>, CustomMessageKnob> attachedKnobs;
 
-    public CustomMessageImpl(@NotNull final Message message) {
+    public CustomMessageImpl(@NotNull final CustomMessageFormatFactory messageFormatFactory, @NotNull final Message message) {
         this.message = message;
-        this.messageFormatFactory = CustomMessageFormatRegistry.getInstance().getMessageFormatFactory();
+        this.messageFormatFactory = messageFormatFactory;
         this.attachedKnobs = new HashMap<>();
+    }
+
+    /**
+     * Utility function for extracting the outer content type of certain message.
+     *
+     * @param message the message which content type should be extracted
+     * @return the outer content type of certain message, or <code>application/octet-stream</code> is message is not initialized.
+     */
+    static public ContentTypeHeader extractContentTypeHeader(@NotNull Message message) {
+        ContentTypeHeader contentTypeHeader = null;
+        MimeKnob mimeKnob;
+        if (message.isInitialized() && (mimeKnob = message.getKnob(MimeKnob.class)) != null) {
+            contentTypeHeader = mimeKnob.getOuterContentType();
+        }
+        return (contentTypeHeader != null) ? contentTypeHeader : ContentTypeHeader.OCTET_STREAM_DEFAULT; // default to app octet;
     }
 
     @Override
     public CustomContentType getContentType() {
-        return new ContentTypeHeaderToCustomConverter(message.getMimeKnob().getOuterContentType());
+        return new ContentTypeHeaderToCustomConverter(extractContentTypeHeader(message));
     }
 
     @Override

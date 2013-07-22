@@ -9,6 +9,7 @@ import com.l7tech.gateway.common.custom.*;
 import com.l7tech.gateway.common.custom.ContentTypeHeaderToCustomConverter;
 import com.l7tech.policy.assertion.ext.message.format.CustomMessageFormatFactory;
 import com.l7tech.policy.assertion.ext.message.knob.CustomHttpHeadersKnob;
+import com.l7tech.policy.assertion.ext.message.knob.CustomPartsKnob;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.server.custom.CustomMessageImpl;
 import com.l7tech.gateway.common.custom.CustomToMessageTargetableConverter;
@@ -31,6 +32,7 @@ import com.l7tech.policy.variable.VariableNotSettableException;
 import com.l7tech.security.cert.TrustedCertManager;
 import com.l7tech.security.token.OpaqueSecurityToken;
 import com.l7tech.server.custom.knob.CustomHttpHeadersKnobImpl;
+import com.l7tech.server.custom.knob.CustomPartsKnobImpl;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -401,8 +403,11 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
         // add HttpServletRequest, HttpServletRequest header values and HttpServletResponse.
         saveServletKnobs(pec, context);
 
-        // plug in the message parts in here (needed for legacy code)
-        context.put("messageParts", extractParts(msg));
+        // check if we should load all message parts into the context map
+        if (serviceInvocation == null || serviceInvocation.loadsMessagePartsIntoMemory()) {
+            // plug in the message parts in here (needed for legacy code)
+            context.put("messageParts", extractParts(msg));
+        }
 
         //add the ServiceFinder
         final ServiceFinderImpl serviceFinder = new ServiceFinderImpl();
@@ -715,9 +720,12 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
      *
      * @param customMessage    the message to attach the new knobs for.
      */
-    public void doAttachKnobs(final CustomMessageImpl customMessage) {
+    public void doAttachKnobs(@NotNull final CustomMessageImpl customMessage) {
         // attach httpHeaders knob
-        customMessage.attachKnob(CustomHttpHeadersKnob.class, new CustomHttpHeadersKnobImpl(customMessage));
+        customMessage.attachKnob(CustomHttpHeadersKnob.class, new CustomHttpHeadersKnobImpl(customMessage.getMessage()));
+
+        // attach mime multi-parts extractor knobs
+        customMessage.attachKnob(CustomPartsKnob.class, new CustomPartsKnobImpl(customMessage.getMessage()));
     }
 
     /**
@@ -836,7 +844,7 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
 
             final CustomToMessageTargetableConverter converter = new CustomToMessageTargetableConverter(targetable);
             final Message targetMessage = policyContext.getOrCreateTargetMessage(converter, false);
-            final CustomMessageImpl customMessage = new CustomMessageImpl(targetMessage);
+            final CustomMessageImpl customMessage = new CustomMessageImpl(getFormats(), targetMessage);
 
             doAttachKnobs(customMessage);
 

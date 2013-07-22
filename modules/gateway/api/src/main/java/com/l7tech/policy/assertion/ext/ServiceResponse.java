@@ -49,7 +49,7 @@ public interface ServiceResponse {
      * <p><b>updatedCookies</b> -- an immutable <code>java.util.Vector</code> of request {@link javax.servlet.http.Cookie Cookie} objects
      * <p><b>originalCookies</b> -- an immutable <code>java.util.Collection</code> of the request {@link javax.servlet.http.Cookie Cookie} objects
      * <p><b>serviceFinder</b> -- an implementation of {@link ServiceFinder}, which provides access to additional Layer 7 API services.
-     * <p><b>messageparts</b> -- an immutable two-dimensional <code>java.lang.Object</code> array containing the response mime parts and associated content-types.
+     * <p><b>messageParts</b> -- an immutable two-dimensional <code>java.lang.Object</code> array containing the response mime parts and associated content-types.
      *
      * The size of the 2D array is [number of mime parts][2], where the content-types appear in indexes [i][0] and the associated mime parts appear in indexes [i][1].
      * Content-types are of type <code>java.lang.String</code> and mime parts are <code>byte</code> arrays and can be cast as such.
@@ -58,7 +58,7 @@ public interface ServiceResponse {
      * <p><b>Notes</b> The {@link javax.servlet.http.HttpServletResponse HttpServletResponse} object is actually a wrapper around {@link javax.servlet.http.HttpServletResponse HttpServletResponse}
      * with an additional method called <code>addCookie</code> which provides the ability to insert {@link javax.servlet.http.Cookie Cookie} objects into the response.
      * <p> <i>Header values</i>, <i>httpRequests</i> and <i>httpResponses</i> are not guaranteed to exist in the <code>Map</Map>.
-     * <p> The <i>messageparts</i> object is guaranteed to exist but may not contain any useful data if no mime parts exist in the message.
+     * <p> The <i>messageParts</i> object is guaranteed to exist but may not contain any useful data if no mime parts exist in the message.
      * 
      * @return a {@link java.util.Map Map} of data representing the current policy execution context
      */

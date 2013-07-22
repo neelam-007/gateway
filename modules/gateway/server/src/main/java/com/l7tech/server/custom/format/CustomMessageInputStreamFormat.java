@@ -1,6 +1,7 @@
 package com.l7tech.server.custom.format;
 
 import com.l7tech.common.mime.ByteArrayStashManager;
+import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.message.Message;
 import com.l7tech.message.MimeKnob;
@@ -61,7 +62,11 @@ public class CustomMessageInputStreamFormat extends CustomMessageFormatBase<Inpu
 
         final Message targetMessage = ((CustomMessageImpl)message).getMessage();
         try {
-            targetMessage.initialize(new ByteArrayStashManager(), targetMessage.getMimeKnob().getOuterContentType(), contents);
+            targetMessage.initialize(
+                    new ByteArrayStashManager(),
+                    CustomMessageImpl.extractContentTypeHeader(targetMessage),
+                    contents
+            );
         } catch (IOException e) {
             throw new CustomMessageAccessException("Error while overwriting InputStream message value", e);
         }

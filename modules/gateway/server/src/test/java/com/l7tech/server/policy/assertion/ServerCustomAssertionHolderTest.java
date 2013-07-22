@@ -3,29 +3,25 @@ package com.l7tech.server.policy.assertion;
 import com.l7tech.common.http.CookieUtils;
 import com.l7tech.common.http.HttpCookie;
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.common.mime.ByteArrayStashManager;
-import com.l7tech.common.mime.ContentTypeHeader;
-import com.l7tech.common.mime.StashManager;
+import com.l7tech.common.mime.*;
 import com.l7tech.message.*;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.ext.*;
 import com.l7tech.policy.assertion.ext.message.*;
-import com.l7tech.policy.assertion.ext.targetable.CustomMessageTargetable;
-import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.ServerPolicyFactory;
 import com.l7tech.server.policy.ServiceFinderImpl;
 import com.l7tech.server.policy.assertion.composite.ServerAllAssertion;
 import com.l7tech.server.policy.custom.CustomAssertionsPolicyTestBase;
 import com.l7tech.server.policy.custom.CustomAssertionsSampleContents;
-import com.l7tech.util.HexUtils;
+import com.l7tech.util.*;
 
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import java.io.IOException;
+import java.io.*;
 import java.security.AccessControlException;
 import java.security.GeneralSecurityException;
 import java.util.*;
@@ -64,16 +60,6 @@ public class ServerCustomAssertionHolderTest extends CustomAssertionsPolicyTestB
         // mock getBean to return appropriate mock classes for policyFactory
         when(mockApplicationContext.getBean("policyFactory", ServerPolicyFactory.class)).thenReturn(serverPolicyFactory);
         when(mockApplicationContext.getBean("policyFactory")).thenReturn(serverPolicyFactory);
-
-        // mock getBean to return appropriate stashManagerFactory used for HardcodedResponseAssertion
-        final StashManagerFactory stashManagerFactory = new StashManagerFactory() {
-            @Override
-            public StashManager createStashManager() {
-                return new ByteArrayStashManager();
-            }
-        };
-        when(mockApplicationContext.getBean("stashManagerFactory")).thenReturn(stashManagerFactory);
-        when(mockApplicationContext.getBean("stashManagerFactory", StashManagerFactory.class)).thenReturn(stashManagerFactory);
 
         // Register needed assertions here
         assertionRegistry.registerAssertion(SetVariableAssertion.class);
@@ -119,9 +105,6 @@ public class ServerCustomAssertionHolderTest extends CustomAssertionsPolicyTestB
 
         assertNotNull("CustomAssertionHolder cannot be null.", customAssertionHolder);
         serviceInvocation.setCustomAssertion(customAssertionHolder.getCustomAssertion());
-
-        final CustomAssertion customAssertion = serviceInvocation.getCustomAssertion();
-        assertFalse("CustomAssertion is of type CustomMessageTargetable", customAssertion instanceof CustomMessageTargetable);
 
         //noinspection deprecation
         doAnswer(new Answer<Void>() {
@@ -183,9 +166,6 @@ public class ServerCustomAssertionHolderTest extends CustomAssertionsPolicyTestB
         assertNotNull("CustomAssertionHolder cannot be null.", customAssertionHolder);
         serviceInvocation.setCustomAssertion(customAssertionHolder.getCustomAssertion());
 
-        final CustomAssertion customAssertion = serviceInvocation.getCustomAssertion();
-        assertFalse("CustomAssertion is of type CustomMessageTargetable", customAssertion instanceof CustomMessageTargetable);
-
         //noinspection deprecation
         doAnswer(new Answer<Void>() {
             @Override
@@ -245,9 +225,6 @@ public class ServerCustomAssertionHolderTest extends CustomAssertionsPolicyTestB
 
         assertNotNull("CustomAssertionHolder cannot be null.", customAssertionHolder);
         serviceInvocation.setCustomAssertion(customAssertionHolder.getCustomAssertion());
-
-        final CustomAssertion customAssertion = serviceInvocation.getCustomAssertion();
-        assertFalse("CustomAssertion is of type CustomMessageTargetable", customAssertion instanceof CustomMessageTargetable);
 
         //noinspection deprecation
         doAnswer(new Answer<Void>() {
@@ -314,9 +291,6 @@ public class ServerCustomAssertionHolderTest extends CustomAssertionsPolicyTestB
 
         assertNotNull("CustomAssertionHolder cannot be null.", customAssertionHolder);
         serviceInvocation.setCustomAssertion(customAssertionHolder.getCustomAssertion());
-
-        final CustomAssertion customAssertion = serviceInvocation.getCustomAssertion();
-        assertFalse("CustomAssertion is of type CustomMessageTargetable", customAssertion instanceof CustomMessageTargetable);
 
         //noinspection deprecation
         doAnswer(new Answer<Void>() {
@@ -857,7 +831,6 @@ public class ServerCustomAssertionHolderTest extends CustomAssertionsPolicyTestB
         doTestUpdateAndDeletedCookies(context);
     }
 
-
     @Test
     public void testLegacyUpdateAndDeleteCookies() throws Exception {
         final CustomAssertionHolder customAssertionHolder = new CustomAssertionHolder();
@@ -915,5 +888,75 @@ public class ServerCustomAssertionHolderTest extends CustomAssertionsPolicyTestB
         assertEquals(AssertionStatus.NONE, status);
 
         doTestUpdateAndDeletedCookies(context);
+    }
+
+    @Test
+    public void testShouldLoadMessagePartsInMemory() throws Exception {
+        final CustomAssertionHolder customAssertionHolder = new CustomAssertionHolder();
+        customAssertionHolder.setCategories(Category.AUDIT_ALERT);
+        customAssertionHolder.setDescriptionText("Test Custom Assertion");
+        customAssertionHolder.setCustomAssertion(new TestLegacyCustomAssertion());
+
+        // override loadsMessagePartsIntoMemory
+        class ShouldLoadMessagePartsInMemoryServiceInvocation extends ServiceInvocation {
+            @Override
+            public boolean loadsMessagePartsIntoMemory() {
+                return false;
+            }
+        }
+        serviceInvocation = spy(new ShouldLoadMessagePartsInMemoryServiceInvocation());
+
+        assertNotNull("CustomAssertion cannot be null.", customAssertionHolder.getCustomAssertion());
+        serviceInvocation.setCustomAssertion(customAssertionHolder.getCustomAssertion());
+
+        // build the context (creates empty request and response)
+        final PolicyEnforcementContext context = createPolicyContext();
+        // initialize the request
+        context.getRequest().initialize(
+                ContentTypeHeader.parseValue(CustomAssertionsSampleContents.MULTIPART_FIRST_PART_APP_OCTET_CONTENT_TYPE),
+                CustomAssertionsSampleContents.MULTIPART_FIRST_PART_APP_OCTET_CONTENT.getBytes()
+        );
+
+        doAnswer(new Answer<CustomAssertionStatus>() {
+            @Override
+            public CustomAssertionStatus answer(InvocationOnMock invocation) throws Throwable {
+                assertTrue("there is only one parameter for onRequest", invocation.getArguments().length == 1);
+
+                final Object param1 = invocation.getArguments()[0];
+                assertTrue("Param is CustomPolicyContext", param1 instanceof CustomPolicyContext);
+                final CustomPolicyContext policyContext = (CustomPolicyContext) param1;
+
+                //noinspection unchecked
+                Map<String, Object> contextMap = policyContext.getContext();
+                assertNull(contextMap.get("messageParts"));
+
+                return CustomAssertionStatus.NONE;
+            }
+        }).when(serviceInvocation).checkRequest(Matchers.<CustomPolicyContext>any());
+
+        //noinspection deprecation
+        doAnswer(new Answer<Void>() {
+            @Override
+            public Void answer(final InvocationOnMock invocation) throws Throwable {
+                fail("onRequest should not be called when checkRequest is implemented!");
+                return null;
+            }
+        }).when(serviceInvocation).onRequest(Matchers.<ServiceRequest>any());
+
+        //noinspection deprecation
+        doAnswer(new Answer<Void>() {
+            @Override
+            public Void answer(final InvocationOnMock invocation) throws Throwable {
+                fail("onResponse should not be called when checkRequest is implemented!");
+                return null;
+            }
+        }).when(serviceInvocation).onResponse(Matchers.<ServiceResponse>any());
+
+        final ServerAssertion serverAssertion = serverPolicyFactory.compilePolicy(customAssertionHolder, false);
+        assertTrue("Is instance of ServerCustomAssertionHolder", serverAssertion instanceof ServerCustomAssertionHolder);
+        final ServerCustomAssertionHolder serverCustomAssertionHolder = (ServerCustomAssertionHolder)serverAssertion;
+
+        AssertionStatus status = serverCustomAssertionHolder.checkRequest(context);
+        assertEquals(AssertionStatus.NONE, status);
     }
 }

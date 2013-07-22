@@ -110,6 +110,29 @@ public abstract class ServiceInvocation {
         return CustomAssertionStatus.NONE;
     }
 
+    /**
+     * Indicate whether the SSG will go through all message parts and load them in memory,
+     * so that they will be available in the context-map as key <code>messageParts</code>.
+     * <p/>
+     * <b>Override</b> this method and return <b>false</b> in order to avoid unnecessary memory usage.
+     * Use {@link com.l7tech.policy.assertion.ext.message.CustomMessage#getKnob(Class) CustomMessage.getKnob(Class)},
+     * with {@link com.l7tech.policy.assertion.ext.message.knob.CustomPartsKnob CustomPartsKnob}.class as parameter
+     * to access the message parts when needed.
+     * <p/>
+     * Note that, this functionality is kept for backwards compatibility. Its <b>strongly</b> advised
+     * to override this method and return false, in your <code>ServiceInvocation</code> implementation,
+     * in order to avoid unnecessary memory usage and potential SSG crashes, due to memory starvation.
+     *
+     * @return true if the SSG should load all message parts into memory, false otherwise.
+     *
+     * @see com.l7tech.policy.assertion.ext.message.CustomMessage#getKnob(Class)
+     * @see com.l7tech.policy.assertion.ext.message.knob.CustomPartsKnob
+     * @see com.l7tech.policy.assertion.ext.message.CustomPolicyContext#getContext()
+     */
+    public boolean loadsMessagePartsIntoMemory() {
+        return true;
+    }
+
     //- PROTECTED
 
     /**

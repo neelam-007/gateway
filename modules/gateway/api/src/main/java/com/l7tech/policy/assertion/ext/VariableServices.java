@@ -16,7 +16,7 @@ public interface VariableServices {
     public String[] getReferencedVarNames(String varName);
 
     /**
-     * Use {@link ServiceRequest#expandVariable(String, java.util.Map)} instead.
+     * Use {@link com.l7tech.policy.assertion.ext.message.CustomPolicyContext#expandVariable(String, java.util.Map)} instead.
      */
     @Deprecated
     public Object expandVariable(String varName, Map varMap);

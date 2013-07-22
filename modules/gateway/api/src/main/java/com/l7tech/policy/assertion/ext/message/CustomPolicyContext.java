@@ -34,23 +34,23 @@ public interface CustomPolicyContext {
      * <p><b>updatedCookies</b> -- an immutable <code>java.util.Vector</code> of request {@link javax.servlet.http.Cookie Cookie} objects
      * <p><b>originalCookies</b> -- an immutable <code>java.util.Collection</code> of the request {@link javax.servlet.http.Cookie Cookie} objects
      *
-     * <p><b>messageparts</b> -- an immutable two-dimensional <code>java.lang.Object</code> array containing the request mime parts and associated content-types.
+     * <p><b>messageParts</b> -- an immutable two-dimensional <code>java.lang.Object</code> array containing the request mime parts and associated content-types.
      *                           The size of the 2D array is [number of mime parts][2], where the content-types appear in indexes [i][0] and the associated mime parts appear in indexes [i][1].
      *                           Content-types are of type <code>java.lang.String</code> and mime parts are <code>byte</code> arrays and can be cast as such.
      *
      * <p><b>defaultRequest</b> -- {@link com.l7tech.policy.assertion.ext.ServiceRequest ServiceRequest} returns deprecated default Request message object aka. ServiceRequest.
      *                             This context variable is provided for backwards compatibility, in order to access the default request, use either
      *                             {@link #getTargetMessage(com.l7tech.policy.assertion.ext.targetable.CustomMessageTargetable)} or
-     *                             {@link #getMessage(String)} with request as a target e.g. <code>getMessage("request")<code/>.
+     *                             {@link #getMessage(String)} with request as a target e.g. <code>getMessage("request")</code>.
      * <p><b>defaultResponse</b> -- {@link com.l7tech.policy.assertion.ext.ServiceResponse ServiceResponse} returns deprecated default Response message object aka. ServiceResponse.
      *                             This context variable is provided for backwards compatibility, in order to access the default response, use either
      *                             {@link #getTargetMessage(com.l7tech.policy.assertion.ext.targetable.CustomMessageTargetable)} or
-     *                             {@link #getMessage(String)} with response as a target e.g. <code>getMessage("response")<code/>.
+     *                             {@link #getMessage(String)} with response as a target e.g. <code>getMessage("response")</code>.
      *
      * <p><b>Notes</b> The {@link javax.servlet.http.HttpServletResponse HttpServletResponse} object is actually a wrapper around {@link javax.servlet.http.HttpServletResponse HttpServletResponse}
      * with an additional method called <code>addCookie</code> which provides the ability to insert {@link javax.servlet.http.Cookie Cookie} objects into the response.
-     * <p> <i>Header values</i>, <i>httpRequests</i> and <i>httpResponses</i> are not guaranteed to exist in the <code>Map</Map>.
-     * <p> The <i>messageparts</i> object is guaranteed to exist but may not contain any useful data if no mime parts exist in the message.
+     * <p> <i>Header values</i>, <i>httpRequests</i> and <i>httpResponses</i> are not guaranteed to exist in the <code>Map</code>.
+     * <p> The <i>messageParts</i> object is guaranteed to exist but may not contain any useful data if no mime parts exist in the message.
      *
      * @return a {@link java.util.Map Map} of data representing the current policy execution context
      */

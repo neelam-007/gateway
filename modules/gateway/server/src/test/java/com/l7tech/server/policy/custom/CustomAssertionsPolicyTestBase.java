@@ -1,5 +1,7 @@
 package com.l7tech.server.policy.custom;
 
+import com.l7tech.common.mime.ByteArrayStashManager;
+import com.l7tech.common.mime.StashManager;
 import com.l7tech.gateway.common.custom.CustomAssertionDescriptor;
 import com.l7tech.gateway.common.custom.CustomAssertionsRegistrar;
 import com.l7tech.message.Message;
@@ -11,6 +13,7 @@ import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.ext.CustomAssertion;
 import com.l7tech.policy.assertion.ext.ServiceInvocation;
+import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.TestLicenseManager;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
@@ -39,13 +42,8 @@ public class CustomAssertionsPolicyTestBase {
 
     /**
      * Our ServiceInvocation implementation for testing
-     * added getCustomAssertion method so that we can have access to the customAssertion.
      */
     protected class TestServiceInvocation extends ServiceInvocation {
-        @SuppressWarnings("UnusedDeclaration")
-        public CustomAssertion getCustomAssertion() {
-            return (this.customAssertion);
-        }
     }
 
     /**
@@ -86,7 +84,7 @@ public class CustomAssertionsPolicyTestBase {
     });
 
     @Spy
-    protected final TestServiceInvocation serviceInvocation = new TestServiceInvocation();
+    protected ServiceInvocation serviceInvocation = new TestServiceInvocation();
 
     @Mock
     protected CustomAssertionsRegistrar mockRegistrar;
@@ -96,6 +94,16 @@ public class CustomAssertionsPolicyTestBase {
     protected void doInit() throws Exception {
         // mock getBean to return appropriate mock classes for CustomAssertionRegistrar
         when(mockApplicationContext.getBean("customAssertionRegistrar")).thenReturn(mockRegistrar);
+        
+        // mock getBean to return appropriate mock classes for stashManagerFactory 
+        final StashManagerFactory stashManagerFactory = new StashManagerFactory() {
+            @Override
+            public StashManager createStashManager() {
+                return new ByteArrayStashManager();
+            }
+        };
+        when(mockApplicationContext.getBean("stashManagerFactory")).thenReturn(stashManagerFactory);
+        when(mockApplicationContext.getBean("stashManagerFactory", StashManagerFactory.class)).thenReturn(stashManagerFactory);
 
         // add sample Legacy descriptor
         //noinspection serial

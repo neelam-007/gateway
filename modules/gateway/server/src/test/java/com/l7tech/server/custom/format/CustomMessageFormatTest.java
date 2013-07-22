@@ -1,24 +1,26 @@
 package com.l7tech.server.custom.format;
 
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.common.mime.ByteArrayStashManager;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.gateway.common.custom.ContentTypeHeaderToCustomConverter;
 import com.l7tech.message.Message;
-import com.l7tech.policy.assertion.ext.message.CustomJsonData;
-import com.l7tech.policy.assertion.ext.message.CustomMessage;
-import com.l7tech.policy.assertion.ext.message.CustomMessageAccessException;
-import com.l7tech.policy.assertion.ext.message.InvalidDataException;
+import com.l7tech.policy.assertion.ext.message.*;
 import com.l7tech.policy.assertion.ext.message.format.CustomMessageFormat;
 import com.l7tech.policy.assertion.ext.message.format.CustomMessageFormatFactory;
 import com.l7tech.policy.assertion.ext.message.format.NoSuchMessageFormatException;
+import com.l7tech.policy.assertion.ext.message.knob.CustomMessageKnob;
+import com.l7tech.policy.assertion.ext.message.knob.NoSuchKnobException;
 import com.l7tech.server.custom.CustomMessageImpl;
 import com.l7tech.util.IOUtils;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.io.InputStream;
+import java.util.Collection;
 import java.util.HashMap;
 
 import org.w3c.dom.Document;
@@ -136,18 +138,12 @@ public class CustomMessageFormatTest {
 
         //register a new format String
         CustomMessageFormat newStringFormat = new CustomMessageFormat<String>() {
-            @Override
-            public Class<String> getRepresentationClass() { return String.class; }
-            @Override
-            public String getFormatName() { return "Text"; }
-            @Override
-            public String getFormatDescription() { return "New Text Format"; }
-            @Override
-            public String extract(CustomMessage message) throws CustomMessageAccessException { return null; }
-            @Override
-            public void overwrite(CustomMessage message, String contents) throws CustomMessageAccessException { }
-            @Override
-            public <K> String createBody(K content) throws CustomMessageAccessException { return null; }
+            @Override public Class<String> getRepresentationClass() { return String.class; }
+            @Override public String getFormatName() { return "Text"; }
+            @Override public String getFormatDescription() { return "New Text Format"; }
+            @Override public String extract(CustomMessage message) throws CustomMessageAccessException { return null; }
+            @Override public void overwrite(CustomMessage message, String contents) throws CustomMessageAccessException { }
+            @Override public <K> String createBody(K content) throws CustomMessageAccessException { return null; }
         };
         formatRegistry.register(String.class, newStringFormat);
         assertNotNull(formatFactory.getFormatForRepresentationClass(String.class));
@@ -340,11 +336,13 @@ public class CustomMessageFormatTest {
         } else if (content instanceof String) {
             message = new Message();
             message.initialize(contentType, ((String)content).getBytes());
+        } else if (content instanceof InputStream) {
+            message = new Message(new ByteArrayStashManager(), contentType, (InputStream) content);
         } else if (content == null) {
             message = new Message(); // uninitialized
         }
         assertNotNull(message);
-        return new CustomMessageImpl(message);
+        return new CustomMessageImpl(formatFactory, message);
     }
 
     /**
@@ -352,6 +350,71 @@ public class CustomMessageFormatTest {
      */
     private CustomMessage createMessage() throws Exception {
         return createMessage(null, null);
+    }
+
+    /**
+     * Utility function for testing the extract method for a certain format instance
+     */
+    private void doTestExtractAndOverwriteException(@NotNull final CustomMessageFormat format) {
+        // test extract for null as message parameter
+        try {
+            format.extract(null);
+            fail("extract should have thrown for null message param");
+        } catch (CustomMessageAccessException ignore) {
+            // expected
+        }
+
+        // test overwrite for null as message parameter
+        try {
+            //noinspection unchecked
+            format.overwrite(null, null);
+            fail("extract should have thrown for null message param");
+        } catch (CustomMessageAccessException ignore) {
+            // expected
+        }
+
+        // create empty CustomMessage object to be used for extract and overwrite methods
+        CustomMessage message = new CustomMessage() {
+            @Override public CustomContentType getContentType() { return null; }
+            @Override public void setContentType(CustomContentType contentType) throws IllegalArgumentException { }
+            @Override public Document getDocument() throws CustomMessageAccessException { return null;}
+            @Override public void setDocument(Document document) throws CustomMessageAccessException { }
+            @Override public CustomJsonData getJsonData() throws CustomMessageAccessException { return null; }
+            @Override public void setJsonData(CustomJsonData jsonData) throws CustomMessageAccessException { }
+            @Override public InputStream getInputStream() throws CustomMessageAccessException { return null; }
+            @Override public void setInputStream(InputStream inputStream) throws CustomMessageAccessException { }
+            @Override public <T> T extract(CustomMessageFormat<T> format) throws CustomMessageAccessException { return null; }
+            @Override public <T> void overwrite(CustomMessageFormat<T> format, T value) throws CustomMessageAccessException { }
+            @Override public <K extends CustomMessageKnob> K getKnob(Class<K> knobClass) throws NoSuchKnobException { return null; }
+            @Override public Collection<CustomMessageKnob> getAttachedKnobs() { return null; }
+        };
+
+        // test extract for unsupported message parameter
+        try {
+            format.extract(message);
+            fail("extract should have thrown for unsupported message param");
+        } catch (CustomMessageAccessException ignore) {
+            // expected
+        }
+
+        // test overwrite for unsupported message parameter
+        try {
+            //noinspection unchecked
+            format.overwrite(message, null);
+            fail("extract should have thrown for unsupported message param");
+        } catch (CustomMessageAccessException ignore) {
+            // expected
+        }
+    }
+
+    @Test
+    public void testExtractAndOverwriteException() throws Exception {
+        // get the default formats factory
+        CustomMessageFormatFactory formatFactory = CustomMessageFormatRegistry.getInstance().getMessageFormatFactory();
+
+        doTestExtractAndOverwriteException(formatFactory.getXmlFormat());
+        doTestExtractAndOverwriteException(formatFactory.getJsonFormat());
+        doTestExtractAndOverwriteException(formatFactory.getStreamFormat());
     }
 
     @Test

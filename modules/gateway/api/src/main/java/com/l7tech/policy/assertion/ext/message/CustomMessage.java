@@ -15,7 +15,8 @@ import org.w3c.dom.Document;
 public interface CustomMessage {
 
     /**
-     * Extract the outer content type header associated with the message.
+     * Extract the outer content type header associated with the message.  Never null.
+     * @return message outer content type header, or <code>application/octet-stream</code> if the message is not initialized.
      */
     CustomContentType getContentType();
 
