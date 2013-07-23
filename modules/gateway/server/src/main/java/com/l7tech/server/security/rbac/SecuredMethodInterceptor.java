@@ -609,7 +609,7 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationC
         Object arg = getSingleOrRelevantArg(args, info.relevantArg);
         if (arg == null) return null;
 
-        if (arg instanceof Long || arg instanceof String) {
+        if (arg instanceof Long || arg instanceof String || arg instanceof Goid) {
             info.id = arg.toString();
             return arg.toString();
         }
