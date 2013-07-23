@@ -1,8 +1,15 @@
 package com.ca.siteminder.util;
 
 import com.ca.siteminder.SiteMinderApiClassException;
+import com.ca.siteminder.sdk.agentapi.SmAgentApiException;
+import com.ca.siteminder.sdk.agentapi.SmRegHost;
+import com.ca.siteminder.sdk.agentapi.Util;
+import com.l7tech.util.FileUtils;
+import com.netegrity.util.Fips140Mode;
 import netegrity.siteminder.javaagent.UserCredentials;
 
+import java.io.File;
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
@@ -196,5 +203,46 @@ public abstract class SiteMinderUtil {
             success = true;
         }
         return success;
+    }
+
+    /**
+     * Register and retrieve siteminder host configuration.
+     *
+     * @param address Policy Server Address
+     * @param username Username to login to PolicyServer
+     * @param password password to login to PolicyServer
+     * @param hostname register hostname
+     * @param hostconfig host configuration
+     * @param fibsMode fibs mode
+     * @return
+     * @throws IOException
+     * @throws SmAgentApiException
+     */
+    public static SiteMinderHost regHost(String address,
+                                         String username,
+                                         String password,
+                                         String hostname,
+                                         String hostconfig,
+                                         Integer fibsMode) throws IOException, SmAgentApiException {
+        File tmpDir = null;
+        try {
+            tmpDir = FileUtils.createTempDirectory("SMHOST", null, null, false);
+            String smHostConfig = tmpDir.getAbsolutePath() + File.separator + "smHost.conf";
+
+            Fips140Mode fm = Fips140Mode.getFips140ModeObject();
+            fm.setMode(Util.resolveSetting());
+            if (fibsMode != null) {
+                fm.setMode(fibsMode);
+            }
+
+            SmRegHost regHost = new SmRegHost(address, smHostConfig,
+                    hostname, hostconfig, username, password, false, true);
+            regHost.register();
+            return new SiteMinderHost(smHostConfig);
+        } finally {
+            if (tmpDir != null && tmpDir.exists()) {
+                FileUtils.deleteDir(tmpDir);
+            }
+        }
     }
 }
