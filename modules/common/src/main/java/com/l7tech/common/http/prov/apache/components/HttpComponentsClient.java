@@ -427,6 +427,8 @@ public class HttpComponentsClient implements RerunnableGenericHttpClient{
                             if (response == null)
                                 throw new IllegalStateException("This response has already been closed");
                             try {
+                                if (response.getEntity() == null) return null;
+
                                 InputStream rawStream = response.getEntity().getContent();
 
                                 if (useSsljTruncationAttackWorkaround()) {
