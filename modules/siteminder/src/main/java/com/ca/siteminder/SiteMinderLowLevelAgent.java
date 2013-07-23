@@ -163,8 +163,9 @@ public class SiteMinderLowLevelAgent {
 
         if(context == null) throw new SiteMinderApiClassException("SiteMinderContext object is null!");
         List<Pair<String, Object>> attributes = context.getAttrList();
-        ResourceContextDef resCtxDef = context.getResContextDef();
-        RealmDef realmDef = context.getRealmDef();
+        ResourceContextDef resCtxDef = getSiteMinderResourceDefFromContext(context);
+        RealmDef realmDef = getSiteMinderRealmDefFromContext(context);
+
         SessionDef sessionDef = new SessionDef();
         AttributeList attrList = new AttributeList();
         String clientIP = getClientIp(userIp);
@@ -193,9 +194,34 @@ public class SiteMinderLowLevelAgent {
         }
 
         //finally, set SessionDef in the SiteMinder context. This might be useful for the authorization
-        context.setSessionDef(sessionDef);
+        context.setSessionDef(new SiteMinderContext.SessionDef(sessionDef.reason,
+                                                               sessionDef.idleTimeout,
+                                                               sessionDef.maxTimeout,
+                                                               sessionDef.currentServerTime,
+                                                               sessionDef.sessionStartTime,
+                                                               sessionDef.sessionLastTime,
+                                                               sessionDef.id,
+                                                               sessionDef.spec));
 
         return retCode;
+    }
+
+    private ResourceContextDef getSiteMinderResourceDefFromContext(SiteMinderContext context) {
+        final SiteMinderContext.ResourceContextDef resSmContextDef = context.getResContextDef();
+        return resSmContextDef != null? new ResourceContextDef(resSmContextDef.getAgent(), resSmContextDef.getServer(), resSmContextDef.getResource(), resSmContextDef.getAction()) : new ResourceContextDef();
+    }
+
+    private RealmDef getSiteMinderRealmDefFromContext(SiteMinderContext context) {
+        RealmDef realmDef = new RealmDef();
+        final SiteMinderContext.RealmDef realmSmContextDef = context.getRealmDef();
+        if(realmSmContextDef != null) {
+            realmDef.name = realmSmContextDef.getName();
+            realmDef.oid = realmSmContextDef.getOid();
+            realmDef.domOid = realmSmContextDef.getDomOid();
+            realmDef.credentials = realmSmContextDef.getCredentials();
+            realmDef.formLocation = realmSmContextDef.getFormLocation();
+        }
+        return realmDef;
     }
 
     /**
@@ -212,9 +238,9 @@ public class SiteMinderLowLevelAgent {
         int result = 0;
 
         List<Pair<String, Object>> attributes = context.getAttrList();
-        ResourceContextDef resCtxDef = context.getResContextDef();
-        RealmDef realmDef = context.getRealmDef();
-        SessionDef sd = context.getSessionDef();// get SessionDef object from the context
+        ResourceContextDef resCtxDef = getSiteMinderResourceDefFromContext(context);
+        RealmDef realmDef = getSiteMinderRealmDefFromContext(context);
+        SessionDef sd = getSiteMinderSessionDefFromContext(context);// get SessionDef object from the context
 
         if(ssoToken != null) {
             AttributeList attrList = new AttributeList();
@@ -244,6 +270,22 @@ public class SiteMinderLowLevelAgent {
         logger.log(Level.FINE, "Authorized - against" + " resource '" + SiteMinderUtil.safeNull(resCtxDef.resource) + "'SSO token : " + context.getSsoToken());
 
         return result;
+    }
+
+    private SessionDef getSiteMinderSessionDefFromContext(SiteMinderContext context) {
+        SessionDef sessionDef = new SessionDef();
+        SiteMinderContext.SessionDef smContextSessionDef = context.getSessionDef();
+        if(smContextSessionDef != null){
+            sessionDef.id = smContextSessionDef.getId();
+            sessionDef.spec = smContextSessionDef.getSpec();
+            sessionDef.currentServerTime = smContextSessionDef.getCurrentServerTime();
+            sessionDef.idleTimeout = smContextSessionDef.getIdleTimeout();
+            sessionDef.maxTimeout = smContextSessionDef.getMaxTimeout();
+            sessionDef.sessionStartTime = smContextSessionDef.getSessionStartTime();
+            sessionDef.sessionLastTime = smContextSessionDef.getSessionLastTime();
+            sessionDef.reason = smContextSessionDef.getReason();
+        }
+        return sessionDef;
     }
 
     private int decodeSsoToken(String ssoToken, SiteMinderContext context, AttributeList attrList) {
@@ -294,8 +336,8 @@ public class SiteMinderLowLevelAgent {
         //check if the context is null and throw exception
         if(context == null) throw new SiteMinderApiClassException("SiteMinderContext object is null!");
         List<Pair<String, Object>> attributes = context.getAttrList();
-        ResourceContextDef resCtxDef = context.getResContextDef();
-        RealmDef realmDef = context.getRealmDef();
+        ResourceContextDef resCtxDef = getSiteMinderResourceDefFromContext(context);
+        RealmDef realmDef = getSiteMinderRealmDefFromContext(context);
 
         AttributeList attrList = new AttributeList();
         //TODO: why version is set to 0?
@@ -353,8 +395,15 @@ public class SiteMinderLowLevelAgent {
         else {
             context.setSsoToken(ssoToken);
         }
-        //finally set the session def
-        context.setSessionDef(sessionDef);
+        //finally, set SessionDef in the SiteMinder context. This might be useful for the authorization
+        context.setSessionDef(new SiteMinderContext.SessionDef(sessionDef.reason,
+                sessionDef.idleTimeout,
+                sessionDef.maxTimeout,
+                sessionDef.currentServerTime,
+                sessionDef.sessionStartTime,
+                sessionDef.sessionLastTime,
+                sessionDef.id,
+                sessionDef.spec));
 
         return result;
     }

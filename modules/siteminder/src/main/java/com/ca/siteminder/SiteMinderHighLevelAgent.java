@@ -4,6 +4,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import netegrity.siteminder.javaagent.*;
 
 /**
@@ -93,9 +94,8 @@ public class SiteMinderHighLevelAgent {
         boolean isProtected = agent.isProtected(userIp, resCtxDef, realmDef, context.getTransactionId());
 
         //now set the context
-        context.setResContextDef(resCtxDef);
-        context.setRealmDef(realmDef);
-
+        context.setResContextDef(new SiteMinderContext.ResourceContextDef(resCtxDef.agent, resCtxDef.server, resCtxDef.resource, resCtxDef.action));
+        context.setRealmDef(new SiteMinderContext.RealmDef(realmDef.name, realmDef.oid, realmDef.domOid, realmDef.credentials, realmDef.formLocation));
         //determine which authethentication scheme to use
 
         buildAuthenticationSchemes(context, realmDef.credentials);

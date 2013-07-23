@@ -16,11 +16,6 @@
         <dependency name="layer7-api" rev="latest.integration" conf="compile->master-unsigned"/>
         <dependency name="layer7-common" rev="latest.integration" conf="core; test->default,test"/>
         <dependency name="layer7-kerberos" rev="latest.integration" conf="core"/>
-        <dependency name="layer7-siteminder" rev="latest.integration" conf="core; test->default,test">
-            <exclude module="SmJavaApi" org="com.ca.siteminder" type="*" name="*" ext="*" conf="core,test" matcher="exact"/>
-            <exclude module="cryptoj" org="com.ca.siteminder" type="*" name="*" ext="*" conf="core,test" matcher="exact"/>
-            <exclude module="smjavasdk2" org="com.ca.siteminder" type="*" name="*" ext="*" conf="core,test" matcher="exact"/>
-        </dependency>
         <dependency name="layer7-wsdl" rev="latest.integration" conf="core"/>
         <dependency name="layer7-json" rev="latest.integration" conf="core"/>
         <dependency org="org.apache.santuario" name="xmlsec" rev="1.4.7" force="true" conf="core"/>
