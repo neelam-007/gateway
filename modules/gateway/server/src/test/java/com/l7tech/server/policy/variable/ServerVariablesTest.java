@@ -2,6 +2,7 @@ package com.l7tech.server.policy.variable;
 
 import com.l7tech.common.TestDocuments;
 import com.l7tech.common.http.HttpConstants;
+import com.l7tech.common.http.HttpCookie;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.StashManager;
@@ -37,7 +38,6 @@ import com.l7tech.server.ServerConfig;
 import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.audit.AuditSinkPolicyEnforcementContext;
 import com.l7tech.server.identity.AuthenticationResult;
-import com.l7tech.server.jdbc.JdbcConnectionManagerStub;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.PolicyMetadataStub;
@@ -61,6 +61,7 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.TimeZone;
 import java.util.logging.Level;
@@ -1060,6 +1061,19 @@ public class ServerVariablesTest {
         final PolicyEnforcementContext context = context();
         expandAndCheck(context, "${ssgnode.hostname}", ServerConfig.getInstance().getHostname());
     }
+
+    @Test
+    public void testResponseCookieOverwritePath() throws Exception {
+        final PolicyEnforcementContext context = context();
+        context.addCookie(new HttpCookie("name", "valuea", 1, "/some", ".domain.com"));
+        context.setVariable("response.cookie.overwritePath", false);
+        Iterator<HttpCookie> i = context.getCookies().iterator();
+        while (i.hasNext()) {
+            assertEquals(false, i.next().isOverwritePath());
+        }
+    }
+
+
 
 
     // - PRIVATE

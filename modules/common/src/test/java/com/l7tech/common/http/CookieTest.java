@@ -166,6 +166,9 @@ public class CookieTest {
 
         HttpCookie cookie4 = CookieUtils.ensureValidForDomainAndPath(cookie1, "a.domain.com", "/otherpath");
         assertFalse("Check modified path", cookie1.equals(cookie4));
+
+        HttpCookie cookie5 = CookieUtils.ensureValidForDomainAndPath(cookie1, "a.domain.com", null);
+        assertEquals("Check unmodified path", cookie1, cookie5);
     }
 
     @Test

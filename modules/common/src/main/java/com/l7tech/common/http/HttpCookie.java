@@ -329,6 +329,14 @@ public class HttpCookie {
         return expired;
     }
 
+    public boolean isOverwritePath() {
+        return overwritePath;
+    }
+
+    public void setOverwritePath(boolean overwritePath) {
+        this.overwritePath = overwritePath;
+    }
+
     /**
      *
      */
@@ -493,6 +501,9 @@ public class HttpCookie {
     private final int version;
     private final boolean secure;
     private final boolean newcook;
+
+    //Control attributes for the cookie
+    private boolean overwritePath = true;
 
     /**
      * Called when all properties have been set to generate the cookies ID

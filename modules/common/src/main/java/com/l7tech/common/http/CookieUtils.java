@@ -167,6 +167,7 @@ public class CookieUtils {
      * @param cookie the cookie to check
      * @param domain the cookies target domain
      * @param path the cookies target path (not that the path is trimmed up to and including the last /)
+     *             If null, the cookie path will be used for the return cookie path.
      * @return a valid cookie
      */
     public static HttpCookie ensureValidForDomainAndPath(HttpCookie cookie, String domain, String path) {
@@ -177,6 +178,10 @@ public class CookieUtils {
             String cookiePath = cookie.getPath();
 
             String calcPath = path;
+            if (calcPath == null) {
+                calcPath = cookiePath;
+            }
+
             int trim = calcPath.lastIndexOf('/');
             if(trim>0) {
                 calcPath = calcPath.substring(0, trim);
