@@ -15,6 +15,7 @@ import com.l7tech.policy.assertion.ext.CustomAssertion;
 import com.l7tech.policy.assertion.ext.ServiceInvocation;
 import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.TestLicenseManager;
+import com.l7tech.server.custom.format.CustomMessageFormatRegistry;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.ServerPolicyFactory;
@@ -141,9 +142,11 @@ public class CustomAssertionsPolicyTestBase {
         // Register the CustomAssertionHolder
         assertionRegistry.registerAssertion(CustomAssertionHolder.class);
 
-
         when(mockApplicationContext.getBean("policyFactory")).thenReturn(serverPolicyFactory);
         when(mockApplicationContext.getBean("policyFactory", ServerPolicyFactory.class)).thenReturn(serverPolicyFactory);
+
+        // create our CustomMessageFormatRegistry
+        CustomMessageFormatRegistry.createInstance(stashManagerFactory);
     }
 
     protected PolicyEnforcementContext makeContext(final Message request, final Message response) {

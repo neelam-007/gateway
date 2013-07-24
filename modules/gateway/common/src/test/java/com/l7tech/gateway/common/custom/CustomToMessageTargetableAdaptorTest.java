@@ -13,7 +13,7 @@ import static org.junit.Assert.*;
 /**
  * Test CustomToMessageTargetableConverter
  */
-public class CustomToMessageTargetableConverterTest {
+public class CustomToMessageTargetableAdaptorTest {
     
     @Before
     public void setUp() throws Exception {
@@ -22,14 +22,14 @@ public class CustomToMessageTargetableConverterTest {
     @Test(expected = IllegalArgumentException.class)
     public void testNullSupport() {
         //noinspection ConstantConditions
-        new CustomToMessageTargetableConverter(null);
+        new CustomToMessageTargetableAdaptor(null);
         fail("This message should not have been displayed");
     }
 
     @Test
     public void testGetTarget() throws Exception {
         CustomMessageTargetableSupport customMessageTargetableSupport = new CustomMessageTargetableSupport();
-        CustomToMessageTargetableConverter converter = new CustomToMessageTargetableConverter(customMessageTargetableSupport);
+        CustomToMessageTargetableAdaptor converter = new CustomToMessageTargetableAdaptor(customMessageTargetableSupport);
 
         assertEquals(converter.getCustomMessageTargetable(), customMessageTargetableSupport);
         assertEquals(converter.isTargetModifiedByGateway(), customMessageTargetableSupport.isTargetModifiedByGateway());
@@ -72,7 +72,7 @@ public class CustomToMessageTargetableConverterTest {
     @Test
     public void testSetTarget() throws Exception {
         CustomMessageTargetableSupport customMessageTargetableSupport = new CustomMessageTargetableSupport();
-        CustomToMessageTargetableConverter converter = new CustomToMessageTargetableConverter(customMessageTargetableSupport);
+        CustomToMessageTargetableAdaptor converter = new CustomToMessageTargetableAdaptor(customMessageTargetableSupport);
 
         converter.setTarget(TargetMessageType.REQUEST);
         assertEquals(customMessageTargetableSupport.getTargetMessageVariable(), CustomMessageTargetableSupport.TARGET_REQUEST);

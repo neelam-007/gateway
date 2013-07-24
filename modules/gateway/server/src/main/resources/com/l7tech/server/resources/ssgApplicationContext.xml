@@ -2566,4 +2566,8 @@
     </bean>
     <bean id="sslSsgConnectorDependencyProcessor" class="com.l7tech.server.search.processors.SslSsgConnectorDependencyProcessor" />
 
+    <bean id="ssgCustomMessageFormatRegistry" class="com.l7tech.server.custom.format.CustomMessageFormatRegistry" depends-on="stashManagerFactory" factory-method="createInstance" primary="true">
+        <constructor-arg ref="stashManagerFactory"/>
+    </bean>
+
 </beans>

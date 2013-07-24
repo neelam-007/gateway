@@ -9,6 +9,7 @@ import com.l7tech.policy.assertion.ext.message.CustomJsonData;
 import com.l7tech.policy.assertion.ext.message.CustomMessage;
 import com.l7tech.policy.assertion.ext.message.CustomMessageAccessException;
 
+import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.custom.CustomMessageImpl;
 import com.l7tech.util.BufferPool;
 
@@ -21,8 +22,11 @@ import java.io.*;
  */
 public class CustomMessageJsonFormat extends CustomMessageFormatBase<CustomJsonData> {
 
-    public CustomMessageJsonFormat(@NotNull final String name, @NotNull final String description) {
-        super(name, description);
+    /**
+     * @see CustomMessageFormatBase#CustomMessageFormatBase(com.l7tech.server.StashManagerFactory, String, String)
+     */
+    public CustomMessageJsonFormat(@NotNull StashManagerFactory stashManagerFactory, @NotNull final String name, @NotNull final String description) {
+        super(stashManagerFactory, name, description);
     }
 
     @Override

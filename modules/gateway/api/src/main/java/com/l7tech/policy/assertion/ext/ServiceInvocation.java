@@ -81,7 +81,7 @@ public abstract class ServiceInvocation {
      * This method replaces onRequest(...) and onResponse(...), which are obsolete and have been deprecated.
      *
      * For backwards compatibility, the default request and response are now located into the context map.
-     * You can access them using the following keys; (defaultRequest and defaultResponse)
+     * You can access them using the following keys; (request and response)
      *
      * @param customPolicyContext    the policy enforcement context
      * @return result status from processing the Custom Assertion
@@ -91,8 +91,8 @@ public abstract class ServiceInvocation {
      */
     public CustomAssertionStatus checkRequest(final CustomPolicyContext customPolicyContext) {
         try {
-            final ServiceRequest request = (ServiceRequest)customPolicyContext.getContext().get("defaultRequest");
-            final ServiceResponse response = (ServiceResponse)customPolicyContext.getContext().get("defaultResponse");
+            final ServiceRequest request = (ServiceRequest)customPolicyContext.getContext().get("request");
+            final ServiceResponse response = (ServiceResponse)customPolicyContext.getContext().get("response");
 
             if (customPolicyContext.isPostRouting() && response != null) {
                 //noinspection deprecation

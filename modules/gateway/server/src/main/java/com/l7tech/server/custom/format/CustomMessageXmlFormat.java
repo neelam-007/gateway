@@ -4,6 +4,7 @@ import com.l7tech.message.Message;
 import com.l7tech.message.XmlKnob;
 import com.l7tech.policy.assertion.ext.message.CustomMessage;
 import com.l7tech.policy.assertion.ext.message.CustomMessageAccessException;
+import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.custom.CustomMessageImpl;
 import com.l7tech.common.io.XmlUtil;
 
@@ -20,8 +21,11 @@ import java.io.InputStream;
  */
 public class CustomMessageXmlFormat extends CustomMessageFormatBase<Document> {
 
-    public CustomMessageXmlFormat(@NotNull final String name, @NotNull final String description) {
-        super(name, description);
+    /**
+     * @see CustomMessageFormatBase#CustomMessageFormatBase(com.l7tech.server.StashManagerFactory, String, String)
+     */
+    public CustomMessageXmlFormat(@NotNull StashManagerFactory stashManagerFactory, @NotNull final String name, @NotNull final String description) {
+        super(stashManagerFactory, name, description);
     }
 
     @Override

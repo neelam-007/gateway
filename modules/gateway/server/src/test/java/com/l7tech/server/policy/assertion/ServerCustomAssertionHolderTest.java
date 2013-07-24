@@ -666,8 +666,8 @@ public class ServerCustomAssertionHolderTest extends CustomAssertionsPolicyTestB
                 //noinspection unchecked
                 doTestLegacyContextMap(policyContext.getContext()); // let it throw if its not of type Map<String, Object>
 
-                assertNotNull(policyContext.getContext().get("defaultRequest"));
-                assertNull(policyContext.getContext().get("defaultResponse"));
+                assertNotNull(policyContext.getContext().get("request"));
+                assertNull(policyContext.getContext().get("response"));
 
                 return CustomAssertionStatus.NONE;
             }
@@ -731,8 +731,8 @@ public class ServerCustomAssertionHolderTest extends CustomAssertionsPolicyTestB
                 //noinspection unchecked
                 doTestLegacyContextMap(policyContext.getContext()); // let it throw if its not of type Map<String, Object>
 
-                assertNull(policyContext.getContext().get("defaultRequest"));
-                assertNotNull(policyContext.getContext().get("defaultResponse"));
+                assertNull(policyContext.getContext().get("request"));
+                assertNotNull(policyContext.getContext().get("response"));
 
                 return CustomAssertionStatus.NONE;
             }

@@ -126,16 +126,36 @@ public class PathValidatorTest {
     }
 
     @Test
-    public void validateAgainstCustomCredentialSourceAssertions() throws Exception {
+    public void validateAgainstCustomCredentialSourceAssertionsReturningFalse() throws Exception {
         final CustomAssertionHolder toValidate = new CustomAssertionHolder();
 
         //noinspection serial
         class TestCustomCredentialSourceAssertion implements CustomAssertion, CustomCredentialSource {
-            @Override
-            public String getName() {
-                return "TestCustomCredentialSourceAssertion";
-            }
+            @Override public String getName() { return "TestCustomCredentialSourceAssertion"; }
+            @Override public boolean isCredentialSource() { return false; }
         }
+
+        //noinspection serial
+        toValidate.setCustomAssertion(new TestCustomCredentialSourceAssertion());
+        toValidate.setCategories(Category.MESSAGE, Category.CUSTOM_ASSERTIONS);
+
+        final PathValidator validator = new PathValidator(new AssertionPath(toValidate), context, license, validationResult);
+        validator.validate(toValidate);
+
+        assertSame(0, validationResult.getErrorCount());
+        assertSame(0, validationResult.getWarningCount());
+    }
+
+    @Test
+    public void validateAgainstCustomCredentialSourceAssertionsReturningTrue() throws Exception {
+        final CustomAssertionHolder toValidate = new CustomAssertionHolder();
+
+        //noinspection serial
+        class TestCustomCredentialSourceAssertion implements CustomAssertion, CustomCredentialSource {
+            @Override public String getName() { return "TestCustomCredentialSourceAssertion"; }
+            @Override public boolean isCredentialSource() { return true; }
+        }
+
         //noinspection serial
         toValidate.setCustomAssertion(new TestCustomCredentialSourceAssertion());
         toValidate.setCategories(Category.MESSAGE, Category.CUSTOM_ASSERTIONS);

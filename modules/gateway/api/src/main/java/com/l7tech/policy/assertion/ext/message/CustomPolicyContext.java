@@ -38,14 +38,14 @@ public interface CustomPolicyContext {
      *                           The size of the 2D array is [number of mime parts][2], where the content-types appear in indexes [i][0] and the associated mime parts appear in indexes [i][1].
      *                           Content-types are of type <code>java.lang.String</code> and mime parts are <code>byte</code> arrays and can be cast as such.
      *
-     * <p><b>defaultRequest</b> -- {@link com.l7tech.policy.assertion.ext.ServiceRequest ServiceRequest} returns deprecated default Request message object aka. ServiceRequest.
-     *                             This context variable is provided for backwards compatibility, in order to access the default request, use either
-     *                             {@link #getTargetMessage(com.l7tech.policy.assertion.ext.targetable.CustomMessageTargetable)} or
-     *                             {@link #getMessage(String)} with request as a target e.g. <code>getMessage("request")</code>.
-     * <p><b>defaultResponse</b> -- {@link com.l7tech.policy.assertion.ext.ServiceResponse ServiceResponse} returns deprecated default Response message object aka. ServiceResponse.
-     *                             This context variable is provided for backwards compatibility, in order to access the default response, use either
-     *                             {@link #getTargetMessage(com.l7tech.policy.assertion.ext.targetable.CustomMessageTargetable)} or
-     *                             {@link #getMessage(String)} with response as a target e.g. <code>getMessage("response")</code>.
+     * <p><b>request</b> -- {@link com.l7tech.policy.assertion.ext.ServiceRequest ServiceRequest} returns deprecated default Request message object aka. ServiceRequest.
+     *                      This context variable is provided for backwards compatibility, in order to access the default request, use either
+     *                      {@link #getTargetMessage(com.l7tech.policy.assertion.ext.targetable.CustomMessageTargetable)} or
+     *                      {@link #getMessage(String)} with request as a target e.g. <code>getMessage("request")</code>.
+     * <p><b>response</b> -- {@link com.l7tech.policy.assertion.ext.ServiceResponse ServiceResponse} returns deprecated default Response message object aka. ServiceResponse.
+     *                       This context variable is provided for backwards compatibility, in order to access the default response, use either
+     *                       {@link #getTargetMessage(com.l7tech.policy.assertion.ext.targetable.CustomMessageTargetable)} or
+     *                       {@link #getMessage(String)} with response as a target e.g. <code>getMessage("response")</code>.
      *
      * <p><b>Notes</b> The {@link javax.servlet.http.HttpServletResponse HttpServletResponse} object is actually a wrapper around {@link javax.servlet.http.HttpServletResponse HttpServletResponse}
      * with an additional method called <code>addCookie</code> which provides the ability to insert {@link javax.servlet.http.Cookie Cookie} objects into the response.

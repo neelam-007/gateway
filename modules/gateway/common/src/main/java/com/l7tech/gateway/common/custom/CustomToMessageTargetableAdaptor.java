@@ -15,7 +15,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Converts CustomMessageTargetable into MessageTargetable object.
  */
-public final class CustomToMessageTargetableConverter implements MessageTargetable {
+public final class CustomToMessageTargetableAdaptor implements MessageTargetable {
 
     /**
      * Input {@link CustomMessageTargetable} object
@@ -30,7 +30,7 @@ public final class CustomToMessageTargetableConverter implements MessageTargetab
      *
      * @param customMessageTargetable {@link CustomMessageTargetable} object to convert. Cannot be null.
      */
-    public CustomToMessageTargetableConverter(@NotNull final CustomMessageTargetable customMessageTargetable) {
+    public CustomToMessageTargetableAdaptor(@NotNull final CustomMessageTargetable customMessageTargetable) {
         this.customMessageTargetable = customMessageTargetable;
     }
 

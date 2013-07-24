@@ -10,6 +10,9 @@ import java.util.NoSuchElementException;
 /**
  * Simple custom message multipart extractor knob.
  * <p/>
+ * Use this class as parameter for {@link com.l7tech.policy.assertion.ext.message.CustomMessage#getKnob(Class) CustomMessage.getKnob(Class)}
+ * in order to obtain an <code>CustomPartsKnob</code> instance.
+ * <p/>
  * This is an iterable interface optimized for lazily iterating through the message multipart parts.
  * The purpose of this knob is to extract multipart part's content type and content body input-stream.
  * <p/>

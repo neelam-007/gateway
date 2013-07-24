@@ -3,7 +3,10 @@ package com.l7tech.server.custom.format;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ByteArrayStashManager;
 import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.common.mime.NoSuchPartException;
+import com.l7tech.common.mime.StashManager;
 import com.l7tech.gateway.common.custom.ContentTypeHeaderToCustomConverter;
+import com.l7tech.json.InvalidJsonException;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.ext.message.*;
 import com.l7tech.policy.assertion.ext.message.format.CustomMessageFormat;
@@ -11,6 +14,7 @@ import com.l7tech.policy.assertion.ext.message.format.CustomMessageFormatFactory
 import com.l7tech.policy.assertion.ext.message.format.NoSuchMessageFormatException;
 import com.l7tech.policy.assertion.ext.message.knob.CustomMessageKnob;
 import com.l7tech.policy.assertion.ext.message.knob.NoSuchKnobException;
+import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.custom.CustomMessageImpl;
 import com.l7tech.util.IOUtils;
 
@@ -25,6 +29,7 @@ import java.util.HashMap;
 
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException;
 import scala.actors.threadpool.Arrays;
 
 import static com.l7tech.server.policy.custom.CustomAssertionsSampleContents.*;
@@ -35,33 +40,49 @@ import static org.junit.Assert.*;
  */
 public class CustomMessageFormatTest {
 
-    private CustomMessageFormatRegistry formatRegistry;
-    private CustomMessageFormatFactory formatFactory;
+    private CustomMessageFormatRegistry tmpFormatRegistry;
+    private StashManagerFactory stashManagerFactory;
 
     @Before
     public void setUp() throws Exception {
+        // create a byte array stash manager
+        stashManagerFactory = new StashManagerFactory() {
+            @Override
+            public StashManager createStashManager() {
+                return new ByteArrayStashManager();
+            }
+        };
+
+        // create the default custom formats registry
+        CustomMessageFormatRegistry.createInstance(stashManagerFactory);
+
+        // create a temporary for testing register and remove custom formats.
         //noinspection serial
-        formatRegistry = new CustomMessageFormatRegistry(new HashMap<Class, CustomMessageFormat>(){{
+        tmpFormatRegistry = new CustomMessageFormatRegistry(new HashMap<Class, CustomMessageFormat>(){{
             put(Document.class,
-                    new CustomMessageXmlFormat(CustomMessageFormatFactory.XML_FORMAT,
+                    new CustomMessageXmlFormat(stashManagerFactory,
+                            CustomMessageFormatFactory.XML_FORMAT,
                             CustomMessageFormatFactoryImpl.XML_FORMAT_DESC
                     )
             );
             put(CustomJsonData.class,
-                    new CustomMessageJsonFormat(CustomMessageFormatFactory.JSON_FORMAT,
+                    new CustomMessageJsonFormat(stashManagerFactory,
+                            CustomMessageFormatFactory.JSON_FORMAT,
                             CustomMessageFormatFactoryImpl.JSON_FORMAT_DESC
                     )
             );
             put(InputStream.class,
-                    new CustomMessageInputStreamFormat(CustomMessageFormatFactory.INPUT_STREAM_FORMAT,
+                    new CustomMessageInputStreamFormat(stashManagerFactory,
+                            CustomMessageFormatFactory.INPUT_STREAM_FORMAT,
                             CustomMessageFormatFactoryImpl.INPUT_STREAM_FORMAT_DESC
                     )
             );
         }});
-        formatFactory = formatRegistry.getMessageFormatFactory();
+
+        //formatFactory = CustomMessageFormatRegistry.getInstance().getMessageFormatFactory();
     }
 
-    private void printKnownFormats() throws Exception {
+    private void printKnownFormats(final CustomMessageFormatFactory formatFactory) throws Exception {
         System.out.println("-------------------------------------------------------------------");
         for (CustomMessageFormat format: formatFactory.getKnownFormats()) {
             System.out.println("Format; class = " + format.getRepresentationClass().getSimpleName() + "; name = " + format.getFormatName() + "; desc = " + format.getFormatDescription() + ";");
@@ -72,6 +93,9 @@ public class CustomMessageFormatTest {
     @SuppressWarnings("unchecked")
     @Test
     public void testKnownFormatsExtraction() throws Exception {
+        // get the default formats factory
+        CustomMessageFormatFactory formatFactory = tmpFormatRegistry.getMessageFormatFactory();
+
         // extract using name
         CustomMessageFormat docFormat = formatFactory.getFormatByName(CustomMessageFormatFactory.XML_FORMAT);
         assertNotNull(docFormat);
@@ -87,15 +111,15 @@ public class CustomMessageFormatTest {
         assertEquals(iStreamFormat.getFormatName(), CustomMessageFormatFactory.INPUT_STREAM_FORMAT);
 
         // extract using representation class
-        docFormat = formatFactory.getFormatForRepresentationClass(Document.class);
+        docFormat = formatFactory.getFormat(Document.class);
         assertNotNull(docFormat);
         assertTrue(docFormat instanceof CustomMessageXmlFormat);
         assertEquals(docFormat.getFormatName(), CustomMessageFormatFactory.XML_FORMAT);
-        jsonFormat = formatFactory.getFormatForRepresentationClass(CustomJsonData.class);
+        jsonFormat = formatFactory.getFormat(CustomJsonData.class);
         assertNotNull(jsonFormat);
         assertTrue(jsonFormat instanceof CustomMessageJsonFormat);
         assertEquals(jsonFormat.getFormatName(), CustomMessageFormatFactory.JSON_FORMAT);
-        iStreamFormat = formatFactory.getFormatForRepresentationClass(InputStream.class);
+        iStreamFormat = formatFactory.getFormat(InputStream.class);
         assertNotNull(iStreamFormat);
         assertTrue(iStreamFormat instanceof CustomMessageInputStreamFormat);
         assertEquals(iStreamFormat.getFormatName(), CustomMessageFormatFactory.INPUT_STREAM_FORMAT);
@@ -114,22 +138,25 @@ public class CustomMessageFormatTest {
         assertTrue(iStreamFormat instanceof CustomMessageInputStreamFormat);
         assertEquals(iStreamFormat.getFormatName(), CustomMessageFormatFactory.INPUT_STREAM_FORMAT);
 
-        printKnownFormats();
+        printKnownFormats(formatFactory);
     }
 
     @SuppressWarnings("unchecked")
     @Test
     public void testUpdateFormats() throws Exception {
+        // get the default formats factory
+        CustomMessageFormatFactory formatFactory = tmpFormatRegistry.getMessageFormatFactory();
+
         int initialSize;
         assertTrue((initialSize = formatFactory.getKnownFormats().size()) >= 3);
 
         // remove a format
-        CustomMessageFormat<CustomJsonData> jsonFormat = (CustomMessageFormat<CustomJsonData>)formatRegistry.remove(CustomJsonData.class);
+        CustomMessageFormat<CustomJsonData> jsonFormat = (CustomMessageFormat<CustomJsonData>) tmpFormatRegistry.remove(CustomJsonData.class);
         assertNotNull(jsonFormat);
         assertTrue(formatFactory.getKnownFormats().size() < initialSize);
         try {
-            formatFactory.getFormatForRepresentationClass(CustomJsonData.class);
-            fail("formatFactory.getFormatForRepresentationClass should throw");
+            formatFactory.getFormat(CustomJsonData.class);
+            fail("formatFactory.getFormat should throw");
         } catch (NoSuchMessageFormatException ignore) { }
         try {
             formatFactory.getFormatByName(CustomMessageFormatFactory.JSON_FORMAT);
@@ -145,16 +172,19 @@ public class CustomMessageFormatTest {
             @Override public void overwrite(CustomMessage message, String contents) throws CustomMessageAccessException { }
             @Override public <K> String createBody(K content) throws CustomMessageAccessException { return null; }
         };
-        formatRegistry.register(String.class, newStringFormat);
-        assertNotNull(formatFactory.getFormatForRepresentationClass(String.class));
+        tmpFormatRegistry.register(String.class, newStringFormat);
+        assertNotNull(formatFactory.getFormat(String.class));
         assertNotNull(formatFactory.getFormatByName("TEXT")); // case insensitive
         assertTrue(formatFactory.getKnownFormats().size() == initialSize);
 
-        printKnownFormats();
+        printKnownFormats(formatFactory);
     }
 
     @Test
     public void testXmlCreateBody() throws Exception {
+        // get the default formats factory
+        CustomMessageFormatFactory formatFactory = CustomMessageFormatRegistry.getInstance().getMessageFormatFactory();
+
         // get XML message format
         final CustomMessageFormat<Document> xmlFormat = formatFactory.getXmlFormat();
         assertNotNull(xmlFormat);
@@ -167,11 +197,15 @@ public class CustomMessageFormatTest {
         try {
             xmlFormat.createBody(XML_CONTENT_INVALID);
             fail("xmlFormat.createBody should throw for invalid XML");
-        } catch (CustomMessageAccessException ignore) { }
+        } catch (CustomMessageAccessException e) {
+            assertTrue(e.getCause() instanceof SAXParseException);
+        }
         try {
             xmlFormat.createBody(JSON_CONTENT);
             fail("xmlFormat.createBody should throw for JSON");
-        } catch (CustomMessageAccessException ignore) { }
+        } catch (CustomMessageAccessException e) {
+            assertTrue(e.getCause() instanceof SAXParseException);
+        }
 
         // create from InputStream (valid content)
         InputStream inputStream = formatFactory.getStreamFormat().createBody(XML_CONTENT);
@@ -183,18 +217,24 @@ public class CustomMessageFormatTest {
         try {
             xmlFormat.createBody(inputStream);
             fail("xmlFormat.createBody should throw for invalid XML");
-        } catch (CustomMessageAccessException ignore) { }
+        } catch (CustomMessageAccessException e) {
+            assertTrue(e.getCause() instanceof SAXParseException);
+        }
         inputStream = formatFactory.getStreamFormat().createBody(JSON_CONTENT);
         try {
             xmlFormat.createBody(inputStream);
             fail("xmlFormat.createBody should throw for JSON");
-        } catch (CustomMessageAccessException ignore) { }
+        } catch (CustomMessageAccessException e) {
+            assertTrue(e.getCause() instanceof SAXParseException);
+        }
 
         // unsupported format e.g. byte[]
         try {
             xmlFormat.createBody("test".getBytes());
             fail("xmlFormat.createBody should throw for unsupported type");
-        } catch (CustomMessageAccessException ignore) { }
+        } catch (CustomMessageAccessException e) {
+            assertNull(e.getCause());
+        }
 
         // doesn't allow wrong type cast
         try {
@@ -212,11 +252,16 @@ public class CustomMessageFormatTest {
         try {
             xmlFormat.createBody(null);
             fail("xmlFormat.createBody should throw for null content");
-        } catch (CustomMessageAccessException ignore) { }
+        } catch (CustomMessageAccessException e) {
+            assertNull(e.getCause());
+        }
     }
 
     @Test
     public void testJsonCreateBody() throws Exception {
+        // get the default formats factory
+        CustomMessageFormatFactory formatFactory = CustomMessageFormatRegistry.getInstance().getMessageFormatFactory();
+
         // get JSON message format
         final CustomMessageFormat<CustomJsonData> jsonFormat = formatFactory.getJsonFormat();
         assertNotNull(jsonFormat);
@@ -231,12 +276,16 @@ public class CustomMessageFormatTest {
         try {
             testJson.getJsonObject();
             fail("testJson.getJsonObject should throw for invalid JSON");
-        } catch (InvalidDataException ignore) { }
+        } catch (InvalidDataException e) {
+            assertTrue(e.getCause() instanceof InvalidJsonException);
+        }
         testJson = jsonFormat.createBody(XML_CONTENT);  // doesn't throw
         try {
             testJson.getJsonObject();
             fail("testJson.getJsonObject should throw for invalid JSON");
-        } catch (InvalidDataException ignore) { }
+        } catch (InvalidDataException e) {
+            assertTrue(e.getCause() instanceof InvalidJsonException);
+        }
 
         // create from InputStream (valid content)
         InputStream inputStream = formatFactory.getStreamFormat().createBody(JSON_CONTENT);
@@ -250,19 +299,25 @@ public class CustomMessageFormatTest {
         try {
             testJson.getJsonObject();
             fail("testJson.getJsonObject should throw for invalid JSON");
-        } catch (InvalidDataException ignore) { }
+        } catch (InvalidDataException e) {
+            assertTrue(e.getCause() instanceof InvalidJsonException);
+        }
         inputStream = formatFactory.getStreamFormat().createBody(XML_CONTENT);
         testJson = jsonFormat.createBody(inputStream); // doesn't throw
         try {
             testJson.getJsonObject();
             fail("testJson.getJsonObject should throw for invalid JSON");
-        } catch (InvalidDataException ignore) { }
+        } catch (InvalidDataException e) {
+            assertTrue(e.getCause() instanceof InvalidJsonException);
+        }
 
         // unsupported format e.g. byte[]
         try {
             jsonFormat.createBody("test".getBytes());
             fail("jsonFormat.createBody should throw for unsupported type");
-        } catch (CustomMessageAccessException ignore) { }
+        } catch (CustomMessageAccessException e) {
+            assertNull(e.getCause());
+        }
 
         // doesn't allow wrong type cast
         try {
@@ -280,11 +335,16 @@ public class CustomMessageFormatTest {
         try {
             jsonFormat.createBody(null);
             fail("jsonFormat.createBody should throw for null content");
-        } catch (CustomMessageAccessException ignore) { }
+        } catch (CustomMessageAccessException e) {
+            assertNull(e.getCause());
+        }
     }
 
     @Test
     public void testInputStreamCreateBody() throws Exception {
+        // get the default formats factory
+        CustomMessageFormatFactory formatFactory = CustomMessageFormatRegistry.getInstance().getMessageFormatFactory();
+
         // get InputStream message format
         final CustomMessageFormat<InputStream> iStreamFormat = formatFactory.getStreamFormat();
         assertNotNull(iStreamFormat);
@@ -302,7 +362,9 @@ public class CustomMessageFormatTest {
         try {
             iStreamFormat.createBody("test".getBytes());
             fail("iStreamFormat.createBody should throw for unsupported type");
-        } catch (CustomMessageAccessException ignore) { }
+        } catch (CustomMessageAccessException e) {
+            assertNull(e.getCause());
+        }
 
         // doesn't allow wrong type cast
         try {
@@ -320,13 +382,18 @@ public class CustomMessageFormatTest {
         try {
             iStreamFormat.createBody(null);
             fail("jsonFormat.createBody should throw for null content");
-        } catch (CustomMessageAccessException ignore) { }
+        } catch (CustomMessageAccessException e) {
+            assertNull(e.getCause());
+        }
     }
 
     /**
      * Helper function for creating custom message
      */
     private <T> CustomMessage createMessage(@Nullable ContentTypeHeader contentType, @Nullable T content) throws Exception {
+        // get the default formats factory
+        CustomMessageFormatFactory formatFactory = CustomMessageFormatRegistry.getInstance().getMessageFormatFactory();
+
         Message message = null;
         if (content instanceof Document) {
             message = new Message((Document)content);
@@ -360,8 +427,8 @@ public class CustomMessageFormatTest {
         try {
             format.extract(null);
             fail("extract should have thrown for null message param");
-        } catch (CustomMessageAccessException ignore) {
-            // expected
+        } catch (CustomMessageAccessException e) {
+            assertNull(e.getCause());
         }
 
         // test overwrite for null as message parameter
@@ -369,18 +436,14 @@ public class CustomMessageFormatTest {
             //noinspection unchecked
             format.overwrite(null, null);
             fail("extract should have thrown for null message param");
-        } catch (CustomMessageAccessException ignore) {
-            // expected
+        } catch (CustomMessageAccessException e) {
+            assertNull(e.getCause());
         }
 
         // create empty CustomMessage object to be used for extract and overwrite methods
         CustomMessage message = new CustomMessage() {
             @Override public CustomContentType getContentType() { return null; }
             @Override public void setContentType(CustomContentType contentType) throws IllegalArgumentException { }
-            @Override public Document getDocument() throws CustomMessageAccessException { return null;}
-            @Override public void setDocument(Document document) throws CustomMessageAccessException { }
-            @Override public CustomJsonData getJsonData() throws CustomMessageAccessException { return null; }
-            @Override public void setJsonData(CustomJsonData jsonData) throws CustomMessageAccessException { }
             @Override public InputStream getInputStream() throws CustomMessageAccessException { return null; }
             @Override public void setInputStream(InputStream inputStream) throws CustomMessageAccessException { }
             @Override public <T> T extract(CustomMessageFormat<T> format) throws CustomMessageAccessException { return null; }
@@ -393,8 +456,8 @@ public class CustomMessageFormatTest {
         try {
             format.extract(message);
             fail("extract should have thrown for unsupported message param");
-        } catch (CustomMessageAccessException ignore) {
-            // expected
+        } catch (CustomMessageAccessException e) {
+            assertNull(e.getCause());
         }
 
         // test overwrite for unsupported message parameter
@@ -402,8 +465,8 @@ public class CustomMessageFormatTest {
             //noinspection unchecked
             format.overwrite(message, null);
             fail("extract should have thrown for unsupported message param");
-        } catch (CustomMessageAccessException ignore) {
-            // expected
+        } catch (CustomMessageAccessException e) {
+            assertNull(e.getCause());
         }
     }
 
@@ -419,6 +482,9 @@ public class CustomMessageFormatTest {
 
     @Test
     public void testXmlExtract() throws Exception {
+        // get the default formats factory
+        CustomMessageFormatFactory formatFactory = CustomMessageFormatRegistry.getInstance().getMessageFormatFactory();
+
         // get XML message format
         final CustomMessageFormat<Document> xmlFormat = formatFactory.getXmlFormat();
         assertNotNull(xmlFormat);
@@ -426,10 +492,6 @@ public class CustomMessageFormatTest {
         // valid XML
         CustomMessage xmlMessage = createMessage(ContentTypeHeader.XML_DEFAULT, XML_CONTENT);
         Document docXML = xmlMessage.extract(xmlFormat);
-        assertNotNull(docXML);
-        assertTrue(docXML.isEqualNode(XmlUtil.stringToDocument(XML_CONTENT)));
-        // try convenient function
-        docXML = xmlMessage.getDocument();
         assertNotNull(docXML);
         assertTrue(docXML.isEqualNode(XmlUtil.stringToDocument(XML_CONTENT)));
         // throw for invalid casts
@@ -450,26 +512,18 @@ public class CustomMessageFormatTest {
             //noinspection UnusedAssignment
             docXML = xmlMessage.extract(xmlFormat);
             fail("xmlMessage.extract(xmlFormat) should throw for invalid XML");
-        } catch (CustomMessageAccessException ignore) { }
-        // try convenient function
-        docXML = xmlMessage.getDocument();
-        assertNull(docXML); // expected null
+        } catch (CustomMessageAccessException e) {
+            assertTrue(e.getCause() instanceof SAXParseException);
+        }
 
         // invalid XML (i.e. JSON) shouldn't throw
         xmlMessage = createMessage(ContentTypeHeader.APPLICATION_JSON, JSON_CONTENT);
         docXML = xmlMessage.extract(xmlFormat);
         assertNull(docXML); // should return null
-        // try convenient function
-        docXML = xmlMessage.getDocument();
-        assertNull(docXML); // expected null
 
         // multipart first part XML
         xmlMessage = createMessage(ContentTypeHeader.parseValue(MULTIPART_FIRST_PART_XML_CONTENT_TYPE), MULTIPART_FIRST_PART_XML_CONTENT);
         docXML = xmlMessage.extract(xmlFormat);
-        assertNotNull(docXML);
-        assertTrue(docXML.isEqualNode(XmlUtil.stringToDocument(MULTIPART_XML_PART_CONTENT)));
-        // try convenient function
-        docXML = xmlMessage.getDocument();
         assertNotNull(docXML);
         assertTrue(docXML.isEqualNode(XmlUtil.stringToDocument(MULTIPART_XML_PART_CONTENT)));
 
@@ -479,10 +533,9 @@ public class CustomMessageFormatTest {
             //noinspection UnusedAssignment
             docXML = xmlMessage.extract(xmlFormat);
             fail("xmlMessage.extract(xmlFormat) should throw for empty XML first part of multipart data");
-        } catch (CustomMessageAccessException ignore) { }
-        // try convenient function
-        docXML = xmlMessage.getDocument();
-        assertNull(docXML); // expected null
+        } catch (CustomMessageAccessException e) {
+            assertTrue(e.getCause() instanceof SAXParseException);
+        }
 
         // multipart first part invalid XML (JSON)
         xmlMessage = createMessage(ContentTypeHeader.parseValue(MULTIPART_FIRST_PART_XML_CONTENT_TYPE), MULTIPART_FIRST_PART_XML_CONTENT_INVALID);
@@ -490,40 +543,40 @@ public class CustomMessageFormatTest {
             //noinspection UnusedAssignment
             docXML = xmlMessage.extract(xmlFormat);
             fail("xmlMessage.extract(xmlFormat) should throw for invalid XML first part of multipart data");
-        } catch (CustomMessageAccessException ignore) { }
-        // try convenient function
-        docXML = xmlMessage.getDocument();
-        assertNull(docXML); // expected null
+        } catch (CustomMessageAccessException e) {
+            assertTrue(e.getCause() instanceof SAXParseException);
+        }
 
         // multipart first part non XML
         xmlMessage = createMessage(ContentTypeHeader.parseValue(MULTIPART_FIRST_PART_APP_OCTET_CONTENT_TYPE), MULTIPART_FIRST_PART_APP_OCTET_CONTENT);
         docXML = xmlMessage.extract(xmlFormat);
         assertNull(docXML); // should return null
-        // try convenient function
-        docXML = xmlMessage.getDocument();
-        assertNull(docXML); // expected null
 
         // uninitialized message
         xmlMessage = createMessage();
         docXML = xmlMessage.extract(xmlFormat);
         assertNull(docXML); // should return null
-        // try convenient function
-        docXML = xmlMessage.getDocument();
-        assertNull(docXML); // expected null
 
         // test null
         try {
             xmlMessage.extract(null);
             fail("xmlMessage.extract should throw for null content");
-        } catch (CustomMessageAccessException ignore) { }
+        } catch (CustomMessageAccessException e) {
+            assertNull(e.getCause());
+        }
         try {
             xmlFormat.extract(null);
             fail("xmlFormat.extract should throw for null content");
-        } catch (CustomMessageAccessException ignore) { }
+        } catch (CustomMessageAccessException e) {
+            assertNull(e.getCause());
+        }
     }
 
     @Test
     public void testJsonExtract() throws Exception {
+        // get the default formats factory
+        CustomMessageFormatFactory formatFactory = CustomMessageFormatRegistry.getInstance().getMessageFormatFactory();
+
         // get JSON message format
         final CustomMessageFormat<CustomJsonData> jsonFormat = formatFactory.getJsonFormat();
         assertNotNull(jsonFormat);
@@ -531,11 +584,6 @@ public class CustomMessageFormatTest {
         // valid JSON
         CustomMessage jsonMessage = createMessage(ContentTypeHeader.APPLICATION_JSON, JSON_CONTENT);
         CustomJsonData jsonData = jsonMessage.extract(jsonFormat);
-        assertNotNull(jsonData);
-        assertEquals(jsonData.getJsonData(), JSON_CONTENT);
-        assertNotNull(jsonData.getJsonObject());
-        // try convenient function
-        jsonData = jsonMessage.getJsonData();
         assertNotNull(jsonData);
         assertEquals(jsonData.getJsonData(), JSON_CONTENT);
         assertNotNull(jsonData.getJsonObject());
@@ -558,31 +606,18 @@ public class CustomMessageFormatTest {
         try {
             jsonData.getJsonObject();
             fail("jsonData.getJsonObject should throw for invalid JSON");
-        } catch (InvalidDataException ignore) { }
-        // try convenient function
-        jsonData = jsonMessage.getJsonData();
-        assertNotNull(jsonData);
-        try {
-            jsonData.getJsonObject();
-            fail("jsonData.getJsonObject should throw for invalid JSON");
-        } catch (InvalidDataException ignore) { }
+        } catch (InvalidDataException e) {
+            assertTrue(e.getCause() instanceof InvalidJsonException);
+        }
 
         // invalid JSON (XML) shouldn't throw
         jsonMessage = createMessage(ContentTypeHeader.XML_DEFAULT, XML_CONTENT);
         jsonData = jsonMessage.extract(jsonFormat);
         assertNull(jsonData); // should return null
-        // try convenient function
-        jsonData = jsonMessage.getJsonData();
-        assertNull(jsonData);
 
         // multipart first part JSON
         jsonMessage = createMessage(ContentTypeHeader.parseValue(MULTIPART_FIRST_PART_JSON_CONTENT_TYPE), MULTIPART_FIRST_PART_JSON_CONTENT);
         jsonData = jsonMessage.extract(jsonFormat);
-        assertNotNull(jsonData);
-        assertEquals(jsonData.getJsonData(), MULTIPART_JSON_PART_CONTENT);
-        assertNotNull(jsonData.getJsonObject());
-        // try convenient function
-        jsonData = jsonMessage.getJsonData();
         assertNotNull(jsonData);
         assertEquals(jsonData.getJsonData(), MULTIPART_JSON_PART_CONTENT);
         assertNotNull(jsonData.getJsonObject());
@@ -595,15 +630,9 @@ public class CustomMessageFormatTest {
         try {
             jsonData.getJsonObject();
             fail("jsonData.getJsonObject should throw for empty first part JSON of multipart data.");
-        } catch (InvalidDataException ignore) { }
-        // try convenient function
-        jsonData = jsonMessage.getJsonData();
-        assertNotNull(jsonData);
-        assertEquals(jsonData.getJsonData(), "");
-        try {
-            jsonData.getJsonObject();
-            fail("jsonData.getJsonObject should throw for empty first part JSON of multipart data.");
-        } catch (InvalidDataException ignore) { }
+        } catch (InvalidDataException e) {
+            assertTrue(e.getCause() instanceof InvalidJsonException);
+        }
 
         // multipart first part invalid JSON (XML)
         jsonMessage = createMessage(ContentTypeHeader.parseValue(MULTIPART_FIRST_PART_JSON_CONTENT_TYPE), MULTIPART_FIRST_PART_JSON_CONTENT_INVALID);
@@ -613,45 +642,40 @@ public class CustomMessageFormatTest {
         try {
             jsonData.getJsonObject();
             fail("jsonData.getJsonObject should throw for invalid first part JSON of multipart data.");
-        } catch (InvalidDataException ignore) { }
-        // try convenient function
-        jsonData = jsonMessage.getJsonData();
-        assertNotNull(jsonData);
-        assertEquals(jsonData.getJsonData(), MULTIPART_XML_PART_CONTENT);
-        try {
-            jsonData.getJsonObject();
-            fail("jsonData.getJsonObject should throw for invalid first part JSON of multipart data.");
-        } catch (InvalidDataException ignore) { }
+        } catch (InvalidDataException e) {
+            assertTrue(e.getCause() instanceof InvalidJsonException);
+        }
 
         // multipart first part non JSON
         jsonMessage = createMessage(ContentTypeHeader.parseValue(MULTIPART_FIRST_PART_APP_OCTET_CONTENT_TYPE), MULTIPART_FIRST_PART_APP_OCTET_CONTENT);
         jsonData = jsonMessage.extract(jsonFormat);
         assertNull(jsonData); // should return null
-        // try convenient function
-        jsonData = jsonMessage.getJsonData();
-        assertNull(jsonData);
 
         // uninitialized message
         jsonMessage = createMessage();
         jsonData = jsonMessage.extract(jsonFormat);
         assertNull(jsonData); // should return null
-        // try convenient function
-        jsonData = jsonMessage.getJsonData();
-        assertNull(jsonData);
 
         // test null
         try {
             jsonMessage.extract(null);
             fail("jsonMessage.extract should throw for null content");
-        } catch (CustomMessageAccessException ignore) { }
+        } catch (CustomMessageAccessException e) {
+            assertNull(e.getCause());
+        }
         try {
             jsonFormat.extract(null);
             fail("jsonFormat.extract should throw for null content");
-        } catch (CustomMessageAccessException ignore) { }
+        } catch (CustomMessageAccessException e) {
+            assertNull(e.getCause());
+        }
     }
 
     @Test
     public void testInputStreamExtract() throws Exception {
+        // get the default formats factory
+        CustomMessageFormatFactory formatFactory = CustomMessageFormatRegistry.getInstance().getMessageFormatFactory();
+
         // get InputStream message format
         final CustomMessageFormat<InputStream> iStreamFormat = formatFactory.getStreamFormat();
         assertNotNull(iStreamFormat);
@@ -689,76 +713,98 @@ public class CustomMessageFormatTest {
         try {
             iStreamFormat.extract(null);
             fail("iStreamFormat.extract should throw for null content");
-        } catch (CustomMessageAccessException ignore) { }
+        } catch (CustomMessageAccessException e) {
+            assertNull(e.getCause());
+        }
         try {
             iStreamMessage.extract(null);
             fail("iStreamMessage.extract should throw for null content");
-        } catch (CustomMessageAccessException ignore) { }
+        } catch (CustomMessageAccessException e) {
+            assertNull(e.getCause());
+        }
     }
 
     @Test
     public void testXmlOverwrite() throws Exception {
-        // initial message value is XML  
+        // get the default formats factory
+        CustomMessageFormatFactory formatFactory = CustomMessageFormatRegistry.getInstance().getMessageFormatFactory();       
+
+        // initial message value is XML
         CustomMessage message = createMessage(ContentTypeHeader.XML_DEFAULT, XML_CONTENT);
-        assertTrue(message.getDocument().isEqualNode(XmlUtil.stringToDocument(XML_CONTENT)));
+        assertTrue(message.extract(formatFactory.getXmlFormat()).isEqualNode(XmlUtil.stringToDocument(XML_CONTENT)));
         assertTrue(message.getContentType().matches("text", "xml"));
         // set to JSON
         message.overwrite(formatFactory.getJsonFormat(), formatFactory.getJsonFormat().createBody(JSON_CONTENT));
-        assertEquals(message.getJsonData().getJsonData(), JSON_CONTENT);
-        assertNotNull(message.getJsonData().getJsonObject());
+        assertEquals(message.extract(formatFactory.getJsonFormat()).getJsonData(), JSON_CONTENT);
+        assertNotNull(message.extract(formatFactory.getJsonFormat()).getJsonObject());
         assertTrue(message.getContentType().matches("application", "json")); // overwrite will set the content-type accordingly
-        assertNull(message.getDocument());
+        assertNull(message.extract(formatFactory.getXmlFormat()));
         // reset content type
         message.setContentType(new ContentTypeHeaderToCustomConverter(ContentTypeHeader.SOAP_1_2_DEFAULT));
         assertTrue(message.getContentType().matches("application", "soap+xml"));
-        assertEquals(message.getJsonData().getJsonData(), JSON_CONTENT);
-        assertNotNull(message.getJsonData().getJsonObject());
+        assertEquals(message.extract(formatFactory.getJsonFormat()).getJsonData(), JSON_CONTENT);
+        assertNotNull(message.extract(formatFactory.getJsonFormat()).getJsonObject());
 
         // initial message value is XML
         message = createMessage(ContentTypeHeader.XML_DEFAULT, XML_CONTENT);
-        assertTrue(message.getDocument().isEqualNode(XmlUtil.stringToDocument(XML_CONTENT)));
+        assertTrue(message.extract(formatFactory.getXmlFormat()).isEqualNode(XmlUtil.stringToDocument(XML_CONTENT)));
         // set it to binary
         message.overwrite(formatFactory.getStreamFormat(), formatFactory.getStreamFormat().createBody(INPUT_STREAM_CONTENT_STRING));
         assertTrue(Arrays.equals(IOUtils.slurpStream(message.getInputStream()), INPUT_STREAM_CONTENT_BYTES));
         assertTrue(message.getContentType().matches("text", "xml")); // should be unchanged
-        assertNull(message.getDocument());
+        try {
+            message.extract(formatFactory.getXmlFormat());
+            fail("extract method should throw for non-xml content");
+        } catch (CustomMessageAccessException e) {
+            assertTrue(e.getCause() instanceof SAXParseException);
+        }
         message.setContentType(new ContentTypeHeaderToCustomConverter(ContentTypeHeader.OCTET_STREAM_DEFAULT));
         assertTrue(message.getContentType().matches("application", "octet-stream"));
 
         // initial message value is XML
         message = createMessage(ContentTypeHeader.XML_DEFAULT, XML_CONTENT);
-        assertTrue(message.getDocument().isEqualNode(XmlUtil.stringToDocument(XML_CONTENT)));
+        assertTrue(message.extract(formatFactory.getXmlFormat()).isEqualNode(XmlUtil.stringToDocument(XML_CONTENT)));
         // set it to SOAP (XML)
         message.overwrite(formatFactory.getStreamFormat(), formatFactory.getStreamFormat().createBody(SOAP_CONTENT));
-        assertTrue(message.getDocument().isEqualNode(XmlUtil.stringToDocument(SOAP_CONTENT)));
+        assertTrue(message.extract(formatFactory.getXmlFormat()).isEqualNode(XmlUtil.stringToDocument(SOAP_CONTENT)));
         assertTrue(message.getContentType().matches("text", "xml")); // should be unchanged
-        assertNull(message.getJsonData());
+        assertNull(message.extract(formatFactory.getJsonFormat()));
         message.setContentType(new ContentTypeHeaderToCustomConverter(ContentTypeHeader.SOAP_1_2_DEFAULT));
         assertTrue(message.getContentType().matches("application", "soap+xml"));
+        assertTrue(message.extract(formatFactory.getXmlFormat()).isEqualNode(XmlUtil.stringToDocument(SOAP_CONTENT)));
 
         // test null
         message = createMessage(ContentTypeHeader.XML_DEFAULT, XML_CONTENT);
-        assertTrue(message.getDocument().isEqualNode(XmlUtil.stringToDocument(XML_CONTENT)));
+        assertTrue(message.extract(formatFactory.getXmlFormat()).isEqualNode(XmlUtil.stringToDocument(XML_CONTENT)));
         try {
             message.overwrite(null, formatFactory.getStreamFormat().createBody(INPUT_STREAM_CONTENT_STRING));
             fail("message.overwrite should throw for null format");
-        } catch (CustomMessageAccessException ignore) { }
+        } catch (CustomMessageAccessException e) {
+            assertNull(e.getCause());
+        }
         try {
             formatFactory.getXmlFormat().overwrite(null, XmlUtil.stringToDocument(XML_CONTENT));
             fail("xmlFormat.overwrite should throw for null message");
-        } catch (CustomMessageAccessException ignore) { }
+        } catch (CustomMessageAccessException e) {
+            assertNull(e.getCause());
+        }
         try {
             message.overwrite(formatFactory.getXmlFormat(), null);
             fail("message.overwrite should throw for null content i.e. Document");
-        } catch (IllegalArgumentException ignore) { }
+        } catch (IllegalArgumentException e) {
+            assertNull(e.getCause());
+        }
     }
 
     @Test
     public void testJsonOverwrite() throws Exception {
+        // get the default formats factory
+        CustomMessageFormatFactory formatFactory = CustomMessageFormatRegistry.getInstance().getMessageFormatFactory();
+
         // initial message value is JSON
         CustomMessage message = createMessage(ContentTypeHeader.APPLICATION_JSON, JSON_CONTENT);
-        assertEquals(message.getJsonData().getJsonData(), JSON_CONTENT);
-        assertNotNull(message.getJsonData().getJsonObject());
+        assertEquals(message.extract(formatFactory.getJsonFormat()).getJsonData(), JSON_CONTENT);
+        assertNotNull(message.extract(formatFactory.getJsonFormat()).getJsonObject());
         assertTrue(message.getContentType().matches("application", "json"));
         // set to XML
         try {
@@ -769,124 +815,139 @@ public class CustomMessageFormatTest {
         } catch (RuntimeException e) {
             assertTrue(e.getCause() instanceof SAXException);
         }
-        assertNull(message.getDocument());
-        assertEquals(message.getJsonData().getJsonData(), JSON_CONTENT);
-        assertNotNull(message.getJsonData().getJsonObject());
+        assertNull(message.extract(formatFactory.getXmlFormat()));
+        assertEquals(message.extract(formatFactory.getJsonFormat()).getJsonData(), JSON_CONTENT);
+        assertNotNull(message.extract(formatFactory.getJsonFormat()).getJsonObject());
         assertTrue(message.getContentType().matches("application", "json"));
 
         // set the content to XML using InputStream, before setting the content-type to text/xml
         // initial message value is JSON
         message = createMessage(ContentTypeHeader.APPLICATION_JSON, JSON_CONTENT);
-        assertEquals(message.getJsonData().getJsonData(), JSON_CONTENT);
-        assertNotNull(message.getJsonData().getJsonObject());
+        assertEquals(message.extract(formatFactory.getJsonFormat()).getJsonData(), JSON_CONTENT);
+        assertNotNull(message.extract(formatFactory.getJsonFormat()).getJsonObject());
         assertTrue(message.getContentType().matches("application", "json"));
         // set to XML (using InputStream)
         message.overwrite(formatFactory.getStreamFormat(), formatFactory.getStreamFormat().createBody(XML_CONTENT));
         assertTrue(message.getContentType().matches("application", "json"));
-        assertNull(message.getDocument());
-        assertNotNull(message.getJsonData()); // actually since the content type is not changed, it still have Json data
-        assertEquals(message.getJsonData().getJsonData(), XML_CONTENT);
+        assertNull(message.extract(formatFactory.getXmlFormat()));
+        assertNotNull(message.extract(formatFactory.getJsonFormat())); // actually since the content type is not changed, it still have Json data
+        assertEquals(message.extract(formatFactory.getJsonFormat()).getJsonData(), XML_CONTENT);
         try {
-            message.getJsonData().getJsonObject();
+            message.extract(formatFactory.getJsonFormat()).getJsonObject();
             fail("jsonData.getJsonObject should throw since content is XML.");
-        } catch (InvalidDataException ignore) { }
+        } catch (InvalidDataException e) {
+            assertTrue(e.getCause() instanceof InvalidJsonException);
+        }
         message.setContentType(new ContentTypeHeaderToCustomConverter(ContentTypeHeader.XML_DEFAULT));
         assertTrue(message.getContentType().matches("text", "xml"));
-        assertNull(message.getDocument());
+        assertNull(message.extract(formatFactory.getXmlFormat()));
 
         // set the content to XML using InputStream, after setting the content-type to text/xml
         // initial message value is JSON
         message = createMessage(ContentTypeHeader.APPLICATION_JSON, JSON_CONTENT);
-        assertEquals(message.getJsonData().getJsonData(), JSON_CONTENT);
-        assertNotNull(message.getJsonData().getJsonObject());
+        assertEquals(message.extract(formatFactory.getJsonFormat()).getJsonData(), JSON_CONTENT);
+        assertNotNull(message.extract(formatFactory.getJsonFormat()).getJsonObject());
         assertTrue(message.getContentType().matches("application", "json"));
         // set to XML (using InputStream)
         message.setContentType(new ContentTypeHeaderToCustomConverter(ContentTypeHeader.XML_DEFAULT));
         assertTrue(message.getContentType().matches("text", "xml"));
         message.overwrite(formatFactory.getStreamFormat(), formatFactory.getStreamFormat().createBody(XML_CONTENT));
         assertTrue(message.getContentType().matches("text", "xml"));
-        assertTrue(message.getDocument().isEqualNode(XmlUtil.stringToDocument(XML_CONTENT)));
-        assertNull(message.getJsonData());
+        assertTrue(message.extract(formatFactory.getXmlFormat()).isEqualNode(XmlUtil.stringToDocument(XML_CONTENT)));
+        assertNull(message.extract(formatFactory.getJsonFormat()));
 
         // initial message value is JSON
         message = createMessage(ContentTypeHeader.APPLICATION_JSON, JSON_CONTENT);
-        assertEquals(message.getJsonData().getJsonData(), JSON_CONTENT);
-        assertNotNull(message.getJsonData().getJsonObject());
+        assertEquals(message.extract(formatFactory.getJsonFormat()).getJsonData(), JSON_CONTENT);
+        assertNotNull(message.extract(formatFactory.getJsonFormat()).getJsonObject());
         assertTrue(message.getContentType().matches("application", "json"));
         // set to SOAP
         message.setContentType(new ContentTypeHeaderToCustomConverter(ContentTypeHeader.SOAP_1_2_DEFAULT));
         assertTrue(message.getContentType().matches("application", "soap+xml"));
         message.overwrite(formatFactory.getStreamFormat(), formatFactory.getStreamFormat().createBody(SOAP_CONTENT));
-        assertTrue(message.getDocument().isEqualNode(XmlUtil.stringToDocument(SOAP_CONTENT)));
-        assertNull(message.getJsonData());
+        assertTrue(message.extract(formatFactory.getXmlFormat()).isEqualNode(XmlUtil.stringToDocument(SOAP_CONTENT)));
+        assertNull(message.extract(formatFactory.getJsonFormat()));
 
         // initial message value is JSON
         message = createMessage(ContentTypeHeader.APPLICATION_JSON, JSON_CONTENT);
-        assertEquals(message.getJsonData().getJsonData(), JSON_CONTENT);
-        assertNotNull(message.getJsonData().getJsonObject());
+        assertEquals(message.extract(formatFactory.getJsonFormat()).getJsonData(), JSON_CONTENT);
+        assertNotNull(message.extract(formatFactory.getJsonFormat()).getJsonObject());
         assertTrue(message.getContentType().matches("application", "json"));
         // set it to binary
         message.overwrite(formatFactory.getStreamFormat(), formatFactory.getStreamFormat().createBody(INPUT_STREAM_CONTENT_STRING));
         assertTrue(Arrays.equals(IOUtils.slurpStream(message.getInputStream()), INPUT_STREAM_CONTENT_BYTES));
         assertTrue(message.getContentType().matches("application", "json")); // should be unchanged
-        assertNull(message.getDocument());
-        assertNotNull(message.getJsonData());
-        assertEquals(message.getJsonData().getJsonData(), INPUT_STREAM_CONTENT_STRING);
+        assertNull(message.extract(formatFactory.getXmlFormat()));
+        assertNotNull(message.extract(formatFactory.getJsonFormat()));
+        assertEquals(message.extract(formatFactory.getJsonFormat()).getJsonData(), INPUT_STREAM_CONTENT_STRING);
         try {
-            message.getJsonData().getJsonObject();
+            message.extract(formatFactory.getJsonFormat()).getJsonObject();
             fail("jsonData.getJsonObject should throw since content is not JSON.");
-        } catch (InvalidDataException ignore) { }
+        } catch (InvalidDataException e) {
+            assertTrue(e.getCause() instanceof InvalidJsonException);
+        }
 
         // initial message value is JSON
         message = createMessage(ContentTypeHeader.APPLICATION_JSON, JSON_CONTENT);
-        assertEquals(message.getJsonData().getJsonData(), JSON_CONTENT);
-        assertNotNull(message.getJsonData().getJsonObject());
+        assertEquals(message.extract(formatFactory.getJsonFormat()).getJsonData(), JSON_CONTENT);
+        assertNotNull(message.extract(formatFactory.getJsonFormat()).getJsonObject());
         assertTrue(message.getContentType().matches("application", "json"));
         // set it to another JSON
         message.overwrite(formatFactory.getJsonFormat(), formatFactory.getJsonFormat().createBody(JSON_SECOND_CONTENT));
         assertTrue(message.getContentType().matches("application", "json")); // should be unchanged
-        assertEquals(message.getJsonData().getJsonData(), JSON_SECOND_CONTENT);
-        assertNotNull(message.getJsonData().getJsonObject());
-        assertNull(message.getDocument());
+        assertEquals(message.extract(formatFactory.getJsonFormat()).getJsonData(), JSON_SECOND_CONTENT);
+        assertNotNull(message.extract(formatFactory.getJsonFormat()).getJsonObject());
+        assertNull(message.extract(formatFactory.getXmlFormat()));
 
         // initial message value is JSON
         message = createMessage(ContentTypeHeader.APPLICATION_JSON, JSON_CONTENT);
-        assertEquals(message.getJsonData().getJsonData(), JSON_CONTENT);
-        assertNotNull(message.getJsonData().getJsonObject());
+        assertEquals(message.extract(formatFactory.getJsonFormat()).getJsonData(), JSON_CONTENT);
+        assertNotNull(message.extract(formatFactory.getJsonFormat()).getJsonObject());
         assertTrue(message.getContentType().matches("application", "json"));
         // set it to invalid JSON
         message.overwrite(formatFactory.getJsonFormat(), formatFactory.getJsonFormat().createBody(JSON_CONTENT_INVALID));
         assertTrue(message.getContentType().matches("application", "json")); // should be unchanged
-        assertEquals(message.getJsonData().getJsonData(), JSON_CONTENT_INVALID);
+        assertEquals(message.extract(formatFactory.getJsonFormat()).getJsonData(), JSON_CONTENT_INVALID);
         try {
-            message.getJsonData().getJsonObject();
+            message.extract(formatFactory.getJsonFormat()).getJsonObject();
             fail("jsonData.getJsonObject should throw since content is not JSON.");
-        } catch (InvalidDataException ignore) { }
-        assertNull(message.getDocument());
+        } catch (InvalidDataException e) {
+            assertTrue(e.getCause() instanceof InvalidJsonException);
+        }
+        assertNull(message.extract(formatFactory.getXmlFormat()));
 
         // test null
         message = createMessage(ContentTypeHeader.APPLICATION_JSON, JSON_CONTENT);
-        assertEquals(message.getJsonData().getJsonData(), JSON_CONTENT);
-        assertNotNull(message.getJsonData().getJsonObject());
+        assertEquals(message.extract(formatFactory.getJsonFormat()).getJsonData(), JSON_CONTENT);
+        assertNotNull(message.extract(formatFactory.getJsonFormat()).getJsonObject());
         assertTrue(message.getContentType().matches("application", "json"));
         try {
             message.overwrite(null, formatFactory.getStreamFormat().createBody(INPUT_STREAM_CONTENT_STRING));
             fail("message.overwrite should throw for null format");
-        } catch (CustomMessageAccessException ignore) { }
+        } catch (CustomMessageAccessException e) {
+            assertNull(e.getCause());
+        }
         try {
             formatFactory.getJsonFormat().overwrite(null, formatFactory.getJsonFormat().createBody(JSON_CONTENT));
             fail("jsonFormat.overwrite should throw for null message");
-        } catch (CustomMessageAccessException ignore) { }
+        } catch (CustomMessageAccessException e) {
+            assertNull(e.getCause());
+        }
         message.overwrite(formatFactory.getJsonFormat(), null);
-        assertEquals(message.getJsonData().getJsonData(), "");
+        assertEquals(message.extract(formatFactory.getJsonFormat()).getJsonData(), "");
         try {
-            message.getJsonData().getJsonObject();
+            message.extract(formatFactory.getJsonFormat()).getJsonObject();
             fail("jsonData.getJsonObject should throw since content is empty.");
-        } catch (InvalidDataException ignore) { }
+        } catch (InvalidDataException e) {
+            assertTrue(e.getCause() instanceof InvalidJsonException);
+        }
     }
 
     @Test
     public void testInputStreamOverwrite() throws Exception {
+        // get the default formats factory
+        CustomMessageFormatFactory formatFactory = CustomMessageFormatRegistry.getInstance().getMessageFormatFactory();
+
         // initial message value is InputStream
         CustomMessage message = createMessage(ContentTypeHeader.OCTET_STREAM_DEFAULT, INPUT_STREAM_CONTENT_BYTES);
         assertTrue(Arrays.equals(IOUtils.slurpStream(message.getInputStream()), INPUT_STREAM_CONTENT_BYTES));
@@ -901,11 +962,14 @@ public class CustomMessageFormatTest {
             assertTrue(e.getCause() instanceof SAXException);
         }
         assertTrue(message.getContentType().matches("application", "octet-stream"));
-        assertNull(message.getDocument());
-        assertNull(message.getJsonData());
+        assertNull(message.extract(formatFactory.getXmlFormat()));
+        assertNull(message.extract(formatFactory.getJsonFormat()));
         try {
+            // the above message.overwrite will invalidate the message, therefore the input-stream stashed will be deleted
             message.getInputStream();
-        } catch (CustomMessageAccessException ignore) { }
+        } catch (CustomMessageAccessException e) {
+            assertTrue(e.getCause() instanceof NoSuchPartException);
+        }
 
         // initial message value is InputStream
         message = createMessage(ContentTypeHeader.OCTET_STREAM_DEFAULT, INPUT_STREAM_CONTENT_BYTES);
@@ -915,8 +979,8 @@ public class CustomMessageFormatTest {
         message.setContentType(new ContentTypeHeaderToCustomConverter(ContentTypeHeader.XML_DEFAULT));
         message.overwrite(formatFactory.getStreamFormat(), formatFactory.getStreamFormat().createBody(XML_CONTENT));
         assertTrue(message.getContentType().matches("text", "xml"));
-        assertTrue(message.getDocument().isEqualNode(XmlUtil.stringToDocument(XML_CONTENT)));
-        assertNull(message.getJsonData());
+        assertTrue(message.extract(formatFactory.getXmlFormat()).isEqualNode(XmlUtil.stringToDocument(XML_CONTENT)));
+        assertNull(message.extract(formatFactory.getJsonFormat()));
         assertTrue(Arrays.equals(IOUtils.slurpStream(message.getInputStream()), XML_CONTENT.getBytes()));
 
         // initial message value is InputStream
@@ -926,9 +990,9 @@ public class CustomMessageFormatTest {
         // set to JSON
         message.overwrite(formatFactory.getJsonFormat(), formatFactory.getJsonFormat().createBody(JSON_CONTENT));
         assertTrue(message.getContentType().matches("application", "json"));
-        assertEquals(message.getJsonData().getJsonData(), JSON_CONTENT);
-        assertNotNull(message.getJsonData().getJsonObject());
-        assertNull(message.getDocument());
+        assertEquals(message.extract(formatFactory.getJsonFormat()).getJsonData(), JSON_CONTENT);
+        assertNotNull(message.extract(formatFactory.getJsonFormat()).getJsonObject());
+        assertNull(message.extract(formatFactory.getXmlFormat()));
         assertTrue(Arrays.equals(IOUtils.slurpStream(message.getInputStream()), JSON_CONTENT.getBytes()));
 
         // test null
@@ -938,14 +1002,20 @@ public class CustomMessageFormatTest {
         try {
             message.overwrite(null, formatFactory.getStreamFormat().createBody(INPUT_STREAM_CONTENT_STRING));
             fail("message.overwrite should throw for null format");
-        } catch (CustomMessageAccessException ignore) { }
+        } catch (CustomMessageAccessException e) {
+            assertNull(e.getCause());
+        }
         try {
             formatFactory.getStreamFormat().overwrite(null, formatFactory.getStreamFormat().createBody(INPUT_STREAM_CONTENT_STRING));
             fail("iStreamFormat.overwrite should throw for null message");
-        } catch (CustomMessageAccessException ignore) { }
+        } catch (CustomMessageAccessException e) {
+            assertNull(e.getCause());
+        }
         try {
             message.overwrite(formatFactory.getStreamFormat(), null);
             fail("message.overwrite should throw for null content i.e. InputStream");
-        } catch (IllegalArgumentException ignore) { }
+        } catch (IllegalArgumentException e) {
+            assertNull(e.getCause());
+        }
     }
 }

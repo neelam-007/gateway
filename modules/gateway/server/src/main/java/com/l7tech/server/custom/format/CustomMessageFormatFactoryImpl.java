@@ -46,7 +46,7 @@ public class CustomMessageFormatFactoryImpl implements CustomMessageFormatFactor
     }
 
     @Override
-    public <T> CustomMessageFormat<T> getFormatForRepresentationClass(final Class<T> representationClass) throws NoSuchMessageFormatException {
+    public <T> CustomMessageFormat<T> getFormat(final Class<T> representationClass) throws NoSuchMessageFormatException {
         if (representationClass == null) {
             throw new NoSuchMessageFormatException(representationClass, "Representation Class is null.");
         }
@@ -75,16 +75,16 @@ public class CustomMessageFormatFactoryImpl implements CustomMessageFormatFactor
 
     @Override
     public CustomMessageFormat<Document> getXmlFormat() throws NoSuchMessageFormatException {
-        return getFormatForRepresentationClass(Document.class);
+        return getFormat(Document.class);
     }
 
     @Override
     public CustomMessageFormat<CustomJsonData> getJsonFormat() throws NoSuchMessageFormatException {
-        return getFormatForRepresentationClass(CustomJsonData.class);
+        return getFormat(CustomJsonData.class);
     }
 
     @Override
     public CustomMessageFormat<InputStream> getStreamFormat() throws NoSuchMessageFormatException {
-        return getFormatForRepresentationClass(InputStream.class);
+        return getFormat(InputStream.class);
     }
 }

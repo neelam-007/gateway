@@ -128,11 +128,26 @@ public class CustomAssertionHolder extends Assertion implements UsesVariables, S
      * Checks if the CustomAssertion either implements the {@link CustomCredentialSource} interface or
      * is placed into {@link Category#ACCESS_CONTROL ACCESS_CONTROL} category.
      *
+     * Checks if the CustomAssertion either, implements the
+     * {@link com.l7tech.policy.assertion.ext.CustomCredentialSource CustomCredentialSource} interface and returns <code>true</code> for
+     * {@link com.l7tech.policy.assertion.ext.CustomCredentialSource#isCredentialSource() CustomCredentialSource.isCredentialSource()} method,
+     * or is placed into {@link Category#ACCESS_CONTROL ACCESS_CONTROL} category.
+     *
      * @return true if the CustomAssertion is credential source, false otherwise.
      */
     public boolean isCustomCredentialSource() {
-        return ( (customAssertion != null && customAssertion instanceof CustomCredentialSource) ||  // the new way
-                 (categories != null && categories.contains(Category.ACCESS_CONTROL))               // or the old way
+        return (
+                // the new way
+                (
+                        customAssertion != null &&
+                        customAssertion instanceof CustomCredentialSource &&
+                        ((CustomCredentialSource)customAssertion).isCredentialSource()
+                )
+                || // or the old way
+                (
+                        categories != null &&
+                        categories.contains(Category.ACCESS_CONTROL)
+                )
         );
     }
 

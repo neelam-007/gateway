@@ -2,7 +2,6 @@ package com.l7tech.server.custom;
 
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.gateway.common.custom.ContentTypeHeaderToCustomConverter;
-import com.l7tech.json.InvalidJsonException;
 import com.l7tech.message.Message;
 import com.l7tech.message.MimeKnob;
 import com.l7tech.policy.assertion.ext.message.*;
@@ -22,9 +21,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import org.w3c.dom.Document;
-import org.xml.sax.SAXException;
 
 /**
  * CustomMessage implementation class, wrapping {@link Message} class.
@@ -100,72 +96,6 @@ public class CustomMessageImpl implements CustomMessage {
     }
 
     @Override
-    public Document getDocument() throws CustomMessageAccessException {
-        try {
-            return extract(messageFormatFactory.getXmlFormat());
-        } catch (NoSuchMessageFormatException e) {
-            // it should not happen, this is one of the default CustomMessageFormat
-            logger.log(Level.WARNING, "getDocument returning null since it failed unexpectedly with exception:\n", e);
-            return null;
-        } catch (CustomMessageAccessException e) {
-            if (e.getCause() instanceof SAXException) {
-                // message doesn't contain any XML data, probably cause the content-type is xml but the data is not.
-                logger.log(Level.FINE, "getDocument returning null since it failed unexpectedly with exception:\n", e);
-                return null;
-            }
-            // it's either IOException caused while reading the stream or something else, in any case throw the exception.
-            logger.log(Level.WARNING, "getDocument throwing since it failed unexpectedly with exception:\n", e);
-            throw e;
-        }
-    }
-
-    @Override
-    public void setDocument(Document document) throws CustomMessageAccessException {
-        try {
-            overwrite(messageFormatFactory.getXmlFormat(), document);
-        } catch (NoSuchMessageFormatException e) {
-            // it should not happen, this is one of the default CustomMessageFormat
-            logger.log(Level.WARNING, "setDocument failed unexpectedly with exception:\n", e);
-        } catch (CustomMessageAccessException e) {
-            logger.log(Level.WARNING, "setDocument throwing since it failed unexpectedly with exception:\n", e);
-            throw e;
-        }
-    }
-
-    @Override
-    public CustomJsonData getJsonData() throws CustomMessageAccessException {
-        try {
-            return extract(messageFormatFactory.getJsonFormat());
-        } catch (NoSuchMessageFormatException e) {
-            // it should never happen, this is one of the default CustomMessageFormat
-            logger.log(Level.WARNING, "getJsonData returning null since it failed unexpectedly with exception:\n", e);
-            return null;
-        } catch (CustomMessageAccessException e) {
-            if (e.getCause() instanceof InvalidJsonException) {
-                // message doesn't contain any JSON data, probably cause the content-type is json but the data is not.
-                logger.log(Level.FINE, "getJsonData returning null since it failed unexpectedly with exception:\n", e);
-                return null;
-            }
-            // it's either IOException caused while reading the stream or something else, in any case throw the exception.
-            logger.log(Level.WARNING, "getJsonData throwing since it failed unexpectedly with exception:\n", e);
-            throw e;
-        }
-    }
-
-    @Override
-    public void setJsonData(CustomJsonData jsonData) throws CustomMessageAccessException {
-        try {
-            overwrite(messageFormatFactory.getJsonFormat(), jsonData);
-        } catch (NoSuchMessageFormatException e) {
-            // it should not happen, this is one of the default CustomMessageFormat
-            logger.log(Level.WARNING, "setJsonData failed unexpectedly with exception:\n", e);
-        } catch (CustomMessageAccessException e) {
-            logger.log(Level.WARNING, "setJsonData throwing since it failed unexpectedly with exception:\n", e);
-            throw e;
-        }
-    }
-
-    @Override
     public InputStream getInputStream() throws CustomMessageAccessException {
         try {
             return extract(messageFormatFactory.getStreamFormat());
@@ -173,9 +103,6 @@ public class CustomMessageImpl implements CustomMessage {
             // it should not happen, this is one of the default CustomMessageFormat
             logger.log(Level.WARNING, "getInputStream returning null since it failed unexpectedly with exception:\n", e);
             return null;
-        } catch (CustomMessageAccessException e) {
-            logger.log(Level.WARNING, "getInputStream throwing since it failed unexpectedly with exception:\n", e);
-            throw e;
         }
     }
 
@@ -186,9 +113,6 @@ public class CustomMessageImpl implements CustomMessage {
         } catch (NoSuchMessageFormatException e) {
             // it should not happen, this is one of the default CustomMessageFormat
             logger.log(Level.WARNING, "setInputStream failed unexpectedly with exception:\n", e);
-        } catch (CustomMessageAccessException e) {
-            logger.log(Level.WARNING, "setInputStream throwing since it failed unexpectedly with exception:\n", e);
-            throw e;
         }
     }
 

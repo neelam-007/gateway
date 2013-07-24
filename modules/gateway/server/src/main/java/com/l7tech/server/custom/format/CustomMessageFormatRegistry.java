@@ -1,5 +1,12 @@
 package com.l7tech.server.custom.format;
 
+import com.l7tech.policy.assertion.ext.message.CustomJsonData;
+import com.l7tech.policy.assertion.ext.message.format.CustomMessageFormat;
+import com.l7tech.policy.assertion.ext.message.format.CustomMessageFormatFactory;
+import com.l7tech.server.StashManagerFactory;
+
+import org.jetbrains.annotations.NotNull;
+
 import java.io.InputStream;
 import java.util.Collection;
 import java.util.Collections;
@@ -7,15 +14,15 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import com.l7tech.policy.assertion.ext.message.CustomJsonData;
-import com.l7tech.policy.assertion.ext.message.format.CustomMessageFormat;
-import com.l7tech.policy.assertion.ext.message.format.CustomMessageFormatFactory;
-
-import org.jetbrains.annotations.NotNull;
 import org.w3c.dom.Document;
 
 /**
- * This is a registry used to store {@link com.l7tech.policy.assertion.ext.message.format.CustomMessageFormat CustomMessageFormat}'s.
+ * This is a registry singleton used to store {@link com.l7tech.policy.assertion.ext.message.format.CustomMessageFormat CustomMessageFormat}'s.
+ * <p/>
+ * The singleton instance can be accessed either via {@link #getInstance()} method, which is the preferable way,
+ * or through the application-context via the "ssgCustomMessageFormatRegistry" bean.
+ * <p/>
+ * Use this singleton to register new message formats or remove existing ones.
  */
 public class CustomMessageFormatRegistry {
 
@@ -35,6 +42,13 @@ public class CustomMessageFormatRegistry {
     static private CustomMessageFormatRegistry messageFormatRegistry = null;
 
     /**
+     * @return the one and only CustomMessageFormatRegistry instance
+     */
+    static public CustomMessageFormatRegistry getInstance() {
+        return messageFormatRegistry;
+    }
+
+    /**
      * Create the singleton instance.
      *
      * Initially register three default message formats:
@@ -44,22 +58,25 @@ public class CustomMessageFormatRegistry {
      *
      * @return the singleton instance.
      */
-    static public CustomMessageFormatRegistry getInstance() {
+    static public CustomMessageFormatRegistry createInstance(@NotNull final StashManagerFactory stashManagerFactory) {
         if (messageFormatRegistry == null) {
             //noinspection serial
             messageFormatRegistry = new CustomMessageFormatRegistry(new HashMap<Class, CustomMessageFormat>(){{
                 put(Document.class,
-                        new CustomMessageXmlFormat(CustomMessageFormatFactory.XML_FORMAT,
+                        new CustomMessageXmlFormat(stashManagerFactory,
+                                CustomMessageFormatFactory.XML_FORMAT,
                                 CustomMessageFormatFactoryImpl.XML_FORMAT_DESC
                         )
                 );
                 put(CustomJsonData.class,
-                        new CustomMessageJsonFormat(CustomMessageFormatFactory.JSON_FORMAT,
+                        new CustomMessageJsonFormat(stashManagerFactory,
+                                CustomMessageFormatFactory.JSON_FORMAT,
                                 CustomMessageFormatFactoryImpl.JSON_FORMAT_DESC
                         )
                 );
                 put(InputStream.class,
-                        new CustomMessageInputStreamFormat(CustomMessageFormatFactory.INPUT_STREAM_FORMAT,
+                        new CustomMessageInputStreamFormat(stashManagerFactory,
+                                CustomMessageFormatFactory.INPUT_STREAM_FORMAT,
                                 CustomMessageFormatFactoryImpl.INPUT_STREAM_FORMAT_DESC
                         )
                 );

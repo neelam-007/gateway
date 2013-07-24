@@ -91,24 +91,45 @@ public class CustomAssertionsRegistrarImplTest {
     }
 
     /**
-     * A test credential source assertion
+     * A test non credential source assertion
      */
     @SuppressWarnings("serial")
-    private class TestCredentialSourceAssertion implements CustomAssertion, CustomCredentialSource {
+    public static class TestNonCredentialSourceAssertion implements CustomAssertion {
         @Override
         public String getName() {
-            return "Test CredentialSource CustomAssertion";
+            return "Test NonCredentialSource CustomAssertion";
         }
     }
 
     /**
-     * A test non credential source assertion
+     * A test credential source assertion returning false
      */
     @SuppressWarnings("serial")
-    private class TestNonCredentialSourceAssertion implements CustomAssertion {
+    public static class TestCredentialSourceAssertionReturnFalse implements CustomAssertion, CustomCredentialSource {
         @Override
         public String getName() {
-            return "Test NonCredentialSource CustomAssertion";
+            return "Test CredentialSource CustomAssertion returning false";
+        }
+
+        @Override
+        public boolean isCredentialSource() {
+            return false;
+        }
+    }
+
+    /**
+     * A test credential source assertion returning true
+     */
+    @SuppressWarnings("serial")
+    public static class TestCredentialSourceAssertionReturnTrue implements CustomAssertion, CustomCredentialSource {
+        @Override
+        public String getName() {
+            return "Test CredentialSource CustomAssertion returning true";
+        }
+
+        @Override
+        public boolean isCredentialSource() {
+            return true;
         }
     }
 
@@ -119,13 +140,16 @@ public class CustomAssertionsRegistrarImplTest {
     }
 
     /**
-     * Test hasCustomCredentialSource with registered assertion implementing {@link CustomCredentialSource}
-     * and assertion placed in {@link Category#MESSAGE MESSAGE} category.
+     * Test hasCustomCredentialSource with registered assertion implementing
+     * {@link com.l7tech.policy.assertion.ext.CustomCredentialSource#isCredentialSource()} method by returning <code>false</code>,
+     * assertion implementing {@link com.l7tech.policy.assertion.ext.CustomCredentialSource#isCredentialSource()} method
+     * by returning <code>true</code>, and assertion placed in {@link Category#MESSAGE MESSAGE} category.
      * <p>
      * There are two ways to set certain CustomAssertion as credential source:
      * <ol>
      *     <li>The legacy way, by placing the assertion into {@link com.l7tech.policy.assertion.ext.Category#ACCESS_CONTROL ACCESS_CONTROL}</li>
-     *     <li>or by implementing {@link CustomCredentialSource} interface</li>
+     *     <li>or by implementing {@link com.l7tech.policy.assertion.ext.CustomCredentialSource#isCredentialSource()} method and
+     *     returning <code>true</code> </li>
      * </ol>
      */
     @Test
@@ -152,16 +176,30 @@ public class CustomAssertionsRegistrarImplTest {
         assertFalse("there are no credential source assertions", customAssertionsRegistrarImpl.hasCustomCredentialSource());
 
         //noinspection serial
-        final CustomAssertionDescriptor descriptorCredentialSourceInterface = new CustomAssertionDescriptor (
-                "Test.TestCredentialSourceAssertion",
-                TestCredentialSourceAssertion.class,
+        final CustomAssertionDescriptor descriptorCredentialSourceFalseInterface = new CustomAssertionDescriptor (
+                "Test.TestCredentialSourceAssertionReturnFalse",
+                TestCredentialSourceAssertionReturnFalse.class,
                 TestServiceInvocation.class,
                 new HashSet<Category>() {{
                     add(Category.CUSTOM_ASSERTIONS);
                     add(Category.MESSAGE); // don't place it in ACCESS_CONTROL
                 }}
         );
-        CustomAssertions.register(descriptorCredentialSourceInterface);
+        CustomAssertions.register(descriptorCredentialSourceFalseInterface);
+
+        assertFalse("there are no credential source assertions", customAssertionsRegistrarImpl.hasCustomCredentialSource());
+
+        //noinspection serial
+        final CustomAssertionDescriptor descriptorCredentialSourceTrueInterface = new CustomAssertionDescriptor (
+                "Test.TestCredentialSourceAssertionReturnTrue",
+                TestCredentialSourceAssertionReturnTrue.class,
+                TestServiceInvocation.class,
+                new HashSet<Category>() {{
+                    add(Category.CUSTOM_ASSERTIONS);
+                    add(Category.MESSAGE); // don't place it in ACCESS_CONTROL
+                }}
+        );
+        CustomAssertions.register(descriptorCredentialSourceTrueInterface);
 
         assertTrue("there is one credential source assertion", customAssertionsRegistrarImpl.hasCustomCredentialSource());
     }
@@ -174,7 +212,8 @@ public class CustomAssertionsRegistrarImplTest {
      * There are two ways to set certain CustomAssertion as credential source:
      * <ol>
      *     <li>The legacy way, by placing the assertion into {@link com.l7tech.policy.assertion.ext.Category#ACCESS_CONTROL ACCESS_CONTROL}</li>
-     *     <li>or by implementing {@link CustomCredentialSource} interface</li>
+     *     <li>or by implementing {@link com.l7tech.policy.assertion.ext.CustomCredentialSource#isCredentialSource()} method and
+     *     returning <code>true</code> </li>
      * </ol>
      */
     @Test

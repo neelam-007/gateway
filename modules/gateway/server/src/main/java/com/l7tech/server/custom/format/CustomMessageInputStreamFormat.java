@@ -1,12 +1,11 @@
 package com.l7tech.server.custom.format;
 
-import com.l7tech.common.mime.ByteArrayStashManager;
-import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.message.Message;
 import com.l7tech.message.MimeKnob;
 import com.l7tech.policy.assertion.ext.message.CustomMessage;
 import com.l7tech.policy.assertion.ext.message.CustomMessageAccessException;
+import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.custom.CustomMessageImpl;
 
 import org.jetbrains.annotations.NotNull;
@@ -20,8 +19,11 @@ import java.io.StringReader;
  */
 public class CustomMessageInputStreamFormat extends CustomMessageFormatBase<InputStream> {
 
-    public CustomMessageInputStreamFormat(@NotNull final String name, @NotNull final String description) {
-        super(name, description);
+    /**
+     * @see CustomMessageFormatBase#CustomMessageFormatBase(com.l7tech.server.StashManagerFactory, String, String)
+     */
+    public CustomMessageInputStreamFormat(@NotNull StashManagerFactory stashManagerFactory, @NotNull final String name, @NotNull final String description) {
+        super(stashManagerFactory, name, description);
     }
 
     @Override
@@ -40,9 +42,9 @@ public class CustomMessageInputStreamFormat extends CustomMessageFormatBase<Inpu
 
         final Message targetMessage = ((CustomMessageImpl)message).getMessage();
         try {
-            final MimeKnob knobBytes;
-            if (targetMessage.isInitialized() && (knobBytes = targetMessage.getKnob(MimeKnob.class)) != null) {
-                return knobBytes.getEntireMessageBodyAsInputStream();
+            final MimeKnob mimeKnob;
+            if (targetMessage.isInitialized() && (mimeKnob = targetMessage.getKnob(MimeKnob.class)) != null) {
+                return mimeKnob.getEntireMessageBodyAsInputStream(); // use buffering-disallowed aware method
             }
         } catch (IOException | NoSuchPartException e) {
             throw new CustomMessageAccessException("Error while extracting InputStream message value", e);
@@ -63,7 +65,7 @@ public class CustomMessageInputStreamFormat extends CustomMessageFormatBase<Inpu
         final Message targetMessage = ((CustomMessageImpl)message).getMessage();
         try {
             targetMessage.initialize(
-                    new ByteArrayStashManager(),
+                    stashManagerFactory.createStashManager(),
                     CustomMessageImpl.extractContentTypeHeader(targetMessage),
                     contents
             );

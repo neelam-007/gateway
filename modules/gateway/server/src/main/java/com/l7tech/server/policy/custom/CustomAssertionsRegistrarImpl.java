@@ -238,8 +238,9 @@ public class CustomAssertionsRegistrarImpl extends ApplicationObjectSupport impl
     }
 
     /**
-     * Checks if there is a CustomAssertion registered which either implements the
-     * {@link com.l7tech.policy.assertion.ext.CustomCredentialSource CustomCredentialSource} interface
+     * Checks if there is a CustomAssertion registered which either, implements the
+     * {@link com.l7tech.policy.assertion.ext.CustomCredentialSource CustomCredentialSource} interface and returns <code>true</code> for
+     * {@link com.l7tech.policy.assertion.ext.CustomCredentialSource#isCredentialSource() CustomCredentialSource.isCredentialSource()} method,
      * or is placed into {@link Category#ACCESS_CONTROL ACCESS_CONTROL} category.
      *
      * @return true if there is a CustomAssertion registered which is credential source, false otherwise.
@@ -251,8 +252,13 @@ public class CustomAssertionsRegistrarImpl extends ApplicationObjectSupport impl
             //noinspection unchecked
             Set<CustomAssertionDescriptor> descriptors = CustomAssertions.getDescriptors();
             for (CustomAssertionDescriptor descriptor : descriptors) {
-                if (descriptor.hasCategory(Category.ACCESS_CONTROL) || CustomCredentialSource.class.isAssignableFrom(descriptor.getAssertion())) {
+                if (descriptor.hasCategory(Category.ACCESS_CONTROL)) {
                     return true;
+                } else if (CustomCredentialSource.class.isAssignableFrom(descriptor.getAssertion())) {
+                    final CustomCredentialSource customAssertion = (CustomCredentialSource)descriptor.getAssertion().newInstance();
+                    if (customAssertion.isCredentialSource()) {
+                        return true;
+                    }
                 }
             }
         } catch (Exception e) {

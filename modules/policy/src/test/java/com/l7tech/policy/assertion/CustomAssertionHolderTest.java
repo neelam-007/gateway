@@ -24,6 +24,7 @@ import static com.l7tech.policy.assertion.CustomAssertionHolder.CUSTOM_ASSERTION
 
 import static org.hamcrest.CoreMatchers.*;
 import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
 
 public class CustomAssertionHolderTest {
     private static final String DESC = "My Custom Assertion Description";
@@ -446,26 +447,50 @@ public class CustomAssertionHolderTest {
 
         //noinspection serial
         class TestCustomCredentialSourceAssertion implements CustomAssertion, CustomCredentialSource {
-            @Override
-            public String getName() {
-                return "Test CustomCredentialSource Assertion";
-            }
+            @Override public String getName() { return "Test CustomCredentialSource Assertion"; }
+            @Override public boolean isCredentialSource() { return false; }
         }
 
-        // add custom assertion implementing CustomCredentialSource interface (empty Categories)
+        // custom assertion implementing CustomCredentialSource interface returning true
+        TestCustomCredentialSourceAssertion mockCredSourceAssertion = spy(new TestCustomCredentialSourceAssertion());
+        doReturn(false).when(mockCredSourceAssertion).isCredentialSource();
+
+        // add custom assertion implementing CustomCredentialSource interface returning false (empty Categories)
         holder = new CustomAssertionHolder();
-        holder.setCustomAssertion(new TestCustomCredentialSourceAssertion());
+        holder.setCustomAssertion(mockCredSourceAssertion);
+        assertFalse(holder.isCustomCredentialSource());
+
+        // add custom assertion implementing CustomCredentialSource interface returning false
+        holder = new CustomAssertionHolder();
+        holder.setCustomAssertion(mockCredSourceAssertion);
+        holder.setCategories(Category.LOGIC,  Category.CUSTOM_ASSERTIONS);
+        assertFalse(holder.isCustomCredentialSource());
+
+        // add custom assertion implementing CustomCredentialSource interface and credential source category (ACCESS_CONTROL)
+        holder = new CustomAssertionHolder();
+        holder.setCustomAssertion(mockCredSourceAssertion);
+        holder.setCategories(Category.LOGIC,  Category.ACCESS_CONTROL);
         assertTrue(holder.isCustomCredentialSource());
 
-        // add custom assertion implementing CustomCredentialSource interface
+
+        // custom assertion implementing CustomCredentialSource interface returning true
+        mockCredSourceAssertion = spy(new TestCustomCredentialSourceAssertion());
+        doReturn(true).when(mockCredSourceAssertion).isCredentialSource();
+
+        // add custom assertion implementing CustomCredentialSource interface returning true (empty Categories)
         holder = new CustomAssertionHolder();
-        holder.setCustomAssertion(new TestCustomCredentialSourceAssertion());
+        holder.setCustomAssertion(mockCredSourceAssertion);
+        assertTrue(holder.isCustomCredentialSource());
+
+        // add custom assertion implementing CustomCredentialSource interface returning false
+        holder = new CustomAssertionHolder();
+        holder.setCustomAssertion(mockCredSourceAssertion);
         holder.setCategories(Category.LOGIC,  Category.CUSTOM_ASSERTIONS);
         assertTrue(holder.isCustomCredentialSource());
 
         // add custom assertion implementing CustomCredentialSource interface and credential source category (ACCESS_CONTROL)
         holder = new CustomAssertionHolder();
-        holder.setCustomAssertion(new TestCustomCredentialSourceAssertion());
+        holder.setCustomAssertion(mockCredSourceAssertion);
         holder.setCategories(Category.LOGIC,  Category.ACCESS_CONTROL);
         assertTrue(holder.isCustomCredentialSource());
     }

@@ -2,6 +2,7 @@ package com.l7tech.server.custom.format;
 
 import com.l7tech.policy.assertion.ext.message.format.CustomMessageFormat;
 
+import com.l7tech.server.StashManagerFactory;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -12,10 +13,12 @@ import org.jetbrains.annotations.NotNull;
 public abstract class CustomMessageFormatBase<T> implements CustomMessageFormat<T> {
     protected final String name;
     protected final String description;
+    protected final StashManagerFactory stashManagerFactory;
 
-    public CustomMessageFormatBase(@NotNull final String name, @NotNull final String description) {
+    public CustomMessageFormatBase(@NotNull StashManagerFactory stashManagerFactory, @NotNull final String name, @NotNull final String description) {
         this.name = name;
         this.description = description;
+        this.stashManagerFactory = stashManagerFactory;
     }
 
     @Override

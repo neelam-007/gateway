@@ -66,8 +66,9 @@ public interface CustomAssertionsRegistrar {
     Collection getAssertions( Category c);
 
     /**
-     * Checks if there is a CustomAssertion registered which either implements the
-     * {@link com.l7tech.policy.assertion.ext.CustomCredentialSource CustomCredentialSource} interface
+     * Checks if there is a CustomAssertion registered which either, implements the
+     * {@link com.l7tech.policy.assertion.ext.CustomCredentialSource CustomCredentialSource} interface and returns <code>true</code> for
+     * {@link com.l7tech.policy.assertion.ext.CustomCredentialSource#isCredentialSource() CustomCredentialSource.isCredentialSource()} method,
      * or is placed into {@link Category#ACCESS_CONTROL ACCESS_CONTROL} category.
      *
      * @return true if there is a CustomAssertion registered which is credential source, false otherwise.

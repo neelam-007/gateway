@@ -12,7 +12,7 @@ import com.l7tech.policy.assertion.ext.message.knob.CustomHttpHeadersKnob;
 import com.l7tech.policy.assertion.ext.message.knob.CustomPartsKnob;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.server.custom.CustomMessageImpl;
-import com.l7tech.gateway.common.custom.CustomToMessageTargetableConverter;
+import com.l7tech.gateway.common.custom.CustomToMessageTargetableAdaptor;
 import com.l7tech.server.custom.format.CustomMessageFormatRegistry;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.identity.AnonymousUserReference;
@@ -758,10 +758,10 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
 
             // add default Request and Response
             if (customServiceRequest != null) {
-                contextMap.put("defaultRequest", customServiceRequest);
+                contextMap.put("request", customServiceRequest);
             }
             if (customServiceResponse != null) {
-                contextMap.put("defaultResponse", customServiceResponse);
+                contextMap.put("response", customServiceResponse);
             }
 
             securityContext = new SecurityContext() {
@@ -842,8 +842,8 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
                 throw new NoSuchVariableException("<NULL>", "Target name is null");
             }
 
-            final CustomToMessageTargetableConverter converter = new CustomToMessageTargetableConverter(targetable);
-            final Message targetMessage = policyContext.getOrCreateTargetMessage(converter, false);
+            final CustomToMessageTargetableAdaptor adaptor = new CustomToMessageTargetableAdaptor(targetable);
+            final Message targetMessage = policyContext.getOrCreateTargetMessage(adaptor, false);
             final CustomMessageImpl customMessage = new CustomMessageImpl(getFormats(), targetMessage);
 
             doAttachKnobs(customMessage);

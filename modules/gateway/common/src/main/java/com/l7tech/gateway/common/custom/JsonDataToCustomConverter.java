@@ -32,7 +32,7 @@ public final class JsonDataToCustomConverter implements CustomJsonData {
         try {
             return jsonData.getJsonObject();
         } catch (InvalidJsonException e) {
-            throw new InvalidDataException(e.getMessage(), e.getCause());
+            throw new InvalidDataException(e.getMessage(), e);
         }
     }
 }

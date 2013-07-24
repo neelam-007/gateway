@@ -383,8 +383,9 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
      * First do the the standard user check {@link AuthenticatableHttpServlet#authenticateRequestBasic(javax.servlet.http.HttpServletRequest)},
      * and if non empty list has been returned stop there. If the list of users is empty, retrieve
      * custom assertions and check if there is a custom assertion in the service policy. If true,
-     * and the assertion is either registered as <code>Category</code> {@link com.l7tech.policy.assertion.ext.Category#ACCESS_CONTROL}
-     * or implements {@link com.l7tech.policy.assertion.ext.CustomCredentialSource CustomCredentialSource} interface
+     * and the assertion is either, registered as {@link com.l7tech.policy.assertion.ext.Category#ACCESS_CONTROL} <code>Category</code> or,
+     * implements the {@link com.l7tech.policy.assertion.ext.CustomCredentialSource CustomCredentialSource} interface and returns <code>true</code> for
+     * {@link com.l7tech.policy.assertion.ext.CustomCredentialSource#isCredentialSource() CustomCredentialSource.isCredentialSource()} method,
      * then we let that request through, since the custom assertion is responsible for validating the credentials.
      * If no custom assertion is found throws <code>BadCredentialsException</code>.
      * <p/>
