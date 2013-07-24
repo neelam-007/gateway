@@ -37,7 +37,10 @@ public class KerberosDelegateClientTest {
         //String keytab = "BQIAAABFAAIADFJGLkxJTExZLkNPTQAEaHR0cAAQc3NnLnJmLmxpbGx5LmNvbQAAAAAAAAAAAwAXABCRqKd12yDxqQHeS3wzsafD";
 
         //FOR KPMG
-        String keytab = "BQIAAABMAAIAD0tXT1JMRC5LUE1HLkNPTQAEaHR0cAAUc3NnMS5rd29ybGQua3BtZy5jb20AAAAAAAAAAAMAFwAQkainddsg8akB3kt8M7Gnww==";
+        //String keytab = "BQIAAABMAAIAD0tXT1JMRC5LUE1HLkNPTQAEaHR0cAAUc3NnMS5rd29ybGQua3BtZy5jb20AAAAAAAAAAAMAFwAQkainddsg8akB3kt8M7Gnww==";
+
+        //FOR ELI LILLY
+        String keytab = "BQIAAABEAAIAC0hSLktQTUcuQ09NAARodHRwABBzc2cxLmhyLmtwbWcuY29tAAAAAAAAAAAEABcAEJGop3XbIPGpAd5LfDOxp8M=";
         KerberosConfig.generateKerberosConfig(Base64.decodeBase64(keytab), null, null, false);
 
     }
@@ -85,6 +88,15 @@ public class KerberosDelegateClientTest {
         KerberosServiceTicket serviceTicket = client.getKerberosProxyServiceTicketWithReferral("http/kpmg2.kworld.kpmg.com@KWORLD.KPMG.COM", "http/ssg1.kworld.kpmg.com@KWORLD.KPMG.COM", "awitrisna", "US.KWORLD.KPMG.COM", 1);
         assertNotNull(serviceTicket.getGSSAPReqTicket());
     }
+
+    @Ignore("Require KDC Connection")
+    @Test
+    public void test2ReferralWithKeyTab() throws Exception {
+        KerberosDelegateClient client = new KerberosDelegateClient();
+        KerberosServiceTicket serviceTicket = client.getKerberosProxyServiceTicketWithReferral("http/kpmg-ca.hr.kpmg.com@HR.KPMG.COM", "http/ssg1.hr.kpmg.com@HR.KPMG.COM", "awitrisna", "US.KWORLD.KPMG.COM", 5);
+        assertNotNull(serviceTicket.getGSSAPReqTicket());
+    }
+
 
     @Ignore("Require KDC Connection")
     @Test

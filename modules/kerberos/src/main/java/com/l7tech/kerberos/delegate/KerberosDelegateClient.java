@@ -21,8 +21,7 @@ import java.io.IOException;
 import java.security.Principal;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
-import java.util.Iterator;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Implementation of MS-SFU S4U2Self and S4U2Proxy extension.
@@ -293,7 +292,6 @@ public class KerberosDelegateClient extends KerberosClient {
             @Override
             public KerberosServiceTicket run() throws Exception {
 
-                PrincipalName servicePrincipalName = new PrincipalName(servicePrincipal);
                 KerberosTicket tgt = getTgt(subject);
                 Credentials tgtCredentials = Krb5Util.ticketToCreds(tgt);
 
@@ -310,30 +308,42 @@ public class KerberosDelegateClient extends KerberosClient {
                 subject.getPrivateCredentials().add(referralTGT);
 
                 int referralCount = 0;
+
+                List<String> referralChain = new ArrayList<String>();
                 while (referralCount < maxReferral) {
-
-                    //SSG -> TGS B
-                    //The service now uses the TGT to TGS B to make the S4U2self request in the KRB_TGS_REQ.
-                    //The service uses the PA-FOR-USER padata-type field in the request to indicate the user information in the S4U2self request.
-                    //TGS B creates a PAC with the user's authorization information (as specified in [MS-PAC] section 3) and
-                    //returns it in a TGT referral in the KRB_TGS_REP message. TGS B cannot create the service ticket.
-                    //TGS B does not possess the service's account information, because the service is part of the realm served by TGS A.
-                    //If there are more TGSs involved in the referral chain, repeated the chain.
-                    KerberosServiceTicket nextTGT = getKerberosSelfServiceTicket(servicePrincipal + "@" + referralTGTCred.getServer().getNameStrings()[1], subject, behalfOf, userRealm);
-                    referralTGT = nextTGT.getDelegatedKerberosTicket();
-                    subject.getPrivateCredentials().clear();
-                    subject.getPrivateCredentials().add(referralTGT);
-
-                    referralTGTCred = Krb5Util.ticketToCreds(referralTGT);
-                    if (servicePrincipalName.getRealmString().equalsIgnoreCase(referralTGTCred.getServer().getNameStrings()[1])) {
-                        break;
+                    String serverRealm = referralTGTCred.getServer().getNameStrings()[1];
+                    referralChain.add(serverRealm);
+                    //If the TGS was not the user's realm but was instead just a realm closer.
+                    if (!userRealm.equalsIgnoreCase(serverRealm)) {
+                        referralTGTCred = getReferralTGT(referralTGTCred, targetPrincipal + "@" + serverRealm );
+                        referralTGT = Krb5Util.credsToTicket(referralTGTCred);
+                        subject.getPrivateCredentials().clear();
+                        subject.getPrivateCredentials().add(referralTGT);
+                        referralCount++;
+                        continue;
                     }
-                    referralCount++;
+                    break;
                 }
 
                 if (referralCount == maxReferral) {
                     throw new KerberosException("User's realm not found. Max referral limit reached.");
                 }
+
+                //SSG -> TGS B
+                //The service now uses the TGT to TGS B to make the S4U2self request in the KRB_TGS_REQ.
+                //The service uses the PA-FOR-USER padata-type field in the request to indicate the user information in the S4U2self request.
+                //TGS B creates a PAC with the user's authorization information (as specified in [MS-PAC] section 3) and
+                //returns it in a TGT referral in the KRB_TGS_REP message. TGS B cannot create the service ticket.
+                //TGS B does not possess the service's account information, because the service is part of the realm served by TGS A.
+                //If there are more TGSs involved in the referral chain, repeated the chain.
+                Collections.reverse(referralChain);
+                for (String serverRealm: referralChain) {
+                    KerberosServiceTicket nextTGT = getKerberosSelfServiceTicket(servicePrincipal + "@" + serverRealm, subject, behalfOf, userRealm);
+                    referralTGT = nextTGT.getDelegatedKerberosTicket();
+                    subject.getPrivateCredentials().clear();
+                    subject.getPrivateCredentials().add(referralTGT);
+                }
+
 
                 //SSG -> TGS A
                 //The server uses the TGT from the referral and uses the PA-FOR-USER padata-type to request the service ticket to itself on behalf of the user.

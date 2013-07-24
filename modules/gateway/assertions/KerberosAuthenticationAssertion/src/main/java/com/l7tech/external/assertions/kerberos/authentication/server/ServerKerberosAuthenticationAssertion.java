@@ -149,7 +149,7 @@ public class ServerKerberosAuthenticationAssertion extends AbstractServerAsserti
                     if (userRealm == null || userRealm.trim().length() == 0 || userRealm.equalsIgnoreCase(realm)) {
                         kerberosServiceTicket = client.getKerberosProxyServiceTicket(targetPrincipalName.getName(), svcPrincipal, authenticatedUserAccount);
                     } else {
-                        int maxReferral = config.getIntProperty(ServerConfigParams.PARAM_KERBEROS_REFERRAL_LIMIT, 1);
+                        int maxReferral = config.getIntProperty(ServerConfigParams.PARAM_KERBEROS_REFERRAL_LIMIT, 5);
                         kerberosServiceTicket = client.getKerberosProxyServiceTicketWithReferral(targetPrincipalName.getName(), svcPrincipal, authenticatedUserAccount, userRealm, maxReferral);
                     }
                 } else {
@@ -158,7 +158,7 @@ public class ServerKerberosAuthenticationAssertion extends AbstractServerAsserti
                     if (userRealm == null || userRealm.trim().length() == 0 || userRealm.equalsIgnoreCase(realm)) {
                         kerberosServiceTicket = client.getKerberosProxyServiceTicket(targetPrincipalName.getName(), userPrincipal.getName(), plaintextPassword, authenticatedUserAccount);
                     } else {
-                        int maxReferral = config.getIntProperty(ServerConfigParams.PARAM_KERBEROS_REFERRAL_LIMIT, 1);
+                        int maxReferral = config.getIntProperty(ServerConfigParams.PARAM_KERBEROS_REFERRAL_LIMIT, 5);
                         kerberosServiceTicket = client.getKerberosProxyServiceTicketWithReferral(targetPrincipalName.getName(), userPrincipal.getName(), plaintextPassword, authenticatedUserAccount, userRealm, maxReferral);
                     }
                 }

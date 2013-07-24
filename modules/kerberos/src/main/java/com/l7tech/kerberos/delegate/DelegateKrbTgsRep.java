@@ -55,6 +55,17 @@ public class DelegateKrbTgsRep {
 
         byte[] resetData = rep.encPart.reset(decryptData);
         DerValue ref = new DerValue(resetData);
-        return new EncTGSRepPart(ref);
+        return new EncTGSRepPart(ref) {
+            @Override
+            protected void init(DerValue encoding, int rep_type) throws Asn1Exception, IOException, RealmException {
+                try {
+                    super.init(encoding, rep_type);
+                } catch (Asn1Exception e) {
+                    //For multiple referral tgt, extra data is returned,
+                    //exception thrown when der.getData().available()
+                    //For now just ignore the data.
+                }
+            }
+        };
     }
 }
