@@ -138,6 +138,23 @@ INSERT INTO cluster_properties
     (objectid, version, propkey, propvalue, properties)
     values (-800000, 0, 'upgrade.task.800000', 'com.l7tech.server.upgrade.Upgrade71To80UpdateRoles', null);
 
+--
+-- Custom key value store
+--
+CREATE TABLE custom_key_value_store (
+  goid CHAR(16) FOR BIT DATA NOT NULL,
+  version integer NOT NULL,
+  name varchar(128) NOT NULL,
+  value blob(2147483647) NOT NULL,
+  PRIMARY KEY (goid),
+  UNIQUE (name)
+);
+
+INSERT INTO rbac_role VALUES (-1450,0,'Manage Custom Key Value Store', null,'CUSTOM_KEY_VALUE_STORE',null,null, 'Users assigned to the {0} role have the ability to read, create, update, and delete key values from custom key value store.',0);
+INSERT INTO rbac_permission VALUES (-1451,0,-1450,'CREATE',null,'CUSTOM_KEY_VALUE_STORE');
+INSERT INTO rbac_permission VALUES (-1452,0,-1450,'READ',null,'CUSTOM_KEY_VALUE_STORE');
+INSERT INTO rbac_permission VALUES (-1453,0,-1450,'UPDATE',null,'CUSTOM_KEY_VALUE_STORE');
+INSERT INTO rbac_permission VALUES (-1454,0,-1450,'DELETE',null,'CUSTOM_KEY_VALUE_STORE');
 
 --
 -- Goidification modification. These involve replacing the oid column with a goid column on entity tables.

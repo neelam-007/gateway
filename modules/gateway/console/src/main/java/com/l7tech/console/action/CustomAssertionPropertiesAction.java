@@ -24,8 +24,7 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static com.l7tech.console.api.CustomConsoleContext.addCommonUIServices;
-import static com.l7tech.console.api.CustomConsoleContext.addCustomExtensionInterfaceFinder;
+import static com.l7tech.console.api.CustomConsoleContext.*;
 
 /**
  * The <code>CustomAssertionPropertiesAction</code> edits the SSL assertion
@@ -128,9 +127,10 @@ public class CustomAssertionPropertiesAction extends NodeAction {
         try {
             customAssertionUI = registrar.getUI(cah.getCustomAssertion().getClass().getName());
             if (customAssertionUI instanceof UsesConsoleContext) {
-                Map<String, Object> consoleContext = new HashMap<>(2);
+                Map<String, Object> consoleContext = new HashMap<>(3);
                 addCustomExtensionInterfaceFinder(consoleContext);
                 addCommonUIServices(consoleContext, cah, ((AssertionTreeNode) node.getPreviousNode()).asAssertion());
+                addKeyValueStoreServices(consoleContext);
                 ((UsesConsoleContext) customAssertionUI).setConsoleContextUsed(consoleContext);
             }
             registrarCalled = true;

@@ -9,6 +9,7 @@ import com.l7tech.policy.assertion.ext.action.CustomTaskActionUI;
 import com.l7tech.policy.assertion.ext.cei.CustomExtensionInterfaceBinding;
 import com.l7tech.policy.wsp.ClassLoaderUtil;
 import com.l7tech.server.admin.ExtensionInterfaceManager;
+import com.l7tech.server.store.KeyValueStoreServicesImpl;
 import com.l7tech.server.policy.*;
 import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.server.util.ModuleClassLoader;
@@ -43,11 +44,11 @@ public class CustomAssertionsRegistrarImpl extends ApplicationObjectSupport impl
 
     //- PUBLIC
 
-    public CustomAssertionsRegistrarImpl(ServerAssertionRegistry assertionRegistry, ExtensionInterfaceManager extensionInterfaceManager, SecurePasswordManager securePasswordManager) {
-        if (assertionRegistry == null || extensionInterfaceManager == null) throw new IllegalArgumentException("assertionRegistry and extensionInterfaceManager are required");
+    public CustomAssertionsRegistrarImpl(ServerAssertionRegistry assertionRegistry) {
+        if (assertionRegistry == null) {
+            throw new IllegalArgumentException("assertionRegistry is required");
+        }
         this.assertionRegistry = assertionRegistry;
-        this.extensionInterfaceManager = extensionInterfaceManager;
-        this.securePasswordManager = securePasswordManager;
     }
 
     @Override
@@ -298,6 +299,18 @@ public class CustomAssertionsRegistrarImpl extends ApplicationObjectSupport impl
         this.config = config;
     }
 
+    public void setExtensionInterfaceManager(ExtensionInterfaceManager extensionInterfaceManager) {
+        this.extensionInterfaceManager = extensionInterfaceManager;
+    }
+
+    public void setSecurePasswordManager(SecurePasswordManager securePasswordManager) {
+        this.securePasswordManager = securePasswordManager;
+    }
+
+    public void setCustomKeyValueStoreManager(CustomKeyValueStoreManager customKeyValueStoreManager) {
+        this.customKeyValueStoreManager = customKeyValueStoreManager;
+    }
+
     /**
      * Perform bean initialization after properties are set.
      */
@@ -305,6 +318,18 @@ public class CustomAssertionsRegistrarImpl extends ApplicationObjectSupport impl
     public void afterPropertiesSet() throws Exception {
         if ( config == null) {
             throw new IllegalArgumentException("Server Config is required");
+        }
+
+        if (extensionInterfaceManager == null) {
+            throw new IllegalArgumentException("Extension Interface Manager is required");
+        }
+
+        if (securePasswordManager == null) {
+            throw new IllegalArgumentException("Secure Password Manager is required");
+        }
+
+        if (customKeyValueStoreManager == null) {
+            throw new IllegalArgumentException("Custom Key Value Store Manager is required");
         }
 
         init();
@@ -321,8 +346,9 @@ public class CustomAssertionsRegistrarImpl extends ApplicationObjectSupport impl
     private Config config;
     private ClassLoader customAssertionClassloader;
     private final ServerAssertionRegistry assertionRegistry;
-    private final ExtensionInterfaceManager extensionInterfaceManager;
-    private final SecurePasswordManager securePasswordManager;
+    private ExtensionInterfaceManager extensionInterfaceManager;
+    private SecurePasswordManager securePasswordManager;
+    private CustomKeyValueStoreManager customKeyValueStoreManager;
 
     private Collection asCustomAssertionHolders(final Set customAssertionDescriptors) {
         Collection<CustomAssertionHolder> result = new ArrayList<>();
@@ -562,6 +588,7 @@ public class CustomAssertionsRegistrarImpl extends ApplicationObjectSupport impl
             //
             ServiceFinderImpl serviceFinder = new ServiceFinderImpl();
             serviceFinder.setSecurePasswordServicesImpl(new SecurePasswordServicesImpl(securePasswordManager));
+            serviceFinder.setKeyValueStoreImpl(new KeyValueStoreServicesImpl(customKeyValueStoreManager));
             CustomExtensionInterfaceBinding.setServiceFinder(serviceFinder);
         }
 

@@ -1,6 +1,7 @@
 package com.l7tech.server.admin;
 
 import com.l7tech.server.audit.Auditor;
+import com.l7tech.server.policy.CustomKeyValueStoreManager;
 import com.l7tech.server.policy.ServerAssertionRegistry;
 import com.l7tech.server.policy.custom.CustomAssertionsRegistrarImpl;
 import com.l7tech.server.security.password.SecurePasswordManager;
@@ -78,6 +79,9 @@ public class CustomAssertionsThirdPartyJarAppletTest {
     private SecurePasswordManager securePasswordManagerMock;
 
     @Mock
+    private CustomKeyValueStoreManager customKeyValueStoreManagerMock;
+
+    @Mock
     private FilterConfig filterConfigMock;
 
     @Mock
@@ -142,8 +146,11 @@ public class CustomAssertionsThirdPartyJarAppletTest {
         when(hrespMock.getOutputStream()).thenReturn(servletOutputStreamMock);
 
         customAssertionsRegistrarImpl =
-            new CustomAssertionsRegistrarImpl(serverAssertionRegistryMock, extensionInterfaceManagerMock, securePasswordManagerMock);
+            new CustomAssertionsRegistrarImpl(serverAssertionRegistryMock);
         customAssertionsRegistrarImpl.setServerConfig(configMock);
+        customAssertionsRegistrarImpl.setExtensionInterfaceManager(extensionInterfaceManagerMock);
+        customAssertionsRegistrarImpl.setSecurePasswordManager(securePasswordManagerMock);
+        customAssertionsRegistrarImpl.setCustomKeyValueStoreManager(customKeyValueStoreManagerMock);
         // Load Custom Assertions
         customAssertionsRegistrarImpl.afterPropertiesSet();
 

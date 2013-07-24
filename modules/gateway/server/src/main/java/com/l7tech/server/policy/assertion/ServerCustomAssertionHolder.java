@@ -34,12 +34,10 @@ import com.l7tech.security.token.OpaqueSecurityToken;
 import com.l7tech.server.custom.knob.CustomHttpHeadersKnobImpl;
 import com.l7tech.server.custom.knob.CustomPartsKnobImpl;
 import com.l7tech.server.identity.AuthenticationResult;
+import com.l7tech.server.store.KeyValueStoreServicesImpl;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.policy.CertificateFinderImpl;
-import com.l7tech.server.policy.SecurePasswordServicesImpl;
-import com.l7tech.server.policy.ServiceFinderImpl;
-import com.l7tech.server.policy.VariableServicesImpl;
+import com.l7tech.server.policy.*;
 import com.l7tech.server.policy.custom.CustomAuditorImpl;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.server.security.password.SecurePasswordManager;
@@ -414,6 +412,8 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
         serviceFinder.setCertificateFinderImpl(new CertificateFinderImpl((TrustedCertManager) applicationContext.getBean("trustedCertManager")));
         serviceFinder.setVariableServicesImpl(new VariableServicesImpl(getAudit()));
         serviceFinder.setSecurePasswordServicesImpl(new SecurePasswordServicesImpl((SecurePasswordManager) applicationContext.getBean("securePasswordManager")));
+        serviceFinder.setKeyValueStoreImpl(new KeyValueStoreServicesImpl((CustomKeyValueStoreManager) applicationContext.getBean("customKeyValueStoreManager")));
+
         context.put("serviceFinder", serviceFinder);
 
         return context;

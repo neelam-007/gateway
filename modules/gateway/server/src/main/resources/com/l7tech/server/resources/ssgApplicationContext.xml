@@ -1236,9 +1236,10 @@
     <!-- server side custom assertions registrar -->
     <bean id="customAssertionRegistrar" class="com.l7tech.server.policy.custom.CustomAssertionsRegistrarImpl">
         <constructor-arg ref="assertionRegistry"/>
-        <constructor-arg ref="extensionInterfaceManager"/>
-        <constructor-arg ref="securePasswordManager"/>
         <property name="serverConfig" ref="serverConfig"/>
+        <property name="extensionInterfaceManager" ref="extensionInterfaceManager"/>
+        <property name="securePasswordManager" ref="securePasswordManager"/>
+        <property name="customKeyValueStoreManager" ref="customKeyValueStoreManager"/>
     </bean>
     <!-- jms connection manager -->
     <bean id="jmsConnectionManager" class="com.l7tech.server.transport.jms.JmsConnectionManagerImpl"
@@ -1684,6 +1685,7 @@
                 <ref bean="ssgConnectorManager"/>
                 <ref bean="ssgFirewallRuleManager"/>
                 <ref bean="encapsulatedAssertionConfigManager"/>
+                <ref bean="customKeyValueStoreManager"/>
             </list>
         </property>
         <property name="timer" ref="entityVersionCheckerTimer"/>
@@ -2284,6 +2286,9 @@
     </bean>
 
     <bean id="encapsulatedAssertionConfigManager" class="com.l7tech.server.encass.EncapsulatedAssertionConfigManagerImpl" parent="hibernateBean">
+    </bean>
+
+    <bean id="customKeyValueStoreManager" class="com.l7tech.server.store.CustomKeyValueStoreManagerImpl" parent="hibernateBean">
     </bean>
 
     <bean id="uddiHelper" class="com.l7tech.server.uddi.UDDIHelper">

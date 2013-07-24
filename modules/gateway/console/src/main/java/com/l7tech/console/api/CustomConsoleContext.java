@@ -57,6 +57,10 @@ public class CustomConsoleContext {
         consoleContext.put("commonUIServices", new CommonUIServicesImpl(customAssertionHolder, previousAssertion));
     }
 
+    public static void addKeyValueStoreServices(Map<String, Object> consoleContext) {
+        consoleContext.put("keyValueStoreServices", new KeyValueStoreServicesImpl());
+    }
+
     /**
      * Check data type of String, primitive, and array of String or primitive.
      *

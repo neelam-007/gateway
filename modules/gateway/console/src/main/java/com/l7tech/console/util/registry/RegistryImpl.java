@@ -24,9 +24,7 @@ import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.objectmodel.GuidBasedEntityManager;
 import com.l7tech.objectmodel.HeaderBasedEntityFinder;
-import com.l7tech.policy.Policy;
-import com.l7tech.policy.PolicyPathBuilderFactory;
-import com.l7tech.policy.PolicyValidator;
+import com.l7tech.policy.*;
 import com.l7tech.util.Either;
 import com.l7tech.util.Eithers;
 import com.l7tech.util.Option;
@@ -83,6 +81,7 @@ public final class RegistryImpl extends Registry
     private LogSinkAdmin logSinkAdmin;
     private UDDIRegistryAdmin uddiRegistryAdmin;
     private EncapsulatedAssertionAdmin encapsulatedAssertionAdmin;
+    private CustomKeyValueStoreAdmin customKeyValueStoreAdmin;
     private PolicyValidator policyValidator;
     private GuidBasedEntityManager<Policy> policyFinder;
     private PolicyPathBuilderFactory policyPathBuilderFactory;
@@ -377,6 +376,16 @@ public final class RegistryImpl extends Registry
     }
 
     @Override
+    public CustomKeyValueStoreAdmin getCustomKeyValueStoreAdmin() {
+        checkAdminContext();
+        if (customKeyValueStoreAdmin != null) {
+            return customKeyValueStoreAdmin;
+        }
+        customKeyValueStoreAdmin = adminContext.getAdminInterface(CustomKeyValueStoreAdmin.class);
+        return customKeyValueStoreAdmin;
+    }
+
+    @Override
     public EntityNameResolver getEntityNameResolver() {
         checkAdminContext();
         if (entityNameResolver == null) {
@@ -481,6 +490,7 @@ public final class RegistryImpl extends Registry
         logSinkAdmin = null;
         uddiRegistryAdmin = null;
         encapsulatedAssertionAdmin = null;
+        customKeyValueStoreAdmin = null;
         emailListenerAdmin = null;
         emailAdmin = null;
         entityNameResolver = null;

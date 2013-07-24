@@ -1797,6 +1797,12 @@ INSERT INTO rbac_permission VALUES (-1355,0,-1350,'READ',NULL,'POLICY');
 INSERT INTO rbac_predicate VALUES (-1356,0,-1355);
 INSERT INTO rbac_predicate_attribute VALUES (-1356,'type','Included Policy Fragment','eq');
 
+INSERT INTO rbac_role VALUES (-1450,0,'Manage Custom Key Value Store', null,'CUSTOM_KEY_VALUE_STORE',null,null, 'Users assigned to the {0} role have the ability to read, create, update, and delete key values from custom key value store.',0);
+INSERT INTO rbac_permission VALUES (-1451,0,-1450,'CREATE',null,'CUSTOM_KEY_VALUE_STORE');
+INSERT INTO rbac_permission VALUES (-1452,0,-1450,'READ',null,'CUSTOM_KEY_VALUE_STORE');
+INSERT INTO rbac_permission VALUES (-1453,0,-1450,'UPDATE',null,'CUSTOM_KEY_VALUE_STORE');
+INSERT INTO rbac_permission VALUES (-1454,0,-1450,'DELETE',null,'CUSTOM_KEY_VALUE_STORE');
+
 -- Assign Administrator role to existing admin user
 INSERT INTO rbac_assignment VALUES (-105, -2, -100, '3', 'User');
 
@@ -1997,6 +2003,19 @@ CREATE TABLE firewall_rule_property (
   name varchar(128) NOT NULL,
   value MEDIUMTEXT NOT NULL,
   FOREIGN KEY (firewall_rule_goid) REFERENCES firewall_rule (goid) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
+
+--
+-- Custom key value store
+--
+DROP TABLE IF EXISTS custom_key_value_store;
+CREATE TABLE custom_key_value_store (
+  goid binary(16) NOT NULL,
+  version integer NOT NULL,
+  name varchar(128) NOT NULL,
+  value mediumblob NOT NULL,
+  PRIMARY KEY (goid),
+  UNIQUE KEY (name)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
 DROP TABLE IF EXISTS ssg_version;

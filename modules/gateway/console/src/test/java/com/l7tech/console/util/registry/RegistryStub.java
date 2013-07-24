@@ -547,12 +547,21 @@ public class RegistryStub extends Registry {
     }
 
     @Override
+    public CustomKeyValueStoreAdmin getCustomKeyValueStoreAdmin() {
+        return customKeyValueStoreAdmin;
+    }
+
+    @Override
     public EntityNameResolver getEntityNameResolver() {
         return null;
     }
 
     public void setEncapsulatedAssertionAdmin(@NotNull final EncapsulatedAssertionAdmin encapsulatedAssertionAdmin) {
         this.encapsulatedAssertionAdmin = encapsulatedAssertionAdmin;
+    }
+
+    public void setCustomKeyValueStoreAdmin(@NotNull final CustomKeyValueStoreAdmin customKeyValueStoreAdmin) {
+        this.customKeyValueStoreAdmin = customKeyValueStoreAdmin;
     }
 
     @Override
@@ -600,6 +609,7 @@ public class RegistryStub extends Registry {
     private LogSinkAdmin logSinkAdmin = new LogSinkAdminStub();
     private TrustedCertAdmin trustedCertAdmin = new TrustedCertAdminStub();
     private EncapsulatedAssertionAdmin encapsulatedAssertionAdmin;
+    private CustomKeyValueStoreAdmin customKeyValueStoreAdmin;
     private ServiceAdmin serviceManager;
     private PolicyAdmin policyAdmin;
     private FolderAdmin folderAdmin;

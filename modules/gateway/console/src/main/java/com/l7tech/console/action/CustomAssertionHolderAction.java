@@ -10,8 +10,7 @@ import javax.swing.*;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.l7tech.console.api.CustomConsoleContext.addCommonUIServices;
-import static com.l7tech.console.api.CustomConsoleContext.addCustomExtensionInterfaceFinder;
+import static com.l7tech.console.api.CustomConsoleContext.*;
 
 /**
  * Custom action for Custom Assertions. This action is displayed in the Task->Additional Actions menu
@@ -75,9 +74,10 @@ public class CustomAssertionHolderAction extends BaseAction {
     @Override
     protected void performAction() {
         if (customTaskActionUi instanceof UsesConsoleContext) {
-            Map<String, Object> consoleContext = new HashMap<>(2);
+            Map<String, Object> consoleContext = new HashMap<>(3);
             addCustomExtensionInterfaceFinder(consoleContext);
             addCommonUIServices(consoleContext, null, null);
+            addKeyValueStoreServices(consoleContext);
             ((UsesConsoleContext) customTaskActionUi).setConsoleContextUsed(consoleContext);
         }
 

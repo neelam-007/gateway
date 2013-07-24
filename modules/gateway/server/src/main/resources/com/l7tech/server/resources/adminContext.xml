@@ -491,5 +491,10 @@
 
     </bean>
 
+    <!-- Custom key value store admin impl -->
+    <bean id="customKeyValueStoreAdmin" class="com.l7tech.server.store.CustomKeyValueStoreAdminImpl">
+
+    </bean>
+
 
 </beans>

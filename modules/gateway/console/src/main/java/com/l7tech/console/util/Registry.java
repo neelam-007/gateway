@@ -19,9 +19,7 @@ import com.l7tech.gateway.common.transport.jms.JmsAdmin;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.objectmodel.GuidBasedEntityManager;
 import com.l7tech.objectmodel.HeaderBasedEntityFinder;
-import com.l7tech.policy.Policy;
-import com.l7tech.policy.PolicyPathBuilderFactory;
-import com.l7tech.policy.PolicyValidator;
+import com.l7tech.policy.*;
 import com.l7tech.util.Option;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -250,6 +248,14 @@ public abstract class Registry {
      */
     public abstract EncapsulatedAssertionAdmin getEncapsulatedAssertionAdmin();
 
+    /**
+     * Get the {@link CustomKeyValueStoreAdmin} interface implementation.
+     *
+     * @return the custom key value store admin interface implementation. Never null.
+     * @throws IllegalStateException if the AdminContext is not available. See isAdminContextPresent()
+     */
+    public abstract CustomKeyValueStoreAdmin getCustomKeyValueStoreAdmin();
+
     public abstract EntityNameResolver getEntityNameResolver();
 
     /**
@@ -435,6 +441,11 @@ public abstract class Registry {
 
         @Override
         public EncapsulatedAssertionAdmin getEncapsulatedAssertionAdmin() {
+            throw new IllegalStateException(ILLEGAL_STATE_MSG);
+        }
+
+        @Override
+        public CustomKeyValueStoreAdmin getCustomKeyValueStoreAdmin() {
             throw new IllegalStateException(ILLEGAL_STATE_MSG);
         }
 

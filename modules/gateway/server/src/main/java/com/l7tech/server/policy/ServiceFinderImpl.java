@@ -1,16 +1,15 @@
 package com.l7tech.server.policy;
 
-import com.l7tech.policy.assertion.ext.CertificateFinder;
-import com.l7tech.policy.assertion.ext.SecurePasswordServices;
-import com.l7tech.policy.assertion.ext.ServiceFinder;
-import com.l7tech.policy.assertion.ext.VariableServices;
-
+import com.l7tech.policy.assertion.ext.*;
+import com.l7tech.policy.assertion.ext.store.KeyValueStoreServices;
+import com.l7tech.server.store.KeyValueStoreServicesImpl;
 
 
 public class ServiceFinderImpl implements ServiceFinder {
     private CertificateFinderImpl certificateFinder;
     private VariableServicesImpl variableServices;
     private SecurePasswordServicesImpl securePasswordServices;
+    private KeyValueStoreServicesImpl keyValueStoreServices;
 
     public ServiceFinderImpl() {
     }
@@ -27,6 +26,10 @@ public class ServiceFinderImpl implements ServiceFinder {
         this.securePasswordServices = securePasswordServices;
     }
 
+    public void setKeyValueStoreImpl(KeyValueStoreServicesImpl keyValueStoreServices) {
+        this.keyValueStoreServices = keyValueStoreServices;
+    }
+
     public <T> T lookupService(Class<T> serviceInterface) {
         if (CertificateFinder.class.equals(serviceInterface)) {
             return (T) certificateFinder;
@@ -36,6 +39,9 @@ public class ServiceFinderImpl implements ServiceFinder {
         }
         if (SecurePasswordServices.class.equals(serviceInterface)) {
             return (T) securePasswordServices;
+        }
+        if (KeyValueStoreServices.class.equals(serviceInterface)) {
+            return (T) keyValueStoreServices;
         }
         return null;
     }

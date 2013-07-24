@@ -36,6 +36,7 @@
                 <ref bean="emailAdmin"/>
                 <ref bean="uddiRegistryAdmin" />
                 <ref bean="encapsulatedAssertionAdmin" />
+                <ref bean="customKeyValueStoreAdmin" />
             </list>
         </constructor-arg>
         <constructor-arg index="1" ref="httpRequestExecutor"/>
@@ -178,4 +179,8 @@
         <property name="serviceInterface" value="com.l7tech.gateway.common.admin.EncapsulatedAssertionAdmin"/>
     </bean>
 
+    <bean id="customKeyValueStoreAdmin" parent="invokerCommon">
+        <property name="serviceUrl" value="https://securespangateway/ssg/manager/CustomKeyValueStoreAdmin"/>
+        <property name="serviceInterface" value="com.l7tech.gateway.common.admin.CustomKeyValueStoreAdmin"/>
+    </bean>
 </beans>

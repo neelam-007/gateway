@@ -90,6 +90,7 @@ public enum EntityType implements Comparable<EntityType> {
     FIREWALL_RULE("Firewall Rules Entity", "Firewall Rules Entities", true, false),
     ASSERTION_ACCESS("Assertion", "Assertions", true, true),
     SECURITY_ZONE("Security Zone", "Security Zones", true, true),
+    CUSTOM_KEY_VALUE_STORE("Custom Key Value Store", "Custom Key Value Stores", true, true),
     ;
 
     private final String name;

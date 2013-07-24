@@ -129,4 +129,9 @@
         <property name="serviceInterface" value="com.l7tech.gateway.common.admin.EncapsulatedAssertionAdmin"/>
     </bean>
 
+    <bean name="/CustomKeyValueStoreAdmin" parent="httpInvokerParent">
+        <property name="service" ref="customKeyValueStoreAdmin"/>
+        <property name="serviceInterface" value="com.l7tech.gateway.common.admin.CustomKeyValueStoreAdmin"/>
+    </bean>
+
 </beans>

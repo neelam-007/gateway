@@ -23,8 +23,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
 
-import static com.l7tech.console.api.CustomConsoleContext.addCommonUIServices;
-import static com.l7tech.console.api.CustomConsoleContext.addCustomExtensionInterfaceFinder;
+import static com.l7tech.console.api.CustomConsoleContext.*;
 
 /**
  * Invoked when a Custom Assertion is dropped to a policy tree to
@@ -94,9 +93,10 @@ public class CustomAssertionHolderAdvice implements Advice {
         AssertionEditor editor = null;
         if (customAssertionUI != null) {
             if (customAssertionUI instanceof UsesConsoleContext) {
-                Map<String, Object> consoleContext = new HashMap<>(2);
+                Map<String, Object> consoleContext = new HashMap<>(3);
                 addCustomExtensionInterfaceFinder(consoleContext);
                 addCommonUIServices(consoleContext, cah, pc.getChildLocation() == 0 ? pc.getParent().asAssertion() : ((AssertionTreeNode) (pc.getParent().getChildAt(pc.getChildLocation()-1))).asAssertion());
+                addKeyValueStoreServices(consoleContext);
                 ((UsesConsoleContext) customAssertionUI).setConsoleContextUsed(consoleContext);
             }
             editor = customAssertionUI.getEditor(cah.getCustomAssertion());

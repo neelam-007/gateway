@@ -1606,6 +1606,12 @@ INSERT INTO rbac_permission VALUES (-1355,0,-1350,'READ',NULL,'POLICY');
 INSERT INTO rbac_predicate VALUES (-1356,0,-1355);
 INSERT INTO rbac_predicate_attribute VALUES (-1356,'type','Included Policy Fragment','eq');
 
+INSERT INTO rbac_role VALUES (-1450,0,'Manage Custom Key Value Store', null,'CUSTOM_KEY_VALUE_STORE',null,null, 'Users assigned to the {0} role have the ability to read, create, update, and delete key values from custom key value store.',0);
+INSERT INTO rbac_permission VALUES (-1451,0,-1450,'CREATE',null,'CUSTOM_KEY_VALUE_STORE');
+INSERT INTO rbac_permission VALUES (-1452,0,-1450,'READ',null,'CUSTOM_KEY_VALUE_STORE');
+INSERT INTO rbac_permission VALUES (-1453,0,-1450,'UPDATE',null,'CUSTOM_KEY_VALUE_STORE');
+INSERT INTO rbac_permission VALUES (-1454,0,-1450,'DELETE',null,'CUSTOM_KEY_VALUE_STORE');
+
 -- Assign Administrator role to existing admin user
 INSERT INTO rbac_assignment VALUES (-105, -2, -100, '3', 'User');
 
@@ -1741,3 +1747,15 @@ INSERT INTO rbac_permission VALUES (-1275,0,-1400,'CREATE',NULL,'FIREWALL_RULE')
 INSERT INTO rbac_permission VALUES (-1276,0,-1400,'READ',NULL,'FIREWALL_RULE');
 INSERT INTO rbac_permission VALUES (-1277,0,-1400,'UPDATE',NULL,'FIREWALL_RULE');
 INSERT INTO rbac_permission VALUES (-1278,0,-1400,'DELETE',NULL,'FIREWALL_RULE');
+
+--
+-- Custom key value store
+--
+CREATE TABLE custom_key_value_store (
+  goid CHAR(16) FOR BIT DATA NOT NULL,
+  version integer NOT NULL,
+  name varchar(128) NOT NULL,
+  value blob(2147483647) NOT NULL,
+  PRIMARY KEY (goid),
+  UNIQUE (name)
+);

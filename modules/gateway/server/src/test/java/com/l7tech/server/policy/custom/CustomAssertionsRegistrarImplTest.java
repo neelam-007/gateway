@@ -7,6 +7,7 @@ import com.l7tech.policy.assertion.ext.CustomCredentialSource;
 import com.l7tech.policy.assertion.ext.ServiceInvocation;
 import com.l7tech.policy.assertion.ext.cei.CustomExtensionInterfaceBinding;
 import com.l7tech.server.admin.ExtensionInterfaceManager;
+import com.l7tech.server.policy.CustomKeyValueStoreManager;
 import com.l7tech.server.policy.ServerAssertionRegistry;
 import com.l7tech.server.security.password.SecurePasswordManager;
 import org.junit.Before;
@@ -30,6 +31,9 @@ public class CustomAssertionsRegistrarImplTest {
     @Mock
     private SecurePasswordManager securePasswordManagerMock;
 
+    @Mock
+    private CustomKeyValueStoreManager customKeyValueStoreManagerMock;
+
     @Before
     public void setUp() throws Exception {
         // clear all registered assertions per unit test
@@ -42,7 +46,10 @@ public class CustomAssertionsRegistrarImplTest {
     @Test
     public void registerCustomExtensionInterface() throws Exception {
         ExtensionInterfaceManager extensionInterfaceManager = new ExtensionInterfaceManager(null, null, null);
-        CustomAssertionsRegistrarImpl customAssertionsRegistrarImpl = new CustomAssertionsRegistrarImpl(serverAssertionRegistryMock, extensionInterfaceManager, securePasswordManagerMock);
+        CustomAssertionsRegistrarImpl customAssertionsRegistrarImpl = new CustomAssertionsRegistrarImpl(serverAssertionRegistryMock);
+        customAssertionsRegistrarImpl.setExtensionInterfaceManager(extensionInterfaceManager);
+        customAssertionsRegistrarImpl.setSecurePasswordManager(securePasswordManagerMock);
+        customAssertionsRegistrarImpl.setCustomKeyValueStoreManager(customKeyValueStoreManagerMock);
 
         // register MyCustomExtensionInterfaceBinding which holds an implementation of MyInterface
         customAssertionsRegistrarImpl.registerCustomExtensionInterface("com.l7tech.server.policy.custom.CustomAssertionsRegistrarImplTest$MyCustomExtensionInterfaceBinding", ClassLoader.getSystemClassLoader());
@@ -71,7 +78,10 @@ public class CustomAssertionsRegistrarImplTest {
     @Test
     public void parseModuleFileName() throws Exception {
         ExtensionInterfaceManager extensionInterfaceManager = mock(ExtensionInterfaceManager.class);
-        CustomAssertionsRegistrarImpl customAssertionsRegistrarImpl = new CustomAssertionsRegistrarImpl(serverAssertionRegistryMock, extensionInterfaceManager, securePasswordManagerMock);
+        CustomAssertionsRegistrarImpl customAssertionsRegistrarImpl = new CustomAssertionsRegistrarImpl(serverAssertionRegistryMock);
+        customAssertionsRegistrarImpl.setExtensionInterfaceManager(extensionInterfaceManager);
+        customAssertionsRegistrarImpl.setSecurePasswordManager(securePasswordManagerMock);
+        customAssertionsRegistrarImpl.setCustomKeyValueStoreManager(customKeyValueStoreManagerMock);
 
         String moduleFileName = "salesforce_poc.jar";
         String configFileName = "custom_assertions.properties";
@@ -121,11 +131,10 @@ public class CustomAssertionsRegistrarImplTest {
     @Test
     public void hasCustomCredentialSource_OnlyCredentialSourceAssertion() throws Exception {
         CustomAssertionsRegistrarImpl customAssertionsRegistrarImpl =
-                new CustomAssertionsRegistrarImpl(
-                        serverAssertionRegistryMock,
-                        mock(ExtensionInterfaceManager.class),
-                        securePasswordManagerMock
-                );
+            new CustomAssertionsRegistrarImpl(serverAssertionRegistryMock);
+        customAssertionsRegistrarImpl.setExtensionInterfaceManager(mock(ExtensionInterfaceManager.class));
+        customAssertionsRegistrarImpl.setSecurePasswordManager(securePasswordManagerMock);
+        customAssertionsRegistrarImpl.setCustomKeyValueStoreManager(customKeyValueStoreManagerMock);
 
         assertTrue("there are no assertions registered on startup", customAssertionsRegistrarImpl.getAssertions().isEmpty());
 
@@ -171,11 +180,10 @@ public class CustomAssertionsRegistrarImplTest {
     @Test
     public void hasCustomCredentialSource_OnlyAccessControlCategory() throws Exception {
         CustomAssertionsRegistrarImpl customAssertionsRegistrarImpl =
-                new CustomAssertionsRegistrarImpl(
-                        serverAssertionRegistryMock,
-                        mock(ExtensionInterfaceManager.class),
-                        securePasswordManagerMock
-                );
+                new CustomAssertionsRegistrarImpl(serverAssertionRegistryMock);
+        customAssertionsRegistrarImpl.setExtensionInterfaceManager(mock(ExtensionInterfaceManager.class));
+        customAssertionsRegistrarImpl.setSecurePasswordManager(securePasswordManagerMock);
+        customAssertionsRegistrarImpl.setCustomKeyValueStoreManager(customKeyValueStoreManagerMock);
 
         assertTrue("there are no assertions registered on startup", customAssertionsRegistrarImpl.getAssertions().isEmpty());
 
