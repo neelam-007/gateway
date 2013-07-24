@@ -47,7 +47,7 @@ public class CustomConsoleContextTest {
             String methodName = declaredMethod.getName();
 
             // test return type
-            if (!CustomConsoleContext.isSupportedDataType(declaredMethod.getReturnType())) {
+            if (!CustomConsoleContext.isSupportedDataType(declaredMethod.getGenericReturnType())) {
                 assertTrue(methodName.startsWith(CustomExtensionInterfaceTestMethodSignatures.FAIL_RETURN));
             }
 
@@ -76,6 +76,9 @@ public class CustomConsoleContextTest {
         public String[] successTypes(String stringArg, String[] stringArrayArg, boolean booleanArg);
 
         @SuppressWarnings("unused")
+        public HashMap<String, String> successTypes(String string);
+
+        @SuppressWarnings("unused")
         public void successTypes(String[] stringArrayArg);
 
         @SuppressWarnings("unused")
@@ -98,7 +101,10 @@ public class CustomConsoleContextTest {
         public void failArgsWithUnsupportedTypes(String stringArg, Map<String, String> mapStringStringArg, short shortArg);
 
         @SuppressWarnings("unused")
-        public List<String> failReturnAndArgsWithUnsupportedGenericsAndTypes(List<String> listStringArg);
+        public void failArgsWithUnsupportedGenericsTypes(HashMap<String, String> hashMapStrings);
+
+        @SuppressWarnings("unused")
+        public List<String> failReturnAndArgsWithUnsupportedGenericsTypes(List<String> listStringArg);
     }
 
     @Test

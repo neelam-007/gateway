@@ -9,6 +9,7 @@ import com.l7tech.policy.assertion.ext.cei.CustomExtensionInterfaceFinder;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.util.HashMap;
 import java.util.Map;
 
 public class CustomConsoleContext {
@@ -18,32 +19,16 @@ public class CustomConsoleContext {
             @Override
             public <T> T getExtensionInterface(Class<T> interfaceClass) throws ServiceException {
                 for (Method declaredMethod : interfaceClass.getDeclaredMethods()) {
+                    if (!isSupportedDataType(declaredMethod.getGenericReturnType())) {
+                        throw new ServiceException("Unsupported Custom Extension Interface return type '" +
+                            declaredMethod.getReturnType() + "' for '" +
+                            interfaceClass.getName() + "' '" + declaredMethod.getName() + "'.");
+                    }
 
-                    final Type genericReturnType = declaredMethod.getGenericReturnType();
-                    // Check if the return type is a Parameterized Type.
-                    if (genericReturnType instanceof ParameterizedType &&
-                        java.util.HashMap.class.getName().equals(declaredMethod.getReturnType().getName())) {
-                        // add support for more data types here (e.g. Collection types)
-
-                        // Currently only allow that the return type is HashMap and the map argument types are String.
-                        for (Type argumentType : ((ParameterizedType)genericReturnType).getActualTypeArguments()) {
-                            if (! String.class.getName().equals(((Class)argumentType).getName())) {
-                                throw new ServiceException("Unsupported Custom Extension Interface parameterized return argument type '" +
-                                    argumentType + "' for '" + interfaceClass.getName() + "' '" + declaredMethod.getName() + "'.");
-                            }
-                        }
-                    } else {
-                        if (!isSupportedDataType(declaredMethod.getReturnType())) {
-                            throw new ServiceException("Unsupported Custom Extension Interface return type '" +
-                                declaredMethod.getReturnType() + "' for '" +
-                                interfaceClass.getName() + "' '" + declaredMethod.getName() + "'.");
-                        }
-
-                        for (Class parameterType : declaredMethod.getParameterTypes()) {
-                            if (!isSupportedDataType(parameterType)) {
-                                throw new ServiceException("Unsupported Custom Extension Interface parameter type '" +
-                                    parameterType + "' for '" + interfaceClass.getName() + "' '" + declaredMethod.getName() + "'.");
-                            }
+                    for (Class parameterType : declaredMethod.getParameterTypes()) {
+                        if (!isSupportedDataType(parameterType)) {
+                            throw new ServiceException("Unsupported Custom Extension Interface parameter type '" +
+                                parameterType + "' for '" + interfaceClass.getName() + "' '" + declaredMethod.getName() + "'.");
                         }
                     }
                 }
@@ -61,6 +46,24 @@ public class CustomConsoleContext {
         consoleContext.put("keyValueStoreServices", new KeyValueStoreServicesImpl());
     }
 
+    public static boolean isSupportedDataType(Type dataType) {
+        if (dataType instanceof Class) {
+            return isSupportedDataType((Class) dataType);
+        } else if (dataType instanceof ParameterizedType) {
+            ParameterizedType parameterizedType = (ParameterizedType) dataType;
+            if (!HashMap.class.getName().equals(((Class) parameterizedType.getRawType()).getName())) {
+                return false;
+            }
+            for (Type actualTypeArgument: parameterizedType.getActualTypeArguments()) {
+                if (!String.class.getName().equals(((Class) actualTypeArgument).getName())) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        return false;
+    }
+
     /**
      * Check data type of String, primitive, and array of String or primitive.
      *
@@ -75,5 +78,6 @@ public class CustomConsoleContext {
             dataTypeClass = inDataTypeClass;
         }
         return dataTypeClass.isPrimitive() || String.class.getName().equals(dataTypeClass.getName());
+        // add support for more data types here (e.g. Collection types)
     }
 }
