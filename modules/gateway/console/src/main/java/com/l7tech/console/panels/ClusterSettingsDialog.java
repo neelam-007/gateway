@@ -19,7 +19,7 @@ import java.util.ResourceBundle;
  * To change this template use File | Settings | File Templates.
  */
 public class ClusterSettingsDialog extends JDialog {
-    private static final ResourceBundle resources = ResourceBundle.getBundle("com.ca.siteminder.resources.SiteMinderConfigClusterSettings");
+    private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.panels.resources.SiteMinderConfigClusterSettings");
 
     private JPanel mainPanel;
     private JButton okButton;
