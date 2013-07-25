@@ -16,7 +16,8 @@ public class EntityTypeTest {
 
     private static final Set<EntityType> IGNORE_ENTITY_TYPES = set(
         EntityType.ESM_LOG,
-        EntityType.VALUE_REFERENCE
+        EntityType.VALUE_REFERENCE,
+        EntityType.SITEMINDER_CONFIGURATION
     );
 
     @Test
