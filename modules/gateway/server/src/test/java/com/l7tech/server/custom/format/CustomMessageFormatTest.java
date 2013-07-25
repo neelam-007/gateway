@@ -24,13 +24,13 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.InputStream;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
-import scala.actors.threadpool.Arrays;
 
 import static com.l7tech.server.policy.custom.CustomAssertionsSampleContents.*;
 import static org.junit.Assert.*;
@@ -40,7 +40,8 @@ import static org.junit.Assert.*;
  */
 public class CustomMessageFormatTest {
 
-    private CustomMessageFormatRegistry tmpFormatRegistry;
+    private CustomMessageFormatFactory formatFactory;
+    private CustomMessageFormatRegistry formatRegistry;
     private StashManagerFactory stashManagerFactory;
 
     @Before
@@ -53,12 +54,9 @@ public class CustomMessageFormatTest {
             }
         };
 
-        // create the default custom formats registry
-        CustomMessageFormatRegistry.createInstance(stashManagerFactory);
-
-        // create a temporary for testing register and remove custom formats.
+        // create the format registry for testing register and remove custom formats.
         //noinspection serial
-        tmpFormatRegistry = new CustomMessageFormatRegistry(new HashMap<Class, CustomMessageFormat>(){{
+        formatRegistry = new CustomMessageFormatRegistry(new HashMap<Class, CustomMessageFormat>(){{
             put(Document.class,
                     new CustomMessageXmlFormat(stashManagerFactory,
                             CustomMessageFormatFactory.XML_FORMAT,
@@ -79,10 +77,11 @@ public class CustomMessageFormatTest {
             );
         }});
 
-        //formatFactory = CustomMessageFormatRegistry.getInstance().getMessageFormatFactory();
+        // get the format factory
+        formatFactory = formatRegistry.getMessageFormatFactory();
     }
 
-    private void printKnownFormats(final CustomMessageFormatFactory formatFactory) throws Exception {
+    private void printKnownFormats() throws Exception {
         System.out.println("-------------------------------------------------------------------");
         for (CustomMessageFormat format: formatFactory.getKnownFormats()) {
             System.out.println("Format; class = " + format.getRepresentationClass().getSimpleName() + "; name = " + format.getFormatName() + "; desc = " + format.getFormatDescription() + ";");
@@ -93,9 +92,6 @@ public class CustomMessageFormatTest {
     @SuppressWarnings("unchecked")
     @Test
     public void testKnownFormatsExtraction() throws Exception {
-        // get the default formats factory
-        CustomMessageFormatFactory formatFactory = tmpFormatRegistry.getMessageFormatFactory();
-
         // extract using name
         CustomMessageFormat docFormat = formatFactory.getFormatByName(CustomMessageFormatFactory.XML_FORMAT);
         assertNotNull(docFormat);
@@ -138,20 +134,17 @@ public class CustomMessageFormatTest {
         assertTrue(iStreamFormat instanceof CustomMessageInputStreamFormat);
         assertEquals(iStreamFormat.getFormatName(), CustomMessageFormatFactory.INPUT_STREAM_FORMAT);
 
-        printKnownFormats(formatFactory);
+        printKnownFormats();
     }
 
     @SuppressWarnings("unchecked")
     @Test
     public void testUpdateFormats() throws Exception {
-        // get the default formats factory
-        CustomMessageFormatFactory formatFactory = tmpFormatRegistry.getMessageFormatFactory();
-
         int initialSize;
         assertTrue((initialSize = formatFactory.getKnownFormats().size()) >= 3);
 
         // remove a format
-        CustomMessageFormat<CustomJsonData> jsonFormat = (CustomMessageFormat<CustomJsonData>) tmpFormatRegistry.remove(CustomJsonData.class);
+        CustomMessageFormat<CustomJsonData> jsonFormat = (CustomMessageFormat<CustomJsonData>) formatRegistry.remove(CustomJsonData.class);
         assertNotNull(jsonFormat);
         assertTrue(formatFactory.getKnownFormats().size() < initialSize);
         try {
@@ -172,19 +165,16 @@ public class CustomMessageFormatTest {
             @Override public void overwrite(CustomMessage message, String contents) throws CustomMessageAccessException { }
             @Override public <K> String createBody(K content) throws CustomMessageAccessException { return null; }
         };
-        tmpFormatRegistry.register(String.class, newStringFormat);
+        formatRegistry.register(String.class, newStringFormat);
         assertNotNull(formatFactory.getFormat(String.class));
         assertNotNull(formatFactory.getFormatByName("TEXT")); // case insensitive
         assertTrue(formatFactory.getKnownFormats().size() == initialSize);
 
-        printKnownFormats(formatFactory);
+        printKnownFormats();
     }
 
     @Test
     public void testXmlCreateBody() throws Exception {
-        // get the default formats factory
-        CustomMessageFormatFactory formatFactory = CustomMessageFormatRegistry.getInstance().getMessageFormatFactory();
-
         // get XML message format
         final CustomMessageFormat<Document> xmlFormat = formatFactory.getXmlFormat();
         assertNotNull(xmlFormat);
@@ -259,9 +249,6 @@ public class CustomMessageFormatTest {
 
     @Test
     public void testJsonCreateBody() throws Exception {
-        // get the default formats factory
-        CustomMessageFormatFactory formatFactory = CustomMessageFormatRegistry.getInstance().getMessageFormatFactory();
-
         // get JSON message format
         final CustomMessageFormat<CustomJsonData> jsonFormat = formatFactory.getJsonFormat();
         assertNotNull(jsonFormat);
@@ -342,9 +329,6 @@ public class CustomMessageFormatTest {
 
     @Test
     public void testInputStreamCreateBody() throws Exception {
-        // get the default formats factory
-        CustomMessageFormatFactory formatFactory = CustomMessageFormatRegistry.getInstance().getMessageFormatFactory();
-
         // get InputStream message format
         final CustomMessageFormat<InputStream> iStreamFormat = formatFactory.getStreamFormat();
         assertNotNull(iStreamFormat);
@@ -391,9 +375,6 @@ public class CustomMessageFormatTest {
      * Helper function for creating custom message
      */
     private <T> CustomMessage createMessage(@Nullable ContentTypeHeader contentType, @Nullable T content) throws Exception {
-        // get the default formats factory
-        CustomMessageFormatFactory formatFactory = CustomMessageFormatRegistry.getInstance().getMessageFormatFactory();
-
         Message message = null;
         if (content instanceof Document) {
             message = new Message((Document)content);
@@ -472,9 +453,6 @@ public class CustomMessageFormatTest {
 
     @Test
     public void testExtractAndOverwriteException() throws Exception {
-        // get the default formats factory
-        CustomMessageFormatFactory formatFactory = CustomMessageFormatRegistry.getInstance().getMessageFormatFactory();
-
         doTestExtractAndOverwriteException(formatFactory.getXmlFormat());
         doTestExtractAndOverwriteException(formatFactory.getJsonFormat());
         doTestExtractAndOverwriteException(formatFactory.getStreamFormat());
@@ -482,9 +460,6 @@ public class CustomMessageFormatTest {
 
     @Test
     public void testXmlExtract() throws Exception {
-        // get the default formats factory
-        CustomMessageFormatFactory formatFactory = CustomMessageFormatRegistry.getInstance().getMessageFormatFactory();
-
         // get XML message format
         final CustomMessageFormat<Document> xmlFormat = formatFactory.getXmlFormat();
         assertNotNull(xmlFormat);
@@ -574,9 +549,6 @@ public class CustomMessageFormatTest {
 
     @Test
     public void testJsonExtract() throws Exception {
-        // get the default formats factory
-        CustomMessageFormatFactory formatFactory = CustomMessageFormatRegistry.getInstance().getMessageFormatFactory();
-
         // get JSON message format
         final CustomMessageFormat<CustomJsonData> jsonFormat = formatFactory.getJsonFormat();
         assertNotNull(jsonFormat);
@@ -673,9 +645,6 @@ public class CustomMessageFormatTest {
 
     @Test
     public void testInputStreamExtract() throws Exception {
-        // get the default formats factory
-        CustomMessageFormatFactory formatFactory = CustomMessageFormatRegistry.getInstance().getMessageFormatFactory();
-
         // get InputStream message format
         final CustomMessageFormat<InputStream> iStreamFormat = formatFactory.getStreamFormat();
         assertNotNull(iStreamFormat);
@@ -726,9 +695,6 @@ public class CustomMessageFormatTest {
 
     @Test
     public void testXmlOverwrite() throws Exception {
-        // get the default formats factory
-        CustomMessageFormatFactory formatFactory = CustomMessageFormatRegistry.getInstance().getMessageFormatFactory();       
-
         // initial message value is XML
         CustomMessage message = createMessage(ContentTypeHeader.XML_DEFAULT, XML_CONTENT);
         assertTrue(message.extract(formatFactory.getXmlFormat()).isEqualNode(XmlUtil.stringToDocument(XML_CONTENT)));
@@ -798,9 +764,6 @@ public class CustomMessageFormatTest {
 
     @Test
     public void testJsonOverwrite() throws Exception {
-        // get the default formats factory
-        CustomMessageFormatFactory formatFactory = CustomMessageFormatRegistry.getInstance().getMessageFormatFactory();
-
         // initial message value is JSON
         CustomMessage message = createMessage(ContentTypeHeader.APPLICATION_JSON, JSON_CONTENT);
         assertEquals(message.extract(formatFactory.getJsonFormat()).getJsonData(), JSON_CONTENT);
@@ -945,9 +908,6 @@ public class CustomMessageFormatTest {
 
     @Test
     public void testInputStreamOverwrite() throws Exception {
-        // get the default formats factory
-        CustomMessageFormatFactory formatFactory = CustomMessageFormatRegistry.getInstance().getMessageFormatFactory();
-
         // initial message value is InputStream
         CustomMessage message = createMessage(ContentTypeHeader.OCTET_STREAM_DEFAULT, INPUT_STREAM_CONTENT_BYTES);
         assertTrue(Arrays.equals(IOUtils.slurpStream(message.getInputStream()), INPUT_STREAM_CONTENT_BYTES));

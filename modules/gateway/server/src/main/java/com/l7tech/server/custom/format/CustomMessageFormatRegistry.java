@@ -19,10 +19,9 @@ import org.w3c.dom.Document;
 /**
  * This is a registry singleton used to store {@link com.l7tech.policy.assertion.ext.message.format.CustomMessageFormat CustomMessageFormat}'s.
  * <p/>
- * The singleton instance can be accessed either via {@link #getInstance()} method, which is the preferable way,
- * or through the application-context via the "ssgCustomMessageFormatRegistry" bean.
+ * Grab an instance through the application-context via the "ssgCustomMessageFormatRegistry" bean.
  * <p/>
- * Use this singleton to register new message formats or remove existing ones.
+ * Use this class to register new message formats or remove existing ones.
  */
 public class CustomMessageFormatRegistry {
 
@@ -37,52 +36,37 @@ public class CustomMessageFormatRegistry {
     }
 
     /**
-     * singleton instance
-     */
-    static private CustomMessageFormatRegistry messageFormatRegistry = null;
-
-    /**
-     * @return the one and only CustomMessageFormatRegistry instance
-     */
-    static public CustomMessageFormatRegistry getInstance() {
-        return messageFormatRegistry;
-    }
-
-    /**
-     * Create the singleton instance.
-     *
+     * Default constructor, used to create the bean.
+     * <p/>
      * Initially register three default message formats:
-     * <li>{@link CustomMessageFormatFactory#XML_FORMAT} - representation class: {@link org.w3c.dom.Document}</li>
-     * <li>{@link CustomMessageFormatFactory#JSON_FORMAT} - representation class: {@link CustomJsonData}</li>
-     * <li>{@link CustomMessageFormatFactory#INPUT_STREAM_FORMAT} - representation class: {@link InputStream}</li>
-     *
-     * @return the singleton instance.
+     * <ul>
+     *     <li>{@link CustomMessageFormatFactory#XML_FORMAT} - representation class: {@link org.w3c.dom.Document}</li>
+     *     <li>{@link CustomMessageFormatFactory#JSON_FORMAT} - representation class: {@link CustomJsonData}</li>
+     *     <li>{@link CustomMessageFormatFactory#INPUT_STREAM_FORMAT} - representation class: {@link InputStream}</li>
+     * </ul>
      */
-    static public CustomMessageFormatRegistry createInstance(@NotNull final StashManagerFactory stashManagerFactory) {
-        if (messageFormatRegistry == null) {
-            //noinspection serial
-            messageFormatRegistry = new CustomMessageFormatRegistry(new HashMap<Class, CustomMessageFormat>(){{
-                put(Document.class,
-                        new CustomMessageXmlFormat(stashManagerFactory,
-                                CustomMessageFormatFactory.XML_FORMAT,
-                                CustomMessageFormatFactoryImpl.XML_FORMAT_DESC
-                        )
-                );
-                put(CustomJsonData.class,
-                        new CustomMessageJsonFormat(stashManagerFactory,
-                                CustomMessageFormatFactory.JSON_FORMAT,
-                                CustomMessageFormatFactoryImpl.JSON_FORMAT_DESC
-                        )
-                );
-                put(InputStream.class,
-                        new CustomMessageInputStreamFormat(stashManagerFactory,
-                                CustomMessageFormatFactory.INPUT_STREAM_FORMAT,
-                                CustomMessageFormatFactoryImpl.INPUT_STREAM_FORMAT_DESC
-                        )
-                );
-            }});
-        }
-        return messageFormatRegistry;
+    public CustomMessageFormatRegistry(@NotNull final StashManagerFactory stashManagerFactory) {
+        //noinspection serial
+        this(new HashMap<Class, CustomMessageFormat>() {{
+            put(Document.class,
+                    new CustomMessageXmlFormat(stashManagerFactory,
+                            CustomMessageFormatFactory.XML_FORMAT,
+                            CustomMessageFormatFactoryImpl.XML_FORMAT_DESC
+                    )
+            );
+            put(CustomJsonData.class,
+                    new CustomMessageJsonFormat(stashManagerFactory,
+                            CustomMessageFormatFactory.JSON_FORMAT,
+                            CustomMessageFormatFactoryImpl.JSON_FORMAT_DESC
+                    )
+            );
+            put(InputStream.class,
+                    new CustomMessageInputStreamFormat(stashManagerFactory,
+                            CustomMessageFormatFactory.INPUT_STREAM_FORMAT,
+                            CustomMessageFormatFactoryImpl.INPUT_STREAM_FORMAT_DESC
+                    )
+            );
+        }});
     }
 
     /**

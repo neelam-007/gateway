@@ -146,7 +146,9 @@ public class CustomAssertionsPolicyTestBase {
         when(mockApplicationContext.getBean("policyFactory", ServerPolicyFactory.class)).thenReturn(serverPolicyFactory);
 
         // create our CustomMessageFormatRegistry
-        CustomMessageFormatRegistry.createInstance(stashManagerFactory);
+        CustomMessageFormatRegistry formatRegistry = new CustomMessageFormatRegistry(stashManagerFactory);
+        when(mockApplicationContext.getBean("ssgCustomMessageFormatRegistry")).thenReturn(formatRegistry);
+        when(mockApplicationContext.getBean("ssgCustomMessageFormatRegistry", CustomMessageFormatRegistry.class)).thenReturn(formatRegistry);
     }
 
     protected PolicyEnforcementContext makeContext(final Message request, final Message response) {

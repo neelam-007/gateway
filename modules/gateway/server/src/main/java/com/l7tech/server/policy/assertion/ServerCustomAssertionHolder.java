@@ -80,14 +80,19 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
     private CustomAssertionsRegistrar customAssertionRegistrar;
     private ApplicationContext applicationContext;
 
+    private final CustomMessageFormatFactory formatFactory;
+
     public ServerCustomAssertionHolder(CustomAssertionHolder ca, ApplicationContext springContext) {
         super(ca);
         if (ca == null)
             throw new IllegalArgumentException();
         this.data = ca;
         this.applicationContext = springContext;
-        customAssertion = ca.getCustomAssertion(); // ignore hoder
-        isAuthAssertion = ca.isCustomCredentialSource();
+        this.customAssertion = ca.getCustomAssertion(); // ignore hoder
+        this.isAuthAssertion = ca.isCustomCredentialSource();
+
+        CustomMessageFormatRegistry formatRegistry = applicationContext.getBean("ssgCustomMessageFormatRegistry", CustomMessageFormatRegistry.class);
+        this.formatFactory = formatRegistry != null ? formatRegistry.getMessageFormatFactory() : null;
     }
 
     private void initialize() throws PolicyAssertionException {
@@ -833,7 +838,7 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
 
         @Override
         public CustomMessageFormatFactory getFormats() {
-            return CustomMessageFormatRegistry.getInstance().getMessageFormatFactory();
+            return formatFactory;
         }
 
         @Override
