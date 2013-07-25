@@ -42,4 +42,8 @@ public class CustomKeyValueStoreAdminImpl implements CustomKeyValueStoreAdmin {
     public void deleteCustomKeyValue(@NotNull String key) throws DeleteException {
         customKeyValueStoreManager.deleteByKey(key);
     }
+
+    void setCustomKeyValueStoreManager(@NotNull CustomKeyValueStoreManager customKeyValueStoreManager) {
+        this.customKeyValueStoreManager = customKeyValueStoreManager;
+    }
 }

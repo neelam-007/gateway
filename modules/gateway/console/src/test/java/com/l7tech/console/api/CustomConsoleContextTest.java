@@ -8,6 +8,7 @@ import com.l7tech.policy.assertion.ext.cei.CustomExtensionInterfaceFinder;
 import com.l7tech.policy.assertion.ext.commonui.CommonUIServices;
 import com.l7tech.policy.assertion.ext.commonui.CustomSecurePasswordPanel;
 import com.l7tech.policy.assertion.ext.commonui.CustomTargetVariablePanel;
+import com.l7tech.policy.assertion.ext.store.KeyValueStoreServices;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -182,6 +183,19 @@ public class CustomConsoleContextTest {
         assertFalse(securePasswordPanel.containsItem(1001L));
         assertTrue(securePasswordPanel.containsItem(1002L));
         assertTrue(securePasswordPanel.containsItem(1003L));
+    }
+
+    @Test
+    public void keyValueStoreServices() throws Exception {
+        // Test only for existence of keyValueStoreServices in the console context.
+        // The actual testing of keyValueStoreServices is implemented in
+        // com.l7tech.console.api.CustomKeyValueStoreTest.
+        //
+        Map<String, Object> consoleContext = new HashMap<>(1);
+        CustomConsoleContext.addKeyValueStoreServices(consoleContext);
+
+        KeyValueStoreServices keyValueStoreServices = (KeyValueStoreServices) consoleContext.get("keyValueStoreServices");
+        assertNotNull(keyValueStoreServices);
     }
 
     private interface MyInterface {
