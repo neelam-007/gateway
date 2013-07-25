@@ -386,6 +386,37 @@ public class ServerGatewayManagementAssertionTest {
     }
 
     @Test
+    public void testGetJmsDestination() throws Exception {
+        final String id = new Goid(0,1).toString();
+        final String message =
+                "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" \n" +
+                        "            xmlns:a=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" \n" +
+                        "            xmlns:w=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\">\n" +
+                        "  <s:Header>\n" +
+                        "    <a:MessageID>uuid:4ED2993C-4339-4E99-81FC-C2FD3812781A</a:MessageID> \n" +
+                        "    <a:To>http://127.0.0.1:8080/wsman</a:To> \n" +
+                        "    <a:ReplyTo> \n" +
+                        "      <a:Address s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</a:Address> \n" +
+                        "    </a:ReplyTo> \n" +
+                        "    <a:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Get</a:Action> \n" +
+                        "    <w:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/jmsDestinations</w:ResourceURI> \n" +
+                        "    <w:SelectorSet>\n" +
+                        "      <w:Selector Name=\"id\">"+id+"</w:Selector> \n" +
+                        "    </w:SelectorSet>\n" +
+                        "    <w:OperationTimeout>PT60.000S</w:OperationTimeout> \n" +
+                        "  </s:Header>\n" +
+                        "  <s:Body/> \n" +
+                        "</s:Envelope>";
+
+        final Document result = processRequest( "http://schemas.xmlsoap.org/ws/2004/09/transfer/Get", message );
+
+        final Element soapBody = SoapUtil.getBodyElement(result);
+        final Element jmsDestination = XmlUtil.findExactlyOneChildElementByName( soapBody, NS_GATEWAY_MANAGEMENT, "JMSDestination" );
+
+        assertEquals("Jms Destination identifier:", id, jmsDestination.getAttribute("id"));
+    }
+
+    @Test
     public void testGetInvalidSelector() throws Exception {
         final String message =
                 "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" \n" +
@@ -818,7 +849,7 @@ public class ServerGatewayManagementAssertionTest {
                 "        </Properties>\n" +
                 "    </JMSConnection>\n" +
                 "</JMSDestination>";
-        doCreate( resourceUri, payload, "2", "3", "4" );
+        doCreate( resourceUri, payload, new Goid(0,2).toString(), new Goid(0,3).toString(), new Goid(0,4).toString() );
     }
 
     @Test
@@ -846,7 +877,7 @@ public class ServerGatewayManagementAssertionTest {
                 "        </Properties>\n" +
                 "    </JMSConnection>\n" +
                 "</JMSDestination>";
-        doCreate( resourceUri, payload, "2", "3", "4" );
+        doCreate( resourceUri, payload, new Goid(0,2).toString(), new Goid(0,3).toString(), new Goid(0,4).toString() );
     }
 
     @Test
@@ -865,7 +896,7 @@ public class ServerGatewayManagementAssertionTest {
                 "        <Template>true</Template>\n" +
                 "    </JMSConnection>\n" +
                 "</JMSDestination>";
-        doCreate( resourceUri, payload, "2", "3", "4"  );
+        doCreate( resourceUri, payload, new Goid(0,2).toString(), new Goid(0,3).toString(), new Goid(0,4).toString() );
     }
 
     @BugId("SSG-6372")
@@ -885,7 +916,7 @@ public class ServerGatewayManagementAssertionTest {
                 "        <Template>true</Template>\n" +
                 "    </JMSConnection>\n" +
                 "</JMSDestination>";
-        doCreate( resourceUri, payload, "2", "3", "4"  );
+        doCreate( resourceUri, payload, new Goid(0,2).toString(), new Goid(0,3).toString(), new Goid(0,4).toString()  );
     }
 
     @Test
@@ -1333,9 +1364,10 @@ public class ServerGatewayManagementAssertionTest {
 
     @Test
     public void testPutJmsDestination() throws Exception {
-        final String message = "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\"><s:Header><wsa:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Put</wsa:Action><wsa:To s:mustUnderstand=\"true\">http://127.0.0.1:8080/wsman</wsa:To><wsman:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/jmsDestinations</wsman:ResourceURI><wsa:MessageID s:mustUnderstand=\"true\">uuid:afad2993-7d39-1d39-8002-481688002100</wsa:MessageID><wsa:ReplyTo><wsa:Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo><wsman:SelectorSet><wsman:Selector Name=\"id\">1</wsman:Selector></wsman:SelectorSet><wsman:RequestEPR/></s:Header><s:Body>" +
-              "    <l7:JMSDestination id=\"1\" version=\"0\">\n" +
-              "        <l7:JMSDestinationDetail id=\"1\" version=\"0\">\n" +
+        final String id = new Goid(0,1).toString();
+        final String message = "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\"><s:Header><wsa:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Put</wsa:Action><wsa:To s:mustUnderstand=\"true\">http://127.0.0.1:8080/wsman</wsa:To><wsman:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/jmsDestinations</wsman:ResourceURI><wsa:MessageID s:mustUnderstand=\"true\">uuid:afad2993-7d39-1d39-8002-481688002100</wsa:MessageID><wsa:ReplyTo><wsa:Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo><wsman:SelectorSet><wsman:Selector Name=\"id\">"+id+"</wsman:Selector></wsman:SelectorSet><wsman:RequestEPR/></s:Header><s:Body>" +
+              "    <l7:JMSDestination id=\""+id+"\" version=\"0\">\n" +
+              "        <l7:JMSDestinationDetail id=\""+id+"\" version=\"0\">\n" +
               "            <l7:Name>Test Endpoint 1</l7:Name>\n" +
               "            <l7:DestinationName>Test Endpoint</l7:DestinationName>\n" +
               "            <l7:Inbound>false</l7:Inbound>\n" +
@@ -1353,7 +1385,7 @@ public class ServerGatewayManagementAssertionTest {
               "                </l7:Property>\n" +
               "            </l7:Properties>\n" +
               "        </l7:JMSDestinationDetail>\n" +
-              "        <l7:JMSConnection id=\"1\" version=\"0\">\n" +
+              "        <l7:JMSConnection id=\""+id+"\" version=\"0\">\n" +
               "            <l7:Template>false</l7:Template>\n" +
               "            <l7:Properties>\n" +
               "                <l7:Property key=\"jndi.initialContextFactoryClassname\">\n" +
@@ -1383,9 +1415,9 @@ public class ServerGatewayManagementAssertionTest {
 
                 final int version = expectedVersion++;
 
-                assertEquals("JMS destination id", "1", jmsDestination.getAttribute( "id" ));
+                assertEquals("JMS destination id", id, jmsDestination.getAttribute( "id" ));
                 assertEquals("JMS destination version", Integer.toString( version ), jmsDestination.getAttribute( "version" ));
-                assertEquals("JMS destination detail id", "1", jmsDestinationDetail.getAttribute( "id" ));
+                assertEquals("JMS destination detail id", id , jmsDestinationDetail.getAttribute( "id" ));
                 assertEquals("JMS destination detail version", Integer.toString( version ), jmsDestinationDetail.getAttribute( "version" ));
                 assertEquals("JMS destination detail name", "Test Endpoint 1", XmlUtil.getTextValue(jmsDestinationDetailName));
             }
@@ -1975,13 +2007,24 @@ public class ServerGatewayManagementAssertionTest {
 
         final Document result = processRequest( "http://ns.l7tech.com/2010/04/gateway-management/policies/ImportPolicy", message );
 
+        System.out.println( XmlUtil.nodeToFormattedString(result ) );
+
         final Element soapBody = SoapUtil.getBodyElement(result);
         final Element importResult = XmlUtil.findExactlyOneChildElementByName(soapBody, NS_GATEWAY_MANAGEMENT, "PolicyImportResult");
         final Element importedPolicyRefs = XmlUtil.findExactlyOneChildElementByName(importResult, NS_GATEWAY_MANAGEMENT, "ImportedPolicyReferences");
-        final Element importedPolicyRef = XmlUtil.findExactlyOneChildElementByName(importedPolicyRefs, NS_GATEWAY_MANAGEMENT, "ImportedPolicyReference");
+        final List<Element> importedPolicyRef = XmlUtil.findChildElementsByName(importedPolicyRefs, NS_GATEWAY_MANAGEMENT, "ImportedPolicyReference");
 
-        assertEquals("Imported policy ref GUID", "886ece03-a64c-4c17-93cf-ce49e7265daa", importedPolicyRef.getAttribute( "guid" ));
-        assertEquals("Imported policy ref type", "Created", importedPolicyRef.getAttribute( "type" ));
+        for(Element ele: importedPolicyRef){
+            if(ele.getAttribute("referenceType").contains("JMSEndpointReference")){
+                assertEquals("JMS reference mapped", "Mapped", ele.getAttribute( "type" ));
+                // do nothing
+            }else if(ele.getAttribute("referenceType").contains("IncludedPolicyReference")){
+                assertEquals("Imported policy ref GUID", "886ece03-a64c-4c17-93cf-ce49e7265daa", ele.getAttribute( "guid" ));
+                assertEquals("Imported policy ref type", "Created", ele.getAttribute( "type" ));
+            }else{
+                assertFalse("Unexpeceted reference type: "+ ele.getAttribute("referenceType"),true);
+            }
+        }
     }
 
     @Test
@@ -2641,7 +2684,7 @@ public class ServerGatewayManagementAssertionTest {
 
     private static JmsConnection jmsConnection(final long oid, final String name, final String contextClassname, final String queueFactory, final String jndiUrl, JmsProviderType providerType) {
         final JmsConnection connection = new JmsConnection();
-        connection.setOid( oid );
+        connection.setGoid(new Goid(0, oid));
         connection.setName( name );
         connection.setQueueFactoryUrl( queueFactory );
         connection.setInitialContextFactoryClassname( contextClassname );
@@ -2653,8 +2696,8 @@ public class ServerGatewayManagementAssertionTest {
 
     private static JmsEndpoint jmsEndpoint( final long oid, final long connectionOid, final String queueName) {
         final JmsEndpoint endpoint = new JmsEndpoint();
-        endpoint.setOid( oid );
-        endpoint.setConnectionOid( connectionOid );
+        endpoint.setGoid(new Goid(0, oid));
+        endpoint.setConnectionGoid(new Goid(0, connectionOid));
         endpoint.setName( queueName );
         endpoint.setDestinationName( queueName );
         return endpoint;

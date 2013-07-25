@@ -31,10 +31,7 @@ import static org.junit.Assert.*;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 /**
  * Test class for the policy exporter.
@@ -62,7 +59,7 @@ public class PolicyExporterTest {
         Element idProvRefEle = XmlUtil.findExactlyOneChildElementByName( referencesEle,"IDProviderReference" );
         assertEquals("ID provider reference type", "com.l7tech.console.policy.exporter.IdProviderReference", idProvRefEle.getAttribute( "RefType" ));
         Element jmsConnRefEle = XmlUtil.findExactlyOneChildElementByName( referencesEle, "JMSConnectionReference" );
-        assertEquals("ID provider reference type", "com.l7tech.console.policy.exporter.JMSEndpointReference", jmsConnRefEle.getAttribute( "RefType" ));
+        assertEquals("Jms reference type", "com.l7tech.console.policy.exporter.JMSEndpointReference", jmsConnRefEle.getAttribute( "RefType" ));
     }
 
     @Test

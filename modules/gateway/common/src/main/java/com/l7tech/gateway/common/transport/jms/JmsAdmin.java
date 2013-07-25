@@ -94,98 +94,109 @@ public interface JmsAdmin {
     JmsTuple[] findAllTuples() throws FindException;
 
     /**
-     * Finds the {@link JmsConnection} with the given OID.
+     * Finds the {@link JmsConnection} with the given GOID.
      *
-     * @param oid the OID of the connection to retrieve
+     * @param goid the GOID of the connection to retrieve
      * @return the {@link JmsConnection} with the specified OID, or null if no such connection could be found
      * @throws FindException   if a database problem prevented the connection from being retrieved
      */
     @Transactional(readOnly=true)
     @Secured(types=JMS_CONNECTION, stereotype=MethodStereotype.FIND_ENTITY)
-    JmsConnection findConnectionByPrimaryKey(long oid) throws FindException;
+    JmsConnection findConnectionByPrimaryKey(Goid goid) throws FindException;
 
     /**
-     * Finds the {@link JmsEndpoint} with the given OID.
+     * Finds the {@link JmsEndpoint} with the given GOID.
      *
-     * @param oid the OID of the endpoint to retrieve
+     * @param goid the GOID of the endpoint to retrieve
      * @return the {@link JmsEndpoint} with the specified OID, or null if no such endpoint could be found
      * @throws FindException   if a database problem prevented the endpoint from being retrieved
      */
     @Transactional(readOnly=true)
     @Secured(types=JMS_ENDPOINT, stereotype=MethodStereotype.FIND_ENTITY)
-    JmsEndpoint findEndpointByPrimaryKey(long oid) throws FindException;
+    JmsEndpoint findEndpointByPrimaryKey(Goid goid) throws FindException;
 
     /**
-     * Sets a flag indicating whether the {@link JmsEndpoint} with the specified OID is a message source
+     * Finds the {@link JmsEndpoint} with the given legacy OID.
+     *
+     * @param id the OID of the endpoint to retrieve
+     * @return the {@link JmsEndpoint} with the specified OID, or null if no such endpoint could be found
+     * @throws FindException   if a database problem prevented the endpoint from being retrieved
+     */
+    @Transactional(readOnly=true)
+    @Secured(types=JMS_ENDPOINT, stereotype=MethodStereotype.FIND_ENTITY)
+    JmsEndpoint findEndpointByOldId(Long id) throws FindException;
+
+    /**
+     * Sets a flag indicating whether the {@link JmsEndpoint} with the specified GOID is a message source
      * (i.e. should be polled for inbound messages) or not (i.e. is used for outbound messages)
      *
-     * @param oid             the OID of the {@link JmsEndpoint} to update
+     * @param goid             the GOID of the {@link JmsEndpoint} to update
      * @param isMessageSource true if the endpoint with the specified OID should be polled by the SSG, or false if the SSG can use this endpoint to send outbound messages.
      * @throws FindException   if a database problem prevented the endpoint from being retrieved
      * @throws UpdateException if a database problem prevented the endpoint from being updated
      */
     @Secured(types=JMS_ENDPOINT, stereotype= MethodStereotype.SET_PROPERTY_BY_ID)
-    void setEndpointMessageSource(long oid, boolean isMessageSource) throws FindException, UpdateException;
+    void setEndpointMessageSource(Goid goid, boolean isMessageSource) throws FindException, UpdateException;
 
     /**
      * Save the specified JmsConnection to the database.
      *
      * @param connection the JmsConnection to save
-     * @return the OID assigned to the saved JmsConnection.
+     * @return the GOID assigned to the saved JmsConnection.
      * @throws SaveException   if a database problem prevented the specified JmsConnection from being saved
      */
     @Secured(types=JMS_CONNECTION, stereotype= MethodStereotype.SAVE_OR_UPDATE)
-    long saveConnection(JmsConnection connection) throws SaveException, VersionException;
+    Goid saveConnection(JmsConnection connection) throws SaveException, VersionException;
 
     /**
      * Save the specified JmsEndpoint to the database.
      *
      * @param endpoint the JmsEndpoint to save
-     * @return the OID assigned to the saved JmsEndpoint.
+     * @return the GOID assigned to the saved JmsEndpoint.
      * @throws SaveException   if a database problem prevented the specified JmsEndpoint from being saved
      */
     @Secured(types=JMS_ENDPOINT, stereotype= MethodStereotype.SAVE_OR_UPDATE)
-    long saveEndpoint(JmsEndpoint endpoint) throws SaveException, VersionException;
+    Goid saveEndpoint(JmsEndpoint endpoint) throws SaveException, VersionException;
 
     /**
      * Deletes the {@link JmsEndpoint} with the specified OID from the database.
      *
-     * @param endpointOid the OID of the {@link JmsEndpoint} to be deleted
+     * @param endpointGoid the GOID of the {@link JmsEndpoint} to be deleted
      * @throws FindException   if a database problem prevented the specified JmsEndpoint from being retrieved
      * @throws DeleteException if a database problem prevented the specified JmsEndpoint from being deleted
      */
     @Secured(types=JMS_ENDPOINT, stereotype= MethodStereotype.DELETE_BY_ID)
-    void deleteEndpoint(long endpointOid) throws FindException, DeleteException;
+    void deleteEndpoint(Goid endpointGoid) throws FindException, DeleteException;
 
     /**
-     * Deletes the {@link JmsConnection} with the specified OID from the database.
+     * Deletes the {@link JmsConnection} with the specified GOID from the database.
      *
-     * @param connectionOid the OID of the {@link JmsConnection} to be deleted
+     * @param connectionGoid the GOID of the {@link JmsConnection} to be deleted
      * @throws FindException   if a database problem prevented the specified JmsConnection from being retrieved
      * @throws DeleteException if a database problem prevented the specified JmsConnection from being deleted
      */
     @Secured(types=JMS_CONNECTION, stereotype= MethodStereotype.DELETE_BY_ID)
-    void deleteConnection(long connectionOid) throws FindException, DeleteException;
+    void deleteConnection(Goid connectionGoid) throws FindException, DeleteException;
 
     /**
-     * Returns an array of {@link JmsEndpoint}s that belong to the {@link JmsConnection} with the provided OID.
+     * Returns an array of {@link JmsEndpoint}s that belong to the {@link JmsConnection} with the provided GOID.
      * <p/>
      * Returns transient instances that are not enrolled in the Hibernate session.
      *
-     * @param connectionOid
+     * @param connectionGoid
      * @return an array of {@link JmsEndpoint}s. Never null.
      * @throws FindException   if a database problem prevented the endpoints from being retrieved
      */
     @Transactional(readOnly=true)
     @Secured(types=JMS_ENDPOINT, stereotype=MethodStereotype.FIND_ENTITIES)
-    JmsEndpoint[] getEndpointsForConnection(long connectionOid) throws FindException;
+    JmsEndpoint[] getEndpointsForConnection(Goid connectionGoid) throws FindException;
 
     /**
      * Test the specified JmsConnection, which may or may not exist in the database.  The Gateway will use the
      * specified settings to open a JMS connection.  If this method does not throw, the caller can assume
      * that the settings are valid.
      *
-     * @param connection JmsConnection settings to test.  Might not yet have an OID.
+     * @param connection JmsConnection settings to test.  Might not yet have an GOID.
      * @throws JmsTestException if the test fails
      */
     @Transactional(readOnly=true)
@@ -196,8 +207,8 @@ public interface JmsAdmin {
      * the database.  The Gateway will use the specified settings to open a JMS
      * connection and attempt to verify the existence of a Destination for this JmsEndpoint.
      *
-     * @param connection JmsConnection settings to test.  Might not yet have an OID.
-     * @param endpoint   JmsEndpoint settings to test.  Might not yet have an OID or a valid connectionOid.
+     * @param connection JmsConnection settings to test.  Might not yet have an GOID.
+     * @param endpoint   JmsEndpoint settings to test.  Might not yet have an GOID or a valid connectionOid.
      * @throws FindException   if the connection pointed to by the endpoint cannot be loaded
      */
     @Transactional(readOnly=true)

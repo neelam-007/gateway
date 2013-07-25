@@ -18,6 +18,7 @@ import com.l7tech.gui.util.TableUtil;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.VersionException;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
@@ -226,7 +227,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
         if (provider == null) {
             throw new IllegalStateException("Could not instantiate security provider");
         }
-        final AttemptedOperation attemptedOperation = (endpoint == null || endpoint.getOid() == JmsEndpoint.DEFAULT_OID)
+        final AttemptedOperation attemptedOperation = (endpoint == null || endpoint.getGoid().equals(JmsEndpoint.DEFAULT_GOID))
             ? new AttemptedCreate(EntityType.JMS_ENDPOINT)
             : new AttemptedUpdate(EntityType.JMS_ENDPOINT, endpoint);
         that.securityFormAuthorizationPreparer = new FormAuthorizationPreparer(provider, attemptedOperation);
@@ -526,7 +527,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
 
         // the SecurityZoneWidget is shared by both the JmsEndpoint and JmsConnection
         zoneControl.configure(Arrays.asList(EntityType.JMS_CONNECTION, EntityType.JMS_ENDPOINT),
-                (connection == null || connection.getOid() == JmsConnection.DEFAULT_OID) ? OperationType.CREATE : OperationType.UPDATE,
+                (connection == null || connection.getGoid().equals(JmsConnection.DEFAULT_GOID)) ? OperationType.CREATE : OperationType.UPDATE,
                 endpoint != null ? endpoint.getSecurityZone() : null);
 
         pack();
@@ -1394,14 +1395,14 @@ public class JmsQueuePropertiesDialog extends JDialog {
             // For the case where the destination name is changed, then the connection should be updated.
             newConnection.setName(newEndpoint.getName());
 
-            long oid = Registry.getDefault().getJmsManager().saveConnection(newConnection);
-            newConnection.setOid(oid);
-            newEndpoint.setConnectionOid(newConnection.getOid());
-            oid = Registry.getDefault().getJmsManager().saveEndpoint(newEndpoint);
-            newEndpoint.setOid(oid);
+            Goid goid = Registry.getDefault().getJmsManager().saveConnection(newConnection);
+            newConnection.setGoid(goid);
+            newEndpoint.setConnectionGoid(newConnection.getGoid());
+            goid = Registry.getDefault().getJmsManager().saveEndpoint(newEndpoint);
+            newEndpoint.setGoid(goid);
 
-            connection = Registry.getDefault().getJmsManager().findConnectionByPrimaryKey(newConnection.getOid());
-            endpoint = Registry.getDefault().getJmsManager().findEndpointByPrimaryKey(newEndpoint.getOid());
+            connection = Registry.getDefault().getJmsManager().findConnectionByPrimaryKey(newConnection.getGoid());
+            endpoint = Registry.getDefault().getJmsManager().findEndpointByPrimaryKey(newEndpoint.getGoid());
             isOk = true;
             dispose();
         } catch (Exception e) {

@@ -1,5 +1,6 @@
 package com.l7tech.server.transport.jms2;
 
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.LifecycleException;
 
 import java.beans.PropertyChangeListener;
@@ -33,13 +34,13 @@ public interface JmsEndpointListener extends PropertyChangeListener {
      *
      * @return oid value
      */
-    long getJmsConnectionOid();
+    Goid getJmsConnectionGoid();
 
     /**
      * Returns the listener's JmsEndpoint Oid.
      *
      * @return oid value
      */
-    long getJmsEndpointOid();
+    Goid getJmsEndpointGoid();
 
 }

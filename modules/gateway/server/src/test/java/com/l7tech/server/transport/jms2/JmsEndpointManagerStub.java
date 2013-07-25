@@ -4,9 +4,10 @@
 package com.l7tech.server.transport.jms2;
 
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.JmsEndpointHeader;
+import com.l7tech.server.GoidEntityManagerStub;
 import com.l7tech.server.transport.jms.JmsEndpointManager;
-import com.l7tech.server.EntityManagerStub;
 import com.l7tech.gateway.common.transport.jms.*;
 
 import java.util.Collection;
@@ -15,7 +16,7 @@ import java.util.Collection;
  *
  * @author: vchan
  */
-public class JmsEndpointManagerStub extends EntityManagerStub<JmsEndpoint, JmsEndpointHeader> implements JmsEndpointManager {
+public class JmsEndpointManagerStub extends GoidEntityManagerStub<JmsEndpoint, JmsEndpointHeader> implements JmsEndpointManager {
 
     JmsConnectionManagerStub cnxMgr;
 
@@ -23,22 +24,45 @@ public class JmsEndpointManagerStub extends EntityManagerStub<JmsEndpoint, JmsEn
         throw new UnsupportedOperationException();
     }
 
-    public JmsEndpoint[] findEndpointsForConnection(long connectionOid) throws FindException {
+    public JmsEndpoint[] findEndpointsForConnection(Goid connectionOid) throws FindException {
 
         return getEndpointForConnection(connectionOid);
     }
 
-    public JmsEndpointHeader[] findEndpointHeadersForConnection(long connectionOid) throws FindException {
+    public JmsEndpointHeader[] findEndpointHeadersForConnection(Goid connectionOid) throws FindException {
         throw new UnsupportedOperationException();
     }
 
-    protected JmsEndpoint[] getEndpointForConnection(long connectionOid) {
+    protected JmsEndpoint[] getEndpointForConnection(Goid connectionOid) {
 
-        JmsEndpoint[] result = { buildEndpoint(Integer.valueOf(Long.toString(connectionOid))) };
+        JmsEndpoint[] result = { buildEndpoint((int)connectionOid.getLow()) };
         return result;
     }
 
-    public JmsEndpoint findByPrimaryKey(long oid) throws FindException {
+    public JmsEndpoint findByPrimaryKey(Goid oid) throws FindException {
+        JmsEndpoint endpt;
+
+        if (oid.getLow() == 101L) {
+            endpt = buildEndpoint(JmsConnectionManagerStub.TEST_CONFIG_AMQ_IN);
+        } else if (oid.getLow() == 102L) {
+            endpt = buildEndpoint(JmsConnectionManagerStub.TEST_CONFIG_AMQ_OUT);
+        } else if (oid.getLow() == 103L) {
+            endpt = buildEndpoint(JmsConnectionManagerStub.TEST_CONFIG_MQS_IN);
+        } else if (oid.getLow() == 104L) {
+            endpt = buildEndpoint(JmsConnectionManagerStub.TEST_CONFIG_MQS_OUT);
+        } else if (oid.getLow() == 107L) {
+            endpt = buildEndpoint(JmsConnectionManagerStub.TEST_CONFIG_DYNAMIC_IN);
+        } else if (oid.getLow() == 108L) {
+            endpt = buildEndpoint(JmsConnectionManagerStub.TEST_CONFIG_DYNAMIC_OUT);
+        } else {
+            endpt = buildEndpoint(6666);
+        }
+
+        return endpt;
+    }
+
+    @Override
+    public JmsEndpoint findByOldOid(long oid) throws FindException {
         JmsEndpoint endpt;
 
         if (oid == 101L) {
@@ -60,6 +84,7 @@ public class JmsEndpointManagerStub extends EntityManagerStub<JmsEndpoint, JmsEn
         return endpt;
     }
 
+
     private JmsEndpoint buildEndpoint(int which) {
 
         JmsEndpoint endpt = new JmsEndpoint();
@@ -71,9 +96,9 @@ public class JmsEndpointManagerStub extends EntityManagerStub<JmsEndpoint, JmsEn
         switch(which) {
 
             case JmsConnectionManagerStub.TEST_CONFIG_AMQ_IN: {
-                endpt.setOid(101);
+                endpt.setGoid(new Goid(0, 101));
                 endpt.setVersion(0);
-                endpt.setConnectionOid(which);
+                endpt.setConnectionGoid(new Goid(0,which));
                 endpt.setName("dynamicQueues/JMS.JUNIT.IN.Q");
                 endpt.setDestinationName("dynamicQueues/JMS.JUNIT.IN.Q");
                 endpt.setReplyType(JmsReplyType.AUTOMATIC);
@@ -82,9 +107,9 @@ public class JmsEndpointManagerStub extends EntityManagerStub<JmsEndpoint, JmsEn
                 break;
             }
             case JmsConnectionManagerStub.TEST_CONFIG_AMQ_OUT: {
-                endpt.setOid(102);
+                endpt.setGoid(new Goid(0, 102));
                 endpt.setVersion(0);
-                endpt.setConnectionOid(which);
+                endpt.setConnectionGoid(new Goid(0,which));
                 endpt.setName("dynamicQueues/JMS.JUNIT.OUT.Q");
                 endpt.setDestinationName("dynamicQueues/JMS.JUNIT.OUT.Q");
                 endpt.setReplyType(JmsReplyType.NO_REPLY);
@@ -93,9 +118,9 @@ public class JmsEndpointManagerStub extends EntityManagerStub<JmsEndpoint, JmsEn
                 break;
             }
             case JmsConnectionManagerStub.TEST_CONFIG_MQS_IN: {
-                endpt.setOid(103);
+                endpt.setGoid(new Goid(0, 103));
                 endpt.setVersion(0);
-                endpt.setConnectionOid(which);
+                endpt.setConnectionGoid(new Goid(0,which));
                 endpt.setName("cn=VCTEST.Q.IN");
                 endpt.setDestinationName("cn=VCTEST.Q.IN");
                 endpt.setReplyType(JmsReplyType.NO_REPLY);
@@ -104,9 +129,9 @@ public class JmsEndpointManagerStub extends EntityManagerStub<JmsEndpoint, JmsEn
                 break;
             }
             case JmsConnectionManagerStub.TEST_CONFIG_MQS_OUT: {
-                endpt.setOid(104);
+                endpt.setGoid(new Goid(0, 104));
                 endpt.setVersion(0);
-                endpt.setConnectionOid(which);
+                endpt.setConnectionGoid(new Goid(0,which));
                 endpt.setName("cn=VCTEST.Q.OUT");
                 endpt.setDestinationName("cn=VCTEST.Q.OUT");
                 endpt.setReplyType(JmsReplyType.NO_REPLY);
@@ -115,9 +140,9 @@ public class JmsEndpointManagerStub extends EntityManagerStub<JmsEndpoint, JmsEn
                 break;
             }
             case JmsConnectionManagerStub.TEST_CONFIG_DYNAMIC_IN: {
-                endpt.setOid(107);
+                endpt.setGoid(new Goid(0, 107));
                 endpt.setVersion(0);
-                endpt.setConnectionOid(which);
+                endpt.setConnectionGoid(new Goid(0,which));
                 endpt.setName("ilona.in1");
                 endpt.setDestinationName("ilona.in1");
                 endpt.setReplyType(JmsReplyType.REPLY_TO_OTHER);
@@ -128,9 +153,9 @@ public class JmsEndpointManagerStub extends EntityManagerStub<JmsEndpoint, JmsEn
                 break;
             }
             case JmsConnectionManagerStub.TEST_CONFIG_DYNAMIC_OUT: {
-                endpt.setOid(108);
+                endpt.setGoid(new Goid(0, 108));
                 endpt.setVersion(0);
-                endpt.setConnectionOid(which);
+                endpt.setConnectionGoid(new Goid(0,which));
                 endpt.setName("ilona.in1");
                 endpt.setDestinationName("ilona.in1");
                 endpt.setReplyType(JmsReplyType.NO_REPLY);
@@ -140,9 +165,9 @@ public class JmsEndpointManagerStub extends EntityManagerStub<JmsEndpoint, JmsEn
             }
             default : {
                 // use CONN_AMQ_JUNIT_IN as default
-                endpt.setOid(666);
+                endpt.setGoid(new Goid(0, 666));
                 endpt.setVersion(0);
-                endpt.setConnectionOid(which);
+                endpt.setConnectionGoid(new Goid(0,which));
                 endpt.setName("dynamicQueues/JMS.JUNIT.Q");
                 endpt.setDestinationName("dynamicQueues/JMS.JUNIT.Q");
                 endpt.setReplyType(JmsReplyType.AUTOMATIC);

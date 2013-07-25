@@ -12,6 +12,7 @@ import com.l7tech.gateway.common.transport.jms.JmsReplyType;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.Utilities;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.JmsDynamicProperties;
 import com.l7tech.policy.assertion.*;
@@ -87,11 +88,11 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
 
         try {
             if (newlyCreatedEndpoint != null) {
-                Registry.getDefault().getJmsManager().deleteEndpoint(newlyCreatedEndpoint.getOid());
+                Registry.getDefault().getJmsManager().deleteEndpoint(newlyCreatedEndpoint.getGoid());
                 newlyCreatedEndpoint = null;
             }
             if (newlyCreatedConnection != null) {
-                Registry.getDefault().getJmsManager().deleteConnection(newlyCreatedConnection.getOid());
+                Registry.getDefault().getJmsManager().deleteConnection(newlyCreatedConnection.getGoid());
                 newlyCreatedConnection = null;
             }
         } catch (Exception e) {
@@ -422,7 +423,7 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
                     JmsEndpoint endpoint = item.getQueue().getEndpoint();
                     JmsConnection conn = item.getQueue().getConnection();
 
-                    assertion.setEndpointOid(endpoint.getOid());
+                    assertion.setEndpointGoid(endpoint.getGoid().toString());
                     assertion.setEndpointName(endpoint.getName());
                     JmsDynamicProperties dynProps = null;
                     if ( item.getQueue().isTemplate() ) {
@@ -568,6 +569,7 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
 
     private void initResponseTarget() {
         MessageTargetableSupport responseTarget = assertion.getResponseTarget();
+        responseTargetVariable.setAssertion(assertion,getPreviousAssertion());
         if (responseTarget != null && responseTarget.getOtherTargetMessageVariable() != null) {
             defaultResponseRadioButton.setSelected(false);
             saveAsContextVariableRadioButton.setSelected(true);
@@ -577,7 +579,6 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
             defaultResponseRadioButton.setSelected(true);
             responseTargetVariable.setVariable("");
         }
-        responseTargetVariable.setAssertion(assertion,getPreviousAssertion());
 
         responseByteLimitPanel.setValue(assertion.getResponseSize(), Registry.getDefault().getJmsManager().getDefaultJmsMessageMaxBytes());
     }
@@ -695,7 +696,7 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         if (assertion != null && assertion.getDynamicJmsRoutingProperties() != null) {
             JmsUtilities.QueueItem selected = (JmsUtilities.QueueItem) getQueueComboBox().getSelectedItem();
             if (selected != null) {
-                if (selected.getQueue().getEndpoint().getOid() == assertion.getEndpointOid()) {    
+                if (selected.getQueue().getEndpoint().getGoid().equals( assertion.getEndpointGoid())) {
                     if (assertion.getDynamicJmsRoutingProperties().getJndiUrl() != null && isDynamic(dynamicJndiUrl) ) {
                         dynamicJndiUrl.setText(assertion.getDynamicJmsRoutingProperties().getJndiUrl());
                         dynamicJndiUrl.setCaretPosition( 0 );
@@ -776,17 +777,34 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
 
         RoutingDialogUtils.configSecurityHeaderRadioButtons(assertion, -1, null, secHdrButtons);
 
-        Long endpointOid = assertion.getEndpointOid();
-        try {
-            JmsEndpoint serviceEndpoint = null;
-            if (endpointOid != null) {
-                serviceEndpoint = Registry.getDefault().getJmsManager().findEndpointByPrimaryKey(endpointOid);
-            }
-            JmsUtilities.selectEndpoint(getQueueComboBox(), serviceEndpoint);
-            applyDynamicAssertionPropertyOverrides();
+        if(assertion.getEndpointGoid()==null){
+            Long oid = assertion.getEndpointOid();
+            try {
+                JmsEndpoint serviceEndpoint = null;
+                if (oid != null) {
+                    serviceEndpoint = Registry.getDefault().getJmsManager().findEndpointByOldId(oid);
+                }
+                JmsUtilities.selectEndpoint(getQueueComboBox(), serviceEndpoint);
+                applyDynamicAssertionPropertyOverrides();
 
-        } catch (Exception e) {
-            throw new RuntimeException("Unable to look up JMS Queue for this routing assertion", e);
+            } catch (Exception e) {
+                throw new RuntimeException("Unable to look up JMS Queue for this routing assertion", e);
+            }
+
+
+        }else{
+            Goid endpointGoid = new Goid(assertion.getEndpointGoid());
+            try {
+                JmsEndpoint serviceEndpoint = null;
+                if (endpointGoid != null) {
+                    serviceEndpoint = Registry.getDefault().getJmsManager().findEndpointByPrimaryKey(endpointGoid);
+                }
+                JmsUtilities.selectEndpoint(getQueueComboBox(), serviceEndpoint);
+                applyDynamicAssertionPropertyOverrides();
+
+            } catch (Exception e) {
+                throw new RuntimeException("Unable to look up JMS Queue for this routing assertion", e);
+            }
         }
 
         requestMsgPropsPanel.setData(assertion.getRequestJmsMessagePropertyRuleSet());

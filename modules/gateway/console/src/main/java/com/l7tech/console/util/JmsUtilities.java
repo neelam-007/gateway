@@ -8,6 +8,7 @@ package com.l7tech.console.util;
 
 import com.l7tech.gateway.common.transport.jms.JmsAdmin;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.Resolver;
 import com.l7tech.util.ResolvingComparator;
 import com.l7tech.util.TextUtils;
@@ -92,18 +93,18 @@ public class JmsUtilities {
      * will be cleared.  The combo box model must not change while this method is running, and must
      * return instances of QueueItem.
      * @param cb the JComboBox to adjust
-     * @param endpointOid the OID of the endpoint to select, or null to clear the selection.
+     * @param endpointOid the GOID of the endpoint to select, or null to clear the selection.
      */
-    public static void selectEndpoint(JComboBox cb, Long endpointOid) {
+    public static void selectEndpoint(JComboBox cb, Goid endpointOid) {
         if (endpointOid == null ||
-            endpointOid == JmsEndpoint.DEFAULT_OID) {
+            endpointOid.equals(JmsEndpoint.DEFAULT_GOID)) {
             cb.setSelectedIndex(-1);
             return;
         }
 
         for (int i = 0, size = cb.getModel().getSize(); i < size; i++) {
             QueueItem item = (QueueItem) cb.getModel().getElementAt(i);
-            if (item.getQueue().getEndpoint().getOid() == endpointOid) {
+            if (item.getQueue().getEndpoint().getGoid().equals(endpointOid)) {
                 cb.setSelectedItem(item);
                 return;
             }
@@ -121,7 +122,7 @@ public class JmsUtilities {
      * @param endpoint the endpoint to select, or null to clear the selection.
      */
     public static void selectEndpoint(JComboBox cb, JmsEndpoint endpoint) {
-        selectEndpoint(cb, endpoint == null ? null : endpoint.getOid());
+        selectEndpoint(cb, endpoint == null ? null : endpoint.getGoid());
     }
     
     private static List<JmsAdmin.JmsTuple> sort( final ArrayList<JmsAdmin.JmsTuple> jmsQueues ) {

@@ -2,6 +2,7 @@ package com.l7tech.objectmodel;
 
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.util.Either;
 
 import javax.xml.bind.annotation.XmlRootElement;
 

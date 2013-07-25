@@ -4,6 +4,7 @@ import com.l7tech.gateway.common.log.GatewayDiagnosticContextKeys;
 import com.l7tech.gateway.common.log.SinkConfiguration;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.gateway.common.transport.email.EmailListener;
+import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.Functions;
 import org.hibernate.Criteria;
@@ -31,6 +32,7 @@ public class Upgrade71To80SinkConfig implements UpgradeTask {
     protected SessionFactory sessionFactory;
     protected Long emailPrefix = null;
     protected Long listenPortPrefix = null;
+    protected Long jmsEndpointPrefix = null;
 
     @Override
     public void upgrade(ApplicationContext applicationContext) throws NonfatalUpgradeException, FatalUpgradeException {
@@ -63,11 +65,16 @@ public class Upgrade71To80SinkConfig implements UpgradeTask {
                                 updateLogSinkOids(GatewayDiagnosticContextKeys.LISTEN_PORT_ID, listenPortPrefix, filters);
                             }
 
+                            // update email listener oids to GOIDs
+                            if (jmsEndpointPrefix != null) {
+                                updateLogSinkOids(GatewayDiagnosticContextKeys.JMS_LISTENER_ID, jmsEndpointPrefix, filters);
+                            }
+
                             // todo update for
                             // todo handle hard coded values ( admin user...)
 //                            GatewayDiagnosticContextKeys.SERVICE_ID
 //                            GatewayDiagnosticContextKeys.USER_ID
-//                            GatewayDiagnosticContextKeys.JMS_LISTENER_ID
+//
 //                            GatewayDiagnosticContextKeys.POLICY_ID
 //                            GatewayDiagnosticContextKeys.FOLDER_ID
 
@@ -113,7 +120,7 @@ public class Upgrade71To80SinkConfig implements UpgradeTask {
             }
         });
 
-        listenPortPrefix= new HibernateTemplate(sessionFactory).execute(new HibernateCallback<Long>() {
+        listenPortPrefix = new HibernateTemplate(sessionFactory).execute(new HibernateCallback<Long>() {
             @Override
             public Long doInHibernate(final Session session) throws HibernateException, SQLException {
                 Criteria schemaCriteria = session.createCriteria(SsgConnector.class);
@@ -127,11 +134,24 @@ public class Upgrade71To80SinkConfig implements UpgradeTask {
             }
         });
 
+        jmsEndpointPrefix =  new HibernateTemplate(sessionFactory).execute(new HibernateCallback<Long>() {
+            @Override
+            public Long doInHibernate(final Session session) throws HibernateException, SQLException {
+                Criteria schemaCriteria = session.createCriteria(JmsEndpoint.class);
+                for (Object schemaCriteriaObj : schemaCriteria.list()) {
+                    if (schemaCriteriaObj instanceof JmsEndpoint) {
+                        Long prefix = ((JmsEndpoint) schemaCriteriaObj).getGoid().getHi();
+                        return prefix;
+                    }
+                }
+                return null;
+            }
+        });
+
         // todo get prefixes for:
 //                            GatewayDiagnosticContextKeys.LISTEN_PORT_ID
 //                            GatewayDiagnosticContextKeys.SERVICE_ID
 //                            GatewayDiagnosticContextKeys.USER_ID
-//                            GatewayDiagnosticContextKeys.JMS_LISTENER_ID
 //                            GatewayDiagnosticContextKeys.POLICY_ID
 //                            GatewayDiagnosticContextKeys.FOLDER_ID
     }

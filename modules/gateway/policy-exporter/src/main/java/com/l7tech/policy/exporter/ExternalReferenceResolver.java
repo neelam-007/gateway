@@ -359,7 +359,7 @@ class ExternalReferenceResolver {
                 } else if (reference instanceof JMSEndpointReference) {
                     JMSEndpointReference endpointRef = (JMSEndpointReference) reference;
                     for (EntityHeader entityHeader : entitiesUser.getEntitiesUsed()) {
-                        if (endpointRef.getOid() == entityHeader.getOid()) {
+                        if (endpointRef.getGoid().equals(entityHeader.getGoid())) {
                             itr.remove();
                             break;
                         }

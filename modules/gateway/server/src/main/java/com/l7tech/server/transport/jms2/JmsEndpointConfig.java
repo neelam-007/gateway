@@ -4,6 +4,7 @@ import com.l7tech.gateway.common.transport.jms.JmsAcknowledgementType;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
 import com.l7tech.gateway.common.transport.jms.JmsReplyType;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.JmsDynamicProperties;
 import com.l7tech.server.transport.jms.JmsConfigException;
 import com.l7tech.server.transport.jms.JmsPropertyMapper;
@@ -289,9 +290,9 @@ public class JmsEndpointConfig {
     }
 
     public static final class JmsEndpointKey {
-        private final long jmsEndpointOid;
+        private final Goid jmsEndpointGoid;
         private final int jmsEndpointVersion;
-        private final long jmsConnectionOid;
+        private final Goid jmsConnectionGoid;
         private final int jmsConnectionVersion;
         private final String initialContextFactoryClassname;
         private final String jndiUrl;
@@ -301,9 +302,9 @@ public class JmsEndpointConfig {
 
         private JmsEndpointKey( final JmsEndpoint endpoint,
                                 final JmsConnection connection ) {
-            this.jmsEndpointOid = endpoint.getOid();
+            this.jmsEndpointGoid = endpoint.getGoid();
             this.jmsEndpointVersion = endpoint.getVersion();
-            this.jmsConnectionOid = connection.getOid();
+            this.jmsConnectionGoid = connection.getGoid();
             this.jmsConnectionVersion = connection.getVersion();
 
             if ( endpoint.isTemplate() || connection.isTemplate() ) {
@@ -329,9 +330,9 @@ public class JmsEndpointConfig {
 
             final JmsEndpointKey that = (JmsEndpointKey) o;
 
-            if ( jmsConnectionOid != that.jmsConnectionOid ) return false;
+            if ( jmsConnectionGoid != that.jmsConnectionGoid) return false;
             if ( jmsConnectionVersion != that.jmsConnectionVersion ) return false;
-            if ( jmsEndpointOid != that.jmsEndpointOid ) return false;
+            if ( jmsEndpointGoid != that.jmsEndpointGoid) return false;
             if ( jmsEndpointVersion != that.jmsEndpointVersion ) return false;
             if ( destinationQueue != null ? !destinationQueue.equals( that.destinationQueue ) : that.destinationQueue != null )
                 return false;
@@ -348,9 +349,9 @@ public class JmsEndpointConfig {
 
         @Override
         public int hashCode() {
-            int result = (int) (jmsEndpointOid ^ (jmsEndpointOid >>> 32));
+            int result = jmsEndpointGoid.hashCode();
             result = 31 * result + jmsEndpointVersion;
-            result = 31 * result + (int) (jmsConnectionOid ^ (jmsConnectionOid >>> 32));
+            result = 31 * result + jmsConnectionGoid.hashCode();
             result = 31 * result + jmsConnectionVersion;
             result = 31 * result + (initialContextFactoryClassname != null ? initialContextFactoryClassname.hashCode() : 0);
             result = 31 * result + (jndiUrl != null ? jndiUrl.hashCode() : 0);
@@ -371,11 +372,11 @@ public class JmsEndpointConfig {
             StringBuilder sb = new StringBuilder();
 
             sb.append("JmsEndpointKey[");
-            sb.append(jmsEndpointOid);
+            sb.append(jmsEndpointGoid);
             sb.append(',');
             sb.append(jmsEndpointVersion);
             sb.append('-');
-            sb.append(jmsConnectionOid);
+            sb.append(jmsConnectionGoid);
             sb.append(',');
             sb.append(jmsConnectionVersion);
 

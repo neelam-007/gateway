@@ -1,6 +1,7 @@
 package com.l7tech.server.transport.jms2;
 
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.transport.jms.JmsBag;
 import com.l7tech.server.transport.jms.JmsConfigException;
@@ -252,7 +253,7 @@ public class JmsTestCase {
 //                    JmsConnection conn = provider.createConnection("vchan_in", FMQ_JNDI_URL);
 //                    JmsConnection conn = provider.createConnection(FMQ_QUEUE_DEFAULT, FMQ_JNDI_URL);
                     JmsConnection conn = null;//TODO CONFIGURE FOR TEST
-                    conn.setOid(OidRoot++);
+                    conn.setGoid(new Goid(0,OidRoot++));
                     conn.setVersion(1);
                     result.add(conn);
                 }
@@ -285,13 +286,13 @@ public class JmsTestCase {
             this.testCase = testCase;
         }
 
-        public JmsEndpoint[] findEndpointsForConnection(long connectionOid) throws FindException {
+        public JmsEndpoint[] findEndpointsForConnection(Goid connectionOid) throws FindException {
 
             JmsEndpoint[] result = new JmsEndpoint[1];
 
             for (JmsConnection c : connMgr.findAll()) {
 
-                if (c.getOid() == connectionOid) {
+                if (c.getGoid().equals(connectionOid)) {
                     result[0] = findEndpointForConnection(c);
                     return result;
                 }
@@ -303,9 +304,9 @@ public class JmsTestCase {
         protected JmsEndpoint findEndpointForConnection(JmsConnection conn) {
 
             JmsEndpoint endpt = new JmsEndpoint();
-            endpt.setOid(OidRoot++);
+            endpt.setGoid(new Goid(0,OidRoot++));
             endpt.setVersion(1);
-            endpt.setConnectionOid(conn.getOid());
+            endpt.setConnectionGoid(conn.getGoid());
             endpt.setName(conn.getName());
             endpt.setDestinationName(conn.getName());
             endpt.setReplyType(JmsReplyType.REPLY_TO_OTHER);

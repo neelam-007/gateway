@@ -8,10 +8,12 @@ package com.l7tech.gateway.common.transport.jms;
 
 import com.l7tech.gateway.common.security.password.SecurePasswordReferenceExpander;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.imp.ZoneableNamedEntityImp;
+import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.imp.ZoneableNamedGoidEntityImp;
 import com.l7tech.policy.wsp.WspSensitive;
 import com.l7tech.search.Dependency;
 import org.hibernate.annotations.Proxy;
+import org.hibernate.annotations.Type;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
@@ -28,10 +30,10 @@ import java.net.PasswordAuthentication;
 @Entity
 @Proxy(lazy=false)
 @Table(name="jms_endpoint")
-public class JmsEndpoint extends ZoneableNamedEntityImp implements Serializable, Comparable {
+public class JmsEndpoint extends ZoneableNamedGoidEntityImp implements Serializable {
     public static final int DEFAULT_MAX_CONCURRENT_REQUESTS = 1;
 
-    private long _connectionOid;
+    private Goid _connectionGoid;
     private boolean queue = true;
     private String _destinationName;
     private String _failureDestinationName;
@@ -47,6 +49,7 @@ public class JmsEndpoint extends ZoneableNamedEntityImp implements Serializable,
     private boolean useMessageIdForCorrelation;
     private boolean template;
     private long requestMaxSize = -1;
+    private Long oldOid = null;
 
     public JmsEndpoint(){
     }
@@ -57,11 +60,11 @@ public class JmsEndpoint extends ZoneableNamedEntityImp implements Serializable,
     }
 
     public void copyFrom( JmsEndpoint other ) {
-        setOid( other.getOid() );
+        setGoid(other.getGoid());
         setVersion( other.getVersion() );
         setName( other.getName() );
         setQueue( other.isQueue() );
-        setConnectionOid( other.getConnectionOid() );
+        setConnectionGoid(other.getConnectionGoid());
         setDestinationName( other.getDestinationName() );
         setFailureDestinationName( other.getFailureDestinationName() );
         setAcknowledgementType( other.getAcknowledgementType() );
@@ -77,6 +80,7 @@ public class JmsEndpoint extends ZoneableNamedEntityImp implements Serializable,
         setUseMessageIdForCorrelation(other.isUseMessageIdForCorrelation());
         setRequestMaxSize(other.getRequestMaxSize());
         setSecurityZone(other.getSecurityZone());
+        setOldOid(other.getOldOid());
     }
 
     /**
@@ -156,16 +160,30 @@ public class JmsEndpoint extends ZoneableNamedEntityImp implements Serializable,
         _maxConcurrentRequests = maxConcurrentRequests;
     }
 
-    @Column(name="connection_oid", nullable=false)
+    @Column(name="connection_goid", nullable=false)
     @Dependency(methodReturnType = Dependency.MethodReturnType.OID, type = Dependency.DependencyType.JMS_CONNECTION)
-    public long getConnectionOid() {
-        return _connectionOid;
+    @Type(type = "com.l7tech.server.util.GoidType")
+    public Goid getConnectionGoid() {
+        return _connectionGoid;
     }
 
-    public void setConnectionOid(long conn) {
+    public void setConnectionGoid(Goid conn) {
         checkLocked();
-        _connectionOid = conn;
+        _connectionGoid = conn;
     }
+
+
+    @Column(name="old_objectid")
+    public Long getOldOid() {
+        return oldOid;
+    }
+
+    // only for hibernate
+    @Deprecated
+    public void setOldOid(Long oldOid) {
+        this.oldOid = oldOid;
+    }
+
 
     /**
      * Is the destination a Queue or Topic.
@@ -306,20 +324,7 @@ public class JmsEndpoint extends ZoneableNamedEntityImp implements Serializable,
 
     @Override
     public String toString() {
-        return "<JmsEndpoint connectionOid=\"" + _connectionOid + "\" name=\"" + _name + "\"/>";
-    }
-
-    @Override
-    public int compareTo(Object o) {
-        if (o.getClass().equals(JmsEndpoint.class)) {
-            JmsEndpoint that = (JmsEndpoint) o;
-            if (this.getOid() < that.getOid())
-                return -1;
-            else if (this.getOid() > that.getOid())
-                return 1;
-            return 0;
-        }
-        throw new IllegalArgumentException("May only compare JmsEndpoint to other JmsEndpoints");
+        return "<JmsEndpoint connectionGoid=\"" + _connectionGoid + "\" name=\"" + _name + "\"/>";
     }
 
     /**

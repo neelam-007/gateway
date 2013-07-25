@@ -4,6 +4,8 @@
 package com.l7tech.objectmodel;
 
 
+import com.l7tech.util.Either;
+
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlSeeAlso;
@@ -74,6 +76,20 @@ public class EntityHeader extends EntityHeaderRef {
             return Long.parseLong(strId);
         } catch (Exception e) {
             return PersistentEntity.DEFAULT_OID;
+        }
+    }
+
+
+    public Either<Long,Goid> getEitherGoidorId(){
+        try {
+            return Either.<Long,Goid>left(Long.parseLong(strId));
+        } catch (Exception e) {
+
+        }
+        try {
+            return Either.<Long,Goid>right(new Goid(strId));
+        } catch (Exception e) {
+            return Either.<Long,Goid>right(GoidEntity.DEFAULT_GOID);
         }
     }
 

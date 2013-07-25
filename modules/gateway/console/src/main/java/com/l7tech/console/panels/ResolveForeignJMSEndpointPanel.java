@@ -96,6 +96,7 @@ public class ResolveForeignJMSEndpointPanel extends WizardStepPanel {
         jmsEndpoint.setQueue(foreignRef.isQueue());
         jmsEndpoint.setTemplate(foreignRef.isEndpointTemplate());
         jmsEndpoint.setDestinationName(foreignRef.getDestinationName());
+        jmsEndpoint.setOldOid(foreignRef.getOldOid());
 
         final JmsQueuePropertiesDialog jqpd = JmsQueuePropertiesDialog.createInstance(this.getOwner(), jmsConnection, jmsEndpoint, false);
         jqpd.pack();
@@ -105,8 +106,8 @@ public class ResolveForeignJMSEndpointPanel extends WizardStepPanel {
             public void run() {
                 populateQueueSelector();
 
-                if(!jqpd.isCanceled() && jqpd.getEndpoint().getOid() > 0) {
-                    JmsUtilities.selectEndpoint(queueSelector, jqpd.getEndpoint().getOid());
+                if(!jqpd.isCanceled() && !jqpd.getEndpoint().getGoid().equals(JmsEndpoint.DEFAULT_GOID)) {
+                    JmsUtilities.selectEndpoint(queueSelector, jqpd.getEndpoint().getGoid());
                     changeRadio.setSelected(true);
                     queueSelector.setEnabled(true);
                 }
@@ -124,7 +125,7 @@ public class ResolveForeignJMSEndpointPanel extends WizardStepPanel {
                 logger.severe("No provider selected");
                 return false;
             }
-            foreignRef.setLocalizeReplace(queueItem.getQueue().getEndpoint().getOid());
+            foreignRef.setLocalizeReplace(queueItem.getQueue().getEndpoint().getGoid());
         } else if (deleteRadio.isSelected()) {
             foreignRef.setLocalizeDelete();
         } else if (ignoreRadio.isSelected()) {

@@ -9,7 +9,7 @@ package com.l7tech.server.transport.jms;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.JmsProviderType;
 import com.l7tech.objectmodel.*;
-import com.l7tech.server.HibernateEntityManager;
+import com.l7tech.server.HibernateGoidEntityManager;
 import org.springframework.beans.factory.InitializingBean;
 
 import java.util.*;
@@ -23,7 +23,7 @@ import java.util.logging.Logger;
  * @version $Revision$
  */
 public class JmsConnectionManagerImpl
-        extends HibernateEntityManager<JmsConnection, EntityHeader>
+        extends HibernateGoidEntityManager<JmsConnection, EntityHeader>
         implements InitializingBean, JmsConnectionManager
 {
     @Override
@@ -32,8 +32,8 @@ public class JmsConnectionManagerImpl
     }
 
     @Override
-    public void delete( long oid ) throws DeleteException, FindException {
-        findAndDelete( oid );
+    public void delete( Goid goid ) throws DeleteException, FindException {
+        findAndDelete( goid );
     }
 
     /**
@@ -49,10 +49,10 @@ public class JmsConnectionManagerImpl
         _logger.info("Deleting JmsConnection " + connection);
 
         try {
-            EntityHeader[] endpoints = jmsEndpointManager.findEndpointHeadersForConnection(connection.getOid());
+            EntityHeader[] endpoints = jmsEndpointManager.findEndpointHeadersForConnection(connection.getGoid());
 
             for (EntityHeader endpoint : endpoints)
-                jmsEndpointManager.delete(endpoint.getOid());
+                jmsEndpointManager.delete(endpoint.getGoid());
 
             super.delete(connection);
         } catch (Exception e) {

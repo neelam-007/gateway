@@ -5,6 +5,7 @@ import com.l7tech.console.action.EditXmlSecurityRecipientContextAction;
 import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.JmsRoutingAssertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressable;
@@ -38,7 +39,7 @@ public class JmsRoutingAssertionTreeNode extends DefaultAssertionPolicyNode<JmsR
 
         String actor = SecurityHeaderAddressableSupport.getActorSuffix(ass);
 
-        if (ass.getEndpointOid() == null) {
+        if (ass.getEndpointOid() == null && ass.getEndpointGoid() == null) {
             return addCommentToDisplayText(assertion, assertionName + " (Not Yet Specified)" + actor);
         }
 
@@ -89,7 +90,11 @@ public class JmsRoutingAssertionTreeNode extends DefaultAssertionPolicyNode<JmsR
         if ( endpointDescription == null ) {
             final JmsRoutingAssertion ass = (JmsRoutingAssertion) getUserObject();
             try {
-                final JmsEndpoint endpoint = Registry.getDefault().getJmsManager().findEndpointByPrimaryKey(ass.getEndpointOid());
+                final JmsEndpoint endpoint;
+                if(ass.getEndpointGoid()==null)
+                    endpoint = Registry.getDefault().getJmsManager().findEndpointByOldId(ass.getEndpointOid());
+                else
+                    endpoint = Registry.getDefault().getJmsManager().findEndpointByPrimaryKey(new Goid(ass.getEndpointGoid()));
                 if( endpoint != null ) {
  	 	            endpointDescription = (endpoint.isQueue() ? "Queue " : "Topic ") + endpoint.getName();
                 }

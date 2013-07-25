@@ -14,6 +14,6 @@ import java.util.EnumSet;
 /**
  * @author alex
  */
-public interface JmsConnectionManager extends EntityManager<JmsConnection, EntityHeader> {
+public interface JmsConnectionManager extends GoidEntityManager<JmsConnection, EntityHeader> {
     EnumSet<JmsProviderType> findAllProviders() throws FindException;
 }

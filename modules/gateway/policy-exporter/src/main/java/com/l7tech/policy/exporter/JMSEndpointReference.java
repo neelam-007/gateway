@@ -3,12 +3,10 @@ package com.l7tech.policy.exporter;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.JmsRoutingAssertion;
-import com.l7tech.util.DomUtils;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.InvalidDocumentFormatException;
-import com.l7tech.util.Pair;
+import com.l7tech.util.*;
 import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Element;
 import org.w3c.dom.Text;
@@ -32,18 +30,19 @@ import java.util.logging.Logger;
 public class JMSEndpointReference extends ExternalReference {
 
     public JMSEndpointReference( final ExternalReferenceFinder context,
-                                 final long endpointOid ) {
+                                 final Either<Long,Goid> endpointId ) {
         this( context );
-        oid = endpointOid;
         JmsConnection jmsConnection = null;
         try {
-            JmsEndpoint jmsEndpoint = getFinder().findEndpointByPrimaryKey(endpointOid);
+            JmsEndpoint jmsEndpoint = getFinder().findEndpointByOidorGoid(endpointId);
             if (jmsEndpoint != null) {
+                goid = jmsEndpoint.getGoid();
                 name = jmsEndpoint.getName();
                 type = jmsEndpoint.isQueue() ? TYPE_QUEUE : TYPE_TOPIC;
                 destinationName = jmsEndpoint.getDestinationName();
                 endpointTemplate = jmsEndpoint.isTemplate();
-                jmsConnection = getFinder().findConnectionByPrimaryKey(jmsEndpoint.getConnectionOid());
+                oldOid = jmsEndpoint.getOldOid();
+                jmsConnection = getFinder().findConnectionByPrimaryKey(jmsEndpoint.getConnectionGoid());
             }
         } catch (RuntimeException e) {
             logger.log(Level.SEVERE, "cannot retrieve endpoint. partial reference will be built", e);
@@ -69,10 +68,21 @@ public class JMSEndpointReference extends ExternalReference {
             throw new InvalidDocumentFormatException("Expecting element of name " + REF_EL_NAME);
         }
         JMSEndpointReference output = new JMSEndpointReference(context);
-        String val = getParamFromEl(el, OID_EL_NAME);
+        String val = getParamFromEl(el,"OID");
         if (val != null) {
-            output.oid = Long.parseLong(val);
+            output.oldOid = Long.parseLong(val);
+            output.goid = JmsEndpoint.DEFAULT_GOID;
         }
+        val = getParamFromEl(el, GOID_EL_NAME);
+        if (val != null) {
+            output.goid = new Goid(val);
+        }
+
+        val = getParamFromEl(el, OLD_OID_EL_NAME);
+        if (val != null) {
+            output.oldOid = Long.parseLong(val);
+        }
+
         output.name = getParamFromEl(el, NAME_EL_NAME);
         output.type = getParamFromEl(el, TYPE_EL_NAME);
         output.connectionTemplate = Boolean.parseBoolean(getParamFromEl(el, CONNECTION_TEMPLATE_EL_NAME));
@@ -97,15 +107,17 @@ public class JMSEndpointReference extends ExternalReference {
     public String getRefId() { 
         String id = null;
 
-        if ( oid > 0 ) {
-            id = Long.toString( oid );
+        if ( !goid.equals(JmsEndpoint.DEFAULT_GOID) ) {
+            id = goid.toString();
+        } else if ( oldOid > 0 ){
+            id = Long.toString(oldOid);
         }
 
         return id;
     }
 
-    public long getOid() {
-        return oid;
+    public Goid getGoid() {
+        return goid;
     }
 
     /**
@@ -159,8 +171,12 @@ public class JMSEndpointReference extends ExternalReference {
         return destinationFactoryUrl;
     }
 
+    public Long getOldOid() {
+        return oldOid;
+    }
+
     @Override
-    public boolean setLocalizeReplace( final long newEndpointId ) {
+    public boolean setLocalizeReplace( final Goid newEndpointId ) {
         localizeType = LocalizeAction.REPLACE;
         localEndpointId = newEndpointId;
         return true;
@@ -183,7 +199,7 @@ public class JMSEndpointReference extends ExternalReference {
         setTypeAttribute( refEl );
         referencesParentElement.appendChild(refEl);
 
-        addElement( refEl, OID_EL_NAME, Long.toString(oid) );
+        addElement( refEl, GOID_EL_NAME, goid==null?null:goid.toString() );
         addElement( refEl, CONNECTION_TEMPLATE_EL_NAME, Boolean.toString(connectionTemplate));
         addElement( refEl, ENDPOINT_TEMPLATE_EL_NAME, Boolean.toString(endpointTemplate));
         addElement( refEl, CONTEXT_EL_NAME, initialContextFactoryClassname );
@@ -194,6 +210,8 @@ public class JMSEndpointReference extends ExternalReference {
         addElement( refEl, NAME_EL_NAME, name );
         addElement( refEl, DESTINATION_EL_NAME, destinationName );
         addElement( refEl, TYPE_EL_NAME, type );
+        if(oldOid!=null)
+            addElement( refEl, OLD_OID_EL_NAME, Long.toString(oldOid));
     }
 
     private void addElement( final Element parent,
@@ -229,14 +247,17 @@ public class JMSEndpointReference extends ExternalReference {
 
         final JMSEndpointReference that = (JMSEndpointReference) o;
 
-        if ( oid != that.oid ) return false;
+        if (  oldOid==null  || !oldOid.equals(that.oldOid) || oldOid == that.oldOid ) return false;
+
+        if ( goid==null  || !goid.equals(that.goid) || goid == that.goid) return false;
+
 
         return true;
     }
 
     @Override
     public int hashCode() {
-        return (int) (oid ^ (oid >>> 32));
+        return goid.hashCode();
     }
 
     /**
@@ -270,10 +291,10 @@ public class JMSEndpointReference extends ExternalReference {
                 // explicitly discriminate using the endpoint name
                 for (Pair<JmsEndpoint,JmsConnection> jmsTuple : tempMatches) {
                     if ( jmsTuple.getKey().getName().equals(name) &&
-                         permitMapping( getOid(), jmsTuple.getKey().getOid() )) {
+                         permitMapping( getGoid(), jmsTuple.getKey().getGoid() )) {
                         // WE HAVE A PERFECT MATCH!
-                        logger.fine("The local JMS endpoint was resolved from oid " + getOid() + " to " + jmsTuple.getKey().getOid());
-                        localEndpointId = jmsTuple.getKey().getOid();
+                        logger.fine("The local JMS endpoint was resolved from oid " + getGoid() + " to " + jmsTuple.getKey().getGoid());
+                        localEndpointId = jmsTuple.getKey().getGoid();
                         localizeType = LocalizeAction.REPLACE;
                         return true;
                     }
@@ -283,9 +304,9 @@ public class JMSEndpointReference extends ExternalReference {
                 for (Pair<JmsEndpoint,JmsConnection> jmsTuple : tempMatches) {
                     if ( ( isTemplate(jmsTuple) ||
                           (!isTemplate(jmsTuple) && !isMissing(jndiUrl) && !isMissing(initialContextFactoryClassname) && !isMissing(queueFactoryUrl) && !isMissing(destinationName)) ) &&
-                         permitMapping( getOid(), jmsTuple.getKey().getOid() )) {
-                        logger.fine("The local JMS endpoint was resolved from oid " + getOid() + " to " + jmsTuple.getKey().getOid());
-                        localEndpointId = jmsTuple.getKey().getOid();
+                         permitMapping( getGoid(), jmsTuple.getKey().getGoid() )) {
+                        logger.fine("The local JMS endpoint was resolved from oid " + getGoid() + " to " + jmsTuple.getKey().getGoid());
+                        localEndpointId = jmsTuple.getKey().getGoid();
                         localizeType = LocalizeAction.REPLACE;
                         return true;
                     }
@@ -316,15 +337,16 @@ public class JMSEndpointReference extends ExternalReference {
         if (localizeType != LocalizeAction.IGNORE) {
             if (assertionToLocalize instanceof JmsRoutingAssertion) {
             JmsRoutingAssertion jmsRoutingAssertion = (JmsRoutingAssertion) assertionToLocalize;
-                if (jmsRoutingAssertion.getEndpointOid() != null &&
-                    jmsRoutingAssertion.getEndpointOid() == oid) {
+                if ((jmsRoutingAssertion.getEndpointOid() != null &&
+                    jmsRoutingAssertion.getEndpointOid().equals(oldOid) ) ||( jmsRoutingAssertion.getEndpointGoid() != null &&
+                        jmsRoutingAssertion.getEndpointGoid().equals(goid.toString()))  ) {
                     if (localizeType == LocalizeAction.REPLACE) {
                         // replace endpoint id
-                        jmsRoutingAssertion.setEndpointOid(localEndpointId);
+                        jmsRoutingAssertion.setEndpointGoid(localEndpointId.toString());
                         // replace endpoint name
-                        jmsRoutingAssertion.setEndpointName(endpointNameFromOid(localEndpointId));
+                        jmsRoutingAssertion.setEndpointName(endpointNameFromGoid(localEndpointId));
                         logger.info("The endpoint id of the imported jms routing assertion has been changed " +
-                                    "from " + oid + " to " + localEndpointId);
+                                    "from " + goid + " to " + localEndpointId);
                     } else if (localizeType == LocalizeAction.DELETE) {
                         logger.info("Deleted this assertion from the tree.");
                         return false;
@@ -335,14 +357,14 @@ public class JMSEndpointReference extends ExternalReference {
         return true;
     }
 
-    private String endpointNameFromOid( final long oid ) {
+    private String endpointNameFromGoid( final Goid goid ) {
         try {
-            JmsEndpoint endpoint = getFinder().findEndpointByPrimaryKey(oid);
+            JmsEndpoint endpoint = getFinder().findEndpointByPrimaryKey(goid);
             if (endpoint != null) return endpoint.getName();
         } catch (FindException e) {
-            logger.warning("could not retrieve the JMS endpoint from oid " + oid);
+            logger.warning("could not retrieve the JMS endpoint from goid " + goid);
         }
-        logger.warning("The oid " + oid + " could not be used to get an endpoint name.");
+        logger.warning("The goid " + goid + " could not be used to get an endpoint name.");
         return null;
     }
 
@@ -351,8 +373,9 @@ public class JMSEndpointReference extends ExternalReference {
     private static final String TYPE_QUEUE = "Queue";
     private static final String TYPE_TOPIC = "Topic";
 
-    private long oid;
-    private long localEndpointId;
+    private Goid goid;
+    private Long oldOid;
+    private Goid localEndpointId;
     private String name; // Added in 5.3, will be null in earlier exports
     private String type; // Added in 5.4, will be null in earlier exports
     private boolean connectionTemplate;
@@ -365,7 +388,8 @@ public class JMSEndpointReference extends ExternalReference {
     private String destinationFactoryUrl;
     private LocalizeAction localizeType = null;
     public static final String REF_EL_NAME = "JMSConnectionReference";
-    public static final String OID_EL_NAME = "OID";
+    public static final String OLD_OID_EL_NAME = "OldOid";
+    public static final String GOID_EL_NAME = "Goid";
     public static final String CONNECTION_TEMPLATE_EL_NAME = "ConnectionTemplate";
     public static final String ENDPOINT_TEMPLATE_EL_NAME = "EndpointTemplate";
     public static final String NAME_EL_NAME = "Name";

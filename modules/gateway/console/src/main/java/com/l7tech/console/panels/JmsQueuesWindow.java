@@ -10,6 +10,7 @@ import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
 import com.l7tech.console.util.JmsUtilities;
 import com.l7tech.console.util.Registry;
+import com.l7tech.objectmodel.Goid;
 
 import javax.swing.*;
 import javax.swing.event.*;
@@ -310,12 +311,12 @@ public class JmsQueuesWindow extends JDialog {
                               null, options, options[1]);
                             if (result == 0) {
                                 try {
-                                    Registry.getDefault().getJmsManager().deleteEndpoint(end.getOid());
+                                    Registry.getDefault().getJmsManager().deleteEndpoint(end.getGoid());
 
                                     // If the new connection would be empty, delete it too (normal operation)
-                                    JmsEndpoint[] endpoints = Registry.getDefault().getJmsManager().getEndpointsForConnection(i.getConnection().getOid());
+                                    JmsEndpoint[] endpoints = Registry.getDefault().getJmsManager().getEndpointsForConnection(i.getConnection().getGoid());
                                     if (endpoints.length < 1)
-                                        Registry.getDefault().getJmsManager().deleteConnection(conn.getOid());
+                                        Registry.getDefault().getJmsManager().deleteConnection(conn.getGoid());
                                 } catch (Exception e1) {
                                     throw new RuntimeException("Unable to delete queue " + name, e1);
                                 }
@@ -426,8 +427,8 @@ public class JmsQueuesWindow extends JDialog {
             JmsAdmin.JmsTuple i = getJmsQueueTableModel().getJmsQueues().get(modelRow);
             if (i != null) {
                 //grab the latest version from the list
-                long connectionOid = i.getConnection().getOid();
-                long endpointOid = i.getEndpoint().getOid();
+                Goid connectionOid = i.getConnection().getGoid();
+                Goid endpointOid = i.getEndpoint().getGoid();
                 try {
                     JmsConnection connection = Registry.getDefault().getJmsManager().findConnectionByPrimaryKey(connectionOid);
                     JmsEndpoint endpoint = Registry.getDefault().getJmsManager().findEndpointByPrimaryKey(endpointOid);
@@ -595,7 +596,7 @@ public class JmsQueuesWindow extends JDialog {
             for (int i = 0; i < rows.size(); ++i) {
                 JmsAdmin.JmsTuple item = rows.get(i);
                 JmsEndpoint end = item.getEndpoint();
-                if (end != null && end.getOid() == selectedEndpoint.getOid()) {
+                if (end != null && end.getGoid().equals(selectedEndpoint.getGoid())) {
                     int viewRow = getJmsQueueTable().convertRowIndexToView(i);
                     if (viewRow >= 0) {
                         getJmsQueueTable().getSelectionModel().setSelectionInterval(viewRow, viewRow);

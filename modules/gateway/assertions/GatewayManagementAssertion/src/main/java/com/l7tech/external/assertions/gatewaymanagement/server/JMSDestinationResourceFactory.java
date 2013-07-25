@@ -8,9 +8,7 @@ import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
 import com.l7tech.gateway.common.transport.jms.JmsProviderType;
-import com.l7tech.objectmodel.JmsEndpointHeader;
-import com.l7tech.objectmodel.ObjectModelException;
-import com.l7tech.objectmodel.PersistentEntity;
+import com.l7tech.objectmodel.*;
 import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.security.rbac.SecurityFilter;
 import com.l7tech.server.transport.jms.JmsConnectionManager;
@@ -29,7 +27,7 @@ import java.util.Properties;
  * 
  */
 @ResourceFactory.ResourceType(type=JMSDestinationMO.class)
-public class JMSDestinationResourceFactory extends EntityManagerResourceFactory<JMSDestinationMO, JmsEndpoint, JmsEndpointHeader> {
+public class JMSDestinationResourceFactory extends GoidEntityManagerResourceFactory<JMSDestinationMO, JmsEndpoint, JmsEndpointHeader> {
 
     //- PUBLIC
 
@@ -47,9 +45,9 @@ public class JMSDestinationResourceFactory extends EntityManagerResourceFactory<
 
     @Override
     protected EntityBag<JmsEndpoint> loadEntityBag( final JmsEndpoint jmsEndpoint ) throws ObjectModelException {
-        final JmsConnection jmsConnection = jmsConnectionManager.findByPrimaryKey( jmsEndpoint.getConnectionOid() );
+        final JmsConnection jmsConnection = jmsConnectionManager.findByPrimaryKey( jmsEndpoint.getConnectionGoid() );
         if ( jmsConnection == null ) {
-            throw new ResourceAccessException("JmsConnection not found " + jmsEndpoint.getConnectionOid());
+            throw new ResourceAccessException("JmsConnection not found " + jmsEndpoint.getConnectionGoid());
         }
 
         checkPermitted( OperationType.READ, null, jmsConnection );
@@ -142,7 +140,7 @@ public class JMSDestinationResourceFactory extends EntityManagerResourceFactory<
         final JmsConnection newJmsConnection = newJmsEntityBag.getJmsConnection();
 
         // Validate identity and version (the endpoint is validated as the main entity)
-        verifyIdentifier( oldJmsConnection.getOid(), newJmsConnection.getOid() );
+        verifyIdentifier( oldJmsConnection.getGoid(), newJmsConnection.getGoid() );
         verifyVersion( oldJmsConnection.getVersion(), newJmsConnection.getVersion() );
 
         // Copy endpoint properties that allow update
@@ -202,8 +200,8 @@ public class JMSDestinationResourceFactory extends EntityManagerResourceFactory<
 
         checkPermitted( OperationType.CREATE, null, jmsConnection );
 
-        final long connectionId = jmsConnectionManager.save( jmsConnection );
-        jmsEntityBag.getJmsEndpoint().setConnectionOid( connectionId );
+        final Goid connectionId = jmsConnectionManager.save( jmsConnection );
+        jmsEntityBag.getJmsEndpoint().setConnectionGoid(connectionId);
     }
 
     protected static class JmsEntityBag extends EntityBag<JmsEndpoint> {
@@ -223,8 +221,8 @@ public class JMSDestinationResourceFactory extends EntityManagerResourceFactory<
         }
 
         @Override
-        public Iterator<PersistentEntity> iterator() {
-            return Arrays.<PersistentEntity>asList( getJmsEndpoint(), getJmsConnection() ).iterator();
+        public Iterator<GoidEntity> iterator() {
+            return Arrays.<GoidEntity>asList( getJmsEndpoint(), getJmsConnection() ).iterator();
         }
     }
 

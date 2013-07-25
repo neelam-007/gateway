@@ -16,6 +16,7 @@ import com.l7tech.policy.GenericEntity;
 import com.l7tech.policy.GenericEntityHeader;
 import com.l7tech.policy.Policy;
 import com.l7tech.security.cert.TrustedCert;
+import com.l7tech.util.Either;
 import com.l7tech.util.Pair;
 import org.jetbrains.annotations.NotNull;
 
@@ -76,12 +77,17 @@ public class ExternalReferenceFinderStub implements ExternalReferenceFinder {
     }
 
     @Override
-    public JmsEndpoint findEndpointByPrimaryKey( final long oid ) throws FindException {
+    public JmsEndpoint findEndpointByOidorGoid(Either<Long, Goid> endpointId) throws FindException {
         return null;
     }
 
     @Override
-    public JmsConnection findConnectionByPrimaryKey( final long oid ) throws FindException {
+    public JmsEndpoint findEndpointByPrimaryKey( final Goid oid ) throws FindException {
+        return null;
+    }
+
+    @Override
+    public JmsConnection findConnectionByPrimaryKey( final Goid oid ) throws FindException {
         return null;
     }
 

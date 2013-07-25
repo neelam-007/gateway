@@ -34,7 +34,10 @@ public class JmsRoutingAssertion extends RoutingAssertionWithSamlSV implements U
      * Set the OID of the JMS endpoint.  Set this to null if no endpoint is configured.
      * @param endpointOid  the OID of a JmsEndpoint instance, or null.
      */
+    @Deprecated
     public void setEndpointOid(Long endpointOid) {
+        if(endpointOid!=null)
+            endpointGoid = null;
         this.endpointOid = endpointOid;
     }
 
@@ -44,6 +47,24 @@ public class JmsRoutingAssertion extends RoutingAssertionWithSamlSV implements U
      */
     public String getEndpointName() {
         return endpointName;
+    }
+
+    /**
+     * Set the GOID of the JMS endpoint.  Set this to null if no endpoint is configured.
+     * @param endpointGoid  the OID of a JmsEndpoint instance, or null.
+     */
+    public void setEndpointGoid(String endpointGoid) {
+        if(endpointGoid!=null)
+            this.endpointOid = null;
+        this.endpointGoid = endpointGoid;
+    }
+
+    /**
+     * The name of the { JmsEndpoint}
+     * @return the name of this endpoint if known, for cosmetic purposes only.
+     */
+    public String getEndpointGoid() {
+        return endpointGoid;
     }
 
     /**
@@ -187,8 +208,8 @@ public class JmsRoutingAssertion extends RoutingAssertionWithSamlSV implements U
     @Override
     @Migration(mapName = MigrationMappingSelection.REQUIRED, resolver = PropertyResolver.Type.ASSERTION)
     public EntityHeader[] getEntitiesUsed() {
-        if(endpointOid != null) {
-            return new JmsEndpointHeader[] { new JmsEndpointHeader(endpointOid.toString(), endpointName, null, -1, false)}; // always outgoing
+        if(endpointOid != null || endpointGoid != null) {
+            return new JmsEndpointHeader[] { new JmsEndpointHeader(endpointOid==null?endpointGoid.toString():endpointOid.toString(), endpointName, null, -1, false)}; // always outgoing
         } else {
             return new JmsEndpointHeader[0];
         }
@@ -196,10 +217,10 @@ public class JmsRoutingAssertion extends RoutingAssertionWithSamlSV implements U
 
     @Override
     public void replaceEntity(EntityHeader oldEntityHeader, EntityHeader newEntityHeader) {
-        if(oldEntityHeader.getType().equals(EntityType.JMS_ENDPOINT) && endpointOid != null &&
-                oldEntityHeader.getOid() == endpointOid && newEntityHeader.getType().equals(EntityType.JMS_ENDPOINT))
+        if(oldEntityHeader.getType().equals(EntityType.JMS_ENDPOINT) && (endpointOid != null || endpointGoid!=null) &&
+                (oldEntityHeader.getOid() == endpointOid  || oldEntityHeader.getGoid().equals(endpointGoid))&& newEntityHeader.getType().equals(EntityType.JMS_ENDPOINT))
         {
-            endpointOid = newEntityHeader.getOid();
+            setEndpointGoid(newEntityHeader.getGoid().toString());
             endpointName = newEntityHeader.getName();
         }
     }
@@ -266,6 +287,7 @@ public class JmsRoutingAssertion extends RoutingAssertionWithSamlSV implements U
     private static final String META_INITIALIZED = JmsRoutingAssertion.class.getName() + ".metadataInitialized";
 
     private Long endpointOid = null;
+    private String endpointGoid = null;
     private String endpointName = null;
     private JmsMessagePropertyRuleSet requestJmsMessagePropertyRuleSet;
     private JmsMessagePropertyRuleSet responseJmsMessagePropertyRuleSet;

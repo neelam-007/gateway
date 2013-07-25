@@ -116,10 +116,10 @@ public class BulkZoneUpdater {
                 case JMS_CONNECTION:
                     final List<Serializable> endpointOids = new ArrayList<>();
                     for (final EntityHeader jmsConnection : entities) {
-                        final JmsEndpoint[] found = jmsAdmin.getEndpointsForConnection(jmsConnection.getOid());
+                        final JmsEndpoint[] found = jmsAdmin.getEndpointsForConnection(jmsConnection.getGoid());
                         if (found != null) {
                             for (int i = 0; i < found.length; i++) {
-                                endpointOids.add(found[i].getOid());
+                                endpointOids.add(found[i].getGoid());
                             }
                         }
                     }

@@ -378,25 +378,26 @@ class EntityPropertiesHelper {
             "version",
             "id",
             "name",
-            "oid",
+            "goid",
             "properties",
             "providerType",
             "template",
             "securityZone"
         ) )
         .put( JmsEndpoint.class, list(
-            "oid",
+            "goid",
             "id",
             "name",
             "destinationName",
             "version",
             "disabled",
-            "connectionOid",
+            "connectionGoid",
             "maxConcurrentRequests",
             "messageSource",
             "template",
             "queue",
-            "securityZone"
+            "securityZone",
+            "oldOid"
         ) )
         .put( Policy.class, list(
             "xml",

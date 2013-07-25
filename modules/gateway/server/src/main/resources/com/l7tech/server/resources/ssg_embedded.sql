@@ -496,7 +496,7 @@ create table jdbc_connection (
 );
 
 create table jms_connection (
-    objectid bigint not null,
+    goid CHAR(16) FOR BIT DATA not null,
     name varchar(128) not null,
     version integer,
     destination_factory_url varchar(4096),
@@ -510,15 +510,15 @@ create table jms_connection (
     topic_factory_url varchar(255),
     username varchar(255),
     security_zone_goid CHAR(16) FOR BIT DATA references security_zone(goid) on delete set null,
-    primary key (objectid)
+    primary key (goid)
 );
 
 create table jms_endpoint (
-    objectid bigint not null,
+    goid CHAR(16) FOR BIT DATA not null,
     name varchar(128) not null,
     version integer,
     acknowledgement_type varchar(255),
-    connection_oid bigint not null,
+    connection_goid CHAR(16) FOR BIT DATA not null,
     destination_name varchar(128),
     disabled smallint,
     failure_destination_name varchar(128),
@@ -534,7 +534,8 @@ create table jms_endpoint (
     use_message_id_for_correlation smallint,
     username varchar(255),
     security_zone_goid CHAR(16) FOR BIT DATA references security_zone(goid) on delete set null,
-    primary key (objectid)
+    old_objectid bigint,
+    primary key (goid)
 );
 
 create table keystore_file (

@@ -420,6 +420,28 @@ ALTER TABLE encapsulated_assertion_result  ADD FOREIGN KEY (encapsulated_asserti
 update rbac_role set entity_goid = toGoid(@encapsulated_assertion_prefix,entity_oid) where entity_oid is not null and entity_type='ENCAPSULATED_ASSERTION';
 update rbac_predicate_oid oid1 left join rbac_predicate on rbac_predicate.objectid = oid1.objectid left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid set oid1.entity_id = hex(toGoid(@encapsulated_assertion_prefix,oid1.entity_id)) where rbac_permission.entity_type = 'ENCAPSULATED_ASSERTION';
 
+-- jms
+
+ALTER TABLE jms_endpoint ADD COLUMN old_objectid BIGINT(20);
+update jms_endpoint set old_objectid=objectid;
+ALTER TABLE jms_endpoint CHANGE COLUMN objectid goid binary(16);
+-- For manual runs use: set @jms_endpoint_prefix=createUnreservedPoorRandomPrefix();
+SET @jms_endpoint_prefix=#RANDOM_LONG_NOT_RESERVED#;
+update jms_endpoint set goid = toGoid(@jms_endpoint_prefix,old_objectid);
+
+ALTER TABLE jms_connection ADD COLUMN objectid_backup BIGINT(20);
+update jms_connection set objectid_backup=objectid;
+ALTER TABLE jms_connection CHANGE COLUMN objectid goid binary(16);
+-- For manual runs use: set @jms_connection_prefix=createUnreservedPoorRandomPrefix();
+SET @jms_connection_prefix=#RANDOM_LONG_NOT_RESERVED#;
+update jms_connection set goid = toGoid(@jms_connection_prefix,objectid_backup);
+ALTER TABLE jms_connection DROP COLUMN objectid_backup;
+
+ALTER TABLE jms_endpoint ADD COLUMN connection_goid binary(16);
+update jms_endpoint set connection_goid = toGoid(@jms_connection_prefix,connection_oid);
+ALTER TABLE jms_endpoint DROP COLUMN connection_oid;
+
+
 --
 -- Register upgrade task for upgrading sink configuration references to GOIDs
 --

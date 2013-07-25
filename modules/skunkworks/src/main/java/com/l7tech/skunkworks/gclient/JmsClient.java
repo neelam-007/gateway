@@ -4,6 +4,7 @@ import com.l7tech.common.http.ParameterizedString;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
 import com.l7tech.gateway.common.transport.jms.JmsReplyType;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.transport.jms.JmsBag;
 import com.l7tech.server.transport.jms.JmsConfigException;
 import com.l7tech.server.transport.jms.JmsUtil;
@@ -64,7 +65,7 @@ public class JmsClient {
         }
 
         routedRequestConnection = new JmsConnection();
-        routedRequestConnection.setOid(1);
+        routedRequestConnection.setGoid(new Goid(0,1));
         routedRequestConnection.setVersion(1);
         routedRequestConnection.setInitialContextFactoryClassname((String)data.get("initialContextFactory"));
         routedRequestConnection.setJndiUrl((String)data.get("jndiProviderURL"));
@@ -77,7 +78,7 @@ public class JmsClient {
             routedRequestConnection.setDestinationFactoryUrl((String)data.get("connectionFactory"));
 
         routedRequestEndpoint = new JmsEndpoint();
-        routedRequestEndpoint.setConnectionOid(1);
+        routedRequestEndpoint.setConnectionGoid(new Goid(0,1));
         routedRequestEndpoint.setDestinationName((String)data.get("destination"));
         routedRequestEndpoint.setMaxConcurrentRequests(1);
         routedRequestEndpoint.setMessageSource(false);

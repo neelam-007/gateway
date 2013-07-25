@@ -1,5 +1,6 @@
 package com.l7tech.server.transport.jms2;
 
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.transport.jms.JmsUtil;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.TimeUnit;
@@ -235,11 +236,11 @@ public abstract class AbstractJmsEndpointListener implements JmsEndpointListener
     private String identify() {
         StringBuilder s = new StringBuilder(_endpointCfg.getDisplayName());
         s.append("[");
-        s.append(_endpointCfg.getEndpoint().getOid());
+        s.append(_endpointCfg.getEndpoint().getGoid());
         s.append("v");
         s.append(_endpointCfg.getEndpoint().getVersion());
         s.append(",");
-        s.append(_endpointCfg.getConnection().getOid());
+        s.append(_endpointCfg.getConnection().getGoid());
         s.append("v");
         s.append(_endpointCfg.getConnection().getVersion());
         s.append("]");
@@ -386,13 +387,13 @@ public abstract class AbstractJmsEndpointListener implements JmsEndpointListener
     }
 
     @Override
-    public long getJmsConnectionOid() {
-        return this._endpointCfg.getConnection().getOid();
+    public Goid getJmsConnectionGoid() {
+        return this._endpointCfg.getConnection().getGoid();
     }
 
     @Override
-    public long getJmsEndpointOid() {
-        return this._endpointCfg.getEndpoint().getOid();
+    public Goid getJmsEndpointGoid() {
+        return this._endpointCfg.getEndpoint().getGoid();
     }
 
     @Override

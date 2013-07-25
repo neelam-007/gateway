@@ -44,6 +44,7 @@ import com.l7tech.server.transport.SsgActiveConnectorManager;
 import com.l7tech.server.transport.jms.JmsConnectionManager;
 import com.l7tech.server.transport.jms.JmsEndpointManager;
 import com.l7tech.server.util.JaasUtils;
+import com.l7tech.util.Either;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Pair;
 import com.l7tech.util.Triple;
@@ -503,13 +504,20 @@ public class PolicyHelper {
         }
 
         @Override
-        public JmsEndpoint findEndpointByPrimaryKey( final long oid ) throws FindException {
-            return filter( jmsEndpointManager.findByPrimaryKey( oid ) );
+        public JmsEndpoint findEndpointByOidorGoid(Either<Long, Goid> endpointId) throws FindException {
+            if(endpointId.isLeft())
+                return filter(jmsEndpointManager.findByOldOid(endpointId.left()));
+            return filter(jmsEndpointManager.findByPrimaryKey(endpointId.right()));
         }
 
         @Override
-        public JmsConnection findConnectionByPrimaryKey( final long oid ) throws FindException {
-            return filter( jmsConnectionManager.findByPrimaryKey( oid ) );
+        public JmsEndpoint findEndpointByPrimaryKey( final Goid goid ) throws FindException {
+            return filter( jmsEndpointManager.findByPrimaryKey( goid ) );
+        }
+
+        @Override
+        public JmsConnection findConnectionByPrimaryKey( final Goid goid ) throws FindException {
+            return filter( jmsConnectionManager.findByPrimaryKey( goid ) );
         }
 
         @Override
@@ -532,7 +540,7 @@ public class PolicyHelper {
             final List<Pair<JmsEndpoint, JmsConnection>> result = new ArrayList<Pair<JmsEndpoint, JmsConnection>>();
             final Collection<JmsConnection> connections = filter( jmsConnectionManager.findAll() );
             for ( final JmsConnection connection : connections ) {
-                final JmsEndpoint[] endpoints = jmsEndpointManager.findEndpointsForConnection(connection.getOid());
+                final JmsEndpoint[] endpoints = jmsEndpointManager.findEndpointsForConnection(connection.getGoid());
                 for ( final JmsEndpoint endpoint : endpoints) {
                     JmsEndpoint filteredEndpoint = filter( endpoint );
                     if ( filteredEndpoint != null ) {

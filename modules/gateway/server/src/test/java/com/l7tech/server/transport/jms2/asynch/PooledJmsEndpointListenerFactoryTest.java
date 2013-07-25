@@ -3,6 +3,7 @@ package com.l7tech.server.transport.jms2.asynch;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
 import com.l7tech.gateway.common.transport.jms.JmsReplyType;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.transport.jms.JmsConnectionManager;
@@ -51,7 +52,7 @@ public class PooledJmsEndpointListenerFactoryTest {
 
         //Setup connection
         JmsConnection jmsConnection = new JmsConnection();
-        jmsConnection.setOid(1);
+        jmsConnection.setGoid(new Goid(0, 1));
         jmsConnection.setInitialContextFactoryClassname("");
         Properties properties = new Properties();
         properties.setProperty(JmsConnection.PROP_IS_DEDICATED_POOL, Boolean.TRUE.toString());
@@ -63,11 +64,11 @@ public class PooledJmsEndpointListenerFactoryTest {
 
         //Setup Endpoint
         JmsEndpoint connector = new JmsEndpoint();
-        connector.setOid(1);
+        connector.setGoid(new Goid(0,1));
         connector.setName("Inbound");
         connector.setQueue(true);
         connector.setDestinationName("inbound");
-        connector.setConnectionOid(jmsConnection.getOid());
+        connector.setConnectionGoid(jmsConnection.getGoid());
         connector.setReplyType(JmsReplyType.NO_REPLY);
 
         jmsEndpointManager.save(connector);
@@ -79,7 +80,7 @@ public class PooledJmsEndpointListenerFactoryTest {
 
         //Setup connection
         JmsConnection jmsConnection2 = new JmsConnection();
-        jmsConnection2.setOid(2);
+        jmsConnection2.setGoid(new Goid(0,2));
         jmsConnection2.setInitialContextFactoryClassname("");
         Properties properties2 = new Properties();
         properties2.setProperty(JmsConnection.PROP_IS_DEDICATED_POOL, Boolean.TRUE.toString());
@@ -91,11 +92,11 @@ public class PooledJmsEndpointListenerFactoryTest {
 
         //Setup Endpoint
         JmsEndpoint connector2 = new JmsEndpoint();
-        connector2.setOid(1);
+        connector2.setGoid(new Goid(0,1));
         connector2.setName("Inbound");
         connector2.setQueue(true);
         connector2.setDestinationName("inbound");
-        connector2.setConnectionOid(jmsConnection.getOid());
+        connector2.setConnectionGoid(jmsConnection.getGoid());
         connector2.setReplyType(JmsReplyType.NO_REPLY);
 
         jmsEndpointManager.save(connector);
@@ -117,7 +118,7 @@ public class PooledJmsEndpointListenerFactoryTest {
 
         //Setup connection
         JmsConnection jmsConnection = new JmsConnection();
-        jmsConnection.setOid(1);
+        jmsConnection.setGoid(new Goid(0,1));
         jmsConnection.setInitialContextFactoryClassname("");
         Properties properties = new Properties();
         jmsConnection.properties(properties);
@@ -127,11 +128,11 @@ public class PooledJmsEndpointListenerFactoryTest {
 
         //Setup Endpoint
         JmsEndpoint connector = new JmsEndpoint();
-        connector.setOid(1);
+        connector.setGoid(new Goid(0,1));
         connector.setName("Inbound");
         connector.setQueue(true);
         connector.setDestinationName("inbound");
-        connector.setConnectionOid(jmsConnection.getOid());
+        connector.setConnectionGoid(jmsConnection.getGoid());
         connector.setReplyType(JmsReplyType.NO_REPLY);
 
         jmsEndpointManager.save(connector);
@@ -143,7 +144,7 @@ public class PooledJmsEndpointListenerFactoryTest {
 
         //Setup connection
         JmsConnection jmsConnection2 = new JmsConnection();
-        jmsConnection2.setOid(2);
+        jmsConnection2.setGoid(new Goid(0,2));
         jmsConnection2.setInitialContextFactoryClassname("");
         Properties properties2 = new Properties();
         properties2.setProperty(JmsConnection.PROP_IS_DEDICATED_POOL, Boolean.TRUE.toString());
@@ -155,11 +156,11 @@ public class PooledJmsEndpointListenerFactoryTest {
 
         //Setup Endpoint
         JmsEndpoint connector2 = new JmsEndpoint();
-        connector2.setOid(1);
+        connector2.setGoid(new Goid(0,1));
         connector2.setName("Inbound");
         connector2.setQueue(true);
         connector2.setDestinationName("inbound");
-        connector2.setConnectionOid(jmsConnection.getOid());
+        connector2.setConnectionGoid(jmsConnection.getGoid());
         connector2.setReplyType(JmsReplyType.NO_REPLY);
 
         jmsEndpointManager.save(connector);

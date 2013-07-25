@@ -32,10 +32,7 @@ import com.l7tech.policy.GenericEntityHeader;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.exporter.*;
 import com.l7tech.security.cert.TrustedCert;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.Functions;
-import com.l7tech.util.Option;
-import com.l7tech.util.Pair;
+import com.l7tech.util.*;
 import org.jetbrains.annotations.NotNull;
 import org.xml.sax.EntityResolver;
 import org.xml.sax.InputSource;
@@ -126,15 +123,23 @@ public class ConsoleExternalReferenceFinder implements ExternalReferenceFinder, 
     }
 
     @Override
-    public JmsEndpoint findEndpointByPrimaryKey( final long oid ) throws FindException {
+    public JmsEndpoint findEndpointByOidorGoid(Either<Long, Goid> endpointId) throws FindException {
         JmsAdmin jmsAdmin = getAdminInterface( JmsAdmin.class );
-        return jmsAdmin.findEndpointByPrimaryKey( oid );
+        if(endpointId.isLeft())
+            return jmsAdmin.findEndpointByOldId(endpointId.left());
+        return jmsAdmin.findEndpointByPrimaryKey( endpointId.right() );
     }
 
     @Override
-    public JmsConnection findConnectionByPrimaryKey( final long oid ) throws FindException {
+    public JmsEndpoint findEndpointByPrimaryKey( final Goid goid ) throws FindException {
         JmsAdmin jmsAdmin = getAdminInterface( JmsAdmin.class );
-        return jmsAdmin.findConnectionByPrimaryKey( oid );
+        return jmsAdmin.findEndpointByPrimaryKey( goid );
+    }
+
+    @Override
+    public JmsConnection findConnectionByPrimaryKey( final Goid goid ) throws FindException {
+        JmsAdmin jmsAdmin = getAdminInterface( JmsAdmin.class );
+        return jmsAdmin.findConnectionByPrimaryKey( goid );
     }
 
     @Override

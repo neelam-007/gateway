@@ -2,6 +2,7 @@ package com.l7tech.policy.exporter;
 
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.common.export.ExternalReferenceFactory;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.wsp.InvalidPolicyStreamException;
 import com.l7tech.util.DomUtils;
@@ -103,10 +104,18 @@ public abstract class ExternalReference {
         boolean localized = false;
         try {
             localized = setLocalizeReplace( Long.parseLong( identifier ) );
+            return localized;
         } catch ( NumberFormatException nfe ) {
             // not localized
         }
+        try {
+            localized = setLocalizeReplace( new Goid(identifier) );
+        } catch ( IllegalArgumentException ile ) {
+            // not localized
+        }
         return localized;
+
+
     }
 
     /**
@@ -150,7 +159,11 @@ public abstract class ExternalReference {
      * @return true if successful
      * @see #localizeAssertion(Assertion)
      */
+    @Deprecated
     public boolean setLocalizeReplace( long identifier ) {
+        return false;
+    }
+    public boolean setLocalizeReplace( Goid identifier ) {
         return false;
     }
 
@@ -226,6 +239,11 @@ public abstract class ExternalReference {
         refEl.setAttributeNS( null, ExporterConstants.REF_TYPE_ATTRNAME, getRefType() );
     }
 
+    protected boolean permitMapping( final Goid importGoid, final Goid targetGoid ) {
+        return permitMapping( importGoid.toString(),  targetGoid.toString() );
+    }
+
+    @Deprecated
     protected boolean permitMapping( final long importOid, final long targetOid ) {
         return permitMapping( Long.toString( importOid ), Long.toString( targetOid ) );
     }

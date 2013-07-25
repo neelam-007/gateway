@@ -100,7 +100,7 @@ class JmsTask implements Runnable {
         // call the request handler to invoke the MessageProcessor
         HybridDiagnosticContext.put(
                 GatewayDiagnosticContextKeys.JMS_LISTENER_ID,
-                Long.toString( endpointCfg.getEndpoint().getOid() ) );
+                endpointCfg.getEndpoint().getGoid().toString());
         try {
             handler.onMessage(endpointCfg, jmsBag, endpointCfg.isTransactional(), createFailureProducer(), jmsMessage);
         } finally {

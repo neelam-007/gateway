@@ -5,7 +5,7 @@
 package com.l7tech.gateway.common.transport.jms;
 
 import com.l7tech.objectmodel.SsgKeyHeader;
-import com.l7tech.objectmodel.imp.ZoneableNamedEntityImp;
+import com.l7tech.objectmodel.imp.ZoneableNamedGoidEntityImp;
 import com.l7tech.policy.UsesPrivateKeys;
 import com.l7tech.policy.wsp.WspSensitive;
 import com.l7tech.search.Dependencies;
@@ -36,7 +36,7 @@ import java.util.logging.Logger;
 @Entity
 @Proxy(lazy=false)
 @Table(name="jms_connection")
-public class JmsConnection extends ZoneableNamedEntityImp implements UsesPrivateKeys, Serializable {
+public class JmsConnection extends ZoneableNamedGoidEntityImp implements UsesPrivateKeys, Serializable {
     private static final Logger logger = Logger.getLogger(JmsConnection.class.getName());
     private static final Charset ENCODING = Charsets.UTF8;
 
@@ -102,7 +102,7 @@ public class JmsConnection extends ZoneableNamedEntityImp implements UsesPrivate
     }
 
     public void copyFrom( JmsConnection other ) {
-        setOid( other.getOid() );
+        setGoid(other.getGoid());
         setVersion( other.getVersion() );
         setName( other.getName() );
         setTemplate( other.isTemplate() );
@@ -121,7 +121,7 @@ public class JmsConnection extends ZoneableNamedEntityImp implements UsesPrivate
 
     @Override
     public String toString() {
-        return "<JmsConnection oid=\"" + _oid + "\" name=\"" + _name + "\"/>";
+        return "<JmsConnection goid=\"" + getGoid() + "\" name=\"" + _name + "\"/>";
     }
 
     @Size(min=1,max=128)

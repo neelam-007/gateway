@@ -71,7 +71,7 @@ public class JmsAdminImpl implements JmsAdmin {
         ArrayList<JmsTuple> result = new ArrayList<JmsTuple>();
         Collection<JmsConnection> connections = jmsConnectionManager.findAll();
         for (JmsConnection connection : connections) {
-            JmsEndpoint[] endpoints = jmsEndpointManager.findEndpointsForConnection(connection.getOid());
+            JmsEndpoint[] endpoints = jmsEndpointManager.findEndpointsForConnection(connection.getGoid());
             for (JmsEndpoint endpoint : endpoints) {
                 result.add(new JmsTuple(connection, endpoint));
             }
@@ -81,37 +81,42 @@ public class JmsAdminImpl implements JmsAdmin {
     }
 
     /**
-     * Finds the {@link JmsConnection} with the provided OID.
+     * Finds the {@link JmsConnection} with the provided GOID.
      *
-     * @return the {@link JmsConnection} with the provided OID.
+     * @return the {@link JmsConnection} with the provided GOID.
      * @throws FindException
      */
     @Override
-    public JmsConnection findConnectionByPrimaryKey(long oid) throws FindException {
-        return jmsConnectionManager.findByPrimaryKey(oid);
+    public JmsConnection findConnectionByPrimaryKey(Goid goid) throws FindException {
+        return jmsConnectionManager.findByPrimaryKey(goid);
     }
 
     @Override
-    public JmsEndpoint findEndpointByPrimaryKey(long oid) throws FindException {
-        return jmsEndpointManager.findByPrimaryKey(oid);
+    public JmsEndpoint findEndpointByPrimaryKey(Goid goid) throws FindException {
+        return jmsEndpointManager.findByPrimaryKey(goid);
     }
 
     @Override
-    public void setEndpointMessageSource(long oid, boolean isMessageSource) throws FindException, UpdateException {
-        JmsEndpoint endpoint = findEndpointByPrimaryKey(oid);
-        if (endpoint == null) throw new FindException("No endpoint with OID " + oid + " could be found");
+    public JmsEndpoint findEndpointByOldId(Long id) throws FindException{
+        return jmsEndpointManager.findByOldOid(id);
+    }
+
+    @Override
+    public void setEndpointMessageSource(Goid goid, boolean isMessageSource) throws FindException, UpdateException {
+        JmsEndpoint endpoint = findEndpointByPrimaryKey(goid);
+        if (endpoint == null) throw new FindException("No endpoint with GOID " + goid + " could be found");
         endpoint.setMessageSource(isMessageSource);
     }
 
     @Override
-    public long saveConnection(JmsConnection connection) throws SaveException, VersionException {
+    public Goid saveConnection(JmsConnection connection) throws SaveException, VersionException {
         try {
-            long oid = connection.getOid();
-            if (oid == JmsConnection.DEFAULT_OID)
-                oid = jmsConnectionManager.save(connection);
+            Goid goid = connection.getGoid();
+            if (goid.equals(JmsConnection.DEFAULT_GOID))
+                goid = jmsConnectionManager.save(connection);
             else
                 jmsConnectionManager.update(connection);
-            return oid;
+            return goid;
         } catch (ObjectModelException e) {
             if (ExceptionUtils.causedBy(e, StaleUpdateException.class)) {
                 logger.log(Level.INFO, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
@@ -125,13 +130,13 @@ public class JmsAdminImpl implements JmsAdmin {
     /**
      * Returns an array of {@link JmsEndpoint}s that belong to the {@link JmsConnection} with the provided OID.
      *
-     * @param connectionOid The connection OID
+     * @param connectionGoid The connection GOID
      * @return an array of {@link JmsEndpoint}s
      * @throws FindException
      */
     @Override
-    public JmsEndpoint[] getEndpointsForConnection(long connectionOid) throws FindException {
-        return jmsEndpointManager.findEndpointsForConnection(connectionOid);
+    public JmsEndpoint[] getEndpointsForConnection(Goid connectionGoid) throws FindException {
+        return jmsEndpointManager.findEndpointsForConnection(connectionGoid);
     }
 
     /**
@@ -332,16 +337,16 @@ public class JmsAdminImpl implements JmsAdmin {
     }
 
     @Override
-    public long saveEndpoint(JmsEndpoint endpoint) throws SaveException, VersionException {
+    public Goid saveEndpoint(JmsEndpoint endpoint) throws SaveException, VersionException {
         try {
-            long oid = endpoint.getOid();
-            if (oid == JmsConnection.DEFAULT_OID)
-                oid = jmsEndpointManager.save(endpoint);
+            Goid goid = endpoint.getGoid();
+            if (goid.equals(JmsConnection.DEFAULT_GOID))
+                goid = jmsEndpointManager.save(endpoint);
             else {
                 jmsEndpointManager.update(endpoint);
             }
 
-            return oid;
+            return goid;
         } catch (ObjectModelException e) {
             if (ExceptionUtils.causedBy(e, StaleUpdateException.class)) {
                 logger.log(Level.INFO, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
@@ -353,13 +358,13 @@ public class JmsAdminImpl implements JmsAdmin {
     }
 
     @Override
-    public void deleteEndpoint(long endpointOid) throws FindException, DeleteException {
-        jmsEndpointManager.delete(endpointOid);
+    public void deleteEndpoint(Goid endpointGoid) throws FindException, DeleteException {
+        jmsEndpointManager.delete(endpointGoid);
     }
 
     @Override
-    public void deleteConnection(long connectionOid) throws FindException, DeleteException {
-        jmsConnectionManager.delete(connectionOid);
+    public void deleteConnection(Goid connectionGoOid) throws FindException, DeleteException {
+        jmsConnectionManager.delete(connectionGoOid);
     }
 
     @Override

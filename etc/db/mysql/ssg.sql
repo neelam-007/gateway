@@ -432,7 +432,7 @@ CREATE TABLE service_usage (
 
 DROP TABLE IF EXISTS jms_connection;
 CREATE TABLE jms_connection (
-  objectid bigint NOT NULL,
+  goid binary(16) NOT NULL,
   version integer NOT NULL,
   name varchar(128) NOT NULL,
   jndi_url varchar(255),
@@ -446,7 +446,7 @@ CREATE TABLE jms_connection (
   properties mediumtext,
   provider_type varchar(255),
   security_zone_goid binary(16),
-  primary key(objectid),
+  primary key(goid),
   CONSTRAINT jms_conn_security_zone FOREIGN KEY (security_zone_goid) REFERENCES security_zone (goid) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
@@ -456,9 +456,9 @@ CREATE TABLE jms_connection (
 
 DROP TABLE IF EXISTS jms_endpoint;
 CREATE TABLE jms_endpoint(
-  objectid bigint NOT NULL,
+  goid binary(16) NOT NULL,
   version integer NOT NULL,
-  connection_oid bigint NOT NULL,
+  connection_goid binary(16) NOT NULL,
   name varchar(128) NOT NULL,
   destination_type tinyint(1) NOT NULL default 1,
   destination_name varchar(128),
@@ -476,7 +476,8 @@ CREATE TABLE jms_endpoint(
   use_message_id_for_correlation tinyint(1) NOT NULL DEFAULT 0,
   request_max_size bigint NOT NULL default -1,
   security_zone_goid binary(16),
-  primary key(objectid),
+  old_objectid bigint,
+  primary key(goid),
   CONSTRAINT jms_endpoint_security_zone FOREIGN KEY (security_zone_goid) REFERENCES security_zone (goid) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 

@@ -11,6 +11,7 @@ import com.l7tech.gateway.common.transport.jms.JmsOutboundMessageType;
 import com.l7tech.gateway.common.transport.jms.JmsReplyType;
 import com.l7tech.message.*;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.JmsDynamicProperties;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.NoSuchVariableException;
@@ -21,6 +22,7 @@ import com.l7tech.server.ServerConfig;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.event.EntityInvalidationEvent;
+import com.l7tech.server.event.GoidEntityInvalidationEvent;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.server.transport.jms.*;
@@ -804,12 +806,24 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
         }
 
         if ( jmsEndpoint == null ) {
-            jmsEndpoint = jmsEndpointManager.findByPrimaryKey(assertion.getEndpointOid());
+            jmsEndpoint = getJmsEndpoint();
             synchronized(jmsInfoSync) {
                 routedRequestEndpoint = jmsEndpoint;
             }
         }
         return jmsEndpoint;
+    }
+
+    private JmsEndpoint getJmsEndpoint() throws FindException {
+        if(assertion.getEndpointGoid()==null){
+            // try with old oid
+            return jmsEndpointManager.findByOldOid(assertion.getEndpointOid());
+        }
+
+        Goid endpointGoid = new Goid(assertion.getEndpointGoid());
+        return jmsEndpointManager.findByPrimaryKey(endpointGoid);
+
+
     }
 
     private JmsConnection getRoutedRequestConnection( final JmsEndpoint endpoint ) throws FindException {
@@ -823,7 +837,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                 logAndAudit(AssertionMessages.JMS_ROUTING_NON_EXISTENT_ENDPOINT,
                         String.valueOf(assertion.getEndpointOid()) + "/" + assertion.getEndpointName());
             } else {
-                jmsConn = jmsConnectionManager.findByPrimaryKey( endpoint.getConnectionOid() );
+                jmsConn = jmsConnectionManager.findByPrimaryKey( endpoint.getConnectionGoid() );
                 synchronized(jmsInfoSync) {
                     routedRequestConnection = jmsConn;
                 }
@@ -985,8 +999,8 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
 
         @Override
         public void onApplicationEvent( final ApplicationEvent applicationEvent ) {
-            if (applicationEvent instanceof EntityInvalidationEvent) {
-                EntityInvalidationEvent eie = (EntityInvalidationEvent) applicationEvent;
+            if (applicationEvent instanceof GoidEntityInvalidationEvent) {
+                GoidEntityInvalidationEvent eie = (GoidEntityInvalidationEvent) applicationEvent;
 
                 JmsConnection connection;
                 JmsEndpoint endpoint;
@@ -998,14 +1012,14 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                 if (connection != null && endpoint != null) {
                     boolean updated = false;
                     if (JmsConnection.class.isAssignableFrom(eie.getEntityClass())) {
-                        for(long invalidatedId : eie.getEntityIds()) {
-                            if (connection.getOid() == invalidatedId)
+                        for(Goid invalidatedId : eie.getEntityIds()) {
+                            if (connection.getGoid().equals(invalidatedId))
                                 updated = true;
                         }
                     }
                     if (JmsEndpoint.class.isAssignableFrom(eie.getEntityClass())) {
-                        for(long invalidatedId : eie.getEntityIds()) {
-                            if (endpoint.getOid() == invalidatedId)
+                        for(Goid invalidatedId : eie.getEntityIds()) {
+                            if (endpoint.getGoid().equals(invalidatedId))
                                 updated = true;
                         }
                     }
@@ -1014,7 +1028,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                         if (serverJmsRoutingAssertion.markUpdate(true) ) {
                             if (logger.isLoggable(Level.INFO)) {
                                 logger.log(Level.CONFIG, "Flagging JMS information for update [conn:{0}; epnt:{1}].",
-                                    new Object[]{Long.toString(connection.getOid()), Long.toString(endpoint.getOid())});
+                                    new Object[]{connection.getGoid(),endpoint.getGoid()});
                             }
                         }
                     }

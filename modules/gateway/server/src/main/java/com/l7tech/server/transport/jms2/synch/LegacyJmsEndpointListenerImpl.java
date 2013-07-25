@@ -46,7 +46,7 @@ class LegacyJmsEndpointListenerImpl extends AbstractJmsEndpointListener {
     protected void handleMessage( final Message jmsMessage ) throws JmsRuntimeException {
         HybridDiagnosticContext.put(
                 GatewayDiagnosticContextKeys.JMS_LISTENER_ID,
-                Long.toString( getEndpointConfig().getEndpoint().getOid() ) );
+                getEndpointConfig().getEndpoint().getGoid().toString() );
         try {
             if ( !_endpointCfg.isTransactional() ) {
 

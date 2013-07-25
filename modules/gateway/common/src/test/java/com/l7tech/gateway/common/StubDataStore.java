@@ -1,5 +1,6 @@
 package com.l7tech.gateway.common;
 
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
@@ -116,6 +117,9 @@ public class StubDataStore {
     public long nextObjectId() {
         return ++objectIdSequence;
     }
+    public Goid nextGoid() {
+        return new Goid(0,nextObjectId());
+    }
 
     static void recycle() {
         defaultStore = null;
@@ -226,8 +230,8 @@ public class StubDataStore {
 
     private void initialJmsProviders(XMLEncoder encoder) {
         JmsConnection p = new JmsConnection();
-        long connectionOid = nextObjectId();
-        p.setOid(connectionOid);
+        Goid connectionOid = nextGoid();
+        p.setGoid(connectionOid);
         p.setJndiUrl("JNDI:foo:bar:baz");
         p.setName("JMS on NowhereInteresting");
 
@@ -235,15 +239,15 @@ public class StubDataStore {
         populate(p);
 
         JmsEndpoint e = new JmsEndpoint();
-        e.setConnectionOid( connectionOid );
+        e.setConnectionGoid(connectionOid);
         e.setName( "q1 on foo:bar:baz" );
         e.setDestinationName( "q1" );
-        e.setOid( nextObjectId() );
+        e.setGoid( nextGoid() );
         encoder.writeObject(e);
         populate(e);
 
         p = new JmsConnection();
-        p.setOid(nextObjectId());
+        p.setGoid(nextGoid());
         p.setJndiUrl("JNDI:blee:bloo:boof");
         p.setName("JMS on SomewhereElse");
 
@@ -300,9 +304,9 @@ public class StubDataStore {
         } else if (o instanceof PublishedService) {
             pubServices.put(((PublishedService)o).getOid(), (PublishedService) o);
         } else if (o instanceof JmsConnection) {
-            jmsProviders.put(new Long(((JmsConnection)o).getOid()), (JmsConnection) o);
+            jmsProviders.put(((JmsConnection)o).getGoid(), (JmsConnection) o);
         } else if (o instanceof JmsEndpoint) {
-            jmsEndpoints.put(new Long(((JmsEndpoint)o).getOid()), (JmsEndpoint) o);
+            jmsEndpoints.put(((JmsEndpoint)o).getGoid(), (JmsEndpoint) o);
         } else if (o != null) {
             System.err.println("Don't know how to handle " + o.getClass());
         }
@@ -335,8 +339,8 @@ public class StubDataStore {
     private Set<GroupMembership> memberships = new HashSet<GroupMembership>();
 
     private Map<Long, PublishedService> pubServices = new HashMap<Long, PublishedService>();
-    private Map<Long, JmsConnection> jmsProviders = new HashMap<Long, JmsConnection>();
-    private Map<Long, JmsEndpoint> jmsEndpoints = new HashMap<Long, JmsEndpoint>();
+    private Map<Goid, JmsConnection> jmsProviders = new HashMap<Goid, JmsConnection>();
+    private Map<Goid, JmsEndpoint> jmsEndpoints = new HashMap<Goid, JmsEndpoint>();
 
     private long objectIdSequence = 100;
 

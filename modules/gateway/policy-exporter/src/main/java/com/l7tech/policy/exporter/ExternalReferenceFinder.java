@@ -16,6 +16,7 @@ import com.l7tech.policy.GenericEntity;
 import com.l7tech.policy.GenericEntityHeader;
 import com.l7tech.policy.Policy;
 import com.l7tech.security.cert.TrustedCert;
+import com.l7tech.util.Either;
 import com.l7tech.util.Pair;
 import org.jetbrains.annotations.NotNull;
 
@@ -50,9 +51,11 @@ public interface ExternalReferenceFinder {
 
     JdbcConnection getJdbcConnection( String name ) throws FindException;
 
-    JmsEndpoint findEndpointByPrimaryKey( long oid ) throws FindException;
+    JmsEndpoint findEndpointByOidorGoid(Either<Long,Goid> endpointId) throws FindException;
 
-    JmsConnection findConnectionByPrimaryKey( long oid ) throws FindException;
+    JmsEndpoint findEndpointByPrimaryKey( Goid goid ) throws FindException;
+
+    JmsConnection findConnectionByPrimaryKey( Goid goid ) throws FindException;
 
     SsgActiveConnector findConnectorByPrimaryKey (long oid) throws FindException;
 

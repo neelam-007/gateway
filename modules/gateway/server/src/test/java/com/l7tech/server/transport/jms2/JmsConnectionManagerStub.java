@@ -6,8 +6,9 @@ package com.l7tech.server.transport.jms2;
 import com.l7tech.gateway.common.transport.jms.JmsProviderType;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
+import com.l7tech.server.GoidEntityManagerStub;
 import com.l7tech.server.transport.jms.JmsConnectionManager;
-import com.l7tech.server.EntityManagerStub;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.JmsProvider;
 
@@ -20,7 +21,7 @@ import java.util.EnumSet;
  *
  * @author: vchan
  */
-public class JmsConnectionManagerStub extends EntityManagerStub<JmsConnection, EntityHeader> implements JmsConnectionManager {
+public class JmsConnectionManagerStub extends GoidEntityManagerStub<JmsConnection, EntityHeader> implements JmsConnectionManager {
 
     public static final int TEST_CONFIG_AMQ_IN  = 1000;
     public static final int TEST_CONFIG_AMQ_OUT = 1001;
@@ -138,9 +139,8 @@ public class JmsConnectionManagerStub extends EntityManagerStub<JmsConnection, E
         return connList;
     }
 
-    public JmsConnection findByPrimaryKey(long oid) throws FindException {
-
-        return getConnection((int) oid);
+    public JmsConnection findByPrimaryKey(Goid oid) throws FindException {
+        return getConnection((int)oid.getLow());
     }
 
     protected Collection<JmsProvider> createTestConnections() {
@@ -169,41 +169,41 @@ public class JmsConnectionManagerStub extends EntityManagerStub<JmsConnection, E
 
             case TEST_CONFIG_AMQ_IN: {
                 conn = provider.createConnection("dynamicQueues/JMS.JUNIT.IN.Q", AMQ_JNDI_URL);
-                conn.setOid(TEST_CONFIG_AMQ_IN);
+                conn.setGoid(new Goid(0,TEST_CONFIG_AMQ_IN));
                 break;
             }
             case TEST_CONFIG_AMQ_OUT: {
                 conn = provider.createConnection("dynamicQueues/JMS.JUNIT.OUT.Q", AMQ_JNDI_URL);
-                conn.setOid(TEST_CONFIG_AMQ_OUT);
+                conn.setGoid(new Goid(0,TEST_CONFIG_AMQ_OUT));
                 break;
             }
             case TEST_CONFIG_MQS_IN: {
                 conn = provider.createConnection("cn=VCTEST.Q.IN", MQS_JNDI_URL);
-                conn.setOid(TEST_CONFIG_MQS_IN);
+                conn.setGoid(new Goid(0,TEST_CONFIG_MQS_IN));
 //                conn.setProperties(MQS_CONN_PROPERTIES); // for ssl
                 break;
             }
             case TEST_CONFIG_MQS_OUT: {
                 conn = provider.createConnection("cn=VCTEST.Q.OUT", MQS_JNDI_URL);
-                conn.setOid(TEST_CONFIG_MQS_OUT);
+                conn.setGoid(new Goid(0,TEST_CONFIG_MQS_OUT));
 //                conn.setProperties(MQS_CONN_PROPERTIES);
                 break;
             }
             case TEST_CONFIG_DYNAMIC_IN: {
                 conn = provider.createConnection("ilona.in1", DYNAMIC_JNDI_URL);
-                conn.setOid(TEST_CONFIG_DYNAMIC_IN);
+                conn.setGoid(new Goid(0,TEST_CONFIG_DYNAMIC_IN));
 //                conn.setProperties(DYNAMIC_CONN_PROPERTIES); // for ssl
                 break;
             }
             case TEST_CONFIG_DYNAMIC_OUT: {
                 conn = provider.createConnection("ilona.in1", DYNAMIC_JNDI_URL);
-                conn.setOid(TEST_CONFIG_DYNAMIC_OUT);
+                conn.setGoid(new Goid(0,TEST_CONFIG_DYNAMIC_OUT));
 //                conn.setProperties(DYNAMIC_CONN_PROPERTIES);
                 break;
             }
             default: {
                 conn = provider.createConnection(AMQ_QUEUE_DEFAULT, AMQ_JNDI_URL);
-                conn.setOid(6666);
+                conn.setGoid(new Goid(0,6666));
                 break;
             }
         }

@@ -10,8 +10,8 @@ import java.util.*;
  * Stub-mode JMS admin interface.
  */
 public class JmsAdminStub implements JmsAdmin {
-    private Map connections;
-    private Map endpoints;
+    private Map<Goid,JmsConnection> connections;
+    private Map<Goid, JmsEndpoint> endpoints;
 
     private static JmsProvider[] providers = new JmsProvider[] {
         new JmsProvider("WebSphere MQ 5.2.1", "com.ibm.jms.jndi.InitialContextFactory", "JmsQueueConnectionFactory"),
@@ -32,7 +32,7 @@ public class JmsAdminStub implements JmsAdmin {
     public synchronized JmsConnection[] findAllConnections() throws FindException {
         Collection list = new ArrayList();
         for (Iterator i = connections.keySet().iterator(); i.hasNext();) {
-            Long key = (Long) i.next();
+            Goid key = (Goid) i.next();
             list.add( connections.get(key) );
         }
         return (JmsConnection[]) list.toArray(new JmsConnection[0]);
@@ -44,76 +44,84 @@ public class JmsAdminStub implements JmsAdmin {
         Set keys = endpoints.keySet();
         for (Iterator i = keys.iterator(); i.hasNext();) {
             JmsEndpoint endpoint = (JmsEndpoint) endpoints.get(i.next());
-            found.add(new JmsTuple( findConnectionByPrimaryKey( endpoint.getConnectionOid() ), endpoint ));
+            found.add(new JmsTuple( findConnectionByPrimaryKey( endpoint.getConnectionGoid() ), endpoint ));
         }
         return (JmsTuple[]) found.toArray(new JmsTuple[0]);
     }
 
     @Override
-    public synchronized JmsConnection findConnectionByPrimaryKey(long oid) throws FindException {
-        return (JmsConnection) connections.get(new Long(oid));
+    public synchronized JmsConnection findConnectionByPrimaryKey(Goid oid) throws FindException {
+        return (JmsConnection) connections.get(oid);
     }
 
     @Override
-    public synchronized long saveConnection(JmsConnection connection) throws SaveException, VersionException {
-        long oid = connection.getOid();
-        if (oid == 0 || oid == PersistentEntity.DEFAULT_OID) {
-            oid = StubDataStore.defaultStore().nextObjectId();
+    public synchronized Goid saveConnection(JmsConnection connection) throws SaveException, VersionException {
+        Goid goid = connection.getGoid();
+        if (goid == null || goid.equals(GoidEntity.DEFAULT_GOID)) {
+            goid = new Goid(0,StubDataStore.defaultStore().nextObjectId());
         }
-        connection.setOid(oid);
-        Long key = new Long(oid);
-        connections.put(key, connection);
-        return oid;
+        connection.setGoid(goid);
+        connections.put(goid, connection);
+        return goid;
     }
 
     @Override
-    public synchronized void deleteConnection(long id) throws DeleteException {
-        if (connections.remove(new Long(id)) == null) {
-            throw new RuntimeException("Could not find jms connection oid= " + id);
+    public synchronized void deleteConnection(Goid id) throws DeleteException {
+        if (connections.remove(id) == null) {
+            throw new RuntimeException("Could not find jms connection goid= " + id);
         }
     }
 
     @Override
-    public JmsEndpoint[] getEndpointsForConnection(long connectionOid) throws FindException {
+    public JmsEndpoint[] getEndpointsForConnection(Goid connectionOid) throws FindException {
         List found = new ArrayList();
         Set keys = endpoints.keySet();
         for (Iterator i = keys.iterator(); i.hasNext();) {
             JmsEndpoint endpoint = (JmsEndpoint) endpoints.get(i.next());
-            if (endpoint.getConnectionOid() == connectionOid)
+            if (endpoint.getConnectionGoid() == connectionOid)
                 found.add(endpoint);
         }
         return (JmsEndpoint[]) found.toArray(new JmsEndpoint[0]);
     }
 
     @Override
-    public synchronized JmsEndpoint findEndpointByPrimaryKey(long oid) throws FindException {
-        JmsEndpoint e = (JmsEndpoint)endpoints.get(new Long(oid));
+    public synchronized JmsEndpoint findEndpointByPrimaryKey(Goid goid) throws FindException {
+        JmsEndpoint e = (JmsEndpoint)endpoints.get(goid);
         if (e == null )
-            throw new FindException("No endpoint with OID " + oid + " is known");
+            throw new FindException("No endpoint with GOID " + goid + " is known");
         else
             return e;
     }
 
     @Override
-    public void setEndpointMessageSource(long oid, boolean isMessageSource) throws FindException {
-        JmsEndpoint endpoint = findEndpointByPrimaryKey(oid);
+    public void setEndpointMessageSource(Goid goid, boolean isMessageSource) throws FindException {
+        JmsEndpoint endpoint = findEndpointByPrimaryKey(goid);
         endpoint.setMessageSource(isMessageSource);        
     }
 
     @Override
-    public synchronized long saveEndpoint(JmsEndpoint endpoint) throws SaveException, VersionException {
-        long oid = endpoint.getOid();
-        if (oid == 0 || oid == JmsEndpoint.DEFAULT_OID) {
-            oid = StubDataStore.defaultStore().nextObjectId();
-            endpoint.setOid(oid);
+    public synchronized Goid saveEndpoint(JmsEndpoint endpoint) throws SaveException, VersionException {
+        Goid oid = endpoint.getGoid();
+        if (oid == null || oid.equals(JmsEndpoint.DEFAULT_GOID)) {
+            oid = new Goid(0,StubDataStore.defaultStore().nextObjectId());
+            endpoint.setGoid(oid);
         }
-        endpoints.put(new Long(oid), endpoint);
+        endpoints.put(oid, endpoint);
         return oid;
     }
 
     @Override
-    public void deleteEndpoint( long endpointOid ) throws FindException, DeleteException {
-        endpoints.remove(new Long(endpointOid));
+    public void deleteEndpoint( Goid endpointOid ) throws FindException, DeleteException {
+        endpoints.remove(endpointOid);
+    }
+
+    @Override
+    public JmsEndpoint findEndpointByOldId(Long id) throws FindException {
+        for(JmsEndpoint endpoint : endpoints.values()){
+            if(endpoint.getOldOid()!=null && endpoint.getOldOid().equals(id))
+                return endpoint;
+        }
+        return null;
     }
 
     @Override

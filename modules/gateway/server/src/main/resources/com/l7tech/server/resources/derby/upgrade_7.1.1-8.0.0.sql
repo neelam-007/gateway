@@ -375,6 +375,32 @@ ALTER TABLE encapsulated_assertion_result add constraint FK_ENCASSRES_ENCASS for
 update rbac_role set entity_goid = toGoid(cast(getVariable('encass_prefix') as bigint),entity_oid) where entity_oid is not null and entity_type='ENCAPSULATED_ASSERTION';
 update rbac_predicate_oid oid1 set oid1.entity_id = ifnull((select goidToString(toGoid(cast(getVariable('encass_prefix') as bigint),cast(oid1.entity_id as bigint))) from rbac_predicate left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid where rbac_predicate.objectid = oid1.objectid and rbac_permission.entity_type = 'ENCAPSULATED_ASSERTION'), oid1.entity_id);
 
+-- jms
+ALTER TABLE jms_endpoint ADD COLUMN old_objectid bigint;
+UPDATE  jms_endpoint SET old_objectid = objectid;
+ALTER TABLE jms_endpoint DROP COLUMN objectid;
+ALTER TABLE jms_endpoint ADD COLUMN goid CHAR(16) FOR BIT DATA;
+call setVariable('jms_endpoint_prefix', cast(randomLongNotReserved() as char(21)));
+update jms_endpoint set goid = toGoid(cast(getVariable('jms_endpoint_prefix') as bigint), old_objectid);
+ALTER TABLE jms_endpoint ALTER COLUMN goid NOT NULL;
+ALTER TABLE jms_endpoint ADD PRIMARY KEY (goid);
+
+ALTER TABLE jms_connection ADD COLUMN objectid_backup bigint;
+update jms_connection set objectid_backup = objectid;
+ALTER TABLE jms_connection DROP COLUMN objectid;
+ALTER TABLE jms_connection ADD COLUMN goid CHAR(16) FOR BIT DATA;
+call setVariable('jms_connection_prefix', cast(randomLongNotReserved() as char(21)));
+update jms_connection set goid = toGoid(cast(getVariable('jms_connection_prefix') as bigint), objectid_backup);
+ALTER TABLE jms_connection ALTER COLUMN goid NOT NULL;
+ALTER TABLE jms_connection DROP COLUMN objectid_backup;
+ALTER TABLE jms_connection ADD PRIMARY KEY (goid);
+
+ALTER TABLE jms_endpoint ADD COLUMN connection_goid CHAR(16) FOR BIT DATA;
+update jms_endpoint set connection_goid = toGoid(cast(getVariable('jms_connection_prefix') as bigint), connection_oid);
+ALTER TABLE jms_endpoint DROP COLUMN connection_oid;
+ALTER TABLE jms_endpoint ALTER COLUMN connection_goid NOT NULL;
+
+
 --
 -- Register upgrade task for upgrading sink configuration references to GOIDs
 --
