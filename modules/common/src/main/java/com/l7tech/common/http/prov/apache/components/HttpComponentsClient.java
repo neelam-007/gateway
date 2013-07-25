@@ -295,7 +295,11 @@ public class HttpComponentsClient implements RerunnableGenericHttpClient{
         //final HttpState state = getHttpState(client, params);
         final HttpContext state = getHttpState(params);
 
-        final HttpRequestBase httpMethod = getClientMethod(method, params, targetUrl);
+        String methodString = params.getMethodAsString();
+        if (HttpMethod.OTHER.equals(method) && (methodString == null || methodString.trim().length() < 1))
+            throw new GenericHttpException("Method name string must be provided for HTTP method OTHER");
+
+        final HttpRequestBase httpMethod = getClientMethod(method, methodString, params, targetUrl);
 
         configureParameters( clientParams, state, client, httpMethod, params );
 
@@ -665,7 +669,7 @@ public class HttpComponentsClient implements RerunnableGenericHttpClient{
         }
     }
 
-    private HttpRequestBase getClientMethod(final HttpMethod method, final GenericHttpRequestParams params, URL targetUrl) throws GenericHttpException{
+    private HttpRequestBase getClientMethod(final HttpMethod method, final String methodAsString, final GenericHttpRequestParams params, URL targetUrl) throws GenericHttpException{
         HttpUriRequest httpRequest = null;
         HttpMethod methodType = HttpMethod.POST;
         if(method != null) methodType = method;
@@ -706,6 +710,15 @@ public class HttpComponentsClient implements RerunnableGenericHttpClient{
             case PATCH:
                 //RFC 5789 HTTP Patch method
                 return new HttpPatch(uri);
+            case OTHER:
+                if (methodAsString == null)
+                    throw new IllegalStateException("Method " + method + " not supported with null methodAsString");
+                return new HttpPost(uri) {
+                    @Override
+                    public String getMethod() {
+                        return methodAsString;
+                    }
+                };
             //TODO: add HttpTrace method
             default:
                 throw new IllegalStateException("Method " + method + " not supported");

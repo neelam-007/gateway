@@ -122,6 +122,7 @@ public class HttpRoutingAssertion extends RoutingAssertionWithSamlSV implements 
     protected String[] tlsTrustedCertNames;
 
     private boolean forceIncludeRequestBody = false;
+    private String httpMethodAsString;
 
     // TODO WARNING
     // TODO WARNING
@@ -177,6 +178,7 @@ public class HttpRoutingAssertion extends RoutingAssertionWithSamlSV implements 
         this.setUsesDefaultKeyStore(source.isUsesDefaultKeyStore());
         this.setNonDefaultKeystoreId(source.getNonDefaultKeystoreId());
         this.setHttpMethod(source.getHttpMethod());
+        this.setHttpMethodAsString(source.getHttpMethodAsString());
         this.setProxyHost(source.getProxyHost());
         this.setProxyPort(source.getProxyPort());
         this.setProxyUsername(source.getProxyUsername());
@@ -748,6 +750,20 @@ public class HttpRoutingAssertion extends RoutingAssertionWithSamlSV implements 
      */
     public void setHttpMethod(HttpMethod httpMethod) {
         this.httpMethod = httpMethod;
+    }
+
+    /**
+     * @return the custom method name for HttpMethod.OTHER, or null.
+     */
+    public String getHttpMethodAsString() {
+        return httpMethodAsString;
+    }
+
+    /**
+     * @param httpMethodAsString a custom method name for HttpMethod.OTHER, or null.
+     */
+    public void setHttpMethodAsString(String httpMethodAsString) {
+        this.httpMethodAsString = httpMethodAsString;
     }
 
     public String getProxyHost() {

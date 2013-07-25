@@ -1,6 +1,7 @@
 package com.l7tech.server.policy.variable;
 
 import com.l7tech.common.http.HttpCookie;
+import com.l7tech.common.http.HttpMethod;
 import com.l7tech.gateway.common.RequestId;
 import com.l7tech.gateway.common.audit.*;
 import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
@@ -183,7 +184,10 @@ public class ServerVariables {
                 @Override
                 public Object get(String name, PolicyEnforcementContext context) {
                     HttpRequestKnob hrk = context.getRequest().getKnob(HttpRequestKnob.class);
-                    return hrk == null ? null : hrk.getMethod().name();
+                    if (hrk == null)
+                        return null;
+                    final HttpMethod method = hrk.getMethod();
+                    return HttpMethod.OTHER.equals(method) ? hrk.getMethodAsString() : method.name();
                 }
             }),
             new Variable("request.http.uri", new Getter() {

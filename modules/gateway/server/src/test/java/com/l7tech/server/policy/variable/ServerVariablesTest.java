@@ -469,6 +469,20 @@ public class ServerVariablesTest {
     }
 
     @Test
+    public void testHttpMethod() throws Exception {
+        PolicyEnforcementContext context = contextHttp();
+        expandAndCheck(context, "${request.http.method}", "POST");
+
+        context = context();
+        MockHttpServletRequest mockRequest = new MockHttpServletRequest();
+        mockRequest.setMethod("ArgleBlargle");
+        mockRequest.setContentType(ContentTypeHeader.XML_DEFAULT.getFullValue());
+        mockRequest.addHeader(HttpConstants.HEADER_CONTENT_TYPE, ContentTypeHeader.XML_DEFAULT.getFullValue());
+        context.getRequest().attachHttpRequestKnob(new HttpServletRequestKnob(mockRequest));
+        expandAndCheck(context, "${request.http.method}", "ArgleBlargle");
+    }
+
+    @Test
     public void testHttpParameter() throws Exception {
         PolicyEnforcementContext context = contextHttp();
         expandAndCheck(context, "${request.http.parameter.single}", "1");

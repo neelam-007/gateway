@@ -164,4 +164,35 @@ public class HttpComponentsClientTest {
             httpServer.stop();
         }
     }
+
+    @Test
+    public void testCustomRequestMethod() throws Exception {
+        final String[] sawRequestMethod = { null };
+
+        MockHttpServer httpServer = new MockHttpServer(17801);
+        httpServer.setHttpHandler(new HttpHandler() {
+            @Override
+            public void handle(HttpExchange exchange) throws IOException {
+                sawRequestMethod[0] = exchange.getRequestMethod();
+                exchange.sendResponseHeaders(200, 0);
+                exchange.close();
+            }
+        });
+        httpServer.start();
+
+        try {
+            GenericHttpRequestParams requestParams = new GenericHttpRequestParams();
+            requestParams.setMethodAsString("MyCustomFancyHttpVerb");
+            requestParams.setTargetUrl(new URL("http://localhost:" + httpServer.getPort()));
+            RerunnableHttpRequest request = (RerunnableHttpRequest) fixture.createRequest(HttpMethod.OTHER, requestParams);
+            request.setInputStream(new ByteArrayInputStream(("<test>test message</test>").getBytes()));
+            GenericHttpResponse response = request.getResponse();
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            IOUtils.copyStream(response.getInputStream(), bos);
+        } finally {
+            httpServer.stop();
+        }
+
+        assertEquals(sawRequestMethod[0], "MyCustomFancyHttpVerb");
+    }
 }

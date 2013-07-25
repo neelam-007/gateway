@@ -27,6 +27,7 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.uddi.WsdlPortInfo;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
+import com.l7tech.util.SyspropUtil;
 import com.l7tech.wsdl.Wsdl;
 import com.l7tech.xml.soap.SoapVersion;
 import org.apache.commons.lang.ObjectUtils;
@@ -53,6 +54,7 @@ import java.util.logging.Logger;
  */
 public class ServicePropertiesDialog extends JDialog {
     private static final Logger logger = Logger.getLogger(ServicePropertiesDialog.class.getName());
+    private static final boolean ENABLE_CUSTOM_HTTP_VERB = SyspropUtil.getBoolean("com.l7tech.enableCustomHttpVerb", false);
 
     private final PublishedService subject;
     private final boolean wasTracingEnabled;
@@ -75,6 +77,8 @@ public class ServicePropertiesDialog extends JDialog {
     private JCheckBox deleteCheck;
     private JCheckBox headCheck;
     private JCheckBox optionsCheck;
+    private JCheckBox patchCheck;
+    private JCheckBox otherCheck;
     private JPanel wsdlPanel;
     private JButton resetWSDLButton;
     private JButton helpButton;
@@ -244,6 +248,11 @@ public class ServicePropertiesDialog extends JDialog {
             headCheck.setSelected(true);
         }
         optionsCheck.setSelected(methods.contains(HttpMethod.OPTIONS));
+        patchCheck.setSelected(methods.contains(HttpMethod.PATCH));
+        otherCheck.setSelected(methods.contains(HttpMethod.OTHER));
+
+        patchCheck.setVisible(ENABLE_CUSTOM_HTTP_VERB);
+        otherCheck.setVisible(ENABLE_CUSTOM_HTTP_VERB);
 
         if (!subject.isSoap()) {
             tabbedPane1.setEnabledAt(2, false);
@@ -675,6 +684,8 @@ public class ServicePropertiesDialog extends JDialog {
         enableIfHasUpdatePermission(deleteCheck);
         enableIfHasUpdatePermission(headCheck);
         enableIfHasUpdatePermission(optionsCheck);
+        enableIfHasUpdatePermission(patchCheck);
+        enableIfHasUpdatePermission(otherCheck);
         enableIfHasUpdatePermission(disableRadio);
         enableIfHasUpdatePermission(enableRadio);
         enableIfHasUpdatePermission(laxResolutionCheckbox);
@@ -824,7 +835,7 @@ public class ServicePropertiesDialog extends JDialog {
             return;
         }
 
-        if (!getCheck.isSelected() && !putCheck.isSelected() && !postCheck.isSelected() && !deleteCheck.isSelected() && !headCheck.isSelected() && !optionsCheck.isSelected()) {
+        if (!getCheck.isSelected() && !putCheck.isSelected() && !postCheck.isSelected() && !deleteCheck.isSelected() && !headCheck.isSelected() && !optionsCheck.isSelected() && !patchCheck.isSelected() && !otherCheck.isSelected()) {
             int res = JOptionPane.showConfirmDialog(this, "Because no HTTP methods are selected, this service will " +
                                                           "not be accessible through HTTP. Are you sure you want to " +
                                                           "do this?", "Warning", JOptionPane.YES_NO_OPTION);
@@ -991,6 +1002,12 @@ public class ServicePropertiesDialog extends JDialog {
         }
         if (optionsCheck.isSelected()) {
             methods.add(HttpMethod.OPTIONS);
+        }
+        if (patchCheck.isSelected()) {
+            methods.add(HttpMethod.PATCH);
+        }
+        if (otherCheck.isSelected()) {
+            methods.add(HttpMethod.OTHER);
         }
         subject.setHttpMethods(methods);
         subject.setLaxResolution(laxResolutionCheckbox.isSelected());

@@ -470,30 +470,31 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
         return AssertionStatus.FAILED;
     }
 
-    private HttpMethod methodFromRequest(PolicyEnforcementContext context, GenericHttpRequestParams routedRequestParams) {
+    private Pair<HttpMethod,String> methodFromRequest(PolicyEnforcementContext context, GenericHttpRequestParams routedRequestParams) {
         HttpMethod method = assertion.getHttpMethod();
-        if (method != null)
-            return method;
+        if (method != null) {
+            return new Pair<HttpMethod, String>(method, assertion.getHttpMethodAsString());
+        }
 
         if (assertion.getRequestMsgSrc() != null) {
             logAndAudit(AssertionMessages.HTTPROUTE_DEFAULT_METHOD_VAR);
-            return HttpMethod.POST;
+            return new Pair<HttpMethod, String>(HttpMethod.POST, null);
         }
 
         if (!context.getRequest().isHttpRequest()) {
             logAndAudit(AssertionMessages.HTTPROUTE_DEFAULT_METHOD_NON_HTTP);
-            return HttpMethod.POST;
+            return new Pair<HttpMethod, String>(HttpMethod.POST, null);
         }
 
         final HttpRequestKnob httpRequestKnob = context.getRequest().getHttpRequestKnob();
         final HttpMethod requestMethod = httpRequestKnob.getMethod();
         if (requestMethod == null) {
             logAndAudit(AssertionMessages.HTTPROUTE_UNEXPECTED_METHOD, "null");
-            return HttpMethod.POST;
+            return new Pair<HttpMethod, String>(HttpMethod.POST, null);
         }
         if (requestMethod.isFollowRedirects() && !assertion.isForceIncludeRequestBody())
             routedRequestParams.setFollowRedirects(assertion.isFollowRedirects());
-        return requestMethod;
+        return new Pair<HttpMethod, String>(requestMethod, httpRequestKnob.getMethodAsString());
     }
 
     private AssertionStatus reallyTryUrl(PolicyEnforcementContext context, Message requestMessage, final GenericHttpRequestParams routedRequestParams,
@@ -568,7 +569,9 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                 routedRequestParams.setContentLength(contentLength);
             }
 
-            final HttpMethod method = methodFromRequest(context, routedRequestParams);
+            final Pair<HttpMethod,String> methodPair = methodFromRequest(context, routedRequestParams);
+            final HttpMethod method = methodPair.left;
+            routedRequestParams.setMethodAsString(methodPair.right);
 
             // dont add content-type for get and deletes
             if (routedRequestParams.needsRequestBody(method)) {

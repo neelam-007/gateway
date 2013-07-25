@@ -29,10 +29,7 @@ import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.security.cert.TrustedCert;
-import com.l7tech.util.CollectionUtils;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.Functions;
-import com.l7tech.util.ValidationUtils;
+import com.l7tech.util.*;
 import com.l7tech.wsdl.Wsdl;
 
 import javax.swing.*;
@@ -60,6 +57,8 @@ import java.util.logging.Logger;
  * </ul>
  */
 public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
+    private static final boolean ENABLE_CUSTOM_HTTP_VERB = SyspropUtil.getBoolean("com.l7tech.enableCustomHttpVerb", false);
+
     private static class ComboBoxItem {
         private final Object _value;
         private final String _displayName;
@@ -142,7 +141,7 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
     private TargetVariablePanel resMsgDestVariableTextField;
     private JPanel resMsgDestVariableTextFieldPanel;
     private JCheckBox gzipCheckBox;
-    private JComboBox requestMethodComboBox;
+    private JComboBox<String> requestMethodComboBox;
     private JRadioButton automaticRequestMethodRadioButton;
     private JRadioButton overrideRequestMethodRadioButton;
     private JRadioButton rbProxyNone;
@@ -454,6 +453,7 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
 
         Set<HttpMethod> methods = EnumSet.allOf(HttpMethod.class);
         methods.removeAll(Arrays.asList(HttpMethod.OTHER)); // Omit methods not supports by Commons HTTP client
+        requestMethodComboBox.setEditable(ENABLE_CUSTOM_HTTP_VERB);
         requestMethodComboBox.setModel(new DefaultComboBoxModel(methods.toArray()));
         Utilities.enableGrayOnDisabled(requestMethodComboBox);
         final ActionListener requestMethodListener = new ActionListener() {
@@ -522,7 +522,7 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         });
 
         Utilities.equalizeButtonSizes(new JButton[] { okButton, cancelButton });
-        getRootPane().setDefaultButton(okButton);               
+        getRootPane().setDefaultButton(okButton);
     }
 
     private void initializeProxyTab() {
@@ -844,7 +844,19 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
 
         assertion.setGzipEncodeDownstream(gzipCheckBox.isSelected());
 
-        assertion.setHttpMethod(overrideRequestMethodRadioButton.isSelected() ? (HttpMethod)requestMethodComboBox.getSelectedItem() : null);
+        if (overrideRequestMethodRadioButton.isSelected()) {
+            final Object selectedItem = requestMethodComboBox.getSelectedItem();
+            if (selectedItem instanceof HttpMethod) {
+                assertion.setHttpMethod((HttpMethod) selectedItem);
+                assertion.setHttpMethodAsString(null);
+            } else {
+                assertion.setHttpMethod(HttpMethod.OTHER);
+                assertion.setHttpMethodAsString((String) selectedItem);
+            }
+        } else {
+            assertion.setHttpMethod(null);
+            assertion.setHttpMethodAsString(null);
+        }
 
         assertion.setUseKeepAlives(useKeepalivesCheckBox.isSelected());
 
@@ -988,7 +1000,12 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         } else {
             automaticRequestMethodRadioButton.setSelected(false);
             overrideRequestMethodRadioButton.setSelected(true);
-            requestMethodComboBox.setSelectedItem(method);
+            String methodString = assertion.getHttpMethodAsString();
+            if (HttpMethod.OTHER.equals(method) && methodString != null && methodString.trim().length() > 0) {
+                requestMethodComboBox.setSelectedItem(methodString);
+            } else {
+                requestMethodComboBox.setSelectedItem(method);
+            }
         }
         if (bra)
             overrideRequestMethodRadioButton.setEnabled(false);

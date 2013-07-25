@@ -55,16 +55,9 @@ public class GenericHttpRequestParams {
     private int proxyPort;
     private PasswordAuthentication proxyAuthentication;
     private boolean forceIncludeRequestBody;
-
-    public SSLContext getSslContext() {
-        return sslContext;
-    }
-
-    public void setSslContext(SSLContext sslContext) {
-        this.sslContext = sslContext;
-    }
-
     private SSLContext sslContext;
+    private String methodAsString;
+
     // NOTE: Add any new fields to the copy constructor
 
     /**
@@ -118,6 +111,8 @@ public class GenericHttpRequestParams {
         proxyPort = template.proxyPort;
         proxyAuthentication = template.proxyAuthentication;
         forceIncludeRequestBody = template.forceIncludeRequestBody;
+        sslContext = template.sslContext;
+        methodAsString = template.methodAsString;
     }
 
     public GenericHttpState getState() {
@@ -591,5 +586,31 @@ public class GenericHttpRequestParams {
      */
     public boolean needsRequestBody(@NotNull HttpMethod method) {
         return method.needsRequestBody() || (isForceIncludeRequestBody() && method.canForceIncludeRequestBody());
+    }
+
+    public SSLContext getSslContext() {
+        return sslContext;
+    }
+
+    public void setSslContext(SSLContext sslContext) {
+        this.sslContext = sslContext;
+    }
+
+    /**
+     * Get a method string to use for HttpMethod.OTHER.
+     *
+     * @return a custom method string, or null.
+     */
+    public String getMethodAsString() {
+        return methodAsString;
+    }
+
+    /**
+     * Set a method string to use for HttpMethod.OTHER.
+     *
+     * @param methodAsString a custom method string, or null.
+     */
+    public void setMethodAsString(String methodAsString) {
+        this.methodAsString = methodAsString;
     }
 }
