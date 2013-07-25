@@ -1,5 +1,6 @@
 package com.l7tech.console.util.registry;
 
+import com.l7tech.gateway.common.siteminder.SiteMinderAdmin;
 import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.util.EntityNameResolver;
 import com.l7tech.console.util.Registry;
@@ -67,6 +68,7 @@ public final class RegistryImpl extends Registry
     private JmsAdmin jmsAdmin;
     private FtpAdmin ftpAdmin;
     private JdbcAdmin jdbcAdmin;
+    private SiteMinderAdmin siteMinderAdmin;
     private TrustedCertAdmin trustedCertAdmin;
     private ResourceAdmin resourceAdmin;
     private CustomAssertionsRegistrar customAssertionsRegistrar;
@@ -179,6 +181,20 @@ public final class RegistryImpl extends Registry
         }
         jdbcAdmin = adminContext.getJdbcConnectionAdmin();
         return jdbcAdmin;
+    }
+
+    /**
+     *
+     * @return the SiteMinder Configuration manager
+     */
+    @Override
+    public synchronized SiteMinderAdmin getSiteMinderConfigurationAdmin() {
+        checkAdminContext();
+        if (siteMinderAdmin != null) {
+            return siteMinderAdmin;
+        }
+        siteMinderAdmin = adminContext.getSiteMinderConfigurationAdmin();
+        return siteMinderAdmin;
     }
 
     /**

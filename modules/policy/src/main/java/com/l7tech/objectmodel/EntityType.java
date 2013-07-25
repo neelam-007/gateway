@@ -59,6 +59,8 @@ public enum EntityType implements Comparable<EntityType> {
 
     JDBC_CONNECTION("JDBC Connection", true, true),
 
+    SITEMINDER_CONFIGURATION("SiteMinder Configuration", true, true),
+
     EMAIL_LISTENER("Email Listener", true, true),
 
     SSG_ACTIVE_CONNECTOR("Polling Listener", true, true),

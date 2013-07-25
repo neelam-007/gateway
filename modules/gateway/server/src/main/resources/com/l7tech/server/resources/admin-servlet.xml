@@ -129,6 +129,13 @@
         <property name="serviceInterface" value="com.l7tech.gateway.common.admin.EncapsulatedAssertionAdmin"/>
     </bean>
 
+
+    <bean name="/SiteMinderAdmin" parent="httpInvokerParent">
+        <property name="service" ref="siteMinderAdmin"/>
+        <property name="serviceInterface" value="com.l7tech.gateway.common.siteminder.SiteMinderAdmin"/>
+    </bean>
+
+
     <bean name="/CustomKeyValueStoreAdmin" parent="httpInvokerParent">
         <property name="service" ref="customKeyValueStoreAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.admin.CustomKeyValueStoreAdmin"/>

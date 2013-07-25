@@ -36,6 +36,7 @@
                 <ref bean="emailAdmin"/>
                 <ref bean="uddiRegistryAdmin" />
                 <ref bean="encapsulatedAssertionAdmin" />
+                <ref bean="siteMinderAdmin" />
                 <ref bean="customKeyValueStoreAdmin" />
             </list>
         </constructor-arg>
@@ -179,8 +180,14 @@
         <property name="serviceInterface" value="com.l7tech.gateway.common.admin.EncapsulatedAssertionAdmin"/>
     </bean>
 
+   <bean id="siteMinderAdmin" parent="invokerCommon">
+        <property name="serviceUrl" value="https://securespangateway/ssg/manager/SiteMinderAdmin"/>
+        <property name="serviceInterface" value="com.l7tech.gateway.common.siteminder.SiteMinderAdmin"/>
+    </bean>
+
     <bean id="customKeyValueStoreAdmin" parent="invokerCommon">
         <property name="serviceUrl" value="https://securespangateway/ssg/manager/CustomKeyValueStoreAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.admin.CustomKeyValueStoreAdmin"/>
     </bean>
+
 </beans>

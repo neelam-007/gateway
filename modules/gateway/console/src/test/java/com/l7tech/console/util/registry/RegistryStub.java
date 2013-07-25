@@ -1,5 +1,6 @@
 package com.l7tech.console.util.registry;
 
+import com.l7tech.gateway.common.siteminder.SiteMinderAdmin;
 import com.l7tech.common.io.PortRanges;
 import com.l7tech.console.TrustedCertAdminStub;
 import com.l7tech.console.security.SecurityProvider;
@@ -128,6 +129,11 @@ public class RegistryStub extends Registry {
 
     @Override
       public JdbcAdmin getJdbcConnectionAdmin() {
+        return null;
+    }
+
+    @Override
+    public SiteMinderAdmin getSiteMinderConfigurationAdmin(){
         return null;
     }
 

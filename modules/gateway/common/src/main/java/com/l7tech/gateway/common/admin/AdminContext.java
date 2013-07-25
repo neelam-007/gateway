@@ -1,5 +1,6 @@
 package com.l7tech.gateway.common.admin;
 
+import com.l7tech.gateway.common.siteminder.SiteMinderAdmin;
 import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
 import com.l7tech.gateway.common.audit.AuditAdmin;
 import com.l7tech.gateway.common.log.LogSinkAdmin;
@@ -51,6 +52,13 @@ public interface AdminContext {
      * @throws SecurityException on security error accessing the interface
      */
     JdbcAdmin getJdbcConnectionAdmin() throws SecurityException;
+
+    /**
+     *
+     * @return  the SiteMinder configuration manager
+     * @throws SecurityException on security error accessing the interface
+     */
+    SiteMinderAdmin getSiteMinderConfigurationAdmin() throws SecurityException;
 
     /**
      * @return the FTP manager

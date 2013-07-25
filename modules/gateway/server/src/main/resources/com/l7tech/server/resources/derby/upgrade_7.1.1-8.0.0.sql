@@ -38,6 +38,37 @@ create table assertion_access (
   primary key (objectid)
 );
 
+create table siteminder_configuration (
+  goid CHAR(16) FOR BIT DATA not null,
+  version integer,
+  name varchar(128) not null,
+  agent_name varchar(256) not null,
+  address varchar(128) not null,
+  secret varchar(4096) not null,
+  ipcheck smallint default 0,
+  enabled smallint,
+  hostname varchar(255) not null,
+  fipsmode integer not null default 0,
+  noncluster_failover smallint default 0,
+  cluster_threshold integer DEFAULT 50,
+  security_zone_goid CHAR(16) FOR BIT DATA references security_zone(goid) on delete set null,
+  primary key (goid)
+);
+
+CREATE TABLE siteminder_configuration_property (
+  goid CHAR(16) FOR BIT DATA references siteminder_configuration(goid) on delete cascade,
+  name varchar(128) not null,
+  value varchar(32672) not null,
+  primary key (goid,name)
+);
+
+-- create new RBAC role for Manage SiteMinder Configuration --
+INSERT INTO rbac_role VALUES (-1500,0,'Manage SiteMinder Configuration', null,null,null,null, 'Users assigned to the {0} role have the ability to read, create, update and delete SiteMinder Configurations.',0);
+INSERT INTO rbac_permission VALUES (-1501,0,-1500,'READ',NULL,'SITEMINDER_CONFIGURATION');
+INSERT INTO rbac_permission VALUES (-1502,0,-1500,'CREATE',NULL,'SITEMINDER_CONFIGURATION');
+INSERT INTO rbac_permission VALUES (-1503,0,-1500,'UPDATE',NULL,'SITEMINDER_CONFIGURATION');
+INSERT INTO rbac_permission VALUES (-1504,0,-1500,'DELETE',NULL,'SITEMINDER_CONFIGURATION');
+
 alter table rbac_role add column entity_goid CHAR(16) FOR BIT DATA;
 
 alter table policy add column security_zone_goid CHAR(16) FOR BIT DATA;

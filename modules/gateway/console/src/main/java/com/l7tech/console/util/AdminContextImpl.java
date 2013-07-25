@@ -1,5 +1,6 @@
 package com.l7tech.console.util;
 
+import com.l7tech.gateway.common.siteminder.SiteMinderAdmin;
 import com.l7tech.console.panels.CancelableOperationDialog;
 import com.l7tech.gateway.common.admin.*;
 import com.l7tech.gateway.common.audit.AuditAdmin;
@@ -69,6 +70,11 @@ public class AdminContextImpl extends RemotingContext implements AdminContext {
     @Override
     public JdbcAdmin getJdbcConnectionAdmin() throws SecurityException {
         return this.getRemoteInterfaceForEndpoint(JdbcAdmin.class);
+    }
+
+    @Override
+    public SiteMinderAdmin getSiteMinderConfigurationAdmin() throws SecurityException {
+        return this.getRemoteInterfaceForEndpoint(SiteMinderAdmin.class);
     }
 
     @Override

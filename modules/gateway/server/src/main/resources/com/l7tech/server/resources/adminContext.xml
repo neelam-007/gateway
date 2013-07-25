@@ -491,6 +491,11 @@
 
     </bean>
 
+    <!-- jdbc admin servant -->
+    <bean id="siteMinderAdmin" class="com.l7tech.server.siteminder.SiteMinderAdminImpl">
+        <constructor-arg ref="siteMinderConfigurationManager"/>
+    </bean>
+
     <!-- Custom key value store admin impl -->
     <bean id="customKeyValueStoreAdmin" class="com.l7tech.server.store.CustomKeyValueStoreAdminImpl">
 

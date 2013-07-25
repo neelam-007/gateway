@@ -132,6 +132,9 @@
                 <!-- JDBC Connection -->
                 <value>com.l7tech.gateway.common.jdbc.JdbcConnection</value>
 
+                <!-- SiteMinder Configuration -->
+                <value>com.l7tech.gateway.common.siteminder.SiteMinderConfiguration</value>
+
                 <!-- Password Policy -->
                 <value>com.l7tech.identity.IdentityProviderPasswordPolicy</value>
 

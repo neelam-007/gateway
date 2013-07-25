@@ -1071,6 +1071,41 @@ CREATE TABLE jdbc_connection (
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --
+-- Table structure for SiteMinder Configuration
+--
+DROP TABLE IF EXISTS siteminder_configuration;
+CREATE TABLE siteminder_configuration (
+  goid binary(16) NOT NULL,
+  version integer NOT NULL,
+  name varchar(128) NOT NULL,
+  agent_name varchar(256) NOT NULL,
+  address varchar(128) NOT NULL,
+  secret varchar(4096) NOT NULL,
+  ipcheck boolean DEFAULT false NOT NULL,
+  enabled tinyint(1) NOT NULL DEFAULT 1,
+  hostname varchar(255) NOT NULL,
+  fipsmode integer NOT NULL DEFAULT 0,
+  noncluster_failover boolean DEFAULT false NOT NULL,
+  cluster_threshold integer DEFAULT 50,
+  security_zone_goid binary(16),
+  PRIMARY KEY (goid),
+  CONSTRAINT siteminder_configuration_security_zone FOREIGN KEY (security_zone_goid) REFERENCES security_zone (goid) ON DELETE SET NULL,
+  INDEX i_name (name),
+  UNIQUE(name)
+) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
+
+--
+-- Table structure for SiteMinder Configuration additional Properties
+--
+DROP TABLE IF EXISTS siteminder_configuration_property;
+CREATE TABLE siteminder_configuration_property (
+  goid binary(16) NOT NULL,
+  name varchar(128) NOT NULL,
+  value MEDIUMTEXT NOT NULL,
+  FOREIGN KEY (goid) REFERENCES siteminder_configuration (goid) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
+
+--
 -- Table structure for UDDI Registries
 -- Note: base_url is unique and has a size limit of 255 bytes, which is the max allowed for a unique key
 -- in mysql when using utf-8 encoding. It is the max size of a hostname
@@ -2030,6 +2065,13 @@ INSERT INTO rbac_permission VALUES (-1275,0,-1400,'CREATE',NULL,'FIREWALL_RULE')
 INSERT INTO rbac_permission VALUES (-1276,0,-1400,'READ',NULL,'FIREWALL_RULE');
 INSERT INTO rbac_permission VALUES (-1277,0,-1400,'UPDATE',NULL,'FIREWALL_RULE');
 INSERT INTO rbac_permission VALUES (-1278,0,-1400,'DELETE',NULL,'FIREWALL_RULE');
+
+-- create new RBAC role for SiteMinder Configuration --
+INSERT INTO rbac_role VALUES (-1500,0,'Manage SiteMinder Configuration', null,null,null,null, 'Users assigned to the {0} role have the ability to read, create, update and delete SiteMinder configuration.',0);
+INSERT INTO rbac_permission VALUES (-1501,0,-1500,'READ',NULL,'SITEMINDER_CONFIGURATION');
+INSERT INTO rbac_permission VALUES (-1502,0,-1500,'CREATE',NULL,'SITEMINDER_CONFIGURATION');
+INSERT INTO rbac_permission VALUES (-1503,0,-1500,'UPDATE',NULL,'SITEMINDER_CONFIGURATION');
+INSERT INTO rbac_permission VALUES (-1504,0,-1500,'DELETE',NULL,'SITEMINDER_CONFIGURATION');
 
 INSERT INTO ssg_version (current_version) VALUES ('8.0.0');
 

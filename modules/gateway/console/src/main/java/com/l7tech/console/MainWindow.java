@@ -203,6 +203,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     private ManageHttpConfigurationAction manageHttpConfigurationAction = null;
     private ManageEncapsulatedAssertionsAction manageEncapsulatedAssertionsAction = null;
     private ManageSecurityZonesAction manageSecurityZonesAction = null;
+    private ManageSiteMinderConfigurationAction manageSiteMinderConfigurationAction = null;
 
     private JPanel frameContentPane = null;
     private JPanel mainPane = null;
@@ -1045,6 +1046,7 @@ public class MainWindow extends JFrame implements SheetHolder {
             menu.add(getManageHttpConfigurationAction());
             menu.add(getManageServiceResolutionMenuItem());
             menu.add(getManageEncapsulatedAssertionsAction());
+            menu.add(getSiteMinderConfigurationAction());
 
             menu.add(getCustomGlobalActionsMenu());
 
@@ -2272,6 +2274,15 @@ public class MainWindow extends JFrame implements SheetHolder {
         return manageJdbcConnectionsAction;
     }
 
+    private Action getSiteMinderConfigurationAction() {
+        if (manageSiteMinderConfigurationAction != null)
+            return manageSiteMinderConfigurationAction;
+
+        manageSiteMinderConfigurationAction = new ManageSiteMinderConfigurationAction();
+        disableUntilLogin(manageSiteMinderConfigurationAction);
+        return manageSiteMinderConfigurationAction;
+    }
+
     private Action getManageTrustedEsmUsersAction() {
         if (manageTrustedEsmUsersAction != null)
             return manageTrustedEsmUsersAction;
@@ -2628,6 +2639,7 @@ public class MainWindow extends JFrame implements SheetHolder {
                 manageMenu.add(getManageHttpConfigurationAction());
                 manageMenu.add(getManageServiceResolutionMenuItem());
                 manageMenu.add(getManageEncapsulatedAssertionsAction());
+                manageMenu.add(getSiteMinderConfigurationAction());
 
                 manageMenu.add(getCustomGlobalActionsMenu());
                 appletManagePopUpMenu = manageMenu;
