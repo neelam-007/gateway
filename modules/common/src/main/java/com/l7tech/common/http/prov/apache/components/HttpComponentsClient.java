@@ -613,6 +613,7 @@ public class HttpComponentsClient implements RerunnableGenericHttpClient{
         clientParams.setParameter(CoreConnectionPNames.SO_TIMEOUT, params.getReadTimeout()>=0 ? params.getReadTimeout() : timeout);
 //        methodParams.setSoTimeout(params.getReadTimeout()>=0 ? params.getReadTimeout() : timeout);
         clientParams.setParameter(ClientPNames.CONN_MANAGER_TIMEOUT, (long) (params.getConnectionTimeout() >= 0 ? params.getConnectionTimeout() : connectionTimeout));
+        clientParams.setParameter(CoreConnectionPNames.CONNECTION_TIMEOUT, (params.getConnectionTimeout() >= 0 ? params.getConnectionTimeout() : connectionTimeout));
  //       clientParams.setConnectionManagerTimeout( (long) (params.getConnectionTimeout() >= 0 ? params.getConnectionTimeout() : connectionTimeout) );
         if (params.getMaxRetries() >= 0) {
             client.setHttpRequestRetryHandler( new DefaultHttpRequestRetryHandler(params.getMaxRetries(), false ));
