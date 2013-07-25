@@ -1650,8 +1650,6 @@
                 <ref bean="resourceEntryManager"/>
                 <ref bean="roleManager"/>
                 <ref bean="identityProviderConfigManager"/>
-                <ref bean="jmsConnectionManager"/>
-                <ref bean="jmsEndpointManager"/>
                 <ref bean="trustedCertManager"/>
                 <ref bean="revocationCheckPolicyManager"/>
                 <ref bean="ssgActiveConnectorManager"/>
