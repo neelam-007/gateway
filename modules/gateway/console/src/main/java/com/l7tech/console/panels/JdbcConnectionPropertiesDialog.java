@@ -199,6 +199,7 @@ public class JdbcConnectionPropertiesDialog extends JDialog {
 
     private void modelToView() {
         connectionNameTextField.setText(connection.getName());
+        populateDriverClassComboBox();
         jdbcUrlTextField.setText(connection.getJdbcUrl());
         usernameTextField.setText(connection.getUserName());
         passwordField.setText(connection.getPassword());
