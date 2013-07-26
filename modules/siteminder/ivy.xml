@@ -19,5 +19,6 @@
         <dependency name="smagentapi" rev="12.5" org="com.ca.siteminder" force="true" conf="core,test"/>
         <dependency name="smjavasdk2" rev="12.5" org="com.ca.siteminder" conf="core,test"/>
         <dependency name="junit" rev="4.10" org="junit" conf="test"/>
+        <dependency name="layer7-gateway-common" rev="latest.integration" conf="core"/>
     </dependencies>
 </ivy-module>

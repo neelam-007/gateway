@@ -1,5 +1,6 @@
 package com.ca.siteminder.util;
 
+import com.l7tech.gateway.common.siteminder.SiteMinderHost;
 import org.junit.Ignore;
 import org.junit.Test;
 

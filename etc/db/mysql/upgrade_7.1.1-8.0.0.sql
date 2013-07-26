@@ -109,11 +109,12 @@ CREATE TABLE siteminder_configuration (
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
 CREATE TABLE siteminder_configuration_property (
-  goid CHAR(16) FOR BIT DATA references siteminder_configuration(goid) on delete cascade,
-  name varchar(128) not null,
-  value varchar(32672) not null,
-  primary key (goid,name)
-);
+  goid binary(16) NOT NULL,
+  name varchar(128) NOT NULL,
+  value MEDIUMTEXT NOT NULL,
+  FOREIGN KEY (goid) REFERENCES siteminder_configuration (goid) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
+
 
 -- create new RBAC role for SiteMinder Configuration --
 INSERT INTO rbac_role VALUES (-1500,0,'Manage SiteMinder Configuration', null,null,null,null, 'Users assigned to the {0} role have the ability to read, create, update and delete SiteMinder configuration.',0);

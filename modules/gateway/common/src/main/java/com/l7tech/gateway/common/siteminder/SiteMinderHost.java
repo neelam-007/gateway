@@ -1,7 +1,5 @@
-package com.ca.siteminder.util;
+package com.l7tech.gateway.common.siteminder;
 
-
-import com.netegrity.util.Fips140Mode;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -10,6 +8,11 @@ import java.io.Serializable;
 import java.util.Properties;
 
 public class SiteMinderHost implements Serializable {
+
+    public static final int FIPS140_UNSET = 0;
+    public static final int FIPS140_COMPAT = 1;
+    public static final int FIPS140_MIGRATE = 2;
+    public static final int FIPS140_ONLY = 3;
 
     private final static String HOST_NAME = "hostname";
     private final static String HOST_CONFIG_OBJECT = "hostconfigobject";
@@ -26,6 +29,19 @@ public class SiteMinderHost implements Serializable {
     private String sharedSecret;
     private Long sharedSecretTime;
     private Integer fipsMode;
+    private String userName;
+
+    public SiteMinderHost(){
+        this.hostname = "";
+        this.hostConfigObject = "";
+        this.policyServer = "";
+        this.requestTimeout = 0;
+        this.sharedSecret = "";
+        this.sharedSecretTime = 0L;
+        this.fipsMode = 0;
+        this.userName = "";
+    }
+
 
     public SiteMinderHost(String smHostConfPath) throws IOException {
         try (FileInputStream fis = new FileInputStream(new File(smHostConfPath))) {
@@ -61,11 +77,11 @@ public class SiteMinderHost implements Serializable {
         String value = getValue(properties, attr);
         switch (value) {
             case "COMPAT":
-                return Fips140Mode.FIPS140_COMPAT;
+                return FIPS140_COMPAT;
             case "MIGRATE":
-                return Fips140Mode.FIPS140_MIGRATE;
+                return FIPS140_MIGRATE;
             case "ONLY":
-                return Fips140Mode.FIPS140_ONLY;
+                return FIPS140_ONLY;
         }
         return null;
     }
@@ -105,5 +121,9 @@ public class SiteMinderHost implements Serializable {
 
     public Integer getFipsMode() {
         return fipsMode;
+    }
+
+    public String getUserName() {
+        return userName;
     }
 }

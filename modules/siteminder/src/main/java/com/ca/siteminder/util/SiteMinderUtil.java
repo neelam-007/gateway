@@ -1,9 +1,9 @@
 package com.ca.siteminder.util;
 
-import com.ca.siteminder.SiteMinderApiClassException;
 import com.ca.siteminder.sdk.agentapi.SmAgentApiException;
 import com.ca.siteminder.sdk.agentapi.SmRegHost;
 import com.ca.siteminder.sdk.agentapi.Util;
+import com.l7tech.gateway.common.siteminder.SiteMinderHost;
 import com.l7tech.util.FileUtils;
 import com.netegrity.util.Fips140Mode;
 import netegrity.siteminder.javaagent.UserCredentials;
@@ -213,7 +213,7 @@ public abstract class SiteMinderUtil {
      * @param password password to login to PolicyServer
      * @param hostname register hostname
      * @param hostconfig host configuration
-     * @param fibsMode fibs mode
+     * @param fipsMode fibs mode
      * @return
      * @throws IOException
      * @throws SmAgentApiException
@@ -223,7 +223,7 @@ public abstract class SiteMinderUtil {
                                          String password,
                                          String hostname,
                                          String hostconfig,
-                                         Integer fibsMode) throws IOException, SmAgentApiException {
+                                         Integer fipsMode) throws IOException, SmAgentApiException {
         File tmpDir = null;
         try {
             tmpDir = FileUtils.createTempDirectory("SMHOST", null, null, false);
@@ -231,8 +231,8 @@ public abstract class SiteMinderUtil {
 
             Fips140Mode fm = Fips140Mode.getFips140ModeObject();
             fm.setMode(Util.resolveSetting());
-            if (fibsMode != null) {
-                fm.setMode(fibsMode);
+            if (fipsMode != null) {
+                fm.setMode(fipsMode);
             }
 
             SmRegHost regHost = new SmRegHost(address, smHostConfig,

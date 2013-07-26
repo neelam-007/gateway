@@ -34,5 +34,7 @@
         <dependency org="com.rsa" name="jcm" rev="6.1" force="true" conf="test"/>
         <dependency org="com.rsa" name="cryptojcommon" rev="6.1" force="true" conf="test"/>
         <dependency org="com.rsa" name="cryptojce" rev="6.1" force="true" conf="test"/>
+
+        <dependency name="smagentapi" rev="12.5" org="com.ca.siteminder" force="true" conf="core"/>
     </dependencies>
 </ivy-module>

@@ -5,6 +5,7 @@ import com.l7tech.gateway.common.siteminder.SiteMinderConfiguration;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.SecurityZoneWidget;
 import com.l7tech.gateway.common.security.rbac.OperationType;
+import com.l7tech.gateway.common.siteminder.SiteMinderHost;
 import com.l7tech.gui.MaxLengthDocument;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.InputValidator;
@@ -14,7 +15,6 @@ import com.l7tech.gui.widgets.SquigglyTextField;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.util.MutablePair;
-import com.netegrity.util.Fips140Mode;
 import sun.security.util.Resources;
 
 import javax.swing.*;
@@ -24,11 +24,9 @@ import javax.swing.table.AbstractTableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.IOException;
 import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.Map;
-import java.util.ResourceBundle;
-import java.util.TreeMap;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
@@ -46,14 +44,22 @@ public class SiteMinderConfigPropertiesDialog extends JDialog {
     private static final int MAX_TABLE_COLUMN_NUM = 2;
     private static final int CLUSTER_THRESHOLD_MIN = 1;
     private static final int CLUSTER_THRESHOLD_MAX = 1000;
+    private static final int CLUSTER_SERVER_CONN_MIN = 1;
+    private static final int CLUSTER_SERVER_CONN_MAX = 3;
+    private static final int CLUSTER_SERVER_CONN_STEP = 1;
 
-    private static final String UNSET_FIPS_MODE = "UNSET";
-    private static final String COMPAT_FIPS_MODE = "COMPAT";
-    private static final String MIGRATE_FIPS_MODE = "MIGRATE";
-    private static final String ONLY_FIPS_MODE = "ONLY";
+    public static final String UNSET_FIPS_MODE = "UNSET";
+    public static final String COMPAT_FIPS_MODE = "COMPAT";
+    public static final String MIGRATE_FIPS_MODE = "MIGRATE";
+    public static final String ONLY_FIPS_MODE = "ONLY";
 
+    public static final int FIPS140_UNSET = 0;
+    public static final int FIPS140_COMPAT = 1;
+    public static final int FIPS140_MIGRATE = 2;
+    public static final int FIPS140_ONLY = 3;
 
     private SiteMinderConfiguration configuration;
+    private final Map<String, SiteMinderHost> siteMinderHostMap = new TreeMap<String, SiteMinderHost>();
     private PermissionFlags flags;
 
     private SquigglyTextField configurationNameTextField;
@@ -75,6 +81,7 @@ public class SiteMinderConfigPropertiesDialog extends JDialog {
     private AbstractTableModel clusterSettingTableModel;
     private final Map<String, String> clusterSettingsMap = new TreeMap<String, String>();
     private SecurityZoneWidget zoneControl;
+    private JButton registerButton;
 
     private static class FipsModeType{
         private static final Map<Integer, FipsModeType> fipsTypes = new ConcurrentHashMap<Integer, FipsModeType>();
@@ -92,11 +99,10 @@ public class SiteMinderConfigPropertiesDialog extends JDialog {
         }
     }
 
-    private static final Object UNSET_MODE =  new FipsModeType(Fips140Mode.FIPS140_UNSET, UNSET_FIPS_MODE);
-    private static final Object COMPAT_MODE = new FipsModeType(Fips140Mode.FIPS140_COMPAT, COMPAT_FIPS_MODE);
-    private static final Object MIGRATE_MODE = new FipsModeType(Fips140Mode.FIPS140_MIGRATE, MIGRATE_FIPS_MODE);
-    private static final Object ONLY_MODE =  new FipsModeType(Fips140Mode.FIPS140_ONLY, ONLY_FIPS_MODE);
-
+    public static final Object UNSET_MODE =  new FipsModeType(FIPS140_UNSET, UNSET_FIPS_MODE);
+    public static final Object COMPAT_MODE = new FipsModeType(FIPS140_COMPAT, COMPAT_FIPS_MODE);
+    public static final Object MIGRATE_MODE = new FipsModeType(FIPS140_MIGRATE, MIGRATE_FIPS_MODE);
+    public static final Object ONLY_MODE =  new FipsModeType(FIPS140_ONLY, ONLY_FIPS_MODE);
 
     private boolean confirmed;
 
@@ -206,6 +212,13 @@ public class SiteMinderConfigPropertiesDialog extends JDialog {
             }
         });
 
+        registerButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                doRegister();
+            }
+        });
+
         zoneControl.configure(SiteMinderConfiguration.DEFAULT_GOID.equals(configuration.getGoid()) ? OperationType.CREATE : OperationType.UPDATE, configuration);
 
         modelToView();
@@ -214,6 +227,33 @@ public class SiteMinderConfigPropertiesDialog extends JDialog {
     }
 
     private void modelToView(){
+        if (siteMinderHostMap != null && siteMinderHostMap.size() != 0 ){
+            SiteMinderHost siteMinderHost = siteMinderHostMap.get("SiteMinder Host Configuration");
+
+            configuration.setHostname(siteMinderHost.getHostname());
+            configuration.setSecret(siteMinderHost.getSharedSecret());
+            configuration.setAddress("127.0.0.1");
+            configuration.setFipsmode(siteMinderHost.getFipsMode());
+
+            Map<String, String> properties = new HashMap<String, String>();
+
+            String [] clusterProperties = siteMinderHost.getPolicyServer().split(",");
+
+            if (clusterProperties.length == 4){
+
+                properties.put(resources.getString("property.cluster.server.address"), clusterProperties[0]);
+                properties.put(resources.getString("property.cluster.server.accounting.port"), clusterProperties[1]);
+                properties.put(resources.getString("property.cluster.server.authentication.port"), clusterProperties[2]);
+                properties.put(resources.getString("property.cluster.server.authorization.port"), clusterProperties[3]);
+                properties.put(resources.getString("property.cluster.server.connection.min"), String.valueOf(CLUSTER_SERVER_CONN_MIN));
+                properties.put(resources.getString("property.cluster.server.connection.max"), String.valueOf(CLUSTER_SERVER_CONN_MAX));
+                properties.put(resources.getString("property.cluster.server.connection.step"), String.valueOf(CLUSTER_SERVER_CONN_STEP));
+                properties.put(resources.getString("property.cluster.server.timeout"), String.valueOf(siteMinderHost.getRequestTimeout()));
+
+                configuration.setProperties(properties);
+            }
+        }
+
         configurationNameTextField.setText(configuration.getName());
         agentNameTextField.setText(configuration.getAgent_name());
         secretTextArea.setText(configuration.getSecret());
@@ -222,19 +262,19 @@ public class SiteMinderConfigPropertiesDialog extends JDialog {
         hostNameTextField.setText(configuration.getHostname());
         switch (configuration.getFipsmode()){
             case 0:
-                fipsModeComboBox.setSelectedIndex(Fips140Mode.FIPS140_UNSET);
+                fipsModeComboBox.setSelectedIndex(FIPS140_UNSET);
                 break;
             case 1:
-                fipsModeComboBox.setSelectedIndex(Fips140Mode.FIPS140_COMPAT);
+                fipsModeComboBox.setSelectedIndex(FIPS140_COMPAT);
                 break;
             case 2:
-                fipsModeComboBox.setSelectedIndex(Fips140Mode.FIPS140_MIGRATE);
+                fipsModeComboBox.setSelectedIndex(FIPS140_MIGRATE);
                 break;
             case 3:
-                fipsModeComboBox.setSelectedIndex(Fips140Mode.FIPS140_ONLY);
+                fipsModeComboBox.setSelectedIndex(FIPS140_ONLY);
                 break;
             default:
-                fipsModeComboBox.setSelectedIndex(Fips140Mode.FIPS140_UNSET);
+                fipsModeComboBox.setSelectedIndex(FIPS140_UNSET);
                 break;
         }
         nonclusterFailoverCheckBox.setSelected(configuration.isNoncluster_failover());
@@ -333,13 +373,13 @@ public class SiteMinderConfigPropertiesDialog extends JDialog {
                         resources.getString("dialog.title.wrong.property.fipsmode"), JOptionPane.WARNING_MESSAGE, null);
                 return;
             case COMPAT_FIPS_MODE:
-                configuration.setFipsmode(Fips140Mode.FIPS140_COMPAT);
+                configuration.setFipsmode(FIPS140_COMPAT);
                 break;
             case MIGRATE_FIPS_MODE:
-                configuration.setFipsmode(Fips140Mode.FIPS140_MIGRATE);
+                configuration.setFipsmode(FIPS140_MIGRATE);
                 break;
             case ONLY_FIPS_MODE:
-                configuration.setFipsmode(Fips140Mode.FIPS140_ONLY);
+                configuration.setFipsmode(FIPS140_ONLY);
                 break;
             default:
                 MessageFormat.format(resources.getString("warning.basic.config.fips.configured"), resources.getString("property.agent.fipsmode"));
@@ -353,6 +393,27 @@ public class SiteMinderConfigPropertiesDialog extends JDialog {
 
     private void doCancel(){
         dispose();
+    }
+
+    private void doRegister(){
+        register(new MutablePair<String, SiteMinderHost>("", new SiteMinderHost()));
+    }
+
+    private void register(final MutablePair<String, SiteMinderHost> property) {
+
+        final SiteMinderRegisterConfigDialog dlg = new SiteMinderRegisterConfigDialog(this, property);
+        dlg.pack();
+        Utilities.centerOnScreen(dlg);
+
+        DialogDisplayer.display(dlg, new Runnable() {
+            @Override
+            public void run() {
+                if (dlg.isConfirmed()){
+                    siteMinderHostMap.put(property.left, property.right);
+                    modelToView();
+                }
+            };
+        });
     }
 
     private void initClusterSettingsTable(){

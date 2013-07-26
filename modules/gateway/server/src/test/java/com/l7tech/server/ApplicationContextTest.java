@@ -56,7 +56,7 @@ public class ApplicationContextTest  {
     private static final Set<String> NON_ADMIN_BEANS = set( "logAccessAdmin", "clusterLogAccessAdmin" );
     private static final Set<String> EXTRA_ADMIN_BEANS = set( "adminLogin", "customAssertionRegistrar" );
     private static final Set<String> NON_SECURED_BEANS = set( "customAssertionRegistrar" );
-    private static final Set<String> TRANSACTIONAL_GETTER_BLACKLIST = set( "auditAdmin", "serviceAdmin", "trustedCertAdmin", "emailListenerAdmin", "clusterStatusAdmin", "jdbcAdmin");
+    private static final Set<String> TRANSACTIONAL_GETTER_BLACKLIST = set( "auditAdmin", "serviceAdmin", "trustedCertAdmin", "emailListenerAdmin", "clusterStatusAdmin", "jdbcAdmin", "siteMinderAdmin");
     private static final Set<String> TRANSACTION_ROLLBACK_WHITELIST = set( "adminLogin", "clusterIDManager", "counterManager", "distributedMessageIdManager", "ftpAdmin", "kerberosAdmin", "schemaEntryManager");
     private static final Set<String> SECURED_RETURNTYPE_WHITELIST = set(
             "com.l7tech.gateway.common.audit.AuditAdmin.getDigestsForAuditRecords",
@@ -65,7 +65,8 @@ public class ApplicationContextTest  {
             "com.l7tech.gateway.common.resources.ResourceAdmin.getDefaultHttpProxyConfiguration",
             "com.l7tech.gateway.common.jdbc.JdbcAdmin.testJdbcConnection",
             "com.l7tech.gateway.common.cluster.ClusterStatusAdmin.isCluster",
-            "com.l7tech.gateway.common.admin.UDDIRegistryAdmin.testUDDIRegistryAuthentication"
+            "com.l7tech.gateway.common.admin.UDDIRegistryAdmin.testUDDIRegistryAuthentication",
+            "com.l7tech.gateway.common.siteminder.SiteMinderAdmin.registerSiteMinderConfiguration"
             );
     private static final Set<EntityType> IGNORE_ENTITY_TYPES = set(
         EntityType.ESM_ENTERPRISE_FOLDER,  

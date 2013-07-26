@@ -22,7 +22,7 @@ import static org.springframework.transaction.annotation.Propagation.REQUIRED;
 @Transactional(propagation=REQUIRED, rollbackFor=Throwable.class)
 @Secured(types = EntityType.SITEMINDER_CONFIGURATION)
 @Administrative
-public interface SiteMinderAdmin {
+public interface SiteMinderAdmin extends AsyncAdminMethods {
 
     /**
      *  Retrieve a SiteMinder configuration entity from the database by using a configuration name.
@@ -68,4 +68,23 @@ public interface SiteMinderAdmin {
      */
     @Secured (types = EntityType.SITEMINDER_CONFIGURATION, stereotype = MethodStereotype.DELETE_ENTITY)
     void deleteSiteMinderConfiguration(SiteMinderConfiguration siteMinderConfiguration) throws DeleteException;
+
+    /**
+     * Register and retrieve siteminder host configuration.
+     * @param address: Policy Server Address
+     * @param username: Username to login to PolicyServer
+     * @param password: Password to login to PolicyServer
+     * @param hostname: Registered hostname
+     * @param hostconfig: Host's configuration
+     * @param fipsMode: FIPS mode
+     * @return
+     */
+    @Transactional(readOnly = true)
+    @Secured (types = EntityType.SITEMINDER_CONFIGURATION, stereotype = MethodStereotype.FIND_ENTITIES)
+    AsyncAdminMethods.JobId<SiteMinderHost> registerSiteMinderConfiguration(String address,
+                                                                            String username,
+                                                                            String password,
+                                                                            String hostname,
+                                                                            String hostconfig,
+                                                                            Integer fipsMode);
 }
