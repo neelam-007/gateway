@@ -970,6 +970,18 @@ public class ManagedObjectTest {
     }
 
     @Test
+    public void testCustomKeyValueStoreSerialization() throws Exception {
+        final CustomKeyValueStoreMO customKeyValueStoreMO = ManagedObjectFactory.createCustomKeyValueStore();
+        customKeyValueStoreMO.setKey("key.prefix.key1");
+        customKeyValueStoreMO.setValue("<xml>Test value</xml>".getBytes("UTF-8"));
+
+        final CustomKeyValueStoreMO roundTripped = roundTrip(customKeyValueStoreMO);
+
+        assertEquals("key.prefix.key1", roundTripped.getKey());
+        assertEquals(true, Arrays.equals("<xml>Test value</xml>".getBytes("UTF-8"), roundTripped.getValue()));
+    }
+
+    @Test
     public void testMapSerialization() throws Exception {
         final Map<String,Object> properties = new HashMap<String,Object>();
         properties.put( "1", "string value" );

@@ -389,6 +389,15 @@ public class ManagedObjectFactory {
     }
 
     /**
+     * Create a new CustomKeyValueStoreMO instance.
+     *
+     * @return The new instance
+     */
+    public static CustomKeyValueStoreMO createCustomKeyValueStore() {
+        return new CustomKeyValueStoreMO();
+    }
+
+    /**
      * Read a managed object from the given data.
      *
      * @param in The input data.

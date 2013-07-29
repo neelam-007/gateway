@@ -120,6 +120,9 @@
                 <bean class="com.l7tech.external.assertions.gatewaymanagement.server.GenericEntityResourceFactory" parent="entityResourceFactoryParent">
                     <constructor-arg index="3" ref="genericEntityManagerWithData" />
                 </bean>
+                <bean class="com.l7tech.external.assertions.gatewaymanagement.server.CustomKeyValueStoreResourceFactory" parent="entityResourceFactoryParent">
+                    <constructor-arg index="3" ref="customKeyValueStoreManager" />
+                </bean>
                 <bean class="com.l7tech.external.assertions.gatewaymanagement.server.TestResourceFactory"/>
             </list>
         </constructor-arg>

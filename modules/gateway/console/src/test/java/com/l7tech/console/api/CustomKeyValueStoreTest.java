@@ -12,10 +12,12 @@ import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
 
 import static junit.framework.Assert.assertNotNull;
+import static junit.framework.Assert.assertTrue;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.when;
 
@@ -101,7 +103,7 @@ public class CustomKeyValueStoreTest {
         when(customKeyValueStoreAdmin.findByUniqueKey(KEY)).thenReturn(customKeyValue);
         byte[] actual = customKeyValueStore.get(KEY);
         assertNotNull(actual);
-        assertEquals(VALUE, new String(actual));
+        assertTrue(Arrays.equals(VALUE.getBytes("UTF-8"), actual));
     }
 
     @Test

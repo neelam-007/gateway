@@ -26,3 +26,4 @@ StoredPasswordMO
 TrustedCertificateMO
 EncapsulatedAssertionMO
 GenericEntityMO
+CustomKeyValueStoreMO

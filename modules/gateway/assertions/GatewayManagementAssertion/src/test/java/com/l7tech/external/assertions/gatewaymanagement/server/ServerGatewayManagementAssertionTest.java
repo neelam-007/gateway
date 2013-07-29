@@ -57,6 +57,7 @@ import com.l7tech.server.security.password.SecurePasswordManagerStub;
 import com.l7tech.server.security.rbac.RbacServicesStub;
 import com.l7tech.server.service.ServiceDocumentManagerStub;
 import com.l7tech.server.service.ServiceManager;
+import com.l7tech.server.store.CustomKeyValueStoreManagerStub;
 import com.l7tech.server.transport.SsgActiveConnectorManagerStub;
 import com.l7tech.server.transport.jms.JmsConnectionManagerStub;
 import com.l7tech.server.transport.jms.JmsEndpointManagerStub;
@@ -481,6 +482,70 @@ public class ServerGatewayManagementAssertionTest {
         final Element value = XmlUtil.findExactlyOneChildElementByName(subcode, SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE, "Value");
 
         assertEquals("SOAP Fault value", "wsman:SchemaValidationError", XmlUtil.getTextValue(value));
+    }
+
+    @Test
+    public void testGetCustomKeyValueStoreById() throws Exception {
+        final String message =
+            "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" \n" +
+            "            xmlns:a=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" \n" +
+            "            xmlns:w=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\">\n" +
+            "  <s:Header>\n" +
+            "    <a:MessageID>uuid:4ED2993C-4339-4E99-81FC-C2FD3812781A</a:MessageID> \n" +
+            "    <a:To>http://127.0.0.1:8080/wsman</a:To> \n" +
+            "    <a:ReplyTo> \n" +
+            "      <a:Address s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</a:Address> \n" +
+            "    </a:ReplyTo> \n" +
+            "    <a:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Get</a:Action> \n" +
+            "    <w:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/customKeyValueStores</w:ResourceURI> \n" +
+            "    <w:SelectorSet>\n" +
+            "      <w:Selector Name=\"id\">"+new Goid(0,1).toHexString()+"</w:Selector> \n" +
+            "    </w:SelectorSet>\n" +
+            "    <w:OperationTimeout>PT60.000S</w:OperationTimeout> \n" +
+            "  </s:Header>\n" +
+            "  <s:Body/> \n" +
+            "</s:Envelope>";
+
+        final Document result = processRequest("http://schemas.xmlsoap.org/ws/2004/09/transfer/Get", message);
+        final Element soapBody = SoapUtil.getBodyElement(result);
+        final Element customKeyValueElm = XmlUtil.findExactlyOneChildElementByName(soapBody, NS_GATEWAY_MANAGEMENT, "CustomKeyValueStore");
+        final Element keyElm = XmlUtil.findExactlyOneChildElementByName(customKeyValueElm, NS_GATEWAY_MANAGEMENT, "Key");
+        final Element valueElm = XmlUtil.findExactlyOneChildElementByName(customKeyValueElm, NS_GATEWAY_MANAGEMENT, "Value");
+
+        assertEquals("key.prefix.key1", DomUtils.getTextValue(keyElm));
+        assertEquals("PHhtbD5UZXN0IHZhbHVlPC94bWw+", DomUtils.getTextValue(valueElm));
+    }
+
+    @Test
+    public void testGetCustomKeyValueStoreByKey() throws Exception {
+        final String message =
+            "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" \n" +
+            "            xmlns:a=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" \n" +
+            "            xmlns:w=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\">\n" +
+            "  <s:Header>\n" +
+            "    <a:MessageID>uuid:4ED2993C-4339-4E99-81FC-C2FD3812781A</a:MessageID> \n" +
+            "    <a:To>http://127.0.0.1:8080/wsman</a:To> \n" +
+            "    <a:ReplyTo> \n" +
+            "      <a:Address s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</a:Address> \n" +
+            "    </a:ReplyTo> \n" +
+            "    <a:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Get</a:Action> \n" +
+            "    <w:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/customKeyValueStores</w:ResourceURI> \n" +
+            "    <w:SelectorSet>\n" +
+            "      <w:Selector Name=\"name\">key.prefix.key1</w:Selector> \n" +
+            "    </w:SelectorSet>\n" +
+            "    <w:OperationTimeout>PT60.000S</w:OperationTimeout> \n" +
+            "  </s:Header>\n" +
+            "  <s:Body/> \n" +
+            "</s:Envelope>";
+
+        final Document result = processRequest("http://schemas.xmlsoap.org/ws/2004/09/transfer/Get", message);
+        final Element soapBody = SoapUtil.getBodyElement(result);
+        final Element customKeyValueElm = XmlUtil.findExactlyOneChildElementByName(soapBody, NS_GATEWAY_MANAGEMENT, "CustomKeyValueStore");
+        final Element keyElm = XmlUtil.findExactlyOneChildElementByName(customKeyValueElm, NS_GATEWAY_MANAGEMENT, "Key");
+        final Element valueElm = XmlUtil.findExactlyOneChildElementByName(customKeyValueElm, NS_GATEWAY_MANAGEMENT, "Value");
+
+        assertEquals("key.prefix.key1", DomUtils.getTextValue(keyElm));
+        assertEquals("PHhtbD5UZXN0IHZhbHVlPC94bWw+", DomUtils.getTextValue(valueElm));
     }
 
     @Test
@@ -1042,6 +1107,19 @@ public class ServerGatewayManagementAssertionTest {
                 "    </Properties>\n" +
                 "</StoredPassword>";
         doCreate( resourceUri, payload, "2", "3" );
+    }
+
+    @Test
+    public void testCreateCustomKeyValueStore() throws Exception {
+        String resourceUri = "http://ns.l7tech.com/2010/04/gateway-management/customKeyValueStores";
+        String payload =
+            "<l7:CustomKeyValueStore xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
+            "    <l7:Key>key.prefix.key2</l7:Key>\n" +
+            "    <l7:Value>PHhtbD5UZXN0IHZhbHVlPC94bWw+</l7:Value>\n" +
+            "</l7:CustomKeyValueStore>";
+
+        String expectedId = new Goid(0,2).toString();
+        doCreate(resourceUri, payload, expectedId);
     }
 
     @Test
@@ -1653,6 +1731,50 @@ public class ServerGatewayManagementAssertionTest {
     }
 
     @Test
+    public void testPutCustomKeyValueStore() throws Exception {
+        final String message =
+            "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" \n" +
+            "            xmlns:a=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" \n" +
+            "            xmlns:w=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\">\n" +
+            "  <s:Header>\n" +
+            "    <a:MessageID>uuid:4ED2993C-4339-4E99-81FC-C2FD3812781A</a:MessageID> \n" +
+            "    <a:To>http://127.0.0.1:8080/wsman</a:To> \n" +
+            "    <a:ReplyTo> \n" +
+            "      <a:Address s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</a:Address> \n" +
+            "    </a:ReplyTo> \n" +
+            "    <a:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Put</a:Action> \n" +
+            "    <w:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/customKeyValueStores</w:ResourceURI> \n" +
+            "    <w:SelectorSet>\n" +
+            "      <w:Selector Name=\"id\">"+new Goid(0,1).toHexString()+"</w:Selector> \n" +
+            "    </w:SelectorSet>\n" +
+            "    <w:OperationTimeout>PT60.000S</w:OperationTimeout>\n" +
+            "  </s:Header>\n" +
+            "  <s:Body> \n" +
+            "    <l7:CustomKeyValueStore xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
+            "      <l7:Key>key.prefix.key1</l7:Key>\n" +
+            "      <l7:Value>PHhtbD5UZXN0IHZhbHVlIC0gVXBkYXRlZDwveG1sPg==</l7:Value>\n" +
+            "    </l7:CustomKeyValueStore>\n" +
+            "  </s:Body>\n" +
+            "</s:Envelope>";
+
+        final UnaryVoidThrows<Document,Exception> verifier = new UnaryVoidThrows<Document,Exception>(){
+            @Override
+            public void call( final Document result ) throws Exception {
+                final Element soapBody = SoapUtil.getBodyElement(result);
+                final Element customKeyValueElm = XmlUtil.findExactlyOneChildElementByName(soapBody, NS_GATEWAY_MANAGEMENT, "CustomKeyValueStore");
+                final Element keyElm = XmlUtil.findExactlyOneChildElementByName(customKeyValueElm, NS_GATEWAY_MANAGEMENT, "Key");
+                final Element valueElm = XmlUtil.findExactlyOneChildElementByName(customKeyValueElm, NS_GATEWAY_MANAGEMENT, "Value");
+
+                assertEquals("key.prefix.key1", DomUtils.getTextValue(keyElm));
+                assertEquals("PHhtbD5UZXN0IHZhbHVlIC0gVXBkYXRlZDwveG1sPg==", DomUtils.getTextValue(valueElm));
+            }
+        };
+
+        putAndVerify( message, verifier, false );
+        putAndVerify( message, verifier, true );
+    }
+
+    @Test
     public void testDelete() throws Exception {        
         String message = "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\"><s:Header><wsa:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Delete</wsa:Action><wsa:To s:mustUnderstand=\"true\">http://127.0.0.1:8080/wsman</wsa:To><wsman:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/clusterProperties</wsman:ResourceURI><wsa:MessageID s:mustUnderstand=\"true\">uuid:b2794ffb-7d39-1d39-8002-481688002100</wsa:MessageID><wsa:ReplyTo><wsa:Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo><wsman:SelectorSet><wsman:Selector Name=\"id\">"+new Goid(0,2).toHexString()+"</wsman:Selector></wsman:SelectorSet></s:Header><s:Body/></s:Envelope>";
 
@@ -1672,6 +1794,36 @@ public class ServerGatewayManagementAssertionTest {
         final Document result = processRequest( "http://schemas.xmlsoap.org/ws/2004/09/transfer/Delete", message );
 
         final Element soapBody = SoapUtil.getBodyElement(result);
+        assertNotNull("SOAP Body", soapBody);
+        assertNull("No body content", soapBody.getFirstChild());
+    }
+
+    @Test
+    public void testDeleteCustomKeyValueStore() throws Exception {
+        final String message =
+            "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" \n" +
+            "            xmlns:a=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" \n" +
+            "            xmlns:w=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\">\n" +
+            "  <s:Header>\n" +
+            "    <a:MessageID>uuid:4ED2993C-4339-4E99-81FC-C2FD3812781A</a:MessageID> \n" +
+            "    <a:To>http://127.0.0.1:8080/wsman</a:To> \n" +
+            "    <a:ReplyTo> \n" +
+            "      <a:Address s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</a:Address> \n" +
+            "    </a:ReplyTo> \n" +
+            "    <a:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Delete</a:Action> \n" +
+            "    <w:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/customKeyValueStores</w:ResourceURI> \n" +
+            "    <w:SelectorSet>\n" +
+            "      <w:Selector Name=\"id\">"+new Goid(0,1).toHexString()+"</w:Selector> \n" +
+            "    </w:SelectorSet>\n" +
+            "    <w:OperationTimeout>PT60.000S</w:OperationTimeout> \n" +
+            "  </s:Header>\n" +
+            "  <s:Body/> \n" +
+            "</s:Envelope>";
+
+        final Document result = processRequest( "http://schemas.xmlsoap.org/ws/2004/09/transfer/Delete", message );
+
+        final Element soapBody = SoapUtil.getBodyElement(result);
+
         assertNotNull("SOAP Body", soapBody);
         assertNull("No body content", soapBody.getFirstChild());
     }
@@ -2510,7 +2662,8 @@ public class ServerGatewayManagementAssertionTest {
         "http://ns.l7tech.com/2010/04/gateway-management/services",
         "http://ns.l7tech.com/2010/04/gateway-management/storedPasswords",
         "http://ns.l7tech.com/2010/04/gateway-management/trustedCertificates",
-        "http://ns.l7tech.com/2010/04/gateway-management/encapsulatedAssertions"
+        "http://ns.l7tech.com/2010/04/gateway-management/encapsulatedAssertions",
+        "http://ns.l7tech.com/2010/04/gateway-management/customKeyValueStores"
     };
 
     @Before
@@ -2588,6 +2741,10 @@ public class ServerGatewayManagementAssertionTest {
         genericEntity.setValueXml("<xml>xml value</xml>");
 
         beanFactory.addBean("genericEntityManagerWithData", new GenericEntityManagerStub(genericEntity));
+
+        beanFactory.addBean("customKeyValueStoreManager", new CustomKeyValueStoreManagerStub(
+            customKeyValueStore(new Goid(0,1L), "key.prefix.key1", "<xml>Test value</xml>".getBytes("UTF-8"))
+        ) );
 
         final ClassLoader systemClassLoader = ClassLoader.getSystemClassLoader();
         final ResourceClassLoader resourceClassLoader = new ResourceClassLoader(
@@ -2772,6 +2929,17 @@ public class ServerGatewayManagementAssertionTest {
         securePassword.setLastUpdate( System.currentTimeMillis() );
         securePassword.setType(type);
         return securePassword;
+    }
+
+    private static CustomKeyValueStore customKeyValueStore(final Goid goid,
+                                                           final String key,
+                                                           final byte[] value) {
+        final CustomKeyValueStore customKeyValueStore = new CustomKeyValueStore();
+        customKeyValueStore.setGoid(goid);
+        customKeyValueStore.setName(key);
+        customKeyValueStore.setValue(value);
+
+        return customKeyValueStore;
     }
 
     private void doCreate( final String resourceUri,
