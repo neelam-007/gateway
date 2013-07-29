@@ -1,6 +1,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.console.util.EntityUtils;
+import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
 import com.l7tech.objectmodel.*;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.DialogDisplayer;
@@ -226,8 +227,8 @@ public class UddiRegistryManagerWindow extends JDialog {
                 return;
             }
         }
-
-        final UddiRegistryPropertiesDialog dlg = new UddiRegistryPropertiesDialog(this, uddiRegistry, flags.canUpdateAll() || flags.canCreateAll());
+        final boolean canUpdate = Registry.getDefault().getSecurityProvider().hasPermission(new AttemptedUpdate(EntityType.UDDI_REGISTRY, uddiRegistry));
+        final UddiRegistryPropertiesDialog dlg = new UddiRegistryPropertiesDialog(this, uddiRegistry, canUpdate);
         dlg.pack();
         Utilities.centerOnScreen(dlg);
         if(selectNameField)
