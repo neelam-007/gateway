@@ -1,6 +1,9 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.console.util.EntityUtils;
+import com.l7tech.gateway.common.security.rbac.AttemptedCreateSpecific;
+import com.l7tech.gateway.common.security.rbac.AttemptedOperation;
+import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
 import com.l7tech.objectmodel.*;
 import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.transport.email.EmailListener;
@@ -191,7 +194,12 @@ public class EmailListenerManagerWindow extends JDialog {
     }
 
     private void editAndSave(final EmailListener emailListener, final boolean selectNameField) {
-        final EmailListenerPropertiesDialog dlg = new EmailListenerPropertiesDialog(this, emailListener);
+        boolean create = GoidEntity.DEFAULT_GOID.equals(emailListener.getGoid());
+        final AttemptedOperation operation = create
+                ? new AttemptedCreateSpecific(EntityType.EMAIL_LISTENER, emailListener)
+                : new AttemptedUpdate(EntityType.EMAIL_LISTENER, emailListener);
+        boolean readOnly = !Registry.getDefault().getSecurityProvider().hasPermission(operation);
+        final EmailListenerPropertiesDialog dlg = new EmailListenerPropertiesDialog(this, emailListener, readOnly);
         dlg.pack();
         Utilities.centerOnScreen(dlg);
         if(selectNameField)

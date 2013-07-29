@@ -66,6 +66,7 @@ public class EmailListenerPropertiesDialog extends JDialog {
     private JLabel serviceNameLabel;
     private JComboBox serviceNameCombo;
     private ByteLimitPanel byteLimit;
+    private boolean readOnly;
     private SecurityZoneWidget zoneControl;
 
     private final EmailListener emailListener;
@@ -131,10 +132,12 @@ public class EmailListenerPropertiesDialog extends JDialog {
      *
      * @param owner The owner of this dialog window
      * @param emailListener The EmailListener to read values from and possibly update
+     * @param readOnly if the user should only be able to read the email listener
      */
-    public EmailListenerPropertiesDialog(Dialog owner, EmailListener emailListener) throws HeadlessException {
+    public EmailListenerPropertiesDialog(Dialog owner, EmailListener emailListener, final boolean readOnly) throws HeadlessException {
         super(owner, TITLE, true);
         this.emailListener = emailListener;
+        this.readOnly = readOnly;
         initialize();
     }
 
@@ -146,8 +149,9 @@ public class EmailListenerPropertiesDialog extends JDialog {
      *
      * @param owner The owner of this dialog window
      * @param emailListener The EmailListener to read values from and possibly update
+     * @param readOnly if the user should only be able to read the email listener
      */
-    public EmailListenerPropertiesDialog(Frame owner, EmailListener emailListener) throws HeadlessException {
+    public EmailListenerPropertiesDialog(Frame owner, EmailListener emailListener, final boolean readOnly) throws HeadlessException {
         super(owner, TITLE, true);
         this.emailListener = emailListener;
         initialize();
@@ -357,9 +361,7 @@ public class EmailListenerPropertiesDialog extends JDialog {
         checkInterval.setEditor(jsne);
         ((JSpinner.DefaultEditor) checkInterval.getEditor()).getTextField().setFocusLostBehavior(JFormattedTextField.PERSIST);  //we'll do our own checking
 
-        zoneControl.configure(EntityType.EMAIL_LISTENER,
-                emailListener.getGoid().equals(EmailListener.DEFAULT_GOID) ? OperationType.CREATE : OperationType.UPDATE,
-                emailListener.getSecurityZone());
+        zoneControl.configure(emailListener.getGoid().equals(EmailListener.DEFAULT_GOID) ? OperationType.CREATE : readOnly ? OperationType.READ : OperationType.UPDATE, emailListener);
     }
 
     private PublishedService getSelectedHardwiredService() {
@@ -591,7 +593,7 @@ public class EmailListenerPropertiesDialog extends JDialog {
     public static void main(String[] args) {
         Frame f = new JFrame();
         f.setVisible(true);
-        EmailListenerPropertiesDialog d = new EmailListenerPropertiesDialog(f, new EmailListener());
+        EmailListenerPropertiesDialog d = new EmailListenerPropertiesDialog(f, new EmailListener(), false);
         d.setVisible(true);
         d.dispose();
         f.dispose();
