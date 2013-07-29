@@ -51,17 +51,17 @@ public class GoidTest {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void fromBadString(){
+    public void fromBadString() {
         new Goid("");
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void fromBadString2(){
+    public void fromBadString2() {
         new Goid("A8HZQvUlgDlyjF83TPJetzz");
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void fromBadByteArray(){
+    public void fromBadByteArray() {
         Random random = new Random();
         byte[] bytes = new byte[17];
         random.nextBytes(bytes);
@@ -69,7 +69,7 @@ public class GoidTest {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void fromBadByteArray2(){
+    public void fromBadByteArray2() {
         Random random = new Random();
         byte[] bytes = new byte[15];
         random.nextBytes(bytes);
@@ -77,7 +77,7 @@ public class GoidTest {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void fromBadByteArray3(){
+    public void fromBadByteArray3() {
         Random random = new Random();
         byte[] bytes = new byte[0];
         random.nextBytes(bytes);
@@ -85,15 +85,145 @@ public class GoidTest {
     }
 
     @Test
-    public void cloneTest(){
-        Random random = new Random();
-        byte[] bytes = new byte[16];
-        random.nextBytes(bytes);
-        Goid original = new Goid(bytes);
+    public void cloneTest() {
+        Goid original = createRandomGoid();
         Goid clone = original.clone();
 
         Assert.assertFalse(original == clone);
         Assert.assertEquals(original, clone);
         Assert.assertArrayEquals(original.getBytes(), clone.getBytes());
+    }
+
+    @Test
+    public void compareTest() {
+        Goid goid;
+        do {
+            goid = createRandomGoid();
+        }
+        while (goid.getHi() == Long.MAX_VALUE || goid.getHi() == Long.MIN_VALUE || goid.getLow() == Long.MAX_VALUE || goid.getLow() == Long.MIN_VALUE);
+        Goid clone = goid.clone();
+
+        Assert.assertEquals("The compare to method should return 0 if both goings are equal", 0, goid.compareTo(goid));
+        Assert.assertEquals("The compare to method should return 0 if both goings are equal", 0, goid.compareTo(clone));
+        Assert.assertEquals("The compare to method should return 0 if both goings are equal", 0, clone.compareTo(goid));
+
+        Goid biggerHiGoid = new Goid(goid.getHi() + 1, goid.getLow());
+        Goid biggerLowGoid = new Goid(goid.getHi(), goid.getLow() + 1);
+        Goid smallerHiGoid = new Goid(goid.getHi() - 1, goid.getLow());
+        Goid smallerLowGoid = new Goid(goid.getHi(), goid.getLow() - 1);
+
+        Assert.assertEquals(-1, goid.compareTo(biggerHiGoid));
+        Assert.assertEquals(-1, goid.compareTo(biggerLowGoid));
+        Assert.assertEquals(1, goid.compareTo(smallerHiGoid));
+        Assert.assertEquals(1, goid.compareTo(smallerLowGoid));
+
+        Assert.assertEquals(-1, smallerHiGoid.compareTo(goid));
+        Assert.assertEquals(-1, smallerLowGoid.compareTo(goid));
+        Assert.assertEquals(1, biggerHiGoid.compareTo(goid));
+        Assert.assertEquals(1, biggerLowGoid.compareTo(goid));
+    }
+
+    @Test
+    public void equalsTest() {
+        Goid goid;
+        do {
+            goid = createRandomGoid();
+        }
+        while (goid.getHi() == Long.MAX_VALUE || goid.getHi() == Long.MIN_VALUE || goid.getLow() == Long.MAX_VALUE || goid.getLow() == Long.MIN_VALUE);
+        Goid clone = goid.clone();
+
+        Assert.assertTrue(goid.equals(goid));
+        Assert.assertTrue(goid.equals(clone));
+        Assert.assertTrue(clone.equals(goid));
+
+        Goid biggerHiGoid = new Goid(goid.getHi() + 1, goid.getLow());
+        Goid biggerLowGoid = new Goid(goid.getHi(), goid.getLow() + 1);
+        Goid smallerHiGoid = new Goid(goid.getHi() - 1, goid.getLow());
+        Goid smallerLowGoid = new Goid(goid.getHi(), goid.getLow() - 1);
+
+        Assert.assertFalse(goid.equals(biggerHiGoid));
+        Assert.assertFalse(goid.equals(biggerLowGoid));
+        Assert.assertFalse(goid.equals(smallerHiGoid));
+        Assert.assertFalse(goid.equals(smallerLowGoid));
+
+        Assert.assertFalse(smallerHiGoid.equals(goid));
+        Assert.assertFalse(smallerLowGoid.equals(goid));
+        Assert.assertFalse(biggerHiGoid.equals(goid));
+        Assert.assertFalse(biggerLowGoid.equals(goid));
+
+        Assert.assertFalse(goid.equals(null));
+
+        Assert.assertFalse(goid.equals(goid.toHexString()));
+    }
+
+    @Test
+    public void staticEqualsTest() {
+        Goid goid;
+        do {
+            goid = createRandomGoid();
+        }
+        while (goid.getHi() == Long.MAX_VALUE || goid.getHi() == Long.MIN_VALUE || goid.getLow() == Long.MAX_VALUE || goid.getLow() == Long.MIN_VALUE);
+        Goid clone = goid.clone();
+
+        Assert.assertTrue(Goid.equals(goid, goid));
+        Assert.assertTrue(Goid.equals(goid, clone));
+        Assert.assertTrue(Goid.equals(clone, goid));
+
+        Goid biggerHiGoid = new Goid(goid.getHi() + 1, goid.getLow());
+        Goid biggerLowGoid = new Goid(goid.getHi(), goid.getLow() + 1);
+        Goid smallerHiGoid = new Goid(goid.getHi() - 1, goid.getLow());
+        Goid smallerLowGoid = new Goid(goid.getHi(), goid.getLow() - 1);
+
+        Assert.assertFalse(Goid.equals(goid, biggerHiGoid));
+        Assert.assertFalse(Goid.equals(goid, biggerLowGoid));
+        Assert.assertFalse(Goid.equals(goid, smallerHiGoid));
+        Assert.assertFalse(Goid.equals(goid, smallerLowGoid));
+
+        Assert.assertFalse(Goid.equals(smallerHiGoid, goid));
+        Assert.assertFalse(Goid.equals(smallerLowGoid, goid));
+        Assert.assertFalse(Goid.equals(biggerHiGoid, goid));
+        Assert.assertFalse(Goid.equals(biggerLowGoid, goid));
+
+        Assert.assertFalse(Goid.equals(goid, null));
+        Assert.assertFalse(Goid.equals(null, goid));
+        Assert.assertTrue(Goid.equals(null, null));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void nullStringTest(){
+        String nullString = null;
+        new Goid(nullString);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void nullGoidTest(){
+        Goid nullGoid = null;
+        new Goid(nullGoid);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void nullParseGoidTest(){
+        String nullString = null;
+        Goid.parseGoid(nullString);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void nullToStringTest(){
+        Goid nullGoid = null;
+        Goid.toString(nullGoid);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void nullCompareToTest(){
+        Goid goid = createRandomGoid();
+        Goid nullGoid = null;
+        goid.compareTo(nullGoid);
+    }
+
+    private static Goid createRandomGoid() {
+        Random random = new Random();
+        byte[] bytes = new byte[16];
+        random.nextBytes(bytes);
+        return new Goid(bytes);
     }
 }

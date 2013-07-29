@@ -1,6 +1,8 @@
 package com.l7tech.objectmodel;
 
 import com.l7tech.util.HexUtils;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -13,16 +15,18 @@ import java.util.Arrays;
  *
  * @author Victor Kazakov
  */
-public class Goid implements Serializable {
+public final class Goid implements Comparable<Goid>, Serializable {
 
     //The bytes of the goid. This should always be a 16 byte array
-    private byte[] goid;
+    private final byte[] goid;
 
     /**
      * This is needed for serialization
      */
     @SuppressWarnings("UnusedDeclaration")
-    private Goid(){}
+    private Goid() {
+        goid = null;
+    }
 
     /**
      * Creates a new goid from two long values
@@ -55,7 +59,7 @@ public class Goid implements Serializable {
      * @param goid A string representation of a goid.
      * @throws IllegalArgumentException This is thrown if the given string does not represent a goid
      */
-    public Goid(String goid) {
+    public Goid(@NotNull String goid) {
         byte[] goidFromString;
 
         try {
@@ -75,7 +79,7 @@ public class Goid implements Serializable {
      *
      * @param goid The goid to clone.
      */
-    public Goid(Goid goid) {
+    public Goid(@NotNull Goid goid) {
         this(goid.getBytes());
     }
 
@@ -122,7 +126,7 @@ public class Goid implements Serializable {
     }
 
     @Override
-    public boolean equals(Object o) {
+    public boolean equals(@Nullable Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
@@ -139,12 +143,22 @@ public class Goid implements Serializable {
         return Arrays.hashCode(goid);
     }
 
+    /**
+     * This will return the Hex String representation of the Goid
+     *
+     * @return The Hex String representation of the goid
+     */
     @Override
     public String toString() {
         return toHexString();
     }
 
-    public String toHexString(){
+    /**
+     * This will return the Hex String representation of the Goid
+     *
+     * @return The Hex String representation of the goid
+     */
+    public String toHexString() {
         return HexUtils.hexDump(goid);
     }
 
@@ -155,7 +169,41 @@ public class Goid implements Serializable {
      * @return The goid represented by the string
      * @throws IllegalArgumentException This is thrown if the string cannot be converted to a goid.
      */
-    public static Goid parseGoid(String goid){
+    public static Goid parseGoid(@NotNull String goid) {
         return new Goid(goid);
+    }
+
+    /**
+     * This is the static version of the toString method. It will return the hex string representation of the goid
+     *
+     * @param goid The goid to return the hex string representation of.
+     * @return The hex string representation of the goid
+     */
+    public static String toString(@NotNull Goid goid) {
+        return goid.toHexString();
+    }
+
+    /**
+     * Compares two goids they are equal if their bytes are equal, or if they are both null.
+     *
+     * @param goid1 the first goid
+     * @param goid2 the second goid
+     * @return true iff both goid bytes are the same or if both goids are null.
+     */
+    public static boolean equals(@Nullable Goid goid1, @Nullable Goid goid2) {
+        return goid1 == null ? goid2 == null : goid1.equals(goid2);
+    }
+
+    /**
+     * Compares this going to the one give. 0 is returned if both Goid's are equal. -1 is returned if this Goid is less
+     * then the one given. 1 is returned otherwise.
+     *
+     * @param o The goid to compare to
+     * @return -1 if this going is less then the one given, 0 if they are equal, 1 if this goid is greater then the one
+     *         given.
+     */
+    @Override
+    public int compareTo(@NotNull Goid o) {
+        return (getHi() < o.getHi()) ? -1 : ((getHi() == o.getHi()) ? ((getLow() < o.getLow()) ? -1 : ((getLow() == o.getLow()) ? 0 : 1)) : 1);
     }
 }
