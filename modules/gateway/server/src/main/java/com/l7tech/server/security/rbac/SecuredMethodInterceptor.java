@@ -325,6 +325,11 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationC
                     /* BYPASS further checks */
                     return methodInvocation.proceed();
                 }
+            case TEST_CONFIGURATION:
+                check.setBefore(CheckBefore.SOME);
+                check.setAfter(CheckAfter.NONE);
+                check.operation = OperationType.OTHER;
+                break;
             default:
                 throw new UnsupportedOperationException("Security declaration for method " + mname + " specifies unsupported stereotype " + check.stereotype.name());
         }
@@ -359,6 +364,20 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationC
                     }
                 }
                 break;
+            case SOME:
+                if (check.operation != OTHER) {
+                    throw new IllegalStateException("CheckBefore.SOME currently only supports OperationType.OTHER");
+                }
+                for (final EntityType type : check.types) {
+                    boolean canPerformAnyOperation =
+                            rbacServices.isPermittedForSomeEntityOfType(user, CREATE, type) ||
+                            rbacServices.isPermittedForSomeEntityOfType(user, READ, type) ||
+                            rbacServices.isPermittedForSomeEntityOfType(user, UPDATE, type) ||
+                            rbacServices.isPermittedForAnyEntityOfType(user, DELETE, type);
+                    if (!canPerformAnyOperation) {
+                        throw new PermissionDeniedException(check.operation, type, "User does not have permission to create, read, update, or delete any of type " + type);
+                    }
+                }
             case NONE:
                 break;
         }

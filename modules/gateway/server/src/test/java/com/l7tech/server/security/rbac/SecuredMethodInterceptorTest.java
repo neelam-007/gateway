@@ -270,6 +270,8 @@ public class SecuredMethodInterceptorTest {
                 {"missingStereotype", privilegedUser, null, null, null, UnsupportedOperationException.class},
                 //customInterceptor
                 {"customInterceptor", privilegedUser, null, null, genericString, null},
+                {"testConfiguration", privilegedUser, null, null, null, null},
+                {"testConfiguration", unprivilegedUser, null, null, null, PermissionDeniedException.class}
         });
     }
 
@@ -545,6 +547,9 @@ public class SecuredMethodInterceptorTest {
 
         @Secured(customInterceptor = "com.l7tech.server.security.rbac.MockCustomRbacInterceptor")
         void customInterceptor();
+
+        @Secured(stereotype = MethodStereotype.TEST_CONFIGURATION)
+        void testConfiguration();
     }
 
     /**

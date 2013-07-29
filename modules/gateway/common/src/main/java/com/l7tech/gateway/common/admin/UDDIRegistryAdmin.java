@@ -10,6 +10,8 @@ package com.l7tech.gateway.common.admin;
 import com.l7tech.gateway.common.uddi.*;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.transaction.annotation.Transactional;
+
+import static com.l7tech.gateway.common.security.rbac.MethodStereotype.TEST_CONFIGURATION;
 import static org.springframework.transaction.annotation.Propagation.REQUIRED;
 import com.l7tech.gateway.common.security.rbac.Secured;
 import com.l7tech.gateway.common.security.rbac.MethodStereotype;
@@ -88,7 +90,7 @@ public interface UDDIRegistryAdmin {
      * @throws UDDIException if it's not possible to authenticate
      */
     @Transactional(readOnly=true)
-    @Secured(types=EntityType.UDDI_REGISTRY, stereotype=FIND_ENTITIES)
+    @Secured(types=EntityType.UDDI_REGISTRY, stereotype=TEST_CONFIGURATION)
     void testUDDIRegistryAuthentication(UDDIRegistry uddiRegistry) throws UDDIException;
 
     /**

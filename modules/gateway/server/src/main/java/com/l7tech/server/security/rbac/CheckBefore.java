@@ -17,5 +17,10 @@ enum CheckBefore {
     ENTITY,
 
     /** Check permission to execute operation against all entities of type */
-    ALL
+    ALL,
+
+    /**
+     * Check permission to execute operation against some entities of the type.
+     */
+    SOME
 }

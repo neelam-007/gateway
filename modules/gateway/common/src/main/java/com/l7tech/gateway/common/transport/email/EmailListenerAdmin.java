@@ -94,7 +94,7 @@ public interface EmailListenerAdmin {
     @Secured(stereotype=DELETE_BY_ID)
     void deleteEmailListener(Goid goid) throws DeleteException, FindException;
 
-    @Secured(stereotype=SAVE)
+    @Secured(stereotype=TEST_CONFIGURATION)
     boolean testEmailAccount(EmailServerType serverType,
                              String hostname,
                              int port,

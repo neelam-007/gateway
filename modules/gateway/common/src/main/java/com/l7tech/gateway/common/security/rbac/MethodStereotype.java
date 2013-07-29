@@ -132,6 +132,14 @@ public enum MethodStereotype {
      *
      */
     ENTITY_OPERATION,
+
+    /**
+     * Caller wants to test the configuration of an entity, most likely a listener of some sort, which may or may not be created yet.
+     *
+     * Caller must hold {@link OperationType#CREATE} or {@link OperationType#READ} or {@link OperationType#UPDATE} or {@link OperationType#DELETE} permission
+     * on some entities of each of the declared type(s).
+     */
+    TEST_CONFIGURATION,
     
     /**
      * The method does not conform to any known stereotype.  An exception will be thrown at runtime.
