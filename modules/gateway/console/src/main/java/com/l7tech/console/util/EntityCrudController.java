@@ -148,11 +148,10 @@ public class EntityCrudController<ET> {
             @Override
             public void actionPerformed(ActionEvent e) {
                 if (entityEditor != null) {
-                    final int rowIndex = entityTable.getSelectedRow();
-                    if (rowIndex >= 0) {
-                        final int modelIndex = entityTable.convertRowIndexToModel(rowIndex);
-                        final ET entity = entityTableModel.getRowObject(modelIndex);
-                        if (entity != null) {
+                    final ET entity = getSelectedEntity();
+                    if (entity != null) {
+                        final int modelIndex = entityTableModel.getRowIndex(entity);
+                        if (modelIndex >= 0) {
                             entityEditor.displayEditDialog(entity, new Functions.UnaryVoidThrows<ET, SaveException>() {
                                 @Override
                                 public void call(final ET editedEntity) throws SaveException {
@@ -185,9 +184,7 @@ public class EntityCrudController<ET> {
             @Override
             public void actionPerformed(ActionEvent e) {
                 if (entityDeleter != null) {
-                    final int rowIndex = entityTable.getSelectedRow();
-                    final int modelIndex = entityTable.convertRowIndexToModel(rowIndex);
-                    final ET entity = entityTableModel.getRowObject(modelIndex);
+                    final ET entity = getSelectedEntity();
                     if (entity != null) {
                         entityDeleter.displayDeleteDialog(entity, new Functions.UnaryVoid<ET>() {
                             @Override
@@ -220,5 +217,17 @@ public class EntityCrudController<ET> {
             savedEntity = entitySaver.saveEntity(entity);
         }
         return savedEntity;
+    }
+
+    private ET getSelectedEntity() {
+        ET selected = null;
+        final int rowIndex = entityTable.getSelectedRow();
+        if (rowIndex >= 0) {
+            final int modelIndex = entityTable.convertRowIndexToModel(rowIndex);
+            if (modelIndex >= 0) {
+                selected = entityTableModel.getRowObject(modelIndex);
+            }
+        }
+        return selected;
     }
 }

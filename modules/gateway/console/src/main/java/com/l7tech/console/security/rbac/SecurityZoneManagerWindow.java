@@ -19,6 +19,7 @@ import org.apache.commons.lang.WordUtils;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
+import javax.swing.event.TableModelEvent;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -48,9 +49,9 @@ public class SecurityZoneManagerWindow extends JDialog {
     private SecurityZoneEntitiesPanel entitiesPanel;
     private JButton assignButton;
     private SecurityProvider securityProvider;
-
     private SimpleTableModel<SecurityZone> securityZonesTableModel;
     private boolean canCreate;
+    private Map<EntityType, List<SecurityZone>> modifiableEntityTypes = new TreeMap<>(EntityType.NAME_COMPARATOR);
 
     public SecurityZoneManagerWindow(Window owner) {
         super(owner, "Manage Security Zones", DEFAULT_MODALITY_TYPE);
@@ -68,7 +69,18 @@ public class SecurityZoneManagerWindow extends JDialog {
                 enableOrDisable();
                 reloadTabbedPanels();
             }
-        });
+        }) {
+            @Override
+            public void tableChanged(final TableModelEvent e) {
+                if (TableModelEvent.DELETE == e.getType()) {
+                    // need custom handling for delete event as it can get triggered before row selection is cleared
+                    enableOrDisable(null);
+                    reloadTabbedPanels(null);
+                } else {
+                    run();
+                }
+            }
+        };
 
         securityZonesTableModel = TableUtil.configureTable(securityZonesTable,
                 column("Name", 40, 140, 99999, propertyTransform(SecurityZone.class, "name")),
@@ -96,6 +108,7 @@ public class SecurityZoneManagerWindow extends JDialog {
                 Registry.getDefault().getRbacAdmin().deleteSecurityZone(entity);
                 flushCachedZones();
                 refreshTrees();
+                loadModifiableEntityTypes();
             }
 
             @Override
@@ -133,6 +146,9 @@ public class SecurityZoneManagerWindow extends JDialog {
                 Goid goid = Registry.getDefault().getRbacAdmin().saveSecurityZone(entity);
                 flushCachedZones();
                 refreshTrees();
+                // user may have modified a zone that affects their permissions
+                Registry.getDefault().getSecurityProvider().refreshPermissionCache();
+                loadModifiableEntityTypes();
                 try {
                     return Registry.getDefault().getRbacAdmin().findSecurityZoneByPrimaryKey(goid);
                 } catch (final FindException e) {
@@ -163,54 +179,51 @@ public class SecurityZoneManagerWindow extends JDialog {
         editButton.addActionListener(ecc.createEditAction());
         Utilities.setDoubleClickAction(securityZonesTable, editButton);
         removeButton.addActionListener(ecc.createDeleteAction());
-        final Map<EntityType, List<SecurityZone>> modifiableEntityTypes = getModifiableEntityTypes();
-        if (!modifiableEntityTypes.isEmpty()) {
-            assignButton.addActionListener(new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    final AssignSecurityZonesDialog assignDialog = new AssignSecurityZonesDialog(SecurityZoneManagerWindow.this, modifiableEntityTypes);
-                    assignDialog.pack();
-                    Utilities.centerOnParentWindow(assignDialog);
-                    DialogDisplayer.display(assignDialog, new Runnable() {
-                        @Override
-                        public void run() {
-                            if (getSelectedSecurityZone() != null) {
-                                // currently selected zone's entities may have changed
-                                reloadTabbedPanels();
-                            }
+        loadModifiableEntityTypes();
+        assignButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                final AssignSecurityZonesDialog assignDialog = new AssignSecurityZonesDialog(SecurityZoneManagerWindow.this, modifiableEntityTypes);
+                assignDialog.pack();
+                Utilities.centerOnParentWindow(assignDialog);
+                DialogDisplayer.display(assignDialog, new Runnable() {
+                    @Override
+                    public void run() {
+                        if (getSelectedSecurityZone() != null) {
+                            // currently selected zone's entities may have changed
+                            reloadTabbedPanels();
                         }
-                    });
-                }
-            });
-        } else {
-            assignButton.setVisible(false);
-        }
+                    }
+                });
+            }
+        });
         enableOrDisable();
     }
 
     /**
-     * Get sorted entity types for which the user can modify at least one entity by changing its zone (must be able to switch between at least two zones).
-     *
-     * @return a map of sorted entity types for which the user can modify at least one entity by changing its zone.
-     *         Key = entity type, value = sorted zones that can be set for the entity type.
+     * Load sorted entity types for which the user can modify at least one entity by changing its zone (must be able to switch between at least two zones).
+     * <p/>
+     * Key = entity type, value = sorted zones that can be set for the entity type.
      */
-    private Map<EntityType, List<SecurityZone>> getModifiableEntityTypes() {
-        final Map<EntityType, List<SecurityZone>> validEntityTypes = new TreeMap<>(EntityType.NAME_COMPARATOR);
+    private void loadModifiableEntityTypes() {
+        modifiableEntityTypes.clear();
         for (final EntityType type : SecurityZoneUtil.getNonHiddenZoneableEntityTypes()) {
             // must be able to update at least one of the entity type
             if (securityProvider.hasPermission(new AttemptedUpdateAny(type))) {
                 final List<SecurityZone> validZones = SecurityZoneUtil.getSortedZonesForOperationAndEntityType(OperationType.UPDATE, Collections.singleton(type));
                 // must be able to switch between at least two zones
                 if (validZones.size() > 1) {
-                    validEntityTypes.put(type, validZones);
+                    modifiableEntityTypes.put(type, validZones);
                 }
             }
         }
-        return validEntityTypes;
     }
 
     private void reloadTabbedPanels() {
-        final SecurityZone selected = getSelectedSecurityZone();
+        reloadTabbedPanels(getSelectedSecurityZone());
+    }
+
+    private void reloadTabbedPanels(@Nullable final SecurityZone selected) {
         propertiesPanel.configure(selected);
         entitiesPanel.configure(selected);
     }
@@ -226,12 +239,15 @@ public class SecurityZoneManagerWindow extends JDialog {
         securityZonesTableModel.setRows(new ArrayList<SecurityZone>(securityZones));
     }
 
-    private void enableOrDisable() {
-        final SecurityProvider securityProvider = Registry.getDefault().getSecurityProvider();
-        final SecurityZone selected = getSelectedSecurityZone();
+    private void enableOrDisable(@Nullable final SecurityZone selected) {
         editButton.setEnabled(selected != null && securityProvider.hasPermission(new AttemptedUpdate(EntityType.SECURITY_ZONE, selected)));
         removeButton.setEnabled(selected != null && securityProvider.hasPermission(new AttemptedDeleteSpecific(EntityType.SECURITY_ZONE, selected)));
         createButton.setEnabled(canCreate);
+        assignButton.setEnabled(!modifiableEntityTypes.isEmpty());
+    }
+
+    private void enableOrDisable() {
+        enableOrDisable(getSelectedSecurityZone());
     }
 
     @Nullable
