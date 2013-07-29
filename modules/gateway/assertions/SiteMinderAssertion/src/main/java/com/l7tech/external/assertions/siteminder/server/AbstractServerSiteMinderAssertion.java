@@ -1,19 +1,20 @@
 package com.l7tech.external.assertions.siteminder.server;
 
-import com.ca.siteminder.SiteMinderAgentConfigurationException;
 import com.ca.siteminder.SiteMinderApiClassException;
 import com.ca.siteminder.SiteMinderContext;
 import com.ca.siteminder.SiteMinderHighLevelAgent;
 import com.l7tech.external.assertions.siteminder.util.SiteMinderAssertionUtil;
 import com.l7tech.message.Message;
 import com.l7tech.message.TcpKnob;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
-import com.l7tech.util.Config;
+import com.l7tech.server.siteminder.SiteMinderConfigurationManager;
 import com.l7tech.util.ExceptionUtils;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.context.ApplicationContext;
 
 /**
  * Copyright: Layer 7 Technologies, 2013
@@ -21,33 +22,28 @@ import org.jetbrains.annotations.NotNull;
  * Date: 7/16/13
  */
 public abstract class AbstractServerSiteMinderAssertion<AT extends Assertion> extends AbstractServerAssertion<AT>{
-    protected Config config;
     protected SiteMinderHighLevelAgent hla;
 
-    public AbstractServerSiteMinderAssertion(@NotNull final AT assertion) {
+    protected ApplicationContext applicationContext;
+    protected SiteMinderConfigurationManager manager;
+
+    public AbstractServerSiteMinderAssertion(@NotNull final AT assertion, final ApplicationContext applicationContext) {
         super(assertion);
-        this.hla = new SiteMinderHighLevelAgent();
+        this.hla = applicationContext.getBean("siteMinderHighLevelAgent", SiteMinderHighLevelAgent.class);
+        this.manager = applicationContext.getBean("siteMinderConfigurationManager", SiteMinderConfigurationManager.class);
     }
 
-    public AbstractServerSiteMinderAssertion(@NotNull final AT assertion, SiteMinderHighLevelAgent agent, Config config) {
-        super(assertion);
-        this.hla = agent;
-        this.config = config;
-    }
-
-    protected void initSmAgentFromContext(SiteMinderContext context) throws PolicyAssertionException {
-        //TODO: we need to use a pool of configured agents that will be available to every assertion
+    protected void initSmAgentFromContext(String agentId, SiteMinderContext context) throws PolicyAssertionException {
         try {
-//            return new SiteMinderHighLevelAgent(config.getProperty("smAgentConfig"), getAgentIdOrDefault(context));
-             hla.checkAndInitialize(config.getProperty("smAgentConfig"), getAgentIdOrDefault(context));
-        } catch (SiteMinderAgentConfigurationException e) {
-            throw new PolicyAssertionException(assertion, "SiteMinder agent configuration is invalid", ExceptionUtils.getDebugException(e));
+            if (context.getAgent() == null) {
+                context.setAgent(manager.getSiteMinderLowLevelAgent(agentId));
+            }
         } catch (SiteMinderApiClassException e) {
             throw new PolicyAssertionException(assertion, "SiteMinder agent API exception", e);
+        } catch (FindException e) {
+            throw new PolicyAssertionException(assertion, "No SiteMinder agent configuration", ExceptionUtils.getDebugException(e));
         }
     }
-
-    protected abstract String getAgentIdOrDefault(SiteMinderContext context);
 
     protected void populateContextVariables(PolicyEnforcementContext pac, String prefix, SiteMinderContext context) {
         pac.setVariable(prefix + "." + SiteMinderAssertionUtil.SMCONTEXT, context);

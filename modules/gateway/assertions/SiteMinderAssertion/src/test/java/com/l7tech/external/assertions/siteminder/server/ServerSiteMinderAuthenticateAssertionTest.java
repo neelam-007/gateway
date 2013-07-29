@@ -1,8 +1,6 @@
 package com.l7tech.external.assertions.siteminder.server;
 
-import com.ca.siteminder.SiteMinderContext;
-import com.ca.siteminder.SiteMinderCredentials;
-import com.ca.siteminder.SiteMinderHighLevelAgent;
+import com.ca.siteminder.*;
 import com.l7tech.common.http.HttpCookie;
 import com.l7tech.external.assertions.siteminder.SiteMinderAuthenticateAssertion;
 import com.l7tech.message.AbstractHttpResponseKnob;
@@ -11,9 +9,11 @@ import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.security.token.http.HttpBasicToken;
+import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
+import com.l7tech.server.siteminder.SiteMinderHighLevelAgentStub;
 import com.l7tech.util.Config;
 import org.junit.Before;
 import org.junit.Test;
@@ -27,7 +27,6 @@ import java.util.logging.Logger;
 
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertTrue;
-import static org.mockito.Matchers.*;
 import static org.mockito.Mockito.*;
 
 /**
@@ -38,9 +37,6 @@ public class ServerSiteMinderAuthenticateAssertionTest {
 
     private static final Logger log = Logger.getLogger(ServerSiteMinderAuthenticateAssertionTest.class.getName());
     public static final String SSO_TOKEN = "abcdefghigklmnopqrstuvwxyz0123456789==";
-
-    @Mock
-    SiteMinderHighLevelAgent mockHla;
 
     @Mock
     SiteMinderContext mockContext;
@@ -80,17 +76,17 @@ public class ServerSiteMinderAuthenticateAssertionTest {
         AuthenticationContext ac = pec.getDefaultAuthenticationContext();
         ac.addCredentials(LoginCredentials.makeLoginCredentials(new HttpBasicToken("user", "password".toCharArray()), smAuthenticateAssertion.getClass()));
 
-        when(mockContext.getAgentId()).thenReturn("agent");
+        when(mockContext.getAgent()).thenReturn(new SiteMinderLowLevelAgent());
         List<SiteMinderContext.AuthenticationScheme> authSchemes = new ArrayList<>();
         authSchemes.add(SiteMinderContext.AuthenticationScheme.METADATA);
         authSchemes.add(SiteMinderContext.AuthenticationScheme.BASIC);
         when(mockContext.getAuthSchemes()).thenReturn(authSchemes);
         when(mockContext.getSsoToken()).thenReturn(SSO_TOKEN);
-        when(mockHla.processAuthenticationRequest(any(SiteMinderCredentials.class), anyString(), isNull(String.class), any(SiteMinderContext.class))).thenReturn(1);
-        when(mockHla.checkAndInitialize(anyString(), eq("agent"))).thenReturn(true);
-        fixture = new ServerSiteMinderAuthenticateAssertion(smAuthenticateAssertion, mockHla, mockConfig);
+        //when(mockHla.processAuthenticationRequest(any(SiteMinderCredentials.class), anyString(), isNull(String.class), any(SiteMinderContext.class))).thenReturn(1);
+        fixture = new ServerSiteMinderAuthenticateAssertion(smAuthenticateAssertion, ApplicationContexts.getTestApplicationContext());
         assertTrue(AssertionStatus.NONE == fixture.checkRequest(pec));
-        verify(mockHla, times(1)).processAuthenticationRequest(any(SiteMinderCredentials.class), isNull(String.class), isNull(String.class), eq(mockContext));
+        SiteMinderHighLevelAgent hlAgent = ApplicationContexts.getTestApplicationContext().getBean("siteMinderHighLevelAgent", SiteMinderHighLevelAgentStub.class);
+        //verify(hlAgent, times(1)).processAuthenticationRequest(any(SiteMinderCredentials.class), isNull(String.class), isNull(String.class), eq(mockContext));
 
     }
 
@@ -104,7 +100,7 @@ public class ServerSiteMinderAuthenticateAssertionTest {
         smAuthenticateAssertion.setCookieNameVariable("SMSESSION");
         pec.setVariable(smAuthenticateAssertion.getPrefix() + ".smcontext", mockContext);
 
-        when(mockContext.getAgentId()).thenReturn("agent");
+        when(mockContext.getAgent()).thenReturn(new SiteMinderLowLevelAgent());
         List<SiteMinderContext.AuthenticationScheme> authSchemes = new ArrayList<>();
         authSchemes.add(SiteMinderContext.AuthenticationScheme.METADATA);
         authSchemes.add(SiteMinderContext.AuthenticationScheme.BASIC);
@@ -114,10 +110,11 @@ public class ServerSiteMinderAuthenticateAssertionTest {
         AuthenticationContext ac = pec.getDefaultAuthenticationContext();
         ac.addCredentials(LoginCredentials.makeLoginCredentials(new HttpBasicToken("user", "password".toCharArray()), smAuthenticateAssertion.getClass()));
 
-        fixture = new ServerSiteMinderAuthenticateAssertion(smAuthenticateAssertion, mockHla, mockConfig);
-        when(mockHla.processAuthenticationRequest(any(SiteMinderCredentials.class), isNull(String.class), eq(SSO_TOKEN), any(SiteMinderContext.class))).thenReturn(1);
+        fixture = new ServerSiteMinderAuthenticateAssertion(smAuthenticateAssertion, ApplicationContexts.getTestApplicationContext());
+        //when(mockHla.processAuthenticationRequest(any(SiteMinderCredentials.class), isNull(String.class), eq(SSO_TOKEN), any(SiteMinderContext.class))).thenReturn(1);
         assertTrue(AssertionStatus.NONE == fixture.checkRequest(pec));
-        verify(mockHla, times(1)).processAuthenticationRequest(any(SiteMinderCredentials.class), isNull(String.class), eq(SSO_TOKEN), eq(mockContext));
+        SiteMinderHighLevelAgent hlAgent = ApplicationContexts.getTestApplicationContext().getBean("siteMinderHighLevelAgent", SiteMinderHighLevelAgentStub.class);
+        //verify(hlAgent, times(1)).processAuthenticationRequest(any(SiteMinderCredentials.class), isNull(String.class), eq(SSO_TOKEN), eq(mockContext));
     }
 
     private static class TestResponse extends AbstractHttpResponseKnob {

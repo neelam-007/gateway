@@ -458,4 +458,8 @@
         <constructor-arg ref="sshSessionFactory" />
         <constructor-arg ref="serverConfig" />
     </bean>
+
+    <bean id="siteMinderConfigurationManager" class="com.l7tech.server.siteminder.SiteMinderConfigurationManagerStub"/>
+
+    <bean id="siteMinderHighLevelAgent" class="com.l7tech.server.siteminder.SiteMinderHighLevelAgentStub"/>
 </beans>

@@ -33,18 +33,18 @@ public class SiteMinderContext {
     private List<Pair<String, Object>> attrList = new ArrayList<Pair<String,Object>>();
     List<AuthenticationScheme> authSchemes = new ArrayList<AuthenticationScheme>();
     private String ssoToken;
-    private String agentId;
+    private SiteMinderLowLevelAgent agent;
 
     public SiteMinderContext() {
 
     }
 
-    public String getAgentId() {
-        return agentId;
+    public SiteMinderLowLevelAgent getAgent() {
+        return agent;
     }
 
-    public void setAgentId(String id) {
-        agentId = id;
+    public void setAgent(SiteMinderLowLevelAgent agent) {
+        this.agent = agent;
     }
 
     public String getSsoToken() {

@@ -35,28 +35,8 @@ public class ServerSiteMinderAuthenticateAssertion extends AbstractServerSiteMin
 
 
     public ServerSiteMinderAuthenticateAssertion(final SiteMinderAuthenticateAssertion assertion, ApplicationContext springContext) throws PolicyAssertionException {
-        super(assertion);
-        this.config = springContext.getBean("serverConfig", com.l7tech.util.Config.class);
+        super(assertion, springContext);
         this.variablesUsed = assertion.getVariablesUsed();
-    }
-
-    /**
-     * package level constructor used for unit tests
-     * initializes the SM HLA with the configuration read fromm the smAgentConfigProperty
-     * TODO: this should be changed to allow configuration read from
-     * @param assertion SiteMinderAuthenticateAssertion
-     * @param agent  SiteMInderHighLevelAgent
-     * @throws PolicyAssertionException
-     */
-    ServerSiteMinderAuthenticateAssertion(final SiteMinderAuthenticateAssertion assertion, final SiteMinderHighLevelAgent agent, final Config config) throws PolicyAssertionException {
-        super(assertion, agent, config);
-        this.config = config;
-        this.variablesUsed = assertion.getVariablesUsed();
-    }
-
-    @Override
-    protected String getAgentIdOrDefault(SiteMinderContext context) {
-        return context.getAgentId();
     }
 
     public AssertionStatus checkRequest( final PolicyEnforcementContext context ) throws IOException, PolicyAssertionException {
@@ -79,13 +59,10 @@ public class ServerSiteMinderAuthenticateAssertion extends AbstractServerSiteMin
                 logAndAudit(AssertionMessages.SITEMINDER_ERROR, msg);
                 return AssertionStatus.FALSIFIED;
             }
-            //TODO: replace with real siteMinder config from layer7-siteminder module
-            if(smContext.getAgentId() == null) {
-                logAndAudit(AssertionMessages.SITEMINDER_ERROR, "Agent ID is null!");
+            if(smContext.getAgent() == null) {
+                logAndAudit(AssertionMessages.SITEMINDER_ERROR, "Agent is null!");
                 return AssertionStatus.FALSIFIED;
             }
-
-            initSmAgentFromContext(smContext);
 
             //first check what credentials are accepted by the policy server
             SiteMinderCredentials credentials = collectCredentials(context, variableMap, smContext);
@@ -236,10 +213,6 @@ public class ServerSiteMinderAuthenticateAssertion extends AbstractServerSiteMin
 
     }
 
-    @Override
-    protected void initSmAgentFromContext(SiteMinderContext context) throws PolicyAssertionException {
-        super.initSmAgentFromContext(context);
-    }
     /*
 * Called reflectively by module class loader when module is unloaded, to ask us to clean up any globals
 * that would otherwise keep our instances from getting collected.

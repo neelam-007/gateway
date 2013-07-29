@@ -5,14 +5,12 @@ import com.l7tech.console.panels.TargetVariablePanel;
 import com.l7tech.console.util.Registry;
 
 import com.l7tech.external.assertions.siteminder.SiteMinderAuthenticateAssertion;
-import com.l7tech.external.assertions.siteminder.SiteMinderAuthenticateAssertion;
 import com.l7tech.external.assertions.siteminder.SiteMinderCheckProtectedAssertion;
-import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
+import com.l7tech.gateway.common.siteminder.SiteMinderAdmin;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.policy.variable.Syntax;
 
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
@@ -20,7 +18,6 @@ import javax.swing.event.ChangeListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
@@ -82,23 +79,16 @@ public class SiteMinderCheckProtectedPropertiesDialog extends AssertionPropertie
 
     /**
      * populates agent combo box with agent IDs
-     * TODO: move to generic entity model instead of cluster properties
      * @param agentComboBoxModel
      */
     private void populateAgentComboBoxModel(DefaultComboBoxModel<String> agentComboBoxModel) {
-        //TODO: this will be gone when the new SiteMinder agent configuration is implemented
+
         try {
-            ClusterProperty smConfigProperty = clusterStatusAdmin.findPropertyByName("siteminder12.agent.configuration");
-            if(smConfigProperty != null){
-                String smConfig = smConfigProperty.getValue();
-                //search for agent name in the cluster property file
-                String agentId = null;
-                Matcher m = AGENTID_PATTERN.matcher(smConfig);
-                while (m.find()) {
-                    agentId = m.group(1);
-                    agentComboBoxModel.addElement(agentId);
-                }
+            java.util.List<String> agents = getSiteMinderAdmin().getAllSiteMinderConfigurationNames();
+            for (String agent: agents) {
+                agentComboBoxModel.addElement(agent);
             }
+
         } catch (FindException e) {
             //do not throw any exceptions at this point. leave agent combo box empty
         }
@@ -167,4 +157,10 @@ public class SiteMinderCheckProtectedPropertiesDialog extends AssertionPropertie
     private void initAdminConnection() {
         clusterStatusAdmin = Registry.getDefault().getClusterStatusAdmin();
     }
+
+    private SiteMinderAdmin getSiteMinderAdmin(){
+        return Registry.getDefault().getSiteMinderConfigurationAdmin();
+    }
+
+
 }

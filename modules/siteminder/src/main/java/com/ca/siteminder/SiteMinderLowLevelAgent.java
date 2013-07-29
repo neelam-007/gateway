@@ -34,22 +34,23 @@ public class SiteMinderLowLevelAgent {
     private boolean agentCheckSessionIP;
     private String cookieName;
     private boolean updateCookie;
-    private final SiteMinderAgentConfig agentConfig;
+    private SiteMinderConfig agentConfig;
 
-
-    public SiteMinderLowLevelAgent(SiteMinderAgentConfig config) throws SiteMinderApiClassException {
-        agentConfig = config;
-        if(!initialize(agentConfig)) throw new SiteMinderApiClassException("Unable to initialize SiteMinder Agent API");
+    public SiteMinderLowLevelAgent() {
     }
 
-    public boolean initialize(SiteMinderAgentConfig agentConfig) throws SiteMinderApiClassException {
+    public SiteMinderLowLevelAgent(SiteMinderConfig config) throws SiteMinderApiClassException {
+        agentConfig = config;
+        if(!initialize()) throw new SiteMinderApiClassException("Unable to initialize SiteMinder Agent API");
+    }
+
+    private boolean initialize() throws SiteMinderApiClassException {
         initialized = false;
         try {
-            agentConfig.validate();
             agentName = agentConfig.getAgentName();
-            agentIP = agentConfig.getAgentAddress();
-            agentCheckSessionIP = agentConfig.isAgentIpCheck();
-            updateCookie = agentConfig.isUpdateCookie();
+            agentIP = agentConfig.getAddress();
+            agentCheckSessionIP = agentConfig.isIpcheck();
+            updateCookie = agentConfig.isUdpateCookie();
 
             InitDef initDef = null;
             agentApi = new AgentAPI();
@@ -58,10 +59,10 @@ public class SiteMinderLowLevelAgent {
             if (iter.hasNext()) {
                 if (agentConfig.isCluster()) {
                     logger.log(Level.FINE, "Initializing agent in cluster mode...");
-                    initDef = new InitDef(agentConfig.getHostname(), agentConfig.getAgentSecret(), agentConfig.getClusterFailOverThreshold(),(ServerDef)iter.next());
+                    initDef = new InitDef(agentConfig.getHostname(), agentConfig.getSecret(), agentConfig.getClusterThreshold(),(ServerDef)iter.next());
                 } else {
                     logger.log(Level.FINE, "Initializing agent in non-cluster mode...");
-                    initDef = new InitDef(agentConfig.getHostname(), agentConfig.getAgentSecret(), agentConfig.isNonClusterFailOver(), (ServerDef)iter.next());
+                    initDef = new InitDef(agentConfig.getHostname(), agentConfig.getSecret(), agentConfig.isNonClusterFailover(), (ServerDef)iter.next());
                 }
             }
 
@@ -83,19 +84,8 @@ public class SiteMinderLowLevelAgent {
                 }
             }
 
-            String fipsMode = agentConfig.getFipsMode();
-            int cryptoOpMode;
+            int cryptoOpMode = agentConfig.getFibsmode();
 
-            if (FIPS_MODE_COMPAT.equals(fipsMode)) {
-                cryptoOpMode = InitDef.CRYPTO_OP_COMPAT;
-            } else if(FIPS_MODE_MIGRATE.equals(fipsMode)) {
-                cryptoOpMode = InitDef.CRYPTO_OP_MIGRATE_F1402;
-            } else if(FIPS_MODE_ONLY.equals(fipsMode)) {
-                cryptoOpMode = InitDef.CRYPTO_OP_F1402;
-            } else {
-                logger.log(Level.SEVERE, "Unexpected FIPS mode: " + fipsMode);
-                return false;
-            }
             initDef.setCryptoOpMode(cryptoOpMode);
             agentApi.getConfig(initDef, agentName, null); //the last parameter is used to configure ACO
 
@@ -406,10 +396,6 @@ public class SiteMinderLowLevelAgent {
                 sessionDef.spec));
 
         return result;
-    }
-
-    public SiteMinderAgentConfig getConfig() {
-        return agentConfig;
     }
 
     /**

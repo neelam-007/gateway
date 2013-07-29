@@ -1686,6 +1686,7 @@
                 <ref bean="customKeyValueStoreManager"/>
                 <ref bean="jmsConnectionManager"/>
                 <ref bean="jmsEndpointManager"/>
+                <ref bean="siteMinderConfigurationManager"/>
             </list>
         </property>
         <property name="timer" ref="entityVersionCheckerTimer"/>
@@ -2567,6 +2568,8 @@
     <bean id="sslSsgConnectorDependencyProcessor" class="com.l7tech.server.search.processors.SslSsgConnectorDependencyProcessor" />
 
     <bean id="siteMinderConfigurationManager" class="com.l7tech.server.siteminder.SiteMinderConfigurationManagerImpl" parent="hibernateBean"/>
+
+    <bean id="siteMinderHighLevelAgent" class="com.ca.siteminder.SiteMinderHighLevelAgent"/>
 
     <bean id="ssgCustomMessageFormatRegistry" class="com.l7tech.server.custom.format.CustomMessageFormatRegistry" depends-on="stashManagerFactory">
         <constructor-arg ref="stashManagerFactory"/>

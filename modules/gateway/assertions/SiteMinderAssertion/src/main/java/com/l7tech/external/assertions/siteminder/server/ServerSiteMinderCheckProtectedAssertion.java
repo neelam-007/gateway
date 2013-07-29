@@ -28,26 +28,10 @@ public class ServerSiteMinderCheckProtectedAssertion extends AbstractServerSiteM
 //    private Config config;
 
     public ServerSiteMinderCheckProtectedAssertion(final SiteMinderCheckProtectedAssertion assertion, ApplicationContext springContext) throws PolicyAssertionException {
-        super(assertion);
-        this.config = springContext.getBean("serverConfig", com.l7tech.util.Config.class);
+        super(assertion, springContext);
         this.variablesUsed = assertion.getVariablesUsed();
         //TODO: replace with the real config
 //        checkSmAgentConfig();
-
-    }
-
-    /**
-     * package level constructor used for unit tests
-     * initializes the SM HLA with the configuration read fromm the smAgentConfigProperty
-     * TODO: this should be changed to allow configuration read from
-     * @param assertion SiteMinderAuthenticateAssertion
-     * @param agent  SiteMInderHighLevelAgent
-     * @throws PolicyAssertionException
-     */
-    ServerSiteMinderCheckProtectedAssertion( final SiteMinderCheckProtectedAssertion assertion, final SiteMinderHighLevelAgent agent ) throws PolicyAssertionException {
-        super(assertion);
-        this.variablesUsed = assertion.getVariablesUsed();
-        this.hla = agent;
     }
 
     /**
@@ -77,15 +61,13 @@ public class ServerSiteMinderCheckProtectedAssertion extends AbstractServerSiteM
             smContext = new SiteMinderContext();
         }
 
-        //TODO: replace with real siteMinder config from layer7-siteminder module
-        initSmAgentFromContext(smContext);
+        initSmAgentFromContext(assertion.getAgentID(), smContext);
 
-        smContext.setAgentId(getAgentIdOrDefault(smContext));//set agent config
         String transactionId = UUID.randomUUID().toString();//generate SiteMinder transaction id.
         smContext.setTransactionId(transactionId);
         try {
             //check if protected and return AssertionStatus.NONE if it is
-            if(hla.checkProtected(getAgentIdOrDefault(smContext), getClientIp(context), resource, action, smContext)) {
+            if(hla.checkProtected(getClientIp(context), resource, action, smContext)) {
                 status = AssertionStatus.NONE;
             }
             populateContextVariables(context, varPrefix, smContext);
@@ -115,7 +97,4 @@ public class ServerSiteMinderCheckProtectedAssertion extends AbstractServerSiteM
         }
     }*/
 
-    protected String getAgentIdOrDefault(SiteMinderContext context) {
-        return context != null && context.getAgentId() != null? context.getAgentId() : assertion.getAgentID();  //To change body of created methods use File | Settings | File Templates.
-    }
 }

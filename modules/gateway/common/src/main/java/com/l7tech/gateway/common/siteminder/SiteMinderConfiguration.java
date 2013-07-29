@@ -24,7 +24,7 @@ import java.util.Map;
 @Entity
 @Proxy(lazy=false)
 @Table(name="siteminder_configuration")
-public class SiteMinderConfiguration extends ZoneableNamedGoidEntityImp implements Comparable{
+public class SiteMinderConfiguration extends ZoneableNamedGoidEntityImp implements Comparable {
 
     private String agent_name;
     private String address;

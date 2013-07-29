@@ -31,24 +31,9 @@ public class ServerSiteMinderAuthorizeAssertion extends AbstractServerSiteMinder
 //    private SiteMinderHighLevelAgent hla;
 
     public ServerSiteMinderAuthorizeAssertion(final SiteMinderAuthorizeAssertion assertion, ApplicationContext springContext) throws PolicyAssertionException {
-        super(assertion);
-        this.config = springContext.getBean("serverConfig", com.l7tech.util.Config.class);
+        super(assertion, springContext);
         this.variablesUsed = assertion.getVariablesUsed();
 
-    }
-
-    /**
-     * package level constructor used for unit tests
-     * initializes the SM HLA with the configuration read fromm the smAgentConfigProperty
-     * TODO: this should be changed to allow configuration read from
-     * @param assertion SiteMinderAuthenticateAssertion
-     * @param agent  SiteMInderHighLevelAgent
-     * @throws PolicyAssertionException
-     */
-    ServerSiteMinderAuthorizeAssertion( final SiteMinderAuthorizeAssertion assertion, final SiteMinderHighLevelAgent agent ) throws PolicyAssertionException {
-        super(assertion);
-        this.variablesUsed = assertion.getVariablesUsed();
-//        this.hla = agent;
     }
 
     /**
@@ -80,8 +65,8 @@ public class ServerSiteMinderAuthorizeAssertion extends AbstractServerSiteMinder
             return AssertionStatus.FALSIFIED;
         }
 
-        if(smContext.getAgentId() == null) {
-            logAndAudit(AssertionMessages.SITEMINDER_ERROR, "Agent ID is null!");
+        if(smContext.getAgent() == null) {
+            logAndAudit(AssertionMessages.SITEMINDER_ERROR, "Agent is null!");
             return AssertionStatus.FALSIFIED;
         }
 
@@ -90,8 +75,6 @@ public class ServerSiteMinderAuthorizeAssertion extends AbstractServerSiteMinder
         if(assertion.isUseVarAsCookieSource()){
             ssoToken = SiteMinderAssertionUtil.extractContextVarValue(assertion.getCookieSourceVar(), variableMap, getAudit());
         }
-        //TODO: replace with real siteMinder config from layer7-siteminder module
-        initSmAgentFromContext(smContext);
         //
         try {
             int result = hla.processAuthorizationRequest(getClientIp(context), ssoToken, smContext);
@@ -109,14 +92,6 @@ public class ServerSiteMinderAuthorizeAssertion extends AbstractServerSiteMinder
 
         return status;
     }
-
-    @Override
-    protected String getAgentIdOrDefault(SiteMinderContext context) {
-        //TODO: need to get the proper default agent
-        return context.getAgentId();
-    }
-
-
 
     /*
     * Creates a cookie from the SiteMinder SSO Token and its details and adds it to the HttpServletResponse.
