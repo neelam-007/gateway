@@ -14,6 +14,7 @@ import javax.xml.bind.annotation.XmlTransient;
 /**
  * Convenience superclass for PersistentEntities that can be placed into security zones.
  */
+@Deprecated
 @MappedSuperclass
 public abstract class ZoneablePersistentEntityImp extends PersistentEntityImp implements ZoneableEntity {
     protected SecurityZone securityZone;

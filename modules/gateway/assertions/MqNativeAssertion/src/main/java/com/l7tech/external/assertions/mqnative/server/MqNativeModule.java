@@ -10,6 +10,7 @@ import com.l7tech.gateway.common.Component;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import com.l7tech.message.*;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.*;
 import com.l7tech.server.audit.AuditContextUtils;
@@ -74,7 +75,7 @@ public class MqNativeModule extends ActiveTransportModule implements Application
     private static final String PROP_ENABLE_MQ_LOGGING = "com.l7tech.external.assertions.mqnative.server.enableMqLogging";
     private static final String SYSPROP_MQ_SOCKET_CONNECT_TIMEOUT = "com.ibm.mq.tuning.socketConnectTimeout";
 
-    private final Map<Long, Set<MqNativeListener>> activeListeners = new ConcurrentHashMap<Long, Set<MqNativeListener>> ();
+    private final Map<Goid, Set<MqNativeListener>> activeListeners = new ConcurrentHashMap<Goid, Set<MqNativeListener>> ();
     private final ThreadPoolBean threadPoolBean;
 
     static {
@@ -213,7 +214,7 @@ public class MqNativeModule extends ActiveTransportModule implements Application
         }
 
         Set<MqNativeListener> listenerSet = new HashSet<MqNativeListener>( numberOfListenersToCreate );
-        activeListeners.put( ssgActiveConnector.getOid(), listenerSet );
+        activeListeners.put( ssgActiveConnector.getGoid(), listenerSet );
         for ( int i = 1; i <= numberOfListenersToCreate; i++ ) {
             MqNativeListener newListener = null;
             try {
@@ -281,8 +282,8 @@ public class MqNativeModule extends ActiveTransportModule implements Application
     }
 
     @Override
-    protected void removeConnector( long oid ) {
-        Set<MqNativeListener> listenerSet = activeListeners.remove(oid);
+    protected void removeConnector( Goid goid ) {
+        Set<MqNativeListener> listenerSet = activeListeners.remove(goid);
         if  (listenerSet != null) {
             for (MqNativeListener listener : listenerSet) {
                 listener.stop();
@@ -682,7 +683,7 @@ public class MqNativeModule extends ActiveTransportModule implements Application
         this.securePasswordManager = securePasswordManager;
     }
 
-    Map<Long, Set<MqNativeListener>> getActiveListeners() {
+    Map<Goid, Set<MqNativeListener>> getActiveListeners() {
         return activeListeners;
     }
 }

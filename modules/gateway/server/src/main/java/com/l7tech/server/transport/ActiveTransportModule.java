@@ -5,10 +5,11 @@ import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.LifecycleBean;
 import com.l7tech.server.LifecycleException;
 import com.l7tech.server.audit.Auditor;
-import com.l7tech.server.event.EntityInvalidationEvent;
+import com.l7tech.server.event.GoidEntityInvalidationEvent;
 import com.l7tech.server.event.system.ReadyForMessages;
 import com.l7tech.util.ExceptionUtils;
 import org.jetbrains.annotations.NotNull;
@@ -74,7 +75,7 @@ public abstract class ActiveTransportModule extends LifecycleBean {
      * @return true if this SsgActiveConnector version is already current, and any associated entity update event should be ignored.
      *         false if this SsgActiveConnector version may not be current and the SsgActiveConnector should be removed and re-added.
      */
-    protected boolean isCurrent( final long oid, final int version ) {
+    protected boolean isCurrent( final Goid oid, final int version ) {
         return false;
     }
 
@@ -94,7 +95,7 @@ public abstract class ActiveTransportModule extends LifecycleBean {
      *
      * @param oid the oid of the SsgActiveConnector to remove.
      */
-    protected abstract void removeConnector( long oid );
+    protected abstract void removeConnector( Goid oid );
 
     /**
      * Get the set of connector types recognized by this transport module.
@@ -155,8 +156,8 @@ public abstract class ActiveTransportModule extends LifecycleBean {
         if (!isStarted())
             return;
 
-        if (applicationEvent instanceof EntityInvalidationEvent) {
-            EntityInvalidationEvent event = (EntityInvalidationEvent)applicationEvent;
+        if (applicationEvent instanceof GoidEntityInvalidationEvent) {
+            GoidEntityInvalidationEvent event = (GoidEntityInvalidationEvent)applicationEvent;
             if (SsgActiveConnector.class.equals(event.getEntityClass()))
                 handleConnectorInvalidationEvent( event );
         } else if (applicationEvent instanceof ReadyForMessages && isStarted() && !isInitialized() ) {
@@ -168,22 +169,22 @@ public abstract class ActiveTransportModule extends LifecycleBean {
         }
     }
 
-    private void handleConnectorInvalidationEvent( final EntityInvalidationEvent event ) {
-        long[] ids = event.getEntityIds();
+    private void handleConnectorInvalidationEvent( final GoidEntityInvalidationEvent event ) {
+        Goid[] ids = event.getEntityIds();
         char[] operations = event.getEntityOperations();
         for (int i = 0; i < ids.length; i++) {
             handleConnectorOperation( operations[i], ids[i] );
         }
     }
 
-    private void handleConnectorOperation( final char operation, final long connectorId ) {
+    private void handleConnectorOperation( final char operation, final Goid connectorId ) {
         try {
             switch (operation) {
-                case EntityInvalidationEvent.CREATE:
-                case EntityInvalidationEvent.UPDATE:
+                case GoidEntityInvalidationEvent.CREATE:
+                case GoidEntityInvalidationEvent.UPDATE:
                     createOrUpdateConnector( connectorId );
                     break;
-                case EntityInvalidationEvent.DELETE:
+                case GoidEntityInvalidationEvent.DELETE:
                     removeConnector( connectorId );
                     break;
                 default:
@@ -195,7 +196,7 @@ public abstract class ActiveTransportModule extends LifecycleBean {
         }
     }
 
-    private void createOrUpdateConnector( final long connectorId ) throws FindException, ListenerException {
+    private void createOrUpdateConnector( final Goid connectorId ) throws FindException, ListenerException {
         final SsgActiveConnector c = ssgActiveConnectorManager.findByPrimaryKey(connectorId);
         if (c == null) {
             // Already removed
@@ -204,7 +205,7 @@ public abstract class ActiveTransportModule extends LifecycleBean {
 
         // If this module keeps track of active entities, and can tell this update has already been processed,
         // skip the expensive removal and re-add.
-        if (isCurrent(c.getOid(), c.getVersion()))
+        if (isCurrent(c.getGoid(), c.getVersion()))
             return;
 
         removeConnector( connectorId );

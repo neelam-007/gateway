@@ -8,6 +8,7 @@ import com.l7tech.gateway.common.transport.TransportAdmin;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
@@ -59,6 +60,7 @@ public class MqNativeRoutingAssertion extends RoutingAssertion implements UsesEn
 
     @Nullable
     private Long ssgActiveConnectorId;
+    private Goid ssgActiveConnectorGoid;
     private String ssgActiveConnectorName;
     private String responseTimeout;
     private String responseSize;
@@ -117,12 +119,35 @@ public class MqNativeRoutingAssertion extends RoutingAssertion implements UsesEn
     }
 
     /**
+     * Deprecated. Save the Goid instead
      * Set the OID for the associated SsgActiveConnector.
      *
      * @param ssgActiveConnectorId the OID, or null.
      */
+    @Deprecated
     public void setSsgActiveConnectorId( @Nullable final Long ssgActiveConnectorId ) {
         this.ssgActiveConnectorId = ssgActiveConnectorId;
+        this.ssgActiveConnectorGoid = null;
+    }
+
+    /**
+     * Get the GOID of the associated SsgActiveConnector.
+     *
+     * @return the GOID of the connector, or null.
+     */
+    @Nullable
+    public Goid getSsgActiveConnectorGoid() {
+        return ssgActiveConnectorGoid;
+    }
+
+    /**
+     * Set the GOID for the associated SsgActiveConnector.
+     *
+     * @param ssgActiveConnectorGoid the GOID, or null.
+     */
+    public void setSsgActiveConnectorGoid(@Nullable Goid ssgActiveConnectorGoid) {
+        this.ssgActiveConnectorGoid = ssgActiveConnectorGoid;
+        this.ssgActiveConnectorId = null;
     }
 
     /**
@@ -478,7 +503,11 @@ public class MqNativeRoutingAssertion extends RoutingAssertion implements UsesEn
             SsgActiveConnector activeConnector;
             TransportAdmin ta = Registry.getDefault().getTransportAdmin();
             try {
-                activeConnector = ta.findSsgActiveConnectorByPrimaryKey(assertion.getSsgActiveConnectorId());
+                if(assertion.getSsgActiveConnectorId()!=null){
+                    activeConnector = ta.findSsgActiveConnectorByOldId(assertion.getSsgActiveConnectorId());
+                }else{
+                    activeConnector = ta.findSsgActiveConnectorByPrimaryKey(new Goid(assertion.getSsgActiveConnectorName()));
+                }
                 if ( activeConnector == null ) {
                     activeConnectorStatus = ActiveConnectorStatus.NOT_FOUND;
                     return;

@@ -1,6 +1,6 @@
 package com.l7tech.gateway.common.transport;
 
-import com.l7tech.objectmodel.imp.ZoneableNamedEntityImp;
+import com.l7tech.objectmodel.imp.ZoneableNamedGoidEntityImp;
 import com.l7tech.search.Dependency;
 import com.l7tech.util.Functions.Unary;
 import org.hibernate.annotations.Fetch;
@@ -25,7 +25,7 @@ import java.util.logging.Logger;
 @Entity
 @Proxy(lazy=false)
 @Table(name="active_connector")
-public class SsgActiveConnector extends ZoneableNamedEntityImp {
+public class SsgActiveConnector extends ZoneableNamedGoidEntityImp {
     private static final Logger logger = Logger.getLogger(SsgActiveConnector.class.getName());
 
     /** If specified, incoming messages should be assumed to use the specified content type. */
@@ -100,6 +100,7 @@ public class SsgActiveConnector extends ZoneableNamedEntityImp {
     private String type;
     private Long hardwiredServiceOid;
     private Map<String,String> properties = new HashMap<String,String>();
+    private Long oldOid;
 
     public SsgActiveConnector() {
     }
@@ -111,6 +112,7 @@ public class SsgActiveConnector extends ZoneableNamedEntityImp {
         this.hardwiredServiceOid = ssgActiveConnector.getHardwiredServiceOid();
         this.setProperties( new HashMap<String, String>( ssgActiveConnector.getProperties() ) );
         this.setSecurityZone(ssgActiveConnector.getSecurityZone());
+        this.oldOid = ssgActiveConnector.oldOid;
     }
 
     public static SsgActiveConnector newWithType(String type) {
@@ -150,6 +152,15 @@ public class SsgActiveConnector extends ZoneableNamedEntityImp {
         this.hardwiredServiceOid = hardwiredServiceOid;
     }
 
+    @Column(name="old_objectid")
+    public Long getOldOid() {
+        return oldOid;
+    }
+
+    public void setOldOid(Long oldOid) {
+        this.oldOid = oldOid;
+    }
+
     /**
      * Get the extra properties of this connector.
      * <p/>
@@ -160,7 +171,7 @@ public class SsgActiveConnector extends ZoneableNamedEntityImp {
     @Fetch(FetchMode.SUBSELECT)
     @ElementCollection(fetch=FetchType.EAGER)
     @JoinTable(name="active_connector_property",
-               joinColumns=@JoinColumn(name="connector_oid", referencedColumnName="objectid"))
+               joinColumns=@JoinColumn(name="connector_goid", referencedColumnName="goid"))
     @MapKeyColumn(name="name",length=128)
     @Column(name="value", nullable=false, length=32672)
     protected Map<String,String> getProperties() {

@@ -8,6 +8,7 @@ import org.jetbrains.annotations.Nullable;
  * Helper class for locking PersistentEntityImp, without forcing public lock()/isLocked() methods to be available
  * in all subclasses of PersistentEntityImp.
  */
+@Deprecated
 public class PersistentEntityUtil {
 
     /**

@@ -77,7 +77,7 @@ public class ResolveForeignMqNativePanel extends WizardStepPanel {
             if (queueSelectorComboBox.getSelectedIndex() < 0) return false;
 
             final SsgActiveConnector connector = (SsgActiveConnector) queueSelectorComboBox.getSelectedItem();
-            foreignRef.setLocalizeReplace(connector.getOid());
+            foreignRef.setLocalizeReplace(connector.getGoid());
         } else if (removeRadioButton.isSelected()) {
             foreignRef.setLocalizeDelete();
         } else if (ignoreRadioButton.isSelected()) {

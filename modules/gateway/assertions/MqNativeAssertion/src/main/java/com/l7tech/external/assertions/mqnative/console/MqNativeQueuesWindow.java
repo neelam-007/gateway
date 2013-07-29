@@ -593,7 +593,8 @@ public class MqNativeQueuesWindow extends JDialog {
             List<SsgActiveConnector> modelRows = getMqQueueTableModel().getConnectors();
             for (int i = 0; i < modelRows.size(); ++i) {
                 SsgActiveConnector modelItem = modelRows.get(i);
-                if (modelItem != null && modelItem.getOid() == selectedConfiguration.getOid()) {
+                if (modelItem != null && ((modelItem.getGoid()!=null && modelItem.getGoid().toString().equals( selectedConfiguration.getGoid())))||
+                        (modelItem.getOldOid() != null && modelItem.getOldOid().equals(selectedConfiguration.getOldOid()))) {
                     int viewRow = getMqQueueTable().convertRowIndexToView(i);
                     if (viewRow >= 0) {
                         getMqQueueTable().getSelectionModel().setSelectionInterval(viewRow, viewRow);
@@ -634,7 +635,7 @@ public class MqNativeQueuesWindow extends JDialog {
     private void deleteConfiguration( final SsgActiveConnector configuration ) throws FindException, DeleteException {
         final TransportAdmin transportAdmin = getTransportAdmin();
         if (transportAdmin != null) {
-            transportAdmin.deleteSsgActiveConnector( configuration.getOid() );
+            transportAdmin.deleteSsgActiveConnector( configuration.getGoid() );
         }
     }
 }

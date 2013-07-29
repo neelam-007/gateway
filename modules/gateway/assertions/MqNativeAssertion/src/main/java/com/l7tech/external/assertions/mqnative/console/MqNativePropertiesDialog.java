@@ -527,7 +527,7 @@ public class MqNativePropertiesDialog extends JDialog {
         keystoreComboBox.setRenderer( TextListCellRenderer.<Object>basicComboBoxRenderer() );
         keystoreComboBox.selectDefaultSsl();
         keystoreComboBox.setEnabled(false);
-        zoneControl.configure(mqNativeActiveConnector.getOid() == SsgActiveConnector.DEFAULT_OID ? OperationType.CREATE : OperationType.UPDATE, mqNativeActiveConnector);
+        zoneControl.configure(mqNativeActiveConnector.getGoid().equals(SsgActiveConnector.DEFAULT_GOID) ? OperationType.CREATE : OperationType.UPDATE, mqNativeActiveConnector);
 
         pack();
         initializeView();
@@ -624,7 +624,7 @@ public class MqNativePropertiesDialog extends JDialog {
             }
 
             hostNameTextBox.setText(mqNativeActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_HOST_NAME));
-            if(mqNativeActiveConnector.getOid() > -1L || isClone) {
+            if(!mqNativeActiveConnector.getGoid().equals(SsgActiveConnector.DEFAULT_GOID) || isClone) {
                 channelTextBox.setText(mqNativeActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_CHANNEL));
             } else {
                 channelTextBox.setText("SYSTEM.DEF.SVRCONN");

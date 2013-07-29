@@ -101,8 +101,13 @@ public class TransportAdminImpl implements TransportAdmin {
     }
 
     @Override
-    public SsgActiveConnector findSsgActiveConnectorByPrimaryKey( final long oid ) throws FindException {
-        return ssgActiveConnectorManager.findByPrimaryKey(oid);
+    public SsgActiveConnector findSsgActiveConnectorByPrimaryKey( final Goid goid ) throws FindException {
+        return ssgActiveConnectorManager.findByPrimaryKey(goid);
+    }
+
+    @Override
+    public SsgActiveConnector findSsgActiveConnectorByOldId(long oid) throws FindException {
+        return ssgActiveConnectorManager.findByOldOid(oid);
     }
 
     @Override
@@ -123,18 +128,18 @@ public class TransportAdminImpl implements TransportAdmin {
     }
 
     @Override
-    public long saveSsgActiveConnector( final SsgActiveConnector activeConnector ) throws SaveException, UpdateException {
-        if ( activeConnector.getOid() == SsgActiveConnector.DEFAULT_OID) {
+    public Goid saveSsgActiveConnector( final SsgActiveConnector activeConnector ) throws SaveException, UpdateException {
+        if ( activeConnector.getGoid().equals(SsgActiveConnector.DEFAULT_GOID)) {
             return ssgActiveConnectorManager.save( activeConnector );
         } else {
             ssgActiveConnectorManager.update( activeConnector );
-            return activeConnector.getOid();
+            return activeConnector.getGoid();
         }
     }
 
     @Override
-    public void deleteSsgActiveConnector( final long oid ) throws DeleteException, FindException {
-        ssgActiveConnectorManager.delete(oid);
+    public void deleteSsgActiveConnector( final Goid goid ) throws DeleteException, FindException {
+        ssgActiveConnectorManager.delete(goid);
     }
 
     @Override

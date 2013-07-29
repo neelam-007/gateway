@@ -11,14 +11,14 @@ public class SsgActiveConnectorHeader extends ZoneableEntityHeader {
     private boolean enabled;
     private boolean inbound;
 
-    public SsgActiveConnectorHeader( final long id,
+    public SsgActiveConnectorHeader( final Goid goid,
                                      final String name,
                                      final String connectorType,
                                      final int version,
                                      final boolean enabled,
                                      final boolean inbound,
                                      @Nullable final Goid securityZoneGoid) {
-        super(id, EntityType.SSG_ACTIVE_CONNECTOR, name, null, version);
+        super(goid, EntityType.SSG_ACTIVE_CONNECTOR, name, null, version);
         this.connectorType = connectorType;
         this.enabled = enabled;
         this.inbound = inbound;
@@ -26,7 +26,7 @@ public class SsgActiveConnectorHeader extends ZoneableEntityHeader {
     }
 
     public SsgActiveConnectorHeader( final SsgActiveConnector connector ) {
-        this( connector.getOid(),
+        this( connector.getGoid(),
                 connector.getName(),
                 connector.getType(),
                 connector.getVersion(),

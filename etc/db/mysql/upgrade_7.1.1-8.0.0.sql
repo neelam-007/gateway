@@ -476,6 +476,33 @@ ALTER TABLE jms_endpoint ADD COLUMN connection_goid binary(16);
 update jms_endpoint set connection_goid = toGoid(@jms_connection_prefix,connection_oid);
 ALTER TABLE jms_endpoint DROP COLUMN connection_oid;
 
+update rbac_role set entity_goid = toGoid(@jms_connection_prefix,entity_oid) where entity_oid is not null and entity_type='JMS_CONNECTION';
+update rbac_predicate_oid oid1 left join rbac_predicate on rbac_predicate.objectid = oid1.objectid left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid set oid1.entity_id = hex(toGoid(@jms_connection_prefix,oid1.entity_id)) where rbac_permission.entity_type = 'JMS_CONNECTION';
+
+update rbac_role set entity_goid = toGoid(@jms_endpoint_prefix,entity_oid) where entity_oid is not null and entity_type='JMS_ENDPOINT';
+update rbac_predicate_oid oid1 left join rbac_predicate on rbac_predicate.objectid = oid1.objectid left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid set oid1.entity_id = hex(toGoid(@jms_endpoint_prefix,oid1.entity_id)) where rbac_permission.entity_type = 'JMS_ENDPOINT';
+
+
+-- active connector
+
+call dropForeignKey('active_connector_property','active_connector');
+
+ALTER TABLE active_connector ADD COLUMN old_objectid BIGINT(20);
+update active_connector set old_objectid=objectid;
+ALTER TABLE active_connector CHANGE COLUMN objectid goid binary(16);
+-- For manual runs use: set @active_connector_prefix=createUnreservedPoorRandomPrefix();
+SET @active_connector_prefix=#RANDOM_LONG_NOT_RESERVED#;
+update active_connector set goid = toGoid(@active_connector_prefix,old_objectid);
+
+ALTER TABLE active_connector_property ADD COLUMN connector_oid_backup BIGINT(20);
+UPDATE  active_connector_property SET connector_oid_backup = connector_oid;
+ALTER TABLE active_connector_property CHANGE COLUMN connector_oid connector_goid binary(16);
+UPDATE active_connector_property SET connector_goid = toGoid(@active_connector_prefix,connector_oid_backup);
+ALTER TABLE active_connector_property DROP COLUMN connector_oid_backup;
+ALTER TABLE active_connector_property  ADD FOREIGN KEY (connector_goid) REFERENCES active_connector (goid) ON DELETE CASCADE;
+
+update rbac_role set entity_goid = toGoid(@active_connector_prefix,entity_oid) where entity_oid is not null and entity_type='SSG_ACTIVE_CONNECTOR';
+update rbac_predicate_oid oid1 left join rbac_predicate on rbac_predicate.objectid = oid1.objectid left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid set oid1.entity_id = hex(toGoid(@active_connector_prefix,oid1.entity_id)) where rbac_permission.entity_type = 'SSG_ACTIVE_CONNECTOR';
 
 --
 -- Register upgrade task for upgrading sink configuration references to GOIDs

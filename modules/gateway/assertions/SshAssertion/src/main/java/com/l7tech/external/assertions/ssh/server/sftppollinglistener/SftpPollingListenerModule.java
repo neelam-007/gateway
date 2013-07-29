@@ -8,6 +8,7 @@ import com.l7tech.gateway.common.Component;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import com.l7tech.message.*;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.*;
 import com.l7tech.server.audit.AuditContextUtils;
@@ -61,7 +62,7 @@ public class SftpPollingListenerModule extends ActiveTransportModule implements 
 
     private static final Set<String> SUPPORTED_TYPES = caseInsensitiveSet( ACTIVE_CONNECTOR_TYPE_SFTP );
 
-    private final Map<Long, SftpPollingListener> activeListeners = new ConcurrentHashMap<Long, SftpPollingListener>();
+    private final Map<Goid, SftpPollingListener> activeListeners = new ConcurrentHashMap<Goid, SftpPollingListener>();
     private ThreadPoolBean threadPoolBean;
 
     @Inject
@@ -192,7 +193,7 @@ public class SftpPollingListenerModule extends ActiveTransportModule implements 
             newListener.setIgnoredFileExtensionList(
                     map(list(serverConfig.getProperty(SFTP_POLLING_IGNORED_FILE_EXTENSION_LIST_PROPERTY).split("\\s*,\\s*")), trim()));
             newListener.start();
-            activeListeners.put( ssgActiveConnector.getOid(), newListener );
+            activeListeners.put( ssgActiveConnector.getGoid(), newListener );
         } catch (LifecycleException e) {
             logger.log( Level.WARNING,
                     "Exception while initializing polling listener " + newListener.getDisplayName() + ": " + getMessage( e ),
@@ -205,8 +206,8 @@ public class SftpPollingListenerModule extends ActiveTransportModule implements 
     }
 
     @Override
-    protected void removeConnector( long oid ) {
-        final SftpPollingListener listener = activeListeners.remove( oid );
+    protected void removeConnector( Goid goid ) {
+        final SftpPollingListener listener = activeListeners.remove( goid );
         if  ( listener != null  ) {
             listener.stop();
         }

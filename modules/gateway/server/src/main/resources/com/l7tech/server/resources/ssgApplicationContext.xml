@@ -1652,7 +1652,6 @@
                 <ref bean="identityProviderConfigManager"/>
                 <ref bean="trustedCertManager"/>
                 <ref bean="revocationCheckPolicyManager"/>
-                <ref bean="ssgActiveConnectorManager"/>
                 <ref bean="sinkManager"/>
                 <ref bean="policyManager"/>
                 <ref bean="keystoreFileManager"/>
@@ -1686,7 +1685,7 @@
                 <ref bean="customKeyValueStoreManager"/>
                 <ref bean="jmsConnectionManager"/>
                 <ref bean="jmsEndpointManager"/>
-                <ref bean="siteMinderConfigurationManager"/>
+                <ref bean="ssgActiveConnectorManager"/>
             </list>
         </property>
         <property name="timer" ref="entityVersionCheckerTimer"/>

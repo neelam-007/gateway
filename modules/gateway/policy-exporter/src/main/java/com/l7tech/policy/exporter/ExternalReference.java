@@ -240,7 +240,7 @@ public abstract class ExternalReference {
     }
 
     protected boolean permitMapping( final Goid importGoid, final Goid targetGoid ) {
-        return permitMapping( importGoid.toString(),  targetGoid.toString() );
+        return permitMapping( Goid.toString(importGoid),  Goid.toString(targetGoid) );
     }
 
     @Deprecated

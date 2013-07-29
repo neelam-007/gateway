@@ -3,8 +3,10 @@ package com.l7tech.server.transport;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import com.l7tech.gateway.common.transport.SsgActiveConnectorHeader;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.server.HibernateEntityManager;
+import com.l7tech.server.HibernateGoidEntityManager;
 import com.l7tech.server.util.MapRestriction;
+import org.hibernate.Criteria;
+import org.hibernate.criterion.Restrictions;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -13,7 +15,7 @@ import java.util.*;
  * Hibernate entity manager for SSG active connectors.
  */
 public class SsgActiveConnectorManagerImpl
-        extends HibernateEntityManager<SsgActiveConnector, SsgActiveConnectorHeader>
+        extends HibernateGoidEntityManager<SsgActiveConnector, SsgActiveConnectorHeader>
         implements SsgActiveConnectorManager
 {
 
@@ -23,6 +25,19 @@ public class SsgActiveConnectorManagerImpl
     @Override
     public Collection<SsgActiveConnector> findSsgActiveConnectorsByType( @NotNull final String type ) throws FindException {
        return findByPropertyMaybeNull( "type", type );
+    }
+
+    @Override
+    public SsgActiveConnector findByOldOid(long oid) throws FindException {
+        Criteria oldOidCriteria = getSession().createCriteria(getImpClass());
+        oldOidCriteria.add(Restrictions.eq("oldOid", oid));
+        List<SsgActiveConnector> result = oldOidCriteria.list();
+        if(result.size()>1){
+            throw new FindException("More then one entity found for old_objectid="+oid);
+        }
+        if(result.isEmpty())
+            return null;
+        return result.get(0);
     }
 
     @Override

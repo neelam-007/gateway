@@ -21,6 +21,10 @@ public class ZoneableEntityHeader extends EntityHeader implements HasSecurityZon
         super(oid, type, name, description, version);
     }
 
+    public ZoneableEntityHeader(final Goid goid, final EntityType type, final String name, final String description, final Integer version) {
+        super(goid, type, name, description, version);
+    }
+
     public ZoneableEntityHeader(final String oid, final EntityType type, final String name, final String description, final Integer version) {
         super(oid, type, name, description, version);
     }

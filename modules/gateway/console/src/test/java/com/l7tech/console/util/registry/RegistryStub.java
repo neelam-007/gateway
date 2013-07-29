@@ -321,12 +321,17 @@ public class RegistryStub extends Registry {
             }
 
             @Override
-            public void deleteSsgActiveConnector( final long oid ) throws DeleteException, FindException {
+            public void deleteSsgActiveConnector( final Goid oid ) throws DeleteException, FindException {
                 throw new FindException("Not implemented");
             }
 
             @Override
-            public SsgActiveConnector findSsgActiveConnectorByPrimaryKey( final long oid ) throws FindException {
+            public SsgActiveConnector findSsgActiveConnectorByPrimaryKey( final Goid oid ) throws FindException {
+                throw new FindException("Not implemented");
+            }
+
+            @Override
+            public SsgActiveConnector findSsgActiveConnectorByOldId(long oid) throws FindException {
                 throw new FindException("Not implemented");
             }
 
@@ -341,7 +346,7 @@ public class RegistryStub extends Registry {
             }
 
             @Override
-            public long saveSsgActiveConnector( final SsgActiveConnector activeConnector ) throws SaveException, UpdateException {
+            public Goid saveSsgActiveConnector( final SsgActiveConnector activeConnector ) throws SaveException, UpdateException {
                 throw new SaveException("Not implemented");
             }
 

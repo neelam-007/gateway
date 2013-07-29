@@ -7,6 +7,7 @@ import static com.l7tech.external.assertions.mqnative.MqNativeReplyType.REPLY_NO
 import static com.l7tech.external.assertions.mqnative.MqNativeReplyType.REPLY_SPECIFIED_QUEUE;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import static com.l7tech.gateway.common.transport.SsgActiveConnector.*;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.Either;
 import static com.l7tech.util.Either.left;
 import static com.l7tech.util.Either.right;
@@ -44,7 +45,7 @@ class MqNativeEndpointConfig {
         this.dynamic = connector.getBooleanProperty( PROPERTIES_KEY_MQ_NATIVE_OUTBOUND_IS_TEMPLATE_QUEUE );
         this.queueName = connector.getProperty( PROPERTIES_KEY_MQ_NATIVE_TARGET_QUEUE_NAME );
         this.replyToQueueName = connector.getProperty( PROPERTIES_KEY_MQ_NATIVE_SPECIFIED_REPLY_QUEUE_NAME );
-        this.key = new MqNativeEndpointKey( connector.getOid(), connector.getVersion() );
+        this.key = new MqNativeEndpointKey( connector.getGoid(), connector.getVersion() );
         this.copyCorrelationId = connector.getBooleanProperty( PROPERTIES_KEY_MQ_NATIVE_IS_COPY_CORRELATION_ID_FROM_REQUEST );
         this.queueManagerName = connector.getProperty( PROPERTIES_KEY_MQ_NATIVE_QUEUE_MANAGER_NAME );
         this.replyType = connector.getEnumProperty( PROPERTIES_KEY_MQ_NATIVE_REPLY_TYPE, REPLY_NONE, MqNativeReplyType.class );
@@ -115,16 +116,16 @@ class MqNativeEndpointConfig {
      * these properties must be added to the key.</p>
      */
     static final class MqNativeEndpointKey {
-        private final long id;
+        private final Goid id;
         private final int version;
 
-        MqNativeEndpointKey( final long id,
+        MqNativeEndpointKey( final Goid id,
                              final int version ) {
             this.id = id;
             this.version = version;
         }
 
-        long getId() {
+        Goid getId() {
             return id;
         }
 
@@ -140,7 +141,7 @@ class MqNativeEndpointConfig {
 
             final MqNativeEndpointKey that = (MqNativeEndpointKey) o;
 
-            if ( id != that.id ) return false;
+            if ( !id.equals(that.id) ) return false;
             if ( version != that.version ) return false;
 
             return true;
@@ -148,8 +149,8 @@ class MqNativeEndpointConfig {
 
         @Override
         public int hashCode() {
-            int result = (int) (id ^ (id >>> 32));
-            result = 31 * result + version;
+            int result = id.hashCode();
+            result += 31 * result + version;
             return result;
         }
 

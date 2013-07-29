@@ -57,7 +57,9 @@ public interface ExternalReferenceFinder {
 
     JmsConnection findConnectionByPrimaryKey( Goid goid ) throws FindException;
 
-    SsgActiveConnector findConnectorByPrimaryKey (long oid) throws FindException;
+    SsgActiveConnector findConnectorByOidorGoid (Either<Long,Goid>  connectorId) throws FindException;
+
+    SsgActiveConnector findConnectorByPrimaryKey (Goid oid) throws FindException;
 
     Collection<SsgActiveConnector> findSsgActiveConnectorsByType(String type) throws FindException;
 

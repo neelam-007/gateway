@@ -431,6 +431,33 @@ update jms_endpoint set connection_goid = toGoid(cast(getVariable('jms_connectio
 ALTER TABLE jms_endpoint DROP COLUMN connection_oid;
 ALTER TABLE jms_endpoint ALTER COLUMN connection_goid NOT NULL;
 
+update rbac_role set entity_goid = toGoid(cast(getVariable('jms_connection_prefix') as bigint),entity_oid) where entity_oid is not null and entity_type='JMS_CONNECTION';
+update rbac_predicate_oid oid1 set oid1.entity_id = ifnull((select goidToString(toGoid(cast(getVariable('jms_connection_prefix') as bigint),cast(oid1.entity_id as bigint))) from rbac_predicate left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid where rbac_predicate.objectid = oid1.objectid and rbac_permission.entity_type = 'JMS_CONNECTION'), oid1.entity_id);
+
+update rbac_role set entity_goid = toGoid(cast(getVariable('jms_endpoint_prefix') as bigint),entity_oid) where entity_oid is not null and entity_type='JMS_ENDPOINT';
+update rbac_predicate_oid oid1 set oid1.entity_id = ifnull((select goidToString(toGoid(cast(getVariable('jms_endpoint_prefix') as bigint),cast(oid1.entity_id as bigint))) from rbac_predicate left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid where rbac_predicate.objectid = oid1.objectid and rbac_permission.entity_type = 'JMS_ENDPOINT'), oid1.entity_id);
+
+-- active connectors
+
+ALTER TABLE active_connector ADD COLUMN old_objectid bigint;
+update active_connector set old_objectid = objectid;
+ALTER TABLE active_connector DROP COLUMN objectid;
+ALTER TABLE active_connector ADD COLUMN goid CHAR(16) FOR BIT DATA;
+call setVariable('active_connector_prefix', cast(randomLongNotReserved() as char(21)));
+update active_connector set goid = toGoid(cast(getVariable('active_connector_prefix') as bigint), old_objectid);
+ALTER TABLE active_connector ALTER COLUMN goid NOT NULL;
+ALTER TABLE active_connector ADD PRIMARY KEY (goid);
+
+ALTER TABLE active_connector_property ADD COLUMN connector_goid CHAR(16) FOR BIT DATA;
+update active_connector_property set connector_goid = toGoid(cast(getVariable('active_connector_prefix') as bigint), connector_oid);
+ALTER TABLE active_connector_property ALTER COLUMN connector_goid NOT NULL;
+ALTER TABLE active_connector_property DROP COLUMN connector_oid;
+ALTER TABLE active_connector_property add constraint FK58920F603AEA90B6 foreign key (connector_goid) references active_connector on delete cascade;
+
+update rbac_role set entity_goid = toGoid(cast(getVariable('active_connector_prefix') as bigint),entity_oid) where entity_oid is not null and entity_type='SSG_ACTIVE_CONNECTOR';
+update rbac_predicate_oid oid1 set oid1.entity_id = ifnull((select goidToString(toGoid(cast(getVariable('active_connector_prefix') as bigint),cast(oid1.entity_id as bigint))) from rbac_predicate left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid where rbac_predicate.objectid = oid1.objectid and rbac_permission.entity_type = 'SSG_ACTIVE_CONNECTOR'), oid1.entity_id);
+
+
 
 --
 -- Register upgrade task for upgrading sink configuration references to GOIDs

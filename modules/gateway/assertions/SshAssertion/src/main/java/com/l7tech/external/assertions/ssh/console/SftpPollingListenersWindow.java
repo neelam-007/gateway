@@ -282,7 +282,8 @@ public class SftpPollingListenersWindow extends JDialog {
             List<SsgActiveConnector> modelRows = tableModel.getConnectors();
             for (int i = 0; i < modelRows.size(); ++i) {
                 SsgActiveConnector modelItem = modelRows.get(i);
-                if (modelItem != null && modelItem.getOid() == selectedConfiguration.getOid()) {
+                if (modelItem != null && ((modelItem.getGoid()!=null && modelItem.getGoid().toString().equals( selectedConfiguration.getGoid())))||
+                        (modelItem.getOldOid() != null && modelItem.getOldOid().equals(selectedConfiguration.getOldOid()))) {
                     int viewRow = listenersTable.convertRowIndexToView(i);
                     if (viewRow >= 0) {
                         listenersTable.getSelectionModel().setSelectionInterval(viewRow, viewRow);
@@ -322,7 +323,7 @@ public class SftpPollingListenersWindow extends JDialog {
     private void deleteConfiguration( final SsgActiveConnector configuration ) throws FindException, DeleteException {
         final TransportAdmin transportAdmin = getTransportAdmin();
         if (transportAdmin != null) {
-            transportAdmin.deleteSsgActiveConnector( configuration.getOid() );
+            transportAdmin.deleteSsgActiveConnector( configuration.getGoid() );
         }
     }
 

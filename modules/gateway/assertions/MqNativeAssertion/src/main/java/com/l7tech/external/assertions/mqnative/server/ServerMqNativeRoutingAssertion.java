@@ -13,13 +13,14 @@ import com.l7tech.gateway.common.audit.AuditDetailMessage;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import com.l7tech.message.*;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.server.StashManagerFactory;
-import com.l7tech.server.event.EntityInvalidationEvent;
+import com.l7tech.server.event.GoidEntityInvalidationEvent;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AssertionStatusException;
 import com.l7tech.server.policy.assertion.ServerRoutingAssertion;
@@ -800,14 +801,22 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
 
         final SsgActiveConnector ssgActiveConnector;
         try {
-            ssgActiveConnector = ssgActiveConnectorManager.findByPrimaryKey( assertion.getSsgActiveConnectorId() );
+            if(assertion.getSsgActiveConnectorGoid() == null){
+                ssgActiveConnector = ssgActiveConnectorManager.findByOldOid( assertion.getSsgActiveConnectorId() );
+            }else{
+                ssgActiveConnector = ssgActiveConnectorManager.findByPrimaryKey(new Goid(assertion.getSsgActiveConnectorGoid()));
+            }
         } catch ( FindException e ) {
             throw new MqNativeConfigException(
-                    "Error accessing MQ endpoint #" + assertion.getSsgActiveConnectorId(), e );
+                    "Error accessing MQ endpoint #" + (assertion.getSsgActiveConnectorGoid()==null ?assertion.getSsgActiveConnectorId() : assertion.getSsgActiveConnectorGoid()), e );
         } catch ( NullPointerException e ) {
             // Unboxing of 'assertion.getSsgActiveConnectorId()' may produce 'java.lang.NullPointerException'.
             throw new MqNativeConfigException(
                     "Error accessing MQ endpoint #" + assertion.getSsgActiveConnectorId(), e );
+        } catch (IllegalArgumentException e){
+            // 'assertion.getSsgActiveConnectorGoid()' may have illegal format
+            throw new MqNativeConfigException(
+                    "Error accessing MQ endpoint #" + assertion.getSsgActiveConnectorGoid(), e );
         }
 
         if ( ssgActiveConnector == null ||
@@ -863,8 +872,8 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
 
         @Override
         public void onApplicationEvent( final ApplicationEvent applicationEvent ) {
-            if (applicationEvent instanceof EntityInvalidationEvent ) {
-                EntityInvalidationEvent eie = (EntityInvalidationEvent) applicationEvent;
+            if (applicationEvent instanceof GoidEntityInvalidationEvent) {
+                GoidEntityInvalidationEvent eie = (GoidEntityInvalidationEvent) applicationEvent;
                 if (SsgActiveConnector.class.isAssignableFrom(eie.getEntityClass())) {
 
                     MqNativeEndpointConfig mqEndpointConfig;

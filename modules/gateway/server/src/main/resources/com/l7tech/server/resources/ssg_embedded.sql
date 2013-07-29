@@ -226,21 +226,22 @@ create sequence hibernate_sequence start with 1;
 -- --------------------------------------------------------------------------
 
 create table active_connector (
-    objectid bigint not null,
+    goid CHAR(16) FOR BIT DATA not null,
     name varchar(128) not null,
     version integer,
     enabled smallint,
     hardwired_service_oid bigint,
     type varchar(64) not null,
     security_zone_goid CHAR(16) FOR BIT DATA references security_zone(goid) on delete set null,
-    primary key (objectid)
+    old_objectid bigint,
+    primary key (goid)
 );
 
 create table active_connector_property (
-    connector_oid bigint not null,
+    connector_goid CHAR(16) FOR BIT DATA not null,
     value varchar(32672) not null,
     name varchar(128) not null,
-    primary key (connector_oid, name)
+    primary key (connector_goid, name)
 );
 
 create table client_cert (
@@ -1113,7 +1114,7 @@ create table wssc_session (
 
 alter table active_connector_property
     add constraint FK58920F603AEA90B6
-    foreign key (connector_oid)
+    foreign key (connector_goid)
     references active_connector
     on delete cascade;
 

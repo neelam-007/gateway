@@ -1917,23 +1917,24 @@ CREATE TABLE email_listener_state (
 
 DROP TABLE IF EXISTS active_connector;
 CREATE TABLE active_connector (
-  objectid bigint(20) NOT NULL,
+  goid binary(16)) NOT NULL,
   version integer NOT NULL,
   enabled tinyint(1) NOT NULL,
   name varchar(128) NOT NULL,
   type varchar(128) NOT NULL,
   hardwired_service_oid bigint(20),
   security_zone_goid binary(16),
-  PRIMARY KEY (objectid),
+  old_objectid bigint(20),
+  PRIMARY KEY (goid),
   CONSTRAINT active_conn_security_zone FOREIGN KEY (security_zone_goid) REFERENCES security_zone (goid) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
 DROP TABLE IF EXISTS active_connector_property;
 CREATE TABLE active_connector_property (
-  connector_oid bigint(20) NOT NULL,
+  connector_goid binary(16) NOT NULL,
   name varchar(128) NOT NULL,
   value MEDIUMTEXT NOT NULL,
-  FOREIGN KEY (connector_oid) REFERENCES active_connector (objectid) ON DELETE CASCADE
+  FOREIGN KEY (connector_goid) REFERENCES active_connector (goid) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --

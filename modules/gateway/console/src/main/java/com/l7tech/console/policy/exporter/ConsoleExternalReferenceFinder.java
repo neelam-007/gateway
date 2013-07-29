@@ -143,9 +143,17 @@ public class ConsoleExternalReferenceFinder implements ExternalReferenceFinder, 
     }
 
     @Override
-    public SsgActiveConnector findConnectorByPrimaryKey(long oid) throws FindException {
+    public SsgActiveConnector findConnectorByPrimaryKey(Goid goid) throws FindException {
         TransportAdmin transportAdmin = getAdminInterface( TransportAdmin.class );
-        return transportAdmin.findSsgActiveConnectorByPrimaryKey(oid);
+        return transportAdmin.findSsgActiveConnectorByPrimaryKey(goid);
+    }
+
+    @Override
+    public SsgActiveConnector findConnectorByOidorGoid(Either<Long, Goid> endpointId) throws FindException {
+        TransportAdmin transportAdmin = getAdminInterface( TransportAdmin.class );
+        if(endpointId.isLeft())
+            return transportAdmin.findSsgActiveConnectorByOldId(endpointId.left());
+        return transportAdmin.findSsgActiveConnectorByPrimaryKey( endpointId.right() );
     }
 
     @Override

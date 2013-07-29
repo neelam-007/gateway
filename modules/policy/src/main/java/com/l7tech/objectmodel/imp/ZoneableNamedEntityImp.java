@@ -12,6 +12,7 @@ import javax.xml.bind.annotation.XmlTransient;
 /**
  * Convenience superclass for named entities that can be placed into security zones.
  */
+@Deprecated
 @MappedSuperclass
 public abstract class ZoneableNamedEntityImp extends NamedEntityImp implements ZoneableEntity {
     protected SecurityZone securityZone;

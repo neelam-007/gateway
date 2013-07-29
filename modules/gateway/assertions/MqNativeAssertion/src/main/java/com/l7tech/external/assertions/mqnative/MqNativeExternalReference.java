@@ -3,10 +3,12 @@ package com.l7tech.external.assertions.mqnative;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.exporter.ExternalReference;
 import com.l7tech.policy.exporter.ExternalReferenceFinder;
 import com.l7tech.policy.wsp.InvalidPolicyStreamException;
+import com.l7tech.util.Either;
 import com.l7tech.util.InvalidDocumentFormatException;
 import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Element;
@@ -36,7 +38,8 @@ public class MqNativeExternalReference extends ExternalReference {
 
     private final Logger logger = Logger.getLogger(MqNativeExternalReference.class.getName());
 
-    private long oid;
+    private Long oid;
+    private Goid goid;
     private String connectorName;
     private String host;
     private long port;
@@ -44,22 +47,23 @@ public class MqNativeExternalReference extends ExternalReference {
     private String channelName;
     private String queueName;
 
-    private long localOid;
+    private Goid localGoid;
     private LocalizeAction localizeType;
 
     public MqNativeExternalReference(ExternalReferenceFinder finder) {
         super(finder);
     }
 
-    public MqNativeExternalReference(ExternalReferenceFinder finder, long oid) {
+    public MqNativeExternalReference(ExternalReferenceFinder finder, final Either<Long,Goid> connectorId) {
         this(finder);
-        this.oid = oid;
 
         try {
-            SsgActiveConnector connector = getFinder().findConnectorByPrimaryKey(oid);
+            SsgActiveConnector connector = getFinder().findConnectorByOidorGoid(connectorId);
             if (connector == null)
                 throw new IllegalArgumentException("The MQ Native Queue (oid = " + oid + ") does not exist");
 
+            goid = connector.getGoid();
+            oid = connector.getOldOid();
             connectorName = connector.getName();
             host = connector.getProperty(PROPERTIES_KEY_MQ_NATIVE_HOST_NAME);
             port = Integer.parseInt(connector.getProperty(PROPERTIES_KEY_MQ_NATIVE_PORT));
@@ -96,9 +100,9 @@ public class MqNativeExternalReference extends ExternalReference {
     }
 
     @Override
-    public boolean setLocalizeReplace(final long connectorOid) {
+    public boolean setLocalizeReplace(final Goid connectorId) {
         localizeType = LocalizeAction.REPLACE;
-        localOid = connectorOid;
+        localGoid = connectorId;
         return true;
     }
 
@@ -132,9 +136,9 @@ public class MqNativeExternalReference extends ExternalReference {
     protected boolean verifyReference() throws InvalidPolicyStreamException {
 
         try {
-            final SsgActiveConnector activeConnector = getFinder().findConnectorByPrimaryKey(oid);
+            final SsgActiveConnector activeConnector = getFinder().findConnectorByPrimaryKey(goid);
             if (activeConnector != null) {
-                if (isMatch(activeConnector.getName(), connectorName) && permitMapping(oid, activeConnector.getOid())) {
+                if (isMatch(activeConnector.getName(), connectorName) && permitMapping(goid, activeConnector.getGoid())) {
                     // Perfect Match (OID and name are matched.)
                     logger.fine("The MQ Native queue was resolved by oid '" + oid + "' and name '" + activeConnector.getName() + "'");
                     return true;
@@ -142,10 +146,10 @@ public class MqNativeExternalReference extends ExternalReference {
             } else {
                 final Collection<SsgActiveConnector> outboundQueues = findAllOutboundQueues();
                 for (SsgActiveConnector connector: outboundQueues) {
-                    if (isMatch(connector.getName(), connectorName) && permitMapping(oid, connector.getOid())) {
+                    if (isMatch(connector.getName(), connectorName) && permitMapping(goid, connector.getGoid())) {
                         // Connector Name matched
-                        logger.fine("The MQ Native queue was resolved from oid '" + oid + "' to '" + connector.getOid() + "'");
-                        localOid = connector.getOid();
+                        logger.fine("The MQ Native queue was resolved from id '" + (goid==null?oid:goid) + "' to '" + connector.getGoid() + "'");
+                        localGoid = connector.getGoid();
                         localizeType = LocalizeAction.REPLACE;
                         return true;
                     }
@@ -158,10 +162,10 @@ public class MqNativeExternalReference extends ExternalReference {
                         isMatch(connector.getProperty(PROPERTIES_KEY_MQ_NATIVE_QUEUE_MANAGER_NAME), queueManagerName) &&
                         isMatch(connector.getProperty(PROPERTIES_KEY_MQ_NATIVE_CHANNEL), channelName) &&
                         isMatch(connector.getProperty(PROPERTIES_KEY_MQ_NATIVE_TARGET_QUEUE_NAME), queueName) &&
-                        permitMapping(oid, connector.getOid())) {
+                        permitMapping(goid, connector.getGoid())) {
                         // Partial matched
-                        logger.fine("The MQ Native queue was resolved from oid '" + oid + "' to '" + connector.getOid() + "'");
-                        localOid = connector.getOid();
+                        logger.fine("The MQ Native queue was resolved from oid '" + oid + "' to '" + connector.getGoid() + "'");
+                        localGoid = connector.getGoid();
                         localizeType = LocalizeAction.REPLACE;
                         return true;
                     }
@@ -182,8 +186,8 @@ public class MqNativeExternalReference extends ExternalReference {
                 final Long connectorId = mqNativeRoutingAssertion.getSsgActiveConnectorId();
                 if (connectorId != null && connectorId == oid) { // The purpose of "equals" is to find the right assertion and update it using localized value.
                     if (localizeType == LocalizeAction.REPLACE) {
-                        mqNativeRoutingAssertion.setSsgActiveConnectorId(localOid);
-                        mqNativeRoutingAssertion.setSsgActiveConnectorName(getActiveConnectorNameByOid(localOid));
+                        mqNativeRoutingAssertion.setSsgActiveConnectorGoid(localGoid);
+                        mqNativeRoutingAssertion.setSsgActiveConnectorName(getActiveConnectorNameByOid(localGoid));
                     }  else if (localizeType == LocalizeAction.DELETE) {
                         logger.info("Deleted this assertion from the tree.");
                         return false;
@@ -218,15 +222,15 @@ public class MqNativeExternalReference extends ExternalReference {
         return output;
     }
 
-    private String getActiveConnectorNameByOid( final long oid ) {
+    private String getActiveConnectorNameByOid( final Goid goid ) {
         try {
-            SsgActiveConnector activeConnector = getFinder().findConnectorByPrimaryKey(oid);
+            SsgActiveConnector activeConnector = getFinder().findConnectorByPrimaryKey(goid);
             if (activeConnector != null)
                 return activeConnector.getName();
         } catch (FindException e) {
-            logger.warning("could not retrieve the active connector from oid " + oid);
+            logger.warning("could not retrieve the active connector from goid " + goid);
         }
-        logger.warning("The oid " + oid + " could not be used to get an active connector connectorName.");
+        logger.warning("The goid " + goid + " could not be used to get an active connector connectorName.");
         return null;
     }
 

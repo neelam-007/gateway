@@ -5,6 +5,7 @@
 package com.l7tech.policy.wsp;
 
 import com.l7tech.objectmodel.AttributeHeader;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.*;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
@@ -161,6 +162,7 @@ public class WspConstants {
         new BasicTypeMapping(BigInteger.class, "bigIntegerValue"),
 
         new BeanTypeMapping(Assertion.Comment.class, "assertionComment"),
+        new BasicTypeMapping(Goid.class,"goidValue"),
 
         // Typesafe enumerations
         new WspEnumTypeMapping(WsTrustRequestType.class, "requestType"),

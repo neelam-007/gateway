@@ -17,6 +17,7 @@ import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import com.l7tech.message.HasHeaders;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.server.*;
 import com.l7tech.server.event.FaultProcessed;
@@ -211,20 +212,20 @@ public class MqNativeModuleTest extends AbstractJUnit4SpringContextTests {
         serverConfig.putProperty(MQ_LISTENER_POLLING_INTERVAL_PROPERTY, "5s");
 
         when(ssgActiveConnector.getName()).thenReturn("Test SSG Active Connector");
-        when(ssgActiveConnector.getOid()).thenReturn(999999999L);
+        when(ssgActiveConnector.getGoid()).thenReturn(new Goid(0,999999999L));
 
         // test one listener create
         int numberOfListenersToCreate = 1;
         when(ssgActiveConnector.getIntegerProperty(PROPERTIES_KEY_NUMBER_OF_SAC_TO_CREATE, 1)).thenReturn(numberOfListenersToCreate);
         mqNativeModule.addConnector(ssgActiveConnector);
-        Set<MqNativeListener> activeListenerSet = mqNativeModule.getActiveListeners().get(ssgActiveConnector.getOid());
+        Set<MqNativeListener> activeListenerSet = mqNativeModule.getActiveListeners().get(ssgActiveConnector.getGoid());
         assertEquals(numberOfListenersToCreate, activeListenerSet.size());
 
         // test multiple concurrent listener create
         numberOfListenersToCreate = 20;
         when(ssgActiveConnector.getIntegerProperty(PROPERTIES_KEY_NUMBER_OF_SAC_TO_CREATE, 1)).thenReturn(numberOfListenersToCreate);
         mqNativeModule.addConnector(ssgActiveConnector);
-        activeListenerSet = mqNativeModule.getActiveListeners().get(ssgActiveConnector.getOid());
+        activeListenerSet = mqNativeModule.getActiveListeners().get(ssgActiveConnector.getGoid());
         assertEquals(numberOfListenersToCreate, activeListenerSet.size());
     }
 

@@ -14,6 +14,8 @@ import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.imp.GoidEntityImp;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.util.Functions.*;
 
@@ -35,7 +37,7 @@ import static com.l7tech.gateway.common.transport.SsgActiveConnector.*;
 import static com.l7tech.gui.util.Utilities.comboBoxModel;
 import static com.l7tech.gui.util.Utilities.enableGrayOnDisabled;
 import static com.l7tech.objectmodel.EntityUtil.name;
-import static com.l7tech.objectmodel.imp.PersistentEntityUtil.oid;
+import static com.l7tech.objectmodel.imp.GoidEntityUtil.goid;
 import static com.l7tech.policy.variable.Syntax.getReferencedNames;
 import static com.l7tech.util.TextUtils.truncStringMiddleExact;
 import static com.l7tech.util.ValidationUtils.isValidInteger;
@@ -324,7 +326,9 @@ public class MqNativeRoutingAssertionDialog extends AssertionPropertiesOkCancelS
         if ( mqNativeDynamicProperties != null ) {
             final SsgActiveConnector selected = (SsgActiveConnector)queueComboBox.getSelectedItem();
             if ( selected != null ) {
-                if ( assertion.getSsgActiveConnectorId()!=null && selected.getOid() == assertion.getSsgActiveConnectorId() ) {
+                if ( assertion.getSsgActiveConnectorId()!=null &&
+                        ((selected.getGoid()!=null && selected.getGoid().toString().equals( assertion.getSsgActiveConnectorGoid()))||
+                         (selected.getOldOid() != null && selected.getOldOid().equals(assertion.getSsgActiveConnectorId()))) ) {
                     setIfDynamic( mqNativeDynamicProperties.getQueueName(), "", dynamicDestQueueName );
                     setIfDynamic( mqNativeDynamicProperties.getReplyToQueue(), "", dynamicReplyQueueName );
                 }
@@ -376,10 +380,10 @@ public class MqNativeRoutingAssertionDialog extends AssertionPropertiesOkCancelS
         configSecurityHeaderHandling( assertion, RoutingAssertion.CLEANUP_CURRENT_SECURITY_HEADER, secHdrButtons );
         SsgActiveConnector item = (SsgActiveConnector) queueComboBox.getSelectedItem();
         if ( item == null ) {
-            assertion.setSsgActiveConnectorId( null );
+            assertion.setSsgActiveConnectorGoid( null );
             assertion.setSsgActiveConnectorName( null );
         } else {
-            assertion.setSsgActiveConnectorId( item.getOidAsLong() );
+            assertion.setSsgActiveConnectorGoid( item.getGoid() );
             assertion.setSsgActiveConnectorName( item.getName() );
 
             MqNativeDynamicProperties dynProps = null;
@@ -443,9 +447,12 @@ public class MqNativeRoutingAssertionDialog extends AssertionPropertiesOkCancelS
         configSecurityHeaderRadioButtons( assertion, -1, null, secHdrButtons );
 
         final Long endpointOid = assertion.getSsgActiveConnectorId();
-        final SsgActiveConnector foundQueue = endpointOid != null ?
-                grepFirst( getQueueItems(), equality( oid(), endpointOid ) ) :
-                null ;
+        final Goid endpointGoid = assertion.getSsgActiveConnectorGoid();
+        final SsgActiveConnector foundQueue = endpointGoid != null ?
+                grepFirst( getQueueItems(), equality( goid(), endpointGoid) ) :
+                endpointOid != null ?
+                        grepFirst( getQueueItems(), equality( oldOid(), endpointOid ) ) :
+                        null ;
 
         if( foundQueue != null )
             queueComboBox.setSelectedItem(foundQueue);
@@ -495,6 +502,15 @@ public class MqNativeRoutingAssertionDialog extends AssertionPropertiesOkCancelS
         responseByteLimitPanel.setValue(assertion.getResponseSize(), getMqNativeAdmin().getDefaultMqMessageMaxBytes());
 
         enableOrDisableComponents();
+    }
+
+    private Unary<Long, SsgActiveConnector> oldOid() {
+        return new Unary<Long,SsgActiveConnector>(){
+            @Override
+            public Long call( final SsgActiveConnector entity ) {
+                return entity == null ?  null : entity.getOldOid();
+            }
+        };
     }
 
     private static MqNativeAdmin getMqNativeAdmin() {

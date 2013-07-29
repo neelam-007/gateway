@@ -521,8 +521,15 @@ public class PolicyHelper {
         }
 
         @Override
-        public SsgActiveConnector findConnectorByPrimaryKey(long oid) throws FindException {
-            return filter(ssgActiveConnectorManager.findByPrimaryKey(oid));
+        public SsgActiveConnector findConnectorByPrimaryKey(Goid goid) throws FindException {
+            return filter(ssgActiveConnectorManager.findByPrimaryKey(goid));
+        }
+
+        @Override
+        public SsgActiveConnector findConnectorByOidorGoid(Either<Long, Goid> endpointId) throws FindException {
+            if(endpointId.isLeft())
+                return filter(ssgActiveConnectorManager.findByOldOid(endpointId.left()));
+            return filter(ssgActiveConnectorManager.findByPrimaryKey(endpointId.right()));
         }
 
         @Override

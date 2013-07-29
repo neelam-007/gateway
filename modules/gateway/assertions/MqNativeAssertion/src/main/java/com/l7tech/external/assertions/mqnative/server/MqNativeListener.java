@@ -94,7 +94,7 @@ public abstract class MqNativeListener {
         final StringBuilder stringBuilder = new StringBuilder(128);
         stringBuilder.append( ssgActiveConnector.getName() );
         stringBuilder.append( " (#" );
-        stringBuilder.append( ssgActiveConnector.getOid() );
+        stringBuilder.append( ssgActiveConnector.getGoid() );
         stringBuilder.append( ",v" );
         stringBuilder.append( ssgActiveConnector.getVersion() );
         if ( concurrentId > 0 ) {

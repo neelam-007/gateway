@@ -92,7 +92,12 @@ public class ExternalReferenceFinderStub implements ExternalReferenceFinder {
     }
 
     @Override
-    public SsgActiveConnector findConnectorByPrimaryKey(long oid) throws FindException {
+    public SsgActiveConnector findConnectorByPrimaryKey(Goid oid) throws FindException {
+        return null;
+    }
+
+    @Override
+    public SsgActiveConnector findConnectorByOidorGoid(Either<Long, Goid> connectorId) throws FindException {
         return null;
     }
 
