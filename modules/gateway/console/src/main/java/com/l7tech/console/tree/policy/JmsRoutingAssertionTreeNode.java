@@ -3,6 +3,7 @@ package com.l7tech.console.tree.policy;
 
 import com.l7tech.console.action.EditXmlSecurityRecipientContextAction;
 import com.l7tech.console.util.Registry;
+import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
@@ -10,10 +11,13 @@ import com.l7tech.policy.assertion.JmsRoutingAssertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressable;
 import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressableSupport;
+import com.l7tech.util.ExceptionUtils;
 
 import javax.swing.*;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Class JmsRoutingAssertionTreeNode.
@@ -82,6 +86,7 @@ public class JmsRoutingAssertionTreeNode extends DefaultAssertionPolicyNode<JmsR
 
     //- PRIVATE
 
+    private static final Logger logger = Logger.getLogger(JmsRoutingAssertionTreeNode.class.getName());
     private String endpointDescription;
 
     private String endpointDescription() {
@@ -98,8 +103,9 @@ public class JmsRoutingAssertionTreeNode extends DefaultAssertionPolicyNode<JmsR
                 if( endpoint != null ) {
  	 	            endpointDescription = (endpoint.isQueue() ? "Queue " : "Topic ") + endpoint.getName();
                 }
-            } catch(FindException e) {
+            } catch(final FindException | PermissionDeniedException e) {
                 // Use name from assertion
+                logger.log(Level.WARNING, "Unable to retrieve jms endpoint description: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             }
 
             if ( endpointDescription == null ) {
