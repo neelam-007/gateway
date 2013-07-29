@@ -6,6 +6,8 @@ import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ByteArrayStashManager;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.PartInfo;
+import com.l7tech.common.mime.PartIterator;
+import com.l7tech.test.BugId;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.DomUtils;
@@ -549,4 +551,220 @@ public class KnobblyMessageTest {
              RUBY +
             "\r\n" +
             "------=Part_-763936460.407197826076299--\r\n";
+
+    @Test
+    @BugId("SSG-7354")
+    public void testMessageReInitialize() throws Exception {
+        final String JSON_CONTENT = "{\n" +
+                "\"input\": [\n" +
+                "{ \"firstName\":\"John\" , \"lastName\":\"Doe\" }, \n" +
+                "{ \"firstName\":\"Anna\" , \"lastName\":\"Smith\" }, \n" +
+                "{ \"firstName\":\"Peter\" , \"lastName\":\"Jones\" }\n" +
+                "]\n" +
+                "}";
+        final String XML_CONTENT = "<foobar/>";
+
+        // empty uninitialized message
+        Message message = new Message();
+        assertFalse(message.isInitialized());
+        assertNotNull(message.getMimeKnob());
+        assertSame(0, IOUtils.slurpStream(message.getMimeKnob().getEntireMessageBodyAsInputStream()).length);
+        assertFalse(message.isXml());
+        try {
+            message.getXmlKnob();
+            fail("Non XML content should throw");
+        } catch (SAXException ignore) { /* expected */ }
+        assertFalse(message.isSoap());
+        try {
+            message.getSoapKnob();
+            fail("Non SOAP content should throw");
+        } catch (MessageNotSoapException ignore) { /* expected */ }
+        assertFalse(message.isJson());
+        assertNotNull(message.getJsonKnob());
+        try {
+            message.getJsonKnob().getJsonData();
+            fail("Non JSON content should throw");
+        } catch (IOException ignore) { /* expected */ }
+        // verify again against mime knob, making sure that mime knob is cached before initialize is called again
+        assertNotNull(message.getMimeKnob());
+        assertSame(0, IOUtils.slurpStream(message.getMimeKnob().getEntireMessageBodyAsInputStream()).length);
+
+        // reinitialize the message with byte array
+        message.initialize(ContentTypeHeader.OCTET_STREAM_DEFAULT, JSON_CONTENT.getBytes("UTF-8"));
+        // verify that the message is properly reinitialized
+        assertTrue(message.isInitialized());
+        assertNotNull(message.getMimeKnob());
+        assertTrue(message.getMimeKnob().getOuterContentType().matches(ContentTypeHeader.OCTET_STREAM_DEFAULT));
+        assertTrue(Arrays.equals(IOUtils.slurpStream(message.getMimeKnob().getEntireMessageBodyAsInputStream()), JSON_CONTENT.getBytes("UTF-8")));
+        assertFalse(message.isJson());
+        assertNotNull(message.getJsonKnob());
+        try {
+            message.getJsonKnob().getJsonData();
+            fail("Non JSON content should throw");
+        } catch (IOException ignore) { /* expected */ }
+        assertFalse(message.isSoap());
+        try {
+            message.getSoapKnob();
+            fail("Non SOAP content should throw");
+        } catch (MessageNotSoapException ignore) { /* expected */ }
+        assertFalse(message.isXml());
+        try {
+            message.getXmlKnob();
+            fail("Non XML content should throw");
+        } catch (SAXException ignore) { /* expected */ }
+        // verify again against mime knob, making sure that mime knob is cached before initialize is called again
+        assertNotNull(message.getMimeKnob());
+        assertTrue(Arrays.equals(IOUtils.slurpStream(message.getMimeKnob().getEntireMessageBodyAsInputStream()), JSON_CONTENT.getBytes("UTF-8")));
+
+        // reinitialize the message with InputStream
+        message.initialize(new ByteArrayStashManager(), ContentTypeHeader.OCTET_STREAM_DEFAULT, new ByteArrayInputStream(XML_CONTENT.getBytes("UTF-8")));
+        // verify that the message is properly reinitialized
+        assertTrue(message.isInitialized());
+        assertNotNull(message.getMimeKnob());
+        assertTrue(message.getMimeKnob().getOuterContentType().matches(ContentTypeHeader.OCTET_STREAM_DEFAULT));
+        assertTrue(Arrays.equals(IOUtils.slurpStream(message.getMimeKnob().getEntireMessageBodyAsInputStream()), XML_CONTENT.getBytes("UTF-8")));
+        assertFalse(message.isJson());
+        assertNotNull(message.getJsonKnob());
+        try {
+            message.getJsonKnob().getJsonData();
+            fail("Non JSON content should throw");
+        } catch (IOException ignore) { /* expected */ }
+        assertFalse(message.isSoap());
+        try {
+            message.getSoapKnob();
+            fail("Non SOAP content should throw");
+        } catch (MessageNotSoapException ignore) { /* expected */ }
+        assertFalse(message.isXml());
+        try {
+            message.getXmlKnob();
+            fail("Non XML content should throw");
+        } catch (SAXException ignore) { /* expected */ }
+        // verify again against mime knob, making sure that mime knob is cached before initialize is called again
+        assertNotNull(message.getMimeKnob());
+        assertTrue(Arrays.equals(IOUtils.slurpStream(message.getMimeKnob().getEntireMessageBodyAsInputStream()), XML_CONTENT.getBytes("UTF-8")));
+
+        // initial content to Json
+        message.initialize(ContentTypeHeader.APPLICATION_JSON, JSON_CONTENT.getBytes());
+        // verify that the message is properly set
+        assertTrue(message.isInitialized());
+        assertNotNull(message.getMimeKnob());
+        assertTrue(message.getMimeKnob().getOuterContentType().matches(ContentTypeHeader.APPLICATION_JSON));
+        assertTrue(Arrays.equals(IOUtils.slurpStream(message.getMimeKnob().getEntireMessageBodyAsInputStream()), JSON_CONTENT.getBytes("UTF-8")));
+        assertFalse(message.isXml());
+        try {
+            message.getXmlKnob();
+            fail("Non XML content should throw");
+        } catch (SAXException ignore) { /* expected */ }
+        assertFalse(message.isSoap());
+        try {
+            message.getSoapKnob();
+            fail("Non SOAP content should throw");
+        } catch (MessageNotSoapException ignore) { /* expected */ }
+        assertTrue(message.isJson());
+        assertEquals(message.getJsonKnob().getJsonData().getJsonData(), JSON_CONTENT);
+        assertNotNull(message.getJsonKnob().getJsonData().getJsonObject());
+        // verify again against mime knob, making sure that mime knob is cached before initialize is called again
+        assertNotNull(message.getMimeKnob());
+        assertTrue(Arrays.equals(IOUtils.slurpStream(message.getMimeKnob().getEntireMessageBodyAsInputStream()), JSON_CONTENT.getBytes("UTF-8")));
+
+        // reinitialize the message to Xml
+        message.initialize(XmlUtil.stringToDocument(XML_CONTENT));
+        // verify that the message is properly reinitialized
+        assertTrue(message.isInitialized());
+        assertNotNull(message.getMimeKnob());
+        assertTrue(message.getMimeKnob().getOuterContentType().matches(ContentTypeHeader.XML_DEFAULT));
+        assertTrue(XmlUtil.stringToDocument(new String(IOUtils.slurpStream(message.getMimeKnob().getEntireMessageBodyAsInputStream()))).isEqualNode(XmlUtil.stringToDocument(XML_CONTENT)));
+        assertFalse(message.isJson());
+        assertNotNull(message.getJsonKnob());
+        try {
+            message.getJsonKnob().getJsonData();
+            fail("Non JSON content should throw");
+        } catch (IOException ignore) { /* expected */ }
+        assertFalse(message.isSoap());
+        try {
+            message.getSoapKnob();
+            fail("Non SOAP content should throw");
+        } catch (MessageNotSoapException ignore) { /* expected */ }
+        assertTrue(message.isXml());
+        assertNotNull(message.getXmlKnob().getDocumentReadOnly().isEqualNode(XmlUtil.stringToDocument(XML_CONTENT)));
+        // verify again against mime knob, making sure that mime knob is cached before initialize is called again
+        assertNotNull(message.getMimeKnob());
+        assertTrue(XmlUtil.stringToDocument(new String(IOUtils.slurpStream(message.getMimeKnob().getEntireMessageBodyAsInputStream()))).isEqualNode(XmlUtil.stringToDocument(XML_CONTENT)));
+
+        // reinitialize the message to Soap
+        message.initialize(XmlUtil.stringToDocument(SOAP));
+        // verify that the message is properly reinitialized
+        assertTrue(message.isInitialized());
+        assertNotNull(message.getMimeKnob());
+        assertTrue(message.getMimeKnob().getOuterContentType().matches(ContentTypeHeader.XML_DEFAULT));
+        assertTrue(XmlUtil.stringToDocument(new String(IOUtils.slurpStream(message.getMimeKnob().getEntireMessageBodyAsInputStream()))).isEqualNode(XmlUtil.stringToDocument(SOAP)));
+        assertFalse(message.isJson());
+        assertNotNull(message.getJsonKnob());
+        try {
+            message.getJsonKnob().getJsonData();
+            fail("Non JSON content should throw");
+        } catch (IOException ignore) { /* expected */ }
+        assertTrue(message.isSoap());
+        assertNotNull(message.getSoapKnob().getPayloadNames());
+        assertSame(1, message.getSoapKnob().getPayloadNames().length);
+        assertEquals(MESS_PAYLOAD_NS, message.getSoapKnob().getPayloadNames()[0].getNamespaceURI());
+        assertTrue(message.isXml());
+        assertTrue(message.getXmlKnob().getDocumentReadOnly().isEqualNode(XmlUtil.stringToDocument(SOAP)));
+        // verify again against mime knob, making sure that mime knob is cached before initialize is called again
+        assertNotNull(message.getMimeKnob());
+        assertTrue(XmlUtil.stringToDocument(new String(IOUtils.slurpStream(message.getMimeKnob().getEntireMessageBodyAsInputStream()))).isEqualNode(XmlUtil.stringToDocument(SOAP)));
+
+        // reinitialize the message to Soap using byte array and application/soap+xml content type
+        message.initialize(ContentTypeHeader.SOAP_1_2_DEFAULT, SOAP.getBytes("UTF-8"));
+        // verify that the message is properly reinitialized
+        assertTrue(message.isInitialized());
+        assertNotNull(message.getMimeKnob());
+        assertTrue(message.getMimeKnob().getOuterContentType().matches(ContentTypeHeader.SOAP_1_2_DEFAULT));
+        assertTrue(XmlUtil.stringToDocument(new String(IOUtils.slurpStream(message.getMimeKnob().getEntireMessageBodyAsInputStream()))).isEqualNode(XmlUtil.stringToDocument(SOAP)));
+        assertFalse(message.isJson());
+        assertNotNull(message.getJsonKnob());
+        try {
+            message.getJsonKnob().getJsonData();
+            fail("Non JSON content should throw");
+        } catch (IOException ignore) { /* expected */ }
+        assertTrue(message.isSoap());
+        assertNotNull(message.getSoapKnob().getPayloadNames());
+        assertSame(1, message.getSoapKnob().getPayloadNames().length);
+        assertEquals(MESS_PAYLOAD_NS, message.getSoapKnob().getPayloadNames()[0].getNamespaceURI());
+        assertTrue(message.isXml());
+        assertTrue(message.getXmlKnob().getDocumentReadOnly().isEqualNode(XmlUtil.stringToDocument(SOAP)));
+        // verify again against mime knob, making sure that mime knob is cached before initialize is called again
+        assertNotNull(message.getMimeKnob());
+        assertTrue(XmlUtil.stringToDocument(new String(IOUtils.slurpStream(message.getMimeKnob().getEntireMessageBodyAsInputStream()))).isEqualNode(XmlUtil.stringToDocument(SOAP)));
+
+        // reinitialize the message with multi-parts
+        message.initialize(ContentTypeHeader.parseValue(MESS_CONTENT_TYPE), MESS.getBytes("UTF-8"));
+        // verify that the message is properly reinitialized
+        assertTrue(message.isInitialized());
+        assertNotNull(message.getMimeKnob());
+        assertTrue(message.getMimeKnob().getOuterContentType().matches(ContentTypeHeader.parseValue(MESS_CONTENT_TYPE)));
+        PartIterator parts = message.getMimeKnob().getParts();
+        assertNotNull(parts);
+        assertTrue(Arrays.equals(IOUtils.slurpStream(parts.next().getInputStream(false)), SOAP.getBytes("UTF-8")));
+        assertTrue(Arrays.equals(IOUtils.slurpStream(parts.next().getInputStream(false)), RUBY.getBytes("UTF-8")));
+        assertFalse(message.isJson());
+        assertNotNull(message.getJsonKnob());
+        try {
+            message.getJsonKnob().getJsonData();
+            fail("Non JSON content should throw");
+        } catch (IOException ignore) { /* expected */ }
+
+        assertTrue(message.isSoap());
+        assertNotNull(message.getSoapKnob().getPayloadNames());
+        assertSame(1, message.getSoapKnob().getPayloadNames().length);
+        assertEquals(MESS_PAYLOAD_NS, message.getSoapKnob().getPayloadNames()[0].getNamespaceURI());
+        assertTrue(message.isXml());
+        assertTrue(message.getXmlKnob().getDocumentReadOnly().isEqualNode(XmlUtil.stringToDocument(SOAP)));
+        // verify again against mime knob, making sure that mime knob is cached before initialize is called again
+        assertNotNull(message.getMimeKnob());
+        parts = message.getMimeKnob().getParts();
+        assertNotNull(parts);
+        assertTrue(Arrays.equals(IOUtils.slurpStream(parts.next().getInputStream(false)), SOAP.getBytes("UTF-8")));
+        assertTrue(Arrays.equals(IOUtils.slurpStream(parts.next().getInputStream(false)), RUBY.getBytes("UTF-8")));
+    }
 }

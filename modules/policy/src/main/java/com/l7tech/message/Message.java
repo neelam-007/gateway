@@ -210,6 +210,7 @@ public final class Message implements Closeable {
             List<PreservableFacet> preservables = getPreservableFacets();
             if (rootFacet != null) rootFacet.close(); // This will close the reqKnob and respKnob as well, but they don't do anything when closed
             rootFacet = null;
+            invalidateCachedKnobs();
             rootFacet = new MimeFacet(this, new ByteArrayStashManager(), contentTypeHeader, new EmptyInputStream(),firstPartMaxBytes);
             rootFacet = new XmlFacet(this, rootFacet);
             invalidateCachedKnobs();

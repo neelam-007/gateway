@@ -3,7 +3,6 @@ package com.l7tech.server.custom.format;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ByteArrayStashManager;
 import com.l7tech.common.mime.ContentTypeHeader;
-import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.mime.StashManager;
 import com.l7tech.gateway.common.custom.ContentTypeHeaderToCustomConverter;
 import com.l7tech.json.InvalidJsonException;
@@ -29,7 +28,6 @@ import java.util.Collection;
 import java.util.HashMap;
 
 import org.w3c.dom.Document;
-import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
 import static com.l7tech.server.policy.custom.CustomAssertionsSampleContents.*;
@@ -770,18 +768,11 @@ public class CustomMessageFormatTest {
         assertNotNull(message.extract(formatFactory.getJsonFormat()).getJsonObject());
         assertTrue(message.getContentType().matches("application", "json"));
         // set to XML
-        try {
-            // TODO: For some reason the core Message component is throwing RuntimeException with cause SAXException
-            // when we are setting the new XML content, if the message content was previously set with other then XML content
-            message.overwrite(formatFactory.getXmlFormat(), formatFactory.getXmlFormat().createBody(XML_CONTENT));
-            fail("expected behaviour is to fail if content was previously set to other then XML.");
-        } catch (RuntimeException e) {
-            assertTrue(e.getCause() instanceof SAXException);
-        }
-        assertNull(message.extract(formatFactory.getXmlFormat()));
-        assertEquals(message.extract(formatFactory.getJsonFormat()).getJsonData(), JSON_CONTENT);
-        assertNotNull(message.extract(formatFactory.getJsonFormat()).getJsonObject());
-        assertTrue(message.getContentType().matches("application", "json"));
+        message.overwrite(formatFactory.getXmlFormat(), formatFactory.getXmlFormat().createBody(XML_CONTENT));
+        assertTrue(message.getContentType().matches("text", "xml"));
+        assertNotNull(message.extract(formatFactory.getXmlFormat()));
+        assertTrue(message.extract(formatFactory.getXmlFormat()).isEqualNode(XmlUtil.stringToDocument(XML_CONTENT)));
+        assertNull(message.extract(formatFactory.getJsonFormat()));
 
         // set the content to XML using InputStream, before setting the content-type to text/xml
         // initial message value is JSON
@@ -913,29 +904,17 @@ public class CustomMessageFormatTest {
         assertTrue(Arrays.equals(IOUtils.slurpStream(message.getInputStream()), INPUT_STREAM_CONTENT_BYTES));
         assertTrue(message.getContentType().matches("application", "octet-stream"));
         // set to XML
-        try {
-            // TODO: For some reason the core Message component is throwing RuntimeException with cause SAXException
-            // when we are setting the new XML content, if the message content was previously set with other then XML content
-            message.overwrite(formatFactory.getXmlFormat(), formatFactory.getXmlFormat().createBody(XML_CONTENT));
-            fail("expected behaviour is to fail if content was previously set to other then XML.");
-        } catch (RuntimeException e) {
-            assertTrue(e.getCause() instanceof SAXException);
-        }
-        assertTrue(message.getContentType().matches("application", "octet-stream"));
-        assertNull(message.extract(formatFactory.getXmlFormat()));
+        message.overwrite(formatFactory.getXmlFormat(), formatFactory.getXmlFormat().createBody(XML_CONTENT));
+        assertTrue(message.getContentType().matches("text", "xml"));
+        assertTrue(message.extract(formatFactory.getXmlFormat()).isEqualNode(XmlUtil.stringToDocument(XML_CONTENT)));
         assertNull(message.extract(formatFactory.getJsonFormat()));
-        try {
-            // the above message.overwrite will invalidate the message, therefore the input-stream stashed will be deleted
-            message.getInputStream();
-        } catch (CustomMessageAccessException e) {
-            assertTrue(e.getCause() instanceof NoSuchPartException);
-        }
+        assertTrue(XmlUtil.stringToDocument(XML_CONTENT).isEqualNode(XmlUtil.stringToDocument(new String(IOUtils.slurpStream(message.getInputStream())))));
 
         // initial message value is InputStream
         message = createMessage(ContentTypeHeader.OCTET_STREAM_DEFAULT, INPUT_STREAM_CONTENT_BYTES);
         assertTrue(Arrays.equals(IOUtils.slurpStream(message.getInputStream()), INPUT_STREAM_CONTENT_BYTES));
         assertTrue(message.getContentType().matches("application", "octet-stream"));
-        // set to XML
+        // set the content to XML using InputStream, after setting the content-type to text/xml
         message.setContentType(new ContentTypeHeaderToCustomConverter(ContentTypeHeader.XML_DEFAULT));
         message.overwrite(formatFactory.getStreamFormat(), formatFactory.getStreamFormat().createBody(XML_CONTENT));
         assertTrue(message.getContentType().matches("text", "xml"));
