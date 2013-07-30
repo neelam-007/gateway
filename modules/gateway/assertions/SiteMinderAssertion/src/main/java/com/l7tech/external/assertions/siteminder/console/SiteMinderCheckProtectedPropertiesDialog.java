@@ -6,7 +6,6 @@ import com.l7tech.console.util.Registry;
 
 import com.l7tech.external.assertions.siteminder.SiteMinderAuthenticateAssertion;
 import com.l7tech.external.assertions.siteminder.SiteMinderCheckProtectedAssertion;
-import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
 import com.l7tech.gateway.common.siteminder.SiteMinderAdmin;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.RunOnChangeListener;
@@ -15,6 +14,8 @@ import com.l7tech.objectmodel.FindException;
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -35,7 +36,6 @@ public class SiteMinderCheckProtectedPropertiesDialog extends AssertionPropertie
     private JComboBox actionComboBox;
     private TargetVariablePanel prefixTargetVariablePanel;
     private final InputValidator inputValidator;
-    private ClusterStatusAdmin clusterStatusAdmin;
 
     public SiteMinderCheckProtectedPropertiesDialog(final Frame owner, final SiteMinderCheckProtectedAssertion assertion) {
         super(SiteMinderCheckProtectedAssertion.class, owner, assertion, true);
@@ -47,7 +47,6 @@ public class SiteMinderCheckProtectedPropertiesDialog extends AssertionPropertie
     @Override
     protected void initComponents() {
         super.initComponents();
-        initAdminConnection();
         prefixTargetVariablePanel.setVariable(SiteMinderAuthenticateAssertion.DEFAULT_PREFIX);
         prefixTargetVariablePanel.setDefaultVariableOrPrefix(SiteMinderAuthenticateAssertion.DEFAULT_PREFIX);
         DefaultComboBoxModel<String> agentComboBoxModel = new DefaultComboBoxModel<>();
@@ -68,6 +67,23 @@ public class SiteMinderCheckProtectedPropertiesDialog extends AssertionPropertie
             @Override
             public void actionPerformed(ActionEvent e) {
                 enableDisableComponents();
+            }
+        });
+
+        resourceTextField.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                enableDisableComponents();
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                enableDisableComponents();
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+               enableDisableComponents();
             }
         });
 
@@ -154,9 +170,6 @@ public class SiteMinderCheckProtectedPropertiesDialog extends AssertionPropertie
         return new RunOnChangeListener();
     }
 
-    private void initAdminConnection() {
-        clusterStatusAdmin = Registry.getDefault().getClusterStatusAdmin();
-    }
 
     private SiteMinderAdmin getSiteMinderAdmin(){
         return Registry.getDefault().getSiteMinderConfigurationAdmin();

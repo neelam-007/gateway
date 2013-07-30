@@ -2,13 +2,12 @@ package com.l7tech.external.assertions.siteminder.console;
 
 import com.l7tech.console.panels.AssertionPropertiesOkCancelSupport;
 import com.l7tech.console.panels.TargetVariablePanel;
-import com.l7tech.console.util.Registry;
+
 import com.l7tech.external.assertions.siteminder.SiteMinderAuthenticateAssertion;
-import com.l7tech.gateway.common.cluster.ClusterProperty;
-import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
+
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.RunOnChangeListener;
-import com.l7tech.objectmodel.FindException;
+
 
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
@@ -16,7 +15,6 @@ import javax.swing.event.ChangeListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
@@ -94,6 +92,17 @@ public class SiteMinderAuthenticationPropertiesDialog extends AssertionPropertie
             @Override
             public void actionPerformed(ActionEvent e) {
                 enableDisableComponents();
+            }
+        });
+        inputValidator.constrainTextField(credentialsTextField, new InputValidator.ValidationRule() {
+            @Override
+            public String getValidationError() {
+                if(specifyCredentialsRadioButton.isSelected()){
+                    if(credentialsTextField.getText().isEmpty()){
+                        return "User credentials must not be empty";
+                    }
+                }
+                return null;
             }
         });
         inputValidator.attachToButton(getOkButton(), super.createOkAction());

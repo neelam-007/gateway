@@ -9,7 +9,6 @@ import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
@@ -32,7 +31,7 @@ public class SiteMinderAuthenticateAssertion extends Assertion implements UsesVa
     private boolean useSMCookie;
     private boolean useCustomCookieName;
     private String prefix;
-    private boolean isLastCredential;
+    private boolean isLastCredential = true;
     private String login;
     private String cookieDomain;
     private String cookiePath;

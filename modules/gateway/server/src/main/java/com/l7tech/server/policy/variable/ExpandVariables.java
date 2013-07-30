@@ -197,7 +197,8 @@ public final class ExpandVariables {
         "com.l7tech.server.policy.variable.KerberosAuthorizationDataSelector",
         "com.l7tech.server.policy.variable.DateTimeSelector",
         "com.l7tech.server.policy.variable.FeedbackSelector",
-        "com.l7tech.server.policy.variable.ServiceSelector"
+        "com.l7tech.server.policy.variable.ServiceSelector",
+        "com.l7tech.server.policy.variable.SiteMinderContextSelector"
     };
 
     private static final List<Selector<?>> selectors = Collections.unmodifiableList(new ArrayList<Selector<?>>() {{
