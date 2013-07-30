@@ -1917,7 +1917,7 @@ CREATE TABLE email_listener_state (
 
 DROP TABLE IF EXISTS active_connector;
 CREATE TABLE active_connector (
-  goid binary(16)) NOT NULL,
+  goid binary(16) NOT NULL,
   version integer NOT NULL,
   enabled tinyint(1) NOT NULL,
   name varchar(128) NOT NULL,
