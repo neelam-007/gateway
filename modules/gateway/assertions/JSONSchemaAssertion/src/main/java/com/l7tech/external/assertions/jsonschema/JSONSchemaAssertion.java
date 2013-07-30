@@ -8,7 +8,8 @@ import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.VariableMetadata;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Logger;
 
 /**
@@ -86,7 +87,7 @@ public class JSONSchemaAssertion extends MessageTargetableAssertion implements U
         meta.put(AssertionMetadata.LONG_NAME, "Validate JSON data against a JSON Schema");
         meta.put(AssertionMetadata.DESCRIPTION, "Validate structure, properties and values of JSON data against a JSON Schema");
 
-        meta.put(AssertionMetadata.FEATURE_SET_NAME, "set:modularAssertions");
+        meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
         
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/xmlsignature.gif");
         

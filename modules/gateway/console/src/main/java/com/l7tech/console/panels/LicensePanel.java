@@ -279,7 +279,7 @@ public class LicensePanel extends JPanel {
         contactEmailField.setText(n(license.getLicenseeContactEmail()));
         displayStartDate(startField, license);
         displayExpiryDate(license);
-        displayLiceseAttributes(license);
+        displayLicenseAttributes(license);
 
         grantsPanel.removeAll();
         grantsPanel.setLayout(new BoxLayout(grantsPanel, BoxLayout.Y_AXIS));
@@ -306,7 +306,7 @@ public class LicensePanel extends JPanel {
      * it in the attribute text area in the license panel.
      * @param license: the license containing all license infomation.
      */
-    private void displayLiceseAttributes(License license) {
+    private void displayLicenseAttributes(License license) {
         Set<String> attrList = license.getAttributes();
         StringBuilder sb = new StringBuilder();
         int i = 0;

@@ -1,8 +1,8 @@
 package com.l7tech.external.assertions.createroutingstrategy;
 
-import com.l7tech.external.assertions.adaptiveloadbalancing.AbstractAdaptiveLoadBalancing;
 import com.l7tech.common.io.failover.FailoverStrategy;
 import com.l7tech.common.io.failover.Service;
+import com.l7tech.external.assertions.adaptiveloadbalancing.AbstractAdaptiveLoadBalancing;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.Syntax;
@@ -123,7 +123,7 @@ public class CreateRoutingStrategyAssertion extends AbstractAdaptiveLoadBalancin
         meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.createroutingstrategy.console.CreateRoutingStrategyAssertionDialog");
         meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "Create Routing Strategy Properties");
 
-        meta.put(AssertionMetadata.FEATURE_SET_NAME, "set:modularAssertions");
+        meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;
     }

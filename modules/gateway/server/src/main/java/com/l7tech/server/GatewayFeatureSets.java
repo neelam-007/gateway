@@ -1,23 +1,20 @@
 package com.l7tech.server;
 
-import com.l7tech.gateway.common.License;
+import com.l7tech.gateway.common.licensing.FeatureSetExpander;
 import com.l7tech.policy.AllAssertions;
 import com.l7tech.policy.assertion.*;
-import com.l7tech.policy.assertion.composite.ForEachLoopAssertion;
-import com.l7tech.policy.assertion.credential.http.HttpBasic;
-import com.l7tech.policy.assertion.credential.http.HttpDigest;
-import com.l7tech.policy.assertion.sla.ThroughputQuotaQueryAssertion;
-import com.l7tech.policy.assertion.transport.PreemptiveCompression;
-import com.l7tech.policy.assertion.transport.RemoteDomainIdentityInjection;
 import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
+import com.l7tech.policy.assertion.composite.ForEachLoopAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenExchange;
 import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenRequest;
 import com.l7tech.policy.assertion.credential.WsTrustCredentialExchange;
 import com.l7tech.policy.assertion.credential.XpathCredentialSource;
 import com.l7tech.policy.assertion.credential.http.CookieCredentialSourceAssertion;
+import com.l7tech.policy.assertion.credential.http.HttpBasic;
+import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.credential.http.HttpNegotiate;
 import com.l7tech.policy.assertion.credential.wss.EncryptedUsernameTokenAssertion;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
@@ -26,9 +23,12 @@ import com.l7tech.policy.assertion.identity.AuthenticationAssertion;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.assertion.sla.ThroughputQuota;
+import com.l7tech.policy.assertion.sla.ThroughputQuotaQueryAssertion;
+import com.l7tech.policy.assertion.transport.PreemptiveCompression;
+import com.l7tech.policy.assertion.transport.RemoteDomainIdentityInjection;
+import com.l7tech.policy.assertion.xml.RemoveElement;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.policy.assertion.xml.XslTransformation;
-import com.l7tech.policy.assertion.xml.RemoveElement;
 import com.l7tech.policy.assertion.xmlsec.*;
 import org.jetbrains.annotations.Nullable;
 
@@ -252,7 +252,8 @@ public class GatewayFeatureSets {
         GatewayFeatureSet experimental =
         fsr("set:experimental", "Enable experimental features",
             "Enables features that are only present during development, and that will be moved or renamed before shipping.",
-            srv(SERVICE_BRIDGE, "Experimental SSB service (standalone, non-BRA, present-but-disabled)"));
+            srv(SERVICE_BRIDGE, "Experimental SSB service (standalone, non-BRA, present-but-disabled)"),
+            mass("assertion:Script"));  // ScriptAssertion is for experimental/tactical use only
 
         GatewayFeatureSet wssp =
         fsr("set:wssp", "WS-SecurityPolicy assertion",
@@ -691,6 +692,10 @@ public class GatewayFeatureSets {
                 "The necessary assertions to install the OAuth Toolkit",
                 mass("assertion:OAuthInstaller"));
 
+        GatewayFeatureSet oAuthValidationAssertions = fsr("set:OAuthAssertions:Assertions",
+                "The necessary assertions to perform OAuth validation",
+                mass("assertion:OAuthValidation"));
+
         GatewayFeatureSet policyBundleInstaller = fsr("set:PolicyBundleInstallerAssertion:Assertions",
                 "The necessary assertions to install policy bundles",
                 mass("assertion:PolicyBundleInstaller"));
@@ -699,6 +704,48 @@ public class GatewayFeatureSets {
         fsr("set:SplitJoin:Assertions", "The necessary assertions to enable split and join variable functionality",
             mass("assertion:Split"),
             mass("assertion:Join"));
+
+        GatewayFeatureSet adaptiveLoadBalancingAssertions = fsr("set:AdaptiveLoadBalancing:Assertions",
+                "The necessary assertions to enable Adaptive Load Balancing functionality",
+                mass("assertion:CreateRoutingStrategy"),
+                mass("assertion:ProcessRoutingStrategy"),
+                mass("assertion:ExecuteRoutingStrategy"));
+
+        GatewayFeatureSet caWsdmAssertions = fsr("set:CaWsdm:Assertions",
+                "The necessary assertions to enable CA WSDM Observer functionality",
+                mass("assertion:CaWsdm"));
+
+        GatewayFeatureSet concurrentAllAssertion = fsr("set:ConcurrentAll:Assertions",
+                "The necessary assertions to enable Concurrent All Assertion functionality",
+                mass("assertion:ConcurrentAll"));
+
+        GatewayFeatureSet genericIdentityManagementServiceAssertion = fsr("set:GenericIdentityManagementService:Assertions",
+                "The necessary assertions to enable Generic Identity Management Service functionality",
+                mass("assertion:GenericIdentityManagementService"));
+
+        GatewayFeatureSet identityAttributesAssertion = fsr("set:IdentityAttributes:Assertions",
+                "The necessary assertions to enable Identity Attributes extraction functionality",
+                mass("assertion:IdentityAttributes"));
+
+        GatewayFeatureSet jsonSchemaAssertion = fsr("set:JSONSchema:Assertions",
+                "The necessary assertions to enable JSON Schema validation functionality",
+                mass("assertion:JSONSchema"));
+
+        GatewayFeatureSet apiPortalIntegration = fsr("set:ApiPortalIntegration:Assertions",
+                "The necessary assertions to enable API Portal integration features",
+                mass("assertion:UpgradePortal"),
+                mass("assertion:ApiPortalIntegration"),
+                mass("assertion:ManagePortalResource"),
+                mass("assertion:LookupApiKey"),
+                mass("assertion:ManageApiKey"));
+
+//        GatewayFeatureSet salesForceInstallerAssertion = fsr("set:SalesforceInstaller:Assertions",
+//                "The necessary assertions to enable the Salesforce Installer",
+//                mass("assertion:SalesforceInstaller"));
+//
+//        GatewayFeatureSet salesForceAssertion = fsr("set:Salesforce:Assertions",
+//                "The necessary assertions to enable Salesforce functionality",
+//                mass("assertion:Salesforce"));
 
         // US (NCES)
         GatewayFeatureSet usAssertions =
@@ -809,6 +856,12 @@ public class GatewayFeatureSets {
             fs(ntlmAuthenticationAssertion),
             fs(kerberosAuthenticationAssertion),
             fs(oAuthInstaller),
+            fs(oAuthValidationAssertions),
+            fs(jsonSchemaAssertion),
+            fs(concurrentAllAssertion),
+            fs(caWsdmAssertions),
+            fs(adaptiveLoadBalancingAssertions),
+            fs(genericIdentityManagementServiceAssertion),
             fs(policyBundleInstaller),
             fs(splitJoinAssertions),
             fs(jsonTransformationAssertion),
@@ -863,6 +916,14 @@ public class GatewayFeatureSets {
             fs(ntlmAuthenticationAssertion),
             fs(kerberosAuthenticationAssertion),
             fs(oAuthInstaller),
+            fs(oAuthValidationAssertions),
+            fs(jsonSchemaAssertion),
+            fs(concurrentAllAssertion),
+            fs(caWsdmAssertions),
+            fs(adaptiveLoadBalancingAssertions),
+            fs(genericIdentityManagementServiceAssertion),
+            fs(identityAttributesAssertion),
+            fs(apiPortalIntegration),
             fs(policyBundleInstaller),
             fs(splitJoinAssertions),
             mass("assertion:ValidateCertificate"));
@@ -918,6 +979,14 @@ public class GatewayFeatureSets {
             fs(ntlmAuthenticationAssertion),
             fs(kerberosAuthenticationAssertion),
             fs(oAuthInstaller),
+            fs(oAuthValidationAssertions),
+            fs(jsonSchemaAssertion),
+            fs(concurrentAllAssertion),
+            fs(caWsdmAssertions),
+            fs(adaptiveLoadBalancingAssertions),
+            fs(genericIdentityManagementServiceAssertion),
+            fs(identityAttributesAssertion),
+            fs(apiPortalIntegration),
             fs(policyBundleInstaller),
             fs(splitJoinAssertions),
             fs(jsonTransformationAssertion),
@@ -955,6 +1024,14 @@ public class GatewayFeatureSets {
                 fs(seczones),
                 fs(modularAssertions),
                 fs(oAuthInstaller),
+                fs(oAuthValidationAssertions),
+                fs(jsonSchemaAssertion),
+                fs(concurrentAllAssertion),
+                fs(caWsdmAssertions),
+                fs(adaptiveLoadBalancingAssertions),
+                fs(genericIdentityManagementServiceAssertion),
+                fs(identityAttributesAssertion),
+                fs(apiPortalIntegration),
                 fs(policyBundleInstaller),
                 ass(CookieCredentialSourceAssertion.class),
                 ass(WssReplayProtection.class),
@@ -1006,24 +1083,25 @@ public class GatewayFeatureSets {
     }
 
     /** @return the FeatureSetExpander to use when parsing License files. */
-    public static License.FeatureSetExpander getFeatureSetExpander() {
-        return new License.FeatureSetExpander() {
+    public static FeatureSetExpander getFeatureSetExpander() {
+        return new FeatureSetExpander() {
             @Override
             public Set<String> getAllEnabledFeatures(Set<String> inputSet) {
-                Set<String> ret = new HashSet<String>(inputSet);
-
-                if (ret.isEmpty()) {
-                    // Backwards compatibility mode for licenses that never contained any featureset elements
-                    PROFILE_LICENSE_NAMES_NO_FEATURES.collectAllFeatureNames(ret);
-                    return ret;
-                }
+                Set<String> ret = new HashSet<>(inputSet);
 
                 for (String topName : inputSet) {
                     GatewayFeatureSet fs = sets.get(topName);
+
+                    /**
+                     * If the feature set name is unrecognized, add it directly - it is likely
+                     * for a post-release feature, such as a Tactical modular assertion or new feature pack.
+                     */
                     if (fs == null) {
-                        logger.fine("Ignoring unrecognized feature set name: " + topName);
+                        logger.fine("Included unrecognized feature set name: " + topName);
+                        ret.add(topName);
                         continue;
                     }
+
                     fs.collectAllFeatureNames(ret);
                 }
 

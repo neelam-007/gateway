@@ -1,16 +1,16 @@
 package com.l7tech.external.assertions.idattr;
 
 import com.l7tech.identity.mapping.*;
-import com.l7tech.policy.assertion.*;
-import com.l7tech.policy.variable.VariableMetadata;
-import com.l7tech.policy.variable.DataType;
-import com.l7tech.policy.wsp.*;
-import com.l7tech.objectmodel.UsersOrGroups;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.UsersOrGroups;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
+import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.variable.DataType;
+import com.l7tech.policy.variable.VariableMetadata;
+import com.l7tech.policy.wsp.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -123,7 +123,7 @@ public class IdentityAttributesAssertion extends Assertion implements SetsVariab
 
         // request default feature set name for our class name, since we are a known optional module
         // that is, we want our required feature set to be "assertion:IdentityAttributes" rather than "set:modularAssertions"
-        meta.put(AssertionMetadata.FEATURE_SET_NAME, "set:modularAssertions");
+        meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
 
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;

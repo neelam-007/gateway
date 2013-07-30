@@ -5,20 +5,21 @@
 
 package com.l7tech.server;
 
+import com.l7tech.gateway.common.licensing.FeatureSetExpander;
 import com.l7tech.policy.AllAssertions;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.server.identity.cert.CSRHandler;
 import com.l7tech.server.policy.PolicyServlet;
-import com.l7tech.gateway.common.License;
 import org.junit.Test;
-import static org.junit.Assert.*;
-
 
 import java.io.PrintStream;
-import java.util.*;
-import java.util.logging.Logger;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.util.*;
+import java.util.logging.Logger;
+
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author mike
@@ -99,7 +100,7 @@ public class GatewayFeatureSetsTest {
     public void testAllOptionalAssertionsHaveAccessToModuleLoading() throws Exception {
         Map<String, GatewayFeatureSet> profiles = GatewayFeatureSets.getProductProfiles();
 
-        License.FeatureSetExpander expander = GatewayFeatureSets.getFeatureSetExpander();
+        FeatureSetExpander expander = GatewayFeatureSets.getFeatureSetExpander();
         for (String profileName : profiles.keySet()) {
             //noinspection unchecked
             Set<String> expanded = expander.getAllEnabledFeatures(new HashSet<String>(Arrays.asList(profileName)));

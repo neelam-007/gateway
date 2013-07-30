@@ -97,7 +97,7 @@ public class ConcurrentAllAssertion extends CompositeAssertion {
 
         meta.put(AssertionMetadata.WSP_TYPE_MAPPING_CLASSNAME, "com.l7tech.external.assertions.concall.ConcurrentAllAssertionTypeMapping");
 
-        meta.put(AssertionMetadata.FEATURE_SET_NAME, "set:modularAssertions");
+        meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
 
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;

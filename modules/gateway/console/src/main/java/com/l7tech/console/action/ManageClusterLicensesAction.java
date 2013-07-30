@@ -5,10 +5,10 @@
 
 package com.l7tech.console.action;
 
+import com.l7tech.console.panels.licensing.ManageLicensesDialog;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
-import com.l7tech.console.panels.LicenseDialog;
-import com.l7tech.console.util.TopComponents;
 
 import java.awt.*;
 
@@ -21,11 +21,11 @@ public class ManageClusterLicensesAction extends SecureAction {
     }
 
     public String getName() {
-        return "Manage Gateway License";
+        return "Manage Gateway Licenses";
     }
 
     public String getDescription() {
-        return "View/Install Gateways Cluster License.";
+        return "View/Install/Remove Gateway Cluster Licenses.";
     }
 
     protected String iconResource() {
@@ -34,11 +34,10 @@ public class ManageClusterLicensesAction extends SecureAction {
 
     protected void performAction() {
         final Frame mainWindow = TopComponents.getInstance().getTopParent();
-        String ssghostname = TopComponents.getInstance().ssgURL().getHost();
-        LicenseDialog dlg = new LicenseDialog(mainWindow, ssghostname);
+        ManageLicensesDialog dlg = new ManageLicensesDialog(mainWindow);
 
         dlg.pack();
-        Utilities.centerOnScreen(dlg);
+        Utilities.centerOnParentWindow(dlg);
         dlg.setModal(true);
         DialogDisplayer.display(dlg);
     }

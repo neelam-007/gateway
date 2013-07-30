@@ -2,10 +2,10 @@ package com.l7tech.gateway.common.cluster;
 
 import com.l7tech.common.io.failover.FailoverStrategy;
 import com.l7tech.gateway.common.InvalidLicenseException;
-import com.l7tech.gateway.common.License;
 import com.l7tech.gateway.common.admin.Administrative;
 import com.l7tech.gateway.common.esmtrust.TrustedEsm;
 import com.l7tech.gateway.common.esmtrust.TrustedEsmUser;
+import com.l7tech.gateway.common.licensing.*;
 import com.l7tech.gateway.common.security.rbac.MethodStereotype;
 import com.l7tech.gateway.common.security.rbac.Secured;
 import com.l7tech.gateway.common.service.MetricsSummaryBin;
@@ -182,26 +182,14 @@ public interface ClusterStatusAdmin {
     void deleteProperty(ClusterProperty clusterProperty) throws DeleteException;
 
     /**
-     * Get the currently-installed License from the LicenseManager, if it possesses a valid license.
-     * If there is license XML in the database but not live (perhaps because it is invalid)
-     * this method will throw a LicenseException explaining what the problem was with that license XML.
-     * <p>
-     * Summary:
-     * <pre>
-     *     If:                                then this method will:
-     *     ================================   =======================
-     *     No license is installed or in DB   return null
-     *     A valid license is installed       return the license
-     *     Invalid license is in the DB       throws LicenseException
-     * </pre>
+     * Get the current CompositeLicense from the LicenseManager, or null if there are no LicenseDocuments in the
+     * database.
      *
-     * @return the License currently live inside the LicenseManager, if a valid signed license is currently
-     *         live, or null if no license at all is live and no license XML is present in the cluster property
-     *         table.
-     * @throws InvalidLicenseException a license is in the database but was not installed because it was invalid
+     * @return the current CompositeLicense
      */
+    @Transactional(readOnly=true)
     @Administrative(licensed=false)
-    License getCurrentLicense() throws InvalidLicenseException;
+    CompositeLicense getCompositeLicense();
 
     /**
      * Get the warning period for license expiry.
@@ -215,33 +203,58 @@ public interface ClusterStatusAdmin {
     long getLicenseExpiryWarningPeriod();
 
     /**
-     * Check the specified license for validity with this product and, if it is valid, install it to the cluster
-     * property table and also immediately activate it.
-     * <p>
-     * If this method returns normally, the new license was installed successfully.
+     * Generates a FeatureLicense from the contents of the specified LicenseDocument. N.B. This method
+     * does *not* save the given LicenseDocument to the database. To to so, invoke
+     * {@link #installLicense(FeatureLicense)} with the FeatureLicense returned by this method.
      *
-     * @param newLicenseXml   the license XML to install.
-     * @throws InvalidLicenseException if the specified license XML was not valid.  The exception message explains the problem.
-     * @throws UpdateException if the license was valid, but was not installed because of a database problem.
+     * @param document LicenseDocument from which to create the FeatureLicense
+     * @return the created FeatureLicense
+     * @throws InvalidLicenseException
      */
-    @Secured(types=EntityType.CLUSTER_PROPERTY, stereotype=MethodStereotype.SAVE_OR_UPDATE)
+    @Transactional(readOnly=true)
     @Administrative(licensed=false)
-    void installNewLicense(String newLicenseXml) throws UpdateException, InvalidLicenseException;
+    public FeatureLicense createLicense(LicenseDocument document) throws InvalidLicenseException;
 
     /**
-     * Validates the license.  Check for validity and version.
+     * Check the validity (i.e. applicability to current environment) of the license.
      *
-     * @param newLicenseXml The new license
-     * @throws InvalidLicenseException  Specifies that the license is invalid with reason.
+     * @param license the Feature License to validate
+     * @throws InvalidLicenseException Specifies that the license is invalid with reason.
      */
+    @Transactional(readOnly=true)
     @Administrative(licensed=false)
-    void validateLicense(String newLicenseXml) throws InvalidLicenseException;
+    void validateLicense(FeatureLicense license) throws InvalidLicenseException;
+
+    /**
+     * Installs the specified FeatureLicense on the Gateway. The license will be activated immediately, enabling all
+     * newly licensed features and propagating automatically to all nodes in the cluster.
+     *
+     * @param license the FeatureLicense to install.
+     * @throws LicenseInstallationException if there was a problem installing the license.
+     */
+    @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Throwable.class)
+    @Secured(types=EntityType.CLUSTER_PROPERTY, stereotype=MethodStereotype.SAVE_OR_UPDATE)
+    @Administrative(licensed=false)
+    void installLicense(FeatureLicense license) throws LicenseInstallationException;
+
+    /**
+     * Uninstalls the specified FeatureLicense. Of any features that are not enabled by other installed licenses, most
+     * will automatically become unavailable. Policies containing Assertions that are no longer enabled will fail.
+     * Some subsystems will not be disabled until the Gateway is restarted.
+     *
+     * @param license the Feature License to uninstall
+     * @throws LicenseRemovalException if an error is encountered in uninstalling the license
+     */
+    @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Throwable.class)
+    @Secured(types=EntityType.CLUSTER_PROPERTY, stereotype=MethodStereotype.DELETE_ENTITY)
+    @Administrative(licensed=false)
+    void uninstallLicense(FeatureLicense license) throws LicenseRemovalException;
 
     /**
      * @return whether collection of service metrics is currently enabled
      */
     @Transactional(readOnly=true)
-    @Administrative( background = true)
+    @Administrative(background = true)
     boolean isMetricsEnabled();
 
     /**

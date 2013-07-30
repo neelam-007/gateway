@@ -5,19 +5,18 @@
 
 package com.l7tech.gateway.common;
 
+import com.l7tech.common.io.CertUtils;
+import com.l7tech.common.io.XmlUtil;
+import com.l7tech.gateway.common.licensing.FeatureSetExpander;
 import com.l7tech.security.xml.DsigUtil;
 import com.l7tech.security.xml.SimpleSecurityTokenResolver;
 import com.l7tech.util.*;
-import com.l7tech.util.TooManyChildElementsException;
-import com.l7tech.common.io.CertUtils;
-import com.l7tech.common.io.XmlUtil;
-import com.l7tech.util.IOUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
-import java.io.Serializable;
 import java.io.IOException;
+import java.io.Serializable;
 import java.security.SignatureException;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
@@ -46,36 +45,6 @@ public final class License implements Serializable {
 
     // Grant information -- details of how grants are expressed and stored is not exposed in the License interface.
     private final LicenseGrants g;
-
-    /**
-     * Interface provided by callers that expands feature names into the complete set of all enabled feature
-     * names implied by the input names.
-     */
-    public interface FeatureSetExpander {
-        /**
-         * Expand the input feature names into the complete set of feature names implied by the input set.
-         * <p/>
-         * For example, if a license included the features "set:Profile:Firewall", "set:ssb", and "assertion:Wssp",
-         * getAllEnabledFeatures() would be called with a Set containing just these three names, and would be expected
-         * to return an expanded Set containing all the leaf Feature names implied by these.  In the preceding example,
-         * this would return a large set of many dozens of feature sets, including subsets and leaf features,
-         * specifically including (for example) "set:core", "assertion:HttpRouting", "service:MessageProcessor",
-         * and "assertion:Wssp".
-         *
-         * @param inputSet  a Set of Strings consisting of all feature set names that were explicitly named in
-         *                  the license XML.  Never null, and never contains null or empty strings.
-         *                  <p/>
-         *                  This may be empty if the license contained no featureset elements.  <b>Any license
-         *                  generated prior to summer of 2006 will be like this.</b>  The FeatureSetExpander
-         *                  is responsible for ensuring backwards compatibility by deciding what features to
-         *                  enable in this case (a license that is signed and valid but that names no features).
-         * @return the complete set of all features that should be enabled given this input set.  Typically this
-         *         would always include the input set (and any intermediate sets) as a subset,
-         *         but this isn't strictly necessary.  Must never return null.  Returning the empty set
-         *         will cause all features to be disabled, roughly equivalent to rejecting the entire license.
-         */
-        Set<String> getAllEnabledFeatures(Set<String> inputSet);
-    }
 
     /**
      * Store the license grants.  The format of grants will change in the future.
@@ -255,9 +224,10 @@ public final class License implements Serializable {
      * @param licenseXml     a String containing the License as XML data.
      * @param trustedIssuers license signing certificates that whose signatures will be considered valid.  If null,
      *                       no license signatures will be considered valid.
-     * @param featureSetExpander  a {@link FeatureSetExpander} to explode out the complete set of leaf features given
-     *                            the possibly-more-abstract feature set names explicitly listed in the License.
-     *                            If null, only the features named explicitly in the license will be considered enabled.
+     * @param featureSetExpander  a {@link FeatureSetExpander} to explode out the
+     *                            complete set of leaf features given the possibly-more-abstract feature set names
+     *                            explicitly listed in the License. If null, only the features named explicitly in the
+     *                            license will be considered enabled.
      * @throws SAXException if the licenseXml is not well-formed XML
      * @throws ParseException if one of the fields of the license contains illegally-formatted data
      * @throws TooManyChildElementsException if there is more than one copy of an element that there can be only one of (ie, expires, Signature, etc)
@@ -279,9 +249,9 @@ public final class License implements Serializable {
         try {
             id = Long.parseLong(lic.getAttribute("Id"));
             if (id < 1)
-                throw new InvalidLicenseException("License id is non-positive");
+                throw new InvalidLicenseException("License Id is non-positive");
         } catch (NumberFormatException e) {
-            throw new InvalidLicenseException("License id is missing or non-numeric");
+            throw new InvalidLicenseException("License Id is missing or non-numeric");
         }
 
         startDate = parseDateElement(ld, "valid");
@@ -300,7 +270,7 @@ public final class License implements Serializable {
 
         this.eulaText = parseEulaText(ld);
 
-        Set<String> featureSets = new HashSet<String>();
+        Set<String> featureSets = new HashSet<>();
         collectFeatureSets(ld, "product", "featureset", featureSets);
         allEnabledFeatures = Collections.unmodifiableSet(featureSetExpander == null ? featureSets : featureSetExpander.getAllEnabledFeatures(featureSets));
 
@@ -350,7 +320,7 @@ public final class License implements Serializable {
      * @throws TooManyChildElementsException
      */
     private Set<String> parseWildcardStringLicenseAttributes(Document licenseDoc, String parentElemName, String childElemName) throws TooManyChildElementsException {
-        Set<String> attrList = new HashSet<String>();
+        Set<String> attrList = new HashSet<>();
         Element lic = licenseDoc.getDocumentElement();
         Element licAttrs = DomUtils.findOnlyOneChildElementByName(lic, lic.getNamespaceURI(), parentElemName);
         if (licAttrs == null) {
@@ -422,7 +392,7 @@ public final class License implements Serializable {
             Element element = (Element)i.next();
             String featureSetName = element.getAttribute("name");
             if (featureSetName == null || featureSetName.trim().length() < 1)
-                throw new InvalidLicenseException("product contains feature set with no name");
+                throw new InvalidLicenseException("License contains feature set with no name");
             //noinspection unchecked
             featureSets.add(featureSetName);
             ++added;
@@ -433,7 +403,7 @@ public final class License implements Serializable {
 
     private void requireValue(String name, String val) throws InvalidLicenseException {
         if (val == null || val.length() < 1 || "*".equals(val))
-            throw new InvalidLicenseException("License does not specify the required value " + name);
+            throw new InvalidLicenseException("License does not specify the required value '" + name + "'");
     }
 
     /**

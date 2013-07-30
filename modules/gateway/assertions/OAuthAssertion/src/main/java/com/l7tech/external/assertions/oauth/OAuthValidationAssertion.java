@@ -1,16 +1,14 @@
 package com.l7tech.external.assertions.oauth;
 
-import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
-import com.l7tech.policy.variable.DataType;
 
-import java.util.HashMap;
-import java.util.Map;
+import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 
 /**
  * Assertion for validation of OAuth tokens. The tokens are expected to be split into two parts: the signature part; 
@@ -120,7 +118,7 @@ public class OAuthValidationAssertion extends Assertion implements UsesVariables
 
         // request default feature set name for our class name, since we are a known optional module
         // that is, we want our required feature set to be "assertion:OAuth" rather than "set:modularAssertions"
-        meta.put(AssertionMetadata.FEATURE_SET_NAME, "set:modularAssertions");
+        meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
 
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;

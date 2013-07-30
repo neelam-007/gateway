@@ -517,6 +517,17 @@ INSERT INTO cluster_properties
     (goid, version, propkey, propvalue, properties)
     values (toGoid(0,-800001), 0, 'upgrade.task.800001', 'com.l7tech.server.upgrade.Upgrade71To80SinkConfig', null);
 
+
+--
+-- License documents for updated licensing model
+--
+
+CREATE TABLE license_document (
+  objectid bigint(20) NOT NULL,
+  contents mediumtext,
+  PRIMARY KEY (objectid)
+) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
+
 --
 -- Reenable FK at very end of script
 --

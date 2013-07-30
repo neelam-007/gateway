@@ -1,19 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
     The Admin Services Context contains the definitions that describe and export The Admin Services.
-    Things such as RMI exports, SSL admin configuration are deifned here.
+    Things such as RMI exports, SSL admin configuration are defined here.
  -->
 <!--suppress PlaceholderValuesInspection -->
 <beans xmlns="http://www.springframework.org/schema/beans"
-       xmlns:tx="http://www.springframework.org/schema/tx"
        xmlns:aop="http://www.springframework.org/schema/aop"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:schemaLocation="http://www.springframework.org/schema/beans
                             http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
                             http://www.springframework.org/schema/aop
-                            http://www.springframework.org/schema/aop/spring-aop-2.5.xsd
-                            http://www.springframework.org/schema/tx
-                            http://www.springframework.org/schema/tx/spring-tx-2.5.xsd">
+                            http://www.springframework.org/schema/aop/spring-aop-2.5.xsd">
 
     <!-- Enable aop automatic proxy generation for pointcuts -->
     <aop:config/>

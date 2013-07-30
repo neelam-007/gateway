@@ -10,6 +10,7 @@ import com.l7tech.console.logging.CascadingErrorHandler;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.panels.*;
 import com.l7tech.console.panels.identity.finder.Options;
+import com.l7tech.console.panels.licensing.ManageLicensesDialog;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.security.AuthenticationProvider;
 import com.l7tech.console.security.LogonListener;
@@ -23,10 +24,13 @@ import com.l7tech.console.tree.servicesAndPolicies.AlterFilterAction;
 import com.l7tech.console.tree.servicesAndPolicies.FolderNode;
 import com.l7tech.console.tree.servicesAndPolicies.RootNode;
 import com.l7tech.console.util.*;
-import com.l7tech.gateway.common.*;
+import com.l7tech.gateway.common.Authorizer;
+import com.l7tech.gateway.common.VersionException;
 import com.l7tech.gateway.common.audit.LogonEvent;
 import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
 import com.l7tech.gateway.common.custom.CustomAssertionsRegistrar;
+import com.l7tech.gateway.common.licensing.CompositeLicense;
+import com.l7tech.gateway.common.licensing.FeatureLicense;
 import com.l7tech.gateway.common.security.rbac.AttemptedDeleteAll;
 import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.gui.util.*;
@@ -58,7 +62,6 @@ import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 import java.awt.*;
-import java.awt.Component;
 import java.awt.event.*;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
@@ -1264,7 +1267,7 @@ public class MainWindow extends JFrame implements SheetHolder {
                                     }
                                 } else {
                                     enableOrDisableConnectionComponents(false); // Fixed bug 10238 to disable the connection button or the connection menu item immediately.
-                                    LogonDialog.logon(TopComponents.getInstance().getTopParent(), logonListenr);
+                                    LogonDialog.logon(TopComponents.getInstance().getTopParent(), logonListener);
                                 }
                             }
                         });
@@ -1304,7 +1307,7 @@ public class MainWindow extends JFrame implements SheetHolder {
         }
 
         if (validId) {
-            logonListenr.onAuthSuccess(sessionId, false);
+            logonListener.onAuthSuccess(sessionId, false);
         }
 
         return validId;
@@ -3875,159 +3878,293 @@ public class MainWindow extends JFrame implements SheetHolder {
         }
     };
 
-    private
-    LogonDialog.LogonListener logonListenr =
-            new LogonDialog.LogonListener() {
-                /* invoked on authentication success */
+    private LogonDialog.LogonListener logonListener = new LogonDialog.LogonListener() {
+        /* invoked on authentication success */
+        @Override
+        public void onAuthSuccess(final String id, final boolean usedCertificate) {
+            final boolean isApplet = isApplet();
+
+            if (isApplet) {
+                User user = Registry.getDefault().getSecurityProvider().getUser();
+                if(null != user) {
+                    connectionID = user.getName();
+                }
+            } else {
+                connectionID = id;
+            }
+
+            String statusMessage = connectionID;
+            connectionContext = "";
+
+            /* clear cached server cert */
+            serverSslCert = null;
+            auditSigningCert = null;
+
+            /* init rmi cl */
+            if (!isApplet)
+                RMIClassLoader.getDefaultProviderInstance();
+
+            /* set the preferences */
+            try {
+                SsmPreferences prefs = preferences;
+                connectionContext = " @ " + getServiceUrl();
+                /**
+                 * At anytime, save the last login id.
+                 * Note: showing the login id at the logon dialog is dependent on if the property, SAVE_LAST_LOGIN_ID
+                 * is true or false.  Also see {@link AbstractSsmPreferences#rememberLoginId}
+                 */
+                prefs.putProperty(SsmPreferences.LAST_LOGIN_ID, id);
+                prefs.putProperty(SsmPreferences.LAST_LOGIN_TYPE, usedCertificate ? "certificate" : "password");
+                prefs.store();
+            } catch (IOException e) {
+                log.log(Level.WARNING, "onAuthSuccess()", e);
+            }
+
+            ClusterStatusAdmin clusterStatusAdmin = Registry.getDefault().getClusterStatusAdmin();
+
+            // Gather and cache the cluster license early, since components like the assertion palette will need it
+            CompositeLicense compositeLicense = null; // if null, no license installed
+
+            try {
+                compositeLicense = clusterStatusAdmin.getCompositeLicense();
+            } finally {
+                // Cache it
+                Registry.getDefault().getLicenseManager().setLicense(compositeLicense);
+            }
+
+            // Gather any modular assertions offered by this gateway early on as well, for the assertion palette
+            try {
+                TopComponents.getInstance().getAssertionRegistry().updateModularAssertions();
+                TopComponents.getInstance().getEncapsulatedAssertionRegistry().updateEncapsulatedAssertions();
+                SecurityZoneUtil.flushCachedSecurityZones();
+            } catch (RuntimeException e) {
+                log.log(Level.WARNING, "Unable to update modular assertions: " + ExceptionUtils.getMessage(e) + ".",
+                    ExceptionUtils.getDebugException(e));
+            } catch (FindException e) {
+                log.log(Level.WARNING, "Unable to update encapsulated assertions: " + ExceptionUtils.getMessage(e) + ".",
+                    ExceptionUtils.getDebugException(e));
+            }
+
+            String nodeName = "";
+
+            try {
+                nodeName = clusterStatusAdmin.getSelfNodeName();
+            } catch (RuntimeException e) {
+                log.log(Level.WARNING, "Cannot get the node name", e);
+            }
+
+            if (nodeName == null) {
+                nodeName = "unknown";
+            }
+
+            statusMessage += connectionContext;
+            statusMessage += getNodeNameMsg(nodeName);
+
+            final String message = statusMessage;
+            final int timeout = preferences.getInactivityTimeout();
+
+            SwingUtilities.invokeLater(new Runnable() {
                 @Override
-                public void onAuthSuccess(final String id, final boolean usedCertificate) {
-                    final boolean isApplet = isApplet();
-                    if(isApplet){
-                        User user = Registry.getDefault().getSecurityProvider().getUser();
-                        if(null != user){
-                            connectionID = user.getName();
-                        }
-                    }
-                    else{
-                        connectionID = id;
-                    }
-                    String statusMessage = connectionID;
-                    connectionContext = "";
-
-                    /* clear cached server cert */
-                    serverSslCert = null;
-                    auditSigningCert = null;
-
-                    /* init rmi cl */
-                    if (!isApplet)
-                        RMIClassLoader.getDefaultProviderInstance();
-
-                    /* set the preferences */
+                public void run() {
+                    getStatusMsgLeft().setText(message);
+                    boolean success = false;
                     try {
-                        SsmPreferences prefs = preferences;
-                        connectionContext = " @ " + getServiceUrl();
-                        /**
-                         * At anytime, save the last login id.
-                         * Note: showing the login id at the logon dialog is dependent on if the property, SAVE_LAST_LOGIN_ID
-                         * is true or false.  Also see {@link AbstractSsmPreferences#rememberLoginId}
-                         */
-                        prefs.putProperty(SsmPreferences.LAST_LOGIN_ID, id);
-                        prefs.putProperty(SsmPreferences.LAST_LOGIN_TYPE, usedCertificate ? "certificate" : "password");
-                        prefs.store();
-                    } catch (IOException e) {
-                        log.log(Level.WARNING, "onAuthSuccess()", e);
-                    }
-
-                    ClusterStatusAdmin clusterStatusAdmin = Registry.getDefault().getClusterStatusAdmin();
-
-                    // Gather and cache the cluster license early, since components like the assertion palette will need it
-                    Registry reg = Registry.getDefault();
-                    License lic = null;         // if null, license is missing or invalid
-                    boolean licInvalid = false; // if true, license is invalid
-                    long licenseExpiryWarningPeriod = 0;
-                    try {
-                        licenseExpiryWarningPeriod = clusterStatusAdmin.getLicenseExpiryWarningPeriod();
-                        lic = clusterStatusAdmin.getCurrentLicense();
-                    } catch (InvalidLicenseException e1) {
-                        licInvalid = true;
+                        initalizeWorkspace();
+                        toggleConnectedMenus(true);
+                        homeAction.actionPerformed(null);
+                        MainWindow.this.
+                                setInactivitiyTimeout(timeout);
+                        MainWindow.this.fireConnected();
+                        success = true;
                     } finally {
-                        // Cache it
-                        reg.getLicenseManager().setLicense(lic);
-                    }
-
-                    // Gather any modular assertions offered by this gateway early on as well, for the assertion palette
-                    try {
-                        TopComponents.getInstance().getAssertionRegistry().updateModularAssertions();
-                        TopComponents.getInstance().getEncapsulatedAssertionRegistry().updateEncapsulatedAssertions();
-                        SecurityZoneUtil.flushCachedSecurityZones();
-                    } catch (RuntimeException e) {
-                        log.log(Level.WARNING, "Unable to update modular assertions: " + ExceptionUtils.getMessage(e) + ".",
-                            ExceptionUtils.getDebugException(e));
-                    } catch (FindException e) {
-                        log.log(Level.WARNING, "Unable to update encapsulated assertions: " + ExceptionUtils.getMessage(e) + ".",
-                            ExceptionUtils.getDebugException(e));
-                    }
-
-                    String nodeName = "";
-                    try {
-                        nodeName = clusterStatusAdmin.getSelfNodeName();
-                    } catch (RuntimeException e) {
-                        log.log(Level.WARNING, "Cannot get the node name", e);
-                    }
-
-                    if (nodeName == null) {
-                        nodeName = "unknown";
-                    }
-
-                    statusMessage += connectionContext;
-                    statusMessage += getNodeNameMsg(nodeName);
-
-                    final String message = statusMessage;
-                    final int timeout = preferences.getInactivityTimeout();
-                    SwingUtilities.invokeLater(new Runnable() {
-                        @Override
-                        public void run() {
-                            getStatusMsgLeft().setText(message);
-                            boolean success = false;
-                            try {
-                                initalizeWorkspace();
-                                toggleConnectedMenus(true);
-                                homeAction.actionPerformed(null);
-                                MainWindow.this.
-                                        setInactivitiyTimeout(timeout);
-                                MainWindow.this.fireConnected();
-                                success = true;
-                            } finally {
-                                if (!success) {
-                                    SwingUtilities.invokeLater(new Runnable() {
-                                        @Override
-                                        public void run() {
-                                            MainWindow.this.fireDisconnected();
-                                            enableOrDisableConnectionComponents(true);
-                                        }
-                                    });
+                        if (!success) {
+                            SwingUtilities.invokeLater(new Runnable() {
+                                @Override
+                                public void run() {
+                                    MainWindow.this.fireDisconnected();
+                                    enableOrDisableConnectionComponents(true);
                                 }
-                            }
-                        }
-                    });
-
-                    if (lic == null) {
-                        showLicenseWarning(licInvalid, false, null);
-                    } else {
-                        Authorizer auth = Registry.getDefault().getSecurityProvider();
-                        if (auth.hasPermission(new AttemptedDeleteAll(EntityType.ANY))) {
-                            Date expiryDate = lic.getExpiryDate();
-                            if (expiryDate != null && (expiryDate.getTime() - licenseExpiryWarningPeriod) < System.currentTimeMillis()) {
-                                showLicenseWarning(false, true, expiryDate);
-                            } else {
-                                X509Certificate[] sslCertificates = getServerSslCertChain();
-                                if (sslCertificates != null && sslCertificates.length > 0) {
-                                    Date sslExpiryDate = sslCertificates[0].getNotAfter();
-                                    if (sslExpiryDate != null && (sslExpiryDate.getTime() - licenseExpiryWarningPeriod) < System.currentTimeMillis()) {
-                                        showSSLWarning(sslExpiryDate);
-                                    }
-                                }
-                            }
+                            });
                         }
                     }
+                }
+            });
 
-                    try {
-                        showWarningBanner();
-                    } catch (RuntimeException re) {
-                        log.log(Level.WARNING, "Unable to show warning banner: " + ExceptionUtils.getMessage(re) + ".",
-                                ExceptionUtils.getDebugException(re));
+            Authorizer auth = Registry.getDefault().getSecurityProvider();
+
+            if (auth.hasPermission(new AttemptedDeleteAll(EntityType.ANY))) {
+                long warningPeriod = clusterStatusAdmin.getLicenseExpiryWarningPeriod();
+
+                // check for any license issues we should warn the user of
+                String licenseWarnings = collectLicenseWarnings(compositeLicense, warningPeriod);
+
+                if (licenseWarnings.length() > 0) {
+                    showLicenseWarnings(licenseWarnings);
+                } else {
+                    X509Certificate[] sslCertificates = getServerSslCertChain();
+
+                    if (sslCertificates != null && sslCertificates.length > 0) {
+                        Date sslExpiryDate = sslCertificates[0].getNotAfter();
+
+                        if (sslExpiryDate != null && (sslExpiryDate.getTime() - warningPeriod) < System.currentTimeMillis()) {
+                            showSSLWarning(sslExpiryDate);
+                        }
+                    }
+                }
+            }
+
+            try {
+                showWarningBanner();
+            } catch (RuntimeException re) {
+                log.log(Level.WARNING, "Unable to show warning banner: " + ExceptionUtils.getMessage(re) + ".",
+                        ExceptionUtils.getDebugException(re));
+            }
+        }
+
+        /* invoked on authentication failure */
+        @Override
+        public void onAuthFailure() {
+        }
+    };
+
+    /**
+     * Looks for missing primary license, license invalidity, and license expiration. Creates warning
+     * messages for each issue the user should be warned about.
+     *
+     * @param compositeLicense the CompositeLicense to analyse and show any warnings for
+     * @param expiryWarningPeriod the period of time before a license expiry in which the user should be warned of it
+     * @return a String containing all warning messages
+     */
+    private String collectLicenseWarnings(final CompositeLicense compositeLicense, final long expiryWarningPeriod) {
+        final StringBuilder message = new StringBuilder();
+
+        if (null == compositeLicense || !Registry.getDefault().getLicenseManager().isPrimaryLicenseInstalled()) {
+            message.append("There is no valid Primary License installed on this gateway.\n");
+        }
+
+        if (null != compositeLicense) {
+            SimpleDateFormat sdf = new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss z");
+
+            // check for FeatureLicenses expiring soon
+            if (compositeLicense.hasValid()) {
+                final Map<Long, FeatureLicense> validFeatureLicenses = compositeLicense.getValidFeatureLicenses();
+
+                ArrayList<Long> expiringKeys = new ArrayList<>();
+
+                final long warningPeriodEnd = expiryWarningPeriod + System.currentTimeMillis();
+
+                for (Long idKey : validFeatureLicenses.keySet()) {
+                    if (!validFeatureLicenses.get(idKey).isLicensePeriodExpiryAfter(warningPeriodEnd)) {
+                        expiringKeys.add(idKey);
                     }
                 }
 
-                /* invoked on authentication failure */
+                if(expiringKeys.size() > 0) {
+                    if (expiringKeys.size() == 1) {
+                        message.append("One of the");
+                    } else {
+                        message.append(validFeatureLicenses.size());
+                    }
+
+                    message.append(" licenses installed on this gateway will expire soon:\n");
+
+                    for (Long idKey : expiringKeys) {
+                        message.append("- License ")
+                                .append(idKey)
+                                .append(" expires ")
+                                .append(sdf.format(validFeatureLicenses.get(idKey).getExpiryDate()))
+                                .append(".\n");
+                    }
+                }
+            }
+
+            // check for expired FeatureLicenses
+            if (compositeLicense.hasExpired()) {
+                final Map<Long, FeatureLicense> expiredFeatureLicenses = compositeLicense.getExpiredFeatureLicenses();
+
+                if (expiredFeatureLicenses.size() == 1) {
+                    message.append("A license installed on this gateway has expired:\n");
+                } else {
+                    message.append(expiredFeatureLicenses.size());
+                    message.append(" of the licenses installed on this gateway have expired:\n");
+                }
+
+                for (Long idKey : expiredFeatureLicenses.keySet()) {
+                    message.append("- License ")
+                            .append(idKey)
+                            .append(" expired ")
+                            .append(sdf.format(expiredFeatureLicenses.get(idKey).getExpiryDate()))
+                            .append(".\n");
+                }
+            }
+
+            // check for invalid FeatureLicenses (including start date not reached yet) and LicenseDocuments
+            if (compositeLicense.hasInvalidLicenseDocuments() || compositeLicense.hasInvalidFeatureLicenses()) {
+                final Map<Long, FeatureLicense> invalidFeatureLicenses = compositeLicense.getInvalidFeatureLicenses();
+
+                int invalid = compositeLicense.getInvalidFeatureLicenses().size() +
+                                compositeLicense.getInvalidLicenseDocuments().size();
+
+                if (invalid == 1) {
+                    message.append("A license installed on this gateway is invalid.\n");
+                } else {
+                    message.append(invalid);
+                    message.append(" of the licenses installed on this gateway are invalid.\n");
+                }
+
+                for (Long idKey : invalidFeatureLicenses.keySet()) {
+                    message.append("- License ").append(idKey);
+
+                    message.append(" expired ");
+                    message.append("\n");
+                }
+
+                int invalidDocs = compositeLicense.getInvalidLicenseDocuments().size();
+
+                if (invalidDocs == 1) {
+                    message.append("- One license is malformed.\n");
+                } else if (invalidDocs > 1) {
+                    message.append("- ");
+                    message.append(invalidDocs);
+                    message.append(" licenses are malformed.\n");
+                }
+            }
+        }
+
+        return message.toString();
+    }
+
+    private void showLicenseWarnings(final String warningMessage) {
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+            DialogDisplayer.OptionListener callback = new DialogDisplayer.OptionListener() {
                 @Override
-                public void onAuthFailure() {
+                public void reportResult(int retval) {
+                if (retval == JOptionPane.YES_OPTION) {
+                    ManageLicensesDialog dlg = new ManageLicensesDialog(TopComponents.getInstance().getTopParent());
+                    dlg.pack();
+                    Utilities.centerOnParentWindow(dlg);
+                    dlg.setModal(true);
+                    DialogDisplayer.display(dlg);
+                }
                 }
             };
+
+            DialogDisplayer.showConfirmDialog(TopComponents.getInstance().getTopParent(),
+                    warningMessage + "\nWould you like to view the license manager now?",
+                    "Gateway License Warning",
+                    JOptionPane.YES_NO_OPTION,
+                    JOptionPane.WARNING_MESSAGE,
+                    callback);
+            }
+        });
+    }
 
     private void showWarningBanner() {
         //determine if the warning banner is configured to be displayed
         String warningBannerMessage = TopComponents.getInstance().getLogonWarningBanner();
+
         if (warningBannerMessage != null && !warningBannerMessage.trim().isEmpty()) {
             //warning banner is configured, need to display warning banner
             final Frame parent = TopComponents.getInstance().getTopParent();
@@ -4076,47 +4213,6 @@ public class MainWindow extends JFrame implements SheetHolder {
         } else if (actionName.equals(L7_SHIFT_F3)) {
             shiftF3Action.actionPerformed(new ActionEvent(source, ActionEvent.ACTION_PERFORMED, L7_SHIFT_F3));
         }
-    }
-
-    public void showLicenseWarning(boolean invalidLicense, boolean expiresSoon, Date expiry) {
-        final String title;
-        final StringBuffer message;
-        if (invalidLicense) {
-            title = "Gateway Not Licensed";
-            message = new StringBuffer("The currently installed license for this gateway is invalid.");
-        } else if (expiresSoon) {
-            title = "Gateway License Warning";
-            SimpleDateFormat sdf = new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss z");
-            String dateStr = sdf.format(expiry);
-            message = new StringBuffer("The currently installed license for this gateway expires " + dateStr + ".");
-        } else {
-            title = "Gateway Not Licensed";
-            message = new StringBuffer("There is no license currently installed for this gateway.");
-        }
-        message.append("\n Would you like to view the license manager now?");
-
-        SwingUtilities.invokeLater(new Runnable() {
-            @Override
-            public void run() {
-                DialogDisplayer.OptionListener callback = new DialogDisplayer.OptionListener() {
-                    @Override
-                    public void reportResult(int retval) {
-                        if (retval == JOptionPane.YES_OPTION) {
-                            LicenseDialog dlg = new LicenseDialog(TopComponents.getInstance().getTopParent(),
-                                    TopComponents.getInstance().ssgURL().getHost());
-                            dlg.pack();
-                            Utilities.centerOnScreen(dlg);
-                            dlg.setModal(true);
-                            DialogDisplayer.display(dlg);
-                        }
-                    }
-                };
-                DialogDisplayer.showConfirmDialog(TopComponents.getInstance().getTopParent(),
-                        message.toString(), title,
-                        JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE,
-                        callback);
-            }
-        });
     }
 
     public void showSSLWarning(Date expiry) {

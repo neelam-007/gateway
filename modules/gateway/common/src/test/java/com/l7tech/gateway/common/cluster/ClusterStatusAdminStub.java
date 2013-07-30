@@ -3,16 +3,12 @@ package com.l7tech.gateway.common.cluster;
 import com.l7tech.common.io.failover.FailoverStrategy;
 import com.l7tech.common.io.failover.FailoverStrategyFactory;
 import com.l7tech.gateway.common.InvalidLicenseException;
-import com.l7tech.gateway.common.License;
 import com.l7tech.gateway.common.esmtrust.TrustedEsm;
 import com.l7tech.gateway.common.esmtrust.TrustedEsmUser;
+import com.l7tech.gateway.common.licensing.*;
 import com.l7tech.gateway.common.service.MetricsSummaryBin;
 import com.l7tech.objectmodel.*;
-import com.l7tech.util.CollectionUpdate;
-import com.l7tech.util.CollectionUpdateProducer;
-import com.l7tech.util.Either;
-import com.l7tech.util.Option;
-import com.l7tech.util.Pair;
+import com.l7tech.util.*;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,7 +21,7 @@ import java.util.regex.Pattern;
  * Test stub for ClusterStatusAdmin interface
  */
 public class ClusterStatusAdminStub implements ClusterStatusAdmin {
-    private static License license = null;
+    private static CompositeLicense license = null;
 
     private CollectionUpdateProducer<ClusterNodeInfo, FindException> clusterNodesUpdateProducer =
             new CollectionUpdateProducer<ClusterNodeInfo, FindException>(5000, 10, null) {
@@ -174,7 +170,7 @@ public class ClusterStatusAdminStub implements ClusterStatusAdmin {
     }
 
     @Override
-    public License getCurrentLicense() throws InvalidLicenseException {
+    public CompositeLicense getCompositeLicense() {
         return license;
     }
 
@@ -184,13 +180,23 @@ public class ClusterStatusAdminStub implements ClusterStatusAdmin {
     }
 
     @Override
-    public void installNewLicense(String newLicenseXml) throws InvalidLicenseException {
+    public FeatureLicense createLicense(LicenseDocument document) throws InvalidLicenseException {
         throw new InvalidLicenseException("Not implemented");
     }
 
     @Override
-    public void validateLicense(String newLicenseXml) throws InvalidLicenseException {
+    public void validateLicense(FeatureLicense license) throws InvalidLicenseException {
         throw new InvalidLicenseException("Not implemented");
+    }
+
+    @Override
+    public void installLicense(FeatureLicense license) throws LicenseInstallationException {
+        throw new LicenseInstallationException("Not implemented");
+    }
+
+    @Override
+    public void uninstallLicense(FeatureLicense license) throws LicenseRemovalException {
+        throw new LicenseRemovalException("Not implemented");
     }
 
     @Override

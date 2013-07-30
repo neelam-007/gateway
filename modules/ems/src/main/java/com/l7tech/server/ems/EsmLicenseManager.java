@@ -1,8 +1,8 @@
 package com.l7tech.server.ems;
 
+import com.l7tech.gateway.common.licensing.FeatureSetExpander;
 import com.l7tech.server.AbstractLicenseManager;
 import com.l7tech.server.cluster.ClusterPropertyManager;
-import com.l7tech.gateway.common.License;
 
 import java.util.logging.Logger;
 
@@ -18,7 +18,7 @@ public class EsmLicenseManager extends AbstractLicenseManager {
     }
 
     @Override
-    protected License.FeatureSetExpander getFeatureSetExpander() {
+    protected FeatureSetExpander getFeatureSetExpander() {
         return EsmFeatureSets.getFeatureSetExpander();
     }
 }

@@ -22,7 +22,7 @@ public class SystemMessages extends Messages {
     public static final M LICENSE_DB_ERROR_RETRY        = m(2010, Level.WARNING, "Database error reading license file.  Will keep current license and retry.");
     public static final M LICENSE_DB_ERROR_GAVEUP       = m(2011, Level.WARNING, "Database error reading license file.  Current license was too stale to keep.  Will keep trying.");
     public static final M LICENSE_NO_LICENSE            = m(2012, Level.WARNING, "No valid license is installed.  Some product features may be disabled.");
-    public static final M LICENSE_FOUND                 = m(2013, Level.INFO,  "Valid license found");
+    public static final M LICENSE_FOUND                 = m(2013, Level.INFO,  "Valid license(s) found");
     public static final M LICENSE_INVALID               = m(2014, Level.WARNING, "License file is not valid");
     public static final M LICENSE_UPDATED               = m(2015, Level.INFO, "License updated");
 
@@ -164,6 +164,14 @@ public class SystemMessages extends Messages {
     public static final M INVALID_CONTENT_TYPE = m(2420, Level.WARNING, "Cannot parse content-type value ''{0}'' from cluster property. Reason: {1}");
     public static final M INVALID_CUSTOM_DATE_FORMAT = m(2421, Level.WARNING, "Cannot parse custom date format ''{0}'' from cluster property. Reason: {1}");
     public static final M INVALID_AUTO_DATE_FORMAT = m(2422, Level.WARNING, "Cannot parse auto date format / pattern ''{0}'' from cluster property.");
+
+    // License Management
+    public static final M LICENSE_INSTALLED         = m(2500, Level.INFO, "License {0} installed.");
+    public static final M LICENSE_REMOVED           = m(2501, Level.INFO, "License {0} removed.");
+    public static final M LICENSE_EXPIRED           = m(2502, Level.WARNING, "License {0} has expired.");
+    public static final M LICENSE_NOT_YET_VALID     = m(2503, Level.WARNING, "License {0} is not yet valid.");
+    public static final M LICENSE_INVALID_PRODUCT   = m(2504, Level.WARNING, "License {0} is not valid for this product.");
+    public static final M LICENSE_INVALID_ISSUER    = m(2505, Level.WARNING, "License {0} is not signed by a trusted issuer.");
 
     // MAX -                                      m(2999
 }

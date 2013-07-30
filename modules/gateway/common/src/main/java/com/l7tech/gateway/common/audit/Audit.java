@@ -1,6 +1,7 @@
 package com.l7tech.gateway.common.audit;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Interface over Auditor that allows optional-audit code to be shared with non-SSG systems
@@ -15,7 +16,7 @@ public interface Audit {
      * @param e a Throwable to save with this detail message, or null
      * @see AssertionMessages for a collection of AuditDetailMessage instances
      */
-    void logAndAudit(@NotNull AuditDetailMessage msg, String[] params, Throwable e);
+    void logAndAudit(@NotNull AuditDetailMessage msg, @Nullable String[] params, Throwable e);
 
     /**
      * Audit and log the specified detail message, filled in with the specified parameters.

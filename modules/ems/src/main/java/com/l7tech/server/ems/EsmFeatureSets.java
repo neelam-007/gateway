@@ -1,6 +1,6 @@
 package com.l7tech.server.ems;
 
-import com.l7tech.gateway.common.License;
+import com.l7tech.gateway.common.licensing.FeatureSetExpander;
 
 import java.util.*;
 import java.util.logging.Logger;
@@ -85,8 +85,8 @@ public class EsmFeatureSets {
     }
 
     /** @return the FeatureSetExpander to use when parsing License files. */
-    public static License.FeatureSetExpander getFeatureSetExpander() {
-        return new License.FeatureSetExpander() {
+    public static FeatureSetExpander getFeatureSetExpander() {
+        return new FeatureSetExpander() {
             @Override
             public Set<String> getAllEnabledFeatures(Set<String> inputSet) {
                 Set<String> ret = new HashSet<String>(inputSet);

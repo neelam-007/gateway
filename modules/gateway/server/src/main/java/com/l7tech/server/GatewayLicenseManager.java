@@ -5,8 +5,8 @@
 
 package com.l7tech.server;
 
+import com.l7tech.gateway.common.licensing.FeatureSetExpander;
 import com.l7tech.server.cluster.ClusterPropertyManager;
-import com.l7tech.gateway.common.License;
 
 import java.util.logging.Logger;
 
@@ -23,7 +23,7 @@ public class GatewayLicenseManager extends AbstractLicenseManager {
     }
 
     @Override
-    protected License.FeatureSetExpander getFeatureSetExpander()
+    protected FeatureSetExpander getFeatureSetExpander()
     {
         return GatewayFeatureSets.getFeatureSetExpander();
     }

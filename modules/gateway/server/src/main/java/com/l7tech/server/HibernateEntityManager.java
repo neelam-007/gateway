@@ -7,7 +7,6 @@ import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import org.hibernate.*;
 import org.hibernate.criterion.*;
-import org.hibernate.criterion.Restrictions;
 import org.hibernate.jdbc.Work;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.simple.SimpleJdbcTemplate;
@@ -377,7 +376,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
 
     @Override
     public long save(ET entity) throws SaveException {
-        if (logger.isLoggable(Level.FINE)) logger.log(Level.FINE, "Saving {0} ({1})", new Object[] { getImpClass().getSimpleName(), entity==null ? null : entity.toString() });
+        logger.log(Level.WARNING, "Saving {0} ({1})", new Object[] { getImpClass().getSimpleName(), entity==null ? null : entity.toString() });
         try {
             if (getUniqueType() != UniqueType.NONE) {
                 final Collection<Map<String, Object>> constraints = getUniqueConstraints(entity);

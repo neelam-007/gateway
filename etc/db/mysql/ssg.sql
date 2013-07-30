@@ -2060,6 +2060,13 @@ CREATE TABLE custom_key_value_store (
   UNIQUE KEY (name)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
+DROP TABLE IF EXISTS license_document;
+CREATE TABLE license_document (
+  objectid bigint(20) NOT NULL,
+  contents mediumtext,
+  PRIMARY KEY (objectid)
+) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
+
 DROP TABLE IF EXISTS ssg_version;
 CREATE TABLE ssg_version (
    current_version char(10) NOT NULL

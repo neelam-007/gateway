@@ -1,10 +1,13 @@
 package com.l7tech.internal.license;
 
-import com.l7tech.gateway.common.License;
+import com.l7tech.gateway.common.licensing.FeatureSetExpander;
 import com.l7tech.server.GatewayFeatureSet;
 import com.l7tech.server.GatewayFeatureSets;
 
-import java.util.*;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Wrapper for GatewayFeatureSets that adds a fake entry for the ESM.  This is a hack but is quicker and safer
@@ -16,8 +19,8 @@ public class LicenseGeneratorFeatureSets {
             "Enterprise Service Manager server",
             "Required in order for Enterprise Service Manager server to start given this as its license.", null);
 
-    public static License.FeatureSetExpander getFeatureSetExpander() {
-        final License.FeatureSetExpander expander = GatewayFeatureSets.getFeatureSetExpander();
+    public static FeatureSetExpander getFeatureSetExpander() {
+        final FeatureSetExpander expander = GatewayFeatureSets.getFeatureSetExpander();
         return new UnknownFeaturePreservingFeatureSetExpander(expander);
     }
 
@@ -37,10 +40,10 @@ public class LicenseGeneratorFeatureSets {
     /**
      * A feature set expander that will preserve any unrecognized input feature set names.
      */
-    private static class UnknownFeaturePreservingFeatureSetExpander implements License.FeatureSetExpander {
-        private final License.FeatureSetExpander delegate;
+    private static class UnknownFeaturePreservingFeatureSetExpander implements FeatureSetExpander {
+        private final FeatureSetExpander delegate;
 
-        public UnknownFeaturePreservingFeatureSetExpander(License.FeatureSetExpander delegate) {
+        public UnknownFeaturePreservingFeatureSetExpander(FeatureSetExpander delegate) {
             this.delegate = delegate;
         }
 

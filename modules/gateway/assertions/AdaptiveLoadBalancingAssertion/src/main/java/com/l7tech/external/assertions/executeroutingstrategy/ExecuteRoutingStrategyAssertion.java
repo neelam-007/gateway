@@ -101,7 +101,7 @@ public class ExecuteRoutingStrategyAssertion extends AbstractAdaptiveLoadBalanci
         meta.put(POLICY_NODE_NAME_FACTORY, policyNameFactory);
         meta.put(POLICY_VALIDATOR_CLASSNAME, Validator.class.getName());
 
-        meta.put(AssertionMetadata.FEATURE_SET_NAME, "set:modularAssertions");
+        meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;
     }

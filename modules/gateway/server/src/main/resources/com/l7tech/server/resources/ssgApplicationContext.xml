@@ -9,14 +9,13 @@
 <!--suppress SpringModelInspection -->
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:tx="http://www.springframework.org/schema/tx"
-       xmlns:aop="http://www.springframework.org/schema/aop"
        xmlns:context="http://www.springframework.org/schema/context"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xmlns:util="http://www.springframework.org/schema/util"
        xsi:schemaLocation="http://www.springframework.org/schema/beans
                             http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
-                            http://www.springframework.org/schema/aop
-                            http://www.springframework.org/schema/aop/spring-aop-2.5.xsd
+
+
                             http://www.springframework.org/schema/tx
                             http://www.springframework.org/schema/tx/spring-tx-2.5.xsd
                             http://www.springframework.org/schema/context
@@ -1584,9 +1583,11 @@
 
     <alias name="securityTokenResolver" alias="encryptedKeyCache"/>
 
-    <bean id="licenseManager" class="com.l7tech.server.GatewayLicenseManager" depends-on="systemAuditListener">
-        <constructor-arg ref="clusterPropertyManager"/>
-    </bean>
+    <bean id="featureLicenseFactory" class="com.l7tech.server.licensing.FeatureLicenseFactory"/>
+
+    <bean id="licenseDocumentManager" class="com.l7tech.server.licensing.LicenseDocumentManagerImpl" parent="hibernateBean"/>
+
+    <bean id="licenseManager" class="com.l7tech.server.licensing.GatewayCompositeLicenseManager" depends-on="systemAuditListener"/>
 
     <bean id="certificateAuthenticator" class="com.l7tech.server.identity.cert.CertificateAuthenticator">
         <constructor-arg ref="clientCertManager"/>

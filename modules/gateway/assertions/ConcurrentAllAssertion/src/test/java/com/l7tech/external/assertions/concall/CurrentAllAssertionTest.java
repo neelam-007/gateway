@@ -5,10 +5,13 @@ import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.policy.assertion.TrueAssertion;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.policy.wsp.WspWriter;
-import static org.junit.Assert.*;
-import org.junit.*;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 import java.util.Arrays;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 /**
  *
@@ -25,7 +28,7 @@ public class CurrentAllAssertionTest {
 
     @Test
     public void testFeatureSetName() throws Exception {
-        assertEquals("set:modularAssertions", new ConcurrentAllAssertion().getFeatureSetName());
+        assertEquals("assertion:ConcurrentAll", new ConcurrentAllAssertion().getFeatureSetName());
     }
 
     @Test

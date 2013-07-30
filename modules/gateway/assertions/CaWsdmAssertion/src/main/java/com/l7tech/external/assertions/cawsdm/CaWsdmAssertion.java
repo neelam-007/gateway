@@ -67,7 +67,7 @@ public class CaWsdmAssertion extends Assertion implements SetsVariables {
         meta.put(AssertionMetadata.POLICY_NODE_ICON, "com/l7tech/console/resources/Information16.gif");
 
         // Set required feature set.  We are an optional modular assertion so we depend on set:modularAssertions
-        meta.put(AssertionMetadata.FEATURE_SET_NAME, "set:modularAssertions");
+        meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
 
         // Subscribe our Observer to the module loading events so it can set up its application listener
         meta.put(AssertionMetadata.MODULE_LOAD_LISTENER_CLASSNAME, "com.l7tech.server.module.ca_wsdm.CaWsdmObserver");

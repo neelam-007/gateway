@@ -3,12 +3,12 @@ package com.l7tech.server.cluster;
 import com.l7tech.common.io.failover.FailoverStrategy;
 import com.l7tech.common.io.failover.FailoverStrategyFactory;
 import com.l7tech.gateway.common.InvalidLicenseException;
-import com.l7tech.gateway.common.License;
 import com.l7tech.gateway.common.LicenseException;
 import com.l7tech.gateway.common.admin.LicenseRuntimeException;
 import com.l7tech.gateway.common.cluster.*;
 import com.l7tech.gateway.common.esmtrust.TrustedEsm;
 import com.l7tech.gateway.common.esmtrust.TrustedEsmUser;
+import com.l7tech.gateway.common.licensing.*;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.gateway.common.service.MetricsSummaryBin;
@@ -16,12 +16,16 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.ExtensionInterfaceBinding;
-import com.l7tech.server.*;
+import com.l7tech.server.GatewayFeatureSets;
+import com.l7tech.server.ServerConfig;
+import com.l7tech.server.TrustedEsmManager;
+import com.l7tech.server.TrustedEsmUserManager;
 import com.l7tech.server.admin.ExtensionInterfaceManager;
 import com.l7tech.server.event.EntityChangeSet;
 import com.l7tech.server.event.admin.Deleted;
 import com.l7tech.server.event.admin.PersistenceEvent;
 import com.l7tech.server.event.admin.Updated;
+import com.l7tech.server.licensing.UpdatableCompositeLicenseManager;
 import com.l7tech.server.policy.AssertionModule;
 import com.l7tech.server.policy.ServerAssertionRegistry;
 import com.l7tech.server.security.keystore.luna.GatewayLunaPinFinder;
@@ -66,7 +70,7 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin, ApplicationCon
     public ClusterStatusAdminImp(ClusterInfoManager clusterInfoManager,
                                  ServiceUsageManager serviceUsageManager,
                                  ClusterPropertyManager clusterPropertyManager,
-                                 UpdatableLicenseManager licenseManager,
+                                 UpdatableCompositeLicenseManager licenseManager,
                                  ServiceMetricsManager metricsManager,
                                  ServiceMetricsServices serviceMetricsServices,
                                  ServerConfig serverConfig,
@@ -167,7 +171,7 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin, ApplicationCon
     public void changeNodeName(String nodeid, String newName) throws UpdateException {
         String oldName = clusterInfoManager.renameNode(nodeid, newName);
         EntityChangeSet changes = new EntityChangeSet(new String[]{"name"}, new Object[]{oldName}, new Object[]{newName});
-        publishEvent(new Updated<ClusterNodeInfo>( clusterNodeInfo( nodeid, newName ), changes ));
+        publishEvent(new Updated<>( clusterNodeInfo( nodeid, newName ), changes ));
     }
 
     /**
@@ -191,7 +195,7 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin, ApplicationCon
         // the housekeeping script to remove the old records periodically.
         //ServerLogHandler.cleanAllRecordsForNode((HibernatePersistenceContext)context, nodeid);
 
-        publishEvent(new Deleted<ClusterNodeInfo>( clusterNodeInfo( nodeid, name ) ));
+        publishEvent(new Deleted<>( clusterNodeInfo( nodeid, name ) ));
     }
 
     /**
@@ -229,7 +233,7 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin, ApplicationCon
         Map<String,String> namesToDesc =  serverConfig.getClusterPropertyNames();
         Map<String,String> namesToDefs =  serverConfig.getClusterPropertyDefaults();
 
-        Map<String, String[]> known = new LinkedHashMap<String, String[]>();
+        Map<String, String[]> known = new LinkedHashMap<>();
         for (String name : namesToDesc.keySet()) {
             known.put(name, new String[]{namesToDesc.get(name), namesToDefs.get(name)});
         }
@@ -244,19 +248,19 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin, ApplicationCon
         Map<String,String> namesToVisi =  serverConfig.getClusterPropertyVisibilities();
         Map<String,Validator<String>> namesToValidators =  serverConfig.getClusterPropertyValidators();
 
-        Collection<ClusterPropertyDescriptor> properties = new ArrayList<ClusterPropertyDescriptor>();
+        Collection<ClusterPropertyDescriptor> properties = new ArrayList<>();
         for (String name : namesToDesc.keySet()) {
             String visible = namesToVisi.get(name);
             if ( visible == null ) {
                 visible = "true";
             }
 
-            properties.add( new ClusterPropertyDescriptor(
+            properties.add(new ClusterPropertyDescriptor(
                     name,
                     namesToDesc.get(name),
                     namesToDefs.get(name),
                     Boolean.valueOf(visible),
-                    optional( namesToValidators.get( name ) )) );
+                    optional(namesToValidators.get(name))));
         }
 
         return Collections.unmodifiableCollection(properties);
@@ -286,8 +290,8 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin, ApplicationCon
     }
 
     @Override
-    public License getCurrentLicense() throws InvalidLicenseException {
-        return licenseManager.getCurrentLicense();
+    public CompositeLicense getCompositeLicense() {
+        return licenseManager.getCurrentCompositeLicense();
     }
 
     @Override
@@ -299,23 +303,35 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin, ApplicationCon
             try {
                 expiryWarnPeriod = TimeUnit.parse(propStr, TimeUnit.DAYS);    
             } catch (NumberFormatException nfe) {
-                logger.warning("Unable to parse property '" + propertyName + "' with value '"+propStr+"'.");
+                logger.warning("Unable to parse property '" + propertyName + "' with value '" + propStr + "'.");
             }
         }
         return expiryWarnPeriod;
     }
 
+    public FeatureLicense createLicense(LicenseDocument document) throws InvalidLicenseException {
+        return licenseManager.createFeatureLicense(document);
+    }
+
     @Override
-    public void installNewLicense(String newLicenseXml) throws InvalidLicenseException, UpdateException {
-        licenseManager.installNewLicense(newLicenseXml);
+    public void validateLicense(FeatureLicense license) throws InvalidLicenseException {
+        licenseManager.validateLicense(license);
+    }
+
+    @Override
+    public void installLicense(FeatureLicense license) throws LicenseInstallationException {
+        licenseManager.installLicense(license);
 
         // Make sure we don't return until any module updating has been dealt with
         assertionRegistry.runNeededScan();
     }
 
     @Override
-    public void validateLicense(String newLicenseXml) throws InvalidLicenseException {
-        licenseManager.validateLicense(newLicenseXml);
+    public void uninstallLicense(FeatureLicense license) throws LicenseRemovalException {
+        licenseManager.uninstallLicense(license);
+
+        // Make sure we don't return until any module updating has been dealt with
+        assertionRegistry.runNeededScan();
     }
 
     @Override
@@ -359,10 +375,10 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin, ApplicationCon
     @Override
     @Transactional(propagation = Propagation.SUPPORTS)
     public Collection<ModuleInfo> getAssertionModuleInfo() {
-        Collection<ModuleInfo> ret = new ArrayList<ModuleInfo>();
+        Collection<ModuleInfo> ret = new ArrayList<>();
         Set<AssertionModule> modules = assertionRegistry.getLoadedModules();
         for (AssertionModule module : modules) {
-            Collection<String> assertions = new ArrayList<String>();
+            Collection<String> assertions = new ArrayList<>();
             for (Assertion assertion : module.getAssertionPrototypes())
                 assertions.add(assertion.getClass().getName());
             ret.add(new ModuleInfo(module.getName(), module.getSha1(), assertions));
@@ -373,9 +389,9 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin, ApplicationCon
     @Override
     public Collection<Pair<String, String>> getExtensionInterfaceInstances() {
         Collection<ExtensionInterfaceBinding<?>> bindings = extensionInterfaceManager.getRegisteredInterfaces();
-        List<Pair<String, String>> ret = new ArrayList<Pair<String, String>>();
+        List<Pair<String, String>> ret = new ArrayList<>();
         for (ExtensionInterfaceBinding<?> binding : bindings) {
-            ret.add(new Pair<String, String>(binding.getInterfaceClass().getName(), binding.getInstanceIdentifier()));
+            ret.add(new Pair<>(binding.getInterfaceClass().getName(), binding.getInstanceIdentifier()));
         }
         return ret;
     }
@@ -526,7 +542,7 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin, ApplicationCon
     private final ClusterInfoManager clusterInfoManager;
     private final ServiceUsageManager serviceUsageManager;
     private final ClusterPropertyManager clusterPropertyManager;
-    private final UpdatableLicenseManager licenseManager;
+    private final UpdatableCompositeLicenseManager licenseManager;
     private final ServiceMetricsManager serviceMetricsManager;
     private final ServiceMetricsServices serviceMetricsServices;
     private final ServerConfig serverConfig;

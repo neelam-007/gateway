@@ -6,12 +6,11 @@
 <!--suppress SpringModelInspection -->
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:tx="http://www.springframework.org/schema/tx"
-       xmlns:aop="http://www.springframework.org/schema/aop"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-       xsi:schemaLocation= "http://www.springframework.org/schema/beans
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
                             http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
-                            http://www.springframework.org/schema/aop
-                            http://www.springframework.org/schema/aop/spring-aop-2.5.xsd
+
+
                             http://www.springframework.org/schema/tx
                             http://www.springframework.org/schema/tx/spring-tx-2.5.xsd">
 
@@ -155,6 +154,9 @@
                 <value>com.l7tech.gateway.common.security.keystore.SsgKeyMetadata</value>
                 <value>com.l7tech.server.security.sharedkey.SharedKeyRecord</value>
                 <value>com.l7tech.policy.GenericEntity</value>
+
+                <!-- License Document Entity -->
+                <value>com.l7tech.gateway.common.licensing.LicenseDocument</value>
 
                 <!-- Encapsulated Assertions -->
                 <value>com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig</value>

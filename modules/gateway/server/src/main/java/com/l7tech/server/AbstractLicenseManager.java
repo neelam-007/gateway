@@ -6,6 +6,7 @@ import com.l7tech.gateway.common.LicenseException;
 import com.l7tech.gateway.common.audit.AuditDetailMessage;
 import com.l7tech.gateway.common.audit.SystemMessages;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
+import com.l7tech.gateway.common.licensing.FeatureSetExpander;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.objectmodel.UpdateException;
@@ -238,7 +239,7 @@ public abstract class AbstractLicenseManager extends ApplicationObjectSupport im
         this.clusterPropertyManager = clusterPropertyManager;
     }
 
-    abstract protected License.FeatureSetExpander getFeatureSetExpander();
+    abstract protected FeatureSetExpander getFeatureSetExpander();
 
     //- PRIVATE
 
