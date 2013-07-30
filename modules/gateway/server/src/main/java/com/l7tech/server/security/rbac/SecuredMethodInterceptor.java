@@ -38,6 +38,7 @@ import static com.l7tech.gateway.common.security.rbac.OperationType.*;
  */
 public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationContextAware {
     private static final Logger logger = Logger.getLogger(SecuredMethodInterceptor.class.getName());
+    private static final String TEST_CONFIGURATION = "testConfiguration";
     private final RbacServices rbacServices;
     private final EntityFinder entityFinder;
     private static final String DEFAULT_ID = Long.toString(PersistentEntity.DEFAULT_OID);
@@ -329,6 +330,7 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationC
                 check.setBefore(CheckBefore.SOME);
                 check.setAfter(CheckAfter.NONE);
                 check.operation = OperationType.OTHER;
+                check.otherOperationName = TEST_CONFIGURATION;
                 break;
             default:
                 throw new UnsupportedOperationException("Security declaration for method " + mname + " specifies unsupported stereotype " + check.stereotype.name());
@@ -365,8 +367,8 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationC
                 }
                 break;
             case SOME:
-                if (check.operation != OTHER) {
-                    throw new IllegalStateException("CheckBefore.SOME currently only supports OperationType.OTHER");
+                if (check.operation != OTHER || !check.otherOperationName.equals(TEST_CONFIGURATION)) {
+                    throw new IllegalStateException("CheckBefore.SOME currently only supports OperationType.OTHER and otherOperationName testConfiguration");
                 }
                 for (final EntityType type : check.types) {
                     boolean canPerformAnyOperation =

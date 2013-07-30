@@ -29,7 +29,7 @@ class CheckInfo {
     final EntityType[] types;
     final MethodStereotype stereotype;
     final int relevantArg;
-    final String otherOperationName;
+    String otherOperationName;
 
     OperationType operation;
     private CheckBefore before;
