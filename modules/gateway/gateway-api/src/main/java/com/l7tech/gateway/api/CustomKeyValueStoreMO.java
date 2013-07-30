@@ -15,17 +15,35 @@ import static com.l7tech.gateway.api.impl.AttributeExtensibleType.set;
 /**
  * The CustomKeyValueStoreMO object represents a custom key value.
  */
-@XmlRootElement(name = "CustomKeyValueStore")
-@XmlType(name = "CustomKeyValueStoreType", propOrder = {"keyValue", "valueValue", "extensions"})
-@AccessorSupport.AccessibleResource(name = "customKeyValueStores")
+@XmlRootElement(name = "CustomKeyValue")
+@XmlType(name = "CustomKeyValueType", propOrder = {"storeNameValue", "keyValue", "valueValue", "extensions"})
+@AccessorSupport.AccessibleResource(name = "customKeyValues")
 public class CustomKeyValueStoreMO extends AccessibleObject {
 
     //- PUBLIC
 
     /**
+     * Gets the store name.
+     *
+     * @return the store name
+     */
+    public String getStoreName() {
+        return get(storeName);
+    }
+
+    /**
+     * Sets the store.
+     *
+     * @param storeName the store to use
+     */
+    public void setStoreName(final String storeName) {
+        this.storeName = set(this.storeName, storeName);
+    }
+
+    /**
      * Gets the key.
      *
-     * @return The key
+     * @return the key
      */
     public String getKey() {
         return get(key);
@@ -34,7 +52,7 @@ public class CustomKeyValueStoreMO extends AccessibleObject {
     /**
      * Sets the key.
      *
-     * @param key The key to use
+     * @param key the key to use
      */
     public void setKey( final String key ) {
         this.key = set(this.key, key);
@@ -43,7 +61,7 @@ public class CustomKeyValueStoreMO extends AccessibleObject {
     /**
      * Gets the value.
      *
-     * @return The value
+     * @return the value
      */
     public byte[] getValue() {
         return get(value);
@@ -52,9 +70,9 @@ public class CustomKeyValueStoreMO extends AccessibleObject {
     /**
      * Sets the value.
      *
-     * @param value The value to use.
+     * @param value the value to use
      */
-    public void setValue(byte[] value) {
+    public void setValue(final byte[] value) {
         this.value = set(this.value, value);
     }
 
@@ -84,6 +102,15 @@ public class CustomKeyValueStoreMO extends AccessibleObject {
         this.value = value;
     }
 
+    @XmlElement(name = "StoreName", required = true)
+    protected AttributeExtensibleString getStoreNameValue() {
+        return storeName;
+    }
+
+    protected void setStoreNameValue(final AttributeExtensibleString storeName) {
+        this.storeName = storeName;
+    }
+
     //- PACKAGE
 
     CustomKeyValueStoreMO() {
@@ -93,4 +120,5 @@ public class CustomKeyValueStoreMO extends AccessibleObject {
 
     private AttributeExtensibleString key;
     private AttributeExtensibleByteArray value;
+    private AttributeExtensibleString storeName;
 }

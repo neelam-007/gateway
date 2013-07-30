@@ -972,6 +972,7 @@ public class ManagedObjectTest {
     @Test
     public void testCustomKeyValueStoreSerialization() throws Exception {
         final CustomKeyValueStoreMO customKeyValueStoreMO = ManagedObjectFactory.createCustomKeyValueStore();
+        customKeyValueStoreMO.setStoreName("internalTransactional");
         customKeyValueStoreMO.setKey("key.prefix.key1");
         customKeyValueStoreMO.setValue("<xml>Test value</xml>".getBytes("UTF-8"));
 

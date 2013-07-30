@@ -3,6 +3,7 @@ package com.l7tech.policy.assertion.ext.store;
 import java.util.Map;
 
 /**
+ * <pre>
  * Provides methods to access a key value store.
  *
  * Usage:
@@ -10,17 +11,18 @@ import java.util.Map;
  * To save, update, delete key value pair from the key value store, the key must be
  * prefixed with a value that is unique to your Custom Assertion.
  * For example,
- *    keyValueStoreServices.contains("<prefix>"+"<key>");
- *    keyValueStoreServices.save("<prefix>"+"<key>", value);
- *    keyValueStoreServices.update("<prefix>"+"<key>", value);
- *    keyValueStoreServices.delete("<prefix>"+"<key>");
+ *    keyValueStoreServices.contains(&lt;prefix&gt;+&lt;key&gt;);
+ *    keyValueStoreServices.save(&lt;prefix&gt;+&lt;key&gt;, value);
+ *    keyValueStoreServices.update(&lt;prefix&gt;+&lt;key&gt;, value);
+ *    keyValueStoreServices.delete(&lt;prefix&gt;+&lt;key&gt;);
  *
  * To retrieve all key value pairs for your Custom Assertion, search using the prefix.
  * For example,
- *    keyValueStoreServices.findAllWithKeyPrefix("<prefix>");
+ *    keyValueStoreServices.findAllWithKeyPrefix(&lt;prefix&gt;);
  *
  * Is is the responsibility of the Custom Assertions developer to serialize and
  * de-serialize the object they want to store/retrieve from the key value store.
+ * </pre>
  */
 public interface KeyValueStore {
     /**

@@ -33,6 +33,7 @@ import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionResultDescriptor;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.policy.*;
+import com.l7tech.policy.assertion.ext.store.KeyValueStoreServices;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.security.token.http.HttpBasicToken;
 import com.l7tech.server.EntityManagerStub;
@@ -485,7 +486,7 @@ public class ServerGatewayManagementAssertionTest {
     }
 
     @Test
-    public void testGetCustomKeyValueStoreById() throws Exception {
+    public void testGetCustomKeyValueById() throws Exception {
         final String message =
             "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" \n" +
             "            xmlns:a=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" \n" +
@@ -497,7 +498,7 @@ public class ServerGatewayManagementAssertionTest {
             "      <a:Address s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</a:Address> \n" +
             "    </a:ReplyTo> \n" +
             "    <a:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Get</a:Action> \n" +
-            "    <w:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/customKeyValueStores</w:ResourceURI> \n" +
+            "    <w:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/customKeyValues</w:ResourceURI> \n" +
             "    <w:SelectorSet>\n" +
             "      <w:Selector Name=\"id\">"+new Goid(0,1).toHexString()+"</w:Selector> \n" +
             "    </w:SelectorSet>\n" +
@@ -508,16 +509,18 @@ public class ServerGatewayManagementAssertionTest {
 
         final Document result = processRequest("http://schemas.xmlsoap.org/ws/2004/09/transfer/Get", message);
         final Element soapBody = SoapUtil.getBodyElement(result);
-        final Element customKeyValueElm = XmlUtil.findExactlyOneChildElementByName(soapBody, NS_GATEWAY_MANAGEMENT, "CustomKeyValueStore");
+        final Element customKeyValueElm = XmlUtil.findExactlyOneChildElementByName(soapBody, NS_GATEWAY_MANAGEMENT, "CustomKeyValue");
+        final Element storeNameElm = XmlUtil.findExactlyOneChildElementByName(customKeyValueElm, NS_GATEWAY_MANAGEMENT, "StoreName");
         final Element keyElm = XmlUtil.findExactlyOneChildElementByName(customKeyValueElm, NS_GATEWAY_MANAGEMENT, "Key");
         final Element valueElm = XmlUtil.findExactlyOneChildElementByName(customKeyValueElm, NS_GATEWAY_MANAGEMENT, "Value");
 
+        assertEquals(KeyValueStoreServices.INTERNAL_TRANSACTIONAL_KEY_VALUE_STORE_NAME, DomUtils.getTextValue(storeNameElm));
         assertEquals("key.prefix.key1", DomUtils.getTextValue(keyElm));
         assertEquals("PHhtbD5UZXN0IHZhbHVlPC94bWw+", DomUtils.getTextValue(valueElm));
     }
 
     @Test
-    public void testGetCustomKeyValueStoreByKey() throws Exception {
+    public void testGetCustomKeyValueByKey() throws Exception {
         final String message =
             "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" \n" +
             "            xmlns:a=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" \n" +
@@ -529,7 +532,7 @@ public class ServerGatewayManagementAssertionTest {
             "      <a:Address s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</a:Address> \n" +
             "    </a:ReplyTo> \n" +
             "    <a:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Get</a:Action> \n" +
-            "    <w:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/customKeyValueStores</w:ResourceURI> \n" +
+            "    <w:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/customKeyValues</w:ResourceURI> \n" +
             "    <w:SelectorSet>\n" +
             "      <w:Selector Name=\"name\">key.prefix.key1</w:Selector> \n" +
             "    </w:SelectorSet>\n" +
@@ -540,10 +543,12 @@ public class ServerGatewayManagementAssertionTest {
 
         final Document result = processRequest("http://schemas.xmlsoap.org/ws/2004/09/transfer/Get", message);
         final Element soapBody = SoapUtil.getBodyElement(result);
-        final Element customKeyValueElm = XmlUtil.findExactlyOneChildElementByName(soapBody, NS_GATEWAY_MANAGEMENT, "CustomKeyValueStore");
+        final Element customKeyValueElm = XmlUtil.findExactlyOneChildElementByName(soapBody, NS_GATEWAY_MANAGEMENT, "CustomKeyValue");
+        final Element storeNameElm = XmlUtil.findExactlyOneChildElementByName(customKeyValueElm, NS_GATEWAY_MANAGEMENT, "StoreName");
         final Element keyElm = XmlUtil.findExactlyOneChildElementByName(customKeyValueElm, NS_GATEWAY_MANAGEMENT, "Key");
         final Element valueElm = XmlUtil.findExactlyOneChildElementByName(customKeyValueElm, NS_GATEWAY_MANAGEMENT, "Value");
 
+        assertEquals(KeyValueStoreServices.INTERNAL_TRANSACTIONAL_KEY_VALUE_STORE_NAME, DomUtils.getTextValue(storeNameElm));
         assertEquals("key.prefix.key1", DomUtils.getTextValue(keyElm));
         assertEquals("PHhtbD5UZXN0IHZhbHVlPC94bWw+", DomUtils.getTextValue(valueElm));
     }
@@ -1110,13 +1115,14 @@ public class ServerGatewayManagementAssertionTest {
     }
 
     @Test
-    public void testCreateCustomKeyValueStore() throws Exception {
-        String resourceUri = "http://ns.l7tech.com/2010/04/gateway-management/customKeyValueStores";
+    public void testCreateCustomKeyValue() throws Exception {
+        String resourceUri = "http://ns.l7tech.com/2010/04/gateway-management/customKeyValues";
         String payload =
-            "<l7:CustomKeyValueStore xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
+            "<l7:CustomKeyValue xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
+            "    <l7:StoreName>" + KeyValueStoreServices.INTERNAL_TRANSACTIONAL_KEY_VALUE_STORE_NAME + "</l7:StoreName>\n" +
             "    <l7:Key>key.prefix.key2</l7:Key>\n" +
             "    <l7:Value>PHhtbD5UZXN0IHZhbHVlPC94bWw+</l7:Value>\n" +
-            "</l7:CustomKeyValueStore>";
+            "</l7:CustomKeyValue>";
 
         String expectedId = new Goid(0,2).toString();
         doCreate(resourceUri, payload, expectedId);
@@ -1731,7 +1737,7 @@ public class ServerGatewayManagementAssertionTest {
     }
 
     @Test
-    public void testPutCustomKeyValueStore() throws Exception {
+    public void testPutCustomKeyValue() throws Exception {
         final String message =
             "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" \n" +
             "            xmlns:a=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" \n" +
@@ -1743,17 +1749,18 @@ public class ServerGatewayManagementAssertionTest {
             "      <a:Address s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</a:Address> \n" +
             "    </a:ReplyTo> \n" +
             "    <a:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Put</a:Action> \n" +
-            "    <w:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/customKeyValueStores</w:ResourceURI> \n" +
+            "    <w:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/customKeyValues</w:ResourceURI> \n" +
             "    <w:SelectorSet>\n" +
             "      <w:Selector Name=\"id\">"+new Goid(0,1).toHexString()+"</w:Selector> \n" +
             "    </w:SelectorSet>\n" +
             "    <w:OperationTimeout>PT60.000S</w:OperationTimeout>\n" +
             "  </s:Header>\n" +
             "  <s:Body> \n" +
-            "    <l7:CustomKeyValueStore xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
+            "    <l7:CustomKeyValue xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
+            "      <l7:StoreName>" + KeyValueStoreServices.INTERNAL_TRANSACTIONAL_KEY_VALUE_STORE_NAME + "</l7:StoreName>\n" +
             "      <l7:Key>key.prefix.key1</l7:Key>\n" +
             "      <l7:Value>PHhtbD5UZXN0IHZhbHVlIC0gVXBkYXRlZDwveG1sPg==</l7:Value>\n" +
-            "    </l7:CustomKeyValueStore>\n" +
+            "    </l7:CustomKeyValue>\n" +
             "  </s:Body>\n" +
             "</s:Envelope>";
 
@@ -1761,10 +1768,12 @@ public class ServerGatewayManagementAssertionTest {
             @Override
             public void call( final Document result ) throws Exception {
                 final Element soapBody = SoapUtil.getBodyElement(result);
-                final Element customKeyValueElm = XmlUtil.findExactlyOneChildElementByName(soapBody, NS_GATEWAY_MANAGEMENT, "CustomKeyValueStore");
+                final Element customKeyValueElm = XmlUtil.findExactlyOneChildElementByName(soapBody, NS_GATEWAY_MANAGEMENT, "CustomKeyValue");
+                final Element storeNameElm = XmlUtil.findExactlyOneChildElementByName(customKeyValueElm, NS_GATEWAY_MANAGEMENT, "StoreName");
                 final Element keyElm = XmlUtil.findExactlyOneChildElementByName(customKeyValueElm, NS_GATEWAY_MANAGEMENT, "Key");
                 final Element valueElm = XmlUtil.findExactlyOneChildElementByName(customKeyValueElm, NS_GATEWAY_MANAGEMENT, "Value");
 
+                assertEquals(KeyValueStoreServices.INTERNAL_TRANSACTIONAL_KEY_VALUE_STORE_NAME, DomUtils.getTextValue(storeNameElm));
                 assertEquals("key.prefix.key1", DomUtils.getTextValue(keyElm));
                 assertEquals("PHhtbD5UZXN0IHZhbHVlIC0gVXBkYXRlZDwveG1sPg==", DomUtils.getTextValue(valueElm));
             }
@@ -1799,7 +1808,7 @@ public class ServerGatewayManagementAssertionTest {
     }
 
     @Test
-    public void testDeleteCustomKeyValueStore() throws Exception {
+    public void testDeleteCustomKeyValue() throws Exception {
         final String message =
             "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" \n" +
             "            xmlns:a=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" \n" +
@@ -1811,7 +1820,7 @@ public class ServerGatewayManagementAssertionTest {
             "      <a:Address s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</a:Address> \n" +
             "    </a:ReplyTo> \n" +
             "    <a:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Delete</a:Action> \n" +
-            "    <w:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/customKeyValueStores</w:ResourceURI> \n" +
+            "    <w:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/customKeyValues</w:ResourceURI> \n" +
             "    <w:SelectorSet>\n" +
             "      <w:Selector Name=\"id\">"+new Goid(0,1).toHexString()+"</w:Selector> \n" +
             "    </w:SelectorSet>\n" +
@@ -2663,7 +2672,7 @@ public class ServerGatewayManagementAssertionTest {
         "http://ns.l7tech.com/2010/04/gateway-management/storedPasswords",
         "http://ns.l7tech.com/2010/04/gateway-management/trustedCertificates",
         "http://ns.l7tech.com/2010/04/gateway-management/encapsulatedAssertions",
-        "http://ns.l7tech.com/2010/04/gateway-management/customKeyValueStores"
+        "http://ns.l7tech.com/2010/04/gateway-management/customKeyValues"
     };
 
     @Before
@@ -2743,7 +2752,7 @@ public class ServerGatewayManagementAssertionTest {
         beanFactory.addBean("genericEntityManagerWithData", new GenericEntityManagerStub(genericEntity));
 
         beanFactory.addBean("customKeyValueStoreManager", new CustomKeyValueStoreManagerStub(
-            customKeyValueStore(new Goid(0,1L), "key.prefix.key1", "<xml>Test value</xml>".getBytes("UTF-8"))
+            customKeyValue(new Goid(0,1L), "key.prefix.key1", "<xml>Test value</xml>".getBytes("UTF-8"))
         ) );
 
         final ClassLoader systemClassLoader = ClassLoader.getSystemClassLoader();
@@ -2931,9 +2940,9 @@ public class ServerGatewayManagementAssertionTest {
         return securePassword;
     }
 
-    private static CustomKeyValueStore customKeyValueStore(final Goid goid,
-                                                           final String key,
-                                                           final byte[] value) {
+    private static CustomKeyValueStore customKeyValue(final Goid goid,
+                                                      final String key,
+                                                      final byte[] value) {
         final CustomKeyValueStore customKeyValueStore = new CustomKeyValueStore();
         customKeyValueStore.setGoid(goid);
         customKeyValueStore.setName(key);

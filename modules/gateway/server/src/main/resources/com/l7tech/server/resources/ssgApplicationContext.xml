@@ -1682,7 +1682,6 @@
                 <ref bean="ssgConnectorManager"/>
                 <ref bean="ssgFirewallRuleManager"/>
                 <ref bean="encapsulatedAssertionConfigManager"/>
-                <ref bean="customKeyValueStoreManager"/>
                 <ref bean="jmsConnectionManager"/>
                 <ref bean="jmsEndpointManager"/>
                 <ref bean="ssgActiveConnectorManager"/>

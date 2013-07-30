@@ -4,6 +4,7 @@ import com.l7tech.gateway.api.CustomKeyValueStoreMO;
 import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.policy.CustomKeyValueStore;
+import com.l7tech.policy.assertion.ext.store.KeyValueStoreServices;
 import com.l7tech.server.policy.CustomKeyValueStoreManager;
 import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.security.rbac.SecurityFilter;
@@ -27,10 +28,13 @@ public class CustomKeyValueStoreResourceFactory extends GoidEntityManagerResourc
     @Override
     protected CustomKeyValueStore fromResource(Object resource) throws InvalidResourceException {
         if (!(resource instanceof CustomKeyValueStoreMO )) {
-            throw new InvalidResourceException(InvalidResourceException.ExceptionType.UNEXPECTED_TYPE, "expected custom key value store");
+            throw new InvalidResourceException(InvalidResourceException.ExceptionType.UNEXPECTED_TYPE, "expected custom key value");
         }
 
         final CustomKeyValueStoreMO customKeyValueStoreResource = (CustomKeyValueStoreMO) resource;
+        if (!KeyValueStoreServices.INTERNAL_TRANSACTIONAL_KEY_VALUE_STORE_NAME.equals(customKeyValueStoreResource.getStoreName())) {
+            throw new InvalidResourceException(InvalidResourceException.ExceptionType.INVALID_VALUES, "invalid store name");
+        }
 
         final CustomKeyValueStore customKeyValueStoreEntity = new CustomKeyValueStore();
         customKeyValueStoreEntity.setName(customKeyValueStoreResource.getKey());
@@ -43,6 +47,7 @@ public class CustomKeyValueStoreResourceFactory extends GoidEntityManagerResourc
     protected CustomKeyValueStoreMO asResource(CustomKeyValueStore entity) {
         final CustomKeyValueStoreMO customKeyValueStoreResource = ManagedObjectFactory.createCustomKeyValueStore();
 
+        customKeyValueStoreResource.setStoreName(KeyValueStoreServices.INTERNAL_TRANSACTIONAL_KEY_VALUE_STORE_NAME);
         customKeyValueStoreResource.setKey(entity.getName());
         customKeyValueStoreResource.setValue(entity.getValue());
 
