@@ -142,9 +142,8 @@ public class SiteMinderAgentConfig implements SiteMinderConfig {
     }
 
     @Override
-    public boolean isUdpateCookie() {
-        //TODO
-        return true;
+    public boolean isUpdateSSOToken() {
+        return config.isUpdateSSOToken();
     }
 
     @Override

@@ -50,7 +50,7 @@ public class SiteMinderLowLevelAgent {
             agentName = agentConfig.getAgentName();
             agentIP = agentConfig.getAddress();
             agentCheckSessionIP = agentConfig.isIpcheck();
-            updateCookie = agentConfig.isUdpateCookie();
+            updateCookie = agentConfig.isUpdateSSOToken();
 
             InitDef initDef = null;
             agentApi = new AgentAPI();

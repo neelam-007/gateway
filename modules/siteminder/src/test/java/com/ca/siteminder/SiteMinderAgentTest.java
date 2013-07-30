@@ -68,7 +68,7 @@ public class SiteMinderAgentTest {
            }
 
            @Override
-           public boolean isUdpateCookie() {
+           public boolean isUpdateSSOToken() {
                return true;
            }
 

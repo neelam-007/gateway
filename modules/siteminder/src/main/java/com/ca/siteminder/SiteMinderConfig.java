@@ -36,7 +36,7 @@ public interface SiteMinderConfig {
 
     public int getClusterThreshold();
 
-    public boolean isUdpateCookie();
+    public boolean isUpdateSSOToken();
 
     public List<ServerDef> getServers();
 
