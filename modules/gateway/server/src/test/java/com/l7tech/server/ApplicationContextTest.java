@@ -76,8 +76,7 @@ public class ApplicationContextTest  {
         EntityType.ESM_MIGRATION_RECORD,
         EntityType.ESM_NOTIFICATION_RULE,
         EntityType.ESM_LOG,
-        EntityType.VALUE_REFERENCE,
-        EntityType.SITEMINDER_CONFIGURATION);
+        EntityType.VALUE_REFERENCE);
     private static final Set<String> IGNORED_APPLICATION_LISTENER_BEANS = set( "adminAuditListener", "applicationEventProxy", "cryptoInit", "gatewayState", "keystoreMutatorSwitch", "messageProcessingAuditListener", "systemAuditListener", "jdbcQueryingManager" );
 
     /**
