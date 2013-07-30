@@ -468,6 +468,7 @@ public class ManagedObjectFactory {
     public static Class[] getAllManagedObjectClasses(){
         return new Class[]{
                 ClusterPropertyMO.class,
+                CustomKeyValueStoreMO.class,
                 EncapsulatedAssertionMO.class,
                 FolderMO.class,
                 GenericEntityMO.class,
