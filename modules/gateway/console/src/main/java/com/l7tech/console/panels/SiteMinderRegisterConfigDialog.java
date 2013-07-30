@@ -1,10 +1,15 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.console.util.TopComponents;
+import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gateway.common.siteminder.SiteMinderHost;
 import com.l7tech.console.util.PasswordGuiUtils;
 import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.siteminder.SiteMinderAdmin;
 import com.l7tech.gui.util.*;
+import com.l7tech.gui.widgets.TextListCellRenderer;
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.util.MutablePair;
 import sun.security.util.Resources;
 
@@ -36,9 +41,6 @@ public class SiteMinderRegisterConfigDialog extends JDialog {
     private static final ResourceBundle resources = Resources.getBundle("com.l7tech.console.panels.resources.SiteMinderRegisterConfigDialog");
 
     private JTextField addressTextField;
-    private JPasswordField passwordField;
-    private JCheckBox showPasswordCheckBox;
-    private JLabel plaintextPasswordWarningLabel;
     private JButton okButton;
     private JButton cancelButton;
     private JTextField hostnameTextField;
@@ -46,6 +48,8 @@ public class SiteMinderRegisterConfigDialog extends JDialog {
     private JTextField userNameTextField;
     private JComboBox fipsModeComboBox;
     private JPanel mainPanel;
+    private SecurePasswordComboBox securePasswordComboBox;
+    private JButton managePasswordsButton;
     private MutablePair<String, SiteMinderHost> property;
     public static Map<String, String> siteMinderHostParams = Collections.synchronizedMap(new WeakHashMap<String, String>());
     private boolean confirmed;
@@ -75,7 +79,27 @@ public class SiteMinderRegisterConfigDialog extends JDialog {
         hostnameTextField.getDocument().addDocumentListener(docListener);
         hostConfigurationTextField.getDocument().addDocumentListener(docListener);
         userNameTextField.getDocument().addDocumentListener(docListener);
-        passwordField.getDocument().addDocumentListener(docListener);
+
+        securePasswordComboBox.setRenderer(TextListCellRenderer.<SecurePasswordComboBox>basicComboBoxRenderer());
+        ((JTextField)securePasswordComboBox.getEditor().getEditorComponent()).getDocument().addDocumentListener(docListener);
+
+        managePasswordsButton.addActionListener(new ActionListener(){
+            @Override
+            public void actionPerformed(ActionEvent e) {
+
+                final SecurePasswordManagerWindow dialog = new SecurePasswordManagerWindow(TopComponents.getInstance().getTopParent());
+                dialog.pack();
+                Utilities.centerOnScreen(dialog);
+                DialogDisplayer.display(dialog, new Runnable() {
+                    @Override
+                    public void run() {
+                        securePasswordComboBox.reloadPasswordList();
+                        enableOrDisableOkButton();
+                        DialogDisplayer.pack(SiteMinderRegisterConfigDialog.this);
+                    }
+                });
+            }
+        });
 
         ((JTextField)fipsModeComboBox.getEditor().getEditorComponent()).getDocument().addDocumentListener(docListener);
 
@@ -111,8 +135,6 @@ public class SiteMinderRegisterConfigDialog extends JDialog {
             }
         });
 
-        PasswordGuiUtils.configureOptionalSecurePasswordField(passwordField, showPasswordCheckBox, plaintextPasswordWarningLabel);
-
         modelToView();
 
         enableOrDisableOkButton();
@@ -147,6 +169,17 @@ public class SiteMinderRegisterConfigDialog extends JDialog {
                     break;
             }
         }
+
+        if (property.left.equals("Init SiteMinder Host")){
+            addressTextField.setText(property.right.getPolicyServer());
+            hostnameTextField.setText(property.right.getHostname());
+            fipsModeComboBox.setSelectedIndex(property.right.getFipsMode());
+            hostConfigurationTextField.setText(property.right.getHostConfigObject());
+            userNameTextField.setText(property.right.getUserName());
+            if (property.right.getPasswordOid() != null){
+                securePasswordComboBox.setSelectedSecurePassword(property.right.getPasswordOid());
+            }
+        }
     }
 
     private void register(){
@@ -156,7 +189,7 @@ public class SiteMinderRegisterConfigDialog extends JDialog {
 
         String address = addressTextField.getText().trim();
         String userName = userNameTextField.getText().trim();
-        String password = new String(passwordField.getPassword());
+        long password = securePasswordComboBox.getSelectedSecurePassword().getOid();
         String hostName = hostnameTextField.getText().trim();
         String hostConfiguration = hostConfigurationTextField.getText().trim();
         Integer fipsMode = null;
@@ -198,6 +231,8 @@ public class SiteMinderRegisterConfigDialog extends JDialog {
                 throw new IllegalStateException("An additional property object must be initialized first.");
             }
 
+            siteMinderHost.setUserName(userName);
+            siteMinderHost.setPasswordOid(password);
             property.left = "SiteMinder Host Configuration";
             property.right = siteMinderHost;
 
@@ -221,7 +256,7 @@ public class SiteMinderRegisterConfigDialog extends JDialog {
         boolean hostNameOK = isNonEmptyRequiredTextField(hostnameTextField.getText().trim());
         boolean hostConfigurationOK = isNonEmptyRequiredTextField(hostConfigurationTextField.getText().trim());
         boolean userNameOK = isNonEmptyRequiredTextField(userNameTextField.getText().trim());
-        boolean passwordOK = isNonEmptyRequiredTextField(new String(passwordField.getPassword()));
+        boolean passwordOK = securePasswordComboBox.getSelectedItem() != null;
 
         boolean fipsModeOK = fipsModeComboBox.getSelectedIndex() <= 0  ?  false : true;
 

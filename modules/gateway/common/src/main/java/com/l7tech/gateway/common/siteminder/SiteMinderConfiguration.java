@@ -1,6 +1,7 @@
 package com.l7tech.gateway.common.siteminder;
 
 import com.l7tech.objectmodel.imp.ZoneableNamedGoidEntityImp;
+import com.l7tech.search.Dependency;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
 import org.hibernate.annotations.Proxy;
@@ -35,6 +36,10 @@ public class SiteMinderConfiguration extends ZoneableNamedGoidEntityImp implemen
     private int fipsmode;
     private boolean noncluster_failover;
     private int cluster_threshold;
+    private String hostConfiguration;
+    private String userName;
+    private Long passwordOid;
+    private boolean updateSSOToken;
     private Map<String, String> properties;
 
     public SiteMinderConfiguration() {
@@ -48,6 +53,10 @@ public class SiteMinderConfiguration extends ZoneableNamedGoidEntityImp implemen
         noncluster_failover = false;
         cluster_threshold = 50;
         enabled = true;
+        hostConfiguration = "";
+        userName = "";
+        passwordOid = 0L;
+        updateSSOToken = false;
     }
 
     @Size(min=1,max=128)
@@ -179,6 +188,51 @@ public class SiteMinderConfiguration extends ZoneableNamedGoidEntityImp implemen
         this.cluster_threshold = cluster_threshold;
     }
 
+    @Size(min=1,max=256)
+    @Column(name="host_configuration")
+    public String getHostConfiguration() {
+        return hostConfiguration;
+    }
+
+    public void setHostConfiguration(String hostConfiguration) {
+        this.hostConfiguration = hostConfiguration;
+    }
+
+    @Column(name="update_sso_token")
+    public boolean isUpdateSSOToken() {
+        return updateSSOToken;
+    }
+
+    public void setUpdateSSOToken(boolean updateSSOToken) {
+        this.updateSSOToken = updateSSOToken;
+    }
+
+    @Size(min=1,max=256)
+    @Column(name="user_name")
+    public String getUserName() {
+        return userName;
+    }
+
+    public void setUserName(String userName) {
+        this.userName = userName;
+    }
+
+    /**
+     * Get the identifier of the related secure password.
+     *
+     * @return The identifier or null.
+     */
+    @Column(name="password_oid")
+    @Dependency(type = Dependency.DependencyType.SECURE_PASSWORD, methodReturnType = Dependency.MethodReturnType.OID)
+    public Long getPasswordOid() {
+        return passwordOid;
+    }
+
+    public void setPasswordOid( final Long passwordOid ) {
+        checkLocked();
+        this.passwordOid = passwordOid;
+    }
+
     /**
      * Get the cluster settings configuration for this SiteMinder configuration
      * @return a Set containing the cluster settings.  May be empty but never null.
@@ -230,6 +284,10 @@ public class SiteMinderConfiguration extends ZoneableNamedGoidEntityImp implemen
         this.setFipsmode(other.getFipsmode());
         this.setNoncluster_failover(other.isNoncluster_failover());
         this.setCluster_threshold((other.getCluster_threshold()));
+        this.setUpdateSSOToken(other.isUpdateSSOToken());
+        this.setHostConfiguration(other.getHostConfiguration());
+        this.setUserName(other.getUserName());
+        this.setPasswordOid(other.getPasswordOid());
         this.setSecurityZone(other.getSecurityZone());
         this.setProperties(other.getProperties());
     }

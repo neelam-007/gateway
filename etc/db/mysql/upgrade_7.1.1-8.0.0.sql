@@ -96,12 +96,17 @@ CREATE TABLE siteminder_configuration (
   address varchar(128) NOT NULL,
   secret varchar(4096) NOT NULL,
   ipcheck boolean DEFAULT false NOT NULL,
+  update_sso_token boolean DEFAULT false NOT NULL,
   enabled tinyint(1) NOT NULL DEFAULT 1,
   hostname varchar(255) NOT NULL,
   fipsmode integer NOT NULL DEFAULT 0,
+  host_configuration varchar(256) DEFAULT NULL,
+  user_name varchar(256) DEFAULT NULL,
+  password_oid bigint(20) DEFAULT NULL, 
   noncluster_failover boolean DEFAULT false NOT NULL,
   cluster_threshold integer DEFAULT 50,
   security_zone_goid binary(16),
+  FOREIGN KEY (password_oid) REFERENCES secure_password (objectid),
   PRIMARY KEY (goid),
   CONSTRAINT siteminder_configuration_security_zone FOREIGN KEY (security_zone_goid) REFERENCES security_zone (goid) ON DELETE SET NULL,
   INDEX i_name (name),
@@ -117,11 +122,12 @@ CREATE TABLE siteminder_configuration_property (
 
 
 -- create new RBAC role for SiteMinder Configuration --
-INSERT INTO rbac_role VALUES (-1500,0,'Manage SiteMinder Configuration', null,null,null,null, 'Users assigned to the {0} role have the ability to read, create, update and delete SiteMinder configuration.',0);
+INSERT INTO rbac_role (objectid, version, name, tag, entity_type, entity_oid, entity_goid, description, user_created) VALUES (-1500,0,'Manage SiteMinder Configuration', null, 'SITEMINDER_CONFIGURATION', null, null, 'Users assigned to the {0} role have the ability to read, create, update and delete SiteMinder configuration.',0);
 INSERT INTO rbac_permission VALUES (-1501,0,-1500,'READ',NULL,'SITEMINDER_CONFIGURATION');
 INSERT INTO rbac_permission VALUES (-1502,0,-1500,'CREATE',NULL,'SITEMINDER_CONFIGURATION');
 INSERT INTO rbac_permission VALUES (-1503,0,-1500,'UPDATE',NULL,'SITEMINDER_CONFIGURATION');
 INSERT INTO rbac_permission VALUES (-1504,0,-1500,'DELETE',NULL,'SITEMINDER_CONFIGURATION');
+
 
 alter table rbac_role add column entity_goid BINARY(16);
 CREATE INDEX i_rbacrole_egoid ON rbac_role (entity_goid);

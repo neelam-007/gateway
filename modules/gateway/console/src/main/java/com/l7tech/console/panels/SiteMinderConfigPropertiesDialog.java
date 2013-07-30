@@ -24,7 +24,6 @@ import javax.swing.table.AbstractTableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -82,6 +81,8 @@ public class SiteMinderConfigPropertiesDialog extends JDialog {
     private final Map<String, String> clusterSettingsMap = new TreeMap<String, String>();
     private SecurityZoneWidget zoneControl;
     private JButton registerButton;
+    private JCheckBox updateSSOTokenCheckBox;
+    private JPasswordField secretPasswordField;
 
     private static class FipsModeType{
         private static final Map<Integer, FipsModeType> fipsTypes = new ConcurrentHashMap<Integer, FipsModeType>();
@@ -132,7 +133,8 @@ public class SiteMinderConfigPropertiesDialog extends JDialog {
 
         configurationNameTextField.setDocument(new MaxLengthDocument(128));
         agentNameTextField.setDocument(new MaxLengthDocument(256));
-        secretTextArea.setDocument(new MaxLengthDocument(4096));
+        //secretTextArea.setDocument(new MaxLengthDocument(4096));
+        secretPasswordField.setDocument(new MaxLengthDocument(4096));
         addressTextField.setDocument(new MaxLengthDocument(128));
         hostNameTextField.setDocument(new MaxLengthDocument(255));
         ((JTextField)fipsModeComboBox.getEditor().getEditorComponent()).setDocument(new MaxLengthDocument(255));
@@ -154,7 +156,8 @@ public class SiteMinderConfigPropertiesDialog extends JDialog {
         });
         configurationNameTextField.getDocument().addDocumentListener(docListener);
         agentNameTextField.getDocument().addDocumentListener(docListener);
-        secretTextArea.getDocument().addDocumentListener(docListener);
+        //secretTextArea.getDocument().addDocumentListener(docListener);
+        secretPasswordField.getDocument().addDocumentListener(docListener);
         addressTextField.getDocument().addDocumentListener(docListener);
         hostNameTextField.getDocument().addDocumentListener(docListener);
 
@@ -173,7 +176,8 @@ public class SiteMinderConfigPropertiesDialog extends JDialog {
         validator.constrainTextFieldToBeNonEmpty(resources.getString("label.agent.name"), agentNameTextField, null);
         validator.constrainTextFieldToBeNonEmpty(resources.getString("label.agent.address"), addressTextField, null);
         validator.constrainTextFieldToBeNonEmpty(resources.getString("label.agent.hostname"), hostNameTextField, null);
-        validator.constrainTextFieldToBeNonEmpty(resources.getString("label.agent.secret"), secretTextArea, null);
+        //validator.constrainTextFieldToBeNonEmpty(resources.getString("label.agent.secret"), secretTextArea, null);
+        validator.constrainTextFieldToBeNonEmpty(resources.getString("label.agent.secret"), secretPasswordField, null);
 
         addButton.addActionListener(new ActionListener() {
             @Override
@@ -229,36 +233,42 @@ public class SiteMinderConfigPropertiesDialog extends JDialog {
     private void modelToView(){
         if (siteMinderHostMap != null && siteMinderHostMap.size() != 0 ){
             SiteMinderHost siteMinderHost = siteMinderHostMap.get("SiteMinder Host Configuration");
+            if (siteMinderHost != null)  {
+                configuration.setHostname(siteMinderHost.getHostname());
+                configuration.setSecret(siteMinderHost.getSharedSecret());
+                configuration.setAddress("127.0.0.1");
+                configuration.setFipsmode(siteMinderHost.getFipsMode());
+                configuration.setPasswordOid(siteMinderHost.getPasswordOid());
+                configuration.setHostConfiguration(siteMinderHost.getHostConfigObject());
+                configuration.setUserName(siteMinderHost.getUserName());
 
-            configuration.setHostname(siteMinderHost.getHostname());
-            configuration.setSecret(siteMinderHost.getSharedSecret());
-            configuration.setAddress("127.0.0.1");
-            configuration.setFipsmode(siteMinderHost.getFipsMode());
+                Map<String, String> properties = new HashMap<String, String>();
 
-            Map<String, String> properties = new HashMap<String, String>();
+                String [] clusterProperties = siteMinderHost.getPolicyServer().split(",");
 
-            String [] clusterProperties = siteMinderHost.getPolicyServer().split(",");
+                if (clusterProperties.length == 4){
 
-            if (clusterProperties.length == 4){
+                    properties.put(resources.getString("property.cluster.server.address"), clusterProperties[0]);
+                    properties.put(resources.getString("property.cluster.server.accounting.port"), clusterProperties[1]);
+                    properties.put(resources.getString("property.cluster.server.authentication.port"), clusterProperties[2]);
+                    properties.put(resources.getString("property.cluster.server.authorization.port"), clusterProperties[3]);
+                    properties.put(resources.getString("property.cluster.server.connection.min"), String.valueOf(CLUSTER_SERVER_CONN_MIN));
+                    properties.put(resources.getString("property.cluster.server.connection.max"), String.valueOf(CLUSTER_SERVER_CONN_MAX));
+                    properties.put(resources.getString("property.cluster.server.connection.step"), String.valueOf(CLUSTER_SERVER_CONN_STEP));
+                    properties.put(resources.getString("property.cluster.server.timeout"), String.valueOf(siteMinderHost.getRequestTimeout()));
 
-                properties.put(resources.getString("property.cluster.server.address"), clusterProperties[0]);
-                properties.put(resources.getString("property.cluster.server.accounting.port"), clusterProperties[1]);
-                properties.put(resources.getString("property.cluster.server.authentication.port"), clusterProperties[2]);
-                properties.put(resources.getString("property.cluster.server.authorization.port"), clusterProperties[3]);
-                properties.put(resources.getString("property.cluster.server.connection.min"), String.valueOf(CLUSTER_SERVER_CONN_MIN));
-                properties.put(resources.getString("property.cluster.server.connection.max"), String.valueOf(CLUSTER_SERVER_CONN_MAX));
-                properties.put(resources.getString("property.cluster.server.connection.step"), String.valueOf(CLUSTER_SERVER_CONN_STEP));
-                properties.put(resources.getString("property.cluster.server.timeout"), String.valueOf(siteMinderHost.getRequestTimeout()));
-
-                configuration.setProperties(properties);
+                    configuration.setProperties(properties);
+                }
             }
         }
 
         configurationNameTextField.setText(configuration.getName());
         agentNameTextField.setText(configuration.getAgent_name());
-        secretTextArea.setText(configuration.getSecret());
+        //secretTextArea.setText(configuration.getSecret());
+        secretPasswordField.setText(configuration.getSecret());
         addressTextField.setText(configuration.getAddress());
         IPCheckCheckBox.setSelected(configuration.isIpcheck());
+        updateSSOTokenCheckBox.setSelected(configuration.isUpdateSSOToken());
         hostNameTextField.setText(configuration.getHostname());
         switch (configuration.getFipsmode()){
             case 0:
@@ -362,9 +372,11 @@ public class SiteMinderConfigPropertiesDialog extends JDialog {
 
         configuration.setName(configurationNameTextField.getText().trim());
         configuration.setAgent_name(agentNameTextField.getText().trim());
-        configuration.setSecret(secretTextArea.getText().trim());
+        //configuration.setSecret(secretTextArea.getText().trim());
+        configuration.setSecret(new String(secretPasswordField.getPassword()));
         configuration.setAddress(addressTextField.getText().trim());
         configuration.setIpcheck(IPCheckCheckBox.isSelected());
+        configuration.setUpdateSSOToken(updateSSOTokenCheckBox.isSelected());
         configuration.setHostname(hostNameTextField.getText().trim());
         switch (fipsModeComboBox.getSelectedItem().toString()) {
             case UNSET_FIPS_MODE:
@@ -396,7 +408,13 @@ public class SiteMinderConfigPropertiesDialog extends JDialog {
     }
 
     private void doRegister(){
-        register(new MutablePair<String, SiteMinderHost>("", new SiteMinderHost()));
+
+        register(new MutablePair<String, SiteMinderHost>("Init SiteMinder Host", new SiteMinderHost(configuration.getHostname(),
+                                                                                                    clusterSettingsMap.get(resources.getString("property.cluster.server.address")),
+                                                                                                    configuration.getHostConfiguration(),
+                                                                                                    configuration.getFipsmode(),
+                                                                                                    configuration.getUserName(),
+                                                                                                    configuration.getPasswordOid())));
     }
 
     private void register(final MutablePair<String, SiteMinderHost> property) {

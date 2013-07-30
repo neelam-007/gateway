@@ -9,7 +9,6 @@ import java.util.Properties;
 
 public class SiteMinderHost implements Serializable {
 
-    public static final int FIPS140_UNSET = 0;
     public static final int FIPS140_COMPAT = 1;
     public static final int FIPS140_MIGRATE = 2;
     public static final int FIPS140_ONLY = 3;
@@ -30,16 +29,18 @@ public class SiteMinderHost implements Serializable {
     private Long sharedSecretTime;
     private Integer fipsMode;
     private String userName;
+    private Long passwordOid;
 
-    public SiteMinderHost(){
-        this.hostname = "";
-        this.hostConfigObject = "";
-        this.policyServer = "";
+    public SiteMinderHost(String hostName, String policyServer, String hostConfigObject, Integer fipsMode, String userName, Long passwordOid){
+        this.hostname = hostName;
+        this.hostConfigObject = hostConfigObject;
+        this.policyServer = policyServer;
         this.requestTimeout = 0;
         this.sharedSecret = "";
         this.sharedSecretTime = 0L;
-        this.fipsMode = 0;
-        this.userName = "";
+        this.fipsMode = fipsMode;
+        this.userName = userName;
+        this.passwordOid = passwordOid;
     }
 
 
@@ -123,7 +124,20 @@ public class SiteMinderHost implements Serializable {
         return fipsMode;
     }
 
+    public void setUserName(String userName){
+        this.userName = userName;
+    }
+
+
     public String getUserName() {
         return userName;
+    }
+
+    public void setPasswordOid(Long passwordOid){
+        this.passwordOid = passwordOid;
+    }
+
+    public Long getPasswordOid() {
+        return passwordOid;
     }
 }

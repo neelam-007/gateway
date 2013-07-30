@@ -3,6 +3,7 @@ package com.l7tech.server.siteminder;
 import com.ca.siteminder.sdk.agentapi.SmAgentApiException;
 import com.ca.siteminder.util.SiteMinderUtil;
 import com.l7tech.gateway.common.AsyncAdminMethods;
+import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.siteminder.SiteMinderAdmin;
 import com.l7tech.gateway.common.siteminder.SiteMinderConfiguration;
 import com.l7tech.gateway.common.siteminder.SiteMinderHost;
@@ -11,10 +12,13 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.server.admin.AsyncAdminMethodsImpl;
+import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.util.Background;
 import com.l7tech.util.ExceptionUtils;
 
+import javax.inject.Inject;
 import java.io.IOException;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.TimerTask;
@@ -35,6 +39,9 @@ import static com.l7tech.server.event.AdminInfo.find;
 public class SiteMinderAdminImpl  extends AsyncAdminMethodsImpl implements SiteMinderAdmin {
 
     private SiteMinderConfigurationManager siteMinderConfigurationManager;
+
+    @Inject
+    SecurePasswordManager securePasswordManager;
 
     public SiteMinderAdminImpl (SiteMinderConfigurationManager siteMinderConfigurationManager) {
         this.siteMinderConfigurationManager = siteMinderConfigurationManager;
@@ -111,11 +118,11 @@ public class SiteMinderAdminImpl  extends AsyncAdminMethodsImpl implements SiteM
      */
     @Override
     public AsyncAdminMethods.JobId<SiteMinderHost> registerSiteMinderConfiguration(final String address,
-                                                                           final String username,
-                                                                           final String password,
-                                                                           final String hostname,
-                                                                           final String hostconfig,
-                                                                           final Integer fipsMode){
+                                                                                   final String username,
+                                                                                   final Long password,
+                                                                                   final String hostname,
+                                                                                   final String hostconfig,
+                                                                                   final Integer fipsMode){
 
         final FutureTask<SiteMinderHost> registerTask = new FutureTask<SiteMinderHost>(find(false).wrapCallable(new Callable<SiteMinderHost>() {
             @Override
@@ -151,7 +158,7 @@ public class SiteMinderAdminImpl  extends AsyncAdminMethodsImpl implements SiteM
      * Register SiteMinder Configuration
      * @param address: Policy Server Address
      * @param username: Username to login to PolicyServer
-     * @param password: Password to login to PolicyServer
+     * @param passwordOid: Password to login to PolicyServer
      * @param hostname: Registered hostname
      * @param hostconfig: Host's configuration
      * @param fipsMode: FIPS mode
@@ -159,11 +166,24 @@ public class SiteMinderAdminImpl  extends AsyncAdminMethodsImpl implements SiteM
      */
     public SiteMinderHost registerSiteMinderHost(String address,
                                                  String username,
-                                                 String password,
+                                                 Long passwordOid,
                                                  String hostname,
                                                  String hostconfig,
                                                  Integer fipsMode) throws SmAgentApiException, IOException{
 
+        String password = "";
+        try{
+            SecurePassword securePassword = securePasswordManager.findByPrimaryKey(passwordOid);
+            password = new String(securePasswordManager.decryptPassword(securePassword.getEncodedPassword()));
+        } catch (FindException e){
+            final String msg = "Unable to find password oid entity.";
+            logger.log(Level.WARNING, msg + " " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            return null;
+        } catch (ParseException e) {
+            final String msg = "Parse exception during decrypting password.";
+            logger.log(Level.WARNING, msg + " " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            return null;
+        }
         return SiteMinderUtil.regHost(address, username, password, hostname, hostconfig, fipsMode);
     }
 }

@@ -83,7 +83,7 @@ public interface SiteMinderAdmin extends AsyncAdminMethods {
     @Secured (types = EntityType.SITEMINDER_CONFIGURATION, stereotype = MethodStereotype.FIND_ENTITIES)
     AsyncAdminMethods.JobId<SiteMinderHost> registerSiteMinderConfiguration(String address,
                                                                             String username,
-                                                                            String password,
+                                                                            Long password,
                                                                             String hostname,
                                                                             String hostconfig,
                                                                             Integer fipsMode);
