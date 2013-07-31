@@ -55,11 +55,11 @@ public abstract class AbstractCompositeLicenseManager implements SmartLifecycle,
     private static final String BUILD_VERSION_MINOR = BuildInfo.getProductVersionMinor();
 
     private final Logger logger;
-    private final Audit auditor;
     private final Lock updateLock = new ReentrantLock(); // Not synchronized because lost writes/stale reads are not important
     private final AtomicLong lastUpdate = new AtomicLong(-1L);
     private final RebuildScheduler rebuildScheduler = new RebuildScheduler();
     private final AtomicReference<CompositeLicense> compositeLicense = new AtomicReference<>(null);
+    private final AtomicReference<Audit> auditor = new AtomicReference<>(null);
 
     private volatile boolean running = false;
 
@@ -74,7 +74,6 @@ public abstract class AbstractCompositeLicenseManager implements SmartLifecycle,
 
     protected AbstractCompositeLicenseManager(final Logger logger) {
         this.logger = logger;
-        this.auditor = auditFactory.newInstance(this, logger);
     }
 
     @Override
@@ -352,7 +351,14 @@ public abstract class AbstractCompositeLicenseManager implements SmartLifecycle,
     }
 
     protected Audit getAudit() {
-        return auditor;
+        Audit audit = auditor.get();
+
+        if (null == audit) {
+            audit = auditFactory.newInstance(this, logger);
+            auditor.compareAndSet(null, audit);
+        }
+
+        return audit;
     }
 
     // --- Abstract methods --- //
