@@ -510,6 +510,7 @@ public final class RegistryImpl extends Registry
         emailListenerAdmin = null;
         emailAdmin = null;
         entityNameResolver = null;
+        siteMinderAdmin = null;
     }
 
 
