@@ -1,5 +1,6 @@
 package com.l7tech.server.siteminder;
 
+import com.ca.siteminder.SiteMinderApiClassException;
 import com.ca.siteminder.sdk.agentapi.SmAgentApiException;
 import com.ca.siteminder.util.SiteMinderUtil;
 import com.l7tech.gateway.common.AsyncAdminMethods;
@@ -152,6 +153,31 @@ public class SiteMinderAdminImpl  extends AsyncAdminMethodsImpl implements SiteM
         }, 0L);
 
         return registerJob(registerTask, SiteMinderHost.class);
+    }
+
+    @Override
+    public JobId<String> testSiteMinderConfiguration(final SiteMinderConfiguration siteMinderConfiguration) {
+        final FutureTask<String> registerTask = new FutureTask<String>(find(false).wrapCallable(new Callable<String>() {
+            @Override
+            public String call() throws Exception {
+
+                try{
+                    siteMinderConfigurationManager.validateSiteMinderConfiguration(siteMinderConfiguration);
+                } catch (SiteMinderApiClassException e){
+                    return ExceptionUtils.getMessage(e);
+                }
+                return "";
+            }
+        }));
+
+        Background.scheduleOneShot(new TimerTask() {
+            @Override
+            public void run() {
+                registerTask.run();
+            }
+        }, 0L);
+
+        return registerJob(registerTask, String.class);
     }
 
     /**

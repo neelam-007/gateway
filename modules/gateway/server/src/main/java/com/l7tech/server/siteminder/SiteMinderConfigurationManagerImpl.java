@@ -55,6 +55,11 @@ public class SiteMinderConfigurationManagerImpl
     }
 
     @Override
+    public void validateSiteMinderConfiguration(SiteMinderConfiguration config) throws SiteMinderApiClassException {
+        new SiteMinderLowLevelAgent(new SiteMinderAgentConfig(config));
+    }
+
+    @Override
     public void onApplicationEvent(ApplicationEvent event) {
         // if a SiteMinderConfiguration has been modified, remove it from the cache
         if (event instanceof GoidEntityInvalidationEvent) {
@@ -64,7 +69,6 @@ public class SiteMinderConfigurationManagerImpl
                 for (final Goid id : ids) {
                     try {
                         SiteMinderConfiguration c = findByPrimaryKey(id);
-                        //TODO may need to do some cleanup
                         cache.remove(c.getName());
                     } catch (FindException e) {
                     }

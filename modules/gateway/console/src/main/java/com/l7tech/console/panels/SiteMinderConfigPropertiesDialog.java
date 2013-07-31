@@ -24,10 +24,13 @@ import javax.swing.table.AbstractTableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.lang.reflect.InvocationTargetException;
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
+
+import static com.l7tech.console.util.AdminGuiUtils.doAsyncAdmin;
 
 /**
  * Created with IntelliJ IDEA.
@@ -58,6 +61,7 @@ public class SiteMinderConfigPropertiesDialog extends JDialog {
     public static final int FIPS140_ONLY = 3;
 
     private SiteMinderConfiguration configuration;
+
     private final Map<String, SiteMinderHost> siteMinderHostMap = new TreeMap<String, SiteMinderHost>();
     private PermissionFlags flags;
 
@@ -83,6 +87,7 @@ public class SiteMinderConfigPropertiesDialog extends JDialog {
     private JButton registerButton;
     private JCheckBox updateSSOTokenCheckBox;
     private JPasswordField secretPasswordField;
+    private JButton testButton;
 
     private static class FipsModeType{
         private static final Map<Integer, FipsModeType> fipsTypes = new ConcurrentHashMap<Integer, FipsModeType>();
@@ -209,6 +214,13 @@ public class SiteMinderConfigPropertiesDialog extends JDialog {
             }
         });
 
+        validator.attachToButton(testButton, new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                doTest();
+            }
+        });
+
         cancelButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -308,10 +320,26 @@ public class SiteMinderConfigPropertiesDialog extends JDialog {
                           clusterSettingsMap.containsKey(resources.getString("property.cluster.server.connection.max")) &&
                           clusterSettingsMap.containsKey(resources.getString("property.cluster.server.connection.step")) &&
                           clusterSettingsMap.containsKey(resources.getString("property.cluster.server.timeout")) &&
-                          fipsModeOK;
+                          fipsModeOK &&
+                          isNonEmptyRequiredTextField(((JSpinner.DefaultEditor) clusterTresholdSpinner.getEditor()).getTextField().getText()) &&
+                          isNonEmptyRequiredTextField(configurationNameTextField.getText()) &&
+                          isNonEmptyRequiredTextField(agentNameTextField.getText()) &&
+                          isNonEmptyRequiredTextField(addressTextField.getText()) &&
+                          isNonEmptyRequiredTextField(hostNameTextField.getText()) &&
+                          isNonEmptyRequiredPasswordField(secretPasswordField.getPassword());
 
         okButton.setEnabled(enabled);
+        testButton.setEnabled(enabled);
     }
+
+    private boolean isNonEmptyRequiredTextField(String text) {
+        return text != null && !text.trim().isEmpty();
+    }
+
+    private boolean isNonEmptyRequiredPasswordField(char[] password) {
+        return password != null && !(password.length == 0);
+    }
+
 
     private void doAdd(){
         editAndSave(new MutablePair<String, String>("", ""));
@@ -366,6 +394,17 @@ public class SiteMinderConfigPropertiesDialog extends JDialog {
 
         confirmed = true;
         dispose();
+    }
+
+    private void doTest() {
+        String warningMessage = validateSiteMinderConfiguration();
+        if (warningMessage != null && warningMessage.length() != 0) {
+            DialogDisplayer.showMessageDialog( SiteMinderConfigPropertiesDialog.this, warningMessage,
+                    resources.getString( "dialog.title.siteminder.configuration.validation" ), JOptionPane.WARNING_MESSAGE, null);
+        } else {
+            DialogDisplayer.showMessageDialog( SiteMinderConfigPropertiesDialog.this, resources.getString("message.validation.siteminder.config.passed"),
+                    resources.getString( "dialog.title.siteminder.configuration.validation" ), JOptionPane.WARNING_MESSAGE, null);
+        }
     }
 
     private void viewToModel(){
@@ -610,6 +649,28 @@ public class SiteMinderConfigPropertiesDialog extends JDialog {
         }
 
         return null;
+    }
+
+    private String validateSiteMinderConfiguration() {
+
+        SiteMinderAdmin admin = getSiteMinderAdmin();
+        if (admin == null) return "Can't get SiteMinder admin. Check log and try again";
+        viewToModel();
+        String msg = null;
+        try {
+            msg = doAsyncAdmin(admin,
+                    SiteMinderConfigPropertiesDialog.this,
+                    resources.getString("message.validation.progress"),
+                    resources.getString("message.validation"),
+                    admin.testSiteMinderConfiguration(configuration)).right();
+        } catch (InterruptedException e) {
+            // do nothing, user cancelled
+        } catch (InvocationTargetException e) {
+            DialogDisplayer.showMessageDialog(this, MessageFormat.format(resources.getString("message.validation.siteminder.config.failed"), e.getMessage()),
+                    resources.getString("dialog.title.siteminder.configuration.validation"),
+                    JOptionPane.WARNING_MESSAGE, null);
+        }
+        return msg;
     }
 
     private SiteMinderAdmin getSiteMinderAdmin(){

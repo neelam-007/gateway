@@ -87,4 +87,12 @@ public interface SiteMinderAdmin extends AsyncAdminMethods {
                                                                             String hostname,
                                                                             String hostconfig,
                                                                             Integer fipsMode);
+
+    /**
+     * Test the SiteMinder Configuration
+     * @param siteMinderConfiguration The SiteMinder configuration to be tested.
+     * @return empty string if the testing is successful.  Otherwise, return an error message with testing failure detail.
+     */
+    @Transactional(readOnly=true)
+    AsyncAdminMethods.JobId<String> testSiteMinderConfiguration(SiteMinderConfiguration siteMinderConfiguration);
 }

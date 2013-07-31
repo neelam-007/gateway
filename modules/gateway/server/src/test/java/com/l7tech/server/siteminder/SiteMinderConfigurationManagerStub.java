@@ -21,6 +21,10 @@ public class SiteMinderConfigurationManagerStub extends GoidEntityManagerStub<Si
     }
 
     @Override
+    public void validateSiteMinderConfiguration(SiteMinderConfiguration config) throws SiteMinderApiClassException {
+    }
+
+    @Override
     public void onApplicationEvent(ApplicationEvent applicationEvent) {
     }
 }

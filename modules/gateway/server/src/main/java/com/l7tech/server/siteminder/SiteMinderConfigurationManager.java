@@ -36,4 +36,12 @@ public interface SiteMinderConfigurationManager extends GoidEntityManager<SiteMi
      */
     SiteMinderLowLevelAgent getSiteMinderLowLevelAgent(String name) throws FindException, SiteMinderApiClassException;
 
+    /**
+     * Validate the SiteMinderConfiguration with the provided configuration detail.
+     *
+     * @param config The SiteMinder Configuration
+     * @throws SiteMinderApiClassException Thrown when the configuration is invalid
+     */
+    void validateSiteMinderConfiguration(SiteMinderConfiguration config) throws SiteMinderApiClassException;
+
 }
