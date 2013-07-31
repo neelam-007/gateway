@@ -10,12 +10,19 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
 import java.awt.*;
 
+/**
+ * Cell renderer for the role assignment name column which displays the name with an icon depending on the role assignment type.
+ */
 public class RoleAssignmentNameCellRenderer extends DefaultTableCellRenderer {
     private Icon GROUP_ICON = ImageCache.getInstance().getIconAsIcon(GroupPanel.GROUP_ICON_RESOURCE);
     private Icon USER_ICON = ImageCache.getInstance().getIconAsIcon(UserPanel.USER_ICON_RESOURCE);
     private JTable assignmentsTable;
     private int typeColIndex;
 
+    /**
+     * @param assignmentsTable the JTable holding the role assignments.
+     * @param typeColIndex     the index of the column which is holding the assignment type (group or user).
+     */
     public RoleAssignmentNameCellRenderer(@NotNull final JTable assignmentsTable, final int typeColIndex) {
         this.assignmentsTable = assignmentsTable;
         this.typeColIndex = typeColIndex;
@@ -32,15 +39,9 @@ public class RoleAssignmentNameCellRenderer extends DefaultTableCellRenderer {
             } else if (type instanceof String && type.equals(EntityType.GROUP.getName())) {
                 label.setIcon(GROUP_ICON);
             }
-            if (isSelected) {
-                label.setBackground(table.getSelectionBackground());
-                label.setForeground(table.getSelectionForeground());
-                label.setOpaque(true);
-            } else {
-                label.setBackground(table.getBackground());
-                label.setForeground(table.getForeground());
-                label.setOpaque(false);
-            }
+            label.setBackground(isSelected ? table.getSelectionBackground() : table.getBackground());
+            label.setForeground(isSelected ? table.getSelectionForeground() : table.getForeground());
+            label.setOpaque(isSelected);
             return label;
         } else {
             return super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);

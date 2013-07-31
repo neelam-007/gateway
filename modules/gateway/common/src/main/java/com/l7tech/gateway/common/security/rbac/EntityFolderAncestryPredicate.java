@@ -12,9 +12,6 @@ public class EntityFolderAncestryPredicate extends ScopePredicate {
     private String entityId;
     private EntityType entityType;
 
-    //transient as it does not exist in the db.  no need to use in equals & hashCode.
-    @Transient private String name;
-
     public EntityFolderAncestryPredicate(Permission permission, EntityType entityType, String entityId) {
         super(permission);
         this.entityType = entityType;
@@ -34,7 +31,6 @@ public class EntityFolderAncestryPredicate extends ScopePredicate {
     public ScopePredicate createAnonymousClone() {
         EntityFolderAncestryPredicate copy = new EntityFolderAncestryPredicate(null, entityType, entityId);
         copy.setOid(this.getOid());
-        copy.setName(this.getName());
         return copy;
     }
 
@@ -57,21 +53,6 @@ public class EntityFolderAncestryPredicate extends ScopePredicate {
     @Deprecated
     protected void setEntityId(String entityId) {
         this.entityId = entityId;
-    }
-
-    @Transient
-    public String getName() {
-        return name;
-    }
-
-    public void setName(final String name) {
-        this.name = name;
-    }
-
-    @Override
-    public String toString() {
-        if(name != null && !name.trim().isEmpty()) return String.format("Folder ancestry of %s in %s", entityType.getName(), getName());
-        return String.format("Folder ancestry of %s #%s", entityType.getName(), getEntityId());
     }
 
     @Override

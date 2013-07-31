@@ -4,12 +4,9 @@
 package com.l7tech.server.security.rbac;
 
 import com.l7tech.gateway.common.security.rbac.*;
-import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
-import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.policy.AssertionAccess;
-import com.l7tech.policy.Policy;
 import com.l7tech.server.EntityCrud;
 import com.l7tech.server.policy.AssertionAccessManager;
 import com.l7tech.server.util.JaasUtils;
@@ -97,30 +94,6 @@ public class RbacAdminImpl implements RbacAdmin {
                         oip.setHeader(entityCrud.findHeader(permission.getEntityType(), id));
                     } catch (FindException e) {
                         logger.log(Level.WARNING, "Couldn't look up EntityHeader for " + permission.getEntityType().getName() + " id=" + id + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-                    }
-                }
-                else if(scopePredicate instanceof EntityFolderAncestryPredicate){
-                    EntityFolderAncestryPredicate predicate = (EntityFolderAncestryPredicate)scopePredicate;
-                    try {
-                        EntityHeader header = new EntityHeader(predicate.getEntityId(), predicate.getEntityType(), null, null);
-                        //custom role we can just look for the folder name
-                        if(theRole.isUserCreated()){
-                            header.setType(EntityType.FOLDER);
-                        }
-                        Entity entity = entityCrud.find(header);
-                        if(entity != null){
-                            Folder folder = null;
-                            if(entity instanceof Folder){
-                                folder = (Folder)entity;
-                            } else if(entity instanceof Policy){
-                                folder = ((Policy) entity).getFolder();
-                            } else if(entity instanceof PublishedService){
-                                folder = ((PublishedService) entity).getFolder();
-                            }
-                            if(folder != null) predicate.setName(folder.getName());
-                        }
-                    } catch (FindException e) {
-                        logger.log(Level.WARNING, "Couldn't look up EntityHeader for " + predicate.getEntityType().getName() + " id=" + predicate.getEntityId() + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
                     }
                 }
             }

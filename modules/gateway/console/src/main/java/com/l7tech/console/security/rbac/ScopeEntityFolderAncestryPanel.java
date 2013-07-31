@@ -63,6 +63,7 @@ public class ScopeEntityFolderAncestryPanel extends ValidatedPanel<EntityFolderA
 
         specificFindButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
+                // TODO FIX THIS - it should NOT be hardcoded to EntityType.FOLDER!
                 final FindEntityDialog fed = new FindEntityDialog((JDialog) Utilities.getRootPaneContainerAncestor(ScopeEntityFolderAncestryPanel.this), EntityType.FOLDER, null);
                 fed.pack();
                 Utilities.centerOnScreen(fed);
@@ -92,7 +93,6 @@ public class ScopeEntityFolderAncestryPanel extends ValidatedPanel<EntityFolderA
     @Override
     protected void doUpdateModel() {
         model = new EntityFolderAncestryPredicate(permission, entityType, entityId);
-        if(entityHeader != null) model.setName(entityHeader.getName());
     }
 
     @Override

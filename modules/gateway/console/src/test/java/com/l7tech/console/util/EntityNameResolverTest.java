@@ -9,7 +9,7 @@ import com.l7tech.gateway.common.resources.ResourceAdmin;
 import com.l7tech.gateway.common.resources.ResourceEntry;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gateway.common.security.keystore.SsgKeyMetadata;
-import com.l7tech.gateway.common.security.rbac.Role;
+import com.l7tech.gateway.common.security.rbac.*;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.PublishedServiceAlias;
 import com.l7tech.gateway.common.service.ServiceAdmin;
@@ -569,6 +569,133 @@ public class EntityNameResolverTest {
     @Test
     public void getNameForRootFolderWithoutPath() throws Exception {
         assertEquals("localhost", resolver.getNameForEntity(createRootFolder(), false));
+    }
+
+    @Test
+    public void getNameForObjectIdentityPredicate() throws Exception {
+        final ObjectIdentityPredicate predicate = new ObjectIdentityPredicate(new Permission(new Role(), OperationType.READ, EntityType.POLICY), "1234");
+        predicate.setHeader(new EntityHeader("1234", EntityType.POLICY, "test", null));
+        assertEquals("Policy \"test\"", resolver.getNameForEntity(predicate, false));
+    }
+
+    @Test
+    public void getNameForObjectIdentityPredicateNoHeader() throws Exception {
+        final ObjectIdentityPredicate predicate = new ObjectIdentityPredicate(new Permission(new Role(), OperationType.READ, EntityType.POLICY), "1234");
+        predicate.setHeader(null);
+        assertEquals("Policy 1234", resolver.getNameForEntity(predicate, false));
+    }
+
+    @Test
+    public void getNameForObjectIdentityPredicateNoHeaderOrPermission() throws Exception {
+        final ObjectIdentityPredicate predicate = new ObjectIdentityPredicate(null, "1234");
+        predicate.setHeader(null);
+        assertEquals("1234", resolver.getNameForEntity(predicate, false));
+    }
+
+    @Test
+    public void getNameForAttributePredicateStartsWith() throws Exception {
+        final AttributePredicate predicate = new AttributePredicate(new Permission(new Role(), OperationType.READ, EntityType.POLICY), "name", "test");
+        predicate.setMode("eq");
+        assertEquals("name equals test", resolver.getNameForEntity(predicate, false));
+    }
+
+    @Test
+    public void getNameForAttributePredicateNullMode() throws Exception {
+        final AttributePredicate predicate = new AttributePredicate(new Permission(new Role(), OperationType.READ, EntityType.POLICY), "name", "test");
+        predicate.setMode(null);
+        assertEquals("name equals test", resolver.getNameForEntity(predicate, false));
+    }
+
+    @Test
+    public void getNameForAttributePredicateEquals() throws Exception {
+        final AttributePredicate predicate = new AttributePredicate(new Permission(new Role(), OperationType.READ, EntityType.POLICY), "name", "test");
+        predicate.setMode("sw");
+        assertEquals("name starts with test", resolver.getNameForEntity(predicate, false));
+    }
+
+    @Test
+    public void getNameForAttributePredicateUnknownMode() throws Exception {
+        final AttributePredicate predicate = new AttributePredicate(new Permission(new Role(), OperationType.READ, EntityType.POLICY), "name", "test");
+        predicate.setMode("unknown");
+        assertEquals("attribute=name mode=unknown value=test", resolver.getNameForEntity(predicate, false));
+    }
+
+    @Test
+    public void getNameForAttributePredicateCaseInsensitiveMode() throws Exception {
+        final AttributePredicate predicate = new AttributePredicate(new Permission(new Role(), OperationType.READ, EntityType.POLICY), "name", "test");
+        predicate.setMode("EQ");
+        assertEquals("name equals test", resolver.getNameForEntity(predicate, false));
+    }
+
+    @Test
+    public void getNameForSecurityZonePredicate() throws Exception {
+        final SecurityZone zone = new SecurityZone();
+        zone.setName("test");
+        final SecurityZonePredicate predicate = new SecurityZonePredicate(new Permission(new Role(), OperationType.READ, EntityType.POLICY), zone);
+        assertEquals("in security zone \"test\"", resolver.getNameForEntity(predicate, false));
+    }
+
+    @Test
+    public void getNameForSecurityZonePredicateNullZone() throws Exception {
+        final SecurityZonePredicate predicate = new SecurityZonePredicate(new Permission(new Role(), OperationType.READ, EntityType.POLICY), null);
+        assertEquals("not in any security zone", resolver.getNameForEntity(predicate, false));
+    }
+
+    @Test
+    public void getNameForFolderPredicateTransitive() throws Exception {
+        final FolderPredicate predicate = new FolderPredicate(new Permission(new Role(), OperationType.READ, EntityType.POLICY), new Folder("test", null), true);
+        assertEquals("in folder \"test\" and subfolders", resolver.getNameForEntity(predicate, false));
+    }
+
+    @Test
+    public void getNameForFolderPredicateNotTransitive() throws Exception {
+        final FolderPredicate predicate = new FolderPredicate(new Permission(new Role(), OperationType.READ, EntityType.POLICY), new Folder("test", null), false);
+        assertEquals("in folder \"test\"", resolver.getNameForEntity(predicate, false));
+    }
+
+    @Test
+    public void getNameForFolderAncestryPredicatePolicy() throws Exception {
+        when(policyAdmin.findPolicyByPrimaryKey(1234L)).thenReturn(new Policy(PolicyType.INCLUDE_FRAGMENT, "test", "xml", false));
+        final EntityFolderAncestryPredicate predicate = new EntityFolderAncestryPredicate(new Permission(new Role(), OperationType.READ, EntityType.FOLDER), EntityType.POLICY, "1234");
+        assertEquals("ancestors of policy \"test\"", resolver.getNameForEntity(predicate, false));
+    }
+
+    @Test
+    public void getNameForFolderAncestryPredicateService() throws Exception {
+        final PublishedService publishedService = new PublishedService();
+        publishedService.setName("test");
+        when(serviceAdmin.findServiceByID("1234")).thenReturn(publishedService);
+        final EntityFolderAncestryPredicate predicate = new EntityFolderAncestryPredicate(new Permission(new Role(), OperationType.READ, EntityType.FOLDER), EntityType.SERVICE, "1234");
+        assertEquals("ancestors of published service \"test\"", resolver.getNameForEntity(predicate, false));
+    }
+
+    @Test
+    public void getNameForFolderAncestryPredicateFolder() throws Exception {
+        when(folderAdmin.findByPrimaryKey(1234L)).thenReturn(new Folder("test", null));
+        final EntityFolderAncestryPredicate predicate = new EntityFolderAncestryPredicate(new Permission(new Role(), OperationType.READ, EntityType.FOLDER), EntityType.FOLDER, "1234");
+        assertEquals("ancestors of folder \"test\"", resolver.getNameForEntity(predicate, false));
+    }
+
+    @Test
+    public void getNameForFolderAncestryPredicateServiceAlias() throws Exception {
+        final PublishedService publishedService = new PublishedService();
+        publishedService.setName("test");
+        when(serviceAdmin.findByAlias(1234L)).thenReturn(publishedService);
+        final EntityFolderAncestryPredicate predicate = new EntityFolderAncestryPredicate(new Permission(new Role(), OperationType.READ, EntityType.FOLDER), EntityType.SERVICE_ALIAS, "1234");
+        assertEquals("ancestors of published service alias \"test alias\"", resolver.getNameForEntity(predicate, false));
+    }
+
+    @Test
+    public void getNameForFolderAncestryPredicatePolicyAlias() throws Exception {
+        when(policyAdmin.findByAlias(1234L)).thenReturn(new Policy(PolicyType.INCLUDE_FRAGMENT, "test", "xml", false));
+        final EntityFolderAncestryPredicate predicate = new EntityFolderAncestryPredicate(new Permission(new Role(), OperationType.READ, EntityType.FOLDER), EntityType.POLICY_ALIAS, "1234");
+        assertEquals("ancestors of policy alias \"test alias\"", resolver.getNameForEntity(predicate, false));
+    }
+
+    @Test
+    public void getNameForFolderAncestryPredicateNullEntityType() throws Exception {
+        final EntityFolderAncestryPredicate predicate = new EntityFolderAncestryPredicate(new Permission(new Role(), OperationType.READ, EntityType.POLICY), null, "1234");
+        assertTrue(resolver.getNameForEntity(predicate, false).isEmpty());
     }
 
     private Folder createRootFolder() {

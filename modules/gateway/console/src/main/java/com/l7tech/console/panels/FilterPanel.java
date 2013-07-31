@@ -1,6 +1,5 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.gui.util.DialogDisplayer;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
@@ -17,6 +16,7 @@ public class FilterPanel extends JPanel {
     private static final String CASE_INSENSITIVE_FLAG = "(?i)";
     private JPanel contentPanel;
     private JTextField filterTextField;
+    private JLabel filterOnLabel;
     private TableRowSorter rowSorter;
     // default is filter on first column
     private int[] columnsToFilter = new int[]{0};
@@ -89,5 +89,9 @@ public class FilterPanel extends JPanel {
     public void attachRowSorter(@NotNull final TableRowSorter rowSorter, @NotNull final int[] columnsToFilter) {
         this.rowSorter = rowSorter;
         this.columnsToFilter = columnsToFilter;
+    }
+
+    public void setFilterLabel(@NotNull final String labelText) {
+        filterOnLabel.setText(labelText);
     }
 }

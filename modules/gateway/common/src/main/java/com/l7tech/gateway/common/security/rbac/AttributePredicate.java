@@ -27,6 +27,8 @@ import java.util.logging.Logger;
 @Table(name="rbac_predicate_attribute")
 public class AttributePredicate extends ScopePredicate implements ScopeEvaluator {
     private static final Logger logger = Logger.getLogger(AttributePredicate.class.getName());
+    public static final String EQUALS = "eq";
+    public static final String STARTS_WITH = "sw";
 
     private String attribute;
     private String value;
@@ -169,9 +171,9 @@ public class AttributePredicate extends ScopePredicate implements ScopeEvaluator
         if (got == null)
             return value == null;
 
-        if (mode == null || mode.equals("eq")) {
+        if (mode == null || mode.equals(EQUALS)) {
             return got.toString().trim().equals(value);
-        } else if (mode.equals("sw")) {
+        } else if (mode.equals(STARTS_WITH)) {
             return got.toString().trim().startsWith(value);
         } else {
             logger.log(Level.SEVERE, "Unrecognized RBAC predicate attribute comparison mode \"" + mode + "\" for " + entity.getClass().getName() + "." + getter.getName());
@@ -181,7 +183,9 @@ public class AttributePredicate extends ScopePredicate implements ScopeEvaluator
 
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append(permission.getEntityType().getPluralName());
+        if (permission != null) {
+            sb.append(permission.getEntityType().getPluralName());
+        }
         String oper = "sw".equals(mode) ? " starting with " : " = ";
         sb.append(" with ").append(attribute).append(oper).append(value);
         return sb.toString(); 

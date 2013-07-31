@@ -1,6 +1,5 @@
 package com.l7tech.console.util;
 
-import com.l7tech.console.security.rbac.AssignSecurityZonesDialog;
 import com.l7tech.console.tree.PaletteFolderRegistry;
 import com.l7tech.console.tree.servicesAndPolicies.RootNode;
 import com.l7tech.gateway.common.admin.FolderAdmin;
@@ -10,7 +9,7 @@ import com.l7tech.gateway.common.resources.ResourceAdmin;
 import com.l7tech.gateway.common.resources.ResourceEntry;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gateway.common.security.keystore.SsgKeyMetadata;
-import com.l7tech.gateway.common.security.rbac.Role;
+import com.l7tech.gateway.common.security.rbac.*;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.PublishedServiceAlias;
 import com.l7tech.gateway.common.service.ServiceAdmin;
@@ -105,6 +104,21 @@ public class EntityNameResolver {
         Entity relatedEntity = null;
         if (header.getType() != null && (StringUtils.isBlank(name) || String.valueOf(header.getOid()).equals(name))) {
             switch (header.getType()) {
+                case POLICY:
+                    final Policy policy = policyAdmin.findPolicyByPrimaryKey(header.getOid());
+                    validateFoundEntity(header, policy);
+                    name = getNameForEntity(policy, includePath);
+                    break;
+                case SERVICE:
+                    final PublishedService service = serviceAdmin.findServiceByID(header.getStrId());
+                    validateFoundEntity(header, service);
+                    name = getNameForEntity(service, includePath);
+                    break;
+                case FOLDER:
+                    final Folder folder = folderAdmin.findByPrimaryKey(header.getOid());
+                    validateFoundEntity(header, folder);
+                    name = getNameForEntity(folder, includePath);
+                    break;
                 case SERVICE_ALIAS:
                     final PublishedService owningService = serviceAdmin.findByAlias(header.getOid());
                     validateFoundEntity(header, owningService);
@@ -231,6 +245,50 @@ public class EntityNameResolver {
             }
         } else if (entity instanceof Folder && isRootFolder((Folder) entity)) {
             name = rootFolderName;
+        } else if (entity instanceof ObjectIdentityPredicate) {
+            final ObjectIdentityPredicate predicate = (ObjectIdentityPredicate) entity;
+            final EntityHeader header = predicate.getHeader();
+            if (header != null) {
+                name = header.getType().getName() + " \"" + getNameForHeader(header, includePath) + "\"";
+            } else if (predicate.getPermission() != null && predicate.getPermission().getEntityType() != null) {
+                name = predicate.getPermission().getEntityType().getName() + " " + predicate.getTargetEntityId();
+            } else {
+                name = predicate.getTargetEntityId();
+            }
+        } else if (entity instanceof AttributePredicate) {
+            final AttributePredicate predicate = (AttributePredicate) entity;
+            final String mode = predicate.getMode();
+            final String attribute = predicate.getAttribute();
+            final String value = predicate.getValue();
+            if (mode == null || AttributePredicate.EQUALS.equalsIgnoreCase(mode) || AttributePredicate.STARTS_WITH.equalsIgnoreCase(mode)) {
+                final String operation = AttributePredicate.STARTS_WITH.equalsIgnoreCase(mode) ? "starts with" : "equals";
+                name = attribute + " " + operation + " " + value;
+            } else {
+                // unknown mode
+                name = "attribute=" + attribute + " mode=" + mode + " value=" + value;
+            }
+        } else if (entity instanceof SecurityZonePredicate) {
+            final SecurityZonePredicate predicate = (SecurityZonePredicate) entity;
+            if (predicate.getRequiredZone() != null) {
+                name = "in security zone \"" + predicate.getRequiredZone().getName() + "\"";
+            } else {
+                name = "not in any security zone";
+            }
+        } else if (entity instanceof FolderPredicate) {
+            final FolderPredicate predicate = (FolderPredicate) entity;
+            name = "in folder \"" + getNameForEntity(predicate.getFolder(), includePath) + "\"";
+            if (predicate.isTransitive()) {
+                name = name + " and subfolders";
+            }
+        } else if (entity instanceof EntityFolderAncestryPredicate) {
+            final EntityFolderAncestryPredicate predicate = (EntityFolderAncestryPredicate) entity;
+            if (predicate.getEntityType() != null && predicate.getEntityId() != null) {
+                final EntityHeader header = new EntityHeader(predicate.getEntityId(), predicate.getEntityType(), null, null);
+                final String entityName = "\"" + getNameForHeader(header, includePath) + "\"";
+                name = "ancestors of " + predicate.getEntityType().getName().toLowerCase() + " " + entityName;
+            } else {
+                logger.log(Level.WARNING, "Unable to determine name for EntityFolderAncestryPredicate because it is missing entity type and/or entity id.");
+            }
         } else if (entity instanceof NamedEntityImp) {
             final NamedEntityImp named = (NamedEntityImp) entity;
             name = named.getName();

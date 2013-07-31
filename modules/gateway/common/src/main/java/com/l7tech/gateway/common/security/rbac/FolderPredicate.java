@@ -94,7 +94,9 @@ public class FolderPredicate extends ScopePredicate implements ScopeEvaluator {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append(permission.getEntityType().getPluralName());
+        if (permission != null) {
+            sb.append(permission.getEntityType().getPluralName());
+        }
         sb.append(" in folder ").append(folder.getName());
         if (transitive) {
             sb.append(" (transitive)");

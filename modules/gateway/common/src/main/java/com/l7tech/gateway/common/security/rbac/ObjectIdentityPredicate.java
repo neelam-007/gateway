@@ -73,7 +73,7 @@ public class ObjectIdentityPredicate extends ScopePredicate implements ScopeEval
         if (header != null)
             return getName(header) + " " + header.getType().getName();
         
-        StringBuilder sb = new StringBuilder(permission.getEntityType().getName());
+        StringBuilder sb = new StringBuilder(permission == null ? "" : permission.getEntityType().getName());
         sb.append(" #").append(targetEntityId);
         return sb.toString();
     }

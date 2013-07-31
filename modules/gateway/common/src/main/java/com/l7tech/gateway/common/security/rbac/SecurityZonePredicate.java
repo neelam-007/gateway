@@ -97,7 +97,9 @@ public class SecurityZonePredicate extends ScopePredicate implements ScopeEvalua
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder();
-        sb.append(permission.getEntityType().getPluralName());
+        if (permission != null) {
+            sb.append(permission.getEntityType().getPluralName());
+        }
         if (requiredZone != null) {
             sb.append(" in security zone ").append(requiredZone.getName());
         } else {

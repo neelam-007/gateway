@@ -54,12 +54,10 @@ public class RoleManagerWindow extends JDialog {
     private JTabbedPane tabbedPanel;
     private JPanel assignmentsTab;
     private JPanel propertiesTab;
-    private JTextField roleTextField;
-    private JTextField typeTextField;
-    private JTextPane descriptionTextPane;
     private JButton editButton;
     private RoleAssignmentsPanel assignmentsPanel;
     private JButton removeButton;
+    private RolePropertiesPanel propertiesPanel;
     private SimpleTableModel<Role> rolesTableModel;
     private EntityCrudController<Role> crudController;
 
@@ -68,14 +66,9 @@ public class RoleManagerWindow extends JDialog {
         setContentPane(contentPanel);
         initTable();
         initFiltering();
-        initTabs();
         initCrudController();
         initButtons();
         handleTableChange();
-    }
-
-    private void initTabs() {
-        descriptionTextPane.setContentType("text/html");
     }
 
     private void initCrudController() {
@@ -201,15 +194,7 @@ public class RoleManagerWindow extends JDialog {
 
     private void handleTableChange() {
         final Role selectedRole = getSelectedRole();
-        if (selectedRole != null) {
-            roleTextField.setText(getNameForRole(selectedRole));
-            typeTextField.setText(selectedRole.isUserCreated() ? CUSTOM : SYSTEM);
-            descriptionTextPane.setText(RbacUtilities.getDescriptionString(selectedRole, true));
-        } else {
-            roleTextField.setText(StringUtils.EMPTY);
-            typeTextField.setText(StringUtils.EMPTY);
-            descriptionTextPane.setText(StringUtils.EMPTY);
-        }
+        propertiesPanel.configure(selectedRole, selectedRole == null ? null : getNameForRole(selectedRole));
         assignmentsPanel.configure(selectedRole);
         final SecurityProvider securityProvider = Registry.getDefault().getSecurityProvider();
         editButton.setEnabled(selectedRole != null && selectedRole.isUserCreated() &&
