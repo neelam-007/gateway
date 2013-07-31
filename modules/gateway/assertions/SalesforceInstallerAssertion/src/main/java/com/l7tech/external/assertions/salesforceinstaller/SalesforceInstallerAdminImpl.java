@@ -157,7 +157,6 @@ public class SalesforceInstallerAdminImpl extends AsyncAdminMethodsImpl implemen
     @NotNull
     @Override
     public JobId<ArrayList> install(@NotNull final Collection<String> componentId,
-                                    final long folderOid,
                                     @NotNull final Map<String, BundleMapping> bundleMappings,
                                     @Nullable final String installationPrefix) throws SalesforceInstallationException {
 
@@ -169,7 +168,7 @@ public class SalesforceInstallerAdminImpl extends AsyncAdminMethodsImpl implemen
             @Override
             public ArrayList call() throws Exception {
                 try {
-                    return new ArrayList<String>(doInstall(taskIdentifier, componentId, folderOid, bundleMappings, installationPrefix));
+                    return new ArrayList<String>(doInstall(taskIdentifier, componentId, bundleMappings, installationPrefix));
                 } catch(SalesforceInstallationException e) {
                     final SalesforceInstallationAuditEvent problemEvent = new SalesforceInstallationAuditEvent(this, "Problem during installation of the Toolkit", Level.WARNING);
                     problemEvent.setAuditDetails(Arrays.asList(
@@ -397,7 +396,6 @@ public class SalesforceInstallerAdminImpl extends AsyncAdminMethodsImpl implemen
      *
      * @param taskIdentifier used to look up the context to see if task has been cancelled.
      * @param componentIds component to install
-     * @param folderOid folder to install component into
      * @param bundleMappings any mappings.
      * @param installationPrefix installation prefix
      * @return Ids of installed bundles
@@ -406,7 +404,6 @@ public class SalesforceInstallerAdminImpl extends AsyncAdminMethodsImpl implemen
      */
     protected List<String> doInstall(@NotNull final String taskIdentifier,
                                      @NotNull final Collection<String> componentIds,
-                                     final long folderOid,
                                      @NotNull Map<String, BundleMapping> bundleMappings,
                                      @Nullable final String installationPrefix) throws SalesforceInstallationException {
 
@@ -441,7 +438,7 @@ public class SalesforceInstallerAdminImpl extends AsyncAdminMethodsImpl implemen
                         if (bundleInfo.getId().equals(bundleId)) {
 
                             final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(
-                                    bundleInfo, folderOid, bundleMappings.get(bundleId), prefixToUse, bundleResolver, true);
+                                    bundleInfo, bundleMappings.get(bundleId), prefixToUse, bundleResolver, true);
                             final InstallPolicyBundleEvent installEvent =
                                 new InstallPolicyBundleEvent(this, context, null);
                             jobContext.currentEvent = installEvent;

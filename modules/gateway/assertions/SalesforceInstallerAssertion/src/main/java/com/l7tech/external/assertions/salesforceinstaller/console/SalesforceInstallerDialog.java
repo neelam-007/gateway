@@ -38,13 +38,9 @@ public class SalesforceInstallerDialog extends JDialog {
     private JButton buttonOK;
     private JButton buttonCancel;
     private JLabel otkVersionLabel;
-    private JLabel installToLabel;
     private JPanel componentsToInstallPanel;
-    private long selectedFolderOid;
     private final Map<String, Pair<BundleComponent, BundleInfo>> availableBundles = new HashMap<String, Pair<BundleComponent, BundleInfo>>();
     private static final Logger logger = Logger.getLogger(SalesforceInstallerDialog.class.getName());
-    private String folderPath;
-
 
     public SalesforceInstallerDialog(Frame owner) {
         super(owner, SALESFORCE_FOLDER + " Toolkit Installer", true);
@@ -83,58 +79,7 @@ public class SalesforceInstallerDialog extends JDialog {
         initialize();
     }
 
-    /**
-     * Get the currently selected folder and it's id. If a policy or service is selected, then the folder which
-     * contains it will be returned.
-     *
-     * @return Pair, never null, but contents may be null. If one side is null, both are null.
-     */
-    public static Pair<String, Long> getSelectedFolderAndOid(){
-        ServicesAndPoliciesTree tree = (ServicesAndPoliciesTree) TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME);
-
-        String folderPath = null;
-        Long parentFolderOid = null;
-
-        if (tree != null) {
-            final TreePath selectionPath = tree.getSelectionPath();
-            if (selectionPath != null) {
-                final Object[] path = selectionPath.getPath();
-
-                if (path.length > 0) {
-                    StringBuilder builder = new StringBuilder("");
-
-                    // skip the root node, it is captured as /
-                    RootNode rootFolder = (RootNode) path[0];
-                    long lastParentOid = rootFolder.getOid();
-                    for (int i = 1, pathLength = path.length; i < pathLength; i++) {
-                        Object o = path[i];
-                        if (o instanceof FolderNode) {
-                            FolderNode folderNode = (FolderNode) o;
-                            builder.append("/");
-                            builder.append(folderNode.getName());
-                            lastParentOid = folderNode.getOid();
-                        }
-                    }
-                    builder.append("/");  // if only root node then this captures that with a single /
-                    folderPath = builder.toString();
-                    parentFolderOid = lastParentOid;
-                }
-            }
-
-            if (parentFolderOid == null) {
-                final RootNode rootNode = tree.getRootNode();
-                parentFolderOid = rootNode.getOid();
-                folderPath = "/";
-            }
-        }
-        return new Pair<String, Long>(folderPath, parentFolderOid);
-    }
-
     private void initialize(){
-        final Pair<String, Long> selectedFolderAndOid = getSelectedFolderAndOid();
-        folderPath = selectedFolderAndOid.left;
-        selectedFolderOid = selectedFolderAndOid.right;
-
         final SalesforceInstallerAdmin admin = Registry.getDefault().getExtensionInterface(SalesforceInstallerAdmin.class, null);
         try {
             final String version = admin.getVersion();
@@ -160,21 +105,12 @@ public class SalesforceInstallerDialog extends JDialog {
             logger.warning(e.getMessage());
         }
 
-        setInstallToFolderText(null);
         enableDisableComponents();
     }
 
 
     private void enableDisableComponents() {
         // nothing to change now
-    }
-
-    private void setInstallToFolderText(@Nullable final String versionPrefix) {
-        if (versionPrefix == null || versionPrefix.isEmpty()) {
-            installToLabel.setText(folderPath + SALESFORCE_FOLDER);
-        } else {
-            installToLabel.setText(folderPath + SALESFORCE_FOLDER + " " + versionPrefix);
-        }
     }
 
     private void onOK() {
@@ -299,7 +235,6 @@ public class SalesforceInstallerDialog extends JDialog {
                 "The selected components of the " + SALESFORCE_FOLDER + " toolkit are being installed.",
                 admin.install(
                         bundlesToInstall,
-                        selectedFolderOid,
                         bundleMappings,
                         prefixToUse));
 

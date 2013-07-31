@@ -92,8 +92,7 @@ public class SalesforceInstallerAdminImplTest {
             }
         });
 
-        final AsyncAdminMethods.JobId<ArrayList> jobId = admin.install(Arrays.asList("6a88602e-df72-414a-9f88-9849197c8b7f"),
-                -5002, new HashMap<String, BundleMapping>(), null);
+        final AsyncAdminMethods.JobId<ArrayList> jobId = admin.install(Arrays.asList("6a88602e-df72-414a-9f88-9849197c8b7f"), new HashMap<String, BundleMapping>(), null);
 
         while (!admin.getJobStatus(jobId).startsWith("inactive")) {
             Thread.sleep(10L);

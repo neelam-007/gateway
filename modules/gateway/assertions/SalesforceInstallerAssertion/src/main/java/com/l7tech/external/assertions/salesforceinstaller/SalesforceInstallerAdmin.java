@@ -67,7 +67,6 @@ public interface SalesforceInstallerAdmin extends AsyncAdminMethods {
      *
      * @param otkComponentId     collection of all bundle ids to install. Bundles may depend on each others items, but there is no
      *                           install dependency order.
-     * @param folderOid          oid of the folder to install into.
      * @param bundleMappings     Mapping of bundleId to mappings for that bundle. Required.
      * @param installationPrefix installation prefix. If not null and not empty this value will be prepended to the names
      *                           of all installed policies and the routing URIs of all installed services.
@@ -76,7 +75,6 @@ public interface SalesforceInstallerAdmin extends AsyncAdminMethods {
     @Secured(stereotype = MethodStereotype.SAVE_OR_UPDATE, relevantArg = 1)
     @NotNull
     AsyncAdminMethods.JobId<ArrayList> install(@NotNull Collection<String> otkComponentId,
-                                               long folderOid,
                                                @NotNull Map<String, BundleMapping> bundleMappings,
                                                @Nullable String installationPrefix) throws SalesforceInstallationException;
 

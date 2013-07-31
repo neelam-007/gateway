@@ -15,7 +15,7 @@ import javax.swing.event.TreeSelectionListener;
 public class SalesforceInstallerAction extends SecureAction {
 
     public SalesforceInstallerAction() {
-        super(new AttemptedCreate(EntityType.FOLDER));
+        super(new AttemptedCreate(EntityType.TRUSTED_CERT));
 
         ServicesAndPoliciesTree tree = (ServicesAndPoliciesTree) TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME);
         tree.addTreeSelectionListener(new TreeSelectionListener() {
@@ -28,12 +28,7 @@ public class SalesforceInstallerAction extends SecureAction {
 
     @Override
     public String getName() {
-        final Pair<String,Long> selectedFolderAndOid = SalesforceInstallerDialog.getSelectedFolderAndOid();
-        if (selectedFolderAndOid.left != null) {
-            return "Install Salesforce Toolkit in " + selectedFolderAndOid.left + SalesforceInstallerDialog.SALESFORCE_FOLDER;
-        } else {
-            return "Install Salesforce Toolkit";
-        }
+        return "Install Salesforce Toolkit";
     }
 
 
