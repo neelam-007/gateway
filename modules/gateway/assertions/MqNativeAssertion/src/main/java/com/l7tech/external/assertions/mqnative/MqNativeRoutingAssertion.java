@@ -573,19 +573,24 @@ public class MqNativeRoutingAssertion extends RoutingAssertion implements UsesEn
     @EntityUse(@EntityTypeOverride(type = EntityType.SSG_ACTIVE_CONNECTOR, description = "MQ Native Queue"))
     @Migration(mapName = MigrationMappingSelection.REQUIRED, resolver = PropertyResolver.Type.ASSERTION)
     public EntityHeader[] getEntitiesUsed() {
-        if( ssgActiveConnectorId != null) {
+        if( ssgActiveConnectorGoid != null) {
+            return new EntityHeader[] {new EntityHeader(ssgActiveConnectorGoid.toString(), EntityType.SSG_ACTIVE_CONNECTOR, ssgActiveConnectorName, null)}; // always outgoing
+        }
+        else if( ssgActiveConnectorId != null) {
             return new EntityHeader[] {new EntityHeader(ssgActiveConnectorId.toString(), EntityType.SSG_ACTIVE_CONNECTOR, ssgActiveConnectorName, null)}; // always outgoing
-        } else {
+        }
+        else {
             return new EntityHeader[0];
         }
     }
 
     @Override
     public void replaceEntity(EntityHeader oldEntityHeader, EntityHeader newEntityHeader) {
-        if( oldEntityHeader.getType().equals( EntityType.SSG_ACTIVE_CONNECTOR) && ssgActiveConnectorId != null &&
-                oldEntityHeader.getOid() == ssgActiveConnectorId && newEntityHeader.getType().equals(EntityType.SSG_ACTIVE_CONNECTOR))
+        if( oldEntityHeader.getType().equals( EntityType.SSG_ACTIVE_CONNECTOR) &&
+             (oldEntityHeader.getStrId().equals(ssgActiveConnectorGoid!=null? ssgActiveConnectorGoid.toString():(ssgActiveConnectorId!=null?Long.toString(ssgActiveConnectorId):null)))
+              && newEntityHeader.getType().equals(EntityType.SSG_ACTIVE_CONNECTOR))
         {
-            ssgActiveConnectorId = newEntityHeader.getOid();
+            setSsgActiveConnectorGoid( newEntityHeader.getGoid());
             ssgActiveConnectorName = newEntityHeader.getName();
         }
     }
