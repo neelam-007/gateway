@@ -35,6 +35,7 @@ public class RolePropertiesDialog extends JDialog {
     private JPanel contentPanel;
     private BasicPropertiesPanel basicPropertiesPanel;
     private OkCancelPanel okCancelPanel;
+    private RolePermissionsPanel permissionsPanel;
     private Role role;
     private boolean readOnly;
     private InputValidator inputValidator;
@@ -85,6 +86,7 @@ public class RolePropertiesDialog extends JDialog {
         }
         basicPropertiesPanel.getNameField().setText(role.getName());
         basicPropertiesPanel.getDescriptionTextArea().setText(role.getDescription());
+        permissionsPanel.configure(role);
     }
 
     private void initValidation() {
@@ -118,6 +120,10 @@ public class RolePropertiesDialog extends JDialog {
                 DialogDisplayer.showMessageDialog(this, "Unable to save.", "Error", JOptionPane.ERROR_MESSAGE, null);
             }
         }
+    }
+
+    private void createUIComponents() {
+        permissionsPanel = new RolePermissionsPanel(readOnly);
     }
 
     private class OkButtonActionListener implements ActionListener {
