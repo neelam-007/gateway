@@ -233,7 +233,7 @@ public interface ClusterStatusAdmin {
      * @throws LicenseInstallationException if there was a problem installing the license.
      */
     @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Throwable.class)
-    @Secured(types=EntityType.CLUSTER_PROPERTY, stereotype=MethodStereotype.SAVE_OR_UPDATE)
+    @Secured(types=EntityType.LICENSE_DOCUMENT, stereotype=MethodStereotype.SAVE)
     @Administrative(licensed=false)
     void installLicense(FeatureLicense license) throws LicenseInstallationException;
 
@@ -246,7 +246,7 @@ public interface ClusterStatusAdmin {
      * @throws LicenseRemovalException if an error is encountered in uninstalling the license
      */
     @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Throwable.class)
-    @Secured(types=EntityType.CLUSTER_PROPERTY, stereotype=MethodStereotype.DELETE_ENTITY)
+    @Secured(types=EntityType.LICENSE_DOCUMENT, stereotype=MethodStereotype.DELETE_MULTI)
     @Administrative(licensed=false)
     void uninstallLicense(FeatureLicense license) throws LicenseRemovalException;
 
