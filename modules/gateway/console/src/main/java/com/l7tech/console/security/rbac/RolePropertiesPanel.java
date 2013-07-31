@@ -143,13 +143,14 @@ public class RolePropertiesPanel extends JPanel {
                     }
                 }));
 
-        final CheckCellRenderer checkCellRenderer = new CheckCellRenderer();
         permissionsTable.getTableHeader().setDefaultRenderer(new HeaderCellRenderer(permissionsTable.getTableHeader().getDefaultRenderer()));
+        final CheckCellRenderer checkCellRenderer = new CheckCellRenderer();
         permissionsTable.getColumnModel().getColumn(CREATE_COL_INDEX).setCellRenderer(checkCellRenderer);
         permissionsTable.getColumnModel().getColumn(READ_COL_INDEX).setCellRenderer(checkCellRenderer);
         permissionsTable.getColumnModel().getColumn(UPDATE_COL_INDEX).setCellRenderer(checkCellRenderer);
         permissionsTable.getColumnModel().getColumn(DELETE_COL_INDEX).setCellRenderer(checkCellRenderer);
         permissionsTable.getColumnModel().getColumn(OTHER_COL_INDEX).setCellRenderer(checkCellRenderer);
+        permissionsTable.getColumnModel().getColumn(SCOPE_COL_INDEX).setCellRenderer(new ScopeCellRenderer());
         Utilities.setRowSorter(permissionsTable, permissionsModel);
     }
 
@@ -206,6 +207,21 @@ public class RolePropertiesPanel extends JPanel {
                     }
                 }
                 component = label;
+            }
+            return component;
+        }
+    }
+
+    private class ScopeCellRenderer extends DefaultTableCellRenderer {
+        @Override
+        public Component getTableCellRendererComponent(final JTable table, final Object value, final boolean isSelected, final boolean hasFocus, final int row, final int column) {
+            final Component component = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+            if (component instanceof JLabel && value instanceof String) {
+                final JLabel label = (JLabel) component;
+                final String scopeStr = (String) value;
+                final String[] split = StringUtils.split(scopeStr, ",");
+                final String join = StringUtils.join(split, ",<br/>");
+                label.setToolTipText("<html>" + join + "</html>");
             }
             return component;
         }
