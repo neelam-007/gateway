@@ -5,6 +5,8 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
 import com.l7tech.policy.assertion.ext.ServiceException;
 import com.l7tech.policy.assertion.ext.cei.CustomExtensionInterfaceFinder;
+import com.l7tech.policy.assertion.ext.commonui.CommonUIServices;
+import com.l7tech.policy.assertion.ext.store.KeyValueStoreServices;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
@@ -15,7 +17,7 @@ import java.util.Map;
 public class CustomConsoleContext {
 
     public static void addCustomExtensionInterfaceFinder(Map<String, Object> consoleContext) {
-        consoleContext.put("customExtensionInterfaceFinder", new CustomExtensionInterfaceFinder()  {
+        consoleContext.put(CustomExtensionInterfaceFinder.CONSOLE_CONTEXT_KEY, new CustomExtensionInterfaceFinder()  {
             @Override
             public <T> T getExtensionInterface(Class<T> interfaceClass) throws ServiceException {
                 for (Method declaredMethod : interfaceClass.getDeclaredMethods()) {
@@ -39,11 +41,11 @@ public class CustomConsoleContext {
     }
 
     public static void addCommonUIServices(Map<String, Object> consoleContext, CustomAssertionHolder customAssertionHolder, Assertion previousAssertion) {
-        consoleContext.put("commonUIServices", new CommonUIServicesImpl(customAssertionHolder, previousAssertion));
+        consoleContext.put(CommonUIServices.CONSOLE_CONTEXT_KEY, new CommonUIServicesImpl(customAssertionHolder, previousAssertion));
     }
 
     public static void addKeyValueStoreServices(Map<String, Object> consoleContext) {
-        consoleContext.put("keyValueStoreServices", new KeyValueStoreServicesImpl());
+        consoleContext.put(KeyValueStoreServices.CONSOLE_CONTEXT_KEY, new KeyValueStoreServicesImpl());
     }
 
     public static boolean isSupportedDataType(Type dataType) {

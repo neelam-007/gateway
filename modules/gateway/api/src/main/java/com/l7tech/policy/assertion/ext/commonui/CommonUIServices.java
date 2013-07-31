@@ -2,11 +2,16 @@ package com.l7tech.policy.assertion.ext.commonui;
 
 import javax.swing.*;
 
-/*
-* Use this service to create common UI components.
-* This service can be retrieved from the Console Context using "commonUIServices" as the key.
-*/
+/**
+ * Use this service to create common UI components.
+ */
 public interface CommonUIServices {
+
+    /**
+     * The key for retrieving {@link CommonUIServices} from the Console Context.<p>
+     * See {@link com.l7tech.policy.assertion.ext.cei.UsesConsoleContext UsesConsoleContext} for more details.
+     */
+    static final String CONSOLE_CONTEXT_KEY = "commonUIServices";
 
     /**
      * Creates a target variable panel.

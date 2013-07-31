@@ -1,10 +1,19 @@
 package com.l7tech.policy.assertion.ext.store;
 
 /**
- * Service for getting key value stores.
+ * Use this service to get key value stores.
  */
 public interface KeyValueStoreServices {
 
+    /**
+     * The key for getting {@link KeyValueStoreServices} from the Console Context.<p>
+     * See {@link com.l7tech.policy.assertion.ext.cei.UsesConsoleContext UsesConsoleContext} for more details.
+     */
+    static final String CONSOLE_CONTEXT_KEY = "keyValueStoreServices";
+
+    /**
+     * The internal transactional store name.
+     */
     static final String INTERNAL_TRANSACTIONAL_KEY_VALUE_STORE_NAME = "internalTransactional";
 
     /**

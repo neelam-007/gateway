@@ -64,7 +64,7 @@ public class CustomAssertionHolderValidatorTest {
             // Test the CustomExtensionInterfaceFinder exists in the console context.
             //
             CustomExtensionInterfaceFinder extensionInterfaceFinder =
-                (CustomExtensionInterfaceFinder) consoleContext.get("customExtensionInterfaceFinder");
+                (CustomExtensionInterfaceFinder) consoleContext.get(CustomExtensionInterfaceFinder.CONSOLE_CONTEXT_KEY);
             assertNotNull(extensionInterfaceFinder);
 
             if (raiseWarnings) {
@@ -82,7 +82,7 @@ public class CustomAssertionHolderValidatorTest {
             // Test the CustomExtensionInterfaceFinder exists in the console context.
             //
             CustomExtensionInterfaceFinder extensionInterfaceFinder =
-                (CustomExtensionInterfaceFinder) consoleContext.get("customExtensionInterfaceFinder");
+                (CustomExtensionInterfaceFinder) consoleContext.get(CustomExtensionInterfaceFinder.CONSOLE_CONTEXT_KEY);
             assertNotNull(extensionInterfaceFinder);
 
             if (raiseErrors) {

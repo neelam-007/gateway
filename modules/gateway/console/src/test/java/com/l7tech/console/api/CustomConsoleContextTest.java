@@ -118,7 +118,7 @@ public class CustomConsoleContextTest {
         // get the registered extension interface
         Map<String, Object> consoleContext = new HashMap<>(1);
         CustomConsoleContext.addCustomExtensionInterfaceFinder(consoleContext);
-        CustomExtensionInterfaceFinder customExtensionInterfaceFinder = (CustomExtensionInterfaceFinder) consoleContext.get("customExtensionInterfaceFinder");
+        CustomExtensionInterfaceFinder customExtensionInterfaceFinder = (CustomExtensionInterfaceFinder) consoleContext.get(CustomExtensionInterfaceFinder.CONSOLE_CONTEXT_KEY);
         assertEquals(testFace, customExtensionInterfaceFinder.getExtensionInterface(MyInterface.class));
 
         // not registered
@@ -132,7 +132,7 @@ public class CustomConsoleContextTest {
 
         Map<String, Object> consoleContext = new HashMap<>(1);
         CustomConsoleContext.addCommonUIServices(consoleContext, new CustomAssertionHolder(), null);
-        CommonUIServices commonUIServices = (CommonUIServices) consoleContext.get("commonUIServices");
+        CommonUIServices commonUIServices = (CommonUIServices) consoleContext.get(CommonUIServices.CONSOLE_CONTEXT_KEY);
 
         CustomTargetVariablePanel targetVariablePanel = commonUIServices.createTargetVariablePanel();
         assertNotNull(targetVariablePanel);
@@ -149,7 +149,7 @@ public class CustomConsoleContextTest {
 
         Map<String, Object> consoleContext = new HashMap<>(1);
         CustomConsoleContext.addCommonUIServices(consoleContext, new CustomAssertionHolder(), null);
-        CommonUIServices commonUIServices = (CommonUIServices) consoleContext.get("commonUIServices");
+        CommonUIServices commonUIServices = (CommonUIServices) consoleContext.get(CommonUIServices.CONSOLE_CONTEXT_KEY);
 
         CustomSecurePasswordPanel securePasswordPanel = commonUIServices.createPasswordComboBoxPanel(new JDialog());
         assertNotNull(securePasswordPanel);
@@ -172,7 +172,7 @@ public class CustomConsoleContextTest {
 
         Map<String, Object> consoleContext = new HashMap<>(1);
         CustomConsoleContext.addCommonUIServices(consoleContext, new CustomAssertionHolder(), null);
-        CommonUIServices commonUIServices = (CommonUIServices) consoleContext.get("commonUIServices");
+        CommonUIServices commonUIServices = (CommonUIServices) consoleContext.get(CommonUIServices.CONSOLE_CONTEXT_KEY);
 
         CustomSecurePasswordPanel securePasswordPanel = commonUIServices.createPEMPrivateKeyComboBoxPanel(new JDialog());
         assertNotNull(securePasswordPanel);
@@ -194,7 +194,7 @@ public class CustomConsoleContextTest {
         Map<String, Object> consoleContext = new HashMap<>(1);
         CustomConsoleContext.addKeyValueStoreServices(consoleContext);
 
-        KeyValueStoreServices keyValueStoreServices = (KeyValueStoreServices) consoleContext.get("keyValueStoreServices");
+        KeyValueStoreServices keyValueStoreServices = (KeyValueStoreServices) consoleContext.get(KeyValueStoreServices.CONSOLE_CONTEXT_KEY);
         assertNotNull(keyValueStoreServices);
     }
 
