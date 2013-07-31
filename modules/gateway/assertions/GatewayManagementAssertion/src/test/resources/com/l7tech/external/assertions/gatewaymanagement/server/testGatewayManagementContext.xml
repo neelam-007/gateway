@@ -123,6 +123,9 @@
                 <bean class="com.l7tech.external.assertions.gatewaymanagement.server.CustomKeyValueStoreResourceFactory" parent="entityResourceFactoryParent">
                     <constructor-arg index="3" ref="customKeyValueStoreManager" />
                 </bean>
+                <bean class="com.l7tech.external.assertions.gatewaymanagement.server.ActiveConnectorResourceFactory" parent="entityResourceFactoryParent">
+                    <constructor-arg index="3" ref="ssgActiveConnectorManager"/>
+                </bean>
                 <bean class="com.l7tech.external.assertions.gatewaymanagement.server.TestResourceFactory"/>
             </list>
         </constructor-arg>

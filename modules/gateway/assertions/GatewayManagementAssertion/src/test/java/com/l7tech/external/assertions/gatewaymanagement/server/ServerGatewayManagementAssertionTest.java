@@ -13,6 +13,7 @@ import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.gateway.common.service.ServiceTemplate;
+import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
 import com.l7tech.gateway.common.transport.jms.JmsProviderType;
@@ -416,6 +417,41 @@ public class ServerGatewayManagementAssertionTest {
         final Element jmsDestination = XmlUtil.findExactlyOneChildElementByName( soapBody, NS_GATEWAY_MANAGEMENT, "JMSDestination" );
 
         assertEquals("Jms Destination identifier:", id, jmsDestination.getAttribute("id"));
+    }
+
+    @Test
+    public void testGetActiveConnector() throws Exception {
+        final String id = new Goid(0,2).toString();
+        final String message =
+                "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" \n" +
+                        "            xmlns:a=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" \n" +
+                        "            xmlns:w=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\">\n" +
+                        "  <s:Header>\n" +
+                        "    <a:MessageID>uuid:4ED2993C-4339-4E99-81FC-C2FD3812781A</a:MessageID> \n" +
+                        "    <a:To>http://127.0.0.1:8080/wsman</a:To> \n" +
+                        "    <a:ReplyTo> \n" +
+                        "      <a:Address s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</a:Address> \n" +
+                        "    </a:ReplyTo> \n" +
+                        "    <a:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Get</a:Action> \n" +
+                        "    <w:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/activeConnectors</w:ResourceURI> \n" +
+                        "    <w:SelectorSet>\n" +
+                        "      <w:Selector Name=\"id\">"+id+"</w:Selector> \n" +
+                        "    </w:SelectorSet>\n" +
+                        "    <w:OperationTimeout>PT60.000S</w:OperationTimeout> \n" +
+                        "  </s:Header>\n" +
+                        "  <s:Body/> \n" +
+                        "</s:Envelope>";
+
+        final Document result = processRequest( "http://schemas.xmlsoap.org/ws/2004/09/transfer/Get", message );
+
+        final Element soapBody = SoapUtil.getBodyElement(result);
+        final Element activeConnector = XmlUtil.findExactlyOneChildElementByName( soapBody, NS_GATEWAY_MANAGEMENT, "ActiveConnector" );
+        final Element type = XmlUtil.findExactlyOneChildElementByName( activeConnector, NS_GATEWAY_MANAGEMENT, "Type" );
+        final Element hardwiredId = XmlUtil.findExactlyOneChildElementByName( activeConnector, NS_GATEWAY_MANAGEMENT, "HardwiredId" );
+
+        assertEquals("Active connector identifier:", id, activeConnector.getAttribute("id"));
+        assertEquals("Active connector type:", "SFTP", XmlUtil.getTextValue(type));
+        assertEquals("Active connector hardwired id:", "4567",XmlUtil.getTextValue(hardwiredId));
     }
 
     @Test
@@ -849,6 +885,90 @@ public class ServerGatewayManagementAssertionTest {
                 "</IdentityProvider>";
         String[] expectedIds = new String[]{"1","2","3","4"};
         doCreate( resourceUri, payload, expectedIds );
+    }
+
+    @Test
+    public void testCreateActiveConnector() throws Exception {
+        String resourceUri = "http://ns.l7tech.com/2010/04/gateway-management/activeConnectors";
+        String payload =
+                "<l7:ActiveConnector xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
+                "    <l7:Name>test</l7:Name>\n" +
+                "    <l7:Enabled>true</l7:Enabled>\n" +
+                "    <l7:Type>SFTP</l7:Type>\n" +
+                "    <l7:HardwiredId>163840</l7:HardwiredId>\n" +
+                "    <l7:Properties>\n" +
+                "        <l7:Property key=\"enableResponseMessages\">\n" +
+                "            <l7:StringValue>true</l7:StringValue>\n" +
+                "        </l7:Property>\n" +
+                "        <l7:Property key=\"SftpHost\">\n" +
+                "            <l7:StringValue>centospp.l7tech.com</l7:StringValue>\n" +
+                "        </l7:Property>\n" +
+                "        <l7:Property key=\"SftpPort\">\n" +
+                "            <l7:StringValue>22</l7:StringValue>\n" +
+                "        </l7:Property>\n" +
+                "        <l7:Property key=\"overrideContentType\">\n" +
+                "            <l7:StringValue>text/xml; charset=utf-8</l7:StringValue>\n" +
+                "        </l7:Property>\n" +
+                "        <l7:Property key=\"pollingInterval\">\n" +
+                "            <l7:StringValue>10</l7:StringValue>\n" +
+                "        </l7:Property>\n" +
+                "        <l7:Property key=\"SftpDeleteOnReceive\">\n" +
+                "            <l7:StringValue>false</l7:StringValue>\n" +
+                "        </l7:Property>\n" +
+                "        <l7:Property key=\"SftpSecurePasswordOid\">\n" +
+                "            <l7:StringValue>360448</l7:StringValue>\n" +
+                "        </l7:Property>\n" +
+                "        <l7:Property key=\"SftpUsername\">\n" +
+                "            <l7:StringValue>fish</l7:StringValue>\n" +
+                "        </l7:Property>\n" +
+                "        <l7:Property key=\"SftpDirectory\">\n" +
+                "            <l7:StringValue>/home/fish/messages</l7:StringValue>\n" +
+                "        </l7:Property>\n" +
+                "    </l7:Properties>\n" +
+                "</l7:ActiveConnector>";
+        doCreate( resourceUri, payload, Goid.toString(new Goid(0,4)) );
+    }
+
+    @Test
+    public void testCreateActiveConnectorBadType() throws Exception {
+        String resourceUri = "http://ns.l7tech.com/2010/04/gateway-management/activeConnectors";
+        String payload =
+                "<l7:ActiveConnector xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
+                        "    <l7:ActiveConnectorType>TYPE</l7:ActiveConnectorType>\n" +
+                        "    <l7:Enabled>true</l7:Enabled>\n" +
+                        "    <l7:HardwiredId>163840</l7:HardwiredId>\n" +
+                        "    <l7:Name>test</l7:Name>\n" +
+                        "    <l7:Properties>\n" +
+                        "        <l7:Property key=\"enableResponseMessages\">\n" +
+                        "            <l7:StringValue>true</l7:StringValue>\n" +
+                        "        </l7:Property>\n" +
+                        "        <l7:Property key=\"SftpHost\">\n" +
+                        "            <l7:StringValue>centospp.l7tech.com</l7:StringValue>\n" +
+                        "        </l7:Property>\n" +
+                        "        <l7:Property key=\"SftpPort\">\n" +
+                        "            <l7:StringValue>22</l7:StringValue>\n" +
+                        "        </l7:Property>\n" +
+                        "        <l7:Property key=\"overrideContentType\">\n" +
+                        "            <l7:StringValue>text/xml; charset=utf-8</l7:StringValue>\n" +
+                        "        </l7:Property>\n" +
+                        "        <l7:Property key=\"pollingInterval\">\n" +
+                        "            <l7:StringValue>10</l7:StringValue>\n" +
+                        "        </l7:Property>\n" +
+                        "        <l7:Property key=\"SftpDeleteOnReceive\">\n" +
+                        "            <l7:StringValue>false</l7:StringValue>\n" +
+                        "        </l7:Property>\n" +
+                        "        <l7:Property key=\"SftpSecurePasswordOid\">\n" +
+                        "            <l7:StringValue>360448</l7:StringValue>\n" +
+                        "        </l7:Property>\n" +
+                        "        <l7:Property key=\"SftpUsername\">\n" +
+                        "            <l7:StringValue>fish</l7:StringValue>\n" +
+                        "        </l7:Property>\n" +
+                        "        <l7:Property key=\"SftpDirectory\">\n" +
+                        "            <l7:StringValue>/home/fish/messages</l7:StringValue>\n" +
+                        "        </l7:Property>\n" +
+                        "    </l7:Properties>\n" +
+                        "</l7:ActiveConnector>";
+        doCreateFail( resourceUri, payload, "wsman:SchemaValidationError" );
     }
 
     @Test
@@ -1504,6 +1624,55 @@ public class ServerGatewayManagementAssertionTest {
                 assertEquals("JMS destination detail id", id , jmsDestinationDetail.getAttribute( "id" ));
                 assertEquals("JMS destination detail version", Integer.toString( version ), jmsDestinationDetail.getAttribute( "version" ));
                 assertEquals("JMS destination detail name", "Test Endpoint 1", XmlUtil.getTextValue(jmsDestinationDetailName));
+            }
+        };
+
+        putAndVerify( message, verifier, false );
+        putAndVerify( message, verifier, true );
+    }
+
+    @Test
+    public void testPutActiveConnector() throws Exception {
+        final String id = new Goid(0,2).toString();
+        final String message = "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\"><s:Header><wsa:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Put</wsa:Action><wsa:To s:mustUnderstand=\"true\">http://127.0.0.1:8080/wsman</wsa:To><wsman:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/activeConnectors</wsman:ResourceURI><wsa:MessageID s:mustUnderstand=\"true\">uuid:afad2993-7d39-1d39-8002-481688002100</wsa:MessageID><wsa:ReplyTo><wsa:Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo><wsman:SelectorSet><wsman:Selector Name=\"id\">"+id+"</wsman:Selector></wsman:SelectorSet><wsman:RequestEPR/></s:Header><s:Body>" +
+                "    <l7:ActiveConnector id=\""+id+"\" version=\"0\">\n" +
+                "        <l7:Name>Test SFTP 1</l7:Name>\n" +
+                "        <l7:Enabled>false</l7:Enabled>\n" +
+                "        <l7:Type>SFTP</l7:Type>\n" +
+                "        <l7:Properties>\n" +
+                "            <l7:Property key=\"SftpHost\">\n" +
+                "                <l7:StringValue>host</l7:StringValue>\n" +
+                "            </l7:Property>\n" +
+                "            <l7:Property key=\"SftpPort\">\n" +
+                "                <l7:StringValue>1234</l7:StringValue>\n" +
+                "            </l7:Property>\n" +
+                "            <l7:Property key=\"SftpSecurePasswordOid\">\n" +
+                "                <l7:StringValue>1234</l7:StringValue>\n" +
+                "            </l7:Property>\n" +
+                "            <l7:Property key=\"SftpUsername\">\n" +
+                "                <l7:StringValue>user</l7:StringValue>\n" +
+                "            </l7:Property>\n" +
+                "            <l7:Property key=\"SftpDirectory\">\n" +
+                "                <l7:StringValue>dir</l7:StringValue>\n" +
+                "            </l7:Property>\n" +
+                "        </l7:Properties>\n" +
+                "    </l7:ActiveConnector>" +
+                "</s:Body></s:Envelope>";
+
+        final UnaryVoidThrows<Document,Exception> verifier = new UnaryVoidThrows<Document,Exception>(){
+            private int expectedVersion = 1;
+
+            @Override
+            public void call( final Document result ) throws Exception {
+                final Element soapBody = SoapUtil.getBodyElement(result);
+                final Element connector = XmlUtil.findExactlyOneChildElementByName(soapBody, NS_GATEWAY_MANAGEMENT, "ActiveConnector");
+                final Element connectorName = XmlUtil.findExactlyOneChildElementByName(connector, NS_GATEWAY_MANAGEMENT, "Name");
+
+                final int version = expectedVersion++;
+
+                assertEquals("Active connector id", id, connector.getAttribute( "id" ));
+                assertEquals("Active connector version", Integer.toString( version ), connector.getAttribute( "version" ));
+                assertEquals("Active connector name", "Test SFTP 1", XmlUtil.getTextValue(connectorName));
             }
         };
 
@@ -2703,7 +2872,7 @@ public class ServerGatewayManagementAssertionTest {
                 folder( 2L, testFolder, "Nested Test Folder") ) );
         beanFactory.addBean( "identityProviderConfigManager", new TestIdentityProviderConfigManager(
                 provider( -2L, IdentityProviderType.INTERNAL, "Internal Identity Provider"),
-                provider( -3L, IdentityProviderType.LDAP, "LDAP", "userLookupByCertMode", "CERT")));
+                            provider( -3L, IdentityProviderType.LDAP, "LDAP", "userLookupByCertMode", "CERT")));
         beanFactory.addBean( "jmsConnectionManager",  new JmsConnectionManagerStub(
                 jmsConnection( 1L, "Test Endpoint", "com.context.Classname", "qcf", "ldap://jndi", null),
                 jmsConnection( 2L, "Test Endpoint 2", "com.context.Classname", "qcf 2", "ldap://jndi2", JmsProviderType.Weblogic)));
@@ -2740,6 +2909,25 @@ public class ServerGatewayManagementAssertionTest {
         beanFactory.addBean( "encapsulatedAssertionConfigManager", new EncapsulatedAssertionConfigManagerStub(
                 encapsulatedAssertion( new Goid(0,1L), "Test Encass Config 1", "ABCD-0001", testPolicy1, null, null, null)
         ) );
+
+        final Map<String,String> mqMap = new HashMap<String,String>();
+        mqMap.put(SsgActiveConnector.PROPERTIES_KEY_MQ_NATIVE_HOST_NAME,"host");
+        mqMap.put(SsgActiveConnector.PROPERTIES_KEY_MQ_NATIVE_PORT,"1234");
+        mqMap.put(SsgActiveConnector.PROPERTIES_KEY_MQ_NATIVE_QUEUE_MANAGER_NAME,"qManager");
+        mqMap.put(SsgActiveConnector.PROPERTIES_KEY_MQ_NATIVE_IS_SSL_ENABLED,"false");
+
+        final Map<String,String> sftpMap = new HashMap<String,String>();
+        sftpMap.put(SsgActiveConnector.PROPERTIES_KEY_SFTP_HOST,"host");
+        sftpMap.put(SsgActiveConnector.PROPERTIES_KEY_SFTP_PORT,"1234");
+        sftpMap.put(SsgActiveConnector.PROPERTIES_KEY_SFTP_DIRECTORY,"dir");
+        sftpMap.put(SsgActiveConnector.PROPERTIES_KEY_SFTP_USERNAME,"user");
+        sftpMap.put(SsgActiveConnector.PROPERTIES_KEY_SFTP_SECURE_PASSWORD_OID,"1234");
+
+        beanFactory.addBean( "ssgActiveConnectorManager", new SsgActiveConnectorManagerStub(
+                activeConnector( new Goid(0,1L), "Test MQ Config 1", SsgActiveConnector.ACTIVE_CONNECTOR_TYPE_MQ_NATIVE,1234L, mqMap),
+                activeConnector( new Goid(0,2L), "Test SFTP Config 1", SsgActiveConnector.ACTIVE_CONNECTOR_TYPE_SFTP,4567L, sftpMap),
+                activeConnector( new Goid(0,3L), "Test SFTP Config Bad", "SFTP1", 1234L,sftpMap)
+        ));
 
         final GenericEntity genericEntity = new GenericEntity();
         genericEntity.setGoid(new Goid(0,1));
@@ -2908,6 +3096,23 @@ public class ServerGatewayManagementAssertionTest {
         }
         service.setWsdlXml( wsdlXml );
         return service;
+    }
+
+    private static SsgActiveConnector activeConnector( final Goid goid,
+                                                       final String name,
+                                                       final String type,
+                                                       final Long hardWiredServiceOid,
+                                                       final Map<String,String> properties ){
+        final SsgActiveConnector connector = new SsgActiveConnector();
+        connector.setGoid(goid);
+        connector.setName(name);
+        connector.setType(type);
+        connector.setHardwiredServiceOid(hardWiredServiceOid);
+        for(String key: properties.keySet()){
+            connector.setProperty(key,properties.get(key));
+        }
+
+        return connector;
     }
 
     private static EncapsulatedAssertionConfig encapsulatedAssertion(final Goid goid, final String name, final String guid, final Policy policy,

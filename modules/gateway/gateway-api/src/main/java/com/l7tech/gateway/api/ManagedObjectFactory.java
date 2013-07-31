@@ -398,6 +398,15 @@ public class ManagedObjectFactory {
     }
 
     /**
+     * Create a new ActiveConnectorMO instance.
+     *
+     * @return The new instance
+     */
+    public static ActiveConnectorMO createActiveConnector() {
+        return new ActiveConnectorMO();
+    }
+
+    /**
      * Read a managed object from the given data.
      *
      * @param in The input data.
@@ -483,7 +492,9 @@ public class ManagedObjectFactory {
                 RevocationCheckingPolicyMO.class,
                 ServiceMO.class,
                 StoredPasswordMO.class,
-                TrustedCertificateMO.class
+                TrustedCertificateMO.class,
+                CustomKeyValueStoreMO.class,
+                ActiveConnectorMO.class
         };
     }
 

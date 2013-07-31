@@ -12,6 +12,15 @@ import java.util.Collection;
  * @author ghuang
  */
 public class SsgActiveConnectorManagerStub extends GoidEntityManagerStub<SsgActiveConnector, SsgActiveConnectorHeader> implements SsgActiveConnectorManager {
+
+    public SsgActiveConnectorManagerStub() {
+        super();
+    }
+
+    public SsgActiveConnectorManagerStub(SsgActiveConnector... connectors) {
+        super(connectors);
+    }
+
     @NotNull
     @Override
     public Collection<SsgActiveConnector> findSsgActiveConnectorsByType(@NotNull String type) throws FindException {
