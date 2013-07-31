@@ -204,7 +204,7 @@ public class SiteMinderAuthenticateAssertion extends Assertion implements UsesVa
 
         // request default feature set name for our class name, since we are a known optional module
         // that is, we want our required feature set to be "assertion:SiteMinder" rather than "set:modularAssertions"
-        meta.put(AssertionMetadata.FEATURE_SET_NAME, "set:modularAssertions");
+        meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
         meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.siteminder.console.SiteMinderAuthenticationPropertiesDialog");
         meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "Authenticate via SiteMinder Properties");
 

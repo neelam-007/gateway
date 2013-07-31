@@ -739,6 +739,12 @@ public class GatewayFeatureSets {
                 mass("assertion:LookupApiKey"),
                 mass("assertion:ManageApiKey"));
 
+        GatewayFeatureSet siteMinderAssertions = fsr("set:SiteMinder:Assertions",
+                "The necessary assertions to enable CA SiteMinder integration",
+                mass("assertion:SiteMinderCheckProtected"),
+                mass("assertion:SiteMinderAuthenticate"),
+                mass("assertion:SiteMinderAuthorize"));
+
 //        GatewayFeatureSet salesForceInstallerAssertion = fsr("set:SalesforceInstaller:Assertions",
 //                "The necessary assertions to enable the Salesforce Installer",
 //                mass("assertion:SalesforceInstaller"));
@@ -865,6 +871,7 @@ public class GatewayFeatureSets {
             fs(policyBundleInstaller),
             fs(splitJoinAssertions),
             fs(jsonTransformationAssertion),
+            fs(siteMinderAssertions),
             mass("assertion:ValidateCertificate"));
 
         fsp("set:Profile:CloudConnect", "CloudSpan CloudConnect",
@@ -926,6 +933,7 @@ public class GatewayFeatureSets {
             fs(apiPortalIntegration),
             fs(policyBundleInstaller),
             fs(splitJoinAssertions),
+            fs(siteMinderAssertions),
             mass("assertion:ValidateCertificate"));
 
         fsp("set:Profile:CloudControl", "CloudSpan CloudControl",
@@ -990,6 +998,7 @@ public class GatewayFeatureSets {
             fs(policyBundleInstaller),
             fs(splitJoinAssertions),
             fs(jsonTransformationAssertion),
+            fs(siteMinderAssertions),
             mass("assertion:ValidateCertificate"));
 
         GatewayFeatureSet profileApi =
@@ -1037,7 +1046,8 @@ public class GatewayFeatureSets {
                 ass(WssReplayProtection.class),
                 mass("assertion:SamlIssuer"),
                 mass("assertion:ValidateNonSoapSamlToken"),
-                fs(trustStore));
+                fs(trustStore),
+                fs(siteMinderAssertions));
 
         PROFILE_ALL =
         fsp("set:Profile:Development", "Development Mode",

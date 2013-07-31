@@ -104,7 +104,7 @@ public class SiteMinderCheckProtectedAssertion extends Assertion implements Uses
 
         // request default feature set name for our class name, since we are a known optional module
         // that is, we want our required feature set to be "assertion:SiteMinder" rather than "set:modularAssertions"
-        meta.put(AssertionMetadata.FEATURE_SET_NAME, "set:modularAssertions");
+        meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
         meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.siteminder.console.SiteMinderCheckProtectedPropertiesDialog");
         meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "SiteMinder Check Protected Resource Properties");
 
