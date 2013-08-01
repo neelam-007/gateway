@@ -477,7 +477,7 @@ INSERT INTO cluster_properties
 --
 
 CREATE TABLE license_document (
-  objectid bigint(20) NOT NULL,
-  contents mediumtext,
+  objectid bigint NOT NULL,
+  contents clob(2147483647),
   PRIMARY KEY (objectid)
-) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
+);

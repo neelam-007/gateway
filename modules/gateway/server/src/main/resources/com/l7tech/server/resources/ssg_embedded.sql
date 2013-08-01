@@ -1771,13 +1771,6 @@ alter table firewall_rule_property
     references firewall_rule
     on delete cascade;
 
-DROP TABLE IF EXISTS license_document;
-CREATE TABLE license_document (
-  objectid bigint(20) NOT NULL,
-  contents mediumtext,
-  PRIMARY KEY (objectid)
-) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
-
 -- create new RBAC role for Manage Firewall Rules --
 INSERT INTO rbac_role (objectid, version, name, entity_type, description, user_created) VALUES (-1400, 0, 'Manage Firewall Rules', 'FIREWALL_RULE', 'Users assigned to the {0} role have the ability to read, create, update and delete Firewall rules.', 0);
 INSERT INTO rbac_permission VALUES (-1275,0,-1400,'CREATE',NULL,'FIREWALL_RULE');
@@ -1806,3 +1799,12 @@ CREATE TABLE custom_key_value_store (
   UNIQUE (name)
 );
 
+--
+-- License documents for updated licensing model
+--
+
+CREATE TABLE license_document (
+  objectid bigint NOT NULL,
+  contents clob(2147483647),
+  PRIMARY KEY (objectid)
+);
