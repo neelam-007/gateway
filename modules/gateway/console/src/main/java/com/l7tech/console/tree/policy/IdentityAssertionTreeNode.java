@@ -5,10 +5,12 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.console.action.SelectMessageTargetAction;
 import com.l7tech.console.action.SelectIdentityTagAction;
 import com.l7tech.gateway.common.admin.IdentityAdmin;
+import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.assertion.AssertionUtils;
+import com.l7tech.util.ExceptionUtils;
 
 import javax.swing.*;
 import java.util.logging.Level;
@@ -52,6 +54,9 @@ public abstract class IdentityAssertionTreeNode<AT extends IdentityAssertion> ex
             } catch (FindException e) {
                 provName = NA;
                 log.log(Level.SEVERE, "could not find provider associated with this assertion", e);
+            } catch (final PermissionDeniedException e) {
+                provName = NA;
+                log.log(Level.WARNING, "User does not have permission to look up the IdentityAdmin", ExceptionUtils.getDebugException(e));
             } catch (Exception e) {
                 provName = NA;
                 log.log(Level.SEVERE, "could not lookup the IdentityAdmin", e);
