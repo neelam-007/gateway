@@ -37,11 +37,32 @@ public class AddPermissionsWizard extends Wizard {
             if (config.getAddedPermissions() == null) {
                 getSelectedWizardPanel().storeSettings(config);
             }
-            role.getPermissions().addAll(config.getAddedPermissions());
+            for (final Permission added : config.getAddedPermissions()) {
+                if (!containsPermission(added)) {
+                    role.getPermissions().add(added);
+                } else {
+                    logger.log(Level.WARNING, "Permission already exists on the role: " + added);
+                }
+            }
         } else {
             logger.log(Level.WARNING, "Cannot finish wizard because received invalid settings object: " + wizardInput);
         }
         super.finish(evt);
+    }
+
+    private boolean containsPermission(@NotNull final Permission permission) {
+        boolean alreadyExists = false;
+        for (final Permission existing : role.getPermissions()) {
+            final Permission existingCopy = existing.getAnonymousClone();
+            existingCopy.setOid(Permission.DEFAULT_OID);
+            final Permission toCheck = permission.getAnonymousClone();
+            toCheck.setOid(Permission.DEFAULT_OID);
+            if (existingCopy.equals(toCheck)) {
+                alreadyExists = true;
+                break;
+            }
+        }
+        return alreadyExists;
     }
 
     public class PermissionConfig {

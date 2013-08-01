@@ -2,8 +2,7 @@ package com.l7tech.console.security.rbac;
 
 import com.l7tech.console.panels.BasicPropertiesPanel;
 import com.l7tech.console.panels.OkCancelPanel;
-import com.l7tech.gateway.common.security.rbac.OperationType;
-import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
+import com.l7tech.gateway.common.security.rbac.Permission;
 import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.InputValidator;
@@ -73,6 +72,14 @@ public class RolePropertiesDialog extends JDialog {
         okCancelPanel.getCancelButton().addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(final ActionEvent e) {
+                // remove any permissions which may have been added
+                final Set<Permission> toRemove = new HashSet<>();
+                for (final Permission permission : role.getPermissions()) {
+                    if (permission.getOid() == Permission.DEFAULT_OID) {
+                        toRemove.add(permission);
+                    }
+                }
+                role.getPermissions().removeAll(toRemove);
                 try {
                     afterEditListener.call(null);
                 } catch (final SaveException ex) {
