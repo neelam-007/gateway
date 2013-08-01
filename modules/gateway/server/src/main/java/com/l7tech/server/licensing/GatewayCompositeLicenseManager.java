@@ -14,14 +14,12 @@ public class GatewayCompositeLicenseManager extends AbstractCompositeLicenseMana
 
     private static final Logger logger = Logger.getLogger(GatewayCompositeLicenseManager.class.getName());
 
-    public GatewayCompositeLicenseManager()
-    {
+    public GatewayCompositeLicenseManager() {
         super(logger);
     }
 
     @Override
-    protected FeatureSetExpander getFeatureSetExpander()
-    {
+    protected FeatureSetExpander getFeatureSetExpander() {
         return GatewayFeatureSets.getFeatureSetExpander();
     }
 }

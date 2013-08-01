@@ -2,8 +2,7 @@ package com.l7tech.server.licensing;
 
 import com.l7tech.gateway.common.InvalidLicenseException;
 import com.l7tech.gateway.common.LicenseException;
-import com.l7tech.gateway.common.audit.Audit;
-import com.l7tech.gateway.common.audit.AuditFactory;
+import com.l7tech.gateway.common.audit.AuditDetailMessage;
 import com.l7tech.gateway.common.audit.SystemMessages;
 import com.l7tech.gateway.common.licensing.*;
 import com.l7tech.objectmodel.DeleteException;
@@ -12,22 +11,17 @@ import com.l7tech.objectmodel.SaveException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.server.event.EntityInvalidationEvent;
-import com.l7tech.util.BuildInfo;
-import com.l7tech.util.DateUtils;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.Functions;
+import com.l7tech.server.event.system.LicenseEvent;
+import com.l7tech.util.*;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationListener;
-import org.springframework.context.SmartLifecycle;
+import org.springframework.context.*;
 
 import java.io.ByteArrayInputStream;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -41,14 +35,15 @@ import java.util.logging.Logger;
 /**
  * @author Jamie Williams - wilja33 - jamie.williams2@ca.com
  */
-public abstract class AbstractCompositeLicenseManager implements SmartLifecycle,
+public abstract class AbstractCompositeLicenseManager implements Lifecycle, Phased, ApplicationEventPublisherAware,
         ApplicationListener<EntityInvalidationEvent>, UpdatableCompositeLicenseManager {
 
     /* ---- Issuer Certificate(s) ---- */
     private static final X509Certificate[] TRUSTED_ISSUERS_X509_CERTIFICATES = generateTrustedIssuerCertificates();
 
     public static final int PHASE = -10000;
-    private static final long DB_RETRY_INTERVAL = (5L * 60L * 1000L);
+    private static final long REFRESH_INTERVAL = 6L * 60L * 60L * 1000L;
+    private static final long DB_RETRY_INTERVAL = 5L * 60L * 1000L;
     private static final long DB_FAILURE_GRACE_PERIOD = 72L * 60L * 60L * 1000L; // ignore a DB failure for up to 72 hours before canceling any current license
     private static final String BUILD_PRODUCT_NAME = BuildInfo.getProductName();
     private static final String BUILD_VERSION_MAJOR = BuildInfo.getProductVersionMajor();
@@ -56,15 +51,15 @@ public abstract class AbstractCompositeLicenseManager implements SmartLifecycle,
 
     private final Logger logger;
     private final Lock updateLock = new ReentrantLock(); // Not synchronized because lost writes/stale reads are not important
+    private final AtomicLong lastCheck = new AtomicLong(-1L);
     private final AtomicLong lastUpdate = new AtomicLong(-1L);
     private final RebuildScheduler rebuildScheduler = new RebuildScheduler();
     private final AtomicReference<CompositeLicense> compositeLicense = new AtomicReference<>(null);
-    private final AtomicReference<Audit> auditor = new AtomicReference<>(null);
+    private final List<LicenseEvent> events = new ArrayList<>();
+
+    private ApplicationEventPublisher eventPublisher;
 
     private volatile boolean running = false;
-
-    @Autowired
-    private AuditFactory auditFactory;
 
     @Autowired
     private FeatureLicenseFactory licenseFactory;
@@ -113,7 +108,7 @@ public abstract class AbstractCompositeLicenseManager implements SmartLifecycle,
             rebuildCompositeLicense();
 
             // audit successful installation
-            getAudit().logAndAudit(SystemMessages.LICENSE_INSTALLED, Long.toString(license.getId()));
+//            audit.logAndAudit(SystemMessages.LICENSE_INSTALLED, Long.toString(license.getId()));
         } catch (SaveException e) {
             throw new LicenseInstallationException(ExceptionUtils.getMessage(e), e);
         } finally {
@@ -133,7 +128,7 @@ public abstract class AbstractCompositeLicenseManager implements SmartLifecycle,
             rebuildCompositeLicense();
 
             // audit successful removal
-            getAudit().logAndAudit(SystemMessages.LICENSE_REMOVED, Long.toString(license.getId()));
+//            audit.logAndAudit(SystemMessages.LICENSE_REMOVED, Long.toString(license.getId()));
         } catch (DeleteException e) {
             throw new LicenseRemovalException(ExceptionUtils.getMessage(e), e);
         } finally {
@@ -221,7 +216,39 @@ public abstract class AbstractCompositeLicenseManager implements SmartLifecycle,
 
         CompositeLicense l = compositeLicense.get();
 
+        checkLicenseCurrent();
+
         return l != null && l.isFeatureEnabled(featureName);
+    }
+
+    /**
+     * Check if the license information is due to be refreshed (per the {@link #REFRESH_INTERVAL}), and if so
+     * rebuild the CompositeLicense.
+     */
+    private void checkLicenseCurrent() {
+        long now = System.currentTimeMillis();
+
+        if (now - lastCheck.get() < REFRESH_INTERVAL)
+            return;
+
+        boolean gotLock = false;
+
+        try {
+            if (compositeLicense.get() != null) {
+                // if we already have a license then just try a lock so we don't wait if another thread is holding it
+                gotLock = updateLock.tryLock();
+            } else {
+                gotLock = true;
+                updateLock.lock();
+            }
+
+            if (!gotLock) // see if someone else got here first
+                return;
+
+            rebuildCompositeLicense();
+        } finally {
+            if (gotLock) updateLock.unlock();
+        }
     }
 
     // --- LicenseDocument change event handling: reload LicenseDocuments, regenerate CompositeLicense --- ///
@@ -256,12 +283,12 @@ public abstract class AbstractCompositeLicenseManager implements SmartLifecycle,
                 if (null != compositeLicense.get() &&
                         (System.currentTimeMillis() - lastUpdate.get() < DB_FAILURE_GRACE_PERIOD)) {
                     // audit the error, but leave the CompositeLicense as is
-                    getAudit().logAndAudit(SystemMessages.LICENSE_DB_ERROR_RETRY, null, e);
+//                    audit.logAndAudit(SystemMessages.LICENSE_DB_ERROR_RETRY, null, e);
                 } else {
-                    getAudit().logAndAudit(SystemMessages.LICENSE_DB_ERROR_GAVEUP, null, e);
+//                    audit.logAndAudit(SystemMessages.LICENSE_DB_ERROR_GAVEUP, null, e);
 
-                    // grace period has expired, treat as if no license exists
-                    compositeLicense.set(null);
+                    // grace period has expired, treat as if no licenses exist
+                    setCompositeLicense(null);
                 }
 
                 // schedule a task to retry the rebuild
@@ -271,8 +298,8 @@ public abstract class AbstractCompositeLicenseManager implements SmartLifecycle,
             }
 
             if(licenseDocuments.isEmpty()) {
-                getAudit().logAndAudit(SystemMessages.LICENSE_NO_LICENSE);
-                compositeLicense.set(null);
+//                audit.logAndAudit(SystemMessages.LICENSE_NO_LICENSE);
+                setCompositeLicense(null);
             } else {
                 ArrayList<FeatureLicense> featureLicenses = new ArrayList<>();
                 ArrayList<LicenseDocument> invalidDocuments = new ArrayList<>();
@@ -285,7 +312,7 @@ public abstract class AbstractCompositeLicenseManager implements SmartLifecycle,
                         FeatureLicense license = createFeatureLicense(document);
                         featureLicenses.add(license);
                     } catch (InvalidLicenseException e) {
-                        getAudit().logAndAudit(SystemMessages.LICENSE_INVALID, null, e);
+//                        audit.logAndAudit(SystemMessages.LICENSE_INVALID, null, e);
                         // an invalid LicenseDocument has been found - include it as such in the CompositeLicense
                         invalidDocuments.add(document);
                     }
@@ -296,8 +323,8 @@ public abstract class AbstractCompositeLicenseManager implements SmartLifecycle,
                     try {
                         validateLicenseExpiry(license);
                     } catch (InvalidLicenseException e) {
-                        getAudit().logAndAudit(SystemMessages.LICENSE_EXPIRED,
-                                new String[] {Long.toString(license.getId())}, e);
+//                        audit.logAndAudit(SystemMessages.LICENSE_EXPIRED,
+//                                new String[] {Long.toString(license.getId())}, e);
                         expiredLicenses.put(license.getId(), license);
                         continue;
                     }
@@ -305,8 +332,8 @@ public abstract class AbstractCompositeLicenseManager implements SmartLifecycle,
                     try {
                         validateLicenseStart(license);
                     } catch (InvalidLicenseException e) {
-                        getAudit().logAndAudit(SystemMessages.LICENSE_NOT_YET_VALID,
-                                new String[] {Long.toString(license.getId())}, e);
+//                        audit.logAndAudit(SystemMessages.LICENSE_NOT_YET_VALID,
+//                                new String[] {Long.toString(license.getId())}, e);
                         invalidLicenses.put(license.getId(), license);
                         continue;
                     }
@@ -314,8 +341,8 @@ public abstract class AbstractCompositeLicenseManager implements SmartLifecycle,
                     try {
                         validateIssuer(license);
                     } catch (InvalidLicenseException e) {
-                        getAudit().logAndAudit(SystemMessages.LICENSE_INVALID_ISSUER,
-                                new String[] {Long.toString(license.getId())}, e);
+//                        audit.logAndAudit(SystemMessages.LICENSE_INVALID_ISSUER,
+//                                new String[] {Long.toString(license.getId())}, e);
                         invalidLicenses.put(license.getId(), license);
                         continue;
                     }
@@ -323,8 +350,8 @@ public abstract class AbstractCompositeLicenseManager implements SmartLifecycle,
                     try {
                         validateProduct(license);
                     } catch (InvalidLicenseException e) {
-                        getAudit().logAndAudit(SystemMessages.LICENSE_INVALID_PRODUCT,
-                                new String[] {Long.toString(license.getId())}, e);
+//                        audit.logAndAudit(SystemMessages.LICENSE_INVALID_PRODUCT,
+//                                new String[] {Long.toString(license.getId())}, e);
                         invalidLicenses.put(license.getId(), license);
                         continue;
                     }
@@ -332,56 +359,87 @@ public abstract class AbstractCompositeLicenseManager implements SmartLifecycle,
                     validLicenses.put(license.getId(), license);
                 }
 
-                if (!validLicenses.isEmpty()) {
-                    getAudit().logAndAudit(SystemMessages.LICENSE_NO_LICENSE);
+                if (validLicenses.isEmpty()) {
+//                    audit.logAndAudit(SystemMessages.LICENSE_NO_LICENSE);
                 } else {
-                    getAudit().logAndAudit(SystemMessages.LICENSE_FOUND);
+//                    audit.logAndAudit(SystemMessages.LICENSE_FOUND);
                 }
 
                 final CompositeLicense newCompositeLicense = new CompositeLicense(validLicenses,
                         invalidLicenses, expiredLicenses, invalidDocuments, getFeatureSetExpander());
 
-                compositeLicense.set(newCompositeLicense);
+                setCompositeLicense(newCompositeLicense);
             }
 
             lastUpdate.set(System.currentTimeMillis());
         } finally {
+            lastCheck.set(System.currentTimeMillis());
             updateLock.unlock();
         }
     }
 
-    protected Audit getAudit() {
-        Audit audit = auditor.get();
-
-        if (null == audit) {
-            audit = auditFactory.newInstance(this, logger);
-            auditor.compareAndSet(null, audit);
+    /**
+     * Set the LicenseManager's CompositeLicense. Will only fire a LicenseEvent if the value has changed.
+     *
+     * @param newCompositeLicense the new CompositeLicense value
+     */
+    private void setCompositeLicense(@Nullable CompositeLicense newCompositeLicense) {
+        if (newCompositeLicense != compositeLicense.getAndSet(newCompositeLicense)) {
+            fireEvent("Updated", SystemMessages.LICENSE_UPDATED);
         }
+    }
 
-        return audit;
+    /**
+     * Publish a LicenseEvent.
+     *
+     * @param action the event action
+     * @param message the audit message
+     */
+    private void fireEvent(final String action, final AuditDetailMessage message) {
+        final LicenseEvent event = new LicenseEvent(action, message.getLevel(), action, message.getMessage());
+
+        if (!isRunning()) {
+            // Save these and send them out later to avoid deadlocks from sending events too early in startup.
+            // This is not strictly thread safe, but is sufficiently so for our current usage (should set/recheck
+            // started flag when synchronized)
+            synchronized(events) {
+                events.add(event);
+            }
+        } else {
+            // avoid firing while still holding the license update lock
+            Background.scheduleOneShot(new TimerTask() {
+                @Override
+                public void run() {
+                    eventPublisher.publishEvent(event);
+                }
+            }, 0);
+        }
     }
 
     // --- Abstract methods --- //
 
     protected abstract FeatureSetExpander getFeatureSetExpander();
 
-    // --- SmartLifecycle - ensures the bean starts early & automatically, performs cleanup tasks --- //
+    // --- ApplicationEventPublisher --- //
 
     @Override
-    public boolean isAutoStartup() {
-        return true;
+    public void setApplicationEventPublisher(ApplicationEventPublisher applicationEventPublisher) {
+        this.eventPublisher = applicationEventPublisher;
     }
 
-    @Override
-    public void stop(Runnable callback) {
-        rebuildScheduler.close();
-        running = false;
-        callback.run();
-    }
+    // --- Lifecycle --- //
 
     @Override
     public void start() {
         running = true;
+
+        synchronized(events) {
+            for (final ApplicationEvent event : events) {
+                eventPublisher.publishEvent(event);
+            }
+
+            events.clear();
+        }
     }
 
     @Override
