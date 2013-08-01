@@ -11,7 +11,6 @@ import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.TextListCellRenderer;
-import com.l7tech.objectmodel.EntityType;
 import com.l7tech.uddi.UDDIException;
 import com.l7tech.uddi.UDDIRegistryInfo;
 import com.l7tech.util.ExceptionUtils;
@@ -83,21 +82,21 @@ public class UddiRegistryPropertiesDialog extends JDialog {
     private boolean confirmed;
     private static final String DIALOG_TITLE = "UDDI Registry Properties";
     private Map<String, UDDIRegistryInfo> registryToInfoMap;
-    private final boolean canEdit;
+    private final boolean readOnly;
 
     //only used by main in this classs
-    private UddiRegistryPropertiesDialog(boolean canEdit) {
-        this.canEdit = canEdit;
+    private UddiRegistryPropertiesDialog(boolean readOnly) {
+        this.readOnly = readOnly;
         setContentPane(contentPane);
         setModal(true);
         this.uddiRegistry = new UDDIRegistry();
         initialize();
     }
 
-    public UddiRegistryPropertiesDialog(Window owner, UDDIRegistry uddiRegistry, boolean canEdit) {
+    public UddiRegistryPropertiesDialog(Window owner, UDDIRegistry uddiRegistry, boolean readOnly) {
         super(owner, DIALOG_TITLE, UddiRegistryPropertiesDialog.DEFAULT_MODALITY_TYPE);
         this.uddiRegistry = uddiRegistry;
-        this.canEdit = canEdit;
+        this.readOnly = readOnly;
         this.subscriptionServiceAvailable = isSubscriptionServiceAvailable(uddiRegistry);
         initialize();
     }
@@ -229,7 +228,7 @@ public class UddiRegistryPropertiesDialog extends JDialog {
                 }
             }
         });
-        zoneControl.configure(uddiRegistry.getOid() == UDDIRegistry.DEFAULT_OID ? OperationType.CREATE : canEdit ? OperationType.UPDATE : OperationType.READ, uddiRegistry);
+        zoneControl.configure(uddiRegistry.getOid() == UDDIRegistry.DEFAULT_OID ? OperationType.CREATE : !readOnly ? OperationType.UPDATE : OperationType.READ, uddiRegistry);
 
         //field validation
         inputValidator.constrainTextFieldToBeNonEmpty("UDDI Registry Name", registryNameTextField, null);
@@ -474,7 +473,7 @@ public class UddiRegistryPropertiesDialog extends JDialog {
 
     private void enableOrDisableComponents(){
         if(uddiRegistryTypeComboBox.getSelectedIndex() == -1) enableOrDisableUddiTypeDependentComponents(false);
-        else enableOrDisableUddiTypeDependentComponents(canEdit);
+        else enableOrDisableUddiTypeDependentComponents(!readOnly);
 
         enableOrDisableUrls();
 
@@ -484,16 +483,16 @@ public class UddiRegistryPropertiesDialog extends JDialog {
 
         enableOrDisableMonitoringOptions();
 
-        uddiRegistryTypeComboBox.setEnabled(canEdit);
-        uddiRegistryTypeLabel.setEnabled(canEdit);
-        enabledCheckBox.setEnabled(canEdit);
-        registryNameTextField.setEnabled(canEdit);
-        uddiRegistryNameLabel.setEnabled(canEdit);
+        uddiRegistryTypeComboBox.setEnabled(!readOnly);
+        uddiRegistryTypeLabel.setEnabled(!readOnly);
+        enabledCheckBox.setEnabled(!readOnly);
+        registryNameTextField.setEnabled(!readOnly);
+        uddiRegistryNameLabel.setEnabled(!readOnly);
     }
 
     private void enableOrDisableUrls(){
         final String baseUrlText = baseUrlTextField.getText();
-        final boolean enableUrls = baseUrlTextField.isEnabled() && baseUrlText != null && !baseUrlText.trim().isEmpty() && canEdit;
+        final boolean enableUrls = baseUrlTextField.isEnabled() && baseUrlText != null && !baseUrlText.trim().isEmpty() && !readOnly;
         securityUrlLabel.setEnabled(enableUrls);
         securityUrlTextField.setEnabled(enableUrls);
         inquiryUrlLabel.setEnabled(enableUrls);
@@ -507,7 +506,7 @@ public class UddiRegistryPropertiesDialog extends JDialog {
 
     private void enableOrDisableMonitoringOptions() {
         final String subcriptionUrl = subscriptionUrlTextField.getText();
-        final boolean enableMonitoringSelection = subcriptionUrl != null && !subcriptionUrl.trim().isEmpty() && canEdit;
+        final boolean enableMonitoringSelection = subcriptionUrl != null && !subcriptionUrl.trim().isEmpty() && !readOnly;
         final boolean enableMonitoringOptions = monitoringEnabledCheckBox.isSelected() && monitoringEnabledCheckBox.isEnabled();
 
         monitoringEnabledCheckBox.setEnabled( enableMonitoringSelection );
@@ -518,14 +517,14 @@ public class UddiRegistryPropertiesDialog extends JDialog {
     }
 
     private void enableOrDisableMetricsOptions() {
-        final boolean enableMetricOptions = metricsEnabledCheckBox.isSelected() && metricsEnabledCheckBox.isEnabled() && canEdit;
+        final boolean enableMetricOptions = metricsEnabledCheckBox.isSelected() && metricsEnabledCheckBox.isEnabled() && !readOnly;
         metricsPublishFrequencyLabel.setEnabled(enableMetricOptions);
         metricsPublishFrequencyTextField.setEnabled(enableMetricOptions);
     }
 
     private void enableOrDisableClientAuthOptions() {
         final boolean enableClientAuthOptions = clientAuthenticationCheckBox.isSelected()
-                && clientAuthenticationCheckBox.isEnabled() && canEdit;
+                && clientAuthenticationCheckBox.isEnabled() && !readOnly;
         keyStoreLabel.setEnabled(enableClientAuthOptions);
         privateKeyComboBox.setEnabled(enableClientAuthOptions);
     }
@@ -543,7 +542,7 @@ public class UddiRegistryPropertiesDialog extends JDialog {
 
     private void onOk() {
         viewToModel(uddiRegistry);
-        confirmed = canEdit;
+        confirmed = !readOnly;
         dispose();
     }
 
