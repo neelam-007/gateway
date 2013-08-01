@@ -5,6 +5,7 @@ import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.gateway.common.resources.ResourceEntryHeader;
 import com.l7tech.gateway.common.resources.ResourceType;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
+import com.l7tech.gateway.common.siteminder.SiteMinderConfiguration;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
@@ -158,6 +159,16 @@ public class ExternalReferenceFinderStub implements ExternalReferenceFinder {
 
     @Override
     public User findUserByLogin( final long providerOid, final String login ) throws FindException {
+        return null;
+    }
+
+    @Override
+    public SiteMinderConfiguration findSiteMinderConfigurationByName(String name) throws FindException {
+        return null;
+    }
+
+    @Override
+    public SiteMinderConfiguration findSiteMinderConfigurationByID(Goid id) throws FindException {
         return null;
     }
 

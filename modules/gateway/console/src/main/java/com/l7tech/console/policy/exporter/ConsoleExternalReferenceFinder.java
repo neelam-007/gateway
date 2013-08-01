@@ -17,6 +17,8 @@ import com.l7tech.gateway.common.resources.ResourceEntryHeader;
 import com.l7tech.gateway.common.resources.ResourceType;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
+import com.l7tech.gateway.common.siteminder.SiteMinderAdmin;
+import com.l7tech.gateway.common.siteminder.SiteMinderConfiguration;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import com.l7tech.gateway.common.transport.TransportAdmin;
 import com.l7tech.gateway.common.transport.jms.JmsAdmin;
@@ -230,6 +232,18 @@ public class ConsoleExternalReferenceFinder implements ExternalReferenceFinder, 
     public User findUserByLogin( long providerOid, String login ) throws FindException {
         IdentityAdmin idAdmin = getAdminInterface( IdentityAdmin.class );
         return idAdmin.findUserByLogin( providerOid, login );
+    }
+
+    @Override
+    public SiteMinderConfiguration findSiteMinderConfigurationByName(String name) throws FindException {
+        SiteMinderAdmin siteMinderAdmin = getAdminInterface(SiteMinderAdmin.class);
+        return siteMinderAdmin.getSiteMinderConfiguration(name);
+    }
+
+    @Override
+    public SiteMinderConfiguration findSiteMinderConfigurationByID(Goid id) throws FindException {
+        SiteMinderAdmin siteMinderAdmin = getAdminInterface(SiteMinderAdmin.class);
+        return siteMinderAdmin.getSiteMinderConfiguration(id);
     }
 
     @Override

@@ -107,6 +107,7 @@ public class SiteMinderCheckProtectedAssertion extends Assertion implements Uses
         meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
         meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.siteminder.console.SiteMinderCheckProtectedPropertiesDialog");
         meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "SiteMinder Check Protected Resource Properties");
+        meta.put(AssertionMetadata.MODULE_LOAD_LISTENER_CLASSNAME, "com.l7tech.external.assertions.siteminder.server.SiteMinderModuleLoadListener" );
 
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;

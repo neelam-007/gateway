@@ -88,6 +88,7 @@ public class SiteMinderConfigPropertiesDialog extends JDialog {
     private JCheckBox updateSSOTokenCheckBox;
     private JPasswordField secretPasswordField;
     private JButton testButton;
+    private JCheckBox disableCheckBox;
 
     private static class FipsModeType{
         private static final Map<Integer, FipsModeType> fipsTypes = new ConcurrentHashMap<Integer, FipsModeType>();
@@ -282,6 +283,7 @@ public class SiteMinderConfigPropertiesDialog extends JDialog {
         IPCheckCheckBox.setSelected(configuration.isIpcheck());
         updateSSOTokenCheckBox.setSelected(configuration.isUpdateSSOToken());
         hostNameTextField.setText(configuration.getHostname());
+        disableCheckBox.setSelected(!configuration.isEnabled());
         switch (configuration.getFipsmode()){
             case 0:
                 fipsModeComboBox.setSelectedIndex(FIPS140_UNSET);
@@ -417,6 +419,7 @@ public class SiteMinderConfigPropertiesDialog extends JDialog {
         configuration.setIpcheck(IPCheckCheckBox.isSelected());
         configuration.setUpdateSSOToken(updateSSOTokenCheckBox.isSelected());
         configuration.setHostname(hostNameTextField.getText().trim());
+        configuration.setEnabled(!disableCheckBox.isSelected());
         switch (fipsModeComboBox.getSelectedItem().toString()) {
             case UNSET_FIPS_MODE:
                 DialogDisplayer.showMessageDialog(SiteMinderConfigPropertiesDialog.this,
@@ -679,4 +682,10 @@ public class SiteMinderConfigPropertiesDialog extends JDialog {
             return null;
         return reg.getSiteMinderConfigurationAdmin();
     }
+
+    public SiteMinderConfiguration getConfiguration() {
+        return configuration;
+    }
+
+
 }

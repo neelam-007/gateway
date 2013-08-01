@@ -5,6 +5,7 @@ import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.gateway.common.resources.ResourceEntryHeader;
 import com.l7tech.gateway.common.resources.ResourceType;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
+import com.l7tech.gateway.common.siteminder.SiteMinderConfiguration;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
@@ -84,6 +85,10 @@ public interface ExternalReferenceFinder {
     User findUserByID( long providerOid, String userId ) throws FindException;
 
     User findUserByLogin( long providerOid, String login ) throws FindException;
+
+    SiteMinderConfiguration findSiteMinderConfigurationByName(final String name) throws FindException;
+
+    SiteMinderConfiguration findSiteMinderConfigurationByID(final Goid id) throws FindException;
 
     <ET extends GenericEntity>
     GoidEntityManager<ET, GenericEntityHeader> getGenericEntityManager(@NotNull Class<ET> entityClass) throws FindException;

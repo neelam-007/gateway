@@ -35,6 +35,17 @@ public interface SiteMinderAdmin extends AsyncAdminMethods {
     SiteMinderConfiguration getSiteMinderConfiguration(String configurationName) throws FindException;
 
     /**
+     *  Retrieve a SiteMinder configuration entity from the database by using a configuration name.
+     * @param id: the primary key of a SiteMinder configuration
+     * @return a SiteMinder configuration entity with the name, configurationName
+     * @throws com.l7tech.objectmodel.FindException : thrown when errors finding the SiteMinder configuration entity.
+     */
+    @Transactional(readOnly = true)
+    @Secured(types = EntityType.SITEMINDER_CONFIGURATION, stereotype = MethodStereotype.FIND_ENTITY)
+    SiteMinderConfiguration getSiteMinderConfiguration(Goid id) throws FindException;
+
+
+    /**
      * Retrieve all SiteMinder configuration entities from the database.
      * @return a list of SiteMinder configuration entities
      * @throws FindException: thrown when errors finding the SiteMinder configuration entities.
@@ -94,5 +105,6 @@ public interface SiteMinderAdmin extends AsyncAdminMethods {
      * @return empty string if the testing is successful.  Otherwise, return an error message with testing failure detail.
      */
     @Transactional(readOnly=true)
+    @Secured(types=EntityType.SITEMINDER_CONFIGURATION, stereotype=MethodStereotype.TEST_CONFIGURATION)
     AsyncAdminMethods.JobId<String> testSiteMinderConfiguration(SiteMinderConfiguration siteMinderConfiguration);
 }

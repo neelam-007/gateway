@@ -12,6 +12,7 @@ import com.l7tech.gateway.common.resources.ResourceType;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
+import com.l7tech.gateway.common.siteminder.SiteMinderConfiguration;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
@@ -40,6 +41,7 @@ import com.l7tech.server.policy.export.PolicyExporterImporterManager;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.security.rbac.SecurityFilter;
+import com.l7tech.server.siteminder.SiteMinderConfigurationManager;
 import com.l7tech.server.transport.SsgActiveConnectorManager;
 import com.l7tech.server.transport.jms.JmsConnectionManager;
 import com.l7tech.server.transport.jms.JmsEndpointManager;
@@ -359,6 +361,7 @@ public class PolicyHelper {
         private final TrustedCertManager trustedCertManager;
         private final SsgActiveConnectorManager ssgActiveConnectorManager;
         private final PolicyExporterImporterManager policyExporterImporterManager;
+        private final SiteMinderConfigurationManager siteMinderConfigurationManager;
         private final GenericEntityManager genericEntityManager;
 
         public GatewayExternalReferenceFinder( final RbacServices rbacServices,
@@ -375,6 +378,7 @@ public class PolicyHelper {
                                                final TrustedCertManager trustedCertManager,
                                                final SsgActiveConnectorManager ssgActiveConnectorManager,
                                                final PolicyExporterImporterManager policyExporterImporterManager,
+                                               final SiteMinderConfigurationManager siteMinderConfigurationManager,
                                                final GenericEntityManager genericEntityManager) {
             this.rbacServices = rbacServices;
             this.securityFilter = securityFilter;
@@ -390,6 +394,7 @@ public class PolicyHelper {
             this.trustedCertManager = trustedCertManager;
             this.ssgActiveConnectorManager = ssgActiveConnectorManager;
             this.policyExporterImporterManager = policyExporterImporterManager;
+            this.siteMinderConfigurationManager = siteMinderConfigurationManager;
             this.genericEntityManager = genericEntityManager;
         }
 
@@ -604,6 +609,17 @@ public class PolicyHelper {
         public User findUserByLogin( final long providerOid, final String login ) throws FindException {
             return filter( getIdentityProvider( providerOid ).getUserManager().findByLogin( login ) );
         }
+
+        @Override
+        public SiteMinderConfiguration findSiteMinderConfigurationByName(final String name) throws FindException {
+            return filter(siteMinderConfigurationManager.findByUniqueName(name));
+        }
+
+        @Override
+        public SiteMinderConfiguration findSiteMinderConfigurationByID(final Goid id) throws FindException {
+            return filter(siteMinderConfigurationManager.findByPrimaryKey(id));
+        }
+
 
         @Override
         public <ET extends GenericEntity> GoidEntityManager<ET, GenericEntityHeader> getGenericEntityManager(@NotNull Class<ET> entityClass) throws FindException {

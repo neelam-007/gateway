@@ -58,6 +58,11 @@ public class SiteMinderAdminImpl  extends AsyncAdminMethodsImpl implements SiteM
         return siteMinderConfigurationManager.getSiteMinderConfiguration(configurationName);
     }
 
+    @Override
+    public SiteMinderConfiguration getSiteMinderConfiguration(Goid id) throws FindException {
+        return siteMinderConfigurationManager.findByPrimaryKey(id);
+    }
+
     /**
      * Retrieve all SiteMinder configuration entities from the database.
      * @return  a list of SiteMinder configuration entities
@@ -80,7 +85,9 @@ public class SiteMinderAdminImpl  extends AsyncAdminMethodsImpl implements SiteM
         List<SiteMinderConfiguration> configList = getAllSiteMinderConfigurations();
         List<String> names = new ArrayList<String>(configList.size());
         for (SiteMinderConfiguration config : configList){
-            names.add(config.getName());
+            if (config.isEnabled()) {
+                names.add(config.getName());
+            }
         }
 
         return names;
