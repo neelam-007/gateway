@@ -9,14 +9,12 @@ import com.l7tech.gateway.common.security.rbac.Permission;
 import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.gateway.common.security.rbac.ScopePredicate;
 import com.l7tech.gui.SimpleTableModel;
-import com.l7tech.gui.util.DialogDisplayer;
-import com.l7tech.gui.util.ImageCache;
-import com.l7tech.gui.util.TableUtil;
-import com.l7tech.gui.util.Utilities;
+import com.l7tech.gui.util.*;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
+import org.apache.commons.collections.ComparatorUtils;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -75,6 +73,7 @@ public class RolePermissionsPanel extends JPanel {
         initTable();
         initButtons();
         initFiltering();
+        enableDisable();
     }
 
     /**
@@ -101,8 +100,18 @@ public class RolePermissionsPanel extends JPanel {
 
     private void initButtons() {
         removeButton.setVisible(!readOnly);
-        // remove not yet supported
-        removeButton.setEnabled(false);
+        removeButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(final ActionEvent e) {
+                final Set<PermissionGroup> selected = getSelected();
+                if (permissions != null) {
+                    for (final PermissionGroup group : selected) {
+                        permissions.removeAll(group.getPermissions());
+                    }
+                    loadTable();
+                }
+            }
+        });
         addButton.setVisible(!readOnly);
         addButton.addActionListener(new ActionListener() {
             @Override
@@ -221,7 +230,36 @@ public class RolePermissionsPanel extends JPanel {
         permissionsTable.getColumnModel().getColumn(columnIndices.get(UPDATE)).setCellRenderer(checkXRenderer);
         permissionsTable.getColumnModel().getColumn(columnIndices.get(DELETE)).setCellRenderer(checkXRenderer);
         permissionsTable.getColumnModel().getColumn(columnIndices.get(OTHER)).setCellRenderer(checkXRenderer);
-        Utilities.setRowSorter(permissionsTable, permissionsModel);
+        permissionsTable.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+
+        final int numCols = columnIndices.size();
+        final int[] cols = new int[numCols];
+        final boolean[] order = new boolean[numCols];
+        Comparator[] comparators = null;
+        if (!readOnly) {
+            comparators = new Comparator[numCols];
+        }
+        for (int i = 0; i < numCols; i++) {
+            cols[i] = i;
+            order[i] = true;
+            if (!readOnly && comparators != null) {
+                comparators[i] = i == columnIndices.get(NEW) ? ComparatorUtils.booleanComparator(true) : null;
+            }
+        }
+        Utilities.setRowSorter(permissionsTable, permissionsModel, cols, order, comparators);
+
+        if (!readOnly) {
+            permissionsTable.getSelectionModel().addListSelectionListener(new RunOnChangeListener(new Runnable() {
+                @Override
+                public void run() {
+                    enableDisable();
+                }
+            }));
+        }
+    }
+
+    private void enableDisable() {
+        removeButton.setEnabled(!getSelected().isEmpty());
     }
 
     private void loadTable() {
@@ -259,6 +297,24 @@ public class RolePermissionsPanel extends JPanel {
             }
         }
         return hasNewPermission;
+    }
+
+    private Set<PermissionGroup> getSelected() {
+        final Set<PermissionGroup> selected = new HashSet<>();
+        final int[] selectedIndices = permissionsTable.getSelectedRows();
+        for (int i = 0; i < selectedIndices.length; i++) {
+            int index = selectedIndices[i];
+            if (index >= 0) {
+                final int modelIndex = permissionsTable.convertRowIndexToModel(index);
+                if (modelIndex >= 0) {
+                    final PermissionGroup group = permissionsModel.getRowObject(modelIndex);
+                    if (group != null) {
+                        selected.add(group);
+                    }
+                }
+            }
+        }
+        return selected;
     }
 
     /**

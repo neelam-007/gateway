@@ -4,6 +4,7 @@ import com.l7tech.console.panels.WizardStepPanel;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.security.rbac.Permission;
 import com.l7tech.gateway.common.security.rbac.ScopePredicate;
+import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.objectmodel.EntityType;
 
 import javax.swing.*;
@@ -36,11 +37,31 @@ public class PermissionOptionsPanel extends WizardStepPanel {
         setLayout(new BorderLayout());
         setShowDescriptionPanel(false);
         add(contentPanel);
+        final RunOnChangeListener changeListener = new RunOnChangeListener(new Runnable() {
+            @Override
+            public void run() {
+                notifyListeners();
+            }
+        });
+        createCheckBox.addChangeListener(changeListener);
+        readCheckBox.addChangeListener(changeListener);
+        updateCheckBox.addChangeListener(changeListener);
+        deleteCheckBox.addChangeListener(changeListener);
     }
 
     @Override
     public String getStepLabel() {
         return PERMISSION_OPTIONS;
+    }
+
+    @Override
+    public boolean canAdvance() {
+        return atLeastOneOpSelected();
+    }
+
+    @Override
+    public boolean canFinish() {
+        return atLeastOneOpSelected();
     }
 
     @Override
@@ -85,5 +106,9 @@ public class PermissionOptionsPanel extends WizardStepPanel {
         } else {
             logger.log(Level.WARNING, "Cannot store settings because received invalid settings object: " + settings);
         }
+    }
+
+    private boolean atLeastOneOpSelected() {
+        return createCheckBox.isSelected() || readCheckBox.isSelected() || updateCheckBox.isSelected() || deleteCheckBox.isSelected();
     }
 }
