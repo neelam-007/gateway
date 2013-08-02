@@ -708,7 +708,7 @@ public class GatewayFeatureSets {
         GatewayFeatureSet adaptiveLoadBalancingAssertions = fsr("set:AdaptiveLoadBalancing:Assertions",
                 "The necessary assertions to enable Adaptive Load Balancing functionality",
                 mass("assertion:CreateRoutingStrategy"),
-                mass("assertion:ProcessRoutingStrategy"),
+                mass("assertion:ProcessRoutingStrategyResult"),
                 mass("assertion:ExecuteRoutingStrategy"));
 
         GatewayFeatureSet caWsdmAssertions = fsr("set:CaWsdm:Assertions",
