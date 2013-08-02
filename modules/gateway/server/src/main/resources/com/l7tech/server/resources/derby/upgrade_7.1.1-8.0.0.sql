@@ -646,14 +646,14 @@ update encapsulated_assertion set policy_goid = toGoid(cast(getVariable('policy_
 ALTER TABLE encapsulated_assertion DROP COLUMN policy_oid;
 alter table encapsulated_assertion add constraint FK_ENCASS_POL foreign key (policy_goid) references policy;
 
-update rbac_predicate_attribute set value = goidToString(toGoid(@published_service_prefix, value)) where attribute='serviceOid' OR attribute='publishedServiceOid' OR attribute='serviceid';
+update rbac_predicate_attribute set value = goidToString(toGoid(cast(getVariable('published_service_prefix') as bigint), cast(value as bigint))) where attribute='serviceOid' OR attribute='publishedServiceOid' OR attribute='serviceid';
 update rbac_predicate_attribute set attribute = 'serviceGoid' where attribute='serviceOid';
 update rbac_predicate_attribute set attribute = 'publishedServiceGoid' where attribute='publishedServiceOid';
 
-update rbac_predicate_entityfolder set entity_id = goidToString(toGoid(cast(getVariable('published_service_prefix') as bigint), entity_id)) where entity_type='SERVICE';
-update rbac_predicate_entityfolder set entity_id = goidToString(toGoid(cast(getVariable('folder_prefix') as bigint), entity_id)) where entity_type='FOLDER';
+update rbac_predicate_entityfolder set entity_id = goidToString(toGoid(cast(getVariable('published_service_prefix') as bigint), cast(entity_id as bigint))) where entity_type='SERVICE';
+update rbac_predicate_entityfolder set entity_id = goidToString(toGoid(cast(getVariable('folder_prefix') as bigint), cast(entity_id as bigint))) where entity_type='FOLDER';
 update rbac_predicate_entityfolder set entity_id = goidToString(toGoid(0, -5002)) where entity_type='FOLDER' and entity_id=goidToString(toGoid(cast(getVariable('folder_prefix') as bigint), -5002));
-update rbac_predicate_entityfolder set entity_id = goidToString(toGoid(cast(getVariable('policy_prefix') as bigint), entity_id)) where entity_type='POLICY';
+update rbac_predicate_entityfolder set entity_id = goidToString(toGoid(cast(getVariable('policy_prefix') as bigint), cast(entity_id as bigint))) where entity_type='POLICY';
 
 --
 -- Register upgrade task for upgrading sink configuration references to GOIDs
