@@ -12,10 +12,11 @@ import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.security.keystore.SsgKeyMetadata;
 import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.gateway.common.security.rbac.RbacAdmin;
+import com.l7tech.gui.CheckBoxSelectableTableModel;
 import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gui.util.TableUtil;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.*;
-import com.l7tech.objectmodel.comparator.NamedEntityComparator;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.HasFolderGoid;
 import com.l7tech.policy.AssertionAccess;
@@ -25,7 +26,7 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
 import com.l7tech.policy.assertion.EncapsulatedAssertion;
 import com.l7tech.util.ExceptionUtils;
-import org.apache.commons.collections.ComparatorUtils;
+import com.l7tech.util.Functions;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -33,15 +34,11 @@ import org.jetbrains.annotations.Nullable;
 import javax.swing.*;
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
-import javax.swing.table.DefaultTableCellRenderer;
-import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableRowSorter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
 import java.io.IOException;
 import java.security.KeyStoreException;
 import java.security.cert.CertificateException;
@@ -49,6 +46,8 @@ import java.util.*;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static com.l7tech.gui.util.TableUtil.column;
 
 /**
  * Dialog for bulk assigning entities to security zones.
@@ -78,7 +77,7 @@ public class AssignSecurityZonesDialog extends JDialog {
     private JPanel noEntitiesPanel;
     private JLabel noEntitiesLabel;
     private JScrollPane scrollPane;
-    private EntitiesTableModel dataModel = new EntitiesTableModel(new String[]{"", "Name", "Current Zone", "Path"}, new Object[][]{});
+    private CheckBoxSelectableTableModel<EntityHeader> dataModel;
     private Map<EntityType, List<SecurityZone>> entityTypes;
     private TableColumn pathColumn;
     // key = assertion access oid, value = class name
@@ -131,7 +130,7 @@ public class AssignSecurityZonesDialog extends JDialog {
     }
 
     private void initComboBoxes() {
-        typeComboBox.setModel((new DefaultComboBoxModel<EntityType>(entityTypes.keySet().toArray(new EntityType[entityTypes.keySet().size()]))));
+        typeComboBox.setModel((new DefaultComboBoxModel<>(entityTypes.keySet().toArray(new EntityType[entityTypes.keySet().size()]))));
         typeComboBox.setRenderer(new DefaultListCellRenderer() {
             @Override
             public Component getListCellRendererComponent(final JList<?> list, Object value, final int index, final boolean isSelected, final boolean cellHasFocus) {
@@ -168,7 +167,7 @@ public class AssignSecurityZonesDialog extends JDialog {
         final EntityType selectedEntityType = getSelectedEntityType();
         if (selectedEntityType != null) {
             final List<SecurityZone> zonesForEntityType = entityTypes.get(selectedEntityType);
-            zoneComboBox.setModel(new DefaultComboBoxModel<SecurityZone>(zonesForEntityType.toArray(new SecurityZone[zonesForEntityType.size()])));
+            zoneComboBox.setModel(new DefaultComboBoxModel<>(zonesForEntityType.toArray(new SecurityZone[zonesForEntityType.size()])));
         }
     }
 
@@ -189,23 +188,13 @@ public class AssignSecurityZonesDialog extends JDialog {
         selectAllBtn.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(final ActionEvent e) {
-                for (int i = 0; i < dataModel.getRowCount(); i++) {
-                    // check all visible rows
-                    if (!filterPanel.isFiltered() || entitiesTable.getRowSorter().convertRowIndexToView(i) >= 0) {
-                        dataModel.setValueAt(true, i, CHECK_BOX_COL_INDEX);
-                    }
-                }
+                dataModel.selectAll();
             }
         });
         selectNoneBtn.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(final ActionEvent e) {
-                for (int i = 0; i < dataModel.getRowCount(); i++) {
-                    // un-check all visible rows
-                    if (!filterPanel.isFiltered() || entitiesTable.getRowSorter().convertRowIndexToView(i) >= 0) {
-                        dataModel.setValueAt(false, i, CHECK_BOX_COL_INDEX);
-                    }
-                }
+                dataModel.deselectAll();
             }
         });
         closeBtn.addActionListener(Utilities.createDisposeAction(this));
@@ -213,59 +202,60 @@ public class AssignSecurityZonesDialog extends JDialog {
     }
 
     private void initTable() {
-        entitiesTable.setModel(dataModel);
-        entitiesTable.getColumnModel().getColumn(HEADER_COL_INDEX).setCellRenderer(new DefaultTableCellRenderer() {
-            @Override
-            protected void setValue(final Object value) {
-                setText(((EntityHeader) value).getName());
-            }
-        });
-        entitiesTable.getColumnModel().getColumn(ZONE_COL_INDEX).setCellRenderer(new DefaultTableCellRenderer() {
-            @Override
-            protected void setValue(final Object value) {
-                if (value instanceof SecurityZone) {
-                    final SecurityZone zone = (SecurityZone) value;
-                    setText(zone.equals(SecurityZoneUtil.getNullZone()) ? NO_SECURITY_ZONE : zone.getName());
-                }
-            }
-        });
-        entitiesTable.addMouseListener(new MouseListener() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-            }
-
-            @Override
-            public void mousePressed(MouseEvent e) {
-            }
-
-            @Override
-            public void mouseReleased(final MouseEvent e) {
-                final int rowIndex = entitiesTable.rowAtPoint(e.getPoint());
-                if (rowIndex >= 0) {
-                    final int modelIndex = entitiesTable.convertRowIndexToModel(rowIndex);
-                    final Boolean selected = (Boolean) dataModel.getValueAt(modelIndex, CHECK_BOX_COL_INDEX);
-                    dataModel.setValueAt(!selected, modelIndex, CHECK_BOX_COL_INDEX);
-                }
-            }
-
-            @Override
-            public void mouseEntered(MouseEvent e) {
-            }
-
-            @Override
-            public void mouseExited(MouseEvent e) {
-            }
-        });
-        setColumnWidths(CHECK_BOX_COL_INDEX, 30, 30);
-        setColumnWidths(PATH_COL_INDEX, 60, 99999);
-        setColumnWidths(ZONE_COL_INDEX, 80, 99999);
+        dataModel = TableUtil.configureSelectableTable(entitiesTable, CHECK_BOX_COL_INDEX,
+                column(StringUtils.EMPTY, 30, 30, 99999, new Functions.Unary<Boolean, EntityHeader>() {
+                    @Override
+                    public Boolean call(final EntityHeader header) {
+                        return dataModel.isSelected(header);
+                    }
+                }),
+                column("Name", 30, 200, 99999, new Functions.Unary<String, EntityHeader>() {
+                    @Override
+                    public String call(final EntityHeader header) {
+                        String name = "unavailable";
+                        try {
+                            name = Registry.getDefault().getEntityNameResolver().getNameForHeader(header, false);
+                        } catch (final FindException | PermissionDeniedException e) {
+                            logger.log(Level.WARNING, "Error resolving name for header: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                        }
+                        return name;
+                    }
+                }),
+                column("Current Zone", 30, 200, 99999, new Functions.Unary<String, EntityHeader>() {
+                    @Override
+                    public String call(final EntityHeader header) {
+                        String zoneName = StringUtils.EMPTY;
+                        if (header instanceof HasSecurityZoneGoid) {
+                            final HasSecurityZoneGoid zoneable = (HasSecurityZoneGoid) header;
+                            final SecurityZone zone = SecurityZoneUtil.getSecurityZoneByGoid(zoneable.getSecurityZoneGoid());
+                            if (zone != null) {
+                                zoneName = zone.getName();
+                            } else {
+                                zoneName = NO_SECURITY_ZONE;
+                            }
+                        }
+                        return zoneName;
+                    }
+                }),
+                column("Path", 30, 150, 99999, new Functions.Unary<String, EntityHeader>() {
+                    @Override
+                    public String call(final EntityHeader header) {
+                        String path = "unavailable";
+                        try {
+                            path = getPathForHeader(header);
+                        } catch (final FindException | PermissionDeniedException e) {
+                            logger.log(Level.WARNING, "Error resolving path for header: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                        }
+                        return path;
+                    }
+                }));
         pathColumn = entitiesTable.getColumnModel().getColumn(PATH_COL_INDEX);
         dataModel.addTableModelListener(new TableModelListener() {
             @Override
             public void tableChanged(final TableModelEvent e) {
                 final EntityType selectedEntityType = getSelectedEntityType();
                 if (selectedEntityType != null) {
-                    final int numSelected = getSelectedEntities().size();
+                    final int numSelected = dataModel.getSelected().size();
                     selectedLabel.setText(numSelected + " " + selectedEntityType.getPluralName().toLowerCase() + " selected");
                 } else {
                     selectedLabel.setText(StringUtils.EMPTY);
@@ -273,22 +263,8 @@ public class AssignSecurityZonesDialog extends JDialog {
                 enableDisable();
             }
         });
-        final Comparator<EntityHeader> headerComparator = new Comparator<EntityHeader>() {
-            @Override
-            public int compare(final EntityHeader o1, final EntityHeader o2) {
-                String o1Name = o1.getName() == null ? StringUtils.EMPTY : o1.getName();
-                String o2Name = o2.getName() == null ? StringUtils.EMPTY : o2.getName();
-                return o1Name.compareToIgnoreCase(o2Name);
-            }
-        };
         Utilities.setRowSorter(entitiesTable, dataModel, new int[]{CHECK_BOX_COL_INDEX, HEADER_COL_INDEX, ZONE_COL_INDEX, PATH_COL_INDEX}, new boolean[]{true, true, true, true},
-                new Comparator[]{null, ComparatorUtils.nullLowComparator(headerComparator), new NamedEntityComparator(), null});
-    }
-
-    private void setColumnWidths(final int index, final int min, final int max) {
-        entitiesTable.getColumnModel().getColumn(index).setPreferredWidth(min);
-        entitiesTable.getColumnModel().getColumn(index).setMinWidth(min);
-        entitiesTable.getColumnModel().getColumn(index).setMaxWidth(max);
+                new Comparator[]{null, null, null, null});
     }
 
     @Nullable
@@ -310,35 +286,14 @@ public class AssignSecurityZonesDialog extends JDialog {
         return null;
     }
 
-    /**
-     * @return a map of selected entities where key = row index and value = entity header.
-     */
-    private Map<Integer, EntityHeader> getSelectedEntities() {
-        final Map<Integer, EntityHeader> selectedEntities = new HashMap<>();
-        for (int i = 0; i < dataModel.getRowCount(); i++) {
-            final boolean selected = (Boolean) dataModel.getValueAt(i, CHECK_BOX_COL_INDEX);
-            if (selected) {
-                selectedEntities.put(i, ((EntityHeader) dataModel.getValueAt(i, HEADER_COL_INDEX)));
-            }
-        }
-        return selectedEntities;
-    }
-
     private void loadTable() {
-        final int rowCount = dataModel.getRowCount();
-        for (int i = rowCount - 1; i >= 0; i--) {
-            dataModel.removeRow(i);
-        }
         EntityType selected = getSelectedEntityType();
         if (selected != null) {
             selected = convertToBackingEntityType(selected);
-            final EntityNameResolver entityNameResolver = Registry.getDefault().getEntityNameResolver();
             try {
                 final EntityHeaderSet<EntityHeader> entities = getEntities(selected);
-                boolean atLeastOnePath = false;
-                final EntityHeader[] headers = entities.toArray(new EntityHeader[entities.size()]);
-                for (int i = 0; i < headers.length; i++) {
-                    final EntityHeader header = headers[i];
+                final List<EntityHeader> headers = new ArrayList<>();
+                for (final EntityHeader header : entities) {
                     if (header instanceof PolicyHeader) {
                         final PolicyHeader policy = (PolicyHeader) header;
                         if (PolicyType.PRIVATE_SERVICE == policy.getPolicyType() || !policy.getPolicyType().isSecurityZoneable()) {
@@ -346,6 +301,7 @@ public class AssignSecurityZonesDialog extends JDialog {
                             continue;
                         }
                     }
+
                     if (header.getType() == EntityType.ASSERTION_ACCESS) {
                         final String assertionClassName = header.getName();
                         if (EncapsulatedAssertion.class.getName().equals(assertionClassName)) {
@@ -354,43 +310,17 @@ public class AssignSecurityZonesDialog extends JDialog {
                         }
                         assertionNames.put(header.getOid(), assertionClassName);
                     }
-                    try {
-                        final String displayName = entityNameResolver.getNameForHeader(header, false);
-                        header.setName(displayName);
-                        final Object[] data = new Object[4];
-                        data[CHECK_BOX_COL_INDEX] = Boolean.FALSE;
-                        data[HEADER_COL_INDEX] = header;
-                        final String path = getPathForHeader(header);
-                        if (StringUtils.isNotBlank(path)) {
-                            data[PATH_COL_INDEX] = path;
-                            atLeastOnePath = true;
-                        }
-                        data[ZONE_COL_INDEX] = getZoneForHeader(header);
-                        dataModel.addRow(data);
-                    } catch (final PermissionDeniedException e) {
-                        logger.log(Level.WARNING, "Skipping row because unable to resolve display info for header " + header + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-                    }
+                    headers.add(header);
                 }
-
-                showHidePathColumn(atLeastOnePath);
-                dataModel.fireTableDataChanged();
+                dataModel.setSelectableObjects(headers);
+                boolean showPath = !headers.isEmpty() && (headers.get(0) instanceof HasFolderGoid || headers.get(0).getType() == EntityType.ASSERTION_ACCESS);
+                showHidePathColumn(showPath);
             } catch (final FindException ex) {
                 final String error = "Error retrieving entities of type " + selected;
                 logger.log(Level.WARNING, error, ExceptionUtils.getDebugException(ex));
                 DialogDisplayer.showMessageDialog(this, error, "Error", JOptionPane.ERROR_MESSAGE, null);
             }
         }
-    }
-
-    private SecurityZone getZoneForHeader(final EntityHeader header) {
-        SecurityZone zone = SecurityZoneUtil.getNullZone();
-        if (header instanceof HasSecurityZoneGoid) {
-            final Goid securityZoneGoid = ((HasSecurityZoneGoid) header).getSecurityZoneGoid();
-            if (securityZoneGoid != null) {
-                zone = SecurityZoneUtil.getSecurityZoneByGoid(securityZoneGoid);
-            }
-        }
-        return zone;
     }
 
     private String getPathForHeader(final EntityHeader header) throws FindException {
@@ -484,29 +414,12 @@ public class AssignSecurityZonesDialog extends JDialog {
     private void enableDisable() {
         final boolean hasRows = entitiesTable.getModel().getRowCount() > 0;
         scrollPane.setVisible(hasRows);
-        setBtn.setEnabled(hasRows && getSelectedZone() != null && !getSelectedEntities().isEmpty());
+        setBtn.setEnabled(hasRows && getSelectedZone() != null && !dataModel.getSelected().isEmpty());
         filterPanel.allowFiltering(hasRows);
         noEntitiesPanel.setVisible(!hasRows);
         if (noEntitiesPanel.isVisible()) {
             final EntityType selectedEntityType = getSelectedEntityType();
             noEntitiesLabel.setText(selectedEntityType == null ? "no entities are available" : "no " + selectedEntityType.getPluralName().toLowerCase() + " are available");
-        }
-    }
-
-    private class EntitiesTableModel extends DefaultTableModel {
-        private EntitiesTableModel(@NotNull final String[] columnNames, @NotNull final Object[][] data) {
-            super(data, columnNames);
-        }
-
-        @Override
-        public boolean isCellEditable(final int row, final int col) {
-            // check box toggle handled by mouse listener
-            return false;
-        }
-
-        @Override
-        public Class<?> getColumnClass(final int columnIndex) {
-            return columnIndex == CHECK_BOX_COL_INDEX ? Boolean.class : String.class;
         }
     }
 
@@ -518,14 +431,14 @@ public class AssignSecurityZonesDialog extends JDialog {
             if (selectedZone != null && selectedZone.equals(SecurityZoneUtil.getNullZone())) {
                 selectedZone = null;
             }
-            final Map<Integer, EntityHeader> selectedEntities = getSelectedEntities();
+            final List<EntityHeader> selectedEntities = dataModel.getSelected();
             if (selectedEntityType == EntityType.ASSERTION_ACCESS) {
                 final Set<EntityHeader> assertionAccessToUpdate = new HashSet<>();
                 try {
                     final RbacAdmin rbacAdmin = Registry.getDefault().getRbacAdmin();
-                    for (final Map.Entry<Integer, EntityHeader> entry : selectedEntities.entrySet()) {
-                        final EntityHeader header = entry.getValue();
+                    for (final EntityHeader header : selectedEntities) {
                         if (header.getOid() < 0) {
+                            final int rowIndex = dataModel.getRowIndexForSelectableObject(header);
                             // save a new assertion access
                             final String assertionClassName = assertionNames.get(header.getOid());
                             final AssertionAccess assertionAccess = new AssertionAccess(assertionClassName);
@@ -534,13 +447,14 @@ public class AssignSecurityZonesDialog extends JDialog {
                             assertionNames.remove(header.getOid());
                             assertionNames.put(savedOid, assertionClassName);
                             header.setOid(savedOid);
-                            dataModel.setValueAt(header, entry.getKey(), HEADER_COL_INDEX);
+                            setZoneOnHeader(selectedZone, header);
+                            dataModel.fireTableRowsUpdated(rowIndex, rowIndex);
                         } else {
                             // update an existing assertion access
                             assertionAccessToUpdate.add(header);
                         }
                     }
-                    doBulkUpdate(EntityType.ASSERTION_ACCESS, selectedZone, selectedEntities.keySet(), assertionAccessToUpdate);
+                    doBulkUpdate(EntityType.ASSERTION_ACCESS, selectedZone, assertionAccessToUpdate);
                 } catch (final UpdateException ex) {
                     DialogDisplayer.showMessageDialog(AssignSecurityZonesDialog.this, "Error", "Error assigning entities to zone.", ex);
                 }
@@ -548,47 +462,48 @@ public class AssignSecurityZonesDialog extends JDialog {
                 final Set<EntityHeader> metadataToUpdate = new HashSet<>();
                 try {
                     final TrustedCertAdmin trustedCertManager = Registry.getDefault().getTrustedCertManager();
-                    for (final Map.Entry<Integer, EntityHeader> entry : selectedEntities.entrySet()) {
-                        final EntityHeader header = entry.getValue();
+                    for (final EntityHeader header : selectedEntities) {
                         if (header.getOid() < 0) {
+                            final int rowIndex = dataModel.getRowIndexForSelectableObject(header);
                             // save new key metadata
                             if (header instanceof KeyMetadataHeaderWrapper) {
                                 final KeyMetadataHeaderWrapper keyHeader = (KeyMetadataHeaderWrapper) header;
                                 final SsgKeyMetadata metadata = new SsgKeyMetadata(keyHeader.getKeystoreOid(), keyHeader.getAlias(), selectedZone);
                                 final long savedOid = trustedCertManager.saveOrUpdateMetadata(metadata);
                                 header.setOid(savedOid);
-                                dataModel.setValueAt(header, entry.getKey(), HEADER_COL_INDEX);
+                                setZoneOnHeader(selectedZone, header);
+                                dataModel.fireTableRowsUpdated(rowIndex, rowIndex);
                             }
                         } else {
                             // update an existing key metadata
                             metadataToUpdate.add(header);
                         }
                     }
-                    doBulkUpdate(EntityType.SSG_KEY_METADATA, selectedZone, selectedEntities.keySet(), metadataToUpdate);
+                    doBulkUpdate(EntityType.SSG_KEY_METADATA, selectedZone, metadataToUpdate);
                 } catch (final SaveException ex) {
                     DialogDisplayer.showMessageDialog(AssignSecurityZonesDialog.this, "Error", "Error assigning entities to zone.", ex);
                 }
             } else {
-                doBulkUpdate(selectedEntityType, selectedZone, selectedEntities.keySet(), selectedEntities.values());
+                doBulkUpdate(selectedEntityType, selectedZone, selectedEntities);
             }
         }
 
         /**
          * @param selectedEntityType the selected EntityType
          * @param selectedZone       the selected SecurityZone or null if no zone selected
-         * @param tableRowIndices    the row indices which require zone value to be updated
          * @param entitiesToUpdate   the entities to update in the database
          */
-        private void doBulkUpdate(@NotNull final EntityType selectedEntityType, @Nullable final SecurityZone selectedZone, @NotNull final Collection<Integer> tableRowIndices, @NotNull final Collection<EntityHeader> entitiesToUpdate) {
+        private void doBulkUpdate(@NotNull final EntityType selectedEntityType, @Nullable final SecurityZone selectedZone, @NotNull final Collection<EntityHeader> entitiesToUpdate) {
             final Goid securityZoneGoid = selectedZone == null ? null : selectedZone.getGoid();
             try {
                 final BulkZoneUpdater updater = new BulkZoneUpdater(Registry.getDefault().getRbacAdmin(),
                         Registry.getDefault().getUDDIRegistryAdmin(), Registry.getDefault().getJmsManager(), Registry.getDefault().getPolicyAdmin());
                 updater.bulkUpdate(securityZoneGoid, selectedEntityType, entitiesToUpdate);
 
-                for (final Integer selectedIndex : tableRowIndices) {
-                    dataModel.setValueAt(selectedZone == null ? SecurityZoneUtil.getNullZone() : selectedZone, selectedIndex, ZONE_COL_INDEX);
+                for (final EntityHeader header : entitiesToUpdate) {
+                    setZoneOnHeader(selectedZone, header);
                 }
+                dataModel.fireTableDataChanged();
 
                 if (!entitiesToUpdate.isEmpty()) {
                     final RootNode rootNode = TopComponents.getInstance().getRootNode();
@@ -622,6 +537,13 @@ public class AssignSecurityZonesDialog extends JDialog {
                 DialogDisplayer.showMessageDialog(AssignSecurityZonesDialog.this, "Error", "Error assigning entities to zone.", ex);
             } catch (final UpdateException ex) {
                 DialogDisplayer.showMessageDialog(AssignSecurityZonesDialog.this, "Error", "Unable to assign entities to zone.", ex);
+            }
+        }
+
+        private void setZoneOnHeader(final SecurityZone selectedZone, final EntityHeader header) {
+            if (header instanceof ZoneableEntityHeader) {
+                final ZoneableEntityHeader zoneable = (ZoneableEntityHeader) header;
+                zoneable.setSecurityZoneGoid(selectedZone == null ? null : selectedZone.getGoid());
             }
         }
     }

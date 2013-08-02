@@ -49,6 +49,19 @@ public class CheckBoxSelectableTableModel<T> extends SimpleTableModel<Selectable
     }
 
     /**
+     * @param selectableObject the selectable object which may be in the table model.
+     * @return the row index of the selectable object or -1 if it is not in the model.
+     */
+    public int getRowIndexForSelectableObject(@NotNull final T selectableObject) {
+        for (final SelectableObject<T> row : getRows()) {
+            if (row.getSelectable().equals(selectableObject)) {
+                return getRowIndex(row);
+            }
+        }
+        return -1;
+    }
+
+    /**
      * Select the selectable object of the given row index.
      *
      * @param index the row index to select.
@@ -80,6 +93,11 @@ public class CheckBoxSelectableTableModel<T> extends SimpleTableModel<Selectable
         selectDeselect(index, false);
     }
 
+    /**
+     * Toggle the selection of the given row index.
+     *
+     * @param index the row index to toggle.
+     */
     public void toggle(final int index) {
         final SelectableObject<T> selectable = getRowObject(index);
         if (selectable != null) {
@@ -88,6 +106,10 @@ public class CheckBoxSelectableTableModel<T> extends SimpleTableModel<Selectable
         }
     }
 
+    /**
+     * @param selectable the selectable object which may be selected.
+     * @return true if the given selectable object is selected, false otherwise.
+     */
     public boolean isSelected(@NotNull final T selectable) {
         boolean selected = false;
         for (final SelectableObject<T> row : getRows()) {
@@ -99,6 +121,9 @@ public class CheckBoxSelectableTableModel<T> extends SimpleTableModel<Selectable
         return selected;
     }
 
+    /**
+     * @return a list of selected objects.
+     */
     public List<T> getSelected() {
         final List<T> selected = new ArrayList<>();
         for (final SelectableObject<T> row : getRows()) {
