@@ -10,7 +10,6 @@ import com.l7tech.gui.util.*;
 import com.l7tech.gui.widgets.PasswordDoubleEntryDialog;
 import com.l7tech.gui.widgets.SquigglyTextField;
 import com.l7tech.gui.widgets.TextListCellRenderer;
-import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.EntityUtil;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.ObjectNotFoundException;
@@ -22,7 +21,8 @@ import org.apache.commons.lang.StringUtils;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
@@ -170,8 +170,6 @@ public class SecurePasswordPropertiesDialog extends JDialog {
                             public void reportResult(int option) {
                                 if (JOptionPane.YES_OPTION == option) {
                                     doConfirm();
-                                } else {
-                                    dispose();
                                 }
                             }
                         });
