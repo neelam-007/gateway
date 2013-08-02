@@ -376,7 +376,8 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
 
     @Override
     public long save(ET entity) throws SaveException {
-        logger.log(Level.WARNING, "Saving {0} ({1})", new Object[] { getImpClass().getSimpleName(), entity==null ? null : entity.toString() });
+        if (logger.isLoggable(Level.FINE))
+            logger.log(Level.FINE, "Saving {0} ({1})", new Object[] { getImpClass().getSimpleName(), entity==null ? null : entity.toString() });
         try {
             if (getUniqueType() != UniqueType.NONE) {
                 final Collection<Map<String, Object>> constraints = getUniqueConstraints(entity);
