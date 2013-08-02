@@ -21,7 +21,6 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.assertion.AssertionStatusException;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
-import com.l7tech.util.HexUtils;
 import com.l7tech.util.Pair;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -80,8 +79,6 @@ public class ServerCsrSignerAssertionTest {
         ass.setOutputPrefix(null);
 
         testAudit = new TestAudit();
-
-        System.out.println(HexUtils.encodeBase64(csrBytes));
     }
 
     @Test
