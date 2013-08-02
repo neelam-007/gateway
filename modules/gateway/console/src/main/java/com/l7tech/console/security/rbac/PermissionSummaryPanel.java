@@ -2,11 +2,16 @@ package com.l7tech.console.security.rbac;
 
 import com.l7tech.console.panels.WizardStepPanel;
 import com.l7tech.gateway.common.security.rbac.OperationType;
+import com.l7tech.gateway.common.security.rbac.Permission;
+import com.l7tech.gateway.common.security.rbac.ScopePredicate;
+import com.l7tech.gateway.common.security.rbac.SecurityZonePredicate;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.SecurityZone;
 import org.apache.commons.lang.StringUtils;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.logging.Level;
@@ -47,18 +52,34 @@ public class PermissionSummaryPanel extends WizardStepPanel {
                 // TODO
             }
 
-            if (config.getScope().isEmpty()) {
-                restrictScopeLabel.setText("All objects of the specified type");
-            } else {
-                // TODO
-            }
-
             final Set<String> ops = new HashSet<>(config.getOperations().size());
             for (final OperationType operationType : config.getOperations()) {
                 ops.add(operationType.getName().toLowerCase());
             }
             permittedOperationsLabel.setText(StringUtils.join(ops, ", "));
-            permissionsPanel.configure(config.getAddedPermissions());
+
+            // start fresh
+            config.getGeneratedPermissions().clear();
+            if (config.isHasScope()) {
+                restrictScopeLabel.setText("All objects of the specified type");
+                for (final SecurityZone zone : config.getSelectedZones()) {
+                    for (final OperationType op : config.getOperations()) {
+                        final Permission zonePermission = new Permission(config.getRole(), op, config.getType());
+                        final SecurityZonePredicate predicate = new SecurityZonePredicate(zonePermission, zone);
+                        zonePermission.getScope().add(predicate);
+                        config.getGeneratedPermissions().add(zonePermission);
+                    }
+                }
+            } else {
+                restrictScopeLabel.setText("Objects matching a set of conditions");
+                for (final OperationType operationType : config.getOperations()) {
+                    final Permission unrestricted = new Permission(config.getRole(), operationType, config.getType());
+                    unrestricted.setScope(Collections.<ScopePredicate>emptySet());
+                    config.getGeneratedPermissions().add(unrestricted);
+                }
+            }
+
+            permissionsPanel.configure(config.getGeneratedPermissions());
         } else {
             logger.log(Level.WARNING, "Cannot read settings because received invalid settings object: " + settings);
         }

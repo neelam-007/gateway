@@ -117,7 +117,7 @@ public class RolePermissionsPanel extends JPanel {
             @Override
             public void actionPerformed(final ActionEvent e) {
                 if (role != null) {
-                    final AddPermissionsWizard wizard = new AddPermissionsWizard(TopComponents.getInstance().getTopParent(), role);
+                    final AddPermissionsWizard wizard = AddPermissionsWizard.getInstance(TopComponents.getInstance().getTopParent(), role);
                     wizard.pack();
                     DialogDisplayer.display(wizard, new Runnable() {
                         @Override

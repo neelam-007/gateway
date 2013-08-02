@@ -1,5 +1,7 @@
 package com.l7tech.gui.util;
 
+import com.l7tech.gui.CheckBoxSelectableTableModel;
+import com.l7tech.gui.SelectableObject;
 import com.l7tech.gui.SimpleColumn;
 import com.l7tech.gui.SimpleTableModel;
 import com.l7tech.util.Functions;
@@ -13,7 +15,10 @@ import javax.swing.table.TableColumnModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.util.*;
+import java.util.List;
 
 /**
  * Handy utility routines for dealing with tables.
@@ -242,7 +247,70 @@ public final class TableUtil {
     public static <RT> SimpleTableModel<RT> configureTable(JTable table, Col<RT>... columns) {
         SimpleTableModel<RT> model = new SimpleTableModel<RT>();
         model.setColumns(Arrays.<SimpleColumn<RT>>asList(columns));
+        configureTable(table, model, columns);
+        return model;
+    }
 
+    /**
+     * Configure a table using the {@link CheckBoxSelectableTableModel} and the specified column descriptions, using a generic row backing type.
+     *
+     * This creates and assigns a new {@link SimpleTableModel}, and sets the column widths based on the column descriptors passed in.
+     *
+     * @param table             the JTable to reconfigure.  Any existing table model will be discarded.
+     * @param selectColIndex    the index of the column which contains the check box.
+     * @param columns           one or more column descriptors.  Use {@link #column} to create one.
+     * @param <RT>              the type of object which is selectable.
+     * @return                  the CheckBoxSelectableTableModel that was created and assigned.
+     */
+    public static <RT> CheckBoxSelectableTableModel<RT> configureSelectableTable(@NotNull final JTable table, final int selectColIndex, @NotNull final Col<RT>... columns) {
+        final CheckBoxSelectableTableModel<RT> model = new CheckBoxSelectableTableModel(selectColIndex);
+        final List<SimpleColumn<SelectableObject<RT>>> selectableColumns = new ArrayList<>();
+        for (final Col<RT> column : columns) {
+            final Col<SelectableObject<RT>> col = new Col<>(column.getName(), column.minWidth, column.preferredWidth, column.maxWidth, new Functions.Unary<Object, SelectableObject<RT>>() {
+                @Override
+                public Object call(final SelectableObject<RT> selectable) {
+                    return column.getValueGetter().call(selectable.getSelectable());
+                }
+            });
+            selectableColumns.add(col);
+        }
+        model.setColumns(selectableColumns);
+        configureTable(table, (SimpleTableModel)model, columns);
+
+        // mouse listener which toggles the selection depending on which row was clicked
+        table.addMouseListener(new MouseListener() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+            }
+
+            @Override
+            public void mousePressed(MouseEvent e) {
+            }
+
+            @Override
+            public void mouseReleased(final MouseEvent e) {
+                final int rowIndex = table.rowAtPoint(e.getPoint());
+                if (rowIndex >= 0) {
+                    final int modelIndex = table.convertRowIndexToModel(rowIndex);
+                    if (modelIndex >= 0) {
+                        model.toggle(modelIndex);
+                    }
+                }
+            }
+
+            @Override
+            public void mouseEntered(MouseEvent e) {
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+            }
+        });
+
+        return model;
+    }
+
+    private static <RT> void configureTable(@NotNull final JTable table, @NotNull final SimpleTableModel<RT> model, @NotNull final Col<RT>[] columns) {
         table.setModel(model);
         table.getTableHeader().setReorderingAllowed(false);
         table.getSelectionModel().setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
@@ -254,8 +322,6 @@ public final class TableUtil {
             col.setPreferredWidth(columns[i].preferredWidth);
             col.setMaxWidth(columns[i].maxWidth);
         }
-
-        return model;
     }
 }
 

@@ -2,14 +2,11 @@ package com.l7tech.console.security.rbac;
 
 import com.l7tech.console.panels.WizardStepPanel;
 import com.l7tech.gateway.common.security.rbac.OperationType;
-import com.l7tech.gateway.common.security.rbac.Permission;
-import com.l7tech.gateway.common.security.rbac.ScopePredicate;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.objectmodel.EntityType;
 
 import javax.swing.*;
 import java.awt.*;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.logging.Level;
@@ -31,9 +28,10 @@ public class PermissionOptionsPanel extends WizardStepPanel {
     private JCheckBox readCheckBox;
     private JCheckBox updateCheckBox;
     private JCheckBox deleteCheckBox;
+    private JRadioButton conditionRadio;
 
     public PermissionOptionsPanel() {
-        super(new PermissionSummaryPanel());
+        super(null);
         setLayout(new BorderLayout());
         setShowDescriptionPanel(false);
         add(contentPanel);
@@ -56,12 +54,12 @@ public class PermissionOptionsPanel extends WizardStepPanel {
 
     @Override
     public boolean canAdvance() {
-        return atLeastOneOpSelected();
+        return createCheckBox.isSelected() || readCheckBox.isSelected() || updateCheckBox.isSelected() || deleteCheckBox.isSelected();
     }
 
     @Override
     public boolean canFinish() {
-        return atLeastOneOpSelected();
+        return false;
     }
 
     @Override
@@ -73,42 +71,32 @@ public class PermissionOptionsPanel extends WizardStepPanel {
             } else {
                 // TODO
             }
-
+            setOpsOnConfig(config);
             if (allObjectsRadio.isSelected()) {
-                // scope is not restricted
-                config.setScope(Collections.<ScopePredicate>emptySet());
+                config.setHasScope(false);
             } else {
-                // TODO
+                config.setHasScope(true);
             }
 
-            final Set<OperationType> ops = new HashSet<>();
-            if (createCheckBox.isSelected()) {
-                ops.add(OperationType.CREATE);
-            }
-            if (readCheckBox.isSelected()) {
-                ops.add(OperationType.READ);
-            }
-            if (updateCheckBox.isSelected()) {
-                ops.add(OperationType.UPDATE);
-            }
-            if (deleteCheckBox.isSelected()) {
-                ops.add(OperationType.DELETE);
-            }
-            config.setOperations(ops);
-
-            final Set<Permission> permissions = new HashSet<>();
-            for (final OperationType operationType : config.getOperations()) {
-                final Permission permission = new Permission(config.getRole(), operationType, config.getType());
-                permission.setScope(config.getScope());
-                permissions.add(permission);
-            }
-            config.setAddedPermissions(permissions);
         } else {
             logger.log(Level.WARNING, "Cannot store settings because received invalid settings object: " + settings);
         }
     }
 
-    private boolean atLeastOneOpSelected() {
-        return createCheckBox.isSelected() || readCheckBox.isSelected() || updateCheckBox.isSelected() || deleteCheckBox.isSelected();
+    private void setOpsOnConfig(AddPermissionsWizard.PermissionConfig config) {
+        final Set<OperationType> ops = new HashSet<>();
+        if (createCheckBox.isSelected()) {
+            ops.add(OperationType.CREATE);
+        }
+        if (readCheckBox.isSelected()) {
+            ops.add(OperationType.READ);
+        }
+        if (updateCheckBox.isSelected()) {
+            ops.add(OperationType.UPDATE);
+        }
+        if (deleteCheckBox.isSelected()) {
+            ops.add(OperationType.DELETE);
+        }
+        config.setOperations(ops);
     }
 }
