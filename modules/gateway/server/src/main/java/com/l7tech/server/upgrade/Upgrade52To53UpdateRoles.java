@@ -71,16 +71,16 @@ public class Upgrade52To53UpdateRoles implements UpgradeTask {
         final Collection<ServiceHeader> services = serviceManager.findAllHeaders(false);
 
         for (ServiceHeader serviceHeader : services) {
-            final long serviceOid = serviceHeader.getOid();
-            final Collection<Role> roles = roleManager.findEntitySpecificRoles( EntityType.SERVICE, serviceOid );
+            final Goid serviceGoid = serviceHeader.getGoid();
+            final Collection<Role> roles = roleManager.findEntitySpecificRoles( EntityType.SERVICE, serviceGoid );
 
             if (roles.isEmpty()) {
-                PublishedService service = serviceManager.findByPrimaryKey(serviceOid);
+                PublishedService service = serviceManager.findByPrimaryKey(serviceGoid);
                 if (service != null) {
-                    logger.warning("Missing role for service '" + serviceOid + "', creating new role.");
+                    logger.warning("Missing role for service '" + serviceGoid + "', creating new role.");
                     serviceManager.createRoles(service);
                 } else {
-                    logger.warning("Missing role for service '" + serviceOid + "', not creating new role (error finding service).");
+                    logger.warning("Missing role for service '" + serviceGoid + "', not creating new role (error finding service).");
                 }
             } else if (roles.size() == 1) {
                 final Role role = roles.iterator().next();
@@ -88,7 +88,7 @@ public class Upgrade52To53UpdateRoles implements UpgradeTask {
                 addEntityPermission(role, READ, JDBC_CONNECTION);
                 roleManager.update(role);
             } else {
-                logger.warning("Not upgrading roles for service '" + serviceOid + "', expected one role but found " +roles.size()+ ".");
+                logger.warning("Not upgrading roles for service '" + serviceGoid + "', expected one role but found " +roles.size()+ ".");
             }
         }
     }
@@ -101,16 +101,16 @@ public class Upgrade52To53UpdateRoles implements UpgradeTask {
         final Collection<PolicyHeader> policies = policyManager.findHeadersByType(PolicyType.INCLUDE_FRAGMENT);
 
         for (PolicyHeader policyHeader : policies) {
-            final long policyOid = policyHeader.getOid();
-            final Collection<Role> roles = roleManager.findEntitySpecificRoles(EntityType.POLICY, policyOid);
+            final Goid policyGoid = policyHeader.getGoid();
+            final Collection<Role> roles = roleManager.findEntitySpecificRoles(EntityType.POLICY, policyGoid);
 
             if (roles.isEmpty()) {
-                Policy policy = policyManager.findByPrimaryKey(policyOid);
+                Policy policy = policyManager.findByPrimaryKey(policyGoid);
                 if (policy != null) {
-                    logger.warning("Missing role for policy '" + policyOid + "', creating new role.");
+                    logger.warning("Missing role for policy '" + policyGoid + "', creating new role.");
                     policyManager.createRoles(policy);
                 } else {
-                    logger.warning("Missing role for policy '" + policyOid + "', not creating new role (error finding policy).");
+                    logger.warning("Missing role for policy '" + policyGoid + "', not creating new role (error finding policy).");
                 }
             } else if (roles.size() == 1) {
                 final Role role = roles.iterator().next();
@@ -118,7 +118,7 @@ public class Upgrade52To53UpdateRoles implements UpgradeTask {
                 addEntityPermission(role, READ, JDBC_CONNECTION);
                 roleManager.update(role);
             } else {
-                logger.warning("Not upgrading roles for service '" + policyOid + "', expected one role but found " +roles.size()+ ".");
+                logger.warning("Not upgrading roles for service '" + policyGoid + "', expected one role but found " +roles.size()+ ".");
             }
         }
     }

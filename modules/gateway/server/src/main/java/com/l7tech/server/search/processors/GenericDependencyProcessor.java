@@ -153,7 +153,7 @@ public class GenericDependencyProcessor<O> extends BaseDependencyProcessor<O> {
     @Override
     public List<? extends Entity> find(@NotNull Object searchValue, com.l7tech.search.Dependency.DependencyType dependencyType, com.l7tech.search.Dependency.MethodReturnType searchValueType) throws FindException {
         switch (searchValueType) {
-            case OID:
+            case OID: {
                 //used the entity crud to find the entity using its OID
                 List<EntityHeader> headers;
                 if (searchValue instanceof Long)
@@ -175,6 +175,30 @@ public class GenericDependencyProcessor<O> extends BaseDependencyProcessor<O> {
                         return loadEntity(entityHeader);
                     }
                 });
+            }
+            case GOID: {
+                //used the entity crud to find the entity using its GOID
+                List<EntityHeader> headers;
+                if (searchValue instanceof Goid)
+                    headers = Arrays.asList(new EntityHeader((Goid) searchValue, dependencyType.getEntityType(), null, null));
+                else if (searchValue instanceof String)
+                    headers = Arrays.asList(new EntityHeader((String) searchValue, dependencyType.getEntityType(), null, null));
+                else if (searchValue instanceof Goid[]) {
+                    Goid[] goids = (Goid[]) searchValue;
+                    headers = new ArrayList<>(goids.length);
+                    for (Goid goid : goids) {
+                        headers.add(new EntityHeader(goid, dependencyType.getEntityType(), null, null));
+                    }
+                } else
+                    throw new IllegalArgumentException("Unsupported GOID value type: " + searchValue.getClass());
+                //noinspection ConstantConditions
+                return Functions.map(headers, new Functions.UnaryThrows<Entity, EntityHeader, FindException>() {
+                    @Override
+                    public Entity call(EntityHeader entityHeader) throws FindException {
+                        return loadEntity(entityHeader);
+                    }
+                });
+            }
             case ENTITY:
                 if (searchValue instanceof Entity)
                     return Arrays.asList((Entity) searchValue);

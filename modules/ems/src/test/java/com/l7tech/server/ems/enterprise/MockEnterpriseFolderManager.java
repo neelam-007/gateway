@@ -1,14 +1,14 @@
 package com.l7tech.server.ems.enterprise;
 
 import com.l7tech.objectmodel.*;
-import com.l7tech.server.EntityManagerStub;
+import com.l7tech.server.OidEntityManagerStub;
 
 import java.util.List;
 
 /**
  *
  */
-public class MockEnterpriseFolderManager extends EntityManagerStub<EnterpriseFolder,EntityHeader> implements EnterpriseFolderManager {
+public class MockEnterpriseFolderManager extends OidEntityManagerStub<EnterpriseFolder,EntityHeader> implements EnterpriseFolderManager {
     @Override
     public EnterpriseFolder create(String name, EnterpriseFolder parentFolder) throws InvalidNameException, SaveException, FindException {
         return null;

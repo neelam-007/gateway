@@ -1,5 +1,6 @@
 package com.l7tech.server.hpsoam.metrics;
 
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.Pair;
 import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.wsdl.Wsdl;
@@ -25,14 +26,14 @@ import java.util.logging.Logger;
  */
 public class ServicePerformance {
     private final Logger logger = Logger.getLogger(ServicePerformance.class.getName());
-    private long serviceOID;
+    private Goid serviceGOID;
     private String localName;
     private String ns;
     private ArrayList<OperationPerformance> opPerfs = new ArrayList<OperationPerformance>();
 
 
     public ServicePerformance(PublishedService ps) {
-        serviceOID = ps.getOid();
+        serviceGOID = ps.getGoid();
         localName = ps.getName();
         try {
             Wsdl parsedWSDL = ps.parsedWsdl();
@@ -47,8 +48,8 @@ public class ServicePerformance {
         }
     }
 
-    public long getServiceOID() {
-        return serviceOID;
+    public Goid getServiceGOID() {
+        return serviceGOID;
     }
 
     public String getLocalName() {
@@ -90,7 +91,7 @@ public class ServicePerformance {
 
     public String toString() {
         StringBuffer buf = new StringBuffer();
-        buf.append(" id " + serviceOID);
+        buf.append(" id " + serviceGOID);
         buf.append(" name " + localName);
         buf.append(" ns " + ns);
         for (OperationPerformance op : opPerfs) {

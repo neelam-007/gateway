@@ -16,7 +16,8 @@ import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.comparator.NamedEntityComparator;
-import com.l7tech.objectmodel.folder.HasFolderOid;
+import com.l7tech.objectmodel.folder.Folder;
+import com.l7tech.objectmodel.folder.HasFolderGoid;
 import com.l7tech.policy.AssertionAccess;
 import com.l7tech.policy.PolicyHeader;
 import com.l7tech.policy.PolicyType;
@@ -397,8 +398,8 @@ public class AssignSecurityZonesDialog extends JDialog {
         final EntityNameResolver entityNameResolver = Registry.getDefault().getEntityNameResolver();
         final ConsoleAssertionRegistry assertionRegistry = TopComponents.getInstance().getAssertionRegistry();
         try {
-            if (header instanceof HasFolderOid) {
-                path = entityNameResolver.getPath((HasFolderOid) header);
+            if (header instanceof HasFolderGoid) {
+                path = entityNameResolver.getPath((HasFolderGoid) header);
             } else if (header.getType() == EntityType.ASSERTION_ACCESS) {
                 final Assertion assertion = assertionRegistry.findByClassName(assertionNames.get(header.getOid()));
                 if (assertion != null) {
@@ -604,7 +605,7 @@ public class AssignSecurityZonesDialog extends JDialog {
                             break;
                         case FOLDER:
                             for (final EntityHeader header : entitiesToUpdate) {
-                                if (header.getOid() == RootNode.OID) {
+                                if (Folder.ROOT_FOLDER_ID.equals(header.getGoid())) {
                                     rootNode.setSecurityZone(selectedZone);
                                     break;
                                 }

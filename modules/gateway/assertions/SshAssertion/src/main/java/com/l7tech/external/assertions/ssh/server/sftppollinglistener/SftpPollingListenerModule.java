@@ -265,9 +265,9 @@ public class SftpPollingListenerModule extends ActiveTransportModule implements 
             request.attachKnob(MessageProcessingSshUtil.buildSshKnob( null, 0, null,
                     0, processingFileName, directory, CommandKnob.CommandType.PUT, null, null, metadata, Collections.<String, String>emptyMap()), SshKnob.class, UriKnob.class); // Avoid advertising TcpKnob since we don't have actual transport-level data for it
 
-            final Long hardwiredServiceOid = connector.getHardwiredServiceOid();
-            if ( hardwiredServiceOid != null ) {
-                request.attachKnob(HasServiceOid.class, new HasServiceOidImpl(hardwiredServiceOid));
+            final Goid hardwiredServiceGoid = connector.getHardwiredServiceGoid();
+            if ( hardwiredServiceGoid != null ) {
+                request.attachKnob(HasServiceGoid.class, new HasServiceGoidImpl(hardwiredServiceGoid));
             }
 
             context = PolicyEnforcementContextFactory.createPolicyEnforcementContext( request, null, replyExpected );

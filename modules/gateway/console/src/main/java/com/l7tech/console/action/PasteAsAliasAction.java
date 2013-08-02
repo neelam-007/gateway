@@ -83,7 +83,7 @@ public class PasteAsAliasAction extends SecureAction {
 
             final FolderHeader fH = (FolderHeader) parentNode.getUserObject();
             final FolderHeader parentHeader = (FolderHeader) this.parentNode.getUserObject();
-            if(fH.getOid() == parentHeader.getOid()){
+            if(Goid.equals(fH.getGoid(), parentHeader.getGoid())){
                 DialogDisplayer.showMessageDialog(tree, "Cannot create alias in the same folder as original", "Create Error", JOptionPane.ERROR_MESSAGE, null);
                 return;
             }
@@ -101,7 +101,7 @@ public class PasteAsAliasAction extends SecureAction {
                     aliasFinder = new NullaryThrows<Alias<?>,FindException>(){
                         @Override
                         public Alias<?> call() throws FindException {
-                            return Registry.getDefault().getServiceManager().findAliasByEntityAndFolder(eh.getOid(), parentFolder.getOid());
+                            return Registry.getDefault().getServiceManager().findAliasByEntityAndFolder(eh.getGoid(), parentFolder.getGoid());
                         }
                     };
                 } else if ( eh.getType() == EntityType.POLICY ) {
@@ -109,7 +109,7 @@ public class PasteAsAliasAction extends SecureAction {
                     aliasFinder = new NullaryThrows<Alias<?>,FindException>(){
                         @Override
                         public Alias<?> call() throws FindException {
-                            return Registry.getDefault().getPolicyAdmin().findAliasByEntityAndFolder(eh.getOid(), parentFolder.getOid());
+                            return Registry.getDefault().getPolicyAdmin().findAliasByEntityAndFolder(eh.getGoid(), parentFolder.getGoid());
                         }
                     };
                 }
@@ -131,16 +131,16 @@ public class PasteAsAliasAction extends SecureAction {
         for( final AbstractTreeNode atn: abstractTreeNodes ){
             final EntityHeader eh = ((EntityWithPolicyNode)atn).getEntityHeader();
             final OrganizationHeader header;
-            final Long aliasOid;
+            final Goid aliasGoid;
             try {
                 if ( eh instanceof ServiceHeader ) {
                     header = new ServiceHeader((ServiceHeader)eh);
                     final PublishedServiceAlias psa = new PublishedServiceAlias((ServiceHeader)eh, parentFolder, getSecurityZoneFromHeader((ServiceHeader)eh, EntityType.SERVICE_ALIAS));
-                    aliasOid = Registry.getDefault().getServiceManager().saveAlias(psa);
+                    aliasGoid = Registry.getDefault().getServiceManager().saveAlias(psa);
                 } else if ( eh instanceof PolicyHeader  ) {
                     header = new PolicyHeader((PolicyHeader)eh);
                     final PolicyAlias pa = new PolicyAlias((PolicyHeader)eh, parentFolder, getSecurityZoneFromHeader((PolicyHeader)eh, EntityType.POLICY_ALIAS));
-                    aliasOid = Registry.getDefault().getPolicyAdmin().saveAlias(pa);
+                    aliasGoid = Registry.getDefault().getPolicyAdmin().saveAlias(pa);
                 } else {
                     throw new IllegalStateException("Referent was neither a Policy nor a Service");
                 }
@@ -150,8 +150,8 @@ public class PasteAsAliasAction extends SecureAction {
                 throw new RuntimeException("Unable to save alias", ve);
             }
 
-            header.setAliasOid(aliasOid);
-            header.setFolderOid(parentFolder.getOid());
+            header.setAliasGoid(aliasGoid);
+            header.setFolderGoid(parentFolder.getGoid());
             final EntityWithPolicyNode childNode = (EntityWithPolicyNode) TreeNodeFactory.asTreeNode(header, RootNode.getComparator());
 
             int insertPosition = parentNode.getInsertPosition(childNode, RootNode.getComparator());
@@ -159,7 +159,7 @@ public class PasteAsAliasAction extends SecureAction {
             final DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
             final RootNode rootNode = (RootNode) model.getRoot();
             model.nodesWereInserted(parentNode, new int[]{insertPosition});
-            rootNode.addAlias(header.getOid(), childNode);
+            rootNode.addAlias(header.getGoid(), childNode);
         }
     }
 

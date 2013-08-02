@@ -3,11 +3,11 @@ package com.l7tech.server.identity;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.server.EntityManagerStub;
+import com.l7tech.server.OidEntityManagerStub;
 import org.springframework.beans.factory.InitializingBean;
 
 public class TestIdentityProviderConfigManager
-        extends EntityManagerStub<IdentityProviderConfig, EntityHeader>
+        extends OidEntityManagerStub<IdentityProviderConfig, EntityHeader>
         implements IdentityProviderConfigManager, InitializingBean
 {
     public TestIdentityProviderConfigManager() {

@@ -54,7 +54,7 @@ public class EncapsulatedAssertion extends Assertion implements UsesEntitiesAtDe
 
         //noinspection unchecked
         copy.parameters = (Map<String, String>) ((TreeMap<String, String>)parameters).clone();
-        copy.configHeader = new GuidEntityHeader(configHeader.getOid(), EntityType.ENCAPSULATED_ASSERTION, configHeader.getName(), configHeader.getDescription());
+        copy.configHeader = new GuidEntityHeader(configHeader.getGoid(), EntityType.ENCAPSULATED_ASSERTION, configHeader.getName(), configHeader.getDescription());
         copy.configHeader.setGuid(configHeader.getGuid());
         copy.encapsulatedAssertionConfig = encapsulatedAssertionConfig == null ? null : encapsulatedAssertionConfig.getCopy();
         copy.meta = null;

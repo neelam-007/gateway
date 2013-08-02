@@ -1,7 +1,8 @@
 package com.l7tech.gateway.common.cluster;
 
-import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.gateway.common.service.ServiceStatistics;
+import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.imp.NamedGoidEntityImp;
 
 /**
  * Bean representation of a row in the service_usage table.
@@ -15,8 +16,8 @@ import com.l7tech.gateway.common.service.ServiceStatistics;
  * $Id$<br/>
  *
  */
-public class ServiceUsage extends NamedEntityImp {
-    public static final String ATTR_SERVICE_OID = "serviceid";
+public class ServiceUsage extends NamedGoidEntityImp {
+    public static final String ATTR_SERVICE_GOID = "serviceid";
 
     /**
      * Util method to go from ServiceStatistics to ServiceUsage
@@ -25,7 +26,7 @@ public class ServiceUsage extends NamedEntityImp {
      */
     public static ServiceUsage fromStat(ServiceStatistics stat, String nodeid) {
         ServiceUsage output = new ServiceUsage();
-        output.setServiceid(stat.getServiceOid());
+        output.setServiceid(stat.getServiceGoid());
         output.setNodeid(nodeid);
         output.setAuthorized(stat.getAuthorizedRequestCount());
         output.setCompleted(stat.getCompletedRequestCount());
@@ -36,14 +37,14 @@ public class ServiceUsage extends NamedEntityImp {
     /**
      * id of the service this stat is applicable to
      */
-    public long getServiceid() {
+    public Goid getServiceid() {
         return serviceid;
     }
 
     /**
      * id of the service this stat is applicable to
      */
-    public void setServiceid(long serviceid) {
+    public void setServiceid(Goid serviceid) {
         this.serviceid = serviceid;
     }
 
@@ -109,7 +110,7 @@ public class ServiceUsage extends NamedEntityImp {
     public boolean equals(Object obj) {
         if (!(obj instanceof ServiceUsage)) return false;
         ServiceUsage jghmx = (ServiceUsage)obj;
-        if (serviceid != jghmx.serviceid) return false;
+        if (!Goid.equals(serviceid, jghmx.serviceid)) return false;
         if (!nodeid.equals(jghmx.nodeid)) return false;
         /*if (requests != jghmx.requests) return false;
         if (authorized != jghmx.authorized) return false;
@@ -122,12 +123,15 @@ public class ServiceUsage extends NamedEntityImp {
      * this must be overriden (hibernate requirement for composite id classes)
      */
     public int hashCode() {
-	return com.l7tech.util.HashCode.compute(serviceid, nodeid);
+        int result = super.hashCode();
+        result = 31 * result + (serviceid != null ? serviceid.hashCode() : 0);
+        result = 31 * result + (nodeid != null ? nodeid.hashCode() : 0);
+        return result;
     }
 
     private static final long serialVersionUID = 7989882004981151855L;
 
-    private long serviceid;
+    private Goid serviceid;
     private String nodeid;
     private long requests;
     private long authorized;

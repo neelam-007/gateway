@@ -3,6 +3,7 @@
  */
 package com.l7tech.server.upgrade;
 
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.util.HexUtils;
@@ -35,7 +36,7 @@ public class Upgrade42To43MigratePolicies implements UpgradeTask {
     private static final Logger logger = Logger.getLogger(Upgrade42To43MigratePolicies.class.getName());
 
     private static final String PUBLISHED_SERVICE_TABLE = "published_service";
-    private static final String OBJECTID_COLUMN = "objectid";
+    private static final String OBJECTID_COLUMN = "goid";
     private static final String POLICY_XML_COLUMN = "policy_xml";
     private static final String SOAP_COLUMN = "soap";
     private static final String NAME_COLUMN = "name";
@@ -66,7 +67,7 @@ public class Upgrade42To43MigratePolicies implements UpgradeTask {
             throw new FatalUpgradeException("Couldn't get required components");
         }
 
-        Map<Long, Policy> policies = collectPolicies(session);
+        Map<Goid, Policy> policies = collectPolicies(session);
         createPolicyRecords(policies, session);
         clearOldPolicies(session);
         // session must dangle open; caller will commit transaction, which will flush the session
@@ -75,11 +76,11 @@ public class Upgrade42To43MigratePolicies implements UpgradeTask {
     /**
      * Needs to use JDBC, since the PublishedService class has lost its policyXml property
      */
-    private Map<Long, Policy> collectPolicies(Session session) throws FatalUpgradeException, NonfatalUpgradeException {
+    private Map<Goid, Policy> collectPolicies(Session session) throws FatalUpgradeException, NonfatalUpgradeException {
         Statement stmt = null;
         ResultSet rs = null;
 
-        Map<Long, Policy> policies = new HashMap<Long, Policy>();
+        Map<Goid, Policy> policies = new HashMap<Goid, Policy>();
         try {
             stmt = session.connection().createStatement();
 
@@ -93,7 +94,7 @@ public class Upgrade42To43MigratePolicies implements UpgradeTask {
             rs = stmt.executeQuery(SQL_GET_POLICY_XML);
 
             while (rs.next()) {
-                long oid = rs.getLong(1);
+                byte[] goid = rs.getBytes(1);
                 Clob clob = rs.getClob(2);
                 boolean soap = rs.getInt(3) == 1;
                 String name = rs.getString(4);
@@ -107,9 +108,9 @@ public class Upgrade42To43MigratePolicies implements UpgradeTask {
                     throw new FatalUpgradeException("Couldn't read policy_xml field");
                 }
                 PublishedService service = new PublishedService();
-                service.setOid( oid );
+                service.setGoid(new Goid(goid));
                 service.setName( name );
-                policies.put(oid, new Policy( PolicyType.PRIVATE_SERVICE, service.generatePolicyName(), sw.getBuffer().toString(), soap));
+                policies.put(new Goid(goid), new Policy( PolicyType.PRIVATE_SERVICE, service.generatePolicyName(), sw.getBuffer().toString(), soap));
             }
 
             return policies;
@@ -133,19 +134,19 @@ public class Upgrade42To43MigratePolicies implements UpgradeTask {
         }
     }
 
-    private void createPolicyRecords(Map<Long, Policy> policies, Session session) throws FatalUpgradeException {
-        for (Map.Entry<Long, Policy> entry : policies.entrySet()) {
-            long serviceOid = entry.getKey();
+    private void createPolicyRecords(Map<Goid, Policy> policies, Session session) throws FatalUpgradeException {
+        for (Map.Entry<Goid, Policy> entry : policies.entrySet()) {
+            Goid serviceGoid = entry.getKey();
 
             PublishedService service;
             try {
-                service = (PublishedService) session.load(PublishedService.class, serviceOid);
+                service = (PublishedService) session.load(PublishedService.class, serviceGoid);
                 if (service == null) {
-                    logger.log(Level.SEVERE, "Service #" + serviceOid + " has been deleted; skipping");
+                    logger.log(Level.SEVERE, "Service #" + serviceGoid + " has been deleted; skipping");
                     continue;
                 }
             } catch (HibernateException e) {
-                throw new FatalUpgradeException("Couldn't find Service #" + serviceOid, e);
+                throw new FatalUpgradeException("Couldn't find Service #" + serviceGoid, e);
             }
 
             Policy policy = entry.getValue();
@@ -154,7 +155,7 @@ public class Upgrade42To43MigratePolicies implements UpgradeTask {
                 service.setPolicy(policy);
                 session.update(service);
             } catch (Exception e) {
-                throw new FatalUpgradeException("Couldn't save new Policy for Service #" + serviceOid);
+                throw new FatalUpgradeException("Couldn't save new Policy for Service #" + serviceGoid);
             }
         }
     }

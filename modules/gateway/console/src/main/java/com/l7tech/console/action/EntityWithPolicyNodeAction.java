@@ -53,17 +53,17 @@ public abstract class EntityWithPolicyNodeAction<HT extends EntityWithPolicyNode
         EntityType aliasType = null;
         if ( sn.getEntityHeader() instanceof OrganizationHeader ) {
             OrganizationHeader header = (OrganizationHeader) sn.getEntityHeader();
-            if (header.isAlias() && header.getAliasOid() != null && sn.getParent() != null) {
+            if (header.isAlias() && header.getAliasGoid() != null && sn.getParent() != null) {
                 switch ( header.getType() ) {
                     case POLICY:
                         PolicyAlias policyAlias = new PolicyAlias( (Policy)entity, ((FolderNode)sn.getParent()).getFolder() );
-                        policyAlias.setOid( header.getAliasOid() );
+                        policyAlias.setGoid( header.getAliasGoid() );
                         aliasEntity = policyAlias;
                         aliasType = EntityType.POLICY_ALIAS;
                         break;
                     case SERVICE:
                         PublishedServiceAlias serviceAlias = new PublishedServiceAlias( (PublishedService)entity, ((FolderNode)sn.getParent()).getFolder() );
-                        serviceAlias.setOid( header.getAliasOid() );
+                        serviceAlias.setGoid( header.getAliasGoid() );
                         aliasEntity = serviceAlias;
                         aliasType = EntityType.SERVICE_ALIAS;
                         break;

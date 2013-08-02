@@ -26,12 +26,12 @@ public class GuidEntityHeader extends EntityHeader {
         super(id, type, name, description, version);
     }
 
-    public GuidEntityHeader(long oid, EntityType type, String name, String description) {
-        super(oid, type, name, description);
+    public GuidEntityHeader(Goid goid, EntityType type, String name, String description) {
+        super(goid, type, name, description);
     }
 
-    public GuidEntityHeader(long oid, EntityType type, String name, String description, Integer version) {
-        super(oid, type, name, description, version);
+    public GuidEntityHeader(Goid goid, EntityType type, String name, String description, Integer version) {
+        super(goid, type, name, description, version);
     }
 
     @XmlAttribute

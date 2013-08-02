@@ -5,6 +5,7 @@ import com.l7tech.gateway.common.service.MetricsSummaryBin;
 import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.gateway.common.service.ServiceState;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.SaveException;
 
 import java.util.Collection;
@@ -19,7 +20,7 @@ public interface ServiceMetricsManager {
      * combining bins with the same period start.
      *
      * @param nodeId            cluster node ID; null = all
-     * @param serviceOids       published service OIDs; null = all services permitted for this user
+     * @param serviceGoids       published service GOIDs; null = all services permitted for this user
      * @param resolution        bin resolution ({@link com.l7tech.gateway.common.service.MetricsBin#RES_FINE},
      *                          {@link com.l7tech.gateway.common.service.MetricsBin#RES_HOURLY} or
      *                          {@link com.l7tech.gateway.common.service.MetricsBin#RES_DAILY}); null = all
@@ -31,14 +32,14 @@ public interface ServiceMetricsManager {
      * @throws com.l7tech.objectmodel.FindException if failure to query database
      */
     Collection<MetricsSummaryBin> summarizeByPeriod(String nodeId,
-                                                           long[] serviceOids,
+                                                           Goid[] serviceGoids,
                                                            Integer resolution,
                                                            Long minPeriodStart,
                                                            Long maxPeriodStart,
                                                            boolean includeEmpty)
         throws FindException;
 
-    Map<Long, MetricsSummaryBin> summarizeByService(String nodeId, Integer resolution, Long minPeriodStart, Long maxPeriodStart, long[] serviceOids, boolean includeEmpty)
+    Map<Goid, MetricsSummaryBin> summarizeByService(String nodeId, Integer resolution, Long minPeriodStart, Long maxPeriodStart, Goid[] serviceGoids, boolean includeEmpty)
             throws FindException;
 
     /**
@@ -46,7 +47,7 @@ public interface ServiceMetricsManager {
      * summarizes by combining them into one summary bin.
      *
      * @param clusterNodeId cluster node ID; null = all
-     * @param serviceOids   published service OIDs; null = all services permitted for this user
+     * @param serviceGoids   published service GOIDs; null = all services permitted for this user
      * @param resolution    bin resolution ({@link com.l7tech.gateway.common.service.MetricsBin#RES_FINE},
      *                      {@link com.l7tech.gateway.common.service.MetricsBin#RES_HOURLY} or
      *                      {@link com.l7tech.gateway.common.service.MetricsBin#RES_DAILY})
@@ -59,7 +60,7 @@ public interface ServiceMetricsManager {
      * @throws com.l7tech.objectmodel.FindException if failure to query database
      */
     MetricsSummaryBin summarizeLatest(String clusterNodeId,
-                                             long[] serviceOids,
+                                             Goid[] serviceGoids,
                                              int resolution,
                                              int duration,
                                              boolean includeEmpty)
@@ -68,7 +69,7 @@ public interface ServiceMetricsManager {
     /**
      * Gets the current state of a service that was recently created or updated.
      */
-    ServiceState getCreatedOrUpdatedServiceState(long oid) throws FindException;
+    ServiceState getCreatedOrUpdatedServiceState(Goid goid) throws FindException;
 
     /**
      * Deletes old metrics bins.
@@ -88,10 +89,10 @@ public interface ServiceMetricsManager {
     /**
      * Creates and saves a new hourly bin
      */
-    void createHourlyBin(Long serviceOid, ServiceState state, long startTime) throws SaveException;
+    void createHourlyBin(Goid serviceGoid, ServiceState state, long startTime) throws SaveException;
 
     /**
      * Creates and saves a new daily bin
      */
-    void createDailyBin(Long serviceOid, ServiceState state, long startTime) throws SaveException;
+    void createDailyBin(Goid serviceGoid, ServiceState state, long startTime) throws SaveException;
 }

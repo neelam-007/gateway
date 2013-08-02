@@ -5,10 +5,7 @@ package com.l7tech.console.tree;
 
 import com.l7tech.console.tree.servicesAndPolicies.RootNode;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.objectmodel.Entity;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.OrganizationHeader;
+import com.l7tech.objectmodel.*;
 import com.l7tech.policy.Policy;
 
 import javax.swing.*;
@@ -52,14 +49,14 @@ public abstract class EntityWithPolicyNode<ET extends Entity, HT extends EntityH
     }
 
     /** @return the object ID of the entity for this node (either a PublishedService or a Policy). */
-    public long getEntityOid() {
-        return getEntityHeader().getOid();
+    public Goid getEntityGoid() {
+        return getEntityHeader().getGoid();
     }
 
     /**
      * Get the entity.  As this may trigger a lazy download you should prefer to use
      * the entity header instead whenever possible.  If you only need the entity OID,
-     * use {@link #getEntityOid()}.
+     * use {@link #getEntityGoid()}.
      *
      * @return the Entity behind this Service Node
      * @throws FindException if the Entity cannot be loaded, or has been deleted
@@ -104,15 +101,15 @@ public abstract class EntityWithPolicyNode<ET extends Entity, HT extends EntityH
         if(header instanceof OrganizationHeader){
             OrganizationHeader oH = (OrganizationHeader) header;
             if(!oH.isAlias()){
-                Set<AbstractTreeNode> foundNodes = rootNode.getAliasesForEntity(oH.getOid());
+                Set<AbstractTreeNode> foundNodes = rootNode.getAliasesForEntity(oH.getGoid());
                 if(!foundNodes.isEmpty()){
                     for(AbstractTreeNode atn: foundNodes){
                         model.removeNodeFromParent(atn);
                     }
-                    rootNode.removeEntity(oH.getOid());
+                    rootNode.removeEntity(oH.getGoid());
                 }
             }else{
-                rootNode.removeAlias(oH.getOid(), this);
+                rootNode.removeAlias(oH.getGoid(), this);
             }
         }
     }

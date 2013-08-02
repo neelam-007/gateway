@@ -1,19 +1,20 @@
 package com.l7tech.server.upgrade;
 
-import static com.l7tech.objectmodel.EntityType.ID_PROVIDER_CONFIG;
-import static com.l7tech.objectmodel.EntityType.SERVICE;
 import com.l7tech.gateway.common.security.rbac.Role;
+import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.server.service.ServiceManager;
-import com.l7tech.gateway.common.service.PublishedService;
 import org.springframework.context.ApplicationContext;
 
 import java.util.Collection;
 import java.util.logging.Logger;
+
+import static com.l7tech.objectmodel.EntityType.ID_PROVIDER_CONFIG;
+import static com.l7tech.objectmodel.EntityType.SERVICE;
 
 /**
  * A database upgrade task that adds roles to the database.
@@ -62,9 +63,9 @@ public class Upgrade35To36AddRoles implements UpgradeTask {
         // If any of them doesn't have a role, try to create it
         Collection<PublishedService> services = serviceManager.findAll();
         for (PublishedService service : services) {
-            Collection<Role> roles = roleManager.findEntitySpecificRoles(SERVICE, service.getOid());
+            Collection<Role> roles = roleManager.findEntitySpecificRoles(SERVICE, service.getGoid());
             if (roles == null || roles.isEmpty() ) {
-                logger.info("Auto-creating missing admin Role for service " + service.getName() + " (#" + service.getOid() + ")");
+                logger.info("Auto-creating missing admin Role for service " + service.getName() + " (#" + service.getGoid() + ")");
                 serviceManager.addManageServiceRole(service);
             }
         }

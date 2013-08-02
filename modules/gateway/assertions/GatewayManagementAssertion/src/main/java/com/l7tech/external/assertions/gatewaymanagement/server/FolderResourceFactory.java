@@ -12,28 +12,26 @@ import com.l7tech.server.folder.FolderManager;
 import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.security.rbac.SecurityFilter;
 import com.l7tech.util.Either;
-import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions.Unary;
 import com.l7tech.util.Option;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.springframework.transaction.PlatformTransactionManager;
+
+import java.util.Collections;
+import java.util.Map;
 
 import static com.l7tech.util.Either.left;
 import static com.l7tech.util.Either.right;
 import static com.l7tech.util.Eithers.extract;
 import static com.l7tech.util.Option.none;
 import static com.l7tech.util.Option.some;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.springframework.transaction.PlatformTransactionManager;
-
-import java.lang.reflect.Method;
-import java.util.Collections;
-import java.util.Map;
 
 /**
  * 
  */
 @ResourceFactory.ResourceType(type=FolderMO.class)
-public class FolderResourceFactory extends EntityManagerResourceFactory<FolderMO, Folder, FolderHeader> {
+public class FolderResourceFactory extends GoidEntityManagerResourceFactory<FolderMO, Folder, FolderHeader> {
 
     //- PUBLIC
 
@@ -179,19 +177,19 @@ public class FolderResourceFactory extends EntityManagerResourceFactory<FolderMO
      */
     @NotNull
     Option<Folder> getFolder( @NotNull final Option<String> folderId ) {
-        final long folderOid = folderId.map( new Unary<Long,String>() {
+        final Goid folderGoid = folderId.map( new Unary<Goid,String>() {
             @Override
-            public Long call( final String value ) {
+            public Goid call( final String value ) {
                 try {
-                    return Long.parseLong( value );
-                } catch( NumberFormatException nfe ) {
-                    return PersistentEntity.DEFAULT_OID; // will not match any folder
+                    return Goid.parseGoid( value );
+                } catch( IllegalArgumentException nfe ) {
+                    return GoidEntity.DEFAULT_GOID; // will not match any folder
                 }
             }
-        } ).orSome( ROOT_FOLDER_OID );
+        } ).orSome( Folder.ROOT_FOLDER_ID );
 
         try {
-            return some( selectEntity( Collections.singletonMap( IDENTITY_SELECTOR, Long.toString( folderOid ) ) ) );
+            return some( selectEntity( Collections.singletonMap( IDENTITY_SELECTOR, Goid.toString( folderGoid ) ) ) );
         } catch ( ResourceNotFoundException e ) {
             return none();
         }
@@ -211,7 +209,7 @@ public class FolderResourceFactory extends EntityManagerResourceFactory<FolderMO
                                @NotNull  final Folder newFolder ) {
         Folder result = null;
 
-        if ( oldFolder != null && oldFolder.getOid() == newFolder.getOid() ) {
+        if ( oldFolder != null && Goid.equals(oldFolder.getGoid(), newFolder.getGoid()) ) {
             result = oldFolder;
         }
 
@@ -225,10 +223,9 @@ public class FolderResourceFactory extends EntityManagerResourceFactory<FolderMO
 
     //- PRIVATE
 
-    private static final long ROOT_FOLDER_OID = -5002L;
     private FolderManager folderManager;
 
     private void checkRoot( final Folder folder ) throws ObjectModelException {
-        if ( folder.getOid() == ROOT_FOLDER_OID ) throw new ConstraintViolationException("Cannot update root folder");
+        if ( Folder.ROOT_FOLDER_ID.equals(folder.getGoid()) ) throw new ConstraintViolationException("Cannot update root folder");
     }
 }

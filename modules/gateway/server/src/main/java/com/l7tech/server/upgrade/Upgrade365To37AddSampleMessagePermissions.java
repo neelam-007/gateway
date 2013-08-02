@@ -3,22 +3,27 @@
  */
 package com.l7tech.server.upgrade;
 
-import static com.l7tech.gateway.common.security.rbac.OperationType.*;
-import static com.l7tech.objectmodel.EntityType.SAMPLE_MESSAGE;
-import com.l7tech.gateway.common.security.rbac.*;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.UpdateException;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.server.security.rbac.RoleManager;
-import com.l7tech.server.service.ServiceManager;
+import com.l7tech.gateway.common.security.rbac.AttributePredicate;
+import com.l7tech.gateway.common.security.rbac.Permission;
+import com.l7tech.gateway.common.security.rbac.Role;
+import com.l7tech.gateway.common.security.rbac.ScopePredicate;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.SampleMessage;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.server.security.rbac.RoleManager;
+import com.l7tech.server.service.ServiceManager;
 import org.springframework.context.ApplicationContext;
 
 import java.util.Collection;
-import java.util.Set;
 import java.util.Iterator;
+import java.util.Set;
 import java.util.logging.Logger;
+
+import static com.l7tech.gateway.common.security.rbac.OperationType.*;
+import static com.l7tech.objectmodel.EntityType.SAMPLE_MESSAGE;
 
 /**
  * A database upgrade task that updates the Manage Specific Service Roles so that they also grant CRUD access to the
@@ -62,9 +67,9 @@ public class Upgrade365To37AddSampleMessagePermissions implements UpgradeTask {
             throws FindException, UpdateException {
         Collection<PublishedService> services = serviceManager.findAll();
         for (PublishedService service : services) {
-            Collection<Role> roles = roleManager.findEntitySpecificRoles(EntityType.SERVICE, service.getOid());
+            Collection<Role> roles = roleManager.findEntitySpecificRoles(EntityType.SERVICE, service.getGoid());
             if (roles == null) {
-                logger.warning("Missing admin Role for service " + service.getName() + " (#" + service.getOid() + ")");
+                logger.warning("Missing admin Role for service " + service.getName() + " (#" + service.getGoid() + ")");
                 continue;
             }
 
@@ -89,10 +94,10 @@ public class Upgrade365To37AddSampleMessagePermissions implements UpgradeTask {
                     }
                 }
 
-                if (!canCreate) role.addAttributePermission(CREATE, SAMPLE_MESSAGE, SampleMessage.ATTR_SERVICE_OID, Long.toString(service.getOid()));
-                if (!canRead)   role.addAttributePermission(READ,   SAMPLE_MESSAGE, SampleMessage.ATTR_SERVICE_OID, Long.toString(service.getOid()));
-                if (!canUpdate) role.addAttributePermission(UPDATE, SAMPLE_MESSAGE, SampleMessage.ATTR_SERVICE_OID, Long.toString(service.getOid()));
-                if (!canDelete) role.addAttributePermission(DELETE, SAMPLE_MESSAGE, SampleMessage.ATTR_SERVICE_OID, Long.toString(service.getOid()));
+                if (!canCreate) role.addAttributePermission(CREATE, SAMPLE_MESSAGE, SampleMessage.ATTR_SERVICE_GOID, Goid.toString(service.getGoid()));
+                if (!canRead)   role.addAttributePermission(READ,   SAMPLE_MESSAGE, SampleMessage.ATTR_SERVICE_GOID, Goid.toString(service.getGoid()));
+                if (!canUpdate) role.addAttributePermission(UPDATE, SAMPLE_MESSAGE, SampleMessage.ATTR_SERVICE_GOID, Goid.toString(service.getGoid()));
+                if (!canDelete) role.addAttributePermission(DELETE, SAMPLE_MESSAGE, SampleMessage.ATTR_SERVICE_GOID, Goid.toString(service.getGoid()));
 
                 roleManager.update(role);
             }
@@ -112,7 +117,7 @@ public class Upgrade365To37AddSampleMessagePermissions implements UpgradeTask {
             if (i.hasNext()) return false; // Scope is something other than a single AttributePredicate
             if (pred instanceof AttributePredicate) {
                 AttributePredicate apred = (AttributePredicate) pred;
-                return SampleMessage.ATTR_SERVICE_OID.equals(apred.getAttribute()) && serviceId.equals(apred.getValue());
+                return SampleMessage.ATTR_SERVICE_GOID.equals(apred.getAttribute()) && serviceId.equals(apred.getValue());
             } else {
                 return false;
             }

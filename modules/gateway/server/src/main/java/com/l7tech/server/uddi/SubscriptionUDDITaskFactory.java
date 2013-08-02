@@ -1,49 +1,45 @@
 package com.l7tech.server.uddi;
 
 import com.l7tech.common.http.GenericHttpClientFactory;
+import com.l7tech.common.http.GenericHttpRequestParams;
+import com.l7tech.common.http.HttpConstants;
+import com.l7tech.common.http.SimpleHttpClient;
 import com.l7tech.common.io.DocumentReferenceProcessor;
-import com.l7tech.gateway.common.uddi.*;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.ObjectModelException;
-import com.l7tech.objectmodel.UpdateException;
-import com.l7tech.server.ServerConfigParams;
-import com.l7tech.server.url.HttpObjectCache;
-import com.l7tech.util.Config;
-import com.l7tech.util.ConfigFactory;
-import com.l7tech.util.TimeUnit;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.Pair;
-import com.l7tech.util.ResourceUtils;
 import com.l7tech.gateway.common.audit.SystemMessages;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceDocument;
 import com.l7tech.gateway.common.service.ServiceDocumentWsdlStrategy;
-import com.l7tech.uddi.*;
-import com.l7tech.server.service.ServiceManager;
+import com.l7tech.gateway.common.uddi.UDDIRegistry;
+import com.l7tech.gateway.common.uddi.UDDIServiceControl;
+import com.l7tech.gateway.common.uddi.UDDIServiceControlRuntime;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.ObjectModelException;
+import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.service.ServiceDocumentManager;
-import com.l7tech.wsdl.WsdlEntityResolver;
+import com.l7tech.server.service.ServiceManager;
+import com.l7tech.server.url.HttpObjectCache;
+import com.l7tech.uddi.*;
+import com.l7tech.util.*;
 import com.l7tech.wsdl.ResourceTrackingWSDLLocator;
 import com.l7tech.wsdl.Wsdl;
-import com.l7tech.common.http.SimpleHttpClient;
-import com.l7tech.common.http.HttpConstants;
-import com.l7tech.common.http.GenericHttpRequestParams;
-
-import java.util.*;
-import java.util.logging.Logger;
-import java.util.logging.Level;
-import java.net.URL;
-import java.net.MalformedURLException;
-import java.net.PasswordAuthentication;
-import java.io.IOException;
-import java.io.StringReader;
-import java.text.SimpleDateFormat;
-import java.text.DateFormat;
-
+import com.l7tech.wsdl.WsdlEntityResolver;
 import org.xml.sax.EntityResolver;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 import javax.wsdl.WSDLException;
+import java.io.IOException;
+import java.io.StringReader;
+import java.net.MalformedURLException;
+import java.net.PasswordAuthentication;
+import java.net.URL;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * UDDITaskFactory for subscription tasks
@@ -606,7 +602,7 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
                                 }
 
                                 final PublishedService ps =
-                                        factory.serviceManager.findByPrimaryKey(serviceControl.getPublishedServiceOid());
+                                        factory.serviceManager.findByPrimaryKey(serviceControl.getPublishedServiceGoid());
                                 final UDDIServiceControlRuntime monitorRuntime =
                                         factory.uddiServiceControlRuntimeManager.findByServiceControlOid(serviceControl.getOid());
                                 if(!forceUpdate){
@@ -620,7 +616,7 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
                                     }else{
                                         logger.log(Level.WARNING, "Received notification for service for which we had no persisted runtime " +
                                                 "information. BusinessService: " + serviceControl.getUddiServiceKey() +
-                                                " from registry " + describe(uddiRegistry) + ". Related PublishedService #(" + serviceControl.getPublishedServiceOid()+").");
+                                                " from registry " + describe(uddiRegistry) + ". Related PublishedService #(" + serviceControl.getPublishedServiceGoid()+").");
                                         continue;
                                     }
                                 }
@@ -645,7 +641,7 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
                                             serviceControl.getWsdlPortBinding(),
                                             (serviceControl.getWsdlPortBindingNamespace() != null) ? "namespace '" + serviceControl.getWsdlPortBindingNamespace() + "'" : "",
                                             describe(uddiRegistry));
-                                    processInvalidOriginalService(factory, context, uddiRegistry, serviceControl.getOid(), ps.getOid());
+                                    processInvalidOriginalService(factory, context, uddiRegistry, serviceControl.getOid(), ps.getGoid());
                                     continue;
                                 }
 
@@ -653,7 +649,7 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
                                 //we do this regardless of configuration. UDDI is the authoritative source of info for the endPoint
                                 boolean serviceUpdated = false;
                                 //update serviceControl in case it has been updated
-                                serviceControl = factory.uddiServiceControlManager.findByPublishedServiceOid(serviceControl.getPublishedServiceOid());
+                                serviceControl = factory.uddiServiceControlManager.findByPublishedServiceGoid(serviceControl.getPublishedServiceGoid());
                                 if (serviceControl == null) {
                                     continue;
                                 }
@@ -675,7 +671,7 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
                                     factory.uddiServiceControlRuntimeManager.update(monitorRuntime);
                                     context.logAndAudit(
                                             SystemMessages.UDDI_NOTIFICATION_ENDPOINT_UPDATED,
-                                            String.valueOf(ps.getOid()),
+                                            String.valueOf(ps.getGoid()),
                                             endPoint,
                                             serviceKey,
                                             serviceControl.getWsdlPortName(),
@@ -724,7 +720,7 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
                                         final List<ServiceDocument> serviceDocuments = ServiceDocumentWsdlStrategy.fromWsdlResources(sourceDocs);
 
                                         // Check if WSDL has changed
-                                        Collection<ServiceDocument> existingServiceDocuments = factory.serviceDocumentManager.findByServiceId(ps.getOid());
+                                        Collection<ServiceDocument> existingServiceDocuments = factory.serviceDocumentManager.findByServiceId(ps.getGoid());
                                         Wsdl wsdl = ServiceDocumentWsdlStrategy.parseWsdl(ps, existingServiceDocuments);
                                         Wsdl newWsdl = ServiceDocumentWsdlStrategy.parseWsdl(wsdlUrlStr, contents.get(wsdlUrlStr), existingServiceDocuments);
 
@@ -745,19 +741,19 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
                                                     factory.serviceDocumentManager.delete(serviceDocument);
                                                 }
                                                 for (ServiceDocument serviceDocument : serviceDocuments) {
-                                                    serviceDocument.setServiceId(ps.getOid());
+                                                    serviceDocument.setServiceId(ps.getGoid());
                                                     factory.serviceDocumentManager.save(serviceDocument);
                                                 }
 
-                                                context.logAndAudit(SystemMessages.UDDI_NOTIFICATION_SERVICE_WSDL_UPDATE, ps.displayName() + " (#" + ps.getOid() + ")");
+                                                context.logAndAudit(SystemMessages.UDDI_NOTIFICATION_SERVICE_WSDL_UPDATE, ps.displayName() + " (#" + ps.getGoid() + ")");
                                             }
                                         } else {
-                                            logger.info("Published Service #(" + ps.getOid() + ") WSDL is not updated as it is already up to date for business service '" + serviceKey + "' for registry " + describe(uddiRegistry) + ".");
+                                            logger.info("Published Service #(" + ps.getGoid() + ") WSDL is not updated as it is already up to date for business service '" + serviceKey + "' for registry " + describe(uddiRegistry) + ".");
                                         }
                                     } catch (IOException ioe) {
-                                        context.logAndAudit(SystemMessages.UDDI_NOTIFICATION_SERVICE_WSDL_ERROR, ExceptionUtils.getDebugException(ioe), "Cause '" + ExceptionUtils.getMessage(ioe) + "'", ps.displayName() + " (#" + ps.getOid() + ")");
+                                        context.logAndAudit(SystemMessages.UDDI_NOTIFICATION_SERVICE_WSDL_ERROR, ExceptionUtils.getDebugException(ioe), "Cause '" + ExceptionUtils.getMessage(ioe) + "'", ps.displayName() + " (#" + ps.getGoid() + ")");
                                     } catch (WSDLException we) {
-                                        context.logAndAudit(SystemMessages.UDDI_NOTIFICATION_SERVICE_WSDL_ERROR, ExceptionUtils.getDebugException(we), "Cause '" + ExceptionUtils.getMessage(we) + "'", ps.displayName() + " (#" + ps.getOid() + ")");
+                                        context.logAndAudit(SystemMessages.UDDI_NOTIFICATION_SERVICE_WSDL_ERROR, ExceptionUtils.getDebugException(we), "Cause '" + ExceptionUtils.getMessage(we) + "'", ps.displayName() + " (#" + ps.getGoid() + ")");
                                     }
                                 }
 
@@ -793,18 +789,18 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
                                                    final UDDITaskContext context,
                                                    final UDDIRegistry uddiRegistry,
                                                    final long serviceControlOid,
-                                                   final long serviceOid) throws UpdateException, FindException {
+                                                   final Goid serviceGoid) throws UpdateException, FindException {
             //set defaultRoutingURL to be empty
-            final PublishedService ps = factory.serviceManager.findByPrimaryKey(serviceOid);
+            final PublishedService ps = factory.serviceManager.findByPrimaryKey(serviceGoid);
             if(ps == null) return;
 
             ps.setDefaultRoutingUrl(null);
             factory.serviceManager.update(ps);
-            logger.log(Level.INFO, "Cleared context variable ${service.defaultRoutingURL} of UDDI endpoint value for published service #(" + String.valueOf(ps.getOid()) + ").");
+            logger.log(Level.INFO, "Cleared context variable ${service.defaultRoutingURL} of UDDI endpoint value for published service #(" + String.valueOf(ps.getGoid()) + ").");
 
             final UDDIServiceControl serviceControl = factory.uddiServiceControlManager.findByPrimaryKey(serviceControlOid);
             if(serviceControl != null) {
-                context.logAndAudit(SystemMessages.UDDI_ORIGINAL_SERVICE_INVALIDATED, serviceKey, describe(uddiRegistry), String.valueOf(ps.getOid()) );
+                context.logAndAudit(SystemMessages.UDDI_ORIGINAL_SERVICE_INVALIDATED, serviceKey, describe(uddiRegistry), String.valueOf(ps.getGoid()) );
                 serviceControl.setUnderUddiControl(false);
                 serviceControl.setMonitoringEnabled(false);
                 factory.uddiServiceControlManager.update(serviceControl);
@@ -812,10 +808,10 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
         }
 
         private void disableService(UDDITaskContext context, UDDIServiceControl serviceControl) throws FindException, UpdateException {
-            final PublishedService ps = factory.serviceManager.findByPrimaryKey(serviceControl.getPublishedServiceOid());
+            final PublishedService ps = factory.serviceManager.findByPrimaryKey(serviceControl.getPublishedServiceGoid());
             ps.setDisabled(true);
             factory.serviceManager.update(ps);
-            context.logAndAudit(SystemMessages.UDDI_NOTIFICATION_SERVICE_DISABLED, ps.getOidAsLong().toString());
+            context.logAndAudit(SystemMessages.UDDI_NOTIFICATION_SERVICE_DISABLED, ps.getGoid().toString());
         }
 
         /**
@@ -857,7 +853,7 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
                     final String msg = "Problem wih found endpoint from Original Business Service's " +
                             "bindingTemplate for wsdl:port '"+serviceControl.getWsdlPortName()+"' in UDDI for service" +
                             " '"+serviceControl.getUddiServiceKey()+"' in UDDIRegistry "+describe(uddiRegistry)+
-                            " for Published Service #("+ps.getOid()+"), it routes back to the Gateway: '" + endPoint + "'.";
+                            " for Published Service #("+ps.getGoid()+"), it routes back to the Gateway: '" + endPoint + "'.";
                     if (!forceUpdate) {
                         context.logAndAudit(SystemMessages.UDDI_NOTIFICATION_PROCESSING_FAILED, msg);
                     } else {
@@ -868,7 +864,7 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
                         @Override
                         public void handleTaskError() {
                             try {
-                                processInvalidOriginalService(factory, context, uddiRegistry, serviceControl.getOid(), ps.getOid());
+                                processInvalidOriginalService(factory, context, uddiRegistry, serviceControl.getOid(), ps.getGoid());
                             } catch (UpdateException e) {
                                 context.logAndAudit(SystemMessages.DATABASE_ERROR, e,
                                         "Database error updating Published Service / UDDIServiceControl.");

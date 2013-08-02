@@ -47,7 +47,7 @@ public class RoleManagerImpl extends HibernateEntityManager<Role, EntityHeader> 
     private static final String HQL_FIND_ALL_FOLDER_PREDICATES_REFERENCING_FOLDER_ID =
         "from rbac_predicate_folder" +
             " in class " + FolderPredicate.class.getName() +
-            " where rbac_predicate_folder.folder.oid = ?";
+            " where rbac_predicate_folder.folder.goid = ?";
 
     // Finds scopes with this entity OID for ALL entity types; result will need to be further filtered
     // based on the owning Permission's entityType.
@@ -401,7 +401,7 @@ public class RoleManagerImpl extends HibernateEntityManager<Role, EntityHeader> 
         permissionsToDelete.addAll(findObjectIdentityPredicatePermissionsForEntity(etype, entityOid));
         permissionsToDelete.addAll(findEntityFolderAncestryPredicatePermissionsForEntity(etype, entityOid));
         if (EntityType.FOLDER.equals(etype)) {
-            permissionsToDelete.addAll(findFolderPredicatePermissionsForFolder(entityOid));
+            throw new UnsupportedOperationException("Folder entities are no longer supported here");
         }
         if (EntityType.SECURITY_ZONE.equals(etype)) {
             throw new UnsupportedOperationException("SecurityZone entities are no longer supported here");
@@ -435,7 +435,7 @@ public class RoleManagerImpl extends HibernateEntityManager<Role, EntityHeader> 
         permissionsToDelete.addAll(findObjectIdentityPredicatePermissionsForEntity(etype, entityGoid));
         permissionsToDelete.addAll(findEntityFolderAncestryPredicatePermissionsForEntity(etype, entityGoid));
         if (EntityType.FOLDER.equals(etype)) {
-            throw new UnsupportedOperationException("Folder Entities are not yet supported here.");
+            permissionsToDelete.addAll(findFolderPredicatePermissionsForFolder(entityGoid));
         }
         if (EntityType.SECURITY_ZONE.equals(etype)) {
             permissionsToDelete.addAll(findSecurityZonePredicatePermissionsForSecurityZone(entityGoid));
@@ -526,10 +526,10 @@ public class RoleManagerImpl extends HibernateEntityManager<Role, EntityHeader> 
         return ret;
     }
 
-    private Set<Permission> findFolderPredicatePermissionsForFolder(long folderOid) {
+    private Set<Permission> findFolderPredicatePermissionsForFolder(Goid folderGoid) {
         Set<Permission> ret = new HashSet<Permission>();
 
-        List predicates = getHibernateTemplate().find(HQL_FIND_ALL_FOLDER_PREDICATES_REFERENCING_FOLDER_ID, folderOid);
+        List predicates = getHibernateTemplate().find(HQL_FIND_ALL_FOLDER_PREDICATES_REFERENCING_FOLDER_ID, folderGoid);
         for (Object predicate : predicates) {
             if (!(predicate instanceof FolderPredicate))
                 throw new HibernateException("Got unexpected return value type of " + predicate.getClass() + " while finding folder predicates by folder oid");

@@ -9,7 +9,9 @@ import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
 import com.l7tech.gateway.common.transport.jms.JmsOutboundMessageType;
 import com.l7tech.gateway.common.transport.jms.JmsReplyType;
-import com.l7tech.message.*;
+import com.l7tech.message.JmsKnob;
+import com.l7tech.message.MessageRole;
+import com.l7tech.message.MimeKnob;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.JmsDynamicProperties;
@@ -21,7 +23,6 @@ import com.l7tech.server.DefaultKey;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.StashManagerFactory;
-import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.event.GoidEntityInvalidationEvent;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.variable.ExpandVariables;
@@ -30,23 +31,25 @@ import com.l7tech.server.transport.jms2.JmsEndpointConfig;
 import com.l7tech.server.transport.jms2.JmsResourceManager;
 import com.l7tech.server.util.ApplicationEventProxy;
 import com.l7tech.util.*;
-import static com.l7tech.util.ExceptionUtils.getDebugException;
-import static com.l7tech.util.ExceptionUtils.getMessage;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 import org.xml.sax.SAXException;
 
 import javax.jms.*;
-import javax.jms.Message;
 import javax.naming.CommunicationException;
 import javax.naming.NamingException;
 import java.io.IOException;
 import java.lang.IllegalStateException;
-import java.util.*;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static com.l7tech.util.ExceptionUtils.getDebugException;
+import static com.l7tech.util.ExceptionUtils.getMessage;
 
 /**
  * Server side implementation of JMS routing assertion.
@@ -522,8 +525,8 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                             return null;
                         }
                         @Override
-                        public long getServiceOid() {
-                            return 0L;
+                        public Goid getServiceGoid() {
+                            return new Goid(0,0);
                         }
 
                         @Override

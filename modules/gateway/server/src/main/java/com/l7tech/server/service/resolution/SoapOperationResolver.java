@@ -7,6 +7,7 @@ import com.l7tech.message.Message;
 import com.l7tech.message.SoapKnob;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.service.ServiceDocumentManager;
 import com.l7tech.wsdl.Wsdl;
 import com.l7tech.xml.soap.SoapUtil;
@@ -51,22 +52,22 @@ public class SoapOperationResolver extends NameValueServiceResolver<List<QName>>
                 return EMPTY;
             }
 
-            List<List<QName>> operationQnameLists = getAllOperationQNames(wsdl, service.getOid());
+            List<List<QName>> operationQnameLists = getAllOperationQNames(wsdl, service.getGoid());
 
             if (operationQnameLists.isEmpty()) {
-                auditor.logAndAudit(MessageProcessingMessages.SR_SOAPOPERATION_NO_QNAMES_AT_ALL, service.getName(), Long.toString(service.getOid()));
+                auditor.logAndAudit(MessageProcessingMessages.SR_SOAPOPERATION_NO_QNAMES_AT_ALL, service.getName(), Goid.toString(service.getGoid()));
                 return EMPTY;
             } else {
                 return operationQnameLists;
             }
         } catch (WSDLException e) {
-            logger.log(Level.WARNING, MessageFormat.format("Unable to parse WSDL for {0} service (#{1})", service.getName(), service.getOid()), e);
+            logger.log(Level.WARNING, MessageFormat.format("Unable to parse WSDL for {0} service (#{1})", service.getName(), service.getGoid()), e);
             return EMPTY;
         }
     }
 
     @SuppressWarnings({ "unchecked" })
-    private List<List<QName>> getAllOperationQNames( final Wsdl wsdl, final long serviceOid ) {
+    private List<List<QName>> getAllOperationQNames( final Wsdl wsdl, final Goid serviceGoid ) {
         List<List<QName>> operationQnameLists = new ArrayList<List<QName>>();
         Collection<Binding> bindings = wsdl.getBindings();
         if (bindings == null || bindings.isEmpty()) {
@@ -95,7 +96,7 @@ public class SoapOperationResolver extends NameValueServiceResolver<List<QName>>
             private Collection<ServiceDocument> getServiceDocuments() {
                 if ( serviceDocuments == null ) {
                     try {
-                        serviceDocuments = serviceDocumentManager.findByServiceIdAndType( serviceOid, "WSDL-IMPORT" );
+                        serviceDocuments = serviceDocumentManager.findByServiceIdAndType( serviceGoid, "WSDL-IMPORT" );
                     } catch ( FindException fe ) {
                         serviceDocuments = Collections.emptyList();
                     }

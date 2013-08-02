@@ -190,7 +190,7 @@ public class ServerEncapsulatedAssertion extends AbstractServerAssertion<Encapsu
             declareOutputVariables(config, (HasOutputVariables) childContext);
 
             // TODO cache policy handle in instance field until policy change is detected, instead of looking up a new one for every request
-            AssertionStatus result = lookupAndExecutePolicy(policy.getOid(), childContext);
+            AssertionStatus result = lookupAndExecutePolicy(policy.getGoid(), childContext);
 
             populateOutputVariables(context, config, childContext);
 
@@ -200,9 +200,9 @@ public class ServerEncapsulatedAssertion extends AbstractServerAssertion<Encapsu
         }
     }
 
-    private AssertionStatus lookupAndExecutePolicy(final long policyOid, PolicyEnforcementContext childContext) throws PolicyAssertionException, IOException {
+    private AssertionStatus lookupAndExecutePolicy(final Goid policyGoid, PolicyEnforcementContext childContext) throws PolicyAssertionException, IOException {
         AssertionStatus result;
-        final ServerPolicyHandle sph = policyCache.getServerPolicy(policyOid);
+        final ServerPolicyHandle sph = policyCache.getServerPolicy(policyGoid);
         if (sph != null) {
             try {
                 result = executePolicy(sph, childContext);

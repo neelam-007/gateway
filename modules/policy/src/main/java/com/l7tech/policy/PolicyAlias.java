@@ -2,6 +2,7 @@ package com.l7tech.policy;
 
 import com.l7tech.objectmodel.Alias;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.SecurityZone;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.migration.Migration;
@@ -27,7 +28,7 @@ public class PolicyAlias extends Alias<Policy> {
     }
 
     public PolicyAlias( final PolicyHeader policy, final Folder folder, @Nullable final SecurityZone securityZone) {
-        super(policy.getOid(), folder, securityZone);
+        super(policy.getGoid(), folder, securityZone);
     }
 
     @XmlTransient
@@ -38,15 +39,15 @@ public class PolicyAlias extends Alias<Policy> {
 
     @Override
     @Migration(mapName = NONE, mapValue = NONE, resolver = PropertyResolver.Type.POLICY_ALIAS)
-    @Dependency(type = Dependency.DependencyType.POLICY, methodReturnType = Dependency.MethodReturnType.OID)
-    public long getEntityOid() {
-        return entityOid;
+    @Dependency(type = Dependency.DependencyType.POLICY, methodReturnType = Dependency.MethodReturnType.GOID)
+    public Goid getEntityGoid() {
+        return entityGoid;
     }
 
     // needed here for JAXB serialization
     @Override
     @Deprecated
-    public void setEntityOid(long entityOid) {
-        super.setEntityOid(entityOid);
+    public void setEntityGoid(Goid entityGoid) {
+        super.setEntityGoid(entityGoid);
     }
 }

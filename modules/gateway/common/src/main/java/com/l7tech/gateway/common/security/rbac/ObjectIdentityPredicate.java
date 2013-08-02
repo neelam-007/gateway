@@ -57,7 +57,8 @@ public class ObjectIdentityPredicate extends ScopePredicate implements ScopeEval
         if (etype == null || etype == EntityType.ANY)
             throw new IllegalStateException("Can't evaluate an ObjectIdentityPredicate without a specific EntityType");
         // Type has already been checked by {@link Permission#matches}
-        return targetEntityId.equals(entity.getId());
+        // The hex of the goid should all be in lowercase but use equalsIgnoreCase incase it is not for some reason sanity
+        return targetEntityId.equalsIgnoreCase(entity.getId());
     }
 
     @Transient

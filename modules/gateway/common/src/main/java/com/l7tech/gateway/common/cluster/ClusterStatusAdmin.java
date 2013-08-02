@@ -274,7 +274,7 @@ public interface ClusterStatusAdmin {
      * services, RBAC is enforced inside the implementation instead of using attributes.
      *
      * @param nodeId            cluster node ID; null = all
-     * @param serviceOids       published service OIDs; null = all services permitted for this user
+     * @param serviceGoids      published service GOIDs; null = all services permitted for this user
      * @param resolution        bin resolution
      *                          ({@link com.l7tech.gateway.common.service.MetricsBin#RES_FINE},
      *                          {@link com.l7tech.gateway.common.service.MetricsBin#RES_HOURLY} or
@@ -290,7 +290,7 @@ public interface ClusterStatusAdmin {
     @Transactional(readOnly=true)
     @Administrative( background = true)
     Collection<MetricsSummaryBin> summarizeByPeriod(final String nodeId,
-                                                    final long[] serviceOids,
+                                                    final Goid[] serviceGoids,
                                                     final Integer resolution,
                                                     final Long minPeriodStart,
                                                     final Long maxPeriodStart,
@@ -305,7 +305,7 @@ public interface ClusterStatusAdmin {
      * services, RBAC is enforced inside the implementation instead of using attributes.
      *
      * @param nodeId            cluster node ID; null = all
-     * @param serviceOids       published service OIDs; null = all services permitted for this user
+     * @param serviceGoids      published service GOIDs; null = all services permitted for this user
      * @param resolution        bin resolution
      *                          ({@link com.l7tech.gateway.common.service.MetricsBin#RES_FINE},
      *                          {@link com.l7tech.gateway.common.service.MetricsBin#RES_HOURLY} or
@@ -322,7 +322,7 @@ public interface ClusterStatusAdmin {
     @Transactional(readOnly=true)
     @Administrative(background = true)
     Collection<MetricsSummaryBin> summarizeLatestByPeriod(final String nodeId,
-                                                          final long[] serviceOids,
+                                                          final Goid[] serviceGoids,
                                                           final Integer resolution,
                                                           final long duration,
                                                           final boolean includeEmpty)
@@ -336,7 +336,7 @@ public interface ClusterStatusAdmin {
      * services, RBAC is enforced inside the implementation instead of using attributes.
      *
      * @param clusterNodeId cluster node ID; null = all
-     * @param serviceOids   published service OIDs; null = all services permitted for this user
+     * @param serviceGoids  published service GOIDs; null = all services permitted for this user
      * @param resolution    bin resolution
      *                      ({@link com.l7tech.gateway.common.service.MetricsBin#RES_FINE},
      *                      {@link com.l7tech.gateway.common.service.MetricsBin#RES_HOURLY} or
@@ -352,7 +352,7 @@ public interface ClusterStatusAdmin {
     @Transactional(readOnly=true)
     @Administrative(background = true)
     MetricsSummaryBin summarizeLatest(final String clusterNodeId,
-                                      final long[] serviceOids,
+                                      final Goid[] serviceGoids,
                                       final int resolution,
                                       final int duration,
                                       final boolean includeEmpty)

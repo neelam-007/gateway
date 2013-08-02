@@ -17,6 +17,7 @@ import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.policy.PolicyUtil;
@@ -760,7 +761,7 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
         if (include != null) {
             try {
                 Policy thisPolicy = getPolicyNodeCookie().getPolicy();
-                if ( thisPolicy.getType() == PolicyType.INCLUDE_FRAGMENT && thisPolicy.getOid()>=0 ) {
+                if ( thisPolicy.getType() == PolicyType.INCLUDE_FRAGMENT && !Goid.isDefault(thisPolicy.getGoid()) ) {
                     Set<String> policyGuids = new HashSet<String>();
                     policyGuids.add(thisPolicy.getGuid());
                     try {

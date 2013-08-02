@@ -8,6 +8,7 @@ import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
 import com.l7tech.gateway.common.cluster.GatewayStatus;
 import com.l7tech.gateway.common.cluster.ServiceUsage;
 import com.l7tech.gui.util.SwingWorker;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.gateway.common.service.ServiceHeader;
@@ -26,7 +27,7 @@ import java.util.logging.Logger;
 public class ClusterStatusWorker extends SwingWorker {
 
     private ClusterStatusAdmin clusterStatusService;
-    private Hashtable<Long, ServiceUsage> statsList;
+    private Hashtable<Goid, ServiceUsage> statsList;
     private Hashtable<String, GatewayStatus> newNodeList;
     private Hashtable<String, GatewayStatus> currentNodeList;
     private long clusterRequestCount;
@@ -48,7 +49,7 @@ public class ClusterStatusWorker extends SwingWorker {
         this.currentNodeList = currentNodeList;
         this.cancelled = cancelled;
 
-        statsList = new Hashtable<Long, ServiceUsage>();
+        statsList = new Hashtable<Goid, ServiceUsage>();
     }
 
     /**
@@ -172,11 +173,11 @@ public class ClusterStatusWorker extends SwingWorker {
 
                 for ( ServiceHeader header : entityHeaders ) {
                     ServiceUsage su = new ServiceUsage();
-                    su.setServiceid(header.getOid());
+                    su.setServiceid(header.getGoid());
                     su.setName(header.getDisplayName());
 
                     // add the stats to the list
-                    statsList.put(new Long(su.getServiceid()), su);
+                    statsList.put(su.getServiceid(), su);
                 }
             } catch (FindException e) {
                 logger.log(Level.WARNING, "Unable to find all published services from server", e);
@@ -185,7 +186,7 @@ public class ClusterStatusWorker extends SwingWorker {
             // update the statistics list and the node caches with the retrived data
             for (int i = 0; i < serviceStats.length; i++) {
 
-                Object clusterServiceUsage =  statsList.get(new Long(serviceStats[i].getServiceid()));
+                Object clusterServiceUsage =  statsList.get(serviceStats[i].getServiceid());
 
                 // update cluster service usage
                 if(clusterServiceUsage != null){

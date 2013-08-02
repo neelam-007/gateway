@@ -88,20 +88,20 @@ public class BulkZoneUpdater {
                     final List<Serializable> serviceControlOids = new ArrayList<>();
                     final List<Serializable> policyOids = new ArrayList<>();
                     for (final EntityHeader service : entities) {
-                        final UDDIServiceControl uddiServiceControl = uddiAdmin.getUDDIServiceControl(service.getOid());
+                        final UDDIServiceControl uddiServiceControl = uddiAdmin.getUDDIServiceControl(service.getGoid());
                         if (uddiServiceControl != null) {
                             serviceControlOids.add(uddiServiceControl.getOid());
                         }
-                        final UDDIProxiedServiceInfo proxiedServiceInfo = uddiAdmin.findProxiedServiceInfoForPublishedService(service.getOid());
+                        final UDDIProxiedServiceInfo proxiedServiceInfo = uddiAdmin.findProxiedServiceInfoForPublishedService(service.getGoid());
                         if (proxiedServiceInfo != null) {
                             proxiedServiceInfoOids.add(proxiedServiceInfo.getOid());
                         }
                         if (service instanceof ServiceHeader) {
-                            final Long policyOid = ((ServiceHeader) service).getPolicyOid();
-                            if (policyOid != null) {
-                                final Policy policy = policyAdmin.findPolicyByPrimaryKey(((ServiceHeader) service).getPolicyOid());
+                            final Goid policyGoid = ((ServiceHeader) service).getPolicyGoid();
+                            if (policyGoid != null) {
+                                final Policy policy = policyAdmin.findPolicyByPrimaryKey(((ServiceHeader) service).getPolicyGoid());
                                 if (policy != null) {
-                                    policyOids.add(policy.getOid());
+                                    policyOids.add(policy.getGoid());
                                 }
                             }
                         }

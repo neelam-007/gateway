@@ -153,11 +153,11 @@ public class Role extends NamedEntityImp implements Comparable<Role> {
      * Adds a new Permission granting read access to the folder ancestry of an entity.
      *
      * @param etype    the type of entity whose folder ancestry should be made readable
-     * @param entityId the ID of the entity whose folder ancestry should be made readable
+     * @param entityGoid the ID of the entity whose folder ancestry should be made readable
      */
-    public void addEntityFolderAncestryPermission(EntityType etype, String entityId) {
+    public void addEntityFolderAncestryPermission(EntityType etype, Goid entityGoid) {
         Permission perm = new Permission(this, OperationType.READ, EntityType.FOLDER);
-        perm.getScope().add(new EntityFolderAncestryPredicate(perm, etype, entityId));
+        perm.getScope().add(new EntityFolderAncestryPredicate(perm, etype, entityGoid));
         permissions.add(perm);
     }
 

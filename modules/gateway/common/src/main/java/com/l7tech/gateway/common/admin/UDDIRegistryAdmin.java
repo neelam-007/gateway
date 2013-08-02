@@ -7,24 +7,26 @@
  */
 package com.l7tech.gateway.common.admin;
 
-import com.l7tech.gateway.common.uddi.*;
+import com.l7tech.gateway.common.security.rbac.MethodStereotype;
+import com.l7tech.gateway.common.security.rbac.Secured;
+import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.gateway.common.service.ServiceHeader;
+import com.l7tech.gateway.common.uddi.UDDIProxiedServiceInfo;
+import com.l7tech.gateway.common.uddi.UDDIPublishStatus;
+import com.l7tech.gateway.common.uddi.UDDIRegistry;
+import com.l7tech.gateway.common.uddi.UDDIServiceControl;
+import com.l7tech.objectmodel.*;
+import com.l7tech.uddi.UDDIException;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.transaction.annotation.Transactional;
 
-import static com.l7tech.gateway.common.security.rbac.MethodStereotype.TEST_CONFIGURATION;
-import static org.springframework.transaction.annotation.Propagation.REQUIRED;
-import com.l7tech.gateway.common.security.rbac.Secured;
-import com.l7tech.gateway.common.security.rbac.MethodStereotype;
-import static com.l7tech.gateway.common.security.rbac.MethodStereotype.FIND_ENTITIES;
-import static com.l7tech.gateway.common.security.rbac.MethodStereotype.DELETE_BY_ID;
-
-import com.l7tech.gateway.common.service.ServiceHeader;
-import com.l7tech.gateway.common.service.PublishedService;
-import com.l7tech.objectmodel.*;
-import com.l7tech.uddi.UDDIException;
-
 import java.util.Collection;
 import java.util.Map;
+
+import static com.l7tech.gateway.common.security.rbac.MethodStereotype.DELETE_BY_ID;
+import static com.l7tech.gateway.common.security.rbac.MethodStereotype.FIND_ENTITIES;
+import static com.l7tech.gateway.common.security.rbac.MethodStereotype.TEST_CONFIGURATION;
+import static org.springframework.transaction.annotation.Propagation.REQUIRED;
 
 @Transactional(propagation=REQUIRED, rollbackFor=Throwable.class)
 @Secured(types= EntityType.UDDI_REGISTRY)
@@ -227,14 +229,14 @@ public interface UDDIRegistryAdmin {
     /**
      * Find the UDDIProxiedService for a service, if it exists
      *
-     * @param publishedServiceOid the service to get the UDDIProxiedService for
+     * @param publishedServiceGoid the service to get the UDDIProxiedService for
      * @return UDDIProxiedService or null if the service does not have one
      * @throws com.l7tech.objectmodel.FindException
      *          Any problem finding the proxied service
      */
     @Transactional(readOnly = true)
     @Secured(types = EntityType.SERVICE, stereotype = MethodStereotype.FIND_ENTITY)
-    UDDIProxiedServiceInfo findProxiedServiceInfoForPublishedService(long publishedServiceOid) throws FindException;
+    UDDIProxiedServiceInfo findProxiedServiceInfoForPublishedService(Goid publishedServiceGoid) throws FindException;
 
     /**
      * Get the UDDIPublishStatus for the UDDIProxiedServiceInfo. Allows the UI to display
@@ -243,13 +245,13 @@ public interface UDDIRegistryAdmin {
      * This entity cannot be saved back by the user. There are no admin methods to do this and should not be
      *
      * @param uddiProxiedServiceInfo UDDIProxiedServiceInfo to get publish status information for
-     * @param publishedServiceOid long oid of the related published service. ONLY USED FOR RBAC. //todo refactor
+     * @param publishedServiceGoid Goid goid of the related published service. ONLY USED FOR RBAC. //todo refactor
      * @return UDDIPublishStatus representing the publish status
      * @throws FindException any problems searching the database
      */
     @Transactional(readOnly = true)
     @Secured(types = EntityType.SERVICE, stereotype = MethodStereotype.GET_PROPERTY_BY_ID, relevantArg = 1)
-    UDDIPublishStatus getPublishStatusForProxy(long uddiProxiedServiceInfo, long publishedServiceOid) throws FindException;
+    UDDIPublishStatus getPublishStatusForProxy(long uddiProxiedServiceInfo, Goid publishedServiceGoid) throws FindException;
 
     /**
      * Find all UDDIProxiedServices which have been published to a UDDIRegistry
@@ -300,13 +302,13 @@ public interface UDDIRegistryAdmin {
     /**
      * Find the UDDIServiceControl for a service, if it exists
      *
-     * @param serviceOid the service to get the UDDIServiceControl for
+     * @param serviceGoid the service to get the UDDIServiceControl for
      * @return UDDIServiceControl or null if the service does not have one
      * @throws com.l7tech.objectmodel.FindException Any problem finding the service control
      */
     @Transactional(readOnly=true)
     @Secured(types=EntityType.SERVICE, stereotype= MethodStereotype.FIND_ENTITY)
-    UDDIServiceControl getUDDIServiceControl(long serviceOid) throws FindException;
+    UDDIServiceControl getUDDIServiceControl(Goid serviceGoid) throws FindException;
 
     /**
      * Find the value of the endpoint of the Original Service. This value is used to populate the ${service.defaultRoutingURL}
@@ -335,13 +337,13 @@ public interface UDDIRegistryAdmin {
     /**
      * Get the list of services headers from the supplied list which have information published to UDDI
      *
-     * @param allServiceIds Collection Long oids of services to query for. Required, cannot be null
+     * @param allServiceIds Collection Goid goids of services to query for. Required, cannot be null
      * @return Collection ServiceHeader of all services which have data in UDDI. Can be empty, never null
      * @throws FindException any db problems
      */
     @Transactional(readOnly = true)
     @Secured(types = EntityType.SERVICE, stereotype = MethodStereotype.FIND_ENTITIES)
-    Collection<ServiceHeader> getServicesPublishedToUDDI(Collection<Long> allServiceIds) throws FindException;
+    Collection<ServiceHeader> getServicesPublishedToUDDI(Collection<Goid> allServiceIds) throws FindException;
 
     static class PublishProxiedServiceException extends Exception{
         public PublishProxiedServiceException(String message) {

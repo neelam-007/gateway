@@ -1,9 +1,6 @@
 package com.l7tech.server.encass;
 
-import com.l7tech.objectmodel.Entity;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.GuidEntityHeader;
+import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import com.l7tech.server.HibernateGoidEntityManager;
 import com.l7tech.server.policy.EncapsulatedAssertionConfigManager;
@@ -22,10 +19,10 @@ import java.util.Collection;
  */
 public class EncapsulatedAssertionConfigManagerImpl extends HibernateGoidEntityManager<EncapsulatedAssertionConfig,GuidEntityHeader> implements EncapsulatedAssertionConfigManager {
 
-    private static final String HQL_FIND_ENCASS_CONFIGS_REFERENCING_POLICY_OID =
+    private static final String HQL_FIND_ENCASS_CONFIGS_REFERENCING_POLICY_GOID =
         "from encapsulated_assertion" +
             " in class " + EncapsulatedAssertionConfig.class.getName() +
-            " where encapsulated_assertion.policy.oid = ?";
+            " where encapsulated_assertion.policy.goid = ?";
 
 
     @Override
@@ -35,9 +32,9 @@ public class EncapsulatedAssertionConfigManagerImpl extends HibernateGoidEntityM
 
     @NotNull
     @Override
-    public Collection<EncapsulatedAssertionConfig> findByPolicyOid(long policyOid) throws FindException {
+    public Collection<EncapsulatedAssertionConfig> findByPolicyGoid(Goid policyGoid) throws FindException {
         //noinspection unchecked
-        return (Collection<EncapsulatedAssertionConfig>)getHibernateTemplate().find(HQL_FIND_ENCASS_CONFIGS_REFERENCING_POLICY_OID, policyOid);
+        return (Collection<EncapsulatedAssertionConfig>)getHibernateTemplate().find(HQL_FIND_ENCASS_CONFIGS_REFERENCING_POLICY_GOID, policyGoid);
     }
 
     @Override

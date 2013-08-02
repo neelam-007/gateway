@@ -5,6 +5,7 @@ import com.l7tech.gateway.common.admin.Administrative;
 import com.l7tech.gateway.common.security.rbac.MethodStereotype;
 import com.l7tech.gateway.common.security.rbac.Secured;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.bundle.BundleInfo;
 import com.l7tech.policy.bundle.BundleMapping;
 import com.l7tech.policy.bundle.PolicyBundleDryRunResult;
@@ -106,7 +107,7 @@ public interface OAuthInstallerAdmin extends AsyncAdminMethods{
      *
      * @param otkComponentId     collection of all bundle ids to install. Bundles may depend on each others items, but there is no
      *                           install dependency order.
-     * @param folderOid          oid of the folder to install into.
+     * @param folderGoid         goid of the folder to install into.
      * @param bundleMappings     Mapping of bundleId to mappings for that bundle. Required.
      * @param installationPrefix installation prefix. If not null and not empty this value will be prepended to the names
      *                           of all installed policies and the routing URIs of all installed services.
@@ -117,7 +118,7 @@ public interface OAuthInstallerAdmin extends AsyncAdminMethods{
     @Secured(stereotype = MethodStereotype.SAVE_OR_UPDATE, relevantArg = 1)
     @NotNull
     AsyncAdminMethods.JobId<ArrayList> installOAuthToolkit(@NotNull Collection<String> otkComponentId,
-                                                           long folderOid,
+                                                           Goid folderGoid,
                                                            @NotNull Map<String, BundleMapping> bundleMappings,
                                                            @Nullable String installationPrefix,
                                                            boolean integrateApiPortal) throws OAuthToolkitInstallationException;

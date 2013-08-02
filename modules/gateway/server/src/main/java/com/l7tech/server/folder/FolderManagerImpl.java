@@ -1,26 +1,25 @@
 package com.l7tech.server.folder;
 
+import com.l7tech.gateway.common.admin.FolderAdmin;
+import com.l7tech.gateway.common.security.rbac.RbacAdmin;
+import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.objectmodel.*;
-import static com.l7tech.objectmodel.EntityType.*;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.FolderHeader;
 import com.l7tech.server.FolderSupportHibernateEntityManager;
 import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.util.TextUtils;
-import com.l7tech.gateway.common.security.rbac.Role;
-import com.l7tech.gateway.common.security.rbac.RbacAdmin;
-import static com.l7tech.gateway.common.security.rbac.OperationType.READ;
-import static com.l7tech.gateway.common.security.rbac.OperationType.UPDATE;
-import static com.l7tech.gateway.common.security.rbac.OperationType.DELETE;
-import com.l7tech.gateway.common.admin.FolderAdmin;
 import org.springframework.transaction.annotation.Propagation;
-import static org.springframework.transaction.annotation.Propagation.REQUIRED;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.text.MessageFormat;
 import java.util.*;
 import java.util.logging.Logger;
-import java.text.MessageFormat;
 import java.util.regex.Pattern;
+
+import static com.l7tech.gateway.common.security.rbac.OperationType.*;
+import static com.l7tech.objectmodel.EntityType.*;
+import static org.springframework.transaction.annotation.Propagation.REQUIRED;
 
 /**
  * Implementation of the service/policy folder manager.
@@ -120,7 +119,7 @@ public class FolderManagerImpl extends FolderSupportHibernateEntityManager<Folde
     public void update(Folder entity) throws UpdateException {
         try {
             // check for version conflict
-            Folder dbFolderVersion = findByPrimaryKey(entity.getOid());
+            Folder dbFolderVersion = findByPrimaryKey(entity.getGoid());
             if (dbFolderVersion == null) {
                 //folder was deleted by someone else already
                 String msg = "Unable to save folder because the folder was deleted by another user.\n" +
@@ -143,14 +142,14 @@ public class FolderManagerImpl extends FolderSupportHibernateEntityManager<Folde
 
 
     @Override
-    public void updateFolder( final long entityId, final Folder folder ) throws UpdateException {
+    public void updateFolder( final Goid entityId, final Folder folder ) throws UpdateException {
         setParentFolderForEntity( entityId, folder );
     }
 
     @Override
     public void updateFolder( final Folder entity, final Folder folder ) throws UpdateException {
         if ( entity == null ) throw new UpdateException("Folder is required but missing.");
-        setParentFolderForEntity( entity.getOid(), folder );
+        setParentFolderForEntity( entity.getGoid(), folder );
     }
 
     @Override
@@ -181,8 +180,8 @@ public class FolderManagerImpl extends FolderSupportHibernateEntityManager<Folde
     }
 
     @Override
-    public void deleteRoles( final long folderOid ) throws DeleteException {
-        roleManager.deleteEntitySpecificRoles(FOLDER, folderOid);
+    public void deleteRoles( final Goid folderGoid ) throws DeleteException {
+        roleManager.deleteEntitySpecificRoles(FOLDER, folderGoid);
     }
 
     /**
@@ -195,7 +194,7 @@ public class FolderManagerImpl extends FolderSupportHibernateEntityManager<Folde
         // truncate folder name in the role name to avoid going beyond 128 limit
         // cutoff is arbitrarily set to 50
         String folderNameForRole = TextUtils.truncStringMiddle( folder.getName(), 50 );
-        String name = MessageFormat.format(ROLE_ADMIN_NAME_PATTERN, folderNameForRole, folder.getOid() );
+        String name = MessageFormat.format(ROLE_ADMIN_NAME_PATTERN, folderNameForRole, folder.getGoid() );
 
         logger.info("Creating new Role: " + name);
 
@@ -230,7 +229,7 @@ public class FolderManagerImpl extends FolderSupportHibernateEntityManager<Folde
         role.addEntityPermission(READ, JMS_ENDPOINT, null);
 
         // Read this folders's folder ancestry
-        role.addEntityFolderAncestryPermission(FOLDER, folder.getId());
+        role.addEntityFolderAncestryPermission(FOLDER, folder.getGoid());
 
         // Read all service templates
         role.addEntityPermission(READ, SERVICE_TEMPLATE, null);
@@ -249,7 +248,7 @@ public class FolderManagerImpl extends FolderSupportHibernateEntityManager<Folde
 
         // Set role as entity-specific
         role.setEntityType(FOLDER);
-        role.setEntityOid(folder.getOid());
+        role.setEntityGoid(folder.getGoid());
         role.setDescription("Users assigned to the {0} role have the ability to view, update and delete services and policies within the {1} folder.");
 
         roleManager.save(role);
@@ -265,7 +264,7 @@ public class FolderManagerImpl extends FolderSupportHibernateEntityManager<Folde
         // truncate folder name in the role name to avoid going beyond 128 limit
         // cutoff is arbitrarily set to 50
         String folderNameForRole = TextUtils.truncStringMiddle( folder.getName(), 50 );
-        String name = MessageFormat.format(ROLE_READ_NAME_PATTERN, folderNameForRole, folder.getOid() );
+        String name = MessageFormat.format(ROLE_READ_NAME_PATTERN, folderNameForRole, folder.getGoid() );
 
         logger.info("Creating new Role: " + name);
 
@@ -290,7 +289,7 @@ public class FolderManagerImpl extends FolderSupportHibernateEntityManager<Folde
         role.addEntityPermission(READ, JMS_ENDPOINT, null);
 
         // Read this folders's folder ancestry
-        role.addEntityFolderAncestryPermission(FOLDER, folder.getId());
+        role.addEntityFolderAncestryPermission(FOLDER, folder.getGoid());
 
         // Read all service templates
         role.addEntityPermission(READ, SERVICE_TEMPLATE, null);
@@ -303,7 +302,7 @@ public class FolderManagerImpl extends FolderSupportHibernateEntityManager<Folde
 
         // Set role as entity-specific
         role.setEntityType(FOLDER);
-        role.setEntityOid(folder.getOid());
+        role.setEntityGoid(folder.getGoid());
         role.setDescription("Users assigned to the {0} role have the ability to view services and policies within the {1} folder.");
 
         roleManager.save(role);

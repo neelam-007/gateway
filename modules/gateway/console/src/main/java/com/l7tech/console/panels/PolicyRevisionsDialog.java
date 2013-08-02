@@ -11,6 +11,7 @@ import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.TableUtil;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.OrganizationHeader;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.policy.Policy;
@@ -59,7 +60,7 @@ public class PolicyRevisionsDialog extends JDialog {
     private JButton setCommentButton;
 
     private final EntityWithPolicyNode policyNode;
-    private final long policyOid;
+    private final Goid policyGoid;
     private final DateFormat dateFormat = DateFormat.getInstance();
 
     private final TreeCellRenderer defaultRenderer = new DefaultTreeCellRenderer();
@@ -78,17 +79,17 @@ public class PolicyRevisionsDialog extends JDialog {
     /** Index of the "Act." table column in the table model. */
     private static final int COLUMN_IDX_ACTIVE = 0;
 
-    public PolicyRevisionsDialog(Frame owner, EntityWithPolicyNode policyNode, long policyOid) {
+    public PolicyRevisionsDialog(Frame owner, EntityWithPolicyNode policyNode, Goid policyGoid) {
         super(owner);
         this.policyNode = policyNode;
-        this.policyOid = policyOid;
+        this.policyGoid = policyGoid;
         initialize();
     }
 
-    public PolicyRevisionsDialog(Dialog owner, EntityWithPolicyNode policyNode, long policyOid) {
+    public PolicyRevisionsDialog(Dialog owner, EntityWithPolicyNode policyNode, Goid policyGoid) {
         super(owner);
         this.policyNode = policyNode;
-        this.policyOid = policyOid;
+        this.policyGoid = policyGoid;
         initialize();
     }
 
@@ -189,7 +190,7 @@ public class PolicyRevisionsDialog extends JDialog {
             return;
 
         try {
-            Registry.getDefault().getPolicyAdmin().setActivePolicyVersion(policyOid, info.right.getOid());
+            Registry.getDefault().getPolicyAdmin().setActivePolicyVersion(policyGoid, info.right.getGoid());
             policyNode.clearCachedEntities();
 
             for (Integer row : tableModel.findRows(IS_ACTIVE)) {
@@ -212,7 +213,7 @@ public class PolicyRevisionsDialog extends JDialog {
 
         // If the policy is Audit Sink Policy, an error dialog pops up and shows it is not allowed to clear active for the audit sink policy.
         try {
-            Policy policy = Registry.getDefault().getPolicyAdmin().findPolicyByPrimaryKey(policyOid);
+            Policy policy = Registry.getDefault().getPolicyAdmin().findPolicyByPrimaryKey(policyGoid);
             if (isAuditSinkPolicy(policy)) {
                 showErrorMessage(
                     "Unable to Clear Active Version",
@@ -222,7 +223,7 @@ public class PolicyRevisionsDialog extends JDialog {
                 return;
             }
         } catch (FindException e) {
-            showErrorMessage("Unable to Clear Active Version", "Unable to find the policy (OID: " + policyOid + ")", e);
+            showErrorMessage("Unable to Clear Active Version", "Unable to find the policy (GOID: " + policyGoid + ")", e);
         }
 
         DialogDisplayer.showConfirmDialog(this,
@@ -234,7 +235,7 @@ public class PolicyRevisionsDialog extends JDialog {
                 if (option != JOptionPane.OK_OPTION)
                     return;
                 try {
-                    Registry.getDefault().getPolicyAdmin().clearActivePolicyVersion(policyOid);
+                    Registry.getDefault().getPolicyAdmin().clearActivePolicyVersion(policyGoid);
                     policyNode.clearCachedEntities();
                     for (Integer row : tableModel.findRows(IS_ACTIVE)) {
                         tableModel.getRowObject(row).setActive(false);
@@ -247,7 +248,7 @@ public class PolicyRevisionsDialog extends JDialog {
                     WorkSpacePanel workspace = TopComponents.getInstance().getCurrentWorkspace();
                     if (workspace.getComponent() instanceof PolicyEditorPanel) {
                         PolicyEditorPanel pep = (PolicyEditorPanel)workspace.getComponent();
-                        if (pep.getPolicyNode().getPolicy().getOid() == policyOid) {
+                        if (Goid.equals(pep.getPolicyNode().getPolicy().getGoid(), policyGoid)) {
                             pep.setOverrideVersionActive(false);
                             pep.updateHeadings();
                         }
@@ -276,7 +277,7 @@ public class PolicyRevisionsDialog extends JDialog {
             return;
         PolicyVersion version = info.right;
 
-        if (version.isActive() && areUnsavedChangesToThisPolicy(version.getPolicyOid())) {
+        if (version.isActive() && areUnsavedChangesToThisPolicy(version.getPolicyGoid())) {
             JOptionPane.showMessageDialog(
                     this,
                     "<html>This policy is currently open for editing and has unsaved changes.<p>&nbsp;<p>Please save or discard edits before editing the active version's comment.",
@@ -298,7 +299,7 @@ public class PolicyRevisionsDialog extends JDialog {
             comment = null;
 
         try {
-            Registry.getDefault().getPolicyAdmin().setPolicyVersionComment(version.getPolicyOid(), version.getOid(), comment);
+            Registry.getDefault().getPolicyAdmin().setPolicyVersionComment(version.getPolicyGoid(), version.getGoid(), comment);
             version.setName(comment);
             tableModel.fireTableRowsUpdated(info.left, info.left);
         } catch (FindException e1) {
@@ -374,7 +375,7 @@ public class PolicyRevisionsDialog extends JDialog {
         if (xml == null) {
             // Fault in XML from server as revisions are clicked on for the first time
             try {
-                PolicyVersion fullVersion = Registry.getDefault().getPolicyAdmin().findPolicyVersionByPrimaryKey(policyOid, version.getOid());
+                PolicyVersion fullVersion = Registry.getDefault().getPolicyAdmin().findPolicyVersionByPrimaryKey(policyGoid, version.getGoid());
                 BeanUtils.copyProperties(fullVersion, version);
                 xml = version.getXml();
             } catch (Exception e) {
@@ -390,7 +391,7 @@ public class PolicyRevisionsDialog extends JDialog {
 
     private void fetchUpdatedRows() {
         try {
-            java.util.List<PolicyVersion> vers = Registry.getDefault().getPolicyAdmin().findPolicyVersionHeadersByPolicy(policyOid);
+            java.util.List<PolicyVersion> vers = Registry.getDefault().getPolicyAdmin().findPolicyVersionHeadersByPolicy(policyGoid);
             Collections.sort(vers, new Comparator<PolicyVersion>() {
                 public int compare(PolicyVersion o1, PolicyVersion o2) {
                     return Long.valueOf(o2.getOrdinal()).compareTo(o1.getOrdinal());
@@ -402,9 +403,9 @@ public class PolicyRevisionsDialog extends JDialog {
         }
     }
 
-    private static boolean areUnsavedChangesToThisPolicy(long policyOid) {
+    private static boolean areUnsavedChangesToThisPolicy(Goid policyGoid) {
         PolicyEditorPanel pep = TopComponents.getInstance().getPolicyEditorPanel();
-        return pep != null && policyOid == pep.getPolicyOid() && pep.isUnsavedChanges();
+        return pep != null && Goid.equals(policyGoid, pep.getPolicyGoid()) && pep.isUnsavedChanges();
     }
 
     private void showErrorMessage(String title, String msg, Throwable e) {

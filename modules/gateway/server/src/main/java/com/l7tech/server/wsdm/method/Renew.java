@@ -1,5 +1,6 @@
 package com.l7tech.server.wsdm.method;
 
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.wsdm.Namespaces;
 import com.l7tech.server.wsdm.faults.GenericNotificationExceptionFault;
 import com.l7tech.server.wsdm.faults.ResourceUnknownFault;
@@ -35,8 +36,8 @@ public class Renew extends ESMMethod {
     private String subscriptionIdValue;
     private String terminationTimeValue;
 
-    private Renew(String subscriptionId, Element r, Document doc, Message request, long esmServiceOid) throws GenericNotificationExceptionFault, MalformedURLException {
-        super(doc, request, esmServiceOid);
+    private Renew(String subscriptionId, Element r, Document doc, Message request, Goid esmServiceGoid) throws GenericNotificationExceptionFault, MalformedURLException {
+        super(doc, request, esmServiceGoid);
 
         // find the termination time value
         boolean terminationCheck = false;
@@ -90,13 +91,13 @@ public class Renew extends ESMMethod {
         }
     }
 
-    public static Renew resolve(Message request, long esmServiceOid) throws GenericNotificationExceptionFault, SAXException, IOException {
+    public static Renew resolve(Message request, Goid esmServiceGoid) throws GenericNotificationExceptionFault, SAXException, IOException {
         Document doc = request.getXmlKnob().getDocumentReadOnly();
         try {
             Element bodychild = getFirstBodyChild(doc);
             if ( bodychild != null ) {
                 if (testElementLocalName(bodychild, "Renew")) {
-                    return new Renew(getSubscriptionIdAddressingParameter(doc), bodychild, doc, request, esmServiceOid);
+                    return new Renew(getSubscriptionIdAddressingParameter(doc), bodychild, doc, request, esmServiceGoid);
                 }
             }
         } catch (InvalidDocumentFormatException e) {

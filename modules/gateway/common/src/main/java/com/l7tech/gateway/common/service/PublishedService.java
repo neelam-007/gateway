@@ -1,10 +1,11 @@
 package com.l7tech.gateway.common.service;
 
 import com.l7tech.common.http.HttpMethod;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.HasFolder;
-import com.l7tech.objectmodel.imp.PersistentEntityUtil;
-import com.l7tech.objectmodel.imp.ZoneableNamedEntityImp;
+import com.l7tech.objectmodel.imp.GoidEntityUtil;
+import com.l7tech.objectmodel.imp.ZoneableNamedGoidEntityImp;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.Policy;
@@ -16,6 +17,7 @@ import com.l7tech.wsdl.Wsdl;
 import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.xml.soap.SoapVersion;
 
+import javax.persistence.Column;
 import javax.persistence.Transient;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -28,6 +30,7 @@ import javax.wsdl.extensions.ExtensibilityElement;
 import javax.wsdl.extensions.soap.SOAPOperation;
 import javax.wsdl.extensions.soap12.SOAP12Operation;
 import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.XmlTransient;
 import java.io.Flushable;
 import java.io.IOException;
 import java.io.InputStream;
@@ -49,7 +52,7 @@ import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
  */
 @SuppressWarnings( { "NonJaxWsWebServices" } )
 @XmlRootElement
-public class PublishedService extends ZoneableNamedEntityImp implements Flushable, HasFolder {
+public class PublishedService extends ZoneableNamedGoidEntityImp implements Flushable, HasFolder {
     //private static final long serialVersionUID = 8711916262379377867L;
     private static final Logger logger = Logger.getLogger(PublishedService.class.getName());
 
@@ -57,6 +60,8 @@ public class PublishedService extends ZoneableNamedEntityImp implements Flushabl
     public static final EnumSet<HttpMethod> METHODS_REST = EnumSet.of(POST, GET, PUT, DELETE, HEAD);
 
     private Policy policy;
+
+    private Long oldOid;
 
     public PublishedService() {
         setVersion(1);
@@ -100,9 +105,44 @@ public class PublishedService extends ZoneableNamedEntityImp implements Flushabl
         _wsdlUrl = objToCopy._wsdlUrl;
         setWsdlXml(objToCopy.getWsdlXml());
         setSecurityZone(objToCopy.getSecurityZone());
+        setOldOid(objToCopy.getOldOid());
         if (lock) {
-            PersistentEntityUtil.lock(policy);
+            GoidEntityUtil.lock(policy);
             lock();
+        }
+    }
+
+    /**
+     * Returns the services old oid. If it does not have one null is returned.
+     * @return The old oid or null
+     */
+    @XmlTransient
+    @Column(name="old_objectid")
+    public Long getOldOid() {
+        return oldOid;
+    }
+
+    /**
+     * @deprecated This is only to be used for testing purposes. It should never need to be used otherwise.
+     * @param oldOid The services old oid
+     */
+    @Deprecated
+    public void setOldOid(Long oldOid){
+        this.oldOid = oldOid;
+    }
+
+    @Deprecated // only for XML, likely to throw NFE
+    @Override
+    public void setId(String id) {
+        checkLocked();
+        if (id == null || id.length() == 0) {
+            setGoid(DEFAULT_GOID);
+        } else {
+            try {
+                setGoid(new Goid(id));
+            } catch (IllegalArgumentException e) {
+                setOldOid(Long.parseLong(id));
+            }
         }
     }
 
@@ -392,7 +432,7 @@ public class PublishedService extends ZoneableNamedEntityImp implements Flushabl
         final PublishedService publishedService = (PublishedService)o;
 
         if (_wsdlUrl != null ? !_wsdlUrl.equals(publishedService._wsdlUrl) : publishedService._wsdlUrl != null) return false;
-        if (_oid != DEFAULT_OID ? _oid != publishedService._oid : publishedService._oid != DEFAULT_OID) return false;
+        if (!Goid.isDefault(getGoid()) ? !Goid.equals(getGoid(),publishedService.getGoid()) :!Goid.isDefault(publishedService.getGoid())) return false;
         if (securityZone != null ? !securityZone.equals(publishedService.securityZone) : publishedService.securityZone != null) return false;
 
         return true;
@@ -402,7 +442,7 @@ public class PublishedService extends ZoneableNamedEntityImp implements Flushabl
     public int hashCode() {
         int result;
         result = (_wsdlUrl != null ? _wsdlUrl.hashCode() : 0);
-        result = 29 * result + (int)_oid;
+        result = 29 * result + (getGoid() != null ? getGoid().hashCode() : 0);
         result = 29 * result + (securityZone != null ? securityZone.hashCode() : 0);
         return result;
     }

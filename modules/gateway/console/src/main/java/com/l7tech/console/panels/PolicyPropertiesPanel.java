@@ -13,8 +13,7 @@ import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.OkCancelDialog;
 import com.l7tech.gui.widgets.ValidatedPanel;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.PersistentEntity;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.util.Resolver;
@@ -105,7 +104,7 @@ public class PolicyPropertiesPanel extends ValidatedPanel {
 
     private static boolean areUnsavedChangesToThisPolicy(Policy policy) {
         PolicyEditorPanel pep = TopComponents.getInstance().getPolicyEditorPanel();
-        return pep != null && policy.getOid() == pep.getPolicyOid() && pep.isUnsavedChanges();
+        return pep != null && Goid.equals(policy.getGoid(), pep.getPolicyGoid()) && pep.isUnsavedChanges();
     }
 
     @Override
@@ -173,7 +172,7 @@ public class PolicyPropertiesPanel extends ValidatedPanel {
         guidField.putClientProperty(Utilities.PROPERTY_CONTEXT_MENU_AUTO_SELECT_ALL, "true");
         Utilities.attachDefaultContextMenu(guidField);
 
-        oidField.setText(policy.getOid() == PersistentEntity.DEFAULT_OID ? "" : policy.getId());
+        oidField.setText(Goid.isDefault(policy.getGoid()) ? "" : policy.getId());
         oidField.putClientProperty(Utilities.PROPERTY_CONTEXT_MENU_AUTO_SELECT_ALL, "true");
         Utilities.attachDefaultContextMenu(oidField);
 
@@ -190,7 +189,7 @@ public class PolicyPropertiesPanel extends ValidatedPanel {
         tagCombo.addItemListener(syntaxListener);
         nameField.getDocument().addDocumentListener(syntaxListener);
 
-        zoneControl.configure(policy.getOid() == Policy.DEFAULT_OID ? OperationType.CREATE : canUpdate ? OperationType.UPDATE : OperationType.READ, policy);
+        zoneControl.configure(Goid.isDefault(policy.getGoid()) ? OperationType.CREATE : canUpdate ? OperationType.UPDATE : OperationType.READ, policy);
 
         typeCombo.addItemListener(new ItemListener() {
             @Override
@@ -203,7 +202,7 @@ public class PolicyPropertiesPanel extends ValidatedPanel {
         enableDisable();
 
         // select name field for create
-        if(policy.getOid() == Policy.DEFAULT_OID){
+        if(Goid.isDefault(policy.getGoid())){
             nameField.selectAll();
         }
 

@@ -1,12 +1,12 @@
 package com.l7tech.server.service;
 
-import com.l7tech.server.FolderSupportHibernateEntityManager;
-import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.folder.Folder;
-import org.hibernate.Session;
-import org.hibernate.HibernateException;
+import com.l7tech.server.FolderSupportHibernateEntityManager;
+import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import org.hibernate.Criteria;
+import org.hibernate.HibernateException;
+import org.hibernate.Session;
 import org.hibernate.criterion.Restrictions;
 
 import java.sql.SQLException;
@@ -20,7 +20,7 @@ import java.util.*;
  *
  * @author darmstrong
  */
-public abstract class AliasManagerImpl<AT extends Alias<ET>, ET extends PersistentEntity, HT extends OrganizationHeader>
+public abstract class AliasManagerImpl<AT extends Alias<ET>, ET extends GoidEntity, HT extends OrganizationHeader>
     extends FolderSupportHibernateEntityManager<AT, AliasHeader<ET>>
     implements AliasManager<AT, ET, HT>
 {
@@ -31,9 +31,9 @@ public abstract class AliasManagerImpl<AT extends Alias<ET>, ET extends Persiste
     }
 
     @Override
-    public AT findAliasByEntityAndFolder(final Long serviceOid, final Long folderOid) throws FindException {
-        if (serviceOid == null || folderOid == null) throw new NullPointerException();
-        if (!(PersistentEntity.class.isAssignableFrom(getImpClass()))) throw new IllegalArgumentException("This Manager's entities are not PersistentEntity!");
+    public AT findAliasByEntityAndFolder(final Goid serviceGoid, final Goid folderGoid) throws FindException {
+        if (serviceGoid == null || folderGoid == null) throw new NullPointerException();
+        if (!(GoidEntity.class.isAssignableFrom(getImpClass()))) throw new IllegalArgumentException("This Manager's entities are not GoidEntity!");
 
         try {
             //noinspection unchecked
@@ -41,8 +41,8 @@ public abstract class AliasManagerImpl<AT extends Alias<ET>, ET extends Persiste
                 @Override
                 public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
                     Criteria crit = session.createCriteria(getImpClass());
-                    crit.add(Restrictions.eq("entityOid", serviceOid));
-                    crit.add(Restrictions.eq("folder.oid", folderOid));
+                    crit.add(Restrictions.eq("entityGoid", serviceGoid));
+                    crit.add(Restrictions.eq("folder.goid", folderGoid));
                     return crit.uniqueResult();
                 }
             });
@@ -52,9 +52,9 @@ public abstract class AliasManagerImpl<AT extends Alias<ET>, ET extends Persiste
     }
 
     @Override
-    public Collection<AT> findAllAliasesForEntity(final Long serviceOid) throws FindException {
-        if (serviceOid == null) throw new NullPointerException();
-        if (!(PersistentEntity.class.isAssignableFrom(getImpClass()))) throw new IllegalArgumentException("This Manager's entities are not PersistentEntity!");
+    public Collection<AT> findAllAliasesForEntity(final Goid serviceGoid) throws FindException {
+        if (serviceGoid == null) throw new NullPointerException();
+        if (!(GoidEntity.class.isAssignableFrom(getImpClass()))) throw new IllegalArgumentException("This Manager's entities are not GoidEntity!");
 
         try {
             //noinspection unchecked
@@ -62,7 +62,7 @@ public abstract class AliasManagerImpl<AT extends Alias<ET>, ET extends Persiste
                 @Override
                 public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
                     Criteria crit = session.createCriteria(getImpClass());
-                    crit.add(Restrictions.eq("entityOid", serviceOid));
+                    crit.add(Restrictions.eq("entityGoid", serviceGoid));
                     return crit.list();
                 }
             });
@@ -84,9 +84,9 @@ public abstract class AliasManagerImpl<AT extends Alias<ET>, ET extends Persiste
             throws FindException{
         Collection<AT> allAliases = findAll();
 
-        Map<Long, Set<AT>> entityIdToAllItsAliases = new HashMap<Long, Set<AT>>();
+        Map<Goid, Set<AT>> entityIdToAllItsAliases = new HashMap<Goid, Set<AT>>();
         for(AT AT : allAliases){
-            Long origServiceId = AT.getEntityOid();
+            Goid origServiceId = AT.getEntityGoid();
             if(!entityIdToAllItsAliases.containsKey(origServiceId)){
                 Set<AT> aliasSet = new HashSet<AT>();
                 entityIdToAllItsAliases.put(origServiceId, aliasSet);
@@ -96,14 +96,14 @@ public abstract class AliasManagerImpl<AT extends Alias<ET>, ET extends Persiste
 
         Collection<HT> returnHeaders = new ArrayList<HT>();
         for(HT ht: originalHeaders){
-            Long serviceId = ht.getOid();
+            Goid serviceId = ht.getGoid();
             returnHeaders.add(ht);
             if(entityIdToAllItsAliases.containsKey(serviceId)){
                 Set<AT> aliases = entityIdToAllItsAliases.get(serviceId);
                 for(AT pa: aliases){
                     HT newHT = getNewEntityHeader(ht);
-                    newHT.setAliasOid(pa.getOidAsLong());
-                    newHT.setFolderOid(pa.getFolder().getOid());
+                    newHT.setAliasGoid(pa.getGoid());
+                    newHT.setFolderGoid(pa.getFolder().getGoid());
                     returnHeaders.add(newHT);
                 }
             }
@@ -113,20 +113,20 @@ public abstract class AliasManagerImpl<AT extends Alias<ET>, ET extends Persiste
     }
 
     @Override
-    public void updateFolder( final long entityId, final Folder folder ) throws UpdateException {
+    public void updateFolder( final Goid entityId, final Folder folder ) throws UpdateException {
         setParentFolderForEntity( entityId, folder );
     }
 
     @Override
     public void updateFolder( final AT entity, final Folder folder ) throws UpdateException {
         if ( entity == null ) throw new UpdateException("Alias is required but missing.");
-        setParentFolderForEntity( entity.getOid(), folder );
+        setParentFolderForEntity( entity.getGoid(), folder );
     }
 
     @Override
     public AT findByHeader(EntityHeader header) throws FindException {
         if (header instanceof OrganizationHeader) {
-            return findByPrimaryKey(((OrganizationHeader)header).getAliasOid());
+            return findByPrimaryKey(((OrganizationHeader)header).getAliasGoid());
         } else if (header.getType().name().endsWith("_ALIAS")) {
             return super.findByHeader(header);
         } else {

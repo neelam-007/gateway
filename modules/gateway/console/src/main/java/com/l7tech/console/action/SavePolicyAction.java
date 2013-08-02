@@ -122,21 +122,21 @@ public class SavePolicyAction extends EntityWithPolicyNodeAction<PolicyEntityNod
             if (policyNode == null) {
                 throw new IllegalArgumentException("No edited policy or service specified");
             }
-            final long policyOid;
+            final Goid policyGoid;
             final int policyVersion;
             if (policyNode instanceof ServiceNode) {
                 final PublishedService svc = ((ServiceNode) policyNode).getEntity();
                 name = svc.getName();
-                policyOid = svc.getPolicy().getOid();
+                policyGoid = svc.getPolicy().getGoid();
                 policyVersion = svc.getPolicy().getVersion();
             } else {
                 Policy policy = policyNode.getPolicy();
                 name = policy.getName();
-                policyOid = policy.getOid();
+                policyGoid = policy.getGoid();
                 policyVersion = policy.getVersion();
             }
 
-            PolicyAdmin.SavePolicyWithFragmentsResult result = updatePolicyXml(policyOid, policyVersion, xml, fragments, activateAsWell);
+            PolicyAdmin.SavePolicyWithFragmentsResult result = updatePolicyXml(policyGoid, policyVersion, xml, fragments, activateAsWell);
             fragmentNameGuidMap = result.fragmentNameGuidMap;
             PolicyCheckpointState checkpointState = result.policyCheckpointState;
             final long newVersionOrdinal = checkpointState.getPolicyVersionOrdinal();
@@ -179,13 +179,13 @@ public class SavePolicyAction extends EntityWithPolicyNodeAction<PolicyEntityNod
         }
     }
 
-    private static PolicyAdmin.SavePolicyWithFragmentsResult updatePolicyXml(final long policyOid,
+    private static PolicyAdmin.SavePolicyWithFragmentsResult updatePolicyXml(final Goid policyGoid,
                                                                              final int version,
                                                                              final String xml,
                                                                              final HashMap<String, Policy> fragments,
                                                                              final boolean activateAsWell)
             throws FindException, UpdateException, SaveException, PolicyAssertionException {
-        Policy policy = Registry.getDefault().getPolicyAdmin().findPolicyByPrimaryKey(policyOid);
+        Policy policy = Registry.getDefault().getPolicyAdmin().findPolicyByPrimaryKey(policyGoid);
         if (policy == null)
             throw new FindException("Unable to save policy -- this policy no longer exists");
         if (version != policy.getVersion())

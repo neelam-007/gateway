@@ -15,9 +15,7 @@ import com.l7tech.gateway.common.transport.email.EmailListenerAdmin;
 import com.l7tech.gateway.common.transport.email.EmailServerType;
 import com.l7tech.gui.util.*;
 import com.l7tech.gui.widgets.TextListCellRenderer;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.*;
 import com.l7tech.util.ValidationUtils;
 
 import javax.swing.*;
@@ -75,9 +73,9 @@ public class EmailListenerPropertiesDialog extends JDialog {
 
 
     private static class ComboItem {
-        ComboItem(String name, long id) {
+        ComboItem(String name, Goid goid) {
             serviceName = name;
-            serviceID = id;
+            serviceID = goid;
         }
 
         @Override
@@ -86,7 +84,7 @@ public class EmailListenerPropertiesDialog extends JDialog {
         }
 
         String serviceName;
-        long serviceID;
+        Goid serviceID;
 
         @Override
         @SuppressWarnings({ "RedundantIfStatement" })
@@ -96,7 +94,7 @@ public class EmailListenerPropertiesDialog extends JDialog {
 
             ComboItem comboItem = (ComboItem) o;
 
-            if (serviceID != comboItem.serviceID) return false;
+            if (!Goid.equals(serviceID, comboItem.serviceID)) return false;
             if (serviceName != null ? !serviceName.equals(comboItem.serviceName) : comboItem.serviceName != null)
                 return false;
 
@@ -107,7 +105,7 @@ public class EmailListenerPropertiesDialog extends JDialog {
         public int hashCode() {
             int result;
             result = (serviceName != null ? serviceName.hashCode() : 0);
-            result = 31 * result + (int) (serviceID ^ (serviceID >>> 32));
+            result = 31 * result + (serviceID != null ? serviceID.hashCode() : 0);
             return result;
         }
     }
@@ -370,7 +368,7 @@ public class EmailListenerPropertiesDialog extends JDialog {
         if (item == null) return null;
         ServiceAdmin sa = getServiceAdmin();
         try {
-            svc = sa.findServiceByID(Long.toString(item.serviceID));
+            svc = sa.findServiceByID(Goid.toString(item.serviceID));
         } catch (FindException e) {
             logger.severe("Can not find service with id " + item.serviceID);
         }
@@ -503,7 +501,7 @@ public class EmailListenerPropertiesDialog extends JDialog {
  	 	}
 
         boolean isHardWired = false;
- 	 	long hardWiredId = 0;
+        Goid hardWiredId = GoidEntity.DEFAULT_GOID;
 
         Properties props = emailListener.properties();
  	 	String tmp = props.getProperty(EmailListener.PROP_IS_HARDWIRED_SERVICE);
@@ -511,7 +509,7 @@ public class EmailListenerPropertiesDialog extends JDialog {
             if (Boolean.parseBoolean(tmp)) {
                 tmp = props.getProperty(EmailListener.PROP_HARDWIRED_SERVICE_ID);
                 isHardWired = true;
-                hardWiredId = Long.parseLong(tmp);
+                hardWiredId = Goid.parseGoid(tmp);
             }
  	 	}
 
@@ -526,9 +524,9 @@ public class EmailListenerPropertiesDialog extends JDialog {
                 ServiceHeader svcHeader = (ServiceHeader) aService;
                 comboitems[i] = new ComboItem(
                     svcHeader.isDisabled()? svcHeader.getDisplayName() + " (This service is currently disabled.)" : svcHeader.getDisplayName(),
-                    svcHeader.getOid()
+                    svcHeader.getGoid()
                 );
-                if (isHardWired && aService.getOid() == hardWiredId) {
+                if (isHardWired && Goid.equals(aService.getGoid(), hardWiredId)) {
                     selectMe = comboitems[i];
                 }
             }
@@ -574,7 +572,7 @@ public class EmailListenerPropertiesDialog extends JDialog {
         if (associateWithPublishedService.isSelected()) {
  	 	    PublishedService svc = getSelectedHardwiredService();
  	 	    properties.setProperty(EmailListener.PROP_IS_HARDWIRED_SERVICE, (Boolean.TRUE).toString());
- 	 	    properties.setProperty(EmailListener.PROP_HARDWIRED_SERVICE_ID, (new Long(svc.getOid())).toString());
+ 	 	    properties.setProperty(EmailListener.PROP_HARDWIRED_SERVICE_ID, svc.getGoid().toString());
  	 	} else {
  	 	    properties.setProperty(EmailListener.PROP_IS_HARDWIRED_SERVICE, (Boolean.FALSE).toString());
  	 	}

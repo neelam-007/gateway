@@ -2,11 +2,12 @@ package com.l7tech.external.assertions.cache.server;
 
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.cluster.ClusterPropertyManager;
-import com.l7tech.server.event.EntityInvalidationEvent;
+import com.l7tech.server.event.GoidEntityInvalidationEvent;
 import com.l7tech.server.event.system.Stopping;
 import com.l7tech.server.util.ApplicationEventProxy;
 import com.l7tech.util.Background;
@@ -19,11 +20,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.TimerTask;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Provides access to cached information.
@@ -66,8 +67,8 @@ public class SsgCacheManager {
             public void onApplicationEvent(ApplicationEvent event) {
                 if (event instanceof Stopping) {
                     close();
-                } else if (event instanceof EntityInvalidationEvent) {
-                    EntityInvalidationEvent eiEvent = (EntityInvalidationEvent) event;
+                } else if (event instanceof GoidEntityInvalidationEvent) {
+                    GoidEntityInvalidationEvent eiEvent = (GoidEntityInvalidationEvent) event;
                     if (ClusterProperty.class.equals(eiEvent.getEntityClass())) {
                         handleClusterPropertyChange(eiEvent);
                     }
@@ -76,10 +77,10 @@ public class SsgCacheManager {
         };
     }
 
-    private void handleClusterPropertyChange(EntityInvalidationEvent eiEvent) {
-        for (long oid : eiEvent.getEntityIds()) {
+    private void handleClusterPropertyChange(GoidEntityInvalidationEvent eiEvent) {
+        for (Goid goid : eiEvent.getEntityIds()) {
             try {
-                ClusterProperty cp = cpManager.findByPrimaryKey(oid);
+                ClusterProperty cp = cpManager.findByPrimaryKey(goid);
                 if (cp != null && ServerConfig.getInstance().getClusterPropertyName( ServerConfigParams.PARAM_MESSAGECACHE_RESETGENERATION ).equals(cp.getName())) {
                     clearAllCaches();
                 }

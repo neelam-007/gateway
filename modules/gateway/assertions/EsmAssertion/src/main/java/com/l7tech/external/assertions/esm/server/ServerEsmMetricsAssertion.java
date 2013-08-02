@@ -36,7 +36,7 @@ public class ServerEsmMetricsAssertion extends AbstractServerAssertion<EsmMetric
         logger.info("Forwarding message to WSDM QOS Metrics Service");
 
         try {
-            final Document response = esmService.handleESMRequest(context.getService().getOid(), context.getRequest());
+            final Document response = esmService.handleESMRequest(context.getService().getGoid(), context.getRequest());
             context.getResponse().initialize(response);
             return AssertionStatus.NONE;
         } catch (SAXException e) {

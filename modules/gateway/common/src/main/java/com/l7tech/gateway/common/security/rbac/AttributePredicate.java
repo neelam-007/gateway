@@ -5,6 +5,7 @@ package com.l7tech.gateway.common.security.rbac;
 
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.NamedEntity;
 import org.hibernate.annotations.Proxy;
 
@@ -96,7 +97,8 @@ public class AttributePredicate extends ScopePredicate implements ScopeEvaluator
                 if (Number.class.isAssignableFrom(rtype) || rtype == Long.TYPE || rtype == Integer.TYPE || rtype == Byte.TYPE || rtype == Short.TYPE ||
                     CharSequence.class.isAssignableFrom(rtype) || 
                     rtype == Boolean.TYPE || Boolean.class.isAssignableFrom(rtype) ||
-                    Enum.class.isAssignableFrom(rtype))
+                    Enum.class.isAssignableFrom(rtype) ||
+                    Goid.class.isAssignableFrom(rtype))
                 {
                     synchronized (this) {
                         if (this.getter == null)

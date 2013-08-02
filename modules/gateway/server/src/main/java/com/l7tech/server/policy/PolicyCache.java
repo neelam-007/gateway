@@ -1,5 +1,6 @@
 package com.l7tech.server.policy;
 
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyDeletionForbiddenException;
@@ -32,10 +33,10 @@ public interface PolicyCache {
      *
      * <p>The handle MUST be closed when no longer required.</p>
      *
-     * @param policyOid The OID of the policy whose ServerPolicy is desired.
+     * @param policyGoid The GOID of the policy whose ServerPolicy is desired.
      * @return The handle for the policy or null if the policy is not valid
      */
-    ServerPolicyHandle getServerPolicy(long policyOid);
+    ServerPolicyHandle getServerPolicy(Goid policyGoid);
 
     /**
      * Get a handle for the ServerPolicy of the given Policy.
@@ -62,10 +63,10 @@ public interface PolicyCache {
      *
      * <p>An exception is thrown if the policy should not be deleted.</p>
      *
-     * @param policyOid the OID of the policy that may be deleted
+     * @param policyGoid the GOID of the policy that may be deleted
      * @throws PolicyDeletionForbiddenException if the policy must not be deleted
      */
-    void validateRemove(long policyOid) throws PolicyDeletionForbiddenException;
+    void validateRemove(Goid policyGoid) throws PolicyDeletionForbiddenException;
 
     /**
      * Notify the PolicyCache that the specified policy is new or updated.
@@ -77,10 +78,10 @@ public interface PolicyCache {
     /**
      * Notify the PolicyCache that the policy with the specified OID has been deleted.
      *
-     * @param policyOid the OID of the policy that was deleted
+     * @param policyGoid the GOID of the policy that was deleted
      * @return true if removed
      */
-    boolean remove(long policyOid);
+    boolean remove(Goid policyGoid);
 
     /**
      * Get GUIDs for policies by type.
@@ -110,37 +111,37 @@ public interface PolicyCache {
     void unregisterGlobalPolicy( String guid );
 
     /**
-     * Find any Policies that directly use the policy with the specified OID.
+     * Find any Policies that directly use the policy with the specified GOID.
      *
      * <p>This will not find ancestors other than parents.</p>
      *
      * <p>This will not find invalid ancestors.</p>
      *
-     * @param policyOid the OID of the policy to find usages of
-     * @return the Set of policies that use the policy with the specified OID. Never null.
+     * @param policyGoid the GOID of the policy to find usages of
+     * @return the Set of policies that use the policy with the specified GOID. Never null.
      */
-    Set<Policy> findUsages(long policyOid);
+    Set<Policy> findUsages(Goid policyGoid);
 
     /**
-     * Gets the map of policy OID to version for the cached policy with the given OID.
+     * Gets the map of policy GOID to version for the cached policy with the given GOID.
      *
      * <p>If the policy is not known then an empty map is returned</p>
      *
      * <p>For known policies the result always includes the provided policy
      * OID, mapped to its version.</p>
      *
-     * @param policyOid the OID of the policy to get version info for
+     * @param policyGoid the GOID of the policy to get version info for
      * @return the version map, may be empty but never null
      */
-    Map<Long, Integer> getDependentVersions(long policyOid);
+    Map<Goid, Integer> getDependentVersions(Goid policyGoid);
 
     /**
      * Get the unique identifier for the current version of the policy.
      *
-     * @param policyOid The policy OID
+     * @param policyGoid The policy GOID
      * @return The policy unique version identifier or null
      */
-    String getUniquePolicyVersionIdentifer(long policyOid);
+    String getUniquePolicyVersionIdentifer(Goid policyGoid);
 
     /**
      * Get the metadata of the given Policy.
@@ -153,10 +154,10 @@ public interface PolicyCache {
     /**
      * Get the metadata of the given Policy.
      *
-     * @param policyOid The OID of the policy whose metadata is desired.
+     * @param policyGoid The GOID of the policy whose metadata is desired.
      * @return The metadata for the policy or null if the policy is not valid
      */
-    PolicyMetadata getPolicyMetadata(long policyOid);
+    PolicyMetadata getPolicyMetadata(Goid policyGoid);
 
     /**
      * Get the metadata of the given Policy.
@@ -177,8 +178,8 @@ public interface PolicyCache {
     /**
      * Get the folder path for the identified policy.
      *
-     * @param policyOid The identifier of the policy
+     * @param policyGoid The identifier of the policy
      * @return The folder path from the root to the parent folder (empty if the policy is unknown)
      */
-    List<Folder> getFolderPath(long policyOid);
+    List<Folder> getFolderPath(Goid policyGoid);
 }

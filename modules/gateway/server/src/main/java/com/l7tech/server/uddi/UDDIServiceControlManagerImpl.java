@@ -4,6 +4,7 @@ import com.l7tech.gateway.common.uddi.UDDIServiceControl;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.HibernateEntityManager;
 
 import java.util.Map;
@@ -20,8 +21,8 @@ public class UDDIServiceControlManagerImpl extends HibernateEntityManager<UDDISe
     //- PUBLIC
 
     @Override
-    public UDDIServiceControl findByPublishedServiceOid( final long serviceOid ) throws FindException {
-        return findByUniqueKey( "publishedServiceOid", serviceOid );
+    public UDDIServiceControl findByPublishedServiceGoid( final Goid serviceGoid ) throws FindException {
+        return findByUniqueKey( "publishedServiceGoid", serviceGoid );
     }
 
     @Override
@@ -71,7 +72,7 @@ public class UDDIServiceControlManagerImpl extends HibernateEntityManager<UDDISe
     @Override
     protected Collection<Map<String, Object>> getUniqueConstraints( final UDDIServiceControl uddiServiceControl ) {
         Map<String,Object> serviceOidMap = new HashMap<String, Object>();
-        serviceOidMap.put( "publishedServiceOid", uddiServiceControl.getPublishedServiceOid() );
+        serviceOidMap.put( "publishedServiceGoid", uddiServiceControl.getPublishedServiceGoid() );
         return Arrays.asList(serviceOidMap);
     }
 

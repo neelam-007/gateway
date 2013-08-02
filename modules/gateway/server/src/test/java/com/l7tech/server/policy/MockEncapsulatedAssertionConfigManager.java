@@ -2,6 +2,7 @@ package com.l7tech.server.policy;
 
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.GuidEntityHeader;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import com.l7tech.server.GoidEntityManagerStub;
@@ -16,7 +17,7 @@ import java.util.Collections;
 public class MockEncapsulatedAssertionConfigManager extends GoidEntityManagerStub<EncapsulatedAssertionConfig,GuidEntityHeader> implements EncapsulatedAssertionConfigManager {
     @NotNull
     @Override
-    public Collection<EncapsulatedAssertionConfig> findByPolicyOid(long policyOid) throws FindException {
+    public Collection<EncapsulatedAssertionConfig> findByPolicyGoid(Goid policyOid) throws FindException {
         return Collections.emptyList();
     }
 

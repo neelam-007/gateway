@@ -1,6 +1,7 @@
 package com.l7tech.server.service.resolution;
 
 import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
 import com.l7tech.util.Triple;
@@ -27,13 +28,13 @@ public class NonUniqueServiceResolutionException extends ServiceResolutionExcept
      *
      * @return The set of service ids (never null)
      */
-    public Set<Long> getConflictingServices() {
-        return Functions.reduce( conflictingParameterCollection, new HashSet<Long>(), new Functions.Binary<Set<Long>,Set<Long>,Pair<Map<String, Object>, PublishedService>>(){
+    public Set<Goid> getConflictingServices() {
+        return Functions.reduce( conflictingParameterCollection, new HashSet<Goid>(), new Functions.Binary<Set<Goid>,Set<Goid>,Pair<Map<String, Object>, PublishedService>>(){
             @Override
-            public Set<Long> call( final Set<Long> serviceOids,
+            public Set<Goid> call( final Set<Goid> serviceGoids,
                                    final Pair<Map<String, Object>, PublishedService> servicePair ) {
-                serviceOids.add( servicePair.right.getOid() );
-                return serviceOids;
+                serviceGoids.add( servicePair.right.getGoid() );
+                return serviceGoids;
             }
         } );
     }
@@ -41,11 +42,11 @@ public class NonUniqueServiceResolutionException extends ServiceResolutionExcept
     /**
      * Get the name of a service by identifier.
      *
-     * @param serviceOid The service id.
+     * @param serviceGoid The service id.
      * @param displayName True to return the display name.
      * @return The name or display name
      */
-    public String getServiceName( final long serviceOid,
+    public String getServiceName( final Goid serviceGoid,
                                   final boolean displayName ) {
         return Functions.reduce( conflictingParameterCollection, null, new Functions.Binary<String,String,Pair<Map<String, Object>, PublishedService>>(){
             @Override
@@ -53,7 +54,7 @@ public class NonUniqueServiceResolutionException extends ServiceResolutionExcept
                                 final Pair<Map<String, Object>, PublishedService> servicePair ) {
                 return value != null ?
                         value :
-                        servicePair.right.getOid()==serviceOid ?
+                        Goid.equals(servicePair.right.getGoid(), serviceGoid) ?
                                 (displayName ? servicePair.right.displayName() : servicePair.right.getName()) :
                                 null;
             }
@@ -63,16 +64,16 @@ public class NonUniqueServiceResolutionException extends ServiceResolutionExcept
     /**
      * Get the conflicting parameters for the service.
      *
-     * @param serviceOid The service info to access.
+     * @param serviceGoid The service info to access.
      * @return A list of path/namespace/soapAction triples.
      */
-    public Set<Triple<String,String,String>> getParameters( final long serviceOid ) {
+    public Set<Triple<String,String,String>> getParameters( final Goid serviceGoid ) {
         return Functions.reduce( conflictingParameterCollection, new HashSet<Triple<String,String,String>>(),
                 new Functions.Binary<Set<Triple<String,String,String>>,Set<Triple<String,String,String>>,Pair<Map<String, Object>, PublishedService>>(){
             @Override
             public Set<Triple<String,String,String>> call( final Set<Triple<String,String,String>> values,
                                                            final Pair<Map<String, Object>, PublishedService> servicePair ) {
-                if ( servicePair.right.getOid() == serviceOid ) {
+                if ( Goid.equals(servicePair.right.getGoid(), serviceGoid) ) {
                     values.add( new Triple<String,String,String>(
                         servicePair.right.getRoutingUri(),
                         (String)servicePair.left.get( UrnResolver.class.getName() + ServiceResolver.SUFFIX_VALUE ),

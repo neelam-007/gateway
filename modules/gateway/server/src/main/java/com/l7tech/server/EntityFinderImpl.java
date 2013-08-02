@@ -215,7 +215,7 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
             }else if(auditHeader.getRecordType().equals(AuditRecordUtils.TYPE_MESSAGE)){
                 return new MessageSummaryAuditRecord(
                         auditHeader.getLevel(),auditHeader.getNodeId(),  null,AssertionStatus.NONE,null,null, 3,
-                        null, 3, 4, 3,45, null, null,false, SecurityTokenType.HTTP_BASIC,4,null, null,null);
+                        null, 3, 4, 3,new Goid(0,45), null, null,false, SecurityTokenType.HTTP_BASIC,4,null, null,null);
             }else if(auditHeader.getRecordType().equals(AuditRecordUtils.TYPE_SYSTEM)){
                return  new SystemAuditRecord(auditHeader.getLevel(), auditHeader.getNodeId(), Component.GW_AUDIT_SYSTEM,
                        "fake", false, 0L, null, null, "fake", "0.0.0.0");

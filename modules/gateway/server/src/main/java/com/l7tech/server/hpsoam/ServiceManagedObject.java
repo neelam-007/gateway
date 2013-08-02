@@ -1,5 +1,6 @@
 package com.l7tech.server.hpsoam;
 
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.InetAddressUtil;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.util.ISO8601Date;
@@ -43,8 +44,8 @@ public class ServiceManagedObject {
         creation = System.currentTimeMillis();
     }
 
-    public long getServiceID() {
-        return service.getOid();
+    public Goid getServiceID() {
+        return service.getGoid();
     }
 
     public PublishedService getPublishedService() {
@@ -162,7 +163,7 @@ public class ServiceManagedObject {
         return "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
                 "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:f=\"http://schemas.hp.com/wsmf/2003/03/Foundation\">\n" +
                 "    <soapenv:Body>\n" +
-                "       <f:GetManagementWsdlUrlResponse>" + context.req.getScheme() + "://" + getHostFromReq(context.req) + getPortWithColonFromReq(context.req) + "/ssg/wsmf/service/" + service.getOid() + "?wsdl</f:GetManagementWsdlUrlResponse>\n" +
+                "       <f:GetManagementWsdlUrlResponse>" + context.req.getScheme() + "://" + getHostFromReq(context.req) + getPortWithColonFromReq(context.req) + "/ssg/wsmf/service/" + service.getGoid() + "?wsdl</f:GetManagementWsdlUrlResponse>\n" +
                 "    </soapenv:Body>\n" +
                 "</soapenv:Envelope>";
     }
@@ -297,14 +298,14 @@ public class ServiceManagedObject {
     }
 
     public String generateMOWsdlUrl(HttpServletRequest req) {
-        return req.getScheme() + "://" + getHostFromReq(req) + getPortWithColonFromReq(req) + "/ssg/wsmf/service/" + service.getOid() + "?wsdl=mo";
+        return req.getScheme() + "://" + getHostFromReq(req) + getPortWithColonFromReq(req) + "/ssg/wsmf/service/" + service.getGoid() + "?wsdl=mo";
     }
 
     public String generateContainedWsdlUrl(HttpServletRequest req) {
-        return req.getScheme() + "://" + getHostFromReq(req) + getPortWithColonFromReq(req) + "/ssg/wsmf/service/" + service.getOid() + "?wsdl=contained";
+        return req.getScheme() + "://" + getHostFromReq(req) + getPortWithColonFromReq(req) + "/ssg/wsmf/service/" + service.getGoid() + "?wsdl=contained";
     }
 
-    public static String generateContainedWsdlUrl(HttpServletRequest req, long svcid) {
+    public static String generateContainedWsdlUrl(HttpServletRequest req, String svcid) {
         return req.getScheme() + "://" + getHostFromReq(req) + getPortWithColonFromReq(req) + "/ssg/wsmf/service/" + svcid + "?wsdl=contained";
     }
 
@@ -350,7 +351,7 @@ public class ServiceManagedObject {
 
                     ssgurl = new URL(proto + "://" + InetAddressUtil.getHostForUrl(req.getServerName()) +
                                      portStr + SecureSpanConstants.SERVICE_FILE +
-                                     Long.toString(service.getOid()));
+                                     Goid.toString(service.getGoid()));
                 } else {
                     ssgurl = new URL(proto + "://" + InetAddressUtil.getHostForUrl(req.getServerName()) +
                                      portStr + routinguri);
@@ -379,7 +380,7 @@ public class ServiceManagedObject {
         InputStream is = getInputStreamFromCP("ServiceMO.wsdl");
         String beforeEdits = new String( IOUtils.slurpStream(is));
         beforeEdits = beforeEdits.replace("^^^INSERT_METHOD_HOST_PORT_HERE^^^", getHostPort(req));
-        beforeEdits = beforeEdits.replace("^^^INSERT_TARGET_HERE^^^", req.getScheme() + "://" + getHostFromReq(req) + getPortWithColonFromReq(req) + "/ssg/wsmf/service/" + service.getOid());
+        beforeEdits = beforeEdits.replace("^^^INSERT_TARGET_HERE^^^", req.getScheme() + "://" + getHostFromReq(req) + getPortWithColonFromReq(req) + "/ssg/wsmf/service/" + service.getGoid());
         beforeEdits = beforeEdits.replace("^^^INSERT_NAME_HERE^^^", service.getName() + " Managed Object");
         return beforeEdits;
     }

@@ -5,6 +5,7 @@ import com.l7tech.console.table.StatisticsTableSorter;
 import com.l7tech.console.util.ArrowIcon;
 import com.l7tech.console.util.ColumnHeaderTooltips;
 import com.l7tech.gateway.common.logging.StatisticsRecord;
+import com.l7tech.objectmodel.Goid;
 
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
@@ -50,7 +51,7 @@ public class StatisticsPanel extends JPanel {
     static Logger logger = Logger.getLogger(StatisticsPanel.class.getName());
 
     /** Snapshot of services usage at counter reset time. Can be null if counting since cluster startup. */
-    private Map<Long, ServiceUsage> serviceUsageAtCounterStart;
+    private Map<Goid, ServiceUsage> serviceUsageAtCounterStart;
 
     public StatisticsPanel() {
         setBorder(new javax.swing.border.LineBorder(new java.awt.Color(0, 0, 0)));
@@ -329,11 +330,10 @@ public class StatisticsPanel extends JPanel {
         getStatTotalColumnModel().setColumnMargin(((DefaultTableColumnModel) e.getSource()).getColumnMargin());
     }
 
-    public void updateStatCache(long serviceid, long completedCount) {
+    public void updateStatCache(Goid serviceid, long completedCount) {
 
         Vector lastMinuteCounts = null;
-        Long svcId = new Long(serviceid);
-        lastMinuteCounts = (Vector) lastMinuteCompletedCountsCache.get(svcId);
+        lastMinuteCounts = (Vector) lastMinuteCompletedCountsCache.get(serviceid);
 
         if (lastMinuteCounts != null) {
             if(lastMinuteCounts.size() <= NUMBER_OF_SAMPLE_PER_MINUTE){
@@ -359,16 +359,16 @@ public class StatisticsPanel extends JPanel {
         } else {
             Vector newList = new Vector();
             newList.add(new Long(completedCount));
-            lastMinuteCompletedCountsCache.put(svcId, newList);
+            lastMinuteCompletedCountsCache.put(serviceid, newList);
         }
     }
 
-    private long getLastMinuteCompletedCount(long serviceid){
+    private long getLastMinuteCompletedCount(Goid serviceid){
 
         long lastMinuteCompletedCount = 0;
         Vector lastMinuteCounts = null;
 
-        lastMinuteCounts = (Vector) lastMinuteCompletedCountsCache.get(new Long(serviceid));
+        lastMinuteCounts = (Vector) lastMinuteCompletedCountsCache.get(serviceid);
 
         if (lastMinuteCounts != null) {
             int index = lastMinuteCounts.size() - 1;
@@ -487,7 +487,7 @@ public class StatisticsPanel extends JPanel {
         getStatTotalTableModel().fireTableDataChanged();
 
         if (serviceUsageAtCounterStart == null) {
-            serviceUsageAtCounterStart = new HashMap<Long, ServiceUsage>();
+            serviceUsageAtCounterStart = new HashMap<Goid, ServiceUsage>();
         } else {
             serviceUsageAtCounterStart.clear();
         }

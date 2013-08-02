@@ -7,6 +7,7 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.external.assertions.ahttp.AsyncHttpRoutingAssertion;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.GoidEntity;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyHeader;
 import com.l7tech.policy.PolicyType;
@@ -123,7 +124,7 @@ public class AsyncHttpRoutingAssertionPropertiesDialog extends AssertionProperti
         }
 
         if (header == null) {
-            header = new PolicyHeader(-1, false, PolicyType.INCLUDE_FRAGMENT, "Policy GUID " + policyGuid, null, policyGuid, null, null, 0, 0, false, null);
+            header = new PolicyHeader(GoidEntity.DEFAULT_GOID, false, PolicyType.INCLUDE_FRAGMENT, "Policy GUID " + policyGuid, null, policyGuid, null, null, 0, 0, false, null);
         }
 
         final PolicyHeader[] headerArray = policyHeaders.toArray(new PolicyHeader[policyHeaders.size() + 1]);

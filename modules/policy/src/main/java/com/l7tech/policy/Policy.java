@@ -4,7 +4,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.PartiallyZoneableEntity;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.HasFolder;
-import com.l7tech.objectmodel.imp.ZoneableNamedEntityImp;
+import com.l7tech.objectmodel.imp.ZoneableNamedGoidEntityImp;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.assertion.Assertion;
@@ -39,7 +39,7 @@ import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
  * @author alex
  */
 @XmlRootElement
-public class Policy extends ZoneableNamedEntityImp implements Flushable, HasFolder, PartiallyZoneableEntity {
+public class Policy extends ZoneableNamedGoidEntityImp implements Flushable, HasFolder, PartiallyZoneableEntity {
     private static final Logger logger = Logger.getLogger(Policy.class.getName());
 
     private static WspReader.Visibility defaultVisibility = WspReader.INCLUDE_DISABLED;
@@ -118,7 +118,7 @@ public class Policy extends ZoneableNamedEntityImp implements Flushable, HasFold
      */
     public synchronized @Nullable Assertion getAssertion() throws IOException {
         if (xml == null || xml.length() == 0) {
-            logger.warning(MessageFormat.format("Policy #{0} ({1}) has an invalid or empty policy_xml field.  Using null policy.", _oid, _name));
+            logger.warning(MessageFormat.format("Policy #{0} ({1}) has an invalid or empty policy_xml field.  Using null policy.", getGoid(), _name));
             return FalseAssertion.getInstance();
         }
         // Warning: ESM migration depends on the cached instance of assertion being available after the policy XML has been parsed.
@@ -126,7 +126,7 @@ public class Policy extends ZoneableNamedEntityImp implements Flushable, HasFold
             WspReader.Visibility v = visibility != null ? visibility : defaultVisibility;
             assertion = WspReader.getDefault().parsePermissively(xml, v);
             if (assertion != null) {
-                assertion.ownerPolicyOid(getOid());
+                assertion.ownerPolicyGoid(getGoid());
                 if (isLocked())
                     assertion.lock();
             }
@@ -318,7 +318,7 @@ public class Policy extends ZoneableNamedEntityImp implements Flushable, HasFold
 
     @Override
     @ManyToOne
-    @JoinColumn(name="folder_oid")
+    @JoinColumn(name="folder_goid")
     @Migration(mapName = NONE, mapValue = NONE)
     public Folder getFolder() {
         return folder;
@@ -366,7 +366,7 @@ public class Policy extends ZoneableNamedEntityImp implements Flushable, HasFold
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder("<policy ");
-        sb.append("oid=\"").append(_oid).append("\" ");
+        sb.append("id=\"").append(getGoid().toHexString()).append("\" ");
         sb.append("type=\"").append(type).append("\" ");
         sb.append("name=\"").append(_name == null ? "" : _name).append("\"/>");
         return sb.toString();

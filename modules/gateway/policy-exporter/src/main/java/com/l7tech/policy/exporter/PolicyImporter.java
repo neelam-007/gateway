@@ -120,7 +120,7 @@ public class PolicyImporter {
                         p.setXml(WspWriter.getPolicyXml(p.getAssertion()));
                     }
                 } catch(IOException e) {
-                    logger.log(Level.WARNING, "failed to parse policy XML for policy #" + p.getOid());
+                    logger.log(Level.WARNING, "failed to parse policy XML for policy #" + p.getGoid());
                 }
             }
             try {

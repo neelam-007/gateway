@@ -1,5 +1,7 @@
 package com.l7tech.server.wsdm.subscription;
 
+import com.l7tech.objectmodel.Goid;
+
 /**
  * SubscriptionKey is an identifier for a subscription.
  */
@@ -10,14 +12,14 @@ public final class SubscriptionKey {
     /**
      * Create a SubscriptionKey for the given values.
      *
-     * @param serviceOid The service oid (required)
+     * @param serviceGoid The service oid (required)
      * @param topic The type of the subscription (required)
      * @param notificationUrl The notification URL (required)
      */
-    public SubscriptionKey( final long serviceOid, final int topic, final String notificationUrl ) {
+    public SubscriptionKey( final Goid serviceGoid, final int topic, final String notificationUrl ) {
         if ( notificationUrl == null ) throw new IllegalArgumentException("Null notification URL");
 
-        this.serviceOid = serviceOid;
+        this.serviceGoid = serviceGoid;
         this.topic = topic;
         this.notificationUrl = notificationUrl;
     }
@@ -28,11 +30,11 @@ public final class SubscriptionKey {
      * @param subscription The Subscription (required)
      */
     public SubscriptionKey( final Subscription subscription ) {
-        this( subscription.getPublishedServiceOid(), subscription.getTopic(), subscription.getReferenceCallback() );
+        this( subscription.getPublishedServiceGoid(), subscription.getTopic(), subscription.getReferenceCallback() );
     }
 
-    public long getServiceOid() {
-        return serviceOid;
+    public Goid getServiceGoid() {
+        return serviceGoid;
     }
 
     public int getTopic() {
@@ -49,7 +51,7 @@ public final class SubscriptionKey {
 
         SubscriptionKey that = (SubscriptionKey) o;
 
-        if (serviceOid != that.serviceOid) return false;
+        if (!Goid.equals(serviceGoid, that.serviceGoid)) return false;
         if (topic != that.topic) return false;
         if (!notificationUrl.equals(that.notificationUrl)) return false;
 
@@ -58,7 +60,7 @@ public final class SubscriptionKey {
 
     public int hashCode() {
         int result;
-        result = (int) (serviceOid ^ (serviceOid >>> 32));
+        result = serviceGoid != null ? serviceGoid.hashCode() : 0;
         result = 31 * result + topic;
         result = 31 * result + notificationUrl.hashCode();
         return result;
@@ -66,7 +68,7 @@ public final class SubscriptionKey {
 
     //- PRIVATE
 
-    private final long serviceOid;
+    private final Goid serviceGoid;
     private final int topic;
     private final String notificationUrl;    
 }

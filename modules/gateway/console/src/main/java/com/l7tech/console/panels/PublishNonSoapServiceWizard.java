@@ -11,6 +11,7 @@ import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
@@ -93,9 +94,9 @@ public class PublishNonSoapServiceWizard extends Wizard {
                 @Override
                 public void run() {
                     try {
-                        long oid = Registry.getDefault().getServiceManager().savePublishedService(service);
+                        Goid goid = Registry.getDefault().getServiceManager().savePublishedService(service);
                         Registry.getDefault().getSecurityProvider().refreshPermissionCache();
-                        service.setOid(oid);
+                        service.setGoid(goid);
                         Thread.sleep(1000);
                         PublishNonSoapServiceWizard.this.notify(new ServiceHeader(service));
                         PublishNonSoapServiceWizard.super.finish(evt);

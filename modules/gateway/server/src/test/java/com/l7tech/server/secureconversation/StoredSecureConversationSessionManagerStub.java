@@ -2,12 +2,12 @@ package com.l7tech.server.secureconversation;
 
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.server.EntityManagerStub;
+import com.l7tech.server.OidEntityManagerStub;
 
 /**
  * Stub for StoredSecureConversationSessionManager
  */
-public class StoredSecureConversationSessionManagerStub extends EntityManagerStub<StoredSecureConversationSession,EntityHeader> implements StoredSecureConversationSessionManager {
+public class StoredSecureConversationSessionManagerStub extends OidEntityManagerStub<StoredSecureConversationSession,EntityHeader> implements StoredSecureConversationSessionManager {
 
     @Override
     public StoredSecureConversationSession findInboundSessionByIdentifier( final String identifier ) {

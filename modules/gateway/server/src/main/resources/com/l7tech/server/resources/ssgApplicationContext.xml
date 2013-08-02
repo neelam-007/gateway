@@ -873,7 +873,7 @@
                 <bean class="com.l7tech.server.service.resolution.RequirePathResolver">
                     <constructor-arg ref="auditFactory"/>
                 </bean>
-                <bean class="com.l7tech.server.service.resolution.ServiceOidResolver">
+                <bean class="com.l7tech.server.service.resolution.ServiceIdResolver">
                     <constructor-arg ref="auditFactory"/>
                 </bean>
                 <bean class="com.l7tech.server.service.resolution.UriResolver">
@@ -1654,20 +1654,16 @@
                 <ref bean="trustedCertManager"/>
                 <ref bean="revocationCheckPolicyManager"/>
                 <ref bean="sinkManager"/>
-                <ref bean="policyManager"/>
                 <ref bean="keystoreFileManager"/>
                 <ref bean="messageContextMappingKeyManager"/>
                 <ref bean="uddiRegistryManager"/>
                 <ref bean="uddiPublishStatusManager"/>
                 <ref bean="uddiServiceControlManager"/>
                 <ref bean="uddiProxiedServiceInfoManager"/>
-                <ref bean="serviceManager"/>
                 <ref bean="securePasswordManager"/>
                 <ref bean="httpConfigurationManager"/>
                 <ref bean="resolutionConfigurationManager"/>
                 <ref bean="passwordPolicyManger"/>
-                <ref bean="policyVersionManager"/>
-                <ref bean="folderManager"/>
             </list>
         </property>
         <property name="timer" ref="entityVersionCheckerTimer"/>
@@ -1685,6 +1681,10 @@
                 <ref bean="encapsulatedAssertionConfigManager"/>
                 <ref bean="jmsConnectionManager"/>
                 <ref bean="jmsEndpointManager"/>
+                <ref bean="policyManager"/>
+                <ref bean="serviceManager"/>
+                <ref bean="policyVersionManager"/>
+                <ref bean="folderManager"/>
                 <ref bean="ssgActiveConnectorManager"/>
             </list>
         </property>

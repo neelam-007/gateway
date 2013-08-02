@@ -33,7 +33,7 @@ import static com.l7tech.util.Option.optional;
  *
  */
 @ResourceFactory.ResourceType(type=PolicyMO.class)
-public class PolicyResourceFactory extends EntityManagerResourceFactory<PolicyMO, Policy, PolicyHeader> {
+public class PolicyResourceFactory extends GoidEntityManagerResourceFactory<PolicyMO, Policy, PolicyHeader> {
 
     //- PUBLIC
 

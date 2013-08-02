@@ -31,7 +31,6 @@ import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class EntityFinderImplTest {
-    private static final long OID = 1234L;
     private static final Goid GOID = new Goid(0,1234L);
     private static final Goid ZONE_GOID = new Goid(0,1111L);
     private static final String NAME = "test";
@@ -73,7 +72,7 @@ public class EntityFinderImplTest {
     @Test
     public void findByEntityTypeAndSecurityZoneGoid() throws Exception {
         final PublishedService service = new PublishedService();
-        service.setOid(OID);
+        service.setGoid(GOID);
         service.setName(NAME);
         service.setSecurityZone(zone);
         entities.add(service);
@@ -84,7 +83,7 @@ public class EntityFinderImplTest {
         assertEquals(1, found.size());
         final EntityHeader header = found.iterator().next();
         assertEquals(ZONE_GOID, ((HasSecurityZoneGoid)header).getSecurityZoneGoid());
-        assertEquals(OID, header.getOid());
+        assertEquals(GOID, header.getGoid());
         assertEquals(NAME, header.getName());
         assertEquals(EntityType.SERVICE, header.getType());
         assertEquals(NAME, header.getDescription());
@@ -112,7 +111,7 @@ public class EntityFinderImplTest {
     @Test
     public void findByEntityTypeAndSecurityZoneGoidNotNamedEntity() throws Exception {
         final PublishedServiceAlias alias = new PublishedServiceAlias(new PublishedService(), null);
-        alias.setOid(OID);
+        alias.setGoid(GOID);
         alias.setSecurityZone(zone);
         entities.add(alias);
         when(hibernateTemplate.execute(any(HibernateCallback.class))).thenReturn(entities);
@@ -122,7 +121,7 @@ public class EntityFinderImplTest {
         assertEquals(1, found.size());
         final EntityHeader header = found.iterator().next();
         assertEquals(ZONE_GOID, ((HasSecurityZoneGoid)header).getSecurityZoneGoid());
-        assertEquals(OID, header.getOid());
+        assertEquals(GOID, header.getGoid());
         assertNull(header.getName());
         assertEquals(EntityType.SERVICE_ALIAS, header.getType());
         assertNull(header.getDescription());

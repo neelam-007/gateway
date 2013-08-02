@@ -166,7 +166,7 @@ public final class EntityHeaderUtils {
             externalEntityHeader = (ExternalEntityHeader) header;
         } else if (header instanceof OrganizationHeader && ((OrganizationHeader) header).isAlias()) {
             OrganizationHeader oh = ((OrganizationHeader) header);
-            externalEntityHeader = new ExternalEntityHeader(oh.getAliasOid().toString(), // use the alias OID as the external ID
+            externalEntityHeader = new ExternalEntityHeader(oh.getAliasGoid().toString(), // use the alias OID as the external ID
                     EntityType.valueOf(header.getType().name() + "_ALIAS"),
                     oh.getStrId(), oh.getName() + " Alias", oh.getDescription(), oh.getVersion());
         } else if (header instanceof PolicyHeader) {
@@ -193,9 +193,9 @@ public final class EntityHeaderUtils {
             AliasHeader aliasHeader = (AliasHeader) header;
             externalEntityHeader = new ExternalEntityHeader(aliasHeader.getStrId(), aliasHeader);
             if (aliasHeader.getAliasedEntityType() == EntityType.POLICY) {
-                externalEntityHeader.setProperty("Alias Of Internal", Long.toString(aliasHeader.getAliasedEntityId()));
+                externalEntityHeader.setProperty("Alias Of Internal", Goid.toString(aliasHeader.getAliasedEntityId()));
             } else {
-                externalEntityHeader.setProperty("Alias Of", Long.toString(aliasHeader.getAliasedEntityId()));
+                externalEntityHeader.setProperty("Alias Of", Goid.toString(aliasHeader.getAliasedEntityId()));
             }
             externalEntityHeader.setProperty("Alias Type", aliasHeader.getAliasedEntityType().toString());
         } else if (header instanceof JmsEndpointHeader) {

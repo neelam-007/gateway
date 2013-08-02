@@ -395,9 +395,9 @@ public class MqNativeModule extends ActiveTransportModule implements Application
             MqMessageProxy mqMessage = new MqMessageProxy(mqRequestMessage);
             gatewayRequestMessage.attachKnob(buildMqNativeKnob(soapActionValue, mqMessage), true, MqNativeKnob.class, OutboundHeadersKnob.class);
 
-            final Long hardwiredServiceOid = connector.getHardwiredServiceOid();
-            if ( hardwiredServiceOid != null ) {
-                gatewayRequestMessage.attachKnob(HasServiceOid.class, new HasServiceOidImpl(hardwiredServiceOid));
+            final Goid hardwiredServiceGoid = connector.getHardwiredServiceGoid();
+            if ( hardwiredServiceGoid != null ) {
+                gatewayRequestMessage.attachKnob(HasServiceGoid.class, new HasServiceGoidImpl(hardwiredServiceGoid));
             }
 
             final boolean replyExpected = MqNativeReplyType.REPLY_NONE !=

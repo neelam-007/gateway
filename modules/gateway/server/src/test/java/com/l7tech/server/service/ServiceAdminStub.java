@@ -55,11 +55,11 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
      */
     @Override
     public PublishedService findServiceByID(String oid) throws FindException {
-        return serviceManager.findByPrimaryKey(toLong(oid));
+        return serviceManager.findByPrimaryKey(toGoid(oid));
     }
 
     @Override
-    public PublishedServiceAlias findAliasByEntityAndFolder(Long serviceOid, Long folderOid) throws FindException {
+    public PublishedServiceAlias findAliasByEntityAndFolder(Goid serviceOid, Goid folderOid) throws FindException {
         return serviceAliasManager.findAliasByEntityAndFolder(serviceOid, folderOid);
     }
 
@@ -96,13 +96,13 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
      * @param service
      */
     @Override
-    public long savePublishedService(PublishedService service)
+    public Goid savePublishedService(PublishedService service)
             throws UpdateException, SaveException, VersionException, PolicyAssertionException {
         return serviceManager.save(service);
     }
 
     @Override
-    public long saveAlias(PublishedServiceAlias serviceAlias) throws UpdateException, SaveException, VersionException {
+    public Goid saveAlias(PublishedServiceAlias serviceAlias) throws UpdateException, SaveException, VersionException {
         return serviceAliasManager.save(serviceAlias);
     }
 
@@ -113,13 +113,13 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
      * @param docs ignored
      */
     @Override
-    public long savePublishedServiceWithDocuments(PublishedService service, Collection<ServiceDocument> docs)
+    public Goid savePublishedServiceWithDocuments(PublishedService service, Collection<ServiceDocument> docs)
             throws UpdateException, SaveException, VersionException, PolicyAssertionException {
         return serviceManager.save(service);
     }
 
     @Override
-    public void setTracingEnabled(long serviceOid, boolean tracingEnabled) throws UpdateException {
+    public void setTracingEnabled(Goid serviceOid, boolean tracingEnabled) throws UpdateException {
         try {
             PublishedService service = serviceManager.findByPrimaryKey(serviceOid);
             service.setTracingEnabled(tracingEnabled);
@@ -149,7 +149,7 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
     @Override
     public void deletePublishedService(String id) throws DeleteException {
         try {
-            long oid = toLong(id);
+            Goid oid = toGoid(id);
             PublishedService service = serviceManager.findByPrimaryKey(oid);
             serviceManager.delete(service);
             logger.info("Deleted PublishedService: " + oid);
@@ -164,7 +164,7 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
     public void deleteEntityAlias(String serviceID) throws DeleteException {
         final PublishedServiceAlias alias;
         try {
-            long oid = toLong(serviceID);
+            Goid oid = toGoid(serviceID);
             alias = serviceAliasManager.findByPrimaryKey(oid);
             serviceAliasManager.delete(alias);
             logger.info("Deleted PublishedServiceAlias: " + oid);
@@ -269,7 +269,7 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
     }
 
     @Override
-    public EntityHeader[] findSampleMessageHeaders(long serviceOid, String operationName) throws FindException {
+    public EntityHeader[] findSampleMessageHeaders(Goid serviceOid, String operationName) throws FindException {
         return new EntityHeader[0];
     }
 
@@ -309,12 +309,12 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
      * @throws IllegalArgumentException if service ID is null
      * @throws NumberFormatException    on parse error
      */
-    private long toLong(String serviceID)
+    private Goid toGoid(String serviceID)
       throws IllegalArgumentException {
         if (serviceID == null) {
             throw new IllegalArgumentException();
         }
-        return Long.parseLong(serviceID);
+        return Goid.parseGoid(serviceID);
     }
 
     private ServiceHeader[] collectionToHeaderArray(Collection<ServiceHeader> input) {
@@ -360,7 +360,7 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
     }
 
     @Override
-    public PublishedService findByAlias(long aliasOid) throws FindException {
+    public PublishedService findByAlias(Goid aliasOid) throws FindException {
         return null;
     }
 

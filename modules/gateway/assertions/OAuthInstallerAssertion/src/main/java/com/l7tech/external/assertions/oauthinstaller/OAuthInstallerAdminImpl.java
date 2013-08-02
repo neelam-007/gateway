@@ -6,6 +6,7 @@ import com.l7tech.gateway.common.audit.AuditDetail;
 import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.policy.assertion.CommentAssertion;
 import com.l7tech.policy.bundle.BundleInfo;
@@ -165,7 +166,7 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
      *
      * @param otkComponentId     names of all bundles to install. Bundles may depend on each others items, but there is no
      *                           install dependency order.
-     * @param folderOid          oid of the folder to install into.
+     * @param folderGoid         goid of the folder to install into.
      * @param installationPrefix prefix to version the installation with
      * @param integrateApiPortal true if API portal should be integrated. See interface javadoc.
      * @return Job ID, which will report on which bundles were installed.
@@ -174,7 +175,7 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
     @NotNull
     @Override
     public JobId<ArrayList> installOAuthToolkit(@NotNull final Collection<String> otkComponentId,
-                                                final long folderOid,
+                                                final Goid folderGoid,
                                                 @NotNull final Map<String, BundleMapping> bundleMappings,
                                                 @Nullable final String installationPrefix,
                                                 final boolean integrateApiPortal) throws OAuthToolkitInstallationException {
@@ -195,7 +196,7 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
             @Override
             public ArrayList call() throws Exception {
                 try {
-                    return new ArrayList<String>(doInstallOAuthToolkit(taskIdentifier, otkComponentId, folderOid, bundleMappings, prefixToUse, integrateApiPortal));
+                    return new ArrayList<String>(doInstallOAuthToolkit(taskIdentifier, otkComponentId, folderGoid, bundleMappings, prefixToUse, integrateApiPortal));
                 } catch(OAuthToolkitInstallationException e) {
                     final OtkInstallationAuditEvent problemEvent = new OtkInstallationAuditEvent(this, "Problem during installation of the OAuth Toolkit", Level.WARNING);
                     problemEvent.setAuditDetails(Arrays.asList(
@@ -686,7 +687,7 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
      *
      * @param taskIdentifier used to look up the context to see if task has been cancelled.
      * @param otkComponentIds component to install
-     * @param folderOid folder to install component into
+     * @param folderGoid folder to install component into
      * @param bundleMappings any mappings.
      * @param installationPrefix installation prefix
      * @return Ids of installed bundles
@@ -695,7 +696,7 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
      */
     protected List<String> doInstallOAuthToolkit(@NotNull final String taskIdentifier,
                                                  @NotNull final Collection<String> otkComponentIds,
-                                                 final long folderOid,
+                                                 final Goid folderGoid,
                                                  @NotNull Map<String, BundleMapping> bundleMappings,
                                                  @Nullable final String installationPrefix,
                                                  final boolean integrateApiPortal) throws OAuthToolkitInstallationException {
@@ -729,7 +730,7 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
                         if (bundleInfo.getId().equals(bundleId)) {
 
                             final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(
-                                    bundleInfo, folderOid, bundleMappings.get(bundleId), prefixToUse, bundleResolver, checkRequiredAssertions);
+                                    bundleInfo, folderGoid, bundleMappings.get(bundleId), prefixToUse, bundleResolver, checkRequiredAssertions);
                             final InstallPolicyBundleEvent installEvent =
                                     new InstallPolicyBundleEvent(this,
                                             context,

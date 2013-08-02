@@ -15,7 +15,7 @@ public class PolicyVersionUpdated extends Updated<PolicyVersion> {
         if (entity.isActive()) {
             if (Boolean.FALSE.equals(changes.getOldValue("active"))) {
                 // Policy version activated
-                return "activated v" + entity.getOrdinal() + " of policy " + entity.getPolicyOid();
+                return "activated v" + entity.getOrdinal() + " of policy " + entity.getPolicyGoid();
             }
         }
         return null;

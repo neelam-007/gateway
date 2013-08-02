@@ -1,19 +1,20 @@
 package com.l7tech.policy;
 
-import com.l7tech.objectmodel.imp.NamedEntityImp;
+import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.imp.NamedGoidEntityImp;
 
 /**
  * Represents a revision of some policy XML.
  * This is used only by the SSM GUI to provide a versioning service to admins.
  * This class is not used at all by the Gateway runtime.
  */
-public class PolicyVersion extends NamedEntityImp {
+public class PolicyVersion extends NamedGoidEntityImp {
     private long ordinal;
     private long time;
     private long userProviderOid;
     private String userLogin;
     private String xml;
-    private long policyOid;
+    private Goid policyGoid;
     private boolean active;
 
     public boolean isActive() {
@@ -24,12 +25,12 @@ public class PolicyVersion extends NamedEntityImp {
         this.active = active;
     }
 
-    public long getPolicyOid() {
-        return policyOid;
+    public Goid getPolicyGoid() {
+        return policyGoid;
     }
 
-    public void setPolicyOid(long policyOid) {
-        this.policyOid = policyOid;
+    public void setPolicyGoid(Goid policyGoid) {
+        this.policyGoid = policyGoid;
     }
 
     public String getXml() {
@@ -79,6 +80,6 @@ public class PolicyVersion extends NamedEntityImp {
     }
 
     public String toString() {
-        return "[PolicyVersion oid=" + getOid() + " policyOid=" + getPolicyOid() + ']';
+        return "[PolicyVersion goid=" + getGoid() + " policyGoid=" + getPolicyGoid() + ']';
     }
 }

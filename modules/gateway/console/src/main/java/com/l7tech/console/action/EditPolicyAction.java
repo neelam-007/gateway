@@ -246,9 +246,9 @@ public class EditPolicyAction extends NodeAction {
     private static Assertion findStartingAssertion(Policy policy) throws IOException, FindException, UserCancelledException {
         final Option<PolicyVersion> version;
         try {
-            version = PolicyRevisionUtils.selectRevision( policy.getOid(), "edit" );
+            version = PolicyRevisionUtils.selectRevision( policy.getGoid(), "edit" );
         } catch (FindException e) {
-            String msg = "Unable to retrieve versions for disabled policy oid " + policy.getOid() + ": " + ExceptionUtils.getMessage(e);
+            String msg = "Unable to retrieve versions for disabled policy goid " + policy.getGoid() + ": " + ExceptionUtils.getMessage(e);
             logger.log(Level.WARNING, msg, e);
             JOptionPane.showMessageDialog(TopComponents.getInstance().getTopParent(),
                                           msg, "Unable to Retrieve Revisions", JOptionPane.ERROR_MESSAGE);
@@ -258,7 +258,7 @@ public class EditPolicyAction extends NodeAction {
         if ( version.isSome() ) {
             final PolicyVersion policyVersion = version.some();
             PolicyVersion fullVersion = Registry.getDefault().getPolicyAdmin().
-                    findPolicyVersionByPrimaryKey( policyVersion.getPolicyOid(), policyVersion.getOid() );
+                    findPolicyVersionByPrimaryKey( policyVersion.getPolicyGoid(), policyVersion.getGoid() );
             return WspReader.getDefault().parsePermissively(fullVersion.getXml(), WspReader.INCLUDE_DISABLED);
         } else {
             return new AllAssertion(new ArrayList<Assertion>(Arrays.asList(new FalseAssertion())));

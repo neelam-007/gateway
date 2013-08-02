@@ -81,7 +81,7 @@ public class CreateFolderAction extends SecureAction {
                     newFolder.setName(dialog.getName());
                     newFolder.setSecurityZone(dialog.getSelectedSecurityZone());
                     try {
-                        newFolder.setOid(folderAdmin.saveFolder(newFolder));
+                        newFolder.setGoid(folderAdmin.saveFolder(newFolder));
 
                         final JTree tree = (JTree)TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME);
                         if (tree != null) {

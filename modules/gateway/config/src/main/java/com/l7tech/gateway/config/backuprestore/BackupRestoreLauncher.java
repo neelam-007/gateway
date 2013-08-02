@@ -1,17 +1,18 @@
 package com.l7tech.gateway.config.backuprestore;
 
-import com.l7tech.util.SyspropUtil;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
-import static com.l7tech.gateway.config.backuprestore.ImportExportUtilities.UtilityResult.*;
+import com.l7tech.util.SyspropUtil;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.*;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
+
+import static com.l7tech.gateway.config.backuprestore.ImportExportUtilities.UtilityResult.Status;
 
 /**
  * Copyright (C) 2009, Layer 7 Technologies Inc.
@@ -25,7 +26,7 @@ public class BackupRestoreLauncher {
     private static final String SSGRESTORE_SH = "ssgrestore.sh";
     private static final String SSGMIGRATE_SH = "ssgmigrate.sh";
     private static final Logger logger = Logger.getLogger(BackupRestoreLauncher.class.getName());
-    private static final String SECURE_SPAN_HOME = "/opt/SecureSpan";
+    private static final String SECURE_SPAN_HOME = "C:\\Users\\vkazakov\\Workspaces\\SSG\\build\\deploy";
 
     public enum UTILITY_TYPE{
         BACKUP("Backup"),

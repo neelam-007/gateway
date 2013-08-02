@@ -35,7 +35,7 @@ public class PolicyRevisionsAction extends NodeAction {
         final EntityWithPolicyNode policyNode = (EntityWithPolicyNode)node;
         try {
             Policy policy = policyNode.getPolicy();
-            PolicyRevisionsDialog dlg = new PolicyRevisionsDialog(TopComponents.getInstance().getTopParent(), policyNode, policy.getOid());
+            PolicyRevisionsDialog dlg = new PolicyRevisionsDialog(TopComponents.getInstance().getTopParent(), policyNode, policy.getGoid());
             dlg.pack();
             DialogDisplayer.display(dlg);
         } catch (FindException e) {

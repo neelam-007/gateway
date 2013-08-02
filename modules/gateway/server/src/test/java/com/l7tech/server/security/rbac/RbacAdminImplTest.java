@@ -28,7 +28,7 @@ import static org.mockito.Mockito.*;
 @RunWith(MockitoJUnitRunner.class)
 public class RbacAdminImplTest {
     private static final Goid ZONE_GOID = new Goid(0,1234L);
-    private static final long OID = 5678L;
+    private static final Goid GOID = new Goid(0,5678L);
     private RbacAdminImpl admin;
     @Mock
     private RoleManager roleManager;
@@ -106,11 +106,11 @@ public class RbacAdminImplTest {
         final Role role = new Role();
         role.setName("Manage Test Service (#1234)");
         role.setEntityType(EntityType.SERVICE);
-        role.setEntityOid(OID);
+        role.setEntityGoid(GOID);
         final User user = new InternalUser("test");
         final PublishedService service = new PublishedService();
         when(roleManager.getAssignedRoles(user, true, false)).thenReturn(Arrays.asList(role));
-        when(entityCrud.find(EntityType.SERVICE.getEntityClass(), OID)).thenReturn(service);
+        when(entityCrud.find(EntityType.SERVICE.getEntityClass(), GOID)).thenReturn(service);
 
         final Collection<Role> assignedRoles = admin.findRolesForUser(user);
         assertEquals(1, assignedRoles.size());

@@ -6,6 +6,7 @@ import com.l7tech.gateway.common.uddi.UDDIProxiedServiceInfo;
 import com.l7tech.gateway.common.uddi.UDDIPublishStatus;
 import com.l7tech.gateway.common.uddi.UDDIRegistry;
 import com.l7tech.gateway.common.uddi.UDDIServiceControl;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.SecurityZone;
 import com.l7tech.server.service.ServiceCache;
 import com.l7tech.server.service.ServiceManager;
@@ -143,8 +144,8 @@ public class UDDIRegistryAdminImplTest {
 
     @Test
     public void publishGatewayEndpointSetsSecurityZone() throws Exception {
-        when(serviceCache.getCachedService(anyLong())).thenReturn(service);
-        when(uddiServiceControlManager.findByPublishedServiceOid(anyLong())).thenReturn(control);
+        when(serviceCache.getCachedService(any(Goid.class))).thenReturn(service);
+        when(uddiServiceControlManager.findByPublishedServiceGoid(any(Goid.class))).thenReturn(control);
         when(uddiRegistryManager.findByPrimaryKey(anyLong())).thenReturn(registry);
         when(service.parsedWsdl()).thenReturn(wsdl);
         when(wsdl.getHash()).thenReturn("abc123");
@@ -158,8 +159,8 @@ public class UDDIRegistryAdminImplTest {
     @Test
     public void publishGatewayEndpointGifSetsSecurityZone() throws Exception {
         properties.put(UDDIProxiedServiceInfo.GIF_SCHEME, UDDIRegistryAdmin.EndpointScheme.HTTP);
-        when(serviceCache.getCachedService(anyLong())).thenReturn(service);
-        when(uddiServiceControlManager.findByPublishedServiceOid(anyLong())).thenReturn(control);
+        when(serviceCache.getCachedService(any(Goid.class))).thenReturn(service);
+        when(uddiServiceControlManager.findByPublishedServiceGoid(any(Goid.class))).thenReturn(control);
         when(uddiRegistryManager.findByPrimaryKey(anyLong())).thenReturn(registry);
         when(service.parsedWsdl()).thenReturn(wsdl);
         when(wsdl.getHash()).thenReturn("abc123");
@@ -172,8 +173,8 @@ public class UDDIRegistryAdminImplTest {
 
     @Test
     public void overwriteBusinessServiceInUDDISetsSecurityZone() throws Exception {
-        when(serviceCache.getCachedService(anyLong())).thenReturn(service);
-        when(uddiServiceControlManager.findByPublishedServiceOid(anyLong())).thenReturn(control);
+        when(serviceCache.getCachedService(any(Goid.class))).thenReturn(service);
+        when(uddiServiceControlManager.findByPublishedServiceGoid(any(Goid.class))).thenReturn(control);
         when(service.parsedWsdl()).thenReturn(wsdl);
         when(wsdl.getHash()).thenReturn("abc123");
 
@@ -186,7 +187,7 @@ public class UDDIRegistryAdminImplTest {
     @Test
     public void publishGatewayWsdlSetsSecurityZone() throws Exception {
         when(uddiRegistryManager.findByPrimaryKey(anyLong())).thenReturn(registry);
-        when(serviceCache.getCachedService(anyLong())).thenReturn(service);
+        when(serviceCache.getCachedService(any(Goid.class))).thenReturn(service);
         when(service.parsedWsdl()).thenReturn(wsdl);
         when(wsdl.getHash()).thenReturn("abc123");
 

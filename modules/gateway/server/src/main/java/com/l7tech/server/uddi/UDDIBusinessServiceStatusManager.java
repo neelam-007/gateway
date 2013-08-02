@@ -3,6 +3,7 @@ package com.l7tech.server.uddi;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityManager;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 
 import java.util.Collection;
 
@@ -36,10 +37,10 @@ public interface UDDIBusinessServiceStatusManager extends EntityManager<UDDIBusi
     /**
      * Find the business services for a published service
      *
-     * @param publishedServiceOid The published service OID (required)
+     * @param publishedServiceGoid The published service GOID (required)
      * @return The collection of matching UDDIBusinessServiceStatus (can be empty but not null)
      * @throws FindException If an error occurs
      */
-    Collection<UDDIBusinessServiceStatus> findByPublishedService( long publishedServiceOid ) throws FindException;
+    Collection<UDDIBusinessServiceStatus> findByPublishedService( Goid publishedServiceGoid ) throws FindException;
 
 }

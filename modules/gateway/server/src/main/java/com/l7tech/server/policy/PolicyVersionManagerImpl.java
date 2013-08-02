@@ -2,6 +2,7 @@ package com.l7tech.server.policy;
 
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyVersion;
+import com.l7tech.server.HibernateGoidEntityManager;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import com.l7tech.util.Config;
@@ -29,7 +30,7 @@ import java.util.logging.Logger;
  * Gateway's production implementation of {@link PolicyVersionManager}.
  */
 @Transactional(propagation=REQUIRED, rollbackFor=Throwable.class)
-public class PolicyVersionManagerImpl extends HibernateEntityManager<PolicyVersion, EntityHeader> implements PolicyVersionManager {
+public class PolicyVersionManagerImpl extends HibernateGoidEntityManager<PolicyVersion, EntityHeader> implements PolicyVersionManager {
     @SuppressWarnings({ "FieldNameHidesFieldInSuperclass" })
     protected static final Logger logger = Logger.getLogger(PolicyVersionManagerImpl.class.getName());
 
@@ -53,30 +54,30 @@ public class PolicyVersionManagerImpl extends HibernateEntityManager<PolicyVersi
 
     @Override
     @Transactional(readOnly=true)
-    public PolicyVersion findByPrimaryKey(long policyOid, long policyVersionOid) throws FindException {
+    public PolicyVersion findByPrimaryKey(Goid policyGoid, Goid policyVersionGoid) throws FindException {
         Map<String, Object> map = new HashMap<String, Object>();
-        map.put("oid", policyVersionOid);
-        map.put("policyOid", policyOid);
+        map.put("goid", policyVersionGoid);
+        map.put("policyGoid", policyGoid);
         List<PolicyVersion> found = findMatching(Collections.singletonList(map));
         if (found == null || found.isEmpty())
             return null;
         if (found.size() > 1)
-            throw new FindException("Found more than one PolicyVersion with oid=" + policyVersionOid + " and policy_oid=" + policyOid); // can't happen
+            throw new FindException("Found more than one PolicyVersion with goid=" + policyVersionGoid + " and policy_goid=" + policyGoid); // can't happen
         return found.iterator().next();
     }
 
     @Override
     @Transactional(readOnly=true)
-    public List<PolicyVersion> findAllForPolicy(long policyOid) throws FindException {
+    public List<PolicyVersion> findAllForPolicy(Goid policyGoid) throws FindException {
         Map<String, Object> map = new HashMap<String, Object>();
-        map.put("policyOid", policyOid);
+        map.put("policyGoid", policyGoid);
         return findMatching(Collections.singletonList(map));
     }
 
     @Override
     public PolicyVersion checkpointPolicy(Policy newPolicy, boolean activated, boolean newEntity) throws ObjectModelException {
-        final long policyOid = newPolicy.getOid();
-        if (policyOid == Policy.DEFAULT_OID)
+        final Goid policyGoid = newPolicy.getGoid();
+        if (Goid.isDefault(policyGoid))
             throw new IllegalArgumentException("Unable to checkpoint policy without a valid OID");
 
         AdminInfo adminInfo = AdminInfo.find(false);
@@ -84,13 +85,13 @@ public class PolicyVersionManagerImpl extends HibernateEntityManager<PolicyVersi
 
         // If the most recent PolicyVersion matches then this was a do-nothing policy change
         // and should be ignored (Bug #4569, #10662)
-        final PolicyVersion last = findLatestRevisionForPolicy( policyOid );
+        final PolicyVersion last = findLatestRevisionForPolicy( policyGoid );
         if ( last!=null ) {
             if ( last.getXml()!=null && last.getXml().equals( newPolicy.getXml() ) ) {
                 if ( activated && !last.isActive() ) {
                     last.setActive( true );
                     update( last );
-                    deactivateVersions(policyOid, last.getOid());
+                    deactivateVersions(policyGoid, last.getGoid());
                 }
                 return last;
             } else if ( ver.getOrdinal() <= last.getOrdinal() ) {
@@ -98,50 +99,50 @@ public class PolicyVersionManagerImpl extends HibernateEntityManager<PolicyVersi
             }
         }
 
-        final long versionOid = save(ver);
-        ver.setOid(versionOid);
+        final Goid versionGoid = save(ver);
+        ver.setGoid(versionGoid);
 
         if (activated) {
             // Deactivate all previous versions
-            deactivateVersions(policyOid, versionOid);
+            deactivateVersions(policyGoid, versionGoid);
         }
 
-        deleteStaleRevisions(policyOid, ver);
+        deleteStaleRevisions(policyGoid, ver);
         return ver;
     }
 
     @Override
-    public PolicyVersion findLatestRevisionForPolicy(final long policyOid) {
+    public PolicyVersion findLatestRevisionForPolicy(final Goid policyGoid) {
         return getHibernateTemplate().execute(new ReadOnlyHibernateCallback<PolicyVersion>() {
             @Override
             public PolicyVersion doInHibernateReadOnly( final Session session ) throws HibernateException, SQLException {
                 final DetachedCriteria detachedCriteria = DetachedCriteria.forClass( getImpClass() );
-                detachedCriteria.add( Property.forName( "policyOid" ).eq( policyOid ) );
+                detachedCriteria.add( Property.forName( "policyGoid" ).eq( policyGoid ) );
                 detachedCriteria.setProjection( Property.forName( "ordinal" ).max() );
 
                 final Criteria criteria = session.createCriteria( getImpClass() );
-                criteria.add( Property.forName( "policyOid" ).eq( policyOid ) );
+                criteria.add( Property.forName( "policyGoid" ).eq( policyGoid ) );
                 criteria.add( Property.forName( "ordinal" ).eq( detachedCriteria ) );
                 return (PolicyVersion) criteria.uniqueResult();
             }
         } );
     }
 
-    private void deleteStaleRevisions(final long policyOid, final PolicyVersion justSaved) throws FindException, DeleteException {
-        final long justSavedOid = justSaved.getOid();
+    private void deleteStaleRevisions(final Goid policyGoid, final PolicyVersion justSaved) throws FindException, DeleteException {
+        final Goid justSavedGoid = justSaved.getGoid();
 
         // Delete oldest anonymous revisions if we have exceeded MAX_REVISIONS
         // Revisions that have been assigned a name won't be deleted
         int numToKeep = config.getIntProperty( ServerConfigParams.PARAM_POLICY_VERSIONING_MAX_REVISIONS, 20);
-        List<PolicyVersion> revisions = new ArrayList<PolicyVersion>(findAllForPolicy(policyOid));
+        List<PolicyVersion> revisions = new ArrayList<PolicyVersion>(findAllForPolicy(policyGoid));
 
         // Don't count revisions against the limit if they have been assigned names
         revisions = Functions.grep(revisions, new Functions.Unary<Boolean,PolicyVersion>() {
             @Override
             public Boolean call(PolicyVersion policyVersion) {
                 boolean inactive = !policyVersion.isActive();
-                boolean notTheOneWeJustSaved = policyVersion.getOid() != justSavedOid;
-                boolean belongsToOurPolicy = policyVersion.getPolicyOid() == policyOid;
+                boolean notTheOneWeJustSaved = !Goid.equals(policyVersion.getGoid(), justSavedGoid);
+                boolean belongsToOurPolicy = Goid.equals(policyVersion.getPolicyGoid(), policyGoid);
                 boolean nameIsEmpty = isNameEmpty(policyVersion);
 
                 // Candidates for deletion are inactive, anonymous, and not the one we just saved
@@ -161,7 +162,7 @@ public class PolicyVersionManagerImpl extends HibernateEntityManager<PolicyVersi
 
         if (num >= numToKeep) {
             for (PolicyVersion revision : revisions) {
-                if (revision.getPolicyOid() == policyOid && revision.getOid() != justSavedOid) {
+                if (Goid.equals(revision.getPolicyGoid(), policyGoid) && !Goid.equals(revision.getGoid(), justSavedGoid)) {
                     delete(revision);
                     num--;
                     if (num <= numToKeep)
@@ -181,7 +182,7 @@ public class PolicyVersionManagerImpl extends HibernateEntityManager<PolicyVersi
     }
 
     @Override
-    public void deactivateVersions(final long policyOid, final long versionOid) throws UpdateException {
+    public void deactivateVersions(final Goid policyGoid, final Goid versionGoid) throws UpdateException {
         try {
             getHibernateTemplate().execute(new HibernateCallback<Void>() {
                 @Override
@@ -189,10 +190,10 @@ public class PolicyVersionManagerImpl extends HibernateEntityManager<PolicyVersi
                     FlushMode oldFlushMode = session.getFlushMode();
                     try {
                         session.setFlushMode(FlushMode.COMMIT);
-                        session.createQuery("update versioned PolicyVersion set active = :active where policyOid = :policyOid and oid <> :versionOid")
+                        session.createQuery("update versioned PolicyVersion set active = :active where policyGoid = :policyGoid and goid <> :versionGoid")
                                 .setBoolean("active", false)
-                                .setLong("policyOid", policyOid)
-                                .setLong("versionOid", versionOid)
+                                .setParameter("policyGoid", policyGoid)
+                                .setParameter("versionGoid", versionGoid)
                                 .executeUpdate();
                         return null;
                     } finally {
@@ -206,22 +207,22 @@ public class PolicyVersionManagerImpl extends HibernateEntityManager<PolicyVersi
     }
 
     @Override
-    public PolicyVersion findActiveVersionForPolicy(long policyOid) throws FindException {
+    public PolicyVersion findActiveVersionForPolicy(Goid policyGoid) throws FindException {
         Map<String, Object> map = new HashMap<String, Object>();
-        map.put("policyOid", policyOid);
+        map.put("policyGoid", policyGoid);
         map.put("active", Boolean.TRUE);
         List<PolicyVersion> found = findMatching(Collections.singletonList(map));
         if (found == null || found.isEmpty())
             return null;
         if (found.size() > 1)
-            throw new FindException("Found more than one active PolicyVersion with policy_oid=" + policyOid); // can't happen
+            throw new FindException("Found more than one active PolicyVersion with policy_goid=" + policyGoid); // can't happen
         return found.iterator().next();
     }
 
     private static PolicyVersion snapshot( Policy policy, AdminInfo adminInfo, boolean activated, boolean newEntity) {
-        long policyOid = policy.getOid();
+        Goid policyGoid = policy.getGoid();
         PolicyVersion ver = new PolicyVersion();
-        ver.setPolicyOid(policyOid);
+        ver.setPolicyGoid(policyGoid);
         ver.setActive(activated);
 
         // The entity version numbering for Policy starts at zero, but due to quirks in how save() vs update()

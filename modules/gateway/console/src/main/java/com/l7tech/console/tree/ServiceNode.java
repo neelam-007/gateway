@@ -82,8 +82,8 @@ public class ServiceNode extends EntityWithPolicyNode<PublishedService, ServiceH
 
         ServiceHeader newEh = new ServiceHeader(svc);
         newEh.setPolicyDisabled(svc.getPolicy() == null ? false : svc.getPolicy().isDisabled());
-        newEh.setAliasOid(serviceHeader.getAliasOid());
-        newEh.setFolderOid(serviceHeader.getFolderOid());
+        newEh.setAliasGoid(serviceHeader.getAliasGoid());
+        newEh.setFolderGoid(serviceHeader.getFolderGoid());
         setUserObject(newEh);
         firePropertyChange(this, "UserObject", serviceHeader, newEh);
         return svc;
@@ -168,7 +168,7 @@ public class ServiceNode extends EntityWithPolicyNode<PublishedService, ServiceH
         } catch (Exception e) {
             ErrorManager.getDefault().
               notify(Level.SEVERE, e,
-                "Error accessing service id=" + getEntityHeader().getOid());
+                "Error accessing service id=" + getEntityHeader().getGoid());
         }
     }
 

@@ -173,12 +173,12 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
     }
 
     @Override
-    public UDDIProxiedServiceInfo findProxiedServiceInfoForPublishedService(long serviceOid) throws FindException {
-        return uddiProxiedServiceInfoManager.findByPublishedServiceOid(serviceOid);
+    public UDDIProxiedServiceInfo findProxiedServiceInfoForPublishedService(Goid serviceGoid) throws FindException {
+        return uddiProxiedServiceInfoManager.findByPublishedServiceGoid(serviceGoid);
     }
 
     @Override
-    public UDDIPublishStatus getPublishStatusForProxy(final long uddiProxiedServiceInfoOid, long publishedServiceOid) throws FindException {
+    public UDDIPublishStatus getPublishStatusForProxy(final long uddiProxiedServiceInfoOid, Goid publishedServiceGoid) throws FindException {
         final UDDIPublishStatus publishStatus = uddiPublishStatusManager.findByProxiedSerivceInfoOid(uddiProxiedServiceInfoOid);
         if(publishStatus == null)
             throw new FindException("Cannot find the UDDIPublishStatus for UDDIProxiedServiceInfo with id#(" + uddiProxiedServiceInfoOid+")");
@@ -304,7 +304,7 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
                 throw new SaveException("serviceEndPoint is required when saving a UDDIServiceControl. Cannot be null, empty or contain only spaces");
             }
             
-            final PublishedService service = serviceManager.findByPrimaryKey(uddiServiceControl.getPublishedServiceOid());
+            final PublishedService service = serviceManager.findByPrimaryKey(uddiServiceControl.getPublishedServiceGoid());
 
             final Wsdl wsdl;
             try {
@@ -338,10 +338,10 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
             uddiServiceControlRuntimeManager.save(monitorRuntime);
             service.setDefaultRoutingUrl(serviceEndPoint);
             serviceManager.save(service);
-            logger.log(Level.INFO, "Set context variable ${service.defaultRoutingURL} with UDDI endpoint value for service #(" + service.getOid()+")");
+            logger.log(Level.INFO, "Set context variable ${service.defaultRoutingURL} with UDDI endpoint value for service #(" + service.getGoid()+")");
 
             //Has the published service been published to UDDI?
-            final UDDIProxiedServiceInfo info = uddiProxiedServiceInfoManager.findByPublishedServiceOid(uddiServiceControl.getPublishedServiceOid());
+            final UDDIProxiedServiceInfo info = uddiProxiedServiceInfoManager.findByPublishedServiceGoid(uddiServiceControl.getPublishedServiceGoid());
             if(info != null && info.getPublishType() == UDDIProxiedServiceInfo.PublishType.PROXY){
                 //we have published the gateway wsdl. We need to update UDDI in case extra meta data is required
                 //now that we have the original service (this is really for activesoa to turn a service virtual)
@@ -374,7 +374,7 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
                         "WSDL cannot be under UDDI control when the owning business service in UDDI has had its bindingTemplates removed");
             }
 
-            final UDDIProxiedServiceInfo serviceInfo = uddiProxiedServiceInfoManager.findByPublishedServiceOid(original.getPublishedServiceOid());
+            final UDDIProxiedServiceInfo serviceInfo = uddiProxiedServiceInfoManager.findByPublishedServiceGoid(original.getPublishedServiceGoid());
             //this exception is for admin api users only, UI stops this from happening
             if(serviceInfo != null && uddiServiceControl.isUnderUddiControl() && serviceInfo.getPublishType() != UDDIProxiedServiceInfo.PublishType.PROXY){
                 throw new UpdateException("Cannot save UDDIServiceControl with isUnderUDDIControl = true, when either a bindingTemplate has been added to the original or if it has been overwritten");
@@ -382,10 +382,10 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
 
             uddiServiceControlManager.update( uddiServiceControl );
             if(clearServiceDefaultURL){
-                final PublishedService service = serviceManager.findByPrimaryKey(uddiServiceControl.getPublishedServiceOid());
+                final PublishedService service = serviceManager.findByPrimaryKey(uddiServiceControl.getPublishedServiceGoid());
                 service.setDefaultRoutingUrl(null);
                 serviceManager.update(service);
-                logger.log(Level.INFO, "Cleared context variable ${service.defaultRoutingURL} of UDDI endpoint value for service #(" + service.getOid()+")");
+                logger.log(Level.INFO, "Cleared context variable ${service.defaultRoutingURL} of UDDI endpoint value for service #(" + service.getGoid()+")");
             }
 
             if(wsdlRefreshRequiredMessage != null){
@@ -449,10 +449,10 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
         if(service != null){
             service.setDefaultRoutingUrl(null);
             serviceManager.update(service);
-            logger.log(Level.INFO, "Cleared context variable ${service.defaultRoutingURL} of UDDI endpoint value for service #(" + service.getOid()+")");
+            logger.log(Level.INFO, "Cleared context variable ${service.defaultRoutingURL} of UDDI endpoint value for service #(" + service.getGoid()+")");
         }
 
-        final UDDIProxiedServiceInfo serviceInfo = uddiProxiedServiceInfoManager.findByPublishedServiceOid(serviceControl.getPublishedServiceOid());
+        final UDDIProxiedServiceInfo serviceInfo = uddiProxiedServiceInfoManager.findByPublishedServiceGoid(serviceControl.getPublishedServiceGoid());
         if(serviceInfo != null && serviceInfo.getPublishType() != UDDIProxiedServiceInfo.PublishType.PROXY){
             throw new DeleteException("Cannot delete record of how service was created until any published binding or overwritten service has been deleted");
         } else {
@@ -461,8 +461,8 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
     }
 
     @Override
-    public UDDIServiceControl getUDDIServiceControl( final long serviceOid ) throws FindException {
-        return uddiServiceControlManager.findByPublishedServiceOid( serviceOid );
+    public UDDIServiceControl getUDDIServiceControl( final Goid serviceGoid ) throws FindException {
+        return uddiServiceControlManager.findByPublishedServiceGoid( serviceGoid );
     }
 
     @Override
@@ -483,13 +483,13 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
                                        final Map<String, Object> properties,
                                        final @Nullable SecurityZone securityZone)
             throws FindException, SaveException, UDDIRegistryNotEnabledException {
-        if (publishedService == null) throw new NullPointerException("publishedServiceOid must not be null");
+        if (publishedService == null) throw new NullPointerException("publishedServiceGoid must not be null");
 
-        final PublishedService service = serviceCache.getCachedService(publishedService.getOid());
+        final PublishedService service = serviceCache.getCachedService(publishedService.getGoid());
         if (service == null)
             throw new SaveException("PublishedService with id #(" + publishedService + ") was not found");
 
-        final UDDIServiceControl serviceControl = uddiServiceControlManager.findByPublishedServiceOid(service.getOid());
+        final UDDIServiceControl serviceControl = uddiServiceControlManager.findByPublishedServiceGoid(service.getGoid());
         if (serviceControl == null)
             throw new SaveException("PublishedService with id #(" + publishedService + ") was not created from UDDI (record may have been deleted)");
 
@@ -503,7 +503,7 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
 
         final String wsdlHash = getWsdlHash(service);
 
-        final UDDIProxiedServiceInfo serviceInfo = UDDIProxiedServiceInfo.getEndPointPublishInfo(service.getOid(),
+        final UDDIProxiedServiceInfo serviceInfo = UDDIProxiedServiceInfo.getEndPointPublishInfo(service.getGoid(),
                 uddiRegistry.getOid(), serviceControl.getUddiBusinessKey(), serviceControl.getUddiBusinessName(),
                 wsdlHash, removeOthers);
         serviceInfo.setSecurityZone(securityZone);
@@ -530,10 +530,10 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
         if(scheme == null)
             throw new IllegalArgumentException("properties is missing the '" + UDDIProxiedServiceInfo.GIF_SCHEME + "' property");
 
-        final PublishedService service = serviceCache.getCachedService(publishedService.getOid());
+        final PublishedService service = serviceCache.getCachedService(publishedService.getGoid());
         if(service == null) throw new SaveException("PublishedService with id #(" + publishedService + ") was not found");
 
-        final UDDIServiceControl serviceControl = uddiServiceControlManager.findByPublishedServiceOid(service.getOid());
+        final UDDIServiceControl serviceControl = uddiServiceControlManager.findByPublishedServiceGoid(service.getGoid());
         if(serviceControl == null) throw new SaveException("PublishedService with id #("+ publishedService +") was not created from UDDI (record may have been deleted)");
 
         final UDDIRegistry uddiRegistry = uddiRegistryManager.findByPrimaryKey(serviceControl.getUddiRegistryOid());
@@ -542,7 +542,7 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
 
         final String wsdlHash = getWsdlHash(service);
 
-        final UDDIProxiedServiceInfo serviceInfo = UDDIProxiedServiceInfo.getGifEndPointPublishInfo(service.getOid(),
+        final UDDIProxiedServiceInfo serviceInfo = UDDIProxiedServiceInfo.getGifEndPointPublishInfo(service.getGoid(),
                 uddiRegistry.getOid(), serviceControl.getUddiBusinessKey(), serviceControl.getUddiBusinessName(),
                 wsdlHash);
         serviceInfo.setSecurityZone(securityZone);
@@ -559,17 +559,17 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
     @Override
     public void overwriteBusinessServiceInUDDI(PublishedService publishedServiceIn, final boolean updateWhenGatewayWsdlChanges, final @Nullable SecurityZone securityZone)
             throws SaveException, FindException {
-        final PublishedService publishedService = serviceCache.getCachedService(publishedServiceIn.getOid());
+        final PublishedService publishedService = serviceCache.getCachedService(publishedServiceIn.getGoid());
         if(publishedService == null) throw new IllegalArgumentException("No PublishedService found for #(" + publishedServiceIn +")" );
 
-        final UDDIServiceControl serviceControl = uddiServiceControlManager.findByPublishedServiceOid(publishedService.getOid());
+        final UDDIServiceControl serviceControl = uddiServiceControlManager.findByPublishedServiceGoid(publishedService.getGoid());
         if(serviceControl == null)
             throw new SaveException("Cannot overwrite service as there is no record of the BusinessService in UDDI from which the Published Service was created");
 
         final String wsdlHash = getWsdlHash(publishedService);
 
         final UDDIProxiedServiceInfo uddiProxiedServiceInfo =
-                UDDIProxiedServiceInfo.getOverwriteProxyServicePublishInfo(publishedService.getOid(),
+                UDDIProxiedServiceInfo.getOverwriteProxyServicePublishInfo(publishedService.getGoid(),
                         serviceControl.getUddiRegistryOid(), serviceControl.getUddiBusinessKey(),
                         serviceControl.getUddiBusinessName(), wsdlHash, updateWhenGatewayWsdlChanges);
         uddiProxiedServiceInfo.setSecurityZone(securityZone);
@@ -599,12 +599,12 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
         if(uddiRegistry == null) throw new IllegalArgumentException("Cannot find UDDIRegistry with oid: " + uddiRegistryOid);
         throwIfUddiRegistryNotEnabled(uddiRegistry);
 
-        final PublishedService service = serviceCache.getCachedService(publishedService.getOid());
+        final PublishedService service = serviceCache.getCachedService(publishedService.getGoid());
         if(service == null) throw new SaveException("PublishedService with id #(" + publishedService + ") was not found");
 
         final String wsdlHash = getWsdlHash(service);
 
-        final UDDIProxiedServiceInfo uddiProxiedServiceInfo = UDDIProxiedServiceInfo.getProxyServicePublishInfo(service.getOid(),
+        final UDDIProxiedServiceInfo uddiProxiedServiceInfo = UDDIProxiedServiceInfo.getProxyServicePublishInfo(service.getGoid(),
                 uddiRegistry.getOid(), uddiBusinessKey, uddiBusinessName,
                 wsdlHash, updateWhenGatewayWsdlChanges);
         uddiProxiedServiceInfo.setSecurityZone(securityZone);
@@ -652,21 +652,21 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
     }
 
     @Override
-    public Collection<ServiceHeader> getServicesPublishedToUDDI(Collection<Long> allServiceIds) throws FindException {
+    public Collection<ServiceHeader> getServicesPublishedToUDDI(Collection<Goid> allServiceIds) throws FindException {
         if(allServiceIds == null) throw new NullPointerException("allServiceIds cannot be null");
 
         final Collection<ServiceHeader> returnColl = new HashSet<ServiceHeader>();
-        for(Long oid: allServiceIds) {
-            if (uddiProxiedServiceInfoManager.findByPublishedServiceOid(oid) != null) {
-                final PublishedService publishedService = serviceCache.getCachedService(oid);
+        for(Goid goid: allServiceIds) {
+            if (uddiProxiedServiceInfoManager.findByPublishedServiceGoid(goid) != null) {
+                final PublishedService publishedService = serviceCache.getCachedService(goid);
                 final ServiceHeader serviceHeader = new ServiceHeader(publishedService);
                 returnColl.add(serviceHeader);
             } else {
-                final Collection<UDDIBusinessServiceStatus> serviceStatuses = businessServiceStatusManager.findByPublishedService(oid);
+                final Collection<UDDIBusinessServiceStatus> serviceStatuses = businessServiceStatusManager.findByPublishedService(goid);
                 for(UDDIBusinessServiceStatus status: serviceStatuses){
                     if(status.getUddiPolicyStatus() != UDDIBusinessServiceStatus.Status.NONE ||
                             status.getUddiMetricsReferenceStatus() != UDDIBusinessServiceStatus.Status.NONE){
-                        final PublishedService publishedService = serviceCache.getCachedService(oid);
+                        final PublishedService publishedService = serviceCache.getCachedService(goid);
                         final ServiceHeader serviceHeader = new ServiceHeader(publishedService);
                         returnColl.add(serviceHeader);
                     }

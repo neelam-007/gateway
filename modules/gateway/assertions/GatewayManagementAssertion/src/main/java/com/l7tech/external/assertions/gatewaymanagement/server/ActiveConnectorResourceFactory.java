@@ -4,6 +4,7 @@ import com.l7tech.gateway.api.ActiveConnectorMO;
 import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import com.l7tech.gateway.common.transport.SsgActiveConnectorHeader;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.security.rbac.SecurityFilter;
 import com.l7tech.server.transport.SsgActiveConnectorManager;
@@ -36,7 +37,7 @@ public class ActiveConnectorResourceFactory extends GoidEntityManagerResourceFac
         ssgActiveConnectorMO.setVersion(entity.getVersion());
         ssgActiveConnectorMO.setEnabled(entity.isEnabled());
         ssgActiveConnectorMO.setType(entity.getType());
-        ssgActiveConnectorMO.setHardwiredId(entity.getHardwiredServiceOid()==null?null:Long.toString(entity.getHardwiredServiceOid()));
+        ssgActiveConnectorMO.setHardwiredId(entity.getHardwiredServiceGoid()==null?null: Goid.toString(entity.getHardwiredServiceGoid()));
 
         Map<String,String> properties = new HashMap<String,String>();
         for (String propertyName : entity.getPropertyNames()) {
@@ -57,7 +58,7 @@ public class ActiveConnectorResourceFactory extends GoidEntityManagerResourceFac
 
         activeConnector.setEnabled(connectionResource.isEnabled());
         activeConnector.setName(connectionResource.getName());
-        activeConnector.setHardwiredServiceOid(connectionResource.getHardwiredId()==null?null:Long.parseLong(connectionResource.getHardwiredId()));
+        activeConnector.setHardwiredServiceGoid(connectionResource.getHardwiredId()==null?null:Goid.parseGoid(connectionResource.getHardwiredId()));
         activeConnector.setType(connectionResource.getType());
 
         for (Map.Entry<String, String> entry : connectionResource.getProperties().entrySet()) {
@@ -72,7 +73,7 @@ public class ActiveConnectorResourceFactory extends GoidEntityManagerResourceFac
     protected void updateEntity(SsgActiveConnector oldEntity, SsgActiveConnector newEntity) throws InvalidResourceException {
         oldEntity.setEnabled(newEntity.isEnabled());
         oldEntity.setName(newEntity.getName());
-        oldEntity.setHardwiredServiceOid(newEntity.getHardwiredServiceOid());
+        oldEntity.setHardwiredServiceGoid(newEntity.getHardwiredServiceGoid());
         oldEntity.setType(newEntity.getType());
         for (String name : newEntity.getPropertyNames()) {
             oldEntity.setProperty(name, newEntity.getProperty(name));

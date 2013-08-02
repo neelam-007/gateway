@@ -219,7 +219,7 @@ public class ServerGatewayManagementAssertionTest {
                 "    <a:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Get</a:Action> \n" +
                 "    <w:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/services</w:ResourceURI> \n" +
                 "    <w:SelectorSet>\n" +
-                "      <w:Selector Name=\"id\">2</w:Selector> \n" +
+                "      <w:Selector Name=\"id\">"+new Goid(0,2)+"</w:Selector> \n" +
                 "    </w:SelectorSet>\n" +
                 "    <w:OperationTimeout>PT60.000S</w:OperationTimeout> \n" +
                 "  </s:Header>\n" +
@@ -241,7 +241,7 @@ public class ServerGatewayManagementAssertionTest {
     @BugId("SSG-5551")
     @Test
     public void testGetPolicyWithGuid() throws Exception {
-        final String policyGuid = UUID.nameUUIDFromBytes( Long.toString(1L).getBytes() ).toString();
+        final String policyGuid = UUID.nameUUIDFromBytes(Goid.toString(new Goid(0,1)).getBytes()).toString();
         String message =
                 "<env:Envelope xmlns:env=\"http://www.w3.org/2003/05/soap-envelope\"\n" +
                         "    xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\"\n" +
@@ -451,7 +451,7 @@ public class ServerGatewayManagementAssertionTest {
 
         assertEquals("Active connector identifier:", id, activeConnector.getAttribute("id"));
         assertEquals("Active connector type:", "SFTP", XmlUtil.getTextValue(type));
-        assertEquals("Active connector hardwired id:", "4567",XmlUtil.getTextValue(hardwiredId));
+        assertEquals("Active connector hardwired id:", new Goid(0,4567).toHexString(),XmlUtil.getTextValue(hardwiredId));
     }
 
     @Test
@@ -595,7 +595,7 @@ public class ServerGatewayManagementAssertionTest {
         String payload =
             "<l7:EncapsulatedAssertion xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
             "    <l7:Name>Test</l7:Name>\n" +
-            "    <l7:PolicyReference id=\"2\" resourceUri=\"http://ns.l7tech.com/2010/04/gateway-management/policies\"/>\n" +
+            "    <l7:PolicyReference id=\""+new Goid(0,2)+"\" resourceUri=\"http://ns.l7tech.com/2010/04/gateway-management/policies\"/>\n" +
             "    <l7:EncapsulatedArguments>\n" +
             "        <l7:EncapsulatedAssertionArgument>\n" +
             "            <l7:Ordinal>1</l7:Ordinal>\n" +
@@ -695,21 +695,21 @@ public class ServerGatewayManagementAssertionTest {
     @Test
     public void testCreateFolder() throws Exception {
         String resourceUri = "http://ns.l7tech.com/2010/04/gateway-management/folders";
-        String payload = "<n1:Folder xmlns:n1=\"http://ns.l7tech.com/2010/04/gateway-management\" folderId=\"1\"><n1:Name>test</n1:Name></n1:Folder>";
-        doCreate( resourceUri, payload, "3" );
+        String payload = "<n1:Folder xmlns:n1=\"http://ns.l7tech.com/2010/04/gateway-management\" folderId=\""+new Goid(0,1)+"\"><n1:Name>test</n1:Name></n1:Folder>";
+        doCreate( resourceUri, payload, new Goid(0,3).toHexString() );
     }
 
     @Test
     public void testCreateService() throws Exception {
         String resourceUri = "http://ns.l7tech.com/2010/04/gateway-management/services";
-        String payload = "<Service xmlns=\"http://ns.l7tech.com/2010/04/gateway-management\"><ServiceDetail folderId=\"1\"><Name>Warehouse Service</Name><Enabled>true</Enabled><ServiceMappings><HttpMapping><UrlPattern>/waremulti</UrlPattern><Verbs><Verb>POST</Verb></Verbs></HttpMapping></ServiceMappings><Properties><Property key=\"soap\"><BooleanValue>false</BooleanValue></Property></Properties></ServiceDetail><Resources><ResourceSet tag=\"policy\"><Resource type=\"policy\">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;\n" +
+        String payload = "<Service xmlns=\"http://ns.l7tech.com/2010/04/gateway-management\"><ServiceDetail folderId=\""+new Goid(0,1)+"\"><Name>Warehouse Service</Name><Enabled>true</Enabled><ServiceMappings><HttpMapping><UrlPattern>/waremulti</UrlPattern><Verbs><Verb>POST</Verb></Verbs></HttpMapping></ServiceMappings><Properties><Property key=\"soap\"><BooleanValue>false</BooleanValue></Property></Properties></ServiceDetail><Resources><ResourceSet tag=\"policy\"><Resource type=\"policy\">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;\n" +
                 "&lt;wsp:Policy xmlns:L7p=&quot;http://www.layer7tech.com/ws/policy&quot; xmlns:wsp=&quot;http://schemas.xmlsoap.org/ws/2002/12/policy&quot;&gt;\n" +
                 "    &lt;wsp:All wsp:Usage=&quot;Required&quot;&gt;\n" +
                 "        &lt;L7p:EchoRoutingAssertion/&gt;\n" +
                 "    &lt;/wsp:All&gt;\n" +
                 "&lt;/wsp:Policy&gt;\n" +
                 "</Resource></ResourceSet></Resources></Service>";
-        String expectedId = "3";
+        String expectedId = new Goid(0,3).toHexString();
         doCreate( resourceUri, payload, expectedId );
     }
 
@@ -895,7 +895,7 @@ public class ServerGatewayManagementAssertionTest {
                 "    <l7:Name>test</l7:Name>\n" +
                 "    <l7:Enabled>true</l7:Enabled>\n" +
                 "    <l7:Type>SFTP</l7:Type>\n" +
-                "    <l7:HardwiredId>163840</l7:HardwiredId>\n" +
+                "    <l7:HardwiredId>"+new Goid(0,163840)+"</l7:HardwiredId>\n" +
                 "    <l7:Properties>\n" +
                 "        <l7:Property key=\"enableResponseMessages\">\n" +
                 "            <l7:StringValue>true</l7:StringValue>\n" +
@@ -1166,7 +1166,7 @@ public class ServerGatewayManagementAssertionTest {
     @Test
     public void testCreatePolicy() throws Exception {
         String resourceUri = "http://ns.l7tech.com/2010/04/gateway-management/policies";
-        String payload = "<Policy xmlns=\"http://ns.l7tech.com/2010/04/gateway-management\"><PolicyDetail folderId=\"1\"><Name>Policy Name</Name><PolicyType>Include</PolicyType><Properties><Property key=\"soap\"><BooleanValue>true</BooleanValue></Property></Properties></PolicyDetail><Resources><ResourceSet tag=\"policy\"><Resource type=\"policy\">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;\n" +
+        String payload = "<Policy xmlns=\"http://ns.l7tech.com/2010/04/gateway-management\"><PolicyDetail folderId=\""+new Goid(0,1)+"\"><Name>Policy Name</Name><PolicyType>Include</PolicyType><Properties><Property key=\"soap\"><BooleanValue>true</BooleanValue></Property></Properties></PolicyDetail><Resources><ResourceSet tag=\"policy\"><Resource type=\"policy\">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;\n" +
                 "&lt;wsp:Policy xmlns:L7p=&quot;http://www.layer7tech.com/ws/policy&quot; xmlns:wsp=&quot;http://schemas.xmlsoap.org/ws/2002/12/policy&quot;&gt;\n" +
                 "    &lt;wsp:All wsp:Usage=&quot;Required&quot;&gt;\n" +
                 "        &lt;L7p:CommentAssertion&gt;\n" +
@@ -1175,7 +1175,7 @@ public class ServerGatewayManagementAssertionTest {
                 "    &lt;/wsp:All&gt;\n" +
                 "&lt;/wsp:Policy&gt;\n" +
                 "</Resource></ResourceSet></Resources></Policy>";
-        String expectedId = "3";
+        String expectedId = new Goid(0,3).toHexString();
         doCreate( resourceUri, payload, expectedId );
     }
 
@@ -1253,22 +1253,22 @@ public class ServerGatewayManagementAssertionTest {
 
         String id = new Goid(0,1).toString();
         // Try basic successful update of existing encass config
-        putAndVerify(makeEncassPutMess("id=\""+id+"\"", "version=\"0\"", "<l7:Guid>ABCD-0001</l7:Guid>", "id=\"1\"", 1), verifyEncassUpdate(1, null), false );
+        putAndVerify(makeEncassPutMess("id=\""+id+"\"", "version=\"0\"", "<l7:Guid>ABCD-0001</l7:Guid>", "id=\""+new Goid(0,1)+"\"", 1), verifyEncassUpdate(1, null), false );
 
         // Try omitting OID and ver (can't just pass "true" for removeVersionAndId arg because it kills the policy OID in the crossfire and we need it)
-        putAndVerify(makeEncassPutMess("", "", "<l7:Guid>ABCD-0001</l7:Guid>", "id=\"1\"", 2), verifyEncassUpdate(2, null), false );
+        putAndVerify(makeEncassPutMess("", "", "<l7:Guid>ABCD-0001</l7:Guid>", "id=\""+new Goid(0,1)+"\"", 2), verifyEncassUpdate(2, null), false );
 
         // Try leaving out the GUID (should fail)
-        putAndVerify(makeEncassPutMess("id=\""+id+"\"", "version=\"2\"", "", "id=\"1\"", 3), verifyEncassUpdate(3, "unable to change GUID of existing encapsulated assertion config"), false );
+        putAndVerify(makeEncassPutMess("id=\""+id+"\"", "version=\"2\"", "", "id=\""+new Goid(0,1)+"\"", 3), verifyEncassUpdate(3, "unable to change GUID of existing encapsulated assertion config"), false );
 
         // Try changing the encass GUID (should fail)
-        putAndVerify(makeEncassPutMess("id=\""+id+"\"", "version=\"2\"", "<l7:Guid>ABCD-EXTRA-0001</l7:Guid>", "id=\"1\"", 4), verifyEncassUpdate(4, "unable to change GUID of existing encapsulated assertion config"), false );
+        putAndVerify(makeEncassPutMess("id=\""+id+"\"", "version=\"2\"", "<l7:Guid>ABCD-EXTRA-0001</l7:Guid>", "id=\""+new Goid(0,1)+"\"", 4), verifyEncassUpdate(4, "unable to change GUID of existing encapsulated assertion config"), false );
 
         // Try leaving out the backing policy OID (should work OK)
-        putAndVerify(makeEncassPutMess("id=\""+id+"\"", "version=\"2\"", "<l7:Guid>ABCD-0001</l7:Guid>", "id=\"1\"", 5), verifyEncassUpdate(5, null), false );
+        putAndVerify(makeEncassPutMess("id=\""+id+"\"", "version=\"2\"", "<l7:Guid>ABCD-0001</l7:Guid>", "id=\""+new Goid(0,1)+"\"", 5), verifyEncassUpdate(5, null), false );
 
         // Try changing the backing policy OID (should fail)
-        putAndVerify(makeEncassPutMess("id=\""+id+"\"", "version=\"2\"", "<l7:Guid>ABCD-0001</l7:Guid>", "id=\"2\"", 6), verifyEncassUpdate(6, "unable to change backing policy of an existing encapsulated assertion config"), false );
+        putAndVerify(makeEncassPutMess("id=\""+id+"\"", "version=\"2\"", "<l7:Guid>ABCD-0001</l7:Guid>", "id=\""+new Goid(0,2)+"\"", 6), verifyEncassUpdate(6, "unable to change backing policy of an existing encapsulated assertion config"), false );
     }
 
     private UnaryVoidThrows<Document, Exception> verifyEncassUpdate(final int updateNum, @Nullable final String expectedFaultSubstring) {
@@ -1418,7 +1418,7 @@ public class ServerGatewayManagementAssertionTest {
 
     @Test
     public void testPutFolder() throws Exception {
-        final String message = "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns:n1=\"http://ns.l7tech.com/2010/04/gateway-management\"><s:Header><wsa:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Put</wsa:Action><wsa:To s:mustUnderstand=\"true\">http://127.0.0.1:8080/wsman</wsa:To><wsman:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/folders</wsman:ResourceURI><wsa:MessageID s:mustUnderstand=\"true\">uuid:afad2993-7d39-1d39-8002-481688002100</wsa:MessageID><wsa:ReplyTo><wsa:Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo><wsman:SelectorSet><wsman:Selector Name=\"id\">1</wsman:Selector></wsman:SelectorSet><wsman:RequestEPR/></s:Header><s:Body> <n1:Folder xmlns:n1=\"http://ns.l7tech.com/2010/04/gateway-management\" folderId=\"-5002\" id=\"1\" version=\"0\"><n1:Name>Test Folder (updated)</n1:Name></n1:Folder> </s:Body></s:Envelope>";
+        final String message = "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns:n1=\"http://ns.l7tech.com/2010/04/gateway-management\"><s:Header><wsa:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Put</wsa:Action><wsa:To s:mustUnderstand=\"true\">http://127.0.0.1:8080/wsman</wsa:To><wsman:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/folders</wsman:ResourceURI><wsa:MessageID s:mustUnderstand=\"true\">uuid:afad2993-7d39-1d39-8002-481688002100</wsa:MessageID><wsa:ReplyTo><wsa:Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo><wsman:SelectorSet><wsman:Selector Name=\"id\">"+new Goid(0,1)+"</wsman:Selector></wsman:SelectorSet><wsman:RequestEPR/></s:Header><s:Body> <n1:Folder xmlns:n1=\"http://ns.l7tech.com/2010/04/gateway-management\" folderId=\""+new Goid(0,-5002)+"\" id=\""+new Goid(0,1)+"\" version=\"0\"><n1:Name>Test Folder (updated)</n1:Name></n1:Folder> </s:Body></s:Envelope>";
 
         final UnaryVoidThrows<Document,Exception> verifier = new UnaryVoidThrows<Document,Exception>(){
             @Override
@@ -1682,9 +1682,9 @@ public class ServerGatewayManagementAssertionTest {
 
     @Test
     public void testPutPolicy() throws Exception {
-        final String message = "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\"><s:Header><wsa:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Put</wsa:Action><wsa:To s:mustUnderstand=\"true\">http://127.0.0.1:8080/wsman</wsa:To><wsman:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/policies</wsman:ResourceURI><wsa:MessageID s:mustUnderstand=\"true\">uuid:afad2993-7d39-1d39-8002-481688002100</wsa:MessageID><wsa:ReplyTo><wsa:Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo><wsman:SelectorSet><wsman:Selector Name=\"id\">1</wsman:Selector></wsman:SelectorSet><wsman:RequestEPR/></s:Header><s:Body>" +
-                "<l7:Policy id=\"1\" guid=\"c4ca4238-a0b9-3382-8dcc-509a6f75849b\" version=\"0\">\n" +
-                "    <l7:PolicyDetail id=\"1\" guid=\"c4ca4238-a0b9-3382-8dcc-509a6f75849b\" version=\"0\">\n" +
+        final String message = "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\"><s:Header><wsa:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Put</wsa:Action><wsa:To s:mustUnderstand=\"true\">http://127.0.0.1:8080/wsman</wsa:To><wsman:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/policies</wsman:ResourceURI><wsa:MessageID s:mustUnderstand=\"true\">uuid:afad2993-7d39-1d39-8002-481688002100</wsa:MessageID><wsa:ReplyTo><wsa:Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo><wsman:SelectorSet><wsman:Selector Name=\"id\">"+new Goid(0,1)+"</wsman:Selector></wsman:SelectorSet><wsman:RequestEPR/></s:Header><s:Body>" +
+                "<l7:Policy id=\""+new Goid(0,1)+"\" guid=\"c4ca4238-a0b9-3382-8dcc-509a6f75849b\" version=\"0\">\n" +
+                "    <l7:PolicyDetail id=\""+new Goid(0,1)+"\" guid=\"c4ca4238-a0b9-3382-8dcc-509a6f75849b\" version=\"0\">\n" +
                 "        <l7:Name>Test Policy 1</l7:Name>\n" +
                 "        <l7:PolicyType>Include</l7:PolicyType>\n" +
                 "        <l7:Properties>\n" +
@@ -1716,9 +1716,9 @@ public class ServerGatewayManagementAssertionTest {
 
                 final int version = expectedVersion++;
 
-                assertEquals("Policy id", "1", policy.getAttribute( "id" ));
+                assertEquals("Policy id", new Goid(0,1).toHexString(), policy.getAttribute( "id" ));
                 assertEquals("Policy version", Integer.toString( version ), policy.getAttribute( "version" ));
-                assertEquals("Policy detail id", "1", policyDetail.getAttribute( "id" ));
+                assertEquals("Policy detail id", new Goid(0,1).toHexString(), policyDetail.getAttribute( "id" ));
                 assertEquals("Policy detail version", Integer.toString( version ), policyDetail.getAttribute( "version" ));
                 assertEquals("Policy detail name", "Test Policy 1", XmlUtil.getTextValue(policyDetailName));
             }
@@ -1791,9 +1791,9 @@ public class ServerGatewayManagementAssertionTest {
 
     @Test
     public void testPutService() throws Exception {
-        final String message = "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\"><s:Header><wsa:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Put</wsa:Action><wsa:To s:mustUnderstand=\"true\">http://127.0.0.1:8080/wsman</wsa:To><wsman:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/services</wsman:ResourceURI><wsa:MessageID s:mustUnderstand=\"true\">uuid:afad2993-7d39-1d39-8002-481688002100</wsa:MessageID><wsa:ReplyTo><wsa:Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo><wsman:SelectorSet><wsman:Selector Name=\"id\">2</wsman:Selector></wsman:SelectorSet><wsman:RequestEPR/></s:Header><s:Body>" +
-                "<l7:Service id=\"2\" version=\"1\">\n" +
-                "            <l7:ServiceDetail id=\"2\" version=\"1\">\n" +
+        final String message = "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\"><s:Header><wsa:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Put</wsa:Action><wsa:To s:mustUnderstand=\"true\">http://127.0.0.1:8080/wsman</wsa:To><wsman:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/services</wsman:ResourceURI><wsa:MessageID s:mustUnderstand=\"true\">uuid:afad2993-7d39-1d39-8002-481688002100</wsa:MessageID><wsa:ReplyTo><wsa:Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo><wsman:SelectorSet><wsman:Selector Name=\"id\">"+new Goid(0,2)+"</wsman:Selector></wsman:SelectorSet><wsman:RequestEPR/></s:Header><s:Body>" +
+                "<l7:Service id=\""+new Goid(0,2)+"\" version=\"1\">\n" +
+                "            <l7:ServiceDetail id=\""+new Goid(0,2)+"\" version=\"1\">\n" +
                 "                <l7:Name>Test Service 2</l7:Name>\n" +
                 "                <l7:Enabled>true</l7:Enabled>\n" +
                 "                <l7:ServiceMappings>\n" +
@@ -1854,9 +1854,9 @@ public class ServerGatewayManagementAssertionTest {
 
                 final int version = expectedVersion++;
 
-                assertEquals("Service id", "2", service.getAttribute( "id" ));
+                assertEquals("Service id", new Goid(0,2).toHexString(), service.getAttribute( "id" ));
                 assertEquals("Service version", Integer.toString( version ), service.getAttribute( "version" ));
-                assertEquals("Service detail id", "2", serviceDetail.getAttribute( "id" ));
+                assertEquals("Service detail id", new Goid(0,2).toHexString(), serviceDetail.getAttribute( "id" ));
                 assertEquals("Service detail version", Integer.toString( version ), serviceDetail.getAttribute( "version" ));
                 assertEquals("Service detail name", "Test Service 2", XmlUtil.getTextValue(serviceDetailName));
                 assertEquals("Service soapVersion", "1.2", getPropertyValue(properties, "soapVersion"));
@@ -2022,7 +2022,7 @@ public class ServerGatewayManagementAssertionTest {
                 "    <a:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Get</a:Action> \n" +
                 "    <w:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/services</w:ResourceURI> \n" +
                 "    <w:SelectorSet>\n" +
-                "      <w:Selector Name=\"id\">1</w:Selector> \n" +
+                "      <w:Selector Name=\"id\">"+new Goid(0,1)+"</w:Selector> \n" +
                 "    </w:SelectorSet>\n" +
                 "    <w:OperationTimeout>PT60.000S</w:OperationTimeout> \n" +
                 "    <w:FragmentTransfer s:mustUnderstand=\"true\">l7:ServiceDetail/l7:Enabled</w:FragmentTransfer> \n" +
@@ -2204,7 +2204,7 @@ public class ServerGatewayManagementAssertionTest {
     @Test
     public void testPolicyExport() throws Exception {
         final String message =
-                "<env:Envelope xmlns:env=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns:wxf=\"http://schemas.xmlsoap.org/ws/2004/09/transfer\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"><env:Header><wsa:Action env:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/policies/ExportPolicy</wsa:Action><wsa:ReplyTo><wsa:Address env:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo><wsa:MessageID env:mustUnderstand=\"true\">uuid:d521f4b4-ef2a-4381-b11c-fa72eb760a99</wsa:MessageID><wsa:To env:mustUnderstand=\"true\">http://localhost:8080/wsman</wsa:To><wsman:ResourceURI>http://ns.l7tech.com/2010/04/gateway-management/policies</wsman:ResourceURI><wsman:OperationTimeout>P0Y0M0DT0H5M0.000S</wsman:OperationTimeout><wsman:SelectorSet><wsman:Selector Name=\"id\">1</wsman:Selector></wsman:SelectorSet></env:Header><env:Body/></env:Envelope>";
+                "<env:Envelope xmlns:env=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns:wxf=\"http://schemas.xmlsoap.org/ws/2004/09/transfer\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"><env:Header><wsa:Action env:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/policies/ExportPolicy</wsa:Action><wsa:ReplyTo><wsa:Address env:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo><wsa:MessageID env:mustUnderstand=\"true\">uuid:d521f4b4-ef2a-4381-b11c-fa72eb760a99</wsa:MessageID><wsa:To env:mustUnderstand=\"true\">http://localhost:8080/wsman</wsa:To><wsman:ResourceURI>http://ns.l7tech.com/2010/04/gateway-management/policies</wsman:ResourceURI><wsman:OperationTimeout>P0Y0M0DT0H5M0.000S</wsman:OperationTimeout><wsman:SelectorSet><wsman:Selector Name=\"id\">"+new Goid(0,1)+"</wsman:Selector></wsman:SelectorSet></env:Header><env:Body/></env:Envelope>";
 
         final Document result = processRequest( "http://ns.l7tech.com/2010/04/gateway-management/policies/ExportPolicy", message );
 
@@ -2219,7 +2219,7 @@ public class ServerGatewayManagementAssertionTest {
     @Test
     public void testPolicyImport() throws Exception {
         final String message =
-                "<env:Envelope xmlns:env=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns:wxf=\"http://schemas.xmlsoap.org/ws/2004/09/transfer\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"><env:Header><wsa:Action env:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/policies/ImportPolicy</wsa:Action><wsa:ReplyTo><wsa:Address env:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo><wsa:MessageID env:mustUnderstand=\"true\">uuid:d0f59849-9eaa-4027-8b2e-f5ec2dfc1f9d</wsa:MessageID><wsa:To env:mustUnderstand=\"true\">http://localhost:8080/wsman</wsa:To><wsman:ResourceURI>http://ns.l7tech.com/2010/04/gateway-management/policies</wsman:ResourceURI><wsman:OperationTimeout>P0Y0M0DT0H5M0.000S</wsman:OperationTimeout><wsman:SelectorSet><wsman:Selector Name=\"id\">1</wsman:Selector></wsman:SelectorSet></env:Header><env:Body><PolicyImportContext xmlns=\"http://ns.l7tech.com/2010/04/gateway-management\"><Properties/><Resource type=\"policyexport\">&lt;?xml version=\"1.0\" encoding=\"UTF-8\"?&gt;\n" +
+                "<env:Envelope xmlns:env=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns:wxf=\"http://schemas.xmlsoap.org/ws/2004/09/transfer\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"><env:Header><wsa:Action env:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/policies/ImportPolicy</wsa:Action><wsa:ReplyTo><wsa:Address env:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo><wsa:MessageID env:mustUnderstand=\"true\">uuid:d0f59849-9eaa-4027-8b2e-f5ec2dfc1f9d</wsa:MessageID><wsa:To env:mustUnderstand=\"true\">http://localhost:8080/wsman</wsa:To><wsman:ResourceURI>http://ns.l7tech.com/2010/04/gateway-management/policies</wsman:ResourceURI><wsman:OperationTimeout>P0Y0M0DT0H5M0.000S</wsman:OperationTimeout><wsman:SelectorSet><wsman:Selector Name=\"id\">"+new Goid(0,1)+"</wsman:Selector></wsman:SelectorSet></env:Header><env:Body><PolicyImportContext xmlns=\"http://ns.l7tech.com/2010/04/gateway-management\"><Properties/><Resource type=\"policyexport\">&lt;?xml version=\"1.0\" encoding=\"UTF-8\"?&gt;\n" +
                         "&lt;exp:Export Version=\"3.0\"\n" +
                         "    xmlns:L7p=\"http://www.layer7tech.com/ws/policy\"\n" +
                         "    xmlns:exp=\"http://www.layer7tech.com/ws/policy/export\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\"&gt;\n" +
@@ -2241,7 +2241,7 @@ public class ServerGatewayManagementAssertionTest {
     @Test
     public void testPolicyImportWithReferences() throws Exception {
         final String message =
-                "<env:Envelope xmlns:env=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns:wxf=\"http://schemas.xmlsoap.org/ws/2004/09/transfer\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"><env:Header><wsa:Action env:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/policies/ImportPolicy</wsa:Action><wsa:ReplyTo><wsa:Address env:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo><wsa:MessageID env:mustUnderstand=\"true\">uuid:d0f59849-9eaa-4027-8b2e-f5ec2dfc1f9d</wsa:MessageID><wsa:To env:mustUnderstand=\"true\">http://localhost:8080/wsman</wsa:To><wsman:ResourceURI>http://ns.l7tech.com/2010/04/gateway-management/policies</wsman:ResourceURI><wsman:OperationTimeout>P0Y0M0DT0H5M0.000S</wsman:OperationTimeout><wsman:SelectorSet><wsman:Selector Name=\"id\">1</wsman:Selector></wsman:SelectorSet></env:Header><env:Body><PolicyImportContext xmlns=\"http://ns.l7tech.com/2010/04/gateway-management\"><Properties/><Resource type=\"policyexport\">&lt;?xml version=\"1.0\" encoding=\"UTF-8\"?&gt;\n" +
+                "<env:Envelope xmlns:env=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns:wxf=\"http://schemas.xmlsoap.org/ws/2004/09/transfer\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"><env:Header><wsa:Action env:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/policies/ImportPolicy</wsa:Action><wsa:ReplyTo><wsa:Address env:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo><wsa:MessageID env:mustUnderstand=\"true\">uuid:d0f59849-9eaa-4027-8b2e-f5ec2dfc1f9d</wsa:MessageID><wsa:To env:mustUnderstand=\"true\">http://localhost:8080/wsman</wsa:To><wsman:ResourceURI>http://ns.l7tech.com/2010/04/gateway-management/policies</wsman:ResourceURI><wsman:OperationTimeout>P0Y0M0DT0H5M0.000S</wsman:OperationTimeout><wsman:SelectorSet><wsman:Selector Name=\"id\">"+new Goid(0,1)+"</wsman:Selector></wsman:SelectorSet></env:Header><env:Body><PolicyImportContext xmlns=\"http://ns.l7tech.com/2010/04/gateway-management\"><Properties/><Resource type=\"policyexport\">&lt;?xml version=\"1.0\" encoding=\"UTF-8\"?&gt;\n" +
                         "&lt;exp:Export Version=\"3.0\"\n" +
                         "    xmlns:L7p=\"http://www.layer7tech.com/ws/policy\"\n" +
                         "    xmlns:exp=\"http://www.layer7tech.com/ws/policy/export\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\"&gt;\n" +
@@ -2360,7 +2360,7 @@ public class ServerGatewayManagementAssertionTest {
     @Test
     public void testPolicyImportWithInstructions() throws Exception {
         final String message =
-                "<env:Envelope xmlns:env=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns:wxf=\"http://schemas.xmlsoap.org/ws/2004/09/transfer\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"><env:Header><wsa:Action env:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/policies/ImportPolicy</wsa:Action><wsa:ReplyTo><wsa:Address env:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo><wsa:MessageID env:mustUnderstand=\"true\">uuid:d0f59849-9eaa-4027-8b2e-f5ec2dfc1f9d</wsa:MessageID><wsa:To env:mustUnderstand=\"true\">http://localhost:8080/wsman</wsa:To><wsman:ResourceURI>http://ns.l7tech.com/2010/04/gateway-management/policies</wsman:ResourceURI><wsman:OperationTimeout>P0Y0M0DT0H5M0.000S</wsman:OperationTimeout><wsman:SelectorSet><wsman:Selector Name=\"id\">1</wsman:Selector></wsman:SelectorSet></env:Header><env:Body><PolicyImportContext xmlns=\"http://ns.l7tech.com/2010/04/gateway-management\"><Properties/><Resource type=\"policyexport\">&lt;?xml version=\"1.0\" encoding=\"UTF-8\"?&gt;\n" +
+                "<env:Envelope xmlns:env=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns:wxf=\"http://schemas.xmlsoap.org/ws/2004/09/transfer\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"><env:Header><wsa:Action env:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/policies/ImportPolicy</wsa:Action><wsa:ReplyTo><wsa:Address env:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo><wsa:MessageID env:mustUnderstand=\"true\">uuid:d0f59849-9eaa-4027-8b2e-f5ec2dfc1f9d</wsa:MessageID><wsa:To env:mustUnderstand=\"true\">http://localhost:8080/wsman</wsa:To><wsman:ResourceURI>http://ns.l7tech.com/2010/04/gateway-management/policies</wsman:ResourceURI><wsman:OperationTimeout>P0Y0M0DT0H5M0.000S</wsman:OperationTimeout><wsman:SelectorSet><wsman:Selector Name=\"id\">"+new Goid(0,1)+"</wsman:Selector></wsman:SelectorSet></env:Header><env:Body><PolicyImportContext xmlns=\"http://ns.l7tech.com/2010/04/gateway-management\"><Properties/><Resource type=\"policyexport\">&lt;?xml version=\"1.0\" encoding=\"UTF-8\"?&gt;\n" +
                         "&lt;exp:Export Version=\"3.0\"\n" +
                         "    xmlns:L7p=\"http://www.layer7tech.com/ws/policy\"\n" +
                         "    xmlns:exp=\"http://www.layer7tech.com/ws/policy/export\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\"&gt;\n" +
@@ -2479,7 +2479,7 @@ public class ServerGatewayManagementAssertionTest {
     @Test
     public void testPolicyValidate() throws Exception {
         final String message =
-                "<env:Envelope xmlns:env=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns:wxf=\"http://schemas.xmlsoap.org/ws/2004/09/transfer\"><env:Header><wsa:Action env:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/policies/ValidatePolicy</wsa:Action><wsa:ReplyTo><wsa:Address env:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo><wsa:MessageID env:mustUnderstand=\"true\">uuid:61dcea28-f545-4b0f-9436-0e8b59f4370d</wsa:MessageID><wsa:To env:mustUnderstand=\"true\">http://localhost:8080/wsman</wsa:To><wsman:ResourceURI>http://ns.l7tech.com/2010/04/gateway-management/policies</wsman:ResourceURI><wsman:OperationTimeout>P0Y0M0DT0H5M0.000S</wsman:OperationTimeout><wsman:SelectorSet><wsman:Selector Name=\"id\">1</wsman:Selector></wsman:SelectorSet></env:Header><env:Body/></env:Envelope>";
+                "<env:Envelope xmlns:env=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns:wxf=\"http://schemas.xmlsoap.org/ws/2004/09/transfer\"><env:Header><wsa:Action env:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/policies/ValidatePolicy</wsa:Action><wsa:ReplyTo><wsa:Address env:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo><wsa:MessageID env:mustUnderstand=\"true\">uuid:61dcea28-f545-4b0f-9436-0e8b59f4370d</wsa:MessageID><wsa:To env:mustUnderstand=\"true\">http://localhost:8080/wsman</wsa:To><wsman:ResourceURI>http://ns.l7tech.com/2010/04/gateway-management/policies</wsman:ResourceURI><wsman:OperationTimeout>P0Y0M0DT0H5M0.000S</wsman:OperationTimeout><wsman:SelectorSet><wsman:Selector Name=\"id\">"+new Goid(0,1)+"</wsman:Selector></wsman:SelectorSet></env:Header><env:Body/></env:Envelope>";
 
         {
             policyValidator.setErrors( Collections.<PolicyValidatorResult.Error>emptyList() );
@@ -2539,7 +2539,7 @@ public class ServerGatewayManagementAssertionTest {
     @Test
     public void testMoveFolder() throws Exception {
         // move from "Test Folder" to the root
-        String message = "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns:n1=\"http://ns.l7tech.com/2010/04/gateway-management\"><s:Header><wsa:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Put</wsa:Action><wsa:To s:mustUnderstand=\"true\">http://127.0.0.1:8080/wsman</wsa:To><wsman:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/folders</wsman:ResourceURI><wsa:MessageID s:mustUnderstand=\"true\">uuid:afad2993-7d39-1d39-8002-481688002100</wsa:MessageID><wsa:ReplyTo><wsa:Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo><wsman:SelectorSet><wsman:Selector Name=\"id\">2</wsman:Selector></wsman:SelectorSet><wsman:RequestEPR/></s:Header><s:Body> <n1:Folder xmlns:n1=\"http://ns.l7tech.com/2010/04/gateway-management\" folderId=\"-5002\" id=\"2\" version=\"0\"><n1:Name>Nested Test Folder</n1:Name></n1:Folder> </s:Body></s:Envelope>";
+        String message = "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns:n1=\"http://ns.l7tech.com/2010/04/gateway-management\"><s:Header><wsa:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Put</wsa:Action><wsa:To s:mustUnderstand=\"true\">http://127.0.0.1:8080/wsman</wsa:To><wsman:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/folders</wsman:ResourceURI><wsa:MessageID s:mustUnderstand=\"true\">uuid:afad2993-7d39-1d39-8002-481688002100</wsa:MessageID><wsa:ReplyTo><wsa:Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo><wsman:SelectorSet><wsman:Selector Name=\"id\">"+new Goid(0,2)+"</wsman:Selector></wsman:SelectorSet><wsman:RequestEPR/></s:Header><s:Body> <n1:Folder xmlns:n1=\"http://ns.l7tech.com/2010/04/gateway-management\" folderId=\""+new Goid(0,-5002)+"\" id=\""+new Goid(0,2)+"\" version=\"0\"><n1:Name>Nested Test Folder</n1:Name></n1:Folder> </s:Body></s:Envelope>";
 
         final Document result = processRequest( "http://schemas.xmlsoap.org/ws/2004/09/transfer/Put", message );
 
@@ -2547,19 +2547,19 @@ public class ServerGatewayManagementAssertionTest {
         final Element folder = XmlUtil.findExactlyOneChildElementByName(soapBody, NS_GATEWAY_MANAGEMENT, "Folder");
         final Element name = XmlUtil.findExactlyOneChildElementByName(folder, NS_GATEWAY_MANAGEMENT, "Name");
 
-        assertEquals("FolderId", "-5002", folder.getAttributeNS( null, "folderId" ));
+        assertEquals("FolderId", new Goid(0,-5002).toHexString(), folder.getAttributeNS( null, "folderId" ));
         assertEquals("Name", "Nested Test Folder", XmlUtil.getTextValue(name));
     }
 
     @Test
     public void testMovePolicy() throws Exception {
         // move policy from the root to "Test Folder"
-        String message = "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\"><s:Header><wsa:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Put</wsa:Action><wsa:To s:mustUnderstand=\"true\">http://127.0.0.1:8080/wsman</wsa:To><wsman:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/policies</wsman:ResourceURI><wsa:MessageID s:mustUnderstand=\"true\">uuid:afad2993-7d39-1d39-8002-481688002100</wsa:MessageID><wsa:ReplyTo><wsa:Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo><wsman:SelectorSet><wsman:Selector Name=\"id\">2</wsman:Selector></wsman:SelectorSet><wsman:RequestEPR/></s:Header><s:Body>" +
+        String message = "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\"><s:Header><wsa:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Put</wsa:Action><wsa:To s:mustUnderstand=\"true\">http://127.0.0.1:8080/wsman</wsa:To><wsman:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/policies</wsman:ResourceURI><wsa:MessageID s:mustUnderstand=\"true\">uuid:afad2993-7d39-1d39-8002-481688002100</wsa:MessageID><wsa:ReplyTo><wsa:Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo><wsman:SelectorSet><wsman:Selector Name=\"id\">"+new Goid(0,2)+"</wsman:Selector></wsman:SelectorSet><wsman:RequestEPR/></s:Header><s:Body>" +
                 "<l7:Policy guid=\"c81e728d-9d4c-3f63-af06-7f89cc14862c\"\n" +
-                "    id=\"2\" version=\"0\">\n" +
+                "    id=\""+new Goid(0,2)+"\" version=\"0\">\n" +
                 "    <l7:PolicyDetail\n" +
                 "        guid=\"c81e728d-9d4c-3f63-af06-7f89cc14862c\"\n" +
-                "        id=\"2\" folderId=\"1\" version=\"0\">\n" +
+                "        id=\""+new Goid(0,2)+"\" folderId=\""+new Goid(0,1)+"\" version=\"0\">\n" +
                 "        <l7:Name>Test Policy For Move</l7:Name>\n" +
                 "        <l7:PolicyType>Include</l7:PolicyType>\n" +
                 "        <l7:Properties>\n" +
@@ -2586,19 +2586,19 @@ public class ServerGatewayManagementAssertionTest {
         final Element policyDetail = XmlUtil.findExactlyOneChildElementByName(policy, NS_GATEWAY_MANAGEMENT, "PolicyDetail");
         final Element policyDetailName = XmlUtil.findExactlyOneChildElementByName(policyDetail, NS_GATEWAY_MANAGEMENT, "Name");
 
-        assertEquals("Policy id", "2", policy.getAttribute( "id" ));
+        assertEquals("Policy id", new Goid(0,2).toHexString(), policy.getAttribute( "id" ));
         //assertEquals("Policy version", "0", policy.getAttribute( "version" ));
-        assertEquals("Policy detail id", "2", policyDetail.getAttribute( "id" ));
+        assertEquals("Policy detail id", new Goid(0,2).toHexString(), policyDetail.getAttribute( "id" ));
         //assertEquals("Policy detail version", "0", policyDetail.getAttribute( "version" ));
         assertEquals("Policy detail name", "Test Policy For Move", XmlUtil.getTextValue(policyDetailName));
-        assertEquals("Policy detail folder", "1", policyDetail.getAttributeNS( null, "folderId" ));
+        assertEquals("Policy detail folder", new Goid(0,1).toHexString(), policyDetail.getAttributeNS( null, "folderId" ));
     }
 
     @Test
     public void testMoveService() throws Exception {
-        String message = "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\"><s:Header><wsa:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Put</wsa:Action><wsa:To s:mustUnderstand=\"true\">http://127.0.0.1:8080/wsman</wsa:To><wsman:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/services</wsman:ResourceURI><wsa:MessageID s:mustUnderstand=\"true\">uuid:afad2993-7d39-1d39-8002-481688002100</wsa:MessageID><wsa:ReplyTo><wsa:Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo><wsman:SelectorSet><wsman:Selector Name=\"id\">1</wsman:Selector></wsman:SelectorSet><wsman:RequestEPR/></s:Header><s:Body>" +
-                "<l7:Service id=\"1\" version=\"1\">\n" +
-                "     <l7:ServiceDetail id=\"1\" folderId=\"1\" version=\"1\">\n" +
+        String message = "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\"><s:Header><wsa:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Put</wsa:Action><wsa:To s:mustUnderstand=\"true\">http://127.0.0.1:8080/wsman</wsa:To><wsman:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/services</wsman:ResourceURI><wsa:MessageID s:mustUnderstand=\"true\">uuid:afad2993-7d39-1d39-8002-481688002100</wsa:MessageID><wsa:ReplyTo><wsa:Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo><wsman:SelectorSet><wsman:Selector Name=\"id\">"+new Goid(0,1)+"</wsman:Selector></wsman:SelectorSet><wsman:RequestEPR/></s:Header><s:Body>" +
+                "<l7:Service id=\""+new Goid(0,1)+"\" version=\"1\">\n" +
+                "     <l7:ServiceDetail id=\""+new Goid(0,1)+"\" folderId=\""+new Goid(0,1)+"\" version=\"1\">\n" +
                 "         <l7:Name>Test Service 1</l7:Name>\n" +
                 "         <l7:Enabled>true</l7:Enabled>\n" +
                 "         <l7:ServiceMappings>\n" +
@@ -2638,18 +2638,18 @@ public class ServerGatewayManagementAssertionTest {
         final Element serviceDetail = XmlUtil.findExactlyOneChildElementByName(service, NS_GATEWAY_MANAGEMENT, "ServiceDetail");
         final Element serviceDetailName = XmlUtil.findExactlyOneChildElementByName(serviceDetail, NS_GATEWAY_MANAGEMENT, "Name");
 
-        assertEquals("Service id", "1", service.getAttribute( "id" ));
+        assertEquals("Service id", new Goid(0,1).toHexString(), service.getAttribute( "id" ));
         //assertEquals("Service version", "1", service.getAttribute( "version" ));
-        assertEquals("Service detail id", "1", serviceDetail.getAttribute( "id" ));
+        assertEquals("Service detail id", new Goid(0,1).toHexString(), serviceDetail.getAttribute( "id" ));
         //assertEquals("Service detail version", "1", serviceDetail.getAttribute( "version" ));
         assertEquals("Service detail name", "Test Service 1", XmlUtil.getTextValue(serviceDetailName));
-        assertEquals("Service detail folder", "1", serviceDetail.getAttributeNS( null, "folderId" ));
+        assertEquals("Service detail folder", new Goid(0,1).toHexString(), serviceDetail.getAttributeNS( null, "folderId" ));
     }
 
     @Test
     public void testServicePolicyExport() throws Exception {
         final String message =
-                "<env:Envelope xmlns:env=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns:wxf=\"http://schemas.xmlsoap.org/ws/2004/09/transfer\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"><env:Header><wsa:Action env:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/services/ExportPolicy</wsa:Action><wsa:ReplyTo><wsa:Address env:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo><wsa:MessageID env:mustUnderstand=\"true\">uuid:d521f4b4-ef2a-4381-b11c-fa72eb760a99</wsa:MessageID><wsa:To env:mustUnderstand=\"true\">http://localhost:8080/wsman</wsa:To><wsman:ResourceURI>http://ns.l7tech.com/2010/04/gateway-management/services</wsman:ResourceURI><wsman:OperationTimeout>P0Y0M0DT0H5M0.000S</wsman:OperationTimeout><wsman:SelectorSet><wsman:Selector Name=\"id\">1</wsman:Selector></wsman:SelectorSet></env:Header><env:Body/></env:Envelope>";
+                "<env:Envelope xmlns:env=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns:wxf=\"http://schemas.xmlsoap.org/ws/2004/09/transfer\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"><env:Header><wsa:Action env:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/services/ExportPolicy</wsa:Action><wsa:ReplyTo><wsa:Address env:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo><wsa:MessageID env:mustUnderstand=\"true\">uuid:d521f4b4-ef2a-4381-b11c-fa72eb760a99</wsa:MessageID><wsa:To env:mustUnderstand=\"true\">http://localhost:8080/wsman</wsa:To><wsman:ResourceURI>http://ns.l7tech.com/2010/04/gateway-management/services</wsman:ResourceURI><wsman:OperationTimeout>P0Y0M0DT0H5M0.000S</wsman:OperationTimeout><wsman:SelectorSet><wsman:Selector Name=\"id\">"+new Goid(0,1)+"</wsman:Selector></wsman:SelectorSet></env:Header><env:Body/></env:Envelope>";
 
         final Document result = processRequest( "http://ns.l7tech.com/2010/04/gateway-management/services/ExportPolicy", message );
 
@@ -2664,7 +2664,7 @@ public class ServerGatewayManagementAssertionTest {
     @Test
     public void testServicePolicyImport() throws Exception {
         final String message =
-                "<env:Envelope xmlns:env=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns:wxf=\"http://schemas.xmlsoap.org/ws/2004/09/transfer\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"><env:Header><wsa:Action env:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/services/ImportPolicy</wsa:Action><wsa:ReplyTo><wsa:Address env:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo><wsa:MessageID env:mustUnderstand=\"true\">uuid:d0f59849-9eaa-4027-8b2e-f5ec2dfc1f9d</wsa:MessageID><wsa:To env:mustUnderstand=\"true\">http://localhost:8080/wsman</wsa:To><wsman:ResourceURI>http://ns.l7tech.com/2010/04/gateway-management/services</wsman:ResourceURI><wsman:OperationTimeout>P0Y0M0DT0H5M0.000S</wsman:OperationTimeout><wsman:SelectorSet><wsman:Selector Name=\"id\">1</wsman:Selector></wsman:SelectorSet></env:Header><env:Body><PolicyImportContext xmlns=\"http://ns.l7tech.com/2010/04/gateway-management\"><Properties/><Resource type=\"policyexport\">&lt;?xml version=\"1.0\" encoding=\"UTF-8\"?&gt;\n" +
+                "<env:Envelope xmlns:env=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns:wxf=\"http://schemas.xmlsoap.org/ws/2004/09/transfer\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"><env:Header><wsa:Action env:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/services/ImportPolicy</wsa:Action><wsa:ReplyTo><wsa:Address env:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo><wsa:MessageID env:mustUnderstand=\"true\">uuid:d0f59849-9eaa-4027-8b2e-f5ec2dfc1f9d</wsa:MessageID><wsa:To env:mustUnderstand=\"true\">http://localhost:8080/wsman</wsa:To><wsman:ResourceURI>http://ns.l7tech.com/2010/04/gateway-management/services</wsman:ResourceURI><wsman:OperationTimeout>P0Y0M0DT0H5M0.000S</wsman:OperationTimeout><wsman:SelectorSet><wsman:Selector Name=\"id\">"+new Goid(0,1)+"</wsman:Selector></wsman:SelectorSet></env:Header><env:Body><PolicyImportContext xmlns=\"http://ns.l7tech.com/2010/04/gateway-management\"><Properties/><Resource type=\"policyexport\">&lt;?xml version=\"1.0\" encoding=\"UTF-8\"?&gt;\n" +
                         "&lt;exp:Export Version=\"3.0\"\n" +
                         "    xmlns:L7p=\"http://www.layer7tech.com/ws/policy\"\n" +
                         "    xmlns:exp=\"http://www.layer7tech.com/ws/policy/export\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\"&gt;\n" +
@@ -2684,7 +2684,7 @@ public class ServerGatewayManagementAssertionTest {
     @Test
     public void testServicePolicyValidate() throws Exception {
         final String message =
-                "<env:Envelope xmlns:env=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns:wxf=\"http://schemas.xmlsoap.org/ws/2004/09/transfer\"><env:Header><wsa:Action env:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/services/ValidatePolicy</wsa:Action><wsa:ReplyTo><wsa:Address env:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo><wsa:MessageID env:mustUnderstand=\"true\">uuid:61dcea28-f545-4b0f-9436-0e8b59f4370d</wsa:MessageID><wsa:To env:mustUnderstand=\"true\">http://localhost:8080/wsman</wsa:To><wsman:ResourceURI>http://ns.l7tech.com/2010/04/gateway-management/services</wsman:ResourceURI><wsman:OperationTimeout>P0Y0M0DT0H5M0.000S</wsman:OperationTimeout><wsman:SelectorSet><wsman:Selector Name=\"id\">1</wsman:Selector></wsman:SelectorSet></env:Header><env:Body/></env:Envelope>";
+                "<env:Envelope xmlns:env=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns:wxf=\"http://schemas.xmlsoap.org/ws/2004/09/transfer\"><env:Header><wsa:Action env:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/services/ValidatePolicy</wsa:Action><wsa:ReplyTo><wsa:Address env:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo><wsa:MessageID env:mustUnderstand=\"true\">uuid:61dcea28-f545-4b0f-9436-0e8b59f4370d</wsa:MessageID><wsa:To env:mustUnderstand=\"true\">http://localhost:8080/wsman</wsa:To><wsman:ResourceURI>http://ns.l7tech.com/2010/04/gateway-management/services</wsman:ResourceURI><wsman:OperationTimeout>P0Y0M0DT0H5M0.000S</wsman:OperationTimeout><wsman:SelectorSet><wsman:Selector Name=\"id\">"+new Goid(0,1)+"</wsman:Selector></wsman:SelectorSet></env:Header><env:Body/></env:Envelope>";
 
         policyValidator.setErrors( Collections.<PolicyValidatorResult.Error>emptyList() );
         policyValidator.setWarnings( Collections.<PolicyValidatorResult.Warning>emptyList() );
@@ -2848,8 +2848,8 @@ public class ServerGatewayManagementAssertionTest {
     @SuppressWarnings({"serial"})
     public void init() throws Exception {
         new AssertionRegistry(); // causes type mappings to be installed for assertions
-        final Folder rootFolder = folder( -5002L, null, "Root Node");
-        final Folder testFolder = folder( 1L, rootFolder, "Test Folder");
+        final Folder rootFolder = folder( new Goid(0,-5002L), null, "Root Node");
+        final Folder testFolder = folder( new Goid(0,1L), rootFolder, "Test Folder");
         final ClusterPropertyManager clusterPropertyManager = new MockClusterPropertyManager(
                 prop( new Goid(0,1), "testProp1", "testValue1"),
                 prop( new Goid(0,2), "testProp2", "testValue2"),
@@ -2869,7 +2869,7 @@ public class ServerGatewayManagementAssertionTest {
         beanFactory.addBean( "folderManager", new FolderManagerStub(
                 rootFolder,
                 testFolder,
-                folder( 2L, testFolder, "Nested Test Folder") ) );
+                folder( new Goid(0,2L), testFolder, "Nested Test Folder") ) );
         beanFactory.addBean( "identityProviderConfigManager", new TestIdentityProviderConfigManager(
                 provider( -2L, IdentityProviderType.INTERNAL, "Internal Identity Provider"),
                             provider( -3L, IdentityProviderType.LDAP, "LDAP", "userLookupByCertMode", "CERT")));
@@ -2884,18 +2884,18 @@ public class ServerGatewayManagementAssertionTest {
                 connection( new Goid(0,2), "Test Connection") ) );
         beanFactory.addBean( "ssgActiveConnectorManager", new SsgActiveConnectorManagerStub() );
         beanFactory.addBean( "policyExporterImporterManager", new PolicyExporterImporterManagerStub() );
-        final Policy testPolicy1 = policy(1L, PolicyType.INCLUDE_FRAGMENT, "Test Policy", true, POLICY);
+        final Policy testPolicy1 = policy(new Goid(0,1L), PolicyType.INCLUDE_FRAGMENT, "Test Policy", true, POLICY);
         beanFactory.addBean( "policyManager",  new PolicyManagerStub(
                 testPolicy1,
-                policy( 2L, PolicyType.INCLUDE_FRAGMENT, "Test Policy For Move", true, POLICY) ));
+                policy( new Goid(0,2L), PolicyType.INCLUDE_FRAGMENT, "Test Policy For Move", true, POLICY) ));
         beanFactory.addBean( "ssgKeyStoreManager", new SsgKeyStoreManagerStub( new SsgKeyFinderStub( Arrays.asList(
                 key( 0L, "bob", TestDocuments.getWssInteropBobCert(), TestDocuments.getWssInteropBobKey()) ) )) );
         beanFactory.addBean( "rbacServices", new RbacServicesStub() );
         beanFactory.addBean( "securityFilter", new RbacServicesStub() );
         beanFactory.addBean( "serviceDocumentManager", new ServiceDocumentManagerStub() );
         beanFactory.addBean( "serviceManager", new MockServiceManager(
-                service( 1L, "Test Service 1", false, false, null, null),
-                service( 2L, "Test Service 2", false, true, "http://localhost:8080/test.wsdl", WSDL) ));
+                service( new Goid(0,1L), "Test Service 1", false, false, null, null),
+                service( new Goid(0,2L), "Test Service 2", false, true, "http://localhost:8080/test.wsdl", WSDL) ));
         beanFactory.addBean( "policyValidator", policyValidator );
         beanFactory.addBean( "serviceWsdlUpdateChecker", new ServiceWsdlUpdateChecker(null, null){
             @Override
@@ -2924,9 +2924,9 @@ public class ServerGatewayManagementAssertionTest {
         sftpMap.put(SsgActiveConnector.PROPERTIES_KEY_SFTP_SECURE_PASSWORD_OID,"1234");
 
         beanFactory.addBean( "ssgActiveConnectorManager", new SsgActiveConnectorManagerStub(
-                activeConnector( new Goid(0,1L), "Test MQ Config 1", SsgActiveConnector.ACTIVE_CONNECTOR_TYPE_MQ_NATIVE,1234L, mqMap),
-                activeConnector( new Goid(0,2L), "Test SFTP Config 1", SsgActiveConnector.ACTIVE_CONNECTOR_TYPE_SFTP,4567L, sftpMap),
-                activeConnector( new Goid(0,3L), "Test SFTP Config Bad", "SFTP1", 1234L,sftpMap)
+                activeConnector( new Goid(0,1L), "Test MQ Config 1", SsgActiveConnector.ACTIVE_CONNECTOR_TYPE_MQ_NATIVE,new Goid(0,1234L), mqMap),
+                activeConnector( new Goid(0,2L), "Test SFTP Config 1", SsgActiveConnector.ACTIVE_CONNECTOR_TYPE_SFTP,new Goid(0,4567L), sftpMap),
+                activeConnector( new Goid(0,3L), "Test SFTP Config Bad", "SFTP1", new Goid(0,1234L),sftpMap)
         ));
 
         final GenericEntity genericEntity = new GenericEntity();
@@ -2996,9 +2996,9 @@ public class ServerGatewayManagementAssertionTest {
         return prop;
     }
 
-    private static Folder folder( final long oid, final Folder parent, final String name ) {
+    private static Folder folder( final Goid goid, final Folder parent, final String name ) {
         final Folder folder = new Folder( name, parent );
-        folder.setOid( oid );
+        folder.setGoid(goid);
         return folder;
     }
 
@@ -3057,10 +3057,10 @@ public class ServerGatewayManagementAssertionTest {
         return endpoint;
     }
 
-    private static Policy policy( final long oid, final PolicyType type, final String name, final boolean soap, final String policyXml ) {
+    private static Policy policy( final Goid goid, final PolicyType type, final String name, final boolean soap, final String policyXml ) {
         final Policy policy = new Policy( type, name, policyXml, soap);
-        policy.setOid( oid );
-        policy.setGuid( UUID.nameUUIDFromBytes( Long.toString(oid).getBytes() ).toString() );
+        policy.setGoid(goid);
+        policy.setGuid( UUID.nameUUIDFromBytes( Goid.toString(goid).getBytes() ).toString() );
         return policy;
     }
 
@@ -3080,11 +3080,11 @@ public class ServerGatewayManagementAssertionTest {
         return entry;
     }
 
-    private static PublishedService service( final long oid, final String name, final boolean disabled, final boolean soap, final String wsdlUrl, final String wsdlXml ) {
+    private static PublishedService service( final Goid goid, final String name, final boolean disabled, final boolean soap, final String wsdlUrl, final String wsdlXml ) {
         final PublishedService service = new PublishedService();
-        service.setOid( oid );
+        service.setGoid(goid);
         service.setName( name );
-        service.getPolicy().setName( "Policy for " + name + " (#" + oid + ")" );
+        service.getPolicy().setName( "Policy for " + name + " (#" + goid + ")" );
         service.getPolicy().setGuid( UUID.randomUUID().toString() );
         service.getPolicy().setXml( POLICY );
         service.setDisabled( disabled );
@@ -3101,13 +3101,13 @@ public class ServerGatewayManagementAssertionTest {
     private static SsgActiveConnector activeConnector( final Goid goid,
                                                        final String name,
                                                        final String type,
-                                                       final Long hardWiredServiceOid,
+                                                       final Goid hardWiredServiceGoid,
                                                        final Map<String,String> properties ){
         final SsgActiveConnector connector = new SsgActiveConnector();
         connector.setGoid(goid);
         connector.setName(name);
         connector.setType(type);
-        connector.setHardwiredServiceOid(hardWiredServiceOid);
+        connector.setHardwiredServiceGoid(hardWiredServiceGoid);
         for(String key: properties.keySet()){
             connector.setProperty(key,properties.get(key));
         }
@@ -3299,6 +3299,11 @@ public class ServerGatewayManagementAssertionTest {
 
         @Override
         public Collection<PublishedService> findByRoutingUri(String routingUri) throws FindException {
+            throw new FindException("Not implemented");
+        }
+
+        @Override
+        public PublishedService findByOldOid(long oid) throws FindException {
             throw new FindException("Not implemented");
         }
     }

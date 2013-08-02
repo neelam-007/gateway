@@ -38,7 +38,7 @@ public class SecurityZoneManagerImplTest {
         zone.setName("Test");
         zone.setGoid(new Goid(0,1234L));
         rootFolder = new Folder("RootFolder", null);
-        rootFolder.setOid(1111L);
+        rootFolder.setGoid(new Goid(0,1111L));
         when(folderManager.findRootFolder()).thenReturn(rootFolder);
     }
 

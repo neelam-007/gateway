@@ -6,6 +6,7 @@ import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.ObjectModelException;
 
 import javax.swing.*;
@@ -66,7 +67,7 @@ public final class DeleteServiceAction extends DeleteEntityNodeAction<ServiceNod
         if(!(userObj instanceof ServiceHeader)) return false;
         try{
             ServiceHeader sH = (ServiceHeader) userObj;
-            serviceManager.deletePublishedService(Long.toString(sH.getOid()));
+            serviceManager.deletePublishedService(Goid.toString(sH.getGoid()));
             return true;
         }
         catch (ObjectModelException ome) {

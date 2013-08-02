@@ -19,21 +19,21 @@ import java.util.Collection;
  *
  * @author darmstrong
  */
-public interface AliasManager<AT extends Alias<ET>, ET extends PersistentEntity, HT extends OrganizationHeader>
+public interface AliasManager<AT extends Alias<ET>, ET extends GoidEntity, HT extends OrganizationHeader>
         extends FolderedEntityManager<AT, AliasHeader<ET>>
 {
 
     /**
      * Find the alias entity by specifying the read entities oid and the folder the alias is related to
      * This is all that is needed to find an alias.
-     * @param entityOid The oid of the original entity
-     * @param folderOid The oid of the folder the alias is related to
+     * @param entityGoid The goid of the original entity
+     * @param folderGoid The goid of the folder the alias is related to
      * @return The actual alias with correct type, or null if not found
      * @throws FindException
      */
-    public AT findAliasByEntityAndFolder(Long entityOid, Long folderOid) throws FindException;
+    public AT findAliasByEntityAndFolder(Goid entityGoid, Goid folderGoid) throws FindException;
 
-    public Collection<AT> findAllAliasesForEntity(Long entityOid) throws FindException;
+    public Collection<AT> findAllAliasesForEntity(Goid entityGoid) throws FindException;
 
     /**
      * Both Services and Policies have the same requirement for a set of entities returned from a findAll()

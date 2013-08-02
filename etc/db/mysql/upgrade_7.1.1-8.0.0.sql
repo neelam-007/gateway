@@ -31,16 +31,22 @@ begin
 end//
 delimiter ;
 
+DROP FUNCTION IF EXISTS goidToString;
+CREATE FUNCTION goidToString(goid binary(16)) RETURNS CHAR(32) DETERMINISTIC
+RETURN lower(hex(goid));
+
 -- The dropForeignKey function will drop a foreign key constraint on a table where the constraint does not have a name.
 -- The first parameter is the table name that has the constraint. The second parameter is the table that the constraint
--- references. If there are 2 different foreign key references to the same table an error will be returned.
+-- references. If there are 2 different foreign key references to the same table an error will be returned. This only
+-- works for foreign keys that are on primary keys of the foreign table
 DROP PROCEDURE IF EXISTS dropForeignKey;
 delimiter //
 create procedure dropForeignKey(in tableName varchar(255), in referenceTableName varchar(255))
 begin
+    set @constraintName = 'PRIMARY';
 	set @ssgSchema = SCHEMA();
 	SELECT count(*) into @constraint_count FROM information_schema.REFERENTIAL_CONSTRAINTS
-	WHERE constraint_schema = @ssgSchema AND table_name = tableName and referenced_table_name=referenceTableName;
+	WHERE constraint_schema = @ssgSchema AND table_name = tableName and referenced_table_name=referenceTableName and unique_constraint_name=@constraintName;
     if @constraint_count > 1 then set @error_message = concat('\'',tableName, '\' table has more then one foreign key references to \'', referenceTableName,'\''); SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = @error_message; end if;
 	SELECT constraint_name into @constraint_name FROM information_schema.REFERENTIAL_CONSTRAINTS
 	WHERE constraint_schema = @ssgSchema AND table_name = tableName and referenced_table_name=referenceTableName;
@@ -121,6 +127,9 @@ CREATE TABLE siteminder_configuration_property (
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
 
+alter table rbac_role add column entity_goid BINARY(16) after entity_oid;
+CREATE INDEX i_rbacrole_egoid ON rbac_role (entity_goid);
+
 -- create new RBAC role for SiteMinder Configuration --
 INSERT INTO rbac_role (objectid, version, name, tag, entity_type, entity_oid, description, user_created) VALUES (-1500,0,'Manage SiteMinder Configuration', null, 'SITEMINDER_CONFIGURATION', null,'Users assigned to the {0} role have the ability to read, create, update and delete SiteMinder configuration.',0);
 INSERT INTO rbac_permission VALUES (-1501,0,-1500,'READ',NULL,'SITEMINDER_CONFIGURATION');
@@ -128,10 +137,6 @@ INSERT INTO rbac_permission VALUES (-1502,0,-1500,'CREATE',NULL,'SITEMINDER_CONF
 INSERT INTO rbac_permission VALUES (-1503,0,-1500,'UPDATE',NULL,'SITEMINDER_CONFIGURATION');
 INSERT INTO rbac_permission VALUES (-1504,0,-1500,'DELETE',NULL,'SITEMINDER_CONFIGURATION');
 INSERT INTO rbac_permission VALUES (-1505,0,-1500,'READ',NULL,'SECURE_PASSWORD');
-
-
-alter table rbac_role add column entity_goid BINARY(16);
-CREATE INDEX i_rbacrole_egoid ON rbac_role (entity_goid);
 
 alter table policy add column security_zone_goid BINARY(16);
 alter table policy add FOREIGN KEY (security_zone_goid) REFERENCES security_zone (goid) ON DELETE SET NULL;
@@ -250,7 +255,11 @@ CREATE TABLE custom_key_value_store (
   UNIQUE KEY (name)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
+<<<<<<< .mine
+INSERT INTO rbac_role (objectid, version, name, tag, entity_type, entity_oid, entity_goid, description, user_created) VALUES (-1450,0,'Manage Custom Key Value Store', null,'CUSTOM_KEY_VALUE_STORE',null,null, 'Users assigned to the {0} role have the ability to read, create, update, and delete key values from custom key value store.',0);
+=======
 INSERT INTO rbac_role(objectid, version, name, tag, entity_type, entity_oid, entity_goid, description, user_created) VALUES (-1450,0,'Manage Custom Key Value Store', null,'CUSTOM_KEY_VALUE_STORE',null,null, 'Users assigned to the {0} role have the ability to read, create, update, and delete key values from custom key value store.',0);
+>>>>>>> .r37045
 INSERT INTO rbac_permission VALUES (-1451,0,-1450,'CREATE',null,'CUSTOM_KEY_VALUE_STORE');
 INSERT INTO rbac_permission VALUES (-1452,0,-1450,'READ',null,'CUSTOM_KEY_VALUE_STORE');
 INSERT INTO rbac_permission VALUES (-1453,0,-1450,'UPDATE',null,'CUSTOM_KEY_VALUE_STORE');
@@ -269,7 +278,7 @@ set @jdbc_prefix=#RANDOM_LONG_NOT_RESERVED#;
 update jdbc_connection set goid = toGoid(@jdbc_prefix,objectid_backup);
 ALTER TABLE jdbc_connection DROP COLUMN objectid_backup;
 update rbac_role set entity_goid = toGoid(@jdbc_prefix,entity_oid) where entity_oid is not null and entity_type='JDBC_CONNECTION';
-update rbac_predicate_oid oid1 left join rbac_predicate on rbac_predicate.objectid = oid1.objectid left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid set oid1.entity_id = hex(toGoid(@jdbc_prefix,oid1.entity_id)) where rbac_permission.entity_type = 'JDBC_CONNECTION';
+update rbac_predicate_oid oid1 left join rbac_predicate on rbac_predicate.objectid = oid1.objectid left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid set oid1.entity_id = goidToString(toGoid(@jdbc_prefix,oid1.entity_id)) where rbac_permission.entity_type = 'JDBC_CONNECTION';
 
 -- MetricsBin, MetricsBinDetail
 call dropForeignKey('service_metrics_details','service_metrics');
@@ -291,7 +300,7 @@ ALTER TABLE service_metrics_details DROP COLUMN service_metrics_oid_backup;
 ALTER TABLE service_metrics_details  ADD FOREIGN KEY (service_metrics_goid) REFERENCES service_metrics (goid) ON DELETE CASCADE;
 
 update rbac_role set entity_goid = toGoid(@metrics_prefix,entity_oid) where entity_oid is not null and entity_type='METRICS_BIN';
-update rbac_predicate_oid oid1 left join rbac_predicate on rbac_predicate.objectid = oid1.objectid left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid set oid1.entity_id = hex(toGoid(@metrics_prefix,oid1.entity_id)) where rbac_permission.entity_type = 'METRICS_BIN';
+update rbac_predicate_oid oid1 left join rbac_predicate on rbac_predicate.objectid = oid1.objectid left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid set oid1.entity_id = goidToString(toGoid(@metrics_prefix,oid1.entity_id)) where rbac_permission.entity_type = 'METRICS_BIN';
 
 -- Logon info
 ALTER TABLE logon_info ADD COLUMN objectid_backup BIGINT(20);
@@ -312,7 +321,7 @@ update sample_messages set goid = toGoid(@sample_messages_prefix,objectid_backup
 ALTER TABLE sample_messages DROP COLUMN objectid_backup;
 
 update rbac_role set entity_goid = toGoid(@sample_messages_prefix,entity_oid) where entity_oid is not null and entity_type='SAMPLE_MESSAGE';
-update rbac_predicate_oid oid1 left join rbac_predicate on rbac_predicate.objectid = oid1.objectid left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid set oid1.entity_id = hex(toGoid(@sample_messages_prefix,oid1.entity_id)) where rbac_permission.entity_type = 'SAMPLE_MESSAGE';
+update rbac_predicate_oid oid1 left join rbac_predicate on rbac_predicate.objectid = oid1.objectid left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid set oid1.entity_id = goidToString(toGoid(@sample_messages_prefix,oid1.entity_id)) where rbac_permission.entity_type = 'SAMPLE_MESSAGE';
 
 -- ClusterProperty
 ALTER TABLE cluster_properties ADD COLUMN objectid_backup BIGINT(20);
@@ -325,7 +334,7 @@ update cluster_properties set goid = toGoid(0,objectid_backup) where propkey = '
 update cluster_properties set goid = toGoid(0,objectid_backup) where propkey like 'upgrade.task.%';
 ALTER TABLE cluster_properties DROP COLUMN objectid_backup;
 update rbac_role set entity_goid = toGoid(@cluster_properties_prefix,entity_oid) where entity_oid is not null and entity_type='CLUSTER_PROPERTY';
-update rbac_predicate_oid oid1 left join rbac_predicate on rbac_predicate.objectid = oid1.objectid left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid set oid1.entity_id = hex(toGoid(@cluster_properties_prefix,oid1.entity_id)) where rbac_permission.entity_type = 'CLUSTER_PROPERTY';
+update rbac_predicate_oid oid1 left join rbac_predicate on rbac_predicate.objectid = oid1.objectid left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid set oid1.entity_id = goidToString(toGoid(@cluster_properties_prefix,oid1.entity_id)) where rbac_permission.entity_type = 'CLUSTER_PROPERTY';
 
 -- EmailListener
 ALTER TABLE email_listener ADD COLUMN objectid_backup BIGINT(20);
@@ -351,7 +360,7 @@ UPDATE email_listener_state SET goid = toGoid(@emailState_prefix,objectid_backup
 ALTER TABLE email_listener_state DROP COLUMN objectid_backup;
                 
 update rbac_role set entity_goid = toGoid(@email_prefix,entity_oid) where entity_oid is not null and entity_type='EMAIL_LISTENER';
-update rbac_predicate_oid oid1 left join rbac_predicate on rbac_predicate.objectid = oid1.objectid left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid set oid1.entity_id = hex(toGoid(@email_prefix,oid1.entity_id)) where rbac_permission.entity_type = 'EMAIL_LISTENER';
+update rbac_predicate_oid oid1 left join rbac_predicate on rbac_predicate.objectid = oid1.objectid left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid set oid1.entity_id = goidToString(toGoid(@email_prefix,oid1.entity_id)) where rbac_permission.entity_type = 'EMAIL_LISTENER';
 
 -- GenericEntity
 ALTER TABLE generic_entity ADD COLUMN objectid_backup BIGINT(20);
@@ -362,7 +371,7 @@ set @generic_entity_prefix=#RANDOM_LONG_NOT_RESERVED#;
 update generic_entity set goid = toGoid(@generic_entity_prefix,objectid_backup);
 ALTER TABLE generic_entity DROP COLUMN objectid_backup;
 update rbac_role set entity_goid = toGoid(@generic_entity_prefix,entity_oid) where entity_oid is not null and entity_type='GENERIC';
-update rbac_predicate_oid oid1 left join rbac_predicate on rbac_predicate.objectid = oid1.objectid left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid set oid1.entity_id = hex(toGoid(@generic_entity_prefix,oid1.entity_id)) where rbac_permission.entity_type = 'GENERIC';
+update rbac_predicate_oid oid1 left join rbac_predicate on rbac_predicate.objectid = oid1.objectid left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid set oid1.entity_id = goidToString(toGoid(@generic_entity_prefix,oid1.entity_id)) where rbac_permission.entity_type = 'GENERIC';
 
 
 -- Connector
@@ -384,7 +393,7 @@ ALTER TABLE connector_property DROP COLUMN connector_oid_backup;
 ALTER TABLE connector_property ADD FOREIGN KEY (connector_goid) REFERENCES connector (goid) ON DELETE CASCADE;
 
 update rbac_role set entity_goid = toGoid(@connector_prefix,entity_oid) where entity_oid is not null and entity_type='SSG_CONNECTOR';
-update rbac_predicate_oid oid1 left join rbac_predicate on rbac_predicate.objectid = oid1.objectid left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid set oid1.entity_id = hex(toGoid(@connector_prefix,oid1.entity_id)) where rbac_permission.entity_type = 'SSG_CONNECTOR';
+update rbac_predicate_oid oid1 left join rbac_predicate on rbac_predicate.objectid = oid1.objectid left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid set oid1.entity_id = goidToString(toGoid(@connector_prefix,oid1.entity_id)) where rbac_permission.entity_type = 'SSG_CONNECTOR';
 
 -- Firewall rule
 
@@ -406,7 +415,7 @@ ALTER TABLE firewall_rule_property DROP COLUMN firewall_rule_oid_backup;
 ALTER TABLE firewall_rule_property  ADD FOREIGN KEY (firewall_rule_goid) REFERENCES firewall_rule (goid) ON DELETE CASCADE;
 
 update rbac_role set entity_goid = toGoid(@firewall_prefix,entity_oid) where entity_oid is not null and entity_type='FIREWALL_RULE';
-update rbac_predicate_oid oid1 left join rbac_predicate on rbac_predicate.objectid = oid1.objectid left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid set oid1.entity_id = hex(toGoid(@firewall_prefix,oid1.entity_id)) where rbac_permission.entity_type = 'FIREWALL_RULE';
+update rbac_predicate_oid oid1 left join rbac_predicate on rbac_predicate.objectid = oid1.objectid left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid set oid1.entity_id = goidToString(toGoid(@firewall_prefix,oid1.entity_id)) where rbac_permission.entity_type = 'FIREWALL_RULE';
 
 -- Encapsulated assertion
 
@@ -460,7 +469,7 @@ ALTER TABLE encapsulated_assertion_result DROP COLUMN encapsulated_assertion_oid
 ALTER TABLE encapsulated_assertion_result  ADD FOREIGN KEY (encapsulated_assertion_goid) REFERENCES encapsulated_assertion (goid) ON DELETE CASCADE;
 
 update rbac_role set entity_goid = toGoid(@encapsulated_assertion_prefix,entity_oid) where entity_oid is not null and entity_type='ENCAPSULATED_ASSERTION';
-update rbac_predicate_oid oid1 left join rbac_predicate on rbac_predicate.objectid = oid1.objectid left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid set oid1.entity_id = hex(toGoid(@encapsulated_assertion_prefix,oid1.entity_id)) where rbac_permission.entity_type = 'ENCAPSULATED_ASSERTION';
+update rbac_predicate_oid oid1 left join rbac_predicate on rbac_predicate.objectid = oid1.objectid left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid set oid1.entity_id = goidToString(toGoid(@encapsulated_assertion_prefix,oid1.entity_id)) where rbac_permission.entity_type = 'ENCAPSULATED_ASSERTION';
 
 -- jms
 
@@ -484,10 +493,10 @@ update jms_endpoint set connection_goid = toGoid(@jms_connection_prefix,connecti
 ALTER TABLE jms_endpoint DROP COLUMN connection_oid;
 
 update rbac_role set entity_goid = toGoid(@jms_connection_prefix,entity_oid) where entity_oid is not null and entity_type='JMS_CONNECTION';
-update rbac_predicate_oid oid1 left join rbac_predicate on rbac_predicate.objectid = oid1.objectid left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid set oid1.entity_id = hex(toGoid(@jms_connection_prefix,oid1.entity_id)) where rbac_permission.entity_type = 'JMS_CONNECTION';
+update rbac_predicate_oid oid1 left join rbac_predicate on rbac_predicate.objectid = oid1.objectid left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid set oid1.entity_id = goidToString(toGoid(@jms_connection_prefix,oid1.entity_id)) where rbac_permission.entity_type = 'JMS_CONNECTION';
 
 update rbac_role set entity_goid = toGoid(@jms_endpoint_prefix,entity_oid) where entity_oid is not null and entity_type='JMS_ENDPOINT';
-update rbac_predicate_oid oid1 left join rbac_predicate on rbac_predicate.objectid = oid1.objectid left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid set oid1.entity_id = hex(toGoid(@jms_endpoint_prefix,oid1.entity_id)) where rbac_permission.entity_type = 'JMS_ENDPOINT';
+update rbac_predicate_oid oid1 left join rbac_predicate on rbac_predicate.objectid = oid1.objectid left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid set oid1.entity_id = goidToString(toGoid(@jms_endpoint_prefix,oid1.entity_id)) where rbac_permission.entity_type = 'JMS_ENDPOINT';
 
 
 -- active connector
@@ -509,14 +518,284 @@ ALTER TABLE active_connector_property DROP COLUMN connector_oid_backup;
 ALTER TABLE active_connector_property  ADD FOREIGN KEY (connector_goid) REFERENCES active_connector (goid) ON DELETE CASCADE;
 
 update rbac_role set entity_goid = toGoid(@active_connector_prefix,entity_oid) where entity_oid is not null and entity_type='SSG_ACTIVE_CONNECTOR';
-update rbac_predicate_oid oid1 left join rbac_predicate on rbac_predicate.objectid = oid1.objectid left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid set oid1.entity_id = hex(toGoid(@active_connector_prefix,oid1.entity_id)) where rbac_permission.entity_type = 'SSG_ACTIVE_CONNECTOR';
+update rbac_predicate_oid oid1 left join rbac_predicate on rbac_predicate.objectid = oid1.objectid left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid set oid1.entity_id = goidToString(toGoid(@active_connector_prefix,oid1.entity_id)) where rbac_permission.entity_type = 'SSG_ACTIVE_CONNECTOR';
 
+-- Service/Policy/Folder/Alias's
+call dropForeignKey('folder','folder');
+call dropForeignKey('published_service','folder');
+call dropForeignKey('published_service_alias','folder');
+call dropForeignKey('policy','folder');
+call dropForeignKey('policy_alias','folder');
+call dropForeignKey('rbac_predicate_folder','folder');
+
+ALTER TABLE folder ADD COLUMN objectid_backup BIGINT(20);
+update folder set objectid_backup=objectid;
+DROP INDEX i_name_parent ON folder;
+ALTER TABLE folder CHANGE COLUMN objectid goid binary(16);
+-- For manual runs use: set @folder_prefix=createUnreservedPoorRandomPrefix();
+SET @folder_prefix=#RANDOM_LONG_NOT_RESERVED#;
+update folder set goid = toGoid(@folder_prefix,objectid_backup);
+update folder set goid = toGoid(0, -5002) where goid = toGoid(@folder_prefix, -5002);
+ALTER TABLE folder DROP COLUMN objectid_backup;
+
+ALTER TABLE folder ADD COLUMN parent_folder_oid_backup BIGINT(20);
+update folder set parent_folder_oid_backup=parent_folder_oid;
+ALTER TABLE folder CHANGE COLUMN parent_folder_oid parent_folder_goid binary(16);
+update folder set parent_folder_goid = toGoid(@folder_prefix,parent_folder_oid_backup);
+update folder set parent_folder_goid = toGoid(0, -5002) where parent_folder_goid = toGoid(@folder_prefix, -5002);
+ALTER TABLE folder DROP COLUMN parent_folder_oid_backup;
+ALTER TABLE folder ADD UNIQUE KEY `i_name_parent` (`name`,`parent_folder_goid`);
+
+update rbac_role set entity_goid = toGoid(@folder_prefix,entity_oid) where entity_oid is not null and entity_type='FOLDER';
+update rbac_role set entity_goid = toGoid(0, -5002) where entity_oid is not null and entity_type='FOLDER' and entity_goid = toGoid(@folder_prefix, -5002);
+update rbac_predicate_oid oid1 left join rbac_predicate on rbac_predicate.objectid = oid1.objectid left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid set oid1.entity_id = goidToString(toGoid(@folder_prefix,oid1.entity_id)) where rbac_permission.entity_type = 'FOLDER';
+
+call dropForeignKey('policy_alias','policy');
+call dropForeignKey('policy_version','policy');
+call dropForeignKey('published_service','policy');
+call dropForeignKey('encapsulated_assertion','policy');
+
+ALTER TABLE policy ADD COLUMN objectid_backup BIGINT(20);
+update policy set objectid_backup=objectid;
+ALTER TABLE policy CHANGE COLUMN objectid goid binary(16);
+-- For manual runs use: set @policy_prefix=createUnreservedPoorRandomPrefix();
+SET @policy_prefix=#RANDOM_LONG_NOT_RESERVED#;
+update policy set goid = toGoid(@policy_prefix,objectid_backup);
+ALTER TABLE policy DROP COLUMN objectid_backup;
+
+ALTER TABLE policy ADD COLUMN folder_oid_backup BIGINT(20);
+update policy set folder_oid_backup=folder_oid;
+ALTER TABLE policy CHANGE COLUMN folder_oid folder_goid binary(16);
+update policy set folder_goid = toGoid(@folder_prefix,folder_oid_backup);
+update policy set folder_goid = toGoid(0, -5002) where folder_goid = toGoid(@folder_prefix, -5002);
+ALTER TABLE policy DROP COLUMN folder_oid_backup;
+
+update rbac_role set entity_goid = toGoid(@policy_prefix,entity_oid) where entity_oid is not null and entity_type='POLICY';
+update rbac_predicate_oid oid1 left join rbac_predicate on rbac_predicate.objectid = oid1.objectid left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid set oid1.entity_id = goidToString(toGoid(@policy_prefix,oid1.entity_id)) where rbac_permission.entity_type = 'POLICY';
+
+ALTER TABLE policy_alias ADD COLUMN objectid_backup BIGINT(20);
+update policy_alias set objectid_backup=objectid;
+ALTER TABLE policy_alias CHANGE COLUMN objectid goid binary(16);
+-- For manual runs use: set @policy_alias_prefix=createUnreservedPoorRandomPrefix();
+SET @policy_alias_prefix=#RANDOM_LONG_NOT_RESERVED#;
+update policy_alias set goid = toGoid(@policy_alias_prefix,objectid_backup);
+ALTER TABLE policy_alias DROP COLUMN objectid_backup;
+
+ALTER TABLE policy_alias ADD COLUMN policy_oid_backup BIGINT(20);
+update policy_alias set policy_oid_backup=policy_oid;
+ALTER TABLE policy_alias CHANGE COLUMN policy_oid policy_goid binary(16);
+update policy_alias set policy_goid = toGoid(@policy_prefix,policy_oid_backup);
+ALTER TABLE policy_alias DROP COLUMN policy_oid_backup;
+
+ALTER TABLE policy_alias ADD COLUMN folder_oid_backup BIGINT(20);
+update policy_alias set folder_oid_backup=folder_oid;
+ALTER TABLE policy_alias CHANGE COLUMN folder_oid folder_goid binary(16);
+update policy_alias set folder_goid = toGoid(@folder_prefix,folder_oid_backup);
+update policy_alias set folder_goid = toGoid(0, -5002) where folder_goid = toGoid(@folder_prefix, -5002);
+ALTER TABLE policy_alias DROP COLUMN folder_oid_backup;
+
+update rbac_role set entity_goid = toGoid(@policy_alias_prefix,entity_oid) where entity_oid is not null and entity_type='POLICY_ALIAS';
+update rbac_predicate_oid oid1 left join rbac_predicate on rbac_predicate.objectid = oid1.objectid left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid set oid1.entity_id = goidToString(toGoid(@policy_alias_prefix,oid1.entity_id)) where rbac_permission.entity_type = 'POLICY_ALIAS';
+
+ALTER TABLE policy_version ADD COLUMN objectid_backup BIGINT(20);
+update policy_version set objectid_backup=objectid;
+ALTER TABLE policy_version CHANGE COLUMN objectid goid binary(16);
+-- For manual runs use: set @policy_version_prefix=createUnreservedPoorRandomPrefix();
+SET @policy_version_prefix=#RANDOM_LONG_NOT_RESERVED#;
+update policy_version set goid = toGoid(@policy_version_prefix,objectid_backup);
+ALTER TABLE policy_version DROP COLUMN objectid_backup;
+
+ALTER TABLE policy_version ADD COLUMN policy_oid_backup BIGINT(20);
+update policy_version set policy_oid_backup=policy_oid;
+ALTER TABLE policy_version CHANGE COLUMN policy_oid policy_goid binary(16);
+update policy_version set policy_goid = toGoid(@policy_prefix,policy_oid_backup);
+ALTER TABLE policy_version DROP COLUMN policy_oid_backup;
+
+update rbac_role set entity_goid = toGoid(@policy_version_prefix,entity_oid) where entity_oid is not null and entity_type='POLICY_VERSION';
+update rbac_predicate_oid oid1 left join rbac_predicate on rbac_predicate.objectid = oid1.objectid left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid set oid1.entity_id = goidToString(toGoid(@policy_version_prefix,oid1.entity_id)) where rbac_permission.entity_type = 'POLICY_VERSION';
+
+call dropForeignKey('published_service_alias','published_service');
+call dropForeignKey('sample_messages','published_service');
+call dropForeignKey('service_documents','published_service');
+call dropForeignKey('uddi_business_service_status','published_service');
+call dropForeignKey('uddi_proxied_service_info','published_service');
+call dropForeignKey('uddi_service_control','published_service');
+
+ALTER TABLE published_service ADD COLUMN old_objectid BIGINT(20);
+update published_service set old_objectid=objectid;
+ALTER TABLE published_service CHANGE COLUMN objectid goid binary(16);
+-- For manual runs use: set @published_service_prefix=createUnreservedPoorRandomPrefix();
+SET @published_service_prefix=#RANDOM_LONG_NOT_RESERVED#;
+update published_service set goid = toGoid(@published_service_prefix,old_objectid);
+
+ALTER TABLE published_service ADD COLUMN folder_oid_backup BIGINT(20);
+update published_service set folder_oid_backup=folder_oid;
+ALTER TABLE published_service CHANGE COLUMN folder_oid folder_goid binary(16);
+update published_service set folder_goid = toGoid(@folder_prefix,folder_oid_backup);
+update published_service set folder_goid = toGoid(0, -5002) where folder_goid = toGoid(@folder_prefix, -5002);
+ALTER TABLE published_service DROP COLUMN folder_oid_backup;
+
+ALTER TABLE published_service ADD COLUMN policy_oid_backup BIGINT(20);
+update published_service set policy_oid_backup=policy_oid;
+ALTER TABLE published_service CHANGE COLUMN policy_oid policy_goid binary(16);
+update published_service set policy_goid = toGoid(@policy_prefix,policy_oid_backup);
+ALTER TABLE published_service DROP COLUMN policy_oid_backup;
+
+update rbac_role set entity_goid = toGoid(@published_service_prefix,entity_oid) where entity_oid is not null and entity_type='SERVICE';
+update rbac_predicate_oid oid1 left join rbac_predicate on rbac_predicate.objectid = oid1.objectid left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid set oid1.entity_id = goidToString(toGoid(@published_service_prefix,oid1.entity_id)) where rbac_permission.entity_type = 'SERVICE';
+
+ALTER TABLE published_service_alias ADD COLUMN objectid_backup BIGINT(20);
+update published_service_alias set objectid_backup=objectid;
+ALTER TABLE published_service_alias CHANGE COLUMN objectid goid binary(16);
+-- For manual runs use: set @published_service_alias_prefix=createUnreservedPoorRandomPrefix();
+SET @published_service_alias_prefix=#RANDOM_LONG_NOT_RESERVED#;
+update published_service_alias set goid = toGoid(@published_service_alias_prefix,objectid_backup);
+ALTER TABLE published_service_alias DROP COLUMN objectid_backup;
+
+ALTER TABLE published_service_alias ADD COLUMN folder_oid_backup BIGINT(20);
+update published_service_alias set folder_oid_backup=folder_oid;
+ALTER TABLE published_service_alias CHANGE COLUMN folder_oid folder_goid binary(16);
+update published_service_alias set folder_goid = toGoid(@folder_prefix,folder_oid_backup);
+update published_service_alias set folder_goid = toGoid(0, -5002) where folder_goid = toGoid(@folder_prefix, -5002);
+ALTER TABLE published_service_alias DROP COLUMN folder_oid_backup;
+
+ALTER TABLE published_service_alias ADD COLUMN published_service_oid_backup BIGINT(20);
+update published_service_alias set published_service_oid_backup=published_service_oid;
+ALTER TABLE published_service_alias CHANGE COLUMN published_service_oid published_service_goid binary(16);
+update published_service_alias set published_service_goid = toGoid(@published_service_prefix,published_service_oid_backup);
+ALTER TABLE published_service_alias DROP COLUMN published_service_oid_backup;
+
+update rbac_role set entity_goid = toGoid(@published_service_alias_prefix,entity_oid) where entity_oid is not null and entity_type='SERVICE_ALIAS';
+update rbac_predicate_oid oid1 left join rbac_predicate on rbac_predicate.objectid = oid1.objectid left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid set oid1.entity_id = goidToString(toGoid(@published_service_alias_prefix,oid1.entity_id)) where rbac_permission.entity_type = 'SERVICE_ALIAS';
+
+ALTER TABLE audit_message ADD COLUMN service_oid_backup BIGINT(20);
+update audit_message set service_oid_backup=service_oid;
+ALTER TABLE audit_message CHANGE COLUMN service_oid service_goid binary(16);
+update audit_message set service_goid = toGoid(@policy_prefix,service_oid_backup);
+ALTER TABLE audit_message DROP COLUMN service_oid_backup;
+
+ALTER TABLE active_connector ADD COLUMN hardwired_service_oid_backup BIGINT(20);
+update active_connector set hardwired_service_oid_backup=hardwired_service_oid;
+ALTER TABLE active_connector CHANGE COLUMN hardwired_service_oid hardwired_service_goid binary(16);
+update active_connector set hardwired_service_goid = toGoid(@published_service_prefix,hardwired_service_oid_backup);
+ALTER TABLE active_connector DROP COLUMN hardwired_service_oid_backup;
+
+ALTER TABLE rbac_predicate_folder ADD COLUMN folder_oid_backup BIGINT(20);
+update rbac_predicate_folder set folder_oid_backup=folder_oid;
+ALTER TABLE rbac_predicate_folder CHANGE COLUMN folder_oid folder_goid binary(16);
+update rbac_predicate_folder set folder_goid = toGoid(@folder_prefix,folder_oid_backup);
+update rbac_predicate_folder set folder_goid = toGoid(0, -5002) where folder_goid = toGoid(@folder_prefix, -5002);
+ALTER TABLE rbac_predicate_folder DROP COLUMN folder_oid_backup;
+
+ALTER TABLE sample_messages ADD COLUMN published_service_oid_backup BIGINT(20);
+update sample_messages set published_service_oid_backup=published_service_oid;
+ALTER TABLE sample_messages CHANGE COLUMN published_service_oid published_service_goid binary(16);
+update sample_messages set published_service_goid = toGoid(@published_service_prefix,published_service_oid_backup);
+ALTER TABLE sample_messages DROP COLUMN published_service_oid_backup;
+
+ALTER TABLE service_documents ADD COLUMN objectid_backup BIGINT(20);
+update service_documents set objectid_backup=objectid;
+ALTER TABLE service_documents CHANGE COLUMN objectid goid binary(16);
+-- For manual runs use: set @published_service_alias_prefix=createUnreservedPoorRandomPrefix();
+SET @service_documents_prefix=#RANDOM_LONG_NOT_RESERVED#;
+update service_documents set goid = toGoid(@service_documents_prefix,objectid_backup);
+ALTER TABLE service_documents DROP COLUMN objectid_backup;
+
+update rbac_role set entity_goid = toGoid(@service_documents_prefix,entity_oid) where entity_oid is not null and entity_type='SERVICE_DOCUMENT';
+update rbac_predicate_oid oid1 left join rbac_predicate on rbac_predicate.objectid = oid1.objectid left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid set oid1.entity_id = goidToString(toGoid(@service_documents_prefix,oid1.entity_id)) where rbac_permission.entity_type = 'SERVICE_DOCUMENT';
+
+ALTER TABLE service_documents ADD COLUMN service_oid_backup BIGINT(20);
+update service_documents set service_oid_backup=service_oid;
+ALTER TABLE service_documents CHANGE COLUMN service_oid service_goid binary(16);
+update service_documents set service_goid = toGoid(@published_service_prefix,service_oid_backup);
+ALTER TABLE service_documents DROP COLUMN service_oid_backup;
+
+ALTER TABLE service_metrics ADD COLUMN published_service_oid_backup BIGINT(20);
+update service_metrics set published_service_oid_backup=published_service_oid;
+ALTER TABLE service_metrics CHANGE COLUMN published_service_oid published_service_goid binary(16);
+update service_metrics set published_service_goid = toGoid(@published_service_prefix,published_service_oid_backup);
+ALTER TABLE service_metrics DROP COLUMN published_service_oid_backup;
+
+ALTER TABLE service_usage ADD COLUMN serviceid_backup BIGINT(20);
+update service_usage set serviceid_backup=serviceid;
+ALTER TABLE service_usage CHANGE COLUMN serviceid serviceid binary(16);
+update service_usage set serviceid = toGoid(@published_service_prefix,serviceid_backup);
+ALTER TABLE service_usage DROP COLUMN serviceid_backup;
+
+update rbac_role set entity_goid = toGoid(@published_service_prefix,entity_oid) where entity_oid is not null and entity_type='SERVICE_USAGE';
+update rbac_predicate_oid oid1 left join rbac_predicate on rbac_predicate.objectid = oid1.objectid left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid set oid1.entity_id = goidToString(toGoid(@published_service_prefix,oid1.entity_id)) where rbac_permission.entity_type = 'SERVICE_USAGE';
+
+ALTER TABLE uddi_business_service_status ADD COLUMN published_service_oid_backup BIGINT(20);
+update uddi_business_service_status set published_service_oid_backup=published_service_oid;
+ALTER TABLE uddi_business_service_status CHANGE COLUMN published_service_oid published_service_goid binary(16);
+update uddi_business_service_status set published_service_goid = toGoid(@published_service_prefix,published_service_oid_backup);
+ALTER TABLE uddi_business_service_status DROP COLUMN published_service_oid_backup;
+
+ALTER TABLE uddi_proxied_service_info ADD COLUMN published_service_oid_backup BIGINT(20);
+update uddi_proxied_service_info set published_service_oid_backup=published_service_oid;
+ALTER TABLE uddi_proxied_service_info CHANGE COLUMN published_service_oid published_service_goid binary(16);
+update uddi_proxied_service_info set published_service_goid = toGoid(@published_service_prefix,published_service_oid_backup);
+ALTER TABLE uddi_proxied_service_info DROP COLUMN published_service_oid_backup;
+
+ALTER TABLE uddi_service_control ADD COLUMN published_service_oid_backup BIGINT(20);
+update uddi_service_control set published_service_oid_backup=published_service_oid;
+ALTER TABLE uddi_service_control CHANGE COLUMN published_service_oid published_service_goid binary(16);
+update uddi_service_control set published_service_goid = toGoid(@published_service_prefix,published_service_oid_backup);
+ALTER TABLE uddi_service_control DROP COLUMN published_service_oid_backup;
+
+ALTER TABLE wsdm_subscription ADD COLUMN published_service_oid_backup BIGINT(20);
+update wsdm_subscription set published_service_oid_backup=published_service_oid;
+ALTER TABLE wsdm_subscription CHANGE COLUMN published_service_oid published_service_goid binary(16);
+update wsdm_subscription set published_service_goid = toGoid(@published_service_prefix,published_service_oid_backup);
+ALTER TABLE wsdm_subscription DROP COLUMN published_service_oid_backup;
+
+ALTER TABLE wsdm_subscription ADD COLUMN esm_service_oid_backup BIGINT(20);
+update wsdm_subscription set esm_service_oid_backup=esm_service_oid;
+ALTER TABLE wsdm_subscription CHANGE COLUMN esm_service_oid esm_service_goid binary(16);
+update wsdm_subscription set esm_service_goid = toGoid(@published_service_prefix,esm_service_oid_backup);
+ALTER TABLE wsdm_subscription DROP COLUMN esm_service_oid_backup;
+
+ALTER TABLE encapsulated_assertion ADD COLUMN policy_oid_backup BIGINT(20);
+update encapsulated_assertion set policy_oid_backup=policy_oid;
+ALTER TABLE encapsulated_assertion CHANGE COLUMN policy_oid policy_goid binary(16);
+update encapsulated_assertion set policy_goid = toGoid(@policy_prefix,policy_oid_backup);
+ALTER TABLE encapsulated_assertion DROP COLUMN policy_oid_backup;
+
+
+ALTER TABLE folder ADD CONSTRAINT folder_parent_folder FOREIGN KEY (parent_folder_goid) REFERENCES folder (goid);
+ALTER TABLE published_service ADD CONSTRAINT published_service_folder FOREIGN KEY (folder_goid) REFERENCES folder (goid);
+ALTER TABLE published_service_alias ADD FOREIGN KEY (folder_goid) REFERENCES folder (goid) ON DELETE CASCADE;
+ALTER TABLE policy ADD CONSTRAINT policy_folder FOREIGN KEY (folder_goid) REFERENCES folder (goid);
+ALTER TABLE policy_alias ADD FOREIGN KEY (folder_goid) REFERENCES folder (goid) ON DELETE CASCADE;
+ALTER TABLE rbac_predicate_folder ADD FOREIGN KEY (folder_goid) REFERENCES folder (goid) ON DELETE CASCADE;
+
+ALTER TABLE policy_alias ADD FOREIGN KEY (policy_goid) REFERENCES policy (goid) ON DELETE CASCADE;
+ALTER TABLE encapsulated_assertion ADD FOREIGN KEY (policy_goid) REFERENCES policy (goid);
+ALTER TABLE published_service ADD FOREIGN KEY (policy_goid) REFERENCES policy (goid);
+ALTER TABLE policy_version ADD FOREIGN KEY (policy_goid) REFERENCES policy (goid) ON DELETE CASCADE;
+
+ALTER TABLE published_service_alias ADD FOREIGN KEY (published_service_goid) REFERENCES published_service (goid) ON DELETE CASCADE;
+ALTER TABLE sample_messages ADD FOREIGN KEY (published_service_goid) REFERENCES published_service (goid) ON DELETE CASCADE;
+ALTER TABLE service_documents ADD FOREIGN KEY (service_goid) REFERENCES published_service (goid) ON DELETE CASCADE;
+ALTER TABLE uddi_proxied_service_info ADD FOREIGN KEY (published_service_goid) REFERENCES published_service (goid) ON DELETE CASCADE;
+ALTER TABLE uddi_business_service_status ADD FOREIGN KEY (published_service_goid) REFERENCES published_service (goid) ON DELETE CASCADE;
+ALTER TABLE uddi_service_control ADD FOREIGN KEY (published_service_goid) REFERENCES published_service (goid) ON DELETE CASCADE;
+
+update rbac_predicate_attribute set value = goidToString(toGoid(@published_service_prefix, value)) where attribute='serviceOid' OR attribute='publishedServiceOid' OR attribute='serviceid';
+update rbac_predicate_attribute set attribute = 'serviceGoid' where attribute='serviceOid';
+update rbac_predicate_attribute set attribute = 'publishedServiceGoid' where attribute='publishedServiceOid';
+
+update rbac_predicate_entityfolder set entity_id = goidToString(toGoid(@published_service_prefix, entity_id)) where entity_type='SERVICE';
+update rbac_predicate_entityfolder set entity_id = goidToString(toGoid(@folder_prefix, entity_id)) where entity_type='FOLDER';
+update rbac_predicate_entityfolder set entity_id = goidToString(toGoid(0, -5002)) where entity_type='FOLDER' and entity_id=goidToString(toGoid(@folder_prefix, -5002));
+update rbac_predicate_entityfolder set entity_id = goidToString(toGoid(@policy_prefix, entity_id)) where entity_type='POLICY';
 --
 -- Register upgrade task for upgrading sink configuration references to GOIDs
 --
 INSERT INTO cluster_properties
     (goid, version, propkey, propvalue, properties)
-    values (toGoid(0,-800001), 0, 'upgrade.task.800001', 'com.l7tech.server.upgrade.Upgrade71To80SinkConfig', null);
+    values (toGoid(0,-800001), 0, 'upgrade.task.800001', 'com.l7tech.server.upgrade.Upgrade71To80SinkConfig', null),
+           (toGoid(0,-800002), 0, 'upgrade.task.800002', 'com.l7tech.server.upgrade.Upgrade71To80OidReferences', null);
 
 
 --

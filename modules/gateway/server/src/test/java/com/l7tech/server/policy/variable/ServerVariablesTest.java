@@ -16,6 +16,7 @@ import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.identity.ldap.LdapUser;
 import com.l7tech.message.HttpServletRequestKnob;
 import com.l7tech.message.Message;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyHeader;
 import com.l7tech.policy.PolicyType;
@@ -102,7 +103,7 @@ public class ServerVariablesTest {
     public void testBasicServiceContextVariables() throws Exception {
         final PolicyEnforcementContext pec = context();
         final PublishedService ps = new PublishedService();
-        ps.setOid(123456L);
+        ps.setGoid(new Goid(0,123456L));
         ps.setName( "testServiceNameContextVariable" );
         ps.getPolicy().setGuid("8ca3ff80-eaf5-11e0-9572-0800200c9a66");
         pec.setService(ps);
@@ -117,7 +118,7 @@ public class ServerVariablesTest {
         assertEquals("service name variable ", "testServiceNameContextVariable", nameValue);
 
         final String oidValue = ServerVariables.get("service.oid", pec).toString();
-        assertEquals("service oid variable", "123456", oidValue);
+        assertEquals("service oid variable", new Goid(0,123456L).toHexString(), oidValue);
 
         final String policyGuidValue = ServerVariables.get("service.policy.guid", pec).toString();
         assertEquals("service policy guid variable", "8ca3ff80-eaf5-11e0-9572-0800200c9a66", policyGuidValue);
@@ -130,7 +131,7 @@ public class ServerVariablesTest {
     public void testPolicyContextVariables() throws Exception {
         final PolicyEnforcementContext pec = context();
         final Policy policy = new Policy( PolicyType.INCLUDE_FRAGMENT, "testPolicyNameContextVariable", null, false );
-        policy.setOid(1234567L);
+        policy.setGoid(new Goid(0, 1234567L));
         policy.setGuid("8ca3ff80-eaf5-11e0-9572-0800200c9a67");
         pec.setCurrentPolicyMetadata( new PolicyMetadataStub() {
             @Override
@@ -143,7 +144,7 @@ public class ServerVariablesTest {
         assertEquals("service name variable ", "testPolicyNameContextVariable", nameValue);
 
         final String oidValue = ServerVariables.get("policy.oid", pec).toString();
-        assertEquals("service oid variable", "1234567", oidValue);
+        assertEquals("service oid variable", new Goid(0, 1234567L).toHexString(), oidValue);
 
         final String policyGuidValue = ServerVariables.get("policy.guid", pec).toString();
         assertEquals("service policy guid variable", "8ca3ff80-eaf5-11e0-9572-0800200c9a67", policyGuidValue);
@@ -682,7 +683,7 @@ public class ServerVariablesTest {
         expandAndCheck(c, "${audit.requestSavedFlag}", "true");
         expandAndCheck(c, "${audit.responseSavedFlag}", "true");
         expandAndCheck(c, "${audit.routingLatency}", "232");
-        expandAndCheck(c, "${audit.serviceOid}", "8859");
+        expandAndCheck(c, "${audit.serviceOid}", new Goid(0,8859).toHexString());
         expandAndCheck(c, "${audit.status}", "0");
     }
 
@@ -709,7 +710,7 @@ public class ServerVariablesTest {
         expandAndCheck(c, "${audit.requestSavedFlag}", "true");
         expandAndCheck(c, "${audit.responseSavedFlag}", "true");
         expandAndCheck(c, "${audit.routingLatency}", "232");
-        expandAndCheck(c, "${audit.serviceOid}", "8859");
+        expandAndCheck(c, "${audit.serviceOid}", new Goid(0,8859).toHexString());
         expandAndCheck(c, "${audit.status}", "0");
     }
 
@@ -1200,7 +1201,7 @@ public class ServerVariablesTest {
 
     @SuppressWarnings({"deprecation"})
     AuditRecord auditRecord() {
-        AuditRecord auditRecord = new MessageSummaryAuditRecord(Level.INFO, "node1", "req4545", AssertionStatus.NONE, "3.2.1.1", AUDITED_REQUEST_XML, 4833, AUDITED_RESPONSE_XML, 9483, 200, 232, 8859, "ACMEWarehouse",
+        AuditRecord auditRecord = new MessageSummaryAuditRecord(Level.INFO, "node1", "req4545", AssertionStatus.NONE, "3.2.1.1", AUDITED_REQUEST_XML, 4833, AUDITED_RESPONSE_XML, 9483, 200, 232, new Goid(0,8859), "ACMEWarehouse",
                 "listProducts", true, SecurityTokenType.HTTP_BASIC, -2, "alice", "41123", 49585);
         //noinspection deprecation
         auditRecord.setOid(9777L);

@@ -10,6 +10,7 @@ import com.l7tech.identity.User;
 import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.policy.Policy;
@@ -27,11 +28,9 @@ import com.l7tech.server.service.PolicyAliasManagerStub;
 import com.l7tech.server.service.ServiceAliasManagerStub;
 import com.l7tech.server.service.ServiceManager;
 import com.l7tech.server.service.ServiceManagerStub;
+import org.aopalliance.intercept.MethodInvocation;
 import org.junit.Before;
 import org.junit.Test;
-import static org.junit.Assert.*;
-
-import org.aopalliance.intercept.MethodInvocation;
 
 import javax.security.auth.Subject;
 import java.lang.reflect.AccessibleObject;
@@ -42,6 +41,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+
+import static org.junit.Assert.*;
 
 /** @author alex */
 public class RbacFolderTest {
@@ -201,7 +202,7 @@ public class RbacFolderTest {
 
     @Test
     public void testFilteredRead() throws Throwable {
-        canReadSpecific(jimbo, EntityType.POLICY, aPolicy.getOid());
+        canReadSpecific(jimbo, EntityType.POLICY, aPolicy.getGoid());
         assertTrue(rbacServices.isPermittedForEntity(jimbo, aPolicy, OperationType.READ, null));
 
         Collection<PolicyHeader> policies = runAs(jimbo, findAllPolicies);
@@ -209,7 +210,7 @@ public class RbacFolderTest {
         // Make sure we didn't read bPolicy
         assertEquals("Number of policies read", 1, policies.size());
         final PolicyHeader got = policies.iterator().next();
-        assertEquals("aPolicy OID", aPolicy.getOid(), got.getOid());
+        assertEquals("aPolicy OID", aPolicy.getGoid(), got.getGoid());
         assertEquals("aPolicy GUID", aPolicy.getGuid(), got.getGuid());
     }
 
@@ -268,7 +269,7 @@ public class RbacFolderTest {
         role.addAssignedUser(jimbo);
         {
             Permission perm = new Permission(role, OperationType.READ, EntityType.FOLDER);
-            perm.getScope().add(new EntityFolderAncestryPredicate(perm, EntityType.POLICY, aPolicy.getOid()));
+            perm.getScope().add(new EntityFolderAncestryPredicate(perm, EntityType.POLICY, aPolicy.getGoid()));
             role.getPermissions().add(perm);
         }
 
@@ -289,7 +290,7 @@ public class RbacFolderTest {
 
     @Test
     public void testBug6230MultiplePermissions() throws Exception {
-        canReadSpecific(jimbo, EntityType.POLICY, aPolicy.getOid(), bPolicy.getOid());
+        canReadSpecific(jimbo, EntityType.POLICY, aPolicy.getGoid(), bPolicy.getGoid());
         assertTrue("Can read A policy", rbacServices.isPermittedForEntity(jimbo, aPolicy, OperationType.READ, null));
         assertTrue("Can read B policy", rbacServices.isPermittedForEntity(jimbo, bPolicy, OperationType.READ, null));
         Collection<PolicyHeader> headers = runAs(jimbo, findAllPolicies);
@@ -310,11 +311,11 @@ public class RbacFolderTest {
         });
     }
 
-    private long canReadSpecific(final User user, final EntityType etype, final long... oids) throws SaveException {
+    private long canReadSpecific(final User user, final EntityType etype, final Goid... goids) throws SaveException {
         Role role = new Role();
         role.addAssignedUser(user);
-        for (long oid : oids) {
-            role.addEntityPermission(OperationType.READ, etype, Long.toString(oid));
+        for (Goid goid : goids) {
+            role.addEntityPermission(OperationType.READ, etype, Goid.toString(goid));
         }
         return roleManager.save(role);
     }

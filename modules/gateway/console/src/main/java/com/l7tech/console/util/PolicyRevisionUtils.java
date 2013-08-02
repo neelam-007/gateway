@@ -1,11 +1,10 @@
 package com.l7tech.console.util;
 
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.PolicyVersion;
 import com.l7tech.util.Functions.Nullary;
 import com.l7tech.util.Option;
-import static com.l7tech.util.Option.none;
-import static com.l7tech.util.Option.some;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
@@ -15,6 +14,9 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
+import static com.l7tech.util.Option.none;
+import static com.l7tech.util.Option.some;
+
 /**
  * Utilities for working with policy revisions.
  */
@@ -23,15 +25,15 @@ public class PolicyRevisionUtils {
     /**
      * Select a policy revision for use.
      *
-     * @param policyOid The policy
+     * @param policyGoid The policy
      * @param action The action (e.g. "edit", "copy")
      * @return The selected policy version or none
      * @throws FindException If an error occurs
      * @throws UserCancelledException If the user cancels revision selection
      */
-    public static Option<PolicyVersion> selectRevision( final long policyOid,
+    public static Option<PolicyVersion> selectRevision( final Goid policyGoid,
                                                         @NotNull final String action ) throws FindException, UserCancelledException {
-        final List<PolicyVersion> versions = Registry.getDefault().getPolicyAdmin().findPolicyVersionHeadersByPolicy(policyOid);
+        final List<PolicyVersion> versions = Registry.getDefault().getPolicyAdmin().findPolicyVersionHeadersByPolicy(policyGoid);
 
         // Sort more recent revisions to the top
         Collections.sort( versions, new Comparator<PolicyVersion>() {

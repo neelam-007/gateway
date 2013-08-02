@@ -6,10 +6,10 @@ package com.l7tech.console.action;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.OkCancelDialog;
+import com.l7tech.objectmodel.*;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyHeader;
 import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
-import com.l7tech.objectmodel.EntityType;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.util.Functions;
@@ -21,9 +21,6 @@ import com.l7tech.console.tree.servicesAndPolicies.RootNode;
 import com.l7tech.console.tree.servicesAndPolicies.FolderNode;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.DuplicateObjectException;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 
 import javax.swing.*;
@@ -92,7 +89,7 @@ public class EditPolicyProperties extends EntityWithPolicyNodeAction<PolicyEntit
                     if(!(policyNode instanceof PolicyEntityNodeAlias)){
                         if (tree !=null) {
                             PolicyHeader pH = (PolicyHeader) policyNode.getUserObject();
-                            tree.updateAllAliases(pH.getOid());
+                            tree.updateAllAliases(pH.getGoid());
 
                             SwingUtilities.invokeLater(new Runnable() {
                                 @Override
@@ -113,7 +110,7 @@ public class EditPolicyProperties extends EntityWithPolicyNodeAction<PolicyEntit
                     try {
                         final EntityWithPolicyNode pn = pe.getPolicyNode();
                         // if currently edited policy was deleted
-                        if (policyNode.getPolicy().getOid() == pn.getPolicy().getOid()) {
+                        if (Goid.equals(policyNode.getPolicy().getGoid(), pn.getPolicy().getGoid())) {
                             // update name on top of editor
                             pe.changeSubjectName(policyNode.getName());
                             pe.updateHeadings();

@@ -25,8 +25,8 @@ public class InvalidatingPolicyAdmin implements PolicyAdmin {
     }
 
     @Override
-    public Policy findPolicyByPrimaryKey( long oid ) throws FindException {
-        return delegate.findPolicyByPrimaryKey( oid );
+    public Policy findPolicyByPrimaryKey( Goid goid ) throws FindException {
+        return delegate.findPolicyByPrimaryKey( goid );
     }
 
     @Override
@@ -56,8 +56,8 @@ public class InvalidatingPolicyAdmin implements PolicyAdmin {
     }
 
     @Override
-    public PolicyAlias findAliasByEntityAndFolder(Long entityOid, Long folderOid) throws FindException {
-        return delegate.findAliasByEntityAndFolder(entityOid, folderOid);
+    public PolicyAlias findAliasByEntityAndFolder(Goid entityGoid, Goid folderGoid) throws FindException {
+        return delegate.findAliasByEntityAndFolder(entityGoid, folderGoid);
     }
 
 
@@ -67,19 +67,19 @@ public class InvalidatingPolicyAdmin implements PolicyAdmin {
     }
 
     @Override
-    public long saveAlias(PolicyAlias policyAlias) throws SaveException {
+    public Goid saveAlias(PolicyAlias policyAlias) throws SaveException {
         return delegate.saveAlias(policyAlias);
     }
 
     @Override
-    public void deletePolicy( long policyOid ) throws PolicyDeletionForbiddenException, DeleteException, FindException, ConstraintViolationException {
-        delegate.deletePolicy( policyOid );
-        fireEntityDelete( policyOid );
+    public void deletePolicy( Goid policyGoid ) throws PolicyDeletionForbiddenException, DeleteException, FindException, ConstraintViolationException {
+        delegate.deletePolicy( policyGoid );
+        fireEntityDelete( policyGoid );
     }
 
     @Override
-    public Pair<Long,String> savePolicy( Policy policy ) throws PolicyAssertionException, SaveException {
-        Pair<Long,String> policyOidGuid = delegate.savePolicy( policy );
+    public Pair<Goid,String> savePolicy( Policy policy ) throws PolicyAssertionException, SaveException {
+        Pair<Goid,String> policyOidGuid = delegate.savePolicy( policy );
         fireEntityUpdate( policyOidGuid.left );
         return policyOidGuid;
     }
@@ -87,52 +87,52 @@ public class InvalidatingPolicyAdmin implements PolicyAdmin {
     @Override
     public PolicyCheckpointState savePolicy( Policy policy, boolean activateAsWell ) throws PolicyAssertionException, SaveException {
         PolicyCheckpointState result = delegate.savePolicy( policy, activateAsWell );
-        fireEntityUpdate( result.getPolicyOid() );
+        fireEntityUpdate( result.getPolicyGoid() );
         return result;
     }
 
     @Override
     public SavePolicyWithFragmentsResult savePolicy(Policy policy, boolean activateAsWell, HashMap<String, Policy> fragments) throws PolicyAssertionException, SaveException {
         SavePolicyWithFragmentsResult result = delegate.savePolicy(policy, activateAsWell, fragments);
-        fireEntityUpdate( result.policyCheckpointState.getPolicyOid() );
+        fireEntityUpdate( result.policyCheckpointState.getPolicyGoid() );
         return result;
     }
 
     @Override
-    public Set<Policy> findUsages( long oid ) throws FindException {
-        return delegate.findUsages( oid );
+    public Set<Policy> findUsages( Goid goid ) throws FindException {
+        return delegate.findUsages( goid );
     }
 
     @Override
-    public PolicyVersion findPolicyVersionByPrimaryKey( long policyOid, long versionOid ) throws FindException {
-        return delegate.findPolicyVersionByPrimaryKey( policyOid, versionOid );
+    public PolicyVersion findPolicyVersionByPrimaryKey( Goid policyGoid, Goid versionGoid ) throws FindException {
+        return delegate.findPolicyVersionByPrimaryKey( policyGoid, versionGoid );
     }
 
     @Override
-    public List<PolicyVersion> findPolicyVersionHeadersByPolicy( long policyOid ) throws FindException {
-        return delegate.findPolicyVersionHeadersByPolicy( policyOid );
+    public List<PolicyVersion> findPolicyVersionHeadersByPolicy( Goid policyGoid ) throws FindException {
+        return delegate.findPolicyVersionHeadersByPolicy( policyGoid );
     }
 
     @Override
-    public void setPolicyVersionComment( long policyOid, long versionOid, String comment ) throws FindException, UpdateException {
-        delegate.setPolicyVersionComment( policyOid, versionOid, comment );
+    public void setPolicyVersionComment( Goid policyGoid, Goid versionGoid, String comment ) throws FindException, UpdateException {
+        delegate.setPolicyVersionComment( policyGoid, versionGoid, comment );
     }
 
     @Override
-    public void setActivePolicyVersion( long policyOid, long versionOid ) throws FindException, UpdateException {
-        delegate.setActivePolicyVersion( policyOid, versionOid );
-        fireEntityUpdate( policyOid );
+    public void setActivePolicyVersion( Goid policyGoid, Goid versionGoid ) throws FindException, UpdateException {
+        delegate.setActivePolicyVersion( policyGoid, versionGoid );
+        fireEntityUpdate( policyGoid );
     }
 
     @Override
-    public PolicyVersion findActivePolicyVersionForPolicy( long policyOid ) throws FindException {
-        return delegate.findActivePolicyVersionForPolicy( policyOid );
+    public PolicyVersion findActivePolicyVersionForPolicy( Goid policyGoid ) throws FindException {
+        return delegate.findActivePolicyVersionForPolicy( policyGoid );
     }
 
     @Override
-    public void clearActivePolicyVersion( long policyOid ) throws FindException, UpdateException {
-        delegate.clearActivePolicyVersion( policyOid );
-        fireEntityUpdate( policyOid );
+    public void clearActivePolicyVersion( Goid policyGoid ) throws FindException, UpdateException {
+        delegate.clearActivePolicyVersion( policyGoid );
+        fireEntityUpdate( policyGoid );
     }
 
     @Override
@@ -151,13 +151,13 @@ public class InvalidatingPolicyAdmin implements PolicyAdmin {
     }
 
     @Override
-    public PolicyVersion findLatestRevisionForPolicy(final long policyOid) {
-        return delegate.findLatestRevisionForPolicy(policyOid);
+    public PolicyVersion findLatestRevisionForPolicy(final Goid policyGoid) {
+        return delegate.findLatestRevisionForPolicy(policyGoid);
     }
 
     @Override
-    public Policy findByAlias(long aliasOid) throws FindException {
-        return delegate.findByAlias(aliasOid);
+    public Policy findByAlias(Goid aliasGoid) throws FindException {
+        return delegate.findByAlias(aliasGoid);
     }
 
     //- PRIVATE
@@ -168,18 +168,18 @@ public class InvalidatingPolicyAdmin implements PolicyAdmin {
     /**
      * 
      */
-    private void fireEntityDelete( long policyOid ) {
+    private void fireEntityDelete( Goid policyGoid ) {
         if ( listener != null ) {
-            listener.notifyDelete( new EntityHeader( Long.toString(policyOid), EntityType.POLICY, "", "") );
+            listener.notifyDelete( new EntityHeader( Goid.toString(policyGoid), EntityType.POLICY, "", "") );
         }
     }
 
     /**
      *
      */
-    private void fireEntityUpdate( long policyOid ) {
+    private void fireEntityUpdate( Goid policyGoid ) {
         if ( listener != null ) {
-            listener.notifyUpdate( new EntityHeader( Long.toString(policyOid), EntityType.POLICY, "", "") );
+            listener.notifyUpdate( new EntityHeader( Goid.toString(policyGoid), EntityType.POLICY, "", "") );
         }
     }
 }

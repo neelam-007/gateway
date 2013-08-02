@@ -56,7 +56,7 @@ public class ServerUDDINotificationAssertion extends AbstractServerAssertion<UDD
         if ( status == AssertionStatus.NONE ) {
             try {
                 uddiCoordinator.notifyEvent( new NotificationUDDIEvent(
-                        context.getService().getOid(),
+                        context.getService().getGoid(),
                         XmlUtil.nodeToString( requestDocument ),
                         request.getTcpKnob().getRemoteAddress() ) );
 

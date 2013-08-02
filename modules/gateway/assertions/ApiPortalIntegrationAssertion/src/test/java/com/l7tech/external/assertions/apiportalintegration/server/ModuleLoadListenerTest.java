@@ -8,6 +8,7 @@ import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceTemplate;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.folder.Folder;
@@ -16,7 +17,7 @@ import com.l7tech.policy.PolicyType;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.entity.GenericEntityManager;
-import com.l7tech.server.event.EntityInvalidationEvent;
+import com.l7tech.server.event.GoidEntityInvalidationEvent;
 import com.l7tech.server.event.system.LicenseEvent;
 import com.l7tech.server.event.system.ReadyForMessages;
 import com.l7tech.server.folder.FolderManager;
@@ -37,12 +38,13 @@ import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.transaction.PlatformTransactionManager;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.logging.Level;
 
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNotSame;
-import static junit.framework.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.argThat;
 import static org.mockito.Mockito.*;
@@ -311,15 +313,15 @@ public class ModuleLoadListenerTest {
     @Test
     public void onApplicationEventPortalManagedServiceUpdated() throws Exception {
         final PublishedService service = new PublishedService();
-        event = new EntityInvalidationEvent(service, PublishedService.class, new long[]{1234L}, new char[]{EntityInvalidationEvent.UPDATE});
-        when(serviceManager.findByPrimaryKey(1234L)).thenReturn(service);
+        event = new GoidEntityInvalidationEvent(service, PublishedService.class, new Goid[]{new Goid(0,1234L)}, new char[]{GoidEntityInvalidationEvent.UPDATE});
+        when(serviceManager.findByPrimaryKey(new Goid(0,1234L))).thenReturn(service);
         final PortalManagedService updated = new PortalManagedService();
         updated.setName("a1");
-        updated.setDescription("1234");
+        updated.setDescription(new Goid(0,1234L).toHexString());
         updated.setApiGroup("newGroup");
         final PortalManagedService old = new PortalManagedService();
         old.setName("a1");
-        old.setDescription("1234");
+        old.setDescription(new Goid(0,1234L).toHexString());
         old.setApiGroup("oldGroup");
         portalManagedServices.add(old);
         when(portalManagedServiceManager.fromService(service)).thenReturn(updated);
@@ -327,7 +329,7 @@ public class ModuleLoadListenerTest {
 
         listener.onApplicationEvent(event);
 
-        verify(serviceManager).findByPrimaryKey(1234L);
+        verify(serviceManager).findByPrimaryKey(new Goid(0,1234L));
         verify(portalManagedServiceManager).fromService(service);
         verify(portalManagedServiceManager).findAll();
         verify(portalManagedServiceManager).addOrUpdate(updated);
@@ -336,15 +338,15 @@ public class ModuleLoadListenerTest {
     @Test
     public void onApplicationEventPublishedServiceUpdatedNotPortalManaged() throws Exception {
         final PublishedService service = new PublishedService();
-        event = new EntityInvalidationEvent(service, PublishedService.class, new long[]{1234L}, new char[]{EntityInvalidationEvent.UPDATE});
-        when(serviceManager.findByPrimaryKey(1234L)).thenReturn(service);
+        event = new GoidEntityInvalidationEvent(service, PublishedService.class, new Goid[]{new Goid(0,1234L)}, new char[]{GoidEntityInvalidationEvent.UPDATE});
+        when(serviceManager.findByPrimaryKey(new Goid(0,1234L))).thenReturn(service);
         // not portal managed
         when(portalManagedServiceManager.fromService(service)).thenReturn(null);
         when(portalManagedServiceManager.findAll()).thenReturn(portalManagedServices);
 
         listener.onApplicationEvent(event);
 
-        verify(serviceManager).findByPrimaryKey(1234L);
+        verify(serviceManager).findByPrimaryKey(new Goid(0,1234L));
         verify(portalManagedServiceManager).fromService(service);
         verify(portalManagedServiceManager).findAll();
         verify(portalManagedServiceManager, never()).delete(anyString());
@@ -353,19 +355,19 @@ public class ModuleLoadListenerTest {
     @Test
     public void onApplicationEventPublishedServiceUpdatedNoLongerPortalManaged() throws Exception {
         final PublishedService service = new PublishedService();
-        event = new EntityInvalidationEvent(service, PublishedService.class, new long[]{1234L}, new char[]{EntityInvalidationEvent.UPDATE});
+        event = new GoidEntityInvalidationEvent(service, PublishedService.class, new Goid[]{new Goid(0,1234L)}, new char[]{GoidEntityInvalidationEvent.UPDATE});
         final PortalManagedService found = new PortalManagedService();
         found.setName("a1");
-        found.setDescription("1234");
+        found.setDescription(new Goid(0,1234L).toHexString());
         portalManagedServices.add(found);
-        when(serviceManager.findByPrimaryKey(1234L)).thenReturn(service);
+        when(serviceManager.findByPrimaryKey(new Goid(0,1234L))).thenReturn(service);
         // was previously portal managed
         when(portalManagedServiceManager.fromService(service)).thenReturn(null);
         when(portalManagedServiceManager.findAll()).thenReturn(portalManagedServices);
 
         listener.onApplicationEvent(event);
 
-        verify(serviceManager).findByPrimaryKey(1234L);
+        verify(serviceManager).findByPrimaryKey(new Goid(0,1234L));
         verify(portalManagedServiceManager).fromService(service);
         verify(portalManagedServiceManager).findAll();
         verify(portalManagedServiceManager).delete("a1");
@@ -374,21 +376,21 @@ public class ModuleLoadListenerTest {
     @Test
     public void onApplicationEventPortalManagedServiceUpdatedNameChanged() throws Exception {
         final PublishedService service = new PublishedService();
-        event = new EntityInvalidationEvent(service, PublishedService.class, new long[]{1234L}, new char[]{EntityInvalidationEvent.UPDATE});
-        when(serviceManager.findByPrimaryKey(1234L)).thenReturn(service);
+        event = new GoidEntityInvalidationEvent(service, PublishedService.class, new Goid[]{new Goid(0,1234L)}, new char[]{GoidEntityInvalidationEvent.UPDATE});
+        when(serviceManager.findByPrimaryKey(new Goid(0,1234L))).thenReturn(service);
         final PortalManagedService updated = new PortalManagedService();
         updated.setName("a2");
-        updated.setDescription("1234");
+        updated.setDescription(new Goid(0,1234L).toHexString());
         final PortalManagedService found = new PortalManagedService();
         found.setName("a1");
-        found.setDescription("1234");
+        found.setDescription(new Goid(0,1234L).toHexString());
         portalManagedServices.add(found);
         when(portalManagedServiceManager.fromService(service)).thenReturn(updated);
         when(portalManagedServiceManager.findAll()).thenReturn(portalManagedServices);
 
         listener.onApplicationEvent(event);
 
-        verify(serviceManager).findByPrimaryKey(1234L);
+        verify(serviceManager).findByPrimaryKey(new Goid(0,1234L));
         verify(portalManagedServiceManager).fromService(service);
         verify(portalManagedServiceManager).findAll();
         // old one should be deleted
@@ -399,18 +401,18 @@ public class ModuleLoadListenerTest {
     @Test
     public void onApplicationEventPortalManagedServiceUpdatedApiIdConflict() throws Exception {
         final PublishedService service = new PublishedService();
-        event = new EntityInvalidationEvent(service, PublishedService.class, new long[]{1234L}, new char[]{EntityInvalidationEvent.UPDATE});
-        when(serviceManager.findByPrimaryKey(1234L)).thenReturn(service);
+        event = new GoidEntityInvalidationEvent(service, PublishedService.class, new Goid[]{new Goid(0,1234L)}, new char[]{GoidEntityInvalidationEvent.UPDATE});
+        when(serviceManager.findByPrimaryKey(new Goid(0,1234L))).thenReturn(service);
         final PortalManagedService update = new PortalManagedService();
         update.setName("a2");
-        update.setDescription("1234");
+        update.setDescription(new Goid(0,1234L).toHexString());
         final PortalManagedService old = new PortalManagedService();
         old.setName("a1");
-        old.setDescription("1234");
+        old.setDescription(new Goid(0,1234L).toHexString());
         final PortalManagedService conflict = new PortalManagedService();
         // api id conflict
         conflict.setName("a2");
-        conflict.setDescription("5678");
+        conflict.setDescription(new Goid(0,5678L).toHexString());
         portalManagedServices.add(old);
         portalManagedServices.add(conflict);
         when(portalManagedServiceManager.fromService(service)).thenReturn(update);
@@ -419,7 +421,7 @@ public class ModuleLoadListenerTest {
 
         listener.onApplicationEvent(event);
 
-        verify(serviceManager).findByPrimaryKey(1234L);
+        verify(serviceManager).findByPrimaryKey(new Goid(0,1234L));
         verify(portalManagedServiceManager).fromService(service);
         verify(portalManagedServiceManager).findAll();
         verify(portalManagedServiceManager).delete("a1");
@@ -430,13 +432,13 @@ public class ModuleLoadListenerTest {
     @Test
     public void onApplicationEventPublishedServiceCreatedNotPortalManaged() throws Exception {
         final PublishedService service = new PublishedService();
-        event = new EntityInvalidationEvent(service, PublishedService.class, new long[]{1234L}, new char[]{EntityInvalidationEvent.CREATE});
-        when(serviceManager.findByPrimaryKey(1234L)).thenReturn(service);
+        event = new GoidEntityInvalidationEvent(service, PublishedService.class, new Goid[]{new Goid(0,1234L)}, new char[]{GoidEntityInvalidationEvent.CREATE});
+        when(serviceManager.findByPrimaryKey(new Goid(0,1234L))).thenReturn(service);
         when(portalManagedServiceManager.fromService(service)).thenReturn(null);
 
         listener.onApplicationEvent(event);
 
-        verify(serviceManager).findByPrimaryKey(1234L);
+        verify(serviceManager).findByPrimaryKey(new Goid(0,1234L));
         verify(portalManagedServiceManager).fromService(service);
         verify(portalManagedServiceManager, never()).findAll();
         verify(portalManagedServiceManager, never()).delete(anyString());
@@ -445,7 +447,7 @@ public class ModuleLoadListenerTest {
     @Test
     public void onApplicationEventPublishedServiceDeletedNotPortalManaged() throws Exception {
         final PublishedService service = new PublishedService();
-        event = new EntityInvalidationEvent(service, PublishedService.class, new long[]{1234L}, new char[]{EntityInvalidationEvent.DELETE});
+        event = new GoidEntityInvalidationEvent(service, PublishedService.class, new Goid[]{new Goid(0,1234L)}, new char[]{GoidEntityInvalidationEvent.DELETE});
         final PortalManagedService found = new PortalManagedService();
         found.setName("a1");
         // description doesn't match service oid
@@ -456,7 +458,7 @@ public class ModuleLoadListenerTest {
         listener.onApplicationEvent(event);
 
         verify(portalManagedServiceManager).findAll();
-        verify(serviceManager, never()).findByPrimaryKey(anyLong());
+        verify(serviceManager, never()).findByPrimaryKey(any(Goid.class));
         verify(portalManagedServiceManager, never()).fromService(any(PublishedService.class));
         verify(portalManagedServiceManager, never()).delete(anyString());
     }
@@ -464,14 +466,14 @@ public class ModuleLoadListenerTest {
     @Test
     public void onApplicationEventPortalManagedServiceCreated() throws Exception {
         final PublishedService service = new PublishedService();
-        event = new EntityInvalidationEvent(service, PublishedService.class, new long[]{1234L}, new char[]{EntityInvalidationEvent.CREATE});
-        when(serviceManager.findByPrimaryKey(1234L)).thenReturn(service);
+        event = new GoidEntityInvalidationEvent(service, PublishedService.class, new Goid[]{new Goid(0,1234L)}, new char[]{GoidEntityInvalidationEvent.CREATE});
+        when(serviceManager.findByPrimaryKey(new Goid(0,1234L))).thenReturn(service);
         final PortalManagedService portalManagedService = new PortalManagedService();
         when(portalManagedServiceManager.fromService(service)).thenReturn(portalManagedService);
 
         listener.onApplicationEvent(event);
 
-        verify(serviceManager).findByPrimaryKey(1234L);
+        verify(serviceManager).findByPrimaryKey(new Goid(0,1234L));
         verify(portalManagedServiceManager).fromService(service);
         verify(portalManagedServiceManager).addOrUpdate(portalManagedService);
     }
@@ -479,10 +481,10 @@ public class ModuleLoadListenerTest {
     @Test
     public void onApplicationEventPortalManagedServiceDeleted() throws Exception {
         final PublishedService service = new PublishedService();
-        event = new EntityInvalidationEvent(service, PublishedService.class, new long[]{1234L}, new char[]{EntityInvalidationEvent.DELETE});
+        event = new GoidEntityInvalidationEvent(service, PublishedService.class, new Goid[]{new Goid(0,1234L)}, new char[]{GoidEntityInvalidationEvent.DELETE});
         final PortalManagedService found = new PortalManagedService();
         found.setName("a1");
-        found.setDescription("1234");
+        found.setDescription(new Goid(0,1234L).toHexString());
         portalManagedServices.add(found);
         when(portalManagedServiceManager.findAll()).thenReturn(portalManagedServices);
 
@@ -500,13 +502,13 @@ public class ModuleLoadListenerTest {
     @Test
     public void onApplicationEventPortalManagedServiceDeletedMultiple() throws Exception {
         final PublishedService service = new PublishedService();
-        event = new EntityInvalidationEvent(service, PublishedService.class, new long[]{1234L}, new char[]{EntityInvalidationEvent.DELETE});
+        event = new GoidEntityInvalidationEvent(service, PublishedService.class, new Goid[]{new Goid(0,1234L)}, new char[]{GoidEntityInvalidationEvent.DELETE});
         final PortalManagedService found1 = new PortalManagedService();
         found1.setName("a1");
-        found1.setDescription("1234");
+        found1.setDescription(new Goid(0,1234L).toHexString());
         final PortalManagedService found2 = new PortalManagedService();
         found2.setName("a2");
-        found2.setDescription("1234");
+        found2.setDescription(new Goid(0,1234L).toHexString());
         portalManagedServices.add(found1);
         portalManagedServices.add(found2);
         when(portalManagedServiceManager.findAll()).thenReturn(portalManagedServices);
@@ -521,21 +523,21 @@ public class ModuleLoadListenerTest {
     @Test
     public void onApplicationEventPortalManagedServiceMultiple() throws Exception {
         final PublishedService service1 = new PublishedService();
-        service1.setOid(1111L);
+        service1.setGoid(new Goid(0,1111L));
         final PublishedService service2 = new PublishedService();
-        service2.setOid(2222L);
-        event = new EntityInvalidationEvent("", PublishedService.class, new long[]{1111L, 2222L, 3333L}, new char[]{EntityInvalidationEvent.CREATE, EntityInvalidationEvent.UPDATE, EntityInvalidationEvent.DELETE});
-        when(serviceManager.findByPrimaryKey(1111L)).thenReturn(service1);
-        when(serviceManager.findByPrimaryKey(2222L)).thenReturn(service2);
+        service2.setGoid(new Goid(0,2222L));
+        event = new GoidEntityInvalidationEvent("", PublishedService.class, new Goid[]{new Goid(0,1111L), new Goid(0,2222L), new Goid(0,3333L)}, new char[]{GoidEntityInvalidationEvent.CREATE, GoidEntityInvalidationEvent.UPDATE, GoidEntityInvalidationEvent.DELETE});
+        when(serviceManager.findByPrimaryKey(new Goid(0,1111L))).thenReturn(service1);
+        when(serviceManager.findByPrimaryKey(new Goid(0,2222L))).thenReturn(service2);
         final PortalManagedService portalManagedService1 = new PortalManagedService();
         portalManagedService1.setName("a1");
-        portalManagedService1.setDescription("1111");
+        portalManagedService1.setDescription(new Goid(0,1111L).toHexString());
         final PortalManagedService portalManagedService2 = new PortalManagedService();
         portalManagedService2.setName("a2");
-        portalManagedService2.setDescription("2222");
+        portalManagedService2.setDescription(new Goid(0,2222L).toHexString());
         final PortalManagedService portalManagedService3 = new PortalManagedService();
         portalManagedService3.setName("a3");
-        portalManagedService3.setDescription("3333");
+        portalManagedService3.setDescription(new Goid(0,3333L).toHexString());
         portalManagedServices.add(portalManagedService1);
         portalManagedServices.add(portalManagedService2);
         portalManagedServices.add(portalManagedService3);
@@ -545,8 +547,8 @@ public class ModuleLoadListenerTest {
 
         listener.onApplicationEvent(event);
 
-        verify(serviceManager).findByPrimaryKey(1111L);
-        verify(serviceManager).findByPrimaryKey(2222L);
+        verify(serviceManager).findByPrimaryKey(new Goid(0,1111L));
+        verify(serviceManager).findByPrimaryKey(new Goid(0,2222L));
         verify(portalManagedServiceManager).fromService(service1);
         verify(portalManagedServiceManager).fromService(service2);
         verify(portalManagedServiceManager).addOrUpdate(portalManagedService1);
@@ -561,21 +563,21 @@ public class ModuleLoadListenerTest {
     @Test
     public void onApplicationEventPortalManagedServiceMultipleSkipsErrors() throws Exception {
         final PublishedService service1 = new PublishedService();
-        service1.setOid(1111L);
+        service1.setGoid(new Goid(0,1111L));
         final PublishedService service2 = new PublishedService();
-        service2.setOid(2222L);
-        event = new EntityInvalidationEvent("", PublishedService.class, new long[]{1111L, 2222L, 3333L}, new char[]{EntityInvalidationEvent.CREATE, EntityInvalidationEvent.UPDATE, EntityInvalidationEvent.DELETE});
-        when(serviceManager.findByPrimaryKey(1111L)).thenReturn(service1);
-        when(serviceManager.findByPrimaryKey(2222L)).thenReturn(service2);
+        service2.setGoid(new Goid(0,2222L));
+        event = new GoidEntityInvalidationEvent("", PublishedService.class, new Goid[]{new Goid(0,1111L), new Goid(0,2222L), new Goid(0,3333L)}, new char[]{GoidEntityInvalidationEvent.CREATE, GoidEntityInvalidationEvent.UPDATE, GoidEntityInvalidationEvent.DELETE});
+        when(serviceManager.findByPrimaryKey(new Goid(0,1111L))).thenReturn(service1);
+        when(serviceManager.findByPrimaryKey(new Goid(0,2222L))).thenReturn(service2);
         final PortalManagedService portalManagedService1 = new PortalManagedService();
         portalManagedService1.setName("a1");
-        portalManagedService1.setDescription("1111");
+        portalManagedService1.setDescription(new Goid(0,1111L).toHexString());
         final PortalManagedService portalManagedService2 = new PortalManagedService();
         portalManagedService2.setName("a2");
-        portalManagedService2.setDescription("2222");
+        portalManagedService2.setDescription(new Goid(0,2222L).toHexString());
         final PortalManagedService portalManagedService3 = new PortalManagedService();
         portalManagedService3.setName("a3");
-        portalManagedService3.setDescription("3333");
+        portalManagedService3.setDescription(new Goid(0,3333L).toHexString());
         portalManagedServices.add(portalManagedService1);
         portalManagedServices.add(portalManagedService2);
         portalManagedServices.add(portalManagedService3);
@@ -586,8 +588,8 @@ public class ModuleLoadListenerTest {
 
         listener.onApplicationEvent(event);
 
-        verify(serviceManager).findByPrimaryKey(1111L);
-        verify(serviceManager).findByPrimaryKey(2222L);
+        verify(serviceManager).findByPrimaryKey(new Goid(0,1111L));
+        verify(serviceManager).findByPrimaryKey(new Goid(0,2222L));
         verify(portalManagedServiceManager).fromService(service1);
         verify(portalManagedServiceManager).fromService(service2);
         verify(portalManagedServiceManager).addOrUpdate(portalManagedService1);
@@ -601,7 +603,7 @@ public class ModuleLoadListenerTest {
     public void onApplicationEventApiPortalIntegrationCreateClusterProperty() throws Exception {
         final PublishedService service = new PublishedService();
         service.setName(ModuleLoadListener.API_PORTAL_INTEGRATION_INTERNAL_SERVICE_NAME);
-        event = new EntityInvalidationEvent(service, PublishedService.class, new long[]{1234L}, new char[]{EntityInvalidationEvent.CREATE});
+        event = new GoidEntityInvalidationEvent(service, PublishedService.class, new Goid[]{new Goid(0,1234L)}, new char[]{GoidEntityInvalidationEvent.CREATE});
         final Policy policyOAuth1 = new Policy(PolicyType.INCLUDE_FRAGMENT, ModuleLoadListener.OAUTH1X_FRAGMENT_POLICY_NAME, "<policy></policy>", false);
         policyOAuth1.setGuid("policyOAuth1");
         final Policy policyOAuth2 = new Policy(PolicyType.INCLUDE_FRAGMENT, ModuleLoadListener.OAUTH20_FRAGMENT_POLICY_NAME, "<policy></policy>", false);
@@ -610,8 +612,8 @@ public class ModuleLoadListenerTest {
         policyApiPlans.setGuid("policyApiPlans");
 
         final Folder folder = new Folder(ModuleLoadListener.API_DELETED_FOLDER_NAME, null);
-        folder.setOid(4444L);
-        when(serviceManager.findByPrimaryKey(1234L)).thenReturn(service);
+        folder.setGoid(new Goid(0,4444L));
+        when(serviceManager.findByPrimaryKey(new Goid(0,1234L))).thenReturn(service);
         when(policyManager.findByUniqueName(ModuleLoadListener.OAUTH1X_FRAGMENT_POLICY_NAME)).thenReturn(policyOAuth1);
         when(policyManager.findByUniqueName(ModuleLoadListener.OAUTH20_FRAGMENT_POLICY_NAME)).thenReturn(policyOAuth2);
         when(policyManager.findByUniqueName(ModuleLoadListener.API_PLANS_FRAGMENT_POLICY_NAME)).thenReturn(policyApiPlans);
@@ -630,7 +632,7 @@ public class ModuleLoadListenerTest {
     public void onApplicationEventApiPortalIntegrationAlreadyExistClusterProperty() throws Exception {
         final PublishedService service = new PublishedService();
         service.setName(ModuleLoadListener.API_PORTAL_INTEGRATION_INTERNAL_SERVICE_NAME);
-        event = new EntityInvalidationEvent(service, PublishedService.class, new long[]{1234L}, new char[]{EntityInvalidationEvent.CREATE});
+        event = new GoidEntityInvalidationEvent(service, PublishedService.class, new Goid[]{new Goid(0,1234L)}, new char[]{GoidEntityInvalidationEvent.CREATE});
         final Policy policyOAuth1 = new Policy(PolicyType.INCLUDE_FRAGMENT, ModuleLoadListener.OAUTH1X_FRAGMENT_POLICY_NAME, "<policy></policy>", false);
         policyOAuth1.setGuid("policyOAuth1");
         final Policy policyOAuth2 = new Policy(PolicyType.INCLUDE_FRAGMENT, ModuleLoadListener.OAUTH20_FRAGMENT_POLICY_NAME, "<policy></policy>", false);
@@ -641,8 +643,8 @@ public class ModuleLoadListenerTest {
         policyAccountPlans.setGuid("policyAccountPlans");
 
         final Folder folder = new Folder(ModuleLoadListener.API_DELETED_FOLDER_NAME, null);
-        folder.setOid(4444L);
-        when(serviceManager.findByPrimaryKey(1234L)).thenReturn(service);
+        folder.setGoid(new Goid(0,4444L));
+        when(serviceManager.findByPrimaryKey(new Goid(0,1234L))).thenReturn(service);
         when(policyManager.findByUniqueName(ModuleLoadListener.OAUTH1X_FRAGMENT_POLICY_NAME)).thenReturn(policyOAuth1);
         when(policyManager.findByUniqueName(ModuleLoadListener.OAUTH20_FRAGMENT_POLICY_NAME)).thenReturn(policyOAuth2);
         when(policyManager.findByUniqueName(ModuleLoadListener.API_PLANS_FRAGMENT_POLICY_NAME)).thenReturn(policyApiPlans);
@@ -675,9 +677,9 @@ public class ModuleLoadListenerTest {
     public void onApplicationEventApiPortalIntegrationClusterPropertyEntityRequestDoesNotExist() throws Exception {
         final PublishedService service = new PublishedService();
         service.setName(ModuleLoadListener.API_PORTAL_INTEGRATION_INTERNAL_SERVICE_NAME);
-        event = new EntityInvalidationEvent(service, PublishedService.class, new long[]{1234L}, new char[]{EntityInvalidationEvent.CREATE});
+        event = new GoidEntityInvalidationEvent(service, PublishedService.class, new Goid[]{new Goid(0,1234L)}, new char[]{GoidEntityInvalidationEvent.CREATE});
 
-        when(serviceManager.findByPrimaryKey(1234L)).thenReturn(service);
+        when(serviceManager.findByPrimaryKey(new Goid(0,1234L))).thenReturn(service);
         when(folderManager.findByUniqueName(anyString())).thenReturn(null);
 
         listener.onApplicationEvent(event);
@@ -719,8 +721,8 @@ public class ModuleLoadListenerTest {
     public void onApplicationEventApiPlansFragmentAlreadyExists() throws Exception {
         final PublishedService service = new PublishedService();
         service.setName(ModuleLoadListener.API_PORTAL_INTEGRATION_INTERNAL_SERVICE_NAME);
-        event = new EntityInvalidationEvent(service, PublishedService.class, new long[]{1234L}, new char[]{EntityInvalidationEvent.CREATE});
-        when(serviceManager.findByPrimaryKey(1234L)).thenReturn(service);
+        event = new GoidEntityInvalidationEvent(service, PublishedService.class, new Goid[]{new Goid(0,1234L)}, new char[]{GoidEntityInvalidationEvent.CREATE});
+        when(serviceManager.findByPrimaryKey(new Goid(0,1234L))).thenReturn(service);
         when(policyManager.findByUniqueName(ModuleLoadListener.API_PLANS_FRAGMENT_POLICY_NAME)).thenReturn(new Policy(PolicyType.INCLUDE_FRAGMENT, ModuleLoadListener.API_PLANS_FRAGMENT_POLICY_NAME, "", false));
         when(policyManager.findByUniqueName(ModuleLoadListener.ACCOUNT_PLANS_FRAGMENT_POLICY_NAME)).thenReturn(new Policy(PolicyType.INCLUDE_FRAGMENT, ModuleLoadListener.ACCOUNT_PLANS_FRAGMENT_POLICY_NAME, "", false));
 
@@ -738,8 +740,8 @@ public class ModuleLoadListenerTest {
     public void onApplicationEventApiPlansExceptionFindingPolicy() throws Exception {
         final PublishedService service = new PublishedService();
         service.setName(ModuleLoadListener.API_PORTAL_INTEGRATION_INTERNAL_SERVICE_NAME);
-        event = new EntityInvalidationEvent(service, PublishedService.class, new long[]{1234L}, new char[]{EntityInvalidationEvent.CREATE});
-        when(serviceManager.findByPrimaryKey(1234L)).thenReturn(service);
+        event = new GoidEntityInvalidationEvent(service, PublishedService.class, new Goid[]{new Goid(0,1234L)}, new char[]{GoidEntityInvalidationEvent.CREATE});
+        when(serviceManager.findByPrimaryKey(new Goid(0,1234L))).thenReturn(service);
         when(policyManager.findByUniqueName(anyString())).thenThrow(new FindException("cannot find policy"));
 
         listener.onApplicationEvent(event);
@@ -760,8 +762,8 @@ public class ModuleLoadListenerTest {
     public void onApplicationEventApiPlansExceptionSavingPolicy() throws Exception {
         final PublishedService service = new PublishedService();
         service.setName(ModuleLoadListener.API_PORTAL_INTEGRATION_INTERNAL_SERVICE_NAME);
-        event = new EntityInvalidationEvent(service, PublishedService.class, new long[]{1234L}, new char[]{EntityInvalidationEvent.CREATE});
-        when(serviceManager.findByPrimaryKey(1234L)).thenReturn(service);
+        event = new GoidEntityInvalidationEvent(service, PublishedService.class, new Goid[]{new Goid(0,1234L)}, new char[]{GoidEntityInvalidationEvent.CREATE});
+        when(serviceManager.findByPrimaryKey(new Goid(0,1234L))).thenReturn(service);
         when(policyManager.findByUniqueName(anyString())).thenReturn(null);
         when(policyManager.save(any(Policy.class))).thenThrow(new SaveException("cannot save policy"));
 
@@ -784,8 +786,8 @@ public class ModuleLoadListenerTest {
     public void onApplicationEventApiPlansExceptionActivatingPolicy() throws Exception {
         final PublishedService service = new PublishedService();
         service.setName(ModuleLoadListener.API_PORTAL_INTEGRATION_INTERNAL_SERVICE_NAME);
-        event = new EntityInvalidationEvent(service, PublishedService.class, new long[]{1234L}, new char[]{EntityInvalidationEvent.CREATE});
-        when(serviceManager.findByPrimaryKey(1234L)).thenReturn(service).thenReturn(null);
+        event = new GoidEntityInvalidationEvent(service, PublishedService.class, new Goid[]{new Goid(0,1234L)}, new char[]{GoidEntityInvalidationEvent.CREATE});
+        when(serviceManager.findByPrimaryKey(new Goid(0,1234L))).thenReturn(service).thenReturn(null);
         when(policyManager.findByUniqueName(anyString())).thenReturn(null);
         when(policyVersionManager.checkpointPolicy(any(Policy.class), any(Boolean.class), any(Boolean.class))).thenThrow(new ObjectModelException("cannot activate policy"));
 
@@ -807,8 +809,8 @@ public class ModuleLoadListenerTest {
     public void onApplicationEventAccountPlansFragmentAlreadyExists() throws Exception {
         final PublishedService service = new PublishedService();
         service.setName(ModuleLoadListener.API_PORTAL_INTEGRATION_INTERNAL_SERVICE_NAME);
-        event = new EntityInvalidationEvent(service, PublishedService.class, new long[]{1234L}, new char[]{EntityInvalidationEvent.CREATE});
-        when(serviceManager.findByPrimaryKey(1234L)).thenReturn(service);
+        event = new GoidEntityInvalidationEvent(service, PublishedService.class, new Goid[]{new Goid(0,1234L)}, new char[]{GoidEntityInvalidationEvent.CREATE});
+        when(serviceManager.findByPrimaryKey(new Goid(0,1234L))).thenReturn(service);
         when(policyManager.findByUniqueName(ModuleLoadListener.ACCOUNT_PLANS_FRAGMENT_POLICY_NAME)).thenReturn(new Policy(PolicyType.INCLUDE_FRAGMENT, ModuleLoadListener.ACCOUNT_PLANS_FRAGMENT_POLICY_NAME, "", false));
         when(policyManager.findByUniqueName(ModuleLoadListener.API_PLANS_FRAGMENT_POLICY_NAME)).thenReturn(new Policy(PolicyType.INCLUDE_FRAGMENT, ModuleLoadListener.API_PLANS_FRAGMENT_POLICY_NAME, "", false));
 
@@ -827,8 +829,8 @@ public class ModuleLoadListenerTest {
     public void onApplicationEventAccountPlansExceptionFindingPolicy() throws Exception {
         final PublishedService service = new PublishedService();
         service.setName(ModuleLoadListener.API_PORTAL_INTEGRATION_INTERNAL_SERVICE_NAME);
-        event = new EntityInvalidationEvent(service, PublishedService.class, new long[]{1234L}, new char[]{EntityInvalidationEvent.CREATE});
-        when(serviceManager.findByPrimaryKey(1234L)).thenReturn(service);
+        event = new GoidEntityInvalidationEvent(service, PublishedService.class, new Goid[]{new Goid(0,1234L)}, new char[]{GoidEntityInvalidationEvent.CREATE});
+        when(serviceManager.findByPrimaryKey(new Goid(0,1234L))).thenReturn(service);
         when(policyManager.findByUniqueName(anyString())).thenThrow(new FindException("cannot find policy"));
 
         listener.onApplicationEvent(event);
@@ -846,8 +848,8 @@ public class ModuleLoadListenerTest {
     public void onApplicationEventAccountPlansExceptionSavingPolicy() throws Exception {
         final PublishedService service = new PublishedService();
         service.setName(ModuleLoadListener.API_PORTAL_INTEGRATION_INTERNAL_SERVICE_NAME);
-        event = new EntityInvalidationEvent(service, PublishedService.class, new long[]{1234L}, new char[]{EntityInvalidationEvent.CREATE});
-        when(serviceManager.findByPrimaryKey(1234L)).thenReturn(service);
+        event = new GoidEntityInvalidationEvent(service, PublishedService.class, new Goid[]{new Goid(0,1234L)}, new char[]{GoidEntityInvalidationEvent.CREATE});
+        when(serviceManager.findByPrimaryKey(new Goid(0,1234L))).thenReturn(service);
         when(policyManager.findByUniqueName(anyString())).thenReturn(null);
         when(policyManager.save(any(Policy.class))).thenThrow(new SaveException("cannot save policy"));
 
@@ -869,8 +871,8 @@ public class ModuleLoadListenerTest {
     public void onApplicationEventAccountPlansExceptionActivatingPolicy() throws Exception {
         final PublishedService service = new PublishedService();
         service.setName(ModuleLoadListener.API_PORTAL_INTEGRATION_INTERNAL_SERVICE_NAME);
-        event = new EntityInvalidationEvent(service, PublishedService.class, new long[]{1234L}, new char[]{EntityInvalidationEvent.CREATE});
-        when(serviceManager.findByPrimaryKey(1234L)).thenReturn(service);
+        event = new GoidEntityInvalidationEvent(service, PublishedService.class, new Goid[]{new Goid(0,1234L)}, new char[]{GoidEntityInvalidationEvent.CREATE});
+        when(serviceManager.findByPrimaryKey(new Goid(0,1234L))).thenReturn(service);
         when(policyManager.findByUniqueName(anyString())).thenReturn(null);
         when(policyVersionManager.checkpointPolicy(any(Policy.class), any(Boolean.class), any(Boolean.class))).thenThrow(new ObjectModelException("cannot activate policy"));
 
@@ -887,7 +889,7 @@ public class ModuleLoadListenerTest {
 
     @Test
     public void onApplicationEventEntityInvalidationEventNotPublishedService() throws Exception {
-        event = new EntityInvalidationEvent("", Policy.class, new long[]{}, new char[]{});
+        event = new GoidEntityInvalidationEvent("", Policy.class, new Goid[]{}, new char[]{});
 
         listener.onApplicationEvent(event);
 

@@ -2,20 +2,6 @@ package com.l7tech.server.migration;
 
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.migration.PropertyResolver;
-import static com.l7tech.objectmodel.migration.PropertyResolver.Type.DEFAULT;
-import static com.l7tech.objectmodel.migration.PropertyResolver.Type.SERVICE_DOCUMENT;
-import static com.l7tech.objectmodel.migration.PropertyResolver.Type.SERVICE;
-import static com.l7tech.objectmodel.migration.PropertyResolver.Type.SERVICE_ALIAS;
-import static com.l7tech.objectmodel.migration.PropertyResolver.Type.POLICY;
-import static com.l7tech.objectmodel.migration.PropertyResolver.Type.POLICY_ALIAS;
-import static com.l7tech.objectmodel.migration.PropertyResolver.Type.ASSERTION;
-import static com.l7tech.objectmodel.migration.PropertyResolver.Type.ID_PROVIDER_CONFIG;
-import static com.l7tech.objectmodel.migration.PropertyResolver.Type.USERGROUP;
-import static com.l7tech.objectmodel.migration.PropertyResolver.Type.VALUE_REFERENCE;
-import static com.l7tech.objectmodel.migration.PropertyResolver.Type.SSGKEY;
-import static com.l7tech.objectmodel.migration.PropertyResolver.Type.SERVER_VARIABLE;
-import static com.l7tech.objectmodel.migration.PropertyResolver.Type.RESOURCE_ENTRY;
-import static com.l7tech.objectmodel.migration.PropertyResolver.Type.JDBC_CONNECTION;
 import com.l7tech.server.EntityFinder;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.cluster.ClusterPropertyManager;
@@ -24,8 +10,10 @@ import com.l7tech.server.jdbc.JdbcConnectionManager;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.service.ServiceDocumentManager;
 
-import java.util.Map;
 import java.util.HashMap;
+import java.util.Map;
+
+import static com.l7tech.objectmodel.migration.PropertyResolver.Type.*;
 
 /**
  * @author jbufu
@@ -58,16 +46,16 @@ public class PropertyResolverFactory {
         // todo: better registry initialization
         addToRegistry(new DefaultEntityPropertyResolver(this, DEFAULT));
         addToRegistry(new ServiceDocumentResolver(this, SERVICE_DOCUMENT, serviceDocumentManager));
-        addToRegistry(new AbstractOidPropertyResolver(this, SERVICE, entityFinder) {
+        addToRegistry(new AbstractGoidPropertyResolver(this, SERVICE, entityFinder) {
             @Override
             public EntityType getTargetType() { return EntityType.SERVICE; }
         });
-        addToRegistry(new AbstractOidPropertyResolver(this, SERVICE_ALIAS, entityFinder) {
+        addToRegistry(new AbstractGoidPropertyResolver(this, SERVICE_ALIAS, entityFinder) {
             @Override
             public EntityType getTargetType() { return EntityType.SERVICE; }
         });
         addToRegistry(new PolicyPropertyResolver(this, POLICY));
-        addToRegistry(new AbstractOidPropertyResolver(this, POLICY_ALIAS, entityFinder) {
+        addToRegistry(new AbstractGoidPropertyResolver(this, POLICY_ALIAS, entityFinder) {
             @Override
             public EntityType getTargetType() { return EntityType.POLICY; }
         });

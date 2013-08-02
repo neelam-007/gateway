@@ -7,6 +7,7 @@ import com.l7tech.gateway.common.security.rbac.AttemptedCreate;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.Pair;
 
 import javax.swing.event.TreeSelectionEvent;
@@ -28,9 +29,9 @@ public class OAuthInstallerAction extends SecureAction {
 
     @Override
     public String getName() {
-        final Pair<String,Long> selectedFolderAndOid = OAuthInstallerTaskDialog.getSelectedFolderAndOid();
-        if (selectedFolderAndOid.left != null) {
-            return "Install OAuth Toolkit in " + selectedFolderAndOid.left + OAuthInstallerTaskDialog.OAUTH_FOLDER;
+        final Pair<String,Goid> selectedFolderAndGoid = OAuthInstallerTaskDialog.getSelectedFolderAndGoid();
+        if (selectedFolderAndGoid.left != null) {
+            return "Install OAuth Toolkit in " + selectedFolderAndGoid.left + OAuthInstallerTaskDialog.OAUTH_FOLDER;
         } else {
             return "Install OAuth Toolkit";
         }

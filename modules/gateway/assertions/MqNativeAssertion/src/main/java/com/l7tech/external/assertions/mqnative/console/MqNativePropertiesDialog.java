@@ -21,6 +21,8 @@ import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.GoidEntity;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Option;
@@ -676,10 +678,10 @@ public class MqNativePropertiesDialog extends JDialog {
                 }
 
                 boolean associateQueue;
-                if (mqNativeActiveConnector.getHardwiredServiceOid() != null && mqNativeActiveConnector.getHardwiredServiceOid() > -1L){
-                    associateQueue = ServiceComboBox.populateAndSelect(serviceNameCombo, true, mqNativeActiveConnector.getHardwiredServiceOid());
+                if (mqNativeActiveConnector.getHardwiredServiceGoid() != null && !Goid.isDefault(mqNativeActiveConnector.getHardwiredServiceGoid())){
+                    associateQueue = ServiceComboBox.populateAndSelect(serviceNameCombo, true, mqNativeActiveConnector.getHardwiredServiceGoid());
                 }else{
-                    associateQueue = ServiceComboBox.populateAndSelect(serviceNameCombo, true, 0);
+                    associateQueue = ServiceComboBox.populateAndSelect(serviceNameCombo, true, GoidEntity.DEFAULT_GOID);
                 }
                 if(associateQueue) {
                     associateQueueWithPublishedService.setSelected(true);
@@ -787,7 +789,7 @@ public class MqNativePropertiesDialog extends JDialog {
         );
 
         if(!populatedTheServiceList)
-            ServiceComboBox.populateAndSelect(serviceNameCombo, true, 0);
+            ServiceComboBox.populateAndSelect(serviceNameCombo, true, GoidEntity.DEFAULT_GOID);
         enableOrDisableComponents();
     }
 
@@ -1075,10 +1077,10 @@ public class MqNativePropertiesDialog extends JDialog {
             if(associateQueueWithPublishedService.isSelected()){
                 PublishedService svc = ServiceComboBox.getSelectedPublishedService(serviceNameCombo);
                 if(svc != null) {
-                    connector.setHardwiredServiceOid(svc.getOid());
+                    connector.setHardwiredServiceGoid(svc.getGoid());
                 }
             } else {
-                connector.setHardwiredServiceOid(null);
+                connector.setHardwiredServiceGoid(null);
             }
 
             if (specifyContentTypeCheckBox.isSelected()) {

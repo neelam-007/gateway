@@ -1,6 +1,6 @@
 package com.l7tech.server.policy;
 
-import com.l7tech.objectmodel.PersistentEntity;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.HexUtils;
 
@@ -23,20 +23,20 @@ public class PolicyUniqueIdentifier {
     /**
      * Create a PolicyUniqueIdentifier for the given policy and it's dependencies.
      *
-     * @param policyOid The policy identifier
+     * @param policyGoid The policy identifier
      * @param policyVersion The version of the main policy
      * @param usedPolicyVersions The identifiers and versions of used policies
      */
-    public PolicyUniqueIdentifier(final Long policyOid,
+    public PolicyUniqueIdentifier(final Goid policyGoid,
                                   final Integer policyVersion,
-                                  final Map<Long,Integer> usedPolicyVersions) {
-        if ( policyOid == null || policyOid == PersistentEntity.DEFAULT_OID ) throw new IllegalArgumentException("Invalid policyOid " + policyOid);
+                                  final Map<Goid,Integer> usedPolicyVersions) {
+        if ( policyGoid == null || Goid.isDefault(policyGoid) ) throw new IllegalArgumentException("Invalid policyGoid " + policyGoid);
         if ( policyVersion == null ) throw new IllegalArgumentException( "policyVersion must not be null" );
         if ( usedPolicyVersions == null ) throw new IllegalArgumentException( "usedPolicyVersions must not be null" );
 
-        this.policyOid = policyOid;
+        this.policyGoid = policyGoid;
         this.policyVersion = policyVersion;
-        this.usedPolicyVersions = Collections.unmodifiableMap( new TreeMap<Long,Integer>( usedPolicyVersions ) );
+        this.usedPolicyVersions = Collections.unmodifiableMap( new TreeMap<Goid,Integer>( usedPolicyVersions ) );
     }
 
     /**
@@ -44,8 +44,8 @@ public class PolicyUniqueIdentifier {
      *
      * @return The policy id
      */
-    public Long getPolicyOid() {
-        return policyOid;
+    public Goid getPolicyGoid() {
+        return policyGoid;
     }
 
     /**
@@ -84,11 +84,11 @@ public class PolicyUniqueIdentifier {
      * @param includeSelf true to include the ID/version of the main policy
      * @return the map of policy oids to versions.
      */
-    public Map<Long,Integer> getUsedPoliciesAndVersions(boolean includeSelf) {
-        Map<Long,Integer> pandv = new HashMap<Long,Integer>(usedPolicyVersions);
+    public Map<Goid,Integer> getUsedPoliciesAndVersions(boolean includeSelf) {
+        Map<Goid,Integer> pandv = new HashMap<Goid,Integer>(usedPolicyVersions);
 
         if ( includeSelf ) {
-            pandv.put( policyOid, policyVersion );
+            pandv.put( policyGoid, policyVersion );
         }
 
         return pandv;
@@ -102,7 +102,7 @@ public class PolicyUniqueIdentifier {
 
         PolicyUniqueIdentifier that = (PolicyUniqueIdentifier) o;
 
-        if( !policyOid.equals( that.policyOid ) ) return false;
+        if( !Goid.equals(policyGoid, that.policyGoid ) ) return false;
         if( !policyVersion.equals( that.policyVersion ) ) return false;
         if( !usedPolicyVersions.equals( that.usedPolicyVersions ) ) return false;
 
@@ -112,7 +112,7 @@ public class PolicyUniqueIdentifier {
     @Override
     public int hashCode() {
         int result;
-        result = policyOid.hashCode();
+        result = policyGoid != null ? policyGoid.hashCode() : 0;
         result = 31 * result + policyVersion.hashCode();
         result = 31 * result + usedPolicyVersions.hashCode();
         return result;
@@ -126,19 +126,19 @@ public class PolicyUniqueIdentifier {
     //- PRIVATE
 
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
-    private final Long policyOid;
+    private final Goid policyGoid;
     private final Integer policyVersion;
-    private final Map<Long,Integer> usedPolicyVersions;
+    private final Map<Goid,Integer> usedPolicyVersions;
     private String uniqueIdentifer;
 
     private String getUniqueVersion() {
         StringBuilder uniqueVersion = new StringBuilder(128);
 
-        uniqueVersion.append( policyOid );
+        uniqueVersion.append( policyGoid.toHexString() );
         uniqueVersion.append( '|' );
         uniqueVersion.append( policyVersion );
 
-        for ( Map.Entry<Long,Integer> usedPV : usedPolicyVersions.entrySet() ) {
+        for ( Map.Entry<Goid,Integer> usedPV : usedPolicyVersions.entrySet() ) {
             uniqueVersion.append( ',' );
             uniqueVersion.append( usedPV.getKey() );
             uniqueVersion.append( '|' );

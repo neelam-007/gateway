@@ -112,7 +112,7 @@ public class FilterManager {
             return null;
         }
 
-        localCopyOfService.setOid(policyToFilter.getOid());
+        localCopyOfService.setGoid(policyToFilter.getGoid());
         localCopyOfService.getPolicy().setXml(WspWriter.getPolicyXml(rootassertion));
         return localCopyOfService;
     }

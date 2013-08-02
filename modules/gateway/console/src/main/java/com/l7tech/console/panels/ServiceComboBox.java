@@ -8,6 +8,7 @@ import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.ExceptionUtils;
 
 import javax.swing.*;
@@ -34,7 +35,7 @@ public class ServiceComboBox extends JComboBox {
      * Get the selected PublishedService, loading it from the Gateway if possible, or null.
      * @param serviceCombo a JComboBox (not necessary a ServiceComboBox) that uses ServiceComboItem instances in its model.
      * @return the PublishedService currently selected in the combo box, or null if none is selected or the selected service ID is unknown to the Gateway.
-     * If the user does not have permission to read the selected service, a dummy PublishedService with only default values except its OID is returned.
+     * If the user does not have permission to read the selected service, a dummy PublishedService with only default values except its GOID is returned.
      */
     public static PublishedService getSelectedPublishedService(JComboBox serviceCombo) {
         PublishedService svc = null;
@@ -43,14 +44,14 @@ public class ServiceComboBox extends JComboBox {
 
         ServiceAdmin sa = Registry.getDefault().getServiceManager();
         try {
-            svc = sa.findServiceByID(Long.toString(item.serviceID));
+            svc = sa.findServiceByID(Goid.toString(item.serviceID));
         } catch (FindException e) {
             logger.severe("Can not find service with id " + item.serviceID);
         } catch (final PermissionDeniedException e) {
             // service exists but user does not have permission to read it
             logger.log(Level.WARNING, "User does not have permission to read selected service. Returning default service with selected oid.");
             svc = new PublishedService();
-            svc.setOid(item.serviceID);
+            svc.setGoid(item.serviceID);
         }
         return svc;
     }
@@ -62,7 +63,7 @@ public class ServiceComboBox extends JComboBox {
      * @param serviceIdToSelect  the ID of the service to select, if selectService is true.
      * @return true if at least one published service was found.
      */
-    public boolean populateAndSelect(boolean selectService, long serviceIdToSelect) {
+    public boolean populateAndSelect(boolean selectService, Goid serviceIdToSelect) {
         return populateAndSelect(this, selectService, serviceIdToSelect);
     }
 
@@ -74,7 +75,7 @@ public class ServiceComboBox extends JComboBox {
      * @param serviceIdToSelect  the ID of the service to select, if selectService is true.
      * @return true if the requested service was selected.
      */
-    public static boolean populateAndSelect(JComboBox serviceCombo, boolean selectService, long serviceIdToSelect) {
+    public static boolean populateAndSelect(JComboBox serviceCombo, boolean selectService, Goid serviceIdToSelect) {
         final boolean selected;
 
         serviceCombo.setRenderer( TextListCellRenderer.<ServiceComboItem>basicComboBoxRenderer() );
@@ -99,8 +100,8 @@ public class ServiceComboBox extends JComboBox {
             // Case 2: There are no any published services at all.
             else {
                 // We just want to show the message "No published services available." in the combo box.
-                // So "-1" is just a dummy ServiceOID and it won't be used since the checkbox is set to disabled.
-                serviceCombo.addItem(new ServiceComboItem("No published services available.", -1));
+                // So "DEFAULT_GOID" is just a dummy ServiceGOID and it won't be used since the checkbox is set to disabled.
+                serviceCombo.addItem(new ServiceComboItem("No published services available.", PublishedService.DEFAULT_GOID));
                 selected = false;
             }
         } else {
@@ -111,9 +112,9 @@ public class ServiceComboBox extends JComboBox {
                 ServiceHeader svcHeader = (ServiceHeader) aService;
                 comboItems.add(new ServiceComboItem(
                     svcHeader.isDisabled()? svcHeader.getDisplayName() + " (This service is currently disabled.)" : svcHeader.getDisplayName(),
-                    svcHeader.getOid()
+                    svcHeader.getGoid()
                 ));
-                if (selectService && aService.getOid() == serviceIdToSelect) {
+                if (selectService && Goid.equals(aService.getGoid(), serviceIdToSelect)) {
                     selectMe = comboItems.get(i);
                 }
             }

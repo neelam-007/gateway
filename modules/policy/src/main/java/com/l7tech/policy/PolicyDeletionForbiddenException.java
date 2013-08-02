@@ -22,7 +22,7 @@ public class PolicyDeletionForbiddenException extends Exception {
 
     public PolicyDeletionForbiddenException(Policy policy, EntityType referringEntityType, Entity referringEntity) {
         super(MessageFormat.format("Policy #{0} ({1}) cannot be deleted; it is referenced by {2} #{3} ({4})",
-                policy.getOid(), policy.getName(),
+                policy.getGoid(), policy.getName(),
                 referringEntityType.getName(), referringEntity.getId(),
                 referringEntity instanceof NamedEntity ? ((NamedEntity)referringEntity).getName() : null));
         this.policy = policy;
@@ -32,7 +32,7 @@ public class PolicyDeletionForbiddenException extends Exception {
 
     public PolicyDeletionForbiddenException(Policy policy, EntityType referringEntityType, String reason) {
         super(MessageFormat.format("Policy #{0} ({1}) cannot be deleted; {2}",
-                policy.getOid(), policy.getName(), reason));
+                policy.getGoid(), policy.getName(), reason));
         this.policy = policy;
         this.referringEntityType = referringEntityType;
         this.referringEntity = null;

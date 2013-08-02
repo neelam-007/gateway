@@ -1,5 +1,7 @@
 package com.l7tech.message;
 
+import com.l7tech.objectmodel.Goid;
+
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
@@ -12,7 +14,7 @@ import java.util.Map;
  */
 public class JmsKnobStub implements JmsKnob {
 
-    private final long serviceOid;
+    private final Goid serviceGoid;
     private final boolean bytesMessage;
     private final String soapAction;
     private Map<String, String> headers;
@@ -20,14 +22,14 @@ public class JmsKnobStub implements JmsKnob {
     /**
      * Create a new stub jms knob.
      *
-     * @param serviceOid The hardcoded id or zero for none
+     * @param serviceGoid The hardcoded id or zero for none
      * @param bytesMessage True for a bytes message
      * @param soapAction The soap action or null for none
      */
-    public JmsKnobStub( final long serviceOid,
+    public JmsKnobStub( final Goid serviceGoid,
                         final boolean bytesMessage,
                         final String soapAction ) {
-        this.serviceOid = serviceOid;
+        this.serviceGoid = serviceGoid;
         this.bytesMessage = bytesMessage;
         this.soapAction = soapAction;
         headers = new HashMap<String, String>();
@@ -48,8 +50,8 @@ public class JmsKnobStub implements JmsKnob {
     }
 
     @Override
-    public long getServiceOid() {
-        return serviceOid;
+    public Goid getServiceGoid() {
+        return serviceGoid;
     }
 
     @Override

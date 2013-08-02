@@ -7,11 +7,7 @@ import com.l7tech.gateway.common.service.ServiceDocumentWsdlStrategy.ServiceDocu
 import com.l7tech.util.Config;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions.Nullary;
-import static com.l7tech.util.Functions.memoize;
 import com.l7tech.util.Option;
-import static com.l7tech.util.Option.none;
-import static com.l7tech.util.Option.optional;
-import static com.l7tech.util.Option.some;
 import org.hibernate.Criteria;
 import org.hibernate.HibernateException;
 import org.hibernate.Session;
@@ -31,6 +27,9 @@ import java.net.URLClassLoader;
 import java.sql.SQLException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static com.l7tech.util.Functions.memoize;
+import static com.l7tech.util.Option.*;
 
 /**
  * Upgrade task that supports WSDL updates for internal services.
@@ -53,7 +52,7 @@ abstract class InternalServiceWsdlUpgradeTask implements UpgradeTask {
                 for ( final Object serviceObj : serviceCriteria.list() ) {
                     if ( serviceObj instanceof PublishedService ) {
                         final PublishedService publishedService = (PublishedService) serviceObj;
-                        logger.info( "Updating WSDL for "+internalServiceDescription+" internal service '"+publishedService.getName()+"' (#"+publishedService.getOid()+")." );
+                        logger.info( "Updating WSDL for "+internalServiceDescription+" internal service '"+publishedService.getName()+"' (#"+publishedService.getGoid()+")." );
 
                         final Option<ServiceDocumentResources> resources = loader.call();
                         if (!resources.isSome())
@@ -67,14 +66,14 @@ abstract class InternalServiceWsdlUpgradeTask implements UpgradeTask {
                         }
 
                         final Criteria serviceDocumentCriteria = session.createCriteria( ServiceDocument.class );
-                        serviceDocumentCriteria.add( Restrictions.eq( "serviceId", publishedService.getOid() ) );
+                        serviceDocumentCriteria.add( Restrictions.eq( "serviceId", publishedService.getGoid() ) );
                         for ( final Object serviceDocumentObject : serviceDocumentCriteria.list() ) {
                             session.delete( serviceDocumentObject );
                         }
 
                         for( final ServiceDocument document : resources.some().getDependencies() ) {
                             final ServiceDocument dependency = new ServiceDocument( document, false );
-                            dependency.setServiceId( publishedService.getOid() );
+                            dependency.setServiceId( publishedService.getGoid() );
                             session.save( dependency );
                         }
                     }

@@ -11,6 +11,7 @@ import com.l7tech.gateway.common.audit.AuditDetailMessage;
 import com.l7tech.gateway.common.audit.AuditRecord;
 import com.l7tech.gateway.common.audit.MessageSummaryAuditRecord;
 import com.l7tech.message.Message;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
@@ -71,7 +72,7 @@ public class AuditFilterPolicyManagerTest {
 
         policy = new Policy(PolicyType.INTERNAL, "test", successPolicyXml, false);
         policy.setGuid(UUID.nameUUIDFromBytes("test".getBytes()).toString());
-        policy.setOid(23423432);
+        policy.setGoid(new Goid(0,23423432));
         policy.setInternalTag(PolicyType.TAG_AUDIT_MESSAGE_FILTER);
 
         policyManager = new PolicyManagerStub(new Policy[]{policy});
@@ -108,7 +109,7 @@ public class AuditFilterPolicyManagerTest {
                 1000,
                 200,
                 10,
-                123,
+                new Goid(0,123),
                 "serviceName",
                 null,
                 false, null, 02, "user name", "user id", null);

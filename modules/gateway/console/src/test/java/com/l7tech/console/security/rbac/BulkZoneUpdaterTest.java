@@ -21,7 +21,6 @@ import org.mockito.runners.MockitoJUnitRunner;
 import java.io.Serializable;
 import java.util.*;
 
-import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyMap;
 import static org.mockito.Mockito.*;
 
@@ -47,10 +46,10 @@ public class BulkZoneUpdaterTest {
 
     @Test
     public void bulkUpdateEntityTypeWithoutDependencies() throws Exception {
-        headers.add(new EntityHeader(1L, EntityType.POLICY, "test", "test"));
+        headers.add(new EntityHeader(new Goid(0,1), EntityType.POLICY, "test", "test"));
         updater.bulkUpdate(ZONE_GOID, EntityType.POLICY, headers);
         verify(rbacAdmin).setSecurityZoneForEntities(ZONE_GOID,
-                Collections.<EntityType, Collection<Serializable>>singletonMap(EntityType.POLICY, Arrays.<Serializable>asList(1L)));
+                Collections.<EntityType, Collection<Serializable>>singletonMap(EntityType.POLICY, Arrays.<Serializable>asList(new Goid(0,1))));
     }
 
     @Test
@@ -64,19 +63,19 @@ public class BulkZoneUpdaterTest {
     @Test
     public void bulkUpdateNoEntities() throws Exception {
         updater.bulkUpdate(ZONE_GOID, EntityType.SERVICE, Collections.<EntityHeader>emptyList());
-        verify(uddiAdmin, never()).findProxiedServiceInfoForPublishedService(anyLong());
-        verify(uddiAdmin, never()).getUDDIServiceControl(anyLong());
+        verify(uddiAdmin, never()).findProxiedServiceInfoForPublishedService(any(Goid.class));
+        verify(uddiAdmin, never()).getUDDIServiceControl(any(Goid.class));
         verify(rbacAdmin, never()).setSecurityZoneForEntities(any(Goid.class), anyMap());
     }
 
     @Test
     public void bulkUpdateServicesUpdatesDependencies() throws Exception {
         final PublishedService serviceWithUddi = new PublishedService();
-        serviceWithUddi.setOid(1L);
+        serviceWithUddi.setGoid(new Goid(0,1L));
         final PublishedService serviceWithPolicy = new PublishedService();
-        serviceWithPolicy.setOid(2L);
+        serviceWithPolicy.setGoid(new Goid(0, 2L));
         final Policy policy = new Policy(PolicyType.PRIVATE_SERVICE, "test", "test", false);
-        policy.setOid(3L);
+        policy.setGoid(new Goid(0, 3L));
         serviceWithPolicy.setPolicy(policy);
         final UDDIProxiedServiceInfo info = new UDDIProxiedServiceInfo();
         info.setOid(4L);
@@ -84,16 +83,16 @@ public class BulkZoneUpdaterTest {
         control.setOid(5L);
         headers.add(new ServiceHeader(serviceWithUddi));
         headers.add(new ServiceHeader(serviceWithPolicy));
-        when(uddiAdmin.findProxiedServiceInfoForPublishedService(1L)).thenReturn(info);
-        when(uddiAdmin.getUDDIServiceControl(1L)).thenReturn(control);
-        when(policyAdmin.findPolicyByPrimaryKey(3L)).thenReturn(policy);
+        when(uddiAdmin.findProxiedServiceInfoForPublishedService(new Goid(0,1L))).thenReturn(info);
+        when(uddiAdmin.getUDDIServiceControl(new Goid(0,1L))).thenReturn(control);
+        when(policyAdmin.findPolicyByPrimaryKey(new Goid(0,3L))).thenReturn(policy);
 
         updater.bulkUpdate(ZONE_GOID, EntityType.SERVICE, headers);
         final Map<EntityType, Collection<Serializable>> expected = new HashMap<>();
-        expected.put(EntityType.SERVICE, Arrays.<Serializable>asList(1L, 2L));
+        expected.put(EntityType.SERVICE, Arrays.<Serializable>asList(new Goid(0,1L), new Goid(0,2L)));
         expected.put(EntityType.UDDI_PROXIED_SERVICE_INFO, Arrays.<Serializable>asList(4L));
         expected.put(EntityType.UDDI_SERVICE_CONTROL, Arrays.<Serializable>asList(5L));
-        expected.put(EntityType.POLICY, Arrays.<Serializable>asList(3L));
+        expected.put(EntityType.POLICY, Arrays.<Serializable>asList(new Goid(0,3L)));
         verify(rbacAdmin).setSecurityZoneForEntities(ZONE_GOID, expected);
     }
 
@@ -130,7 +129,7 @@ public class BulkZoneUpdaterTest {
     @Test(expected = FindException.class)
     public void bulkUpdateFindError() throws Exception {
         headers.add(new EntityHeader(new Goid(0,1L), EntityType.SERVICE, "testWithUddi", "testWithUddi"));
-        when(uddiAdmin.findProxiedServiceInfoForPublishedService(anyLong())).thenThrow(new FindException("mocking exception"));
+        when(uddiAdmin.findProxiedServiceInfoForPublishedService(any(Goid.class))).thenThrow(new FindException("mocking exception"));
         updater.bulkUpdate(ZONE_GOID, EntityType.SERVICE, headers);
     }
 

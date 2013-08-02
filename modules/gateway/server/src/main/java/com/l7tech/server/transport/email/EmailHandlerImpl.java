@@ -2,10 +2,12 @@ package com.l7tech.server.transport.email;
 
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.transport.email.EmailListener;
 import com.l7tech.message.EmailKnob;
 import com.l7tech.message.MimeKnob;
 import com.l7tech.message.XmlKnob;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.MessageProcessor;
 import com.l7tech.server.ServerConfigParams;
@@ -112,14 +114,14 @@ public class EmailHandlerImpl implements EmailHandler {
         }
 
         try {
-            final long[] hardWiredServiceOidHolder = new long[]{ 0L };
+            final Goid[] hardWiredServiceGoidHolder = new Goid[]{ PublishedService.DEFAULT_GOID };
             try {
                 Properties props = emailListenerCfg.getEmailListener().properties();
                 String tmp = props.getProperty(EmailListener.PROP_IS_HARDWIRED_SERVICE);
                 if (tmp != null) {
                     if (Boolean.parseBoolean(tmp)) {
                         tmp = props.getProperty( EmailListener.PROP_HARDWIRED_SERVICE_ID);
-                        hardWiredServiceOidHolder[0] = Long.parseLong(tmp);
+                        hardWiredServiceGoidHolder[0] = Goid.parseGoid(tmp);
                     }
                 }
             } catch (Exception e) {
@@ -139,8 +141,8 @@ public class EmailHandlerImpl implements EmailHandler {
                 }
 
                 @Override
-                public long getServiceOid() {
-                    return hardWiredServiceOidHolder[0];
+                public Goid getServiceGoid() {
+                    return hardWiredServiceGoidHolder[0];
                 }
             });
 

@@ -12,13 +12,13 @@ import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.identity.ldap.LdapUser;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.IncludeAssertionDereferenceTranslator;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
-import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.policy.wsp.WspWriter;
@@ -652,7 +652,11 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
         return applicationContext;
     }
 
-    protected PublishedService resolveService(long oid) {
-         return serviceCache.getCachedService(oid);
+    protected PublishedService resolveService(Goid goid) {
+         return serviceCache.getCachedService(goid);
+    }
+
+    protected PublishedService resolveService(Long oid) {
+        return serviceCache.findByOldOid(oid);
     }
 }

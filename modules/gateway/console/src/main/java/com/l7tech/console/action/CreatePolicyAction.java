@@ -14,6 +14,7 @@ import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.OkCancelDialog;
 import com.l7tech.objectmodel.DuplicateObjectException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.policy.Policy;
@@ -94,7 +95,7 @@ public class CreatePolicyAction extends SecureAction {
                 AbstractTreeNode root = TopComponents.getInstance().getPoliciesFolderNode();
 
                 final Policy newPolicy = dlg.getValue();
-                Pair<Long,String> oidAndGuid = null;
+                Pair<Goid,String> oidAndGuid = null;
                 try {
                     //if the editor didn't already create some policy content, create a default here
                     if (!(newPolicy.getType() == PolicyType.INTERNAL)) {
@@ -138,7 +139,7 @@ public class CreatePolicyAction extends SecureAction {
                 }
 
                 if ( oidAndGuid != null ) {
-                    newPolicy.setOid( oidAndGuid.left );
+                    newPolicy.setGoid( oidAndGuid.left );
                     newPolicy.setGuid( oidAndGuid.right );
 
                     final JTree tree = (JTree)TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME);
@@ -157,7 +158,7 @@ public class CreatePolicyAction extends SecureAction {
                     final AbstractTreeNode sn = TreeNodeFactory.asTreeNode(ph, null);
                     model.insertNodeInto(sn, parent, parent.getInsertPosition(sn, RootNode.getComparator()));
                     RootNode rootNode = (RootNode) model.getRoot();
-                    rootNode.addEntity(ph.getOid(), sn);
+                    rootNode.addEntity(ph.getGoid(), sn);
 
                     tree.setSelectionPath(new TreePath(sn.getPath()));
 

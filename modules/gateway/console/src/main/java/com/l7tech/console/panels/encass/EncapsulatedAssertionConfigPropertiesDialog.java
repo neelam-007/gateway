@@ -12,8 +12,8 @@ import com.l7tech.gui.SimpleTableModel;
 import com.l7tech.gui.util.*;
 import com.l7tech.gui.widgets.OkCancelDialog;
 import com.l7tech.gui.widgets.WrappingLabel;
-import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionArgumentDescriptor;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionResultDescriptor;
@@ -514,7 +514,7 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
             PolicyHeader initialValue = null;
             if (policy != null) {
                 for (PolicyHeader policyHeader : policyHeaders) {
-                    if (policyHeader.getOid() == policy.getOid()) {
+                    if (Goid.equals(policyHeader.getGoid(), policy.getGoid())) {
                         initialValue = policyHeader;
                         break;
                     }
@@ -534,7 +534,7 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
                         if (policySelector.isSelectionChanged() || autoPopulate) {
                             // reload the policy
                             try {
-                                final Policy newPolicy = Registry.getDefault().getPolicyAdmin().findPolicyByPrimaryKey(selected.getOid());
+                                final Policy newPolicy = Registry.getDefault().getPolicyAdmin().findPolicyByPrimaryKey(selected.getGoid());
                                 if (newPolicy == null) {
                                     showError("Policy not found", null);
                                     return;

@@ -1,5 +1,7 @@
 package com.l7tech.server.wsdm.subscription;
 
+import com.l7tech.objectmodel.Goid;
+
 /**
  * Callback definitions for objects monitoring service states
  * <p/>
@@ -10,11 +12,11 @@ package com.l7tech.server.wsdm.subscription;
  * Date: Jan 4, 2008<br/>
  */
 public interface ServiceStateMonitor {
-    void onServiceDisabled(long serviceoid);
+    void onServiceDisabled(Goid serviceGoid);
 
-    void onServiceEnabled(long serviceoid);
+    void onServiceEnabled(Goid serviceGoid);
 
-    void onServiceCreated(long serviceoid);
+    void onServiceCreated(Goid serviceGoid);
 
-    void onServiceDeleted(long serviceoid);
+    void onServiceDeleted(Goid serviceGoid);
 }

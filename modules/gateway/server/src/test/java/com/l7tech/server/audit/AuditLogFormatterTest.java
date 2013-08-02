@@ -5,15 +5,14 @@ import com.l7tech.gateway.common.Component;
 import com.l7tech.gateway.common.audit.*;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.message.Message;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.server.ServerConfigParams;
-import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
-
+import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.util.Config;
 import com.l7tech.util.MockConfig;
-import static org.junit.Assert.*;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.context.ApplicationContext;
@@ -21,6 +20,8 @@ import org.springframework.context.ApplicationContext;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
+
+import static org.junit.Assert.*;
 
 /**
  * User: vchan
@@ -49,7 +50,7 @@ public class AuditLogFormatterTest {
     public void setUp() throws Exception {
         if (pec == null) {
             PublishedService pubsvc = new PublishedService();
-            pubsvc.setOid(393216L);
+            pubsvc.setGoid(new Goid(0, 393216L));
             pubsvc.setName("Warehoust");
             pubsvc.setRoutingUri("/wh2");
             Message req = new Message(XmlUtil.createEmptyDocument());
@@ -108,11 +109,11 @@ public class AuditLogFormatterTest {
             // test with custom properties
             setCustomTestFormat(TEST_PROP, "Processing service_oid={2} name={3}");
             logStr = new TestingAuditLogFormatter<MessageSummaryAuditRecord>(null).format(testRecord, true);
-            checkFormattedLog("AuditHeader-1: valid parms", "Processing service_oid=393216 name=Warehoust [/wh2]", logStr);
+            checkFormattedLog("AuditHeader-1: valid parms", "Processing service_oid="+new Goid(0,393216L).toHexString()+" name=Warehoust [/wh2]", logStr);
 
             setCustomTestFormat(TEST_PROP, "header: {2};{3};ignore={0}{1};unchanged={4}{8}{16}{32}");
             logStr = new TestingAuditLogFormatter<MessageSummaryAuditRecord>(null).format(testRecord, true);
-            checkFormattedLog("AuditHeader-2: all parms", "header: 393216;Warehoust [/wh2];ignore=;unchanged={4}{8}{16}{32}", logStr);
+            checkFormattedLog("AuditHeader-2: all parms", "header: "+new Goid(0,393216L).toHexString()+";Warehoust [/wh2];ignore=;unchanged={4}{8}{16}{32}", logStr);
 
             setCustomTestFormat(TEST_PROP, "Just plain text");
             logStr = new TestingAuditLogFormatter<MessageSummaryAuditRecord>(null).format(testRecord, true);
@@ -143,7 +144,7 @@ public class AuditLogFormatterTest {
             setCustomTestFormat(TEST_PROP, BAD_FMT_TEMPLATE);
             logStr = new TestingAuditLogFormatter<MessageSummaryAuditRecord>(ctxMap).format(testRecord, true);
             checkFormattedLog("AuditHeader-8: ctx vars, bad formatting",
-                    "bad tags template. ><   393216 >< Warehoust [/wh2] {4} {1011} >< >< >< >< $ section 2. >< >< >< >< >< >< >< >< >< >< section 3. >< >< >< >< >< >< >< ><",
+                    "bad tags template. ><   "+new Goid(0,393216L).toHexString()+" >< Warehoust [/wh2] {4} {1011} >< >< >< >< $ section 2. >< >< >< >< >< >< >< >< >< >< section 3. >< >< >< >< >< >< >< ><",
                     logStr);
 
             // ++test var length limit, test total msg length limit++
@@ -168,11 +169,11 @@ public class AuditLogFormatterTest {
             // test with custom properties
             setCustomTestFormat(TEST_PROP, "{1} oid={2} svc={3}");
             logStr = new TestingAuditLogFormatter<MessageSummaryAuditRecord>(null).format(testRecord, false);
-            checkFormattedLog("AuditFooter-1: valid parms", "Message processed successfully oid=393216 svc=Warehoust [/wh2]", logStr);
+            checkFormattedLog("AuditFooter-1: valid parms", "Message processed successfully oid="+new Goid(0,393216L).toHexString()+" svc=Warehoust [/wh2]", logStr);
 
             setCustomTestFormat(TEST_PROP, "footer: {1};{2};{3};ignore={0};unchanged={4}{8}{16}{32}");
             logStr = new TestingAuditLogFormatter<MessageSummaryAuditRecord>(null).format(testRecord, false);
-            checkFormattedLog("AuditFooter-2: all parms", "footer: Message processed successfully;393216;Warehoust [/wh2];ignore=;unchanged={4}{8}{16}{32}", logStr);
+            checkFormattedLog("AuditFooter-2: all parms", "footer: Message processed successfully;"+new Goid(0,393216L).toHexString()+";Warehoust [/wh2];ignore=;unchanged={4}{8}{16}{32}", logStr);
 
             setCustomTestFormat(TEST_PROP, "Just plain text");
             logStr = new TestingAuditLogFormatter<MessageSummaryAuditRecord>(null).format(testRecord, false);
@@ -202,7 +203,7 @@ public class AuditLogFormatterTest {
             setCustomTestFormat(TEST_PROP, BAD_FMT_TEMPLATE);
             logStr = new TestingAuditLogFormatter<MessageSummaryAuditRecord>(ctxMap).format(testRecord, false);
             checkFormattedLog("AuditFooter-9: ctx vars, bad template",
-                    "bad tags template. ><  Message processed successfully 393216 >< Warehoust [/wh2] {4} {1011} >< >< >< >< $ section 2. >< >< >< >< >< >< >< >< >< >< section 3. >< >< >< >< >< >< >< ><",
+                    "bad tags template. ><  Message processed successfully "+new Goid(0,393216L).toHexString()+" >< Warehoust [/wh2] {4} {1011} >< >< >< >< $ section 2. >< >< >< >< >< >< >< >< >< >< section 3. >< >< >< >< >< >< >< ><",
                     logStr);
 
         } finally {
@@ -229,11 +230,11 @@ public class AuditLogFormatterTest {
             // test with custom properties
             setCustomTestFormat(TEST_PROP, "{0}: {1} oid={2} svc={3}");
             logStr = new TestingAuditLogFormatter<MessageSummaryAuditRecord>(null).formatDetail(testRecord, dtl);
-            checkFormattedLog("AuditDetail-1: valid parms", mid + ": " + mmsg + " oid=393216 svc=Warehoust [/wh2]", logStr);
+            checkFormattedLog("AuditDetail-1: valid parms", mid + ": " + mmsg + " oid="+new Goid(0,393216L).toHexString()+" svc=Warehoust [/wh2]", logStr);
 
             setCustomTestFormat(TEST_PROP, "detail: {0};{1};{2};{3};ignore=none;unchanged={4}{8}{16}{32}");
             logStr = new TestingAuditLogFormatter<MessageSummaryAuditRecord>(null).formatDetail(testRecord, dtl);
-            checkFormattedLog("AuditDetail-2: all parms", "detail: "+mid+";"+mmsg+";393216;Warehoust [/wh2];ignore=none;unchanged={4}{8}{16}{32}", logStr);
+            checkFormattedLog("AuditDetail-2: all parms", "detail: "+mid+";"+mmsg+";"+new Goid(0,393216L).toHexString()+";Warehoust [/wh2];ignore=none;unchanged={4}{8}{16}{32}", logStr);
 
             setCustomTestFormat(TEST_PROP, "Just plain text");
             logStr = new TestingAuditLogFormatter<MessageSummaryAuditRecord>(null).formatDetail(testRecord, dtl);
@@ -263,7 +264,7 @@ public class AuditLogFormatterTest {
             setCustomTestFormat(TEST_PROP, BAD_FMT_TEMPLATE);
             logStr = new TestingAuditLogFormatter<MessageSummaryAuditRecord>(ctxMap).formatDetail(testRecord, dtl);
             checkFormattedLog("AuditDetail-9: ctx vars, bad template",
-                    "bad tags template. >< "+mid+" "+mmsg+" 393216 >< Warehoust [/wh2] {4} {1011} >< >< >< >< $ section 2. >< >< >< >< >< >< >< >< >< >< section 3. >< >< >< >< >< >< >< ><", 
+                    "bad tags template. >< "+mid+" "+mmsg+" "+new Goid(0,393216L).toHexString()+" >< Warehoust [/wh2] {4} {1011} >< >< >< >< $ section 2. >< >< >< >< >< >< >< >< >< >< section 3. >< >< >< >< >< >< >< ><",
                     logStr);
 
         } finally {
@@ -465,7 +466,7 @@ public class AuditLogFormatterTest {
                     null, 4096,
                     null, 4096,
                     HTTP_RESP, LATENCY,
-                    SERVICE_OID, SERVICE_NAME,
+                    SERVICE_GOID, SERVICE_NAME,
                     null,
                     true,
                     SECURITY_TOKEN,
@@ -518,7 +519,7 @@ public class AuditLogFormatterTest {
         final String CLIENT_ADDR = "192.168.1.144";
         final int HTTP_RESP = 200; // OK
         final int LATENCY = 1234;
-        final long SERVICE_OID = 393216L;
+        final Goid SERVICE_GOID = new Goid(0,393216L);
         final String SERVICE_NAME = "Warehoust [/wh2]";
 
         final SecurityTokenType SECURITY_TOKEN = SecurityTokenType.HTTP_BASIC;

@@ -65,7 +65,7 @@ public class AuditLogFormatter<REC extends AuditRecord> {
     private final String otherFormat;
     private final String otherDetail;
 
-    private final String serviceOid;
+    private final String serviceGoid;
     private final String serviceName;
 
     public AuditLogFormatter(Map<String, Object> ctxVariablesMap) {
@@ -99,14 +99,14 @@ public class AuditLogFormatter<REC extends AuditRecord> {
 
         PolicyEnforcementContext pec = PolicyEnforcementContextFactory.getCurrent();
         if (pec != null && pec.getService() != null) {
-            this.serviceOid = (pec.getService().getOidAsLong() != null ? pec.getService().getOidAsLong().toString() : "");
+            this.serviceGoid = (pec.getService().getGoid() != null ? pec.getService().getGoid().toString() : "");
             if ( pec.getService().getRoutingUri() == null ) {
                 this.serviceName = pec.getService().getName();
             } else {
                 this.serviceName = MessageFormat.format("{0} [{1}]", new String[] { pec.getService().getName(), pec.getService().getRoutingUri() });
             }
         } else {
-            this.serviceOid = "";
+            this.serviceGoid = "";
             this.serviceName = "";
         }
     }
@@ -273,7 +273,7 @@ public class AuditLogFormatter<REC extends AuditRecord> {
     }
 
     public String formatDetail(AuditDetailMessage details) {
-        if (serviceOid.length() > 0 && serviceName.length() > 0)
+        if (serviceGoid.length() > 0 && serviceName.length() > 0)
             return truncateForReturn(MessageFormat.format(this.serviceDetail, getParameters(details)));
         return truncateForReturn(MessageFormat.format(this.otherDetail, getParameters(details)));
     }
@@ -299,7 +299,7 @@ public class AuditLogFormatter<REC extends AuditRecord> {
         Object[] parms = new String[4];
         parms[0] = "";
         parms[1] = (isHeader ? "" : record.getMessage());
-        parms[2] = (record instanceof MessageSummaryAuditRecord ? serviceOid : "");
+        parms[2] = (record instanceof MessageSummaryAuditRecord ? serviceGoid : "");
         parms[3] = (record instanceof MessageSummaryAuditRecord ? serviceName : "");
         return parms;
     }
@@ -312,7 +312,7 @@ public class AuditLogFormatter<REC extends AuditRecord> {
     private Object[] getParameters(AuditDetailMessage details) {
         return new String[] { Integer.toString(details.getId()),
                               details.getMessage(),
-                              serviceOid,
+                              serviceGoid,
                               serviceName };
     }
 

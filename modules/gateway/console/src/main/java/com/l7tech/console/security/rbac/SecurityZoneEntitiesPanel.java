@@ -15,7 +15,7 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SecurityZone;
-import com.l7tech.objectmodel.folder.HasFolderOid;
+import com.l7tech.objectmodel.folder.HasFolderGoid;
 import com.l7tech.policy.PolicyHeader;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.policy.assertion.Assertion;
@@ -121,9 +121,9 @@ public class SecurityZoneEntitiesPanel extends JPanel {
                     public String call(final EntityHeader entityHeader) {
                         final EntityNameResolver entityNameResolver = Registry.getDefault().getEntityNameResolver();
                         String path = StringUtils.EMPTY;
-                        if (entityHeader instanceof HasFolderOid) {
+                        if (entityHeader instanceof HasFolderGoid) {
                             try {
-                                path = entityNameResolver.getPath((HasFolderOid) entityHeader);
+                                path = entityNameResolver.getPath((HasFolderGoid) entityHeader);
                             } catch (final FindException e) {
                                 logger.log(Level.WARNING, "Unable to determine path for entity: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
                                 return "unknown path";
@@ -225,9 +225,9 @@ public class SecurityZoneEntitiesPanel extends JPanel {
         final boolean pathColumnVisible = entitiesTable.getColumnCount() > 1;
         if (entitiesTableModel.getRowCount() > 0) {
             final EntityHeader firstHeader = entitiesTableModel.getRowObject(0);
-            if (!pathColumnVisible && (firstHeader instanceof HasFolderOid || firstHeader.getType() == EntityType.ASSERTION_ACCESS)) {
+            if (!pathColumnVisible && (firstHeader instanceof HasFolderGoid || firstHeader.getType() == EntityType.ASSERTION_ACCESS)) {
                 entitiesTable.addColumn(pathColumn);
-            } else if (pathColumnVisible && !(firstHeader instanceof HasFolderOid || firstHeader.getType() == EntityType.ASSERTION_ACCESS)) {
+            } else if (pathColumnVisible && !(firstHeader instanceof HasFolderGoid || firstHeader.getType() == EntityType.ASSERTION_ACCESS)) {
                 entitiesTable.removeColumn(pathColumn);
             }
         } else if (pathColumnVisible) {

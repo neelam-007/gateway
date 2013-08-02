@@ -4,6 +4,7 @@ import com.l7tech.gateway.common.uddi.UDDIServiceControl;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityManager;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 
 import java.util.Collection;
 
@@ -15,11 +16,11 @@ public interface UDDIServiceControlManager extends EntityManager<UDDIServiceCont
     /**
      * Find a UDDIServiceControl by published service oid.
      *
-     * @param serviceOid The service oid
+     * @param serviceGoid The service goid
      * @return The UDDIServiceControl or null
      * @throws FindException If an error occurs.
      */
-    UDDIServiceControl findByPublishedServiceOid( long serviceOid ) throws FindException;
+    UDDIServiceControl findByPublishedServiceGoid( Goid serviceGoid ) throws FindException;
 
     /**
      * Find UDDIServiceControls by UDDI registry oid.

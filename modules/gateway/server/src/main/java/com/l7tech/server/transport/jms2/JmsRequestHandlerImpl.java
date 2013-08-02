@@ -1,10 +1,12 @@
 package com.l7tech.server.transport.jms2;
 
 import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.message.JmsKnob;
 import com.l7tech.message.MimeKnob;
 import com.l7tech.message.XmlKnob;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.MessageProcessor;
 import com.l7tech.server.ServerConfigParams;
@@ -175,13 +177,13 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
             }
 
             try {
-                final long[] hardwiredserviceOidHolder = new long[]{0};
+                final Goid[] hardwiredserviceGoidHolder = new Goid[]{PublishedService.DEFAULT_GOID};
                 try {
                     String tmp = props.getProperty(JmsConnection.PROP_IS_HARDWIRED_SERVICE);
                     if (tmp != null) {
                         if (Boolean.parseBoolean(tmp)) {
                             tmp = props.getProperty(JmsConnection.PROP_HARDWIRED_SERVICE_ID);
-                            hardwiredserviceOidHolder[0] = Long.parseLong(tmp);
+                            hardwiredserviceGoidHolder[0] = Goid.parseGoid(tmp);
                         }
                     }
                 } catch (Exception e) {
@@ -204,8 +206,8 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
                         return soapAction;
                     }
                     @Override
-                    public long getServiceOid() {
-                        return hardwiredserviceOidHolder[0];
+                    public Goid getServiceGoid() {
+                        return hardwiredserviceGoidHolder[0];
                     }
 
                     @Override

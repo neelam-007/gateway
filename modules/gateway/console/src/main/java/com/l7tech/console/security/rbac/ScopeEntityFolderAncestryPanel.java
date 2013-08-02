@@ -11,6 +11,7 @@ import com.l7tech.gui.widgets.ValidatedPanel;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.FolderHeader;
 import com.l7tech.policy.Policy;
@@ -106,16 +107,16 @@ public class ScopeEntityFolderAncestryPanel extends ValidatedPanel<EntityFolderA
     }
 
     private EntityHeader lookupEntityHeader(EntityType entityType, String entityId) {
-        long oid = Long.valueOf(entityId);
+        Goid goid = Goid.parseGoid(entityId);
 
         try {
             switch (entityType) {
                 case FOLDER:
-                    Folder folder = Registry.getDefault().getFolderAdmin().findByPrimaryKey(oid);
+                    Folder folder = Registry.getDefault().getFolderAdmin().findByPrimaryKey(goid);
                     return folder == null ? null : new FolderHeader(folder);
 
                 case POLICY:
-                    Policy policy = Registry.getDefault().getPolicyAdmin().findPolicyByPrimaryKey(oid);
+                    Policy policy = Registry.getDefault().getPolicyAdmin().findPolicyByPrimaryKey(goid);
                     return policy == null ? null : new PolicyHeader(policy);
 
                 case SERVICE:
@@ -127,7 +128,7 @@ public class ScopeEntityFolderAncestryPanel extends ValidatedPanel<EntityFolderA
                     return null;
             }
         } catch (FindException e) {
-            logger.log(Level.WARNING, "Unable to look up entity header for " + entityType + " oid " + entityId + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            logger.log(Level.WARNING, "Unable to look up entity header for " + entityType + " goid " + entityId + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             return null;
         }
     }

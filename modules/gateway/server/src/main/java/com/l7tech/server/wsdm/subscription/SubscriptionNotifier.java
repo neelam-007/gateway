@@ -15,13 +15,13 @@ import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.message.HttpRequestKnobAdapter;
 import com.l7tech.message.Message;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.ServerConfigParams;
-import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.audit.AuditContextFactory;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.audit.MessageSummaryAuditFactory;
@@ -321,13 +321,13 @@ public class SubscriptionNotifier implements ServiceStateMonitor, ApplicationCon
         }
         
         try {
-            PublishedService svc = serviceCache.getCachedService(Long.parseLong(method.getServiceId()));
+            PublishedService svc = serviceCache.getCachedService(Goid.parseGoid(method.getServiceId()));
             if (svc == null) throw new ResourceUnknownFault("No service with ID " + method.getServiceId());
             
             final Subscription sub = new Subscription(method, generateNewSubscriptionId(), clusterNodeId);
             sub.setNotificationPolicyGuid(policyGuid);
 
-            SubscriptionKey key = new SubscriptionKey(sub.getPublishedServiceOid(), sub.getTopic(), sub.getReferenceCallback());
+            SubscriptionKey key = new SubscriptionKey(sub.getPublishedServiceGoid(), sub.getTopic(), sub.getReferenceCallback());
             Collection<Subscription> duplicateSubs = subscriptionManager.findBySubscriptionKey( key );
             if ( !duplicateSubs.isEmpty() ) {
                 String uuid = duplicateSubs.iterator().next().getUuid();
@@ -353,27 +353,27 @@ public class SubscriptionNotifier implements ServiceStateMonitor, ApplicationCon
 
     public class ServiceStatusNotificationContext {
         public String subscriptionId;
-        public long serviceId;
+        public Goid serviceId;
         public String target;
         public String refParamsXml;
         public long ts;
         public String eventId;
         public String notificationPolicyGuid;
         public MetricsSummaryBin bin;
-        public long esmServiceOid;
+        public Goid esmServiceGoid;
     }
 
     @Override
-    public void onServiceDisabled(final long serviceoid) {
+    public void onServiceDisabled(final Goid serviceGoid) {
         if ( notificationEnabled.get() ) {
-            notify(serviceoid, NotificationType.DISABLED);
+            notify(serviceGoid, NotificationType.DISABLED);
         }
     }
 
     @Override
-    public void onServiceEnabled(final long serviceoid) {
+    public void onServiceEnabled(final Goid serviceGoid) {
         if ( notificationEnabled.get() ) {
-            notify(serviceoid, NotificationType.ENABLED);
+            notify(serviceGoid, NotificationType.ENABLED);
         }
     }
 
@@ -383,10 +383,10 @@ public class SubscriptionNotifier implements ServiceStateMonitor, ApplicationCon
         METRICS
     }
 
-    private void notify(final long serviceoid, final NotificationType type) {
+    private void notify(final Goid serviceGoid, final NotificationType type) {
         final Collection<Subscription> subs;
         try {
-            subs = subscriptionManager.findByNodeAndServiceOid(clusterNodeId, serviceoid);
+            subs = subscriptionManager.findByNodeAndServiceGoid(clusterNodeId, serviceGoid);
         } catch (FindException e) {
             logger.log(Level.WARNING, "Unable to find Subscriptions", e);
             return;
@@ -395,7 +395,7 @@ public class SubscriptionNotifier implements ServiceStateMonitor, ApplicationCon
         final List<ServiceStatusNotificationContext> callbacks = new ArrayList<ServiceStatusNotificationContext>();
         final long now = System.currentTimeMillis();
         for (Subscription s : subs) {
-            if (s.getPublishedServiceOid() != serviceoid) continue; // Shouldn't be here anyway
+            if (Goid.equals(s.getPublishedServiceGoid(), serviceGoid)) continue; // Shouldn't be here anyway
 
             if (s.getTermination() < now) {
                 logger.info(MessageFormat.format("Ignoring subscription {0} because it expired {1} seconds ago", s.getUuid(), (System.currentTimeMillis() - s.getTermination()) / 1000));
@@ -405,8 +405,8 @@ public class SubscriptionNotifier implements ServiceStateMonitor, ApplicationCon
                 {
                     ServiceStatusNotificationContext ssnc = new ServiceStatusNotificationContext();
                     ssnc.subscriptionId = s.getUuid();
-                    ssnc.esmServiceOid = s.getEsmServiceOid();
-                    ssnc.serviceId = serviceoid;
+                    ssnc.esmServiceGoid = s.getEsmServiceGoid();
+                    ssnc.serviceId = serviceGoid;
                     ssnc.target = s.getReferenceCallback();
                     ssnc.refParamsXml = processReferenceParameters(s);
                     ssnc.notificationPolicyGuid = s.getNotificationPolicyGuid();
@@ -646,13 +646,13 @@ public class SubscriptionNotifier implements ServiceStateMonitor, ApplicationCon
     }
 
     @Override
-    public void onServiceCreated(final long serviceoid) {
-        onServiceEnabled(serviceoid);
+    public void onServiceCreated(final Goid serviceGoid) {
+        onServiceEnabled(serviceGoid);
     }
 
     @Override
-    public void onServiceDeleted(final long serviceoid) {
-        onServiceDisabled(serviceoid);
+    public void onServiceDeleted(final Goid serviceGoid) {
+        onServiceDisabled(serviceGoid);
     }
 
     public void pushMetricsNotifications(long when) {
@@ -672,8 +672,8 @@ public class SubscriptionNotifier implements ServiceStateMonitor, ApplicationCon
 
             ServiceStatusNotificationContext ssnc = new ServiceStatusNotificationContext();
             ssnc.subscriptionId = sub.getUuid();
-            ssnc.esmServiceOid = sub.getEsmServiceOid();
-            ssnc.serviceId = sub.getPublishedServiceOid();
+            ssnc.esmServiceGoid = sub.getEsmServiceGoid();
+            ssnc.serviceId = sub.getPublishedServiceGoid();
             ssnc.target = sub.getReferenceCallback();
             ssnc.refParamsXml = processReferenceParameters(sub);
             ssnc.notificationPolicyGuid = sub.getNotificationPolicyGuid();
@@ -828,16 +828,16 @@ public class SubscriptionNotifier implements ServiceStateMonitor, ApplicationCon
         output = output.replace("^$^$^_WSA_TARGET_^$^$^", ssnc.target);
         output = output.replace("^$^$^_REFERENCE_PARAMS_^$^$^", ssnc.refParamsXml);
         output = output.replace("^$^$^_SUBSCRIPTION_ID_^$^$^", ssnc.subscriptionId);
-        output = output.replace("^$^$^_ESM_SUBS_SVC_URL_^$^$^", getEsmRoutingUri(ssnc.esmServiceOid));
+        output = output.replace("^$^$^_ESM_SUBS_SVC_URL_^$^$^", getEsmRoutingUri(ssnc.esmServiceGoid));
         output = output.replace("^$^$^_EVENT_UUID_^$^$^", "urn:uuid:" + notificationEventId);
         output = output.replace("^$^$^_SRC_SVC_URL_^$^$^", incomingUrl.toString() + "/service/" + ssnc.serviceId);
         output = output.replace("^$^$^_NOW_TIMESTAMP_^$^$^", ISO8601Date.format(new Date(ssnc.ts)));
         return output;
     }
 
-    private String getEsmRoutingUri(long serviceOid) {
+    private String getEsmRoutingUri(Goid serviceGoid) {
         String esmRoutingUri = null;
-        PublishedService esmService = serviceCache.getCachedService(serviceOid);
+        PublishedService esmService = serviceCache.getCachedService(serviceGoid);
         if (esmService != null) {
             esmRoutingUri = incomingUrl.toString() + esmService.getRoutingUri();
         } else {
@@ -846,7 +846,7 @@ public class SubscriptionNotifier implements ServiceStateMonitor, ApplicationCon
             for(PublishedService service : serviceCache.getInternalServices()) {
                 if (subscriptionWsdlUrl.equals(service.getWsdlUrl())) {
                     esmRoutingUri = incomingUrl.toString() + service.getRoutingUri();
-                    auditor.logAndAudit(ServiceMessages.ESM_SUBSCRIPTION_SERVICE_GONE, Long.toString(serviceOid), esmRoutingUri);
+                    auditor.logAndAudit(ServiceMessages.ESM_SUBSCRIPTION_SERVICE_GONE, Goid.toString(serviceGoid), esmRoutingUri);
                     break;
                 }
             }
@@ -854,7 +854,7 @@ public class SubscriptionNotifier implements ServiceStateMonitor, ApplicationCon
             if (esmRoutingUri == null) {
                 esmRoutingUri = SoapConstants.WSA_NO_ADDRESS;
                 // there are no esm subscription services, use the special address "none"
-                auditor.logAndAudit(ServiceMessages.ESM_NO_SUBSCRIPTION_SERVICE, Long.toString(serviceOid), esmRoutingUri);
+                auditor.logAndAudit(ServiceMessages.ESM_NO_SUBSCRIPTION_SERVICE, Goid.toString(serviceGoid), esmRoutingUri);
             }
         }
         return esmRoutingUri;

@@ -1,5 +1,6 @@
 package com.l7tech.gateway.common.service;
 
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.imp.GoidEntityImp;
 
 import java.text.DateFormat;
@@ -21,7 +22,7 @@ import java.util.logging.Logger;
  * @author rmak
  */
 public class MetricsBin extends GoidEntityImp implements Comparable {
-    public static final String ATTR_SERVICE_OID = "serviceOid";
+    public static final String ATTR_SERVICE_GOID = "serviceGoid";
 
     /** The value to be used for {@link MetricsBin#getResolution()} to indicate that this bin is fine resolution */
     public static final int RES_FINE = 0;
@@ -35,8 +36,8 @@ public class MetricsBin extends GoidEntityImp implements Comparable {
     /** MAC address of the cluster node from which this bin is collected. */
     private String _clusterNodeId;
 
-    /** Object ID of the {@link PublishedService} for which this bin collects data. */
-    private long _serviceOid;
+    /** ID of the {@link PublishedService} for which this bin collects data. */
+    private Goid _serviceGoid;
 
     /**
      * Resolution of this bin.
@@ -292,12 +293,12 @@ public class MetricsBin extends GoidEntityImp implements Comparable {
      *                                  but <code>fineInterval</code> <= 0
      */
     public MetricsBin(final long startTime, int fineInterval, int resolution,
-                      String clusterNodeId, long serviceOid)
+                      String clusterNodeId, Goid serviceGoid)
     {
         checkResolutionType(resolution);
 
         _clusterNodeId = clusterNodeId;
-        _serviceOid = serviceOid;
+        _serviceGoid = serviceGoid;
         _resolution = resolution;
         _periodStart = periodStartFor(resolution, fineInterval, startTime);
         if (resolution == RES_FINE) {
@@ -326,8 +327,8 @@ public class MetricsBin extends GoidEntityImp implements Comparable {
         return _clusterNodeId;
     }
 
-    public long getServiceOid() {
-        return _serviceOid;
+    public Goid getServiceGoid() {
+        return _serviceGoid;
     }
 
     public int getResolution() {
@@ -558,8 +559,8 @@ public class MetricsBin extends GoidEntityImp implements Comparable {
         _clusterNodeId = clusterNodeId;
     }
 
-    public void setServiceOid(long serviceOid) {
-        _serviceOid = serviceOid;
+    public void setServiceGoid(Goid serviceGoid) {
+        _serviceGoid = serviceGoid;
     }
 
     public void setResolution(int res) {
@@ -700,7 +701,7 @@ public class MetricsBin extends GoidEntityImp implements Comparable {
 
         if (_periodStart != that._periodStart) return false;
         if (_resolution != that._resolution) return false;
-        if (_serviceOid != that._serviceOid) return false;
+        if (!Goid.equals(_serviceGoid, that._serviceGoid)) return false;
         if (_interval != that._interval) return false;
         return !(_clusterNodeId != null ? !_clusterNodeId.equals(that._clusterNodeId) : that._clusterNodeId != null);
 
@@ -711,7 +712,7 @@ public class MetricsBin extends GoidEntityImp implements Comparable {
         result = _resolution;
         result = 29 * result + (int)(_startTime ^ (_startTime >>> 32));
         result = 29 * result + (int)(_periodStart ^ (_periodStart >>> 32));
-        result = 29 * result + (int)(_serviceOid ^ (_serviceOid >>> 32));
+        result = 29 * result + (_serviceGoid != null ? _serviceGoid.hashCode() : 0);
         result = 29 * result + (_clusterNodeId != null ? _clusterNodeId.hashCode() : 0);
         result = 29 * result + _interval;
         return result;

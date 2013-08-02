@@ -180,7 +180,7 @@ public interface ServiceAdmin extends AsyncAdminMethods, AliasAdmin<PublishedSer
      * @throws PolicyAssertionException if the server policy could not be instantiated for this policy
      */
     @Secured(stereotype=SAVE_OR_UPDATE)
-    long savePublishedService(PublishedService service)
+    Goid savePublishedService(PublishedService service)
             throws UpdateException, SaveException, VersionException, PolicyAssertionException;
 
     /**
@@ -200,7 +200,7 @@ public interface ServiceAdmin extends AsyncAdminMethods, AliasAdmin<PublishedSer
      * @throws PolicyAssertionException if the server policy could not be instantiated for this policy
      */
     @Secured(stereotype=SAVE_OR_UPDATE, relevantArg=0)
-    long savePublishedServiceWithDocuments(PublishedService service, Collection<ServiceDocument> serviceDocuments)
+    Goid savePublishedServiceWithDocuments(PublishedService service, Collection<ServiceDocument> serviceDocuments)
             throws UpdateException, SaveException, VersionException, PolicyAssertionException;
 
     /**
@@ -208,12 +208,12 @@ public interface ServiceAdmin extends AsyncAdminMethods, AliasAdmin<PublishedSer
      * <p/>
      * This currently requires that the caller have UPDATE permission on all PublishedService entities.
      *
-     * @param serviceOid the OID of the published service whose tracing flag to turn on or off.  Must not be null.
+     * @param serviceGoid the GOID of the published service whose tracing flag to turn on or off.  Must not be null.
      * @param tracingEnabled true to enable debug tracing for this published service; false to turn tracing off.
      * @throws UpdateException if the requested information could not be updated.
      */
     @Secured(stereotype=SET_PROPERTY_BY_UNIQUE_ATTRIBUTE)
-    void setTracingEnabled(long serviceOid, boolean tracingEnabled) throws UpdateException;
+    void setTracingEnabled(Goid serviceGoid, boolean tracingEnabled) throws UpdateException;
 
     /**
      * Validate the service policy and return the policy validation result. Only the server side validation rules
@@ -329,15 +329,15 @@ public interface ServiceAdmin extends AsyncAdminMethods, AliasAdmin<PublishedSer
 
     /**
      * Finds any {@link EntityHeader}s belonging to the {@link PublishedService}
-     * with the specified OID and (optional) operation name.
-     * @param serviceOid the OID of the {@link PublishedService} to which the SampleMessage belongs. Pass -1 for all services.
+     * with the specified GOID and (optional) operation name.
+     * @param serviceGoid the GOID of the {@link PublishedService} to which the SampleMessage belongs. Pass DEFAULT_GOID for all services.
      * @param operationName the name of the operation for which the SampleMessage was saved. Pass null for all operations, or "" for messages that are not categorized by operation name.
      * @return an array of {@link EntityHeader}s. May be empty, but never null.
      */
     @Transactional(readOnly=true)
     @Secured(types=EntityType.SAMPLE_MESSAGE, stereotype=FIND_HEADERS)
     @Administrative(licensed=false)
-    EntityHeader[] findSampleMessageHeaders(long serviceOid, String operationName) throws FindException;
+    EntityHeader[] findSampleMessageHeaders(Goid serviceGoid, String operationName) throws FindException;
 
     @Secured(types=EntityType.SAMPLE_MESSAGE, stereotype=SAVE_OR_UPDATE)
     Goid saveSampleMessage(SampleMessage sm) throws SaveException;
@@ -395,7 +395,7 @@ public interface ServiceAdmin extends AsyncAdminMethods, AliasAdmin<PublishedSer
 
     @Transactional(readOnly = true)
     @Secured(stereotype = FIND_ENTITY, types = EntityType.SERVICE)
-    PublishedService findByAlias(final long aliasOid) throws FindException;
+    PublishedService findByAlias(final Goid aliasGoid) throws FindException;
 
     class ResolutionReport implements Serializable {
         private final boolean resolvesByPath;
@@ -430,10 +430,10 @@ public interface ServiceAdmin extends AsyncAdminMethods, AliasAdmin<PublishedSer
 
                 List<ConflictInfo> conflictList = Arrays.asList( conflicts );
                 Collections.sort( conflictList );
-                long lastServiceId = -1;
+                Goid lastServiceId = GoidEntity.DEFAULT_GOID;
                 for ( final ConflictInfo conflict : conflicts ) {
-                    if ( conflict.getServiceOid() != lastServiceId ) {
-                        lastServiceId = conflict.getServiceOid();
+                    if ( !Goid.equals(conflict.getServiceGoid(), lastServiceId) ) {
+                        lastServiceId = conflict.getServiceGoid();
                         builder.append( "\n  Service: " );
                         builder.append( conflict.getServiceDisplayName() );
                     }
@@ -448,7 +448,7 @@ public interface ServiceAdmin extends AsyncAdminMethods, AliasAdmin<PublishedSer
     }
 
     class ConflictInfo implements Serializable, Comparable<ConflictInfo> {
-        private final long serviceOid;
+        private final Goid serviceGoid;
         private final String serviceName;
         private final String serviceDisplayName;
         private final String soapAction;
@@ -458,13 +458,13 @@ public interface ServiceAdmin extends AsyncAdminMethods, AliasAdmin<PublishedSer
         public ConflictInfo( final String path,
                              final String serviceDisplayName,
                              final String serviceName,
-                             final long serviceOid,
+                             final Goid serviceGoid,
                              final String soapAction,
                              final String soapPayloadNamespace ) {
             this.path = path;
             this.serviceDisplayName = serviceDisplayName;
             this.serviceName = serviceName;
-            this.serviceOid = serviceOid;
+            this.serviceGoid = serviceGoid;
             this.soapAction = soapAction;
             this.soapPayloadNamespace = soapPayloadNamespace;
         }
@@ -481,8 +481,8 @@ public interface ServiceAdmin extends AsyncAdminMethods, AliasAdmin<PublishedSer
             return serviceName;
         }
 
-        public long getServiceOid() {
-            return serviceOid;
+        public Goid getServiceGoid() {
+            return serviceGoid;
         }
 
         public String getSoapAction() {
@@ -510,7 +510,7 @@ public interface ServiceAdmin extends AsyncAdminMethods, AliasAdmin<PublishedSer
 
         @Override
         public int compareTo( final ConflictInfo other ) {
-            int value = Long.valueOf( serviceOid ).compareTo( other.getServiceOid() );
+            int value = serviceGoid.compareTo(other.getServiceGoid());
 
             if ( value == 0 ) {
                 value = compareMaybeNull( path, other.getPath() );
@@ -533,7 +533,7 @@ public interface ServiceAdmin extends AsyncAdminMethods, AliasAdmin<PublishedSer
 
             final ConflictInfo that = (ConflictInfo) o;
 
-            if ( serviceOid != that.serviceOid ) return false;
+            if ( !Goid.equals(serviceGoid, that.serviceGoid) ) return false;
             if ( path != null ? !path.equals( that.path ) : that.path != null ) return false;
             if ( serviceDisplayName != null ? !serviceDisplayName.equals( that.serviceDisplayName ) : that.serviceDisplayName != null )
                 return false;
@@ -548,7 +548,7 @@ public interface ServiceAdmin extends AsyncAdminMethods, AliasAdmin<PublishedSer
 
         @Override
         public int hashCode() {
-            int result = (int) (serviceOid ^ (serviceOid >>> 32));
+            int result = serviceGoid != null ? serviceGoid.hashCode() : 0;
             result = 31 * result + (serviceName != null ? serviceName.hashCode() : 0);
             result = 31 * result + (serviceDisplayName != null ? serviceDisplayName.hashCode() : 0);
             result = 31 * result + (soapAction != null ? soapAction.hashCode() : 0);

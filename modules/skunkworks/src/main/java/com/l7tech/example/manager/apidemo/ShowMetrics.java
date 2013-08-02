@@ -60,7 +60,7 @@ public class ShowMetrics {
 
         System.out.println("Number of metrics bin: " + newBins.size());
         for (MetricsSummaryBin msb : newBins) {
-            System.out.println("Service id: " + msb.getServiceOid());
+            System.out.println("Service id: " + msb.getServiceGoid());
 
             System.out.println("Start time of metrics bin " + DateFormat.getTimeInstance(DateFormat.LONG).format(
                     new Date(msb.getStartTime()))

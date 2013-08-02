@@ -14,6 +14,7 @@ import com.l7tech.gateway.common.audit.MessageProcessingMessages;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceStatistics;
 import com.l7tech.message.*;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -376,7 +377,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                 // Most likely the failure was in some other assertion
                 String serviceName = "";
                 if (context.getService() != null) {
-                    serviceName = context.getService().getName() + " [" + context.getService().getOid() + "]";
+                    serviceName = context.getService().getName() + " [" + context.getService().getGoid() + "]";
                 }
                 auditor.logAndAudit(MessageProcessingMessages.POLICY_EVALUATION_RESULT, serviceName, String.valueOf(status.getNumeric()), status.getMessage());
             }
@@ -420,10 +421,10 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
         if (context.isPolicyExecutionAttempted() && serviceMetricsServices.isEnabled()) {
             final int frontTime = (int)(context.getEndTime() - context.getStartTime());
             final int backTime = (int)(context.getRoutingTotalTime());
-            long serviceOid = context.getService() == null ? -1 : context.getService().getOid();
+            Goid serviceGoid = context.getService() == null ? PublishedService.DEFAULT_GOID : context.getService().getGoid();
 
             serviceMetricsServices.addRequest(
-                    serviceOid,
+                    serviceGoid,
                     getOperationName(context),
                     context.getDefaultAuthenticationContext().getLastAuthenticatedUser(),
                     context.getMappings(),
@@ -434,7 +435,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
     private void updateServiceStatistics(PolicyEnforcementContext context, boolean authorizedRequest, boolean completedRequest) {
         PublishedService service = context.getService();
         if (service != null && context.isPolicyExecutionAttempted()) {
-            ServiceStatistics stats = serviceCache.getServiceStatistics(service.getOid());
+            ServiceStatistics stats = serviceCache.getServiceStatistics(service.getGoid());
             stats.attemptedRequest();
             if (authorizedRequest) {
                 stats.authorizedRequest();
@@ -656,10 +657,10 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                 return AssertionStatus.SERVICE_NOT_FOUND;
             }
 
-            auditor.logAndAudit(MessageProcessingMessages.RESOLVED_SERVICE, service.getName(), String.valueOf(service.getOid()));
+            auditor.logAndAudit(MessageProcessingMessages.RESOLVED_SERVICE, service.getName(), String.valueOf(service.getGoid()));
             context.setService(service);
             HybridDiagnosticContext.put( SERVICE_ID, service.getId() );
-            HybridDiagnosticContext.put( FOLDER_ID, map( policyCache.getFolderPath( service.getPolicy().getOid() ), id() ));
+            HybridDiagnosticContext.put( FOLDER_ID, map( policyCache.getFolderPath( service.getPolicy().getGoid() ), id() ));
             return AssertionStatus.NONE;
         }
 
@@ -682,7 +683,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
 
             // initialize cache
             if(httpRequestKnob instanceof HttpServletRequestKnob) {
-                String cacheId = service.getOid() + "." + service.getVersion();
+                String cacheId = service.getGoid() + "." + service.getVersion();
                 PolicyContextCache cache = new HttpSessionPolicyContextCache(((HttpServletRequestKnob)httpRequestKnob).getHttpServletRequest(), cacheId);
                 context.setCache(cache);
             }
@@ -697,15 +698,15 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                     wrongPolicyVersion = true;
                 } else {
                     try {
-                        String expectedPolicyVersion = policyCache.getUniquePolicyVersionIdentifer( service.getPolicy().getOid() );
-                        long reqPolicyId = Long.parseLong(requestorVersion.substring(0, indexofbar));
+                        String expectedPolicyVersion = policyCache.getUniquePolicyVersionIdentifer( service.getPolicy().getGoid() );
+                        Goid reqPolicyId = Goid.parseGoid(requestorVersion.substring(0, indexofbar));
                         String reqPolicyVersion = requestorVersion.substring(indexofbar + 1);
-                        if ( reqPolicyId != service.getOid() ||
+                        if ( !Goid.equals(reqPolicyId, service.getGoid())  ||
                              !reqPolicyVersion.equals( expectedPolicyVersion )) {
-                            auditor.logAndAudit(MessageProcessingMessages.POLICY_VERSION_INVALID, requestorVersion, String.valueOf(service.getOid()), expectedPolicyVersion);
+                            auditor.logAndAudit(MessageProcessingMessages.POLICY_VERSION_INVALID, requestorVersion, String.valueOf(service.getGoid()), expectedPolicyVersion);
                             wrongPolicyVersion = true;
                         }
-                    } catch (NumberFormatException e) {
+                    } catch (IllegalArgumentException e) {
                         wrongPolicyVersion = true;
                         auditor.logAndAudit(MessageProcessingMessages.POLICY_VERSION_WRONG_FORMAT, null, e);
                     }
@@ -1070,10 +1071,10 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
         }
 
         public void lookupServerPolicy() throws ServiceResolutionException {
-            final long serviceOid = context.getService().getOid();
-            serverPolicy = serviceCache.getServerPolicy(serviceOid);
+            final Goid serviceGoid = context.getService().getGoid();
+            serverPolicy = serviceCache.getServerPolicy(serviceGoid);
             if (serverPolicy == null)
-                throw new ServiceResolutionException("service is resolved but the corresponding policy is invalid for service OID " + serviceOid + " (" + context.getService().getName() + ")");
+                throw new ServiceResolutionException("service is resolved but the corresponding policy is invalid for service OID " + serviceGoid + " (" + context.getService().getName() + ")");
             context.setServicePolicyMetadata( serverPolicy.getPolicyMetadata() );
         }
 

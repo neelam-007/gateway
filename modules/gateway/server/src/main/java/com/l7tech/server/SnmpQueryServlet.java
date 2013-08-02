@@ -2,6 +2,7 @@ package com.l7tech.server;
 
 import com.l7tech.gateway.common.cluster.ServiceUsage;
 import com.l7tech.gateway.common.transport.SsgConnector;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.cluster.ServiceUsageManager;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
@@ -227,11 +228,11 @@ public class SnmpQueryServlet extends HttpServlet {
         }
 
         ServiceUsageManager statsManager = (ServiceUsageManager)applicationContext.getBean("serviceUsageManager");
-        Map<Long, ServiceUsage> statsByOid = new HashMap<Long, ServiceUsage>();
+        Map<Goid, ServiceUsage> statsByGoid = new HashMap<Goid, ServiceUsage>();
         Collection collection = statsManager.getAll();
         for (Iterator i = collection.iterator(); i.hasNext();) {
             ServiceUsage serviceUsage = (ServiceUsage)i.next();
-            statsByOid.put(new Long(serviceUsage.getServiceid()), serviceUsage);
+            statsByGoid.put(serviceUsage.getServiceid(), serviceUsage);
         }
 
         ServiceManager serviceManager = (ServiceManager) applicationContext.getBean("serviceManager");
@@ -239,12 +240,12 @@ public class SnmpQueryServlet extends HttpServlet {
         ServiceUsage[] fullTable = new ServiceUsage[headers.length];
         for (int i = 0; i < headers.length; i++) {
             EntityHeader header = headers[i];
-            ServiceUsage su = statsByOid.get(new Long(header.getOid()));
+            ServiceUsage su = statsByGoid.get(header.getGoid());
             if (su != null) {
                 fullTable[i] = su;
             } else {
                 fullTable[i] = new ServiceUsage();
-                fullTable[i].setServiceid(header.getOid());
+                fullTable[i].setServiceid(header.getGoid());
             }
             fullTable[i].setName(header.getName());
         }
@@ -284,6 +285,11 @@ public class SnmpQueryServlet extends HttpServlet {
 
     /** Same as {@link #send(javax.servlet.http.HttpServletResponse,String,String,String)} but takes long value. */
     private void send(HttpServletResponse response, String next, String type, long value) throws IOException {
+        send(response, next, type, String.valueOf(value));
+    }
+
+    /** Same as {@link #send(javax.servlet.http.HttpServletResponse,String,String,String)} but takes goid value. */
+    private void send(HttpServletResponse response, String next, String type, Goid value) throws IOException {
         send(response, next, type, String.valueOf(value));
     }
 

@@ -5,28 +5,23 @@
 
 package com.l7tech.server.upgrade;
 
-import static com.l7tech.objectmodel.EntityType.FOLDER;
-import static com.l7tech.objectmodel.EntityType.SSG_KEY_ENTRY;
-import static com.l7tech.objectmodel.EntityType.SSG_KEYSTORE;
-import com.l7tech.gateway.common.security.rbac.Role;
-import com.l7tech.gateway.common.security.rbac.Permission;
-import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.security.rbac.EntityFolderAncestryPredicate;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.ObjectModelException;
-import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.gateway.common.security.rbac.OperationType;
+import com.l7tech.gateway.common.security.rbac.Permission;
+import com.l7tech.gateway.common.security.rbac.Role;
+import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.folder.Folder;
-import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.server.folder.FolderManager;
 import com.l7tech.server.identity.IdProvConfManagerServer;
-import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.server.security.rbac.RoleManager;
 import org.springframework.context.ApplicationContext;
 
 import java.util.Collection;
 import java.util.Set;
 import java.util.logging.Logger;
+
+import static com.l7tech.objectmodel.EntityType.*;
 
 /**
  * A database upgrade task that adds folder roles to the database.
@@ -112,9 +107,9 @@ public class Upgrade465To50UpdateRoles implements UpgradeTask {
                 continue; // no roles for root folder
             }
 
-            Collection<Role> roles = roleManager.findEntitySpecificRoles(FOLDER, folder.getOid());
+            Collection<Role> roles = roleManager.findEntitySpecificRoles(FOLDER, folder.getGoid());
             if (roles == null || roles.isEmpty() ) {
-                logger.info("Auto-creating missing admin Roles for folder " + folder.getName() + " (#" + folder.getOid() + ")");
+                logger.info("Auto-creating missing admin Roles for folder " + folder.getName() + " (#" + folder.getGoid() + ")");
                 folderManager.addManageFolderRole( folder );
                 folderManager.addReadonlyFolderRole( folder );
             }
@@ -127,7 +122,7 @@ public class Upgrade465To50UpdateRoles implements UpgradeTask {
         Collection<Role> roles = roleManager.findAll();
         role:
         for ( Role role : roles ) {
-            if ( role.getEntityType()==roleTargetEntityType && role.getEntityOid() != null ) {
+            if ( role.getEntityType()==roleTargetEntityType && role.getEntityGoid() != null ) {
                 Set<Permission> permissions = role.getPermissions();
                 for ( Permission permission : permissions ) {
                     if ( permission.getOperation()==OperationType.READ &&
@@ -139,7 +134,7 @@ public class Upgrade465To50UpdateRoles implements UpgradeTask {
                     }
                 }
                 logger.info("Auto-creating missing folder traversal permission for role " + role.getName() + ".");
-                role.addEntityFolderAncestryPermission( role.getEntityType(), Long.toString(role.getEntityOid()) );
+                role.addEntityFolderAncestryPermission( role.getEntityType(), role.getEntityGoid() );
                 roleManager.update( role );
             }
         }

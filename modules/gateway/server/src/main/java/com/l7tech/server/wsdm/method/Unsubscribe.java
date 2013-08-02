@@ -1,5 +1,6 @@
 package com.l7tech.server.wsdm.method;
 
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.wsdm.Namespaces;
 import com.l7tech.server.wsdm.faults.GenericNotificationExceptionFault;
 import com.l7tech.server.wsdm.faults.ResourceUnknownFault;
@@ -28,8 +29,8 @@ import java.net.MalformedURLException;
 public class Unsubscribe extends ESMMethod {
     private String subscriptionIdValue;
 
-    private Unsubscribe(String subscriptionId, Element unSubscribeEl, Document doc, Message request, long esmServiceOid) throws GenericNotificationExceptionFault, MalformedURLException {
-        super(doc, request, esmServiceOid);
+    private Unsubscribe(String subscriptionId, Element unSubscribeEl, Document doc, Message request, Goid esmServiceGoid) throws GenericNotificationExceptionFault, MalformedURLException {
+        super(doc, request, esmServiceGoid);
 
         // Find the SubscriptionId element and parse the id of the subscription needing unsubscription
         NodeList nl = unSubscribeEl.getElementsByTagNameNS("*", "SubscriptionId" );
@@ -53,13 +54,13 @@ public class Unsubscribe extends ESMMethod {
         }
     }
 
-    public static Unsubscribe resolve(Message request, long esmServiceOid) throws GenericNotificationExceptionFault, SAXException, IOException {
+    public static Unsubscribe resolve(Message request, Goid esmServiceGoid) throws GenericNotificationExceptionFault, SAXException, IOException {
         Document doc = request.getXmlKnob().getDocumentReadOnly();
         try {
             Element bodychild = getFirstBodyChild(doc);
             if ( bodychild != null ) {
                 if (testElementLocalName(bodychild, "Unsubscribe")) {
-                    return new Unsubscribe(getSubscriptionIdAddressingParameter(doc), bodychild, doc, request, esmServiceOid);
+                    return new Unsubscribe(getSubscriptionIdAddressingParameter(doc), bodychild, doc, request, esmServiceGoid);
                 }
             }
         } catch (InvalidDocumentFormatException e) {

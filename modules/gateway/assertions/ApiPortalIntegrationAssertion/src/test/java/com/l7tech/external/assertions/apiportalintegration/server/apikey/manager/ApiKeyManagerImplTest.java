@@ -8,7 +8,6 @@ import com.l7tech.policy.GenericEntity;
 import com.l7tech.policy.GenericEntityHeader;
 import com.l7tech.policy.InvalidGenericEntityException;
 import com.l7tech.server.entity.GenericEntityManager;
-import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.event.GoidEntityInvalidationEvent;
 import com.l7tech.server.util.ApplicationEventProxy;
 import com.l7tech.test.BugNumber;
@@ -333,7 +332,7 @@ public class ApiKeyManagerImplTest {
     public void onApplicationEventNotGenericEntity() throws Exception {
         apiKeyManager.getCache().put("fookey", makeExisting());
         apiKeyManager.getNameCache().put(new Goid(0,1234L), "fookey");
-        final EntityInvalidationEvent event = new EntityInvalidationEvent(new PublishedService(), PublishedService.class, new long[]{1234L}, new char[]{EntityInvalidationEvent.CREATE});;
+        final GoidEntityInvalidationEvent event = new GoidEntityInvalidationEvent(new PublishedService(), PublishedService.class, new Goid[]{new Goid(0,1234L)}, new char[]{GoidEntityInvalidationEvent.CREATE});;
 
         apiKeyManager.onApplicationEvent(event);
 

@@ -78,7 +78,7 @@ public class ServicePublication {
      * published twice on the same cluster with exactly the same parameters.
      * @return the object id of the newly published service
      */
-    public long publishSampleService() throws SaveException, PolicyAssertionException, RemoteException, VersionException, UpdateException, FindException {
+    public Goid publishSampleService() throws SaveException, PolicyAssertionException, RemoteException, VersionException, UpdateException, FindException {
         return publishService("sendSms", SAMPLE_POLICY_XML, SAMPLE_SERVICE_WSDL);
     }
 
@@ -90,7 +90,7 @@ public class ServicePublication {
      * @param wsdlXML the wsdl for this web service
      * @return the object id of the newly published service
      */
-    public long publishService(final String name, final String policyXML, final String wsdlXML) throws SaveException, PolicyAssertionException, RemoteException, VersionException, UpdateException, FindException {
+    public Goid publishService(final String name, final String policyXML, final String wsdlXML) throws SaveException, PolicyAssertionException, RemoteException, VersionException, UpdateException, FindException {
         ServiceAdmin serviceAdmin = session.getServiceAdmin();
         PublishedService newService = new PublishedService();
         newService.setName(name);
@@ -101,7 +101,7 @@ public class ServicePublication {
     }    
 
     private Folder getRootFolder() throws FindException {
-        return session.getFolderAdmin().findByPrimaryKey(-5002L);
+        return session.getFolderAdmin().findByPrimaryKey(new Goid(0,-5002L));
     }
 
     /**

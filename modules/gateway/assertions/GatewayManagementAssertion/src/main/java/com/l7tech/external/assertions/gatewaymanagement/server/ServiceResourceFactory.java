@@ -42,7 +42,7 @@ import static com.l7tech.util.Option.optional;
  * 
  */
 @ResourceFactory.ResourceType(type=ServiceMO.class)
-public class ServiceResourceFactory extends EntityManagerResourceFactory<ServiceMO, PublishedService, ServiceHeader> {
+public class ServiceResourceFactory extends GoidEntityManagerResourceFactory<ServiceMO, PublishedService, ServiceHeader> {
 
     //- PUBLIC
 
@@ -237,7 +237,7 @@ public class ServiceResourceFactory extends EntityManagerResourceFactory<Service
 
     @Override
     protected EntityBag<PublishedService> loadEntityBag( final PublishedService entity ) throws ObjectModelException {
-        return new ServiceEntityBag( entity, serviceDocumentManager.findByServiceIdAndType(entity.getOid(), WSDL_IMPORT ) );
+        return new ServiceEntityBag( entity, serviceDocumentManager.findByServiceIdAndType(entity.getGoid(), WSDL_IMPORT ) );
     }
 
     @Override
@@ -309,12 +309,12 @@ public class ServiceResourceFactory extends EntityManagerResourceFactory<Service
     }
 
     @Override
-    protected void afterCreateEntity( final EntityBag<PublishedService> entityBag, final long identifier ) throws ObjectModelException {
+    protected void afterCreateEntity( final EntityBag<PublishedService> entityBag, final Goid identifier ) throws ObjectModelException {
         final ServiceEntityBag serviceEntityBag = cast( entityBag, ServiceEntityBag.class );
         final Collection<ServiceDocument> serviceDocuments = serviceEntityBag.getServiceDocuments();
 
         for ( final ServiceDocument serviceDocument : serviceDocuments ) {
-            serviceDocument.setOid( -1L );
+            serviceDocument.setGoid( ServiceDocument.DEFAULT_GOID );
             serviceDocument.setServiceId(identifier);
             serviceDocumentManager.save( serviceDocument );
         }
@@ -323,17 +323,17 @@ public class ServiceResourceFactory extends EntityManagerResourceFactory<Service
     @Override
     protected void afterUpdateEntity( final EntityBag<PublishedService> entityBag ) throws ObjectModelException {
         final ServiceEntityBag serviceEntityBag = cast( entityBag, ServiceEntityBag.class );
-        final long serviceOid = serviceEntityBag.getPublishedService().getOid();
+        final Goid serviceGoid = serviceEntityBag.getPublishedService().getGoid();
 
         if ( serviceEntityBag.serviceDocumentsReplaced() ) {
-            final Collection<ServiceDocument> existingServiceDocuments = serviceDocumentManager.findByServiceId( serviceOid );
+            final Collection<ServiceDocument> existingServiceDocuments = serviceDocumentManager.findByServiceId( serviceGoid );
             for ( final ServiceDocument serviceDocument : existingServiceDocuments ) {
                 serviceDocumentManager.delete(serviceDocument);
             }
 
             for ( final ServiceDocument serviceDocument : serviceEntityBag.getServiceDocuments() ) {
-                serviceDocument.setOid( -1L );
-                serviceDocument.setServiceId( serviceOid );
+                serviceDocument.setGoid( ServiceDocument.DEFAULT_GOID );
+                serviceDocument.setServiceId( serviceGoid );
                 serviceDocumentManager.save( serviceDocument );
             }
         }
@@ -368,8 +368,8 @@ public class ServiceResourceFactory extends EntityManagerResourceFactory<Service
         }
 
         @Override
-        public Iterator<PersistentEntity> iterator() {
-            final List<PersistentEntity> entities = new ArrayList<PersistentEntity>();
+        public Iterator<GoidEntity> iterator() {
+            final List<GoidEntity> entities = new ArrayList<GoidEntity>();
             entities.add( getPublishedService() );
             entities.addAll( getServiceDocuments() );
             return entities.iterator();
@@ -417,7 +417,7 @@ public class ServiceResourceFactory extends EntityManagerResourceFactory<Service
         resourceSet.setResources( Collections.singletonList(resource) );
         resource.setType( ResourceHelper.POLICY_TYPE );
         resource.setContent( policy.getXml() );
-        if ( (long) policy.getVersion() != Policy.DEFAULT_OID ) {
+        if (policy.getVersion() != -1 ) {
             resource.setVersion( policy.getVersion() );
         }
         return resourceSet;

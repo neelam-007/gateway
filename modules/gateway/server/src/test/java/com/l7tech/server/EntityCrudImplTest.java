@@ -25,11 +25,11 @@ public class EntityCrudImplTest {
     @Mock
     private EntityFinder entityFinder;
     @Mock
-    private EntityManager<Policy, EntityHeader> policyEntityManager;
+    private GoidEntityManager<Policy, EntityHeader> policyEntityManager;
     @Mock
     private GoidEntityManager<SecurityZone, EntityHeader> zoneEntityManager;
     @Mock
-    private EntityManager<PublishedService, EntityHeader> serviceEntityManager;
+    private GoidEntityManager<PublishedService, EntityHeader> serviceEntityManager;
     @Mock
     private GoidEntityManager<JdbcConnection, EntityHeader> jdbcConnectionEntityManager;
     private List<Serializable> ids;
@@ -54,11 +54,11 @@ public class EntityCrudImplTest {
 
     @Test
     public void setSecurityZoneForEntities() throws Exception {
-        ids.add(1L);
-        ids.add(2L);
+        ids.add(new Goid(0,1L));
+        ids.add(new Goid(0,2L));
         when(zoneEntityManager.findByPrimaryKey(ZONE_GOID)).thenReturn(zone);
-        when(policyEntityManager.findByPrimaryKey(1L)).thenReturn(policy);
-        when(policyEntityManager.findByPrimaryKey(2L)).thenReturn(policy2);
+        when(policyEntityManager.findByPrimaryKey(new Goid(0,1L))).thenReturn(policy);
+        when(policyEntityManager.findByPrimaryKey(new Goid(0,2L))).thenReturn(policy2);
 
         entityCrud.setSecurityZoneForEntities(ZONE_GOID, EntityType.POLICY, ids);
         verify(policyEntityManager).update(policy);
@@ -89,11 +89,11 @@ public class EntityCrudImplTest {
 
     @Test
     public void setSecurityZoneForEntitiesNullZone() throws Exception {
-        ids.add(1L);
-        when(policyEntityManager.findByPrimaryKey(1L)).thenReturn(policy);
+        ids.add(new Goid(0,1L));
+        when(policyEntityManager.findByPrimaryKey(new Goid(0,1L))).thenReturn(policy);
 
         entityCrud.setSecurityZoneForEntities(null, EntityType.POLICY, ids);
-        verify(zoneEntityManager, never()).findByPrimaryKey(anyLong());
+        verify(zoneEntityManager, never()).findByPrimaryKey(any(Goid.class));
         verify(policyEntityManager).update(policy);
     }
 
@@ -112,17 +112,17 @@ public class EntityCrudImplTest {
 
     @Test(expected = UpdateException.class)
     public void setSecurityZoneForEntitiesAtLeastOneEntityNotFound() throws Exception {
-        ids.add(1L);
-        ids.add(2L);
+        ids.add(new Goid(0,1L));
+        ids.add(new Goid(0,2L));
         when(zoneEntityManager.findByPrimaryKey(ZONE_GOID)).thenReturn(zone);
-        when(policyEntityManager.findByPrimaryKey(1L)).thenReturn(policy);
-        when(policyEntityManager.findByPrimaryKey(2L)).thenReturn(null);
+        when(policyEntityManager.findByPrimaryKey(new Goid(0,1L))).thenReturn(policy);
+        when(policyEntityManager.findByPrimaryKey(new Goid(0,2L))).thenReturn(null);
 
         try {
             entityCrud.setSecurityZoneForEntities(ZONE_GOID, EntityType.POLICY, ids);
             fail("Expected UpdateException");
         } catch (final UpdateException e) {
-            assertEquals("Policy with id 2 does not exist or is not security zoneable", e.getMessage());
+            assertEquals("Policy with id "+new Goid(0,2L).toHexString()+" does not exist or is not security zoneable", e.getMessage());
             throw e;
         }
     }
@@ -136,17 +136,17 @@ public class EntityCrudImplTest {
 
     @Test(expected = UpdateException.class)
     public void setSecurityZoneForEntitiesErrorFindingEntity() throws Exception {
-        ids.add(1L);
+        ids.add(new Goid(0,1L));
         when(zoneEntityManager.findByPrimaryKey(ZONE_GOID)).thenReturn(zone);
-        when(policyEntityManager.findByPrimaryKey(anyLong())).thenThrow(new FindException("mocking exception"));
+        when(policyEntityManager.findByPrimaryKey(any(Goid.class))).thenThrow(new FindException("mocking exception"));
         entityCrud.setSecurityZoneForEntities(ZONE_GOID, EntityType.POLICY, ids);
     }
 
     @Test(expected = UpdateException.class)
     public void setSecurityZoneForEntitiesErrorUpdatingEntity() throws Exception {
-        ids.add(1L);
+        ids.add(new Goid(0,1L));
         when(zoneEntityManager.findByPrimaryKey(ZONE_GOID)).thenReturn(zone);
-        when(policyEntityManager.findByPrimaryKey(1L)).thenReturn(policy);
+        when(policyEntityManager.findByPrimaryKey(new Goid(0,1L))).thenReturn(policy);
         doThrow(new UpdateException("mocking exception")).when(policyEntityManager).update(any(Policy.class));
         entityCrud.setSecurityZoneForEntities(ZONE_GOID, EntityType.POLICY, ids);
     }
@@ -168,12 +168,12 @@ public class EntityCrudImplTest {
     @Test
     public void setSecurityZoneForEntitiesMultipleEntityTypes() throws Exception {
         final Map<EntityType, Collection<Serializable>> entities = new HashMap<>();
-        entities.put(EntityType.POLICY, Arrays.<Serializable>asList(1L));
-        entities.put(EntityType.SERVICE, Arrays.<Serializable>asList(2L));
+        entities.put(EntityType.POLICY, Arrays.<Serializable>asList(new Goid(0,1L)));
+        entities.put(EntityType.SERVICE, Arrays.<Serializable>asList(new Goid(0,2L)));
         entities.put(EntityType.JDBC_CONNECTION, Arrays.<Serializable>asList(new Goid(0,3)));
         when(zoneEntityManager.findByPrimaryKey(ZONE_GOID)).thenReturn(zone);
-        when(policyEntityManager.findByPrimaryKey(1L)).thenReturn(policy);
-        when(serviceEntityManager.findByPrimaryKey(2L)).thenReturn(service);
+        when(policyEntityManager.findByPrimaryKey(new Goid(0,1L))).thenReturn(policy);
+        when(serviceEntityManager.findByPrimaryKey(new Goid(0,2L))).thenReturn(service);
         when(jdbcConnectionEntityManager.findByPrimaryKey(new Goid(0,3))).thenReturn(jdbcConnection1);
 
         entityCrud.setSecurityZoneForEntities(ZONE_GOID, entities);
@@ -217,19 +217,19 @@ public class EntityCrudImplTest {
     /**
      * Delegates to the mock.
      */
-    private class StubPolicyEntityManager implements ReadOnlyEntityManager<Policy, EntityHeader>, EntityManager<Policy, EntityHeader> {
+    private class StubPolicyEntityManager implements ReadOnlyEntityManager<Policy, EntityHeader>, GoidEntityManager<Policy, EntityHeader> {
         @Override
-        public long save(Policy entity) throws SaveException {
+        public Goid save(Policy entity) throws SaveException {
             return policyEntityManager.save(entity);
         }
 
         @Override
-        public Integer getVersion(long oid) throws FindException {
+        public Integer getVersion(Goid oid) throws FindException {
             return policyEntityManager.getVersion(oid);
         }
 
         @Override
-        public Map<Long, Integer> findVersionMap() throws FindException {
+        public Map<Goid, Integer> findVersionMap() throws FindException {
             return policyEntityManager.findVersionMap();
         }
 
@@ -239,7 +239,7 @@ public class EntityCrudImplTest {
         }
 
         @Override
-        public Policy getCachedEntity(long o, int maxAge) throws FindException {
+        public Policy getCachedEntity(Goid o, int maxAge) throws FindException {
             return policyEntityManager.getCachedEntity(o, maxAge);
         }
 
@@ -264,7 +264,7 @@ public class EntityCrudImplTest {
         }
 
         @Override
-        public void delete(long oid) throws DeleteException, FindException {
+        public void delete(Goid oid) throws DeleteException, FindException {
             policyEntityManager.delete(oid);
         }
 
@@ -402,20 +402,20 @@ public class EntityCrudImplTest {
         }
     }
 
-    private class StubServiceManager implements ReadOnlyEntityManager<PublishedService, EntityHeader>, EntityManager<PublishedService, EntityHeader> {
+    private class StubServiceManager implements ReadOnlyEntityManager<PublishedService, EntityHeader>, GoidEntityManager<PublishedService, EntityHeader> {
 
         @Override
-        public long save(PublishedService entity) throws SaveException {
+        public Goid save(PublishedService entity) throws SaveException {
             return serviceEntityManager.save(entity);
         }
 
         @Override
-        public Integer getVersion(long oid) throws FindException {
+        public Integer getVersion(Goid oid) throws FindException {
             return serviceEntityManager.getVersion(oid);
         }
 
         @Override
-        public Map<Long, Integer> findVersionMap() throws FindException {
+        public Map<Goid, Integer> findVersionMap() throws FindException {
             return serviceEntityManager.findVersionMap();
         }
 
@@ -425,7 +425,7 @@ public class EntityCrudImplTest {
         }
 
         @Override
-        public PublishedService getCachedEntity(long o, int maxAge) throws FindException {
+        public PublishedService getCachedEntity(Goid o, int maxAge) throws FindException {
             return serviceEntityManager.getCachedEntity(o, maxAge);
         }
 
@@ -450,7 +450,7 @@ public class EntityCrudImplTest {
         }
 
         @Override
-        public void delete(long oid) throws DeleteException, FindException {
+        public void delete(Goid oid) throws DeleteException, FindException {
             serviceEntityManager.delete(oid);
         }
 

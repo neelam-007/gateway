@@ -6,6 +6,7 @@ import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderType;
 import com.l7tech.identity.UserBean;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.Goid;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -17,7 +18,7 @@ import static org.junit.Assert.*;
  * @author alex
  */
 public class RoleTest {
-    private static final int SERVICE_OID = 1234567;
+    private static final Goid SERVICE_GOID = new Goid(0,1234567);
     private static final String SERVICE_NAME = "Foo Bar";
     private static final String SERVICE_URI = "/foobar";
     private static final String IPC_NAME = "TestIP";
@@ -32,14 +33,14 @@ public class RoleTest {
     @Test
     public void testRoleDescription() throws Exception {
         PublishedService service = new PublishedService();
-        service.setOid(SERVICE_OID);
+        service.setGoid(SERVICE_GOID);
         service.setName(SERVICE_NAME);
         service.setRoutingUri(SERVICE_URI);
 
-        role.setName(MessageFormat.format("Manage {0} Service (#{1})", SERVICE_NAME, SERVICE_OID));
+        role.setName(MessageFormat.format("Manage {0} Service (#{1})", SERVICE_NAME, SERVICE_GOID));
         role.setCachedSpecificEntity(service);
         role.setEntityType(EntityType.SERVICE);
-        role.setEntityOid((long) SERVICE_OID);
+        role.setEntityGoid(SERVICE_GOID);
 
         System.out.println(role.getDescriptiveName());
         assertEquals("Manage service role description", "Manage Foo Bar [/foobar] Service", role.getDescriptiveName());

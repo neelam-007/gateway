@@ -69,7 +69,7 @@ public class AuditRecordManagerImpl
         final AuditRecord found = super.findByPrimaryKey(oid);
         if (found != null && found instanceof MessageSummaryAuditRecord) {
             final MessageSummaryAuditRecord messageSummary = (MessageSummaryAuditRecord) found;
-            final PublishedService cachedService = serviceCache.get().getCachedService(messageSummary.getServiceOid());
+            final PublishedService cachedService = serviceCache.get().getCachedService(messageSummary.getServiceGoid());
             if (cachedService != null) {
                 messageSummary.setSecurityZone(cachedService.getSecurityZone());
             }

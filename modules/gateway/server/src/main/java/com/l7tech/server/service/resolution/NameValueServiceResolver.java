@@ -3,7 +3,9 @@ package com.l7tech.server.service.resolution;
 import com.l7tech.gateway.common.audit.AuditFactory;
 import com.l7tech.message.Message;
 import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.objectmodel.Goid;
 
+import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -20,14 +22,17 @@ public abstract class NameValueServiceResolver<T> extends ServiceResolver<T> {
 
     @Override
     public void serviceDeleted( final PublishedService service ) {
-        Long oid = service.getOid();
+        Goid goid = service.getGoid();
+        Long oid = service.getOldOid();
 
         _rwlock.writeLock().lock();
         try {
-            serviceOidToValueListMap.remove( oid );
+            serviceIdToValueListMap.remove(goid);
+            if(oid != null)
+                serviceIdToValueListMap.remove(oid);
 
             for (Map serviceMap : _valueToServiceMapMap.values()) {
-                serviceMap.remove(oid);
+                serviceMap.remove(goid);
             }
         } finally {
             _rwlock.writeLock().unlock();
@@ -47,15 +52,18 @@ public abstract class NameValueServiceResolver<T> extends ServiceResolver<T> {
 
     @Override
     protected void updateServiceValues( final PublishedService service, final List<T> targetValues ) {
-        final Long oid = service.getOid();
+        final Goid goid = service.getGoid();
+        final Long oid = service.getOldOid();
 
         _rwlock.writeLock().lock();
         try {
-            serviceOidToValueListMap.put( oid, targetValues );
+            serviceIdToValueListMap.put(goid, targetValues);
+            if(oid != null)
+                serviceIdToValueListMap.put( oid, targetValues );
 
             for ( T targetValue : targetValues ) {
-                Map<Long, PublishedService> serviceMap = getServiceMap(targetValue);
-                serviceMap.put(oid, service);
+                Map<Goid, PublishedService> serviceMap = getServiceMap(targetValue);
+                serviceMap.put(goid, service);
             }
         } finally {
             _rwlock.writeLock().unlock();
@@ -63,22 +71,25 @@ public abstract class NameValueServiceResolver<T> extends ServiceResolver<T> {
     }
 
     protected List<T> getTargetValues( final PublishedService service ) throws ServiceResolutionException {
-        if ( service.getOid() == PublishedService.DEFAULT_OID ) {
+        if ( Goid.isDefault(service.getGoid()) ) {
             // Don't ever cache values for a service with a to-be-determined OID
             return buildTargetValues(service);
         } else {
-            Long oid = service.getOid();
+            Goid goid = service.getGoid();
+            Long oid = service.getOldOid();
             Lock read = _rwlock.readLock();
             read.lock();
             try {
-                List<T> values = serviceOidToValueListMap.get(oid);
+                List<T> values = serviceIdToValueListMap.get(goid);
                 if ( values == null ) {
                     values = buildTargetValues(service);
                     read.unlock();
                     read = null;
                     _rwlock.writeLock().lock();
                     try {
-                        serviceOidToValueListMap.put(oid, values);
+                        serviceIdToValueListMap.put(goid, values);
+                        if(oid!= null)
+                            serviceIdToValueListMap.put(oid, values);
                     } finally {
                         _rwlock.writeLock().unlock();
                     }
@@ -92,13 +103,13 @@ public abstract class NameValueServiceResolver<T> extends ServiceResolver<T> {
 
     protected abstract T getRequestValue(Message request) throws ServiceResolutionException;
 
-    protected Map<Long, PublishedService> getServiceMap(T value) {
+    protected Map<Goid, PublishedService> getServiceMap(T value) {
         Lock read = _rwlock.readLock();
         read.lock();
         try {
-            Map<Long, PublishedService> serviceMap = _valueToServiceMapMap.get(value);
+            Map<Goid, PublishedService> serviceMap = _valueToServiceMapMap.get(value);
             if ( serviceMap == null ) {
-                serviceMap = new HashMap<Long, PublishedService>();
+                serviceMap = new HashMap<Goid, PublishedService>();
                 read.unlock();
                 read = null;
                 _rwlock.writeLock().lock();
@@ -142,7 +153,7 @@ public abstract class NameValueServiceResolver<T> extends ServiceResolver<T> {
     }
 
     protected Result resolve( final T value, final Collection serviceSubset ) throws ServiceResolutionException {
-        final Map<Long, PublishedService> serviceMap = getServiceMap(value);
+        final Map<Goid, PublishedService> serviceMap = getServiceMap(value);
 
         if ( serviceMap == null || serviceMap.isEmpty() ) return Result.NO_MATCH;
 
@@ -163,8 +174,8 @@ public abstract class NameValueServiceResolver<T> extends ServiceResolver<T> {
         return new Result(resultSet);
     }
 
-    protected final Map<T, Map<Long, PublishedService>> _valueToServiceMapMap = new HashMap<T, Map<Long, PublishedService>>();
-    protected final Map<Long, List<T>> serviceOidToValueListMap = new HashMap<Long, List<T>>();
+    protected final Map<T, Map<Goid, PublishedService>> _valueToServiceMapMap = new HashMap<T, Map<Goid, PublishedService>>();
+    protected final Map<Serializable, List<T>> serviceIdToValueListMap = new HashMap<Serializable, List<T>>();
     protected final ReadWriteLock _rwlock = new ReentrantReadWriteLock(false);
 
     protected boolean isApplicableToConflicts(){ return false; }

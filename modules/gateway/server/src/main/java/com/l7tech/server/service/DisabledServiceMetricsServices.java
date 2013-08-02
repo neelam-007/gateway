@@ -2,6 +2,7 @@ package com.l7tech.server.service;
 
 import com.l7tech.gateway.common.mapping.MessageContextMapping;
 import com.l7tech.identity.User;
+import com.l7tech.objectmodel.Goid;
 
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
@@ -13,7 +14,7 @@ import java.util.List;
 public class DisabledServiceMetricsServices implements ServiceMetricsServices, PropertyChangeListener {
 
     @Override
-    public void addRequest( final long serviceOid,
+    public void addRequest( final Goid serviceGoid,
                             final String operation,
                             final User authorizedUser,
                             final List<MessageContextMapping> mappings,
@@ -29,7 +30,7 @@ public class DisabledServiceMetricsServices implements ServiceMetricsServices, P
     }
 
     @Override
-    public void trackServiceMetrics( final long serviceOid ) {
+    public void trackServiceMetrics( final Goid serviceGoid ) {
     }
 
     @Override

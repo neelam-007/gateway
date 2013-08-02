@@ -45,7 +45,7 @@ import static org.mockito.Mockito.*;
 public class ServerEncapsulatedAssertionTest {
     private static final Goid CONFIG_GOID = new Goid(0L,1L);
     private static final String CONFIG_GUID = UUID.randomUUID().toString();
-    private static final long POLICY_ID = 2L;
+    private static final Goid POLICY_ID = new Goid(0,2L);
     private static final String ENCAPSULATED_ASSERTION_NAME = "testEncapsulatedAssertion";
     private Policy policy;
     private EncapsulatedAssertionConfig config;
@@ -69,7 +69,7 @@ public class ServerEncapsulatedAssertionTest {
         inParams = new HashSet<EncapsulatedAssertionArgumentDescriptor>();
         outParams = new HashSet<EncapsulatedAssertionResultDescriptor>();
         policy = new Policy(PolicyType.INCLUDE_FRAGMENT, "testPolicy", "xml", false);
-        policy.setOid(POLICY_ID);
+        policy.setGoid(POLICY_ID);
         config = new EncapsulatedAssertionConfig();
         config.setName(ENCAPSULATED_ASSERTION_NAME);
         config.setGoid(CONFIG_GOID);
@@ -316,8 +316,8 @@ public class ServerEncapsulatedAssertionTest {
     @Test
     @BugId("SSM-4223")
     public void checkRequestInvalidBackingPolicy() throws Exception {
-        policy.setOid(5555L);
-        when(policyCache.getServerPolicy(5555L)).thenReturn(null);
+        policy.setGoid(new Goid(0,5555L));
+        when(policyCache.getServerPolicy(new Goid(0,5555L))).thenReturn(null);
         assertEquals(AssertionStatus.SERVER_ERROR, serverAssertion.checkRequest(context));
         assertTrue(testAudit.isAuditPresent(AssertionMessages.ENCASS_INVALID_BACKING_POLICY));
     }

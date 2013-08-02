@@ -11,6 +11,7 @@ import com.l7tech.console.util.TopComponents;
 import com.l7tech.external.assertions.oauthinstaller.OAuthInstallerAssertion;
 import com.l7tech.gui.util.*;
 import com.l7tech.gui.widgets.SquigglyTextField;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.bundle.BundleInfo;
 import com.l7tech.policy.bundle.BundleMapping;
 import com.l7tech.external.assertions.oauthinstaller.OAuthInstallerAdmin;
@@ -49,7 +50,7 @@ public class OAuthInstallerTaskDialog extends JDialog {
     private JPanel componentsToInstallPanel;
     private JLabel exampleRoutingUrlLabel;
     private JButton manageSecureZoneDatabaseButton;
-    private long selectedFolderOid;
+    private Goid selectedFolderGoid;
     private final Map<String, Pair<BundleComponent, BundleInfo>> availableBundles = new HashMap<String, Pair<BundleComponent, BundleInfo>>();
     private static final Logger logger = Logger.getLogger(OAuthInstallerTaskDialog.class.getName());
     private String folderPath;
@@ -107,11 +108,11 @@ public class OAuthInstallerTaskDialog extends JDialog {
      *
      * @return Pair, never null, but contents may be null. If one side is null, both are null.
      */
-    public static Pair<String, Long> getSelectedFolderAndOid(){
+    public static Pair<String, Goid> getSelectedFolderAndGoid(){
         ServicesAndPoliciesTree tree = (ServicesAndPoliciesTree) TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME);
 
         String folderPath = null;
-        Long parentFolderOid = null;
+        Goid parentFolderGoid = null;
 
         if (tree != null) {
             final TreePath selectionPath = tree.getSelectionPath();
@@ -123,35 +124,35 @@ public class OAuthInstallerTaskDialog extends JDialog {
 
                     // skip the root node, it is captured as /
                     RootNode rootFolder = (RootNode) path[0];
-                    long lastParentOid = rootFolder.getOid();
+                    Goid lastParentGoid = rootFolder.getGoid();
                     for (int i = 1, pathLength = path.length; i < pathLength; i++) {
                         Object o = path[i];
                         if (o instanceof FolderNode) {
                             FolderNode folderNode = (FolderNode) o;
                             builder.append("/");
                             builder.append(folderNode.getName());
-                            lastParentOid = folderNode.getOid();
+                            lastParentGoid = folderNode.getGoid();
                         }
                     }
                     builder.append("/");  // if only root node then this captures that with a single /
                     folderPath = builder.toString();
-                    parentFolderOid = lastParentOid;
+                    parentFolderGoid = lastParentGoid;
                 }
             }
 
-            if (parentFolderOid == null) {
+            if (parentFolderGoid == null) {
                 final RootNode rootNode = tree.getRootNode();
-                parentFolderOid = rootNode.getOid();
+                parentFolderGoid = rootNode.getGoid();
                 folderPath = "/";
             }
         }
-        return new Pair<String, Long>(folderPath, parentFolderOid);
+        return new Pair<String, Goid>(folderPath, parentFolderGoid);
     }
 
     private void initialize(){
-        final Pair<String, Long> selectedFolderAndOid = getSelectedFolderAndOid();
-        folderPath = selectedFolderAndOid.left;
-        selectedFolderOid = selectedFolderAndOid.right;
+        final Pair<String, Goid> selectedFolderAndGoid = getSelectedFolderAndGoid();
+        folderPath = selectedFolderAndGoid.left;
+        selectedFolderGoid = selectedFolderAndGoid.right;
 
         final OAuthInstallerAdmin admin = Registry.getDefault().getExtensionInterface(OAuthInstallerAdmin.class, null);
         try {
@@ -416,7 +417,7 @@ public class OAuthInstallerTaskDialog extends JDialog {
                 "The selected components of the " + OAUTH_FOLDER + " toolkit are being installed.",
                 admin.installOAuthToolkit(
                         bundlesToInstall,
-                        selectedFolderOid,
+                        selectedFolderGoid,
                         bundleMappings,
                         prefixToUse,
                         doApiIntegration));

@@ -1,5 +1,6 @@
 package com.l7tech.server.wsdm.method;
 
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.wsdm.Namespaces;
 import com.l7tech.server.wsdm.faults.FaultMappableException;
 import com.l7tech.common.io.XmlUtil;
@@ -26,8 +27,8 @@ import java.net.MalformedURLException;
 public class GetManageabilityReferences extends ESMMethod {
     private String resourceIdRequested;
 
-    private GetManageabilityReferences(Document doc, Message request, long esmServiceOid) throws FaultMappableException, MalformedURLException {
-        super(doc, request, esmServiceOid);
+    private GetManageabilityReferences(Document doc, Message request, Goid esmServiceGoid) throws FaultMappableException, MalformedURLException {
+        super(doc, request, esmServiceGoid);
         try {
             // look for the presence of an incoming Header/ResourceId
             Element headerEl = SoapUtil.getHeaderElement(doc);
@@ -46,13 +47,13 @@ public class GetManageabilityReferences extends ESMMethod {
         return resourceIdRequested;
     }
 
-    public static GetManageabilityReferences resolve(Message request, long esmServiceOid) throws FaultMappableException, SAXException, IOException {
+    public static GetManageabilityReferences resolve(Message request, Goid esmServiceGoid) throws FaultMappableException, SAXException, IOException {
         Document doc = request.getXmlKnob().getDocumentReadOnly();
         try {
             Element bodychild = getFirstBodyChild(doc);
             if (bodychild == null) return null;
             if (testElementLocalName(bodychild, "GetManageabilityReferences")) {
-                return new GetManageabilityReferences(doc, request, esmServiceOid);
+                return new GetManageabilityReferences(doc, request, esmServiceGoid);
             }
             return null;
         } catch (Exception e) {

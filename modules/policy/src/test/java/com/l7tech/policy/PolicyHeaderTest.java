@@ -36,7 +36,7 @@ public class PolicyHeaderTest {
 
     @Test
     public void copyConstructorSetsSecurityZone() {
-        header = new PolicyHeader(1234L, false, PolicyType.INCLUDE_FRAGMENT, "test", "test", "test", 1234L, 1234L, 0, 0, false, ZONE_GOID);
+        header = new PolicyHeader(new Goid(0,1234L), false, PolicyType.INCLUDE_FRAGMENT, "test", "test", "test", new Goid(0,1234L), new Goid(0,1234L), 0, 0, false, ZONE_GOID);
         final PolicyHeader copy = new PolicyHeader(header);
         assertEquals(ZONE_GOID, copy.getSecurityZoneGoid());
     }

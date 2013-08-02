@@ -7,9 +7,10 @@ import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.gateway.common.service.ServiceState;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.server.ServerConfigParams;
-import com.l7tech.server.event.EntityInvalidationEvent;
+import com.l7tech.server.event.GoidEntityInvalidationEvent;
 import com.l7tech.server.util.ManagedTimer;
 import com.l7tech.server.util.ManagedTimerTask;
 import com.l7tech.server.util.PostStartupApplicationListener;
@@ -96,17 +97,17 @@ public class ServiceMetricsServicesImpl implements ServiceMetricsServices, PostS
     /**
      * Gets the service metrics for a given published service.
      *
-     * @param serviceOid    OID of published service
+     * @param serviceGoid    GOID of published service
      * @return null if service metrics processing is disabled
      */
     @Override
-    public void trackServiceMetrics(final long serviceOid) {
-        getServiceMetrics( serviceOid );
+    public void trackServiceMetrics(final Goid serviceGoid) {
+        getServiceMetrics( serviceGoid );
     }
 
     @Override
-    public void addRequest(long serviceOid, String operation, User authorizedUser, List<MessageContextMapping> mappings, boolean authorized, boolean completed, int frontTime, int backTime) {
-        ServiceMetrics metrics = getServiceMetrics( serviceOid );
+    public void addRequest(Goid serviceGoid, String operation, User authorizedUser, List<MessageContextMapping> mappings, boolean authorized, boolean completed, int frontTime, int backTime) {
+        ServiceMetrics metrics = getServiceMetrics( serviceGoid );
         if ( metrics != null ) {
             if (_addMappingsIntoServiceMetrics.get()) {
                 metrics.addRequest(operation, authorizedUser, mappings, authorized, completed, frontTime, backTime);
@@ -120,18 +121,18 @@ public class ServiceMetricsServicesImpl implements ServiceMetricsServices, PostS
     /**
      * Gets the service metrics for a given published service.
      *
-     * @param serviceOid    OID of published service
+     * @param serviceGoid    GOID of published service
      * @return null if service metrics processing is disabled
      */
-    ServiceMetrics getServiceMetrics(final long serviceOid) {
+    ServiceMetrics getServiceMetrics(final Goid serviceGoid) {
         if (isEnabled()) {
             ServiceMetrics serviceMetrics;
             synchronized (_serviceMetricsMapLock) {
-                if (! _serviceMetricsMap.containsKey(serviceOid)) {
-                    serviceMetrics = new ServiceMetrics(serviceOid);
-                    _serviceMetricsMap.put(serviceOid, serviceMetrics);
+                if (! _serviceMetricsMap.containsKey(serviceGoid)) {
+                    serviceMetrics = new ServiceMetrics(serviceGoid);
+                    _serviceMetricsMap.put(serviceGoid, serviceMetrics);
                 } else {
-                    serviceMetrics = _serviceMetricsMap.get(serviceOid);
+                    serviceMetrics = _serviceMetricsMap.get(serviceGoid);
                 }
             }
             return serviceMetrics;
@@ -193,11 +194,11 @@ public class ServiceMetricsServicesImpl implements ServiceMetricsServices, PostS
                 synchronized (_serviceMetricsMapLock) {
                     Collection<ServiceHeader> serviceHeaders = serviceMetricsManager.findAllServiceHeaders();
                     for ( ServiceHeader service : serviceHeaders) {
-                        final Long oid = service.getOid();
-                        ServiceMetrics serviceMetrics = new ServiceMetrics(service.getOid());
-                         _serviceMetricsMap.put(oid, serviceMetrics);
+                        final Goid goid = service.getGoid();
+                        ServiceMetrics serviceMetrics = new ServiceMetrics(service.getGoid());
+                         _serviceMetricsMap.put(goid, serviceMetrics);
                         // There won't be any deleted services on startup
-                        serviceStates.put(oid, service.isDisabled() ? ServiceState.DISABLED : ServiceState.ENABLED);
+                        serviceStates.put(goid, service.isDisabled() ? ServiceState.DISABLED : ServiceState.ENABLED);
                     }
                 }
             } catch (FindException e) {
@@ -323,31 +324,31 @@ public class ServiceMetricsServicesImpl implements ServiceMetricsServices, PostS
 
     @Override
     public void onApplicationEvent(ApplicationEvent event) {
-        if (!(event instanceof EntityInvalidationEvent))
+        if (!(event instanceof GoidEntityInvalidationEvent))
             return;
 
-        final EntityInvalidationEvent eie = (EntityInvalidationEvent)event;
+        final GoidEntityInvalidationEvent eie = (GoidEntityInvalidationEvent)event;
         if (!PublishedService.class.isAssignableFrom(eie.getEntityClass())) {
             return;
         }
 
         for (int i = 0; i < eie.getEntityOperations().length; i++) {
             final char op = eie.getEntityOperations()[i];
-            final long oid = eie.getEntityIds()[i];
+            final Goid goid = eie.getEntityIds()[i];
             switch (op) {
-                case EntityInvalidationEvent.CREATE: // Intentional fallthrough
-                case EntityInvalidationEvent.UPDATE:
+                case GoidEntityInvalidationEvent.CREATE: // Intentional fallthrough
+                case GoidEntityInvalidationEvent.UPDATE:
                     try {
-                        serviceStates.put(oid, serviceMetricsManager.getCreatedOrUpdatedServiceState(oid));
+                        serviceStates.put(goid, serviceMetricsManager.getCreatedOrUpdatedServiceState(goid));
                         break;
                     } catch (FindException e) {
                         if (logger.isLoggable(Level.WARNING)) {
-                            logger.log(Level.WARNING, MessageFormat.format("Unable to find created/updated service #{0}", oid), e);
+                            logger.log(Level.WARNING, MessageFormat.format("Unable to find created/updated service #{0}", goid), e);
                         }
                         continue;
                     }
-                case EntityInvalidationEvent.DELETE:
-                    serviceStates.put(oid, ServiceState.DELETED);
+                case GoidEntityInvalidationEvent.DELETE:
+                    serviceStates.put(goid, ServiceState.DELETED);
                     break;
             }
         }
@@ -368,7 +369,7 @@ public class ServiceMetricsServicesImpl implements ServiceMetricsServices, PostS
             }
             int numArchived = 0;
             for (ServiceMetrics serviceMetrics : list) {
-                final ServiceState state = serviceStates.get(serviceMetrics.getServiceOid());
+                final ServiceState state = serviceStates.get(serviceMetrics.getServiceGoid());
                 ServiceMetrics.MetricsCollectorSet metricsSet = serviceMetrics.getMetricsCollectorSet(state);
                 if ( metricsSet != null ) {
                     try {
@@ -405,21 +406,21 @@ public class ServiceMetricsServicesImpl implements ServiceMetricsServices, PostS
     private class HourlyTask extends ManagedTimerTask {
         @Override
         protected void doRun() {
-            Set<Long> list = new HashSet<Long>();
+            Set<Goid> list = new HashSet<Goid>();
             synchronized(_serviceMetricsMapLock) {
                 list.addAll(_serviceMetricsMap.keySet());
             }
 
             // get start time for the last hourly period
             long startTime = MetricsBin.periodStartFor( MetricsBin.RES_HOURLY, 0, System.currentTimeMillis() ) - TimeUnit.HOURS.toMillis(1);
-            for ( Long serviceOid : list ) {
-                final ServiceState state = serviceStates.get( serviceOid );
+            for ( Goid serviceGoid : list ) {
+                final ServiceState state = serviceStates.get( serviceGoid );
                 int retriesLeft = 2;
                 long retryMillis = 5000;
                 boolean retry = true;
                 while (retriesLeft > 0 && retry) {
                     try {
-                        serviceMetricsManager.createHourlyBin(serviceOid, state, startTime);
+                        serviceMetricsManager.createHourlyBin(serviceGoid, state, startTime);
                         retry = false;
                     } catch (SaveException e) {
                         if (retriesLeft < 1 || ExceptionUtils.getCauseIfCausedBy(e, CannotAcquireLockException.class) == null) {
@@ -455,21 +456,21 @@ public class ServiceMetricsServicesImpl implements ServiceMetricsServices, PostS
         }
 
         private void performTask( final boolean reschedule ) {
-            Set<Long> list = new HashSet<Long>();
+            Set<Goid> list = new HashSet<Goid>();
             synchronized(_serviceMetricsMapLock) {
                 list.addAll(_serviceMetricsMap.keySet());
             }
 
             // get start time for the last daily period
             long startTime = MetricsBin.periodStartFor( MetricsBin.RES_DAILY, 0, System.currentTimeMillis() - TimeUnit.HOURS.toMillis(1) );
-            for ( Long serviceOid : list ) {
-                final ServiceState state = serviceStates.get( serviceOid );
+            for ( Goid serviceGoid : list ) {
+                final ServiceState state = serviceStates.get( serviceGoid );
                 int retriesLeft = 2;
                 long retryMillis = 5000;
                 boolean retry = true;
                 while (retriesLeft > 0 && retry) {
                     try {
-                        serviceMetricsManager.createDailyBin( serviceOid, state, startTime );
+                        serviceMetricsManager.createDailyBin( serviceGoid, state, startTime );
                         retry = false;
                     } catch (SaveException e) {
                         if (retriesLeft < 1 || ExceptionUtils.getCauseIfCausedBy(e, CannotAcquireLockException.class) == null) {
@@ -613,7 +614,7 @@ public class ServiceMetricsServicesImpl implements ServiceMetricsServices, PostS
             // This will wait indefinitely until there is an item in the queue.
             final ServiceMetrics.MetricsCollectorSet metricsSet = _flusherQueue.take();
 
-            final MetricsBin bin = new MetricsBin( metricsSet.getStartTime(), fineBinInterval, MetricsBin.RES_FINE, clusterNodeId, metricsSet.getServiceOid() );
+            final MetricsBin bin = new MetricsBin( metricsSet.getStartTime(), fineBinInterval, MetricsBin.RES_FINE, clusterNodeId, metricsSet.getServiceGoid() );
             if ( metricsSet.getServiceState() != null ) bin.setServiceState( metricsSet.getServiceState() );
             bin.setEndTime( metricsSet.getEndTime() );
 
@@ -656,7 +657,7 @@ public class ServiceMetricsServicesImpl implements ServiceMetricsServices, PostS
     /** Fine resolution bin interval (in milliseconds). */
     private int fineBinInterval;
 
-    private Map<Long, ServiceState> serviceStates = new ConcurrentHashMap<Long, ServiceState>();
+    private Map<Goid, ServiceState> serviceStates = new ConcurrentHashMap<Goid, ServiceState>();
 
     /** Whether statistics collecting is turned on. */
     private final AtomicBoolean _enabled = new AtomicBoolean(false);
@@ -678,7 +679,7 @@ public class ServiceMetricsServicesImpl implements ServiceMetricsServices, PostS
     private Thread _flusherThread;
     private static final BlockingQueue<ServiceMetrics.MetricsCollectorSet> _flusherQueue = new ArrayBlockingQueue<ServiceMetrics.MetricsCollectorSet>(500);
 
-    private final Map<Long, ServiceMetrics> _serviceMetricsMap = new HashMap<Long, ServiceMetrics>();
+    private final Map<Goid, ServiceMetrics> _serviceMetricsMap = new HashMap<Goid, ServiceMetrics>();
     private final Object _serviceMetricsMapLock = new Object();
     private AtomicBoolean _addMappingsIntoServiceMetrics = new AtomicBoolean(false);
 }

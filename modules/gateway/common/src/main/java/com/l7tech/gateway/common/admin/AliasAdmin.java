@@ -1,13 +1,13 @@
 package com.l7tech.gateway.common.admin;
 
-import org.springframework.transaction.annotation.Transactional;
-import static org.springframework.transaction.annotation.Propagation.REQUIRED;
-import com.l7tech.gateway.common.security.rbac.Secured;
-import com.l7tech.objectmodel.EntityType;
 import com.l7tech.gateway.common.security.rbac.MethodStereotype;
-import static com.l7tech.gateway.common.security.rbac.MethodStereotype.SAVE_OR_UPDATE;
-import static com.l7tech.gateway.common.security.rbac.MethodStereotype.DELETE_BY_ID;
+import com.l7tech.gateway.common.security.rbac.Secured;
 import com.l7tech.objectmodel.*;
+import org.springframework.transaction.annotation.Transactional;
+
+import static com.l7tech.gateway.common.security.rbac.MethodStereotype.DELETE_BY_ID;
+import static com.l7tech.gateway.common.security.rbac.MethodStereotype.SAVE_OR_UPDATE;
+import static org.springframework.transaction.annotation.Propagation.REQUIRED;
 
 /**
  * Admin interface for managing aliased entities
@@ -32,27 +32,27 @@ public interface AliasAdmin<HT extends Alias> {
      * @throws com.l7tech.objectmodel.VersionException if the service version conflict is detected
      */
     @Secured(stereotype=SAVE_OR_UPDATE)
-    long saveAlias(HT alias)
+    Goid saveAlias(HT alias)
             throws UpdateException, SaveException, VersionException;
 
     /**
-     * Find an Alias based on the original entities oid and the folderoid in which the alias currently resides
-     * @param entityOid oid of the real entity
-     * @param folderOid folder oid of the folder in which the alias currently resides
-     * @return The alias of the entityOid supplied if found, null otherwise
+     * Find an Alias based on the original entities oid and the folderGoid in which the alias currently resides
+     * @param entityGoid goid of the real entity
+     * @param folderGoid folder goid of the folder in which the alias currently resides
+     * @return The alias of the entityGoid supplied if found, null otherwise
      * @throws com.l7tech.objectmodel.FindException
      */
     @Transactional(readOnly=true)
     @Secured(stereotype= MethodStereotype.FIND_ENTITY)
     @Administrative(licensed=false)
-    public HT findAliasByEntityAndFolder(final Long entityOid, final Long folderOid) throws FindException;
+    public HT findAliasByEntityAndFolder(final Goid entityGoid, final Goid folderGoid) throws FindException;
 
     /**
      * Delete an {@link com.l7tech.objectmodel.Alias} by its unique identifier.
 
-     * @param oid the unique identifier of the {@link com.l7tech.objectmodel.Alias} to delete.
+     * @param id the unique identifier of the {@link com.l7tech.objectmodel.Alias} to delete.
      * @throws com.l7tech.objectmodel.DeleteException if the requested alias could not be deleted
      */
     @Secured(stereotype= DELETE_BY_ID, types= {EntityType.SERVICE_ALIAS, EntityType.POLICY_ALIAS})
-    void deleteEntityAlias(String oid) throws DeleteException;
+    void deleteEntityAlias(String id) throws DeleteException;
 }

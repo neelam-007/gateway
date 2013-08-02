@@ -1,5 +1,7 @@
 package com.l7tech.server.uddi;
 
+import com.l7tech.objectmodel.Goid;
+
 /**
  * UDDIEvent for subscription notifications.
  */
@@ -7,17 +9,17 @@ public class NotificationUDDIEvent extends UDDIEvent {
 
     //- PUBLIC
 
-    public NotificationUDDIEvent( final long serviceOid,
+    public NotificationUDDIEvent( final Goid serviceGoid,
                                   final String message,
                                   final String remoteAddress ) {
         super(false);
-        this.serviceOid = serviceOid;
+        this.serviceGoid = serviceGoid;
         this.message = message;
         this.remoteAddress = remoteAddress;
     }
 
-    public long getServiceOid() {
-        return serviceOid;
+    public Goid getServiceGoid() {
+        return serviceGoid;
     }
 
     public String getMessage() {
@@ -30,7 +32,7 @@ public class NotificationUDDIEvent extends UDDIEvent {
 
     //- PRIVATE
 
-    private final long serviceOid;
+    private final Goid serviceGoid;
     private final String message;
     private final String remoteAddress;
 

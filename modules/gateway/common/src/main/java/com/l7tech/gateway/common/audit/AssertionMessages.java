@@ -112,7 +112,7 @@ public class AssertionMessages extends Messages {
     public static final Messages.M RESOLVE_SERVICE_NOT_FOUND = m(4152, Level.INFO, "No service matched the specified parameters");
     public static final Messages.M RESOLVE_SERVICE_FOUND_MULTI = m(4153, Level.INFO, "More than one service matched the specified parameters");
     public static final Messages.M RESOLVE_SERVICE_FAILED = m(4154, Level.WARNING, "Service resolution failed: {0}");
-    public static final Messages.M RESOLVE_SERVICE_SUCCEEDED = m(4155, Level.INFO, "Resolved to service OID: {0}");
+    public static final Messages.M RESOLVE_SERVICE_SUCCEEDED = m(4155, Level.INFO, "Resolved to service GOID: {0}");
 
     // ServerIdentityAssertion
     /**

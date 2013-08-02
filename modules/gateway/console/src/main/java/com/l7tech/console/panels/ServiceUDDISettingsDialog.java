@@ -1,33 +1,35 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.console.poleditor.PolicyEditorPanel;
+import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.TopComponents;
+import com.l7tech.gateway.common.admin.UDDIRegistryAdmin;
 import com.l7tech.gateway.common.service.PublishedService;
-import com.l7tech.gateway.common.uddi.UDDIRegistry;
-import com.l7tech.gateway.common.uddi.UDDIServiceControl;
 import com.l7tech.gateway.common.uddi.UDDIProxiedServiceInfo;
 import com.l7tech.gateway.common.uddi.UDDIPublishStatus;
-
-import static com.l7tech.gateway.common.uddi.UDDIProxiedServiceInfo.PublishType.*;
-import com.l7tech.gateway.common.admin.UDDIRegistryAdmin;
+import com.l7tech.gateway.common.uddi.UDDIRegistry;
+import com.l7tech.gateway.common.uddi.UDDIServiceControl;
 import com.l7tech.gui.util.DialogDisplayer;
-import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.RunOnChangeListener;
-import com.l7tech.console.util.TopComponents;
-import com.l7tech.console.util.Registry;
-import com.l7tech.console.poleditor.PolicyEditorPanel;
-import com.l7tech.uddi.UDDIKeyedReference;
-import com.l7tech.util.ExceptionUtils;
+import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.uddi.UDDIKeyedReference;
 import com.l7tech.uddi.UDDINamedEntity;
+import com.l7tech.util.ExceptionUtils;
 
 import javax.swing.*;
-import java.awt.event.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static com.l7tech.gateway.common.uddi.UDDIProxiedServiceInfo.PublishType.*;
 
 public class ServiceUDDISettingsDialog extends JDialog {//TODO rename to PublishToUDDIDialog
     private static final Logger logger = Logger.getLogger(ServiceUDDISettingsDialog.class.getName());
@@ -201,11 +203,11 @@ public class ServiceUDDISettingsDialog extends JDialog {//TODO rename to Publish
 
         //determine if there is a UDDIProxiedService for this service
         try {
-            uddiProxyServiceInfo = getUDDIRegistryAdmin().findProxiedServiceInfoForPublishedService(service.getOid());
+            uddiProxyServiceInfo = getUDDIRegistryAdmin().findProxiedServiceInfoForPublishedService(service.getGoid());
             if(uddiProxyServiceInfo != null){
                 try {
                     publishStatus =
-                            Registry.getDefault().getUDDIRegistryAdmin().getPublishStatusForProxy(uddiProxyServiceInfo.getOid(), service.getOid());
+                            Registry.getDefault().getUDDIRegistryAdmin().getPublishStatusForProxy(uddiProxyServiceInfo.getOid(), service.getGoid());
                 } catch (FindException e) {
                     showErrorMessage("Cannot get publish status", "Cannot find the publish status for information in UDDI", ExceptionUtils.getDebugException(e), true);
                     dispose();
@@ -216,7 +218,7 @@ public class ServiceUDDISettingsDialog extends JDialog {//TODO rename to Publish
         }
 
         try {
-            uddiServiceControl = getUDDIRegistryAdmin().getUDDIServiceControl(service.getOid());
+            uddiServiceControl = getUDDIRegistryAdmin().getUDDIServiceControl(service.getGoid());
             if(uddiServiceControl != null){
                 originalServiceRegistry = getUDDIRegistryAdmin().findByPrimaryKey(uddiServiceControl.getUddiRegistryOid());
             }
@@ -1067,7 +1069,7 @@ public class ServiceUDDISettingsDialog extends JDialog {//TODO rename to Publish
     
     private boolean areUnsavedChangesToThisPolicy() {
         PolicyEditorPanel pep = TopComponents.getInstance().getPolicyEditorPanel();
-        return pep != null && pep.isEditingPublishedService() && service.getOid() == pep.getPublishedServiceOid() && pep.isUnsavedChanges();
+        return pep != null && pep.isEditingPublishedService() && Goid.equals(service.getGoid(), pep.getPublishedServiceGoid()) && pep.isUnsavedChanges();
     }
 
     /** @return true if the dialog has been dismissed with the ok button */

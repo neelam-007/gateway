@@ -43,14 +43,14 @@ public interface PolicyAdmin extends AliasAdmin<PolicyAlias> {
     String ROLE_NAME_PATTERN = RbacAdmin.ROLE_NAME_PREFIX + " {0} " + ROLE_NAME_TYPE_SUFFIX + RbacAdmin.ROLE_NAME_OID_SUFFIX;
 
     /**
-     * Finds a particular {@link com.l7tech.policy.Policy} with the specified OID, or null if no such policy can be found.
-     * @param oid the OID of the Policy to retrieve
-     * @return the Policy with the specified OID, or null if no such policy can be found.
+     * Finds a particular {@link com.l7tech.policy.Policy} with the specified GOID, or null if no such policy can be found.
+     * @param goid the GOID of the Policy to retrieve
+     * @return the Policy with the specified GOID, or null if no such policy can be found.
      */
     @Secured(stereotype=FIND_ENTITY)
     @Transactional(readOnly=true)
     @Administrative(licensed = false)
-    Policy findPolicyByPrimaryKey(long oid) throws FindException;
+    Policy findPolicyByPrimaryKey(Goid goid) throws FindException;
 
     /**
      * Finds a particular {@link Policy} with the specified OID, or null if no such policy can be found.
@@ -108,14 +108,14 @@ public interface PolicyAdmin extends AliasAdmin<PolicyAlias> {
             throws FindException;
 
     /**
-     * Deletes the policy with the specified OID.  An impact analysis will be performed prior to deleting the policy,
+     * Deletes the policy with the specified GOID.  An impact analysis will be performed prior to deleting the policy,
      * and if any other entity references the policy, {@link PolicyDeletionForbiddenException} will be thrown.
-     * @param oid the OID of the policy to be deleted.
-     * @throws PolicyDeletionForbiddenException if the Policy with the specified OID cannot be deleted because it is
+     * @param goid the GOID of the policy to be deleted.
+     * @throws PolicyDeletionForbiddenException if the Policy with the specified GOID cannot be deleted because it is
      *         referenced by another entity (e.g. a {@link com.l7tech.gateway.common.service.PublishedService})
      */
     @Secured(stereotype=DELETE_BY_ID)
-    void deletePolicy(long oid) throws PolicyDeletionForbiddenException, DeleteException, FindException, ConstraintViolationException;
+    void deletePolicy(Goid goid) throws PolicyDeletionForbiddenException, DeleteException, FindException, ConstraintViolationException;
 
     /**
      * Saves or updates the specified policy.
@@ -126,22 +126,22 @@ public interface PolicyAdmin extends AliasAdmin<PolicyAlias> {
      * as the second argument.
      *
      * @param policy the policy to be saved.
-     * @return the OID/GUID pair for he policy that was saved.
+     * @return the GOID/GUID pair for he policy that was saved.
      * @throws PolicyAssertionException if there is a problem with the policy
      */
     @Secured(stereotype=SAVE_OR_UPDATE)
-    Pair<Long,String> savePolicy(Policy policy) throws PolicyAssertionException, SaveException;
+    Pair<Goid,String> savePolicy(Policy policy) throws PolicyAssertionException, SaveException;
 
     /**
      * Saves or updates the specified PolicyAlias.
      *
      * @param policyAlias the PolicyAlias to be saved.
-     * @return the OID of the PolicyAlias that was saved.
+     * @return the GOID of the PolicyAlias that was saved.
      * @throws SaveException
      */
     @Override
     @Secured(stereotype=SAVE_OR_UPDATE)
-    long saveAlias(PolicyAlias policyAlias) throws SaveException;
+    Goid saveAlias(PolicyAlias policyAlias) throws SaveException;
 
     /**
      * Saves or updates the specified policy.
@@ -181,80 +181,80 @@ public interface PolicyAdmin extends AliasAdmin<PolicyAlias> {
     SavePolicyWithFragmentsResult savePolicy(Policy policy, boolean activateAsWell, HashMap<String, Policy> fragments) throws PolicyAssertionException, SaveException;
 
     @Secured(stereotype = FIND_ENTITIES)
-    Set<Policy> findUsages(long oid) throws FindException;
+    Set<Policy> findUsages(Goid goid) throws FindException;
 
     /**
-     * Find a particular policy revision by its OID.
+     * Find a particular policy revision by its GOID.
      *
-     * @param policyOid the OID of the policy this is a version of.  Required.
-     * @param versionOid the OID to find.  Required.
-     * @return the requested PolicyVersion, or null if that OID wasn't found.
+     * @param policyGoid the GOID of the policy this is a version of.  Required.
+     * @param versionGoid the GOID to find.  Required.
+     * @return the requested PolicyVersion, or null if that GOID wasn't found.
      * @throws FindException if there is a database problem
      */
     @Secured(stereotype=GET_PROPERTY_BY_ID, relevantArg=0)
     @Transactional(readOnly=true)
-    PolicyVersion findPolicyVersionByPrimaryKey(long policyOid, long versionOid) throws FindException;
+    PolicyVersion findPolicyVersionByPrimaryKey(Goid policyGoid, Goid versionGoid) throws FindException;
 
     /**
      * Get summary information about all revisions tracked for the specified policy.
      * <p/>
      * This returns a list of PolicyVersion instances whose "xml" properties are all null.
      *
-     * @param policyOid the OID of the owning Policy.  Required.
+     * @param policyGoid the GOID of the owning Policy.  Required.
      * @return a List of PolicyVersion instances whose "xml" properties are all omitted (null).  May be empty but never null.
      * @throws FindException if there is a database problem
      */
     @Secured(stereotype=GET_PROPERTY_BY_ID, relevantArg=0)
     @Transactional(readOnly=true)
-    List<PolicyVersion> findPolicyVersionHeadersByPolicy(long policyOid) throws FindException;
+    List<PolicyVersion> findPolicyVersionHeadersByPolicy(Goid policyGoid) throws FindException;
 
     /**
      * Set the comment for the specified policy revision.  Setting the comment to anything but null will
      * protect this revision from being deleted automatically.
      *
-     * @param policyOid the OID of the owning Policy.  Required.
-     * @param versionOid the OID of the revision whose comment to set.  Required.
+     * @param policyGoid the GOID of the owning Policy.  Required.
+     * @param versionGoid the GOID of the revision whose comment to set.  Required.
      * @param comment the comment to assign to this revision, or null to clear any comment.
      * @throws FindException if the specified policy or revision doesn't exist, or if the specified revision
      *                       is not owned by the specified policy.
      * @throws UpdateException if there is a problem setting the comment.
      */
     @Secured(stereotype=SET_PROPERTY_BY_ID, relevantArg=0)
-    void setPolicyVersionComment(long policyOid, long versionOid, String comment) throws FindException, UpdateException;
+    void setPolicyVersionComment(Goid policyGoid, Goid versionGoid, String comment) throws FindException, UpdateException;
 
     /**
      * Set the active version for the specified policy to the specified version.
      * This will mutate the current Policy but without adding any new entries to this policy's revision history.
      *
-     * @param policyOid the OID of the Policy to alter.  Required.
-     * @param versionOid the OID of the revision to set as the active revision,
-     *                   or {@link PolicyVersion#DEFAULT_OID} to clear the active revision.  Required.
+     * @param policyGoid the GOID of the Policy to alter.  Required.
+     * @param versionGoid the GOID of the revision to set as the active revision,
+     *                   or {@link PolicyVersion#DEFAULT_GOID} to clear the active revision.  Required.
      * @throws FindException if the specified policy or revision doesn't exist, or if the specified revision
      *                       is not owned by the specified policy.
      */
     @Secured(stereotype=SET_PROPERTY_BY_ID, relevantArg=0)
-    void setActivePolicyVersion(long policyOid, long versionOid) throws FindException, UpdateException;
+    void setActivePolicyVersion(Goid policyGoid, Goid versionGoid) throws FindException, UpdateException;
 
     /**
      * Get the active PolicyVersionfor the specified policy.
      *
-     * @param policyOid the OID of the Policy whose active version to look up.
-     * @return the PolicyVersion that is active for this Policy, or null if no active version was found for the specified policy OID.
+     * @param policyGoid the GOID of the Policy whose active version to look up.
+     * @return the PolicyVersion that is active for this Policy, or null if no active version was found for the specified policy GOID.
      * @throws FindException if there is a problem looking up the requested information
      */
     @Secured(stereotype=GET_PROPERTY_BY_ID, relevantArg=0)
-    PolicyVersion findActivePolicyVersionForPolicy(long policyOid) throws FindException;
+    PolicyVersion findActivePolicyVersionForPolicy(Goid policyGoid) throws FindException;
 
     /**
      * Clear the active version for the specified policy.
      * This will have the effect of disabling the current Policy, but without adding any new entries to this policy's
      * revision history.
      *
-     * @param policyOid the OID of the Policy to disable.  Required.
+     * @param policyGoid the GOID of the Policy to disable.  Required.
      * @throws FindException if the specified policy doesn't exist.
      */
     @Secured(stereotype=SET_PROPERTY_BY_ID, relevantArg=0)
-    void clearActivePolicyVersion(long policyOid) throws FindException, UpdateException;
+    void clearActivePolicyVersion(Goid policyGoid) throws FindException, UpdateException;
 
     /**
      * Get the default policy XML for a policy. User must be able to create a policy to consume this method.
@@ -284,16 +284,16 @@ public interface PolicyAdmin extends AliasAdmin<PolicyAlias> {
     Set<ExternalReferenceFactory> findAllExternalReferenceFactories();
 
     /**
-     * Finds the latest PolicyVersion for the given Policy Oid.
+     * Finds the latest PolicyVersion for the given Policy Goid.
      *
-     * @param policyOid the OID of the policy whose versions will be searched. Required.
+     * @param policyGoid the GOID of the policy whose versions will be searched. Required.
      * @return the latest PolicyVersion.
      */
     @Secured(stereotype=GET_PROPERTY_BY_ID, relevantArg=0)
     @Transactional(readOnly=true)
-    PolicyVersion findLatestRevisionForPolicy(long policyOid);
+    PolicyVersion findLatestRevisionForPolicy(Goid policyGoid);
 
     @Transactional(readOnly = true)
     @Secured(stereotype = FIND_ENTITY, types = EntityType.POLICY)
-    Policy findByAlias(final long aliasOid) throws FindException;
+    Policy findByAlias(final Goid aliasGoid) throws FindException;
 }

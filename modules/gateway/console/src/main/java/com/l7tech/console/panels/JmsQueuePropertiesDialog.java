@@ -19,6 +19,7 @@ import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.GoidEntity;
 import com.l7tech.objectmodel.VersionException;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
@@ -771,7 +772,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
         if (associateQueueWithPublishedService.isSelected()) {
             PublishedService svc = ServiceComboBox.getSelectedPublishedService(serviceNameCombo);
             properties.setProperty(JmsConnection.PROP_IS_HARDWIRED_SERVICE, (Boolean.TRUE).toString());
-            properties.setProperty(JmsConnection.PROP_HARDWIRED_SERVICE_ID, (new Long(svc.getOid())).toString());
+            properties.setProperty(JmsConnection.PROP_HARDWIRED_SERVICE_ID, svc.getGoid().toString());
         } else {
             properties.setProperty(JmsConnection.PROP_IS_HARDWIRED_SERVICE, (Boolean.FALSE).toString());
         }
@@ -941,7 +942,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
      */
     private void initializeView() {
         boolean isHardWired = false;
-        long hardWiredId = 0;
+        Goid hardWiredId = GoidEntity.DEFAULT_GOID;
         loadContentTypesModel();
         if ( connection != null ) {
             isTemplateQueue.setSelected(connection.isTemplate());
@@ -976,7 +977,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
                 if (Boolean.parseBoolean(tmp)) {
                     tmp = props.getProperty(JmsConnection.PROP_HARDWIRED_SERVICE_ID);
                     isHardWired = true;
-                    hardWiredId = Long.parseLong(tmp);
+                    hardWiredId = Goid.parseGoid(tmp);
                 }
             }
 

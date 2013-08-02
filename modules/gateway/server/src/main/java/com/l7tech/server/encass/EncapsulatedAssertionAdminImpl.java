@@ -76,8 +76,8 @@ public class EncapsulatedAssertionAdminImpl implements EncapsulatedAssertionAdmi
      */
     @NotNull
     @Override
-    public Collection<EncapsulatedAssertionConfig> findByPolicyOid(long policyOid) throws FindException {
-        Collection<EncapsulatedAssertionConfig> ret = encapsulatedAssertionConfigManager.findByPolicyOid(policyOid);
+    public Collection<EncapsulatedAssertionConfig> findByPolicyGoid(Goid policyGoid) throws FindException {
+        Collection<EncapsulatedAssertionConfig> ret = encapsulatedAssertionConfigManager.findByPolicyGoid(policyGoid);
         if (ret == null) {
             ret = Collections.emptySet();
         }

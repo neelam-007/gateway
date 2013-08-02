@@ -1,7 +1,6 @@
 package com.l7tech.console.util;
 
 import com.l7tech.console.tree.PaletteFolderRegistry;
-import com.l7tech.console.tree.servicesAndPolicies.RootNode;
 import com.l7tech.gateway.common.admin.FolderAdmin;
 import com.l7tech.gateway.common.admin.PolicyAdmin;
 import com.l7tech.gateway.common.resources.HttpConfiguration;
@@ -19,7 +18,7 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.FolderHeader;
 import com.l7tech.objectmodel.folder.HasFolder;
-import com.l7tech.objectmodel.folder.HasFolderOid;
+import com.l7tech.objectmodel.folder.HasFolderGoid;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.policy.*;
 import com.l7tech.policy.assertion.ContentTypeAssertion;
@@ -33,13 +32,15 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
 public class EntityNameResolverTest {
     private static final long OID = 1234L;
+    private static final Goid GOID = new Goid(0,1234L);
     private static final String NAME = "test";
     private EntityNameResolver resolver;
     @Mock
@@ -69,48 +70,48 @@ public class EntityNameResolverTest {
 
     @Test
     public void getNameForServiceAliasHeader() throws Exception {
-        final PublishedService service = createService(OID, NAME, "/routingUri");
-        final Folder folder = createFolderInRoot(OID, "aliases");
-        final PublishedServiceAlias alias = createServiceAlias(OID, service, folder);
-        when(serviceAdmin.findByAlias(OID)).thenReturn(service);
-        when(folderAdmin.findByPrimaryKey(OID)).thenReturn(folder);
+        final PublishedService service = createService(GOID, NAME, "/routingUri");
+        final Folder folder = createFolderInRoot(GOID, "aliases");
+        final PublishedServiceAlias alias = createServiceAlias(GOID, service, folder);
+        when(serviceAdmin.findByAlias(GOID)).thenReturn(service);
+        when(folderAdmin.findByPrimaryKey(GOID)).thenReturn(folder);
         assertEquals("test alias [/routingUri] (/aliases/test alias)", resolver.getNameForHeader(new AliasHeader(alias)));
     }
 
     @Test
     public void getNameForServiceAliasHeaderNullRoutingUri() throws Exception {
-        final PublishedService service = createService(OID, NAME, null);
-        final Folder folder = createFolderInRoot(OID, "aliases");
-        final PublishedServiceAlias alias = createServiceAlias(OID, service, folder);
-        when(serviceAdmin.findByAlias(OID)).thenReturn(service);
-        when(folderAdmin.findByPrimaryKey(OID)).thenReturn(folder);
+        final PublishedService service = createService(GOID, NAME, null);
+        final Folder folder = createFolderInRoot(GOID, "aliases");
+        final PublishedServiceAlias alias = createServiceAlias(GOID, service, folder);
+        when(serviceAdmin.findByAlias(GOID)).thenReturn(service);
+        when(folderAdmin.findByPrimaryKey(GOID)).thenReturn(folder);
         assertEquals("test alias (/aliases/test alias)", resolver.getNameForHeader(new AliasHeader(alias)));
     }
 
     @Test(expected = FindException.class)
     public void getNameForServiceAliasHeaderServiceNotFound() throws Exception {
-        final PublishedService service = createService(OID, NAME, null);
-        final Folder folder = createFolderInRoot(OID, "aliases");
-        final PublishedServiceAlias alias = createServiceAlias(OID, service, folder);
-        when(serviceAdmin.findByAlias(anyLong())).thenReturn(null);
+        final PublishedService service = createService(GOID, NAME, null);
+        final Folder folder = createFolderInRoot(GOID, "aliases");
+        final PublishedServiceAlias alias = createServiceAlias(GOID, service, folder);
+        when(serviceAdmin.findByAlias(any(Goid.class))).thenReturn(null);
         resolver.getNameForHeader(new AliasHeader(alias));
     }
 
     @Test
     public void getNameForPolicyAliasHeader() throws Exception {
         final Policy policy = new Policy(PolicyType.INCLUDE_FRAGMENT, NAME, "xml", false);
-        final Folder folder = createFolderInRoot(OID, "aliases");
-        final PolicyAlias alias = createPolicyAlias(OID, policy, folder);
-        when(policyAdmin.findByAlias(OID)).thenReturn(policy);
+        final Folder folder = createFolderInRoot(GOID, "aliases");
+        final PolicyAlias alias = createPolicyAlias(GOID, policy, folder);
+        when(policyAdmin.findByAlias(GOID)).thenReturn(policy);
         assertEquals("test alias (/test alias)", resolver.getNameForHeader(new AliasHeader(alias)));
     }
 
     @Test(expected = FindException.class)
     public void getNameForPolicyAliasHeaderNotFound() throws Exception {
         final Policy policy = new Policy(PolicyType.INCLUDE_FRAGMENT, NAME, "xml", false);
-        final Folder folder = createFolderInRoot(OID, "aliases");
-        final PolicyAlias alias = createPolicyAlias(OID, policy, folder);
-        when(policyAdmin.findByAlias(anyLong())).thenReturn(null);
+        final Folder folder = createFolderInRoot(GOID, "aliases");
+        final PolicyAlias alias = createPolicyAlias(GOID, policy, folder);
+        when(policyAdmin.findByAlias(any(Goid.class))).thenReturn(null);
         resolver.getNameForHeader(new AliasHeader(alias));
     }
 
@@ -174,20 +175,20 @@ public class EntityNameResolverTest {
      */
     @Test
     public void getNameForHeaderWithOidInName() throws Exception {
-        final PublishedService service = createService(OID, NAME, null);
-        final Folder folder = createFolderInRoot(OID, "aliases");
-        final PublishedServiceAlias alias = createServiceAlias(OID, service, folder);
-        when(serviceAdmin.findByAlias(OID)).thenReturn(service);
-        when(folderAdmin.findByPrimaryKey(OID)).thenReturn(folder);
+        final PublishedService service = createService(GOID, NAME, null);
+        final Folder folder = createFolderInRoot(GOID, "aliases");
+        final PublishedServiceAlias alias = createServiceAlias(GOID, service, folder);
+        when(serviceAdmin.findByAlias(GOID)).thenReturn(service);
+        when(folderAdmin.findByPrimaryKey(GOID)).thenReturn(folder);
         final AliasHeader header = new AliasHeader(alias);
-        header.setName(String.valueOf(OID));
+        header.setName(String.valueOf(GOID));
         assertEquals("test alias (/aliases/test alias)", resolver.getNameForHeader(header));
     }
 
     @Test
     public void getNameForHasFolderOidHeader() throws Exception {
-        when(folderAdmin.findByPrimaryKey(OID)).thenReturn(new Folder("folder2", new Folder("folder1", new Folder("Root Node", null))));
-        final HasFolderOidStub header = new HasFolderOidStub(OID);
+        when(folderAdmin.findByPrimaryKey(GOID)).thenReturn(new Folder("folder2", new Folder("folder1", new Folder("Root Node", null))));
+        final HasFolderOidStub header = new HasFolderOidStub(GOID);
         header.setName(NAME);
         final String name = resolver.getNameForHeader(header);
         assertEquals("test (/folder1/folder2/test)", name);
@@ -195,8 +196,8 @@ public class EntityNameResolverTest {
 
     @Test
     public void getNameForHasFolderOidHeaderNoName() throws Exception {
-        when(folderAdmin.findByPrimaryKey(OID)).thenReturn(new Folder("folder2", new Folder("folder1", new Folder("Root Node", null))));
-        final HasFolderOidStub header = new HasFolderOidStub(OID);
+        when(folderAdmin.findByPrimaryKey(GOID)).thenReturn(new Folder("folder2", new Folder("folder1", new Folder("Root Node", null))));
+        final HasFolderOidStub header = new HasFolderOidStub(GOID);
         header.setName(null);
         final String name = resolver.getNameForHeader(header);
         assertEquals(" (/folder1/folder2/)", name);
@@ -249,8 +250,8 @@ public class EntityNameResolverTest {
 
     @Test
     public void getPathFromFolderOid() throws Exception {
-        when(folderAdmin.findByPrimaryKey(OID)).thenReturn(new Folder("folder2", new Folder("folder1", new Folder("Root Node", null))));
-        final String path = resolver.getPath(new HasFolderOidStub(OID));
+        when(folderAdmin.findByPrimaryKey(GOID)).thenReturn(new Folder("folder2", new Folder("folder1", new Folder("Root Node", null))));
+        final String path = resolver.getPath(new HasFolderOidStub(GOID));
         assertEquals("/folder1/folder2/", path);
     }
 
@@ -258,19 +259,19 @@ public class EntityNameResolverTest {
     public void getPathFromNullFolderOid() throws Exception {
         final String path = resolver.getPath(new HasFolderOidStub(null));
         assertEquals("/", path);
-        verify(folderAdmin, never()).findByPrimaryKey(anyLong());
+        verify(folderAdmin, never()).findByPrimaryKey(any(Goid.class));
     }
 
     @Test
     public void getPathFromFolderOidDoesNotExist() throws Exception {
-        when(folderAdmin.findByPrimaryKey(OID)).thenReturn(null);
-        assertEquals("/", resolver.getPath(new HasFolderOidStub(OID)));
+        when(folderAdmin.findByPrimaryKey(GOID)).thenReturn(null);
+        assertEquals("/", resolver.getPath(new HasFolderOidStub(GOID)));
     }
 
     @Test(expected = FindException.class)
     public void getPathFromFolderOidFindException() throws Exception {
-        when(folderAdmin.findByPrimaryKey(OID)).thenThrow(new FindException("mocking exception"));
-        resolver.getPath(new HasFolderOidStub(OID));
+        when(folderAdmin.findByPrimaryKey(GOID)).thenThrow(new FindException("mocking exception"));
+        resolver.getPath(new HasFolderOidStub(GOID));
     }
 
     @BugId("SSG-7239")
@@ -358,57 +359,57 @@ public class EntityNameResolverTest {
 
     @Test
     public void getNameForServiceAlias() throws Exception {
-        final PublishedService service = createService(OID, NAME, "/routingUri");
-        final Folder folder = createFolderInRoot(OID, "aliases");
-        final PublishedServiceAlias alias = createServiceAlias(OID, service, folder);
-        when(serviceAdmin.findServiceByID(String.valueOf(OID))).thenReturn(service);
+        final PublishedService service = createService(GOID, NAME, "/routingUri");
+        final Folder folder = createFolderInRoot(GOID, "aliases");
+        final PublishedServiceAlias alias = createServiceAlias(GOID, service, folder);
+        when(serviceAdmin.findServiceByID(String.valueOf(GOID))).thenReturn(service);
         assertEquals("test alias [/routingUri] (/aliases/test alias)", resolver.getNameForEntity(alias, true));
     }
 
     @Test
     public void getNameForServiceAliasWithoutPath() throws Exception {
-        final PublishedService service = createService(OID, NAME, "/routingUri");
-        final Folder folder = createFolderInRoot(OID, "aliases");
-        final PublishedServiceAlias alias = createServiceAlias(OID, service, folder);
-        when(serviceAdmin.findServiceByID(String.valueOf(OID))).thenReturn(service);
+        final PublishedService service = createService(GOID, NAME, "/routingUri");
+        final Folder folder = createFolderInRoot(GOID, "aliases");
+        final PublishedServiceAlias alias = createServiceAlias(GOID, service, folder);
+        when(serviceAdmin.findServiceByID(String.valueOf(GOID))).thenReturn(service);
         assertEquals("test alias [/routingUri]", resolver.getNameForEntity(alias, false));
     }
 
     @Test(expected = FindException.class)
     public void getNameForServiceAliasCannotFindService() throws Exception {
-        final PublishedService service = createService(OID, NAME, "/routingUri");
-        final Folder folder = createFolderInRoot(OID, "aliases");
-        final PublishedServiceAlias alias = createServiceAlias(OID, service, folder);
-        when(serviceAdmin.findServiceByID(String.valueOf(OID))).thenReturn(null);
+        final PublishedService service = createService(GOID, NAME, "/routingUri");
+        final Folder folder = createFolderInRoot(GOID, "aliases");
+        final PublishedServiceAlias alias = createServiceAlias(GOID, service, folder);
+        when(serviceAdmin.findServiceByID(String.valueOf(GOID))).thenReturn(null);
         resolver.getNameForEntity(alias, true);
     }
 
     @Test
     public void getNameForPolicyAlias() throws Exception {
-        final Policy policy = createPolicy(OID, NAME);
-        final Folder folder = createFolderInRoot(OID, "aliases");
-        final PolicyAlias alias = createPolicyAlias(OID, policy, folder);
-        when(policyAdmin.findPolicyByPrimaryKey(OID)).thenReturn(policy);
-        when(folderAdmin.findByPrimaryKey(OID)).thenReturn(folder);
+        final Policy policy = createPolicy(GOID, NAME);
+        final Folder folder = createFolderInRoot(GOID, "aliases");
+        final PolicyAlias alias = createPolicyAlias(GOID, policy, folder);
+        when(policyAdmin.findPolicyByPrimaryKey(GOID)).thenReturn(policy);
+        when(folderAdmin.findByPrimaryKey(GOID)).thenReturn(folder);
         assertEquals("test alias (/aliases/test alias)", resolver.getNameForEntity(alias, true));
     }
 
     @Test
     public void getNameForPolicyAliasWithoutPath() throws Exception {
-        final Policy policy = createPolicy(OID, NAME);
-        final Folder folder = createFolderInRoot(OID, "aliases");
-        final PolicyAlias alias = createPolicyAlias(OID, policy, folder);
-        when(policyAdmin.findPolicyByPrimaryKey(OID)).thenReturn(policy);
-        when(folderAdmin.findByPrimaryKey(OID)).thenReturn(folder);
+        final Policy policy = createPolicy(GOID, NAME);
+        final Folder folder = createFolderInRoot(GOID, "aliases");
+        final PolicyAlias alias = createPolicyAlias(GOID, policy, folder);
+        when(policyAdmin.findPolicyByPrimaryKey(GOID)).thenReturn(policy);
+        when(folderAdmin.findByPrimaryKey(GOID)).thenReturn(folder);
         assertEquals("test alias", resolver.getNameForEntity(alias, false));
     }
 
     @Test(expected = FindException.class)
     public void getNameForPolicyAliasCannotFindPolicy() throws Exception {
-        final Policy policy = createPolicy(OID, NAME);
-        final Folder folder = createFolderInRoot(OID, "aliases");
-        final PolicyAlias alias = createPolicyAlias(OID, policy, folder);
-        when(policyAdmin.findPolicyByPrimaryKey(OID)).thenReturn(null);
+        final Policy policy = createPolicy(GOID, NAME);
+        final Folder folder = createFolderInRoot(GOID, "aliases");
+        final PolicyAlias alias = createPolicyAlias(GOID, policy, folder);
+        when(policyAdmin.findPolicyByPrimaryKey(GOID)).thenReturn(null);
         resolver.getNameForEntity(alias, false);
     }
 
@@ -467,46 +468,46 @@ public class EntityNameResolverTest {
 
     @Test
     public void getNameForServiceRole() throws Exception {
-        final PublishedService service = createService(OID, NAME, "/routingUri");
-        service.setFolder(createFolderInRoot(OID, "services"));
+        final PublishedService service = createService(GOID, NAME, "/routingUri");
+        service.setFolder(createFolderInRoot(GOID, "services"));
         final Role role = createRole("Manage test Service (#1234)", service);
         assertEquals("Manage test [/routingUri] Service (/services/test)", resolver.getNameForEntity(role, true));
     }
 
     @Test
     public void getNameForServiceRoleNoPath() throws Exception {
-        final PublishedService service = createService(OID, NAME, "/routingUri");
-        service.setFolder(createFolderInRoot(OID, "services"));
+        final PublishedService service = createService(GOID, NAME, "/routingUri");
+        service.setFolder(createFolderInRoot(GOID, "services"));
         final Role role = createRole("Manage test Service (#1234)", service);
         assertEquals("Manage test [/routingUri] Service", resolver.getNameForEntity(role, false));
     }
 
     @Test
     public void getNameForPolicyRole() throws Exception {
-        final Policy policy = createPolicy(OID, NAME);
-        policy.setFolder(createFolderInRoot(OID, "policies"));
+        final Policy policy = createPolicy(GOID, NAME);
+        policy.setFolder(createFolderInRoot(GOID, "policies"));
         final Role role = createRole("Manage test Policy (#1234)", policy);
         assertEquals("Manage test Policy (/policies/test)", resolver.getNameForEntity(role, true));
     }
 
     @Test
     public void getNameForPolicyRoleNoPath() throws Exception {
-        final Policy policy = createPolicy(OID, NAME);
-        policy.setFolder(createFolderInRoot(OID, "policies"));
+        final Policy policy = createPolicy(GOID, NAME);
+        policy.setFolder(createFolderInRoot(GOID, "policies"));
         final Role role = createRole("Manage test Policy (#1234)", policy);
         assertEquals("Manage test Policy", resolver.getNameForEntity(role, false));
     }
 
     @Test
     public void getNameForFolderRole() throws Exception {
-        final Folder folder = createFolderInRoot(OID, NAME);
+        final Folder folder = createFolderInRoot(GOID, NAME);
         final Role role = createRole("Manage test Folder (#1234)", folder);
         assertEquals("Manage test Folder (/test)", resolver.getNameForEntity(role, true));
     }
 
     @Test
     public void getNameForFolderRoleNoPath() throws Exception {
-        final Folder folder = createFolderInRoot(OID, NAME);
+        final Folder folder = createFolderInRoot(GOID, NAME);
         final Role role = createRole("Manage test Folder (#1234)", folder);
         assertEquals("Manage test Folder", resolver.getNameForEntity(role, false));
     }
@@ -655,8 +656,8 @@ public class EntityNameResolverTest {
 
     @Test
     public void getNameForFolderAncestryPredicatePolicy() throws Exception {
-        when(policyAdmin.findPolicyByPrimaryKey(1234L)).thenReturn(new Policy(PolicyType.INCLUDE_FRAGMENT, "test", "xml", false));
-        final EntityFolderAncestryPredicate predicate = new EntityFolderAncestryPredicate(new Permission(new Role(), OperationType.READ, EntityType.FOLDER), EntityType.POLICY, "1234");
+        when(policyAdmin.findPolicyByPrimaryKey(new Goid(0,1234L))).thenReturn(new Policy(PolicyType.INCLUDE_FRAGMENT, "test", "xml", false));
+        final EntityFolderAncestryPredicate predicate = new EntityFolderAncestryPredicate(new Permission(new Role(), OperationType.READ, EntityType.FOLDER), EntityType.POLICY, new Goid(0,1234));
         assertEquals("ancestors of policy \"test\"", resolver.getNameForEntity(predicate, false));
     }
 
@@ -671,8 +672,8 @@ public class EntityNameResolverTest {
 
     @Test
     public void getNameForFolderAncestryPredicateFolder() throws Exception {
-        when(folderAdmin.findByPrimaryKey(1234L)).thenReturn(new Folder("test", null));
-        final EntityFolderAncestryPredicate predicate = new EntityFolderAncestryPredicate(new Permission(new Role(), OperationType.READ, EntityType.FOLDER), EntityType.FOLDER, "1234");
+        when(folderAdmin.findByPrimaryKey(new Goid(0,1234L))).thenReturn(new Folder("test", null));
+        final EntityFolderAncestryPredicate predicate = new EntityFolderAncestryPredicate(new Permission(new Role(), OperationType.READ, EntityType.FOLDER), EntityType.FOLDER, new Goid(0,1234));
         assertEquals("ancestors of folder \"test\"", resolver.getNameForEntity(predicate, false));
     }
 
@@ -680,27 +681,27 @@ public class EntityNameResolverTest {
     public void getNameForFolderAncestryPredicateServiceAlias() throws Exception {
         final PublishedService publishedService = new PublishedService();
         publishedService.setName("test");
-        when(serviceAdmin.findByAlias(1234L)).thenReturn(publishedService);
-        final EntityFolderAncestryPredicate predicate = new EntityFolderAncestryPredicate(new Permission(new Role(), OperationType.READ, EntityType.FOLDER), EntityType.SERVICE_ALIAS, "1234");
+        when(serviceAdmin.findByAlias(new Goid(0,1234L))).thenReturn(publishedService);
+        final EntityFolderAncestryPredicate predicate = new EntityFolderAncestryPredicate(new Permission(new Role(), OperationType.READ, EntityType.FOLDER), EntityType.SERVICE_ALIAS, new Goid(0,1234));
         assertEquals("ancestors of published service alias \"test alias\"", resolver.getNameForEntity(predicate, false));
     }
 
     @Test
     public void getNameForFolderAncestryPredicatePolicyAlias() throws Exception {
-        when(policyAdmin.findByAlias(1234L)).thenReturn(new Policy(PolicyType.INCLUDE_FRAGMENT, "test", "xml", false));
-        final EntityFolderAncestryPredicate predicate = new EntityFolderAncestryPredicate(new Permission(new Role(), OperationType.READ, EntityType.FOLDER), EntityType.POLICY_ALIAS, "1234");
+        when(policyAdmin.findByAlias(new Goid(0,1234L))).thenReturn(new Policy(PolicyType.INCLUDE_FRAGMENT, "test", "xml", false));
+        final EntityFolderAncestryPredicate predicate = new EntityFolderAncestryPredicate(new Permission(new Role(), OperationType.READ, EntityType.FOLDER), EntityType.POLICY_ALIAS, new Goid(0,1234));
         assertEquals("ancestors of policy alias \"test alias\"", resolver.getNameForEntity(predicate, false));
     }
 
     @Test
     public void getNameForFolderAncestryPredicateNullEntityType() throws Exception {
-        final EntityFolderAncestryPredicate predicate = new EntityFolderAncestryPredicate(new Permission(new Role(), OperationType.READ, EntityType.POLICY), null, "1234");
+        final EntityFolderAncestryPredicate predicate = new EntityFolderAncestryPredicate(new Permission(new Role(), OperationType.READ, EntityType.POLICY), null, new Goid(0,1234));
         assertTrue(resolver.getNameForEntity(predicate, false).isEmpty());
     }
 
     private Folder createRootFolder() {
         final Folder rootFolder = new Folder("Root Node", null);
-        rootFolder.setOid(RootNode.OID);
+        rootFolder.setGoid(Folder.ROOT_FOLDER_ID);
         return rootFolder;
     }
 
@@ -711,35 +712,35 @@ public class EntityNameResolverTest {
         return role;
     }
 
-    private Policy createPolicy(final Long oid, final String name) {
+    private Policy createPolicy(final Goid goid, final String name) {
         final Policy policy = new Policy(PolicyType.INCLUDE_FRAGMENT, name, "xml", false);
-        policy.setOid(oid);
+        policy.setGoid(goid);
         return policy;
     }
 
-    private PublishedService createService(final Long oid, final String name, final String routingUri) {
+    private PublishedService createService(final Goid goid, final String name, final String routingUri) {
         final PublishedService service = new PublishedService();
         service.setName(name);
         service.setRoutingUri(routingUri);
-        service.setOid(oid);
+        service.setGoid(goid);
         return service;
     }
 
-    private Folder createFolderInRoot(final Long oid, final String name) {
+    private Folder createFolderInRoot(final Goid goid, final String name) {
         final Folder folder = new Folder(name, createRootFolder());
-        folder.setOid(oid);
+        folder.setGoid(goid);
         return folder;
     }
 
-    private PublishedServiceAlias createServiceAlias(final Long oid, final PublishedService service, final Folder folder) {
+    private PublishedServiceAlias createServiceAlias(final Goid goid, final PublishedService service, final Folder folder) {
         final PublishedServiceAlias alias = new PublishedServiceAlias(service, folder);
-        alias.setOid(oid);
+        alias.setGoid(goid);
         return alias;
     }
 
-    private PolicyAlias createPolicyAlias(final Long oid, final Policy policy, final Folder folder) {
+    private PolicyAlias createPolicyAlias(final Goid goid, final Policy policy, final Folder folder) {
         final PolicyAlias policyAlias = new PolicyAlias(policy, folder);
-        policyAlias.setOid(oid);
+        policyAlias.setGoid(goid);
         return policyAlias;
     }
 
@@ -761,21 +762,21 @@ public class EntityNameResolverTest {
         }
     }
 
-    private class HasFolderOidStub extends EntityHeader implements HasFolderOid {
-        private Long folderOid;
+    private class HasFolderOidStub extends EntityHeader implements HasFolderGoid {
+        private Goid folderGoid;
 
-        private HasFolderOidStub(final Long folderOid) {
-            this.folderOid = folderOid;
+        private HasFolderOidStub(final Goid folderGoid) {
+            this.folderGoid = folderGoid;
         }
 
         @Override
-        public Long getFolderOid() {
-            return folderOid;
+        public Goid getFolderGoid() {
+            return folderGoid;
         }
 
         @Override
-        public void setFolderOid(final Long folderOid) {
-            this.folderOid = folderOid;
+        public void setFolderGoid(final Goid folderGoid) {
+            this.folderGoid = folderGoid;
         }
     }
 }

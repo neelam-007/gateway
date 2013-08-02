@@ -87,25 +87,25 @@ public class VersioningPolicyManager implements PolicyManager {
     }
 
     @Override
-    public long save(Policy policy) throws SaveException {
+    public Goid save(Policy policy) throws SaveException {
         if (policy != null)
             policy.setVersion(0);
-        long oid = policyManager.save(policy);
+        Goid goid = policyManager.save(policy);
         try {
             policyVersionManager.checkpointPolicy(policy, true, true);
         } catch ( ObjectModelException ome ) {
             throw new SaveException("Unable to save policy version.", ome);
         }
-        return oid;
+        return goid;
     }
 
     @Override
-    public Integer getVersion(long oid) throws FindException {
-        return policyManager.getVersion(oid);
+    public Integer getVersion(Goid goid) throws FindException {
+        return policyManager.getVersion(goid);
     }
 
     @Override
-    public Map<Long, Integer> findVersionMap() throws FindException {
+    public Map<Goid, Integer> findVersionMap() throws FindException {
         return policyManager.findVersionMap();
     }
 
@@ -115,7 +115,7 @@ public class VersioningPolicyManager implements PolicyManager {
     }
 
     @Override
-    public Policy getCachedEntity(long o, int maxAge) throws FindException {
+    public Policy getCachedEntity(Goid o, int maxAge) throws FindException {
         return policyManager.getCachedEntity(o, maxAge);
     }
 
@@ -140,8 +140,8 @@ public class VersioningPolicyManager implements PolicyManager {
     }
 
     @Override
-    public void delete(long oid) throws DeleteException, FindException {
-        policyManager.delete(oid);
+    public void delete(Goid goid) throws DeleteException, FindException {
+        policyManager.delete(goid);
     }
 
     @Override
@@ -170,7 +170,7 @@ public class VersioningPolicyManager implements PolicyManager {
     }
 
     @Override
-    public void updateFolder(long entityId, Folder folder) throws UpdateException {
+    public void updateFolder(Goid entityId, Folder folder) throws UpdateException {
         policyManager.updateFolder(entityId, folder);
     }
 
@@ -195,8 +195,8 @@ public class VersioningPolicyManager implements PolicyManager {
     }
 
     @Override
-    public void deleteRoles( final long entityOid ) throws DeleteException {
-        policyManager.deleteRoles( entityOid );
+    public void deleteRoles( final Goid entityGoid ) throws DeleteException {
+        policyManager.deleteRoles( entityGoid );
     }
 
     //- PRIVATE
@@ -217,7 +217,7 @@ public class VersioningPolicyManager implements PolicyManager {
     private Policy processRevision( final Policy policy ) throws FindException {
         if (policy == null) return null;
 
-        PolicyVersion activeVersion = policyVersionManager.findActiveVersionForPolicy( policy.getOid() );
+        PolicyVersion activeVersion = policyVersionManager.findActiveVersionForPolicy( policy.getGoid() );
         if (activeVersion != null) {
             policy.setVersionOrdinal(activeVersion.getOrdinal());
             policy.setVersionActive(true);

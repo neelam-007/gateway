@@ -14,5 +14,5 @@ public interface Aliasable{
 
     public boolean isAlias();
 
-    public void setAliasOid(Long aliasOid);
+    public void setAliasGoid(Goid aliasGoid);
 }

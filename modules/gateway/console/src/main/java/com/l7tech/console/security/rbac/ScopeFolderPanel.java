@@ -66,7 +66,7 @@ public class ScopeFolderPanel extends ValidatedPanel<FolderPredicate> {
                         EntityHeader header = fed.getSelectedEntityHeader();
                         if (header != null) {
                             try {
-                                folder = Registry.getDefault().getFolderAdmin().findByPrimaryKey(header.getOid());
+                                folder = Registry.getDefault().getFolderAdmin().findByPrimaryKey(header.getGoid());
                             } catch (FindException e1) {
                                 throw new RuntimeException("Couldn't lookup Folder", e1);
                             }

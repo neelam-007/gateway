@@ -509,7 +509,7 @@ public class ServerVariables {
             new Variable(BuiltinVariables.PREFIX_POLICY + "." + BuiltinVariables.POLICY_SUFFIX_OID, new CurrentPolicyGetter() {
                 @Override
                 protected Object get( final PolicyHeader policyHeader ) {
-                    return policyHeader.getOid();
+                    return policyHeader.getGoid();
                 }
             }),
 

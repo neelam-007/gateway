@@ -1,6 +1,6 @@
 package com.l7tech.objectmodel;
 
-import com.l7tech.objectmodel.folder.HasFolderOid;
+import com.l7tech.objectmodel.folder.HasFolderGoid;
 
 /**
  * When dealing with Services and Policies they have a lot in common - they can be put into folders and they
@@ -11,33 +11,33 @@ import com.l7tech.objectmodel.folder.HasFolderOid;
  *
  * @author darmstrong
  */
-public abstract class OrganizationHeader extends ZoneableGuidEntityHeader implements Aliasable, HasFolderOid {
-    protected OrganizationHeader(long oid, EntityType type, String name, String description, int version) {
-        super(oid, type, name, description, version);
+public abstract class OrganizationHeader extends ZoneableGuidEntityHeader implements Aliasable, HasFolderGoid {
+    protected OrganizationHeader(Goid goid, EntityType type, String name, String description, int version) {
+        super(goid, type, name, description, version);
     }
 
     @Override
-    public Long getFolderOid() {
-        return folderOid;
+    public Goid getFolderGoid() {
+        return folderGoid;
     }
 
     @Override
-    public void setFolderOid(Long folderOid) {
-        this.folderOid = folderOid;
+    public void setFolderGoid(Goid folderGoid) {
+        this.folderGoid = folderGoid;
     }
 
     @Override
     public boolean isAlias() {
-        return aliasOid != null;
+        return aliasGoid != null;
     }
 
-    public Long getAliasOid() {
-        return aliasOid;
+    public Goid getAliasGoid() {
+        return aliasGoid;
     }
 
     @Override
-    public void setAliasOid(Long aliasOid) {
-        this.aliasOid = aliasOid;
+    public void setAliasGoid(Goid aliasGoid) {
+        this.aliasGoid = aliasGoid;
     }
 
     public boolean isPolicyDisabled() {
@@ -51,8 +51,8 @@ public abstract class OrganizationHeader extends ZoneableGuidEntityHeader implem
     public abstract String getDisplayName();
 
     //PRIVATE
-    protected Long folderOid;
-    protected Long aliasOid;
+    protected Goid folderGoid;
+    protected Goid aliasGoid;
 
     protected boolean isPolicyDisabled;
 }

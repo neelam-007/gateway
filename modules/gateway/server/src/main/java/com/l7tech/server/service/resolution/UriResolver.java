@@ -6,6 +6,7 @@ import com.l7tech.gateway.common.audit.MessageProcessingMessages;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.transport.ResolutionConfiguration;
 import com.l7tech.message.*;
+import com.l7tech.objectmodel.Goid;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -69,7 +70,7 @@ public class UriResolver extends ServiceResolver<String> {
     private Result doResolve( final String requestValue,
                               final Collection<PublishedService> serviceSubset,
                               final boolean exactOnly ) {
-        List<Long> res = uriToServiceMap.get(new URIResolutionParam(requestValue));
+        List<Goid> res = uriToServiceMap.get(new URIResolutionParam(requestValue));
         if (res != null && res.size() > 0) {
             if (auditor != null) {
                 auditor.logAndAudit(MessageProcessingMessages.SR_HTTPURI_PERFECT, requestValue);
@@ -169,19 +170,19 @@ public class UriResolver extends ServiceResolver<String> {
         return resultValue;
     }
 
-    private static boolean isInSubset(Collection<PublishedService> serviceSubset, List<Long> criteria) {
+    private static boolean isInSubset(Collection<PublishedService> serviceSubset, List<Goid> criteria) {
         for (PublishedService svc : serviceSubset) {
-            if (criteria.contains(svc.getOidAsLong())) {
+            if (criteria.contains(svc.getGoid())) {
                 return true;
             }
         }
         return false;
     }
 
-    private static Set<PublishedService> narrowList(Collection<PublishedService> serviceSubset, List<Long> criteria) {
+    private static Set<PublishedService> narrowList(Collection<PublishedService> serviceSubset, List<Goid> criteria) {
         Set<PublishedService> output = new HashSet<PublishedService>();
         for (PublishedService svc : serviceSubset) {
-            if (criteria.contains(svc.getOidAsLong())) {
+            if (criteria.contains(svc.getGoid())) {
                 output.add(svc);
             }
         }
@@ -232,23 +233,23 @@ public class UriResolver extends ServiceResolver<String> {
 
     private void createnolock( final PublishedService service, final String targetValue ) {
         final URIResolutionParam uriparam = new URIResolutionParam(targetValue);
-        List<Long> listedServicesForThatURI = uriToServiceMap.get(uriparam);
+        List<Goid> listedServicesForThatURI = uriToServiceMap.get(uriparam);
         if (listedServicesForThatURI == null) {
-            listedServicesForThatURI = new ArrayList<Long>();
+            listedServicesForThatURI = new ArrayList<Goid>();
             uriToServiceMap.put(uriparam, listedServicesForThatURI);
         }
-        listedServicesForThatURI.add(service.getOid());
-        servicetoURIMap.put(service.getOid(), uriparam);
+        listedServicesForThatURI.add(service.getGoid());
+        servicetoURIMap.put(service.getGoid(), uriparam);
     }
 
     private void deletenolock(PublishedService service) {
-        URIResolutionParam uriparam = servicetoURIMap.get(service.getOid());
+        URIResolutionParam uriparam = servicetoURIMap.get(service.getGoid());
         if (uriparam == null) {
             return; // already deleted
         }
-        List<Long> listedServicesForThatURI = uriToServiceMap.get(uriparam);
-        listedServicesForThatURI.remove(service.getOid());
-        servicetoURIMap.remove(service.getOid());
+        List<Goid> listedServicesForThatURI = uriToServiceMap.get(uriparam);
+        listedServicesForThatURI.remove(service.getGoid());
+        servicetoURIMap.remove(service.getGoid());
     }
 
     private static URIResolutionParam whichOneIsBest(List<URIResolutionParam> in,
@@ -381,8 +382,8 @@ public class UriResolver extends ServiceResolver<String> {
 
     private final boolean caseSensitive;
     private final ArrayList<String> knownToFail = new ArrayList<String>();
-    private final Map<URIResolutionParam, List<Long>> uriToServiceMap = new HashMap<URIResolutionParam, List<Long>>();
-    private final Map<Long, URIResolutionParam> servicetoURIMap = new HashMap<Long, URIResolutionParam>();
+    private final Map<URIResolutionParam, List<Goid>> uriToServiceMap = new HashMap<URIResolutionParam, List<Goid>>();
+    private final Map<Goid, URIResolutionParam> servicetoURIMap = new HashMap<Goid, URIResolutionParam>();
     private final ReadWriteLock rwlock = new ReentrantReadWriteLock(false);
     private static final URIResolutionParam CATCHALLRESOLUTION = new URIResolutionParam("/*");
     private final AtomicBoolean enableCaseSensitivity = new AtomicBoolean(true);

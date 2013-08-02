@@ -5,6 +5,7 @@
 package com.l7tech.server.policy;
 
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyAlias;
 import com.l7tech.policy.PolicyType;
@@ -28,7 +29,7 @@ import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
 public class PolicyAdminImplTest {
-    private static final long OID = 1234L;
+    private static final Goid GOID = new Goid(0,1234L);
     private PolicyAdminImpl policyAdmin;
     @Mock
     private PolicyAliasManager policyAliasManager;
@@ -112,31 +113,31 @@ public class PolicyAdminImplTest {
     @Test
     public void findByAlias() throws FindException {
         final Policy policy = new Policy(PolicyType.INCLUDE_FRAGMENT, "test", "test", false);
-        policy.setOid(1L);
+        policy.setGoid(new Goid(0,1L));
         final PolicyAlias alias = new PolicyAlias(policy, null);
-        when(policyAliasManager.findByPrimaryKey(OID)).thenReturn(alias);
-        when(policyManager.findByPrimaryKey(1L)).thenReturn(policy);
-        assertEquals(policy, policyAdmin.findByAlias(1234L));
+        when(policyAliasManager.findByPrimaryKey(GOID)).thenReturn(alias);
+        when(policyManager.findByPrimaryKey(new Goid(0,1L))).thenReturn(policy);
+        assertEquals(policy, policyAdmin.findByAlias(new Goid(0,1234L)));
     }
 
     @Test
     public void findByAliasDoesNotExist() throws FindException {
         when(policyAliasManager.findByPrimaryKey(anyLong())).thenReturn(null);
-        assertNull(policyAdmin.findByAlias(1234L));
+        assertNull(policyAdmin.findByAlias(new Goid(0,1234L)));
         verify(policyManager, never()).findByPrimaryKey(anyLong());
     }
 
     @Test
     public void savePolicyChecksPolicyXmlIfChanged() throws Exception {
-        final long oid = 1234L;
+        final Goid goid = new Goid(0,1234L);
         final String guid = "abc1234";
         final Policy existing = new Policy(PolicyType.INCLUDE_FRAGMENT, "test", "existing", false);
-        existing.setOid(oid);
+        existing.setGoid(goid);
         existing.setGuid(guid);
         final Policy toUpdate = new Policy(PolicyType.INCLUDE_FRAGMENT, "test", "updated", false);
-        toUpdate.setOid(oid);
+        toUpdate.setGoid(goid);
         toUpdate.setGuid(guid);
-        when(policyManager.findByPrimaryKey(oid)).thenReturn(existing);
+        when(policyManager.findByPrimaryKey(goid)).thenReturn(existing);
         when(policyVersionManager.checkpointPolicy(toUpdate, true, false)).thenReturn(new PolicyVersion());
 
         policyAdmin.savePolicy(toUpdate, true);
@@ -147,13 +148,13 @@ public class PolicyAdminImplTest {
     @BugId("SSG-7150")
     @Test
     public void savePolicyDoesNotCheckPolicyXmlIfNotChanged() throws Exception {
-        final long oid = 1234L;
+        final Goid goid = new Goid(0,1234L);
         final String guid = "abc1234";
         final Policy toUpdate = new Policy(PolicyType.INCLUDE_FRAGMENT, "test", "updated", false);
-        toUpdate.setOid(oid);
+        toUpdate.setGoid(goid);
         toUpdate.setGuid(guid);
         // policy xml hasn't changed
-        when(policyManager.findByPrimaryKey(oid)).thenReturn(toUpdate);
+        when(policyManager.findByPrimaryKey(goid)).thenReturn(toUpdate);
         when(policyVersionManager.checkpointPolicy(toUpdate, true, false)).thenReturn(new PolicyVersion());
 
         policyAdmin.savePolicy(toUpdate, true);

@@ -252,10 +252,10 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable{
         final List<ServiceHeader> servicesInUDDI = new ArrayList<ServiceHeader>();
         if (totalNodes > 1 && !serviceNodes.isEmpty()){
             //find out if any have uddi data
-            final Set<Long> serviceIds = new HashSet<Long>();
+            final Set<Goid> serviceIds = new HashSet<Goid>();
             for(final ServiceNode serviceNode: serviceNodes){
                 try {
-                    serviceIds.add(serviceNode.getEntity().getOid());
+                    serviceIds.add(serviceNode.getEntity().getGoid());
                 } catch (FindException e1) {
                     log.log(Level.WARNING, e1.getMessage(), e1);
                     throw new RuntimeException(e1);
@@ -319,7 +319,7 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable{
     private void deleteFolderNode(final FolderNode folderNode) {
         if(folderNode.getChildCount() == 0){
             try {
-                Registry.getDefault().getFolderAdmin().deleteFolder(folderNode.getOid());
+                Registry.getDefault().getFolderAdmin().deleteFolder(folderNode.getGoid());
 
                 JTree tree = (JTree)TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME);
                 if (tree != null) {
@@ -430,15 +430,15 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable{
                 if(uddiPanel.getDeleteAll().isSelected()){
                     // no need to filter any
                 }else{
-                    final Set<Long> serviceIdsInUDDI= new HashSet<Long>();
+                    final Set<Goid> serviceIdsInUDDI= new HashSet<Goid>();
                     for(ServiceHeader header: servicesInUDDI){
-                        serviceIdsInUDDI.add(header.getOid());
+                        serviceIdsInUDDI.add(header.getGoid());
                     }
                     final List<ServiceNode> toRemove = new ArrayList<ServiceNode>();
                     for(final ServiceNode serviceNode: serviceNodes){
                         try {
                             final PublishedService service = serviceNode.getEntity();
-                            if(serviceIdsInUDDI.contains(service.getOid())){
+                            if(serviceIdsInUDDI.contains(service.getGoid())){
                                 toRemove.add(serviceNode);
                             }
                         } catch (FindException e) {
@@ -861,11 +861,11 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable{
         return (RootNode) model.getRoot();
     }
 
-    public void updateAllAliases(Long entityOid){
+    public void updateAllAliases(Goid entityGoid){
         DefaultTreeModel model = (DefaultTreeModel) getModel();
         RootNode rootNode = (RootNode) model.getRoot();
-        Set<AbstractTreeNode> aliases = rootNode.getAliasesForEntity(entityOid);
-        AbstractTreeNode origEntity = rootNode.getNodeForEntity(entityOid);
+        Set<AbstractTreeNode> aliases = rootNode.getAliasesForEntity(entityGoid);
+        AbstractTreeNode origEntity = rootNode.getNodeForEntity(entityGoid);
         Object origUserObject = origEntity.getUserObject();
 
         for(AbstractTreeNode atn: aliases){
@@ -873,7 +873,7 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable{
             if(!(userObj instanceof OrganizationHeader)) return;
 
             OrganizationHeader oH = (OrganizationHeader) userObj;
-            long folderOid = oH.getFolderOid();
+            Goid folderGoid = oH.getFolderGoid();
 
             OrganizationHeader newHeader;
             if(atn instanceof ServiceNode){
@@ -887,8 +887,8 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable{
                 log.log(Level.INFO, msg);
                 throw new RuntimeException(msg);
             }
-            newHeader.setFolderOid(folderOid);
-            newHeader.setAliasOid(oH.getAliasOid());
+            newHeader.setFolderGoid(folderGoid);
+            newHeader.setAliasGoid(oH.getAliasGoid());
 
             atn.setUserObject(newHeader);
             EntityWithPolicyNode ewpn = (EntityWithPolicyNode) atn;

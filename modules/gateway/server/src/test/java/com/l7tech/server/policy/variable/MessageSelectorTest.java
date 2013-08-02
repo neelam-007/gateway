@@ -15,6 +15,7 @@ import com.l7tech.identity.UserBean;
 import com.l7tech.message.HttpRequestKnobStub;
 import com.l7tech.message.JmsKnobStub;
 import com.l7tech.message.Message;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.security.token.OpaqueSecurityToken;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.management.config.monitoring.Header;
@@ -98,7 +99,7 @@ public class MessageSelectorTest {
         headers.put("h1", "h1value");
         headers.put("h2", "h2value");
         headers.put("h3", "h3value");
-        jmsKnob = new JmsKnobStub(1234L, false, null);
+        jmsKnob = new JmsKnobStub(new Goid(0,1234L), false, null);
         jmsKnob.setHeaders(headers);
         message = new Message();
         message.attachJmsKnob(jmsKnob);

@@ -96,7 +96,7 @@ public class PublishNonSoapServiceAction extends SecureAction {
                 final AbstractTreeNode sn = TreeNodeFactory.asTreeNode(eh, null);
                 model.insertNodeInto(sn, parent, parent.getInsertPosition(sn, RootNode.getComparator()));
                 RootNode rootNode = (RootNode) model.getRoot();
-                rootNode.addEntity(eh.getOid(), sn);
+                rootNode.addEntity(eh.getGoid(), sn);
                 tree.setSelectionPath(new TreePath(sn.getPath()));
                 SwingUtilities.invokeLater(new Runnable() {
                     @Override

@@ -8,6 +8,7 @@
 <hibernate-mapping>
     <typedef class="com.l7tech.server.util.CompressedStringType" name="ziptext"/>
     <typedef class="com.l7tech.server.util.SecurityTokenUserType" name="securitytoken"/>
+    <typedef class="com.l7tech.server.util.GoidType" name="goid"/>
 
     <class name="com.l7tech.gateway.common.audit.AuditRecord" table="audit_main" lazy="false">
         <id name="oid" column="objectid" type="long" unsaved-value="-1">
@@ -35,7 +36,7 @@
             <key column="objectid"/>
             <property name="status" type="int"/>
             <property name="strRequestId" column="request_id" type="string"/>
-            <property name="serviceOid" column="service_oid" type="long"/>
+            <property name="serviceGoid" column="service_goid" type="goid"/>
             <property name="operationName" column="operation_name" type="string"/>
             <property name="authenticated" column="authenticated" type="boolean"/>
             <property name="authenticationType" column="authenticationType" type="securitytoken"/>

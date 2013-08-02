@@ -9,6 +9,8 @@ import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.identity.GroupBean;
 import com.l7tech.identity.UserBean;
 import com.l7tech.message.*;
+import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.GoidEntity;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.variable.NoSuchVariableException;
@@ -191,7 +193,7 @@ public class PolicyProcessingTest {
         );
     }
 
-    private long getServiceOid( String resolutionUri ) {
+    private Goid getServiceOid( String resolutionUri ) {
         long oid = 0;
 
         for ( int i=0; i<TEST_SERVICES.length; i++ ) {
@@ -203,7 +205,7 @@ public class PolicyProcessingTest {
 
         Assert.assertTrue( "Service not found", oid > 0 );
 
-        return oid;
+        return new Goid(0,oid);
     }
 
     /**
@@ -214,11 +216,11 @@ public class PolicyProcessingTest {
 
         for (String[] serviceInfo : TEST_SERVICES) {
             PublishedService ps = new PublishedService();
-            ps.setOid(oid++);
+            ps.setGoid(new Goid(0,oid++));
             ps.setName(serviceInfo[0].substring(1));
             ps.setRoutingUri(serviceInfo[0]);
             ps.getPolicy().setXml(new String(loadResource(serviceInfo[1])));
-            ps.getPolicy().setOid(ps.getOid());
+            ps.getPolicy().setGoid(ps.getGoid());
 
             if (serviceInfo.length > 4 && serviceInfo[4] != null) {
                 ps.setSoap(Boolean.parseBoolean( serviceInfo[4] ));
@@ -667,7 +669,7 @@ public class PolicyProcessingTest {
         MockGenericHttpClient mockClient = buildMockHttpClient(null, responseMessage1);
         testingHttpClientFactory.setMockHttpClient( mockClient );
 
-        processJmsMessage( requestMessage1, 0, 0 );
+        processJmsMessage( requestMessage1, 0, GoidEntity.DEFAULT_GOID );
     }
 
     /**
@@ -1717,7 +1719,7 @@ public class PolicyProcessingTest {
      */
     private Result processJmsMessage( final String message,
                                       final int expectedStatus,
-                                      final long serviceOid ) throws IOException {
+                                      final Goid serviceGoid ) throws IOException {
         // Initialize processing context
         final Message response = new Message();
         final Message request = new Message();
@@ -1738,8 +1740,8 @@ public class PolicyProcessingTest {
                 return null;
             }
             @Override
-            public long getServiceOid() {
-                return serviceOid;
+            public Goid getServiceGoid() {
+                return serviceGoid;
             }
 
             @Override

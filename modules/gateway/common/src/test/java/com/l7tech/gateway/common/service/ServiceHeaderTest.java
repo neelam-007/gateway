@@ -11,7 +11,7 @@ import static org.junit.Assert.*;
 
 public class ServiceHeaderTest {
     private static final Goid ZONE_GOID = new Goid(0,1234L);
-    private static final Long POLICY_OID = 2222L;
+    private static final Goid POLICY_GOID = new Goid(0,2222L);
     private PublishedService service;
     private ServiceHeader header;
     private SecurityZone zone;
@@ -26,12 +26,12 @@ public class ServiceHeaderTest {
     @Test
     public void constructorFromService() {
         final Policy policy = new Policy(PolicyType.PRIVATE_SERVICE, "test", "test", false);
-        policy.setOid(POLICY_OID);
+        policy.setGoid(POLICY_GOID);
         service.setPolicy(policy);
         service.setSecurityZone(zone);
         header = new ServiceHeader(service);
         assertEquals(ZONE_GOID, header.getSecurityZoneGoid());
-        assertEquals(new Long(2222), header.getPolicyOid());
+        assertEquals(new Goid(0,2222L), header.getPolicyGoid());
     }
 
     @Test
@@ -40,14 +40,14 @@ public class ServiceHeaderTest {
         service.setPolicy(null);
         header = new ServiceHeader(service);
         assertNull(header.getSecurityZoneGoid());
-        assertNull(header.getPolicyOid());
+        assertNull(header.getPolicyGoid());
     }
 
     @Test
     public void copyConstructor() {
-        header = new ServiceHeader(false, false, "test", 1234L, "test", "test", 1234L, 1234L, 0, 0, "test", false, false, ZONE_GOID, POLICY_OID);
+        header = new ServiceHeader(false, false, "test", new Goid(0,1234L), "test", "test", new Goid(0,1234L), new Goid(0,1234L), 0, 0, "test", false, false, ZONE_GOID, POLICY_GOID);
         final ServiceHeader copy = new ServiceHeader(header);
         assertEquals(ZONE_GOID, copy.getSecurityZoneGoid());
-        assertEquals(POLICY_OID, copy.getPolicyOid());
+        assertEquals(POLICY_GOID, copy.getPolicyGoid());
     }
 }

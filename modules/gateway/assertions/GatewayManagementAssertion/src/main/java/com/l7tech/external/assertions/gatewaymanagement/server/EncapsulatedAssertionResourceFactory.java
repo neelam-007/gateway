@@ -6,6 +6,7 @@ import com.l7tech.gateway.api.PolicyMO;
 import com.l7tech.gateway.api.impl.ManagedObjectReference;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.GuidEntityHeader;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionArgumentDescriptor;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
@@ -110,7 +111,7 @@ public class EncapsulatedAssertionResourceFactory extends GoidEntityManagerResou
         if (newEntity.getPolicy() == null)
             throw new InvalidResourceException(InvalidResourceException.ExceptionType.MISSING_VALUES, "new encapsulated assertion configuration must reference a backing policy");
         if (oldEntity.getPolicy() != null) {
-            if (newEntity.getPolicy().getOid() != oldEntity.getPolicy().getOid())
+            if (!Goid.equals(newEntity.getPolicy().getGoid(), oldEntity.getPolicy().getGoid()))
                 throw new InvalidResourceException(InvalidResourceException.ExceptionType.INVALID_VALUES, "unable to change backing policy of an existing encapsulated assertion config");
         } else {
             oldEntity.setPolicy(newEntity.getPolicy());

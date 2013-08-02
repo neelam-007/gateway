@@ -1,6 +1,7 @@
 package com.l7tech.objectmodel.imp;
 
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.GoidEntity;
 import com.l7tech.util.Functions.Unary;
 import org.jetbrains.annotations.Nullable;
 
@@ -11,14 +12,14 @@ import org.jetbrains.annotations.Nullable;
 public class GoidEntityUtil {
 
     /**
-     * Check whether the specified entity is a PersistentEntityImp that is locked.
+     * Check whether the specified entity is a GoidEntityImp that is locked.
      *
-     * @param pe entity to examine.  May be null.
+     * @param ge entity to examine.  May be null.
      * @return true iff. this is a GoidEntityImp that is locked.
      */
-    public static boolean isLocked(@Nullable GoidEntityImp pe) {
-        if (pe instanceof GoidEntityImp) {
-            GoidEntityImp imp = (GoidEntityImp) pe;
+    public static boolean isLocked(@Nullable GoidEntity ge) {
+        if (ge instanceof GoidEntityImp) {
+            GoidEntityImp imp = (GoidEntityImp) ge;
             return imp.isLocked();
         }
         return false;
@@ -27,12 +28,12 @@ public class GoidEntityUtil {
     /**
      * Lock the specified entity, if it is a GoidEntityImp.
      *
-     * @param pe the entity to lock.  May be null.
+     * @param ge the entity to lock.  May be null.
      * @return current lock state of entity after this method.  A false return means the entity could not be locked by this method.
      */
-    public static boolean lock(@Nullable GoidEntityImp pe) {
-        if (pe instanceof GoidEntityImp) {
-            GoidEntityImp imp = (GoidEntityImp) pe;
+    public static boolean lock(@Nullable GoidEntity ge) {
+        if (ge instanceof GoidEntityImp) {
+            GoidEntityImp imp = (GoidEntityImp) ge;
             imp.lock();
             return true;
         }
@@ -44,10 +45,10 @@ public class GoidEntityUtil {
      *
      * @return A function to access the identifier of an entity
      */
-    public static Unary<Goid,GoidEntityImp> goid() {
-        return new Unary<Goid,GoidEntityImp>(){
+    public static Unary<Goid,GoidEntity> goid() {
+        return new Unary<Goid,GoidEntity>(){
             @Override
-            public Goid call( final GoidEntityImp entity ) {
+            public Goid call( final GoidEntity entity ) {
                 return entity == null ?  null : entity.getGoid();
             }
         };

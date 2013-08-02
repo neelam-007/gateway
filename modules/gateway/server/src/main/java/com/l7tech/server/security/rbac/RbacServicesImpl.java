@@ -316,7 +316,7 @@ public class RbacServicesImpl implements RbacServices, InitializingBean, PostSta
 
             Folder nextFolder = ((HasFolder) targetEntity).getFolder();
             while (nextFolder != null) {
-                if (subjectFolder.getOid() == nextFolder.getOid()) return true;
+                if (Goid.equals(subjectFolder.getGoid(), nextFolder.getGoid())) return true;
                 nextFolder = nextFolder.getFolder();
             }
             return false;

@@ -195,6 +195,16 @@ public final class Goid implements Comparable<Goid>, Serializable {
     }
 
     /**
+     * Checks if the Goid given is equal to the default Goid.
+     *
+     * @param goid the goid to check to see if it is default
+     * @return true if the goid is equal to the default goid, false otherwise.
+     */
+    public static boolean isDefault(@Nullable Goid goid) {
+        return GoidEntity.DEFAULT_GOID.equals(goid);
+    }
+
+    /**
      * Compares this going to the one give. 0 is returned if both Goid's are equal. -1 is returned if this Goid is less
      * then the one given. 1 is returned otherwise.
      *

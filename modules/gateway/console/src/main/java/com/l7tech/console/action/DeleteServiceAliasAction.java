@@ -11,6 +11,7 @@ import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.gateway.common.service.PublishedServiceAlias;
 import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.ObjectModelException;
 
 import javax.swing.*;
@@ -76,9 +77,9 @@ public class DeleteServiceAliasAction extends DeleteEntityNodeAction<ServiceNode
             //delete the alias, leaving the original service alone
             //what alias does this node represent? Need it's policy id and folder id to find out
             //sH's folder id has been modified to point at the folder containing the alias
-            PublishedServiceAlias pa = serviceAdmin.findAliasByEntityAndFolder(sH.getOid(), sH.getFolderOid());
+            PublishedServiceAlias pa = serviceAdmin.findAliasByEntityAndFolder(sH.getGoid(), sH.getFolderGoid());
             if(pa != null){
-                serviceAdmin.deleteEntityAlias((Long.toString(pa.getOid())));
+                serviceAdmin.deleteEntityAlias((Goid.toString(pa.getGoid())));
             }else{
                 DialogDisplayer.showMessageDialog(Actions.getTopParent(),
                   "Cannot find alias to delete",

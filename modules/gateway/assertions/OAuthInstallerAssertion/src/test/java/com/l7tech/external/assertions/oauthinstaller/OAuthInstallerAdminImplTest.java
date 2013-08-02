@@ -3,6 +3,7 @@ package com.l7tech.external.assertions.oauthinstaller;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.common.AsyncAdminMethods;
 import com.l7tech.gateway.common.audit.AuditDetail;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.bundle.BundleInfo;
 import com.l7tech.policy.bundle.BundleMapping;
 import com.l7tech.policy.bundle.PolicyBundleDryRunResult;
@@ -122,7 +123,7 @@ public class OAuthInstallerAdminImplTest {
         });
 
         final AsyncAdminMethods.JobId<ArrayList> jobId = admin.installOAuthToolkit(Arrays.asList("1c2a2874-df8d-4e1d-b8b0-099b576407e1",
-                "ba525763-6e55-4748-9376-76055247c8b1"), -5002, new HashMap<String, BundleMapping>(), null, false);
+                "ba525763-6e55-4748-9376-76055247c8b1"), new Goid(0,-5002), new HashMap<String, BundleMapping>(), null, false);
 
         while (!admin.getJobStatus(jobId).startsWith("inactive")) {
             Thread.sleep(10L);
@@ -366,7 +367,7 @@ public class OAuthInstallerAdminImplTest {
         });
 
         final AsyncAdminMethods.JobId<ArrayList> jobId = admin.installOAuthToolkit(Arrays.asList("1c2a2874-df8d-4e1d-b8b0-099b576407e1")
-                , -5002, new HashMap<String, BundleMapping>(), null, false);
+                , new Goid(0,-5002), new HashMap<String, BundleMapping>(), null, false);
 
         while (!admin.getJobStatus(jobId).startsWith("inactive")) {
             Thread.sleep(10L);
@@ -574,7 +575,7 @@ public class OAuthInstallerAdminImplTest {
         otkToolkitVersion[0] = admin.getOAuthToolkitVersion();
 
         final AsyncAdminMethods.JobId<ArrayList> jobId =
-                admin.installOAuthToolkit(Arrays.asList("1c2a2874-df8d-4e1d-b8b0-099b576407e1"), -5002, new HashMap<String, BundleMapping>(), null, false);
+                admin.installOAuthToolkit(Arrays.asList("1c2a2874-df8d-4e1d-b8b0-099b576407e1"), new Goid(0,-5002), new HashMap<String, BundleMapping>(), null, false);
 
         while (!admin.getJobStatus(jobId).startsWith("inactive")) {
             Thread.sleep(10L);
@@ -695,7 +696,7 @@ public class OAuthInstallerAdminImplTest {
         // Secure Zone Storage
         // false to not integrate the API Portal
         final AsyncAdminMethods.JobId<ArrayList> jobId =
-                admin.installOAuthToolkit(Arrays.asList("b082274b-f00e-4fbf-bbb7-395a95ca2a35"), -5002, new HashMap<String, BundleMapping>(), null, false);
+                admin.installOAuthToolkit(Arrays.asList("b082274b-f00e-4fbf-bbb7-395a95ca2a35"), new Goid(0,-5002), new HashMap<String, BundleMapping>(), null, false);
 
         while (!admin.getJobStatus(jobId).startsWith("inactive")) {
             Thread.sleep(10L);

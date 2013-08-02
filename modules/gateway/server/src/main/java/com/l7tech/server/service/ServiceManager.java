@@ -13,7 +13,7 @@ import java.util.Collection;
 /**
  * Service API. Get instance of this through the Locator class.
  */
-public interface ServiceManager extends PropertySearchableEntityManager<ServiceHeader>, FolderedEntityManager<PublishedService, ServiceHeader>, RoleAwareEntityManager<PublishedService> {
+public interface ServiceManager extends PropertySearchableEntityManager<ServiceHeader>, FolderedEntityManager<PublishedService, ServiceHeader>, RoleAwareGoidEntityManager<PublishedService> {
     /**
      * Get what the server sees at that url.
      * Meant to be used by admin console entity.
@@ -49,5 +49,14 @@ public interface ServiceManager extends PropertySearchableEntityManager<ServiceH
      * @throws FindException if there is a problem accessing the information.
      */
     public Collection<PublishedService> findByRoutingUri(String routingUri) throws FindException;
+
+    /**
+     * Finds a published service by its old oid
+     *
+     * @param oid the oid of the service.  Required.
+     * @return the published service if found, null otherwise.
+     * @throws FindException if there is a problem accessing the information.
+     */
+    public PublishedService findByOldOid(long oid) throws FindException;
 
 }

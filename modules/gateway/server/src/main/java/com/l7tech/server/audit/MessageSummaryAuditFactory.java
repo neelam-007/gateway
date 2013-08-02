@@ -21,6 +21,7 @@ import com.l7tech.message.HttpResponseKnob;
 import com.l7tech.message.Message;
 import com.l7tech.message.MimeKnob;
 import com.l7tech.message.TcpKnob;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.security.token.SecurityTokenType;
@@ -78,7 +79,7 @@ public class MessageSummaryAuditFactory implements PropertyChangeListener{
         long identityProviderOid = -1;
         String userName = null;
         String clientAddr = null;
-        long serviceOid = -1;
+        Goid serviceGoid = PublishedService.DEFAULT_GOID;
         String serviceName = null;
         boolean authenticated;
         SecurityTokenType authType = null;
@@ -87,7 +88,7 @@ public class MessageSummaryAuditFactory implements PropertyChangeListener{
         // Service info
         PublishedService service = context.getService();
         if (service != null) {
-            serviceOid = service.getOid();
+            serviceGoid = service.getGoid();
             serviceName = service.displayName();
         }
 
@@ -194,7 +195,7 @@ public class MessageSummaryAuditFactory implements PropertyChangeListener{
                                              responseContentLength,
                                              responseHttpStatus,
                                              routingLatency,
-                                             serviceOid, serviceName, operationNameHaver,
+                                             serviceGoid, serviceName, operationNameHaver,
                                              authenticated, authType, identityProviderOid, userName, userId,
                                              mapping_values_oid);
         ret.originalPolicyEnforcementContext(context);

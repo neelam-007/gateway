@@ -11,13 +11,13 @@ import java.util.Collection;
 public interface UDDIProxiedServiceInfoManager extends EntityManager<UDDIProxiedServiceInfo, EntityHeader> {
 
     /**
-     * Find a UDDIProxiedService by published service identifier (OID)
+     * Find a UDDIProxiedService by published service identifier (GOID)
      *
-     * @param publishedServiceOid The identifier for the service
+     * @param publishedServiceGoid The identifier for the service
      * @return The UDDIProxiedService or null
      * @throws FindException if an error occurs
      */
-    UDDIProxiedServiceInfo findByPublishedServiceOid( long publishedServiceOid ) throws FindException;
+    UDDIProxiedServiceInfo findByPublishedServiceGoid( Goid publishedServiceGoid ) throws FindException;
 
     /**
      * Find UDDIProxiedServiceInfos with metrics enabled for the given registry.

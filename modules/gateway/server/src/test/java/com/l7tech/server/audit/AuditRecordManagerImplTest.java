@@ -5,6 +5,7 @@ import com.l7tech.gateway.common.audit.AuditRecord;
 import com.l7tech.gateway.common.audit.MessageSummaryAuditRecord;
 import com.l7tech.gateway.common.audit.SystemAuditRecord;
 import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.SecurityZone;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.security.token.SecurityTokenType;
@@ -27,7 +28,7 @@ import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
 public class AuditRecordManagerImplTest {
-    private static final int SERVICE_OID = 8859;
+    private static final Goid SERVICE_GOID = new Goid(0,8859);
     private AuditRecordManagerImpl manager;
     private MessageSummaryAuditRecord messageSummary;
     private SecurityZone zone;
@@ -44,7 +45,7 @@ public class AuditRecordManagerImplTest {
         manager = new TestableAuditRecorManager();
         manager.setApplicationContext(applicationContext);
         ApplicationContexts.inject(manager, CollectionUtils.<String, Object>mapBuilder().put("serviceCache", serviceCache).map(), false);
-        messageSummary = new MessageSummaryAuditRecord(Level.INFO, "node1", "2342345-4545", AssertionStatus.NONE, "3.2.1.1", null, 4833, null, 9483, 200, 232, SERVICE_OID, "ACMEWarehouse", "listProducts", true, SecurityTokenType.HTTP_BASIC, -2, "alice", "41123",null);
+        messageSummary = new MessageSummaryAuditRecord(Level.INFO, "node1", "2342345-4545", AssertionStatus.NONE, "3.2.1.1", null, 4833, null, 9483, 200, 232, SERVICE_GOID, "ACMEWarehouse", "listProducts", true, SecurityTokenType.HTTP_BASIC, -2, "alice", "41123",null);
         zone = new SecurityZone();
         service = new PublishedService();
         service.setSecurityZone(zone);
@@ -53,7 +54,7 @@ public class AuditRecordManagerImplTest {
     @Test
     public void findByPrimaryKeySetsSecurityZoneForMessageSummary() throws Exception {
         when(hibernateTemplate.execute(any(HibernateCallback.class))).thenReturn(messageSummary);
-        when(serviceCache.getCachedService(SERVICE_OID)).thenReturn(service);
+        when(serviceCache.getCachedService(SERVICE_GOID)).thenReturn(service);
         final MessageSummaryAuditRecord found = (MessageSummaryAuditRecord) manager.findByPrimaryKey(1L);
         assertEquals(zone, found.getSecurityZone());
     }
@@ -64,13 +65,13 @@ public class AuditRecordManagerImplTest {
         when(hibernateTemplate.execute(any(HibernateCallback.class))).thenReturn(systemAuditRecord);
         final AuditRecord found = manager.findByPrimaryKey(1L);
         assertEquals(systemAuditRecord, found);
-        verify(serviceCache, never()).getCachedService(anyLong());
+        verify(serviceCache, never()).getCachedService(any(Goid.class));
     }
 
     @Test
     public void findByPrimaryKeyMessageSummaryCachedServiceNotFound() throws Exception {
         when(hibernateTemplate.execute(any(HibernateCallback.class))).thenReturn(messageSummary);
-        when(serviceCache.getCachedService(SERVICE_OID)).thenReturn(null);
+        when(serviceCache.getCachedService(SERVICE_GOID)).thenReturn(null);
         final MessageSummaryAuditRecord found = (MessageSummaryAuditRecord) manager.findByPrimaryKey(1L);
         assertNull(found.getSecurityZone());
     }

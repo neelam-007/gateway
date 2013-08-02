@@ -38,8 +38,8 @@ public class ServiceNodeAlias extends ServiceNode{
                 @Override
                 public PublishedServiceAlias saveEntity(@NotNull final PublishedServiceAlias entity) throws SaveException {
                     try {
-                        final long oid = Registry.getDefault().getServiceManager().saveAlias(entity);
-                        entity.setOid(oid);
+                        final Goid goid = Registry.getDefault().getServiceManager().saveAlias(entity);
+                        entity.setGoid(goid);
                     } catch (final UpdateException | VersionException e) {
                         throw new SaveException("Could not save service alias: " + e.getMessage(), e);
                     }
@@ -89,7 +89,7 @@ public class ServiceNodeAlias extends ServiceNode{
         PublishedServiceAlias alias = null;
         final ServiceHeader header = getEntityHeader();
         try {
-            alias = Registry.getDefault().getServiceManager().findAliasByEntityAndFolder(header.getOid(), header.getFolderOid());
+            alias = Registry.getDefault().getServiceManager().findAliasByEntityAndFolder(header.getGoid(), header.getFolderGoid());
         } catch (final FindException e) {
             logger.log(Level.WARNING, "Unable to retrieve service alias: " + e.getMessage(), ExceptionUtils.getDebugException(e));
         }

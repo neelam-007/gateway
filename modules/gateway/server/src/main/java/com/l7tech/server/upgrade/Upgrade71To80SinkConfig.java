@@ -2,10 +2,13 @@ package com.l7tech.server.upgrade;
 
 import com.l7tech.gateway.common.log.GatewayDiagnosticContextKeys;
 import com.l7tech.gateway.common.log.SinkConfiguration;
+import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.gateway.common.transport.email.EmailListener;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.folder.Folder;
+import com.l7tech.policy.Policy;
 import com.l7tech.util.Functions;
 import org.hibernate.Criteria;
 import org.hibernate.HibernateException;
@@ -33,6 +36,9 @@ public class Upgrade71To80SinkConfig implements UpgradeTask {
     protected Long emailPrefix = null;
     protected Long listenPortPrefix = null;
     protected Long jmsEndpointPrefix = null;
+    protected Long publishedServicePrefix = null;
+    protected Long policyPrefix = null;
+    protected Long folderPrefix = null;
 
     @Override
     public void upgrade(ApplicationContext applicationContext) throws NonfatalUpgradeException, FatalUpgradeException {
@@ -70,13 +76,24 @@ public class Upgrade71To80SinkConfig implements UpgradeTask {
                                 updateLogSinkOids(GatewayDiagnosticContextKeys.JMS_LISTENER_ID, jmsEndpointPrefix, filters);
                             }
 
+                            // update published service oids to GOIDs
+                            if (publishedServicePrefix != null) {
+                                updateLogSinkOids(GatewayDiagnosticContextKeys.SERVICE_ID, publishedServicePrefix, filters);
+                            }
+
+                            // update policy oids to GOIDs
+                            if (policyPrefix != null) {
+                                updateLogSinkOids(GatewayDiagnosticContextKeys.POLICY_ID, policyPrefix, filters);
+                            }
+
+                            // update folder oids to GOIDs
+                            if (folderPrefix != null) {
+                                updateLogSinkOids(GatewayDiagnosticContextKeys.FOLDER_ID, folderPrefix, filters);
+                            }
+
                             // todo update for
                             // todo handle hard coded values ( admin user...)
-//                            GatewayDiagnosticContextKeys.SERVICE_ID
 //                            GatewayDiagnosticContextKeys.USER_ID
-//
-//                            GatewayDiagnosticContextKeys.POLICY_ID
-//                            GatewayDiagnosticContextKeys.FOLDER_ID
 
                             config.setFilters(filters);
                         }
@@ -96,7 +113,11 @@ public class Upgrade71To80SinkConfig implements UpgradeTask {
             List<String> val = filters.get(contextKey);
             List<String> newGuids = new ArrayList<String>();
             for (String oid : val) {
-                newGuids.add(new Goid(prefix, Long.parseLong(oid)).toString());
+                if(GatewayDiagnosticContextKeys.FOLDER_ID.equals(contextKey) && oid.equals("-5002")) {
+                    newGuids.add(new Goid(0, Long.parseLong(oid)).toString());
+                } else {
+                    newGuids.add(new Goid(prefix, Long.parseLong(oid)).toString());
+                }
             }
             filters.put(contextKey, newGuids);
         }
@@ -113,6 +134,9 @@ public class Upgrade71To80SinkConfig implements UpgradeTask {
                 for (Object schemaCriteriaObj : schemaCriteria.list()) {
                     if (schemaCriteriaObj instanceof EmailListener) {
                         Long prefix = ((EmailListener) schemaCriteriaObj).getGoid().getHi();
+                        if(prefix==0) {
+                            continue;
+                        }
                         return prefix;
                     }
                 }
@@ -127,6 +151,9 @@ public class Upgrade71To80SinkConfig implements UpgradeTask {
                 for (Object schemaCriteriaObj : schemaCriteria.list()) {
                     if (schemaCriteriaObj instanceof SsgConnector) {
                         Long prefix = ((SsgConnector) schemaCriteriaObj).getGoid().getHi();
+                        if(prefix==0) {
+                            continue;
+                        }
                         return prefix;
                     }
                 }
@@ -141,6 +168,60 @@ public class Upgrade71To80SinkConfig implements UpgradeTask {
                 for (Object schemaCriteriaObj : schemaCriteria.list()) {
                     if (schemaCriteriaObj instanceof JmsEndpoint) {
                         Long prefix = ((JmsEndpoint) schemaCriteriaObj).getGoid().getHi();
+                        if(prefix==0) {
+                            continue;
+                        }
+                        return prefix;
+                    }
+                }
+                return null;
+            }
+        });
+
+        publishedServicePrefix =  new HibernateTemplate(sessionFactory).execute(new HibernateCallback<Long>() {
+            @Override
+            public Long doInHibernate(final Session session) throws HibernateException, SQLException {
+                Criteria schemaCriteria = session.createCriteria(PublishedService.class);
+                for (Object schemaCriteriaObj : schemaCriteria.list()) {
+                    if (schemaCriteriaObj instanceof PublishedService) {
+                        Long prefix = ((PublishedService) schemaCriteriaObj).getGoid().getHi();
+                        if(prefix==0) {
+                            continue;
+                        }
+                        return prefix;
+                    }
+                }
+                return null;
+            }
+        });
+
+        policyPrefix =  new HibernateTemplate(sessionFactory).execute(new HibernateCallback<Long>() {
+            @Override
+            public Long doInHibernate(final Session session) throws HibernateException, SQLException {
+                Criteria schemaCriteria = session.createCriteria(Policy.class);
+                for (Object schemaCriteriaObj : schemaCriteria.list()) {
+                    if (schemaCriteriaObj instanceof Policy) {
+                        Long prefix = ((Policy) schemaCriteriaObj).getGoid().getHi();
+                        if(prefix==0) {
+                            continue;
+                        }
+                        return prefix;
+                    }
+                }
+                return null;
+            }
+        });
+
+        folderPrefix =  new HibernateTemplate(sessionFactory).execute(new HibernateCallback<Long>() {
+            @Override
+            public Long doInHibernate(final Session session) throws HibernateException, SQLException {
+                Criteria schemaCriteria = session.createCriteria(Folder.class);
+                for (Object schemaCriteriaObj : schemaCriteria.list()) {
+                    if (schemaCriteriaObj instanceof Folder) {
+                        Long prefix = ((Folder) schemaCriteriaObj).getGoid().getHi();
+                        if(prefix==0) {
+                            continue;
+                        }
                         return prefix;
                     }
                 }
@@ -150,10 +231,7 @@ public class Upgrade71To80SinkConfig implements UpgradeTask {
 
         // todo get prefixes for:
 //                            GatewayDiagnosticContextKeys.LISTEN_PORT_ID
-//                            GatewayDiagnosticContextKeys.SERVICE_ID
 //                            GatewayDiagnosticContextKeys.USER_ID
-//                            GatewayDiagnosticContextKeys.POLICY_ID
-//                            GatewayDiagnosticContextKeys.FOLDER_ID
     }
 
     /**

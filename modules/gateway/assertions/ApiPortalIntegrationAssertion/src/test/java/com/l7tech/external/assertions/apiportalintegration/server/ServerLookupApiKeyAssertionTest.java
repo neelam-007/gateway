@@ -6,6 +6,7 @@ import com.l7tech.external.assertions.apiportalintegration.server.resource.*;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.message.Message;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -36,7 +37,7 @@ public class ServerLookupApiKeyAssertionTest {
     private static final String XML = "dummyxml";
     private static final String API_KEY_CV = "apikey";
     private static final String API_KEY_CV_VALUE = "abc123";
-    private static final String SERVICE_ID = "1234";
+    private static final String SERVICE_ID = new Goid(0,1234).toHexString();
     private static final String STATUS = "active";
     private static final int VERSION = 7;
     private static final String LABEL = "someLabel";
@@ -344,7 +345,7 @@ public class ServerLookupApiKeyAssertionTest {
         assertion.setServiceId(LookupApiKeyAssertion.DEFAULT_SERVICE_ID);
         serverAssertion = new ServerLookupApiKeyAssertion(assertion, legacyApiKeyManager, apiKeyManager, transformer, marshaller);
         final PublishedService service = new PublishedService();
-        service.setOid(Long.valueOf(SERVICE_ID));
+        service.setGoid(Goid.parseGoid(SERVICE_ID));
         policyContext.setService(service);
 
         final ApiKey key = createKey(API_KEY_CV_VALUE, SECRET, STATUS, serviceIdPlans, LABEL, PLATFORM, OAUTH_CALLBACK, OAUTH_SCOPE, OAUTH_TYPE, VERSION, ACCOUNT_ID);
@@ -382,7 +383,7 @@ public class ServerLookupApiKeyAssertionTest {
         assertion.setServiceId(LookupApiKeyAssertion.DEFAULT_SERVICE_ID);
         serverAssertion = new ServerLookupApiKeyAssertion(assertion, legacyApiKeyManager, apiKeyManager, transformer, marshaller);
         final PublishedService service = new PublishedService();
-        service.setOid(Long.valueOf(SERVICE_ID));
+        service.setGoid(Goid.parseGoid(SERVICE_ID));
         policyContext.setService(service);
 
         when(legacyApiKeyManager.find(API_KEY_CV_VALUE)).thenReturn(createLegacyKey(API_KEY_CV_VALUE, SECRET, STATUS, serviceIdPlans, LABEL, PLATFORM, OAUTH_CALLBACK, OAUTH_SCOPE, OAUTH_TYPE, VERSION, ACCOUNT_ID));

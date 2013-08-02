@@ -69,7 +69,7 @@ public class MockServletApi {
         if (routingUri !=null) {
             servletRequestMock.addHeader(SecureSpanConstants.HttpHeaders.ORIGINAL_URL, routingUri);
         }
-        String version = "" + service.getOid() + "|" + service.getVersion();
+        String version = "" + service.getGoid() + "|" + service.getVersion();
         servletRequestMock.addHeader(SecureSpanConstants.HttpHeaders.POLICY_VERSION, version);
     }
 

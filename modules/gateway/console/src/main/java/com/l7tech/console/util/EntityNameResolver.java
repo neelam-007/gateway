@@ -1,7 +1,6 @@
 package com.l7tech.console.util;
 
 import com.l7tech.console.tree.PaletteFolderRegistry;
-import com.l7tech.console.tree.servicesAndPolicies.RootNode;
 import com.l7tech.gateway.common.admin.FolderAdmin;
 import com.l7tech.gateway.common.admin.PolicyAdmin;
 import com.l7tech.gateway.common.resources.HttpConfiguration;
@@ -17,8 +16,9 @@ import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.HasFolder;
-import com.l7tech.objectmodel.folder.HasFolderOid;
+import com.l7tech.objectmodel.folder.HasFolderGoid;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
+import com.l7tech.objectmodel.imp.NamedGoidEntityImp;
 import com.l7tech.policy.AssertionAccess;
 import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.Policy;
@@ -102,10 +102,10 @@ public class EntityNameResolver {
         Entity entity = null;
         // entity which is related to but not referenced by the header
         Entity relatedEntity = null;
-        if (header.getType() != null && (StringUtils.isBlank(name) || String.valueOf(header.getOid()).equals(name))) {
+        if (header.getType() != null && (StringUtils.isBlank(name) || name.equalsIgnoreCase(header.getStrId()))) {
             switch (header.getType()) {
                 case POLICY:
-                    final Policy policy = policyAdmin.findPolicyByPrimaryKey(header.getOid());
+                    final Policy policy = policyAdmin.findPolicyByPrimaryKey(header.getGoid());
                     validateFoundEntity(header, policy);
                     name = getNameForEntity(policy, includePath);
                     break;
@@ -115,18 +115,18 @@ public class EntityNameResolver {
                     name = getNameForEntity(service, includePath);
                     break;
                 case FOLDER:
-                    final Folder folder = folderAdmin.findByPrimaryKey(header.getOid());
+                    final Folder folder = folderAdmin.findByPrimaryKey(header.getGoid());
                     validateFoundEntity(header, folder);
                     name = getNameForEntity(folder, includePath);
                     break;
                 case SERVICE_ALIAS:
-                    final PublishedService owningService = serviceAdmin.findByAlias(header.getOid());
+                    final PublishedService owningService = serviceAdmin.findByAlias(header.getGoid());
                     validateFoundEntity(header, owningService);
                     name = owningService.getName() + " alias";
                     relatedEntity = owningService;
                     break;
                 case POLICY_ALIAS:
-                    final Policy owningPolicy = policyAdmin.findByAlias(header.getOid());
+                    final Policy owningPolicy = policyAdmin.findByAlias(header.getGoid());
                     validateFoundEntity(header, owningPolicy);
                     name = owningPolicy.getName() + " alias";
                     relatedEntity = owningPolicy;
@@ -175,8 +175,8 @@ public class EntityNameResolver {
             // get the name and/or path using the full entity
             name = getNameForEntity(entity, includePath);
         } else if (entity == null) {
-            if (includePath && header instanceof HasFolderOid) {
-                path = getPath((HasFolderOid) header);
+            if (includePath && header instanceof HasFolderGoid) {
+                path = getPath((HasFolderGoid) header);
             }
             uniqueInfo = getUniqueInfo(header, relatedEntity);
         }
@@ -212,14 +212,14 @@ public class EntityNameResolver {
         Object relatedEntity = null;
         if (entity instanceof PublishedServiceAlias) {
             final PublishedServiceAlias alias = (PublishedServiceAlias) entity;
-            final PublishedService owningService = serviceAdmin.findServiceByID(String.valueOf(alias.getEntityOid()));
-            validateFoundEntity(EntityType.SERVICE, alias.getOid(), owningService);
+            final PublishedService owningService = serviceAdmin.findServiceByID(String.valueOf(alias.getEntityGoid()));
+            validateFoundEntity(EntityType.SERVICE, alias.getGoid(), owningService);
             name = owningService.getName() + " alias";
             relatedEntity = owningService;
         } else if (entity instanceof PolicyAlias) {
             final PolicyAlias alias = (PolicyAlias) entity;
-            final Policy owningPolicy = policyAdmin.findPolicyByPrimaryKey(alias.getEntityOid());
-            validateFoundEntity(EntityType.POLICY, alias.getOid(), owningPolicy);
+            final Policy owningPolicy = policyAdmin.findPolicyByPrimaryKey(alias.getEntityGoid());
+            validateFoundEntity(EntityType.POLICY, alias.getGoid(), owningPolicy);
             name = owningPolicy.getName() + " alias";
             relatedEntity = owningPolicy;
         } else if (entity instanceof SsgKeyMetadata) {
@@ -292,6 +292,9 @@ public class EntityNameResolver {
         } else if (entity instanceof NamedEntityImp) {
             final NamedEntityImp named = (NamedEntityImp) entity;
             name = named.getName();
+        } else if (entity instanceof NamedGoidEntityImp) {
+            final NamedGoidEntityImp named = (NamedGoidEntityImp) entity;
+            name = named.getName();
         }
         String path = null;
         if (includePath && entity instanceof HasFolder) {
@@ -306,25 +309,25 @@ public class EntityNameResolver {
     }
 
     /**
-     * Get the folder path for a HasFolderOid which can have a reference to a Folder.
+     * Get the folder path for a HasFolderGoid which can have a reference to a Folder.
      * <p/>
-     * The path will always start with '/' to represent the root folder (even if the given HasFolderOid does not reference any Folder).
+     * The path will always start with '/' to represent the root folder (even if the given HasFolderGoid does not reference any Folder).
      *
-     * @param hasFolder the HasFolderOid which can have a reference to a Folder (most likely a header).
-     * @return the folder path for the HasFolderOid or '/' if no Folder is referenced.
-     * @throws FindException if there is an error looking up the Folder referenced by the HasFolderOid.
+     * @param hasFolder the HasFolderGoid which can have a reference to a Folder (most likely a header).
+     * @return the folder path for the HasFolderGoid or '/' if no Folder is referenced.
+     * @throws FindException if there is an error looking up the Folder referenced by the HasFolderGoid.
      * @throws com.l7tech.gateway.common.security.rbac.PermissionDeniedException
      *                       if the user does not have permission to access an entity required to resolve the path
      */
     @NotNull
-    public String getPath(@NotNull final HasFolderOid hasFolder) throws FindException {
+    public String getPath(@NotNull final HasFolderGoid hasFolder) throws FindException {
         final String path;
         if (hasFolder instanceof EntityHeader && isRootFolder((EntityHeader) hasFolder)) {
             path = ROOT;
         } else {
             Folder folder = null;
-            if (hasFolder.getFolderOid() != null) {
-                folder = folderAdmin.findByPrimaryKey(hasFolder.getFolderOid());
+            if (hasFolder.getFolderGoid() != null) {
+                folder = folderAdmin.findByPrimaryKey(hasFolder.getFolderGoid());
             }
             path = getPathForFolder(folder);
         }
@@ -380,11 +383,11 @@ public class EntityNameResolver {
     }
 
     private boolean isRootFolder(@NotNull final EntityHeader header) {
-        return EntityType.FOLDER == header.getType() && RootNode.OID == header.getOid();
+        return EntityType.FOLDER == header.getType() && Folder.ROOT_FOLDER_ID.equals(header.getGoid());
     }
 
     private boolean isRootFolder(@NotNull final Folder folder) {
-        return RootNode.OID == folder.getOid();
+        return Folder.ROOT_FOLDER_ID.equals(folder.getGoid());
     }
 
     private String getNameForAssertion(final Assertion assertion, final String defaultName) {
@@ -471,6 +474,12 @@ public class EntityNameResolver {
     private void validateFoundEntity(final EntityType type, final long oid, final Entity foundEntity) throws FindException {
         if (foundEntity == null) {
             throw new FindException("No entity found for type " + type + " and oid " + oid);
+        }
+    }
+
+    private void validateFoundEntity(final EntityType type, final Goid goid, final Entity foundEntity) throws FindException {
+        if (foundEntity == null) {
+            throw new FindException("No entity found for type " + type + " and goid " + goid);
         }
     }
 

@@ -3,6 +3,7 @@
  */
 package com.l7tech.server.upgrade;
 
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.Policy;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.gateway.common.security.rbac.OperationType;
@@ -41,16 +42,16 @@ public class Upgrade42To43AddPolicyPermissions implements UpgradeTask {
                 final String uri = service.getRoutingUri();
                 final Policy policy = service.getPolicy();
                 if (policy == null) {
-                    logger.warning(MessageFormat.format("Policy for Service #{0} ({1}) [{2}] is missing, cannot update permissions", service.getOid(), service.getName(), uri == null ? "" : uri));
+                    logger.warning(MessageFormat.format("Policy for Service #{0} ({1}) [{2}] is missing, cannot update permissions", service.getGoid(), service.getName(), uri == null ? "" : uri));
                     continue;
-                } else if (policy.getOid() <= 0) {
-                    logger.warning(MessageFormat.format("Policy for Service #{0} ({1}) [{2}] is has not been saved, cannot update permissions", service.getOid(), service.getName(), uri == null ? "" : uri));
+                } else if (Goid.isDefault(policy.getGoid())) {
+                    logger.warning(MessageFormat.format("Policy for Service #{0} ({1}) [{2}] is has not been saved, cannot update permissions", service.getGoid(), service.getName(), uri == null ? "" : uri));
                     continue;
                 }
 
-                Collection<Role> roles = roleManager.findEntitySpecificRoles(EntityType.SERVICE, service.getOid());
+                Collection<Role> roles = roleManager.findEntitySpecificRoles(EntityType.SERVICE, service.getGoid());
                 if (roles == null) {
-                    logger.warning(MessageFormat.format("Role for Service #{0} ({1}) [{2}] is missing, cannot update permissions", service.getOid(), service.getName(), uri == null ? "" : uri));
+                    logger.warning(MessageFormat.format("Role for Service #{0} ({1}) [{2}] is missing, cannot update permissions", service.getGoid(), service.getName(), uri == null ? "" : uri));
                     continue;
                 }
 

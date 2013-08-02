@@ -1,5 +1,6 @@
 package com.l7tech.server.wsdm;
 
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.InetAddressUtil;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.common.service.MetricsSummaryBin;
@@ -98,15 +99,15 @@ public class QoSMetricsService {
             }
         }
 
-        Long oid = null;
+        Goid goid = null;
         boolean operational = false;
         if (serviceId != null) {
             try {
-                oid = Long.valueOf(serviceId);
-                PublishedService ps = serviceCache.getCachedService(oid);
+                goid = Goid.parseGoid(serviceId);
+                PublishedService ps = serviceCache.getCachedService(goid);
                 if (ps == null) throw new ResourceUnknownFault("No service by the ");
                 operational = !ps.isDisabled();
-            } catch (NumberFormatException e) {
+            } catch (IllegalArgumentException e) {
                 logger.log(Level.WARNING, "Improperly formatted Service ID", e);
                 throw new ResourceUnknownFault("Improperly formatted Service ID");
             } catch (Exception e) {
@@ -116,8 +117,8 @@ public class QoSMetricsService {
 
 
         final MetricsRequestContext context;
-        if (oid != null) {
-            MetricsSummaryBin bin = aggregator.getMetricsForService(oid);
+        if (goid != null) {
+            MetricsSummaryBin bin = aggregator.getMetricsForService(goid);
             if (bin == null) {
                 throw new GenericWSRFExceptionFault("No metrics information available");
             }

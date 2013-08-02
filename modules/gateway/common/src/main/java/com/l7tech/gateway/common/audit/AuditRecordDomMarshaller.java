@@ -1,8 +1,9 @@
 package com.l7tech.gateway.common.audit;
 
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.gateway.common.mapping.MessageContextMappingValues;
+import com.l7tech.objectmodel.Goid;
+import com.l7tech.security.token.SecurityTokenType;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Text;
@@ -11,10 +12,7 @@ import javax.xml.bind.MarshalException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 import java.util.logging.Level;
-import java.io.StringWriter;
-import java.io.PrintWriter;
 
 /**
  * Hack for write-only marshalling of an AuditRecord to a DOM element.  Can be replaced with a more standard
@@ -176,7 +174,8 @@ public class AuditRecordDomMarshaller {
         elm(e, "responseSavedFlag", rec.getResponseXml() != null ? "true" : "false");
         elm(e, "responseHttpStatus", Integer.toString(rec.getResponseHttpStatus()));
         elm(e, "routingLatency", Integer.toString(rec.getRoutingLatency()));
-        elm(e, "serviceOid", Long.toString(rec.getServiceOid()));
+        //Leave this as serviceOid as other tooling may expect this to be serviceOid
+        elm(e, "serviceOid", Goid.toString(rec.getServiceGoid()));
         elm(e, "status", Integer.toString(rec.getStatus()));
 
         return e;

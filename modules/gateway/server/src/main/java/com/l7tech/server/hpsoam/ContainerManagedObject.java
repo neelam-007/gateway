@@ -1,5 +1,6 @@
 package com.l7tech.server.hpsoam;
 
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.Background;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.MessageProcessor;
@@ -65,7 +66,7 @@ public class ContainerManagedObject {
                     // add service is not already managed
                     boolean alreadyManaged = false;
                     for (ServiceManagedObject smo : serviceMOs) {
-                        if (smo.getServiceID() == service.getOid()) {
+                        if (Goid.equals(smo.getServiceID(), service.getGoid())) {
                             alreadyManaged = true;
                             // If any property of the published service has changed, the service MO needs to be updated.
                             // But comparing each property value is time consuming; so just replaces it without testing.
@@ -83,7 +84,7 @@ public class ContainerManagedObject {
                 for (ServiceManagedObject smo : serviceMOs) {
                     boolean stillExists = false;
                     for (PublishedService service : allservices) {
-                        if (smo.getServiceID() == service.getOid()) {
+                        if (Goid.equals(smo.getServiceID(), service.getGoid())) {
                             stillExists = true;
                             break;
                         }
@@ -121,17 +122,17 @@ public class ContainerManagedObject {
     public String respondTo(WSMFService.RequestContext context) {
         // pass to relevent serviceMO
         for (ServiceManagedObject serviceMO : serviceMOs) {
-            if (serviceMO.getServiceID() == context.serviceid.longValue()) {
+            if (Goid.equals(serviceMO.getServiceID(), context.serviceid)) {
                 return serviceMO.respondTo(context);
             }
         }
-        logger.warning("Could not find service managed object for id " + context.serviceid.longValue());
+        logger.warning("Could not find service managed object for id " + context.serviceid);
         return null;
     }
 
-    public String handleMOSpecificGET(String fullURL, long serviceid, HttpServletRequest req) {
+    public String handleMOSpecificGET(String fullURL, Goid serviceid, HttpServletRequest req) {
         for (ServiceManagedObject serviceMO : serviceMOs) {
-            if (serviceMO.getServiceID() == serviceid) {
+            if (Goid.equals(serviceMO.getServiceID(), serviceid)) {
                 return serviceMO.handleMOSpecificGET(fullURL, req);
             }
         }

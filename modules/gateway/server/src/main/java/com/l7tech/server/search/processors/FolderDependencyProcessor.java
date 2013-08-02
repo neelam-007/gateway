@@ -3,6 +3,7 @@ package com.l7tech.server.search.processors;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.PublishedServiceAlias;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.SecurityZone;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.policy.Policy;
@@ -60,7 +61,7 @@ public class FolderDependencyProcessor extends GenericDependencyProcessor<Folder
         final ArrayList<Dependency> dependencies = new ArrayList<>();
         //sub-folder dependencies
         for (Folder currentFolder : folders) {
-            if (currentFolder.getFolder() != null && folder.getOid() == currentFolder.getFolder().getOid()) {
+            if (currentFolder.getFolder() != null && Goid.equals(folder.getGoid(), currentFolder.getFolder().getGoid())) {
                 Dependency dependency = finder.getDependency(currentFolder);
                 dependencies.add(dependency);
             }
@@ -69,7 +70,7 @@ public class FolderDependencyProcessor extends GenericDependencyProcessor<Folder
         Set<Policy> servicePolicies = new HashSet<>();
         //service dependencies
         for (PublishedService service : services) {
-            if (service.getFolder() != null && folder.getOid() == service.getFolder().getOid()) {
+            if (service.getFolder() != null && Goid.equals(folder.getGoid(), service.getFolder().getGoid())) {
                 Dependency dependency = finder.getDependency(service);
                 dependencies.add(dependency);
                 servicePolicies.add(service.getPolicy());
@@ -77,21 +78,21 @@ public class FolderDependencyProcessor extends GenericDependencyProcessor<Folder
         }
         //policy dependencies
         for (Policy policy : policies) {
-            if (policy.getFolder() != null && folder.getOid() == policy.getFolder().getOid() && !servicePolicies.contains(policy)) {
+            if (policy.getFolder() != null && Goid.equals(folder.getGoid(), policy.getFolder().getGoid()) && !servicePolicies.contains(policy)) {
                 Dependency dependency = finder.getDependency(policy);
                 dependencies.add(dependency);
             }
         }
         //policy alias dependencies
         for (PolicyAlias policyAlias : policyAliases) {
-            if (policyAlias.getFolder() != null && folder.getOid() == policyAlias.getFolder().getOid()) {
+            if (policyAlias.getFolder() != null && Goid.equals(folder.getGoid(), policyAlias.getFolder().getGoid())) {
                 Dependency dependency = finder.getDependency(policyAlias);
                 dependencies.add(dependency);
             }
         }
         //service alias dependencies
         for (PublishedServiceAlias serviceAlias : serviceAliases) {
-            if (serviceAlias.getFolder() != null && folder.getOid() == serviceAlias.getFolder().getOid()) {
+            if (serviceAlias.getFolder() != null && Goid.equals(folder.getGoid(), serviceAlias.getFolder().getGoid())) {
                 Dependency dependency = finder.getDependency(serviceAlias);
                 dependencies.add(dependency);
             }

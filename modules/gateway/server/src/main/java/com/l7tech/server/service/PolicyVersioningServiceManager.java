@@ -50,6 +50,11 @@ public class PolicyVersioningServiceManager implements ServiceManager {
     }
 
     @Override
+    public PublishedService findByOldOid(long oid) throws FindException {
+        return serviceManager.findByOldOid(oid);
+    }
+
+    @Override
     public String resolveWsdlTarget(String url) {
         return serviceManager.resolveWsdlTarget(url);
     }
@@ -65,8 +70,8 @@ public class PolicyVersioningServiceManager implements ServiceManager {
     }
 
     @Override
-    public void delete(long oid) throws DeleteException, FindException {
-        serviceManager.delete(oid);
+    public void delete(Goid goid) throws DeleteException, FindException {
+        serviceManager.delete(goid);
     }
 
     @Override
@@ -100,12 +105,12 @@ public class PolicyVersioningServiceManager implements ServiceManager {
     }
 
     @Override
-    public Map<Long, Integer> findVersionMap() throws FindException {
+    public Map<Goid, Integer> findVersionMap() throws FindException {
         return serviceManager.findVersionMap();
     }
 
     @Override
-    public PublishedService getCachedEntity(long o, int maxAge) throws FindException {
+    public PublishedService getCachedEntity(Goid o, int maxAge) throws FindException {
         return processRevision( serviceManager.getCachedEntity(o, maxAge) );
     }
 
@@ -130,16 +135,16 @@ public class PolicyVersioningServiceManager implements ServiceManager {
     }
 
     @Override
-    public Integer getVersion(long oid) throws FindException {
-        return serviceManager.getVersion(oid);
+    public Integer getVersion(Goid goid) throws FindException {
+        return serviceManager.getVersion(goid);
     }
 
     @Override
-    public long save(PublishedService service) throws SaveException {
+    public Goid save(PublishedService service) throws SaveException {
         Policy policy = service.getPolicy();
         if (policy != null)
             policy.setVersion(0);
-        long oid = serviceManager.save(service);
+        Goid goid = serviceManager.save(service);
         if ( policy != null ) {
             try {
                 policyVersionManager.checkpointPolicy(policy, true, true);
@@ -147,7 +152,7 @@ public class PolicyVersioningServiceManager implements ServiceManager {
                 throw new SaveException("Unable to save policy version when saving service.", ome);
             }
         }
-        return oid;
+        return goid;
     }
 
     @Override
@@ -180,7 +185,7 @@ public class PolicyVersioningServiceManager implements ServiceManager {
     }
 
     @Override
-    public void updateFolder(long entityId, Folder folder) throws UpdateException {
+    public void updateFolder(Goid entityId, Folder folder) throws UpdateException {
         serviceManager.updateFolder(entityId, folder);
     }
 
@@ -195,8 +200,8 @@ public class PolicyVersioningServiceManager implements ServiceManager {
     }
 
     @Override
-    public void deleteRoles( final long entityOid ) throws DeleteException {
-        serviceManager.deleteRoles( entityOid );
+    public void deleteRoles( final Goid entityGoid ) throws DeleteException {
+        serviceManager.deleteRoles( entityGoid );
     }
 
     //- PRIVATE
@@ -219,7 +224,7 @@ public class PolicyVersioningServiceManager implements ServiceManager {
             Policy policy = service.getPolicy();
     
             if ( policy != null ) {
-                PolicyVersion activeVersion = policyVersionManager.findActiveVersionForPolicy( policy.getOid() );
+                PolicyVersion activeVersion = policyVersionManager.findActiveVersionForPolicy( policy.getGoid() );
                 if (activeVersion != null) {
                     policy.setVersionOrdinal(activeVersion.getOrdinal());
                     policy.setVersionActive(true);

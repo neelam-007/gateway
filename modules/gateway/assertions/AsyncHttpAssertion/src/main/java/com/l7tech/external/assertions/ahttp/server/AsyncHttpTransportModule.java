@@ -7,12 +7,13 @@ import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.gateway.common.log.GatewayDiagnosticContextKeys;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.gateway.common.transport.TransportDescriptor;
-import com.l7tech.message.HasServiceOid;
-import com.l7tech.message.HasServiceOidImpl;
+import com.l7tech.message.HasServiceGoid;
+import com.l7tech.message.HasServiceGoidImpl;
 import com.l7tech.message.Message;
 import com.l7tech.message.MimeKnob;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.GoidEntity;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.*;
 import com.l7tech.server.audit.AuditContextUtils;
@@ -268,7 +269,7 @@ public class AsyncHttpTransportModule extends TransportModule implements Applica
     void submitRequestToMessageProcessor(@NotNull PendingAsyncRequest pendingRequest, @NotNull HttpRequest httpRequest, @NotNull HttpResponse httpResponse, @NotNull InputStream bodyInputStream, @Nullable InetSocketAddress clientAddress) {
         final AsyncHttpListenerInfo listenerInfo = pendingRequest.getListenerInfo();
         final SsgConnector connector = listenerInfo.getConnector();
-        long hardwiredServiceOid = connector.getLongProperty(SsgConnector.PROP_HARDWIRED_SERVICE_ID, -1L);
+        Goid hardwiredServiceGoid = connector.getGoidProperty(SsgConnector.PROP_HARDWIRED_SERVICE_ID, GoidEntity.DEFAULT_GOID);
 
         String idToCleanup = null;
         PolicyEnforcementContext context = null;
@@ -306,8 +307,8 @@ public class AsyncHttpTransportModule extends TransportModule implements Applica
 
             context.setVariable("ahttp.correlationId", pendingRequest.getCorrelationId());
 
-            if (hardwiredServiceOid != -1L) {
-                request.attachKnob(HasServiceOid.class, new HasServiceOidImpl(hardwiredServiceOid));
+            if (!Goid.isDefault(hardwiredServiceGoid)) {
+                request.attachKnob(HasServiceGoid.class, new HasServiceGoidImpl(hardwiredServiceGoid));
             }
 
             final String correlationId = pendingRequest.getCorrelationId();

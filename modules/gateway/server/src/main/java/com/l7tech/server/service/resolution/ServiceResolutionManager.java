@@ -9,6 +9,7 @@ import com.l7tech.gateway.common.transport.ResolutionConfiguration;
 import com.l7tech.message.Message;
 import com.l7tech.message.SoapKnob;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.transport.ResolutionConfigurationManager;
 import com.l7tech.server.util.PostStartupApplicationListener;
@@ -252,7 +253,7 @@ public class ServiceResolutionManager implements PostStartupApplicationListener,
             if ( services==null ) continue;
 
             for ( final PublishedService conflictingService : services ) {
-                if ( conflictingService.getOid() != service.getOid() ) {
+                if ( !Goid.equals(conflictingService.getGoid(), service.getGoid()) ) {
                     conflictingParameterCollection.add( new Pair<Map<String,Object>,PublishedService>(parameters,conflictingService) );
                 }
             }

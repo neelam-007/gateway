@@ -1,28 +1,26 @@
 package com.l7tech.gateway.common.uddi;
 
 import com.l7tech.common.io.NonCloseableOutputStream;
-import com.l7tech.objectmodel.imp.PersistentEntityImp;
-
-import javax.persistence.*;
-import javax.persistence.Entity;
-import javax.persistence.Table;
-import javax.persistence.CascadeType;
-
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.imp.ZoneablePersistentEntityImp;
 import com.l7tech.uddi.UDDIKeyedReference;
 import com.l7tech.uddi.UDDIUtilities;
-import com.l7tech.util.PoolByteArrayOutputStream;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.HexUtils;
+import com.l7tech.util.PoolByteArrayOutputStream;
 import com.l7tech.util.ResourceUtils;
 import org.hibernate.annotations.*;
 
+import javax.persistence.CascadeType;
+import javax.persistence.*;
+import javax.persistence.Entity;
+import javax.persistence.Table;
 import java.beans.ExceptionListener;
 import java.io.ByteArrayInputStream;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.HashSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -41,7 +39,7 @@ import java.util.logging.Logger;
 @Table(name="uddi_proxied_service_info")
 public class UDDIProxiedServiceInfo extends ZoneablePersistentEntityImp {
 
-    public static final String ATTR_SERVICE_OID = "publishedServiceOid";
+    public static final String ATTR_SERVICE_GOID = "publishedServiceGoid";
 
     /**
      * Collection<EndpointPair>. Do not modify (without adding an upgrade sql / task), used in upgrade 5.2 -> 5.3 script
@@ -90,14 +88,14 @@ public class UDDIProxiedServiceInfo extends ZoneablePersistentEntityImp {
     public UDDIProxiedServiceInfo() {
     }
 
-    private static UDDIProxiedServiceInfo getUDDIProxiedServiceInfo(final long publishedServiceOid,
+    private static UDDIProxiedServiceInfo getUDDIProxiedServiceInfo(final Goid publishedServiceGoid,
                                                                     final long uddiRegistryOid,
                                                                     final String uddiBusinessKey,
                                                                     final String uddiBusinessName,
                                                                     final String wsdlHash,
                                                                     final PublishType publishType) {
         final UDDIProxiedServiceInfo info = new UDDIProxiedServiceInfo();
-        info.setPublishedServiceOid(publishedServiceOid);
+        info.setPublishedServiceGoid(publishedServiceGoid);
         info.setUddiRegistryOid(uddiRegistryOid);
         info.setUddiBusinessKey(uddiBusinessKey);
         info.setUddiBusinessName(uddiBusinessName);
@@ -106,7 +104,7 @@ public class UDDIProxiedServiceInfo extends ZoneablePersistentEntityImp {
         return info;
     }
 
-    public static UDDIProxiedServiceInfo getGifEndPointPublishInfo(final long publishedServiceOid,
+    public static UDDIProxiedServiceInfo getGifEndPointPublishInfo(final Goid publishedServiceGoid,
                                                                 final long uddiRegistryOid,
                                                                 final String uddiBusinessKey,
                                                                 final String uddiBusinessName,
@@ -114,7 +112,7 @@ public class UDDIProxiedServiceInfo extends ZoneablePersistentEntityImp {
                                                                 ) {
 
         final UDDIProxiedServiceInfo info = getUDDIProxiedServiceInfo(
-                publishedServiceOid,
+                publishedServiceGoid,
                 uddiRegistryOid,
                 uddiBusinessKey,
                 uddiBusinessName,
@@ -125,7 +123,7 @@ public class UDDIProxiedServiceInfo extends ZoneablePersistentEntityImp {
         return info;
     }
 
-    public static UDDIProxiedServiceInfo getEndPointPublishInfo(final long publishedServiceOid,
+    public static UDDIProxiedServiceInfo getEndPointPublishInfo(final Goid publishedServiceGoid,
                                                                 final long uddiRegistryOid,
                                                                 final String uddiBusinessKey,
                                                                 final String uddiBusinessName,
@@ -133,7 +131,7 @@ public class UDDIProxiedServiceInfo extends ZoneablePersistentEntityImp {
                                                                 final boolean removeOtherBindings) {
 
         final UDDIProxiedServiceInfo info = getUDDIProxiedServiceInfo(
-                publishedServiceOid,
+                publishedServiceGoid,
                 uddiRegistryOid,
                 uddiBusinessKey,
                 uddiBusinessName,
@@ -144,7 +142,7 @@ public class UDDIProxiedServiceInfo extends ZoneablePersistentEntityImp {
         return info;
     }
 
-    public static UDDIProxiedServiceInfo getProxyServicePublishInfo(final long publishedServiceOid,
+    public static UDDIProxiedServiceInfo getProxyServicePublishInfo(final Goid publishedServiceGoid,
                                                                     final long uddiRegistryOid,
                                                                     final String uddiBusinessKey,
                                                                     final String uddiBusinessName,
@@ -152,7 +150,7 @@ public class UDDIProxiedServiceInfo extends ZoneablePersistentEntityImp {
                                                                     final boolean updateProxyOnLocalChange) {
 
         final UDDIProxiedServiceInfo info = getUDDIProxiedServiceInfo(
-                publishedServiceOid,
+                publishedServiceGoid,
                 uddiRegistryOid,
                 uddiBusinessKey,
                 uddiBusinessName,
@@ -163,7 +161,7 @@ public class UDDIProxiedServiceInfo extends ZoneablePersistentEntityImp {
         return info;
     }
 
-    public static UDDIProxiedServiceInfo getOverwriteProxyServicePublishInfo(final long publishedServiceOid,
+    public static UDDIProxiedServiceInfo getOverwriteProxyServicePublishInfo(final Goid publishedServiceGoid,
                                                                              final long uddiRegistryOid,
                                                                              final String uddiBusinessKey,
                                                                              final String uddiBusinessName,
@@ -171,7 +169,7 @@ public class UDDIProxiedServiceInfo extends ZoneablePersistentEntityImp {
                                                                              final boolean updateProxyOnLocalChange) {
 
         final UDDIProxiedServiceInfo info = getUDDIProxiedServiceInfo(
-                publishedServiceOid,
+                publishedServiceGoid,
                 uddiRegistryOid,
                 uddiBusinessKey,
                 uddiBusinessName,
@@ -245,13 +243,14 @@ public class UDDIProxiedServiceInfo extends ZoneablePersistentEntityImp {
         return super.getVersion();
     }
 
-    @Column(name = "published_service_oid", updatable = false)
-    public long getPublishedServiceOid() {
-        return publishedServiceOid;
+    @Column(name = "published_service_goid", updatable = false)
+    @Type(type = "com.l7tech.server.util.GoidType")
+    public Goid getPublishedServiceGoid() {
+        return publishedServiceGoid;
     }
 
-    public void setPublishedServiceOid(long serviceOid) {
-        this.publishedServiceOid = serviceOid;
+    public void setPublishedServiceGoid(Goid serviceOid) {
+        this.publishedServiceGoid = serviceOid;
     }
 
     @Column(name = "uddi_registry_oid", updatable = false)
@@ -452,7 +451,7 @@ public class UDDIProxiedServiceInfo extends ZoneablePersistentEntityImp {
     /**
      * Which published service this proxied service was published for
      */
-    private long publishedServiceOid;
+    private Goid publishedServiceGoid;
 
     /**
      * The UDDI Registry where this proxied service was published

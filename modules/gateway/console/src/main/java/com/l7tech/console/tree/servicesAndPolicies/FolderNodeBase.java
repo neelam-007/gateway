@@ -1,11 +1,12 @@
 package com.l7tech.console.tree.servicesAndPolicies;
 
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.folder.Folder;
 
 import javax.swing.tree.MutableTreeNode;
 
 public interface FolderNodeBase {
-    long getOid();
+    Goid getGoid();
 
     void insert(MutableTreeNode node, int insertPosition);
 

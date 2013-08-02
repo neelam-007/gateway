@@ -400,7 +400,7 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
                         log.log(Level.WARNING, "Invalid XML", e1);
                     }
                     String name = currentOperation == null ? null : currentOperation.getName();
-                    long objectId = (serviceNode == null)? -1 : serviceNode.getEntity().getOid();
+                    Goid objectId = (serviceNode == null)? GoidEntity.DEFAULT_GOID : serviceNode.getEntity().getGoid();
                     sm = new SampleMessage(objectId, name, name, xml);
                 } catch (Exception ex) {
                     throw new RuntimeException("Couldn't find PublishedService", ex);
@@ -428,7 +428,7 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
             @Override
             public void actionPerformed(ActionEvent e) {
                 final SampleMessageComboEntry entry = (SampleMessageComboEntry)sampleMessagesCombo.getSelectedItem();
-                final SampleMessage tempMsg = new SampleMessage(entry.message.getServiceOid(), entry.message.getName(), entry.message.getOperationName(), entry.message.getXml());
+                final SampleMessage tempMsg = new SampleMessage(entry.message.getServiceGoid(), entry.message.getName(), entry.message.getOperationName(), entry.message.getXml());
                 tempMsg.copyFrom(entry.message);
                 if (entry == USE_AUTOGEN) return;
                 showSampleMessageDialog(tempMsg, new Functions.UnaryVoid<SampleMessageDialog>() {
@@ -533,7 +533,7 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
         SampleMessageComboEntry whichEntryToSelect = null;
         try {
             ServiceAdmin serviceManager = Registry.getDefault().getServiceManager();
-            long objectId = (serviceNode == null)? -1 : serviceNode.getEntity().getOid();
+            Goid objectId = (serviceNode == null)? GoidEntity.DEFAULT_GOID : serviceNode.getEntity().getGoid();
             sampleMessages = serviceManager.findSampleMessageHeaders(objectId, operationName);
             for (EntityHeader sampleMessage : sampleMessages) {
                 Goid thisGoid = sampleMessage.getGoid();

@@ -99,7 +99,7 @@ public class StubDataStore {
         return providerConfigs;
     }
 
-    public Map<Long, PublishedService> getPublishedServices() {
+    public Map<Goid, PublishedService> getPublishedServices() {
         return pubServices;
     }
 
@@ -216,13 +216,13 @@ public class StubDataStore {
             wsdl.toWriter(sw);
             service.setWsdlXml(sw.toString());
             service.setWsdlUrl(wsdlUrl);
-            service.setOid(nextObjectId());
+            service.setGoid(new Goid(0, nextObjectId()));
             Assertion assertion = sampleAssertion(pc);
             ByteArrayOutputStream bo = new ByteArrayOutputStream();
             WspWriter.writePolicy(assertion, bo);
 
             service.setPolicy(new Policy(PolicyType.PRIVATE_SERVICE, null, bo.toString(), true));
-            service.getPolicy().setOid(service.getOid());
+            service.getPolicy().setGoid(service.getGoid());
             encoder.writeObject(service);
             populate(service);
         }
@@ -302,7 +302,7 @@ public class StubDataStore {
         } else if (o instanceof IdentityProviderConfig) {
             providerConfigs.put(new Long(((IdentityProviderConfig)o).getOid()), (IdentityProviderConfig) o);
         } else if (o instanceof PublishedService) {
-            pubServices.put(((PublishedService)o).getOid(), (PublishedService) o);
+            pubServices.put(((PublishedService)o).getGoid(), (PublishedService) o);
         } else if (o instanceof JmsConnection) {
             jmsProviders.put(((JmsConnection)o).getGoid(), (JmsConnection) o);
         } else if (o instanceof JmsEndpoint) {
@@ -338,7 +338,7 @@ public class StubDataStore {
     private Map<String, PersistentGroup> groups = new HashMap<String, PersistentGroup>();
     private Set<GroupMembership> memberships = new HashSet<GroupMembership>();
 
-    private Map<Long, PublishedService> pubServices = new HashMap<Long, PublishedService>();
+    private Map<Goid, PublishedService> pubServices = new HashMap<Goid, PublishedService>();
     private Map<Goid, JmsConnection> jmsProviders = new HashMap<Goid, JmsConnection>();
     private Map<Goid, JmsEndpoint> jmsEndpoints = new HashMap<Goid, JmsEndpoint>();
 

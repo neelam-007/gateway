@@ -1,22 +1,24 @@
 package com.l7tech.console.tree;
 
+import com.l7tech.console.action.ConfigureSecurityZoneAction;
+import com.l7tech.console.action.DeletePolicyAliasAction;
+import com.l7tech.console.action.EditPolicyAction;
+import com.l7tech.console.action.PolicyRevisionsAction;
 import com.l7tech.console.util.EntitySaver;
 import com.l7tech.console.util.Registry;
-import com.l7tech.gateway.common.service.PublishedServiceAlias;
-import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.policy.PolicyAlias;
 import com.l7tech.policy.PolicyHeader;
-import com.l7tech.console.action.*;
 import com.l7tech.util.ExceptionUtils;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
-import java.util.Comparator;
-import java.util.Collection;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Comparator;
 import java.util.logging.Level;
 
 public class PolicyEntityNodeAlias extends PolicyEntityNode{
@@ -39,8 +41,8 @@ public class PolicyEntityNodeAlias extends PolicyEntityNode{
             actions.add(new ConfigureSecurityZoneAction<PolicyAlias>(alias, new EntitySaver<PolicyAlias>() {
                 @Override
                 public PolicyAlias saveEntity(@NotNull final PolicyAlias entity) throws SaveException {
-                    final long oid = Registry.getDefault().getPolicyAdmin().saveAlias(entity);
-                    entity.setOid(oid);
+                    final Goid goid = Registry.getDefault().getPolicyAdmin().saveAlias(entity);
+                    entity.setGoid(goid);
                     return entity;
                 }
             }));
@@ -68,7 +70,7 @@ public class PolicyEntityNodeAlias extends PolicyEntityNode{
         PolicyAlias alias = null;
         final PolicyHeader header = getEntityHeader();
         try {
-            alias = Registry.getDefault().getPolicyAdmin().findAliasByEntityAndFolder(header.getOid(), header.getFolderOid());
+            alias = Registry.getDefault().getPolicyAdmin().findAliasByEntityAndFolder(header.getGoid(), header.getFolderGoid());
         } catch (final FindException e) {
             logger.log(Level.WARNING, "Unable to retrieve policy alias: " + e.getMessage(), ExceptionUtils.getDebugException(e));
         }

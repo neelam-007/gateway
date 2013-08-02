@@ -19,8 +19,6 @@ import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 
-import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
-
 /**
  * A persistent entity that holds information about a user-defined assertion with behavior backed by an editable policy fragment.
  * <p/>
@@ -98,7 +96,7 @@ public class EncapsulatedAssertionConfig extends ZoneableNamedGoidEntityImp {
     @Valid
     @Migration(dependency = false)
     @ManyToOne
-    @JoinColumn(name = "policy_oid")
+    @JoinColumn(name = "policy_goid")
     @XmlElement (name = "Policy")
     @XmlJavaTypeAdapter(PolicyAdapter.class)
     @Nullable

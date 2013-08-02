@@ -59,13 +59,13 @@ public class UpgradePortalAdminImplTest {
     @Test
     public void upgradeServices() throws Exception {
         // services do not have an apiId
-        final PublishedService service1 = createService(1L, null, "Test Service 1", null, "${apiKeyRecord.service}", "${service.oid}");
-        final PublishedService service2 = createService(2L, null, "Test Service 2", "${service.oid}", "${apiKeyRecord.service}", "${service.oid}");
+        final PublishedService service1 = createService(new Goid(0,1L), null, "Test Service 1", null, "${apiKeyRecord.service}", "${service.oid}");
+        final PublishedService service2 = createService(new Goid(0,2L), null, "Test Service 2", "${service.oid}", "${apiKeyRecord.service}", "${service.oid}");
         headers.add(new ServiceHeader(service1));
         headers.add(new ServiceHeader(service2));
         when(serviceManager.findAllHeaders()).thenReturn(headers);
-        when(serviceManager.findByPrimaryKey(1L)).thenReturn(service1);
-        when(serviceManager.findByPrimaryKey(2L)).thenReturn(service2);
+        when(serviceManager.findByPrimaryKey(new Goid(0,1L))).thenReturn(service1);
+        when(serviceManager.findByPrimaryKey(new Goid(0,2L))).thenReturn(service2);
         when(portalManagedServiceManager.fromService(service1)).thenReturn(createPortalManagedService("n1", "1"));
         when(portalManagedServiceManager.fromService(service2)).thenReturn(createPortalManagedService("n2", "2"));
 
@@ -85,10 +85,10 @@ public class UpgradePortalAdminImplTest {
     @Test
     public void upgradeServiceWithMultipleAssertions() throws Exception {
         // service has multiple assertions w/out an apiId
-        final PublishedService service1 = createServiceWithMultipleAssertions(1L, 2, "Test Service 1", 1, null, 1, "${apiKeyRecord.service}", "${service.oid}");
+        final PublishedService service1 = createServiceWithMultipleAssertions(new Goid(0,1L), 2, "Test Service 1", 1, null, 1, "${apiKeyRecord.service}", "${service.oid}");
         headers.add(new ServiceHeader(service1));
         when(serviceManager.findAllHeaders()).thenReturn(headers);
-        when(serviceManager.findByPrimaryKey(1L)).thenReturn(service1);
+        when(serviceManager.findByPrimaryKey(new Goid(0,1L))).thenReturn(service1);
         when(portalManagedServiceManager.fromService(service1)).thenReturn(createPortalManagedService("n1", "1"));
 
         final List<UpgradedEntity> upgradedEntities = admin.upgradeServicesTo2_1();
@@ -104,10 +104,10 @@ public class UpgradePortalAdminImplTest {
     @Test
     public void upgradeServiceNotPortalManaged() throws Exception {
         // service an assertion w/out an apiId
-        final PublishedService service1 = createService(1L, null, "Test Service 1", null, "${apiKeyRecord.service}", "${service.oid}");
+        final PublishedService service1 = createService(new Goid(0,1L), null, "Test Service 1", null, "${apiKeyRecord.service}", "${service.oid}");
         headers.add(new ServiceHeader(service1));
         when(serviceManager.findAllHeaders()).thenReturn(headers);
-        when(serviceManager.findByPrimaryKey(1L)).thenReturn(service1);
+        when(serviceManager.findByPrimaryKey(new Goid(0,1L))).thenReturn(service1);
         // NOT PORTAL MANAGED!!!! - could happen if all assertions are disabled
         when(portalManagedServiceManager.fromService(service1)).thenReturn(null);
 
@@ -115,7 +115,7 @@ public class UpgradePortalAdminImplTest {
 
         assertEquals(1, upgradedEntities.size());
         assertEquals("SERVICE", upgradedEntities.get(0).getType());
-        assertEquals("1", upgradedEntities.get(0).getId());
+        assertEquals(new Goid(0,1L).toHexString(), upgradedEntities.get(0).getId());
         assertEquals("Test Service 1", upgradedEntities.get(0).getDescription());
 
         verify(serviceManager).update(argThat(new ServiceWithApiIdsAndComparisonAssertion()));
@@ -123,10 +123,10 @@ public class UpgradePortalAdminImplTest {
 
     @Test
     public void upgradeServiceNoPortalManagedServiceFlag() throws Exception {
-        final PublishedService service1 = createNonPortalManagedService(1L);
+        final PublishedService service1 = createNonPortalManagedService(new Goid(0,1L));
         headers.add(new ServiceHeader(service1));
         when(serviceManager.findAllHeaders()).thenReturn(headers);
-        when(serviceManager.findByPrimaryKey(1L)).thenReturn(service1);
+        when(serviceManager.findByPrimaryKey(new Goid(0,1L))).thenReturn(service1);
 
         final List<UpgradedEntity> upgradedEntities = admin.upgradeServicesTo2_1();
 
@@ -136,10 +136,10 @@ public class UpgradePortalAdminImplTest {
 
     @Test
     public void upgradeServiceContainsFlagInPolicyButNotAsAssertion() throws Exception {
-        final PublishedService service1 = createNonPortalManagedServiceWithComment(1L, ModuleConstants.PORTAL_MANAGED_SERVICE_INDICATOR);
+        final PublishedService service1 = createNonPortalManagedServiceWithComment(new Goid(0,1L), ModuleConstants.PORTAL_MANAGED_SERVICE_INDICATOR);
         headers.add(new ServiceHeader(service1));
         when(serviceManager.findAllHeaders()).thenReturn(headers);
-        when(serviceManager.findByPrimaryKey(1L)).thenReturn(service1);
+        when(serviceManager.findByPrimaryKey(new Goid(0,1L))).thenReturn(service1);
 
         final List<UpgradedEntity> upgradedEntities = admin.upgradeServicesTo2_1();
 
@@ -149,10 +149,10 @@ public class UpgradePortalAdminImplTest {
 
     @Test
     public void upgradeServiceDoesNotRequireUpgrade() throws Exception {
-        final PublishedService service1 = createService(1L, "a1", "Test Service", "${portal.managed.service.apiId}", "${apiKeyRecord.service}", "${portal.managed.service.apiId}");
+        final PublishedService service1 = createService(new Goid(0,1L), "a1", "Test Service", "${portal.managed.service.apiId}", "${apiKeyRecord.service}", "${portal.managed.service.apiId}");
         headers.add(new ServiceHeader(service1));
         when(serviceManager.findAllHeaders()).thenReturn(headers);
-        when(serviceManager.findByPrimaryKey(1L)).thenReturn(service1);
+        when(serviceManager.findByPrimaryKey(new Goid(0,1L))).thenReturn(service1);
 
         final List<UpgradedEntity> upgradedEntities = admin.upgradeServicesTo2_1();
 
@@ -163,10 +163,10 @@ public class UpgradePortalAdminImplTest {
     @Test
     public void upgradeServiceMultipleComparisonAssertion() throws Exception {
         // service has multiple comparison assertions
-        final PublishedService service1 = createServiceWithMultipleAssertions(1L, 1, "Test Service 1", 1, null, 2, "${apiKeyRecord.service}", "${service.oid}");
+        final PublishedService service1 = createServiceWithMultipleAssertions(new Goid(0,1L), 1, "Test Service 1", 1, null, 2, "${apiKeyRecord.service}", "${service.oid}");
         headers.add(new ServiceHeader(service1));
         when(serviceManager.findAllHeaders()).thenReturn(headers);
-        when(serviceManager.findByPrimaryKey(1L)).thenReturn(service1);
+        when(serviceManager.findByPrimaryKey(new Goid(0,1L))).thenReturn(service1);
         when(portalManagedServiceManager.fromService(service1)).thenReturn(createPortalManagedService("n1", "1"));
 
         final List<UpgradedEntity> upgradedEntities = admin.upgradeServicesTo2_1();
@@ -181,10 +181,10 @@ public class UpgradePortalAdminImplTest {
 
     @Test
     public void upgradeServiceSkipsIrrelevantComparisonAssertions() throws Exception {
-        final PublishedService service1 = createService(1L, "a1", "Test Service", "${portal.managed.service.apiId}", "${irrelevant}", "${service.oid}");
+        final PublishedService service1 = createService(new Goid(0,1L), "a1", "Test Service", "${portal.managed.service.apiId}", "${irrelevant}", "${service.oid}");
         headers.add(new ServiceHeader(service1));
         when(serviceManager.findAllHeaders()).thenReturn(headers);
-        when(serviceManager.findByPrimaryKey(1L)).thenReturn(service1);
+        when(serviceManager.findByPrimaryKey(new Goid(0,1L))).thenReturn(service1);
 
         final List<UpgradedEntity> upgradedEntities = admin.upgradeServicesTo2_1();
 
@@ -194,10 +194,10 @@ public class UpgradePortalAdminImplTest {
 
     @Test
     public void upgradeServiceSkipsEmptyLookupServiceId() throws Exception {
-        final PublishedService service1 = createService(1L, "a1", "Test Service", "", "${apiKeyRecord.service}", "${portal.managed.service.apiId}");
+        final PublishedService service1 = createService(new Goid(0,1L), "a1", "Test Service", "", "${apiKeyRecord.service}", "${portal.managed.service.apiId}");
         headers.add(new ServiceHeader(service1));
         when(serviceManager.findAllHeaders()).thenReturn(headers);
-        when(serviceManager.findByPrimaryKey(1L)).thenReturn(service1);
+        when(serviceManager.findByPrimaryKey(new Goid(0,1L))).thenReturn(service1);
 
         final List<UpgradedEntity> upgradedEntities = admin.upgradeServicesTo2_1();
 
@@ -208,10 +208,10 @@ public class UpgradePortalAdminImplTest {
     @Test
     public void upgradeServiceMultipleLookupAssertion() throws Exception {
         // service has multiple comparison assertions
-        final PublishedService service1 = createServiceWithMultipleAssertions(1L, 1, "Test Service 1", 2, null, 1, "${apiKeyRecord.service}", "${service.oid}");
+        final PublishedService service1 = createServiceWithMultipleAssertions(new Goid(0,1L), 1, "Test Service 1", 2, null, 1, "${apiKeyRecord.service}", "${service.oid}");
         headers.add(new ServiceHeader(service1));
         when(serviceManager.findAllHeaders()).thenReturn(headers);
-        when(serviceManager.findByPrimaryKey(1L)).thenReturn(service1);
+        when(serviceManager.findByPrimaryKey(new Goid(0,1L))).thenReturn(service1);
         when(portalManagedServiceManager.fromService(service1)).thenReturn(createPortalManagedService("n1", "1"));
 
         final List<UpgradedEntity> upgradedEntities = admin.upgradeServicesTo2_1();
@@ -414,7 +414,7 @@ public class UpgradePortalAdminImplTest {
         admin.deleteUnusedClusterProperties();
     }
 
-    private PublishedService createService(final long serviceOid, final String apiId, final String name, final String lookupServiceId, final String comparisonLeft, final String comparisonRight) {
+    private PublishedService createService(final Goid serviceGoid, final String apiId, final String name, final String lookupServiceId, final String comparisonLeft, final String comparisonRight) {
         final StringBuilder stringBuilder = new StringBuilder();
         // ApiPortalIntegrationAssertion
         stringBuilder.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
@@ -453,13 +453,13 @@ public class UpgradePortalAdminImplTest {
         stringBuilder.append("</wsp:All>\n" +
                 "</wsp:Policy>");
         final PublishedService service = new PublishedService();
-        service.setOid(serviceOid);
+        service.setGoid(serviceGoid);
         service.setPolicy(new Policy(PolicyType.PRIVATE_SERVICE, "service policy", stringBuilder.toString(), false));
         service.setName(name);
         return service;
     }
 
-    private PublishedService createServiceWithMultipleAssertions(final long serviceOid, final int numAssertions, final String name, final int numLookupAssertions, final String lookupServiceId, final int numComparisonAssertions, final String comparisonLeft, final String comparisonRight) {
+    private PublishedService createServiceWithMultipleAssertions(final Goid serviceGoid, final int numAssertions, final String name, final int numLookupAssertions, final String lookupServiceId, final int numComparisonAssertions, final String comparisonLeft, final String comparisonRight) {
         final StringBuilder stringBuilder = new StringBuilder();
         stringBuilder.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
                 "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
@@ -496,25 +496,25 @@ public class UpgradePortalAdminImplTest {
         stringBuilder.append("</wsp:All>\n" +
                 "</wsp:Policy>");
         final PublishedService service = new PublishedService();
-        service.setOid(serviceOid);
+        service.setGoid(serviceGoid);
         service.setPolicy(new Policy(PolicyType.PRIVATE_SERVICE, "service policy", stringBuilder.toString(), false));
         service.setName(name);
         return service;
     }
 
-    private PublishedService createNonPortalManagedService(final long serviceOid) {
+    private PublishedService createNonPortalManagedService(final Goid serviceGoid) {
         final String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
                 "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
                 "    <wsp:All wsp:Usage=\"Required\">\n" +
                 "    </wsp:All>\n" +
                 "</wsp:Policy>";
         final PublishedService service = new PublishedService();
-        service.setOid(serviceOid);
+        service.setGoid(serviceGoid);
         service.setPolicy(new Policy(PolicyType.PRIVATE_SERVICE, "service policy", xml, false));
         return service;
     }
 
-    private PublishedService createNonPortalManagedServiceWithComment(final long serviceOid, final String comment) {
+    private PublishedService createNonPortalManagedServiceWithComment(final Goid serviceGoid, final String comment) {
         final String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
                 "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
                 "    <wsp:All wsp:Usage=\"Required\">\n" +
@@ -524,7 +524,7 @@ public class UpgradePortalAdminImplTest {
                 "    </wsp:All>\n" +
                 "</wsp:Policy>";
         final PublishedService service = new PublishedService();
-        service.setOid(serviceOid);
+        service.setGoid(serviceGoid);
         service.setPolicy(new Policy(PolicyType.PRIVATE_SERVICE, "service policy", xml, false));
         return service;
     }

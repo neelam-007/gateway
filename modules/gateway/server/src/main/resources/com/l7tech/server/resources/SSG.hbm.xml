@@ -26,8 +26,8 @@
     <typedef class="com.l7tech.server.util.GoidType" name="goid"/>
 
     <class name="com.l7tech.gateway.common.service.PublishedService" table="published_service" lazy="false">
-        <id name="oid" column="objectid" type="long" unsaved-value="-1">
-            <generator class="layer7-generator"/>
+        <id name="goid" column="goid" type="goid">
+            <generator class="layer7-goid-generator"/>
         </id>
 
         <version name="version" column="version" type="integer"/>
@@ -45,29 +45,30 @@
         <property name="wssProcessingEnabled" column="wss_processing" type="boolean"/>
         <property name="tracingEnabled" column="tracing" type="boolean"/>
         <property name="soapVersion" column="soap_version" type="soap_version_type"/>
+        <property name="oldOid" column="old_objectid" type="long"/>
 
         <many-to-one class="com.l7tech.policy.Policy"
-                     name="policy" lazy="false" column="policy_oid" unique="true" cascade="persist,merge,save-update,delete"/>
+                     name="policy" lazy="false" column="policy_goid" unique="true" cascade="persist,merge,save-update,delete"/>
 
-        <many-to-one name="folder" column="folder_oid"/>
+        <many-to-one name="folder" column="folder_goid"/>
         <many-to-one name="securityZone" column="security_zone_goid"/>
     </class>
 
     <class name="com.l7tech.gateway.common.service.PublishedServiceAlias" table="published_service_alias" lazy="false">
-        <id name="oid" column="objectid" type="long" unsaved-value="-1">
-            <generator class="layer7-generator"/>
+        <id name="goid" column="goid" type="goid">
+            <generator class="layer7-goid-generator"/>
         </id>
         <version name="version" type="int"/>
 
-        <property name="entityOid" column="published_service_oid" type="long"/>
+        <property name="entityGoid" column="published_service_goid" type="goid"/>
 
-        <many-to-one name="folder" column="folder_oid"/>
+        <many-to-one name="folder" column="folder_goid"/>
         <many-to-one name="securityZone" column="security_zone_goid"/>
     </class>
 
     <class name="com.l7tech.policy.Policy" table="policy" lazy="false">
-        <id name="oid" column="objectid" type="long" unsaved-value="-1">
-            <generator class="layer7-generator"/>
+        <id name="goid" column="goid" type="goid">
+            <generator class="layer7-goid-generator"/>
         </id>
         <version name="version" type="int"/>
         <property name="guid" column="guid" type="string"/>
@@ -77,17 +78,17 @@
         <property name="soap" column="soap" type="boolean"/>
         <property name="internalTag" column="internal_tag" type="string" length="64"/>
 
-        <many-to-one name="folder" column="folder_oid"/>
+        <many-to-one name="folder" column="folder_goid"/>
         <many-to-one name="securityZone" column="security_zone_goid"/>
     </class>
 
     <class name="com.l7tech.policy.PolicyVersion" table="policy_version" lazy="false">
-        <id name="oid" column="objectid" type="long" unsaved-value="-1">
-            <generator class="layer7-generator"/>
+        <id name="goid" column="goid" type="goid">
+            <generator class="layer7-goid-generator"/>
         </id>
         <version name="version" type="int"/>
         <property name="name" column="name" type="string"/>
-        <property name="policyOid" column="policy_oid" type="long"/>
+        <property name="policyGoid" column="policy_goid" type="goid"/>
         <property name="ordinal" column="ordinal" type="long"/>
         <property name="time" column="time" type="long"/>
         <property name="userProviderOid" column="user_provider_oid" type="long"/>
@@ -97,34 +98,34 @@
     </class>
 
     <class name="com.l7tech.policy.PolicyAlias" table="policy_alias" lazy="false">
-        <id name="oid" column="objectid" type="long" unsaved-value="-1">
-            <generator class="layer7-generator"/>
+        <id name="goid" column="goid" type="goid">
+            <generator class="layer7-goid-generator"/>
         </id>
 
         <version name="version" type="int"/>
 
-        <property name="entityOid" column="policy_oid" type="long"/>
+        <property name="entityGoid" column="policy_goid" type="goid"/>
 
-        <many-to-one name="folder" column="folder_oid"/>
+        <many-to-one name="folder" column="folder_goid"/>
         <many-to-one name="securityZone" column="security_zone_goid"/>
     </class>
 
     <class name="com.l7tech.objectmodel.folder.Folder" table="folder" lazy="false">
-        <id name="oid" column="objectid" type="long" unsaved-value="-1">
-            <generator class="layer7-generator"/>
+        <id name="goid" column="goid" type="goid">
+            <generator class="layer7-goid-generator"/>
         </id>
 
         <version name="version" column="version" type="int"/>
 
         <property name="name" column="name" type="string"/>
 
-        <many-to-one class="com.l7tech.objectmodel.folder.Folder" name="folder" lazy="false" column="parent_folder_oid"/>
+        <many-to-one class="com.l7tech.objectmodel.folder.Folder" name="folder" lazy="false" column="parent_folder_goid"/>
         <many-to-one name="securityZone" column="security_zone_goid"/>
     </class>
   
     <class name="com.l7tech.gateway.common.cluster.ServiceUsage" table="service_usage" lazy="false">
         <composite-id>
-            <key-property name="serviceid" column="serviceid" type="long"/>
+            <key-property name="serviceid" column="serviceid" type="goid"/>
             <key-property name="nodeid" column="nodeid" type="string"/>
         </composite-id>
         <property name="requests" column="requestnr" type="long"/>
@@ -139,7 +140,7 @@
 
         <property name="name" type="string"/>
         <property name="operationName" column="operation_name" type="string"/>
-        <property name="serviceOid" column="published_service_oid" type="long"/>
+        <property name="serviceGoid" column="published_service_goid" type="goid"/>
         <property name="xml" column="`xml`" type="text"/>
         <many-to-one name="securityZone" column="security_zone_goid"/>
     </class>
@@ -150,7 +151,7 @@
         </id>
 
         <property name="clusterNodeId" column="nodeid" type="string"/>
-        <property name="serviceOid" column="published_service_oid" type="long"/>
+        <property name="serviceGoid" column="published_service_goid" type="goid"/>
         <property name="resolution" column="resolution" type="int"/>
         <property name="periodStart" column="period_start" type="long"/>
 
@@ -194,13 +195,13 @@
     </class>
 
     <class name="com.l7tech.gateway.common.service.ServiceDocument" table="service_documents">
-        <id name="oid" column="objectid" type="long" unsaved-value="-1">
-            <generator class="layer7-generator"/>
+        <id name="goid" column="goid" type="goid">
+            <generator class="layer7-goid-generator"/>
         </id>
 
         <version name="version" column="version" type="integer"/>
 
-        <property name="serviceId" column="service_oid" type="long"/>
+        <property name="serviceId" column="service_goid" type="goid"/>
         <property name="uri" column="uri" type="string"/>
         <property name="type" column="type" type="string"/>
         <property name="contentType" column="content_type" type="string"/>

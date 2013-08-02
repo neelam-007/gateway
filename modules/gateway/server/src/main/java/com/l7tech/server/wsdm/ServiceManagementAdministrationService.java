@@ -2,7 +2,9 @@ package com.l7tech.server.wsdm;
 
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.common.service.PublishedService;
-import com.l7tech.server.event.EntityInvalidationEvent;
+import com.l7tech.message.Message;
+import com.l7tech.objectmodel.Goid;
+import com.l7tech.server.event.GoidEntityInvalidationEvent;
 import com.l7tech.server.event.ServiceEnablementEvent;
 import com.l7tech.server.service.ServiceCache;
 import com.l7tech.server.util.PostStartupApplicationListener;
@@ -15,7 +17,6 @@ import com.l7tech.server.wsdm.subscription.SubscriptionNotifier;
 import com.l7tech.server.wsdm.util.EsmUtils;
 import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.xml.soap.SoapUtil;
-import com.l7tech.message.Message;
 import org.springframework.context.ApplicationEvent;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -23,11 +24,11 @@ import org.xml.sax.SAXException;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.io.IOException;
 
 /**
  * Entry point for the ESM subsystem
@@ -64,15 +65,15 @@ public class ServiceManagementAdministrationService implements PostStartupApplic
     /**
      * Entry point for ESM subsystem. This could be called by a servlet or a special ESM assertion.
      *
-     * @param esmServiceOid the OID of the subscription service through which the request was received
+     * @param esmServiceGoid the GOID of the subscription service through which the request was received
      * @param incomingRequest  the incoming request message
      * @return a response xml
      * @throws FaultMappableException in case the service should return a soap fault
      * @throws SAXException     if there's an error processing the request
      */
-    public Document handleESMRequest(long esmServiceOid, Message incomingRequest) throws FaultMappableException, IOException, SAXException {
+    public Document handleESMRequest(Goid esmServiceGoid, Message incomingRequest) throws FaultMappableException, IOException, SAXException {
         // method classification
-        ESMMethod method = ESMMethod.resolve(incomingRequest, esmServiceOid);
+        ESMMethod method = ESMMethod.resolve(incomingRequest, esmServiceGoid);
 
         if (method instanceof GetMultipleResourceProperties) {
             return qosService.handleMultipleResourcePropertiesRequest((GetMultipleResourceProperties)method);
@@ -84,18 +85,18 @@ public class ServiceManagementAdministrationService implements PostStartupApplic
     /**
      * Entry point for ESM subsystem. This could be called by a servlet or a special ESM assertion.
      *
-     * @param esmServiceOid the OID of the subscription service through which the request was received
+     * @param esmServiceGoid the GOID of the subscription service through which the request was received
      * @param incomingRequest the incoming request message
      * @return a response xml
      * @throws FaultMappableException in case the service should return a soap fault
      * @throws SAXException           if there's an error processing the request
      */
-    public Document handleSubscriptionRequest(long esmServiceOid, Message incomingRequest, String policyGuid)
+    public Document handleSubscriptionRequest(Goid esmServiceGoid, Message incomingRequest, String policyGuid)
 
 
         throws FaultMappableException, IOException, SAXException {
         // method classification
-        ESMMethod method = ESMMethod.resolve(incomingRequest, esmServiceOid);
+        ESMMethod method = ESMMethod.resolve(incomingRequest, esmServiceGoid);
 
         try {
             if (method instanceof Renew) {
@@ -186,34 +187,34 @@ public class ServiceManagementAdministrationService implements PostStartupApplic
 
     @Override
     public void onApplicationEvent(ApplicationEvent event) {
-        if (!(event instanceof EntityInvalidationEvent)) return;
+        if (!(event instanceof GoidEntityInvalidationEvent)) return;
         try {
-            EntityInvalidationEvent eie = (EntityInvalidationEvent)event;
+            GoidEntityInvalidationEvent eie = (GoidEntityInvalidationEvent)event;
             if (!PublishedService.class.isAssignableFrom(eie.getEntityClass())) return;
 
             for (int i = 0; i < eie.getEntityIds().length; i++) {
-                long oid = eie.getEntityIds()[i];
+                Goid goid = eie.getEntityIds()[i];
                 char op = eie.getEntityOperations()[i];
                 switch (op) {
-                    case EntityInvalidationEvent.CREATE:
+                    case GoidEntityInvalidationEvent.CREATE:
                         for (ServiceStateMonitor ssm : serviceStateMonitors) {
-                            ssm.onServiceCreated(oid);
+                            ssm.onServiceCreated(goid);
                         }
                         break;
-                    case EntityInvalidationEvent.UPDATE:
+                    case GoidEntityInvalidationEvent.UPDATE:
                         if (eie instanceof ServiceEnablementEvent) {
                             ServiceEnablementEvent see = (ServiceEnablementEvent)eie;
                             for (ServiceStateMonitor ssm : serviceStateMonitors) {
                                 if (see.isEnabled())
-                                    ssm.onServiceEnabled(oid);
+                                    ssm.onServiceEnabled(goid);
                                 else
-                                    ssm.onServiceDisabled(oid);
+                                    ssm.onServiceDisabled(goid);
                             }
                         } // else other kinds of updates are irrelevant to metrics
                         break;
-                    case EntityInvalidationEvent.DELETE:
+                    case GoidEntityInvalidationEvent.DELETE:
                         for (ServiceStateMonitor ssm : serviceStateMonitors) {
-                            ssm.onServiceDeleted(oid);
+                            ssm.onServiceDeleted(goid);
                         }
                         break;
                 }

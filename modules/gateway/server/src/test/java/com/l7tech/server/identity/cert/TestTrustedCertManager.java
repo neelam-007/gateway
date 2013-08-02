@@ -4,21 +4,21 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.security.cert.TrustedCertManager;
-import com.l7tech.server.EntityManagerStub;
 import com.l7tech.server.DefaultKey;
+import com.l7tech.server.OidEntityManagerStub;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Functions.Unary;
 
 import javax.security.auth.x500.X500Principal;
+import java.io.IOException;
 import java.math.BigInteger;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 import java.util.Collections;
-import java.io.IOException;
+import java.util.List;
 
-public class TestTrustedCertManager extends EntityManagerStub<TrustedCert,EntityHeader> implements TrustedCertManager, TrustedCertCache {
+public class TestTrustedCertManager extends OidEntityManagerStub<TrustedCert,EntityHeader> implements TrustedCertManager, TrustedCertCache {
 
     private final DefaultKey defaultKey;
 

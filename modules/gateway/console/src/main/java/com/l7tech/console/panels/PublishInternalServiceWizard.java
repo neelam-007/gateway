@@ -11,6 +11,7 @@ import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.service.*;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.SecurityZone;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.util.Functions;
@@ -98,10 +99,10 @@ public class PublishInternalServiceWizard extends Wizard<PublishInternalServiceW
 
        //check if service is SOAP
         if(service.isSoap()) {
-            PublishServiceWizard.saveServiceWithResolutionCheck( parent, service, toSave.getServiceDocuments(), new Functions.UnaryVoidThrows<Long,Exception>(){
+            PublishServiceWizard.saveServiceWithResolutionCheck( parent, service, toSave.getServiceDocuments(), new Functions.UnaryVoidThrows<Goid,Exception>(){
                 @Override
-                public void call( final Long oid ) throws Exception {
-                    newService.setOid(oid);
+                public void call( final Goid goid ) throws Exception {
+                    newService.setGoid(goid);
                     Registry.getDefault().getSecurityProvider().refreshPermissionCache();
                     Thread.sleep(1000);
                     PublishInternalServiceWizard.this.notify(new ServiceHeader(newService));
@@ -136,9 +137,9 @@ public class PublishInternalServiceWizard extends Wizard<PublishInternalServiceW
                 @Override
                 public void run() {
                     try {
-                        long oid = Registry.getDefault().getServiceManager().savePublishedService(service);
+                        Goid goid = Registry.getDefault().getServiceManager().savePublishedService(service);
                         Registry.getDefault().getSecurityProvider().refreshPermissionCache();
-                        service.setOid(oid);
+                        service.setGoid(goid);
                         Thread.sleep(1000);
                         PublishInternalServiceWizard.this.notify(new ServiceHeader(service));
                     } catch ( Exception e ) {

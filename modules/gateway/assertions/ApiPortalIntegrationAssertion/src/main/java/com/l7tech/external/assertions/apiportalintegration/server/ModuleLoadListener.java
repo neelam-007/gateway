@@ -14,10 +14,9 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
-import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.cluster.ClusterPropertyManager;
-import com.l7tech.server.event.EntityInvalidationEvent;
+import com.l7tech.server.event.GoidEntityInvalidationEvent;
 import com.l7tech.server.event.system.LicenseEvent;
 import com.l7tech.server.event.system.ReadyForMessages;
 import com.l7tech.server.folder.FolderManager;
@@ -88,8 +87,8 @@ public class ModuleLoadListener implements ApplicationListener {
             refreshAllPortalManagedServices();
         } else if (applicationEvent instanceof LicenseEvent) {
             registerServiceTemplates();
-        } else if (applicationEvent instanceof EntityInvalidationEvent) {
-            final EntityInvalidationEvent event = (EntityInvalidationEvent) applicationEvent;
+        } else if (applicationEvent instanceof GoidEntityInvalidationEvent) {
+            final GoidEntityInvalidationEvent event = (GoidEntityInvalidationEvent) applicationEvent;
             if (PublishedService.class.equals(event.getEntityClass())) {
                 handlePublishedServiceInvalidationEvent(event);
             }
@@ -158,23 +157,23 @@ public class ModuleLoadListener implements ApplicationListener {
     private final ServiceTemplate apiPortalIntegrationServiceTemplate;
 
 
-    private void handlePublishedServiceInvalidationEvent(final EntityInvalidationEvent event) {
-        final long[] entityIds = event.getEntityIds();
+    private void handlePublishedServiceInvalidationEvent(final GoidEntityInvalidationEvent event) {
+        final Goid[] entityIds = event.getEntityIds();
         final char[] entityOperations = event.getEntityOperations();
         for (int i = 0; i < entityIds.length; i++) {
-            final long entityId = entityIds[i];
+            final Goid entityId = entityIds[i];
             final char entityOperation = entityOperations[i];
             try {
                 switch (entityOperation) {
-                    case EntityInvalidationEvent.CREATE: {
+                    case GoidEntityInvalidationEvent.CREATE: {
                         handleCreate(entityId);
                         break;
                     }
-                    case EntityInvalidationEvent.UPDATE: {
+                    case GoidEntityInvalidationEvent.UPDATE: {
                         handleUpdate(entityId);
                         break;
                     }
-                    case EntityInvalidationEvent.DELETE: {
+                    case GoidEntityInvalidationEvent.DELETE: {
                         deletePortalManagedServiceIfFound(entityId);
                         break;
                     }
@@ -188,14 +187,14 @@ public class ModuleLoadListener implements ApplicationListener {
         }
     }
 
-    private void handleUpdate(final long entityId) throws FindException, DeleteException, UpdateException, SaveException {
+    private void handleUpdate(final Goid entityId) throws FindException, DeleteException, UpdateException, SaveException {
         final PublishedService service = serviceManager.findByPrimaryKey(entityId);
         final PortalManagedService portalManagedService = portalManagedServiceManager.fromService(service);
         if (portalManagedService != null) {
             // service is portal managed
 
             // check if api id was changed for the updated service
-            final List<PortalManagedService> matchesServiceOid = findByServiceOid(entityId);
+            final List<PortalManagedService> matchesServiceOid = findByServiceGoid(entityId);
             for (final PortalManagedService found : matchesServiceOid) {
                 if (!found.getName().equals(portalManagedService.getName())) {
                     // api id has changed, delete the old one(s)
@@ -216,7 +215,7 @@ public class ModuleLoadListener implements ApplicationListener {
         }
     }
 
-    private void handleCreate(final long entityId) throws FindException, SaveException, UpdateException {
+    private void handleCreate(final Goid entityId) throws FindException, SaveException, UpdateException {
         final PublishedService service = serviceManager.findByPrimaryKey(entityId);
         if (API_PORTAL_INTEGRATION_INTERNAL_SERVICE_NAME.equals(service.getName())) {
             createPolicyFragments();
@@ -230,18 +229,18 @@ public class ModuleLoadListener implements ApplicationListener {
         }
     }
 
-    private void deletePortalManagedServiceIfFound(final long serviceOid) throws FindException, DeleteException {
-        for (final PortalManagedService remove : findByServiceOid(serviceOid)) {
+    private void deletePortalManagedServiceIfFound(final Goid serviceId) throws FindException, DeleteException {
+        for (final PortalManagedService remove : findByServiceGoid(serviceId)) {
             portalManagedServiceManager.delete(remove.getName());
         }
     }
 
-    private List<PortalManagedService> findByServiceOid(final long serviceOid) throws FindException {
+    private List<PortalManagedService> findByServiceGoid(final Goid serviceId) throws FindException {
         // unfortunately we don't have a more efficient way of retrieving portal managed services by service oid (description)
         final List<PortalManagedService> all = portalManagedServiceManager.findAll();
         final List<PortalManagedService> subset = new ArrayList<PortalManagedService>();
         for (final PortalManagedService portalManagedService : all) {
-            if (String.valueOf(serviceOid).equals(portalManagedService.getDescription())) {
+            if (String.valueOf(serviceId).equalsIgnoreCase(portalManagedService.getDescription())) {
                 subset.add(portalManagedService);
             }
         }

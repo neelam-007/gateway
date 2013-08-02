@@ -15,7 +15,7 @@ import java.util.Set;
 /**
  * @author alex
  */
-public interface PolicyManager extends FolderedEntityManager<Policy, PolicyHeader>, GuidBasedEntityManager<Policy>, PropertySearchableEntityManager<PolicyHeader>, RoleAwareEntityManager<Policy> {
+public interface PolicyManager extends FolderedEntityManager<Policy, PolicyHeader>, GuidBasedEntityManager<Policy>, PropertySearchableEntityManager<PolicyHeader>, RoleAwareGoidEntityManager<Policy> {
 
     /**
      * Find headers for policies of the given type.

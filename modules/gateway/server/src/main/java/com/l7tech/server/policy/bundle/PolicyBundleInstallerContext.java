@@ -1,5 +1,7 @@
 package com.l7tech.server.policy.bundle;
 
+import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.policy.bundle.BundleInfo;
 import com.l7tech.policy.bundle.BundleMapping;
 import org.jetbrains.annotations.NotNull;
@@ -24,27 +26,27 @@ public class PolicyBundleInstallerContext {
                                         @Nullable String installationPrefix,
                                         @NotNull BundleResolver bundleResolver,
                                         boolean checkingAssertionExistenceRequired) {
-        this(bundleInfo, ROOT_FOLDER_OID, bundleMapping, installationPrefix, bundleResolver, checkingAssertionExistenceRequired);
+        this(bundleInfo, Folder.ROOT_FOLDER_ID, bundleMapping, installationPrefix, bundleResolver, checkingAssertionExistenceRequired);
     }
 
 
 
     /**
      * @param bundleInfo    bundle to install
-     * @param folderOid     oid of the parent folder
+     * @param folderGoid    goid of the parent folder
      * @param bundleMapping Nullable Map of mappings for the bundle to install
      * @param installationPrefix If not null, the value will be used to prefix the installation.
      * @param bundleResolver used to resolve items from bundleInfo
      * @param checkingAssertionExistenceRequired a flag to indicate if checking assertions have been installed on gateway
      */
     public PolicyBundleInstallerContext(@NotNull BundleInfo bundleInfo,
-                                        long folderOid,
+                                        Goid folderGoid,
                                         @Nullable BundleMapping bundleMapping,
                                         @Nullable String installationPrefix,
                                         @NotNull BundleResolver bundleResolver,
                                         boolean checkingAssertionExistenceRequired) {
         this.bundleInfo = bundleInfo;
-        this.folderOid = folderOid;
+        this.folderGoid = folderGoid;
         this.bundleMapping = bundleMapping;
         this.bundleResolver = bundleResolver;
         this.checkingAssertionExistenceRequired = checkingAssertionExistenceRequired;
@@ -59,8 +61,8 @@ public class PolicyBundleInstallerContext {
         return bundleInfo;
     }
 
-    public long getFolderOid() {
-        return folderOid;
+    public Goid getFolderGoid() {
+        return folderGoid;
     }
 
     @Nullable
@@ -89,11 +91,9 @@ public class PolicyBundleInstallerContext {
 
     // - PRIVATE
 
-    private static final long ROOT_FOLDER_OID = -5002L;
-
     @NotNull
     private final BundleInfo bundleInfo;
-    private final long folderOid;
+    private final Goid folderGoid;
     @Nullable
     private final BundleMapping bundleMapping;
     @Nullable

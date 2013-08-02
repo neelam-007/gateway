@@ -1,15 +1,16 @@
 package com.l7tech.server.wsdm.subscription;
 
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.imp.PersistentEntityImp;
 import com.l7tech.server.wsdm.faults.TopicNotSupportedFaultException;
 import com.l7tech.server.wsdm.method.Subscribe;
+import org.hibernate.annotations.Proxy;
+import org.hibernate.annotations.Type;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Table;
-import javax.persistence.Column;
 import javax.persistence.Version;
-
-import org.hibernate.annotations.Proxy;
 
 /**
  * A subscription
@@ -30,8 +31,8 @@ public class Subscription extends PersistentEntityImp {
     public static final String NS = "http://www.layer7tech.com/ns/wsdm/subscription";
 
     private String uuid;
-    private long esmServiceOid;
-    private long publishedServiceOid;
+    private Goid esmServiceGoid;
+    private Goid publishedServiceGoid;
     private String referenceCallback;
     private int topic = -1;
     private volatile long termination;
@@ -46,8 +47,8 @@ public class Subscription extends PersistentEntityImp {
 
     public Subscription(Subscribe method, String uuid, String ownerNodeId) throws TopicNotSupportedFaultException {
         this.uuid = uuid;
-        this.esmServiceOid = method.getEsmServiceOid();
-        this.publishedServiceOid = Long.parseLong(method.getServiceId());
+        this.esmServiceGoid = method.getEsmServiceGoid();
+        this.publishedServiceGoid = Goid.parseGoid(method.getServiceId());
         this.ownerNodeId = ownerNodeId;
         if (method.isTerminationParsed()) {
             termination = method.getTermination();
@@ -84,9 +85,10 @@ public class Subscription extends PersistentEntityImp {
         return uuid;
     }
 
-    @Column(name="esm_service_oid", nullable=false)
-    public long getEsmServiceOid() {
-        return esmServiceOid;
+    @Column(name="esm_service_goid", nullable=false)
+    @Type(type = "com.l7tech.server.util.GoidType")
+    public Goid getEsmServiceGoid() {
+        return esmServiceGoid;
     }
 
     @Column(name="callback_url", nullable=false, length=255)
@@ -104,9 +106,10 @@ public class Subscription extends PersistentEntityImp {
         return topic;
     }
 
-    @Column(name="published_service_oid", nullable=false)
-    public long getPublishedServiceOid() {
-        return publishedServiceOid;
+    @Column(name="published_service_goid", nullable=false)
+    @Type(type = "com.l7tech.server.util.GoidType")
+    public Goid getPublishedServiceGoid() {
+        return publishedServiceGoid;
     }
 
     @Column(name="notification_policy_guid", length=36)
@@ -133,8 +136,8 @@ public class Subscription extends PersistentEntityImp {
     }
 
     @Deprecated
-    protected void setPublishedServiceOid(long publishedServiceOid) {
-        this.publishedServiceOid = publishedServiceOid;
+    protected void setPublishedServiceGoid(Goid publishedServiceGoid) {
+        this.publishedServiceGoid = publishedServiceGoid;
     }
 
     @Deprecated
@@ -146,8 +149,8 @@ public class Subscription extends PersistentEntityImp {
     }
 
     @Deprecated
-    public void setEsmServiceOid(long esmServiceOid) {
-        this.esmServiceOid = esmServiceOid;
+    public void setEsmServiceGoid(Goid esmServiceGoid) {
+        this.esmServiceGoid = esmServiceGoid;
     }
 
     @Deprecated

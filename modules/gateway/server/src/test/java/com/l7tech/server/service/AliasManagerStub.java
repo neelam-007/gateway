@@ -3,18 +3,14 @@
  */
 package com.l7tech.server.service;
 
-import com.l7tech.objectmodel.Alias;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.OrganizationHeader;
-import com.l7tech.objectmodel.PersistentEntity;
-import com.l7tech.objectmodel.AliasHeader;
+import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.server.EntityManagerStub;
 
 import java.util.*;
 
 /** @author alex */
-public abstract class AliasManagerStub<AT extends Alias<ET>, ET extends PersistentEntity, HT extends OrganizationHeader>
+public abstract class AliasManagerStub<AT extends Alias<ET>, ET extends GoidEntity, HT extends OrganizationHeader>
     extends EntityManagerStub<AT, AliasHeader<ET>>
     implements AliasManager<AT, ET, HT>
 {
@@ -23,21 +19,21 @@ public abstract class AliasManagerStub<AT extends Alias<ET>, ET extends Persiste
     }
 
     @Override
-    public AT findAliasByEntityAndFolder(Long entityOid, Long folderOid) throws FindException {
-        for (Map.Entry<Long, AT> entry : entities.entrySet()) {
+    public AT findAliasByEntityAndFolder(Goid entityOid, Goid folderGoid) throws FindException {
+        for (Map.Entry<Goid, AT> entry : entities.entrySet()) {
             AT alias = entry.getValue();
             Folder folder = alias.getFolder();
-            if (folder.getOid() == folderOid && alias.getEntityOid() == entityOid) return alias;
+            if (Goid.equals(folder.getGoid(), folderGoid) && Goid.equals(alias.getEntityGoid(), entityOid)) return alias;
         }
         return null;
     }
 
     @Override
-    public Collection<AT> findAllAliasesForEntity(Long entityOid) throws FindException {
+    public Collection<AT> findAllAliasesForEntity(Goid entityGoid) throws FindException {
         List<AT> aliases = new ArrayList<AT>();
-        for (Map.Entry<Long, AT> entry : entities.entrySet()) {
+        for (Map.Entry<Goid, AT> entry : entities.entrySet()) {
             AT alias = entry.getValue();
-            if (alias.getEntityOid() == entityOid) aliases.add(alias);
+            if (Goid.equals(alias.getEntityGoid(), entityGoid)) aliases.add(alias);
         }
         return aliases;
     }
@@ -46,9 +42,9 @@ public abstract class AliasManagerStub<AT extends Alias<ET>, ET extends Persiste
     public Collection<HT> expandEntityWithAliases(Collection<HT> originalHeaders) throws FindException {
         Collection<AT> allAliases = findAll();
 
-        Map<Long, Set<AT>> entityIdToAllItsAliases = new HashMap<Long, Set<AT>>();
+        Map<Goid, Set<AT>> entityIdToAllItsAliases = new HashMap<Goid, Set<AT>>();
         for (AT AT : allAliases) {
-            Long origServiceId = AT.getEntityOid();
+            Goid origServiceId = AT.getEntityGoid();
             if (!entityIdToAllItsAliases.containsKey(origServiceId)) {
                 Set<AT> aliasSet = new HashSet<AT>();
                 entityIdToAllItsAliases.put(origServiceId, aliasSet);
@@ -58,14 +54,14 @@ public abstract class AliasManagerStub<AT extends Alias<ET>, ET extends Persiste
 
         Collection<HT> returnHeaders = new ArrayList<HT>();
         for (HT ht : originalHeaders) {
-            Long serviceId = ht.getOid();
+            Goid serviceId = ht.getGoid();
             returnHeaders.add(ht);
             if (entityIdToAllItsAliases.containsKey(serviceId)) {
                 Set<AT> aliases = entityIdToAllItsAliases.get(serviceId);
                 for (AT pa : aliases) {
                     HT newHT = getNewEntityHeader(ht);
-                    newHT.setAliasOid(pa.getOidAsLong());
-                    newHT.setFolderOid(pa.getFolder().getOid());
+                    newHT.setAliasGoid(pa.getGoid());
+                    newHT.setFolderGoid(pa.getFolder().getGoid());
                     returnHeaders.add(newHT);
                 }
             }

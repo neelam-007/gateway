@@ -6,6 +6,7 @@ import com.l7tech.gateway.common.Component;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.message.Message;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
@@ -40,9 +41,9 @@ import static org.junit.Assert.assertTrue;
 public class TracePolicyEvaluatorTest {
     static final String TEST_SERVICE_NAME = "_Foo_TestServiceName___";
     static final String TEST_POLICY_NAME = "_Puu_TestPolicyName___";
-    static final int TEST_SERVICE_OID = 47847;
-    static final int TEST_POLICY_OID = 4848;
-    static final int TRACE_POLICY_OID = 5454;
+    static final Goid TEST_SERVICE_GOID = new Goid(0,47847);
+    static final Goid TEST_POLICY_GOID = new Goid(0,4848);
+    static final Goid TRACE_POLICY_GOID = new Goid(0,5454);
     static PublishedService testService;
     static ApplicationContext applicationContext;
     static PolicyCacheImpl policyCache;
@@ -61,10 +62,10 @@ public class TracePolicyEvaluatorTest {
         assertionToTrace.addChild(new TrueAssertion());
         assertionToTrace.addChild(new FalseAssertion());
         Policy policyToTrace = new Policy(PolicyType.SHARED_SERVICE, TEST_POLICY_NAME, WspWriter.getPolicyXml(assertionToTrace), false);
-        policyToTrace.setOid(TEST_POLICY_OID);
-        policyToTrace.setGuid("guid" + TEST_POLICY_OID);
+        policyToTrace.setGoid(TEST_POLICY_GOID);
+        policyToTrace.setGuid("guid" + TEST_POLICY_GOID);
         testService = new PublishedService();
-        testService.setOid(TEST_SERVICE_OID);
+        testService.setGoid(TEST_SERVICE_GOID);
         testService.setName(TEST_SERVICE_NAME);
 
         AllAssertion traceAssertion = new AllAssertion();
@@ -89,8 +90,8 @@ public class TracePolicyEvaluatorTest {
         traceAssertion.addChild(new SetVariableAssertion("t.assertion.shortName", "${t.assertion.shortName}~${trace.assertion.shortName}"));
         traceAssertion.addChild(new SetVariableAssertion("t.assertion.xml", "${t.assertion.xml}~${trace.assertion.xml}"));
         Policy tracePolicy = new Policy(PolicyType.INTERNAL, "[Internal Debug Trace Policy]", WspWriter.getPolicyXml(traceAssertion), false);
-        tracePolicy.setOid(TRACE_POLICY_OID);
-        tracePolicy.setGuid("guid" + TRACE_POLICY_OID);
+        tracePolicy.setGoid(TRACE_POLICY_GOID);
+        tracePolicy.setGuid("guid" + TRACE_POLICY_GOID);
 
         PolicyManager policyManager = new PolicyManagerStub(policyToTrace, tracePolicy);
         final ServerPolicyFactory spf = new ServerPolicyFactory(new TestLicenseManager(),new MockInjector());
@@ -99,11 +100,11 @@ public class TracePolicyEvaluatorTest {
         policyCache.setPolicyManager(policyManager);
         policyCache.setPolicyVersionManager( new PolicyVersionManagerStub(){
             @Override
-            public PolicyVersion findActiveVersionForPolicy( final long policyOid ) throws FindException {
+            public PolicyVersion findActiveVersionForPolicy( final Goid policyGoid ) throws FindException {
                 final PolicyVersion policyVersion = new PolicyVersion();
                 policyVersion.setActive( true );
                 policyVersion.setOrdinal( 7575L );
-                policyVersion.setPolicyOid( policyOid );
+                policyVersion.setPolicyGoid( policyGoid );
                 return policyVersion;
             }
         } );
@@ -119,15 +120,15 @@ public class TracePolicyEvaluatorTest {
         tracedContext.getRequest().initialize(new ByteArrayStashManager(), ContentTypeHeader.TEXT_DEFAULT, new ByteArrayInputStream("Howdy there!".getBytes(Charsets.UTF8)));
         tracedContext.getResponse().initialize(new ByteArrayStashManager(), ContentTypeHeader.TEXT_DEFAULT, new ByteArrayInputStream("Howdy yourself!".getBytes(Charsets.UTF8)));
 
-        ServerPolicyHandle testHandle = policyCache.getServerPolicy(TEST_POLICY_OID);
-        TracePolicyEvaluator evaluator = TracePolicyEvaluator.createAndAttachToContext(tracedContext, policyCache.getServerPolicy(TRACE_POLICY_OID));
+        ServerPolicyHandle testHandle = policyCache.getServerPolicy(TEST_POLICY_GOID);
+        TracePolicyEvaluator evaluator = TracePolicyEvaluator.createAndAttachToContext(tracedContext, policyCache.getServerPolicy(TRACE_POLICY_GOID));
         testHandle.checkRequest(tracedContext);
 
         final TracePolicyEnforcementContext traceContext = evaluator.getTraceContext();
         assertEquals("testorigvar", traceContext.getVariable("origVar"));
-        assertEquals(String.valueOf(TEST_POLICY_OID), traceContext.getVariable("t.policy.oid"));
-        assertEquals(String.valueOf(TEST_SERVICE_OID), traceContext.getVariable("t.service.oid"));
-        assertEquals("guid" + TEST_POLICY_OID, traceContext.getVariable("t.policy.guid"));
+        assertEquals(String.valueOf(TEST_POLICY_GOID), traceContext.getVariable("t.policy.oid"));
+        assertEquals(String.valueOf(TEST_SERVICE_GOID), traceContext.getVariable("t.service.oid"));
+        assertEquals("guid" + TEST_POLICY_GOID, traceContext.getVariable("t.policy.guid"));
         assertEquals(TEST_POLICY_NAME, traceContext.getVariable("t.policy.name"));
         assertEquals("7575", traceContext.getVariable("t.policy.version"));
         assertEquals(TEST_SERVICE_NAME, traceContext.getVariable("t.service.name"));
@@ -173,8 +174,8 @@ public class TracePolicyEvaluatorTest {
         tracedContext.pushAssertionOrdinal(6);
         tracedContext.pushAssertionOrdinal(12);
 
-        ServerPolicyHandle testHandle = policyCache.getServerPolicy(TEST_POLICY_OID);
-        TracePolicyEvaluator evaluator = TracePolicyEvaluator.createAndAttachToContext(tracedContext, policyCache.getServerPolicy(TRACE_POLICY_OID));
+        ServerPolicyHandle testHandle = policyCache.getServerPolicy(TEST_POLICY_GOID);
+        TracePolicyEvaluator evaluator = TracePolicyEvaluator.createAndAttachToContext(tracedContext, policyCache.getServerPolicy(TRACE_POLICY_GOID));
         testHandle.checkRequest(tracedContext);
 
         final TracePolicyEnforcementContext traceContext = evaluator.getTraceContext();
@@ -198,8 +199,8 @@ public class TracePolicyEvaluatorTest {
         PolicyEnforcementContext tracedContext = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message());
         tracedContext.setVariable("messvar", new Message(new ByteArrayStashManager(), ContentTypeHeader.TEXT_DEFAULT, new ByteArrayInputStream("test message var body".getBytes(Charsets.UTF8))));
 
-        ServerPolicyHandle testHandle = policyCache.getServerPolicy(TEST_POLICY_OID);
-        TracePolicyEvaluator evaluator = TracePolicyEvaluator.createAndAttachToContext(tracedContext, policyCache.getServerPolicy(TRACE_POLICY_OID));
+        ServerPolicyHandle testHandle = policyCache.getServerPolicy(TEST_POLICY_GOID);
+        TracePolicyEvaluator evaluator = TracePolicyEvaluator.createAndAttachToContext(tracedContext, policyCache.getServerPolicy(TRACE_POLICY_GOID));
         testHandle.checkRequest(tracedContext);
 
         final TracePolicyEnforcementContext traceContext = evaluator.getTraceContext();

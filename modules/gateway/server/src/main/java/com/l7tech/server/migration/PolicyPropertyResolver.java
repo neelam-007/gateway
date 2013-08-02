@@ -3,6 +3,7 @@ package com.l7tech.server.migration;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.ExternalEntityHeader;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.migration.MigrationDependency;
 import com.l7tech.objectmodel.migration.MigrationUtils;
 import com.l7tech.objectmodel.migration.PropertyResolver;
@@ -79,12 +80,12 @@ public class PolicyPropertyResolver extends DefaultEntityPropertyResolver {
         if (sourceEntity instanceof PublishedService && ! propName.contains(":")) {
             // set the policy in the targetValue, but keep the existing service's policy's oid/version
             Policy originalPolicy = ((PublishedService) sourceEntity).getPolicy();
-            long originalPolicyOid = originalPolicy.getOid();
+            Goid originalPolicyGoid = originalPolicy.getGoid();
             int originalPolicyVersion = originalPolicy.getVersion();
 
             super.applyMapping(sourceEntity, propName, targetHeader, targetValue, originalHeader);
 
-            ((PublishedService) sourceEntity).getPolicy().setOid(originalPolicyOid);
+            ((PublishedService) sourceEntity).getPolicy().setGoid(originalPolicyGoid);
             ((PublishedService) sourceEntity).getPolicy().setVersion(originalPolicyVersion);
 
         } else if (sourceEntity instanceof PublishedService) {

@@ -1,6 +1,7 @@
 package com.l7tech.server.policy.bundle;
 
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.xml.soap.SoapUtil;
 import org.junit.Test;
 import org.w3c.dom.Document;
@@ -18,15 +19,15 @@ public class GatewayManagementDocumentUtilitiesTest {
     @Test
     public void testGetCreatedId() throws Exception {
         final Document doc = XmlUtil.parse(CREATED_RESPONSE);
-        final Long createdId = GatewayManagementDocumentUtilities.getCreatedId(doc);
+        final Goid createdId = GatewayManagementDocumentUtilities.getCreatedId(doc);
         assertNotNull(createdId);
-        assertEquals(134807552L, createdId.longValue());
+        assertEquals(new Goid(0,134807552L), createdId);
     }
 
     @Test
     public void testErrorResponse_GetCreatedId() throws Exception {
         final Document doc = XmlUtil.parse(ERROR_RESPONSE);
-        final Long createdId = GatewayManagementDocumentUtilities.getCreatedId(doc);
+        final Goid createdId = GatewayManagementDocumentUtilities.getCreatedId(doc);
         assertNull(createdId);
     }
 
@@ -102,21 +103,21 @@ public class GatewayManagementDocumentUtilitiesTest {
     @Test
     public void testGetSelectorId() throws Exception {
         final Document doc = XmlUtil.parse(CREATED_RESPONSE);
-        final List<Long> selectorId = GatewayManagementDocumentUtilities.getSelectorId(doc, false);
+        final List<Goid> selectorId = GatewayManagementDocumentUtilities.getSelectorId(doc, false);
         assertNotNull(selectorId);
         assertFalse(selectorId.isEmpty());
-        assertEquals(Long.valueOf(134807552L), selectorId.get(0));
+        assertEquals(new Goid(0,134807552L), selectorId.get(0));
     }
 
     @Test
     public void testGetMultipleSelectorId() throws Exception {
         final Document doc = XmlUtil.parse(MULTIPLE_SELECTOR_IDS);
-        final List<Long> selectorIds = GatewayManagementDocumentUtilities.getSelectorId(doc, true);
+        final List<Goid> selectorIds = GatewayManagementDocumentUtilities.getSelectorId(doc, true);
         assertNotNull(selectorIds);
         assertFalse(selectorIds.isEmpty());
         assertEquals(2, selectorIds.size());
-        assertEquals(Long.valueOf(32407556), selectorIds.get(0));
-        assertEquals(Long.valueOf(32407555), selectorIds.get(1));
+        assertEquals(new Goid(0,32407556), selectorIds.get(0));
+        assertEquals(new Goid(0,32407555), selectorIds.get(1));
     }
 
     @Test(expected = GatewayManagementDocumentUtilities.UnexpectedManagementResponse.class)
@@ -138,7 +139,7 @@ public class GatewayManagementDocumentUtilitiesTest {
         final List<Element> folder = GatewayManagementDocumentUtilities.getEntityElements(bodyElement, "Folder");
         assertFalse(folder.isEmpty());
         assertEquals(1, folder.size());
-        assertEquals("123456789", folder.get(0).getAttribute("id"));
+        assertEquals(new Goid(0,123456789).toHexString(), folder.get(0).getAttribute("id"));
     }
 
     @Test
@@ -198,7 +199,7 @@ public class GatewayManagementDocumentUtilitiesTest {
             "            <wsa:ReferenceParameters>\n" +
             "                <wsman:ResourceURI>http://ns.l7tech.com/2010/04/gateway-management/folders</wsman:ResourceURI>\n" +
             "                <wsman:SelectorSet>\n" +
-            "                    <wsman:Selector Name=\"id\">134807552</wsman:Selector>\n" +
+            "                    <wsman:Selector Name=\"id\">"+new Goid(0,134807552)+"</wsman:Selector>\n" +
             "                </wsman:SelectorSet>\n" +
             "            </wsa:ReferenceParameters>\n" +
             "        </wxf:ResourceCreated>\n" +
@@ -289,7 +290,7 @@ public class GatewayManagementDocumentUtilitiesTest {
             "        <wsa:To env:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:To>\n" +
             "    </env:Header>\n" +
             "    <env:Body>\n" +
-            "        <l7:Folder folderId=\"-5002\" id=\"123456789\" version=\"1\">\n" +
+            "        <l7:Folder folderId=\""+new Goid(0,-5002)+"\" id=\""+new Goid(0,123456789)+"\" version=\"1\">\n" +
             "            <l7:Name>Test Name</l7:Name>\n" +
             "        </l7:Folder>\n" +
             "    </env:Body>\n" +
@@ -433,7 +434,7 @@ public class GatewayManagementDocumentUtilitiesTest {
             "                        <wsa:ReferenceParameters>\n" +
             "                            <wsman:ResourceURI>http://ns.l7tech.com/2010/04/gateway-management/services</wsman:ResourceURI>\n" +
             "                            <wsman:SelectorSet>\n" +
-            "                                <wsman:Selector Name=\"id\">32407556</wsman:Selector>\n" +
+            "                                <wsman:Selector Name=\"id\">"+new Goid(0,32407556)+"</wsman:Selector>\n" +
             "                            </wsman:SelectorSet>\n" +
             "                        </wsa:ReferenceParameters>\n" +
             "                    </wsa:EndpointReference>\n" +
@@ -447,7 +448,7 @@ public class GatewayManagementDocumentUtilitiesTest {
             "                        <wsa:ReferenceParameters>\n" +
             "                            <wsman:ResourceURI>http://ns.l7tech.com/2010/04/gateway-management/services</wsman:ResourceURI>\n" +
             "                            <wsman:SelectorSet>\n" +
-            "                                <wsman:Selector Name=\"id\">32407555</wsman:Selector>\n" +
+            "                                <wsman:Selector Name=\"id\">"+new Goid(0,32407555)+"</wsman:Selector>\n" +
             "                            </wsman:SelectorSet>\n" +
             "                        </wsa:ReferenceParameters>\n" +
             "                    </wsa:EndpointReference>\n" +

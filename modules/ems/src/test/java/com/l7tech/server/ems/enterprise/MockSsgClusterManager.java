@@ -1,16 +1,16 @@
 package com.l7tech.server.ems.enterprise;
 
 import com.l7tech.objectmodel.*;
-import com.l7tech.server.EntityManagerStub;
+import com.l7tech.server.OidEntityManagerStub;
 
+import java.net.UnknownHostException;
 import java.util.Collection;
 import java.util.List;
-import java.net.UnknownHostException;
 
 /**
  * 
  */
-public class MockSsgClusterManager extends EntityManagerStub<SsgCluster, EntityHeader> implements SsgClusterManager {
+public class MockSsgClusterManager extends OidEntityManagerStub<SsgCluster, EntityHeader> implements SsgClusterManager {
 
     public MockSsgClusterManager() {
     }

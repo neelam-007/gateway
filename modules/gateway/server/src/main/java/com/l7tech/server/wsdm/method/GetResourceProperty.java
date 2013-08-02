@@ -1,5 +1,6 @@
 package com.l7tech.server.wsdm.method;
 
+import com.l7tech.objectmodel.Goid;
 import org.w3c.dom.Element;
 import org.w3c.dom.Document;
 import com.l7tech.message.Message;
@@ -20,8 +21,8 @@ import java.net.MalformedURLException;
 public class GetResourceProperty extends ESMMethod {
     private ResourceProperty propertyRequested;
 
-    private GetResourceProperty(Element getResourcePropertyEl, Document doc, Message request, long esmServiceOid) throws MalformedURLException {
-        super(doc, request, esmServiceOid);
+    private GetResourceProperty(Element getResourcePropertyEl, Document doc, Message request, Goid esmServiceGoid) throws MalformedURLException {
+        super(doc, request, esmServiceGoid);
         /*String val = XmlUtil.getTextValue(getResourcePropertyEl);
         if (val == null || val.length() < 1) {
             throw new InvalidDocumentFormatException("Could not find requested wsrf-rp:GetResourceProperty value");

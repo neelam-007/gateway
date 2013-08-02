@@ -1,5 +1,6 @@
 package com.l7tech.server.hpsoam;
 
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.*;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.server.MessageProcessor;
@@ -66,7 +67,7 @@ public class WSMFService implements ApplicationContextAware {
     }
 
     public class RequestContext {
-        public Long serviceid;
+        public Goid serviceid;
         public String payload;
         public Document payloadXml;
         public String url;
@@ -93,7 +94,7 @@ public class WSMFService implements ApplicationContextAware {
         context.url = WSMFServlet.getFullURL(req);
         Matcher matcher = serviceoidPattern.matcher(context.url);
         if (matcher.matches()) {
-            context.serviceid = Long.parseLong(matcher.group(1));
+            context.serviceid = Goid.parseGoid(matcher.group(1));
         }
 
         if (context.serviceid != null) {
@@ -374,7 +375,7 @@ public class WSMFService implements ApplicationContextAware {
     public String handleMOSpecificGET(String fullURL, HttpServletRequest req) {
         Matcher matcher = serviceoidPattern.matcher(fullURL);
         if (matcher.matches()) {
-            return containerMO.handleMOSpecificGET(fullURL, Long.parseLong(matcher.group(1)), req);
+            return containerMO.handleMOSpecificGET(fullURL, Goid.parseGoid(matcher.group(1)), req);
         }
         throw new RuntimeException("Cannot happen");
     }

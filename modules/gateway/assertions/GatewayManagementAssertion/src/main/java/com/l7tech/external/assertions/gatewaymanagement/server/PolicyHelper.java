@@ -166,19 +166,19 @@ public class PolicyHelper {
                         if ( includedPolicy.getType() != PolicyType.INCLUDE_FRAGMENT ) {
                             throw new ResourceFactory.ResourceAccessException("Policy include fragment is not of expected type.");
                         }
-                        includedPolicy.setOid( Policy.DEFAULT_OID );
+                        includedPolicy.setGoid( Policy.DEFAULT_GOID );
                         includedPolicy.setFolder( null );
 
                         if ( referenceFinder.getUser()==null ||
                              !referenceFinder.rbacServices.isPermittedForEntity(referenceFinder.getUser(), includedPolicy, OperationType.CREATE, null ) )
                             throw new PermissionDeniedException( OperationType.CREATE, EntityType.POLICY );
-                        long oid = referenceFinder.policyManager.save( includedPolicy );
+                        Goid goid = referenceFinder.policyManager.save( includedPolicy );
 
                         PolicyImportResult.ImportedPolicyReference reference = ManagedObjectFactory.createImportedPolicyReference();
                         reference.setType( PolicyImportResult.ImportedPolicyReferenceType.CREATED );
                         reference.setReferenceType( "com.l7tech.console.policy.exporter.IncludedPolicyReference" );
                         reference.setReferenceId( includedPolicy.getGuid() );
-                        reference.setId( Long.toString( oid ) );
+                        reference.setId( Goid.toString( goid ) );
                         reference.setGuid( includedPolicy.getGuid() );
                         references.add( reference );
                     }

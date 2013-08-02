@@ -138,7 +138,7 @@ public class ServicePropertiesDialog extends JDialog {
         subject = svc;
         newWsdlDocuments = serviceDocuments;
         // tracing cannot be enabled in new services, only after service creation
-        wasTracingEnabled = subject.getOid()!=PublishedService.DEFAULT_OID && subject.isTracingEnabled();
+        wasTracingEnabled = !Goid.isDefault(subject.getGoid()) && subject.isTracingEnabled();
 
         if (areUnsavedChangesToThisPolicy(svc)) {
             readOnlyWarningLabel.setText("Service has unsaved policy changes");
@@ -170,7 +170,7 @@ public class ServicePropertiesDialog extends JDialog {
 
         // set initial data
         nameField.setText(subject.getName());
-        if (subject.getOid()!=PublishedService.DEFAULT_OID) oidField.setText(subject.getId());
+        if (!Goid.isDefault(subject.getGoid())) oidField.setText(subject.getId());
         oidField.putClientProperty(Utilities.PROPERTY_CONTEXT_MENU_AUTO_SELECT_ALL, "true");
         Utilities.attachDefaultContextMenu(oidField);
         Policy policy = subject.getPolicy();
@@ -384,7 +384,7 @@ public class ServicePropertiesDialog extends JDialog {
                 }else{
                     try {
                         final UDDIProxiedServiceInfo serviceInfo =
-                                Registry.getDefault().getUDDIRegistryAdmin().findProxiedServiceInfoForPublishedService(uddiServiceControl.getPublishedServiceOid());
+                                Registry.getDefault().getUDDIRegistryAdmin().findProxiedServiceInfoForPublishedService(uddiServiceControl.getPublishedServiceGoid());
                         if(serviceInfo == null || serviceInfo.getPublishType() == UDDIProxiedServiceInfo.PublishType.PROXY){
                             int selection = JOptionPane.showConfirmDialog(ServicePropertiesDialog.this, "The association to the original UDDI BusinessService will be lost.", "Remove BusinessService Association", JOptionPane.WARNING_MESSAGE);
                             if (selection == 0) {
@@ -479,16 +479,16 @@ public class ServicePropertiesDialog extends JDialog {
         });
 
         try {
-            uddiServiceControl = Registry.getDefault().getUDDIRegistryAdmin().getUDDIServiceControl(subject.getOid());
+            uddiServiceControl = Registry.getDefault().getUDDIRegistryAdmin().getUDDIServiceControl(subject.getGoid());
             if(uddiServiceControl != null){
                 originalServiceEndPoint = Registry.getDefault().getUDDIRegistryAdmin().getOriginalServiceEndPoint(uddiServiceControl.getOid());
             }
-            uddiProxiedServiceInfo = Registry.getDefault().getUDDIRegistryAdmin().findProxiedServiceInfoForPublishedService(subject.getOid());
+            uddiProxiedServiceInfo = Registry.getDefault().getUDDIRegistryAdmin().findProxiedServiceInfoForPublishedService(subject.getGoid());
         } catch (FindException e) {
             uddiServiceControl = null;
         }
 
-        zoneControl.configure(subject.getOid() == PublishedService.DEFAULT_OID ? OperationType.CREATE : canUpdate ? OperationType.UPDATE : OperationType.READ, subject);
+        zoneControl.configure(Goid.isDefault(subject.getGoid()) ? OperationType.CREATE : canUpdate ? OperationType.UPDATE : OperationType.READ, subject);
 
         updateURL();
 
@@ -520,7 +520,7 @@ public class ServicePropertiesDialog extends JDialog {
         if (canUpdate && !canTrace)
             tracingCheckBox.setToolTipText("Disabled because enabling tracing requires having permission to update all published services");
 
-        if ( !tracingCheckBox.isEnabled() && subject.getOid()==PublishedService.DEFAULT_OID ) {
+        if ( !tracingCheckBox.isEnabled() && Goid.isDefault(subject.getGoid()) ) {
             tracingCheckBox.setSelected( false ); // insufficient permissions to enable tracing for new service
         }
 
@@ -552,7 +552,7 @@ public class ServicePropertiesDialog extends JDialog {
     }
 
     private UDDIServiceControl getNewUDDIServiceControl(WsdlPortInfo wsdlPortInfo) {
-        return new UDDIServiceControl(subject.getOid(), wsdlPortInfo.getUddiRegistryOid(),
+        return new UDDIServiceControl(subject.getGoid(), wsdlPortInfo.getUddiRegistryOid(),
                 wsdlPortInfo.getBusinessEntityKey(), wsdlPortInfo.getBusinessEntityName(), wsdlPortInfo.getBusinessServiceKey(),
                 wsdlPortInfo.getBusinessServiceName(), wsdlPortInfo.getWsdlServiceName(), wsdlPortInfo.getWsdlPortName(),
                 wsdlPortInfo.getWsdlPortBinding(), wsdlPortInfo.getWsdlPortBindingNamespace(),
@@ -616,7 +616,7 @@ public class ServicePropertiesDialog extends JDialog {
 
     private static boolean areUnsavedChangesToThisPolicy(PublishedService subject) {
         PolicyEditorPanel pep = TopComponents.getInstance().getPolicyEditorPanel();
-        return pep != null && pep.isEditingPublishedService() && subject.getOid() == pep.getPublishedServiceOid() && pep.isUnsavedChanges();
+        return pep != null && pep.isEditingPublishedService() && Goid.equals(subject.getGoid(), pep.getPublishedServiceGoid()) && pep.isUnsavedChanges();
     }
 
     public boolean hasResolutionConflict() {
@@ -631,8 +631,8 @@ public class ServicePropertiesDialog extends JDialog {
         try {
             final ServiceAdmin serviceManager = Registry.getDefault().getServiceManager();
             return !subject.isDisabled() &&
-                    ((subject.getOid()!=PublishedService.DEFAULT_OID && !serviceManager.generateResolutionReport( subject, subjectDocuments ).isSuccess() ) ||
-                     (subject.getOid()==PublishedService.DEFAULT_OID && !serviceManager.generateResolutionReportForNewService( subject, subjectDocuments ).isSuccess()));
+                    ((!Goid.isDefault(subject.getGoid()) && !serviceManager.generateResolutionReport( subject, subjectDocuments ).isSuccess() ) ||
+                     (Goid.isDefault(subject.getGoid()) && !serviceManager.generateResolutionReportForNewService( subject, subjectDocuments ).isSuccess()));
         } catch ( FindException e ) {
             logger.log( Level.WARNING, "Error checking for service resolution conflict" );
         }
@@ -876,16 +876,16 @@ public class ServicePropertiesDialog extends JDialog {
     private void doSave(Collection<ServiceDocument> documents, boolean savePolicy) {
         //attempt to save the changes
         try {
-            long newOid;
+            Goid newGod;
             if (documents == null)
-                newOid = Registry.getDefault().getServiceManager().savePublishedService(subject);
+                newGod = Registry.getDefault().getServiceManager().savePublishedService(subject);
             else
-                newOid = Registry.getDefault().getServiceManager().savePublishedServiceWithDocuments(subject, documents);
-            subject.setOid(newOid);
+                newGod = Registry.getDefault().getServiceManager().savePublishedServiceWithDocuments(subject, documents);
+            subject.setGoid(newGod);
 
             // Update tracing flag if indicated
             if (wasTracingEnabled != subject.isTracingEnabled())
-                Registry.getDefault().getServiceManager().setTracingEnabled(subject.getOid(), subject.isTracingEnabled());
+                Registry.getDefault().getServiceManager().setTracingEnabled(subject.getGoid(), subject.isTracingEnabled());
 
 
             //uddi settings
@@ -1073,7 +1073,7 @@ public class ServicePropertiesDialog extends JDialog {
             Collection<ServiceDocument> svcDocuments = newWsdlDocuments;
             if (svcDocuments == null) {
                 ServiceAdmin svcAdmin = Registry.getDefault().getServiceManager();
-                svcDocuments = svcAdmin.findServiceDocumentsByServiceID(String.valueOf(subject.getOid()));
+                svcDocuments = svcAdmin.findServiceDocumentsByServiceID(String.valueOf(subject.getGoid()));
             }
 
             Set<WsdlComposer.WsdlHolder> importedWsdls = new HashSet<WsdlComposer.WsdlHolder>();

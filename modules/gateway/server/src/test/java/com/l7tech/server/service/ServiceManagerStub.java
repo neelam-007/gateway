@@ -65,11 +65,11 @@ public class ServiceManagerStub extends EntityManagerStub<PublishedService, Serv
      * saves a published service along with it's policy assertions
      */
     @Override
-    public long save(PublishedService service) throws SaveException {
+    public Goid save(PublishedService service) throws SaveException {
         Policy policy = service.getPolicy();
         if (policy == null) throw new IllegalArgumentException("Service saved without a policy");
-        if (policy.getOid() == Policy.DEFAULT_OID) policyManager.save(policy);
-        long oid = super.save(service);
+        if (Policy.DEFAULT_GOID.equals(policy.getGoid())) policyManager.save(policy);
+        Goid goid = super.save(service);
         Field soapVersionField = null;
         try {
             soapVersionField = service.getClass().getDeclaredField("_soapVersion");
@@ -88,11 +88,11 @@ public class ServiceManagerStub extends EntityManagerStub<PublishedService, Serv
                     if (setSoapVersionOnce) {
                         return super.getSoapVersion();
                     }
-                    _locked = false;
+                    locked = false;
                     // set to null so that the version will be read from the wsdl
                     setSoapVersion(null);
                     final SoapVersion soapVersion = super.getSoapVersion();
-                    _locked = true;
+                    locked = true;
                     setSoapVersionOnce = true;
                     return soapVersion;
                 }
@@ -117,7 +117,7 @@ public class ServiceManagerStub extends EntityManagerStub<PublishedService, Serv
                 soapVersionField.setAccessible(false);
             }
         }
-        return oid;
+        return goid;
     }
 
     private ServiceCache getServiceCache() {
@@ -148,6 +148,11 @@ public class ServiceManagerStub extends EntityManagerStub<PublishedService, Serv
 
         }
         return ret;
+    }
+
+    @Override
+    public PublishedService findByOldOid(long oid) throws FindException {
+        return null;
     }
 
     /**

@@ -1,16 +1,13 @@
 package com.l7tech.server.service;
 
-import com.l7tech.server.ApplicationContexts;
-import com.l7tech.wsdl.Wsdl;
+import com.l7tech.common.TestDocuments;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceAdmin;
-import com.l7tech.common.TestDocuments;
-import junit.extensions.TestSetup;
-import org.junit.Before;
+import com.l7tech.objectmodel.Goid;
+import com.l7tech.server.ApplicationContexts;
+import com.l7tech.wsdl.Wsdl;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import static org.junit.Assert.*;
-
 import org.springframework.context.ApplicationContext;
 
 import javax.wsdl.*;
@@ -19,9 +16,9 @@ import javax.wsdl.extensions.soap.SOAPAddress;
 import javax.wsdl.extensions.soap.SOAPBody;
 import javax.wsdl.extensions.soap.SOAPOperation;
 import java.io.FileNotFoundException;
-import java.io.StringWriter;
-import java.io.InputStreamReader;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.StringWriter;
 import java.util.Iterator;
 import java.util.List;
 
@@ -57,7 +54,7 @@ public class ServiceAdminTest {
         originalService.setWsdlXml(sw.toString());
         System.out.println("saving service");
         ServiceAdmin sadmin = (ServiceAdmin)applicationContext.getBean("serviceAdmin");
-        long res = sadmin.savePublishedService(originalService);
+        Goid res = sadmin.savePublishedService(originalService);
         System.out.println("saved with id=" + res);
     }
 

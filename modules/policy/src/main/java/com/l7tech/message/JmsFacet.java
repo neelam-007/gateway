@@ -20,7 +20,7 @@ public class JmsFacet extends MessageFacet {
     }
 
     public MessageKnob getKnob(Class c) {
-        if (c == JmsKnob.class || c == HasSoapAction.class || c == HasServiceOid.class) {
+        if (c == JmsKnob.class || c == HasSoapAction.class || c == HasServiceGoid.class) {
             return jmsKnob;
         }
         return super.getKnob(c);

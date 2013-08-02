@@ -36,7 +36,7 @@ public class SubscriptionManagerImpl
     private static final String COLUMN_CALLBACK = "referenceCallback";
     private static final String COLUMN_NODEID = "ownerNodeId";
     private static final String COLUMN_NOTIFIED = "lastNotificationTime";
-    private static final String COLUMN_SERVICEOID = "publishedServiceOid";
+    private static final String COLUMN_SERVICEGOID = "publishedServiceGoid";
     private static final String COLUMN_TERMINATION = "termination";
     private static final String COLUMN_TOPIC = "topic";
     private static final String COLUMN_UUID = "uuid";
@@ -150,12 +150,12 @@ public class SubscriptionManagerImpl
     }
 
     @SuppressWarnings({"unchecked"})
-    public Collection<Subscription> findByNodeAndServiceOid(final String clusterNodeId, final long serviceOid) throws FindException {
+    public Collection<Subscription> findByNodeAndServiceGoid(final String clusterNodeId, final Goid serviceGoid) throws FindException {
         return getHibernateTemplate().executeFind(new ReadOnlyHibernateCallback() {
             protected Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
                 Criteria crit = session.createCriteria(Subscription.class);
                 crit.add(Restrictions.eq(COLUMN_NODEID, clusterNodeId));
-                crit.add(Restrictions.eq(COLUMN_SERVICEOID, serviceOid));
+                crit.add(Restrictions.eq(COLUMN_SERVICEGOID, serviceGoid));
                 return crit.list();
             }
         });
@@ -166,7 +166,7 @@ public class SubscriptionManagerImpl
         return getHibernateTemplate().executeFind(new ReadOnlyHibernateCallback() {
             protected Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
                 Criteria crit = session.createCriteria(Subscription.class);
-                crit.add(Restrictions.eq(COLUMN_SERVICEOID, key.getServiceOid()));
+                crit.add(Restrictions.eq(COLUMN_SERVICEGOID, key.getServiceGoid()));
                 crit.add(Restrictions.eq(COLUMN_TOPIC, key.getTopic()));
                 crit.add(Restrictions.eq(COLUMN_CALLBACK, key.getNotificationUrl()));
                 return crit.list();
@@ -207,20 +207,20 @@ public class SubscriptionManagerImpl
             throw new FindException("Unable to find subscriptions", e);
         }
 
-        final Map<Long, MetricsSummaryBin> bins = aggregator.getMetricsForServices();
+        final Map<Goid, MetricsSummaryBin> bins = aggregator.getMetricsForServices();
 
         if (myUnexpiredMetricsSubs == null || myUnexpiredMetricsSubs.isEmpty()) return Collections.emptyMap();
 
         final Map<SubscriptionKey, Pair<Subscription, MetricsSummaryBin>> result = new HashMap<SubscriptionKey, Pair<Subscription, MetricsSummaryBin>>();
 
         for (Subscription sub : myUnexpiredMetricsSubs) {
-            final long oid = sub.getPublishedServiceOid();
-            final MetricsSummaryBin bin = bins.get(oid);
+            final Goid goid = sub.getPublishedServiceGoid();
+            final MetricsSummaryBin bin = bins.get(goid);
             if (bin != null) {
                 SubscriptionKey key = new SubscriptionKey(sub);
                 result.put(key, new Pair<Subscription, MetricsSummaryBin>(sub, bin));
             } else {
-                logger.fine("No ServiceMetrics bins available for " + oid);
+                logger.fine("No ServiceMetrics bins available for " + goid);
             }
         }
 

@@ -83,7 +83,7 @@ public final class DeletePolicyAction extends DeleteEntityNodeAction<PolicyEntit
 
         PolicyHeader pH = (PolicyHeader) userObj;
         try {
-            policyAdmin.deletePolicy(pH.getOid());
+            policyAdmin.deletePolicy(pH.getGoid());
             return true;
         }catch (ObjectModelException ome) {
             PolicyDeletionForbiddenException pdfe = ExceptionUtils.getCauseIfCausedBy(ome, PolicyDeletionForbiddenException.class);

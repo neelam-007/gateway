@@ -3,6 +3,7 @@
  */
 package com.l7tech.policy.assertion;
 
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.annotation.*;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
@@ -48,7 +49,7 @@ public abstract class Assertion implements Cloneable, Serializable {
 
     protected transient CompositeAssertion parent;
     private transient int ordinal;
-    private transient Long ownerPolicyOid = null;
+    private transient Goid ownerPolicyGoid = null;
     private transient boolean locked = false;
     private boolean enabled = true;
     private @Nullable Comment assertionComment;
@@ -297,23 +298,23 @@ public abstract class Assertion implements Cloneable, Serializable {
         return fullClass.substring(fullClass.lastIndexOf('.') + 1);
     }
 
-    public Long ownerPolicyOid() {
-        Long oid = ownerPolicyOid;
+    public Goid ownerPolicyGoid() {
+        Goid goid = ownerPolicyGoid;
 
-        if ( oid == null ) {
+        if ( goid == null ) {
             Assertion parent = getParent();
             if ( parent != null ) {
-                oid = parent.ownerPolicyOid();
+                goid = parent.ownerPolicyGoid();
             }
         }
 
-        return oid;
+        return goid;
     }
 
-    public void ownerPolicyOid(Long ownerPolicyOid) {
+    public void ownerPolicyGoid(Goid ownerPolicyGoid) {
         checkLocked();
-        if (ownerPolicyOid != null && ownerPolicyOid == -1) ownerPolicyOid = null;
-        this.ownerPolicyOid = ownerPolicyOid;
+        if (ownerPolicyGoid != null && Goid.isDefault(ownerPolicyGoid)) ownerPolicyGoid = null;
+        this.ownerPolicyGoid = ownerPolicyGoid;
     }
 
     /**

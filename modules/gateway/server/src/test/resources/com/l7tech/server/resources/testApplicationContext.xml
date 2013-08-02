@@ -86,7 +86,7 @@
                 <constructor-arg index="1" value="Default"/>
                 <constructor-arg index="2">
                     <list>
-                        <bean class="com.l7tech.server.service.resolution.ServiceOidResolver"><constructor-arg ref="auditFactory"/></bean>
+                        <bean class="com.l7tech.server.service.resolution.ServiceIdResolver"><constructor-arg ref="auditFactory"/></bean>
                         <bean class="com.l7tech.server.service.resolution.UriResolver"><constructor-arg ref="auditFactory"/></bean>
                         <bean class="com.l7tech.server.service.resolution.SoapActionResolver"><constructor-arg ref="auditFactory"/></bean>
                         <bean class="com.l7tech.server.service.resolution.UrnResolver"><constructor-arg ref="auditFactory"/></bean>

@@ -180,7 +180,7 @@ public class FilteringAuditLogListener implements AuditLogListener, PropertyChan
         PolicyEnforcementContext pec = PolicyEnforcementContextFactory.getCurrent();
 
         if ( pec != null && pec.getService() != null ) {
-            return pec.getService().getName() + " [" + pec.getService().getOid() + "]";
+            return pec.getService().getName() + " [" + pec.getService().getGoid() + "]";
         }
 
         return null;

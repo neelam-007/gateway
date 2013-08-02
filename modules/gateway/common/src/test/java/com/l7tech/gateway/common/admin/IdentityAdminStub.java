@@ -285,7 +285,7 @@ public class IdentityAdminStub implements IdentityAdmin {
         if (s == null) {
             throw new IllegalArgumentException();
         }
-        return new EntityHeader(Long.toString(s.getOid()), EntityType.SERVICE, s.getName(), "");
+        return new EntityHeader(Goid.toString(s.getGoid()), EntityType.SERVICE, s.getName(), "");
     }
 
     static EntityHeader fromIdentityProviderConfig(IdentityProviderConfig config) {

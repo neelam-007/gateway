@@ -22,15 +22,15 @@ import java.util.Map;
  * @author alex
  */
 public class EntityFinderStub implements EntityFinder, DesignTimeEntityProvider {
-    private final Map<Class<? extends Entity>, EntityManager> entityManagers;
+    private final Map<Class<? extends Entity>, GoidEntityManager> entityManagers;
 
     public EntityFinderStub() {
-        this.entityManagers = new HashMap<Class<? extends Entity>, EntityManager>();
+        this.entityManagers = new HashMap<Class<? extends Entity>, GoidEntityManager>();
     }
 
-    public EntityFinderStub(EntityManager... entityManagers) {
-        Map<Class<? extends Entity>, EntityManager> managerMap = new HashMap<Class<? extends Entity>, EntityManager>();
-        for (EntityManager entityManager : entityManagers) {
+    public EntityFinderStub(GoidEntityManager... entityManagers) {
+        Map<Class<? extends Entity>, GoidEntityManager> managerMap = new HashMap<Class<? extends Entity>, GoidEntityManager>();
+        for (GoidEntityManager entityManager : entityManagers) {
             managerMap.put(entityManager.getImpClass(), entityManager);
         }
         this.entityManagers = managerMap;
@@ -43,17 +43,17 @@ public class EntityFinderStub implements EntityFinder, DesignTimeEntityProvider 
 
     @Override
     public Entity find(@NotNull EntityHeader header) throws FindException {
-        return entityManagers.get(EntityTypeRegistry.getEntityClass(header.getType())).findByPrimaryKey(header.getOid());
+        return entityManagers.get(EntityTypeRegistry.getEntityClass(header.getType())).findByPrimaryKey(header.getGoid());
     }
 
     @Override
     public <ET extends Entity> ET find(Class<ET> clazz, Serializable pk) throws FindException {
-        return (ET)entityManagers.get(clazz).findByPrimaryKey(Long.valueOf(pk.toString()));
+        return (ET)entityManagers.get(clazz).findByPrimaryKey(Goid.parseGoid(pk.toString()));
     }
 
     @Override
     public EntityHeader findHeader(EntityType etype, Serializable pk) throws FindException {
-        Entity e = entityManagers.get(EntityTypeRegistry.getEntityClass(etype)).findByPrimaryKey(Long.valueOf(pk.toString()));
+        Entity e = entityManagers.get(EntityTypeRegistry.getEntityClass(etype)).findByPrimaryKey(Goid.parseGoid(pk.toString()));
         return EntityHeaderUtils.fromEntity(e);
     }
 

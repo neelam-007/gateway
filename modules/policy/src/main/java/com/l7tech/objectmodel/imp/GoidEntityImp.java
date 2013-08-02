@@ -80,7 +80,11 @@ public abstract class GoidEntityImp implements GoidEntity, Serializable {
         if (id == null || id.length() == 0) {
             setGoid(DEFAULT_GOID);
         } else {
-            setGoid(new Goid(id));
+            try {
+                setGoid(new Goid(id));
+            } catch (IllegalArgumentException e) {
+                setGoid(DEFAULT_GOID);
+            }
         }
     }
 

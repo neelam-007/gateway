@@ -1,31 +1,32 @@
 package com.l7tech.server.migration;
 
+import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceDocument;
 import com.l7tech.gateway.common.service.ServiceDocumentWsdlStrategy;
-import com.l7tech.server.cluster.ExternalEntityHeaderEnhancer;
-import com.l7tech.server.management.migration.bundle.MigrationMetadata;
-import com.l7tech.server.management.migration.bundle.MigrationBundle;
-import com.l7tech.server.management.migration.bundle.ExportedItem;
-import com.l7tech.server.management.migration.bundle.MigratedItem;
-import static com.l7tech.server.management.migration.bundle.MigratedItem.ImportOperation.*;
-import com.l7tech.server.management.migration.MigrationManager;
-import com.l7tech.server.management.api.node.MigrationApi;
-import com.l7tech.objectmodel.migration.PropertyResolver;
+import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.migration.*;
-import com.l7tech.server.*;
+import com.l7tech.server.EntityCrud;
+import com.l7tech.server.EntityHeaderUtils;
+import com.l7tech.server.cluster.ExternalEntityHeaderEnhancer;
+import com.l7tech.server.management.api.node.MigrationApi;
+import com.l7tech.server.management.migration.MigrationManager;
+import com.l7tech.server.management.migration.bundle.ExportedItem;
+import com.l7tech.server.management.migration.bundle.MigratedItem;
+import com.l7tech.server.management.migration.bundle.MigrationBundle;
+import com.l7tech.server.management.migration.bundle.MigrationMetadata;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.gateway.common.service.PublishedService;
-import com.l7tech.gateway.common.service.ServiceHeader;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.Flushable;
 import java.io.IOException;
-import java.util.*;
-import java.util.logging.Logger;
-import java.util.logging.Level;
+import java.io.Serializable;
 import java.lang.reflect.Method;
+import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
-import org.springframework.transaction.annotation.Transactional;
+import static com.l7tech.server.management.migration.bundle.MigratedItem.ImportOperation.*;
 
 /**
  * Implements MigrationManager operations for SSG.
@@ -346,14 +347,34 @@ public class MigrationManagerImpl implements MigrationManager {
                 ExternalEntityHeader dependant = dep.getDependant();
                 Entity dependantEntity = metadata.isMapped(dependant) ? entitiesFromTarget.get(metadata.getMapping(dependant)) : bundle.getExportedEntity(dependant);
                 if (dependantEntity == entity) continue;
-                PropertyResolver resolver = getResolver(dependantEntity, dep.getPropName());
+                String propName = correctPropName(dependantEntity, dep.getPropName());
+                PropertyResolver resolver = getResolver(dependantEntity, propName);
                 if (entity == null) {
                     throw new MigrationApi.MigrationException("Cannot apply mapping, target entity not found for dependency reference: " + dep.getDependency());
                 }
-                resolver.applyMapping(dependantEntity, dep.getPropName(), targetHeader, entity, header);
+                resolver.applyMapping(dependantEntity, propName, targetHeader, entity, header);
             }
         } catch (PropertyResolverException e) {
             throw new MigrationApi.MigrationException(e);
+        }
+    }
+
+    /**
+     * This will correct the property name in the case the is is a reference to an old oid.
+     * @param entity The entity to correct the property name for
+     * @param propertyName The property name
+     * @return The corrected property name, or the original if it didn't need to be corrected.
+     */
+    private static String correctPropName(Entity entity, String propertyName) {
+        if(entity instanceof GoidEntity){
+            switch(propertyName){
+                case "EntityOid":
+                    return "EntityGoid";
+                default:
+                    return propertyName;
+            }
+        } else {
+            return propertyName;
         }
     }
 
@@ -370,8 +391,12 @@ public class MigrationManagerImpl implements MigrationManager {
             ((PersistentEntity) entity).setOid(((PersistentEntity)onTarget).getOid());
             ((PersistentEntity) entity).setVersion(((PersistentEntity)onTarget).getVersion());
         }
+        if (entity instanceof GoidEntity && onTarget instanceof GoidEntity) {
+            ((GoidEntity) entity).setGoid(((GoidEntity)onTarget).getGoid());
+            ((GoidEntity) entity).setVersion(((GoidEntity)onTarget).getVersion());
+        }
         if (entity instanceof PublishedService && onTarget instanceof PublishedService) {
-            ((PublishedService)entity).getPolicy().setOid(((PublishedService)onTarget).getPolicy().getOid());
+            ((PublishedService)entity).getPolicy().setGoid(((PublishedService)onTarget).getPolicy().getGoid());
             ((PublishedService)entity).getPolicy().setVersion(((PublishedService)onTarget).getPolicy().getVersion());
             ((PublishedService)entity).setDisabled(((PublishedService)onTarget).isDisabled());
             ((PublishedService)entity).parseWsdlStrategy( buildWsdlStrategy( header, bundle ) );
@@ -391,6 +416,8 @@ public class MigrationManagerImpl implements MigrationManager {
             // loadEntity() returns null until the whole import (transactional) completes, version is not always incremented (e.g. if the new entity is not different) 
             if (entity instanceof PersistentEntity && onTarget instanceof PersistentEntity)
                 ((PersistentEntity) entity).setVersion(((PersistentEntity) onTarget).getVersion() + (entity.equals(onTarget) ? 0 : 1) );
+            else if (entity instanceof GoidEntity && onTarget instanceof GoidEntity)
+                ((GoidEntity) entity).setVersion(((GoidEntity) onTarget).getVersion() + (entity.equals(onTarget) ? 0 : 1) );
         }
 
         return entity;
@@ -419,9 +446,14 @@ public class MigrationManagerImpl implements MigrationManager {
         if (!dryRun) {
             if (entity instanceof PersistentEntity)
                 ((PersistentEntity) entity).setVersion(0);
-            Long oid = (Long) entityCrud.save(entity);
-            if (entity instanceof PersistentEntity)
-                ((PersistentEntity) entity).setOid(oid);
+            else if (entity instanceof GoidEntity)
+                ((GoidEntity) entity).setVersion(0);
+            Serializable id = entityCrud.save(entity);
+            if (entity instanceof PersistentEntity) {
+                ((PersistentEntity) entity).setOid((Long)id);
+            } else if(entity instanceof GoidEntity){
+                ((GoidEntity) entity).setGoid((Goid)id);
+            }
         }
         return entity;
     }
@@ -544,7 +576,7 @@ public class MigrationManagerImpl implements MigrationManager {
         for (ExternalEntityHeader header : entities.keySet()) {
             if (header.getType() == EntityType.SERVICE_DOCUMENT ) {
                 ServiceDocument serviceDocument = (ServiceDocument) entities.get(header);
-                if ( serviceDocument.getServiceId() == serviceHeader.getOid()  ) {
+                if ( Goid.equals(serviceDocument.getServiceId(), serviceHeader.getGoid())  ) {
                     serviceDocuments.add( serviceDocument );
                 }
             }

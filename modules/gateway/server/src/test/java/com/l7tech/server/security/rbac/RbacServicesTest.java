@@ -7,14 +7,17 @@ import com.l7tech.identity.User;
 import com.l7tech.identity.UserBean;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.EntityFinder;
 import com.l7tech.server.EntityFinderStub;
-import static org.junit.Assert.*;
 import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  *
@@ -28,7 +31,7 @@ public class RbacServicesTest {
         final RbacServices rbacServices = new RbacServicesImpl(roleManager , entityFinder );
 
         final PublishedService service = new PublishedService();
-        service.setOid( 123 );
+        service.setGoid(new Goid(0,123));
         service.setName( "Test Service" );
 
         final boolean permitted1 = rbacServices.isPermittedForEntity( new UserBean("none"), service, OperationType.READ, null );
@@ -99,13 +102,13 @@ public class RbacServicesTest {
                 if ( "some".equals( user.getLogin() ) ) {
                     Collection<Role> roles = new ArrayList<Role>();
                     Role role = new Role();
-                    role.addEntityPermission( OperationType.READ, EntityType.SERVICE, "123" );
+                    role.addEntityPermission( OperationType.READ, EntityType.SERVICE, new Goid(0,123).toHexString() );
                     roles.add( role );
                     return roles;
                 } else if ( "some-other".equals( user.getLogin() ) ) {
                     Collection<Role> roles = new ArrayList<Role>();
                     Role role = new Role();
-                    role.addEntityPermission( OperationType.READ, EntityType.SERVICE, "456" );
+                    role.addEntityPermission( OperationType.READ, EntityType.SERVICE, new Goid(0,456).toHexString() );
                     roles.add( role );
                     return roles;
                 } else if ( "any".equals( user.getLogin() ) ) {

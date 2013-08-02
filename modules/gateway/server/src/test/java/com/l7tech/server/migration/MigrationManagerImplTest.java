@@ -4,6 +4,7 @@ import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.ExternalEntityHeader;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.migration.MigrationDependency;
@@ -67,7 +68,7 @@ public class MigrationManagerImplTest {
         when(entityCrud.find(argThat(hasEntityType(EntityType.SERVICE)))).thenReturn(null);
 
         when(factory.getPropertyResolver(any(PropertyResolver.Type.class))).thenReturn(propertyResolver);
-        when(entityCrud.save(serviceToMigrate)).thenReturn(1234L);
+        when(entityCrud.save(serviceToMigrate)).thenReturn(new Goid(0,1234L));
 
         final Collection<MigratedItem> migratedItems = manager.importBundle(bundle, false);
         verify(entityCrud).save(serviceToMigrate);
@@ -116,14 +117,14 @@ public class MigrationManagerImplTest {
         final MigrationBundle bundle = new MigrationBundle(metadata);
         // we are migrating a service
         final PublishedService serviceToMigrate = new PublishedService();
-        final ExternalEntityHeader serviceHeader = new ExternalEntityHeader("1", EntityType.SERVICE, "1", "service", "usesEncapsulatedAssertion", 0);
+        final ExternalEntityHeader serviceHeader = new ExternalEntityHeader(new Goid(0,1).toHexString(), EntityType.SERVICE, new Goid(0,1).toHexString(), "service", "usesEncapsulatedAssertion", 0);
         metadata.addHeader(serviceHeader);
         bundle.addExportedItem(new ExportedItem(serviceHeader, serviceToMigrate));
-        metadata.setTargetFolder(new ExternalEntityHeader("1", EntityType.FOLDER, "1", "RootFolder", "RootFolder", 0));
+        metadata.setTargetFolder(new ExternalEntityHeader(new Goid(0,1).toHexString(), EntityType.FOLDER, new Goid(0,1).toHexString(), "RootFolder", "RootFolder", 0));
 
         // service depends on encass (expects the encass to exist on the target ssg)
-        final ExternalEntityHeader encassHeader = new ExternalEntityHeader("1", EntityType.ENCAPSULATED_ASSERTION, "1", "encapsulatedAssertion", "encapsulatedAssertion", 0);
-        metadata.addDependency(new MigrationDependency(serviceHeader, encassHeader, "Policy:2:EntitiesUsed", PropertyResolver.Type.ASSERTION, MigrationMappingSelection.NONE, false));
+        final ExternalEntityHeader encassHeader = new ExternalEntityHeader(new Goid(0,1).toHexString(), EntityType.ENCAPSULATED_ASSERTION, new Goid(0,1).toHexString(), "encapsulatedAssertion", "encapsulatedAssertion", 0);
+        metadata.addDependency(new MigrationDependency(serviceHeader, encassHeader, "Policy:"+new Goid(0,2).toHexString()+":EntitiesUsed", PropertyResolver.Type.ASSERTION, MigrationMappingSelection.NONE, false));
         return bundle;
     }
 

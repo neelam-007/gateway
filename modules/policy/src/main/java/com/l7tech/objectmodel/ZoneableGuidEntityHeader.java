@@ -8,8 +8,8 @@ import org.jetbrains.annotations.Nullable;
 public class ZoneableGuidEntityHeader extends GuidEntityHeader implements HasSecurityZoneGoid {
     protected Goid securityZoneGoid;
 
-    protected ZoneableGuidEntityHeader(final long oid, final EntityType type, final String name, final String description, final int version) {
-        super(oid, type, name, description, version);
+    protected ZoneableGuidEntityHeader(final Goid goid, final EntityType type, final String name, final String description, final int version) {
+        super(goid, type, name, description, version);
     }
 
     public ZoneableGuidEntityHeader(final String id, final EntityType type, final String name, final String description, final Integer version) {

@@ -10,12 +10,13 @@ import com.l7tech.server.message.PolicyEnforcementContextFactory
 import com.l7tech.server.service.ServiceCache
 import java.util.ArrayList
 import com.l7tech.server.service.resolution.ServiceResolutionException
-import com.l7tech.message.{HasServiceOidImpl, HasServiceOid, Message}
+import com.l7tech.message.{HasServiceGoidImpl, HasServiceGoid, Message}
 import java.util.logging.Logger
 import org.specs2.specification.Scope
 import com.l7tech.gateway.common.audit.{Audit, AuditFactory}
 import com.l7tech.gateway.common.audit.AssertionMessages._
 import org.mockito.Matchers
+import com.l7tech.objectmodel.Goid
 
 /**
  * Unit test for ServerResolveServiceAssertion.
@@ -32,8 +33,8 @@ class ServerResolveServiceAssertionTest extends SpecificationWithJUnit with Mock
       there was one(audit).logAndAudit(RESOLVE_SERVICE_ALREADY_RESOLVED)
     }
 
-    "fail if HasServiceOid knob already present on default request" in new DefaultScope {
-      pec.getRequest.attachKnob(classOf[HasServiceOid], new HasServiceOidImpl(123))
+    "fail if HasServiceGoid knob already present on default request" in new DefaultScope {
+      pec.getRequest.attachKnob(classOf[HasServiceGoid], new HasServiceGoidImpl(new Goid(0,123)))
 
       sass.checkRequest(pec) must be equalTo SERVER_ERROR
 
@@ -47,9 +48,9 @@ class ServerResolveServiceAssertionTest extends SpecificationWithJUnit with Mock
       sass.checkRequest(pec) must be equalTo NONE
 
       there was one(sass.serviceCache).resolve(anyString, anyString, anyString)
-      val hasServiceOid = pec.getRequest.getKnob(classOf[HasServiceOid])
+      val hasServiceOid = pec.getRequest.getKnob(classOf[HasServiceGoid])
       hasServiceOid must not beTheSameAs null
-      hasServiceOid.getServiceOid must be equalTo service.getOid
+      hasServiceOid.getServiceGoid must be equalTo service.getGoid
       there was one(audit).logAndAudit(Matchers.eq(RESOLVE_SERVICE_SUCCEEDED), any)
     }
 
@@ -59,7 +60,7 @@ class ServerResolveServiceAssertionTest extends SpecificationWithJUnit with Mock
       sass.checkRequest(pec) must be equalTo FAILED
 
       there was one(sass.serviceCache).resolve(anyString, anyString, anyString)
-      pec.getRequest.getKnob(classOf[HasServiceOid]) must be equalTo null
+      pec.getRequest.getKnob(classOf[HasServiceGoid]) must be equalTo null
       there was one(audit).logAndAudit(RESOLVE_SERVICE_NOT_FOUND)
     }
 
@@ -69,7 +70,7 @@ class ServerResolveServiceAssertionTest extends SpecificationWithJUnit with Mock
       sass.checkRequest(pec) must be equalTo FAILED
 
       there was one(sass.serviceCache).resolve(anyString, anyString, anyString)
-      pec.getRequest.getKnob(classOf[HasServiceOid]) must be equalTo null
+      pec.getRequest.getKnob(classOf[HasServiceGoid]) must be equalTo null
       there was one(audit).logAndAudit(RESOLVE_SERVICE_FOUND_MULTI)
     }
 
@@ -79,7 +80,7 @@ class ServerResolveServiceAssertionTest extends SpecificationWithJUnit with Mock
       sass.checkRequest(pec) must be equalTo FAILED
 
       there was one(sass.serviceCache).resolve(anyString, anyString, anyString)
-      pec.getRequest.getKnob(classOf[HasServiceOid]) must be equalTo null
+      pec.getRequest.getKnob(classOf[HasServiceGoid]) must be equalTo null
       there was one(audit).logAndAudit(Matchers.eq(RESOLVE_SERVICE_FAILED), Matchers.any(classOf[Array[String]]), Matchers.any(classOf[Throwable]))
       there was no(audit).logAndAudit(any, Matchers.anyVararg[String]())
     }
@@ -99,7 +100,7 @@ class ServerResolveServiceAssertionTest extends SpecificationWithJUnit with Mock
     val pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response)
 
     val service = newPublishedService
-    service.setOid(2424)
+    service.setGoid(new Goid(0,2424))
 
     def newPublishedService = new PublishedService()
 

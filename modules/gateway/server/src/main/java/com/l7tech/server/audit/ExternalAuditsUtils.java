@@ -4,6 +4,7 @@ import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.common.Component;
 import com.l7tech.gateway.common.audit.*;
 import com.l7tech.message.Message;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.security.cert.KeyUsageException;
 import com.l7tech.security.token.SecurityTokenType;
@@ -147,7 +148,7 @@ public class ExternalAuditsUtils {
         MessageSummaryAuditRecord record =new MessageSummaryAuditRecord(Level.WARNING, UUID.randomUUID().toString() , "requestId", AssertionStatus.NOT_APPLICABLE,
                 "clientAddr",requestXML, requestXML.length(),
                 responseXML, responseXML.length() , 1234, 5678,
-                7, "serviceName", "operationNameHaver",
+                new Goid(0,7), "serviceName", "operationNameHaver",
                 true, SecurityTokenType.UNKNOWN, -5,
                 "userName", "userId",null);
         signAuditRecord(record,defaultKey);
@@ -248,7 +249,7 @@ public class ExternalAuditsUtils {
                             String entityId ,
                             Integer status ,
                             String requestId ,
-                            String serviceOid ,
+                            String serviceGoid ,
                             String operationName ,
                             Boolean authenticated ,
                             String authenticationType,
@@ -301,7 +302,7 @@ public class ExternalAuditsUtils {
                     responseLength,
                     responseStatus,
                     latency,
-                    Long.parseLong(serviceOid),
+                    Goid.parseGoid(serviceGoid),
                     name,
                     operationName,
                     authenticated,

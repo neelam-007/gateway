@@ -63,19 +63,19 @@ public class ServiceWsdlUpdateChecker {
         
         //check if it's under UDDI Control
         try {
-            final UDDIServiceControl uddiServiceControl = uddiServiceControlManager.findByPublishedServiceOid(service.getOid());
+            final UDDIServiceControl uddiServiceControl = uddiServiceControlManager.findByPublishedServiceGoid(service.getGoid());
             if ( uddiServiceControl != null && uddiServiceControl.isUnderUddiControl() ) {
                 updatePermitted = false;
 
                 if ( resetWsdlXml ) {
-                    final PublishedService original = serviceManager.findByPrimaryKey(service.getOid());
+                    final PublishedService original = serviceManager.findByPrimaryKey(service.getGoid());
                     if(original != null){
                         //check the WSDL
                         try {
                             final String updatedHash = service.parsedWsdl().getHash();
                             final String originalHash = original.parsedWsdl().getHash();
                             if ( !updatedHash.equals(originalHash) ) {
-                                logger.log( Level.INFO, "Published Service id(#" + service.getOid()+" is under UDDI control. The updated WSDL will be ignored");
+                                logger.log( Level.INFO, "Published Service id(#" + service.getGoid()+" is under UDDI control. The updated WSDL will be ignored");
                                 service.setWsdlXml( original.getWsdlXml() );
                             }
                         } catch ( WSDLException e) {

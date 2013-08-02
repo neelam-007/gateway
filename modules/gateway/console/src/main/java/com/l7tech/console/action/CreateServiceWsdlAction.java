@@ -22,6 +22,7 @@ import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
@@ -207,7 +208,7 @@ public class CreateServiceWsdlAction extends SecureAction {
                     sd.setUri(sourceWsdl.getWsdlLocation());
                     sd.setType(WsdlCreateWizard.IMPORT_SERVICE_DOCUMENT_TYPE);
                     sd.setContentType("text/xml");
-                    sd.setServiceId(service.getOid());
+                    sd.setServiceId(service.getGoid());
                     StringWriter writer = new StringWriter();
                     wsdlWriter.writeWSDL(sourceWsdl.wsdl.getDefinition(), writer);
                     sd.setContents(writer.toString());
@@ -226,11 +227,11 @@ public class CreateServiceWsdlAction extends SecureAction {
             }
 
             final Frame parent = TopComponents.getInstance().getTopParent();
-            PublishServiceWizard.saveServiceWithResolutionCheck( parent, service, sourceDocs, new Functions.UnaryVoidThrows<Long,Exception>(){
+            PublishServiceWizard.saveServiceWithResolutionCheck( parent, service, sourceDocs, new Functions.UnaryVoidThrows<Goid,Exception>(){
                 @Override
-                public void call( final Long oid ) throws Exception {
+                public void call( final Goid goid ) throws Exception {
                     Registry.getDefault().getSecurityProvider().refreshPermissionCache();
-                    service.setOid(oid);
+                    service.setGoid(goid);
                     serviceAdded( new ServiceHeader(service) );
                 }
             }, new Functions.UnaryVoid<Exception>(){
@@ -265,7 +266,7 @@ public class CreateServiceWsdlAction extends SecureAction {
                         AbstractTreeNode sn = TreeNodeFactory.asTreeNode(eh, null);
                         model.insertNodeInto(sn, parent, parent.getInsertPosition(sn, RootNode.getComparator()));
                         RootNode rootNode = (RootNode) model.getRoot();
-                        rootNode.addEntity(eh.getOid(), sn);
+                        rootNode.addEntity(eh.getGoid(), sn);
 
                         //reset filter
                         tree.filterTreeToDefault();

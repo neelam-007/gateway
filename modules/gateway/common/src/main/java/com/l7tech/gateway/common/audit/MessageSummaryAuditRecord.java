@@ -10,6 +10,7 @@ import com.l7tech.gateway.common.mapping.MessageContextMapping;
 import com.l7tech.gateway.common.mapping.MessageContextMappingKeys;
 import com.l7tech.gateway.common.mapping.MessageContextMappingValues;
 import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.SecurityZone;
 import com.l7tech.objectmodel.ZoneableEntity;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -36,7 +37,7 @@ import java.io.IOException;
  * @version $Revision$
  */
 public class MessageSummaryAuditRecord extends AuditRecord implements ZoneableEntity {
-    public static final String ATTR_SERVICE_OID = "serviceOid";
+    public static final String ATTR_SERVICE_GOID = "serviceGoid";
 
     /** @deprecated to be called only for serialization and persistence purposes! */
     @Deprecated
@@ -54,7 +55,7 @@ public class MessageSummaryAuditRecord extends AuditRecord implements ZoneableEn
      * @param requestContentLength the length of the request, in bytes.
      * @param responseXml the text of the response sent to the client. Not saved by default.
      * @param responseContentLength the length of the response, in bytes.
-     * @param serviceOid the OID of the {@link PublishedService} this request was resolved to, or {@link PublishedService#DEFAULT_OID} if it could not be resolved.
+     * @param serviceGoid the GOID of the {@link PublishedService} this request was resolved to, or {@link PublishedService#DEFAULT_GOID} if it could not be resolved.
      * @param serviceName the name of the {@link PublishedService} this request was resolved to, or null if it could not be resolved.
      * @param operationNameHaver an Object on which toString() will be called if the operation name is needed, or null if one will not be provided.
      * @param authenticated true if the request was authenticated, false otherwise
@@ -66,7 +67,7 @@ public class MessageSummaryAuditRecord extends AuditRecord implements ZoneableEn
     public MessageSummaryAuditRecord(Level level, String nodeId, String requestId, AssertionStatus status,
                                      String clientAddr, String requestXml, int requestContentLength,
                                      String responseXml, int responseContentLength, int httpRespStatus, int routingLatency,
-                                     long serviceOid, String serviceName, Object operationNameHaver,
+                                     Goid serviceGoid, String serviceName, Object operationNameHaver,
                                      boolean authenticated, SecurityTokenType authenticationType, long identityProviderOid,
                                      String userName, String userId, Number mappingValueOidHaver)
     {
@@ -95,7 +96,7 @@ public class MessageSummaryAuditRecord extends AuditRecord implements ZoneableEn
         this.responseHttpStatus = httpRespStatus;
         this.routingLatency = routingLatency;
         this.operationNameHaver = operationNameHaver;
-        this.serviceOid = serviceOid;
+        this.serviceGoid = serviceGoid;
         this.authenticated = authenticated;
         this.authenticationType = authenticationType;
         this.mappingValueOidHaver = mappingValueOidHaver;
@@ -110,11 +111,11 @@ public class MessageSummaryAuditRecord extends AuditRecord implements ZoneableEn
     }
 
     /**
-     * Gets the OID of the {@link PublishedService} this request was resolved to, or {@link PublishedService#DEFAULT_OID} if it could not be resolved.
-     * @return the OID of the {@link PublishedService} this request was resolved to, or {@link PublishedService#DEFAULT_OID} if it could not be resolved.
+     * Gets the GOID of the {@link PublishedService} this request was resolved to, or {@link PublishedService#DEFAULT_GOID} if it could not be resolved.
+     * @return the GOID of the {@link PublishedService} this request was resolved to, or {@link PublishedService#DEFAULT_GOID} if it could not be resolved.
      */
-    public long getServiceOid() {
-        return serviceOid;
+    public Goid getServiceGoid() {
+        return serviceGoid;
     }
 
     @Override
@@ -260,8 +261,8 @@ public class MessageSummaryAuditRecord extends AuditRecord implements ZoneableEn
 
     /** @deprecated to be called only for serialization and persistence purposes! */
     @Deprecated
-    protected void setServiceOid( long serviceOid ) {
-        this.serviceOid = serviceOid;
+    protected void setServiceGoid( Goid serviceGoid ) {
+        this.serviceGoid = serviceGoid;
     }
 
     /** @deprecated to be called only for serialization and persistence purposes! */
@@ -359,8 +360,8 @@ public class MessageSummaryAuditRecord extends AuditRecord implements ZoneableEn
     /** String containing XML from response, or null if the current response has no XML */
     protected String responseXml;
 
-    /** OID of the PublishedService that this request was resolved to, or -1 if it has not yet been successfully resolved. */
-    protected long serviceOid = PublishedService.DEFAULT_OID;
+    /** GOID of the PublishedService that this request was resolved to, or the default if it has not yet been successfully resolved. */
+    protected Goid serviceGoid = PublishedService.DEFAULT_GOID;
 
     /** <code>true</code> indicates that the request was successfully authenticated, or <code>false</code> otherwise. */
     protected boolean authenticated;
@@ -409,7 +410,7 @@ public class MessageSummaryAuditRecord extends AuditRecord implements ZoneableEn
         if (requestId != null) out.write(requestId.getBytes());
         out.write(SERSEP.getBytes());
 
-        out.write(Long.toString(serviceOid).getBytes());
+        out.write(Goid.toString(serviceGoid).getBytes());
         out.write(SERSEP.getBytes());
 
         if (getOperationName() != null) out.write(getOperationName().getBytes()); // this is lazy, must use getter

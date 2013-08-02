@@ -6,7 +6,6 @@ package com.l7tech.server;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.folder.FolderedEntityManager;
-import com.l7tech.objectmodel.folder.FolderedGoidEntityManager;
 import com.l7tech.objectmodel.folder.HasFolder;
 import org.hibernate.HibernateException;
 import org.hibernate.Session;
@@ -176,8 +175,8 @@ public class EntityCrudImpl extends HibernateDaoSupport implements EntityCrud {
             final GoidEntityManager manager = getGoidEntityManager(e.getClass());
             if (manager != null) {
                 GoidEntity goidEntity = (GoidEntity) e;
-                if (goidEntity instanceof HasFolder && manager instanceof FolderedGoidEntityManager) {
-                    ((FolderedGoidEntityManager)manager).updateWithFolder(goidEntity);
+                if (goidEntity instanceof HasFolder && manager instanceof FolderedEntityManager) {
+                    ((FolderedEntityManager)manager).updateWithFolder(goidEntity);
                 } else {
                     manager.update(goidEntity);
                 }
@@ -186,12 +185,7 @@ public class EntityCrudImpl extends HibernateDaoSupport implements EntityCrud {
         } else {
             EntityManager manager = getEntityManager(e.getClass());
             if (manager != null) {
-                PersistentEntity pe = (PersistentEntity) e;
-                if (e instanceof HasFolder && manager instanceof FolderedEntityManager) {
-                    ((FolderedEntityManager)manager).updateWithFolder(pe);
-                } else {
-                    manager.update(pe);
-                }
+                manager.update((PersistentEntity) e);
                 return;
             }
         }

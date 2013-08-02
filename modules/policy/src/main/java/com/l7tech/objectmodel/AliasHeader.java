@@ -1,6 +1,6 @@
 package com.l7tech.objectmodel;
 
-import com.l7tech.objectmodel.folder.HasFolderOid;
+import com.l7tech.objectmodel.folder.HasFolderGoid;
 
 /**
  * EntityHeader for Aliases.
@@ -8,19 +8,19 @@ import com.l7tech.objectmodel.folder.HasFolderOid;
  * <p>Extension of entity header with additional data for the target of the
  * alias and for the containing Folder.</p>
  */
-public class AliasHeader<ET extends PersistentEntity> extends ZoneableEntityHeader implements HasFolderOid {
+public class AliasHeader<ET extends GoidEntity> extends ZoneableEntityHeader implements HasFolderGoid {
 
     //- PUBLIC
 
     public AliasHeader( Alias<ET> alias ) {
-        super( alias.getOid(),
+        super( alias.getGoid(),
                EntityTypeRegistry.getEntityType(alias.getClass()),
                alias instanceof NamedEntity ? ((NamedEntity)alias).getName() : null,
                null,
                alias.getVersion());
         aliasedEntityType = alias.getEntityType();
-        aliasedEntityId = alias.getEntityOid();
-        folderOid = alias.getFolder() != null ? alias.getFolder().getOid() : null;
+        aliasedEntityId = alias.getEntityGoid();
+        folderGoid = alias.getFolder() != null ? alias.getFolder().getGoid() : null;
         securityZoneGoid = alias.getSecurityZone() == null ? null : alias.getSecurityZone().getGoid();
     }
 
@@ -32,25 +32,25 @@ public class AliasHeader<ET extends PersistentEntity> extends ZoneableEntityHead
         this.aliasedEntityType = aliasedEntityType;
     }
 
-    public Long getAliasedEntityId() {
+    public Goid getAliasedEntityId() {
         return aliasedEntityId;
     }
 
-    public void setAliasedEntityId(Long aliasedEntityId) {
+    public void setAliasedEntityId(Goid aliasedEntityId) {
         this.aliasedEntityId = aliasedEntityId;
     }
 
-    public Long getFolderOid() {
-        return folderOid;
+    public Goid getFolderGoid() {
+        return folderGoid;
     }
 
-    public void setFolderOid(Long folderOid) {
-        this.folderOid = folderOid;
+    public void setFolderGoid(Goid folderGoid) {
+        this.folderGoid = folderGoid;
     }
 
     //- PRIVATE
 
     private EntityType aliasedEntityType;
-    private Long aliasedEntityId;
-    private Long folderOid;
+    private Goid aliasedEntityId;
+    private Goid folderGoid;
 }

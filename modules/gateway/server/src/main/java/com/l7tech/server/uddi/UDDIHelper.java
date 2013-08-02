@@ -83,12 +83,12 @@ public class UDDIHelper implements SsgConnectorActivationListener {
     /**
      * Get a single cluster endpoint pair.
      * @param scheme HTTP or HTTPS
-     * @param serviceOid oid of the Published Service
+     * @param serviceGoid goid of the Published Service
      * @return EndpointPair containing the service consumption URL and WSDL URL
      * @throws com.l7tech.server.uddi.UDDIHelper.EndpointNotDefinedException if no endpoint for the request scheme exists.
      */
     public EndpointPair getEndpointForScheme(final UDDIRegistryAdmin.EndpointScheme scheme,
-                                             final long serviceOid) throws EndpointNotDefinedException{
+                                             final Goid serviceGoid) throws EndpointNotDefinedException{
         final Map<Goid,String> connectorProtocols;
         synchronized (activeConnectorProtocols) {
             connectorProtocols = new HashMap<Goid,String>( activeConnectorProtocols );
@@ -99,14 +99,14 @@ public class UDDIHelper implements SsgConnectorActivationListener {
                 if(!connectorProtocols.values().contains("HTTP"))
                     throw new EndpointNotDefinedException("Cannot get endpoint for HTTP as no HTTP listener is defined.");
                 return new EndpointPair(
-                        doGetExternalUrlForService(serviceOid, false),
-                        doGetExternalWsdlUrlForService(serviceOid, false));
+                        doGetExternalUrlForService(serviceGoid, false),
+                        doGetExternalWsdlUrlForService(serviceGoid, false));
             case HTTPS:
                 if(!connectorProtocols.values().contains("HTTPS"))
                     throw new EndpointNotDefinedException("Cannot get endpoint for HTTPS as no HTTPS listener is defined.");
                 return new EndpointPair(
-                        doGetExternalUrlForService(serviceOid, true),
-                        doGetExternalWsdlUrlForService(serviceOid, false));
+                        doGetExternalUrlForService(serviceGoid, true),
+                        doGetExternalWsdlUrlForService(serviceGoid, false));
             default:
                 throw new EndpointNotDefinedException("Unknown scheme: " + scheme.toString());
 
@@ -127,11 +127,11 @@ public class UDDIHelper implements SsgConnectorActivationListener {
      *
      * All URL's returned are specific to the published service with the serviceOid supplied.
      *
-     * @param serviceOid long oid of the published service to generated external URLs for
+     * @param serviceGoid goid of the published service to generated external URLs for
      * @return Collection&lt;EndpointPair&gt; Collection of Pairs where each pair is a distinct end point URL for the
      * service. There should only ever be one http pair and one https pair
      */
-    public Set<EndpointPair> getAllExternalEndpointAndWsdlUrls( long serviceOid ){
+    public Set<EndpointPair> getAllExternalEndpointAndWsdlUrls( Goid serviceGoid ){
         final Set<EndpointPair> endpointsAndWsdlUrls = new HashSet<EndpointPair>();
 
         final Map<Goid,String> connectorProtocols;
@@ -140,8 +140,8 @@ public class UDDIHelper implements SsgConnectorActivationListener {
         }
 
         final EndpointPair httpPair = new EndpointPair(
-                doGetExternalUrlForService( serviceOid, false ),
-                doGetExternalWsdlUrlForService( serviceOid, false ) );
+                doGetExternalUrlForService( serviceGoid, false ),
+                doGetExternalWsdlUrlForService( serviceGoid, false ) );
 
         if ( connectorProtocols.values().contains("HTTP") ) {
             endpointsAndWsdlUrls.add( httpPair );
@@ -149,8 +149,8 @@ public class UDDIHelper implements SsgConnectorActivationListener {
 
         if ( connectorProtocols.values().contains("HTTPS") ) {
             endpointsAndWsdlUrls.add( new EndpointPair(
-                doGetExternalUrlForService( serviceOid, true),
-                doGetExternalWsdlUrlForService( serviceOid, false )
+                doGetExternalUrlForService( serviceGoid, true),
+                doGetExternalWsdlUrlForService( serviceGoid, false )
             ) );
         }
 
@@ -165,11 +165,11 @@ public class UDDIHelper implements SsgConnectorActivationListener {
     /**
      * Get the WSDL download URL for the given service identifier (OID)
      *
-     * @param serviceOid The oid for the service
+     * @param serviceGoid The goid for the service
      * @return The URL
      */
-    public String getExternalWsdlUrlForService( final long serviceOid )  {
-        return doGetExternalWsdlUrlForService( serviceOid, false );
+    public String getExternalWsdlUrlForService( final Goid serviceGoid )  {
+        return doGetExternalWsdlUrlForService( serviceGoid, false );
     }
 
     /**
@@ -190,7 +190,7 @@ public class UDDIHelper implements SsgConnectorActivationListener {
         return SecureSpanConstants.WSDL_PROXY_FILE + "?" + SecureSpanConstants.HttpQueryParameters.PARAM_SERVICEOID;
     }
 
-    public String getExternalPolicyUrlForService( final long serviceOid,
+    public String getExternalPolicyUrlForService( final Goid serviceGoid,
                                                   final boolean fullPolicy,
                                                   final boolean inlinePolicy ){
         final String policyUrlTemplate = serverConfig.getProperty(
@@ -201,13 +201,13 @@ public class UDDIHelper implements SsgConnectorActivationListener {
                 getExternalHostName(),
                 getExternalPort(),
                 getExternalHttpsPort(),
-                Long.toString(serviceOid),
+                serviceGoid.toHexString(),
                 fullPolicy ? "yes" : "no",
                 inlinePolicy ? "yes" : "no");
     }
 
-    public String getExternalUrlForService( final long serviceOid ) {
-        return doGetExternalUrlForService( serviceOid, false );
+    public String getExternalUrlForService( final Goid serviceGoid ) {
+        return doGetExternalUrlForService( serviceGoid, false );
     }
 
     /**
@@ -447,12 +447,12 @@ public class UDDIHelper implements SsgConnectorActivationListener {
         return serverConfig.getIntProperty( PROP_RESULT_BATCH_SIZE, defaultResultBatchSize );
     }
 
-    private String doGetExternalUrlForService( final long serviceOid, final boolean secure ) {
-        return buildCompleteGatewayUrl(SecureSpanConstants.SERVICE_FILE, secure) + serviceOid;
+    private String doGetExternalUrlForService( final Goid serviceGoid, final boolean secure ) {
+        return buildCompleteGatewayUrl(SecureSpanConstants.SERVICE_FILE, secure) + serviceGoid.toHexString();
     }
 
-    private String doGetExternalWsdlUrlForService( final long serviceOid, final boolean secure )  {
-        String query = SecureSpanConstants.HttpQueryParameters.PARAM_SERVICEOID + "=" + serviceOid;
+    private String doGetExternalWsdlUrlForService( final Goid serviceGoid, final boolean secure )  {
+        String query = SecureSpanConstants.HttpQueryParameters.PARAM_SERVICEOID + "=" + serviceGoid.toHexString();
         return buildCompleteGatewayUrl(SecureSpanConstants.WSDL_PROXY_FILE, secure) + "?" + query;
     }
 

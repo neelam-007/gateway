@@ -9,33 +9,33 @@ import com.l7tech.objectmodel.ZoneableEntityHeader;
  *
  * @author darmstrong
  */
-public class FolderHeader extends ZoneableEntityHeader implements HasFolderOid {
+public class FolderHeader extends ZoneableEntityHeader implements HasFolderGoid {
 
     //- PUBLIC
 
     public FolderHeader(final Folder folder) {
-        this( folder.getOid(),
+        this( folder.getGoid(),
               folder.getName(),
-              folder.getFolder() == null ? null : folder.getFolder().getOid(),
+              folder.getFolder() == null ? null : folder.getFolder().getGoid(),
               folder.getVersion(),
               folder.getPath(),
               folder.getSecurityZone() == null ? null : folder.getSecurityZone().getGoid());
     }
 
-    public FolderHeader( final long objectid,
+    public FolderHeader( final Goid goid,
                          final String name,
-                         final Long parentFolderOid,
+                         final Goid parentFolderGoid,
                          final Integer version,
                          final String path,
                          final Goid securityZoneGoid) {
-        super(objectid, EntityType.FOLDER, name, path, version);
-        this.parentFolderOid = parentFolderOid;
+        super(goid, EntityType.FOLDER, name, path, version);
+        this.parentFolderGoid = parentFolderGoid;
         this.path = path;
         this.securityZoneGoid = securityZoneGoid;
     }
 
-    public Long getParentFolderOid() {
-        return parentFolderOid;
+    public Goid getParentFolderGoid() {
+        return parentFolderGoid;
     }
 
     /**
@@ -53,18 +53,18 @@ public class FolderHeader extends ZoneableEntityHeader implements HasFolderOid {
     }
 
     @Override
-    public Long getFolderOid() {
-        return getParentFolderOid();
+    public Goid getFolderGoid() {
+        return getParentFolderGoid();
     }
 
     @Override
-    public void setFolderOid(Long folderOid) {
-        throw new UnsupportedOperationException("set folderOid not supported");
+    public void setFolderGoid(Goid folderOid) {
+        throw new UnsupportedOperationException("set folderGoid not supported");
     }
 
     //- PRIVATE
 
-    private final Long parentFolderOid;
+    private final Goid parentFolderGoid;
     private final String path;
 }
 

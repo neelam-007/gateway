@@ -5,12 +5,12 @@ import com.l7tech.gateway.common.audit.AuditFactory;
 import com.l7tech.gateway.common.audit.MessageProcessingMessages;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.transport.ResolutionConfiguration;
+import com.l7tech.message.HasServiceGoid;
 import com.l7tech.message.HttpRequestKnob;
 import com.l7tech.message.Message;
-import com.l7tech.message.HasServiceOid;
+import com.l7tech.objectmodel.Goid;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
@@ -21,20 +21,20 @@ import java.util.regex.Pattern;
  * Resolves services based on the Service OID that is passed in the original
  * url or at the end of uri. The format expected is <i>/service/3145729</i>.
  *
- * Also resolves using the HasServiceOid message facet.
+ * Also resolves using the HasServiceGoid message facet.
  */
-public class ServiceOidResolver extends NameValueServiceResolver<String> {
+public class ServiceIdResolver extends NameValueServiceResolver<String> {
     private final Pattern[] regexPatterns;
-    // when disabled we still support HasServiceOid for hard coded service resolution
+    // when disabled we still support HasServiceGoid for hard coded service resolution
     private final AtomicBoolean enabled = new AtomicBoolean(true);
     private final AtomicBoolean enableOriginalUrlHeader = new AtomicBoolean(true);
 
-    public ServiceOidResolver( final AuditFactory auditorFactory ) {
+    public ServiceIdResolver(final AuditFactory auditorFactory) {
         super( auditorFactory );
         List<Pattern> compiled = new ArrayList<Pattern>();
 
         try {
-            for (String s : SecureSpanConstants.RESOLUTION_BY_OID_REGEXES) {
+            for (String s : SecureSpanConstants.RESOLUTION_BY_ID_REGEXES) {
                 compiled.add(Pattern.compile(s));
             }
         } catch (Exception e) {
@@ -55,19 +55,23 @@ public class ServiceOidResolver extends NameValueServiceResolver<String> {
 
     @Override
     protected List<String> buildTargetValues(PublishedService service) {
-        return Arrays.asList(Long.toString(service.getOid()));
+        ArrayList<String> targetValues = new ArrayList<>();
+        targetValues.add(Goid.toString(service.getGoid()));
+        if(service.getOldOid() != null)
+            targetValues.add(Long.toString(service.getOldOid()));
+        return targetValues;
     }
 
     /**
      *
      * @param request the message request to examine
-     * @return the service OID if found, <b>null</b> otherwise
+     * @return the service ID if found, <b>null</b> otherwise
      * @throws ServiceResolutionException on service resolution error (multiple
      */
     @Override
     protected String getRequestValue(Message request) throws ServiceResolutionException {
-        HasServiceOid hso = request.getKnob( HasServiceOid.class );
-        if ( hso != null && hso.getServiceOid() > 0 ) return Long.toString( hso.getServiceOid() );
+        HasServiceGoid hso = request.getKnob( HasServiceGoid.class );
+        if ( hso != null && !Goid.isDefault(hso.getServiceGoid()) ) return Goid.toString( hso.getServiceGoid() );
 
         if ( !enabled.get() || regexPatterns == null) { // compile failed
             return null;

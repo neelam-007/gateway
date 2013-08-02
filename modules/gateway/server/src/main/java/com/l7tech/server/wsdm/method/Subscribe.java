@@ -1,5 +1,6 @@
 package com.l7tech.server.wsdm.method;
 
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.*;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.server.wsdm.Namespaces;
@@ -44,8 +45,8 @@ public class Subscribe extends ESMMethod {
 
     private static final int MAX_REFERENCE_PARAMS_SIZE = 16384; // match Subscription.getReferenceParams column length
 
-    private Subscribe(final Element subscribeEl, Document doc, Message request, long esmServiceOid) throws GenericNotificationExceptionFault, WsAddressingFault, MalformedURLException {
-        super(doc, request, esmServiceOid);
+    private Subscribe(final Element subscribeEl, Document doc, Message request, Goid esmServiceGoid) throws GenericNotificationExceptionFault, WsAddressingFault, MalformedURLException {
+        super(doc, request, esmServiceGoid);
         try {
             // extract ConsumerReference/Address/Text()
             Element consumerReferenceEl = XmlUtil.findOnlyOneChildElementByName(subscribeEl, Namespaces.WSNT, "ConsumerReference");
@@ -130,7 +131,7 @@ public class Subscribe extends ESMMethod {
         }
     }
 
-    public static Subscribe resolve(Message request, long esmServiceOid) throws GenericNotificationExceptionFault, WsAddressingFault, SAXException, IOException {
+    public static Subscribe resolve(Message request, Goid esmServiceGoid) throws GenericNotificationExceptionFault, WsAddressingFault, SAXException, IOException {
         Document doc = request.getXmlKnob().getDocumentReadOnly();
         Element bodychild;
         try {
@@ -140,7 +141,7 @@ public class Subscribe extends ESMMethod {
         }
         if (bodychild == null) return null;
         if (testElementLocalName(bodychild, "Subscribe")) {
-            return new Subscribe(bodychild, doc, request, esmServiceOid);
+            return new Subscribe(bodychild, doc, request, esmServiceGoid);
         }
         return null;
     }

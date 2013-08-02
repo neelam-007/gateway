@@ -18,42 +18,42 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author alex
  */
 public class ManagerPolicyCache implements EntityInvalidationListener, ReadOnlyEntityManager<Policy, EntityHeader>, GuidBasedEntityManager<Policy>, ApplicationListener {
-    private final Map<Long, Policy> cache = new ConcurrentHashMap<Long, Policy>();
-    private final Map<String, Long> guidToOidMap = new ConcurrentHashMap<String, Long>();
+    private final Map<Goid, Policy> cache = new ConcurrentHashMap<Goid, Policy>();
+    private final Map<String, Goid> guidToOidMap = new ConcurrentHashMap<String, Goid>();
 
     public ManagerPolicyCache() {
     }
 
     @Override
-    public Policy findByPrimaryKey(Goid goid) throws FindException {
-        throw new UnsupportedOperationException("Goids are not yet supported here.");
+    public Policy findByPrimaryKey(long oid) throws FindException {
+        throw new UnsupportedOperationException("Oids are not supported here.");
     }
 
     @Override
-    public Policy findByPrimaryKey(long oid) throws FindException {
-        Policy p = cache.get(oid);
+    public Policy findByPrimaryKey(Goid goid) throws FindException {
+        Policy p = cache.get(goid);
         if (p != null) return p;
 
-        p = Registry.getDefault().getPolicyAdmin().findPolicyByPrimaryKey(oid);
+        p = Registry.getDefault().getPolicyAdmin().findPolicyByPrimaryKey(goid);
         if (p != null) {
-            cache.put(oid, p);
-            guidToOidMap.put(p.getGuid(), p.getOid());
+            cache.put(goid, p);
+            guidToOidMap.put(p.getGuid(), p.getGoid());
         }
         return p;
     }
 
     @Override
     public Policy findByGuid(String guid) throws FindException {
-        Long oid = guidToOidMap.get(guid);
-        if(oid == null) {
+        Goid goid = guidToOidMap.get(guid);
+        if(goid == null) {
             Policy p = Registry.getDefault().getPolicyAdmin().findPolicyByGuid(guid);
             if(p != null) {
-                cache.put(p.getOid(), p);
-                guidToOidMap.put(p.getGuid(), p.getOid());
+                cache.put(p.getGoid(), p);
+                guidToOidMap.put(p.getGuid(), p.getGoid());
             }
             return p;
         } else {
-            Policy p = findByPrimaryKey(oid);
+            Policy p = findByPrimaryKey(goid);
             if(p == null) {
                 guidToOidMap.remove(guid);
             }

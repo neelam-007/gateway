@@ -6,6 +6,7 @@ import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.FolderHeader;
@@ -91,7 +92,7 @@ public abstract class AbstractDynamicRolePermissionsUpgradeTask implements Upgra
         final Collection<PolicyHeader> policies = policyManager.findAllHeaders();
 
         for ( final PolicyHeader policyHeader : policies ) {
-            final long policyOid = policyHeader.getOid();
+            final Goid policyGoid = policyHeader.getGoid();
 
             PolicyType policyType = policyHeader.getPolicyType();
             if ( shouldIgnorePolicyType( policyType ) )
@@ -102,7 +103,7 @@ public abstract class AbstractDynamicRolePermissionsUpgradeTask implements Upgra
                 createRole = addPermissionToRole(
                     roleManager,
                     EntityType.POLICY,
-                    policyOid,
+                    policyGoid,
                     perm.left,
                     perm.right);
                 if ( createRole )
@@ -110,12 +111,12 @@ public abstract class AbstractDynamicRolePermissionsUpgradeTask implements Upgra
             }
 
             if ( createRole && shouldCreateMissingRoles() ) {
-                final Policy policy = policyManager.findByPrimaryKey(policyOid);
+                final Policy policy = policyManager.findByPrimaryKey(policyGoid);
                 if ( policy != null ) {
-                    logger.warning( "Missing role for policy '" + policyOid + "', creating new role." );
+                    logger.warning( "Missing role for policy '" + policyGoid + "', creating new role." );
                     policyManager.createRoles( policy );
                 } else {
-                    logger.warning( "Missing role for policy '" + policyOid + "', not creating new role (unable to access policy)." );
+                    logger.warning( "Missing role for policy '" + policyGoid + "', not creating new role (unable to access policy)." );
                 }
             }
         }
@@ -131,14 +132,14 @@ public abstract class AbstractDynamicRolePermissionsUpgradeTask implements Upgra
         final Collection<ServiceHeader> services = serviceManager.findAllHeaders(false);
 
         for ( final ServiceHeader serviceHeader : services ) {
-            final long serviceOid = serviceHeader.getOid();
+            final Goid serviceGoid = serviceHeader.getGoid();
 
             boolean createRole = false;
             for ( Pair<OperationType, EntityType> perm : perms ) {
                 createRole = addPermissionToRole(
                     roleManager,
                     EntityType.SERVICE,
-                    serviceOid,
+                    serviceGoid,
                     perm.left,
                     perm.right);
                 if ( createRole )
@@ -146,12 +147,12 @@ public abstract class AbstractDynamicRolePermissionsUpgradeTask implements Upgra
             }
 
             if ( createRole && shouldCreateMissingRoles() ) {
-                final PublishedService service = serviceManager.findByPrimaryKey(serviceOid);
+                final PublishedService service = serviceManager.findByPrimaryKey(serviceGoid);
                 if ( service != null ) {
-                    logger.warning( "Missing role for service '" + serviceOid + "', creating new role." );
+                    logger.warning( "Missing role for service '" + serviceGoid + "', creating new role." );
                     serviceManager.createRoles( service );
                 } else {
-                    logger.warning( "Missing role for service '" + serviceOid + "', not creating new role (unable to access service)." );
+                    logger.warning( "Missing role for service '" + serviceGoid + "', not creating new role (unable to access service)." );
                 }
             }
         }
@@ -163,14 +164,14 @@ public abstract class AbstractDynamicRolePermissionsUpgradeTask implements Upgra
         final Collection<FolderHeader> folders = folderManager.findAllHeaders();
 
         for ( final FolderHeader folder : folders ) {
-            final long folderOid = folder.getOid();
+            final Goid folderGoid = folder.getGoid();
             boolean createRole = false;
             for ( Pair<OperationType, EntityType> perm : perms ) {
                 // expect both Manage X Folder and View X Folder roles
                 createRole = addPermissionToRoles(
                         roleManager,
                         EntityType.FOLDER,
-                        folderOid,
+                        folderGoid,
                         perm.left,
                         perm.right,
                         2);
@@ -178,12 +179,12 @@ public abstract class AbstractDynamicRolePermissionsUpgradeTask implements Upgra
                     break;
             }
             if ( createRole && shouldCreateMissingRoles() ) {
-                final Folder f = folderManager.findByPrimaryKey(folderOid);
+                final Folder f = folderManager.findByPrimaryKey(folderGoid);
                 if ( f != null ) {
-                    logger.warning( "Missing role for folder '" + folderOid + "', creating new role." );
+                    logger.warning( "Missing role for folder '" + folderGoid + "', creating new role." );
                     folderManager.createRoles( f );
                 } else {
-                    logger.warning( "Missing role for folder '" + folderOid + "', not creating new role (unable to access folder)." );
+                    logger.warning( "Missing role for folder '" + folderGoid + "', not creating new role (unable to access folder)." );
                 }
             }
         }
@@ -203,21 +204,21 @@ public abstract class AbstractDynamicRolePermissionsUpgradeTask implements Upgra
 
     private boolean addPermissionToRole( final RoleManager roleManager,
                                          final EntityType entityType,
-                                         final long entityOid,
+                                         final Goid entityGoid,
                                          final OperationType permissionOp,
                                          final EntityType permissionEntity ) throws ObjectModelException {
-        return addPermissionToRoles(roleManager, entityType, entityOid, permissionOp, permissionEntity, 1);
+        return addPermissionToRoles(roleManager, entityType, entityGoid, permissionOp, permissionEntity, 1);
     }
 
     private boolean addPermissionToRoles(final RoleManager roleManager,
                                          final EntityType entityType,
-                                         final long entityOid,
+                                         final Goid entityGoid,
                                          final OperationType permissionOp,
                                          final EntityType permissionEntity,
                                          final int numExpectedRoles) throws ObjectModelException {
     boolean createRole = false;
 
-    final Collection<Role> roles = roleManager.findEntitySpecificRoles(entityType, entityOid);
+    final Collection<Role> roles = roleManager.findEntitySpecificRoles(entityType, entityGoid);
 
     if ( roles.isEmpty() ) {
         createRole = true;
@@ -228,7 +229,7 @@ public abstract class AbstractDynamicRolePermissionsUpgradeTask implements Upgra
             }
         }
     } else {
-        logger.warning( "Not upgrading roles for "+entityType.getName()+" '" + entityOid + "', expected " + numExpectedRoles + " role(s) but found " +roles.size()+ "." );
+        logger.warning( "Not upgrading roles for "+entityType.getName()+" '" + entityGoid + "', expected " + numExpectedRoles + " role(s) but found " +roles.size()+ "." );
     }
 
     return createRole;

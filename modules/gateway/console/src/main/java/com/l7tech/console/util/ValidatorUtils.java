@@ -3,11 +3,8 @@ package com.l7tech.console.util;
 import com.l7tech.common.protocol.SecureSpanConstants;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -22,7 +19,7 @@ public class ValidatorUtils {
     private static final List<Pattern> compiled;
     static {
         List<Pattern> allCompiled = new ArrayList<Pattern>();
-        for (String s : SecureSpanConstants.RESOLUTION_BY_OID_REGEXES) {
+        for (String s : SecureSpanConstants.RESOLUTION_BY_ID_REGEXES) {
             allCompiled.add(Pattern.compile(s));
         }
         compiled = Collections.unmodifiableList(allCompiled);
@@ -43,20 +40,20 @@ public class ValidatorUtils {
                 message = "Cannot set empty URI on " + serviceType + " service";
             } else if (path.startsWith(SecureSpanConstants.SSG_RESERVEDURI_PREFIX)) {
                 message = "Custom resolution path cannot start with " + SecureSpanConstants.SSG_RESERVEDURI_PREFIX;
-            } else if (uriConflictsWithServiceOIDResolver(path)) {
+            } else if (uriConflictsWithServiceIDResolver(path)) {
                 message = "This custom resolution path conflicts with an internal resolution mechanism.";
             }
         } else {
             if (path != null && path.length() > 0 && path.startsWith(SecureSpanConstants.SSG_RESERVEDURI_PREFIX)) {
                 message = "Custom resolution path cannot start with " + SecureSpanConstants.SSG_RESERVEDURI_PREFIX;
-            } else if (path != null && path.length() > 0 && uriConflictsWithServiceOIDResolver(path)) {
+            } else if (path != null && path.length() > 0 && uriConflictsWithServiceIDResolver(path)) {
                 message = "This custom resolution path conflicts with an internal resolution mechanism.";
             }
         }
         return message;
     }
 
-    private static boolean uriConflictsWithServiceOIDResolver(String newURI) {
+    private static boolean uriConflictsWithServiceIDResolver(String newURI) {
 
         for (Pattern regexPattern : compiled) {
             Matcher matcher = regexPattern.matcher(newURI);

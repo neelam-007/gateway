@@ -7,6 +7,7 @@ import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.FolderHeader;
 import com.l7tech.policy.Policy;
@@ -29,7 +30,6 @@ import org.springframework.context.ApplicationContext;
 import java.util.*;
 
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.argThat;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.anyString;
@@ -71,14 +71,14 @@ public class Upgrade70To71UpgradeRolesTest {
         when(policyManager.findAllHeaders()).thenReturn(policies);
         when(serviceManager.findAllHeaders(false)).thenReturn(services);
         when(folderManager.findAllHeaders()).thenReturn(folders);
-        when(roleManager.findEntitySpecificRoles(eq(EntityType.POLICY), anyLong())).thenReturn(policyRoles);
-        when(roleManager.findEntitySpecificRoles(eq(EntityType.SERVICE), anyLong())).thenReturn(serviceRoles);
-        when(roleManager.findEntitySpecificRoles(eq(EntityType.FOLDER), anyLong())).thenReturn(folderRoles);
+        when(roleManager.findEntitySpecificRoles(eq(EntityType.POLICY), any(Goid.class))).thenReturn(policyRoles);
+        when(roleManager.findEntitySpecificRoles(eq(EntityType.SERVICE), any(Goid.class))).thenReturn(serviceRoles);
+        when(roleManager.findEntitySpecificRoles(eq(EntityType.FOLDER), any(Goid.class))).thenReturn(folderRoles);
     }
 
     @Test
     public void upgradePolicyRoles() throws Exception {
-        policies.add(createPolicyHeader(1L));
+        policies.add(createPolicyHeader(new Goid(0,1L)));
         policyRoles.add(createRole("Manage Policy"));
         upgrade.upgrade(context);
         verify(roleManager).update(argThat(hasRoleWithNameAndPermission("Manage Policy", OperationType.READ, EntityType.ENCAPSULATED_ASSERTION)));
@@ -86,7 +86,7 @@ public class Upgrade70To71UpgradeRolesTest {
 
     @Test
     public void upgradeServiceRoles() throws Exception {
-        services.add(createServiceHeader(1L));
+        services.add(createServiceHeader(new Goid(0,1L)));
         serviceRoles.add(createRole("Manage Service"));
         upgrade.upgrade(context);
         verify(roleManager).update(argThat(hasRoleWithNameAndPermission("Manage Service", OperationType.READ, EntityType.ENCAPSULATED_ASSERTION)));
@@ -95,7 +95,7 @@ public class Upgrade70To71UpgradeRolesTest {
     @BugId("SSM-4256")
     @Test
     public void upgradeFolderRoles() throws Exception {
-        folders.add(createFolderHeader(1L));
+        folders.add(createFolderHeader(new Goid(0,1L)));
         folderRoles.add(createRole("Manage Folder"));
         folderRoles.add(createRole("View Folder"));
         upgrade.upgrade(context);
@@ -112,7 +112,7 @@ public class Upgrade70To71UpgradeRolesTest {
 
     @Test
     public void ignoreNonPolicyFragments() throws Exception {
-        policies.add(createPolicyHeader(1L, PolicyType.PRIVATE_SERVICE));
+        policies.add(createPolicyHeader(new Goid(0,1L), PolicyType.PRIVATE_SERVICE));
         policyRoles.add(createRole("Manage Policy"));
         upgrade.upgrade(context);
         verify(roleManager, never()).update(any(Role.class));
@@ -120,7 +120,7 @@ public class Upgrade70To71UpgradeRolesTest {
 
     @Test
     public void doNotCreateMissingPolicyRoles() throws Exception {
-        policies.add(createPolicyHeader(1L));
+        policies.add(createPolicyHeader(new Goid(0,1L)));
         policyRoles.clear();
         upgrade.upgrade(context);
         verify(roleManager, never()).update(any(Role.class));
@@ -129,7 +129,7 @@ public class Upgrade70To71UpgradeRolesTest {
 
     @Test
     public void unexpectedNumberOfPolicyRoles() throws Exception {
-        policies.add(createPolicyHeader(1L));
+        policies.add(createPolicyHeader(new Goid(0,1L)));
         policyRoles.add(createRole("Manage Policy"));
         policyRoles.add(createRole("Some Extra Role"));
         upgrade.upgrade(context);
@@ -138,7 +138,7 @@ public class Upgrade70To71UpgradeRolesTest {
 
     @Test
     public void policyRoleAlreadyHasPermission() throws Exception {
-        policies.add(createPolicyHeader(1L));
+        policies.add(createPolicyHeader(new Goid(0,1L)));
         policyRoles.add(createRole("Manage Policy", Collections.singletonMap(OperationType.READ, EntityType.ENCAPSULATED_ASSERTION)));
         upgrade.upgrade(context);
         verify(roleManager, never()).update(any(Role.class));
@@ -159,7 +159,7 @@ public class Upgrade70To71UpgradeRolesTest {
 
     @Test
     public void doNotCreateMissingServiceRoles() throws Exception {
-        services.add(createServiceHeader(1L));
+        services.add(createServiceHeader(new Goid(0,1L)));
         serviceRoles.clear();
         upgrade.upgrade(context);
         verify(roleManager, never()).update(any(Role.class));
@@ -168,7 +168,7 @@ public class Upgrade70To71UpgradeRolesTest {
 
     @Test
     public void unexpectedNumberOfServiceRoles() throws Exception {
-        services.add(createServiceHeader(1L));
+        services.add(createServiceHeader(new Goid(0,1L)));
         serviceRoles.add(createRole("Manage Service"));
         serviceRoles.add(createRole("Some Extra Role"));
         upgrade.upgrade(context);
@@ -177,7 +177,7 @@ public class Upgrade70To71UpgradeRolesTest {
 
     @Test
     public void serviceRoleAlreadyHasPermission() throws Exception {
-        services.add(createServiceHeader(1L));
+        services.add(createServiceHeader(new Goid(0,1L)));
         serviceRoles.add(createRole("Manage Service", Collections.singletonMap(OperationType.READ, EntityType.ENCAPSULATED_ASSERTION)));
         upgrade.upgrade(context);
         verify(roleManager, never()).update(any(Role.class));
@@ -198,7 +198,7 @@ public class Upgrade70To71UpgradeRolesTest {
 
     @Test
     public void doNotCreateMissingFolderRoles() throws Exception {
-        folders.add(createFolderHeader(1L));
+        folders.add(createFolderHeader(new Goid(0,1L)));
         folderRoles.clear();
         upgrade.upgrade(context);
         verify(roleManager, never()).update(any(Role.class));
@@ -207,7 +207,7 @@ public class Upgrade70To71UpgradeRolesTest {
 
     @Test
     public void tooLittleFolderRoles() throws Exception {
-        folders.add(createFolderHeader(1L));
+        folders.add(createFolderHeader(new Goid(0,1L)));
         // missing View Folder role
         folderRoles.add(createRole("Manage Folder"));
         upgrade.upgrade(context);
@@ -217,7 +217,7 @@ public class Upgrade70To71UpgradeRolesTest {
 
     @Test
     public void tooManyFolderRoles() throws Exception {
-        folders.add(createFolderHeader(1L));
+        folders.add(createFolderHeader(new Goid(0,1L)));
         folderRoles.add(createRole("Manage Folder"));
         folderRoles.add(createRole("View Folder"));
         folderRoles.add(createRole("Some Extra Role"));
@@ -228,7 +228,7 @@ public class Upgrade70To71UpgradeRolesTest {
 
     @Test
     public void folderRoleAlreadyHasPermission() throws Exception {
-        folders.add(createFolderHeader(1L));
+        folders.add(createFolderHeader(new Goid(0,1L)));
         folderRoles.add(createRole("Manage Folder", Collections.singletonMap(OperationType.READ, EntityType.ENCAPSULATED_ASSERTION)));
         folderRoles.add(createRole("View Folder"));
         upgrade.upgrade(context);
@@ -238,7 +238,7 @@ public class Upgrade70To71UpgradeRolesTest {
 
     @Test
     public void folderRolesAlreadyHavePermission() throws Exception {
-        folders.add(createFolderHeader(1L));
+        folders.add(createFolderHeader(new Goid(0,1L)));
         folderRoles.add(createRole("Manage Folder", Collections.singletonMap(OperationType.READ, EntityType.ENCAPSULATED_ASSERTION)));
         folderRoles.add(createRole("View Folder", Collections.singletonMap(OperationType.READ, EntityType.ENCAPSULATED_ASSERTION)));
         upgrade.upgrade(context);
@@ -253,9 +253,9 @@ public class Upgrade70To71UpgradeRolesTest {
 
     @Test(expected = NonfatalUpgradeException.class)
     public void roleException() throws Exception {
-        policies.add(createPolicyHeader(1L));
+        policies.add(createPolicyHeader(new Goid(0,1L)));
         policyRoles.add(createRole("Manage Policy"));
-        when(roleManager.findEntitySpecificRoles(any(EntityType.class), anyLong())).thenThrow(new FindException("mocking exception"));
+        when(roleManager.findEntitySpecificRoles(any(EntityType.class), any(Goid.class))).thenThrow(new FindException("mocking exception"));
         upgrade.upgrade(context);
     }
 
@@ -299,25 +299,25 @@ public class Upgrade70To71UpgradeRolesTest {
         return new RoleMatcher(name, operationType, entityType);
     }
 
-    private PolicyHeader createPolicyHeader(final long oid, final PolicyType policyType) {
+    private PolicyHeader createPolicyHeader(final Goid oid, final PolicyType policyType) {
         final Policy policy = new Policy(policyType, "testPolicy", "xml", false);
-        policy.setOid(oid);
+        policy.setGoid(oid);
         return new PolicyHeader(policy);
     }
 
-    private PolicyHeader createPolicyHeader(final long oid) {
+    private PolicyHeader createPolicyHeader(final Goid oid) {
         return createPolicyHeader(oid, PolicyType.INCLUDE_FRAGMENT);
     }
 
-    private ServiceHeader createServiceHeader(final long oid) {
+    private ServiceHeader createServiceHeader(final Goid oid) {
         final PublishedService service = new PublishedService();
-        service.setOid(oid);
+        service.setGoid(oid);
         return new ServiceHeader(service);
     }
 
-    private FolderHeader createFolderHeader(final long oid) {
+    private FolderHeader createFolderHeader(final Goid oid) {
         final Folder folder = new Folder("testFolder", null);
-        folder.setOid(oid);
+        folder.setGoid(oid);
         return new FolderHeader(folder);
     }
 

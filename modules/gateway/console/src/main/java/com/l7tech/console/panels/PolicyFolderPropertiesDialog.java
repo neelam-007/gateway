@@ -7,6 +7,7 @@ import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.EntityUtil;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.SecurityZone;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.FolderHeader;
@@ -98,7 +99,7 @@ public class PolicyFolderPropertiesDialog extends JDialog {
 
         nameField.setText(header.getName());
         zoneControl.configure(EntityType.FOLDER,
-                header.getOid() == Folder.DEFAULT_OID ? OperationType.CREATE : readOnly ? OperationType.READ : OperationType.UPDATE,
+                Goid.isDefault(header.getGoid())  ? OperationType.CREATE : readOnly ? OperationType.READ : OperationType.UPDATE,
                 header.getSecurityZoneGoid() == null ? null : SecurityZoneUtil.getSecurityZoneByGoid(header.getSecurityZoneGoid()));
 
         addWindowListener(new WindowAdapter() {

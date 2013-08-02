@@ -22,8 +22,8 @@ public final class DerbyFunctions {
      * @param low  The low long
      * @return The goid bytes. This can be set to a 'char(16) for bit data' in derby
      */
-    public static byte[] toGoid(long high, long low) {
-        return new Goid(high, low).getBytes();
+    public static byte[] toGoid(Long high, Long low) {
+        return high != null && low != null ? new Goid(high, low).getBytes() : null;
     }
 
     /**
@@ -33,7 +33,7 @@ public final class DerbyFunctions {
      * @return The hex string representation of the goid
      */
     public static String goidToString(byte[] bytes) {
-        return new Goid(bytes).toHexString();
+        return bytes != null ? new Goid(bytes).toHexString() : null;
     }
 
     /**

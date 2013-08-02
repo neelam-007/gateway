@@ -322,7 +322,7 @@ public class DecryptElementAssertionPropertiesDialog extends JDialog {
                         log.log(Level.WARNING, "Invalid XML", e1);
                     }
                     String name = currentOperation == null ? null : currentOperation.getName();
-                    long objectId = (policyNode instanceof ServiceNode)? policyNode.getEntityOid() : -1;
+                    Goid objectId = (policyNode instanceof ServiceNode)? policyNode.getEntityGoid() : GoidEntity.DEFAULT_GOID;
                     sm = new SampleMessage(objectId, name, name, xml);
                 } catch (Exception ex) {
                     throw new RuntimeException("Couldn't find PublishedService", ex);
@@ -437,7 +437,7 @@ public class DecryptElementAssertionPropertiesDialog extends JDialog {
         SampleMessageComboEntry whichEntryToSelect = null;
         try {
             ServiceAdmin serviceManager = Registry.getDefault().getServiceManager();
-            long objectId = (policyNode instanceof ServiceNode)? policyNode.getEntityOid() : -1;
+            Goid objectId = (policyNode instanceof ServiceNode)? policyNode.getEntityGoid() : GoidEntity.DEFAULT_GOID;
             sampleMessages = serviceManager.findSampleMessageHeaders(objectId, operationName);
             for (EntityHeader sampleMessage : sampleMessages) {
                 Goid thisGoid = sampleMessage.getGoid();

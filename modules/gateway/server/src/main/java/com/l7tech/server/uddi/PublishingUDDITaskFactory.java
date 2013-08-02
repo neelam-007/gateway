@@ -57,7 +57,7 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                 case PROXY:
                     if (publishStatus.getPublishStatus() == UDDIPublishStatus.PublishStatus.PUBLISH ||
                             publishStatus.getPublishStatus() == UDDIPublishStatus.PublishStatus.PUBLISH_FAILED) {
-                        final PublishedService service = serviceCache.getCachedService(uddiProxiedServiceInfo.getPublishedServiceOid());
+                        final PublishedService service = serviceCache.getCachedService(uddiProxiedServiceInfo.getPublishedServiceGoid());
                         task = new PublishGatewayWsdlUddiTask(this, service);
                     } else if (publishStatus.getPublishStatus() == UDDIPublishStatus.PublishStatus.DELETE ||
                             publishStatus.getPublishStatus() == UDDIPublishStatus.PublishStatus.DELETE_FAILED) {
@@ -88,7 +88,7 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
 
                     break;
                 case OVERWRITE:
-                    final PublishedService ps = serviceCache.getCachedService(uddiProxiedServiceInfo.getPublishedServiceOid());
+                    final PublishedService ps = serviceCache.getCachedService(uddiProxiedServiceInfo.getPublishedServiceGoid());
                     final UDDIServiceControl serviceControl = publishUDDIEvent.getServiceControl();
                     if (serviceControl == null){
                         try {
@@ -106,7 +106,7 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                     } else {
                         if (publishStatus.getPublishStatus() == UDDIPublishStatus.PublishStatus.PUBLISH ||
                                 publishStatus.getPublishStatus() == UDDIPublishStatus.PublishStatus.PUBLISH_FAILED) {
-                            final PublishedService service = serviceCache.getCachedService(uddiProxiedServiceInfo.getPublishedServiceOid());
+                            final PublishedService service = serviceCache.getCachedService(uddiProxiedServiceInfo.getPublishedServiceGoid());
                             task = new PublishGatewayWsdlUddiTask(this, service);
                         } else if (publishStatus.getPublishStatus() == UDDIPublishStatus.PublishStatus.DELETE ||
                                 publishStatus.getPublishStatus() == UDDIPublishStatus.PublishStatus.DELETE_FAILED) {
@@ -181,24 +181,24 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                 }
 
                 final PublishedService publishedService =
-                        factory.serviceCache.getCachedService(uddiProxiedServiceInfo.getPublishedServiceOid());
+                        factory.serviceCache.getCachedService(uddiProxiedServiceInfo.getPublishedServiceGoid());
 
                 UDDIServiceControl serviceControl =
-                        factory.uddiServiceControlManager.findByPublishedServiceOid(uddiProxiedServiceInfo.getPublishedServiceOid());
+                        factory.uddiServiceControlManager.findByPublishedServiceGoid(uddiProxiedServiceInfo.getPublishedServiceGoid());
                 if (serviceControl == null)
-                    throw new IllegalStateException("No UDDIServiceControl found for PublishedService with id #(" + uddiProxiedServiceInfo.getPublishedServiceOid() + ")");
+                    throw new IllegalStateException("No UDDIServiceControl found for PublishedService with id #(" + uddiProxiedServiceInfo.getPublishedServiceGoid() + ")");
 
                 if (uddiProxiedServiceInfo.isRemoveOtherBindings() && serviceControl.isUnderUddiControl()) {
                     throw new IllegalStateException("Cannot remove other bindings when the WSDL is under UDDI control");
                 }
 
-                logger.log(Level.INFO, "Publishing endpoint from Published Service id #(" + publishedService.getOid() + ") to UDDI registry id #(" + uddiRegistry.getOid() + ")");
+                logger.log(Level.INFO, "Publishing endpoint from Published Service id #(" + publishedService.getGoid() + ") to UDDI registry id #(" + uddiRegistry.getOid() + ")");
 
                 final Wsdl wsdl;
                 try {
                     wsdl = publishedService.parsedWsdl();
                 } catch (WSDLException e) {
-                    logger.log(Level.WARNING, "Unable to parse WSDL for service " + publishedService.getName() + "(#" + publishedService.getOid() + "). Any previously published information will be delete from UDDI", ExceptionUtils.getDebugException(e));
+                    logger.log(Level.WARNING, "Unable to parse WSDL for service " + publishedService.getName() + "(#" + publishedService.getGoid() + "). Any previously published information will be delete from UDDI", ExceptionUtils.getDebugException(e));
 
                     uddiPublishStatus.setPublishStatus(UDDIPublishStatus.PublishStatus.DELETE);
                     factory.uddiPublishStatusManager.update(uddiPublishStatus);
@@ -206,7 +206,7 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                 }
 
                 final Set<EndpointPair> allEndpointPairs =
-                        factory.uddiHelper.getAllExternalEndpointAndWsdlUrls(publishedService.getOid());
+                        factory.uddiHelper.getAllExternalEndpointAndWsdlUrls(publishedService.getGoid());
 
                 //this will be null on first publish
                 final Set<EndpointPair> persistedEndpoints = uddiProxiedServiceInfo.getProperty(UDDIProxiedServiceInfo.ALL_ENDPOINT_PAIRS_KEY);
@@ -222,7 +222,7 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                 try {
                     businessServicePublisher = new BusinessServicePublisher(
                         wsdl,
-                        publishedService.getOid(),
+                        publishedService.getGoid().toHexString(),
                         factory.uddiHelper.newUDDIClientConfig(uddiRegistry));
 
                     //provides best effort commit / rollback for all UDDI interactions
@@ -266,7 +266,7 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
 
                     if (uddiProxiedServiceInfo.isRemoveOtherBindings()) {
                         //reread the UDDIServiceControl as it may have been updated via the UI during the time it takes to publish
-                        serviceControl = factory.uddiServiceControlManager.findByPublishedServiceOid(uddiProxiedServiceInfo.getPublishedServiceOid());
+                        serviceControl = factory.uddiServiceControlManager.findByPublishedServiceGoid(uddiProxiedServiceInfo.getPublishedServiceGoid());
                         if (serviceControl != null && !serviceControl.isHasHadEndpointRemoved()) {
                             if (serviceControl.isUnderUddiControl()) {
                                 serviceControl.setUnderUddiControl(false);//if this is actually done a coding error happened
@@ -340,24 +340,24 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                 }
 
                 final PublishedService publishedService =
-                        factory.serviceCache.getCachedService(uddiProxiedServiceInfo.getPublishedServiceOid());
+                        factory.serviceCache.getCachedService(uddiProxiedServiceInfo.getPublishedServiceGoid());
 
                 final UDDIServiceControl serviceControl =
-                        factory.uddiServiceControlManager.findByPublishedServiceOid(uddiProxiedServiceInfo.getPublishedServiceOid());
+                        factory.uddiServiceControlManager.findByPublishedServiceGoid(uddiProxiedServiceInfo.getPublishedServiceGoid());
                 if (serviceControl == null)
-                    throw new IllegalStateException("No UDDIServiceControl found for PublishedService with id #(" + uddiProxiedServiceInfo.getPublishedServiceOid() + ")");
+                    throw new IllegalStateException("No UDDIServiceControl found for PublishedService with id #(" + uddiProxiedServiceInfo.getPublishedServiceGoid() + ")");
 
                 if (serviceControl.isUnderUddiControl()) {
                     throw new IllegalStateException("Cannot publish GIF endpoint when service is under UDDI control.");
                 }
 
-                logger.log(Level.INFO, "Publishing endpoint from Published Service id #(" + publishedService.getOid() + ") to UDDI registry id #(" + uddiRegistry.getOid() + ")");
+                logger.log(Level.INFO, "Publishing endpoint from Published Service id #(" + publishedService.getGoid() + ") to UDDI registry id #(" + uddiRegistry.getOid() + ")");
 
                 final Wsdl wsdl;
                 try {
                     wsdl = publishedService.parsedWsdl();
                 } catch (WSDLException e) {
-                    logger.log(Level.WARNING, "Unable to parse WSDL for service " + publishedService.getName() + "(#" + publishedService.getOid() + "). Any previously published information will be delete from UDDI", ExceptionUtils.getDebugException(e));
+                    logger.log(Level.WARNING, "Unable to parse WSDL for service " + publishedService.getName() + "(#" + publishedService.getGoid() + "). Any previously published information will be delete from UDDI", ExceptionUtils.getDebugException(e));
 
                     uddiPublishStatus.setPublishStatus(UDDIPublishStatus.PublishStatus.DELETE);
                     factory.uddiPublishStatusManager.update(uddiPublishStatus);
@@ -372,7 +372,7 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
 
                 final EndpointPair endPointPair;
                 try {
-                    endPointPair = factory.uddiHelper.getEndpointForScheme(endpointScheme, publishedService.getOid());
+                    endPointPair = factory.uddiHelper.getEndpointForScheme(endpointScheme, publishedService.getGoid());
                 } catch (UDDIHelper.EndpointNotDefinedException e) {
                     PublishingUDDITaskFactory.handleUddiPublishFailure(uddiPublishStatus.getOid(), context, factory.uddiPublishStatusManager);
                     context.logAndAudit(SystemMessages.UDDI_PUBLISH_ENDPOINT_FAILED, ExceptionUtils.getDebugException(e), ExceptionUtils.getMessage(e));
@@ -397,7 +397,7 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                 try {
                     businessServicePublisher = new BusinessServicePublisher(
                         wsdl,
-                        publishedService.getOid(),
+                        publishedService.getGoid().toHexString(),
                         factory.uddiHelper.newUDDIClientConfig(uddiRegistry));
 
                     // what is the name of the WSMS for the required reference C.2?
@@ -482,7 +482,7 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
             try {
                 //Get the most up to date version of the UDDIProxiedServiceInfo - the queue can be stale - will cause loop with eventual hibernate errors
                 UDDIProxiedServiceInfo uddiProxiedServiceInfo =
-                        factory.uddiProxiedServiceInfoManager.findByPublishedServiceOid(publishedService.getOid());
+                        factory.uddiProxiedServiceInfoManager.findByPublishedServiceGoid(publishedService.getGoid());
                 if (uddiProxiedServiceInfo == null) return;
 
                 uddiPublishStatus =
@@ -502,7 +502,7 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                 }
 
                 final UDDIServiceControl serviceControl =
-                        factory.uddiServiceControlManager.findByPublishedServiceOid(publishedService.getOid());
+                        factory.uddiServiceControlManager.findByPublishedServiceGoid(publishedService.getGoid());
                 if (serviceControl == null && uddiProxiedServiceInfo.getPublishType() == UDDIProxiedServiceInfo.PublishType.OVERWRITE) {
                     throw new IllegalStateException("When a service has been overwritten, we must have a record of its UDDI information");
                 }
@@ -535,13 +535,13 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                 }
 
                 logger.log(Level.INFO,
-                        "Publishing Gateway WSDL " + ((serviceWasOverwritten) ? "for overwritten service " : "") + "for Published Service id #(" + publishedService.getOid() + ") to UDDI Registry id #(" + uddiRegistry.getOid() + ")");
+                        "Publishing Gateway WSDL " + ((serviceWasOverwritten) ? "for overwritten service " : "") + "for Published Service id #(" + publishedService.getGoid() + ") to UDDI Registry id #(" + uddiRegistry.getOid() + ")");
 
                 final Wsdl wsdl;
                 try {
                     wsdl = publishedService.parsedWsdl();
                 } catch (WSDLException e) {
-                    logger.log(Level.WARNING, "Unable to parse WSDL for service " + publishedService.getName() + "(#" + publishedService.getOid() + "). Any previously published information will be delete from UDDI", ExceptionUtils.getDebugException(e));
+                    logger.log(Level.WARNING, "Unable to parse WSDL for service " + publishedService.getName() + "(#" + publishedService.getGoid() + "). Any previously published information will be delete from UDDI", ExceptionUtils.getDebugException(e));
                     uddiPublishStatus.setPublishStatus(UDDIPublishStatus.PublishStatus.DELETE);
                     factory.uddiPublishStatusManager.update(uddiPublishStatus);
                     return;
@@ -567,14 +567,14 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                         PublishingUDDITaskFactory.getRegistrySpecificMetaData(uddiRegistry, serviceControl, uddiProxiedServiceInfo, factory, uddiClient);
 
                 final Set<EndpointPair> allEndpointPairs =
-                        factory.uddiHelper.getAllExternalEndpointAndWsdlUrls(publishedService.getOid());
+                        factory.uddiHelper.getAllExternalEndpointAndWsdlUrls(publishedService.getGoid());
 
                 final Pair<Set<String>, Set<UDDIBusinessService>> deletedAndNewServices;
                 BusinessServicePublisher businessServicePublisher = null;
                 try {
                     businessServicePublisher = new BusinessServicePublisher(
                             wsdl,
-                            uddiProxiedServiceInfo.getPublishedServiceOid(),
+                            uddiProxiedServiceInfo.getPublishedServiceGoid().toHexString(),
                             uddiClient);
 
                     deletedAndNewServices = businessServicePublisher.publishServicesToUDDIRegistry(
@@ -589,7 +589,7 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                 }
 
                 //reread in case it was modified via UI during the time taken to publish
-                uddiProxiedServiceInfo = factory.uddiProxiedServiceInfoManager.findByPublishedServiceOid(publishedService.getOid());
+                uddiProxiedServiceInfo = factory.uddiProxiedServiceInfoManager.findByPublishedServiceGoid(publishedService.getGoid());
 
                 if(uddiProxiedServiceInfo != null){
                     //persist the endpoints published so we can detect when they change and a republish is required
@@ -746,7 +746,7 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
             try {
                 //Get the most up to date version of the UDDIProxiedServiceInfo - the queue can be stale
                 final UDDIProxiedServiceInfo uddiProxiedServiceInfo =
-                        factory.uddiProxiedServiceInfoManager.findByPublishedServiceOid(publishedService.getOid());
+                        factory.uddiProxiedServiceInfoManager.findByPublishedServiceGoid(publishedService.getGoid());
                 if (uddiProxiedServiceInfo == null) return;
 
                 uddiPublishStatus =
@@ -775,39 +775,39 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                 }
 
                 final PublishedService publishedService =
-                        factory.serviceCache.getCachedService(uddiProxiedServiceInfo.getPublishedServiceOid());
+                        factory.serviceCache.getCachedService(uddiProxiedServiceInfo.getPublishedServiceGoid());
 
                 UDDIServiceControl serviceControl =
-                        factory.uddiServiceControlManager.findByPublishedServiceOid(uddiProxiedServiceInfo.getPublishedServiceOid());
+                        factory.uddiServiceControlManager.findByPublishedServiceGoid(uddiProxiedServiceInfo.getPublishedServiceGoid());
                 if (serviceControl == null)//UDDIServiceControl delete logic does not allow this
-                    throw new IllegalStateException("No UDDIServiceControl found for PublishedService with id #(" + uddiProxiedServiceInfo.getPublishedServiceOid() + ")");
+                    throw new IllegalStateException("No UDDIServiceControl found for PublishedService with id #(" + uddiProxiedServiceInfo.getPublishedServiceGoid() + ")");
 
                 if (serviceControl.isHasBeenOverwritten()) {
                     logger.log(Level.FINER, "UDDIProxiedServiceInfo has already overwritten the BusinessService in UDDI. Nothing to do");
                     return;
                 }
 
-                logger.log(Level.INFO, "Overwriting BusinessService with Gateway WSDL from Published Service id #(" + publishedService.getOid() + ") to UDDI registry id #(" + uddiRegistry.getOid() + ")");
+                logger.log(Level.INFO, "Overwriting BusinessService with Gateway WSDL from Published Service id #(" + publishedService.getGoid() + ") to UDDI registry id #(" + uddiRegistry.getOid() + ")");
 
                 final Wsdl wsdl;
                 try {
                     wsdl = publishedService.parsedWsdl();
                 } catch (WSDLException e) {
-                    logger.log(Level.WARNING, "Unable to parse WSDL for service " + publishedService.getName() + "(#" + publishedService.getOid() + "). Any previously published information will be delete from UDDI", ExceptionUtils.getDebugException(e));
+                    logger.log(Level.WARNING, "Unable to parse WSDL for service " + publishedService.getName() + "(#" + publishedService.getGoid() + "). Any previously published information will be delete from UDDI", ExceptionUtils.getDebugException(e));
                     uddiPublishStatus.setPublishStatus(UDDIPublishStatus.PublishStatus.DELETE);
                     factory.uddiPublishStatusManager.update(uddiPublishStatus);
                     return;
                 }
 
                 final Set<EndpointPair> allEndpointPairs =
-                        factory.uddiHelper.getAllExternalEndpointAndWsdlUrls(publishedService.getOid());
+                        factory.uddiHelper.getAllExternalEndpointAndWsdlUrls(publishedService.getGoid());
 
                 BusinessServicePublisher businessServicePublisher = null;
                 final Set<String> publishedBindingKeys;
                 try {
                     businessServicePublisher = new BusinessServicePublisher(
                         wsdl,
-                        uddiProxiedServiceInfo.getPublishedServiceOid(),
+                        uddiProxiedServiceInfo.getPublishedServiceGoid().toHexString(),
                         factory.uddiHelper.newUDDIClientConfig(uddiRegistry));
 
                     publishedBindingKeys = businessServicePublisher.overwriteServiceInUDDI(serviceControl.getUddiServiceKey(),
@@ -831,7 +831,7 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                 factory.uddiProxiedServiceInfoManager.update(uddiProxiedServiceInfo);
                 //reread the UDDIServiceControl as it may have been updated via the UI in the time it took to publish
                 serviceControl =
-                        factory.uddiServiceControlManager.findByPublishedServiceOid(uddiProxiedServiceInfo.getPublishedServiceOid());
+                        factory.uddiServiceControlManager.findByPublishedServiceGoid(uddiProxiedServiceInfo.getPublishedServiceGoid());
                 if(serviceControl != null){
                     serviceControl.setHasBeenOverwritten(true);
                     serviceControl.setUnderUddiControl(false);//can no longer be under UDDI control
@@ -883,9 +883,9 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                 }
 
                 final UDDIServiceControl serviceControl =
-                        factory.uddiServiceControlManager.findByPublishedServiceOid(uddiProxiedServiceInfo.getPublishedServiceOid());
+                        factory.uddiServiceControlManager.findByPublishedServiceGoid(uddiProxiedServiceInfo.getPublishedServiceGoid());
                 if (serviceControl == null)
-                    throw new IllegalStateException("No UDDIServiceControl found for PublishedService with id #(" + uddiProxiedServiceInfo.getPublishedServiceOid() + ")");
+                    throw new IllegalStateException("No UDDIServiceControl found for PublishedService with id #(" + uddiProxiedServiceInfo.getPublishedServiceGoid() + ")");
 
                 //this must be found due to db constraints
                 final UDDIRegistry uddiRegistry =
@@ -899,16 +899,16 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
 
                 logger.log(Level.INFO, "Deleting gateway GIF endpoint from BusinessService with serviceKey " +
                         "#(" + serviceControl.getUddiServiceKey() + ") " +
-                        "for published service #(" + uddiProxiedServiceInfo.getPublishedServiceOid() + ") " +
+                        "for published service #(" + uddiProxiedServiceInfo.getPublishedServiceGoid() + ") " +
                         "in UDDI Registry id #(" + uddiRegistry.getOid() + ")");
 
                 final PublishedService publishedService =
-                        factory.serviceCache.getCachedService(uddiProxiedServiceInfo.getPublishedServiceOid());
+                        factory.serviceCache.getCachedService(uddiProxiedServiceInfo.getPublishedServiceGoid());
 
                 //Only try and delete from UDDI if information was successfully published
                 BusinessServicePublisher publisher = null;
                 try {
-                    publisher = new BusinessServicePublisher(publishedService.getOid(), factory.uddiHelper.newUDDIClientConfig(uddiRegistry));
+                    publisher = new BusinessServicePublisher(publishedService.getGoid().toHexString(), factory.uddiHelper.newUDDIClientConfig(uddiRegistry));
                     final Set<String> proxyBindingKeys = uddiProxiedServiceInfo.getProperty(UDDIProxiedServiceInfo.ALL_BINDING_TEMPLATE_KEYS);
                     final String functionalBindingKey = uddiProxiedServiceInfo.getProperty(UDDIProxiedServiceInfo.FUNCTIONAL_ENDPOINT_KEY);
 
@@ -978,10 +978,10 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                 }
 
                 final UDDIServiceControl serviceControl =
-                        factory.uddiServiceControlManager.findByPublishedServiceOid(uddiProxiedServiceInfo.getPublishedServiceOid());
+                        factory.uddiServiceControlManager.findByPublishedServiceGoid(uddiProxiedServiceInfo.getPublishedServiceGoid());
                 if (serviceControl == null)
                     throw new IllegalStateException("No UDDIServiceControl found for PublishedService with id #(" +
-                            uddiProxiedServiceInfo.getPublishedServiceOid() + ")");
+                            uddiProxiedServiceInfo.getPublishedServiceGoid() + ")");
                 
                 //this must be found due to db constraints
                 final UDDIRegistry uddiRegistry =
@@ -995,16 +995,16 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
 
                 logger.log(Level.INFO, "Deleting gateway endpoints from BusinessService with serviceKey " +
                         "#(" + serviceControl.getUddiServiceKey() + ") " +
-                        "for published service #(" + uddiProxiedServiceInfo.getPublishedServiceOid() + ") " +
+                        "for published service #(" + uddiProxiedServiceInfo.getPublishedServiceGoid() + ") " +
                         "in UDDI Registry id #(" + uddiRegistry.getOid() + ")");
 
                 final PublishedService publishedService =
-                        factory.serviceCache.getCachedService(uddiProxiedServiceInfo.getPublishedServiceOid());
+                        factory.serviceCache.getCachedService(uddiProxiedServiceInfo.getPublishedServiceGoid());
 
                 //Only try and delete from UDDI if information was successfully published
                 BusinessServicePublisher publisher = null;
                 try {
-                    publisher = new BusinessServicePublisher(publishedService.getOid(), factory.uddiHelper.newUDDIClientConfig(uddiRegistry));
+                    publisher = new BusinessServicePublisher(publishedService.getGoid().toHexString(), factory.uddiHelper.newUDDIClientConfig(uddiRegistry));
                     publisher.deleteGatewayBindingTemplates(serviceControl.getUddiServiceKey(),
                             uddiProxiedServiceInfo.<Set<EndpointPair>>getProperty(UDDIProxiedServiceInfo.ALL_ENDPOINT_PAIRS_KEY),
                             uddiProxiedServiceInfo.<Set<String>>getProperty(UDDIProxiedServiceInfo.ALL_BINDING_TEMPLATE_KEYS));
@@ -1074,7 +1074,7 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                 }
 
                 final UDDIServiceControl serviceControl =
-                        factory.uddiServiceControlManager.findByPublishedServiceOid(uddiProxiedServiceInfo.getPublishedServiceOid());
+                        factory.uddiServiceControlManager.findByPublishedServiceGoid(uddiProxiedServiceInfo.getPublishedServiceGoid());
                 if (serviceControl == null && uddiProxiedServiceInfo.getPublishType() == UDDIProxiedServiceInfo.PublishType.OVERWRITE) {
                     throw new IllegalStateException("When a service has been overwritten, we must have a record of its UDDI information");
                 }
@@ -1105,7 +1105,7 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                 } else {
 //                    serviceWasOverwritten = false;
                     logger.log(Level.INFO,
-                            "Deleting published Gateway WSDL from Published Service id #(" + uddiProxiedServiceInfo.getPublishedServiceOid() + ")s in UDDI Registry id #(" + uddiRegistry.getOid() + ")");
+                            "Deleting published Gateway WSDL from Published Service id #(" + uddiProxiedServiceInfo.getPublishedServiceGoid() + ")s in UDDI Registry id #(" + uddiRegistry.getOid() + ")");
                 }
 
                 switch (uddiProxiedServiceInfo.getPublishType()) {
@@ -1137,13 +1137,13 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                         break;
                     case OVERWRITE:
                         final PublishedService publishedService =
-                                factory.serviceCache.getCachedService(uddiProxiedServiceInfo.getPublishedServiceOid());
+                                factory.serviceCache.getCachedService(uddiProxiedServiceInfo.getPublishedServiceGoid());
                         
                         final Wsdl wsdl;
                         try {
                             wsdl = publishedService.parsedWsdl();
                         } catch (WSDLException e) {
-                            logger.log(Level.WARNING, "Unable to parse WSDL for service " + publishedService.getName() + "(#" + publishedService.getOid() + "). Any previously published information will be delete from UDDI", ExceptionUtils.getDebugException(e));
+                            logger.log(Level.WARNING, "Unable to parse WSDL for service " + publishedService.getName() + "(#" + publishedService.getGoid() + "). Any previously published information will be delete from UDDI", ExceptionUtils.getDebugException(e));
 
                             uddiPublishStatus.setPublishStatus(UDDIPublishStatus.PublishStatus.DELETE);
                             factory.uddiPublishStatusManager.update(uddiPublishStatus);
@@ -1152,7 +1152,7 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
 
                         BusinessServicePublisher publisher = null;
                         try {
-                            publisher = new BusinessServicePublisher(wsdl, publishedService.getOid(), factory.uddiHelper.newUDDIClientConfig(uddiRegistry));
+                            publisher = new BusinessServicePublisher(wsdl, publishedService.getGoid().toHexString(), factory.uddiHelper.newUDDIClientConfig(uddiRegistry));
                             publisher.deleteGatewayBindingTemplates(serviceControl.getUddiServiceKey(),
                                     uddiProxiedServiceInfo.<Set<EndpointPair>>getProperty(UDDIProxiedServiceInfo.ALL_ENDPOINT_PAIRS_KEY),
                                     uddiProxiedServiceInfo.<Set<String>>getProperty(UDDIProxiedServiceInfo.ALL_BINDING_TEMPLATE_KEYS));

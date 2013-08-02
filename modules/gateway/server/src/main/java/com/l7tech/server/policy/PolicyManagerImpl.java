@@ -126,9 +126,9 @@ public class PolicyManagerImpl extends FolderSupportHibernateEntityManager<Polic
         //Modify results for any aliases that may exist
         Collection<PolicyAlias> allAliases = policyAliasManager.findAll();
 
-        Map<Long, Set<PolicyAlias>> policyIdToAllItsAliases = new HashMap<Long, Set<PolicyAlias>>();
+        Map<Goid, Set<PolicyAlias>> policyIdToAllItsAliases = new HashMap<Goid, Set<PolicyAlias>>();
         for(PolicyAlias pa: allAliases){
-            Long origServiceId = pa.getEntityOid();
+            Goid origServiceId = pa.getEntityGoid();
             if(!policyIdToAllItsAliases.containsKey(origServiceId)){
                 Set<PolicyAlias> aliasSet = new HashSet<PolicyAlias>();
                 policyIdToAllItsAliases.put(origServiceId, aliasSet);
@@ -138,14 +138,14 @@ public class PolicyManagerImpl extends FolderSupportHibernateEntityManager<Polic
 
         Collection<PolicyHeader> returnHeaders = new ArrayList<PolicyHeader>();
         for(PolicyHeader ph: origHeaders){
-            Long serviceId = ph.getOid();
+            Goid serviceId = ph.getGoid();
             returnHeaders.add(ph);
             if(policyIdToAllItsAliases.containsKey(serviceId)){
                 Set<PolicyAlias> aliases = policyIdToAllItsAliases.get(serviceId);
                 for(PolicyAlias pa: aliases){
                     PolicyHeader newSH = new PolicyHeader(ph);
-                    newSH.setAliasOid(pa.getOidAsLong());
-                    newSH.setFolderOid(pa.getFolder().getOid());
+                    newSH.setAliasGoid(pa.getGoid());
+                    newSH.setFolderGoid(pa.getFolder().getGoid());
                     returnHeaders.add(newSH);
                 }
             }
@@ -166,8 +166,8 @@ public class PolicyManagerImpl extends FolderSupportHibernateEntityManager<Polic
     }
 
     @Override
-    public long save(final Policy policy) throws SaveException {
-        long oid;
+    public Goid save(final Policy policy) throws SaveException {
+        Goid goid;
 
         try {
             policyCache.validate(policy);
@@ -185,9 +185,9 @@ public class PolicyManagerImpl extends FolderSupportHibernateEntityManager<Polic
             throw new SaveException("Couldn't save policy under root folder.");
         }
 
-        oid = super.save(policy);
+        goid = super.save(policy);
 
-        return oid;
+        return goid;
     }
 
     @Override
@@ -210,26 +210,26 @@ public class PolicyManagerImpl extends FolderSupportHibernateEntityManager<Polic
     }
 
     @Override
-    public void updateFolder( final long entityId, final Folder folder ) throws UpdateException {
+    public void updateFolder( final Goid entityId, final Folder folder ) throws UpdateException {
         setParentFolderForEntity( entityId, folder );
     }
 
     @Override
     public void updateFolder( final Policy entity, final Folder folder ) throws UpdateException {
         if ( entity == null ) throw new UpdateException("Policy is required but missing.");
-        setParentFolderForEntity( entity.getOid(), folder );
+        setParentFolderForEntity( entity.getGoid(), folder );
     }
 
     @Override
-    public void delete( long oid ) throws DeleteException, FindException {
-        findAndDelete(oid);
+    public void delete( Goid goid ) throws DeleteException, FindException {
+        findAndDelete(goid);
     }
 
     @Override
     public void delete( Policy policy) throws DeleteException {
         try {
             if ( policy != null )
-                policyCache.validateRemove( policy.getOid() );
+                policyCache.validateRemove( policy.getGoid() );
         } catch (PolicyDeletionForbiddenException e) {
             throw new DeleteException("Couldn't delete Policy: " + ExceptionUtils.getMessage(e), e);
         }
@@ -254,8 +254,8 @@ public class PolicyManagerImpl extends FolderSupportHibernateEntityManager<Polic
     }
 
     @Override
-    public void deleteRoles( final long policyOid ) throws DeleteException {
-        roleManager.deleteEntitySpecificRoles(EntityType.POLICY, policyOid);        
+    public void deleteRoles( final Goid policyGoid ) throws DeleteException {
+        roleManager.deleteEntitySpecificRoles(EntityType.POLICY, policyGoid);
     }
 
     @Override
@@ -266,7 +266,7 @@ public class PolicyManagerImpl extends FolderSupportHibernateEntityManager<Polic
         String pname = policy.getName();
         // cutoff is arbitrarily set to 50
         pname = TextUtils.truncStringMiddle(pname, 50);
-        String name = MessageFormat.format(PolicyAdmin.ROLE_NAME_PATTERN, pname, policy.getOid());
+        String name = MessageFormat.format(PolicyAdmin.ROLE_NAME_PATTERN, pname, policy.getGoid());
 
         logger.info("Creating new Role: " + name);
 
@@ -274,7 +274,7 @@ public class PolicyManagerImpl extends FolderSupportHibernateEntityManager<Polic
         newRole.setName(name);
         newRole.setDescription("Users assigned to the {0} role have the ability to read, update and delete the {1} policy.");        
         newRole.setEntityType(POLICY);
-        newRole.setEntityOid(policy.getOid());
+        newRole.setEntityGoid(policy.getGoid());
 
         // RUD this policy
         newRole.addEntityPermission(READ, POLICY, policy.getId()); // Read this policy
@@ -289,7 +289,7 @@ public class PolicyManagerImpl extends FolderSupportHibernateEntityManager<Polic
         newRole.addEntityPermission(READ, HTTP_CONFIGURATION, null);
 
         // Read this policy's folder ancestry
-        newRole.addEntityFolderAncestryPermission(POLICY, policy.getId());
+        newRole.addEntityFolderAncestryPermission(POLICY, policy.getGoid());
 
         // Use encapsulated assertion within a policy
         newRole.addEntityPermission(READ, ENCAPSULATED_ASSERTION, null);

@@ -1,11 +1,12 @@
 package com.l7tech.server.folder;
 
-import com.l7tech.gateway.common.security.password.SecurePassword;
+import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.objectmodel.Entity;
-import com.l7tech.objectmodel.PersistentEntity;
+import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.GoidEntity;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.FolderedEntityManager;
@@ -49,7 +50,7 @@ public class FolderAdminImplTest {
     public void setup() {
         entityManagerMap = new HashMap<>();
         entityManagerMap.put(Policy.class, folderedEntityManager);
-        entityManagerMap.put(SecurePassword.class, folderedEntityManager);
+        entityManagerMap.put(JdbcConnection.class, folderedEntityManager);
         folderAdmin = new FolderAdminImpl(folderManager, entityManagerMap, rbacServices);
         user = new InternalUser("test");
         rootFolder = new Folder("root", null);
@@ -62,14 +63,14 @@ public class FolderAdminImplTest {
     public void moveEntityToFolderAllowed() throws Exception {
         final Policy policy = new Policy(PolicyType.INCLUDE_FRAGMENT, "test", "test", false);
         policy.setFolder(fromFolder);
-        policy.setOid(1234L);
+        policy.setGoid(new Goid(0,1234L));
         when(rbacServices.isPermittedForEntity(user, toFolder, OperationType.UPDATE, null)).thenReturn(true);
         when(rbacServices.isPermittedForEntity(user, policy, OperationType.UPDATE, null)).thenReturn(true);
         when(rbacServices.isPermittedForEntity(user, fromFolder, OperationType.UPDATE, null)).thenReturn(true);
 
         moveEntityToFolderAsUser(toFolder, policy);
 
-        verify(rbacServices, times(3)).isPermittedForEntity(eq(user), any(PersistentEntity.class), eq(OperationType.UPDATE), eq((String) null));
+        verify(rbacServices, times(3)).isPermittedForEntity(eq(user), any(GoidEntity.class), eq(OperationType.UPDATE), eq((String) null));
         verify(folderedEntityManager).updateFolder(policy, toFolder);
     }
 
@@ -77,7 +78,7 @@ public class FolderAdminImplTest {
     public void moveEntityToNullRootFolder() throws Exception {
         final Policy policy = new Policy(PolicyType.INCLUDE_FRAGMENT, "test", "test", false);
         policy.setFolder(fromFolder);
-        policy.setOid(1234L);
+        policy.setGoid(new Goid(0, 1234L));
         when(folderManager.findRootFolder()).thenReturn(rootFolder);
         when(rbacServices.isPermittedForEntity(user, rootFolder, OperationType.UPDATE, null)).thenReturn(true);
         when(rbacServices.isPermittedForEntity(user, policy, OperationType.UPDATE, null)).thenReturn(true);
@@ -86,7 +87,7 @@ public class FolderAdminImplTest {
         moveEntityToFolderAsUser(null, policy);
 
         verify(folderManager).findRootFolder();
-        verify(rbacServices, times(3)).isPermittedForEntity(eq(user), any(PersistentEntity.class), eq(OperationType.UPDATE), eq((String) null));
+        verify(rbacServices, times(3)).isPermittedForEntity(eq(user), any(GoidEntity.class), eq(OperationType.UPDATE), eq((String) null));
         verify(folderedEntityManager).updateFolder(policy, rootFolder);
     }
 
@@ -94,14 +95,14 @@ public class FolderAdminImplTest {
     public void moveEntityToFolderNotAllowedToUpdateDestinationFolder() throws Exception {
         final Policy policy = new Policy(PolicyType.INCLUDE_FRAGMENT, "test", "test", false);
         policy.setFolder(fromFolder);
-        policy.setOid(1234L);
+        policy.setGoid(new Goid(0, 1234L));
         when(rbacServices.isPermittedForEntity(user, toFolder, OperationType.UPDATE, null)).thenReturn(false);
 
         try {
             moveEntityToFolderAsUser(toFolder, policy);
             fail("Expected PermissionDeniedException");
         } catch (final PermissionDeniedException e) {
-            verify(rbacServices, times(1)).isPermittedForEntity(eq(user), any(PersistentEntity.class), eq(OperationType.UPDATE), eq((String) null));
+            verify(rbacServices, times(1)).isPermittedForEntity(eq(user), any(GoidEntity.class), eq(OperationType.UPDATE), eq((String) null));
             verify(folderedEntityManager, never()).updateFolder(policy, toFolder);
             throw e;
         }
@@ -111,7 +112,7 @@ public class FolderAdminImplTest {
     public void moveEntityToFolderNotAllowedToUpdateEntity() throws Exception {
         final Policy policy = new Policy(PolicyType.INCLUDE_FRAGMENT, "test", "test", false);
         policy.setFolder(fromFolder);
-        policy.setOid(1234L);
+        policy.setGoid(new Goid(0, 1234L));
         when(rbacServices.isPermittedForEntity(user, toFolder, OperationType.UPDATE, null)).thenReturn(true);
         when(rbacServices.isPermittedForEntity(user, policy, OperationType.UPDATE, null)).thenReturn(false);
 
@@ -119,7 +120,7 @@ public class FolderAdminImplTest {
             moveEntityToFolderAsUser(toFolder, policy);
             fail("Expected PermissionDeniedException");
         } catch (final PermissionDeniedException e) {
-            verify(rbacServices, times(2)).isPermittedForEntity(eq(user), any(PersistentEntity.class), eq(OperationType.UPDATE), eq((String) null));
+            verify(rbacServices, times(2)).isPermittedForEntity(eq(user), any(GoidEntity.class), eq(OperationType.UPDATE), eq((String) null));
             verify(folderedEntityManager, never()).updateFolder(policy, toFolder);
             throw e;
         }
@@ -129,7 +130,7 @@ public class FolderAdminImplTest {
     public void moveEntityToFolderNotAllowedToUpdateTargetFolder() throws Exception {
         final Policy policy = new Policy(PolicyType.INCLUDE_FRAGMENT, "test", "test", false);
         policy.setFolder(fromFolder);
-        policy.setOid(1234L);
+        policy.setGoid(new Goid(0, 1234L));
         when(rbacServices.isPermittedForEntity(user, toFolder, OperationType.UPDATE, null)).thenReturn(true);
         when(rbacServices.isPermittedForEntity(user, policy, OperationType.UPDATE, null)).thenReturn(true);
         when(rbacServices.isPermittedForEntity(user, fromFolder, OperationType.UPDATE, null)).thenReturn(false);
@@ -138,7 +139,7 @@ public class FolderAdminImplTest {
             moveEntityToFolderAsUser(toFolder, policy);
             fail("Expected PermissionDeniedException");
         } catch (final PermissionDeniedException e) {
-            verify(rbacServices, times(3)).isPermittedForEntity(eq(user), any(PersistentEntity.class), eq(OperationType.UPDATE), eq((String) null));
+            verify(rbacServices, times(3)).isPermittedForEntity(eq(user), any(GoidEntity.class), eq(OperationType.UPDATE), eq((String) null));
             verify(folderedEntityManager, never()).updateFolder(policy, toFolder);
             throw e;
         }
@@ -146,19 +147,19 @@ public class FolderAdminImplTest {
 
     @Test
     public void moveEntityToFolderEntityDoesNotHaveFolder() throws Exception {
-        final SecurePassword doesNotHaveFolder = new SecurePassword();
-        doesNotHaveFolder.setOid(1234L);
+        final JdbcConnection doesNotHaveFolder = new JdbcConnection();
+        doesNotHaveFolder.setGoid(new Goid(0, 1234L));
         when(rbacServices.isPermittedForEntity(user, toFolder, OperationType.UPDATE, null)).thenReturn(true);
         when(rbacServices.isPermittedForEntity(user, doesNotHaveFolder, OperationType.UPDATE, null)).thenReturn(true);
 
         moveEntityToFolderAsUser(toFolder, doesNotHaveFolder);
 
-        verify(rbacServices, times(2)).isPermittedForEntity(eq(user), any(PersistentEntity.class), eq(OperationType.UPDATE), eq((String) null));
+        verify(rbacServices, times(2)).isPermittedForEntity(eq(user), any(GoidEntity.class), eq(OperationType.UPDATE), eq((String) null));
         // let the manager handle how it wants to deal with the entity
         verify(folderedEntityManager).updateFolder(doesNotHaveFolder, toFolder);
     }
 
-    private void moveEntityToFolderAsUser(final Folder moveTo, final PersistentEntity toMove) {
+    private void moveEntityToFolderAsUser(final Folder moveTo, final GoidEntity toMove) {
         Subject.doAs(new Subject(true, Collections.singleton(user), Collections.emptySet(), Collections.emptySet()), new PrivilegedAction() {
             @Override
             public Object run() {

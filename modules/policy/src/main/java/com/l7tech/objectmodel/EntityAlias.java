@@ -21,8 +21,8 @@ public interface EntityAlias extends HasFolder {
     EntityType getEntityType();
 
     /*
-    * entityOid is the entity oid of the real entity an instance of this interface
+    * entityGoid is the entity goid of the real entity an instance of this interface
     * is aliasing
     * */
-    long getEntityOid();
+    Goid getEntityGoid();
 }

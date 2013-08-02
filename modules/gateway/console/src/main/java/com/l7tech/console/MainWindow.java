@@ -2004,11 +2004,11 @@ public class MainWindow extends JFrame implements SheetHolder {
 
         final String url = getServiceUrl();
         try {
-            final Folder rootFolder = Registry.getDefault().getFolderAdmin().findByPrimaryKey(RootNode.OID);
+            final Folder rootFolder = Registry.getDefault().getFolderAdmin().findByPrimaryKey(Folder.ROOT_FOLDER_ID);
             if (rootFolder != null) {
                 rootNode = new RootNode(url, new FolderHeader(rootFolder));
             } else {
-                log.log(Level.WARNING, "Root folder not found with oid " + RootNode.OID);
+                log.log(Level.WARNING, "Root folder not found with goid " + Folder.ROOT_FOLDER_ID);
                 rootNode = new RootNode(url);
             }
 

@@ -12,11 +12,10 @@ import com.l7tech.gateway.common.transport.ResolutionConfiguration;
 import com.l7tech.message.HttpRequestKnobStub;
 import com.l7tech.message.JmsKnobStub;
 import com.l7tech.message.Message;
+import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.GoidEntity;
 import com.l7tech.server.service.PersistentServiceDocumentWsdlStrategy;
 import com.l7tech.server.service.ServiceDocumentManagerStub;
-import static org.junit.Assert.*;
-import static org.junit.Assert.assertEquals;
-
 import com.l7tech.server.transport.ResolutionConfigurationManagerStub;
 import com.l7tech.test.BugNumber;
 import com.l7tech.xml.soap.SoapVersion;
@@ -26,13 +25,11 @@ import org.xml.sax.SAXException;
 
 import javax.xml.namespace.QName;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static org.junit.Assert.*;
 
 /**
  * Tests for service resolution.
@@ -45,7 +42,7 @@ public class ServiceResolutionManagerTest {
         Message message = new Message( XmlUtil.parse( "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\"><soapenv:Body/></soapenv:Envelope>" ));
         PublishedService service = resolutionManager.resolve( auditor, message, srl(), services );
         assertNotNull( "Service null (not resolved)", service );
-        assertEquals( "Service id", 1L, service.getOid() );
+        assertEquals( "Service id", new Goid(0,1L), service.getGoid() );
     }
 
     @Test
@@ -55,7 +52,7 @@ public class ServiceResolutionManagerTest {
         message.attachHttpRequestKnob( new HttpRequestKnobStub(null, "/warehouse") );
         PublishedService service = resolutionManager.resolve( auditor, message, srl(), services );
         assertNotNull( "Service null (not resolved)", service );
-        assertEquals( "Service id", 2L, service.getOid() );
+        assertEquals( "Service id", new Goid(0,2L), service.getGoid() );
 
         // test with body content resolver disabled
         final ResolutionConfiguration config = getDefaultResolutionConfiguration();
@@ -63,7 +60,7 @@ public class ServiceResolutionManagerTest {
         configure( config, resolutionManager.getResolvers() );
         PublishedService service2 = resolutionManager.resolve( auditor, message, srl(), services );
         assertNotNull( "Service null (not resolved 2)", service2 );
-        assertEquals( "Service id", 2L, service2.getOid() );
+        assertEquals( "Service id", new Goid(0,2L), service2.getGoid() );
     }
 
     @Test
@@ -73,7 +70,7 @@ public class ServiceResolutionManagerTest {
         message.attachHttpRequestKnob( new HttpRequestKnobStub(null, "/wild/some/path/here") );
         PublishedService service = resolutionManager.resolve( auditor, message, srl(), services );
         assertNotNull( "Service null (not resolved)", service );
-        assertEquals( "Service id", 4L, service.getOid() );
+        assertEquals( "Service id", new Goid(0,4L), service.getGoid() );
     }
 
     @Test
@@ -90,7 +87,7 @@ public class ServiceResolutionManagerTest {
         configure( config, resolutionManager.getResolvers() );
         PublishedService service2 = resolutionManager.resolve( auditor, message, srl(), services );
         assertNotNull( "Service null (not resolved 2)", service2 );
-        assertEquals( "Service id", 2L, service2.getOid() );
+        assertEquals( "Service id", new Goid(0,2L), service2.getGoid() );
     }
 
     @Test
@@ -101,13 +98,13 @@ public class ServiceResolutionManagerTest {
         message.attachHttpRequestKnob( new HttpRequestKnobStub(null, "/warehouse") );
         PublishedService service = resolutionManager.resolve( auditor, message, srl(), services );
         assertNotNull( "Service null (not resolved)", service );
-        assertEquals( "Service id", 2L, service.getOid() );
+        assertEquals( "Service id", new Goid(0,2L), service.getGoid() );
 
         Message message2 = new Message( XmlUtil.parse( "<xml-message/>" ));
         message2.attachHttpRequestKnob( new HttpRequestKnobStub(null, "/service/3") );
         PublishedService service2 = resolutionManager.resolve( auditor, message2, srl(), services );
         assertNotNull( "Service null (not resolved)", service2 );
-        assertEquals( "Service id", 3L, service2.getOid() );
+        assertEquals( "Service id", new Goid(0,3L), service2.getGoid() );
 
         // test with uri path required
         final ResolutionConfiguration config = getDefaultResolutionConfiguration();
@@ -115,7 +112,7 @@ public class ServiceResolutionManagerTest {
         configure( config, resolutionManager.getResolvers() );
         PublishedService service3 = resolutionManager.resolve( auditor, message, srl(), services );
         assertNotNull( "Service null (not resolved 2)", service3 );
-        assertEquals( "Service id", 2L, service3.getOid() );
+        assertEquals( "Service id", new Goid(0,2L), service3.getGoid() );
 
         PublishedService service4 = resolutionManager.resolve( auditor, message2, srl(), services );
         assertNull( "Service not null (resolved)", service4 );
@@ -127,7 +124,7 @@ public class ServiceResolutionManagerTest {
         Message message = new Message( XmlUtil.parse( "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\"><soapenv:Body><listProducts xmlns=\"http://warehouse.acme.com/ws\"/></soapenv:Body></soapenv:Envelope>" ));
         PublishedService service = resolutionManager.resolve( auditor, message, srl(), services );
         assertNotNull( "Service null (not resolved)", service );
-        assertEquals( "Service id", 2L, service.getOid() );
+        assertEquals( "Service id", new Goid(0,2L), service.getGoid() );
 
         // test with SOAP action resolver disabled
         final ResolutionConfiguration config = getDefaultResolutionConfiguration();
@@ -135,7 +132,7 @@ public class ServiceResolutionManagerTest {
         configure( config, resolutionManager.getResolvers() );
         PublishedService service2 = resolutionManager.resolve( auditor, message, srl(), services );
         assertNotNull( "Service null (not resolved 2)", service2 );
-        assertEquals( "Service id", 2L, service2.getOid() );
+        assertEquals( "Service id", new Goid(0,2L), service2.getGoid() );
 
         // test failure when SOAP Body child resolution is not in use
         config.setUseSoapBodyChildNamespace( false );
@@ -148,10 +145,10 @@ public class ServiceResolutionManagerTest {
     public void testResolutionSoapAction() throws Exception {
         configure( getDefaultResolutionConfiguration(), resolutionManager.getResolvers() );
         Message message = new Message( XmlUtil.parse( "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\"><soapenv:Body><listProducts xmlns=\"http://warehouse.acme.com/ws\"/></soapenv:Body></soapenv:Envelope>" ));
-        message.attachJmsKnob( new JmsKnobStub( 0L, true, "http://warehouse.acme.com/ws/listProducts" ) );
+        message.attachJmsKnob( new JmsKnobStub(GoidEntity.DEFAULT_GOID, true, "http://warehouse.acme.com/ws/listProducts" ) );
         PublishedService service = resolutionManager.resolve( auditor, message, srl(), services );
         assertNotNull( "Service null (not resolved 1)", service );
-        assertEquals( "Service id", 2L, service.getOid() );
+        assertEquals( "Service id", new Goid(0,2L), service.getGoid() );
 
         // test with body content resolver disabled
         final ResolutionConfiguration config = getDefaultResolutionConfiguration();
@@ -159,7 +156,7 @@ public class ServiceResolutionManagerTest {
         configure( config, resolutionManager.getResolvers() );
         PublishedService service2 = resolutionManager.resolve( auditor, message, srl(), services );
         assertNotNull( "Service null (not resolved 2)", service2 );
-        assertEquals( "Service id", 2L, service2.getOid() );
+        assertEquals( "Service id", new Goid(0,2L), service2.getGoid() );
 
         // test failure when soap action is not in use
         config.setUseSoapAction( false );
@@ -175,7 +172,7 @@ public class ServiceResolutionManagerTest {
         message.attachHttpRequestKnob( new HttpRequestKnobStub(l(header("L7-Original-URL","http://blah/warehouse")),"/some/other/uri") );
         PublishedService service = resolutionManager.resolve( auditor, message, srl(), services );
         assertNotNull( "Service null (not resolved 1)", service );
-        assertEquals( "Service id", 2L, service.getOid() );
+        assertEquals( "Service id", new Goid(0,2L), service.getGoid() );
 
         // test with original url disabled
         final ResolutionConfiguration config = getDefaultResolutionConfiguration();
@@ -192,7 +189,41 @@ public class ServiceResolutionManagerTest {
         message.attachHttpRequestKnob( new HttpRequestKnobStub(null,"/service/2") );
         PublishedService service = resolutionManager.resolve( auditor, message, srl(), services );
         assertNotNull( "Service null (not resolved 1)", service );
-        assertEquals( "Service id", 2L, service.getOid() );
+        assertEquals( "Service id", new Goid(0,2L), service.getGoid() );
+
+        // test with service id disabled
+        final ResolutionConfiguration config = getDefaultResolutionConfiguration();
+        config.setUseServiceOid( false );
+        configure( config, resolutionManager.getResolvers() );
+        PublishedService service2 = resolutionManager.resolve( auditor, message, srl(), services );
+        assertNull( "Service not null (resolved 2)", service2 );
+    }
+
+    @Test
+    public void testResolutionServiceGoid() throws Exception {
+        configure( getDefaultResolutionConfiguration(), resolutionManager.getResolvers() );
+        Message message = new Message( XmlUtil.parse( "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\"><soapenv:Body><listProducts xmlns=\"http://warehouse.acme.com/ws\"/></soapenv:Body></soapenv:Envelope>" ));
+        message.attachHttpRequestKnob( new HttpRequestKnobStub(null,"/service/"+new Goid(0,2L).toHexString()) );
+        PublishedService service = resolutionManager.resolve( auditor, message, srl(), services );
+        assertNotNull( "Service null (not resolved 1)", service );
+        assertEquals( "Service id", new Goid(0,2L), service.getGoid() );
+
+        // test with service id disabled
+        final ResolutionConfiguration config = getDefaultResolutionConfiguration();
+        config.setUseServiceOid( false );
+        configure( config, resolutionManager.getResolvers() );
+        PublishedService service2 = resolutionManager.resolve( auditor, message, srl(), services );
+        assertNull( "Service not null (resolved 2)", service2 );
+    }
+
+    @Test
+    public void testResolutionServiceComplexHexGoid() throws Exception {
+        configure( getDefaultResolutionConfiguration(), resolutionManager.getResolvers() );
+        Message message = new Message( XmlUtil.parse( "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\"><soapenv:Body><listProducts xmlns=\"http://warehouse.acme.com/ws\"/></soapenv:Body></soapenv:Envelope>" ));
+        message.attachHttpRequestKnob( new HttpRequestKnobStub(null,"/service/"+new Goid(-93463452159384L,6294682937658L).toHexString()) );
+        PublishedService service = resolutionManager.resolve( auditor, message, srl(), services );
+        assertNotNull( "Service null (not resolved 1)", service );
+        assertEquals( "Service id", new Goid(-93463452159384L,6294682937658L), service.getGoid() );
 
         // test with service id disabled
         final ResolutionConfiguration config = getDefaultResolutionConfiguration();
@@ -209,7 +240,7 @@ public class ServiceResolutionManagerTest {
         message.attachHttpRequestKnob( new HttpRequestKnobStub(l(header("L7-Original-URL","http://blah/service/2")),"/some/other/uri") );
         PublishedService service = resolutionManager.resolve( auditor, message, srl(), services );
         assertNotNull( "Service null (not resolved 1)", service );
-        assertEquals( "Service id", 2L, service.getOid() );
+        assertEquals( "Service id", new Goid(0,2L), service.getGoid() );
 
         // test with original url disabled
         final ResolutionConfiguration config = getDefaultResolutionConfiguration();
@@ -277,7 +308,7 @@ public class ServiceResolutionManagerTest {
         final ServiceResolver r3 = new SoapOperationResolver(auditFactory, new ServiceDocumentManagerStub());
 
         final PublishedService service = new PublishedService();
-        service.setOid( 1L );
+        service.setGoid(new Goid(0,1L));
         service.setName("EmptyOpService");
         service.setRoutingUri( "/empty" );
         service.setSoap(true);
@@ -292,10 +323,10 @@ public class ServiceResolutionManagerTest {
     @BugNumber(9776)
     @Test
     public void testServiceConflictWild() throws Exception {
-        resolutionManager.checkResolution( service( -1L, "Test1", "/wild/path", null, false ), services );
+        resolutionManager.checkResolution( service( -1L, new Goid(0,-1L), "Test1", "/wild/path", null, false ), services );
 
         try {
-            resolutionManager.checkResolution( service( -1L, "Test2", "/wild/*", null, false ), services );
+            resolutionManager.checkResolution( service( -1L, new Goid(0,-1L), "Test2", "/wild/*", null, false ), services );
             fail( "Service conflict expected for /wild/*" );
         } catch ( NonUniqueServiceResolutionException e ) {
             // expected
@@ -314,7 +345,7 @@ public class ServiceResolutionManagerTest {
             "Default",
             Arrays.<ServiceResolver>asList(
                 new RequirePathResolver(auditFactory),
-                new ServiceOidResolver(auditFactory),
+                new ServiceIdResolver(auditFactory),
                 new UriResolver(auditFactory),
                 new CaseInsensitiveUriResolver(auditFactory),
                 new SoapActionResolver(auditFactory),
@@ -325,10 +356,11 @@ public class ServiceResolutionManagerTest {
         ));
 
         final ServiceInfo[] serviceInfos = new ServiceInfo[]{
-            si( service( 1L, "EmptyOpService", "/empty", SoapVersion.UNKNOWN, false), l("urn:empty:empty"), l((String)null), l(Collections.<QName>emptyList()) ),
-            si( service( 2L, "SoapService", "/warehouse", SoapVersion.SOAP_1_1, false), l("http://warehouse.acme.com/ws/listProducts","http://warehouse.acme.com/ws/getProductDetails"), l("http://warehouse.acme.com/ws"), l(qns("http://warehouse.acme.com/ws","listProducts"),qns("http://warehouse.acme.com/ws","getProductDetails")) ),
-            si( service( 3L, "XML", null, null, false), null, null, null ), // unresolvable other than by id
-            si( service( 4L, "Wild", "/wild/*", null, false), null, null, null ),
+            si( service( 1L, new Goid(0,1L), "EmptyOpService", "/empty", SoapVersion.UNKNOWN, false), l("urn:empty:empty"), l((String)null), l(Collections.<QName>emptyList()) ),
+            si( service( 2L, new Goid(0,2L), "SoapService", "/warehouse", SoapVersion.SOAP_1_1, false), l("http://warehouse.acme.com/ws/listProducts","http://warehouse.acme.com/ws/getProductDetails"), l("http://warehouse.acme.com/ws"), l(qns("http://warehouse.acme.com/ws","listProducts"),qns("http://warehouse.acme.com/ws","getProductDetails")) ),
+            si( service( 3L, new Goid(0,3L), "XML", null, null, false), null, null, null ), // unresolvable other than by id
+            si( service( 4L, new Goid(0,4L), "Wild", "/wild/*", null, false), null, null, null ),
+            si( service( null, new Goid(-93463452159384L,6294682937658L), "ComplexHex", "/complex_hex/*", null, false), null, null, null ),
         };
 
         Collection<PublishedService> services = new ArrayList<PublishedService>();
@@ -369,9 +401,10 @@ public class ServiceResolutionManagerTest {
         }
     }
 
-    private static PublishedService service( final long oid, final String name, final String uri, final SoapVersion soapVersion, final boolean lax ) {
+    private static PublishedService service( final Long oid, final Goid goid, final String name, final String uri, final SoapVersion soapVersion, final boolean lax ) {
         final PublishedService service = new PublishedService();
-        service.setOid( oid );
+        service.setGoid(goid);
+        service.setOldOid(oid);
         service.setName( name );
         service.setRoutingUri( uri );
         if ( soapVersion == null ) {
@@ -449,8 +482,10 @@ public class ServiceResolutionManagerTest {
         private List<?> getTargetValues( final Class<? extends ServiceResolver> resolverClass ) {
             final List<Object> targetValues = new ArrayList<Object>();
 
-            if ( ServiceOidResolver.class.equals( resolverClass ) ) {
-                targetValues.add( service.getOidAsLong().toString() );
+            if ( ServiceIdResolver.class.equals( resolverClass ) ) {
+                targetValues.add( service.getGoid().toString() );
+                if(service.getOldOid()!=null)
+                    targetValues.add( service.getOldOid().toString() );
             } else if ( UriResolver.class.equals( resolverClass ) ) {
                 targetValues.add( service.getRoutingUri()==null ? "" : service.getRoutingUri() );
             } else if ( CaseInsensitiveUriResolver.class.equals( resolverClass ) ) {

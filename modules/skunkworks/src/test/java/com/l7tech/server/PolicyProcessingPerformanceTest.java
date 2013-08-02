@@ -9,6 +9,7 @@ import com.l7tech.common.mime.StashManager;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.identity.UserBean;
 import com.l7tech.message.*;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.security.MockGenericHttpClient;
 import com.l7tech.security.prov.JceProvider;
@@ -216,11 +217,11 @@ public class PolicyProcessingPerformanceTest extends TestCase {
 
         for (String[] serviceInfo : TEST_SERVICES) {
             PublishedService ps = new PublishedService();
-            ps.setOid(oid++);
+            ps.setGoid(new Goid(0,oid++));
             ps.setName(serviceInfo[0].substring(1));
             ps.setRoutingUri(serviceInfo[0]);
             ps.getPolicy().setXml(new String(loadResource(serviceInfo[1])));
-            ps.getPolicy().setOid(ps.getOid());
+            ps.getPolicy().setGoid(ps.getGoid());
             ps.setSoap(true);
 
             if (serviceInfo.length > 2) {

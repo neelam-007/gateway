@@ -2,6 +2,7 @@ package com.l7tech.external.assertions.policybundleinstaller;
 
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.message.Message;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.bundle.BundleInfo;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -73,11 +74,11 @@ public class PolicyBundleInstallerTest {
         }, context, cancelledCallback);
 
         final Document folderDoc = bundleResolver.getBundleItem(bundleInfo.getId(), FOLDER, false);
-        final Map<Long, Long> oldToNewMap = bundleInstaller.installFolders(-5002, folderDoc);
+        final Map<String, Goid> oldToNewMap = bundleInstaller.installFolders(new Goid(0,-5002), folderDoc);
         assertNotNull(oldToNewMap);
         assertFalse(oldToNewMap.isEmpty());
 
-        for (Map.Entry<Long, Long> entry : oldToNewMap.entrySet()) {
+        for (Map.Entry<String, Goid> entry : oldToNewMap.entrySet()) {
             System.out.println(entry.getKey() + ": " + entry.getValue());
         }
     }
@@ -135,9 +136,9 @@ public class PolicyBundleInstallerTest {
                             nameToIdMap.put(name, idToUse);
                         }
 
-                        final Long folderIdLong = Long.valueOf(folderId);
-                        System.out.println("Requesting lookup for folder: " + folderIdLong + ": " + requestXml);
-                        final String response = MessageFormat.format(CANNED_ENUMERATE_WITH_FILTER_AND_EPR_RESPONSE, String.valueOf(idToUse));
+                        final Goid folderIdGoid = Goid.parseGoid(folderId);
+                        System.out.println("Requesting lookup for folder: " + folderIdGoid + ": " + requestXml);
+                        final String response = MessageFormat.format(CANNED_ENUMERATE_WITH_FILTER_AND_EPR_RESPONSE, String.valueOf(new Goid(0,idToUse)));
                         setResponse(context, response);
                         return AssertionStatus.NONE;
                     }
@@ -147,11 +148,11 @@ public class PolicyBundleInstallerTest {
             }
         }, context, getCancelledCallback(installEvent));
 
-        final Map<Long, Long> oldToNewMap = bundleInstaller.installFolders(-5002, oAuth_1_0);
+        final Map<String, Goid> oldToNewMap = bundleInstaller.installFolders(new Goid(0,-5002), oAuth_1_0);
         assertNotNull(oldToNewMap);
         assertFalse(oldToNewMap.isEmpty());
 
-        for (Map.Entry<Long, Long> entry : oldToNewMap.entrySet()) {
+        for (Map.Entry<String, Goid> entry : oldToNewMap.entrySet()) {
             System.out.println(entry.getKey() + ": " + entry.getValue());
         }
 
@@ -536,12 +537,12 @@ public class PolicyBundleInstallerTest {
                         if (requestXml.contains(InstallerUtils.JDBC_MGMT_NS)) {
                             // no results
                             setResponse(context, XmlUtil.parse(FILTER_NO_RESULTS));
-                        } else if (requestXml.contains("/l7:Service/l7:ServiceDetail[@id='123345678']/l7:ServiceMappings/l7:HttpMapping/l7:UrlPattern")) {
+                        } else if (requestXml.contains("/l7:Service/l7:ServiceDetail[@id='"+new Goid(0,123345678)+"']/l7:ServiceMappings/l7:HttpMapping/l7:UrlPattern")) {
                             // no results
                             setResponse(context, XmlUtil.parse(FILTER_NO_RESULTS));
                         } else {
                             // results
-                            setResponse(context, XmlUtil.parse(MessageFormat.format(CANNED_ENUMERATE_WITH_FILTER_AND_EPR_RESPONSE, "123345678")));
+                            setResponse(context, XmlUtil.parse(MessageFormat.format(CANNED_ENUMERATE_WITH_FILTER_AND_EPR_RESPONSE, new Goid(0,123345678))));
                         }
                     }
                 } catch (Exception e) {
@@ -622,12 +623,12 @@ public class PolicyBundleInstallerTest {
                         if (requestXml.contains(InstallerUtils.JDBC_MGMT_NS)) {
                             // no results
                             setResponse(context, XmlUtil.parse(FILTER_NO_RESULTS));
-                        } else if (requestXml.contains("/l7:Service/l7:ServiceDetail[@id='123345678']/l7:ServiceMappings/l7:HttpMapping/l7:UrlPattern")) {
+                        } else if (requestXml.contains("/l7:Service/l7:ServiceDetail[@id='"+new Goid(0,123345678)+"']/l7:ServiceMappings/l7:HttpMapping/l7:UrlPattern")) {
                             // no results
                             setResponse(context, XmlUtil.parse(FILTER_NO_RESULTS));
                         } else {
                             // results
-                            setResponse(context, XmlUtil.parse(MessageFormat.format(CANNED_ENUMERATE_WITH_FILTER_AND_EPR_RESPONSE, "123345678")));
+                            setResponse(context, XmlUtil.parse(MessageFormat.format(CANNED_ENUMERATE_WITH_FILTER_AND_EPR_RESPONSE, new Goid(0,123345678))));
                         }
                     }
                 } catch (Exception e) {
@@ -668,7 +669,7 @@ public class PolicyBundleInstallerTest {
                     if (requestXml.contains("http://schemas.xmlsoap.org/ws/2004/09/enumeration/Enumerate")) {
                         if (requestXml.contains(InstallerUtils.JDBC_MGMT_NS)) {
                             // results
-                            setResponse(context, XmlUtil.parse(MessageFormat.format(CANNED_ENUMERATE_WITH_FILTER_AND_EPR_RESPONSE, "123345678")));
+                            setResponse(context, XmlUtil.parse(MessageFormat.format(CANNED_ENUMERATE_WITH_FILTER_AND_EPR_RESPONSE, new Goid(0,123345678))));
                         } else {
                             // no results
                             setResponse(context, XmlUtil.parse(FILTER_NO_RESULTS));
@@ -788,12 +789,16 @@ public class PolicyBundleInstallerTest {
         return itemsToDocs;
     }
 
-    private Map<Long, Long> getFolderIds() {
+    private Map<String, Goid> getFolderIds() {
         // fake the folder ids
-        return new HashMap<Long, Long>(){
+        return new HashMap<String, Goid>(){
             @Override
-            public Long get(Object key) {
-                return Long.valueOf(key.toString());
+            public Goid get(Object key) {
+                try{
+                    return Goid.parseGoid(key.toString());
+                } catch(IllegalArgumentException e) {
+                    return new Goid(0, Long.valueOf(key.toString()));
+                }
             }
 
             @Override
@@ -821,7 +826,7 @@ public class PolicyBundleInstallerTest {
     private Pair<AssertionStatus, Document> cannedIdResponse(Document requestXml) {
         try {
             System.out.println(XmlUtil.nodeToFormattedString(requestXml));
-            final String format = MessageFormat.format(CANNED_CREATE_ID_RESPONSE_TEMPLATE, String.valueOf(nextOid++));
+            final String format = MessageFormat.format(CANNED_CREATE_ID_RESPONSE_TEMPLATE, String.valueOf(new Goid(0,nextOid++)));
             final Document parse = XmlUtil.parse(format);
             return new Pair<AssertionStatus, Document>(
                     AssertionStatus.NONE,

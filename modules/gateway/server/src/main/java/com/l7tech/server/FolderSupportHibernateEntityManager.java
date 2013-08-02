@@ -1,16 +1,13 @@
 package com.l7tech.server;
 
-import com.l7tech.objectmodel.PersistentEntity;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.UpdateException;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.folder.HasFolder;
+import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.folder.Folder;
+import com.l7tech.objectmodel.folder.HasFolder;
 
 /**
  * Extension of HibernateEntityManager that supports use of Folders.
  */
-public abstract class FolderSupportHibernateEntityManager<ET extends PersistentEntity, HT extends EntityHeader> extends HibernateEntityManager<ET,HT> {
+public abstract class FolderSupportHibernateEntityManager<ET extends GoidEntity, HT extends EntityHeader> extends HibernateGoidEntityManager<ET,HT> {
 
     //- PUBLIC
 
@@ -18,13 +15,13 @@ public abstract class FolderSupportHibernateEntityManager<ET extends PersistentE
      * Update method that does not permit update of Folder.
      *
      * @param entity The entity to update.
-     * @throws UpdateException If the user attempts to modify the entities folder.
+     * @throws com.l7tech.objectmodel.UpdateException If the user attempts to modify the entities folder.
      */
     @Override
     public void update( final ET entity ) throws UpdateException {
         try {
             HasFolder entityHasFolder = (HasFolder) entity;
-            HasFolder currentEntityHasFolder = (HasFolder) this.findByPrimaryKey( entity.getOid() );
+            HasFolder currentEntityHasFolder = (HasFolder) this.findByPrimaryKey( entity.getGoid() );
 
             if (changesExistingFolder(currentEntityHasFolder, entityHasFolder)) {
                 throw new UpdateException( "Folder update not permitted." );
@@ -51,14 +48,14 @@ public abstract class FolderSupportHibernateEntityManager<ET extends PersistentE
     /**
      * Update the parent folder for the given entity.
      *
-     * @param entityId The ID for the entity to update
+     * @param entityGoid The ID for the entity to update
      * @param folder The parent folder must not be null.
      */
-    protected void setParentFolderForEntity( final long entityId, final Folder folder ) throws UpdateException {
+    protected void setParentFolderForEntity( final Goid entityGoid, final Folder folder ) throws UpdateException {
         if ( folder == null ) throw new UpdateException("Folder is required but missing.");
 
         try {
-            ET entity = this.findByPrimaryKey( entityId );
+            ET entity = this.findByPrimaryKey( entityGoid );
             if ( entity != null ) {
                 HasFolder entityHasFolder = (HasFolder) entity;
                 entityHasFolder.setFolder( folder );
@@ -69,12 +66,12 @@ public abstract class FolderSupportHibernateEntityManager<ET extends PersistentE
         } catch ( FindException fe ) {
             throw new UpdateException( "Error when updating folder.", fe );
         }
-    } 
+    }
 
     protected static boolean changesExistingFolder(HasFolder existingEntity, HasFolder updatedEntity) {
         return existingEntity != null && ( updatedEntity.getFolder() != null || existingEntity.getFolder() != null) &&
-               ( (updatedEntity.getFolder() == null && existingEntity.getFolder() != null ) ||
-                 (updatedEntity.getFolder() != null && existingEntity.getFolder() == null ) ||
-                 (updatedEntity.getFolder().getOid() != existingEntity.getFolder().getOid()) );
+                ( (updatedEntity.getFolder() == null && existingEntity.getFolder() != null ) ||
+                        (updatedEntity.getFolder() != null && existingEntity.getFolder() == null ) ||
+                        (!updatedEntity.getFolder().getGoid().equals(existingEntity.getFolder().getGoid())) );
     }
 }

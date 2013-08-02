@@ -1,15 +1,13 @@
 package com.l7tech.server.transport.ftp;
 
 import com.l7tech.common.log.HybridDiagnosticContext;
-import com.l7tech.gateway.common.log.GatewayDiagnosticContextKeys;
-import com.l7tech.objectmodel.Goid;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.InetAddressUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.gateway.common.log.GatewayDiagnosticContextKeys;
 import com.l7tech.message.FtpRequestKnob;
-import com.l7tech.message.HasServiceOid;
-import com.l7tech.message.HasServiceOidImpl;
+import com.l7tech.message.HasServiceGoid;
+import com.l7tech.message.HasServiceGoidImpl;
 import com.l7tech.message.Message;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.MessageProcessor;
 import com.l7tech.server.StashManagerFactory;
@@ -20,9 +18,10 @@ import com.l7tech.server.policy.PolicyVersionException;
 import com.l7tech.server.util.EventChannel;
 import com.l7tech.server.util.SoapFaultManager;
 import com.l7tech.util.CausedIOException;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.InetAddressUtil;
 import com.l7tech.util.ResourceUtils;
 import org.apache.ftpserver.DefaultFtpReply;
-import org.apache.ftpserver.FtpSessionImpl;
 import org.apache.ftpserver.ServerDataConnectionFactory;
 import org.apache.ftpserver.ftplet.*;
 import org.apache.ftpserver.interfaces.FtpServerSession;
@@ -56,7 +55,7 @@ class MessageProcessingFtplet extends DefaultFtplet {
                              final StashManagerFactory stashManagerFactory,
                              final EventChannel messageProcessingEventChannel,
                              final ContentTypeHeader overriddenContentType,
-                             final long hardwiredServiceOid,
+                             final Goid hardwiredServiceGoid,
                              final long maxRequestSize,
                              final Goid connectorGoid ) {
         this.ftpServerManager = ftpServerManager;
@@ -65,7 +64,7 @@ class MessageProcessingFtplet extends DefaultFtplet {
         this.stashManagerFactory = stashManagerFactory;
         this.messageProcessingEventChannel = messageProcessingEventChannel;
         this.overriddenContentType = overriddenContentType;
-        this.hardwiredServiceOid = hardwiredServiceOid;
+        this.hardwiredServiceGoid = hardwiredServiceGoid;
         this.maxRequestSize = maxRequestSize;
         this.connectorGoid = connectorGoid;
     }
@@ -132,7 +131,7 @@ class MessageProcessingFtplet extends DefaultFtplet {
     private final StashManagerFactory stashManagerFactory;
     private final EventChannel messageProcessingEventChannel;
     private final ContentTypeHeader overriddenContentType;
-    private final long hardwiredServiceOid;
+    private final Goid hardwiredServiceGoid;
     private final long maxRequestSize;
     private final Goid connectorGoid;
 
@@ -278,8 +277,8 @@ class MessageProcessingFtplet extends DefaultFtplet {
                     user));
         request = requestMessage;
 
-        if (hardwiredServiceOid != -1) {
-            requestMessage.attachKnob(HasServiceOid.class, new HasServiceOidImpl(hardwiredServiceOid));
+        if (!Goid.isDefault(hardwiredServiceGoid)) {
+            requestMessage.attachKnob(HasServiceGoid.class, new HasServiceGoidImpl(hardwiredServiceGoid));
         }
 
         // process request message

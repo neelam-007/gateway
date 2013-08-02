@@ -1,14 +1,15 @@
 package com.l7tech.server.upgrade;
 
 import com.l7tech.test.BugNumber;
-
-import static org.junit.Assert.*;
 import org.junit.Test;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileReader;
+
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  *

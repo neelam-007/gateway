@@ -74,7 +74,7 @@ public class PortalMetricsUpgradeUtility extends AbstractPortalMetricsUtility {
         final Statement selectStatement = sourceConnection.createStatement();
         final ResultSet resultSet = selectStatement.executeQuery(SELECT);
         while (resultSet.next()) {
-            final String serviceOid = resultSet.getString("serviceOid");
+            final String serviceOid = resultSet.getString("serviceGoid");
             final String apiId = resultSet.getString("apiId");
             if (StringUtils.isNumeric(serviceOid)) {
                 serviceOidApiIdMap.put(Long.valueOf(serviceOid), apiId);

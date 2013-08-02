@@ -43,14 +43,14 @@ public class BusinessServicePublisherTest {
         final String gatewayURL = "http://localhost:8080/3828382";
         EndpointPair endpointPair = new EndpointPair(gatewayURL, gatewayWsdlUrl);
 
-        final int serviceOid = 3828382;
+        final String serviceId = "3828382";
         final String businessKey = "uddi:uddi_business_key";
         WsdlToUDDIModelConverter wsdlToUDDIModelConverter = new WsdlToUDDIModelConverter(wsdl, businessKey);
-        wsdlToUDDIModelConverter.convertWsdlToUDDIModel(Arrays.asList(endpointPair), "Layer7", Long.toString(serviceOid));
+        wsdlToUDDIModelConverter.convertWsdlToUDDIModel(Arrays.asList(endpointPair), "Layer7", serviceId);
 
         TestUddiClient uddiClient = new TestUddiClient(true);
 
-        BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, serviceOid, uddiClient);
+        BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, serviceId, uddiClient);
 
         final Pair<Set<String>, Set<UDDIBusinessService>> pair =
                 servicePublisher.publishServicesToUDDIRegistry(businessKey,
@@ -110,14 +110,14 @@ public class BusinessServicePublisherTest {
         final String gatewayURHttps = "https://localhost:8080/3828382";
         EndpointPair endpointPairHttps = new EndpointPair(gatewayWsdlUrl, gatewayURHttps);
 
-        final int serviceOid = 3828382;
+        final String serviceId = "3828382";
         final String businessKey = "uddi:uddi_business_key";
         WsdlToUDDIModelConverter wsdlToUDDIModelConverter = new WsdlToUDDIModelConverter(wsdl, businessKey);
-        wsdlToUDDIModelConverter.convertWsdlToUDDIModel(Arrays.asList(endpointPair, endpointPairHttps), "Layer7", Long.toString(serviceOid));
+        wsdlToUDDIModelConverter.convertWsdlToUDDIModel(Arrays.asList(endpointPair, endpointPairHttps), "Layer7", serviceId);
 
         UDDIClient uddiClient = new TestUddiClient(true);
 
-        BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, serviceOid, uddiClient);
+        BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, serviceId, uddiClient);
 
         final Pair<Set<String>, Set<UDDIBusinessService>> pair =
                 servicePublisher.publishServicesToUDDIRegistry(businessKey,
@@ -155,12 +155,12 @@ public class BusinessServicePublisherTest {
         final String gatewayURHttps = "https://localhost:8080/3828382";
         EndpointPair endpointPairHttps = new EndpointPair(gatewayURHttps, gatewayWsdlUrl);
 
-        final int serviceOid = 3828382;
+        final String serviceId = "3828382";
         final String businessKey = "uddi:uddi_business_key";
 
         UDDIClient uddiClient = new TestUddiClient(true);
 
-        BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, serviceOid, uddiClient);
+        BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, serviceId, uddiClient);
 
         final Pair<Set<String>, Set<UDDIBusinessService>> pair =
                 servicePublisher.publishServicesToUDDIRegistry(businessKey,
@@ -179,14 +179,14 @@ public class BusinessServicePublisherTest {
         final EndpointPair endpointPair = new EndpointPair(gatewayURL, gatewayWsdlUrl);
 
 
-        final int serviceOid = 3828382;
+        final String serviceId = "3828382";
         final String businessKey = "uddi:uddi_business_key";
         WsdlToUDDIModelConverter wsdlToUDDIModelConverter = new WsdlToUDDIModelConverter(wsdl, businessKey);
-        wsdlToUDDIModelConverter.convertWsdlToUDDIModel(Arrays.asList(endpointPair), "Layer7", Long.toString(serviceOid));
+        wsdlToUDDIModelConverter.convertWsdlToUDDIModel(Arrays.asList(endpointPair), "Layer7", serviceId);
 
         UDDIClient uddiClient = new TestUddiClient(true);
 
-        BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, serviceOid, uddiClient);
+        BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, serviceId, uddiClient);
 
         final Pair<Set<String>, Set<UDDIBusinessService>> pair =
                 servicePublisher.publishServicesToUDDIRegistry(businessKey,
@@ -237,12 +237,12 @@ public class BusinessServicePublisherTest {
         final String gatewayURL = "http://localhost:8080/3828382";
         final EndpointPair endpointPair = new EndpointPair(gatewayURL, gatewayWsdlUrl);
 
-        final int serviceOid = 3828382;
+        final String serviceId = "3828382";
 
         //Test is now setup
 
         UDDIClient uddiClient = new TestUddiClient();
-        BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, serviceOid, uddiClient);
+        BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, serviceId, uddiClient);
 
         Pair<List<BindingTemplate>, List<TModel>> bindingAndModels =
                 servicePublisher.publishEndPointToExistingService(
@@ -276,9 +276,9 @@ public class BusinessServicePublisherTest {
         stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/ArtistRegistryServiceTModel_PortType.xml");
         final TModel portTypeTModel = JAXB.unmarshal(stream, TModel.class);
 
-        final int serviceOid = 3828382;
+        final String serviceId = "3828382";
         TestUddiClient uddiClient = new TestUddiClient(businessService, Arrays.asList(bindingTModel, portTypeTModel));
-        BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, serviceOid, uddiClient);
+        BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, serviceId, uddiClient);
 
         final String originalBindingKey = "uddi:ad36b520-d229-11df-a331-7bda57c0a325";
         final Pair<String, String> pair = servicePublisher.publishBindingTemplateGif(
@@ -362,9 +362,9 @@ public class BusinessServicePublisherTest {
         stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/ArtistRegistryServiceTModel_PortType.xml");
         final TModel portTypeTModel = JAXB.unmarshal(stream, TModel.class);
 
-        final int serviceOid = 3828382;
+        final String serviceId = "3828382";
         TestUddiClient uddiClient = new TestUddiClient(businessService, Arrays.asList(bindingTModel, portTypeTModel));
-        BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, serviceOid, uddiClient);
+        BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, serviceId, uddiClient);
 
         final Set<UDDIKeyedReference> configRefs = new HashSet<UDDIKeyedReference>();
         final UDDIKeyedReference metaData = new UDDIKeyedReference("key1", "name1", "value1");
@@ -481,9 +481,9 @@ public class BusinessServicePublisherTest {
     public void testDeleteOfGifEndpoint() throws Exception{
         Wsdl wsdl = Wsdl.newInstance(null, WsdlTUDDIModelConverterTest.getWsdlReader("com/l7tech/uddi/artistregistry.wsdl"));
 
-        final int serviceOid = 3828382;
-        final String gatewayWsdlUrl = "http://ssghost:8080/" + serviceOid + "?wsdl";
-        final String gatewayURL = "http://ssghost:8080/" + serviceOid;
+        final String serviceId = "3828382";
+        final String gatewayWsdlUrl = "http://ssghost:8080/" + serviceId + "?wsdl";
+        final String gatewayURL = "http://ssghost:8080/" + serviceId;
         final EndpointPair endpointPair = new EndpointPair(gatewayURL, gatewayWsdlUrl);
 
         InputStream stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/ArtistRegistryService_GIF.xml");
@@ -500,7 +500,7 @@ public class BusinessServicePublisherTest {
 
 
         TestUddiClient uddiClient = new TestUddiClient(businessService, Arrays.asList(bindingTModelGif, portTypeTModelGif, bindingTModel, portTypeTModel));
-        BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, serviceOid, uddiClient);
+        BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, serviceId, uddiClient);
 
         final String proxyBindingKey = "uddi:ad36b520-d229-11df-a331-7bda57c0a325";
         final String functionalBindingKey = "uddi:c70283ce-c113-493f-b576-957a94dd1e70";
@@ -567,9 +567,9 @@ public class BusinessServicePublisherTest {
         stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/ArtistRegistryServiceTModel_PortType.xml");
         final TModel portTypeTModel = JAXB.unmarshal(stream, TModel.class);
 
-        final int serviceOid = 3828382;
+        final String serviceId = "3828382";
         TestUddiClient uddiClient = new TestUddiClient(businessService, Arrays.asList(bindingTModelGif, portTypeTModelGif, bindingTModel, portTypeTModel));
-        BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, serviceOid, uddiClient);
+        BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, serviceId, uddiClient);
 
         final String proxyBindingKey = "uddi:ad36b520-d229-11df-a331-7bda57c0a325";
         final String functionalBindingKey = "uddi:c70283ce-c113-493f-b576-957a94dd1e70";
@@ -670,9 +670,9 @@ public class BusinessServicePublisherTest {
         stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/ArtistRegistryServiceTModel_PortType.xml");
         final TModel portTypeTModel = JAXB.unmarshal(stream, TModel.class);
 
-        final int serviceOid = 3828382;
+        final String serviceId = "3828382";
         TestUddiClient uddiClient = new TestUddiClient(businessService, Arrays.asList(bindingTModelGif, portTypeTModelGif, bindingTModel, portTypeTModel));
-        BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, serviceOid, uddiClient);
+        BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, serviceId, uddiClient);
 
         final String proxyBindingKey = "uddi:ad36b520-d229-11df-a331-7bda57c0a325";
         final String functionalBindingKey = "uddi:c70283ce-c113-493f-b576-957a94dd1e70";
@@ -739,9 +739,9 @@ public class BusinessServicePublisherTest {
         stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/ArtistRegistryServiceTModel_PortType.xml");
         final TModel portTypeTModel = JAXB.unmarshal(stream, TModel.class);
 
-        final int serviceOid = 3828382;
+        final String serviceId = "3828382";
         TestUddiClient uddiClient = new TestUddiClient(businessService, Arrays.asList(bindingTModelGif, portTypeTModelGif, bindingTModel, portTypeTModel));
-        BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, serviceOid, uddiClient);
+        BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, serviceId, uddiClient);
 
         final String proxyBindingKey = "uddi:ad36b520-d229-11df-a331-7bda57c0a325";
         final String functionalBindingKey = "uddi:c70283ce-c113-493f-b576-957a94dd1e70";
@@ -810,9 +810,9 @@ public class BusinessServicePublisherTest {
         stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/ArtistRegistryServiceTModel_PortType.xml");
         final TModel portTypeTModel = JAXB.unmarshal(stream, TModel.class);
 
-        final int serviceOid = 3828382;
+        final String serviceId = "3828382";
         TestUddiClient uddiClient = new TestUddiClient(businessService, Arrays.asList(bindingTModelGif, portTypeTModelGif, bindingTModel, portTypeTModel));
-        BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, serviceOid, uddiClient);
+        BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, serviceId, uddiClient);
 
         final String proxyBindingKey = "uddi:ad36b520-d229-11df-a331-7bda57c0a325";
         final String functionalBindingKey = "uddi:c70283ce-c113-493f-b576-957a94dd1e70";
@@ -873,7 +873,7 @@ public class BusinessServicePublisherTest {
         //this reflects the current state of trunk - there are no secure WSDL URLs currently published
         EndpointPair secureEndpointPair = new EndpointPair(secureGatewayURL, gatewayWsdlUrl);
 
-        final int serviceOid = 3828382;
+        final String serviceId = "3828382";
 
         InputStream stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/PlayerStatsProxiedEndpoint_NoMeta.xml");
         final BusinessService businessService = JAXB.unmarshal(stream, BusinessService.class);
@@ -892,7 +892,7 @@ public class BusinessServicePublisherTest {
 
         TestUddiClient uddiClient = new TestUddiClient(businessService, Arrays.asList(bindingTModel, portTypeTModel, bindingTModel2, portTypeTModel2, bindingTModel3, portTypeTModel3));
 
-        BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, serviceOid, uddiClient);
+        BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, serviceId, uddiClient);
 
         EndpointPair previousPair = new EndpointPair();
         previousPair.setEndPointUrl("http://thegatewayhost.l7tech.com");
@@ -939,9 +939,9 @@ public class BusinessServicePublisherTest {
         stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/ArtistRegistryServiceTModel_PortType.xml");
         final TModel portTypeTModel = JAXB.unmarshal(stream, TModel.class);
 
-        final int serviceOid = 3828382;
+        final String serviceId = "3828382";
         TestUddiClient uddiClient = new TestUddiClient(businessService, Arrays.asList(bindingTModelGif, portTypeTModelGif, bindingTModel, portTypeTModel));
-        BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, serviceOid, uddiClient);
+        BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, serviceId, uddiClient);
 
         final String proxyBindingKey = "uddi:ad36b520-d229-11df-a331-7bda57c0a325";
         final String functionalBindingKey = "uddi:c70283ce-c113-493f-b576-957a94dd1e70";
@@ -991,10 +991,10 @@ public class BusinessServicePublisherTest {
         final String gatewayURL = "http://localhost:8080/3828382";
         EndpointPair endpointPair = new EndpointPair(gatewayURL, gatewayWsdlUrl);
 
-        final int serviceOid = 3828382;
+        final String serviceId = "3828382";
 
         TestUddiClient uddiClient = new TestUddiClient();
-        BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, serviceOid, uddiClient);
+        BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, serviceId, uddiClient);
 
         UDDIRegistrySpecificMetaData metaData = new UDDIRegistrySpecificMetaData() {
             @Override
@@ -1077,7 +1077,7 @@ public class BusinessServicePublisherTest {
         Wsdl wsdl = Wsdl.newInstance(null, WsdlTUDDIModelConverterTest.getWsdlReader("com/l7tech/uddi/Warehouse.wsdl"));
 
         final String gatewayURL = "http://devautotest.l7tech.com:8080/service/3828382";
-        final int serviceOid = 3828382;
+        final String serviceId = "3828382";
 
         BusinessService businessService = new BusinessService();
         businessService.setServiceKey("not needed");
@@ -1092,7 +1092,7 @@ public class BusinessServicePublisherTest {
         businessService.setBindingTemplates(bindingTemplates);
 
         TestUddiClient uddiClient = new TestUddiClient(businessService, null, true);
-        BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, serviceOid, uddiClient);
+        BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, serviceId, uddiClient);
         EndpointPair endpointPair = new EndpointPair();
         endpointPair.setEndPointUrl("http://devautotest.l7tech.com");
         servicePublisher.deleteGatewayBindingTemplates("key", new HashSet<EndpointPair>(Arrays.asList(endpointPair)), null);
@@ -1117,7 +1117,7 @@ public class BusinessServicePublisherTest {
         final String gatewayURL = "http://theoriginalhost.l7tech.com:8080/service/3828382";
         EndpointPair endpointPair = new EndpointPair(gatewayURL, gatewayWsdlUrl);
 
-        final int serviceOid = 3828382;
+        final String serviceId = "3828382";
 
         InputStream stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/PlayerStats.xml");
         final BusinessService businessService = JAXB.unmarshal(stream, BusinessService.class);
@@ -1128,7 +1128,7 @@ public class BusinessServicePublisherTest {
 
         TestUddiClient uddiClient = new TestUddiClient(businessService, Arrays.asList(bindingTModel, portTypeTModel), false);
 
-        BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, serviceOid, uddiClient);
+        BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, serviceId, uddiClient);
 
         try {
             SyspropUtil.setProperty( "com.l7tech.uddi.BusinessServicePublisher.prependServiceLocalName", "" );
@@ -1174,7 +1174,7 @@ public class BusinessServicePublisherTest {
         final String gatewayURL = "http://theoriginalhost.l7tech.com:8080/service/3828382";
         EndpointPair endpointPair = new EndpointPair(gatewayURL, gatewayWsdlUrl);
 
-        final int serviceOid = 3828382;
+        final String serviceId = "3828382";
 
         //these UDDI Objects represent the previously published WSDL, and are now out of date
         InputStream stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/PlayerStats.xml");
@@ -1186,7 +1186,7 @@ public class BusinessServicePublisherTest {
 
         TestUddiClient uddiClient = new TestUddiClient(businessService, Arrays.asList(bindingTModel, portTypeTModel));
 
-        BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, serviceOid, uddiClient);
+        BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, serviceId, uddiClient);
 
         try {
             SyspropUtil.setProperty( "com.l7tech.uddi.BusinessServicePublisher.prependServiceLocalName", "" );
@@ -1233,7 +1233,7 @@ public class BusinessServicePublisherTest {
         final String gatewayURL = "http://theoriginalhost.l7tech.com:8080/service/3828382";
         EndpointPair endpointPair = new EndpointPair(gatewayURL, gatewayWsdlUrl);
 
-        final int serviceOid = 3828382;
+        final String serviceId = "3828382";
 
         //these UDDI Objects represent the previously published WSDL, and are now out of date
         InputStream stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/PlayerStatsTwoEndpoints.xml");
@@ -1249,7 +1249,7 @@ public class BusinessServicePublisherTest {
 
         TestUddiClient uddiClient = new TestUddiClient(businessService, Arrays.asList(bindingTModel, portTypeTModel, bindingTModel2, portTypeTModel2));
 
-        BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, serviceOid, uddiClient);
+        BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, serviceId, uddiClient);
 
         try {
             SyspropUtil.setProperty( "com.l7tech.uddi.BusinessServicePublisher.prependServiceLocalName", "" );
@@ -1296,7 +1296,7 @@ public class BusinessServicePublisherTest {
         EndpointPair endpointPair = new EndpointPair(gatewayURL, gatewayWsdlUrl);
         EndpointPair securePair = new EndpointPair(secureGatewayURL, gatewayWsdlUrl);
 
-        final int serviceOid = 3828382;
+        final String serviceId = "3828382";
 
         //these UDDI Objects represent the previously published WSDL, and are now out of date
         InputStream stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/PlayerStats.xml");
@@ -1308,7 +1308,7 @@ public class BusinessServicePublisherTest {
 
         TestUddiClient uddiClient = new TestUddiClient(businessService, true, Arrays.asList(bindingTModel, portTypeTModel));
 
-        BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, serviceOid, uddiClient);
+        BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, serviceId, uddiClient);
 
         try {
             SyspropUtil.setProperty( "com.l7tech.uddi.BusinessServicePublisher.prependServiceLocalName", "" );
@@ -1361,7 +1361,7 @@ public class BusinessServicePublisherTest {
         final String gatewayURL = "http://theoriginalhost.l7tech.com:8080/service/3828382";
         EndpointPair endpointPair = new EndpointPair(gatewayURL, gatewayWsdlUrl);
 
-        final int serviceOid = 3828382;
+        final String serviceId = "3828382";
 
         InputStream stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/PlayerStats.xml");
         final BusinessService businessService = JAXB.unmarshal(stream, BusinessService.class);
@@ -1372,7 +1372,7 @@ public class BusinessServicePublisherTest {
 
         TestUddiClient uddiClient = new TestUddiClient(businessService, Arrays.asList(bindingTModel, portTypeTModel));
 
-        BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, serviceOid, uddiClient);
+        BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, serviceId, uddiClient);
 
         Set<String> bindingKeys;
         try {
@@ -1431,7 +1431,7 @@ public class BusinessServicePublisherTest {
         //this reflects the current state of trunk - there are no secure WSDL URLs currently published
         EndpointPair secureEndpointPair = new EndpointPair(secureGatewayURL, gatewayWsdlUrl);
 
-        final int serviceOid = 3828382;
+        final String serviceId = "3828382";
 
         InputStream stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/PlayerStatsProxiedEndpoint.xml");
         final BusinessService businessService = JAXB.unmarshal(stream, BusinessService.class);
@@ -1450,7 +1450,7 @@ public class BusinessServicePublisherTest {
 
         TestUddiClient uddiClient = new TestUddiClient(businessService, Arrays.asList(bindingTModel, portTypeTModel, bindingTModel2, portTypeTModel2, bindingTModel3, portTypeTModel3));
 
-        BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, serviceOid, uddiClient);
+        BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, serviceId, uddiClient);
 
         EndpointPair previousPair = new EndpointPair();
         previousPair.setEndPointUrl("http://thegatewayhost.l7tech.com");
@@ -1514,7 +1514,7 @@ public class BusinessServicePublisherTest {
         //this reflects the current state of trunk - there are no secure WSDL URLs currently published
         EndpointPair secureEndpointPair = new EndpointPair(secureGatewayURL, gatewayWsdlUrl);
 
-        final int serviceOid = 3828382;
+        final String serviceId = "3828382";
 
         InputStream stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/PlayerStatsProxiedEndpoint.xml");
         final BusinessService businessService = JAXB.unmarshal(stream, BusinessService.class);
@@ -1533,7 +1533,7 @@ public class BusinessServicePublisherTest {
 
         TestUddiClient uddiClient = new TestUddiClient(businessService, Arrays.asList(bindingTModel, portTypeTModel, bindingTModel2, portTypeTModel2, bindingTModel3, portTypeTModel3));
 
-        BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, serviceOid, uddiClient);
+        BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, serviceId, uddiClient);
 
         EndpointPair previousPair = new EndpointPair();
         previousPair.setEndPointUrl("http://thegatewayhost.l7tech.com");
@@ -1594,7 +1594,7 @@ public class BusinessServicePublisherTest {
         //this reflects the current state of trunk - there are no secure WSDL URLs currently published
         EndpointPair secureEndpointPair = new EndpointPair(secureGatewayURL, gatewayWsdlUrl);
 
-        final int serviceOid = 3828382;
+        final String serviceId = "3828382";
 
         InputStream stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/PlayerStatsProxiedEndpoint.xml");
         final BusinessService businessService = JAXB.unmarshal(stream, BusinessService.class);
@@ -1613,7 +1613,7 @@ public class BusinessServicePublisherTest {
 
         TestUddiClient uddiClient = new TestUddiClient(businessService, Arrays.asList(bindingTModel, portTypeTModel, bindingTModel2, portTypeTModel2, bindingTModel3, portTypeTModel3));
 
-        BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, serviceOid, uddiClient);
+        BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, serviceId, uddiClient);
 
         EndpointPair previousPair = new EndpointPair();
         previousPair.setEndPointUrl("http://thegatewayhost.l7tech.com");
@@ -1707,7 +1707,7 @@ public class BusinessServicePublisherTest {
 
         final TestUddiClient uddiClient = new TestUddiClient(businessService, Arrays.asList(bindingTModel, portTypeTModel));
         final Wsdl wsdl = Wsdl.newInstance(null, WsdlTUDDIModelConverterTest.getWsdlReader("com/l7tech/uddi/PlayerStats.wsdl"));
-        final BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, 123132123, uddiClient);
+        final BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, "123132123", uddiClient);
         final String gatewayWsdlUrl = "http://ssghost.l7tech.com:8080/123132123?wsdl";
         final String gatewayURL = "http://ssghost.l7tech.com:8080/service/123132123";
         final EndpointPair endpointPair = new EndpointPair(gatewayURL, gatewayWsdlUrl);
@@ -1804,7 +1804,7 @@ public class BusinessServicePublisherTest {
         //this reflects the current state of trunk - there are no secure WSDL URLs currently published
         EndpointPair secureEndpointPair = new EndpointPair(secureGatewayURL, gatewayWsdlUrl);
 
-        final int serviceOid = 3828382;
+        final String serviceId = "3828382";
 
         InputStream stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/PlayerStatsProxiedEndpoint.xml");
         final BusinessService businessService = JAXB.unmarshal(stream, BusinessService.class);
@@ -1823,7 +1823,7 @@ public class BusinessServicePublisherTest {
 
         TestUddiClient uddiClient = new TestUddiClient(businessService, Arrays.asList(bindingTModel, portTypeTModel, bindingTModel2, portTypeTModel2, bindingTModel3, portTypeTModel3));
 
-        BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, serviceOid, uddiClient);
+        BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, serviceId, uddiClient);
 
         EndpointPair previousPair = new EndpointPair();
         previousPair.setEndPointUrl("http://thegatewayhost.l7tech.com");

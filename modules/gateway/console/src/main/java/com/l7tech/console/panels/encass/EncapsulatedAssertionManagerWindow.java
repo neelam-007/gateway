@@ -328,16 +328,16 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
             throws PolicyAssertionException, ObjectModelException, VersionException {
         final PolicyAdmin policyAdmin = Registry.getDefault().getPolicyAdmin();
         final PolicyAdmin.SavePolicyWithFragmentsResult savePolicyResult = policyAdmin.savePolicy(policy, true, policyFragments);
-        final long policyOid = savePolicyResult.policyCheckpointState.getPolicyOid();
-        policy.setOid(policyOid);
+        final Goid policyGoid = savePolicyResult.policyCheckpointState.getPolicyGoid();
+        policy.setGoid(policyGoid);
         policy.setGuid(savePolicyResult.policyCheckpointState.getPolicyGuid());
-        final PolicyVersion version = policyAdmin.findLatestRevisionForPolicy(policyOid);
+        final PolicyVersion version = policyAdmin.findLatestRevisionForPolicy(policyGoid);
         if (version != null) {
             String artifactVersion = config.getProperty(EncapsulatedAssertionConfig.PROP_ARTIFACT_VERSION);
             if (StringUtils.isBlank(artifactVersion)) {
                 artifactVersion = "(unknown)";
             }
-            policyAdmin.setPolicyVersionComment(policyOid, version.getOid(), "Imported Encapsulated Assertion with Artifact Version " + artifactVersion);
+            policyAdmin.setPolicyVersionComment(policyGoid, version.getGoid(), "Imported Encapsulated Assertion with Artifact Version " + artifactVersion);
         } else {
             logger.log(Level.WARNING, "Unable to set policy version comment for imported encapsulated assertion");
         }

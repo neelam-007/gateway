@@ -148,7 +148,7 @@ public class FolderPropertiesAction extends SecureAction {
 
     private void refreshTree(Folder folder, final JTree tree) {
         try {
-            this.folder = folderAdmin.findByPrimaryKey(folder.getOid());
+            this.folder = folderAdmin.findByPrimaryKey(folder.getGoid());
 
             TreePath rootPath = tree.getPathForRow(0);
             final TreePath selectedNodeTreePath = tree.getSelectionPath();

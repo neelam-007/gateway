@@ -50,6 +50,10 @@ begin
 end//
 delimiter ;
 
+DROP FUNCTION IF EXISTS goidToString;
+CREATE FUNCTION goidToString(goid binary(16)) RETURNS CHAR(32) DETERMINISTIC
+RETURN lower(hex(goid));
+
 --
 -- Security zones
 --
@@ -175,19 +179,19 @@ CREATE TABLE internal_user_group (
 
 DROP TABLE IF EXISTS folder;
 CREATE TABLE folder (
-  objectid bigint(20) NOT NULL,
+  goid binary(16) NOT NULL,
   version int(11) not null,
   name varchar(128) NOT NULL,
-  parent_folder_oid bigint(20),
+  parent_folder_goid binary(16),
   security_zone_goid binary(16),
-  PRIMARY KEY  (objectid),
-  CONSTRAINT folder_parent_folder FOREIGN KEY (parent_folder_oid) REFERENCES folder (objectid),
+  PRIMARY KEY  (goid),
+  CONSTRAINT folder_parent_folder FOREIGN KEY (parent_folder_goid) REFERENCES folder (goid),
   CONSTRAINT folder_security_zone FOREIGN KEY (security_zone_goid) REFERENCES security_zone (goid) ON DELETE SET NULL,
-  UNIQUE KEY `i_name_parent` (`name`,`parent_folder_oid`)
+  UNIQUE KEY `i_name_parent` (`name`,`parent_folder_goid`)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
 
-INSERT INTO folder VALUES (-5002, 0, 'Root Node', NULL, NULL);
+INSERT INTO folder VALUES (toGoid(0,-5002), 0, 'Root Node', NULL, NULL);
 
 --
 -- Table to record system logon activity
@@ -226,11 +230,12 @@ CREATE TABLE password_history (
 
 DROP TABLE IF EXISTS published_service;
 CREATE TABLE published_service (
-  objectid bigint(20) NOT NULL,
+  goid binary(16) NOT NULL,
+  old_objectid bigint(20),
   version int(11) NOT NULL,
   name varchar(255) NOT NULL,
   policy_xml mediumtext,
-  policy_oid bigint(20) default NULL,
+  policy_goid binary(16) default NULL,
   wsdl_url varchar(4096),
   wsdl_xml mediumtext,
   disabled TINYINT(1) NOT NULL DEFAULT 0,
@@ -242,12 +247,12 @@ CREATE TABLE published_service (
   lax_resolution TINYINT(1) NOT NULL DEFAULT 0,
   wss_processing TINYINT(1) NOT NULL DEFAULT 1,
   tracing TINYINT(1) NOT NULL DEFAULT 0,
-  folder_oid bigint(20),
+  folder_goid binary(16),
   soap_version VARCHAR(20) DEFAULT 'UNKNOWN',
   security_zone_goid binary(16),
-  PRIMARY KEY (objectid),
-  FOREIGN KEY (policy_oid) REFERENCES policy (objectid),
-  CONSTRAINT published_service_folder FOREIGN KEY (folder_oid) REFERENCES folder (objectid),
+  PRIMARY KEY (goid),
+  FOREIGN KEY (policy_goid) REFERENCES policy (goid),
+  CONSTRAINT published_service_folder FOREIGN KEY (folder_goid) REFERENCES folder (goid),
   CONSTRAINT service_security_zone FOREIGN KEY (security_zone_goid) REFERENCES security_zone (goid) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
@@ -256,14 +261,14 @@ CREATE TABLE published_service (
 --
 DROP TABLE IF EXISTS published_service_alias;
 CREATE TABLE published_service_alias (
-  `objectid` bigint(20) NOT NULL,
+  `goid` binary(16) NOT NULL,
   `version` int(11) NOT NULL,
-  `folder_oid` bigint(20) NOT NULL,
-  `published_service_oid` bigint(20) NOT NULL,
+  `folder_goid` binary(16) NOT NULL,
+  `published_service_goid` binary(16) NOT NULL,
   security_zone_goid binary(16),
-  UNIQUE KEY (folder_oid, published_service_oid),
-  FOREIGN KEY (published_service_oid) REFERENCES published_service (objectid) ON DELETE CASCADE,
-  FOREIGN KEY (folder_oid) REFERENCES folder (objectid) ON DELETE CASCADE,
+  UNIQUE KEY (folder_goid, published_service_goid),
+  FOREIGN KEY (published_service_goid) REFERENCES published_service (goid) ON DELETE CASCADE,
+  FOREIGN KEY (folder_goid) REFERENCES folder (goid) ON DELETE CASCADE,
   CONSTRAINT service_alias_security_zone FOREIGN KEY (security_zone_goid) REFERENCES security_zone (goid) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -273,7 +278,7 @@ CREATE TABLE published_service_alias (
 
 DROP TABLE IF EXISTS policy;
 CREATE TABLE policy (
-  objectid bigint(20) NOT NULL,
+  goid binary(16) NOT NULL,
   version int(11) NOT NULL,
   name varchar(255) NOT NULL,
   xml mediumtext NOT NULL,
@@ -281,12 +286,12 @@ CREATE TABLE policy (
   soap TINYINT(1) NOT NULL DEFAULT 0,
   guid char(36) NOT NULL,
   internal_tag VARCHAR(64),
-  folder_oid bigint(20),
+  folder_goid binary(16),
   security_zone_goid binary(16),
-  PRIMARY KEY (objectid),
+  PRIMARY KEY (goid),
   UNIQUE KEY i_name (name),
   UNIQUE KEY i_guid (guid),
-  CONSTRAINT policy_folder FOREIGN KEY (folder_oid) REFERENCES folder (objectid),
+  CONSTRAINT policy_folder FOREIGN KEY (folder_goid) REFERENCES folder (goid),
   CONSTRAINT policy_security_zone FOREIGN KEY (security_zone_goid) REFERENCES security_zone (goid) ON DELETE SET NULL,
   INDEX (policy_type)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
@@ -297,20 +302,20 @@ CREATE TABLE policy (
 
 DROP TABLE IF EXISTS policy_version;
 CREATE TABLE policy_version (
-  objectid bigint(20) NOT NULL,
+  goid binary(16) NOT NULL,
   version int(11) NOT NULL,
   name varchar(255),
-  policy_oid bigint(20) NOT NULL,
+  policy_goid binary(16) NOT NULL,
   ordinal int(20) NOT NULL,
   time bigint(20) NOT NULL,
   user_provider_oid bigint(20),
   user_login varchar(255),
   active boolean,
   xml mediumtext,
-  PRIMARY KEY (objectid),
-  INDEX (policy_oid),
-  UNIQUE KEY i_policy_ordinal (policy_oid, ordinal),
-  FOREIGN KEY (policy_oid) REFERENCES policy (objectid) ON DELETE CASCADE
+  PRIMARY KEY (goid),
+  INDEX (policy_goid),
+  UNIQUE KEY i_policy_ordinal (policy_goid, ordinal),
+  FOREIGN KEY (policy_goid) REFERENCES policy (goid) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
 
@@ -319,14 +324,14 @@ CREATE TABLE policy_version (
 --
 DROP TABLE IF EXISTS policy_alias;
 CREATE TABLE policy_alias (
-  `objectid` bigint(20) NOT NULL,
+  `goid` binary(16) NOT NULL,
   `version` int(11) NOT NULL,
-  `folder_oid` bigint(20) NOT NULL,
-  `policy_oid` bigint(20) NOT NULL,
+  `folder_goid` binary(16) NOT NULL,
+  `policy_goid` binary(16) NOT NULL,
   security_zone_goid binary(16),
-  UNIQUE KEY (folder_oid, policy_oid),
-  FOREIGN KEY (policy_oid) REFERENCES policy (objectid) ON DELETE CASCADE,
-  FOREIGN KEY (folder_oid) REFERENCES folder (objectid) ON DELETE CASCADE,
+  UNIQUE KEY (folder_goid, policy_goid),
+  FOREIGN KEY (policy_goid) REFERENCES policy (goid) ON DELETE CASCADE,
+  FOREIGN KEY (folder_goid) REFERENCES folder (goid) ON DELETE CASCADE,
   CONSTRAINT policy_alias_security_zone FOREIGN KEY (security_zone_goid) REFERENCES security_zone (goid) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -418,7 +423,7 @@ INSERT INTO cluster_master (nodeid, touched_time, version) VALUES (NULL, 0, 0);
 
 DROP TABLE IF EXISTS service_usage;
 CREATE TABLE service_usage (
-  serviceid bigint NOT NULL,
+  serviceid binary(16) NOT NULL,
   nodeid varchar(32) NOT NULL,
   requestnr bigint NOT NULL,
   authorizedreqnr bigint NOT NULL,
@@ -706,7 +711,7 @@ CREATE TABLE audit_message (
   objectid bigint(20) NOT NULL,
   status varchar(32) NOT NULL,
   request_id varchar(40) NOT NULL,
-  service_oid bigint(20),
+  service_goid binary(16),
   operation_name varchar(255),
   authenticated tinyint(1) default '0',
   authenticationType int(11),
@@ -720,7 +725,7 @@ CREATE TABLE audit_message (
   PRIMARY KEY  (objectid),
   KEY idx_status (status),
   KEY idx_request_id (request_id),
-  KEY idx_service_oid (service_oid),
+  KEY idx_service_oid (service_goid),
   FOREIGN KEY (objectid) REFERENCES audit_main (objectid) ON DELETE CASCADE,
   CONSTRAINT message_context_mapping FOREIGN KEY (mapping_values_oid) REFERENCES message_context_mapping_values (objectid)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
@@ -837,14 +842,14 @@ INSERT INTO cluster_properties VALUES (toGoid(0,-700001),0,'cluster.hostname',''
 DROP TABLE IF EXISTS sample_messages;
 CREATE TABLE sample_messages (
   goid BINARY(16) NOT NULL,
-  published_service_oid bigint(20),
+  published_service_goid BINARY(16),
   name varchar(128) NOT NULL,
   xml mediumtext NOT NULL,
   operation_name varchar(128),
   security_zone_goid binary(16),
-  INDEX i_ps_oid (published_service_oid),
+  INDEX i_ps_oid (published_service_goid),
   INDEX i_operation_name (operation_name),
-  FOREIGN KEY (published_service_oid) REFERENCES published_service (objectid) ON DELETE CASCADE,
+  FOREIGN KEY (published_service_goid) REFERENCES published_service (goid) ON DELETE CASCADE,
   PRIMARY KEY (goid),
   CONSTRAINT sample_msg_security_zone FOREIGN KEY (security_zone_goid) REFERENCES security_zone (goid) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
@@ -853,7 +858,7 @@ DROP TABLE IF EXISTS service_metrics;
 CREATE TABLE service_metrics (
   goid BINARY(16) NOT NULL,
   nodeid VARCHAR(32) NOT NULL,
-  published_service_oid BIGINT(20) NOT NULL,
+  published_service_goid binary(16) NOT NULL,
   resolution INTEGER NOT NULL,
   period_start BIGINT(20) NOT NULL,
   start_time BIGINT(20) NOT NULL,
@@ -870,10 +875,10 @@ CREATE TABLE service_metrics (
   front_sum INTEGER NOT NULL,
   service_state VARCHAR(16),
   INDEX i_sm_nodeid (nodeid),
-  INDEX i_sm_serviceoid (published_service_oid),
+  INDEX i_sm_servicegoid (published_service_goid),
   INDEX i_sm_pstart (period_start),
   PRIMARY KEY (goid),
-  UNIQUE (nodeid, published_service_oid, resolution, period_start)
+  UNIQUE (nodeid, published_service_goid, resolution, period_start)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
 DROP TABLE IF EXISTS service_metrics_details;
@@ -900,16 +905,16 @@ CREATE TABLE service_metrics_details (
 
 DROP TABLE IF EXISTS service_documents;
 CREATE TABLE service_documents (
-  objectid bigint(20) NOT NULL,
+  goid binary(16) NOT NULL,
   version int(11) NOT NULL,
-  service_oid bigint(20) NOT NULL,
+  service_goid binary(16) NOT NULL,
   uri MEDIUMTEXT,
   type VARCHAR(32) NOT NULL,
   content_type VARCHAR(32) NOT NULL,
   content MEDIUMTEXT,
-  INDEX i_sd_service_type (service_oid, type),
-  PRIMARY KEY (objectid),
-  FOREIGN KEY (service_oid) REFERENCES published_service (objectid) ON DELETE CASCADE
+  INDEX i_sd_service_type (service_goid, type),
+  PRIMARY KEY (goid),
+  FOREIGN KEY (service_goid) REFERENCES published_service (goid) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
 
@@ -1168,7 +1173,7 @@ CREATE TABLE uddi_registry_subscription (
 DROP TABLE IF EXISTS uddi_proxied_service_info;
 CREATE TABLE uddi_proxied_service_info (
   objectid bigint(20) NOT NULL,
-  published_service_oid bigint(20) NOT NULL,
+  published_service_goid binary(16) NOT NULL,
   uddi_registry_oid bigint(20) NOT NULL,
   version integer NOT NULL,
   uddi_business_key varchar(255) NOT NULL,
@@ -1185,8 +1190,8 @@ CREATE TABLE uddi_proxied_service_info (
   properties mediumtext,
   security_zone_goid binary(16),
   PRIMARY KEY (objectid),
-  UNIQUE KEY  (published_service_oid),
-  FOREIGN KEY (published_service_oid) REFERENCES published_service (objectid) ON DELETE CASCADE,
+  UNIQUE KEY  (published_service_goid),
+  FOREIGN KEY (published_service_goid) REFERENCES published_service (goid) ON DELETE CASCADE,
   FOREIGN KEY (uddi_registry_oid) REFERENCES uddi_registries (objectid) ON DELETE CASCADE,
   CONSTRAINT uddi_prox_svc_info_security_zone FOREIGN KEY (security_zone_goid) REFERENCES security_zone (goid) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
@@ -1248,7 +1253,7 @@ DROP TABLE IF EXISTS uddi_business_service_status;
 CREATE TABLE uddi_business_service_status (
   objectid bigint(20) NOT NULL,
   version integer NOT NULL,
-  published_service_oid bigint(20) NOT NULL,
+  published_service_goid binary(16) NOT NULL,
   uddi_registry_oid bigint(20) NOT NULL,
   uddi_service_key varchar(255) NOT NULL,
   uddi_service_name varchar(255) NOT NULL,
@@ -1259,7 +1264,7 @@ CREATE TABLE uddi_business_service_status (
   uddi_metrics_tmodel_key varchar(255),
   metrics_reference_status varchar(32) NOT NULL,
   PRIMARY KEY (objectid),
-  FOREIGN KEY (published_service_oid) REFERENCES published_service (objectid) ON DELETE CASCADE,
+  FOREIGN KEY (published_service_goid) REFERENCES published_service (goid) ON DELETE CASCADE,
   FOREIGN KEY (uddi_registry_oid) REFERENCES uddi_registries (objectid) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
@@ -1270,7 +1275,7 @@ DROP TABLE IF EXISTS uddi_service_control;
 CREATE TABLE uddi_service_control (
   objectid bigint(20) NOT NULL,
   version integer NOT NULL,
-  published_service_oid bigint(20) NOT NULL,
+  published_service_goid binary(16) NOT NULL,
   uddi_registry_oid bigint(20) NOT NULL,
   uddi_business_key varchar(255) NOT NULL,
   uddi_business_name varchar(255) NOT NULL,
@@ -1292,8 +1297,8 @@ CREATE TABLE uddi_service_control (
   has_been_overwritten tinyint(1) NOT NULL DEFAULT 0,
   security_zone_goid binary(16),
   PRIMARY KEY (objectid),
-  UNIQUE KEY  (published_service_oid),
-  FOREIGN KEY (published_service_oid) REFERENCES published_service (objectid) ON DELETE CASCADE,
+  UNIQUE KEY  (published_service_goid),
+  FOREIGN KEY (published_service_goid) REFERENCES published_service (goid) ON DELETE CASCADE,
   FOREIGN KEY (uddi_registry_oid) REFERENCES uddi_registries (objectid) ON DELETE CASCADE,
   CONSTRAINT uddi_svc_ctrl_security_zone FOREIGN KEY (security_zone_goid) REFERENCES security_zone (goid) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
@@ -1428,11 +1433,11 @@ CREATE TABLE rbac_predicate_oid (
 DROP TABLE IF EXISTS rbac_predicate_folder;
 CREATE TABLE rbac_predicate_folder (
   objectid bigint(20) NOT NULL,
-  folder_oid bigint(20) NOT NULL,
+  folder_goid binary(16) NOT NULL,
   transitive boolean NOT NULL,
   PRIMARY KEY (objectid),
   FOREIGN KEY (objectid) REFERENCES rbac_predicate (objectid) ON DELETE CASCADE,
-  FOREIGN KEY (folder_oid) REFERENCES folder (objectid) ON DELETE CASCADE
+  FOREIGN KEY (folder_goid) REFERENCES folder (goid) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --
@@ -1876,8 +1881,8 @@ CREATE TABLE wsdm_subscription (
   uuid varchar(36) NOT NULL,
   callback_url varchar(255) NOT NULL,
   reference_parameters mediumtext,
-  published_service_oid bigint(20) NOT NULL,
-  esm_service_oid bigint(20) NOT NULL DEFAULT -1,
+  published_service_goid BINARY(16) NOT NULL,
+  esm_service_goid BINARY(16) NOT NULL DEFAULT X'0000000000000000FFFFFFFFFFFFFFFF',
   termination_time bigint(20) NOT NULL,
   topic int(11) NOT NULL,
   notification_policy_guid CHAR(36),
@@ -1927,7 +1932,7 @@ CREATE TABLE active_connector (
   enabled tinyint(1) NOT NULL,
   name varchar(128) NOT NULL,
   type varchar(128) NOT NULL,
-  hardwired_service_oid bigint(20),
+  hardwired_service_goid binary(16),
   security_zone_goid binary(16),
   old_objectid bigint(20),
   PRIMARY KEY (goid),
@@ -1987,9 +1992,9 @@ CREATE TABLE encapsulated_assertion (
   version integer NOT NULL,
   name varchar(128) NOT NULL,
   guid varchar(255) NOT NULL,
-  policy_oid bigint(20) NOT NULL,
+  policy_goid binary(16) NOT NULL,
   security_zone_goid binary(16),
-  FOREIGN KEY (policy_oid) REFERENCES policy (objectid),
+  FOREIGN KEY (policy_goid) REFERENCES policy (goid),
   PRIMARY KEY (goid),
   UNIQUE KEY i_guid (guid),
   CONSTRAINT encass_security_zone FOREIGN KEY (security_zone_goid) REFERENCES security_zone (goid) ON DELETE SET NULL

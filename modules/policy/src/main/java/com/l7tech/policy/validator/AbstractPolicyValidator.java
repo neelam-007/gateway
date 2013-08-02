@@ -142,9 +142,6 @@ public abstract class AbstractPolicyValidator implements PolicyValidator {
         } else if(rootAssertion instanceof Include) {
             Include includeAssertion = (Include)rootAssertion;
             String policyIdentifier = includeAssertion.getPolicyGuid();
-            if ( policyIdentifier == null ) {
-                policyIdentifier = "policyoid:" + includeAssertion.getPolicyOid();    
-            }
             if(visitedPolicies.keySet().contains(policyIdentifier)) {
                 PolicyAssertionException pae = new PolicyAssertionException(includeAssertion, "Circular policy include for Policy " + visitedPolicies.get(policyIdentifier));
                 r.addError(new PolicyValidatorResult.Error(includeAssertion, pae.getMessage(), pae));
@@ -163,14 +160,14 @@ public abstract class AbstractPolicyValidator implements PolicyValidator {
                 }
 
                 visitedPolicies.put(includedPolicy.getGuid(), includedPolicy.getName());
-                visitedPolicies.put("policyoid:" + includedPolicy.getOid(), includedPolicy.getName());
+                visitedPolicies.put("policyid:" + includedPolicy.getGoid(), includedPolicy.getName());
                 try {
                     checkAssertionForCircularIncludes(includedPolicy.getAssertion(), visitedPolicies, r);
                 } catch(IOException e) {
                     // ignore
                 } finally {
                     visitedPolicies.remove(includedPolicy.getGuid());
-                    visitedPolicies.remove("policyoid:" + includedPolicy.getOid());
+                    visitedPolicies.remove("policyid:" + includedPolicy.getGoid());
                 }
             }
         }

@@ -5,14 +5,14 @@
  */
 package com.l7tech.console.panels;
 
-import com.l7tech.gui.util.Utilities;
 import com.l7tech.gateway.common.service.SampleMessage;
+import com.l7tech.gui.util.Utilities;
+import com.l7tech.objectmodel.Goid;
+import org.junit.Ignore;
 
 import javax.swing.*;
 import java.awt.*;
 import java.util.HashMap;
-
-import org.junit.Ignore;
 
 /**
  * @author emil
@@ -23,7 +23,7 @@ public class SampleMessageDialogTest {
     public static void main(String[] args)
       throws Exception {
         UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-        SampleMessage sm = new SampleMessage(1234, "foo", "getQuote", "<xml/>");
+        SampleMessage sm = new SampleMessage(new Goid(0,1234), "foo", "getQuote", "<xml/>");
         SampleMessageDialog smd = new SampleMessageDialog((Dialog)null, sm, true, new HashMap<String, String>());
         smd.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         smd.pack();

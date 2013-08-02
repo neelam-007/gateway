@@ -11,6 +11,7 @@ import com.l7tech.gateway.common.transport.TransportDescriptor;
 import com.l7tech.message.*;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.GoidEntity;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.*;
 import com.l7tech.server.audit.AuditContextUtils;
@@ -384,7 +385,7 @@ public class SimpleRawTransportModule extends TransportModule implements Applica
     }
 
     private void handleRawTcpRequest(final Socket sock, SsgConnector connector) {
-        long hardwiredServiceOid = connector.getLongProperty(SsgConnector.PROP_HARDWIRED_SERVICE_ID, -1L);
+        Goid hardwiredServiceGoid = connector.getGoidProperty(SsgConnector.PROP_HARDWIRED_SERVICE_ID, GoidEntity.DEFAULT_GOID);
 
         PolicyEnforcementContext context = null;
         InputStream responseStream = null;
@@ -408,8 +409,8 @@ public class SimpleRawTransportModule extends TransportModule implements Applica
             ContentTypeHeader ctype = ctypeStr == null ? ContentTypeHeader.OCTET_STREAM_DEFAULT : ContentTypeHeader.create(ctypeStr);
             request.initialize(stashManagerFactory.createStashManager(), ctype, new ByteArrayInputStream(bytes), requestSizeLimit);
             request.attachKnob(TcpKnob.class, new SocketTcpKnob(sock));
-            if (hardwiredServiceOid != -1L) {
-                request.attachKnob(HasServiceOid.class, new HasServiceOidImpl(hardwiredServiceOid));
+            if (!Goid.isDefault(hardwiredServiceGoid)) {
+                request.attachKnob(HasServiceGoid.class, new HasServiceGoidImpl(hardwiredServiceGoid));
             }
 
             AssertionStatus status = messageProcessor.processMessage(context);

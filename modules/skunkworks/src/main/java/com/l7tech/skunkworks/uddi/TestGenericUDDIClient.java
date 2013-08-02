@@ -1,34 +1,33 @@
 package com.l7tech.skunkworks.uddi;
 
-import com.l7tech.util.SyspropUtil;
-import org.junit.Test;
-import org.junit.Before;
-import org.junit.After;
-import org.xml.sax.SAXException;
-import org.w3c.dom.Document;
-import com.l7tech.common.uddi.guddiv3.*;
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.uddi.*;
-import com.l7tech.wsdl.Wsdl;
+import com.l7tech.common.uddi.guddiv3.*;
 import com.l7tech.example.manager.apidemo.SsgAdminSession;
-import com.l7tech.gateway.common.service.ServiceAdmin;
-import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.admin.UDDIRegistryAdmin;
-import com.l7tech.gateway.common.uddi.*;
+import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.gateway.common.service.ServiceAdmin;
+import com.l7tech.gateway.common.uddi.UDDIProxiedServiceInfo;
+import com.l7tech.gateway.common.uddi.UDDIRegistry;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.uddi.*;
 import com.l7tech.util.Pair;
+import com.l7tech.util.SyspropUtil;
+import com.l7tech.wsdl.Wsdl;
+import junit.framework.Assert;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.w3c.dom.Document;
+import org.xml.sax.SAXException;
 
-import java.util.*;
-import java.util.logging.LogManager;
+import javax.security.auth.login.LoginException;
+import javax.wsdl.WSDLException;
 import java.io.*;
 import java.net.MalformedURLException;
 import java.rmi.RemoteException;
-
-import junit.framework.Assert;
-
-import javax.wsdl.WSDLException;
-import javax.security.auth.login.LoginException;
+import java.util.*;
+import java.util.logging.LogManager;
 
 /**
  * Copyright (C) 2008, Layer 7 Technologies Inc.
@@ -210,7 +209,7 @@ public class TestGenericUDDIClient {
         serviceToPublish.setWsdlXml(XmlUtil.nodeToString(dom));
         serviceAdmin.savePublishedService(serviceToPublish);
 
-        UDDIProxiedServiceInfo uddiProxiedServiceInfo = uddiRegistryAdmin.findProxiedServiceInfoForPublishedService(serviceToPublish.getOid());
+        UDDIProxiedServiceInfo uddiProxiedServiceInfo = uddiRegistryAdmin.findProxiedServiceInfoForPublishedService(serviceToPublish.getGoid());
         if(uddiProxiedServiceInfo == null) throw new IllegalStateException("UDDIProxiedService not found");
         uddiRegistryAdmin.updatePublishedGatewayWsdl(uddiProxiedServiceInfo.getOid());
 
@@ -257,7 +256,7 @@ public class TestGenericUDDIClient {
         serviceToPublish.setWsdlXml(XmlUtil.nodeToString(dom));
         serviceAdmin.savePublishedService(serviceToPublish);
 
-        UDDIProxiedServiceInfo uddiProxiedServiceInfo = uddiRegistryAdmin.findProxiedServiceInfoForPublishedService(serviceToPublish.getOid());
+        UDDIProxiedServiceInfo uddiProxiedServiceInfo = uddiRegistryAdmin.findProxiedServiceInfoForPublishedService(serviceToPublish.getGoid());
         if(uddiProxiedServiceInfo == null) throw new IllegalStateException("UDDIProxiedServiceInfo not found");
         uddiRegistryAdmin.updatePublishedGatewayWsdl(uddiProxiedServiceInfo.getOid());
 

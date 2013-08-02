@@ -1,5 +1,6 @@
 package com.l7tech.server.policy;
 
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -34,8 +35,8 @@ public class ServerPolicy extends AbstractReferenceCounted<ServerPolicyHandle> {
      */
     public ServerPolicy(final Policy policy,
                         final PolicyMetadata policyMetadata,
-                        final Set<Long> usedPolicyIds,
-                        final Map<Long, Integer> dependentVersions,
+                        final Set<Goid> usedPolicyIds,
+                        final Map<Goid, Integer> dependentVersions,
                         final ServerAssertion rootAssertion,
                         final Nullary<Collection<Folder>> folderPathCallback ) {
         if ( policy == null ) throw new IllegalArgumentException("policy must not be null");
@@ -94,30 +95,30 @@ public class ServerPolicy extends AbstractReferenceCounted<ServerPolicyHandle> {
     private final ServerAssertion rootAssertion;
 
     private PolicyUniqueIdentifier buildPolicyUniqueIdentifier( final Policy policy,
-                                                                final Map<Long, Integer> dependentVersions,
-                                                                final Set<Long> usedPolicyIds ) {
-        Map<Long, Integer> usedPoliciesAndVersions = new HashMap<Long,Integer>();
+                                                                final Map<Goid, Integer> dependentVersions,
+                                                                final Set<Goid> usedPolicyIds ) {
+        Map<Goid, Integer> usedPoliciesAndVersions = new HashMap<Goid,Integer>();
 
-        for ( Long policyOid : usedPolicyIds ) {
-            Integer usedVersion = dependentVersions.get( policyOid );
+        for ( Goid policyGoid : usedPolicyIds ) {
+            Integer usedVersion = dependentVersions.get( policyGoid );
             if ( usedVersion == null ) {
-                throw new IllegalArgumentException("Missing version for policy with oid " + policyOid);
+                throw new IllegalArgumentException("Missing version for policy with goid " + policyGoid);
             }
-            usedPoliciesAndVersions.put( policyOid, usedVersion );
+            usedPoliciesAndVersions.put( policyGoid, usedVersion );
         }
 
-        return new PolicyUniqueIdentifier( policy.getOid(), policy.getVersion(), usedPoliciesAndVersions );
+        return new PolicyUniqueIdentifier( policy.getGoid(), policy.getVersion(), usedPoliciesAndVersions );
     }
 
     private static final class Metadata implements ServerPolicyMetadata {
         private final Policy policy;
         private final PolicyUniqueIdentifier policyUVID;
-        private final Set<Long> usedPolicyIds;
+        private final Set<Goid> usedPolicyIds;
         private final Nullary<Collection<Folder>> folderPathCallback;
 
         private Metadata( final Policy policy,
                           final PolicyUniqueIdentifier puvid,
-                          final Set<Long> usedPolicyIds,
+                          final Set<Goid> usedPolicyIds,
                           final Nullary<Collection<Folder>> folderPathCallback ) {
             this.policy = policy;
             this.policyUVID = puvid;
@@ -136,18 +137,18 @@ public class ServerPolicy extends AbstractReferenceCounted<ServerPolicyHandle> {
         }
 
         @Override
-        public Set<Long> getUsedPolicyIds( final boolean includeSelf ) {
+        public Set<Goid> getUsedPolicyIds( final boolean includeSelf ) {
             if ( !includeSelf) {
                 return usedPolicyIds;
             } else {
-                Set<Long> ids = new HashSet<Long>(usedPolicyIds);
-                ids.add( getPolicy().getOid() );
+                Set<Goid> ids = new HashSet<Goid>(usedPolicyIds);
+                ids.add( getPolicy().getGoid() );
                 return Collections.unmodifiableSet( ids );
             }
         }
 
         @Override
-        public Map<Long,Integer> getDependentVersions( final boolean includeSelf ) {
+        public Map<Goid,Integer> getDependentVersions( final boolean includeSelf ) {
             return policyUVID.getUsedPoliciesAndVersions( includeSelf );
         }
 

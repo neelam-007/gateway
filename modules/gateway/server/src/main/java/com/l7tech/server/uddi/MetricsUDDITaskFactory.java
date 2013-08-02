@@ -1,5 +1,6 @@
 package com.l7tech.server.uddi;
 
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.uddi.UDDIException;
 import com.l7tech.uddi.UDDIClient;
@@ -131,7 +132,7 @@ public class MetricsUDDITaskFactory extends UDDITaskFactory {
                     final Collection<UDDIBusinessServiceStatus> toUpdate =
                             factory.uddiBusinessServiceStatusManager.findByRegistryAndMetricsStatus( registryOid, UDDIBusinessServiceStatus.Status.PUBLISHED );
 
-                    final Map<Long,MetricsRequestContext> metricsMap = new HashMap<Long,MetricsRequestContext>();
+                    final Map<Goid,MetricsRequestContext> metricsMap = new HashMap<Goid,MetricsRequestContext>();
 
                     UDDIClient client = null;
                     try {
@@ -193,13 +194,13 @@ public class MetricsUDDITaskFactory extends UDDITaskFactory {
                                        final UDDIClient client,
                                        final UDDIBusinessServiceStatus businessService,
                                        final long endTime,
-                                       final Map<Long,MetricsRequestContext> metricsMap ) throws ValueException {
-            final long serviceOid = businessService.getPublishedServiceOid();
+                                       final Map<Goid,MetricsRequestContext> metricsMap ) throws ValueException {
+            final Goid serviceGoid = businessService.getPublishedServiceGoid();
             final String serviceKey = businessService.getUddiServiceKey();
             final String serviceName = businessService.getUddiServiceName();
             final String metricsTModelKey = businessService.getUddiMetricsTModelKey();
 
-            final MetricsRequestContext metricsRequestContext = getMetricsRequestContext( serviceOid, endTime, metricsMap );
+            final MetricsRequestContext metricsRequestContext = getMetricsRequestContext( serviceGoid, endTime, metricsMap );
             if ( metricsRequestContext == null ) {
                 return null;              
             }
@@ -336,16 +337,16 @@ public class MetricsUDDITaskFactory extends UDDITaskFactory {
             return published;
         }
 
-        private MetricsRequestContext getMetricsRequestContext( final long serviceOid,
+        private MetricsRequestContext getMetricsRequestContext( final Goid serviceGoid,
                                                                 final long endTime,
-                                                                final Map<Long,MetricsRequestContext> metricsMap ) {
-            MetricsRequestContext context = metricsMap.get( serviceOid );
+                                                                final Map<Goid,MetricsRequestContext> metricsMap ) {
+            MetricsRequestContext context = metricsMap.get( serviceGoid );
 
             if ( context == null ) {
-                final MetricsSummaryBin bin = factory.aggregator.getMetricsForService(serviceOid);
+                final MetricsSummaryBin bin = factory.aggregator.getMetricsForService(serviceGoid);
                 if ( bin != null ) {
                     context = new MetricsRequestContext(bin, true, null, endTime - bin.getStartTime());
-                    metricsMap.put( serviceOid, context );
+                    metricsMap.put( serviceGoid, context );
                 }
             }
 

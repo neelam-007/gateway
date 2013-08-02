@@ -1,6 +1,7 @@
 package com.l7tech.server.policy.bundle;
 
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.DomUtils;
 import com.l7tech.util.MissingRequiredElementException;
@@ -236,7 +237,7 @@ public class GatewayManagementDocumentUtilities {
      * @throws Exception parsing or xpath
      */
     @NotNull
-    public static List<Long> getSelectorId(final Document response, final boolean allowMultiple) throws UnexpectedManagementResponse {
+    public static List<Goid> getSelectorId(final Document response, final boolean allowMultiple) throws UnexpectedManagementResponse {
         final ElementCursor cursor = new DomElementCursor(response.getDocumentElement());
 
         // Find the Selector result either from a create response of from an enumeration filter with
@@ -244,7 +245,7 @@ public class GatewayManagementDocumentUtilities {
 
         final XpathResult xpathResult = XpathUtil.getXpathResultQuietly(cursor, getNamespaceMap(), "//wsman:Selector[@Name='id']");
 
-        final List<Long> foundIds = new ArrayList<Long>();
+        final List<Goid> foundIds = new ArrayList<Goid>();
         if (xpathResult.getType() == XpathResult.TYPE_NODESET && !xpathResult.getNodeSet().isEmpty()) {
 
             final XpathResultNodeSet nodeSet = xpathResult.getNodeSet();
@@ -263,7 +264,7 @@ public class GatewayManagementDocumentUtilities {
                 final XpathResultNode template = new XpathResultNode();
                 iterator.next(template);
                 final String nodeValue = template.getNodeValue();
-                foundIds.add(Long.valueOf(nodeValue));
+                foundIds.add(Goid.parseGoid(nodeValue));
             }
         }
 
@@ -277,8 +278,8 @@ public class GatewayManagementDocumentUtilities {
      * @return Long id. Null if not found. e.g. resource was not created
      */
     @Nullable
-    public static Long getCreatedId(final Document response) throws UnexpectedManagementResponse {
-        final List<Long> createdId = getSelectorId(response, false);
+    public static Goid getCreatedId(final Document response) throws UnexpectedManagementResponse {
+        final List<Goid> createdId = getSelectorId(response, false);
         return (createdId.isEmpty()) ? null : createdId.get(0);
     }
 

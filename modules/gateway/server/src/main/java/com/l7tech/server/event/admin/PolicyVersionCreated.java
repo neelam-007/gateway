@@ -12,7 +12,7 @@ public class PolicyVersionCreated extends Created<PolicyVersion> {
 
     private static String getNote( PolicyVersion entity) {
         if (entity.isActive())
-            return "activated v" + entity.getOrdinal() + " of policy " + entity.getPolicyOid();
+            return "activated v" + entity.getOrdinal() + " of policy " + entity.getPolicyGoid();
         return null;
     }
 }

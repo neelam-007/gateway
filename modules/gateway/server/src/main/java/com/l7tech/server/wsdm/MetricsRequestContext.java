@@ -1,5 +1,6 @@
 package com.l7tech.server.wsdm;
 
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.wsdm.util.ISO8601Duration;
 import com.l7tech.gateway.common.service.MetricsSummaryBin;
 
@@ -23,7 +24,7 @@ public class MetricsRequestContext {
     private final long nrSuccessRequests;
     private final long nrRequests;
     private final boolean operational;
-    private final long serviceId;
+    private final Goid serviceId;
     private final long serviceTime;
     private final long throughput;
     private final long periodStart;
@@ -35,7 +36,7 @@ public class MetricsRequestContext {
 
     public MetricsRequestContext(MetricsSummaryBin bin, boolean operational, URL url, long uptime) {
         this.operational = operational;
-        this.serviceId = bin.getServiceOid();
+        this.serviceId = bin.getServiceGoid();
         this.incomingURL = url;
 
         avgResponseTime = (long)bin.getAverageFrontendResponseTime();
@@ -116,7 +117,7 @@ public class MetricsRequestContext {
         return operational;
     }
 
-    public long getServiceId() {
+    public Goid getServiceId() {
         return serviceId;
     }
 

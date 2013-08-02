@@ -1,6 +1,7 @@
 package com.l7tech.gateway.common.security.rbac;
 
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.Goid;
 import org.hibernate.annotations.Proxy;
 
 import javax.persistence.*;
@@ -18,10 +19,10 @@ public class EntityFolderAncestryPredicate extends ScopePredicate {
         this.entityId = entityId;
     }
 
-    public EntityFolderAncestryPredicate(Permission permission, EntityType entityType, long targetEntityOid) {
+    public EntityFolderAncestryPredicate(Permission permission, EntityType entityType, Goid targetEntityGoid) {
         super(permission);
         this.entityType = entityType;
-        this.entityId = Long.toString(targetEntityOid);
+        this.entityId = Goid.toString(targetEntityGoid);
     }
 
     @Deprecated
@@ -29,7 +30,7 @@ public class EntityFolderAncestryPredicate extends ScopePredicate {
 
     @Override
     public ScopePredicate createAnonymousClone() {
-        EntityFolderAncestryPredicate copy = new EntityFolderAncestryPredicate(null, entityType, entityId);
+        EntityFolderAncestryPredicate copy = new EntityFolderAncestryPredicate(null, entityType, new Goid(entityId));
         copy.setOid(this.getOid());
         return copy;
     }

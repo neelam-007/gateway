@@ -1,6 +1,7 @@
 package com.l7tech.server.encass;
 
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.GuidEntityHeader;
 import com.l7tech.objectmodel.ObjectNotFoundException;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
@@ -24,12 +25,12 @@ public class EncapsulatedAssertionConfigManagerStub extends GoidEntityManagerStu
 
     @NotNull
     @Override
-    public Collection<EncapsulatedAssertionConfig> findByPolicyOid(long policyOid) throws FindException {
+    public Collection<EncapsulatedAssertionConfig> findByPolicyGoid(Goid policyOid) throws FindException {
         Collection<EncapsulatedAssertionConfig> got = findAll();
         List<EncapsulatedAssertionConfig> ret = new ArrayList<EncapsulatedAssertionConfig>();
         for (EncapsulatedAssertionConfig config : got) {
             Policy policy = config.getPolicy();
-            if (policy != null && policy.getOid() == policyOid)
+            if (policy != null && Goid.equals(policy.getGoid(), policyOid))
                 ret.add(config);
         }
         return ret;

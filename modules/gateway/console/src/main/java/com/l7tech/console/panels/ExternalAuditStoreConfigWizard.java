@@ -113,7 +113,7 @@ public class ExternalAuditStoreConfigWizard extends Wizard {
         // Create new lookup policy with default settings
         policy.setXml(getLookupPolicyXML(connection, connectionDriverClass,recordTable,detailTable, createEmptyPolicy));
         PolicyCheckpointState checkpoint = Registry.getDefault().getPolicyAdmin().savePolicy(policy, true);
-        policy = Registry.getDefault().getPolicyAdmin().findPolicyByPrimaryKey(checkpoint.getPolicyOid());
+        policy = Registry.getDefault().getPolicyAdmin().findPolicyByPrimaryKey(checkpoint.getPolicyGoid());
         header = new PolicyHeader(policy);
 
         // Refresh service tree
@@ -166,7 +166,7 @@ public class ExternalAuditStoreConfigWizard extends Wizard {
 
         policy.setXml(getSinkPolicyXML(connection, recordTable, detailTable, createEmptyPolicy));
         PolicyCheckpointState checkpoint = Registry.getDefault().getPolicyAdmin().savePolicy(policy, true);
-        policy = Registry.getDefault().getPolicyAdmin().findPolicyByPrimaryKey(checkpoint.getPolicyOid());
+        policy = Registry.getDefault().getPolicyAdmin().findPolicyByPrimaryKey(checkpoint.getPolicyGoid());
         header = new PolicyHeader(policy);
 
         // Refresh service tree

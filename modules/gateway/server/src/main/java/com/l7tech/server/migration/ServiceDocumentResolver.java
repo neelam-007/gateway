@@ -30,21 +30,21 @@ public class ServiceDocumentResolver extends AbstractPropertyResolver {
     public Map<ExternalEntityHeader, Set<MigrationDependency>> getDependencies(ExternalEntityHeader source, Object entity, Method property, String propertyName) throws PropertyResolverException {
         logger.log(Level.FINEST, "Getting dependencies for property {0} of entity with header {1}.", new Object[]{property.getName(),source});
 
-        final Long serviceOid;
+        final Goid serviceGoid;
         try {
-            serviceOid = Long.parseLong((String) getPropertyValue(entity, property));
+            serviceGoid = Goid.parseGoid((String) getPropertyValue(entity, property));
         } catch (RuntimeException e) {
             throw new PropertyResolverException("Error getting property value for entity: " + entity, e);
         }
 
         Map<ExternalEntityHeader,Set<MigrationDependency>> result = new HashMap<ExternalEntityHeader, Set<MigrationDependency>>();
         try {
-            for (ServiceDocument doc : documentManager.findByServiceId(serviceOid)) {
+            for (ServiceDocument doc : documentManager.findByServiceId(serviceGoid)) {
                     ExternalEntityHeader docHeader = EntityHeaderUtils.toExternal(EntityHeaderUtils.fromEntity(doc));
                     result.put(docHeader, Collections.<MigrationDependency>singleton(null));
                 }
         } catch (FindException e) {
-            logger.log(Level.FINE, "No service documents found for service: {0}.", serviceOid);
+            logger.log(Level.FINE, "No service documents found for service: {0}.", serviceGoid);
         }
         return result;
     }

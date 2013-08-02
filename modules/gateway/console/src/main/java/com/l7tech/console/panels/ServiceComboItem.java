@@ -1,10 +1,12 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.objectmodel.Goid;
+
 /**
  * Represents a published service entry in a {@link com.l7tech.console.panels.ServiceComboBox}.
 */
 public class ServiceComboItem implements Comparable {
-    ServiceComboItem(String name, long id) {
+    ServiceComboItem(String name, Goid id) {
         serviceName = name;
         serviceID = id;
     }
@@ -15,7 +17,7 @@ public class ServiceComboItem implements Comparable {
     }
 
     String serviceName;
-    long serviceID;
+    Goid serviceID;
 
     @Override
     @SuppressWarnings({ "RedundantIfStatement" })
@@ -25,7 +27,7 @@ public class ServiceComboItem implements Comparable {
 
         ServiceComboItem comboItem = (ServiceComboItem) o;
 
-        if (serviceID != comboItem.serviceID) return false;
+        if (!Goid.equals(serviceID, comboItem.serviceID)) return false;
         if (serviceName != null ? !serviceName.equals(comboItem.serviceName) : comboItem.serviceName != null)
             return false;
 
@@ -36,7 +38,7 @@ public class ServiceComboItem implements Comparable {
     public int hashCode() {
         int result;
         result = (serviceName != null ? serviceName.hashCode() : 0);
-        result = 31 * result + (int) (serviceID ^ (serviceID >>> 32));
+        result = 31 * result + (serviceID != null ? serviceID.hashCode() : 0);
         return result;
     }
 

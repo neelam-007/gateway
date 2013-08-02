@@ -143,12 +143,12 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
 
     @Override
     public PublishedService findServiceByID(String serviceID) throws FindException {
-        long oid = parseServiceOid(serviceID);
-        PublishedService service = serviceManager.findByPrimaryKey(oid);
+        Goid goid = parseServiceGoid(serviceID);
+        PublishedService service = serviceManager.findByPrimaryKey(goid);
         if (service != null) {
-            logger.finest("Returning service id " + oid + ", version " + service.getVersion());
+            logger.finest("Returning service id " + goid.toHexString() + ", version " + service.getVersion());
             Policy policy = service.getPolicy();
-            PolicyVersion policyVersion = policyVersionManager.findActiveVersionForPolicy(policy.getOid());
+            PolicyVersion policyVersion = policyVersionManager.findActiveVersionForPolicy(policy.getGoid());
             if (policyVersion != null) {
                 policy.setVersionOrdinal(policyVersion.getOrdinal());
                 policy.setVersionActive(true);
@@ -159,8 +159,8 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
 
     @Override
     public Collection<ServiceDocument> findServiceDocumentsByServiceID(String serviceID) throws FindException  {
-        long oid = parseServiceOid(serviceID);
-        return serviceDocumentManager.findByServiceId(oid);
+        Goid goid = parseServiceGoid(serviceID);
+        return serviceDocumentManager.findByServiceId(goid);
     }
 
     @Override
@@ -183,8 +183,8 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
     }
 
     @Override
-    public PublishedServiceAlias findAliasByEntityAndFolder(Long serviceOid, Long folderOid) throws FindException {
-        return serviceAliasManager.findAliasByEntityAndFolder(serviceOid, folderOid);
+    public PublishedServiceAlias findAliasByEntityAndFolder(Goid serviceGoid, Goid folderGoid) throws FindException {
+        return serviceAliasManager.findAliasByEntityAndFolder(serviceGoid, folderGoid);
     }
 
     @Override
@@ -249,8 +249,8 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
         }
     }
 
-    private static boolean isDefaultOid(PersistentEntity entity) {
-        return entity.getOid() == PersistentEntity.DEFAULT_OID;
+    private static boolean isDefaultGoid(GoidEntity entity) {
+        return Goid.isDefault(entity.getGoid());
     }
 
     /**
@@ -261,32 +261,32 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
      *
      */
     @Override
-    public long savePublishedService(PublishedService service)
+    public Goid savePublishedService(PublishedService service)
             throws UpdateException, SaveException, VersionException, PolicyAssertionException
     {
         return doSavePublishedService( service, true );
     }
 
-    private long doSavePublishedService(PublishedService service, boolean checkWsdl)
+    private Goid doSavePublishedService(PublishedService service, boolean checkWsdl)
             throws UpdateException, SaveException, VersionException, PolicyAssertionException
     {
         final Policy policy = service.getPolicy();
-        if (policy != null && isDefaultOid(service) != isDefaultOid(policy))
+        if (policy != null && isDefaultGoid(service) != isDefaultGoid(policy))
             throw new SaveException("Unable to save new service with existing policy, or to update existing service with new policy");
 
-        long oid;
+        Goid goid;
         try {
-            if (!isDefaultOid(service)) {
+            if (!isDefaultGoid(service)) {
                 // UPDATING EXISTING SERVICE
-                oid = service.getOid();
-                logger.fine("Updating PublishedService: " + oid);
+                goid = service.getGoid();
+                logger.fine("Updating PublishedService: " + goid.toHexString());
 
                 if ( checkWsdl ) {
                     uddiServiceWsdlUpdateChecker.isWsdlUpdatePermitted( service, true );
                 }
 
 
-                PublishedService previous = serviceManager.findByPrimaryKey(service.getOid());
+                PublishedService previous = serviceManager.findByPrimaryKey(service.getGoid());
                 if (previous == null)
                     throw new UpdateException("Unable to update service: previous version not found");
                 // Saving an existing published service must never change its policy xml (or folder) as a side-effect. (Bug #6405)
@@ -307,7 +307,7 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
                 // Services may not be saved for the first time with the trace bit set.
                 service.setTracingEnabled(false);
 
-                oid = serviceManager.save(service);
+                goid = serviceManager.save(service);
                 if (policy != null) {
                     policyChecker.checkPolicy(policy);
                     policyVersionManager.checkpointPolicy(policy, true, true);
@@ -317,22 +317,22 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
         } catch (ObjectModelException | IOException e) {
             throw new SaveException(e);
         }
-        return oid;
+        return goid;
     }
 
     @Override
-    public long saveAlias(PublishedServiceAlias psa) throws UpdateException, SaveException, VersionException {
-        long oid;
+    public Goid saveAlias(PublishedServiceAlias psa) throws UpdateException, SaveException, VersionException {
+        Goid goid;
         try {
-            if (psa.getOid() > 0) {
+            if (!Goid.isDefault(psa.getGoid())) {
                 // UPDATING EXISTING SERVICE
-                oid = psa.getOid();
-                logger.fine("Updating PublishedServiceAlias: " + oid);
+                goid = psa.getGoid();
+                logger.fine("Updating PublishedServiceAlias: " + goid.toHexString());
                 serviceAliasManager.update(psa);
             } else {
                 // SAVING NEW SERVICE
                 logger.fine("Saving new PublishedServiceAlias");
-                oid = serviceAliasManager.save(psa);
+                goid = serviceAliasManager.save(psa);
             }
         } catch (UpdateException e) {
             throw e;
@@ -341,23 +341,23 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
         } catch (ObjectModelException e) {
             throw new SaveException(e);
         }
-        return oid;
+        return goid;
     }
 
     /**
      * this save method handles both save and updates.
-     * the distinction happens on the server side by inspecting the oid of the object
-     * if the oid appears to be "virgin" a save is invoked, otherwise an update call is made.
+     * the distinction happens on the server side by inspecting the goid of the object
+     * if the goid appears to be "virgin" a save is invoked, otherwise an update call is made.
      * @param service the object to be saved or updated
      */
     @Override
-    public long savePublishedServiceWithDocuments(PublishedService service, Collection<ServiceDocument> serviceDocuments)
+    public Goid savePublishedServiceWithDocuments(PublishedService service, Collection<ServiceDocument> serviceDocuments)
             throws UpdateException, SaveException, VersionException, PolicyAssertionException
     {
-        long oid;
+        Goid goid;
         boolean newService = true;
 
-        if (service.getOid() > 0) {
+        if (!Goid.isDefault(service.getGoid())) {
             newService = false;
         }
 
@@ -365,16 +365,16 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
         if ( !uddiServiceWsdlUpdateChecker.isWsdlUpdatePermitted( service ) ) {
             throw new UpdateException("Cannot change the WSDL for a Published Service when its WSDL is under UDDI control");
         }
-        oid = doSavePublishedService(service, false);
+        goid = doSavePublishedService(service, false);
 
         try {
-            Collection<ServiceDocument> existingServiceDocuments = serviceDocumentManager.findByServiceId(oid);
+            Collection<ServiceDocument> existingServiceDocuments = serviceDocumentManager.findByServiceId(goid);
             for (ServiceDocument serviceDocument : existingServiceDocuments) {
                 serviceDocumentManager.delete(serviceDocument);
             }
             for (ServiceDocument serviceDocument : serviceDocuments) {
-                serviceDocument.setOid(-1);
-                serviceDocument.setServiceId(oid);
+                serviceDocument.setGoid(ServiceDocument.DEFAULT_GOID);
+                serviceDocument.setServiceId(goid);
                 serviceDocumentManager.save(serviceDocument);
             }
         } catch (FindException fe) {
@@ -387,17 +387,17 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
             else throw new UpdateException(message);
         }
 
-        return oid;
+        return goid;
     }
 
     @Override
-    public void setTracingEnabled(long serviceOid, boolean tracingEnabled) throws UpdateException {
+    public void setTracingEnabled(Goid serviceGoid, boolean tracingEnabled) throws UpdateException {
         try {
-            PublishedService service = serviceManager.findByPrimaryKey(serviceOid);
+            PublishedService service = serviceManager.findByPrimaryKey(serviceGoid);
             service.setTracingEnabled(tracingEnabled);
             serviceManager.update(service);
         } catch (FindException e) {
-            throw new UpdateException("Unable to find service with oid " + serviceOid + ": " + ExceptionUtils.getMessage(e), e);
+            throw new UpdateException("Unable to find service with goid " + serviceGoid.toHexString() + ": " + ExceptionUtils.getMessage(e), e);
         }
     }
 
@@ -405,17 +405,17 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
     public void deletePublishedService(String serviceID) throws DeleteException {
         final PublishedService service;
         try {
-            long oid = parseServiceOid(serviceID);
+            Goid goid = parseServiceGoid(serviceID);
 
             //Check to see if this service has any aliases
-            Collection<PublishedServiceAlias> aliases = serviceAliasManager.findAllAliasesForEntity(new Long(serviceID));
+            Collection<PublishedServiceAlias> aliases = serviceAliasManager.findAllAliasesForEntity(goid);
             for(PublishedServiceAlias psa: aliases){
                 serviceAliasManager.delete(psa);
             }
-            service = serviceManager.findByPrimaryKey(oid);
+            service = serviceManager.findByPrimaryKey(goid);
             serviceManager.delete(service);
-            serviceManager.deleteRoles(service.getOid());
-            logger.info("Deleted PublishedService: " + oid);
+            serviceManager.deleteRoles(service.getGoid());
+            logger.info("Deleted PublishedService: " + goid);
         } catch (FindException e) {
             throw new DeleteException("Could not find object to delete.", e);
         }
@@ -425,10 +425,10 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
     public void deleteEntityAlias(String serviceID) throws DeleteException {
         final PublishedServiceAlias alias;
         try {
-            long oid = parseServiceOid(serviceID);
-            alias = serviceAliasManager.findByPrimaryKey(oid);
+            Goid goid = parseServiceGoid(serviceID);
+            alias = serviceAliasManager.findByPrimaryKey(goid);
             serviceAliasManager.delete(alias);
-            logger.info("Deleted PublishedServiceAlias: " + oid);
+            logger.info("Deleted PublishedServiceAlias: " + goid);
         } catch (FindException e) {
             throw new DeleteException("Could not find object to delete.", e);
         }
@@ -597,8 +597,8 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
     }
 
     @Override
-    public EntityHeader[] findSampleMessageHeaders(long serviceOid, String operationName) throws FindException {
-        return sampleMessageManager.findHeaders(serviceOid, operationName);
+    public EntityHeader[] findSampleMessageHeaders(Goid serviceGoid, String operationName) throws FindException {
+        return sampleMessageManager.findHeaders(serviceGoid, operationName);
     }
 
     @Override
@@ -645,13 +645,13 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
         try {
             serviceCache.checkResolution( service );
         } catch ( NonUniqueServiceResolutionException e ) {
-            for ( final Long serviceOid : e.getConflictingServices() ) {
-                for ( final Triple<String,String,String> parameters : e.getParameters( serviceOid ) ) {
+            for ( final Goid serviceGoid : e.getConflictingServices() ) {
+                for ( final Triple<String,String,String> parameters : e.getParameters( serviceGoid ) ) {
                     conflictInformation.add( new ConflictInfo(
                         parameters.left,
-                        e.getServiceName( serviceOid, true ),
-                        e.getServiceName( serviceOid, false ),
-                        serviceOid,
+                        e.getServiceName( serviceGoid, true ),
+                        e.getServiceName( serviceGoid, false ),
+                        serviceGoid,
                         parameters.right,
                         parameters.middle
                     ) );
@@ -668,35 +668,35 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
 
     @Override
     public ResolutionReport generateResolutionReportForNewService( final PublishedService service, final Collection<ServiceDocument> serviceDocuments ) throws FindException {
-        if ( service.getOid() != PublishedService.DEFAULT_OID ) throw new FindException("Service must not be persistant");
+        if ( !Goid.isDefault(service.getGoid())) throw new FindException("Service must not be persistent");
         return generateResolutionReport( service, serviceDocuments==null ? Collections.<ServiceDocument>emptyList() : serviceDocuments );
     }
 
     @Override
-    public PublishedService findByAlias(final long aliasOid) throws FindException {
+    public PublishedService findByAlias(final Goid aliasGoid) throws FindException {
         PublishedService found = null;
-        final PublishedServiceAlias alias = serviceAliasManager.findByPrimaryKey(aliasOid);
+        final PublishedServiceAlias alias = serviceAliasManager.findByPrimaryKey(aliasGoid);
         if (alias != null) {
-            found = findServiceByID(String.valueOf(alias.getEntityOid()));
+            found = findServiceByID(String.valueOf(alias.getEntityGoid()));
         }
         return found;
     }
 
     /**
-     * Parse the String service ID to long (database format)
+     * Parse the String service ID to Goid (database format)
      *
-     * @param serviceoid the service ID, must not be null, and .
-     * @return the service ID representing <code>long</code>
+     * @param serviceGoid the service ID, must not be null, and .
+     * @return the service ID representing <code>Goid</code>
      * @throws FindException if service ID is missing or invalid
      */
-    private static long parseServiceOid( final String serviceoid ) throws FindException {
-        if ( serviceoid == null ) {
+    private static Goid parseServiceGoid( final String serviceGoid ) throws FindException {
+        if ( serviceGoid == null ) {
             throw new FindException("Missing required service identifier");
         }
         try {
-            return Long.parseLong(serviceoid);
-        } catch ( NumberFormatException nfe ) {
-            throw new FindException("Invalid service identifier '"+serviceoid+"'.");
+            return Goid.parseGoid(serviceGoid);
+        } catch ( IllegalArgumentException iae ) {
+            throw new FindException("Invalid service identifier '"+serviceGoid+"'.");
         }
     }
 
@@ -712,13 +712,13 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
     }
 
     @Override
-    public String getPolicyURL(final String serviceoid, final boolean fullPolicyUrl) throws FindException {
-        return uddiHelper.getExternalPolicyUrlForService( parseServiceOid(serviceoid), fullPolicyUrl, false);
+    public String getPolicyURL(final String serviceGoid, final boolean fullPolicyUrl) throws FindException {
+        return uddiHelper.getExternalPolicyUrlForService( parseServiceGoid(serviceGoid), fullPolicyUrl, false);
     }
 
     @Override
-    public String getConsumptionURL(final String serviceoid) throws FindException {
-        return uddiHelper.getExternalUrlForService( parseServiceOid(serviceoid));
+    public String getConsumptionURL(final String serviceGoid) throws FindException {
+        return uddiHelper.getExternalUrlForService( parseServiceGoid(serviceGoid));
     }
 
     @Override

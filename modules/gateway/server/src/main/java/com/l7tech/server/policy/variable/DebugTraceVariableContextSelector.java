@@ -18,8 +18,10 @@ import java.util.*;
  */
 public class DebugTraceVariableContextSelector implements ExpandVariables.Selector<DebugTraceVariableContext> {
     private static final String SERVICE_OID = "service.oid";
+    private static final String SERVICE_ID = "service.id";
     private static final String SERVICE_NAME = "service.name";
     private static final String POLICY_OID = "policy.oid";
+    private static final String POLICY_ID = "policy.id";
     private static final String POLICY_GUID = "policy.guid";
     private static final String POLICY_NAME = "policy.name";
     private static final String POLICY_VERSION = "policy.version";
@@ -87,7 +89,15 @@ public class DebugTraceVariableContextSelector implements ExpandVariables.Select
             @Override
             public Selection call(DebugTraceVariableContext ctx) {
                 final PublishedService service = ctx.getContext().getOriginalContext().getService();
-                return new Selection(service == null ? null : service.getOid());
+                return new Selection(service == null ? null : service.getGoid());
+            }
+        });
+
+        simpleFields.put(SERVICE_ID, new Functions.Unary<Selection, DebugTraceVariableContext>() {
+            @Override
+            public Selection call(DebugTraceVariableContext ctx) {
+                final PublishedService service = ctx.getContext().getOriginalContext().getService();
+                return new Selection(service == null ? null : service.getGoid());
             }
         });
 
@@ -104,7 +114,16 @@ public class DebugTraceVariableContextSelector implements ExpandVariables.Select
             public Selection call(DebugTraceVariableContext ctx) {
                 PolicyMetadata meta = ctx.getContext().getOriginalContext().getCurrentPolicyMetadata();
                 PolicyHeader head = meta == null ? null : meta.getPolicyHeader();
-                return new Selection(head == null ? null : head.getOid());
+                return new Selection(head == null ? null : head.getGoid());
+            }
+        });
+
+        simpleFields.put(POLICY_ID, new Functions.Unary<Selection, DebugTraceVariableContext>() {
+            @Override
+            public Selection call(DebugTraceVariableContext ctx) {
+                PolicyMetadata meta = ctx.getContext().getOriginalContext().getCurrentPolicyMetadata();
+                PolicyHeader head = meta == null ? null : meta.getPolicyHeader();
+                return new Selection(head == null ? null : head.getGoid());
             }
         });
 

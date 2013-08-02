@@ -4,7 +4,7 @@ import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.server.EntityManagerStub;
+import com.l7tech.server.OidEntityManagerStub;
 
 import java.text.ParseException;
 
@@ -12,7 +12,7 @@ import java.text.ParseException;
  * A test SecurePasswordManager that "encrypts" passwords by changing them into all uppercase, and "decrypts"
  * them by changing them to all lowercase.
  */
-public class SecurePasswordManagerStub extends EntityManagerStub<SecurePassword,EntityHeader> implements SecurePasswordManager {
+public class SecurePasswordManagerStub extends OidEntityManagerStub<SecurePassword,EntityHeader> implements SecurePasswordManager {
     public SecurePasswordManagerStub() {
     }
 

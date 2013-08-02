@@ -1,11 +1,13 @@
 package com.l7tech.gateway.common.transport;
 
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.imp.ZoneableNamedGoidEntityImp;
 import com.l7tech.search.Dependency;
 import com.l7tech.util.Functions.Unary;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
 import org.hibernate.annotations.Proxy;
+import org.hibernate.annotations.Type;
 import org.jetbrains.annotations.Nullable;
 
 import javax.persistence.*;
@@ -98,7 +100,7 @@ public class SsgActiveConnector extends ZoneableNamedGoidEntityImp {
 
     private boolean enabled;
     private String type;
-    private Long hardwiredServiceOid;
+    private Goid hardwiredServiceGoid;
     private Map<String,String> properties = new HashMap<String,String>();
     private Long oldOid;
 
@@ -109,7 +111,7 @@ public class SsgActiveConnector extends ZoneableNamedGoidEntityImp {
         super(ssgActiveConnector);
         this.enabled = ssgActiveConnector.isEnabled();
         this.type = ssgActiveConnector.getType();
-        this.hardwiredServiceOid = ssgActiveConnector.getHardwiredServiceOid();
+        this.hardwiredServiceGoid = ssgActiveConnector.getHardwiredServiceGoid();
         this.setProperties( new HashMap<String, String>( ssgActiveConnector.getProperties() ) );
         this.setSecurityZone(ssgActiveConnector.getSecurityZone());
         this.oldOid = ssgActiveConnector.oldOid;
@@ -141,15 +143,16 @@ public class SsgActiveConnector extends ZoneableNamedGoidEntityImp {
         this.type = type;
     }
 
-    @Column(name="hardwired_service_oid")
-    @Dependency(methodReturnType = Dependency.MethodReturnType.OID, type = Dependency.DependencyType.SERVICE)
-    public Long getHardwiredServiceOid() {
-        return hardwiredServiceOid;
+    @Column(name="hardwired_service_goid")
+    @Type(type = "com.l7tech.server.util.GoidType")
+    @Dependency(methodReturnType = Dependency.MethodReturnType.GOID, type = Dependency.DependencyType.SERVICE)
+    public Goid getHardwiredServiceGoid() {
+        return hardwiredServiceGoid;
     }
 
-    public void setHardwiredServiceOid(Long hardwiredServiceOid) {
+    public void setHardwiredServiceGoid(Goid hardwiredServiceGoid) {
         checkLocked();
-        this.hardwiredServiceOid = hardwiredServiceOid;
+        this.hardwiredServiceGoid = hardwiredServiceGoid;
     }
 
     @Column(name="old_objectid")

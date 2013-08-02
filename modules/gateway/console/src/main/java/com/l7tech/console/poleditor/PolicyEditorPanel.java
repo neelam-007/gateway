@@ -23,6 +23,7 @@ import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.gui.util.*;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.*;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.AllAssertion;
@@ -256,24 +257,24 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     }
 
     /**
-     * Get the OID of the PublishedService whose policy is open for editing, if this panel is editing the
+     * Get the GOID of the PublishedService whose policy is open for editing, if this panel is editing the
      * policy of a PublishedService.
      *
-     * @return the OID of the PublishedService whose policy is open for editing, or null if it's not a PublishedService policy.
+     * @return the GOID of the PublishedService whose policy is open for editing, or null if it's not a PublishedService policy.
      */
-    public Long getPublishedServiceOid() {
+    public Goid getPublishedServiceGoid() {
         final PublishedService ps = getPublishedService();
-        return ps == null ? null : ps.getOid();
+        return ps == null ? null : ps.getGoid();
     }
 
     /**
-     * Get the OID of the Policy that is open for editing in this editor panel.
+     * Get the GOID of the Policy that is open for editing in this editor panel.
      *
-     * @return the policy OID.  Never null.
+     * @return the policy GOID.  Never null.
      */
-    public long getPolicyOid() {
+    public Goid getPolicyGoid() {
         try {
-            return getPolicyNode().getPolicy().getOid();
+            return getPolicyNode().getPolicy().getGoid();
         } catch (FindException e) {
             throw new RuntimeException(e);
         }
@@ -641,13 +642,13 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     }
 
     private long getLatestVersionNumber() {
-        final long policyOid;
+        final Goid policyGoid;
         try {
-            policyOid = subject.getPolicyNode().getPolicy().getOid();
+            policyGoid = subject.getPolicyNode().getPolicy().getGoid();
         } catch (final FindException e) {
             throw new RuntimeException(e);
         }
-        final PolicyVersion latest = policyAdmin.findLatestRevisionForPolicy(policyOid);
+        final PolicyVersion latest = policyAdmin.findLatestRevisionForPolicy(policyGoid);
         return latest.getOrdinal();
     }
 

@@ -4,6 +4,7 @@
 package com.l7tech.gateway.common.security.rbac;
 
 import com.l7tech.objectmodel.Entity;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.HasFolder;
 import org.hibernate.annotations.Proxy;
@@ -56,7 +57,7 @@ public class FolderPredicate extends ScopePredicate implements ScopeEvaluator {
 
         Folder nextFolder = entityFolder;
         while (nextFolder != null) {
-            if (nextFolder.getOid() == this.folder.getOid())
+            if (Goid.equals(this.folder.getGoid(), nextFolder.getGoid()))
                 return true;
             if (!transitive)
                 break;
@@ -69,7 +70,7 @@ public class FolderPredicate extends ScopePredicate implements ScopeEvaluator {
      * @return the folder in which entities must be stored to match this predicate.
      */
     @ManyToOne(optional=false)
-    @JoinColumn(name="folder_oid")
+    @JoinColumn(name="folder_goid")
     public Folder getFolder() {
         return folder;
     }

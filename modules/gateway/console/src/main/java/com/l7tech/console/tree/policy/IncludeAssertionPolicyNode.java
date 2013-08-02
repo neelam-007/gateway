@@ -6,6 +6,7 @@ package com.l7tech.console.tree.policy;
 import com.l7tech.console.action.EditPolicyAction;
 import com.l7tech.console.tree.EntityWithPolicyNode;
 import com.l7tech.console.tree.servicesAndPolicies.RootNode;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.Policy;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
@@ -53,11 +54,11 @@ public class IncludeAssertionPolicyNode extends AssertionTreeNode<Include> {
         try {
             Assertion ass = policy.getAssertion();
             if (!(ass instanceof CompositeAssertion))
-                throw new RuntimeException(MessageFormat.format("Top-level assertion in included policy #{0} ({1}) is not a CompositeAssertion", policy.getOid(), policy.getName()));
+                throw new RuntimeException(MessageFormat.format("Top-level assertion in included policy #{0} ({1}) is not a CompositeAssertion", policy.getGoid(), policy.getName()));
             LoadChildrenStrategy strat = LoadChildrenStrategy.newStrategy(this);
             strat.loadChildren(this, (CompositeAssertion)ass);
         } catch (IOException e) {
-            logger.log(Level.WARNING, MessageFormat.format("Couldn't parse included policy #{0} ({1}): {2}", policy.getOid(), policy.getName(), ExceptionUtils.getMessage(e)), e);
+            logger.log(Level.WARNING, MessageFormat.format("Couldn't parse included policy #{0} ({1}): {2}", policy.getGoid(), policy.getName(), ExceptionUtils.getMessage(e)), e);
         }
     }
 
@@ -160,9 +161,9 @@ public class IncludeAssertionPolicyNode extends AssertionTreeNode<Include> {
     public Action[] getActions() {
         final List<Action> actions = new ArrayList<Action>();
         final Policy policy = getPolicy();
-        if (policy != null && Policy.DEFAULT_OID != policy.getOid()) {
+        if (policy != null && !Goid.isDefault(policy.getGoid())) {
             final RootNode rootNode = TopComponents.getInstance().getRootNode();
-            final AbstractTreeNode retrievedNode = rootNode.getNodeForEntity(policy.getOid());
+            final AbstractTreeNode retrievedNode = rootNode.getNodeForEntity(policy.getGoid());
             if (retrievedNode instanceof EntityWithPolicyNode) {
                 final EntityWithPolicyNode entityNode = (EntityWithPolicyNode) retrievedNode;
                 // allow user to edit the included policy

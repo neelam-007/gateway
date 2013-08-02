@@ -345,19 +345,19 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin, ApplicationCon
     }
 
     @Override
-    public Collection<MetricsSummaryBin> summarizeByPeriod(final String nodeId, final long[] serviceOids, final Integer resolution, final Long minPeriodStart, final Long maxPeriodStart, final boolean includeEmpty) throws FindException {
-        return serviceMetricsManager.summarizeByPeriod(nodeId, serviceOids, resolution, minPeriodStart, maxPeriodStart, includeEmpty);
+    public Collection<MetricsSummaryBin> summarizeByPeriod(final String nodeId, final Goid[] serviceGoids, final Integer resolution, final Long minPeriodStart, final Long maxPeriodStart, final boolean includeEmpty) throws FindException {
+        return serviceMetricsManager.summarizeByPeriod(nodeId, serviceGoids, resolution, minPeriodStart, maxPeriodStart, includeEmpty);
     }
 
     @Override
-    public Collection<MetricsSummaryBin> summarizeLatestByPeriod(final String nodeId, final long[] serviceOids, final Integer resolution, final long duration, final boolean includeEmpty) throws FindException {
+    public Collection<MetricsSummaryBin> summarizeLatestByPeriod(final String nodeId, final Goid[] serviceGoids, final Integer resolution, final long duration, final boolean includeEmpty) throws FindException {
         final long minPeriodStart = System.currentTimeMillis() - duration;
-        return serviceMetricsManager.summarizeByPeriod(nodeId, serviceOids, resolution, minPeriodStart, null, includeEmpty);
+        return serviceMetricsManager.summarizeByPeriod(nodeId, serviceGoids, resolution, minPeriodStart, null, includeEmpty);
     }
 
     @Override
-    public MetricsSummaryBin summarizeLatest(final String nodeId, final long[] serviceOids, final int resolution, final int duration, final boolean includeEmpty) throws FindException {
-        return serviceMetricsManager.summarizeLatest(nodeId, serviceOids, resolution, duration, includeEmpty);
+    public MetricsSummaryBin summarizeLatest(final String nodeId, final Goid[] serviceGoids, final int resolution, final int duration, final boolean includeEmpty) throws FindException {
+        return serviceMetricsManager.summarizeLatest(nodeId, serviceGoids, resolution, duration, includeEmpty);
     }
 
     @NotNull

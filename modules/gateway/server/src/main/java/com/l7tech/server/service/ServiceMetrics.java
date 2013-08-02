@@ -3,6 +3,8 @@ package com.l7tech.server.service;
 import com.l7tech.gateway.common.service.ServiceState;
 import com.l7tech.gateway.common.mapping.MessageContextMapping;
 import com.l7tech.identity.User;
+import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.GoidEntity;
 
 import java.util.logging.Logger;
 import java.util.List;
@@ -38,7 +40,7 @@ class ServiceMetrics {
      * The OID of the {@link com.l7tech.gateway.common.service.PublishedService} for which these MetricsBins were
      * collected.
      */
-    private final long _serviceOid;
+    private final Goid _serviceGoid;
 
     /**
      * The collector for summary statistics.
@@ -55,18 +57,18 @@ class ServiceMetrics {
     /**
      * Creates a ServiceMetrics and starts collection right away.
      *
-     * @param serviceOid the OID of the {@link com.l7tech.gateway.common.service.PublishedService} for which metrics are being gathered
+     * @param serviceGoid the GOID of the {@link com.l7tech.gateway.common.service.PublishedService} for which metrics are being gathered
      */
-    public ServiceMetrics(long serviceOid) {
-        if (serviceOid < 0) throw new IllegalArgumentException("serviceOid must be positive");
+    public ServiceMetrics(Goid serviceGoid) {
+        if (Goid.isDefault(serviceGoid)) throw new IllegalArgumentException("serviceGoid must not be the default");
 
-        _serviceOid = serviceOid;
+        _serviceGoid = serviceGoid;
         _currentCollector = new MetricsCollector(System.currentTimeMillis());
         _currentDetailCollector = new HashMap<MetricsDetailKey,MetricsCollector>();
     }
 
-    public long getServiceOid() {
-        return _serviceOid;
+    public Goid getServiceGoid() {
+        return _serviceGoid;
     }
 
     /**
@@ -136,7 +138,7 @@ class ServiceMetrics {
             // Bug 3728: Omit no-traffic fine bins to improve performance.
             // Dashboard will use empty uptime bins to keep moving chart advancing.
             if (currentServiceState != lastServiceState || _currentCollector.getNumAttemptedRequest() > 0) {
-                set = new MetricsCollectorSet(_serviceOid, currentServiceState, _currentCollector, _currentDetailCollector);
+                set = new MetricsCollectorSet(_serviceGoid, currentServiceState, _currentCollector, _currentDetailCollector);
             }
 
             _currentCollector = new MetricsCollector(System.currentTimeMillis());
@@ -151,7 +153,7 @@ class ServiceMetrics {
 
     static MetricsCollectorSet getEmptyMetricsSet( final long startTime, final long endTime ) {
         MetricsCollector collector = new MetricsCollector( -1L );
-        return new MetricsCollectorSet( -1L, startTime, endTime, collector, Collections.<MetricsDetailKey,MetricsCollector>emptyMap() );
+        return new MetricsCollectorSet( GoidEntity.DEFAULT_GOID, startTime, endTime, collector, Collections.<MetricsDetailKey,MetricsCollector>emptyMap() );
     }
 
     static class MetricsDetailKey {
@@ -231,18 +233,18 @@ class ServiceMetrics {
      * Set of collection and summary metrics with identifying information
      */
     public static class MetricsCollectorSet {
-        private final long serviceOid;
+        private final Goid serviceGoid;
         private final long startTime;
         private final long endTime;
         private final ServiceState serviceState;
         private final MetricsCollector summaryMetrics;
         private final Map<MetricsDetailKey, MetricsCollector> detailMetrics;
 
-        MetricsCollectorSet( final long serviceOid,
+        MetricsCollectorSet( final Goid serviceGoid,
                              final ServiceState serviceState,
                              final MetricsCollector summaryMetrics,
                              final Map<MetricsDetailKey, MetricsCollector> detailMetrics) {
-            this.serviceOid = serviceOid;
+            this.serviceGoid = serviceGoid;
             this.startTime = summaryMetrics.startTime;
             this.endTime = System.currentTimeMillis();
             this.serviceState = serviceState;
@@ -250,12 +252,12 @@ class ServiceMetrics {
             this.detailMetrics = detailMetrics;
         }
 
-        MetricsCollectorSet( final long serviceOid,
+        MetricsCollectorSet( final Goid serviceGoid,
                              final long startTime,
                              final long endTime,
                              final MetricsCollector summaryMetrics,
                              final Map<MetricsDetailKey, MetricsCollector> detailMetrics) {
-            this.serviceOid = serviceOid;
+            this.serviceGoid = serviceGoid;
             this.startTime = startTime;
             this.endTime = endTime;
             this.serviceState = null;
@@ -263,8 +265,8 @@ class ServiceMetrics {
             this.detailMetrics = detailMetrics;
         }
 
-        public long getServiceOid() {
-            return serviceOid;
+        public Goid getServiceGoid() {
+            return serviceGoid;
         }
 
         public long getStartTime() {

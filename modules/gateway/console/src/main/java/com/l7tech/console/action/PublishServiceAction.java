@@ -113,7 +113,7 @@ public class PublishServiceAction extends SecureAction {
                 final AbstractTreeNode sn = TreeNodeFactory.asTreeNode(eh, RootNode.getComparator());
                 model.insertNodeInto(sn, parentNode, parentNode.getInsertPosition(sn, RootNode.getComparator()));
                 RootNode rootNode = (RootNode) model.getRoot();
-                rootNode.addEntity(eh.getOid(), sn);
+                rootNode.addEntity(eh.getGoid(), sn);
                 tree.setSelectionPath(new TreePath(sn.getPath()));
                 SwingUtilities.invokeLater(new Runnable() {
                     @Override

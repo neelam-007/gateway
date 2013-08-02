@@ -5,6 +5,7 @@ package com.l7tech.server.service;
 
 import com.l7tech.identity.User;
 import com.l7tech.gateway.common.mapping.MessageContextMapping;
+import com.l7tech.objectmodel.Goid;
 
 import java.util.List;
 
@@ -49,14 +50,14 @@ public interface ServiceMetricsServices {
     /**
      * Ensure service metrics are tracked for a given published service.
      *
-     * @param serviceOid    OID of published service
+     * @param serviceGoid    GOID of published service
      */
-    void trackServiceMetrics(long serviceOid);
+    void trackServiceMetrics(Goid serviceGoid);
 
     /**
      * Record service metrics for a given published service and mapping info.
      *
-     * @param serviceOid  OID of published service
+     * @param serviceGoid  GOID of published service
      * @param operation   the published service operation (may be null)
      * @param authorizedUser the user for the request (may be null)
      * @param mappings    Message context mapping information (may be null)
@@ -65,7 +66,7 @@ public interface ServiceMetricsServices {
      * @param frontTime  Complete time for request processing
      * @param backTime   Time taken by the protected service
      */
-    void addRequest(long serviceOid, String operation, User authorizedUser, List<MessageContextMapping> mappings, boolean authorized, boolean completed, int frontTime, int backTime);
+    void addRequest(Goid serviceGoid, String operation, User authorizedUser, List<MessageContextMapping> mappings, boolean authorized, boolean completed, int frontTime, int backTime);
 
     /**
      * Get the interval for fine metrics bins.

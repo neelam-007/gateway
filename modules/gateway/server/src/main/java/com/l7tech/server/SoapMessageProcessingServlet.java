@@ -14,6 +14,8 @@ import com.l7tech.gateway.common.audit.SystemMessages;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.message.*;
+import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.GoidEntity;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.security.xml.decorator.DecoratorException;
@@ -197,9 +199,9 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             final InputStream requestInput = gzipEncodedTransaction ? gis : hrequest.getInputStream();
             request.initialize(stashManager, ctype, requestInput, maxBytes);
 
-            final long hardwiredServiceOid = connector.getLongProperty(SsgConnector.PROP_HARDWIRED_SERVICE_ID, -1L );
-            if (hardwiredServiceOid != -1L ) {
-                request.attachKnob(HasServiceOid.class, new HasServiceOidImpl(hardwiredServiceOid));
+            final Goid hardwiredServiceGoid = connector.getGoidProperty(SsgConnector.PROP_HARDWIRED_SERVICE_ID, GoidEntity.DEFAULT_GOID);
+            if (!Goid.isDefault(hardwiredServiceGoid) ) {
+                request.attachKnob(HasServiceGoid.class, new HasServiceGoidImpl(hardwiredServiceGoid));
             }
 
             final MimeKnob mk = request.getMimeKnob();
@@ -447,7 +449,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         }
     }
 
-    private String makePolicyUrl(HttpServletRequest hreq, long oid) {
+    private String makePolicyUrl(HttpServletRequest hreq, Goid goid) {
         StringBuilder policyUrl = new StringBuilder( hreq.getScheme() );
         policyUrl.append("://");
         policyUrl.append(InetAddressUtil.getHostForUrl(hreq.getServerName()));
@@ -459,7 +461,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             policyServletUri = DEFAULT_POLICYSERVLET_URI;
 
         policyUrl.append(policyServletUri);
-        policyUrl.append(oid);
+        policyUrl.append(goid);
 
         return policyUrl.toString();
     }
@@ -475,7 +477,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             if (shouldSendBackPolicyUrl(context)) {
                 PublishedService pserv = context.getService();
                 if (pserv != null) {
-                    String purl = makePolicyUrl(hreq, pserv.getOid());
+                    String purl = makePolicyUrl(hreq, pserv.getGoid());
                     hresp.setHeader(SecureSpanConstants.HttpHeaders.POLICYURL_HEADER, purl);
                 }
             }
@@ -551,7 +553,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                 if (shouldSendBackPolicyUrl(context)) {
                     PublishedService pserv = context.getService();
                     if (pserv != null) {
-                        String purl = makePolicyUrl(hreq, pserv.getOid());
+                        String purl = makePolicyUrl(hreq, pserv.getGoid());
                         hresp.setHeader(SecureSpanConstants.HttpHeaders.POLICYURL_HEADER, purl);
                     }
                 }
@@ -602,7 +604,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             PublishedService pserv = context.getService();
             String purl;
             if (pserv != null && shouldSendBackPolicyUrl(context)) {
-                purl = makePolicyUrl(hreq, pserv.getOid());
+                purl = makePolicyUrl(hreq, pserv.getGoid());
                 hresp.setHeader(SecureSpanConstants.HttpHeaders.POLICYURL_HEADER, purl);
             }
             sos = hresp.getOutputStream();

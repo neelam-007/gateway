@@ -19,10 +19,7 @@ import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.ObjectModelException;
-import com.l7tech.objectmodel.SaveException;
+import com.l7tech.objectmodel.*;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyCheckpointState;
 import com.l7tech.policy.PolicyHeader;
@@ -110,7 +107,7 @@ public class EditServiceProperties extends EntityWithPolicyNodeAction<ServiceNod
                         //something else show to the user in the tree changes
                         if(!(serviceNode instanceof ServiceNodeAlias)){
                             ServiceHeader sH = (ServiceHeader) serviceNode.getUserObject();
-                            tree.updateAllAliases(sH.getOid());
+                            tree.updateAllAliases(sH.getGoid());
 
                             SwingUtilities.invokeLater(new Runnable() {
                                 public void run() {
@@ -132,7 +129,7 @@ public class EditServiceProperties extends EntityWithPolicyNodeAction<ServiceNod
                         if (pn instanceof ServiceNode) {
                             PublishedService editedSvc = ((ServiceNode) pn).getEntity();
                             // if currently edited service was deleted
-                            if (serviceNode.getEntityOid() == editedSvc.getOid()) {
+                            if (Goid.equals(serviceNode.getEntityGoid(), editedSvc.getGoid())) {
                                 // update name on top of editor
                                 pe.changeSubjectName(serviceNode.getName());
                                 pe.updateHeadings();
@@ -212,7 +209,7 @@ public class EditServiceProperties extends EntityWithPolicyNodeAction<ServiceNod
             // Create new trace policy with default settings
             Policy policy = makeDefaultTracePolicyEntity();
             PolicyCheckpointState checkpoint = Registry.getDefault().getPolicyAdmin().savePolicy(policy, true);
-            policy = Registry.getDefault().getPolicyAdmin().findPolicyByPrimaryKey(checkpoint.getPolicyOid());
+            policy = Registry.getDefault().getPolicyAdmin().findPolicyByPrimaryKey(checkpoint.getPolicyGoid());
             header = new PolicyHeader(policy);
 
             // Refresh service tree

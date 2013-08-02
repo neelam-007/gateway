@@ -31,16 +31,16 @@ public class FolderNode extends AbstractTreeNode implements FolderNodeBase {
 
         final FolderAdmin folderAdmin = Registry.getDefault().getFolderAdmin();
 
-        if (parentFolder == null && folderHeader.getParentFolderOid() != null) {
+        if (parentFolder == null && folderHeader.getParentFolderGoid() != null) {
             try {
-                parentFolder = folderAdmin.findByPrimaryKey(folderHeader.getParentFolderOid());
+                parentFolder = folderAdmin.findByPrimaryKey(folderHeader.getParentFolderGoid());
             } catch (FindException e) {
                 throw new RuntimeException("Couldn't find parent folder", e);
             }
         }
 
         folder = new Folder(folderHeader.getName(), parentFolder);
-        folder.setOid(folderHeader.getOid());
+        folder.setGoid(folderHeader.getGoid());
         folder.setVersion(folderHeader.getVersion());
         SecurityZone zone = null;
         final Goid securityZoneGoid = folderHeader.getSecurityZoneGoid();
@@ -73,8 +73,8 @@ public class FolderNode extends AbstractTreeNode implements FolderNodeBase {
     }
 
     @Override
-    public long getOid() {
-        return folderHeader.getOid();
+    public Goid getGoid() {
+        return folderHeader.getGoid();
     }
 
     /**
@@ -141,18 +141,18 @@ public class FolderNode extends AbstractTreeNode implements FolderNodeBase {
     }
 
     /**
-     * Non recursive method to determine if the entity represented by the supplied oid is a direct child
+     * Non recursive method to determine if the entity represented by the supplied goid is a direct child
      * of this folder node. Will also return true if an alias representing this entity is in this folder
-     * @param oid the oid to search for
-     * @return true if oid's entity is a direct child, false otherwise
+     * @param goid the goid to search for
+     * @return true if goid's entity is a direct child, false otherwise
      */
-    public boolean isEntityAChildNode(long oid){
+    public boolean isEntityAChildNode(Goid goid){
         for(int i = 0; i < getChildCount(); i++){
             AbstractTreeNode atn = (AbstractTreeNode) getChildAt(i);
             Object userObj = atn.getUserObject();
             if(atn instanceof EntityWithPolicyNode){
                 EntityHeader aH = (EntityHeader) userObj;
-                if(aH.getOid() == oid){
+                if(Goid.equals(aH.getGoid(), goid)){
                     return true;
                 }
             }

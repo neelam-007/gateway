@@ -66,8 +66,8 @@ public class PolicyEntityNode extends EntityWithPolicyNode<Policy, PolicyHeader>
         }
 
         PolicyHeader newEh = new PolicyHeader(updatedPolicy);
-        newEh.setAliasOid(eh.getAliasOid());
-        newEh.setFolderOid(eh.getFolderOid());
+        newEh.setAliasGoid(eh.getAliasGoid());
+        newEh.setFolderGoid(eh.getFolderGoid());
         newEh.setPolicyDisabled(updatedPolicy.isDisabled());
 
         setUserObject(newEh);
@@ -105,7 +105,7 @@ public class PolicyEntityNode extends EntityWithPolicyNode<Policy, PolicyHeader>
         if (getEntityHeader().getPolicyType().equals(PolicyType.INCLUDE_FRAGMENT)) {
             try {
                 EncapsulatedAssertionConfig config;
-                final Collection<EncapsulatedAssertionConfig> found = Registry.getDefault().getEncapsulatedAssertionAdmin().findByPolicyOid(getEntityHeader().getOid());
+                final Collection<EncapsulatedAssertionConfig> found = Registry.getDefault().getEncapsulatedAssertionAdmin().findByPolicyGoid(getEntityHeader().getGoid());
                 EncapsulatedAssertionConsoleUtil.attachPolicies(found);
                 if (found.isEmpty()) {
                     // policy not yet associated with an EncapsulatedAssertionConfig

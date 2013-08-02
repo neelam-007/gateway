@@ -17,7 +17,7 @@ public class EntityHeaderMarshallingTest {
 
     @Test
     public void testSomething() throws Exception {
-        JAXB.marshal(new EntityHeaderWithDependencies(new PolicyHeader(-1,true, PolicyType.INCLUDE_FRAGMENT,"a policy", "desc", "abc-123", -1L, null, 2, 2, false, null), Collections.singleton(new EntityHeaderRef(EntityType.FOLDER, "-1234"))), System.out);
+        JAXB.marshal(new EntityHeaderWithDependencies(new PolicyHeader(new Goid(0,-1),true, PolicyType.INCLUDE_FRAGMENT,"a policy", "desc", "abc-123", new Goid(0,-1L), null, 2, 2, false, null), Collections.singleton(new EntityHeaderRef(EntityType.FOLDER, new Goid(0,-1234).toHexString()))), System.out);
     }
 
     @Test

@@ -13,6 +13,7 @@ import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.gateway.common.uddi.UDDIServiceControl;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
@@ -241,10 +242,10 @@ public class PublishServiceWizard extends Wizard {
 
             final Frame parent = TopComponents.getInstance().getTopParent();
             final Collection<ServiceDocument> serviceDocuments = saBundle.getServiceDocuments();
-            saveServiceWithResolutionCheck( parent, newService, serviceDocuments, new Functions.UnaryVoidThrows<Long,Exception>(){
+            saveServiceWithResolutionCheck( parent, newService, serviceDocuments, new Functions.UnaryVoidThrows<Goid,Exception>(){
                 @Override
-                public void call( final Long oid ) throws Exception {
-                    saBundle.service.setOid(oid);
+                public void call( final Goid goid ) throws Exception {
+                    saBundle.service.setGoid(goid);
                     Registry.getDefault().getSecurityProvider().refreshPermissionCache();
                     Thread.sleep(1000);
                     PublishServiceWizard.this.notify(new ServiceHeader(saBundle.service));
@@ -252,7 +253,7 @@ public class PublishServiceWizard extends Wizard {
                     //was the service created from UDDI, if the WSDL url still matches what was saved, then
                     //record this
                     if( saBundle.isServiceControlRequired() ){
-                        UDDIServiceControl uddiServiceControl = new UDDIServiceControl(oid, wsdlPortInfo.getUddiRegistryOid(),
+                        UDDIServiceControl uddiServiceControl = new UDDIServiceControl(goid, wsdlPortInfo.getUddiRegistryOid(),
                                 wsdlPortInfo.getBusinessEntityKey(), wsdlPortInfo.getBusinessEntityName(),
                                 wsdlPortInfo.getBusinessServiceKey(), wsdlPortInfo.getBusinessServiceName(),
                                 wsdlPortInfo.getWsdlServiceName(), wsdlPortInfo.getWsdlPortName(), wsdlPortInfo.getWsdlPortBinding(),
@@ -302,7 +303,7 @@ public class PublishServiceWizard extends Wizard {
     public static void saveServiceWithResolutionCheck( final Frame parent,
                                                        final PublishedService newService,
                                                        final Collection<ServiceDocument> newServiceDocuments,
-                                                       final Functions.UnaryVoidThrows<Long,Exception> callback,
+                                                       final Functions.UnaryVoidThrows<Goid,Exception> callback,
                                                        final Functions.UnaryVoid<Exception> errorCallback ) {
             if ( ServicePropertiesDialog.hasResolutionConflict( newService, newServiceDocuments ) ) {
                 String msg = "The resolution parameters (SOAPAction, namespace, and possibly\n" +
@@ -337,11 +338,11 @@ public class PublishServiceWizard extends Wizard {
 
     private static void savePublishedService( final PublishedService newService,
                                               final Collection<ServiceDocument> newServiceDocuments,
-                                              final Functions.UnaryVoidThrows<Long, Exception> callback,
+                                              final Functions.UnaryVoidThrows<Goid, Exception> callback,
                                               final Functions.UnaryVoid<Exception> errorCallback ) {
         try {
-            long oid = Registry.getDefault().getServiceManager().savePublishedServiceWithDocuments(newService, newServiceDocuments);
-            callback.call( oid );
+            Goid goid = Registry.getDefault().getServiceManager().savePublishedServiceWithDocuments(newService, newServiceDocuments);
+            callback.call( goid );
         } catch ( Exception e ) {
             errorCallback.call(e);
         }

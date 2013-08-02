@@ -4,6 +4,7 @@ import com.l7tech.gateway.common.Component;
 import com.l7tech.gateway.common.audit.AuditDetailMessage;
 import com.l7tech.gateway.common.audit.AuditRecord;
 import com.l7tech.gateway.common.audit.SystemAuditRecord;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.InvalidPolicyException;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
@@ -14,8 +15,8 @@ import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.ServerConfigStub;
 import com.l7tech.server.TestLicenseManager;
-import com.l7tech.server.event.system.Started;
 import com.l7tech.server.event.PolicyCacheEvent;
+import com.l7tech.server.event.system.Started;
 import com.l7tech.server.folder.FolderCacheStub;
 import com.l7tech.server.jdbc.JdbcConnectionManagerStub;
 import com.l7tech.server.jdbc.JdbcConnectionPoolManager;
@@ -24,15 +25,17 @@ import com.l7tech.server.policy.*;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.util.EventChannel;
-import static org.junit.Assert.*;
-
 import com.l7tech.server.util.MockInjector;
-import org.junit.*;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 /**
  *
@@ -132,7 +135,7 @@ public class AuditPolicyEvaluatorTest {
 
     /** A fake no-op test policy that uses the appropriate GUID. */
     Policy testPolicy = new Policy(PolicyType.INTERNAL, "Sink policy", WspWriter.getPolicyXml(new TrueAssertion()), false) {{
-        setOid(33333);
+        setGoid(new Goid(0,33333));
         setGuid(TEST_POLICY_GUID);
     }};
 

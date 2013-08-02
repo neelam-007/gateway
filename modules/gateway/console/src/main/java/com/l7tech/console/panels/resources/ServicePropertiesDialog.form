@@ -67,7 +67,7 @@
                     </constraints>
                     <properties>
                       <labelFor value="78d2a"/>
-                      <text value="Service OID:"/>
+                      <text value="Service GOID:"/>
                     </properties>
                   </component>
                   <component id="99446" class="javax.swing.JCheckBox" binding="enableWSSSecurityProcessingCheckBox">
@@ -230,7 +230,7 @@
                           <focusable value="true"/>
                           <opaque value="false"/>
                           <requestFocusEnabled value="true"/>
-                          <text value="&lt;html&gt;&#13;&#10;  &lt;head&gt;&#13;&#10;    &#13;&#10;  &lt;/head&gt;&#13;&#10;  &lt;body&gt;&#13;&#10;  &lt;/body&gt;&#13;&#10;&lt;/html&gt;&#13;&#10;"/>
+                          <text value="&lt;html&gt;&#13;&#10;  &lt;head&gt;&#13;&#10;&#13;&#10;  &lt;/head&gt;&#13;&#10;  &lt;body&gt;&#13;&#10;    &lt;p style=&quot;margin-top: 0&quot;&gt;&#13;&#10;      &#13;&#10;    &lt;/p&gt;&#13;&#10;  &lt;/body&gt;&#13;&#10;&lt;/html&gt;&#13;&#10;"/>
                           <verifyInputWhenFocusTarget value="false"/>
                         </properties>
                       </component>

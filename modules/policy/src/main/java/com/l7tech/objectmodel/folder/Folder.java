@@ -1,21 +1,23 @@
 package com.l7tech.objectmodel.folder;
 
-import com.l7tech.objectmodel.imp.NamedEntityImp;
-import com.l7tech.objectmodel.imp.ZoneableNamedEntityImp;
+import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.imp.ZoneableNamedGoidEntityImp;
 import com.l7tech.objectmodel.migration.Migration;
-import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
 
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import javax.xml.bind.annotation.XmlRootElement;
 
+import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
+
 /**
  * Represents a service/policy folder.
  */
 @XmlRootElement
-public class Folder extends ZoneableNamedEntityImp implements HasFolder {
+public class Folder extends ZoneableNamedGoidEntityImp implements HasFolder {
     private Folder parentFolder;
     private static final int MAX_NESTING_CHECK_LEVEL = 1000;
+    public static final Goid ROOT_FOLDER_ID = new Goid(0,-5002);
 
     public Folder(String name, Folder parentFolder) {
         this._name = name;
@@ -33,6 +35,17 @@ public class Folder extends ZoneableNamedEntityImp implements HasFolder {
     public Folder(final Folder folder) {
         super(folder);
         this.parentFolder = folder.getFolder();
+    }
+
+    @Deprecated
+    @Override
+    public void setId(String id) {
+        checkLocked();
+        if ("-5002".equals(id)) {
+            setGoid(ROOT_FOLDER_ID);
+        } else {
+            super.setId(id);
+        }
     }
 
     /**
@@ -75,7 +88,7 @@ public class Folder extends ZoneableNamedEntityImp implements HasFolder {
 
     public void reParent(Folder parentFolder) throws InvalidParentFolderException {
         checkLocked();
-        if (parentFolder.getOid()==getOid() || isParentOf(parentFolder))
+        if (Goid.equals(parentFolder.getGoid(), getGoid()) || isParentOf(parentFolder))
             throw new InvalidParentFolderException("The destination folder is a subfolder of the source folder");
         this.parentFolder = parentFolder;
     }
@@ -96,13 +109,13 @@ public class Folder extends ZoneableNamedEntityImp implements HasFolder {
         if (maybeChild == null)
             return -1;
 
-        if (_oid == maybeChild.getOid())
+        if (Goid.equals(getGoid(), maybeChild.getGoid()))
             return 0;
 
         int nesting = 0;
         Folder parent = maybeChild.getFolder();
         while(parent != null && nesting++ < MAX_NESTING_CHECK_LEVEL) {
-            if (parent.getOid() == _oid)
+            if (Goid.equals(parent.getGoid(), getGoid()))
                 return nesting;
             parent = parent.getFolder();
         }

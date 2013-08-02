@@ -1,13 +1,15 @@
 package com.l7tech.gateway.common.service;
 
-import com.l7tech.objectmodel.imp.PersistentEntityImp;
+import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.imp.GoidEntityImp;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.PropertyResolver;
-import static com.l7tech.objectmodel.migration.MigrationMappingSelection.*;
 
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import javax.xml.bind.annotation.XmlRootElement;
+
+import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
 
 /**
  * ServiceDocument represents document that is related to a service.
@@ -17,7 +19,7 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @author Steve Jones
  */
 @XmlRootElement
-public class ServiceDocument extends PersistentEntityImp {
+public class ServiceDocument extends GoidEntityImp {
 
     //- PUBLIC
 
@@ -33,7 +35,7 @@ public class ServiceDocument extends PersistentEntityImp {
     public ServiceDocument( final ServiceDocument serviceDocument,
                             final boolean copyIdentity ) {
         if ( copyIdentity ) {
-            setOid( serviceDocument.getOid() );
+            setGoid(serviceDocument.getGoid());
             setVersion( serviceDocument.getVersion() );
         }
         setServiceId( serviceDocument.getServiceId() );
@@ -49,7 +51,7 @@ public class ServiceDocument extends PersistentEntityImp {
      * @return The service identifier
      */
     @Migration(mapName = NONE, mapValue = NONE, resolver = PropertyResolver.Type.SERVICE)
-    public long getServiceId() {
+    public Goid getServiceId() {
         return serviceId;
     }
 
@@ -58,7 +60,7 @@ public class ServiceDocument extends PersistentEntityImp {
      *
      * @param serviceId The service identifier
      */
-    public void setServiceId(final long serviceId) {
+    public void setServiceId(final Goid serviceId) {
         this.serviceId = serviceId;
     }
 
@@ -152,7 +154,7 @@ public class ServiceDocument extends PersistentEntityImp {
 
     //- PRIVATE
 
-    private long serviceId;
+    private Goid serviceId;
     private String uri;
     private String type;
     private String contentType;

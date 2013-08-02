@@ -629,22 +629,22 @@ abstract class GoidEntityManagerResourceFactory<R, E extends GoidEntity, EH exte
     }
 
     /**
-     * Convert the given identifier to the internal <code>long</code> format.
+     * Convert the given identifier to the internal <code>goid</code> format.
      *
      * @param identifier The identifier to process.
      * @param identifierDescription A user facing description of the identifier.
-     * @return The identifier as a long
+     * @return The identifier as a Goid
      * @throws com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory.InvalidResourceException If the given identifier is not valid
      */
-    protected final long toInternalId( final String identifier,
+    protected final Goid toInternalId( final String identifier,
                                        final String identifierDescription ) throws InvalidResourceException {
         if ( identifier == null )
             throw new InvalidResourceException(
                     InvalidResourceException.ExceptionType.MISSING_VALUES,
                     "Missing " + identifierDescription );
         try {
-            return Long.parseLong(identifier);
-        } catch ( NumberFormatException nfe ) {
+            return Goid.parseGoid(identifier);
+        } catch ( IllegalArgumentException nfe ) {
             throw new InvalidResourceException(
                     InvalidResourceException.ExceptionType.INVALID_VALUES,
                     "Invalid " + identifierDescription );

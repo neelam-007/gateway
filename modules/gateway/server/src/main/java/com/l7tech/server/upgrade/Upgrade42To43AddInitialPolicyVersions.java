@@ -49,14 +49,14 @@ public class Upgrade42To43AddInitialPolicyVersions implements UpgradeTask {
         try {
             // Create initial version in policy_version table for policies which lack any versions
             for ( Policy policy : policyManager.findAll()) {
-                Integer count = (Integer) session.createQuery("select count(*) from PolicyVersion where policyOid = :policyOid")
-                        .setLong("policyOid", policy.getOid())
+                Integer count = (Integer) session.createQuery("select count(*) from PolicyVersion where policyGoid = :policyGoid")
+                        .setParameter("policyGoid", policy.getGoid())
                         .uniqueResult();
                 
                 if (count != null && count < 1) {
-                    logger.info("Creating initial policy revision checkpoint for policy oid " + policy.getOid() + " (" + policy.getName() + ')');
+                    logger.info("Creating initial policy revision checkpoint for policy oid " + policy.getGoid() + " (" + policy.getName() + ')');
                     PolicyVersion version = new PolicyVersion();
-                    version.setPolicyOid(policy.getOid());
+                    version.setPolicyGoid(policy.getGoid());
                     version.setActive(true);
                     version.setOrdinal(policy.getVersion() - 1);
                     version.setXml(policy.getXml());

@@ -7,8 +7,9 @@ import com.l7tech.gateway.common.service.ServiceStatistics;
 import com.l7tech.message.Message;
 import com.l7tech.message.XmlKnob;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.ObjectModelException;
-import com.l7tech.objectmodel.imp.PersistentEntityUtil;
+import com.l7tech.objectmodel.imp.GoidEntityUtil;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyHeader;
 import com.l7tech.policy.assertion.Assertion;
@@ -16,7 +17,7 @@ import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.cluster.ClusterInfoManager;
 import com.l7tech.server.cluster.ServiceUsageManager;
-import com.l7tech.server.event.EntityInvalidationEvent;
+import com.l7tech.server.event.GoidEntityInvalidationEvent;
 import com.l7tech.server.event.PolicyCacheEvent;
 import com.l7tech.server.event.ServiceEnablementEvent;
 import com.l7tech.server.event.system.ServiceCacheEvent;
@@ -74,10 +75,10 @@ public class ServiceCache
     public static final long INTEGRITY_CHECK_FREQUENCY = 4000; // 4 seconds
 
     // the cache data itself
-    private final Map<Long, PublishedService> services = new HashMap<Long, PublishedService>();
-    private final ConcurrentMap<Long, ServiceStatistics> serviceStatistics = new ConcurrentHashMap<Long, ServiceStatistics>();
-    private final Map<Long, String> servicesThatAreThrowing = new HashMap<Long, String>();
-    private final Set<Long> servicesThatAreDisabled = new HashSet<Long>();
+    private final Map<Goid, PublishedService> services = new HashMap<Goid, PublishedService>();
+    private final ConcurrentMap<Goid, ServiceStatistics> serviceStatistics = new ConcurrentHashMap<Goid, ServiceStatistics>();
+    private final Map<Goid, String> servicesThatAreThrowing = new HashMap<Goid, String>();
+    private final Set<Goid> servicesThatAreDisabled = new HashSet<Goid>();
 
     private final PlatformTransactionManager transactionManager;
     private final ServiceManager serviceManager;
@@ -94,7 +95,7 @@ public class ServiceCache
     private boolean running = false;
 
     private Auditor auditor;
-    private Long nonSoapCatchAllServiceOid = null;
+    private Goid nonSoapCatchAllServiceOid = null;
     private final PolicyCache policyCache;
     private final ServiceResolutionManager serviceResolutionManager;
     private final AtomicBoolean needXpathCompile = new AtomicBoolean(true);
@@ -201,16 +202,16 @@ public class ServiceCache
             public void afterCompletion(int status) {
                 if (status == TransactionSynchronization.STATUS_COMMITTED) {
                     // reload service. version property must be up-to-date
-                    loadServiceToCache( updated.getService().getOid() );
+                    loadServiceToCache( updated.getService().getGoid() );
                 }
             }
         });
     }
 
-    private void loadServiceToCache( final long serviceOid ) {
+    private void loadServiceToCache( final Goid serviceGoid ) {
         PublishedService publishedService;
         try {
-            publishedService = serviceManager.findByPrimaryKey(serviceOid);
+            publishedService = serviceManager.findByPrimaryKey(serviceGoid);
         } catch ( FindException e) {
             publishedService = null;
             logger.log( Level.WARNING, "could not get service back", e);
@@ -218,8 +219,8 @@ public class ServiceCache
 
         if (publishedService != null) {
             try {
-                PersistentEntityUtil.lock(publishedService);
-                PersistentEntityUtil.lock(publishedService.getPolicy());
+                GoidEntityUtil.lock(publishedService);
+                GoidEntityUtil.lock(publishedService.getPolicy());
                 cache(publishedService);
                 TarariLoader.compile();
             } catch (Exception e) {
@@ -247,13 +248,13 @@ public class ServiceCache
                         String ordinal = ass == null ? "" : "#" + Integer.toString(ass.getOrdinal());
                         String what = ass == null ? "<unknown>" : "(" + ass.getClass().getSimpleName() + ")";
                         String msg = MessageFormat.format( "Disabling PublishedService #{0} ({1}); policy could not be compiled (assertion {2} {3})",
-                                        service.getOid(), service.getName(), ordinal, what );
+                                        service.getGoid(), service.getName(), ordinal, what );
                         logger.log(Level.WARNING, msg, e);
                         // We don't actually disable the service here -- only the admin should be doing that.
                         // Instead, we will let the service cache continue to monitor the situation
                     } catch (Exception e) {
                         String msg = MessageFormat.format( "Disabling PublishedService #{0} ({1}); policy could not be compiled",
-                                        service.getOid(), service.getName() );
+                                        service.getGoid(), service.getName() );
                         logger.log(Level.WARNING, msg, e);
                     }
                 }
@@ -279,20 +280,20 @@ public class ServiceCache
     private void initializeServiceStatistics() throws ObjectModelException {
         try {
             final Collection<PublishedService> services = serviceManager.findAll();
-            final Set<Long> servicesByOid = new HashSet<Long>(services.size());
+            final Set<Goid> servicesByGoid = new HashSet<Goid>(services.size());
             for (PublishedService service : services) {
-                servicesByOid.add(service.getOid());
+                servicesByGoid.add(service.getGoid());
             }
             final ServiceUsage[] sus = serviceUsageManager.findByNode(clusterInfoManager.thisNodeId());
             for (ServiceUsage su : sus) {
-                final long serviceOid = su.getServiceid();
+                final Goid serviceGoid = su.getServiceid();
                 // Retain usage data for existing published services only.
-                if (servicesByOid.contains(serviceOid)) {
+                if (servicesByGoid.contains(serviceGoid)) {
                     final ServiceStatistics stats = new ServiceStatistics(su.getServiceid(),
                                                                           (int)su.getRequests(),
                                                                           (int)su.getAuthorized(),
                                                                           (int)su.getCompleted());
-                    serviceStatistics.put(stats.getServiceOid(), stats);
+                    serviceStatistics.put(stats.getServiceGoid(), stats);
                 }
             }
         } catch (FindException e) {
@@ -319,10 +320,10 @@ public class ServiceCache
      *
      * @return Map with Long service oid as a key and Long service version as values
      */
-    private Map<Long, Integer> versionSnapshot() {
-        Map<Long, Integer> output = new HashMap<Long, Integer>();
+    private Map<Goid, Integer> versionSnapshot() {
+        Map<Goid, Integer> output = new HashMap<Goid, Integer>();
         for (PublishedService svc : services.values()) {
-            output.put(svc.getOid(), svc.getVersion());
+            output.put(svc.getGoid(), svc.getVersion());
         }
         return output;
     }
@@ -330,12 +331,12 @@ public class ServiceCache
     /**
      * get pre-parsed root server assertion for cached service
      *
-     * @param serviceOid id of the service of which we want the parsed server side root assertion
+     * @param serviceGoid id of the service of which we want the parsed server side root assertion
      */
-    public ServerPolicyHandle getServerPolicy(long serviceOid) {
+    public ServerPolicyHandle getServerPolicy(Goid serviceGoid) {
         rwlock.readLock().lock();
         try {
-            PublishedService service = services.get( serviceOid );
+            PublishedService service = services.get( serviceGoid );
             if (service == null) return null;
             return getServerPolicyForService( service );
         } finally {
@@ -542,7 +543,7 @@ public class ServiceCache
      * @throws ServerPolicyException if a server assertion contructor for this service threw an exception
      */
     public void cache(PublishedService service) throws ServerPolicyException {
-        final List<Pair<Long, CachedServiceNotificationType>> notificationMap = new LinkedList<Pair<Long, CachedServiceNotificationType>>();
+        final List<Pair<Goid, CachedServiceNotificationType>> notificationMap = new LinkedList<Pair<Goid, CachedServiceNotificationType>>();
         rwlock.writeLock().lock();
         try {
             cacheNoLock(service, notificationMap);
@@ -556,43 +557,43 @@ public class ServiceCache
         }
     }
 
-    private void notifyListeners(final List<Pair<Long, CachedServiceNotificationType>> notificationList) {
+    private void notifyListeners(final List<Pair<Goid, CachedServiceNotificationType>> notificationList) {
         threadPool.execute(new Runnable() {
             @Override
             public void run() {
-                final List<Long> oids = new LinkedList<Long>();
+                final List<Goid> goids = new LinkedList<Goid>();
                 final List<Character> ops = new LinkedList<Character>();
-                final List<Long> enabled = new LinkedList<Long>();
-                final List<Long> disabled = new LinkedList<Long>();
+                final List<Goid> enabled = new LinkedList<Goid>();
+                final List<Goid> disabled = new LinkedList<Goid>();
 
-                for (Pair<Long, CachedServiceNotificationType> entry : notificationList) {
-                    final Long oid = entry.left;
+                for (Pair<Goid, CachedServiceNotificationType> entry : notificationList) {
+                    final Goid goid = entry.left;
                     final CachedServiceNotificationType type = entry.right;
                     switch(type) {
                         case CREATED:
-                            oids.add(oid);
-                            ops.add(EntityInvalidationEvent.CREATE);
+                            goids.add(goid);
+                            ops.add(GoidEntityInvalidationEvent.CREATE);
                             break;
                         case UPDATED:
-                            oids.add(oid);
-                            ops.add(EntityInvalidationEvent.UPDATE);
+                            goids.add(goid);
+                            ops.add(GoidEntityInvalidationEvent.UPDATE);
                             break;
                         case DISABLED:
-                            disabled.add(oid);
+                            disabled.add(goid);
                             break;
                         case ENABLED:
-                            enabled.add(oid);
+                            enabled.add(goid);
                             break;
                         case DELETED:
-                            oids.add(oid);
-                            ops.add(EntityInvalidationEvent.DELETE);
+                            goids.add(goid);
+                            ops.add(GoidEntityInvalidationEvent.DELETE);
                             break;
                     }
                 }
 
-                if (!oids.isEmpty()) {
-                    logger.log(Level.INFO, "Created/Updated/Deleted: " + oids);
-                    getApplicationContext().publishEvent(new EntityInvalidationEvent(ServiceCache.this, PublishedService.class, ArrayUtils.unbox(oids), ArrayUtils.unboxChars(ops)));
+                if (!goids.isEmpty()) {
+                    logger.log(Level.INFO, "Created/Updated/Deleted: " + goids);
+                    getApplicationContext().publishEvent(new GoidEntityInvalidationEvent(ServiceCache.this, PublishedService.class, goids.toArray(new Goid[goids.size()]), ArrayUtils.unboxChars(ops)));
                 }
                 
                 if (!enabled.isEmpty()) notifyEnablements(enabled, true);
@@ -601,19 +602,19 @@ public class ServiceCache
         });
     }
 
-    private void notifyEnablements(List<Long> oids, boolean enabled) {
-        if (oids == null || oids.isEmpty()) return;
-        logger.log(Level.INFO, (enabled ? "Enabled" : "Disabled" + ": ") + oids);
-        getApplicationContext().publishEvent(new ServiceEnablementEvent(ServiceCache.this, ArrayUtils.unbox(oids), enabled));
+    private void notifyEnablements(List<Goid> goids, boolean enabled) {
+        if (goids == null || goids.isEmpty()) return;
+        logger.log(Level.INFO, (enabled ? "Enabled" : "Disabled" + ": ") + goids);
+        getApplicationContext().publishEvent(new ServiceEnablementEvent(ServiceCache.this, goids.toArray(new Goid[goids.size()]), enabled));
     }
 
 
     /**
      * Caller must hold lock protecting {@link #services}
      */
-    private void cacheNoLock(PublishedService service, List<Pair<Long, CachedServiceNotificationType>> notificationList) throws ServerPolicyException {
-        final Long oid = service.getOid();
-        final PublishedService oldService = services.get(oid);
+    private void cacheNoLock(PublishedService service, List<Pair<Goid, CachedServiceNotificationType>> notificationList) throws ServerPolicyException {
+        final Goid goid = service.getGoid();
+        final PublishedService oldService = services.get(goid);
 
         final boolean update;
         if (oldService == null) {
@@ -621,32 +622,32 @@ public class ServiceCache
         } else {
             update = true;
             if (oldService.isDisabled() && !service.isDisabled()) {
-                notificationList.add(new Pair<Long, CachedServiceNotificationType>(oid, CachedServiceNotificationType.ENABLED));
+                notificationList.add(new Pair<Goid, CachedServiceNotificationType>(goid, CachedServiceNotificationType.ENABLED));
             } else if (service.isDisabled() && !oldService.isDisabled()) {
-                notificationList.add(new Pair<Long, CachedServiceNotificationType>(oid, CachedServiceNotificationType.DISABLED));
+                notificationList.add(new Pair<Goid, CachedServiceNotificationType>(goid, CachedServiceNotificationType.DISABLED));
             }
         }
 
         if (update) {
             serviceResolutionManager.notifyServiceUpdated( auditor, service );
-            notificationList.add(new Pair<Long, CachedServiceNotificationType>(oid, CachedServiceNotificationType.UPDATED));
-            logger.finest("updated service " + service.getName() + " in cache. oid=" + service.getOid() + " version=" + service.getVersion());
+            notificationList.add(new Pair<Goid, CachedServiceNotificationType>(goid, CachedServiceNotificationType.UPDATED));
+            logger.finest("updated service " + service.getName() + " in cache. oid=" + service.getGoid() + " version=" + service.getVersion());
         } else {
             serviceResolutionManager.notifyServiceCreated( auditor, service );
-            notificationList.add(new Pair<Long, CachedServiceNotificationType>(oid, CachedServiceNotificationType.CREATED));
-            logger.finest("added service " + service.getName() + " in cache. oid=" + service.getOid());
+            notificationList.add(new Pair<Goid, CachedServiceNotificationType>(goid, CachedServiceNotificationType.CREATED));
+            logger.finest("added service " + service.getName() + " in cache. oid=" + service.getGoid());
         }
 
         // cache the service
-        if (!PersistentEntityUtil.isLocked(service))
+        if (!GoidEntityUtil.isLocked(service))
             throw new IllegalArgumentException("Unlocked service may not be placed into the service cache");
-        services.put(oid, service);
+        services.put(goid, service);
 
         // cache the server policy for this service
         final Policy policy = service.getPolicy();
         if (policy == null)
-            throw new ServerPolicyException(null, "Service #" + service.getOid() + " (" + service.getName() + ") has no policy");
-        if (!PersistentEntityUtil.isLocked(policy))
+            throw new ServerPolicyException(null, "Service #" + service.getGoid() + " (" + service.getName() + ") has no policy");
+        if (!GoidEntityUtil.isLocked(policy))
             throw new IllegalArgumentException("Unlocked service policy may not be placed into the service cache");
         policyCache.update(policy);
     }
@@ -681,7 +682,7 @@ public class ServiceCache
     }
 
     private void handleInvalidPolicy( final PublishedService publishedService,
-                                      final Long policyId,
+                                      final Goid policyId,
                                       final Exception exception ) {
         PublishedService service = publishedService;
 
@@ -703,11 +704,11 @@ public class ServiceCache
     }
 
     private void handleValidPolicy( final Policy policy  ) {
-        PublishedService service = getCachedServiceByPolicy( policy.getOid() );
+        PublishedService service = getCachedServiceByPolicy( policy.getGoid() );
 
         if ( service!=null && service.getPolicy()!=null && service.getPolicy().getVersion() != policy.getVersion() ) {
-            logger.fine("service " + service.getOid() + " to be updated in cache because of outdated policy.");
-            loadServiceToCache( service.getOid() );
+            logger.fine("service " + service.getGoid() + " to be updated in cache because of outdated policy.");
+            loadServiceToCache( service.getGoid() );
         }
 
         // if it is not cached then it will be disabled later
@@ -722,7 +723,7 @@ public class ServiceCache
      * Caller must hold lock
      */
     private boolean isDisabled( final PublishedService service ) {
-        return servicesThatAreDisabled.contains( service.getOid() );
+        return servicesThatAreDisabled.contains( service.getGoid() );
     }
 
     /**
@@ -730,9 +731,9 @@ public class ServiceCache
      */
     private void setDisabled( final PublishedService service, final boolean disabled ) {
         if ( disabled ) {
-            servicesThatAreDisabled.add( service.getOid() );
+            servicesThatAreDisabled.add( service.getGoid() );
         } else {
-            servicesThatAreDisabled.remove( service.getOid() );
+            servicesThatAreDisabled.remove( service.getGoid() );
         }
     }
 
@@ -740,18 +741,18 @@ public class ServiceCache
      * Caller must hold a lock protecting {@link #services}
      */
     private void removeNoLock(PublishedService service) {
-        final Long key = service.getOid();
+        final Goid key = service.getGoid();
         final Policy policy = service.getPolicy();
         services.remove(key);
         if ( policy != null ) {
-            policyCache.remove( policy.getOid() );
+            policyCache.remove( policy.getGoid() );
         }
         serviceStatistics.remove(key);
         serviceResolutionManager.notifyServiceDeleted( service );
         if ( policy != null ) {
             policy.forceRecompile();
         }
-        logger.finest("removed service " + service.getName() + " from cache. oid=" + service.getOid());
+        logger.finest("removed service " + service.getName() + " from cache. goid=" + service.getGoid());
     }
 
     /**
@@ -771,11 +772,11 @@ public class ServiceCache
     /**
      * gets a service from the cache
      */
-    public PublishedService getCachedService(long oid) {
+    public PublishedService getCachedService(Goid goid) {
         PublishedService out = null;
         rwlock.readLock().lock();
         try {
-            out = services.get(oid);
+            out = services.get(goid);
         } finally {
             rwlock.readLock().unlock();
         }
@@ -783,15 +784,32 @@ public class ServiceCache
     }
 
     /**
+     * Returns the service by its old oid. This will bypass the service cache.
+     *
+     * @param oid The oid of the service to find
+     * @return The service or null if it cannot find it.
+     * @throws FindException
+     */
+    public PublishedService findByOldOid(long oid) {
+        try {
+            return serviceManager.findByOldOid(oid);
+        } catch (FindException e) {
+            //return null if there was an exception looking fo the service by oid.
+            logger.info("Error finding service by oid: " + oid + " message: " + e.getMessage());
+            return null;
+        }
+    }
+
+    /**
      * gets a service from the cache
      */
-    public PublishedService getCachedServiceByPolicy(long policyOid) {
+    public PublishedService getCachedServiceByPolicy(Goid policyGoid) {
         PublishedService out = null;
         rwlock.readLock().lock();
         try {
             for ( PublishedService service : services.values() ) {
                 Policy policy = service.getPolicy();
-                if ( policy != null && policy.getOid() == policyOid ) {
+                if ( policy != null && policy.getGoid().equals(policyGoid) ) {
                     out = service;
                     break;
                 }
@@ -828,14 +846,14 @@ public class ServiceCache
     /**
      * get per-node statistics for cached service.
      * those stats are lazyly created
-     * @param serviceOid service whose stats to fetch.  required
+     * @param serviceGoid service whose stats to fetch.  required
      * @return stats for this service, possibly just-created
      */
-    public ServiceStatistics getServiceStatistics(long serviceOid) {
-        ServiceStatistics stats = serviceStatistics.get(serviceOid);
+    public ServiceStatistics getServiceStatistics(Goid serviceGoid) {
+        ServiceStatistics stats = serviceStatistics.get(serviceGoid);
         if (stats == null) {
-            stats = new ServiceStatistics(serviceOid);
-            ServiceStatistics oldStats = serviceStatistics.putIfAbsent(serviceOid, stats);
+            stats = new ServiceStatistics(serviceGoid);
+            ServiceStatistics oldStats = serviceStatistics.putIfAbsent(serviceGoid, stats);
             if (oldStats != null)
                 return oldStats;
         }
@@ -870,13 +888,13 @@ public class ServiceCache
         // Collect information about what has happened to services in the system since the last integrity check, so that
         // listeners can be notified outside our lock, and in a different thread
 
-        final List<Pair<Long, CachedServiceNotificationType>> notificationMap = new LinkedList<Pair<Long, CachedServiceNotificationType>>();
+        final List<Pair<Goid, CachedServiceNotificationType>> notificationMap = new LinkedList<Pair<Goid, CachedServiceNotificationType>>();
 
         Lock ciReadLock = rwlock.readLock();
         ciReadLock.lock();
         try {
-            Map<Long, Integer> cacheversions = versionSnapshot();
-            Map<Long, Integer> dbversions;
+            Map<Goid, Integer> cacheversions = versionSnapshot();
+            Map<Goid, Integer> dbversions;
 
             // get db versions
             try {
@@ -888,10 +906,10 @@ public class ServiceCache
             }
 
             // actual check logic
-            ArrayList<Long> updatesAndAdditions = new ArrayList<Long>();
-            ArrayList<Long> deletions = new ArrayList<Long>();
+            ArrayList<Goid> updatesAndAdditions = new ArrayList<Goid>();
+            ArrayList<Goid> deletions = new ArrayList<Goid>();
             // 1. check that all that is in db is present in cache and that version is same
-            for (Long dbid : dbversions.keySet()) {
+            for (Goid dbid : dbversions.keySet()) {
                 // is it already in cache?
                 Integer cacheversion = cacheversions.get(dbid);
                 if (cacheversion == null) {
@@ -908,9 +926,9 @@ public class ServiceCache
                 }
             }
             // 2. check for things in cache not in db (deletions)
-            for (Long cacheid : cacheversions.keySet()) {
+            for (Goid cacheid : cacheversions.keySet()) {
                 if (dbversions.get(cacheid) == null) {
-                    notificationMap.add(new Pair<Long, CachedServiceNotificationType>(cacheid, CachedServiceNotificationType.DELETED));
+                    notificationMap.add(new Pair<Goid, CachedServiceNotificationType>(cacheid, CachedServiceNotificationType.DELETED));
                     deletions.add(cacheid);
                     logger.info("service " + cacheid + " to be deleted from cache because no longer in database.");
                 }
@@ -927,7 +945,7 @@ public class ServiceCache
                 Lock ciWriteLock = rwlock.writeLock();
                 ciWriteLock.lock();
                 try {
-                    for (Long svcid : updatesAndAdditions) {
+                    for (Goid svcid : updatesAndAdditions) {
                         PublishedService newService;
                         try {
                             newService = serviceManager.findByPrimaryKey(svcid);
@@ -937,36 +955,36 @@ public class ServiceCache
                                     "cannot be retrieved", e);
                         }
                         if (newService != null) {
-                            final Long oid = newService.getOid();
+                            final Goid goid = newService.getGoid();
                             final Policy policy = newService.getPolicy();
                             String uniqueVersion = null;
                             if ( policy != null ) { // Get version for full policy if possible
-                                uniqueVersion = policyCache.getUniquePolicyVersionIdentifer( policy.getOid() );
+                                uniqueVersion = policyCache.getUniquePolicyVersionIdentifer( policy.getGoid() );
                             }
                             if ( uniqueVersion == null ) { // Use service version if that is all that is available
                                 uniqueVersion = Integer.toString( newService.getVersion() );
                             }
                             final String newVersionUID = uniqueVersion;
                             try {
-                                final String throwingVersion = servicesThatAreThrowing.get(oid);
+                                final String throwingVersion = servicesThatAreThrowing.get(goid);
                                 if (throwingVersion == null || !throwingVersion.equals( newVersionUID ))
                                 {
                                     // Try to cache it again
                                     cacheNoLock(new PublishedService( newService, true ), notificationMap);
                                     if (throwingVersion != null) {
-                                        logger.log(Level.INFO, "Policy for service #" + oid + " is no longer invalid");
-                                        servicesThatAreThrowing.remove(oid);
+                                        logger.log(Level.INFO, "Policy for service #" + goid + " is no longer invalid");
+                                        servicesThatAreThrowing.remove(goid);
                                     }
                                 }
                             } catch (ServerPolicyException e) {
-                                logger.log(Level.WARNING, "Policy for service #" + oid + " is invalid: " + ExceptionUtils.getMessage(e), e);
-                                servicesThatAreThrowing.put(oid, newVersionUID);
+                                logger.log(Level.WARNING, "Policy for service #" + goid + " is invalid: " + ExceptionUtils.getMessage(e), e);
+                                servicesThatAreThrowing.put(goid, newVersionUID);
                             }
                         } // otherwise, next integrity check shall delete this service from cache
                     }
                     // Trigger xpath compilation if the set of registered xpaths has changed
                     TarariLoader.compile();
-                    for (Long key : deletions) {
+                    for (Goid key : deletions) {
                         PublishedService serviceToDelete = services.get(key);
                         if ( serviceToDelete != null ) {
                             removeNoLock(serviceToDelete);
@@ -988,7 +1006,7 @@ public class ServiceCache
     private void updateCatchAll() {
         for (PublishedService p : services.values()) {
             if (!p.isDisabled() && !p.isSoap() && "/*".equals(p.getRoutingUri())) {
-                nonSoapCatchAllServiceOid = p.getOid();
+                nonSoapCatchAllServiceOid = p.getGoid();
                 return;
             }
         }
@@ -1017,10 +1035,10 @@ public class ServiceCache
          * @return the cached services
          */
         @ManagedAttribute(description="Cached Services", currencyTimeLimit=30)
-        public Set<Long> getServices() {
+        public Set<Goid> getServices() {
             cache.rwlock.readLock().lock();
             try {
-                return new TreeSet<Long>(cache.services.keySet());
+                return new TreeSet<Goid>(cache.services.keySet());
             } finally {
                cache.rwlock.readLock().unlock();
             }
@@ -1032,10 +1050,10 @@ public class ServiceCache
          * @return the services with errors
          */
         @ManagedAttribute(description="Services With Errors", currencyTimeLimit=30)
-        public Set<Long> getServicesWithErrors() {
+        public Set<Goid> getServicesWithErrors() {
             cache.rwlock.readLock().lock();
             try {
-                return new TreeSet<Long>(cache.servicesThatAreThrowing.keySet());
+                return new TreeSet<Goid>(cache.servicesThatAreThrowing.keySet());
             } finally {
                 cache.rwlock.readLock().unlock();
             }
@@ -1047,10 +1065,10 @@ public class ServiceCache
          * @return the disatbled services
          */
         @ManagedAttribute(description="Disabled Services", currencyTimeLimit=30)
-        public Set<Long> getDisabledServices() {
+        public Set<Goid> getDisabledServices() {
             cache.rwlock.readLock().lock();
             try {
-                return new TreeSet<Long>(cache.servicesThatAreDisabled);
+                return new TreeSet<Goid>(cache.servicesThatAreDisabled);
             } finally {
                 cache.rwlock.readLock().unlock();
             }

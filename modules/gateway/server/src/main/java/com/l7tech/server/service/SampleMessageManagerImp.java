@@ -1,9 +1,7 @@
 package com.l7tech.server.service;
 
 import com.l7tech.gateway.common.service.SampleMessage;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.*;
 import com.l7tech.server.HibernateGoidEntityManager;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import org.hibernate.Criteria;
@@ -26,22 +24,22 @@ public class SampleMessageManagerImp
         extends HibernateGoidEntityManager<SampleMessage, EntityHeader>
         implements SampleMessageManager
 {
-    private static final String PROP_SERVICE_OID = "serviceOid";
+    private static final String PROP_SERVICE_GOID = "serviceGoid";
     private static final String PROP_OPERATION_NAME = "operationName";
 
     @Override
     @Transactional(readOnly=true)
-    public EntityHeader[] findHeaders(final long serviceOid, final String operationName) throws FindException {
+    public EntityHeader[] findHeaders(final Goid serviceGoid, final String operationName) throws FindException {
         try {
             return (EntityHeader[]) getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
                 @Override
                 public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
                     Criteria crit = session.createCriteria(SampleMessage.class);
 
-                    if (serviceOid == -1) {
-                        crit.add(Restrictions.isNull(PROP_SERVICE_OID));
+                    if (Goid.isDefault(serviceGoid)) {
+                        crit.add(Restrictions.isNull(PROP_SERVICE_GOID));
                     } else {
-                        crit.add(Restrictions.eq(PROP_SERVICE_OID, new Long(serviceOid)));
+                        crit.add(Restrictions.eq(PROP_SERVICE_GOID, serviceGoid));
                     }
 
                     if (operationName == null) {

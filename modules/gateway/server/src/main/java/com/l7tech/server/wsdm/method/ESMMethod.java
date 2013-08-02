@@ -2,6 +2,7 @@ package com.l7tech.server.wsdm.method;
 
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.http.HttpConstants;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.wsdm.faults.FaultMappableException;
 import com.l7tech.server.wsdm.faults.InvalidWsAddressingHeaderFault;
 import com.l7tech.server.wsdm.subscription.Subscription;
@@ -36,16 +37,16 @@ public abstract class ESMMethod {
     private final Document reqestDoc;
     private final Message requestMessage;
     private final URL incomingUrl;
-    private final long esmServiceOid;
+    private final Goid esmServiceGoid;
     private String messageId;
     private Element soapHeader;
 
-    public static ESMMethod resolve(Message request, long esmServiceOid) throws FaultMappableException, SAXException, IOException {
+    public static ESMMethod resolve(Message request, Goid esmServiceGoid) throws FaultMappableException, SAXException, IOException {
 
-        ESMMethod method = GetMultipleResourceProperties.resolve(request, esmServiceOid);
-        if (method == null) method = Renew.resolve(request, esmServiceOid);
-        if (method == null) method = Subscribe.resolve(request, esmServiceOid);
-        if (method == null) method = Unsubscribe.resolve(request, esmServiceOid);
+        ESMMethod method = GetMultipleResourceProperties.resolve(request, esmServiceGoid);
+        if (method == null) method = Renew.resolve(request, esmServiceGoid);
+        if (method == null) method = Subscribe.resolve(request, esmServiceGoid);
+        if (method == null) method = Unsubscribe.resolve(request, esmServiceGoid);
         // if (method == null) method = GetResourceProperty.resolve(request);
         // if (method == null) method = GetManageabilityReferences.resolve(request);
         if (method != null)
@@ -53,10 +54,10 @@ public abstract class ESMMethod {
         return method;
     }
 
-    protected ESMMethod(Document reqestDoc, Message request, long esmServiceOid) throws MalformedURLException {
+    protected ESMMethod(Document reqestDoc, Message request, Goid esmServiceGoid) throws MalformedURLException {
         this.reqestDoc = reqestDoc;
         this.requestMessage = request;
-        this.esmServiceOid = esmServiceOid;
+        this.esmServiceGoid = esmServiceGoid;
         this.incomingUrl = extractIncomingUrl();
     }
 
@@ -243,8 +244,8 @@ public abstract class ESMMethod {
         return messageId;
     }
 
-    public long getEsmServiceOid() {
-        return esmServiceOid;
+    public Goid getEsmServiceGoid() {
+        return esmServiceGoid;
     }
 
     public URL getIncomingUrl() {

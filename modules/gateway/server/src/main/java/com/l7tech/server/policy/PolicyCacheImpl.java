@@ -5,15 +5,16 @@ import com.l7tech.gateway.common.audit.AuditDetailMessage;
 import com.l7tech.gateway.common.audit.MessageProcessingMessages;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.folder.Folder;
-import com.l7tech.objectmodel.imp.PersistentEntityUtil;
+import com.l7tech.objectmodel.imp.GoidEntityUtil;
 import com.l7tech.policy.*;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.PolicyVariableUtils;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.server.audit.Auditor;
-import com.l7tech.server.event.EntityInvalidationEvent;
+import com.l7tech.server.event.GoidEntityInvalidationEvent;
 import com.l7tech.server.event.PolicyCacheEvent;
 import com.l7tech.server.event.system.LicenseEvent;
 import com.l7tech.server.event.system.PolicyReloadEvent;
@@ -129,18 +130,18 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
             throw new IllegalArgumentException( "policy must not be null" );
         }
 
-        return getPolicyMetadata( policy.getOid() );
+        return getPolicyMetadata( policy.getGoid() );
     }
 
     @Override
-    public PolicyMetadata getPolicyMetadata(long policyOid) {
-        if( policyOid == Policy.DEFAULT_OID )
+    public PolicyMetadata getPolicyMetadata(Goid policyGoid) {
+        if( Goid.isDefault(policyGoid) )
             throw new IllegalArgumentException( "Can't compile a brand-new policy--it must be saved first" );
 
         final Lock read = lock.readLock();
         read.lock();
         try {
-            PolicyCacheEntry pce = cacheGet( policyOid );
+            PolicyCacheEntry pce = cacheGet( policyGoid );
             if( pce != null && pce.isValid() ) {
                 return pce.getPolicyMetadata();
             }
@@ -157,11 +158,11 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
         final Lock read = lock.readLock();
         read.lock();
         try {
-            Long policyOid = guidToOidMap.get(guid);
-            if (policyOid != null) {
-                if( policyOid == Policy.DEFAULT_OID )
+            Goid policyGoid = guidToGoidMap.get(guid);
+            if (policyGoid != null) {
+                if(Goid.isDefault(policyGoid) )
                     throw new IllegalArgumentException( "Can't compile a brand-new policy--it must be saved first" );
-                PolicyCacheEntry pce = cacheGet( policyOid );
+                PolicyCacheEntry pce = cacheGet( policyGoid );
                 if( pce != null && pce.isValid() ) {
                     return pce.getPolicyMetadata();
                 }
@@ -174,10 +175,10 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
     }
 
     @Override
-    public List<Folder> getFolderPath( final long policyOid ) {
-        final PolicyCacheEntry pce = cacheGetWithLock(policyOid);
+    public List<Folder> getFolderPath( final Goid policyGoid ) {
+        final PolicyCacheEntry pce = cacheGetWithLock(policyGoid);
         return pce!=null && pce.policy.getFolder()!=null ?
-                folderCache.findPathByPrimaryKey( pce.policy.getFolder().getOid() ) :
+                folderCache.findPathByPrimaryKey( pce.policy.getFolder().getGoid() ) :
                 Collections.<Folder>emptyList();
     }
 
@@ -195,21 +196,21 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
             throw new IllegalArgumentException( "policy must not be null" );
         }
 
-        return getServerPolicy( policy.getOid() );
+        return getServerPolicy( policy.getGoid() );
     }
 
     /**
      *
      */
     @Override
-    public ServerPolicyHandle getServerPolicy( final long policyOid ) {
-        if( policyOid == Policy.DEFAULT_OID )
+    public ServerPolicyHandle getServerPolicy( final Goid policyGoid ) {
+        if( Goid.isDefault(policyGoid) )
             throw new IllegalArgumentException( "Can't compile a brand-new policy--it must be saved first" );
 
         final Lock read = lock.readLock();
         read.lock();
         try {
-            PolicyCacheEntry pce = cacheGet( policyOid );
+            PolicyCacheEntry pce = cacheGet( policyGoid );
             if( pce != null && pce.isValid() ) {
                 return pce.serverPolicy.ref();
             }
@@ -229,9 +230,9 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
         final Lock read = lock.readLock();
         read.lock();
         try {
-            Long oid = guidToOidMap.get(policyGuid);
-            if(oid != null) {
-                PolicyCacheEntry pce = cacheGet( oid );
+            Goid goid = guidToGoidMap.get(policyGuid);
+            if(goid != null) {
+                PolicyCacheEntry pce = cacheGet( goid );
                 if( pce != null && pce.isValid() ) {
                     return pce.serverPolicy.ref();
                 }
@@ -265,7 +266,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
                     if ( pce.policy.isDisabled() ) {
                         logger.log( Level.INFO,
                                 "Ignoring disabled ''{0}'' : #{1} ({2})",
-                                new Object[]{ pce.policy.getType(), pce.policy.getOid(), pce.policy.getName() }  );
+                                new Object[]{ pce.policy.getType(), pce.policy.getGoid(), pce.policy.getName() }  );
                     } else {
                         guids.add( pce.policy.getGuid() );
                     }
@@ -306,19 +307,19 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
     public void unregisterGlobalPolicy( final String policyGuid ) {
         ensureCacheValid();
 
-        Long oid = null;
+        Goid goid = null;
 
         final Lock read = lock.readLock();
         read.lock();
         try {
             guidToPolicyMap.remove(policyGuid);
-            oid = guidToOidMap.get( policyGuid );
+            goid = guidToGoidMap.get( policyGuid );
         } finally {
             read.unlock();
         }
 
-        if(oid != null) {
-            removeInternal( oid );
+        if(goid != null) {
+            removeInternal( goid );
         }
     }
 
@@ -326,15 +327,15 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
      *
      */
     @Override
-    public Map<Long, Integer> getDependentVersions( final long policyOid ) {
+    public Map<Goid, Integer> getDependentVersions( final Goid policyGoid ) {
         ensureCacheValid();
 
-        Map<Long,Integer> dependentVersions;
+        Map<Goid,Integer> dependentVersions;
 
         final Lock read = lock.readLock();
         read.lock();
         try {
-            PolicyCacheEntry pce = cacheGet( policyOid );
+            PolicyCacheEntry pce = cacheGet( policyGoid );
             if( pce != null && pce.isValid() ) {
                 dependentVersions = pce.getMetadata().getDependentVersions( true );
             } else {
@@ -351,7 +352,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
      *
      */
     @Override
-    public String getUniquePolicyVersionIdentifer( final long policyOid ) {
+    public String getUniquePolicyVersionIdentifer( final Goid policyGoid ) {
         ensureCacheValid();
 
         String uniqueId = null;
@@ -359,7 +360,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
         final Lock read = lock.readLock();
         read.lock();
         try {
-            PolicyCacheEntry pce = cacheGet( policyOid );
+            PolicyCacheEntry pce = cacheGet( policyGoid );
             if( pce != null && pce.isValid() ) {
                 uniqueId = pce.getMetadata().getPolicyUniqueIdentifier();
             }
@@ -377,7 +378,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
     public void update( final Policy policy ) {
         ensureCacheValid();
 
-        if( policy.getOid() == Policy.DEFAULT_OID )
+        if( Goid.isDefault(policy.getGoid()) )
             throw new IllegalArgumentException( "Can't update a brand-new policy--it must be saved first" );
 
         perhapsUpdateInternal(preparedPolicy(policy));
@@ -404,7 +405,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
         if ( policy == null) throw new IllegalArgumentException( "policy must not be null" );
 
         // get using policies
-        Set<String> policies = toPolicyGuids( findUsagesInternal( policy.getOid() ) );
+        Set<String> policies = toPolicyGuids( findUsagesInternal( policy.getGoid() ) );
         if ( !policies.isEmpty() ) {
             final Assertion thisRootAssertion;
             try {
@@ -431,13 +432,13 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
      *
      */
     @Override
-    public void validateRemove( final long oid ) throws PolicyDeletionForbiddenException {
+    public void validateRemove( final Goid goid ) throws PolicyDeletionForbiddenException {
         ensureCacheValid();
 
         final Lock read = lock.readLock();
         read.lock();
         try {
-            ensureNotUsed( oid );
+            ensureNotUsed( goid );
         } finally {
             read.unlock();
         }
@@ -448,20 +449,20 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
      *
      */
     @Override
-    public Set<Policy> findUsages( final long oid ) {
+    public Set<Policy> findUsages( final Goid goid ) {
         ensureCacheValid();
 
-        return findUsagesInternal( oid );
+        return findUsagesInternal( goid );
     }
 
     /**
      *
      */
     @Override
-    public boolean remove( final long oid ) {
+    public boolean remove( final Goid goid ) {
         ensureCacheValid();
 
-        return removeInternal( oid );
+        return removeInternal( goid );
     }
 
     /**
@@ -485,18 +486,18 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
                 ResourceUtils.closeQuietly( pce );
             }
             policyCache.clear();
-            guidToOidMap.clear();
+            guidToGoidMap.clear();
             policyTypeAndTagToGuidsMap.clear();
 
             // rebuild
             for( Policy policy : policyManager.findAll() ) {
                 policy = preparedPolicy(policy);
-                findDependentPoliciesIfDirty(policy, null, new HashSet<Long>(), new HashMap<Long, Integer>(), events);
+                findDependentPoliciesIfDirty(policy, null, new HashSet<Goid>(), new HashMap<Goid, Integer>(), events);
             }
 
             // rebuild registered
             for ( RegisteredPolicy policy : guidToPolicyMap.values() ) {
-                findDependentPoliciesIfDirty( policy, null, new HashSet<Long>(), new HashMap<Long, Integer>(), events );
+                findDependentPoliciesIfDirty( policy, null, new HashSet<Goid>(), new HashMap<Goid, Integer>(), events );
             }
 
             cacheIsInvalid = false;
@@ -537,26 +538,26 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
                     resetAllForModuleUnload();
                 }
             });
-        } else if( applicationEvent instanceof EntityInvalidationEvent ) {
-            final EntityInvalidationEvent event = (EntityInvalidationEvent) applicationEvent;
+        } else if( applicationEvent instanceof GoidEntityInvalidationEvent) {
+            final GoidEntityInvalidationEvent event = (GoidEntityInvalidationEvent) applicationEvent;
             final PolicyVersionManager policyVersionManager = this.policyVersionManager;
 
             if( Policy.class.isAssignableFrom( event.getEntityClass() ) ) {
                 ensureCacheValid();
-                long policyOid = -1L;
+                Goid policyGoid = Policy.DEFAULT_GOID;
                 try {
-                    for( long oid : event.getEntityIds() ) {
-                        policyOid = oid;
-                        Policy policy = policyManager.findByPrimaryKey( oid );
+                    for( Goid goid : event.getEntityIds() ) {
+                        policyGoid = goid;
+                        Policy policy = policyManager.findByPrimaryKey( goid );
                         if( policy == null ) {
-                            notifyDelete( oid );
+                            notifyDelete( goid );
                         } else {
                             notifyUpdate(preparedPolicy(policy));
                         }
                     }
                 } catch( FindException fe ) {
                     markDirty();
-                    logAndAudit( MessageProcessingMessages.POLICY_CACHE_STORAGE_ERROR, new String[] { Long.toString(policyOid) }, fe );
+                    logAndAudit( MessageProcessingMessages.POLICY_CACHE_STORAGE_ERROR, new String[] { Goid.toString(policyGoid) }, fe );
                 }
                 publishReload();
             } else if ( policyVersionManager!=null && PolicyVersion.class.isAssignableFrom( event.getEntityClass() ) ) {
@@ -565,23 +566,23 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
                 // case we reload the policy to pick up the updated version (revision) information.
                 ensureCacheValid();
 
-                long policyOid = -1L;
+                Goid policyGoid = PolicyVersion.DEFAULT_GOID;
                 try {
-                    for( final Pair<Long,Character> entityInfo : zipI( box(event.getEntityIds()), box( event.getEntityOperations() )) ) {
-                        if ( ((int) EntityInvalidationEvent.CREATE) != entityInfo.right &&
-                             ((int) EntityInvalidationEvent.UPDATE) != entityInfo.right) continue;
-                        final long oid = entityInfo.left;
-                        final PolicyVersion version = policyVersionManager.findByPrimaryKey( oid );
+                    for( final Pair<Goid,Character> entityInfo : zipI( event.getEntityIds(), box(event.getEntityOperations())) ) {
+                        if ( ((int) GoidEntityInvalidationEvent.CREATE) != entityInfo.right &&
+                             ((int) GoidEntityInvalidationEvent.UPDATE) != entityInfo.right) continue;
+                        final Goid goid = entityInfo.left;
+                        final PolicyVersion version = policyVersionManager.findByPrimaryKey( goid );
                         if ( version == null || !version.isActive() ) continue;
 
-                        final PolicyCacheEntry pce = cacheGetWithLock( version.getPolicyOid() );
+                        final PolicyCacheEntry pce = cacheGetWithLock( version.getPolicyGoid() );
                         final PolicyMetadata policyMetadata = pce==null ? null : pce.getPolicyMetadata();
                         final PolicyHeader policyHeader = policyMetadata==null ? null : policyMetadata.getPolicyHeader();
                         if ( policyHeader != null &&
                              policyHeader.getPolicyRevision() != version.getOrdinal() ) {
-                            final Policy policy = policyManager.findByPrimaryKey( version.getPolicyOid() );
+                            final Policy policy = policyManager.findByPrimaryKey( version.getPolicyGoid() );
                             if( policy == null ) {
-                                notifyDelete( version.getPolicyOid() );
+                                notifyDelete( version.getPolicyGoid() );
                             } else {
                                 notifyUpdate(preparedPolicy(policy));
                             }
@@ -589,7 +590,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
                     }
                 } catch( FindException fe ) {
                     markDirty();
-                    logAndAudit( MessageProcessingMessages.POLICY_CACHE_STORAGE_ERROR, new String[] { Long.toString(policyOid) }, fe );
+                    logAndAudit( MessageProcessingMessages.POLICY_CACHE_STORAGE_ERROR, new String[] { Goid.toString(policyGoid) }, fe );
                 }
             }
         } else if ( applicationEvent instanceof Started ) {
@@ -623,10 +624,10 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
      * @return the cached policies
      */
     @ManagedAttribute(description="Cached Policies", currencyTimeLimit=30)
-    public Set<Long> getPolicies() {
+    public Set<Goid> getPolicies() {
         lock.readLock().lock();
         try {
-            return new TreeSet<Long>(policyCache.keySet());
+            return new TreeSet<Goid>(policyCache.keySet());
         } finally {
             lock.readLock().unlock();
         }
@@ -638,10 +639,10 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
      * @return the policies that are unlicensed
      */
     @ManagedAttribute(description="Unlicensed Policies", currencyTimeLimit=30)
-    public Set<Long> getUnlicensedPolicies() {
+    public Set<Goid> getUnlicensedPolicies() {
         lock.readLock().lock();
         try {
-            return new TreeSet<Long>(policiesThatAreUnlicensed);
+            return new TreeSet<Goid>(policiesThatAreUnlicensed);
         } finally {
             lock.readLock().unlock();
         }
@@ -656,18 +657,18 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
     /**
      *
      */
-    protected boolean isInCache( final Long policyOid ) {
-        return cacheGetWithLock( policyOid ) != null;
+    protected boolean isInCache( final Goid policyGoid ) {
+        return cacheGetWithLock( policyGoid ) != null;
     }
 
     /**
      *
      */
-    protected void setLicenseStatus( final Long policyOid, final boolean licensed ) {
+    protected void setLicenseStatus( final Goid policyGoid, final boolean licensed ) {
         if ( licensed ) {
-            policiesThatAreUnlicensed.remove( policyOid );
+            policiesThatAreUnlicensed.remove( policyGoid );
         } else {
-            policiesThatAreUnlicensed.add( policyOid );
+            policiesThatAreUnlicensed.add( policyGoid );
         }
     }
 
@@ -683,7 +684,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
         try {
             ass = policy.getAssertion();
         } catch( IOException ioe ) {
-            throw new InvalidPolicyException( "Invalid policy with id " + policy.getOid() + ": " + ExceptionUtils.getMessage( ioe ), ioe );
+            throw new InvalidPolicyException( "Invalid policy with id " + policy.getGoid() + ": " + ExceptionUtils.getMessage( ioe ), ioe );
         }
 
         if (policy.getVisibility() != cacheAssertionVisibility) // sanity check
@@ -700,10 +701,10 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
         // build server policy, create dummy if unlicensed        
         try {
             serverRootAssertion = policyFactory.compilePolicy( ass, true );
-            setLicenseStatus( policy.getOid(), true );
+            setLicenseStatus( policy.getGoid(), true );
         } catch( LicenseException le ) {
-            setLicenseStatus( policy.getOid(), false );
-            logAndAudit( MessageProcessingMessages.POLICY_CACHE_UNLICENSED, policy.getName(), Long.toString( policy.getOid() ), ExceptionUtils.getMessage( le ));
+            setLicenseStatus( policy.getGoid(), false );
+            logAndAudit( MessageProcessingMessages.POLICY_CACHE_UNLICENSED, policy.getName(), Goid.toString( policy.getGoid() ), ExceptionUtils.getMessage( le ));
             final String message = "Assertion not available: " + ExceptionUtils.getMessage( le );
             serverRootAssertion = new AbstractServerAssertion<UnknownAssertion>( new UnknownAssertion() ) {
                 @Override
@@ -743,9 +744,9 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
     private boolean cacheIsInvalid = true;
     private boolean initialized = false;
-    private final Set<Long> policiesThatAreUnlicensed = new HashSet<Long>();
-    private final Map<Long, PolicyCacheEntry> policyCache = new HashMap<Long, PolicyCacheEntry>(); // policy cache entries must be closed on removal
-    private final Map<String, Long> guidToOidMap = new HashMap<String, Long>();
+    private final Set<Goid> policiesThatAreUnlicensed = new HashSet<Goid>();
+    private final Map<Goid, PolicyCacheEntry> policyCache = new HashMap<Goid, PolicyCacheEntry>(); // policy cache entries must be closed on removal
+    private final Map<String, Goid> guidToGoidMap = new HashMap<String, Goid>();
     private final ConcurrentMap<Pair<PolicyType,String>, Set<String>> policyTypeAndTagToGuidsMap = new ConcurrentHashMap<Pair<PolicyType,String>, Set<String>>();
     private final Map<String, RegisteredPolicy> guidToPolicyMap = new HashMap<String,RegisteredPolicy>();
 
@@ -755,22 +756,22 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
           updateInternal( policy );
     }
 
-    private void notifyDelete( final long oid ) {
-        logger.log( Level.FINE, MessageFormat.format( "Policy #{0} has been deleted", oid ) );
-        removeInternal( oid );
+    private void notifyDelete( final Goid goid ) {
+        logger.log( Level.FINE, MessageFormat.format( "Policy #{0} has been deleted", goid ) );
+        removeInternal( goid );
     }
 
-    private Set<Policy> findUsagesInternal( final Long oid ) {
+    private Set<Policy> findUsagesInternal( final Goid goid ) {
         Set<Policy> policies = new HashSet<Policy>();
 
         final Lock read = lock.readLock();
         read.lock();
         try {
-            PolicyCacheEntry pce = cacheGet( oid );
+            PolicyCacheEntry pce = cacheGet( goid );
             if( pce != null ) {
-                final Set<Long> usedByOids = pce.usedBy;
-                for( Long aLong : usedByOids ) {
-                    PolicyCacheEntry userPce = cacheGet( aLong );
+                final Set<Goid> usedByOids = pce.usedBy;
+                for( Goid aGoid : usedByOids ) {
+                    PolicyCacheEntry userPce = cacheGet( aGoid );
                     if( userPce != null ) {
                         policies.add( userPce.policy );
                     }
@@ -786,14 +787,14 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
     /**
      * Find all usages of the policy, populate given Map.
      */
-    private void findAllUsages( final Long oid, final Map<Long, Policy> usingPolicies ) {
+    private void findAllUsages( final Goid goid, final Map<Goid, Policy> usingPolicies ) {
         final Lock read = lock.readLock();
         read.lock();
         try {
-            for( Policy policy : findUsagesInternal( oid ) ) {
-                if( !usingPolicies.containsKey( policy.getOid() )) {
-                    usingPolicies.put( policy.getOid(), policy );
-                    findAllUsages( policy.getOid(), usingPolicies );
+            for( Policy policy : findUsagesInternal( goid ) ) {
+                if( !usingPolicies.containsKey( policy.getGoid() )) {
+                    usingPolicies.put( policy.getGoid(), policy );
+                    findAllUsages( policy.getGoid(), usingPolicies );
                 }
             }
         } finally {
@@ -804,9 +805,9 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
     /**
      * Caller must hold lock
      */
-    private void updateUsage( final Long usingPolicyId, final boolean used, final Set<Long> policyIds ) {
-        for( Long useeOid : policyIds ) {
-            PolicyCacheEntry useePdi = cacheGet( useeOid );
+    private void updateUsage( final Goid usingPolicyId, final boolean used, final Set<Goid> policyIds ) {
+        for( Goid useeGoid : policyIds ) {
+            PolicyCacheEntry useePdi = cacheGet(useeGoid);
             if( useePdi != null ) {
                 if ( used ) {
                     useePdi.usedBy.add( usingPolicyId );
@@ -821,16 +822,16 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
      * Add an item to the cache, update the usage structure (usedBy)
      */
     private void cacheReplace( final PolicyCacheEntry pce ) {
-        if (!PersistentEntityUtil.isLocked(pce.policy))
+        if (!GoidEntityUtil.isLocked(pce.policy))
             throw new IllegalArgumentException("Unlocked policy may not be placed into the policy cache");
         PolicyCacheEntry replaced = policyCache.put( pce.policyId, pce );
         if ( replaced != null ) {
             ResourceUtils.closeQuietly( replaced );
-            guidToOidMap.remove(replaced.policy.getGuid());
+            guidToGoidMap.remove(replaced.policy.getGuid());
             pce.usedBy.addAll( replaced.usedBy );
             updateUsage( pce.policyId, false, replaced.getUsedPolicyIds());
         }
-        guidToOidMap.put(pce.policy.getGuid(), pce.policyId);
+        guidToGoidMap.put(pce.policy.getGuid(), pce.policyId);
         updateUsage( pce.policyId, true, pce.getUsedPolicyIds());
     }
 
@@ -841,22 +842,22 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
      * cache. No event is fired in this case since it is not a state change,
      * just book keeping.
      */
-    private PolicyCacheEntry cacheRemove( final Long policyId ) {
+    private PolicyCacheEntry cacheRemove( final Goid policyId ) {
         PolicyCacheEntry removed = policyCache.remove( policyId );
         if ( removed != null ) {
             ResourceUtils.closeQuietly( removed );
-            guidToOidMap.remove(removed.policy.getGuid());
+            guidToGoidMap.remove(removed.policy.getGuid());
             updateUsage( policyId, false, removed.getUsedPolicyIds());
 
-            Set<Long> policiesToRemove = new HashSet<Long>();
-            for ( Long usedPolicyId : removed.getUsedPolicyIds() ) {
+            Set<Goid> policiesToRemove = new HashSet<Goid>();
+            for ( Goid usedPolicyId : removed.getUsedPolicyIds() ) {
                 PolicyCacheEntry entry = cacheGet( usedPolicyId );
                 if ( entry != null && !entry.isValid() && entry.usedBy.isEmpty() ) {
                     policiesToRemove.add( usedPolicyId );      
                 }
             }
 
-            for ( Long removePolicyId : policiesToRemove ) {
+            for ( Goid removePolicyId : policiesToRemove ) {
                 cacheRemove( removePolicyId );    
             }
         }
@@ -866,14 +867,14 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
     /**
      * Get an item from the cache
      */
-    private PolicyCacheEntry cacheGet( final Long policyId ) {
+    private PolicyCacheEntry cacheGet( final Goid policyId ) {
         return policyCache.get( policyId );
     }
 
     /**
      * Get an item from the cache with a read lock
      */
-    private PolicyCacheEntry cacheGetWithLock( final Long policyOid ) {
+    private PolicyCacheEntry cacheGetWithLock( final Goid policyOid ) {
         PolicyCacheEntry pce;
 
         final Lock read = lock.readLock();
@@ -893,7 +894,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
      * Policy should be read only.
      */
     private void perhapsUpdateInternal( final Policy policy ) {
-        final PolicyCacheEntry entry = cacheGetWithLock( policy.getOid() );
+        final PolicyCacheEntry entry = cacheGetWithLock( policy.getGoid() );
         if ( entry == null ||
              entry.isDirty() ||
              !entry.isValid() ||
@@ -910,7 +911,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
         if ( logger.isLoggable( Level.FINE )) {
             logger.log( Level.FINE,
                     "Policy #{0} ({1}) has been created or updated; updating caches",
-                    new Object[]{ policy.getOid(), policy.getName() } );
+                    new Object[]{ policy.getGoid(), policy.getName() } );
         }
 
         List<PolicyCacheEvent> events = new ArrayList<PolicyCacheEvent>();
@@ -919,23 +920,23 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
         try {
             policyTypeAndTagToGuidsMap.clear();
 
-            final Map<Long, Policy> usingPolicies = new HashMap<Long,Policy>();
-            findAllUsages( policy.getOid(), usingPolicies );
+            final Map<Goid, Policy> usingPolicies = new HashMap<Goid,Policy>();
+            findAllUsages( policy.getGoid(), usingPolicies );
 
             // mark self and users as dirty
-            markDirty( Collections.singleton( policy.getOid() ) );
+            markDirty( Collections.singleton( policy.getGoid() ) );
             markDirty( usingPolicies.keySet() );
 
             // rebuild self
-            findDependentPolicies( policy, null, new HashSet<Long>(), new HashMap<Long, Integer>(), events );
+            findDependentPolicies( policy, null, new HashSet<Goid>(), new HashMap<Goid, Integer>(), events );
 
             // rebuild parents
             for( Policy usingPolicy : usingPolicies.values() ) {
-                findDependentPoliciesIfDirty( usingPolicy, null, new HashSet<Long>(), new HashMap<Long, Integer>(), events );
-                trace( cacheGet( usingPolicy.getOid() ) );
+                findDependentPoliciesIfDirty( usingPolicy, null, new HashSet<Goid>(), new HashMap<Goid, Integer>(), events );
+                trace( cacheGet( usingPolicy.getGoid() ) );
             }
 
-            trace( cacheGet( policy.getOid() ) );
+            trace( cacheGet( policy.getGoid() ) );
         } finally {
             write.unlock();
         }
@@ -945,32 +946,32 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
         }
     }
 
-    private boolean removeInternal( final long oid ) {
+    private boolean removeInternal( final Goid goid ) {
         boolean removedPolicy = false;
         final Policy removed;
-        final Set<Long> invalidated = new HashSet<Long>();
+        final Set<Goid> invalidated = new HashSet<Goid>();
         final Lock write = lock.writeLock();
         write.lock();
         try {
             policyTypeAndTagToGuidsMap.clear();
 
-            PolicyCacheEntry pce = cacheGet( oid );
+            PolicyCacheEntry pce = cacheGet( goid );
             if ( pce == null ) {
                 removed = null;
-                logger.log( Level.FINE, "No entry found for Policy #{0}, ignoring", oid );
+                logger.log( Level.FINE, "No entry found for Policy #{0}, ignoring", goid );
             } else {
                 removedPolicy = true;
                 final Policy deletedPolicy = pce.policy;
-                final Map<Long,Policy> usingPolicies = new HashMap<Long,Policy>();
-                findAllUsages( oid, usingPolicies );
+                final Map<Goid,Policy> usingPolicies = new HashMap<Goid,Policy>();
+                findAllUsages( goid, usingPolicies );
                 markDirty( usingPolicies.keySet() );
 
-                logger.log( Level.FINE, "Policy #{0} has ben deleted; removing from cache", oid );
+                logger.log( Level.FINE, "Policy #{0} has ben deleted; removing from cache", goid );
                 if ( usingPolicies.isEmpty() ) {
-                    cacheRemove( oid );
+                    cacheRemove( goid );
                 } else {
                     // cache as invalid, just in case the OID re-appears somehow
-                    logger.log( Level.FINE, "Caching Policy #{0} as invalid for users: {1}", new Object[]{oid, usingPolicies.keySet()} );
+                    logger.log( Level.FINE, "Caching Policy #{0} as invalid for users: {1}", new Object[]{goid, usingPolicies.keySet()} );
 
                     // update users
                     recursiveInvalidate( deletedPolicy, null , usingPolicies.keySet(), invalidated );
@@ -978,7 +979,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
 
                 removed = deletedPolicy;
 
-                trace( cacheGet( oid ));
+                trace( cacheGet( goid ));
             }
         } finally {
             write.unlock();
@@ -987,7 +988,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
         if ( removed != null )
             publishEvent( new PolicyCacheEvent.Deleted(this, removed) );
 
-        for ( Long policyId : invalidated ) {
+        for ( Goid policyId : invalidated ) {
             publishEvent( new PolicyCacheEvent.Invalid(this, policyId, null) );
         }
 
@@ -997,9 +998,9 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
     /**
      * Recursively invalidate the parents of the given policy.
      */
-    private void recursiveInvalidate( Policy policy, @Nullable Long usedPolicyId, Set<Long> policiesToInvalidate, Set<Long> invalidated ) {
+    private void recursiveInvalidate( Policy policy, @Nullable Goid usedPolicyId, Set<Goid> policiesToInvalidate, Set<Goid> invalidated ) {
         // invalidate the given policy
-        Long policyId = policy.getOid();
+        Goid policyId = policy.getGoid();
         PolicyCacheEntry entry = cacheGet( policyId );
         if ( entry != null ) {
             invalidated.add( policyId );
@@ -1009,7 +1010,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
         // invalidate parents
         Set<Policy> parents = findUsagesInternal( policyId );
         for( Policy parentPolicy : parents ) {
-            Long parentPolicyId = parentPolicy.getOid();
+            Goid parentPolicyId = parentPolicy.getGoid();
             if ( policiesToInvalidate.contains( parentPolicyId )) {
                 policiesToInvalidate.remove( parentPolicyId );
                 recursiveInvalidate( parentPolicy, policyId, policiesToInvalidate, invalidated );
@@ -1026,12 +1027,12 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
      */
     private void findDependentPoliciesIfDirty( final Policy thisPolicy,
                                                final @Nullable Policy parentPolicy,
-                                               final Set<Long> seenOids,
-                                               final Map<Long, Integer> dependentVersions,
+                                               final Set<Goid> seenGoids,
+                                               final Map<Goid, Integer> dependentVersions,
                                                final List<PolicyCacheEvent> events ) {
-        PolicyCacheEntry pce = cacheGet( thisPolicy.getOid() );
+        PolicyCacheEntry pce = cacheGet( thisPolicy.getGoid() );
         if ( pce == null || pce.isDirty() ) {
-            findDependentPolicies(thisPolicy, parentPolicy, seenOids, dependentVersions, events );
+            findDependentPolicies(thisPolicy, parentPolicy, seenGoids, dependentVersions, events );
         }
     }
 
@@ -1046,7 +1047,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
      *
      * @param thisPolicy        the Policy to run the dependency check on (should be read-only)
      * @param parentPolicy      the Policy that includes this policy, if known
-     * @param seenOids          the Policy OIDs seen thus far in this policy stack, to detect cycles
+     * @param seenGoids         the Policy OIDs seen thus far in this policy stack, to detect cycles
      *                          (always pass a new, mutable <code>{@link Set}&lt;{@link Long}&gt;)
      * @param dependentVersions the OIDs and versions of policies seen thus far in this path through the policy tree, to
      *                          track dependencies. (always pass a new, mutable <code>{@link java.util.Map}&lt;Long, Integer&gt;)
@@ -1056,12 +1057,12 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
      */
     private PolicyCacheEntry findDependentPolicies( final Policy thisPolicy,
                                                     final @Nullable Policy parentPolicy,
-                                                    final Set<Long> seenOids,
-                                                    final Map<Long, Integer> dependentVersions,
+                                                    final Set<Goid> seenGoids,
+                                                    final Map<Goid, Integer> dependentVersions,
                                                     final List<PolicyCacheEvent> events ) {
-        final Long thisPolicyId = thisPolicy.getOid();
+        final Goid thisPolicyId = thisPolicy.getGoid();
         dependentVersions.put( thisPolicyId, thisPolicy.getVersion() );
-        final Set<Long> descendentPolicies = new HashSet<Long>();
+        final Set<Goid> descendentPolicies = new HashSet<Goid>();
         if ( logger.isLoggable( Level.FINE ) )
             logger.log( Level.FINE, "Processing Policy #{0} ({1})", new Object[]{ thisPolicyId, thisPolicy.getName() } );
 
@@ -1069,11 +1070,11 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
         PolicyMetadata meta = null;
         ServerAssertion serverAssertion = null;
         Exception exception = null;
-        Long usedInvalidPolicyId = null;
+        Goid usedInvalidPolicyId = null;
         try {
             try {
                 // validate / parse policy
-                if( !seenOids.add( thisPolicyId ) ) {
+                if( !seenGoids.add( thisPolicyId ) ) {
                     throw new CircularPolicyException( parentPolicy, thisPolicy.getGuid(), thisPolicy.getName() );
                 }
 
@@ -1096,12 +1097,12 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
                                 new Object[]{ thisPolicyId, thisPolicy.getName(), includedGuid, include.getPolicyName() } );
                     if( includedGuid == null )
                         throw new InvalidPolicyException( "Found Include assertion with no PolicyGUID in Policy #" + thisPolicy.getGuid() );
-                    final Long includedOid;
+                    final Goid includedGoid;
 
                     // Get cached info for include, rebuild if required
                     PolicyCacheEntry includedInfo = null;
-                    if(guidToOidMap.containsKey(includedGuid)) {
-                        includedInfo = cacheGet( guidToOidMap.get(includedGuid) );
+                    if(guidToGoidMap.containsKey(includedGuid)) {
+                        includedInfo = cacheGet( guidToGoidMap.get(includedGuid) );
                     }
                     if( includedInfo == null || includedInfo.isDirty() ) {
                         if ( logger.isLoggable( Level.FINE ) )
@@ -1109,35 +1110,35 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
                                     new Object[]{ includedGuid, include.getPolicyName() } );
                         final Policy  includedPolicy = policyManager.findByGuid( includedGuid );
                         if( includedPolicy == null ) {
-                            throw new ServerPolicyInstantiationException("Include assertion in Policy #" + thisPolicy.getOid() + " refers to Policy #" + includedGuid + ", which does not exist");
+                            throw new ServerPolicyInstantiationException("Include assertion in Policy #" + thisPolicy.getGoid() + " refers to Policy #" + includedGuid + ", which does not exist");
                         }
-                        includedOid = includedPolicy.getOid();
-                        descendentPolicies.add( includedOid);
-                        includedInfo = findDependentPolicies(preparedPolicy(includedPolicy), thisPolicy, seenOids, dependentVersions, events );
+                        includedGoid = includedPolicy.getGoid();
+                        descendentPolicies.add( includedGoid);
+                        includedInfo = findDependentPolicies(preparedPolicy(includedPolicy), thisPolicy, seenGoids, dependentVersions, events );
                     } else {
-                        includedOid = includedInfo.policyId;
-                        descendentPolicies.add( includedOid );
+                        includedGoid = includedInfo.policyId;
+                        descendentPolicies.add( includedGoid );
                     }
 
                     if ( includedInfo.isValid() ) {
                         if ( logger.isLoggable( Level.FINE ) )
                             logger.log( Level.FINE, "Found dependency info for #{0} ({1})",
-                                    new Object[]{ Long.toString( includedOid ), include.getPolicyName() } );
+                                    new Object[]{ Goid.toString( includedGoid ), include.getPolicyName() } );
                         dependentVersions.putAll( includedInfo.getMetadata().getDependentVersions( true ));
                         descendentPolicies.addAll( includedInfo.getMetadata().getUsedPolicyIds( false ) );
-                        for ( Long policyOid : includedInfo.getMetadata().getUsedPolicyIds( false ) ) {
-                            if ( seenOids.contains( policyOid )) {
+                        for ( Goid policyGoid : includedInfo.getMetadata().getUsedPolicyIds( false ) ) {
+                            if ( seenGoids.contains(policyGoid)) {
                                 throw new CircularPolicyException( parentPolicy, thisPolicy.getGuid(), thisPolicy.getName() );
                             }
                         }
                     } else {
                         if ( logger.isLoggable( Level.FINE ) )
                             logger.log( Level.FINE, "Found dependency info for #{0} ({1}) [invalid policy]",
-                                    new Object[]{ Long.toString( includedOid ), include.getPolicyName() } );
+                                    new Object[]{ Goid.toString( includedGoid ), include.getPolicyName() } );
                         // Add usedBy so we are notified when this policy is updated
                         includedInfo.usedBy.add( thisPolicyId );
                         usedInvalidPolicyId = includedInfo.policyId;
-                        throw new ServerPolicyInstantiationException("Include assertion in Policy #" + thisPolicy.getOid() + " refers to Policy #'"+includedOid+"' which is invalid");
+                        throw new ServerPolicyInstantiationException("Include assertion in Policy #" + thisPolicy.getGoid() + " refers to Policy #'"+includedGoid+"' which is invalid");
                     }
                 }
 
@@ -1162,12 +1163,12 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
                 exception = ipe;
             } catch ( FindException fe ) {
                 markDirty();
-                logAndAudit( MessageProcessingMessages.POLICY_CACHE_STORAGE_ERROR, new String[] { Long.toString(thisPolicyId) }, fe );
+                logAndAudit( MessageProcessingMessages.POLICY_CACHE_STORAGE_ERROR, new String[] { Goid.toString(thisPolicyId) }, fe );
                 exception = fe;
             }
 
             // update cache structure (even if policy is invalid)
-            seenOids.remove( thisPolicyId );
+            seenGoids.remove( thisPolicyId );
 
             PolicyCacheEntry pce;
             if ( serverAssertion != null ) {
@@ -1223,8 +1224,8 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
      *
      * Caller should hold lock 
      */
-    private void markDirty( final Set<Long> policyIds ) {
-        for ( Long policyId : policyIds ) {
+    private void markDirty( final Set<Goid> policyIds ) {
+        for ( Goid policyId : policyIds ) {
             PolicyCacheEntry entry = cacheGet( policyId );
             if ( entry != null ) {
                 entry.markDirty();
@@ -1232,11 +1233,11 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
         }
     }
 
-    private void ensureNotUsed( final long oid ) throws PolicyDeletionForbiddenException {
-        PolicyCacheEntry pce = cacheGet( oid );
+    private void ensureNotUsed( final Goid goid ) throws PolicyDeletionForbiddenException {
+        PolicyCacheEntry pce = cacheGet( goid );
         if( pce != null ) {
             if( !pce.usedBy.isEmpty() ) {
-                for ( Long id : pce.usedBy ) {
+                for ( Goid id : pce.usedBy ) {
                     final PolicyCacheEntry entry = cacheGet( id );
                     if ( entry != null ) {
                         throw new PolicyDeletionForbiddenException( pce.policy, EntityType.POLICY, entry.policy );
@@ -1261,12 +1262,12 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
      *
      * Used policies must be in cache.
      */
-    private PolicyMetadata collectMetadata( final Policy policy, final @Nullable Assertion rootAssertion, final Set<Long> usedPolicyOids ) throws FindException {
+    private PolicyMetadata collectMetadata( final Policy policy, final @Nullable Assertion rootAssertion, final Set<Goid> usedPolicyGoids ) throws FindException {
         // find policy revision
         long policyRevision = 0L;
         final PolicyVersionManager policyVersionManager = this.policyVersionManager;
         if ( policyVersionManager != null ) {
-            final PolicyVersion activeVersion = policyVersionManager.findActiveVersionForPolicy(policy.getOid());
+            final PolicyVersion activeVersion = policyVersionManager.findActiveVersionForPolicy(policy.getGoid());
             if ( activeVersion != null ) {
                 policyRevision = activeVersion.getOrdinal();
             }
@@ -1303,8 +1304,8 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
         }
 
         // need to check included policies also (which must have been cached before calling)
-        for( Long usedPolicyOid : usedPolicyOids ) {
-            PolicyCacheEntry entry = cacheGet( usedPolicyOid );
+        for( Goid usedPolicyGoid : usedPolicyGoids ) {
+            PolicyCacheEntry entry = cacheGet( usedPolicyGoid );
             if( entry != null && entry.isValid() ) {
                 PolicyMetadata metadata = entry.handle.getPolicyMetadata();
                 tarariWanted = tarariWanted || metadata.isTarariWanted();
@@ -1364,12 +1365,12 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
     }
 
     private void resetUnlicensed() {
-        Set<Long> unlicensed;
+        Set<Goid> unlicensed;
 
         final Lock read = lock.readLock();
         read.lock();
         try {
-            unlicensed = new HashSet<Long>(policiesThatAreUnlicensed);
+            unlicensed = new HashSet<Goid>(policiesThatAreUnlicensed);
         } finally {
             read.unlock();
         }
@@ -1383,12 +1384,12 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
     }
 
     private void resetAllForModuleUnload() {
-        Set<Long> forReset;
+        Set<Goid> forReset;
 
         final Lock read = lock.readLock();
         read.lock();
         try {
-            forReset = new HashSet<Long>( policyCache.keySet() );
+            forReset = new HashSet<Goid>( policyCache.keySet() );
         } finally {
             read.unlock();
         }
@@ -1398,28 +1399,28 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
         reset( forReset );
     }
 
-    private void reset( final Set<Long> policyIds ) {
+    private void reset( final Set<Goid> policyIds ) {
         final Lock write = lock.writeLock();
         write.lock();
         try {
             policyTypeAndTagToGuidsMap.clear();
             markDirty( policyIds );
-            for ( Long oid : policyIds ) {
-                PolicyCacheEntry pce = cacheGet(oid);
+            for ( Goid id : policyIds ) {
+                PolicyCacheEntry pce = cacheGet(id);
                 if (pce == null) continue; // no longer relevant
 
                 Policy policy = null;
                 try {
-                    policy = policyManager.findByPrimaryKey( oid );
+                    policy = policyManager.findByPrimaryKey( id );
                 } catch ( FindException fe ) {
                     markDirty();
-                    logAndAudit( MessageProcessingMessages.POLICY_CACHE_STORAGE_ERROR, new String[] { oid.toString() }, fe );
+                    logAndAudit( MessageProcessingMessages.POLICY_CACHE_STORAGE_ERROR, new String[] { id.toString() }, fe );
                 }
 
                 if ( policy != null ) {
                     updateInternal(preparedPolicy(policy));
                 } else {
-                    removeInternal( oid );
+                    removeInternal( id );
                 }
             }
         } finally {
@@ -1509,15 +1510,15 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
     }
 
     private static class PolicyCacheEntry implements Closeable {
-        private final Long policyId;
+        private final Goid policyId;
         private final Policy policy;
 
         // one of these is two fields is required
         private final ServerPolicyHandle handle;
         private final ServerPolicy serverPolicy;
-        private final Long usesPolicyId;
+        private final Goid usesPolicyId;
 
-        private final Set<Long> usedBy;
+        private final Set<Goid> usedBy;
         private boolean dirty = false;
 
         /**
@@ -1531,15 +1532,15 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
          */
         private PolicyCacheEntry( final Policy policy,
                                   final ServerPolicy serverPolicy,
-                                  final Set<Long> usedBy ) {
+                                  final Set<Goid> usedBy ) {
             if ( policy == null ) throw new IllegalArgumentException("policy must not be null");
             if ( serverPolicy == null ) throw new IllegalArgumentException("serverPolicy must not be null");
-            this.policyId = policy.getOid();
+            this.policyId = policy.getGoid();
             this.policy = policy;
             this.handle = serverPolicy.ref();
             this.serverPolicy = serverPolicy;
             this.usesPolicyId = null;
-            this.usedBy = new HashSet<Long>();
+            this.usedBy = new HashSet<Goid>();
             if ( usedBy != null ) {
                 this.usedBy.addAll( usedBy );
             }
@@ -1554,14 +1555,14 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
          * @param usesPolicyId The id of the policy that this item depends on (may be null)
          */
         private PolicyCacheEntry( final Policy policy,
-                                  final @Nullable Long usesPolicyId ) {
+                                  final @Nullable Goid usesPolicyId ) {
             if ( policy == null ) throw new IllegalArgumentException("policy must not be null");
-            this.policyId = policy.getOid();
+            this.policyId = policy.getGoid();
             this.policy = policy;
             this.handle = null;
             this.serverPolicy = null;
             this.usesPolicyId = usesPolicyId;
-            this.usedBy = new HashSet<Long>();
+            this.usedBy = new HashSet<Goid>();
         }
 
         private ServerPolicyMetadata getMetadata() {
@@ -1572,8 +1573,8 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
             }
         }
 
-        private Set<Long> getUsedPolicyIds() {
-            Set<Long> policyIds;
+        private Set<Goid> getUsedPolicyIds() {
+            Set<Goid> policyIds;
 
             if ( handle == null ) {
                 if ( usesPolicyId == null ) {
@@ -1616,6 +1617,9 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
         }
     }
 
+    /**
+     * Registered policies are ones that can be registered by assertions. These can be global policies for example. Registered policies should never by stored in the database!
+     */
     private static final class RegisteredPolicy extends Policy {
         private static final AtomicLong registeredOidCounter = new AtomicLong( -100000L );
 
@@ -1628,7 +1632,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
             if ( type==null ) throw new IllegalArgumentException("type is required.");
             if ( xml==null || xml.trim().isEmpty() ) throw new IllegalArgumentException("xml is required.");
 
-            setOid(registeredOidCounter.getAndDecrement());
+            setGoid(new Goid(0,registeredOidCounter.getAndDecrement()));
             setGuid(UUID.randomUUID().toString());
             setInternalTag(tag);
             setVisibility(WspReader.Visibility.omitDisabled);

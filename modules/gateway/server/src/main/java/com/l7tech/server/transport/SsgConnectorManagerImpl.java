@@ -1,19 +1,16 @@
 package com.l7tech.server.transport;
 
-import com.l7tech.objectmodel.*;
-import com.l7tech.server.HibernateGoidEntityManager;
-import com.l7tech.server.ServerConfigParams;
-import com.l7tech.server.event.GoidEntityInvalidationEvent;
-import com.l7tech.util.InetAddressUtil;
 import com.l7tech.common.io.PortRange;
 import com.l7tech.common.io.PortRanges;
 import com.l7tech.gateway.common.transport.InterfaceTag;
-import com.l7tech.gateway.common.transport.TransportDescriptor;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.gateway.common.transport.SsgConnector.Endpoint;
-import com.l7tech.server.HibernateEntityManager;
+import com.l7tech.gateway.common.transport.TransportDescriptor;
+import com.l7tech.objectmodel.*;
+import com.l7tech.server.HibernateGoidEntityManager;
 import com.l7tech.server.ServerConfig;
-import com.l7tech.server.event.EntityInvalidationEvent;
+import com.l7tech.server.ServerConfigParams;
+import com.l7tech.server.event.GoidEntityInvalidationEvent;
 import com.l7tech.server.util.ApplicationEventProxy;
 import com.l7tech.server.util.FirewallUtils;
 import com.l7tech.util.*;
@@ -21,7 +18,6 @@ import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.*;
-import static org.springframework.transaction.annotation.Propagation.SUPPORTS;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.beans.PropertyChangeEvent;
@@ -36,6 +32,8 @@ import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static org.springframework.transaction.annotation.Propagation.SUPPORTS;
 
 /**
  * Implementation of {@link SsgConnectorManager}.
@@ -390,7 +388,7 @@ public class SsgConnectorManagerImpl
             Goid goid = ids[i];
 
             switch (op) {
-                case EntityInvalidationEvent.DELETE:
+                case GoidEntityInvalidationEvent.DELETE:
                     knownConnectors.remove(goid);
                     break;
                 default:

@@ -12,7 +12,6 @@ import com.l7tech.policy.InvalidGenericEntityException;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.server.entity.GenericEntityManager;
-import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.event.GoidEntityInvalidationEvent;
 import com.l7tech.server.service.ServiceManager;
 import com.l7tech.server.util.ApplicationEventProxy;
@@ -36,9 +35,9 @@ import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
 public class PortalManagedServiceManagerImplTest {
-    private static final long SERVICE_A = 1L;
+    private static final Goid SERVICE_A = new Goid(0,1L);
     private static final String SERVICE_A_STRING = String.valueOf(SERVICE_A);
-    private static final long SERVICE_B = 2L;
+    private static final Goid SERVICE_B = new Goid(0,2L);
     private static final String SERVICE_B_STRING = String.valueOf(SERVICE_B);
     private PortalManagedServiceManagerImpl manager;
     private List<ServiceHeader> serviceHeaders;
@@ -630,8 +629,8 @@ public class PortalManagedServiceManagerImplTest {
 
     @Test
     public void findAll() throws Exception {
-        when(entityManager.findAll()).thenReturn(Arrays.asList(createPortalManagedService(new Goid(0,1L), "a1", 1L, "group1"),
-                createPortalManagedService(new Goid(0,2L), "a2", 2L, "group2")));
+        when(entityManager.findAll()).thenReturn(Arrays.asList(createPortalManagedService(new Goid(0,1L), "a1", new Goid(0,1L), "group1"),
+                createPortalManagedService(new Goid(0,2L), "a2", new Goid(0,2L), "group2")));
 
         final List<PortalManagedService> portalManagedServices = manager.findAll();
 
@@ -976,7 +975,7 @@ public class PortalManagedServiceManagerImplTest {
     public void onApplicationEventNotGenericEntity() throws Exception {
         manager.getCache().put("a1", createPortalManagedService(new Goid(0,1234L), "a1", SERVICE_A, "group1"));
         manager.getNameCache().put(new Goid(0,1234L), "a1");
-        final EntityInvalidationEvent event = new EntityInvalidationEvent(new PublishedService(), PublishedService.class, new long[]{1234L}, new char[]{EntityInvalidationEvent.CREATE});
+        final GoidEntityInvalidationEvent event = new GoidEntityInvalidationEvent(new PublishedService(), PublishedService.class, new Goid[]{new Goid(0,1234L)}, new char[]{GoidEntityInvalidationEvent.CREATE});
 
         manager.onApplicationEvent(event);
 
@@ -1047,22 +1046,22 @@ public class PortalManagedServiceManagerImplTest {
         return stringBuilder.toString();
     }
 
-    private PublishedService createPublishedService(final Long oid, final ApiPortalIntegrationAssertion... assertions) {
+    private PublishedService createPublishedService(final Goid goid, final ApiPortalIntegrationAssertion... assertions) {
         final String policyXml = createPolicyXml(assertions);
         final Policy policy = new Policy(PolicyType.PRIVATE_SERVICE, "policy", policyXml, true);
         final PublishedService service = new PublishedService();
-        service.setOid(oid);
+        service.setGoid(goid);
         service.setPolicy(policy);
         return service;
     }
 
-    private PortalManagedService createPortalManagedService(final Goid goid, final String apiId, final Long serviceOid, final String apiGroup) {
+    private PortalManagedService createPortalManagedService(final Goid goid, final String apiId, final Goid serviceGoid, final String apiGroup) {
         final PortalManagedService portalManagedService = new PortalManagedService();
         if (goid != null) {
             portalManagedService.setGoid(goid);
         }
         portalManagedService.setName(apiId);
-        portalManagedService.setDescription(String.valueOf(serviceOid));
+        portalManagedService.setDescription(String.valueOf(serviceGoid));
         portalManagedService.setApiGroup(apiGroup);
         return portalManagedService;
     }

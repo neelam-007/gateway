@@ -338,9 +338,9 @@ public class ApiPortalAuthAndMgmtConfigurationDialog extends JDialog {
         }
 
         // If validation is passed, then publish a new service
-        long oid = Registry.getDefault().getServiceManager().savePublishedService(service);
+        Goid goid = Registry.getDefault().getServiceManager().savePublishedService(service);
         Registry.getDefault().getSecurityProvider().refreshPermissionCache();
-        service.setOid(oid);
+        service.setGoid(goid);
         Thread.sleep(1000);
 
         EntityHeader entityHeader = new ServiceHeader(service);
@@ -355,7 +355,7 @@ public class ApiPortalAuthAndMgmtConfigurationDialog extends JDialog {
         final AbstractTreeNode sn = TreeNodeFactory.asTreeNode(entityHeader, null);
         model.insertNodeInto(sn, parent, parent.getInsertPosition(sn, RootNode.getComparator()));
         RootNode rootNode = (RootNode) model.getRoot();
-        rootNode.addEntity(entityHeader.getOid(), sn);
+        rootNode.addEntity(entityHeader.getGoid(), sn);
         tree.setSelectionPath(new TreePath(sn.getPath()));
 
         // If everything is good, close the installation dialog

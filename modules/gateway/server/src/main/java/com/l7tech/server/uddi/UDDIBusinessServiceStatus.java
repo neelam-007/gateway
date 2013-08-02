@@ -1,15 +1,11 @@
 package com.l7tech.server.uddi;
 
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.imp.PersistentEntityImp;
-
-import javax.persistence.Entity;
-import javax.persistence.Table;
-import javax.persistence.Version;
-import javax.persistence.Column;
-import javax.persistence.Enumerated;
-import javax.persistence.EnumType;
-
 import org.hibernate.annotations.Proxy;
+import org.hibernate.annotations.Type;
+
+import javax.persistence.*;
 
 /**
  * Tracks the current status for a UDDI business service.
@@ -23,13 +19,14 @@ public class UDDIBusinessServiceStatus extends PersistentEntityImp {
 
     //- PUBLIC
     
-    @Column(name = "published_service_oid", updatable=false)
-    public long getPublishedServiceOid() {
-        return publishedServiceOid;
+    @Column(name = "published_service_goid", updatable=false)
+    @Type(type = "com.l7tech.server.util.GoidType")
+    public Goid getPublishedServiceGoid() {
+        return publishedServiceGoid;
     }
 
-    public void setPublishedServiceOid( final long publishedServiceOid ) {
-        this.publishedServiceOid = publishedServiceOid;
+    public void setPublishedServiceGoid( final Goid publishedServiceGoid ) {
+        this.publishedServiceGoid = publishedServiceGoid;
     }
 
     @Column(name = "uddi_registry_oid", updatable=false)
@@ -146,7 +143,7 @@ public class UDDIBusinessServiceStatus extends PersistentEntityImp {
 
     //- PRIVATE
 
-    private long publishedServiceOid;
+    private Goid publishedServiceGoid;
     private long uddiRegistryOid;
     private String uddiServiceKey;
     private String uddiServiceName;

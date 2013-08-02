@@ -1,7 +1,7 @@
 package com.l7tech.objectmodel;
 
 import com.l7tech.objectmodel.folder.Folder;
-import com.l7tech.objectmodel.imp.ZoneablePersistentEntityImp;
+import com.l7tech.objectmodel.imp.ZoneableGoidEntityImp;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.search.Dependency;
 import org.jetbrains.annotations.Nullable;
@@ -17,34 +17,34 @@ import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
  * @author darmstrong
  */
 @XmlRootElement
-public abstract class Alias<ET extends PersistentEntity> extends ZoneablePersistentEntityImp implements EntityAlias {
-    protected long entityOid;
+public abstract class Alias<ET extends GoidEntity> extends ZoneableGoidEntityImp implements EntityAlias {
+    protected Goid entityGoid;
     private Folder folder;
 
     @Deprecated // For Serialization and persistence only
     protected Alias() { }
 
-    protected Alias( final long entityOid,
+    protected Alias( final Goid entityGoid,
                      final Folder folder,
                      @Nullable final SecurityZone securityZone) {
-        this.entityOid = entityOid;
+        this.entityGoid = entityGoid;
         this.folder = folder;
         this.securityZone = securityZone;
     }
 
     protected Alias(ET entity, Folder folder, @Nullable final SecurityZone securityZone) {
-        this( entity.getOid(), folder, securityZone);
+        this( entity.getGoid(), folder, securityZone);
     }
 
     /**
-     * The OID of the entity to which this alias refers.
+     * The GOID of the entity to which this alias refers.
      * Needs to be overridden with the proper Migration annotation.
      */
-    public abstract long getEntityOid();
+    public abstract Goid getEntityGoid();
 
     @Deprecated
-    protected void setEntityOid(long entityOid) {
-        this.entityOid = entityOid;
+    protected void setEntityGoid(Goid entityGoid) {
+        this.entityGoid = entityGoid;
     }
 
     /** The folder where this alias lives. */

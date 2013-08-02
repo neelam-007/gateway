@@ -1,5 +1,6 @@
 package com.l7tech.server.policy;
 
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.policy.Policy;
 import com.l7tech.util.Functions.Nullary;
@@ -39,7 +40,7 @@ public interface ServerPolicyMetadata {
      *
      * @return The set of policy identifiers.
      */
-    public Set<Long> getUsedPolicyIds( boolean includeSelf );
+    public Set<Goid> getUsedPolicyIds( boolean includeSelf );
 
     /**
      * Get a map of used policy versions.
@@ -47,7 +48,7 @@ public interface ServerPolicyMetadata {
      * @param includeSelf True to include the top level policy in the result
      * @return The map of policy ids to versions
      */
-    public Map<Long,Integer> getDependentVersions( boolean includeSelf );
+    public Map<Goid,Integer> getDependentVersions( boolean includeSelf );
 
     /**
      * Get folder lookup.

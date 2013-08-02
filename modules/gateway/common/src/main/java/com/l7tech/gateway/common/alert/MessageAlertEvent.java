@@ -5,14 +5,16 @@
  */
 package com.l7tech.gateway.common.alert;
 
+import com.l7tech.objectmodel.Goid;
+
 import java.io.Serializable;
 
 /**
  * Configuration for a {@link AlertEvent} that fires when interesting message processing events occur.
  */
 public class MessageAlertEvent extends AlertEvent implements Serializable {
-    /** OID of the {@link com.l7tech.gateway.common.service.PublishedService} this Trigger is interested in, or null for all services */
-    private Long publishedServiceOid;
+    /** GOID of the {@link com.l7tech.gateway.common.service.PublishedService} this Trigger is interested in, or null for all services */
+    private Goid publishedServiceGoid;
 
     /** OID of the {@link com.l7tech.identity.IdentityProviderConfig} this Trigger is interested in, or null for all providers. */
     private Long identityProviderOid;
@@ -35,12 +37,12 @@ public class MessageAlertEvent extends AlertEvent implements Serializable {
      */
     private Integer assertionStatus;
 
-    public Long getPublishedServiceOid() {
-        return publishedServiceOid;
+    public Goid getPublishedServiceGoid() {
+        return publishedServiceGoid;
     }
 
-    public void setPublishedServiceOid(Long publishedServiceOid) {
-        this.publishedServiceOid = publishedServiceOid;
+    public void setPublishedServiceGoid(Goid publishedServiceGoid) {
+        this.publishedServiceGoid = publishedServiceGoid;
     }
 
     public Long getIdentityProviderOid() {

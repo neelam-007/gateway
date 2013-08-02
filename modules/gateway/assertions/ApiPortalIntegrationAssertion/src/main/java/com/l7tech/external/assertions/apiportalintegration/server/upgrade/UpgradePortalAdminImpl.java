@@ -72,7 +72,7 @@ public class UpgradePortalAdminImpl implements UpgradePortalAdmin {
         try {
             final Collection<ServiceHeader> allHeaders = serviceManager.findAllHeaders();
             for (final ServiceHeader header : allHeaders) {
-                final PublishedService service = serviceManager.findByPrimaryKey(header.getOid());
+                final PublishedService service = serviceManager.findByPrimaryKey(header.getGoid());
                 final boolean modified = upgradePolicy(service);
                 if (modified) {
                     // this update should kick off an entity invalidation event
@@ -85,7 +85,7 @@ public class UpgradePortalAdminImpl implements UpgradePortalAdmin {
                     } else {
                         // this can happen if all ApiPortalIntegrationAssertions are disabled (therefore the service is not portal managed)
                         // but we still should indicate that an entity was modified
-                        upgradedServices.add(new UpgradedEntity(String.valueOf(service.getOid()), UpgradedEntity.SERVICE, service.getName()));
+                        upgradedServices.add(new UpgradedEntity(String.valueOf(service.getGoid()), UpgradedEntity.SERVICE, service.getName()));
                     }
                 }
             }

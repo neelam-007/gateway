@@ -14,6 +14,8 @@ import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import com.l7tech.message.OutboundHeaderSupport;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.GoidEntity;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.security.password.SecurePasswordManager;
@@ -308,8 +310,8 @@ public class MqNativeUtils {
             }
 
             @Override
-            public long getServiceOid() {
-                return 0;
+            public Goid getServiceGoid() {
+                return GoidEntity.DEFAULT_GOID;
             }
 
             @Override

@@ -4,14 +4,14 @@ import com.l7tech.gateway.common.security.RevocationCheckPolicy;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
-import com.l7tech.server.EntityManagerStub;
+import com.l7tech.server.OidEntityManagerStub;
 
 import java.util.Collection;
 
 /**
  * A fake RevocationCheckPolicyManager for unit tests.
  */
-public class TestRevocationCheckPolicyManager extends EntityManagerStub<RevocationCheckPolicy, EntityHeader> implements RevocationCheckPolicyManager {
+public class TestRevocationCheckPolicyManager extends OidEntityManagerStub<RevocationCheckPolicy, EntityHeader> implements RevocationCheckPolicyManager {
     @Override
     public void updateDefault(long oid, RevocationCheckPolicy revocationCheckPolicy) throws FindException, UpdateException {
         // set default

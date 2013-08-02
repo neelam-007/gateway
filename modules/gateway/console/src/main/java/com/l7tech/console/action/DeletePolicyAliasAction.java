@@ -8,6 +8,7 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.admin.PolicyAdmin;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.PolicyHeader;
 import com.l7tech.policy.PolicyAlias;
 import com.l7tech.objectmodel.ObjectModelException;
@@ -76,9 +77,9 @@ public class DeletePolicyAliasAction extends DeleteEntityNodeAction<PolicyEntity
             //delete the alias, leaving the original service alone
             //what alias does this node represent? Need it's policy id and folder id to find out
             //pH's folder id has been modified to point at the folder containing the alias
-            PolicyAlias pa = policyAdmin.findAliasByEntityAndFolder(pH.getOid(), pH.getFolderOid());
+            PolicyAlias pa = policyAdmin.findAliasByEntityAndFolder(pH.getGoid(), pH.getFolderGoid());
             if(pa != null){
-                policyAdmin.deleteEntityAlias((Long.toString(pa.getOid())));
+                policyAdmin.deleteEntityAlias((Goid.toString(pa.getGoid())));
             }else{
                 DialogDisplayer.showMessageDialog(Actions.getTopParent(),
                   "Cannot find alias to delete",

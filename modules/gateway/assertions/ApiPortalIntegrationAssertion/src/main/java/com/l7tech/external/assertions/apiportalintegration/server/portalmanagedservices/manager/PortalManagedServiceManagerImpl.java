@@ -91,7 +91,7 @@ public class PortalManagedServiceManagerImpl extends AbstractPortalGenericEntity
         if (serviceHeaders != null && !serviceHeaders.isEmpty()) {
             for (final ServiceHeader serviceHeader : serviceHeaders) {
                 try {
-                    final PublishedService publishedService = serviceManager.findByPrimaryKey(serviceHeader.getOid());
+                    final PublishedService publishedService = serviceManager.findByPrimaryKey(serviceHeader.getGoid());
                     if (publishedService != null) {
                         final PortalManagedService portalManagedService = fromService(publishedService);
                         if (portalManagedService != null) {
@@ -100,7 +100,7 @@ public class PortalManagedServiceManagerImpl extends AbstractPortalGenericEntity
                     }
                 } catch (final FindException e) {
                     // try to find as many as possible
-                    LOGGER.log(Level.WARNING, "Unable to create Portal Managed Service for service with oid=" + serviceHeader.getOid(), ExceptionUtils.getDebugException(e));
+                    LOGGER.log(Level.WARNING, "Unable to create Portal Managed Service for service with goid=" + serviceHeader.getGoid(), ExceptionUtils.getDebugException(e));
                 }
             }
         }
@@ -111,20 +111,20 @@ public class PortalManagedServiceManagerImpl extends AbstractPortalGenericEntity
     public PortalManagedService fromService(@NotNull final PublishedService publishedService) throws FindException {
         PortalManagedService portalManagedService = null;
         final String policyXml = publishedService.getPolicy().getXml();
-        final long serviceId = publishedService.getOid();
+        final Goid serviceId = publishedService.getGoid();
         if (policyXml != null && (policyXml.contains(ModuleConstants.TEMP_PORTAL_MANAGED_SERVICE_INDICATOR) || policyXml.contains(ModuleConstants.PORTAL_MANAGED_SERVICE_INDICATOR))) {
             try {
                 final PortalManagedService fromPolicy = createPortalManagedService(serviceId, policyXml);
                 if (fromPolicy != null && StringUtils.isNotBlank(fromPolicy.getName())) {
                     portalManagedService = fromPolicy;
                 } else if (fromPolicy != null) {
-                    LOGGER.log(Level.WARNING, "Service with oid=" + serviceId + " is not a valid Portal Managed Service.");
+                    LOGGER.log(Level.WARNING, "Service with goid=" + serviceId + " is not a valid Portal Managed Service.");
                 }
             } catch (final SAXException e) {
-                throw new FindException("Error parsing Portal Managed Service properties for service with oid=" + serviceId, e);
+                throw new FindException("Error parsing Portal Managed Service properties for service with goid=" + serviceId, e);
             }
         } else {
-            LOGGER.log(Level.FINE, "Service with oid=" + serviceId + " is not a Portal Managed Service.");
+            LOGGER.log(Level.FINE, "Service with goid=" + serviceId + " is not a Portal Managed Service.");
         }
         return portalManagedService;
     }
@@ -167,7 +167,7 @@ public class PortalManagedServiceManagerImpl extends AbstractPortalGenericEntity
     /**
      * Can return null if all ApiPortalIntegration assertions in the policy are disabled.
      */
-    private PortalManagedService createPortalManagedService(final long serviceOid, final String policyXml) throws SAXException {
+    private PortalManagedService createPortalManagedService(final Goid serviceId, final String policyXml) throws SAXException {
         PortalManagedService portalManagedService = null;
         final Document document = XmlUtil.parse(policyXml);
         final NodeList nodeList = document.getElementsByTagName(L7P_API_PORTAL_INTEGRATION);
@@ -192,7 +192,7 @@ public class PortalManagedServiceManagerImpl extends AbstractPortalGenericEntity
             // if more than one ApiPortalIntegration assertion exists, we only care about the first enabled one
             if (temp.isEnabled()) {
                 portalManagedService = temp;
-                portalManagedService.setDescription(String.valueOf(serviceOid));
+                portalManagedService.setDescription(String.valueOf(serviceId));
                 break;
             } else {
                 LOGGER.log(Level.FINE, "Found disabled ApiPortalIntegration assertion");

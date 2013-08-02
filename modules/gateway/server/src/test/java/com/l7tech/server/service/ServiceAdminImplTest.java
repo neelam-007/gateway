@@ -2,6 +2,7 @@ package com.l7tech.server.service;
 
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.PublishedServiceAlias;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.policy.PolicyVersionManager;
 import com.l7tech.util.Config;
 import org.junit.Before;
@@ -10,13 +11,13 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import static org.junit.Assert.*;
-import static org.mockito.Matchers.anyLong;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ServiceAdminImplTest {
-    private static final long OID = 1234L;
+    private static final Goid GOID = new Goid(0,1234L);
     private ServiceAdminImpl serviceAdmin;
     @Mock
     private ServiceManager serviceManager;
@@ -35,17 +36,17 @@ public class ServiceAdminImplTest {
     @Test
     public void findByAlias() throws Exception {
         final PublishedService service = new PublishedService();
-        service.setOid(1L);
+        service.setGoid(new Goid(0,1L));
         final PublishedServiceAlias alias = new PublishedServiceAlias(service, null);
-        when(serviceAliasManager.findByPrimaryKey(OID)).thenReturn(alias);
-        when(serviceManager.findByPrimaryKey(1L)).thenReturn(service);
-        assertEquals(service, serviceAdmin.findByAlias(OID));
+        when(serviceAliasManager.findByPrimaryKey(GOID)).thenReturn(alias);
+        when(serviceManager.findByPrimaryKey(new Goid(0,1L))).thenReturn(service);
+        assertEquals(service, serviceAdmin.findByAlias(GOID));
     }
 
     @Test
     public void findByAliasDoesNotExist() throws Exception {
-        when(serviceAliasManager.findByPrimaryKey(anyLong())).thenReturn(null);
-        assertNull(serviceAdmin.findByAlias(OID));
-        verify(serviceManager, never()).findByPrimaryKey(anyLong());
+        when(serviceAliasManager.findByPrimaryKey(any(Goid.class))).thenReturn(null);
+        assertNull(serviceAdmin.findByAlias(GOID));
+        verify(serviceManager, never()).findByPrimaryKey(any(Goid.class));
     }
 }

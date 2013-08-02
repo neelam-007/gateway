@@ -1,5 +1,6 @@
 package com.l7tech.policy;
 
+import com.l7tech.objectmodel.Goid;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.Serializable;
@@ -9,9 +10,9 @@ import java.io.Serializable;
  * that has just been saved.
  */
 public class PolicyCheckpointState implements Serializable {
-    private static final long serialVersionUID = -2389027329118377434L;
+    private static final long serialVersionUID = -362032826443260105L;
 
-    private final long policyOid;
+    private final Goid policyGoid;
     private final String policyGuid;
     private final long policyVersionOrdinal;
     private final boolean policyVersionActive;
@@ -19,24 +20,24 @@ public class PolicyCheckpointState implements Serializable {
     /**
      * Create a PolicyCheckpointState to hold information about a Policy that was just saved.
      *
-     * @param policyOid  the OID that got assigned to the policy that was saved.
+     * @param policyGoid  the GOID that got assigned to the policy that was saved.
      * @param policyGuid the GUID for the policy that was saved.
      * @param policyVersionOrdinal the ordinal that was assigned to this version of the policy XML.
      * @param policyVersionActive true if this ordinal matches that of the currently-active version of the policy.
      */
-    public PolicyCheckpointState( final long policyOid,
+    public PolicyCheckpointState( final Goid policyGoid,
                                   @NotNull final String policyGuid,
                                   final long policyVersionOrdinal,
                                   final boolean policyVersionActive) {
-        this.policyOid = policyOid;
+        this.policyGoid = policyGoid;
         this.policyGuid = policyGuid;
         this.policyVersionOrdinal = policyVersionOrdinal;
         this.policyVersionActive = policyVersionActive;
     }
 
-    /** @return the OID of the policy that was saved. */
-    public long getPolicyOid() {
-        return policyOid;
+    /** @return the GOID of the policy that was saved. */
+    public Goid getPolicyGoid() {
+        return policyGoid;
     }
 
     /** @return the GUID of the policy that was saved. */

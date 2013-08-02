@@ -127,6 +127,24 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
     }
 
     /**
+     * Find a single entity by a unique key. Any Entity which defines a unique key can use this.
+     *
+     * @param uniquePropertyName String name of the property (not the field!) which is unique. This value must be
+     * the property from the Entity class without the 'get' prefix.
+     * @param uniqueKey goid value of the unique field
+     * @return the entity by that name, or null if none was found.
+     * @throws FindException in the event of a database problem
+     */
+    @Transactional(readOnly = true)
+    protected ET findByUniqueKey(final String uniquePropertyName, final Goid uniqueKey) throws FindException {
+        if (uniquePropertyName == null) throw new NullPointerException();
+        if (uniquePropertyName.trim().isEmpty())
+            throw new IllegalArgumentException("uniquePropertyName cannot be empty");
+
+        return findUnique( Collections.<String,Object>singletonMap( uniquePropertyName, uniqueKey ) );
+    }
+
+    /**
      * Finds a unique entity matching the specified criteria.
      *
      * @param map Criteria specification: entries in the map are ANDed.

@@ -14,8 +14,8 @@ import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.SquigglyTextField;
 import com.l7tech.gui.widgets.TextListCellRenderer;
-import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.*;
 import org.jetbrains.annotations.Nullable;
 
@@ -1209,8 +1209,8 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         setEndpointList(connector.getEndpoints());
 
         String hardwiredServiceIdStr = connector.getProperty(SsgConnector.PROP_HARDWIRED_SERVICE_ID);
-        long hardwiredServiceId = hardwiredServiceIdStr != null && hardwiredServiceIdStr.trim().length() > 0 ? Long.parseLong(hardwiredServiceIdStr) : -1L;
-        boolean usingHardwired = serviceNameComboBox.populateAndSelect(hardwiredServiceId != -1L, hardwiredServiceId);
+        Goid hardwiredServiceId = hardwiredServiceIdStr != null && hardwiredServiceIdStr.trim().length() > 0 ? Goid.parseGoid(hardwiredServiceIdStr) : PublishedService.DEFAULT_GOID;
+        boolean usingHardwired = serviceNameComboBox.populateAndSelect(!Goid.isDefault(hardwiredServiceId), hardwiredServiceId);
         hardwiredServiceCheckBox.setSelected(usingHardwired);
 
         String ctype = connector.getProperty(SsgConnector.PROP_OVERRIDE_CONTENT_TYPE);
@@ -1374,7 +1374,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         if (hardwiredServiceCheckBox.isSelected()) {
             PublishedService ps = serviceNameComboBox.getSelectedPublishedService();
             if (ps != null)
-                connector.putProperty(SsgConnector.PROP_HARDWIRED_SERVICE_ID, String.valueOf(ps.getOid()));
+                connector.putProperty(SsgConnector.PROP_HARDWIRED_SERVICE_ID, String.valueOf(ps.getGoid()));
         }
 
         connector.removeProperty(SsgConnector.PROP_OVERRIDE_CONTENT_TYPE);

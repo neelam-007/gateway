@@ -16,13 +16,14 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 import static org.junit.Assert.*;
+import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class EncapsulatedAssertionAdminImplTest {
-    private static final Long POLICY_OID = 1234L;
+    private static final Goid POLICY_GOID = new Goid(0,1234L);
     private static final Goid CONFIG_GOID = new Goid(0L,12345L);
     private static final String CONFIG_GUID = "abc123";
     private static final String POLICY_GUID = "abc";
@@ -68,8 +69,8 @@ public class EncapsulatedAssertionAdminImplTest {
 
     @Test
     public void findByPolicyOidDetachesPolicies() throws Exception {
-        when(manager.findByPolicyOid(POLICY_OID)).thenReturn(configs);
-        assertPoliciesDetached(admin.findByPolicyOid(POLICY_OID));
+        when(manager.findByPolicyGoid(POLICY_GOID)).thenReturn(configs);
+        assertPoliciesDetached(admin.findByPolicyGoid(POLICY_GOID));
     }
 
     @Test
@@ -98,8 +99,8 @@ public class EncapsulatedAssertionAdminImplTest {
 
     @Test
     public void findByPolicyOidNull() throws Exception {
-        when(manager.findByPolicyOid(anyLong())).thenReturn(null);
-        assertTrue(admin.findByPolicyOid(POLICY_OID).isEmpty());
+        when(manager.findByPolicyGoid(any(Goid.class))).thenReturn(null);
+        assertTrue(admin.findByPolicyGoid(POLICY_GOID).isEmpty());
     }
 
     @Test

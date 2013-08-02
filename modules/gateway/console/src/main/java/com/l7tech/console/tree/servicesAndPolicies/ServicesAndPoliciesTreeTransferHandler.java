@@ -4,11 +4,7 @@ import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.panels.PolicyPropertiesPanel;
 import com.l7tech.console.panels.ServicePropertiesDialog;
 import com.l7tech.console.tree.*;
-import com.l7tech.console.util.EntityUtils;
-import com.l7tech.console.util.PolicyRevisionUtils;
-import com.l7tech.console.util.Registry;
-import com.l7tech.console.util.TopComponents;
-import com.l7tech.console.util.UserCancelledException;
+import com.l7tech.console.util.*;
 import com.l7tech.gateway.common.admin.AliasAdmin;
 import com.l7tech.gateway.common.security.rbac.AttemptedUpdateAll;
 import com.l7tech.gateway.common.service.PublishedService;
@@ -19,22 +15,19 @@ import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.OkCancelDialog;
 import com.l7tech.objectmodel.*;
-import com.l7tech.objectmodel.folder.*;
-import com.l7tech.objectmodel.imp.NamedEntityImp;
-import com.l7tech.policy.Policy;
-import com.l7tech.policy.PolicyAlias;
-import com.l7tech.policy.PolicyHeader;
-import com.l7tech.policy.PolicyType;
-import com.l7tech.policy.PolicyVersion;
+import com.l7tech.objectmodel.folder.Folder;
+import com.l7tech.objectmodel.folder.FolderHeader;
+import com.l7tech.objectmodel.folder.HasFolder;
+import com.l7tech.objectmodel.folder.HasFolderGoid;
+import com.l7tech.objectmodel.imp.NamedGoidEntityImp;
+import com.l7tech.policy.*;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions.Unary;
 import com.l7tech.util.Option;
-import static com.l7tech.util.Option.optional;
 import com.l7tech.util.Pair;
-import static com.l7tech.util.TextUtils.isNotEmpty;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
@@ -49,6 +42,9 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.Vector;
 import java.util.logging.Level;
+
+import static com.l7tech.util.Option.optional;
+import static com.l7tech.util.TextUtils.isNotEmpty;
 
 /**
  * TransferHandler for the Services and Policies tree.
@@ -229,7 +225,7 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
 
         EntityWithPolicyNode childTransferNode = (EntityWithPolicyNode) transferNode;
         Entity entity = childTransferNode.getEntity();
-        if (!(entity instanceof HasFolderOid || entity instanceof HasFolder)) return false;
+        if (!(entity instanceof HasFolderGoid || entity instanceof HasFolder)) return false;
 
         Object childObj = childTransferNode.getUserObject();
         if(!(childObj instanceof OrganizationHeader)) return false;
@@ -252,7 +248,7 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
         return false;
     }
 
-    private <FE extends NamedEntityImp & HasFolder> boolean copyAlias( final FolderNode newParent,
+    private <FE extends NamedGoidEntityImp & HasFolder> boolean copyAlias( final FolderNode newParent,
                                                                        final ServicesAndPoliciesTree tree,
                                                                        final FE entity) {
 
@@ -261,24 +257,24 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
         //entity.getFolder()
         final Folder entityFolder = entity.getFolder();
         final Folder parentFolder = newParent.getFolder();
-        if( entityFolder != null && entityFolder.getOid()==parentFolder.getOid() ){
+        if( entityFolder != null && Goid.equals(entityFolder.getGoid(), parentFolder.getGoid()) ){
             DialogDisplayer.showMessageDialog(tree, "Cannot create alias in the same folder as original", "Create Error", JOptionPane.ERROR_MESSAGE, null);
             return false;
         }
 
         final DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
         final RootNode rootNode = (RootNode) model.getRoot();
-        final long parentFolderOid = parentFolder.getOid();
+        final Goid parentFolderGoid = parentFolder.getGoid();
         //Create an alias of each node selected
 
         final OrganizationHeader header;
-        Long aliasOid;
+        Goid aliasGoid;
         if (entity instanceof PublishedService) {
             PublishedService ps = (PublishedService) entity;
             //check if an alias already exists here
             PublishedServiceAlias checkAlias;
             try {
-                checkAlias = Registry.getDefault().getServiceManager().findAliasByEntityAndFolder(ps.getOid(), parentFolderOid);
+                checkAlias = Registry.getDefault().getServiceManager().findAliasByEntityAndFolder(ps.getGoid(), parentFolderGoid);
                 if(checkAlias != null){
                     DialogDisplayer.showMessageDialog(tree,"Alias of service " + ps.displayName() + " already exists in folder " + parentFolder.getName(), "Create Error", JOptionPane.ERROR_MESSAGE, null);
                     return false;
@@ -290,7 +286,7 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
             try {
                 header = new ServiceHeader(ps);
                 PublishedServiceAlias psa = new PublishedServiceAlias(ps, parentFolder);
-                aliasOid = Registry.getDefault().getServiceManager().saveAlias(psa);
+                aliasGoid = Registry.getDefault().getServiceManager().saveAlias(psa);
             } catch (ObjectModelException ome) {
                 throw new RuntimeException("Unable to save alias", ome);
             } catch (VersionException ve) {
@@ -301,7 +297,7 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
             //check if an alias already exists here
             PolicyAlias checkAlias;
             try {
-                checkAlias = Registry.getDefault().getPolicyAdmin().findAliasByEntityAndFolder(policy.getOid(), parentFolderOid);
+                checkAlias = Registry.getDefault().getPolicyAdmin().findAliasByEntityAndFolder(policy.getGoid(), parentFolderGoid);
                 if(checkAlias != null){
                     DialogDisplayer.showMessageDialog(tree,"Alias of policy " + policy.getName() + " already exists in folder " + parentFolder.getName(), "Create Error", JOptionPane.ERROR_MESSAGE, null);
                     return false;
@@ -313,7 +309,7 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
             try {
                 header = new PolicyHeader(policy);
                 PolicyAlias pa = new PolicyAlias(policy, parentFolder);
-                aliasOid = Registry.getDefault().getPolicyAdmin().saveAlias(pa);
+                aliasGoid = Registry.getDefault().getPolicyAdmin().saveAlias(pa);
             } catch (SaveException e1) {
                 throw new RuntimeException("Unable to save alias", e1);
             }
@@ -321,14 +317,14 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
             throw new IllegalStateException("Referent was neither a Policy nor a Service");
         }
 
-        header.setAliasOid(aliasOid);
-        header.setFolderOid(parentFolderOid);
+        header.setAliasGoid(aliasGoid);
+        header.setFolderGoid(parentFolderGoid);
         EntityWithPolicyNode childNode = (EntityWithPolicyNode) TreeNodeFactory.asTreeNode(header, RootNode.getComparator());
 
         int insertPosition = newParent.getInsertPosition(childNode, RootNode.getComparator());
         newParent.insert(childNode, insertPosition);
         model.nodesWereInserted(newParent, new int[]{insertPosition});
-        rootNode.addAlias(header.getOid(), childNode);
+        rootNode.addAlias(header.getGoid(), childNode);
         tree.setSelectionPath(new TreePath(childNode.getPath()));
         model.nodeChanged(childNode);
         return true;
@@ -359,11 +355,11 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
             String policyXml = WspWriter.getPolicyXml(new AllAssertion());
             final Option<PolicyVersion> version;
             try {
-                version = PolicyRevisionUtils.selectRevision( originalPolicy.getOid(), "copy" );
+                version = PolicyRevisionUtils.selectRevision( originalPolicy.getGoid(), "copy" );
                 if ( version.isSome() ) {
                     final PolicyVersion policyVersion = version.some();
                     final Option<PolicyVersion> fullVersion = optional( Registry.getDefault().getPolicyAdmin().
-                            findPolicyVersionByPrimaryKey( policyVersion.getPolicyOid(), policyVersion.getOid() ) );
+                            findPolicyVersionByPrimaryKey( policyVersion.getPolicyGoid(), policyVersion.getGoid() ) );
                     policyXml = fullVersion.map( new Unary<String,PolicyVersion>(){
                         @Override
                         public String call( final PolicyVersion policyVersion ) {
@@ -372,7 +368,7 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
                     } ).filter( isNotEmpty() ).orSome( policyXml );
                 }
             } catch (FindException e) {
-                String msg = "Unable to retrieve versions for disabled policy oid " + originalPolicy.getOid() + ": " + ExceptionUtils.getMessage(e);
+                String msg = "Unable to retrieve versions for disabled policy goid " + originalPolicy.getGoid() + ": " + ExceptionUtils.getMessage(e);
                 JOptionPane.showMessageDialog(TopComponents.getInstance().getTopParent(),
                                               msg, "Unable to Retrieve Revisions", JOptionPane.ERROR_MESSAGE);
 
@@ -402,14 +398,14 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
                 if ( dlg.wasOKed() ) {
                     Policy returnedPolicy = dlg.getValue();
                     try {
-                        final Pair<Long, String> oidAndGuid = Registry.getDefault().getPolicyAdmin().savePolicy( returnedPolicy );
-                        returnedPolicy.setOid( oidAndGuid.left );
-                        returnedPolicy.setGuid( oidAndGuid.right );
+                        final Pair<Goid, String> goidAndGuid = Registry.getDefault().getPolicyAdmin().savePolicy( returnedPolicy );
+                        returnedPolicy.setGoid( goidAndGuid.left );
+                        returnedPolicy.setGuid( goidAndGuid.right );
                         final AbstractTreeNode policyNode = TreeNodeFactory.asTreeNode( new PolicyHeader( returnedPolicy ), RootNode.getComparator() );
                         final DefaultTreeModel model = (DefaultTreeModel) tree.getModel();
                         model.insertNodeInto( policyNode, parentNode, parentNode.getInsertPosition( policyNode, RootNode.getComparator() ) );
                         final RootNode rootNode = (RootNode) model.getRoot();
-                        rootNode.addEntity( oidAndGuid.left, policyNode );
+                        rootNode.addEntity( goidAndGuid.left, policyNode );
                         tree.setSelectionPath( new TreePath( policyNode.getPath() ) );
                         model.nodeChanged( policyNode );
                     } catch ( DuplicateObjectException doe ) {
@@ -471,7 +467,7 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
                         DefaultTreeModel model = (DefaultTreeModel) tree.getModel();
                         model.insertNodeInto(serviceNode, parentNode, parentNode.getInsertPosition(serviceNode, RootNode.getComparator()));
                         RootNode rootNode = (RootNode) model.getRoot();
-                        rootNode.addEntity(savedService.getOid(), serviceNode);
+                        rootNode.addEntity(savedService.getGoid(), serviceNode);
                         tree.setSelectionPath(new TreePath(serviceNode.getPath()));
                         model.nodeChanged(serviceNode);
                         tree.filterTreeToDefault();
@@ -498,7 +494,7 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
                 Registry.getDefault().getFolderAdmin().moveEntityToFolder( newParentFolder, movedFolder );
 
                 //need to update with new folder version from the database
-                Folder updatedFolder = Registry.getDefault().getFolderAdmin().findByPrimaryKey(movedFolder.getOid());
+                Folder updatedFolder = Registry.getDefault().getFolderAdmin().findByPrimaryKey(movedFolder.getGoid());
                 updatedFolderNode = new FolderNode(new FolderHeader(updatedFolder), updatedFolder.getFolder());
             } catch(ConstraintViolationException e) {
                 DialogDisplayer.showMessageDialog(tree,
@@ -523,7 +519,7 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
             //See if an node already representing this entity already exists in this folder location for this service
             if (newParent instanceof FolderNode) {
                 FolderNode fn = (FolderNode) newParent;
-                if (fn.isEntityAChildNode(oH.getOid())) {
+                if (fn.isEntityAChildNode(oH.getGoid())) {
                     if (tree != null) {
                         DialogDisplayer.showMessageDialog(tree,
                                                          "Cannot move an entity with another entity (alias or original) in the same folder",
@@ -540,7 +536,7 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
             }
 
             Entity entity = childTransferNode.getEntity();
-            if (!(entity instanceof HasFolderOid || entity instanceof HasFolder)) return false;
+            if (!(entity instanceof HasFolderGoid || entity instanceof HasFolder)) return false;
 
             if (childTransferNode instanceof ServiceNodeAlias || childTransferNode instanceof PolicyEntityNodeAlias) {
                 //With the entity oid and the old folder oid we can find the actual alias
@@ -554,7 +550,7 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
                 } else if(childTransferNode instanceof PolicyEntityNode) {
                     aliasAdmin = Registry.getDefault().getPolicyAdmin();
                 }
-                Alias alias = aliasAdmin.findAliasByEntityAndFolder(Long.valueOf(entity.getId()), fh.getOid());
+                Alias alias = aliasAdmin.findAliasByEntityAndFolder(Goid.parseGoid(entity.getId()), fh.getGoid());
                 if(alias == null) {
                     DialogDisplayer.showMessageDialog(tree, "Cannot find alias", "Find Error", JOptionPane.ERROR_MESSAGE, null);
                     return false;
@@ -568,9 +564,9 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
                 //after it downloads the entity it will use the OrganizationHeader to update the aliases
                 //folder and alias properties
                 OrganizationHeader header = (OrganizationHeader) childTransferNode.getUserObject();
-                header.setFolderOid(newParent.getOid());
-            } else if ( entity instanceof PersistentEntity ) {
-                Registry.getDefault().getFolderAdmin().moveEntityToFolder( newParentFolder, (PersistentEntity)entity );
+                header.setFolderGoid(newParent.getGoid());
+            } else if ( entity instanceof GoidEntity ) {
+                Registry.getDefault().getFolderAdmin().moveEntityToFolder( newParentFolder, (GoidEntity)entity );
 
             }
             childTransferNode.updateUserObject();

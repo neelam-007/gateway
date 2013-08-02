@@ -24,13 +24,13 @@ public class PolicyHeader extends OrganizationHeader {
     }
 
     public PolicyHeader(final Policy policy, final long policyRevision) {
-        this(policy.getOid(),
+        this(policy.getGoid(),
              policy.isSoap(),
              policy.getType(),
              policy.getName(),
              policy.getInternalTag(),
              policy.getGuid(),
-             policy.getFolder() == null ? null : policy.getFolder().getOid(),
+             policy.getFolder() == null ? null : policy.getFolder().getGoid(),
              null,
              policyRevision,
              policy.getVersion(),
@@ -45,40 +45,40 @@ public class PolicyHeader extends OrganizationHeader {
     }
 
     public PolicyHeader(final PolicyHeader policyHeader){
-        this(policyHeader.getOid(),
+        this(policyHeader.getGoid(),
              policyHeader.isSoap(),
              policyHeader.getPolicyType(),
              policyHeader.getName(),
              policyHeader.getDescription(),
              policyHeader.getGuid(),
-             policyHeader.getFolderOid(),
-             policyHeader.getAliasOid(),
+             policyHeader.getFolderGoid(),
+             policyHeader.getAliasGoid(),
              policyHeader.getPolicyRevision(),
              policyHeader.getVersion(),
              policyHeader.isPolicyDisabled(),
              policyHeader.getSecurityZoneGoid());
     }
 
-    public PolicyHeader(final long oid,
+    public PolicyHeader(final Goid goid,
                         final boolean isSoap,
                         final PolicyType policyType,
                         final String name,
                         final String description,
                         final String policyGuid,
-                        final Long folderOid,
-                        final Long aliasOid,
+                        final Goid folderGoid,
+                        final Goid aliasGoid,
                         final long policyRevision,
                         final int version,
                         final boolean isPolicyDisabled,
                         @Nullable final Goid securityZoneGoid)
     {
-        super(oid, EntityType.POLICY, name, description, version);
+        super(goid, EntityType.POLICY, name, description, version);
 
         this.guid = policyGuid;
         this.isSoap = isSoap;
         this.policyType = policyType;
-        this.folderOid = folderOid;
-        this.aliasOid = aliasOid;
+        this.folderGoid = folderGoid;
+        this.aliasGoid = aliasGoid;
         this.policyRevision = policyRevision;
         this.isPolicyDisabled = isPolicyDisabled;
         this.securityZoneGoid = securityZoneGoid;

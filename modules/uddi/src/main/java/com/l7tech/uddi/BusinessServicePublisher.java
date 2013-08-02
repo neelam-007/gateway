@@ -1,20 +1,21 @@
 package com.l7tech.uddi;
 
-import com.l7tech.common.uddi.guddiv3.*;
 import com.l7tech.common.protocol.SecureSpanConstants;
-import static com.l7tech.uddi.UDDIUtilities.TMODEL_TYPE.WSDL_PORT_TYPE;
-import static com.l7tech.uddi.UDDIUtilities.TMODEL_TYPE.WSDL_BINDING;
+import com.l7tech.common.uddi.guddiv3.*;
 import com.l7tech.util.ConfigFactory;
-import com.l7tech.util.Pair;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Pair;
 import com.l7tech.util.Triple;
 import com.l7tech.wsdl.Wsdl;
 
+import java.io.Closeable;
+import java.io.IOException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.io.Closeable;
-import java.io.IOException;
+
+import static com.l7tech.uddi.UDDIUtilities.TMODEL_TYPE.WSDL_BINDING;
+import static com.l7tech.uddi.UDDIUtilities.TMODEL_TYPE.WSDL_PORT_TYPE;
 
 /**
  * Responsible for publishing a set of BusinessServices or Gateway endpoints extracted from a WSDL to a UDDI Registry.
@@ -35,7 +36,7 @@ public class BusinessServicePublisher implements Closeable {
     private Wsdl wsdl;
     private final UDDIClient uddiClient;
     private final JaxWsUDDIClient jaxWsUDDIClient;
-    private long serviceOid;
+    private String serviceId;
 
     /**
      * Only off interest when an overwritten service is being updated. This is the set of BindingTemplates added
@@ -49,39 +50,39 @@ public class BusinessServicePublisher implements Closeable {
      * Create a new BusinessServicePublisher.
      *
      * @param wsdl WSDL to publish to UDDI
-     * @param serviceOid services OID, which originates from the WSDL
+     * @param serviceId services GOID, which originates from the WSDL
      * @param uddiCfg UDDIClientConfig for the UDDI Registry to publish to
      */
     public BusinessServicePublisher(final Wsdl wsdl,
-                                    final long serviceOid,
+                                    final String serviceId,
                                     final UDDIClientConfig uddiCfg) {
 
-        this(buildUDDIClient(uddiCfg), wsdl, serviceOid);
+        this(buildUDDIClient(uddiCfg), wsdl, serviceId);
     }
 
     public BusinessServicePublisher(final Wsdl wsdl,
-                                    final long serviceOid,
+                                    final String serviceId,
                                     final UDDIClient uddiClient) {
 
-        this(uddiClient, wsdl, serviceOid);
+        this(uddiClient, wsdl, serviceId);
     }
 
     /**
      * Create a new BusinessServicePublisher.
      *
-     * @param serviceOid services OID, which originates from the WSDL
+     * @param serviceId services GOID, which originates from the WSDL
      * @param uddiCfg UDDIClientConfig for the UDDI Registry to publish to
      */
-    public BusinessServicePublisher(final long serviceOid,
+    public BusinessServicePublisher(final String serviceId,
                                     final UDDIClientConfig uddiCfg) {
 
-        this(buildUDDIClient(uddiCfg), serviceOid);
+        this(buildUDDIClient(uddiCfg), serviceId);
     }
 
-    public BusinessServicePublisher(final long serviceOid,
+    public BusinessServicePublisher(final String serviceId,
                                     final UDDIClient uddiClient) {
 
-        this(uddiClient, serviceOid);
+        this(uddiClient, serviceId);
     }
 
     /**
@@ -524,7 +525,7 @@ public class BusinessServicePublisher implements Closeable {
 
                         hostName = hostName.substring(hostName.indexOf("://") + 3, hostName.length());
 
-                        if (endPoint.indexOf(hostName) != -1 && endPoint.indexOf(SecureSpanConstants.SERVICE_FILE + Long.toString(serviceOid)) != -1) {
+                        if (endPoint.indexOf(hostName) != -1 && endPoint.indexOf(SecureSpanConstants.SERVICE_FILE + serviceId) != -1) {
                             logger.log(Level.INFO, "bindingTemplate with key '" + bt.getBindingKey() + "' will be deleted");
                             uddiClient.deleteBindingTemplate(bt.getBindingKey());
                             continue outer;
@@ -654,7 +655,7 @@ public class BusinessServicePublisher implements Closeable {
         try {
             modelConverter.convertWsdlToUDDIModel(allEndpointPairs, null, null);
         } catch (WsdlToUDDIModelConverter.MissingWsdlReferenceException e) {
-            throw new UDDIException("Unable to convert WSDL from service (#" + serviceOid + ") into UDDI object model.", e);
+            throw new UDDIException("Unable to convert WSDL from service (#" + serviceId + ") into UDDI object model.", e);
         }
 
         final UDDIBusinessServiceDownloader serviceDownloader = new UDDIBusinessServiceDownloader(jaxWsUDDIClient);
@@ -762,7 +763,7 @@ public class BusinessServicePublisher implements Closeable {
         final WsdlToUDDIModelConverter modelConverter = new WsdlToUDDIModelConverter(wsdl, businessKey);
         try {
             final String prependServiceName = ConfigFactory.getProperty( "com.l7tech.uddi.BusinessServicePublisher.prependServiceLocalName", "Layer7" );
-            final String appendServiceName = ConfigFactory.getProperty( "com.l7tech.uddi.BusinessServicePublisher.appendServiceLocalName", Long.toString( serviceOid ) );
+            final String appendServiceName = ConfigFactory.getProperty( "com.l7tech.uddi.BusinessServicePublisher.appendServiceLocalName", serviceId );
             if (!isOverwriteUpdate) {
                 modelConverter.convertWsdlToUDDIModel(allEndpointPairs, prependServiceName, appendServiceName);
             } else {
@@ -770,7 +771,7 @@ public class BusinessServicePublisher implements Closeable {
             }
 
         } catch (WsdlToUDDIModelConverter.MissingWsdlReferenceException e) {
-            throw new UDDIException("Unable to convert WSDL from service (#" + serviceOid + ") into UDDI object model.", e);
+            throw new UDDIException("Unable to convert WSDL from service (#" + serviceId + ") into UDDI object model.", e);
         }
 
         //not final as we may modify the reference
@@ -804,18 +805,18 @@ public class BusinessServicePublisher implements Closeable {
      *
      * @param uddiClient UDDIClient for the UDDI Registry to publish to
      * @param wsdl WSDL to publish to UDDI
-     * @param serviceOid services OID, which originates from the WSDL
+     * @param serviceId services GOID, which originates from the WSDL
      */
     protected BusinessServicePublisher(final UDDIClient uddiClient,
                                        final Wsdl wsdl,
-                                       final long serviceOid
+                                       final String serviceId
     ) {
         if(wsdl == null) throw new NullPointerException("wsdl cannot be null");
         if(uddiClient == null) throw new NullPointerException("uddiClient cannot be null");
 
         this.wsdl = wsdl;
         this.uddiClient = uddiClient;
-        this.serviceOid = serviceOid;
+        this.serviceId = serviceId;
         if( uddiClient instanceof JaxWsUDDIClient ){
             jaxWsUDDIClient = (JaxWsUDDIClient) uddiClient;
         }else{
@@ -828,16 +829,16 @@ public class BusinessServicePublisher implements Closeable {
      * on a BusinessServicePublisher constructed like this.
      *
      * @param uddiClient UDDIClient for the UDDI Registry to publish to
-     * @param serviceOid services OID, which originates from the WSDL
+     * @param serviceId services GOID, which originates from the WSDL
      */
     protected BusinessServicePublisher(final UDDIClient uddiClient,
-                                       final long serviceOid
+                                       final String serviceId
     ) {
         if(uddiClient == null) throw new NullPointerException("uddiClient cannot be null");
 
         this.wsdl = null;
         this.uddiClient = uddiClient;
-        this.serviceOid = serviceOid;
+        this.serviceId = serviceId;
         if( uddiClient instanceof JaxWsUDDIClient ){
             jaxWsUDDIClient = (JaxWsUDDIClient) uddiClient;
         }else{
@@ -1085,7 +1086,7 @@ public class BusinessServicePublisher implements Closeable {
 
                     hostName = hostName.substring(hostName.indexOf("://") + 3, hostName.length());
 
-                    if (endPoint.indexOf(hostName) != -1 && endPoint.indexOf(SecureSpanConstants.SERVICE_FILE + Long.toString(serviceOid)) != -1) {
+                    if (endPoint.indexOf(hostName) != -1 && endPoint.indexOf(SecureSpanConstants.SERVICE_FILE + serviceId) != -1) {
                         applicableTemplates.add(bt);
                         continue outer;
                     }

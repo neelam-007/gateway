@@ -2,6 +2,7 @@ package com.l7tech.gateway.common.service;
 
 import com.l7tech.objectmodel.Alias;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.SecurityZone;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.migration.Migration;
@@ -30,7 +31,7 @@ public class PublishedServiceAlias extends Alias<PublishedService> {
     public PublishedServiceAlias( final ServiceHeader pService,
                                   final Folder folder,
                                   @Nullable final SecurityZone securityZone) {
-        super(pService.getOid(), folder, securityZone);
+        super(pService.getGoid(), folder, securityZone);
     }
 
     @XmlTransient
@@ -40,16 +41,16 @@ public class PublishedServiceAlias extends Alias<PublishedService> {
     }
 
     @Override
-    @Dependency(type = Dependency.DependencyType.SERVICE, methodReturnType = Dependency.MethodReturnType.OID)
+    @Dependency(type = Dependency.DependencyType.SERVICE, methodReturnType = Dependency.MethodReturnType.GOID)
     @Migration(mapName = NONE, mapValue = NONE, resolver = PropertyResolver.Type.SERVICE_ALIAS)
-    public long getEntityOid() {
-        return entityOid;
+    public Goid getEntityGoid() {
+        return entityGoid;
     }
 
     // needed here for JAXB serialization
     @Override
     @Deprecated
-    public void setEntityOid(long entityOid) {
-        super.setEntityOid(entityOid);
+    public void setEntityGoid(Goid entityGoid) {
+        super.setEntityGoid(entityGoid);
     }
 }

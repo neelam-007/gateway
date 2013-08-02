@@ -24,8 +24,8 @@ implements UDDIProxiedServiceInfoManager{
     }
 
     @Override
-    public UDDIProxiedServiceInfo findByPublishedServiceOid( final long publishedServiceOid ) throws FindException {
-        return findByUniqueKey( "publishedServiceOid", publishedServiceOid );
+    public UDDIProxiedServiceInfo findByPublishedServiceGoid( final Goid publishedServiceGoid ) throws FindException {
+        return findByUniqueKey( "publishedServiceGoid", publishedServiceGoid );
     }
 
     @Override
@@ -52,7 +52,7 @@ implements UDDIProxiedServiceInfoManager{
     @Override
     protected Collection<Map<String, Object>> getUniqueConstraints(final UDDIProxiedServiceInfo proxiedServiceInfo) {
         Map<String,Object> serviceOidMap = new HashMap<String, Object>();
-        serviceOidMap.put("publishedServiceOid", proxiedServiceInfo.getPublishedServiceOid());
+        serviceOidMap.put("publishedServiceGoid", proxiedServiceInfo.getPublishedServiceGoid());
         return Arrays.asList(serviceOidMap);
     }
 

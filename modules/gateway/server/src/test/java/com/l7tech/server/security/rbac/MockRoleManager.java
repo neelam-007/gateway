@@ -10,14 +10,14 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.objectmodel.imp.NamedGoidEntityImp;
 import com.l7tech.server.EntityFinder;
-import com.l7tech.server.EntityManagerStub;
+import com.l7tech.server.OidEntityManagerStub;
 import com.l7tech.util.Pair;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 import java.util.regex.Pattern;
 
-public class MockRoleManager extends EntityManagerStub<Role,EntityHeader> implements RoleManager, RbacServices {
+public class MockRoleManager extends OidEntityManagerStub<Role,EntityHeader> implements RoleManager, RbacServices {
     private GroupManager groupManager;
 
     public MockRoleManager(EntityFinder entityFinder) {

@@ -4,9 +4,9 @@
 package com.l7tech.server.transport.jms;
 
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.JmsEndpointHeader;
-import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.GoidEntityManagerStub;
 import com.l7tech.util.Functions;
 

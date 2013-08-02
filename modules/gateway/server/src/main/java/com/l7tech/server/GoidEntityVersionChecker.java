@@ -1,7 +1,6 @@
 package com.l7tech.server;
 
 import com.l7tech.objectmodel.*;
-import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.event.GoidEntityInvalidationEvent;
 import com.l7tech.server.event.admin.Created;
 import com.l7tech.server.event.admin.Deleted;
@@ -242,11 +241,11 @@ public class GoidEntityVersionChecker implements ApplicationContextAware, Initia
      */
     private void handleApplicationEvent( final ApplicationEvent event ) {
         if ( event instanceof Created ) {
-            handleAdminInvalidation((PersistenceEvent) event, EntityInvalidationEvent.CREATE);
+            handleAdminInvalidation((PersistenceEvent) event, GoidEntityInvalidationEvent.CREATE);
         } else if ( event instanceof Updated ) {
-            handleAdminInvalidation((PersistenceEvent) event, EntityInvalidationEvent.UPDATE);
+            handleAdminInvalidation((PersistenceEvent) event, GoidEntityInvalidationEvent.UPDATE);
         } else if ( event instanceof Deleted ) {
-            handleAdminInvalidation((PersistenceEvent) event, EntityInvalidationEvent.DELETE);
+            handleAdminInvalidation((PersistenceEvent) event, GoidEntityInvalidationEvent.DELETE);
         }
     }
 
@@ -305,7 +304,7 @@ public class GoidEntityVersionChecker implements ApplicationContextAware, Initia
         public boolean isInvalidationRequired( GoidEntity entity, char operation ) {
             boolean invalidationRequired;
 
-            if ( operation == EntityInvalidationEvent.DELETE ) {
+            if ( operation == GoidEntityInvalidationEvent.DELETE ) {
                 invalidationRequired = notifyDelete( entity.getGoid() );
             } else {
                 invalidationRequired = notifyUpdate( entity.getGoid(), entity.getVersion() );
@@ -328,7 +327,7 @@ public class GoidEntityVersionChecker implements ApplicationContextAware, Initia
         protected void onDelete(Goid removedGoid) {
             if(invalidationGoids !=null) {
                 invalidationGoids.add(removedGoid);
-                invalidationOps.add(EntityInvalidationEvent.DELETE);
+                invalidationOps.add(GoidEntityInvalidationEvent.DELETE);
             }
         }
 
@@ -336,7 +335,7 @@ public class GoidEntityVersionChecker implements ApplicationContextAware, Initia
         protected void onUpdate(GoidEntity updatedEntity) {
             if(invalidationGoids !=null) {
                 invalidationGoids.add(updatedEntity.getGoid());
-                invalidationOps.add(EntityInvalidationEvent.UPDATE);
+                invalidationOps.add(GoidEntityInvalidationEvent.UPDATE);
             }
         }
 
@@ -344,7 +343,7 @@ public class GoidEntityVersionChecker implements ApplicationContextAware, Initia
         protected void onCreate(GoidEntity createdEntity) {
             if(invalidationGoids !=null) {
                 invalidationGoids.add(createdEntity.getGoid());
-                invalidationOps.add(EntityInvalidationEvent.CREATE);
+                invalidationOps.add(GoidEntityInvalidationEvent.CREATE);
             }
         }
     }

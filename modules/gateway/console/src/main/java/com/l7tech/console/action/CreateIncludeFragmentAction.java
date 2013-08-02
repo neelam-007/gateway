@@ -13,10 +13,7 @@ import com.l7tech.gateway.common.admin.PolicyAdmin;
 import com.l7tech.gateway.common.security.rbac.AttemptedCreate;
 import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
 import com.l7tech.gui.util.DialogDisplayer;
-import com.l7tech.objectmodel.DuplicateObjectException;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.SaveException;
+import com.l7tech.objectmodel.*;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyHeader;
 import com.l7tech.policy.PolicyType;
@@ -161,7 +158,7 @@ public class CreateIncludeFragmentAction extends NodeAction {
         final AbstractTreeNode fragmentNode = TreeNodeFactory.asTreeNode(new PolicyHeader(fragment), null);
         servicesModel.insertNodeInto(fragmentNode, policiesFolderNode, policiesFolderNode.getInsertPosition(fragmentNode, RootNode.getComparator()));
         final RootNode rootNode = (RootNode) servicesModel.getRoot();
-        rootNode.addEntity(fragmentHeader.getOid(), fragmentNode);
+        rootNode.addEntity(fragmentHeader.getGoid(), fragmentNode);
     }
 
     /**
@@ -175,8 +172,8 @@ public class CreateIncludeFragmentAction extends NodeAction {
         final String xml = WspWriter.getPolicyXml(allAssertion);
         final Policy fragment = new Policy(PolicyType.INCLUDE_FRAGMENT, fragmentName, xml, false);
         final PolicyAdmin policyAdmin = Registry.getDefault().getPolicyAdmin();
-        final Pair<Long, String> oidUuid = policyAdmin.savePolicy(fragment);
-        fragment.setOid(oidUuid.left);
+        final Pair<Goid, String> oidUuid = policyAdmin.savePolicy(fragment);
+        fragment.setGoid(oidUuid.left);
         fragment.setGuid(oidUuid.right);
         addFragmentToServicesTree(fragment);
         return oidUuid.right;

@@ -9,6 +9,7 @@ import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.common.Component;
 import com.l7tech.gateway.common.audit.*;
 import com.l7tech.message.Message;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.policy.variable.Syntax;
@@ -123,7 +124,7 @@ public class AuditSinkSchemaTest {
         MessageSummaryAuditRecord record = new MessageSummaryAuditRecord(Level.WARNING, UUID.randomUUID().toString() , "requestId", AssertionStatus.NOT_APPLICABLE,
                 "clientAddr", "requestXml", 5,
                 "responseXml", 6 , 1234, 5678,
-                7, "serviceName", "operationNameHaver",
+                new Goid(0,7), "serviceName", "operationNameHaver",
                 true, SecurityTokenType.UNKNOWN, -5,
                 "userName", "userId", -10);
         signAuditRecord(record);

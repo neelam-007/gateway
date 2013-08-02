@@ -1,5 +1,6 @@
 package com.l7tech.gateway.common.service;
 
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.Functions;
 
 import java.util.*;
@@ -23,11 +24,11 @@ import java.util.*;
  * @author rmak
  */
 public class MetricsSummaryBin extends MetricsBin {
-    /** OID of published services with policy violations. */
-    private final Set<Long> _servicesWithPolicyViolation = new HashSet<Long>(0);
+    /** GOID of published services with policy violations. */
+    private final Set<Goid> _servicesWithPolicyViolation = new HashSet<Goid>(0);
 
-    /** OID of published services with routing failure. */
-    private final Set<Long> _servicesWithRoutingFailure = new HashSet<Long>(0);
+    /** GOID of published services with routing failure. */
+    private final Set<Goid> _servicesWithRoutingFailure = new HashSet<Goid>(0);
 
     private static final Functions.Unary<Long,MetricsBin> periodStartGetter = new Functions.Unary<Long, MetricsBin>() {
         public Long call(MetricsBin metricsBin) {
@@ -35,9 +36,9 @@ public class MetricsSummaryBin extends MetricsBin {
         }
     };
     
-    private static final Functions.Unary<Long,MetricsBin> serviceOidGetter = new Functions.Unary<Long, MetricsBin>() {
-        public Long call(MetricsBin metricsBin) {
-            return metricsBin.getServiceOid();
+    private static final Functions.Unary<Goid,MetricsBin> serviceGoidGetter = new Functions.Unary<Goid, MetricsBin>() {
+        public Goid call(MetricsBin metricsBin) {
+            return metricsBin.getServiceGoid();
         }
     };
 
@@ -63,8 +64,8 @@ public class MetricsSummaryBin extends MetricsBin {
         return rv;
     }
 
-    public static Map<Long, MetricsSummaryBin> createSummaryMetricsBinsByServiceOid(final Collection<MetricsBin> bins) {
-        return createSummaryMetricsBins(bins, serviceOidGetter);
+    public static Map<Goid, MetricsSummaryBin> createSummaryMetricsBinsByServiceOid(final Collection<MetricsBin> bins) {
+        return createSummaryMetricsBins(bins, serviceGoidGetter);
     }
 
     /**
@@ -119,7 +120,7 @@ public class MetricsSummaryBin extends MetricsBin {
         }
 
         String clusterNodeId = null;
-        long serviceOid = -1;
+        Goid serviceGoid = PublishedService.DEFAULT_GOID;
         int resolution = -1;
         long periodStart = -1;
         long periodEnd = -1;
@@ -146,7 +147,7 @@ public class MetricsSummaryBin extends MetricsBin {
             MetricsBin bin = it.next();
             if (first) {
                 clusterNodeId = bin.getClusterNodeId();
-                serviceOid = bin.getServiceOid();
+                serviceGoid = bin.getServiceGoid();
                 resolution = bin.getResolution();
                 periodStart = bin.getPeriodStart();
                 periodEnd = bin.getPeriodEnd();
@@ -165,8 +166,8 @@ public class MetricsSummaryBin extends MetricsBin {
             } else {
                 if (!(clusterNodeId == null || clusterNodeId.equals(bin.getClusterNodeId())))
                     clusterNodeId = null; // Null out summarized node ID if this summary came from different nodes
-                if (serviceOid != bin.getServiceOid())
-                    serviceOid = -1;
+                if (!Goid.equals(serviceGoid, bin.getServiceGoid()))
+                    serviceGoid = PublishedService.DEFAULT_GOID;
                 if (resolution != bin.getResolution())
                     resolution = -1;
                 periodStart = Math.min(periodStart, bin.getPeriodStart());
@@ -221,14 +222,14 @@ public class MetricsSummaryBin extends MetricsBin {
                 _servicesWithRoutingFailure.addAll(summaryBin.getServicesWithRoutingFailure());
             } else {
                 if (bin.getNumPolicyViolation() != 0)
-                    _servicesWithPolicyViolation.add(bin.getServiceOid());
+                    _servicesWithPolicyViolation.add(bin.getServiceGoid());
                 if (bin.getNumRoutingFailure() != 0)
-                    _servicesWithRoutingFailure.add(bin.getServiceOid());
+                    _servicesWithRoutingFailure.add(bin.getServiceGoid());
             }
         }
 
         setClusterNodeId(clusterNodeId);
-        setServiceOid(serviceOid);
+        setServiceGoid(serviceGoid);
         if(resolution == -1) {
             _resolution = -1;
         } else {
@@ -256,12 +257,12 @@ public class MetricsSummaryBin extends MetricsBin {
     }
 
     /** @return OID of published services with policy violations */
-    public Set<Long> getServicesWithPolicyViolation() {
+    public Set<Goid> getServicesWithPolicyViolation() {
         return _servicesWithPolicyViolation;
     }
 
     /** @return OID of published services with routing failures */
-    public Set<Long> getServicesWithRoutingFailure() {
+    public Set<Goid> getServicesWithRoutingFailure() {
         return _servicesWithRoutingFailure;
     }
 

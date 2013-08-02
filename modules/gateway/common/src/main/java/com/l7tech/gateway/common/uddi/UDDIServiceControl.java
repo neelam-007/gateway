@@ -1,14 +1,15 @@
 package com.l7tech.gateway.common.uddi;
 
-import com.l7tech.objectmodel.imp.PersistentEntityImp;
-import javax.persistence.Entity;
-import javax.persistence.Table;
-import javax.persistence.Version;
-import javax.persistence.Column;
-
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.imp.ZoneablePersistentEntityImp;
 import com.l7tech.util.BeanUtils;
 import org.hibernate.annotations.Proxy;
+import org.hibernate.annotations.Type;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Table;
+import javax.persistence.Version;
 /**
  * Represents the UDDI location from which a published service was created. 
  */
@@ -16,11 +17,11 @@ import org.hibernate.annotations.Proxy;
 @Proxy(lazy=false)
 @Table(name="uddi_service_control")
 public class UDDIServiceControl extends ZoneablePersistentEntityImp {
-    public static final String ATTR_SERVICE_OID = "publishedServiceOid";
+    public static final String ATTR_SERVICE_GOID = "publishedServiceGoid";
 
     //- PUBLIC
 
-    public UDDIServiceControl(long publishedServiceOid,
+    public UDDIServiceControl(Goid publishedServiceGoid,
                               long uddiRegistryOid,
                               String uddiBusinessKey,
                               String uddiBusinessName,
@@ -31,7 +32,7 @@ public class UDDIServiceControl extends ZoneablePersistentEntityImp {
                               String wsdlPortBinding,
                               String wsdlPortBindingNamespace,
                               boolean underUddiControl) {
-        this.publishedServiceOid = publishedServiceOid;
+        this.publishedServiceGoid = publishedServiceGoid;
         this.uddiRegistryOid = uddiRegistryOid;
         this.uddiBusinessKey = uddiBusinessKey;
         this.uddiBusinessName = uddiBusinessName;
@@ -47,13 +48,14 @@ public class UDDIServiceControl extends ZoneablePersistentEntityImp {
     public UDDIServiceControl() {
     }
 
-    @Column(name = "published_service_oid", updatable = false)
-    public long getPublishedServiceOid() {
-        return publishedServiceOid;
+    @Column(name = "published_service_goid", updatable = false)
+    @Type(type = "com.l7tech.server.util.GoidType")
+    public Goid getPublishedServiceGoid() {
+        return publishedServiceGoid;
     }
 
-    public void setPublishedServiceOid( final long publishedServiceOid ) {
-        this.publishedServiceOid = publishedServiceOid;
+    public void setPublishedServiceGoid( final Goid publishedServiceGoid ) {
+        this.publishedServiceGoid = publishedServiceGoid;
     }
 
     @Column(name = "uddi_registry_oid", updatable = false)
@@ -260,7 +262,7 @@ public class UDDIServiceControl extends ZoneablePersistentEntityImp {
         if (publishWsPolicyEnabled != that.publishWsPolicyEnabled) return false;
         if (publishWsPolicyFull != that.publishWsPolicyFull) return false;
         if (publishWsPolicyInlined != that.publishWsPolicyInlined) return false;
-        if (publishedServiceOid != that.publishedServiceOid) return false;
+        if (!Goid.equals(publishedServiceGoid, that.publishedServiceGoid)) return false;
         if (uddiRegistryOid != that.uddiRegistryOid) return false;
         if (underUddiControl != that.underUddiControl) return false;
         if (updateWsdlOnChange != that.updateWsdlOnChange) return false;
@@ -281,7 +283,7 @@ public class UDDIServiceControl extends ZoneablePersistentEntityImp {
     @Override
     public int hashCode() {
         int result = super.hashCode();
-        result = 31 * result + (int) (publishedServiceOid ^ (publishedServiceOid >>> 32));
+        result = 31 * result + (publishedServiceGoid != null ? publishedServiceGoid.hashCode() : 0);
         result = 31 * result + (int) (uddiRegistryOid ^ (uddiRegistryOid >>> 32));
         result = 31 * result + uddiBusinessKey.hashCode();
         result = 31 * result + uddiBusinessName.hashCode();
@@ -318,7 +320,7 @@ public class UDDIServiceControl extends ZoneablePersistentEntityImp {
 
     //- PRIVATE
 
-    private long publishedServiceOid;
+    private Goid publishedServiceGoid;
     private long uddiRegistryOid;
     private String uddiBusinessKey;
     private String uddiBusinessName;

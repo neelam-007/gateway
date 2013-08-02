@@ -29,12 +29,12 @@ public class ServiceAdminWsdlStrategy extends ServiceDocumentWsdlStrategy {
         try {
             serviceDocuments = Registry.getDefault().getServiceManager().findServiceDocumentsByServiceID( service.getId() );
             if (!serviceDocuments.isEmpty()) {
-                logger.log(Level.FINE, "Service ''{0,number,0}'', has ''{1}'' imports.", new Object[]{service.getOid(), serviceDocuments.size()});
+                logger.log(Level.FINE, "Service ''{0,number,0}'', has ''{1}'' imports.", new Object[]{service.getGoid(), serviceDocuments.size()});
             } else {
-                logger.log(Level.FINE, "Service ''{0,number,0}'', has no available imports.", service.getOid());
+                logger.log(Level.FINE, "Service ''{0,number,0}'', has no available imports.", service.getGoid());
             }
         } catch ( FindException fe ) {
-            throw new WSDLException( WSDLException.OTHER_ERROR, "Unable to access documents for service with id '"+service.getOid()+"'.", fe);
+            throw new WSDLException( WSDLException.OTHER_ERROR, "Unable to access documents for service with id '"+service.getGoid()+"'.", fe);
         }
 
         return serviceDocuments;

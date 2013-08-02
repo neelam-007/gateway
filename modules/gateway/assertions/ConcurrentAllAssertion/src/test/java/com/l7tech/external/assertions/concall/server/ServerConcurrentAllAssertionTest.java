@@ -10,6 +10,7 @@ import com.l7tech.gateway.common.audit.AuditDetailMessage;
 import com.l7tech.gateway.common.audit.LoggingAudit;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.message.Message;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.*;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.AllAssertion;
@@ -372,7 +373,7 @@ public class ServerConcurrentAllAssertionTest {
 
         // Set context info for service
         final PublishedService ps = new PublishedService();
-        ps.setOid(123456L);
+        ps.setGoid(new Goid(0,123456L));
         ps.setName( "testServiceNameContextVariable" );
         ps.getPolicy().setGuid( "8ca3ff80-eaf5-11e0-9572-0800200c9a66" );
         context.setService( ps );
@@ -384,7 +385,7 @@ public class ServerConcurrentAllAssertionTest {
         } );
         // Set context info for current policy
         final Policy policy = new Policy( PolicyType.INCLUDE_FRAGMENT, "testPolicyNameContextVariable", null, false );
-        policy.setOid( 1234567L );
+        policy.setGoid( new Goid(0,1234567L) );
         policy.setGuid( "8ca3ff80-eaf5-11e0-9572-0800200c9a67" );
         context.setCurrentPolicyMetadata( new PolicyMetadataStub() {
             @Override
@@ -402,11 +403,11 @@ public class ServerConcurrentAllAssertionTest {
         assertEquals(AssertionStatus.NONE, status);
 
         assertEquals("concurrent.service.name", "testServiceNameContextVariable", context.getVariable("concurrent.service.name").toString());
-        assertEquals("concurrent.service.oid", "123456", context.getVariable("concurrent.service.oid").toString());
+        assertEquals("concurrent.service.oid", new Goid(0,123456L).toHexString(), context.getVariable("concurrent.service.oid").toString());
         assertEquals("concurrent.service.policy.guid", "8ca3ff80-eaf5-11e0-9572-0800200c9a66", context.getVariable("concurrent.service.policy.guid").toString());
         assertEquals("concurrent.service.policy.version", "123", context.getVariable("concurrent.service.policy.version").toString());
         assertEquals("concurrent.policy.name", "testPolicyNameContextVariable", context.getVariable("concurrent.policy.name").toString());
-        assertEquals("concurrent.policy.oid", "1234567", context.getVariable("concurrent.policy.oid").toString());
+        assertEquals("concurrent.policy.oid", new Goid(0,1234567L).toHexString(), context.getVariable("concurrent.policy.oid").toString());
         assertEquals("concurrent.policy.guid", "8ca3ff80-eaf5-11e0-9572-0800200c9a67", context.getVariable("concurrent.policy.guid").toString());
         assertEquals("concurrent.policy.version", "1234321", context.getVariable("concurrent.policy.version").toString());
         assertEquals("concurrent.assertion.number", "1|2|3|10", context.getVariable("concurrent.assertion.number").toString());

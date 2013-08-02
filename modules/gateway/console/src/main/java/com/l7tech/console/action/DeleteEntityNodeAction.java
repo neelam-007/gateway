@@ -10,19 +10,18 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.service.ServiceHeader;
-import com.l7tech.objectmodel.OrganizationHeader;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.util.Functions;
 import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.OrganizationHeader;
+import com.l7tech.util.Functions;
 import org.apache.commons.lang.WordUtils;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
-import java.util.Set;
-import java.util.HashSet;
 import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.logging.Level;
 
 /**
@@ -115,10 +114,10 @@ public abstract class DeleteEntityNodeAction <HT extends EntityWithPolicyNode> e
         if(node instanceof ServiceNode && !(node instanceof ServiceNodeAlias)){
             final ServiceNode serviceNode = (ServiceNode) node;            
             //if confirmation is enabled, it means that it's a single delete, so we should check if UDDI has data
-            final Set<Long> serviceOidSet = new HashSet<Long>();
+            final Set<Goid> serviceGoidSet = new HashSet<Goid>();
             try {
-                serviceOidSet.add(serviceNode.getEntity().getOid());
-                final Collection<ServiceHeader> headers = Registry.getDefault().getUDDIRegistryAdmin().getServicesPublishedToUDDI(serviceOidSet);
+                serviceGoidSet.add(serviceNode.getEntity().getGoid());
+                final Collection<ServiceHeader> headers = Registry.getDefault().getUDDIRegistryAdmin().getServicesPublishedToUDDI(serviceGoidSet);
                 isPublishedToUddi = !headers.isEmpty();
             } catch (FindException e) {
                 log.log(Level.WARNING, e.getMessage(), e);
@@ -176,26 +175,26 @@ public abstract class DeleteEntityNodeAction <HT extends EntityWithPolicyNode> e
 
         //Remove any aliases
         OrganizationHeader oH = (OrganizationHeader) node.getUserObject();
-        long oldServiceOid = oH.getOid();
+        Goid oldServiceGoid = oH.getGoid();
         Object root = model.getRoot();
         RootNode rootNode = (RootNode) root;
 
         if(!oH.isAlias()){
             //fyi if an original is deleted, aliases are deleted on cascade in the model
-            Set<AbstractTreeNode> foundNodes = rootNode.getAliasesForEntity(oldServiceOid);
+            Set<AbstractTreeNode> foundNodes = rootNode.getAliasesForEntity(oldServiceGoid);
             if(!foundNodes.isEmpty()){
                 for(AbstractTreeNode atn: foundNodes){
                     model.removeNodeFromParent(atn);
                 }
-                rootNode.removeEntity(oldServiceOid);
+                rootNode.removeEntity(oldServiceGoid);
             }
         }else{
-            rootNode.removeAlias(oldServiceOid, node);
+            rootNode.removeAlias(oldServiceGoid, node);
         }
 
         //Update the workspace if this service was being displayed
         PolicyEditorPanel pe = creg.getPolicyEditorPanel();
-        if (pe != null && pe.getPolicyNode().getEntityOid() == entityNode.getEntityOid()) {
+        if (pe != null && Goid.equals(pe.getPolicyNode().getEntityGoid(), entityNode.getEntityGoid())) {
             new HomeAction().performAction();
         }
     }

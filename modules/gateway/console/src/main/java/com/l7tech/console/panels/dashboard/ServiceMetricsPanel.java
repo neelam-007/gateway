@@ -4,8 +4,10 @@ import com.l7tech.console.security.LogonListener;
 import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
 import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
 import com.l7tech.gateway.common.audit.LogonEvent;
+import com.l7tech.gateway.common.service.*;
 import com.l7tech.gui.util.ImageCache;
 import com.l7tech.gui.widgets.BetterComboBox;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.CollectionUpdate;
 import com.l7tech.util.CollectionUpdateConsumer;
 import com.l7tech.console.MainWindow;
@@ -14,11 +16,6 @@ import com.l7tech.console.panels.MetricsChartPanel;
 import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.gateway.common.service.ServiceHeader;
-import com.l7tech.gateway.common.service.ServiceHeaderDifferentiator;
-import com.l7tech.gateway.common.service.MetricsBin;
-import com.l7tech.gateway.common.service.MetricsSummaryBin;
-import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.util.TimeUnit;
 
 import javax.swing.*;
@@ -161,7 +158,7 @@ public class ServiceMetricsPanel extends JPanel implements LogonListener {
 
     /** Combobox item to represent all published services selected. */
     private static final ServiceHeader ALL_SERVICES = new ServiceHeader(false, false,
-            _resources.getString("publishedServiceCombo.allValue"), null, null, null, -1L, null, -1L, -1, null, false, false, null, null);
+            _resources.getString("publishedServiceCombo.allValue"), null, null, null, PublishedService.DEFAULT_GOID, null, -1L, -1, null, false, false, null, null);
 
     private final DefaultComboBoxModel _publishedServicesComboModel =
             new DefaultComboBoxModel() {
@@ -462,13 +459,13 @@ public class ServiceMetricsPanel extends JPanel implements LogonListener {
             final String nodeId = node != ALL_NODES ? node.getNodeIdentifier() : null;
 
             final EntityHeader service = (EntityHeader) _publishedServicesComboModel.getSelectedItem();
-            final long[] serviceOids = service != ALL_SERVICES ? new long[]{service.getOid()} : null;
+            final Goid[] serviceGoids = service != ALL_SERVICES ? new Goid[]{service.getGoid()} : null;
 
             // -----------------------------------------------------------------
             // Get data from Gateway
             // -----------------------------------------------------------------
 
-            final RefreshWorker refreshWorker = new RefreshWorker( resolution, nodeId, serviceOids ){
+            final RefreshWorker refreshWorker = new RefreshWorker( resolution, nodeId, serviceGoids ){
                 @Override
                 protected void update( final MetricsData data ) {
                     final Collection<MetricsSummaryBin> newBins = data.getNewBins();
@@ -503,7 +500,7 @@ public class ServiceMetricsPanel extends JPanel implements LogonListener {
                     if (_publishedServicesComboModel.getSelectedItem() != prevService) {
                         for (int i = 1; i < _publishedServicesComboModel.getSize(); ++i) {
                             final ServiceHeader serviceHeader = (ServiceHeader)_publishedServicesComboModel.getElementAt(i);
-                            if ( serviceHeader.getOid() == prevService.getOid()) {
+                            if ( Goid.equals(serviceHeader.getGoid(), prevService.getGoid())) {
                                 _publishedServicesComboModel.setSelectedItem( serviceHeader );
                                 if (_logger.isLoggable(Level.FINE)) {
                                     _logger.fine("Reselected modified published service \"" + serviceHeader.getDisplayName() + "\" in combo box.");
@@ -732,14 +729,14 @@ public class ServiceMetricsPanel extends JPanel implements LogonListener {
     private abstract class RefreshWorker extends com.l7tech.gui.util.SwingWorker {
         private final Integer resolution;
         private final String nodeId;
-        private final long[] serviceOids;
+        private final Goid[] serviceGoids;
 
         private RefreshWorker( final Integer resolution,
                                final String nodeId,
-                               final long[] serviceOids ) {
+                               final Goid[] serviceGoids ) {
             this.resolution = resolution;
             this.nodeId = nodeId;
-            this.serviceOids = serviceOids;
+            this.serviceGoids = serviceGoids;
         }
 
         protected abstract void update( final MetricsData data );
@@ -770,14 +767,14 @@ public class ServiceMetricsPanel extends JPanel implements LogonListener {
                     Collection<MetricsSummaryBin> newBins;
                     if (_latestDownloadedPeriodStart == -1L) {
                         newBins = clusterStatusAdmin.summarizeLatestByPeriod(nodeId,
-                                                                             serviceOids,
+                                                                             serviceGoids,
                                                                              resolution,
                                                                              _currentResolution.getChartTimeRange() +
                                                                              _currentResolution.getBinInterval(),
                                                                              true); // (Bug 3855) Need to include empty uptime bins in order for moving chart to advance when there are no request message.
                     } else {
                         newBins = clusterStatusAdmin.summarizeByPeriod(nodeId,
-                                                                       serviceOids,
+                                                                       serviceGoids,
                                                                        resolution,
                                                                        _latestDownloadedPeriodStart + 1L,
                                                                        null,
@@ -791,10 +788,10 @@ public class ServiceMetricsPanel extends JPanel implements LogonListener {
                         // either during this call or the previous call.
                     } else if (_currentResolution == _hourlyResolution) {
                         // Gets a summary collated from an hour's worth of fine metrics bins.
-                        latestBin = clusterStatusAdmin.summarizeLatest(nodeId, serviceOids, MetricsBin.RES_FINE, 60 * 60 * 1000, true);
+                        latestBin = clusterStatusAdmin.summarizeLatest(nodeId, serviceGoids, MetricsBin.RES_FINE, 60 * 60 * 1000, true);
                     } else if (_currentResolution == _dailyResolution) {
                         // Gets a summary collated from a day's worth of hourly metrics bins.
-                        latestBin = clusterStatusAdmin.summarizeLatest(nodeId, serviceOids, MetricsBin.RES_HOURLY, 24 * 60 * 60 * 1000, false /* only FINE resolution has empty uptime bins */);
+                        latestBin = clusterStatusAdmin.summarizeLatest(nodeId, serviceGoids, MetricsBin.RES_HOURLY, 24 * 60 * 60 * 1000, false /* only FINE resolution has empty uptime bins */);
                     }
 
                     return new MetricsData( latestBin, newBins );

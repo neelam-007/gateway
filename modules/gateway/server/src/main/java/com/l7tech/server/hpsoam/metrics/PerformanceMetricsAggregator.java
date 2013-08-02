@@ -185,7 +185,7 @@ public class PerformanceMetricsAggregator implements TrafficMonitor {
                     output.append("                        <perf:ServicePerformance>\n");
                     output.append("                            <perf:ServiceNamespace>" + svcPerf.getNs() + "</perf:ServiceNamespace>\n");
                     output.append("                            <perf:ServiceLocalName>" + svcPerf.getLocalName() + "</perf:ServiceLocalName>\n");
-                    output.append("                            <perf:ServiceWsdlUrl>" + ServiceManagedObject.generateContainedWsdlUrl(context.req, svcPerf.getServiceOID()) + "</perf:ServiceWsdlUrl>\n");
+                    output.append("                            <perf:ServiceWsdlUrl>" + ServiceManagedObject.generateContainedWsdlUrl(context.req, svcPerf.getServiceGOID().toHexString()) + "</perf:ServiceWsdlUrl>\n");
                     output.append("                            <perf:OperationPerformanceList>\n");
                     for (OperationPerformance operf : svcPerf.getOpPerfs()) {
                         output.append("                                <perf:OperationPerformance>\n");

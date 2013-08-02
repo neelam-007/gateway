@@ -28,7 +28,7 @@ public interface SubscriptionManager extends EntityManager<Subscription, EntityH
     void renewSubscription(String subscriptionId, long newTermination, String policyGuid) throws FindException, UpdateException, ResourceUnknownFault, UnacceptableTerminationTimeFault;
 
     @Transactional(readOnly = true, rollbackFor = Throwable.class)
-    Collection<Subscription> findByNodeAndServiceOid(String nodeId, long serviceOid) throws FindException;
+    Collection<Subscription> findByNodeAndServiceGoid(String nodeId, Goid serviceGoid) throws FindException;
 
     /**
      * Find subscriptions that match the given criteria.

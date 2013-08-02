@@ -24,11 +24,12 @@ public class SecureSpanConstants {
     public static final String SSG_RESERVEDURI_PREFIX = "/ssg";
 
     /**
-     * the regular expression that extracts the service oid at the end of the original url ir request URI
-     * Each regex must match the service OID as match group #1 or else fail
+     * the regular expression that extracts the service oid or goid at the end of the original url ir request URI
+     * Each regex must match the service OID or GOID as match group #1 or else fail
      */
-    public static final String[] RESOLUTION_BY_OID_REGEXES = {
-        "/service/(\\d+)$",
+    public static final String[] RESOLUTION_BY_ID_REGEXES = {
+        "/service/(\\d{1,20})$",
+        "/service/([0-9a-fA-F]{32})$",
     };
 
     /**

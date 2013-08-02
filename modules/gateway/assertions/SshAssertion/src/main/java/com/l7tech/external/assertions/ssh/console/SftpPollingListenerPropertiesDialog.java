@@ -18,7 +18,7 @@ import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.SquigglyTextField;
 import com.l7tech.gui.widgets.TextListCellRenderer;
-import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.GoidEntity;
 import com.l7tech.util.Pair;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.Nullable;
@@ -177,7 +177,7 @@ public class SftpPollingListenerPropertiesDialog extends JDialog {
         contentTypeComboBox.setModel(contentTypeComboBoxModel);
 
         serviceNameComboBox.setRenderer( TextListCellRenderer.<ServiceComboItem>basicComboBoxRenderer() );
-        ServiceComboBox.populateAndSelect(serviceNameComboBox, false, 0L);
+        ServiceComboBox.populateAndSelect(serviceNameComboBox, false, GoidEntity.DEFAULT_GOID);
         hardwiredServiceCheckBox.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -400,9 +400,9 @@ public class SftpPollingListenerPropertiesDialog extends JDialog {
         enableResponsesCheckBox.setSelected( connector.getBooleanProperty( PROPERTIES_KEY_ENABLE_RESPONSE_MESSAGES ) );
         deleteProcessedMessagesCheckBox.setSelected( connector.getBooleanProperty( PROPERTIES_KEY_SFTP_DELETE_ON_RECEIVE ) );
 
-        if( connector.getHardwiredServiceOid() != null ) {
+        if( connector.getHardwiredServiceGoid() != null ) {
             hardwiredServiceCheckBox.setSelected(true);
-            ServiceComboBox.populateAndSelect(serviceNameComboBox, true, connector.getHardwiredServiceOid());
+            ServiceComboBox.populateAndSelect(serviceNameComboBox, true, connector.getHardwiredServiceGoid());
         } else {
             hardwiredServiceCheckBox.setSelected(false);
         }
@@ -468,7 +468,7 @@ public class SftpPollingListenerPropertiesDialog extends JDialog {
         final PublishedService service = hardwiredServiceCheckBox.isSelected() ?
             ServiceComboBox.getSelectedPublishedService(serviceNameComboBox) :
             null;
-        connector.setHardwiredServiceOid( service == null ? null : service.getOid() );
+        connector.setHardwiredServiceGoid( service == null ? null : service.getGoid() );
 
         connector.removeProperty( PROPERTIES_KEY_REQUEST_SIZE_LIMIT );
         String requestByteLimit = byteLimitPanel.getValue();

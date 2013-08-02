@@ -2,9 +2,10 @@ package com.l7tech.console.tree.servicesAndPolicies;
 
 import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.OrganizationHeader;
+import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.FolderHeader;
-import static com.l7tech.util.CollectionUtils.iterable;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Functions.Unary;
 import com.l7tech.util.Resolver;
@@ -17,6 +18,8 @@ import java.awt.*;
 import java.awt.event.*;
 import java.util.*;
 import java.util.List;
+
+import static com.l7tech.util.CollectionUtils.iterable;
 
 /**
  * Tree for selection of organizational headers / folders.
@@ -33,7 +36,7 @@ public class OrganizationSelectionTree<LEH extends OrganizationHeader> extends J
      * @param leafsSelectable True if the displayed OrganizationHeaders are selectable.
      */
     public OrganizationSelectionTree( final boolean leafsSelectable ) {
-        this.rootNode = new CheckBoxNode( new FolderHeader(-5002L, "/", null, null, "/", null), false);
+        this.rootNode = new CheckBoxNode( new FolderHeader(Folder.ROOT_FOLDER_ID, "/", null, null, "/", null), false);
         this.organizationTreeModel = new DefaultTreeModel(rootNode);
         this.leafsSelectable = leafsSelectable;
         setModel( organizationTreeModel );
@@ -67,7 +70,7 @@ public class OrganizationSelectionTree<LEH extends OrganizationHeader> extends J
         }, false ) );
         FolderHeader root = null;
         for(FolderHeader folder : allFolderHeaders ) {
-            if(folder.getParentFolderOid() == null) {
+            if(folder.getParentFolderGoid() == null) {
                 root = folder;
             }
         }
@@ -76,22 +79,22 @@ public class OrganizationSelectionTree<LEH extends OrganizationHeader> extends J
         if (root == null) return;
 
         //noinspection unchecked
-        insertNodes( iterable( allFolderHeaders, leafHeadersList ), rootNode, root.getOid() );
+        insertNodes( iterable( allFolderHeaders, leafHeadersList ), rootNode, root.getGoid() );
         organizationTreeModel.reload(rootNode);
 
         expandPath(new TreePath(rootNode.getPath()));
     }
 
-    private void insertNodes( Iterable<? extends EntityHeader> contents, AbstractTreeNode target, long folderOid ) {
+    private void insertNodes( Iterable<? extends EntityHeader> contents, AbstractTreeNode target, Goid folderGoid ) {
         for( final EntityHeader entityHeader : contents ) {
-            if( getParentFolderOid(entityHeader) != null && folderOid == getParentFolderOid(entityHeader) ) {
+            if( getParentFolderGoid(entityHeader) != null && Goid.equals(getParentFolderGoid(entityHeader), folderGoid) ) {
                 final boolean isFolder = entityHeader instanceof FolderHeader;
                 final AbstractTreeNode childNode = isFolder || leafsSelectable ?
                         new CheckBoxNode(entityHeader, false) :
                         new OrganizationHeaderNode( (OrganizationHeader)entityHeader );
                 organizationTreeModel.insertNodeInto(childNode, target, target.getChildCount());
                 if ( isFolder ) {
-                    insertNodes( contents, childNode, entityHeader.getOid() );
+                    insertNodes( contents, childNode, entityHeader.getGoid() );
                     // hide empty folders when not selectable
                     if ( leafsSelectable && childNode.getChildCount()==0 ) {
                         organizationTreeModel.removeNodeFromParent( childNode );
@@ -109,12 +112,12 @@ public class OrganizationSelectionTree<LEH extends OrganizationHeader> extends J
         return super.convertValueToText( value, selected, expanded, leaf, row, hasFocus );
     }
 
-    private Long getParentFolderOid( final EntityHeader entityHeader ) {
-        Long folderId = null;
+    private Goid getParentFolderGoid(final EntityHeader entityHeader) {
+        Goid folderId = null;
         if ( entityHeader instanceof FolderHeader ) {
-            folderId = ((FolderHeader)entityHeader).getParentFolderOid();
+            folderId = ((FolderHeader)entityHeader).getParentFolderGoid();
         } else if ( entityHeader instanceof OrganizationHeader ) {
-            folderId = ((OrganizationHeader)entityHeader).getFolderOid();
+            folderId = ((OrganizationHeader)entityHeader).getFolderGoid();
         }
         return folderId;
     }

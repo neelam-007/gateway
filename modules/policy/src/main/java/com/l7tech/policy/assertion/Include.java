@@ -8,9 +8,10 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.GuidEntityHeader;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyHeader;
-import static com.l7tech.policy.assertion.AssertionMetadata.*;
 
 import java.util.UUID;
+
+import static com.l7tech.policy.assertion.AssertionMetadata.*;
 
 /**
  * A reference to a {@link Policy} with {@link Policy#getType()} ==
@@ -73,10 +74,12 @@ public class Include extends Assertion implements UsesEntities, PolicyReference 
         this.policyGuid = policyGuid;
     }
 
+    @Deprecated
     public Long getPolicyOid() {
         return policyOid;
     }
 
+    @Deprecated
     public void setPolicyOid(Long policyOid) {
         this.policyOid = policyOid;
     }

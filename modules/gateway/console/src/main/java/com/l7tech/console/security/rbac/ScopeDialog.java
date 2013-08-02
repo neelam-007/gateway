@@ -12,6 +12,7 @@ import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.OkCancelDialog;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.GoidEntity;
 import com.l7tech.objectmodel.folder.HasFolder;
 import com.l7tech.util.Functions;
 import org.jetbrains.annotations.NotNull;
@@ -201,7 +202,7 @@ class ScopeDialog extends JDialog {
                             } else if (OPTION_FOLDER.equals(optionStr)) {
                                 scope = new FolderPredicate(permission, null, true);
                             } else if (OPTION_FOLDER_ANCESTRY.equals(optionStr)) {
-                                scope = new EntityFolderAncestryPredicate(permission, entityType, -1L);
+                                scope = new EntityFolderAncestryPredicate(permission, entityType, GoidEntity.DEFAULT_GOID);
                             } else if (OPTION_SECURITY_ZONE.equals(optionStr)) {
                                 scope = new SecurityZonePredicate(permission, null);
                             } else {

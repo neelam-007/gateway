@@ -5,7 +5,7 @@ package com.l7tech.server;
 
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.folder.Folder;
-import com.l7tech.objectmodel.folder.FolderedGoidEntityManager;
+import com.l7tech.objectmodel.folder.FolderedEntityManager;
 import com.l7tech.objectmodel.imp.GoidEntityImp;
 
 import java.util.*;
@@ -13,7 +13,7 @@ import java.util.*;
 /**
  * Stub Entity Manager
  */
-public abstract class GoidEntityManagerStub<ET extends GoidEntity, EH extends EntityHeader> implements FolderedGoidEntityManager<ET, EH>, RoleAwareGoidEntityManager<ET> {
+public abstract class GoidEntityManagerStub<ET extends GoidEntity, EH extends EntityHeader> implements FolderedEntityManager<ET, EH>, RoleAwareGoidEntityManager<ET> {
     protected final Map<Goid, ET> entities;
     protected final Map<Goid, EH> headers;
     private final boolean canHasNames = NamedEntity.class.isAssignableFrom(getImpClass());

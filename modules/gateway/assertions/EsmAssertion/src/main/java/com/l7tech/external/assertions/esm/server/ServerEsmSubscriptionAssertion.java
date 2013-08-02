@@ -31,7 +31,7 @@ public class ServerEsmSubscriptionAssertion extends AbstractServerAssertion<EsmS
         logger.info("Forwarding message to WSDM Subscription Service");
 
         try {
-            final Document response = esmService.handleSubscriptionRequest(context.getService().getOid(), context.getRequest(), assertion.getNotificationPolicyGuid());
+            final Document response = esmService.handleSubscriptionRequest(context.getService().getGoid(), context.getRequest(), assertion.getNotificationPolicyGuid());
             context.getResponse().initialize(response);
             return AssertionStatus.NONE;
         } catch (SAXException e) {

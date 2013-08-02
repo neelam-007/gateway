@@ -5,10 +5,7 @@ import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
-import com.l7tech.objectmodel.folder.Folder;
-import com.l7tech.objectmodel.folder.FolderHeader;
-import com.l7tech.objectmodel.folder.FolderedEntityManager;
-import com.l7tech.objectmodel.folder.HasFolder;
+import com.l7tech.objectmodel.folder.*;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.util.JaasUtils;
@@ -40,14 +37,14 @@ public class FolderAdminImpl implements FolderAdmin {
     }
 
     @Override
-    public void deleteFolder( final long oid ) throws FindException, DeleteException {
-        folderManager.deleteRoles(oid);
-        folderManager.delete(oid);
+    public void deleteFolder( final Goid goid ) throws FindException, DeleteException {
+        folderManager.deleteRoles(goid);
+        folderManager.delete(goid);
     }
 
     @Override
-    public Folder findByPrimaryKey( final long oid ) throws FindException {
-        return folderManager.findByPrimaryKey(oid);
+    public Folder findByPrimaryKey( final Goid goid ) throws FindException {
+        return folderManager.findByPrimaryKey(goid);
     }
 
     @Override
@@ -64,12 +61,12 @@ public class FolderAdminImpl implements FolderAdmin {
      * @throws ConstraintViolationException
      */
     @Override
-    public long saveFolder( final Folder folder ) throws UpdateException, SaveException, ConstraintViolationException {
+    public Goid saveFolder( final Folder folder ) throws UpdateException, SaveException, ConstraintViolationException {
         final String name = folder.getName();
         if (name != null) {
             if (name.length() > MAX_FOLDER_NAME_LENGTH) {
                 String message = "Folder name cannot exceed "+MAX_FOLDER_NAME_LENGTH+" characters";
-                if ( folder.getOid() == Folder.DEFAULT_OID ) {
+                if ( Goid.isDefault(folder.getGoid()) ) {
                     throw new SaveException( message );
                 } else {
                     throw new UpdateException( message );
@@ -78,11 +75,11 @@ public class FolderAdminImpl implements FolderAdmin {
         }
 
         try {
-            long oid;
+            Goid goid;
             Folder rootFolder = folderManager.findRootFolder();
 
-            if (folder.getOid() == Folder.DEFAULT_OID) {
-                Folder targetFolder = folderManager.findByPrimaryKey(folder.getFolder().getOid()); // the  parent folder might be changed in other places.
+            if (Goid.isDefault(folder.getGoid())) {
+                Folder targetFolder = folderManager.findByPrimaryKey(folder.getFolder().getGoid()); // the  parent folder might be changed in other places.
                 final int targetMaxDepth = MAX_FOLDER_DEPTH - rootFolder.getNesting(targetFolder);
                 validateFolders( folder, targetMaxDepth, 1, new Functions.Binary<SaveException,String,Throwable>() {
                     @Override
@@ -93,8 +90,8 @@ public class FolderAdminImpl implements FolderAdmin {
                         return new SaveException(s, throwable);
                     }
                 }  );
-                oid = folderManager.save(folder);
-                folder.setOid(oid);
+                goid = folderManager.save(folder);
+                folder.setGoid(goid);
                 try {
                     folderManager.addManageFolderRole( folder );
                     folderManager.addReadonlyFolderRole( folder );
@@ -104,9 +101,9 @@ public class FolderAdminImpl implements FolderAdmin {
             } else {
                 folderManager.update(folder);
                 folderManager.updateRoles( folder );
-                oid = folder.getOid();
+                goid = folder.getGoid();
             }
-            return oid;
+            return goid;
         } catch (DuplicateObjectException doe) {
             //thrown when saving a folder with duplicate folder name
             throw new ConstraintViolationException("Folder name already exists", doe);
@@ -131,7 +128,7 @@ public class FolderAdminImpl implements FolderAdmin {
      */
     @SuppressWarnings({"unchecked"})
     @Override
-    public void moveEntityToFolder( final Folder folder, PersistentEntity entity ) throws UpdateException {
+    public void moveEntityToFolder( final Folder folder, GoidEntity entity ) throws UpdateException {
         if ( entity == null ) throw new UpdateException( "Entity is required." );
         Folder rootFolder;
         try {
@@ -142,7 +139,7 @@ public class FolderAdminImpl implements FolderAdmin {
 
         Folder destinationFolder = folder != null ? folder : rootFolder;
 
-        if(entity.getOid() == destinationFolder.getOid())
+        if(Goid.equals(entity.getGoid(), destinationFolder.getGoid()))
             throw new UpdateException("Parent folder cannot be the same as folder id", null);
 
         if ( entity instanceof Folder ) {
@@ -173,7 +170,7 @@ public class FolderAdminImpl implements FolderAdmin {
         manager.updateFolder( entity, destinationFolder );
     }
 
-    private void checkMoveEntityPermissions(@NotNull final PersistentEntity entity, @NotNull final Folder targetFolder) throws UpdateException {
+    private void checkMoveEntityPermissions(@NotNull final GoidEntity entity, @NotNull final Folder targetFolder) throws UpdateException {
         final User user = JaasUtils.getCurrentUser();
         try {
             if (!rbacServices.isPermittedForEntity(user, targetFolder, OperationType.UPDATE, null)) {
@@ -210,9 +207,9 @@ public class FolderAdminImpl implements FolderAdmin {
      */
     private <T extends Throwable> void validateFolders( final Folder folder, int targetMaxDepth, int referenceFolderDepth,
                                                         final Functions.Binary<T,String,Throwable> exceptionBuilder ) throws T {
-        Long parentFolderId = folder.getFolder() != null ? folder.getFolder().getOid() : null;
+        Goid parentFolderId = folder.getFolder() != null ? folder.getFolder().getGoid() : null;
         if (parentFolderId != null) {
-            if (parentFolderId == folder.getOid())
+            if (Goid.equals(parentFolderId, folder.getGoid()))
                 throw exceptionBuilder.call("Parent folder cannot be the same as folder id", null);
 
             if (referenceFolderDepth > targetMaxDepth)

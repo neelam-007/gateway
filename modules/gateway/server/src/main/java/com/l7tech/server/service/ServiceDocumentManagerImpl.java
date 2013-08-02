@@ -1,26 +1,23 @@
 package com.l7tech.server.service;
 
+import com.l7tech.gateway.common.service.ServiceDocument;
+import com.l7tech.objectmodel.*;
+import com.l7tech.server.HibernateGoidEntityManager;
+import com.l7tech.server.util.ReadOnlyHibernateCallback;
+import org.hibernate.Criteria;
+import org.hibernate.HibernateException;
+import org.hibernate.Session;
+import org.hibernate.criterion.Restrictions;
+import org.springframework.dao.DataAccessException;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.ArrayList;
-import java.sql.SQLException;
 
-import org.springframework.transaction.annotation.Transactional;
-import static org.springframework.transaction.annotation.Propagation.SUPPORTS;
 import static org.springframework.transaction.annotation.Propagation.REQUIRED;
-import org.springframework.dao.DataAccessException;
-import org.hibernate.Session;
-import org.hibernate.HibernateException;
-import org.hibernate.Criteria;
-import org.hibernate.criterion.Restrictions;
-
-import com.l7tech.gateway.common.service.ServiceDocument;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.server.HibernateEntityManager;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.UpdateException;
-import com.l7tech.server.util.ReadOnlyHibernateCallback;
+import static org.springframework.transaction.annotation.Propagation.SUPPORTS;
 
 /**
  * Implementation of Manager for ServiceDocuments
@@ -28,20 +25,20 @@ import com.l7tech.server.util.ReadOnlyHibernateCallback;
  * @author Steve Jones
  */
 @Transactional(propagation=REQUIRED, rollbackFor=Throwable.class)
-public class ServiceDocumentManagerImpl extends HibernateEntityManager<ServiceDocument, EntityHeader> implements ServiceDocumentManager {
+public class ServiceDocumentManagerImpl extends HibernateGoidEntityManager<ServiceDocument, EntityHeader> implements ServiceDocumentManager {
 
     //- PUBLIC
 
-    public Collection<ServiceDocument> findByServiceId(final long serviceId) throws FindException {
+    public Collection<ServiceDocument> findByServiceId(final Goid serviceId) throws FindException {
         try {
             return (Collection<ServiceDocument>) getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
                 public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
                     Criteria crit = session.createCriteria(ServiceDocument.class);
 
-                    if (serviceId == -1) {
-                        crit.add(Restrictions.isNull(PROP_SERVICE_OID));
+                    if (Goid.isDefault(serviceId)) {
+                        crit.add(Restrictions.isNull(PROP_SERVICE_GOID));
                     } else {
-                        crit.add(Restrictions.eq(PROP_SERVICE_OID, new Long(serviceId)));
+                        crit.add(Restrictions.eq(PROP_SERVICE_GOID, serviceId));
                     }
 
                     List results = crit.list();
@@ -58,16 +55,16 @@ public class ServiceDocumentManagerImpl extends HibernateEntityManager<ServiceDo
         }
     }
 
-    public Collection<ServiceDocument> findByServiceIdAndType(final long serviceId, final String type) throws FindException {
+    public Collection<ServiceDocument> findByServiceIdAndType(final Goid serviceId, final String type) throws FindException {
         try {
             return (Collection<ServiceDocument>) getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
                 public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
                     Criteria crit = session.createCriteria(ServiceDocument.class);
 
-                    if (serviceId == -1) {
-                        crit.add(Restrictions.isNull(PROP_SERVICE_OID));
+                    if (Goid.isDefault(serviceId)) {
+                        crit.add(Restrictions.isNull(PROP_SERVICE_GOID));
                     } else {
-                        crit.add(Restrictions.eq(PROP_SERVICE_OID, new Long(serviceId)));
+                        crit.add(Restrictions.eq(PROP_SERVICE_GOID, serviceId));
                     }
 
                     if (type == null) {
@@ -90,7 +87,7 @@ public class ServiceDocumentManagerImpl extends HibernateEntityManager<ServiceDo
         }
     }
 
-    public long save(final ServiceDocument entity) throws SaveException {
+    public Goid save(final ServiceDocument entity) throws SaveException {
         if (!isValid(entity)) {
             throw new SaveException("Invalid service document.");
         }
@@ -127,7 +124,7 @@ public class ServiceDocumentManagerImpl extends HibernateEntityManager<ServiceDo
 
     //- PRIVATE
 
-    private static final String PROP_SERVICE_OID = "serviceId";
+    private static final String PROP_SERVICE_GOID = "serviceId";
     private static final String PROP_TYPE = "type";
 
     /**
@@ -138,7 +135,7 @@ public class ServiceDocumentManagerImpl extends HibernateEntityManager<ServiceDo
         if (serviceDocument == null) {
             valid = false; 
         } else {
-            if (serviceDocument.getServiceId() <= 0) {
+            if (Goid.isDefault(serviceDocument.getServiceId())) {
                 valid = false;
             }
             if (serviceDocument.getUri() == null) {

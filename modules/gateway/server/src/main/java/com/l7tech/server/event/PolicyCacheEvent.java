@@ -3,6 +3,7 @@
  */
 package com.l7tech.server.event;
 
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.Policy;
 import org.springframework.context.ApplicationEvent;
 
@@ -37,16 +38,16 @@ public abstract class PolicyCacheEvent extends ApplicationEvent {
     }
 
     public static class Invalid extends PolicyCacheEvent {
-        private final Long policyId;
+        private final Goid policyId;
         private final Exception exception;
 
-        public Invalid( Object source, Long identifier, Exception exception ) {
+        public Invalid( Object source, Goid identifier, Exception exception ) {
             super( source, null );
             this.policyId = identifier;
             this.exception = exception;
         }
 
-        public Long getPolicyId() {
+        public Goid getPolicyId() {
             return policyId;
         }
 

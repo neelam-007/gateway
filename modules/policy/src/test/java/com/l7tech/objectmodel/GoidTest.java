@@ -220,6 +220,16 @@ public class GoidTest {
         goid.compareTo(nullGoid);
     }
 
+    @Test
+    public void lowercaseGoidTest() {
+        for (int i = 0; i < NUM_TESTS; i++) {
+            Goid goid = createRandomGoid();
+            Assert.assertEquals("The goid string format should contain only lowercase characters.", goid.toHexString().toLowerCase(), goid.toHexString());
+            Assert.assertEquals("The goid string format should contain only lowercase characters.", goid.toString().toLowerCase(), goid.toString());
+            Assert.assertEquals("The goid string format should contain only lowercase characters.", Goid.toString(goid).toLowerCase(), Goid.toString(goid));
+        }
+    }
+
     private static Goid createRandomGoid() {
         Random random = new Random();
         byte[] bytes = new byte[16];

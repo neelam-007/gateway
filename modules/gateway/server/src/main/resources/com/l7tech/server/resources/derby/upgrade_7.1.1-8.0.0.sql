@@ -66,15 +66,15 @@ CREATE TABLE siteminder_configuration_property (
   primary key (goid,name)
 );
 
+alter table rbac_role add column entity_goid CHAR(16) FOR BIT DATA;
+
 -- create new RBAC role for Manage SiteMinder Configuration --
-INSERT INTO rbac_role (objectid, version, name, tag, entity_type, entity_oid, description, user_created) VALUES (-1500,0,'Manage SiteMinder Configuration', null, 'SITEMINDER_CONFIGURATION', null,  'Users assigned to the {0} role have the ability to read, create, update and delete SiteMinder configuration.',0);
+INSERT INTO rbac_role (objectid, version, name, tag, entity_type, entity_oid, entity_goid, description, user_created) VALUES (-1500,0,'Manage SiteMinder Configuration', null, 'SITEMINDER_CONFIGURATION', null, null, 'Users assigned to the {0} role have the ability to read, create, update and delete SiteMinder configuration.',0);
 INSERT INTO rbac_permission VALUES (-1501,0,-1500,'READ',NULL,'SITEMINDER_CONFIGURATION');
 INSERT INTO rbac_permission VALUES (-1502,0,-1500,'CREATE',NULL,'SITEMINDER_CONFIGURATION');
 INSERT INTO rbac_permission VALUES (-1503,0,-1500,'UPDATE',NULL,'SITEMINDER_CONFIGURATION');
 INSERT INTO rbac_permission VALUES (-1504,0,-1500,'DELETE',NULL,'SITEMINDER_CONFIGURATION');
 INSERT INTO rbac_permission VALUES (-1505,0,-1500,'READ',NULL,'SECURE_PASSWORD');
-
-alter table rbac_role add column entity_goid CHAR(16) FOR BIT DATA;
 
 alter table policy add column security_zone_goid CHAR(16) FOR BIT DATA;
 alter table policy add foreign key (security_zone_goid) references security_zone (goid) on delete set null;
@@ -186,7 +186,7 @@ CREATE TABLE custom_key_value_store (
   UNIQUE (name)
 );
 
-INSERT INTO rbac_role(objectid, version, name, tag, entity_type, entity_oid, entity_goid, description, user_created)  VALUES (-1450,0,'Manage Custom Key Value Store', null,'CUSTOM_KEY_VALUE_STORE',null,null, 'Users assigned to the {0} role have the ability to read, create, update, and delete key values from custom key value store.',0);
+INSERT INTO rbac_role (objectid, version, name, tag, entity_type, entity_oid, entity_goid, description, user_created) VALUES (-1450,0,'Manage Custom Key Value Store', null,'CUSTOM_KEY_VALUE_STORE',null,null, 'Users assigned to the {0} role have the ability to read, create, update, and delete key values from custom key value store.',0);
 INSERT INTO rbac_permission VALUES (-1451,0,-1450,'CREATE',null,'CUSTOM_KEY_VALUE_STORE');
 INSERT INTO rbac_permission VALUES (-1452,0,-1450,'READ',null,'CUSTOM_KEY_VALUE_STORE');
 INSERT INTO rbac_permission VALUES (-1453,0,-1450,'UPDATE',null,'CUSTOM_KEY_VALUE_STORE');
@@ -225,7 +225,7 @@ CREATE FUNCTION getVariable(keyParam CHAR(128)) RETURNS CHAR(128)
     PARAMETER STYLE JAVA NO SQL LANGUAGE JAVA
     EXTERNAL NAME 'com.l7tech.server.upgrade.DerbyFunctions.getVariable';
 
---- JdbcConnection
+-- JdbcConnection
 ALTER TABLE jdbc_connection ADD COLUMN goid CHAR(16) FOR BIT DATA;
 call setVariable('jdbc_connection_prefix', cast(randomLongNotReserved() as char(21)));
 update jdbc_connection set goid = toGoid(cast(getVariable('jdbc_connection_prefix') as bigint), objectid);
@@ -249,7 +249,7 @@ ALTER TABLE service_metrics_details ALTER COLUMN service_metrics_goid NOT NULL;
 ALTER TABLE service_metrics_details DROP COLUMN service_metrics_goid;
 ALTER TABLE service_metrics_details ADD PRIMARY KEY (service_metrics_oid, mapping_values_oid);
 
---- LogonInfo
+-- LogonInfo
 ALTER TABLE logon_info ADD COLUMN goid CHAR(16) FOR BIT DATA;
 call setVariable('logon_info_prefix', cast(randomLongNotReserved() as char(21)));
 update logon_info set goid = toGoid(cast(getVariable('logon_info_prefix') as bigint), objectid);
@@ -258,7 +258,7 @@ ALTER TABLE logon_info DROP PRIMARY KEY;
 ALTER TABLE logon_info DROP COLUMN objectid;
 ALTER TABLE logon_info ADD PRIMARY KEY (goid);
 
---- SampleMessage
+-- SampleMessage
 ALTER TABLE sample_messages ADD COLUMN goid CHAR(16) FOR BIT DATA;
 call setVariable('sample_messages_prefix', cast(randomLongNotReserved() as char(21)));
 update sample_messages set goid = toGoid(cast(getVariable('sample_messages_prefix') as bigint), objectid);
@@ -312,7 +312,7 @@ alter table email_listener_state ADD CONSTRAINT FK5A708C492FC43EC3 foreign key (
 update rbac_role set entity_goid = toGoid(cast(getVariable('email_listener_prefix') as bigint),entity_oid) where entity_oid is not null and entity_type='EMAIL_LISTENER';
 update rbac_predicate_oid oid1 set oid1.entity_id = ifnull((select goidToString(toGoid(cast(getVariable('email_listener_prefix') as bigint),cast(oid1.entity_id as bigint))) from rbac_predicate left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid where rbac_predicate.objectid = oid1.objectid and rbac_permission.entity_type = 'EMAIL_LISTENER'), oid1.entity_id);
 
---- GenericEntity
+-- GenericEntity
 ALTER TABLE generic_entity ADD COLUMN goid CHAR(16) FOR BIT DATA;
 call setVariable('generic_entity_prefix', cast(randomLongNotReserved() as char(21)));
 update generic_entity set goid = toGoid(cast(getVariable('generic_entity_prefix') as bigint), objectid);
@@ -462,14 +462,206 @@ ALTER TABLE active_connector_property add constraint FK58920F603AEA90B6 foreign 
 update rbac_role set entity_goid = toGoid(cast(getVariable('active_connector_prefix') as bigint),entity_oid) where entity_oid is not null and entity_type='SSG_ACTIVE_CONNECTOR';
 update rbac_predicate_oid oid1 set oid1.entity_id = ifnull((select goidToString(toGoid(cast(getVariable('active_connector_prefix') as bigint),cast(oid1.entity_id as bigint))) from rbac_predicate left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid where rbac_predicate.objectid = oid1.objectid and rbac_permission.entity_type = 'SSG_ACTIVE_CONNECTOR'), oid1.entity_id);
 
+-- services/policies/folders
+ALTER TABLE folder ADD COLUMN goid CHAR(16) FOR BIT DATA;
+call setVariable('folder_prefix', cast(randomLongNotReserved() as char(21)));
+update folder set goid = toGoid(cast(getVariable('folder_prefix') as bigint), objectid);
+update folder set goid = toGoid(0, -5002) where goid = toGoid(cast(getVariable('folder_prefix') as bigint), -5002);
+ALTER TABLE folder ALTER COLUMN goid NOT NULL;
+ALTER TABLE folder DROP COLUMN objectid;
+ALTER TABLE folder ADD PRIMARY KEY (goid);
 
+ALTER TABLE folder ADD COLUMN parent_folder_goid CHAR(16) FOR BIT DATA;
+update folder set parent_folder_goid = toGoid(cast(getVariable('folder_prefix') as bigint), parent_folder_oid);
+update folder set parent_folder_goid = toGoid(0, -5002) where parent_folder_goid = toGoid(cast(getVariable('folder_prefix') as bigint), -5002);
+ALTER TABLE folder DROP COLUMN parent_folder_oid;
+ALTER TABLE folder add constraint FKB45D1C6EF8097918 foreign key (parent_folder_goid) references folder;
+
+update rbac_role set entity_goid = toGoid(cast(getVariable('folder_prefix') as bigint),entity_oid) where entity_oid is not null and entity_type='FOLDER';
+update rbac_role set entity_goid = toGoid(0, -5002) where entity_oid is not null and entity_type='FOLDER' and entity_goid = toGoid(cast(getVariable('folder_prefix') as bigint), -5002);
+update rbac_predicate_oid oid1 set oid1.entity_id = ifnull((select goidToString(toGoid(cast(getVariable('folder_prefix') as bigint),cast(oid1.entity_id as bigint))) from rbac_predicate left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid where rbac_predicate.objectid = oid1.objectid and rbac_permission.entity_type = 'FOLDER'), oid1.entity_id);
+
+ALTER TABLE policy ADD COLUMN goid CHAR(16) FOR BIT DATA;
+call setVariable('policy_prefix', cast(randomLongNotReserved() as char(21)));
+update policy set goid = toGoid(cast(getVariable('policy_prefix') as bigint), objectid);
+ALTER TABLE policy ALTER COLUMN goid NOT NULL;
+ALTER TABLE policy DROP COLUMN objectid;
+ALTER TABLE policy ADD PRIMARY KEY (goid);
+
+ALTER TABLE policy ADD COLUMN folder_goid CHAR(16) FOR BIT DATA;
+update policy set folder_goid = toGoid(cast(getVariable('folder_prefix') as bigint), folder_oid);
+update policy set folder_goid = toGoid(0, -5002) where folder_goid = toGoid(cast(getVariable('folder_prefix') as bigint), -5002);
+ALTER TABLE policy DROP COLUMN folder_oid;
+ALTER TABLE policy add constraint FKC56DA532DB935A63 foreign key (folder_goid) references folder;
+
+update rbac_role set entity_goid = toGoid(cast(getVariable('policy_prefix') as bigint),entity_oid) where entity_oid is not null and entity_type='POLICY';
+update rbac_predicate_oid oid1 set oid1.entity_id = ifnull((select goidToString(toGoid(cast(getVariable('policy_prefix') as bigint),cast(oid1.entity_id as bigint))) from rbac_predicate left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid where rbac_predicate.objectid = oid1.objectid and rbac_permission.entity_type = 'POLICY'), oid1.entity_id);
+
+ALTER TABLE policy_alias ADD COLUMN goid CHAR(16) FOR BIT DATA;
+call setVariable('policy_alias_prefix', cast(randomLongNotReserved() as char(21)));
+update policy_alias set goid = toGoid(cast(getVariable('policy_alias_prefix') as bigint), objectid);
+ALTER TABLE policy_alias ALTER COLUMN goid NOT NULL;
+ALTER TABLE policy_alias DROP COLUMN objectid;
+ALTER TABLE policy_alias ADD PRIMARY KEY (goid);
+
+ALTER TABLE policy_alias ADD COLUMN folder_goid CHAR(16) FOR BIT DATA;
+update policy_alias set folder_goid = toGoid(cast(getVariable('folder_prefix') as bigint), folder_oid);
+update policy_alias set folder_goid = toGoid(0, -5002) where folder_goid = toGoid(cast(getVariable('folder_prefix') as bigint), -5002);
+ALTER TABLE policy_alias DROP COLUMN folder_oid;
+ALTER TABLE policy_alias add constraint FKA07B7103DB935A63 foreign key (folder_goid) references folder;
+
+ALTER TABLE policy_alias ADD COLUMN policy_goid CHAR(16) FOR BIT DATA;
+update policy_alias set policy_goid = toGoid(cast(getVariable('policy_prefix') as bigint), policy_oid);
+ALTER TABLE policy_alias DROP COLUMN policy_oid;
+
+update rbac_role set entity_goid = toGoid(cast(getVariable('policy_alias_prefix') as bigint),entity_oid) where entity_oid is not null and entity_type='POLICY_ALIAS';
+update rbac_predicate_oid oid1 set oid1.entity_id = ifnull((select goidToString(toGoid(cast(getVariable('policy_alias_prefix') as bigint),cast(oid1.entity_id as bigint))) from rbac_predicate left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid where rbac_predicate.objectid = oid1.objectid and rbac_permission.entity_type = 'POLICY_ALIAS'), oid1.entity_id);
+
+ALTER TABLE policy_version ADD COLUMN goid CHAR(16) FOR BIT DATA;
+call setVariable('policy_version_prefix', cast(randomLongNotReserved() as char(21)));
+update policy_version set goid = toGoid(cast(getVariable('policy_version_prefix') as bigint), objectid);
+ALTER TABLE policy_version ALTER COLUMN goid NOT NULL;
+ALTER TABLE policy_version DROP COLUMN objectid;
+ALTER TABLE policy_version ADD PRIMARY KEY (goid);
+
+ALTER TABLE policy_version ADD COLUMN policy_goid CHAR(16) FOR BIT DATA;
+update policy_version set policy_goid = toGoid(cast(getVariable('policy_prefix') as bigint), policy_oid);
+ALTER TABLE policy_version DROP COLUMN policy_oid;
+
+update rbac_role set entity_goid = toGoid(cast(getVariable('policy_version_prefix') as bigint),entity_oid) where entity_oid is not null and entity_type='POLICY_VERSION';
+update rbac_predicate_oid oid1 set oid1.entity_id = ifnull((select goidToString(toGoid(cast(getVariable('policy_version_prefix') as bigint),cast(oid1.entity_id as bigint))) from rbac_predicate left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid where rbac_predicate.objectid = oid1.objectid and rbac_permission.entity_type = 'POLICY_VERSION'), oid1.entity_id);
+
+ALTER TABLE published_service ADD COLUMN old_objectid bigint;
+update published_service set old_objectid = objectid;
+ALTER TABLE published_service DROP COLUMN objectid;
+ALTER TABLE published_service ADD COLUMN goid CHAR(16) FOR BIT DATA;
+call setVariable('published_service_prefix', cast(randomLongNotReserved() as char(21)));
+update published_service set goid = toGoid(cast(getVariable('published_service_prefix') as bigint), old_objectid);
+ALTER TABLE published_service ALTER COLUMN goid NOT NULL;
+ALTER TABLE published_service ADD PRIMARY KEY (goid);
+
+ALTER TABLE published_service ADD COLUMN folder_goid CHAR(16) FOR BIT DATA;
+update published_service set folder_goid = toGoid(cast(getVariable('folder_prefix') as bigint), folder_oid);
+update published_service set folder_goid = toGoid(0, -5002) where folder_goid = toGoid(cast(getVariable('folder_prefix') as bigint), -5002);
+ALTER TABLE published_service DROP COLUMN folder_oid;
+ALTER TABLE published_service add constraint FK25874164DB935A63 foreign key (folder_goid) references folder;
+
+ALTER TABLE published_service ADD COLUMN policy_goid CHAR(16) FOR BIT DATA;
+update published_service set policy_goid = toGoid(cast(getVariable('policy_prefix') as bigint), policy_oid);
+ALTER TABLE published_service DROP COLUMN policy_oid;
+ALTER TABLE published_service add constraint FK25874164DAFA444B foreign key (policy_goid) references policy;
+
+update rbac_role set entity_goid = toGoid(cast(getVariable('published_service_prefix') as bigint),entity_oid) where entity_oid is not null and entity_type='SERVICE';
+update rbac_predicate_oid oid1 set oid1.entity_id = ifnull((select goidToString(toGoid(cast(getVariable('published_service_prefix') as bigint),cast(oid1.entity_id as bigint))) from rbac_predicate left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid where rbac_predicate.objectid = oid1.objectid and rbac_permission.entity_type = 'SERVICE'), oid1.entity_id);
+
+ALTER TABLE published_service_alias ADD COLUMN goid CHAR(16) FOR BIT DATA;
+call setVariable('published_service_alias_prefix', cast(randomLongNotReserved() as char(21)));
+update published_service_alias set goid = toGoid(cast(getVariable('published_service_alias_prefix') as bigint), objectid);
+ALTER TABLE published_service_alias ALTER COLUMN goid NOT NULL;
+ALTER TABLE published_service_alias DROP COLUMN objectid;
+ALTER TABLE published_service_alias ADD PRIMARY KEY (goid);
+
+ALTER TABLE published_service_alias ADD COLUMN folder_goid CHAR(16) FOR BIT DATA;
+update published_service_alias set folder_goid = toGoid(cast(getVariable('folder_prefix') as bigint), folder_oid);
+update published_service_alias set folder_goid = toGoid(0, -5002) where folder_goid = toGoid(cast(getVariable('folder_prefix') as bigint), -5002);
+ALTER TABLE published_service_alias DROP COLUMN folder_oid;
+ALTER TABLE published_service_alias add constraint FK6AE79FB5DB935A63 foreign key (folder_goid) references folder;
+
+ALTER TABLE published_service_alias ADD COLUMN published_service_goid CHAR(16) FOR BIT DATA;
+update published_service_alias set published_service_goid = toGoid(cast(getVariable('published_service_prefix') as bigint), published_service_oid);
+ALTER TABLE published_service_alias DROP COLUMN published_service_oid;
+
+update rbac_role set entity_goid = toGoid(cast(getVariable('published_service_alias_prefix') as bigint),entity_oid) where entity_oid is not null and entity_type='SERVICE_ALIAS';
+update rbac_predicate_oid oid1 set oid1.entity_id = ifnull((select goidToString(toGoid(cast(getVariable('published_service_alias_prefix') as bigint),cast(oid1.entity_id as bigint))) from rbac_predicate left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid where rbac_predicate.objectid = oid1.objectid and rbac_permission.entity_type = 'SERVICE_ALIAS'), oid1.entity_id);
+
+ALTER TABLE audit_message ADD COLUMN service_goid CHAR(16) FOR BIT DATA;
+update audit_message set service_goid = toGoid(cast(getVariable('published_service_prefix') as bigint), service_oid);
+ALTER TABLE audit_message DROP COLUMN service_oid;
+
+ALTER TABLE active_connector ADD COLUMN hardwired_service_goid CHAR(16) FOR BIT DATA;
+update active_connector set hardwired_service_goid = toGoid(cast(getVariable('published_service_prefix') as bigint), hardwired_service_oid);
+ALTER TABLE active_connector DROP COLUMN hardwired_service_oid;
+
+ALTER TABLE rbac_predicate_folder ADD COLUMN folder_goid CHAR(16) FOR BIT DATA;
+update rbac_predicate_folder set folder_goid = toGoid(cast(getVariable('folder_prefix') as bigint), folder_oid);
+update rbac_predicate_folder set folder_goid = toGoid(0, -5002) where folder_goid = toGoid(cast(getVariable('folder_prefix') as bigint), -5002);
+ALTER TABLE rbac_predicate_folder DROP COLUMN folder_oid;
+
+ALTER TABLE sample_messages ADD COLUMN published_service_goid CHAR(16) FOR BIT DATA;
+update sample_messages set published_service_goid = toGoid(cast(getVariable('published_service_prefix') as bigint), published_service_oid);
+ALTER TABLE sample_messages DROP COLUMN published_service_oid;
+
+ALTER TABLE service_documents ADD COLUMN goid CHAR(16) FOR BIT DATA;
+call setVariable('service_documents_prefix', cast(randomLongNotReserved() as char(21)));
+update service_documents set goid = toGoid(cast(getVariable('service_documents_prefix') as bigint), objectid);
+ALTER TABLE service_documents ALTER COLUMN goid NOT NULL;
+ALTER TABLE service_documents DROP COLUMN objectid;
+ALTER TABLE service_documents ADD PRIMARY KEY (goid);
+
+update rbac_role set entity_goid = toGoid(cast(getVariable('service_documents_prefix') as bigint),entity_oid) where entity_oid is not null and entity_type='SERVICE_DOCUMENT';
+update rbac_predicate_oid oid1 set oid1.entity_id = ifnull((select goidToString(toGoid(cast(getVariable('service_documents_prefix') as bigint),cast(oid1.entity_id as bigint))) from rbac_predicate left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid where rbac_predicate.objectid = oid1.objectid and rbac_permission.entity_type = 'SERVICE_DOCUMENT'), oid1.entity_id);
+
+ALTER TABLE service_documents ADD COLUMN service_goid CHAR(16) FOR BIT DATA;
+update service_documents set service_goid = toGoid(cast(getVariable('published_service_prefix') as bigint), service_oid);
+ALTER TABLE service_documents DROP COLUMN service_oid;
+
+ALTER TABLE service_metrics ADD COLUMN published_service_goid CHAR(16) FOR BIT DATA;
+update service_metrics set published_service_goid = toGoid(cast(getVariable('published_service_prefix') as bigint), published_service_oid);
+ALTER TABLE service_metrics DROP COLUMN published_service_oid;
+
+ALTER TABLE service_usage ADD COLUMN serviceid_backup bigint;
+update service_usage set serviceid_backup = serviceid;
+ALTER TABLE service_usage DROP COLUMN serviceid;
+ALTER TABLE service_usage ADD COLUMN serviceid CHAR(16) FOR BIT DATA;
+update service_usage set serviceid = toGoid(cast(getVariable('published_service_prefix') as bigint), serviceid_backup);
+ALTER TABLE service_usage ALTER COLUMN serviceid NOT NULL;
+ALTER TABLE service_usage DROP COLUMN serviceid_backup;
+ALTER TABLE service_usage ADD PRIMARY KEY (serviceid, nodeid);
+
+update rbac_role set entity_goid = toGoid(cast(getVariable('published_service_prefix') as bigint),entity_oid) where entity_oid is not null and entity_type='SERVICE_USAGE';
+update rbac_predicate_oid oid1 set oid1.entity_id = ifnull((select goidToString(toGoid(cast(getVariable('published_service_prefix') as bigint),cast(oid1.entity_id as bigint))) from rbac_predicate left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid where rbac_predicate.objectid = oid1.objectid and rbac_permission.entity_type = 'SERVICE_USAGE'), oid1.entity_id);
+
+ALTER TABLE uddi_business_service_status ADD COLUMN published_service_goid CHAR(16) FOR BIT DATA;
+update uddi_business_service_status set published_service_goid = toGoid(cast(getVariable('published_service_prefix') as bigint), published_service_oid);
+ALTER TABLE uddi_business_service_status DROP COLUMN published_service_oid;
+
+ALTER TABLE uddi_proxied_service_info ADD COLUMN published_service_goid CHAR(16) FOR BIT DATA;
+update uddi_proxied_service_info set published_service_goid = toGoid(cast(getVariable('published_service_prefix') as bigint), published_service_oid);
+ALTER TABLE uddi_proxied_service_info DROP COLUMN published_service_oid;
+
+ALTER TABLE uddi_service_control ADD COLUMN published_service_goid CHAR(16) FOR BIT DATA;
+update uddi_service_control set published_service_goid = toGoid(cast(getVariable('published_service_prefix') as bigint), published_service_oid);
+ALTER TABLE uddi_service_control DROP COLUMN published_service_oid;
+
+ALTER TABLE wsdm_subscription ADD COLUMN published_service_goid CHAR(16) FOR BIT DATA;
+update wsdm_subscription set published_service_goid = toGoid(cast(getVariable('published_service_prefix') as bigint), published_service_oid);
+ALTER TABLE wsdm_subscription DROP COLUMN published_service_oid;
+
+ALTER TABLE wsdm_subscription ADD COLUMN esm_service_goid CHAR(16) FOR BIT DATA;
+update wsdm_subscription set esm_service_goid = toGoid(cast(getVariable('published_service_prefix') as bigint), esm_service_oid);
+ALTER TABLE wsdm_subscription DROP COLUMN esm_service_oid;
+
+ALTER TABLE encapsulated_assertion ADD COLUMN policy_goid CHAR(16) FOR BIT DATA;
+update encapsulated_assertion set policy_goid = toGoid(cast(getVariable('policy_prefix') as bigint), policy_oid);
+ALTER TABLE encapsulated_assertion DROP COLUMN policy_oid;
+alter table encapsulated_assertion add constraint FK_ENCASS_POL foreign key (policy_goid) references policy;
+
+update rbac_predicate_attribute set value = goidToString(toGoid(@published_service_prefix, value)) where attribute='serviceOid' OR attribute='publishedServiceOid' OR attribute='serviceid';
+update rbac_predicate_attribute set attribute = 'serviceGoid' where attribute='serviceOid';
+update rbac_predicate_attribute set attribute = 'publishedServiceGoid' where attribute='publishedServiceOid';
+
+update rbac_predicate_entityfolder set entity_id = goidToString(toGoid(cast(getVariable('published_service_prefix') as bigint), entity_id)) where entity_type='SERVICE';
+update rbac_predicate_entityfolder set entity_id = goidToString(toGoid(cast(getVariable('folder_prefix') as bigint), entity_id)) where entity_type='FOLDER';
+update rbac_predicate_entityfolder set entity_id = goidToString(toGoid(0, -5002)) where entity_type='FOLDER' and entity_id=goidToString(toGoid(cast(getVariable('folder_prefix') as bigint), -5002));
+update rbac_predicate_entityfolder set entity_id = goidToString(toGoid(cast(getVariable('policy_prefix') as bigint), entity_id)) where entity_type='POLICY';
 
 --
 -- Register upgrade task for upgrading sink configuration references to GOIDs
 --
 INSERT INTO cluster_properties
     (goid, version, propkey, propvalue, properties)
-    values (toGoid(0,-800001), 0, 'upgrade.task.800001', 'com.l7tech.server.upgrade.Upgrade71To80SinkConfig', null);
+    values (toGoid(0,-800001), 0, 'upgrade.task.800001', 'com.l7tech.server.upgrade.Upgrade71To80SinkConfig', null),
+           (toGoid(0,-800002), 0, 'upgrade.task.800002', 'com.l7tech.server.upgrade.Upgrade71To80OidReferences', null);
 
 
 --

@@ -1,5 +1,6 @@
 package com.l7tech.server.hpsoam.metrics;
 
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.message.PolicyEnforcementContext;
 
 import java.util.ArrayList;
@@ -53,9 +54,9 @@ public class PerfWindow {
     }
 
     public ServicePerformance getOrMakeServicePerformance(PolicyEnforcementContext context) {
-        long svcid = context.getService().getOid();
+        Goid svcid = context.getService().getGoid();
         for (ServicePerformance sp : svcPerfs) {
-            if (sp.getServiceOID() == svcid) return sp;
+            if (Goid.equals(sp.getServiceGOID(), svcid)) return sp;
         }
         ServicePerformance output = new ServicePerformance(context.getService());
         svcPerfs.add(output);

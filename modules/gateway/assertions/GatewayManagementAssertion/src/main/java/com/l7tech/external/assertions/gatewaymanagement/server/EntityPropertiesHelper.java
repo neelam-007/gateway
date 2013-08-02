@@ -401,7 +401,7 @@ class EntityPropertiesHelper {
         ) )
         .put( Policy.class, list(
             "xml",
-            "oid",
+            "goid",
             "guid",
             "versionActive",
             "folder",
@@ -424,7 +424,8 @@ class EntityPropertiesHelper {
             "name",
             "laxResolution",
             "tracingEnabled",
-            "oid",
+            "goid",
+            "oldOid",
             "disabled",
             "soapVersion",
             "securityZone"

@@ -15,7 +15,7 @@ public interface HasFolder {
     public Folder getFolder();
 
     /**
-     * @param folderOid the folder to associate with an entity. May be null.
+     * @param folder the folder to associate with an entity. May be null.
      */
     public void setFolder(Folder folder);
 }

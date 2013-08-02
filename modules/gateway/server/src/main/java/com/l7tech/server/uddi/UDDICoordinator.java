@@ -120,19 +120,15 @@ public class UDDICoordinator implements ApplicationContextAware, InitializingBea
             if ( UDDIRegistry.class.equals(entityInvalidationEvent.getEntityClass()) ) {
                 loadUDDIRegistries(true);
             } else if (
-                    UDDIPublishStatus.class.equals(entityInvalidationEvent.getEntityClass()) ||
-                    PublishedService.class.equals(entityInvalidationEvent.getEntityClass())) {
-                final boolean statusUpdate = UDDIPublishStatus.class.equals(entityInvalidationEvent.getEntityClass());
-                final boolean publishedServiceUpdate = PublishedService.class.equals(entityInvalidationEvent.getEntityClass());
-                
+                    UDDIPublishStatus.class.equals(entityInvalidationEvent.getEntityClass())) {
+
                 long[] entityIds = entityInvalidationEvent.getEntityIds();
                 char[] entityOps = entityInvalidationEvent.getEntityOperations();
 
                 for ( int i=0; i<entityIds.length; i++ ) {
                     long id = entityIds[i];
                     char op = entityOps[i];
-                    if( statusUpdate &&
-                            (EntityInvalidationEvent.CREATE == op || EntityInvalidationEvent.UPDATE == op)){
+                    if(EntityInvalidationEvent.CREATE == op || EntityInvalidationEvent.UPDATE == op){
                         try {
                             final UDDIPublishStatus uddiPublishStatus = uddiPublishStatusManager.findByPrimaryKey(id);
                             if(uddiPublishStatus == null){
@@ -152,7 +148,7 @@ public class UDDICoordinator implements ApplicationContextAware, InitializingBea
                             }
 
                             final UDDIServiceControl serviceControl =
-                                    uddiServiceControlManager.findByPublishedServiceOid(uddiProxiedServiceInfo.getPublishedServiceOid());
+                                    uddiServiceControlManager.findByPublishedServiceGoid(uddiProxiedServiceInfo.getPublishedServiceGoid());
                             //ok if serviceControl is null
                             notifyPublishEvent(uddiProxiedServiceInfo, uddiPublishStatus, serviceControl);
 
@@ -160,19 +156,37 @@ public class UDDICoordinator implements ApplicationContextAware, InitializingBea
                             logger.log(Level.WARNING, "Could not find created UDDIPublishStatus with id #(" + id + ")");
                             return;
                         }
-                    }else if(publishedServiceUpdate && EntityInvalidationEvent.UPDATE == op){
+                    }
+                }
+            } else if ( UDDIProxiedServiceInfo.class.equals(entityInvalidationEvent.getEntityClass()) ) {
+                timer.schedule( new BusinessServiceStatusTimerTask(this), 0 );
+            } else if ( UDDIServiceControl.class.equals(entityInvalidationEvent.getEntityClass()) ) {
+                timer.schedule( new BusinessServiceStatusTimerTask(this), 0 );
+            }
+        } else if (applicationEvent instanceof GoidEntityInvalidationEvent){
+            GoidEntityInvalidationEvent entityInvalidationEvent = (GoidEntityInvalidationEvent) applicationEvent;
+            if (PublishedService.class.equals(entityInvalidationEvent.getEntityClass())) {
+                final boolean publishedServiceUpdate = PublishedService.class.equals(entityInvalidationEvent.getEntityClass());
+
+                Goid[] entityIds = entityInvalidationEvent.getEntityIds();
+                char[] entityOps = entityInvalidationEvent.getEntityOperations();
+
+                for ( int i=0; i<entityIds.length; i++ ) {
+                    Goid id = entityIds[i];
+                    char op = entityOps[i];
+                    if(GoidEntityInvalidationEvent.UPDATE == op){
                         final PublishedService service = serviceCache.getCachedService(id);
                         if(service == null) return;
                         final UDDIProxiedServiceInfo uddiProxiedServiceInfo;
                         final UDDIPublishStatus uddiPublishStatus;
                         try {
-                            uddiProxiedServiceInfo = uddiProxiedServiceInfoManager.findByPublishedServiceOid(service.getOid());
+                            uddiProxiedServiceInfo = uddiProxiedServiceInfoManager.findByPublishedServiceGoid(service.getGoid());
                             if(uddiProxiedServiceInfo == null) return;
 
                             uddiPublishStatus = uddiPublishStatusManager.findByProxiedSerivceInfoOid(uddiProxiedServiceInfo.getOid());
                             if(uddiPublishStatus == null) return;
                         } catch (FindException e) {
-                            logger.log(Level.WARNING, "Problem looking up UDDIProxiedServiceInfo with service id #(" + service.getOid()+") ");
+                            logger.log(Level.WARNING, "Problem looking up UDDIProxiedServiceInfo with service id #(" + service.getGoid()+") ");
                             return;
                         }
 
@@ -182,30 +196,12 @@ public class UDDICoordinator implements ApplicationContextAware, InitializingBea
                                 uddiPublishStatus.getPublishStatus() == UDDIPublishStatus.PublishStatus.PUBLISH_FAILED){
                             return;
                         }
-                        timer.schedule( new PublishedServiceWsdlUpdatedTimerTask(this, service.getOid()), 0 );
+                        timer.schedule( new PublishedServiceWsdlUpdatedTimerTask(this, service.getGoid()), 0 );
                         return;
                     }
                 }
-            } else if ( UDDIProxiedServiceInfo.class.equals(entityInvalidationEvent.getEntityClass()) ) {
-                timer.schedule( new BusinessServiceStatusTimerTask(this), 0 );
-            } else if ( UDDIServiceControl.class.equals(entityInvalidationEvent.getEntityClass()) ) {
-                timer.schedule( new BusinessServiceStatusTimerTask(this), 0 );
             } else if (ClusterProperty.class.equals(entityInvalidationEvent.getEntityClass())){
                 final Object source = entityInvalidationEvent.getSource();
-                if(source instanceof ClusterProperty){
-                    ClusterProperty cp = (ClusterProperty) source;
-                    if (cp.getName().equals("cluster.hostname") ||
-                            cp.getName().equals("cluster.httpPort") ||
-                            cp.getName().equals("cluster.httpsPort")) {
-                            timer.schedule(new CheckPublishedEndpointsTimerTask(this), 0);
-                    }
-                }
-            }
-
-        }else if ( applicationEvent instanceof GoidEntityInvalidationEvent) {
-            GoidEntityInvalidationEvent goidEntityInvalidationEvent = (GoidEntityInvalidationEvent) applicationEvent;
-            if (ClusterProperty.class.equals(goidEntityInvalidationEvent.getEntityClass())){
-                final Object source = goidEntityInvalidationEvent.getSource();
                 if(source instanceof ClusterProperty){
                     ClusterProperty cp = (ClusterProperty) source;
                     if (cp.getName().equals("cluster.hostname") ||
@@ -274,21 +270,22 @@ public class UDDICoordinator implements ApplicationContextAware, InitializingBea
 
     private PublishedService getServiceForHandlingUDDINotifications( final long registryOid ) {
         PublishedService notificationService = null;
-        long notificationServiceOid = Long.MAX_VALUE; // find the matching service with the lowest oid
 
         for( PublishedService service : serviceCache.getInternalServices( )) {
             if ( SUBSCRIPTION_SERVICE_WSDL.equals(service.getWsdlUrl()) ) {
                 UDDIProxiedServiceInfo uddiService = null;
                 try {
-                    uddiService = uddiProxiedServiceInfoManager.findByPublishedServiceOid( service.getOid() );
+                    uddiService = uddiProxiedServiceInfoManager.findByPublishedServiceGoid( service.getGoid() );
                 } catch (FindException e) {
                     logger.log( Level.WARNING, "Error finding uddi proxied service", e );
                 }
                 boolean registryMatch = uddiService != null && uddiService.getUddiRegistryOid() == registryOid;
 
-                if ( service.getOid() < notificationServiceOid && registryMatch ) {
+                if ( registryMatch ) {
+                    if(notificationService != null){
+                        logger.log( Level.WARNING, "Found multiple services for the same UDDI registry: " + registryOid );
+                    }
                     notificationService = service;
-                    notificationServiceOid = service.getOid();
                 }
             }
         }
@@ -305,7 +302,7 @@ public class UDDICoordinator implements ApplicationContextAware, InitializingBea
 
         PublishedService service = getServiceForHandlingUDDINotifications( registryOid );
         if ( service != null ) {
-            notificationUrl = uddiHelper.getExternalUrlForService( service.getOid() ); //TODO Add option to get secure URL once we publish SSL endpoint?
+            notificationUrl = uddiHelper.getExternalUrlForService( service.getGoid() ); //TODO Add option to get secure URL once we publish SSL endpoint?
         }
 
         return notificationUrl;
@@ -324,7 +321,7 @@ public class UDDICoordinator implements ApplicationContextAware, InitializingBea
                 UDDIClient uddiClient = null;
                 try {
                     uddiClient = urr.getUDDIClient();
-                    UDDIProxiedServiceInfo serviceInfo = uddiProxiedServiceInfoManager.findByPublishedServiceOid(service.getOid());
+                    UDDIProxiedServiceInfo serviceInfo = uddiProxiedServiceInfoManager.findByPublishedServiceGoid(service.getGoid());
                     Set<UDDIProxiedService> proxiedServices = serviceInfo.getProxiedServices();
                     Set<String> serviceKeys = new HashSet<String>();
                     for(UDDIProxiedService ps: proxiedServices){
@@ -438,11 +435,11 @@ public class UDDICoordinator implements ApplicationContextAware, InitializingBea
      *
      * @throws ObjectModelException
      */
-    private void checkPublishedServiceWithUpdatedWsdls(final long serviceOid) throws ObjectModelException{
-        final PublishedService service = serviceCache.getCachedService(serviceOid);
+    private void checkPublishedServiceWithUpdatedWsdls(final Goid serviceGoid) throws ObjectModelException{
+        final PublishedService service = serviceCache.getCachedService(serviceGoid);
         if(service == null) return;
 
-        final UDDIProxiedServiceInfo uddiProxiedServiceInfo = uddiProxiedServiceInfoManager.findByPublishedServiceOid(service.getOid());
+        final UDDIProxiedServiceInfo uddiProxiedServiceInfo = uddiProxiedServiceInfoManager.findByPublishedServiceGoid(service.getGoid());
         if(uddiProxiedServiceInfo == null) return;
 
         final UDDIPublishStatus uddiPublishStatus = uddiPublishStatusManager.findByProxiedSerivceInfoOid(uddiProxiedServiceInfo.getOid());
@@ -453,7 +450,7 @@ public class UDDICoordinator implements ApplicationContextAware, InitializingBea
             final Wsdl wsdl = service.parsedWsdl();
             updatedWsdlHash = wsdl.getHash();
         } catch (Exception e) {//WsdlException or IOException
-            logger.log(Level.WARNING, "Could not parse the WSDL for published service with id#(" + service.getOid()+")", ExceptionUtils.getDebugException(e));
+            logger.log(Level.WARNING, "Could not parse the WSDL for published service with id#(" + service.getGoid()+")", ExceptionUtils.getDebugException(e));
             uddiPublishStatus.setPublishStatus(UDDIPublishStatus.PublishStatus.DELETE);
             uddiPublishStatusManager.update(uddiPublishStatus);
             return;
@@ -500,9 +497,9 @@ public class UDDICoordinator implements ApplicationContextAware, InitializingBea
                     status != UDDIPublishStatus.PublishStatus.PUBLISHED){
                 final UDDIProxiedServiceInfo info = oidToProxyServiceMap.get(publishStatus.getUddiProxiedServiceInfoOid());
                 logger.log(Level.FINE, "Creating event to update published proxy service info in UDDI. Service #("
-                        + info.getPublishedServiceOid()+") in status " + status.toString());
+                        + info.getPublishedServiceGoid()+") in status " + status.toString());
                 final UDDIServiceControl serviceControl =
-                        uddiServiceControlManager.findByPublishedServiceOid(info.getPublishedServiceOid());
+                        uddiServiceControlManager.findByPublishedServiceGoid(info.getPublishedServiceGoid());
                 //ok if serviceControl is null
 
                 notifyPublishEvent( info, publishStatus, serviceControl);
@@ -532,25 +529,25 @@ public class UDDICoordinator implements ApplicationContextAware, InitializingBea
                         //should never happen if invariants of properties are maintained. Putting here to avoid a
                         //null pointer in the off chance the db is corrupted or there is a programming error.
                         logger.log(Level.WARNING, "Could not find endpoint type for GIF published endpoint for " +
-                                "published service #("+serviceInfo.getPublishedServiceOid()+"). ");
+                                "published service #("+serviceInfo.getPublishedServiceGoid()+"). ");
                         continue;
                     }
                     final EndpointPair endPointPair;
                     try {
-                        endPointPair = uddiHelper.getEndpointForScheme(endpointScheme, serviceInfo.getPublishedServiceOid());
+                        endPointPair = uddiHelper.getEndpointForScheme(endpointScheme, serviceInfo.getPublishedServiceGoid());
                     } catch (UDDIHelper.EndpointNotDefinedException e) {
                         auditor.logAndAudit(SystemMessages.UDDI_GIF_SCHEME_NOT_AVAILABLE, endpointScheme.toString(), ExceptionUtils.getMessage(e));
                         continue;
                     }
                     allEndpointPairs = new HashSet<EndpointPair>(Arrays.asList(endPointPair));
                 } else {
-                    allEndpointPairs = uddiHelper.getAllExternalEndpointAndWsdlUrls(serviceInfo.getPublishedServiceOid());
+                    allEndpointPairs = uddiHelper.getAllExternalEndpointAndWsdlUrls(serviceInfo.getPublishedServiceGoid());
                 }
 
                 final Set<EndpointPair> persistedEndpoints = serviceInfo.getProperty(UDDIProxiedServiceInfo.ALL_ENDPOINT_PAIRS_KEY);
 
                 if(!allEndpointPairs.equals(persistedEndpoints)){
-                    logger.log(Level.INFO, "Setting service #(" + serviceInfo.getPublishedServiceOid()+") to republish to UDDI following change to external endpoints");
+                    logger.log(Level.INFO, "Setting service #(" + serviceInfo.getPublishedServiceGoid()+") to republish to UDDI following change to external endpoints");
                     publishStatus.setPublishStatus(UDDIPublishStatus.PublishStatus.PUBLISH);
                     uddiPublishStatusManager.update(publishStatus);
                 }
@@ -572,32 +569,32 @@ public class UDDICoordinator implements ApplicationContextAware, InitializingBea
         final Collection<UDDIBusinessServiceStatus> status = uddiBusinessServiceStatusManager.findAll();
 
         // Build key set
-        final Map<Triple<Long,Long,String>,UDDIBusinessServiceStatus> registryServiceMap = new HashMap<Triple<Long,Long,String>,UDDIBusinessServiceStatus>();
+        final Map<Triple<Long,Goid,String>,UDDIBusinessServiceStatus> registryServiceMap = new HashMap<Triple<Long,Goid,String>,UDDIBusinessServiceStatus>();
         for ( UDDIProxiedServiceInfo proxiedServiceInfo : proxiedServices ) {
             if ( proxiedServiceInfo.getProxiedServices() != null ) {
                 for ( UDDIProxiedService proxiedService : proxiedServiceInfo.getProxiedServices() ) {
                     if ( proxiedService.getUddiServiceKey() != null ) {
-                        registryServiceMap.put( new Triple<Long,Long,String>(
+                        registryServiceMap.put( new Triple<Long,Goid,String>(
                                 proxiedServiceInfo.getUddiRegistryOid(),
-                                proxiedServiceInfo.getPublishedServiceOid(),
+                                proxiedServiceInfo.getPublishedServiceGoid(),
                                 proxiedService.getUddiServiceKey() ), null );
                     }
                 }
             }
         }
         for ( UDDIServiceControl origService : origServices ) {
-            registryServiceMap.put( new Triple<Long,Long,String>(
+            registryServiceMap.put( new Triple<Long,Goid,String>(
                     origService.getUddiRegistryOid(),
-                    origService.getPublishedServiceOid(),
+                    origService.getPublishedServiceGoid(),
                     origService.getUddiServiceKey() ), null );
         }
 
         final Map<Long,WsPolicyUDDIEvent> wsPolicyEventMap = new HashMap<Long,WsPolicyUDDIEvent>(); // one event per registry
 
         // Delete stale entries
-        final Set<Triple<Long,Long,String>> registryServiceKeys = registryServiceMap.keySet();
+        final Set<Triple<Long,Goid,String>> registryServiceKeys = registryServiceMap.keySet();
         for ( UDDIBusinessServiceStatus serviceStatus : status ) {
-            Triple<Long,Long,String> key = new Triple<Long,Long,String>( serviceStatus.getUddiRegistryOid(), serviceStatus.getPublishedServiceOid(), serviceStatus.getUddiServiceKey() );
+            Triple<Long,Goid,String> key = new Triple<Long,Goid,String>( serviceStatus.getUddiRegistryOid(), serviceStatus.getPublishedServiceGoid(), serviceStatus.getUddiServiceKey() );
             if ( !registryServiceKeys.contains(key) ) {
                 if ( serviceStatus.getUddiMetricsReferenceStatus() == UDDIBusinessServiceStatus.Status.NONE &&
                      serviceStatus.getUddiPolicyStatus() == UDDIBusinessServiceStatus.Status.NONE ) {
@@ -608,7 +605,7 @@ public class UDDICoordinator implements ApplicationContextAware, InitializingBea
                     updateUDDIBusinessServiceStatus(
                             registryServiceMap,
                             wsPolicyEventMap,
-                            serviceStatus.getPublishedServiceOid(),
+                            serviceStatus.getPublishedServiceGoid(),
                             serviceStatus.getUddiRegistryOid(),
                             serviceStatus.getUddiServiceKey(),
                             serviceStatus.getUddiServiceName(),
@@ -625,12 +622,12 @@ public class UDDICoordinator implements ApplicationContextAware, InitializingBea
         // Update / create service status
         for ( UDDIProxiedServiceInfo proxiedServiceInfo : proxiedServices ) {
             if ( proxiedServiceInfo.getProxiedServices() != null ) {
-                final long publishedServiceOid = proxiedServiceInfo.getPublishedServiceOid();
+                final Goid publishedServiceGoid = proxiedServiceInfo.getPublishedServiceGoid();
                 final long uddiRegistryOid = proxiedServiceInfo.getUddiRegistryOid();
                 final boolean isMetricsEnabled = proxiedServiceInfo.isMetricsEnabled();
                 final boolean isPublishWsPolicyEnabled = proxiedServiceInfo.isPublishWsPolicyEnabled() && autoRepublish;
                 final String wsPolicyUrl = uddiHelper.getExternalPolicyUrlForService(
-                        proxiedServiceInfo.getPublishedServiceOid(),
+                        proxiedServiceInfo.getPublishedServiceGoid(),
                         proxiedServiceInfo.isPublishWsPolicyFull(),
                         proxiedServiceInfo.isPublishWsPolicyInlined() );
 
@@ -642,7 +639,7 @@ public class UDDICoordinator implements ApplicationContextAware, InitializingBea
                         updateUDDIBusinessServiceStatus(
                                 registryServiceMap,
                                 wsPolicyEventMap,
-                                publishedServiceOid,
+                                publishedServiceGoid,
                                 uddiRegistryOid,
                                 serviceKey,
                                 serviceName,
@@ -654,21 +651,21 @@ public class UDDICoordinator implements ApplicationContextAware, InitializingBea
             }
         }
         for ( UDDIServiceControl origService : origServices ) {
-            final long publishedServiceOid = origService.getPublishedServiceOid();
+            final Goid publishedServiceGoid = origService.getPublishedServiceGoid();
             final long uddiRegistryOid = origService.getUddiRegistryOid();
             final String serviceKey = origService.getUddiServiceKey();
             final String serviceName = origService.getUddiServiceName();
             final boolean isMetricsEnabled = origService.isMetricsEnabled();
             final boolean isPublishWsPolicyEnabled = origService.isPublishWsPolicyEnabled() && autoRepublish;
             final String wsPolicyUrl = uddiHelper.getExternalPolicyUrlForService(
-                    origService.getPublishedServiceOid(),
+                    origService.getPublishedServiceGoid(),
                     origService.isPublishWsPolicyFull(),
                     origService.isPublishWsPolicyInlined() );
 
             updateUDDIBusinessServiceStatus(
                     registryServiceMap,
                     wsPolicyEventMap,
-                    publishedServiceOid,
+                    publishedServiceGoid,
                     uddiRegistryOid,
                     serviceKey,
                     serviceName,
@@ -682,16 +679,16 @@ public class UDDICoordinator implements ApplicationContextAware, InitializingBea
         }
     }
 
-    private void updateUDDIBusinessServiceStatus( final Map<Triple<Long,Long,String>,UDDIBusinessServiceStatus> registryServiceMap,
+    private void updateUDDIBusinessServiceStatus( final Map<Triple<Long,Goid,String>,UDDIBusinessServiceStatus> registryServiceMap,
                                                   final Map<Long,WsPolicyUDDIEvent> wsPolicyEventMap,
-                                                  final long publishedServiceOid,
+                                                  final Goid publishedServiceGoid,
                                                   final long uddiRegistryOid,
                                                   final String serviceKey,
                                                   final String serviceName,
                                                   final boolean metricsEnabled,
                                                   final boolean publishWsPolicyEnabled,
                                                   final String publishWsPolicyUrl ) throws SaveException, UpdateException {
-        final Triple<Long,Long,String> key = new Triple<Long,Long,String>( uddiRegistryOid, publishedServiceOid, serviceKey );
+        final Triple<Long,Goid,String> key = new Triple<Long,Goid,String>( uddiRegistryOid, publishedServiceGoid, serviceKey );
 
         boolean updated = false;
 
@@ -699,7 +696,7 @@ public class UDDICoordinator implements ApplicationContextAware, InitializingBea
         if ( serviceStatus == null ) {
             updated = true;
             serviceStatus = buildUDDIBusinessServiceStatus(
-                    publishedServiceOid,
+                    publishedServiceGoid,
                     uddiRegistryOid,
                     serviceKey,
                     serviceName );
@@ -775,12 +772,12 @@ public class UDDICoordinator implements ApplicationContextAware, InitializingBea
         return updated;
     }
 
-    private UDDIBusinessServiceStatus buildUDDIBusinessServiceStatus( final long publishedServiceOid,
+    private UDDIBusinessServiceStatus buildUDDIBusinessServiceStatus( final Goid publishedServiceGoid,
                                                                       final long uddiRegistryOid,
                                                                       final String serviceKey,
                                                                       final String serviceName ) {
         UDDIBusinessServiceStatus serviceStatus = new UDDIBusinessServiceStatus();
-        serviceStatus.setPublishedServiceOid( publishedServiceOid );
+        serviceStatus.setPublishedServiceGoid( publishedServiceGoid );
         serviceStatus.setUddiRegistryOid( uddiRegistryOid );
         serviceStatus.setUddiServiceKey( serviceKey );
         serviceStatus.setUddiServiceName( serviceName );
@@ -1064,11 +1061,11 @@ public class UDDICoordinator implements ApplicationContextAware, InitializingBea
 
     private static final class PublishedServiceWsdlUpdatedTimerTask extends ManagedTimerTask {
         private final UDDICoordinator coordinator;
-        private final long serviceOid;
+        private final Goid serviceGoid;
 
-        PublishedServiceWsdlUpdatedTimerTask( final UDDICoordinator coordinator, final long serviceOid) {
+        PublishedServiceWsdlUpdatedTimerTask( final UDDICoordinator coordinator, final Goid serviceGoid) {
             this.coordinator = coordinator;
-            this.serviceOid = serviceOid;
+            this.serviceGoid = serviceGoid;
         }
 
         @Override
@@ -1081,7 +1078,7 @@ public class UDDICoordinator implements ApplicationContextAware, InitializingBea
                             @Override
                             protected void doInTransactionWithoutResult( final TransactionStatus transactionStatus ) {
                                 try {
-                                    coordinator.checkPublishedServiceWithUpdatedWsdls(serviceOid);
+                                    coordinator.checkPublishedServiceWithUpdatedWsdls(serviceGoid);
                                 } catch (ObjectModelException ome) {
                                     logger.log( Level.WARNING, "Error updating proxied business service status.", ome );
                                     transactionStatus.setRollbackOnly();

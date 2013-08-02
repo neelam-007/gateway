@@ -5,10 +5,11 @@ import com.l7tech.gateway.common.security.rbac.Secured;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.FolderHeader;
-import static org.springframework.transaction.annotation.Propagation.REQUIRED;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collection;
+
+import static org.springframework.transaction.annotation.Propagation.REQUIRED;
 
 
 /**
@@ -46,7 +47,7 @@ public interface FolderAdmin {
      * @throws com.l7tech.objectmodel.UpdateException if the requested information could not be updated
      */
     @Secured(stereotype= MethodStereotype.SAVE_OR_UPDATE, relevantArg=0)
-    long saveFolder(Folder folder) throws UpdateException, SaveException, ConstraintViolationException;
+    Goid saveFolder(Folder folder) throws UpdateException, SaveException, ConstraintViolationException;
 
     /**
      * Update the parent folder for the given entity.
@@ -61,24 +62,24 @@ public interface FolderAdmin {
      * @throws ConstraintViolationException if the move causes a contraint violation (e.g. duplicate folder name)
      * @throws com.l7tech.gateway.common.security.rbac.PermissionDeniedException if the user does not have update permission on the entity as well as both the target and desination folders.
      */
-    void moveEntityToFolder( Folder folder, PersistentEntity entity ) throws UpdateException, ConstraintViolationException;
+    void moveEntityToFolder( Folder folder, GoidEntity entity ) throws UpdateException, ConstraintViolationException;
 
     /**
      * Delete a {@link com.l7tech.objectmodel.folder.Folder} by its unique identifier.
 
-     * @param oid the unique identifier of the {@link com.l7tech.objectmodel.folder.Folder} to delete.
+     * @param goid the unique identifier of the {@link com.l7tech.objectmodel.folder.Folder} to delete.
      * @throws com.l7tech.objectmodel.DeleteException if the requested information could not be deleted
      */
     @Secured(types=EntityType.FOLDER, stereotype=MethodStereotype.DELETE_BY_ID)
-    void deleteFolder(long oid) throws FindException, DeleteException;
+    void deleteFolder(Goid goid) throws FindException, DeleteException;
 
     /**
-     * Find the folder with the specified OID.  May be null, indicating that no such folder exists.
-     * @param oid the OID of the folder to search for
-     * @return the folder with the specified OID, or null if no such folder exists.
+     * Find the folder with the specified GOID.  May be null, indicating that no such folder exists.
+     * @param goid the GOID of the folder to search for
+     * @return the folder with the specified GOID, or null if no such folder exists.
      */
     @Transactional(readOnly=true)
     @Secured(types=EntityType.FOLDER, stereotype=MethodStereotype.FIND_ENTITY)
     @Administrative(licensed=false)            
-    Folder findByPrimaryKey(long oid) throws FindException;
+    Folder findByPrimaryKey(Goid goid) throws FindException;
 }

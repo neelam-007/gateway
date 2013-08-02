@@ -24,13 +24,13 @@ import com.l7tech.message.HttpServletRequestKnob;
 import com.l7tech.message.HttpServletResponseKnob;
 import com.l7tech.message.Message;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyPathBuilder;
 import com.l7tech.policy.PolicyPathBuilderFactory;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.server.AuthenticatableHttpServlet;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.GatewayFeatureSets;
@@ -232,14 +232,26 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
             @Override
             public PolicyService.ServiceInfo getPolicy(String serviceId) {
                 try {
-                    final PublishedService targetService = resolveService(Long.parseLong(serviceId));
+                    Goid serviceGoid = null;
+                    Long serviceOid = null;
+                    try {
+                        serviceGoid = Goid.parseGoid(serviceId);
+                    } catch (IllegalArgumentException e) {
+                        try {
+                            serviceOid = Long.parseLong(serviceId);
+                        } catch (NumberFormatException e2) {
+                            logger.log(Level.INFO, "cannot parse service id: " + serviceId);
+                            throw new IllegalStateException("Service not found (" + serviceId + ")"); // caught by us in doGet and doPost
+                        }
+                    }
+                    final PublishedService targetService = serviceGoid != null ? resolveService(serviceGoid) : resolveService(serviceOid);
                     if (targetService == null || (targetService.isDisabled() && !allowDisabled)) 
                         throw new IllegalStateException("Service not found ("+serviceId+")"); // caught by us in doGet and doPost
 
                     final Assertion servicePolicy = new Policy(targetService.getPolicy()).getAssertion(); // copy policy since we may be modifying it (simplification, filters, etc)
                     if (servicePolicy == null)
                         return null;
-                    final String servicePolicyVersion = policyCache.getUniquePolicyVersionIdentifer( targetService.getPolicy().getOid() );
+                    final String servicePolicyVersion = policyCache.getUniquePolicyVersionIdentifer( targetService.getPolicy().getGoid() );
 
                     return new PolicyService.ServiceInfo() {
                         // if not processing then initialize with the service policy, else we'll process it when required
@@ -266,9 +278,6 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
                 } catch (IOException e) {
                     logger.log(Level.SEVERE, "cannot parse policy", e);
                     return null;
-                } catch (NumberFormatException e) {
-                    logger.log(Level.INFO, "cannot parse service id: " + serviceId);
-                    throw new IllegalStateException("Service not found ("+serviceId+")"); // caught by us in doGet and doPost
                 }
             }
         };

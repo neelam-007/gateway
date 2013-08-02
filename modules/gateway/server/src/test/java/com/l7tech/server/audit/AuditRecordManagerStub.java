@@ -1,15 +1,17 @@
 package com.l7tech.server.audit;
 
-import com.l7tech.objectmodel.*;
-import com.l7tech.gateway.common.audit.AuditSearchCriteria;
 import com.l7tech.gateway.common.audit.AuditRecord;
 import com.l7tech.gateway.common.audit.AuditRecordHeader;
-import com.l7tech.server.EntityManagerStub;
+import com.l7tech.gateway.common.audit.AuditSearchCriteria;
+import com.l7tech.objectmodel.DeleteException;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.server.OidEntityManagerStub;
 import com.l7tech.util.Config;
 
+import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Collections;
-import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 
@@ -18,7 +20,7 @@ import java.util.Map;
  * @author emil
  * @version Feb 17, 2005
  */
-public class AuditRecordManagerStub extends EntityManagerStub<AuditRecord,AuditRecordHeader> implements AuditRecordManager {
+public class AuditRecordManagerStub extends OidEntityManagerStub<AuditRecord,AuditRecordHeader> implements AuditRecordManager {
 
     @Override
     public Config getAuditValidatedConfig() {

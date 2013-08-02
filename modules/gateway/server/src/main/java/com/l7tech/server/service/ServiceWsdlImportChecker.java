@@ -1,26 +1,26 @@
 package com.l7tech.server.service;
 
+import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.gateway.common.service.ServiceDocument;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.SaveException;
+import com.l7tech.util.Config;
+import com.l7tech.wsdl.ResourceTrackingWSDLLocator;
+import com.l7tech.wsdl.Wsdl;
+import org.springframework.beans.factory.InitializingBean;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.support.TransactionCallbackWithoutResult;
+import org.springframework.transaction.support.TransactionTemplate;
+import org.xml.sax.InputSource;
+
+import javax.wsdl.WSDLException;
 import java.io.StringReader;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.wsdl.WSDLException;
-
-import com.l7tech.util.Config;
-import org.xml.sax.InputSource;
-import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.transaction.TransactionStatus;
-import org.springframework.transaction.support.TransactionTemplate;
-import org.springframework.transaction.support.TransactionCallbackWithoutResult;
-import org.springframework.beans.factory.InitializingBean;
-
-import com.l7tech.wsdl.ResourceTrackingWSDLLocator;
-import com.l7tech.wsdl.Wsdl;
-import com.l7tech.gateway.common.service.ServiceDocument;
-import com.l7tech.gateway.common.service.PublishedService;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.FindException;
 
 /**
  * Check for any non-cached WSDL imports and save to the DB.
@@ -103,7 +103,7 @@ public class ServiceWsdlImportChecker implements InitializingBean {
         boolean checkImports = false;
         try {
             Collection<ServiceDocument> serviceDocuments =
-                    serviceDocumentManager.findByServiceIdAndType(service.getOid(), "WSDL-IMPORT");
+                    serviceDocumentManager.findByServiceIdAndType(service.getGoid(), "WSDL-IMPORT");
 
             if (serviceDocuments.isEmpty()) {
                 checkImports = true;
@@ -117,7 +117,7 @@ public class ServiceWsdlImportChecker implements InitializingBean {
     /**
      * Create a ServiceDocument from the given WSDL resource.
      */
-    private ServiceDocument buildServiceDocument(long serviceId, ResourceTrackingWSDLLocator.WSDLResource wsdlResource) {
+    private ServiceDocument buildServiceDocument(Goid serviceId, ResourceTrackingWSDLLocator.WSDLResource wsdlResource) {
         ServiceDocument serviceDocument = new ServiceDocument();
         
         serviceDocument.setServiceId(serviceId);
@@ -151,16 +151,16 @@ public class ServiceWsdlImportChecker implements InitializingBean {
 
                         for (ResourceTrackingWSDLLocator.WSDLResource wsdlResource : wloc.getWSDLResources()) {
                             try {
-                                logger.info("Saving imported WSDL '"+wsdlResource.getUri()+"' for service '"+service.getOid()+"'.");
-                                serviceDocumentManager.save(buildServiceDocument(service.getOid(), wsdlResource));
+                                logger.info("Saving imported WSDL '"+wsdlResource.getUri()+"' for service '"+service.getGoid()+"'.");
+                                serviceDocumentManager.save(buildServiceDocument(service.getGoid(), wsdlResource));
                             } catch(SaveException se) {
-                                logger.log(Level.WARNING, "Error saving service document '"+wsdlResource.getUri()+"' for service '"+service.getOid()+"'.", se);
+                                logger.log(Level.WARNING, "Error saving service document '"+wsdlResource.getUri()+"' for service '"+service.getGoid()+"'.", se);
                                 status.setRollbackOnly();
                                 break;
                             }
                         }
                     } catch (WSDLException we) {
-                        logger.log(Level.WARNING, "Could not process WSDL imports for service '"+service.getOid()+"'.", we);
+                        logger.log(Level.WARNING, "Could not process WSDL imports for service '"+service.getGoid()+"'.", we);
                     }
                 }
             }

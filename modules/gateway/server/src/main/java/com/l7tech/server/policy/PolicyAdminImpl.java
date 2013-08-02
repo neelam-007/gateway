@@ -99,8 +99,8 @@ public class PolicyAdminImpl implements PolicyAdmin {
     }
 
     @Override
-    public PolicyAlias findAliasByEntityAndFolder(Long entityOid, Long folderOid) throws FindException {
-        return policyAliasManager.findAliasByEntityAndFolder(entityOid, folderOid);
+    public PolicyAlias findAliasByEntityAndFolder(Goid entityGoid, Goid folderGoid) throws FindException {
+        return policyAliasManager.findAliasByEntityAndFolder(entityGoid, folderGoid);
     }
 
     @Override
@@ -110,10 +110,10 @@ public class PolicyAdminImpl implements PolicyAdmin {
     }
 
     @Override
-    public Policy findPolicyByPrimaryKey(long oid) throws FindException {
-        Policy policy = policyManager.findByPrimaryKey(oid);
+    public Policy findPolicyByPrimaryKey(Goid goid) throws FindException {
+        Policy policy = policyManager.findByPrimaryKey(goid);
         if (policy == null) return null;
-        PolicyVersion activeVersion = policyVersionManager.findActiveVersionForPolicy(oid);
+        PolicyVersion activeVersion = policyVersionManager.findActiveVersionForPolicy(goid);
         if (activeVersion != null) {
             policy.setVersionOrdinal(activeVersion.getOrdinal());
             policy.setVersionActive(true);
@@ -125,7 +125,7 @@ public class PolicyAdminImpl implements PolicyAdmin {
     public Policy findPolicyByUniqueName(String name) throws FindException {
         Policy policy = policyManager.findByUniqueName(name);
         if (policy == null) return null;
-        PolicyVersion activeVersion = policyVersionManager.findActiveVersionForPolicy(policy.getOid());
+        PolicyVersion activeVersion = policyVersionManager.findActiveVersionForPolicy(policy.getGoid());
         if (activeVersion != null) {
             policy.setVersionOrdinal(activeVersion.getOrdinal());
             policy.setVersionActive(true);
@@ -137,7 +137,7 @@ public class PolicyAdminImpl implements PolicyAdmin {
     public Policy findPolicyByGuid(String guid) throws FindException {
         Policy policy = policyManager.findByGuid(guid);
         if (policy == null) return null;
-        PolicyVersion activeVersion = policyVersionManager.findActiveVersionForPolicy(policy.getOid());
+        PolicyVersion activeVersion = policyVersionManager.findActiveVersionForPolicy(policy.getGoid());
         if (activeVersion != null) {
             policy.setVersionOrdinal(activeVersion.getOrdinal());
             policy.setVersionActive(true);
@@ -151,20 +151,20 @@ public class PolicyAdminImpl implements PolicyAdmin {
     }
 
     @Override
-    public void deletePolicy(long oid) throws PolicyDeletionForbiddenException, DeleteException, FindException, ConstraintViolationException {
-        checkForActiveAuditSinkOrTracePolicy(oid);
-        policyManager.delete(oid);
-        policyManager.deleteRoles(oid);
+    public void deletePolicy(Goid goid) throws PolicyDeletionForbiddenException, DeleteException, FindException, ConstraintViolationException {
+        checkForActiveAuditSinkOrTracePolicy(goid);
+        policyManager.delete(goid);
+        policyManager.deleteRoles(goid);
     }
 
-    private void checkForActiveAuditSinkOrTracePolicy(long oid) throws FindException, PolicyDeletionForbiddenException {
+    private void checkForActiveAuditSinkOrTracePolicy(Goid goid) throws FindException, PolicyDeletionForbiddenException {
         if ( config == null)
             return;
-        Policy policy = policyManager.findByPrimaryKey(oid);
+        Policy policy = policyManager.findByPrimaryKey(goid);
         if (policy == null)
             return;
 
-        final Collection<EncapsulatedAssertionConfig> configsWhichReferencePolicy = encapsulatedAssertionConfigManager.findByPolicyOid(policy.getOid());
+        final Collection<EncapsulatedAssertionConfig> configsWhichReferencePolicy = encapsulatedAssertionConfigManager.findByPolicyGoid(policy.getGoid());
         if (encapsulatedAssertionConfigManager != null && configsWhichReferencePolicy.size() > 0) {
             throw  new PolicyDeletionForbiddenException(policy, EntityType.ENCAPSULATED_ASSERTION, configsWhichReferencePolicy.iterator().next());
         }
@@ -217,35 +217,35 @@ public class PolicyAdminImpl implements PolicyAdmin {
     }
 
     @Override
-    public Pair<Long,String> savePolicy(Policy policy) throws SaveException {
+    public Pair<Goid,String> savePolicy(Policy policy) throws SaveException {
         final PolicyCheckpointState policyCheckpointState = savePolicy(policy, true);
-        return pair( policyCheckpointState.getPolicyOid(), policyCheckpointState.getPolicyGuid() );
+        return pair( policyCheckpointState.getPolicyGoid(), policyCheckpointState.getPolicyGuid() );
     }
 
     @Override
-    public void deleteEntityAlias(String policyOid) throws DeleteException {
+    public void deleteEntityAlias(String policyGoid) throws DeleteException {
         final PolicyAlias alias;
         try {
-            long oid = Long.parseLong(policyOid);
-            alias = policyAliasManager.findByPrimaryKey(oid);
+            Goid goid = Goid.parseGoid(policyGoid);
+            alias = policyAliasManager.findByPrimaryKey(goid);
             policyAliasManager.delete(alias);
-            logger.info("Deleted PolicyAlias: " + oid);
+            logger.info("Deleted PolicyAlias: " + goid);
         } catch (FindException e) {
             throw new DeleteException("Could not find object to delete.", e);
         }
     }
 
     @Override
-    public long saveAlias(PolicyAlias pa) throws SaveException {
-        long oid;
+    public Goid saveAlias(PolicyAlias pa) throws SaveException {
+        Goid goid;
         try {
-            if(pa.getOid() > 0L ){
-                oid = pa.getOid();
-                logger.fine("Updating PolicyAlias: " + oid);
+            if(!Goid.isDefault(pa.getGoid()) ){
+                goid = pa.getGoid();
+                logger.fine("Updating PolicyAlias: " + goid);
                 policyAliasManager.update(pa);
             }else{
                 logger.fine("Saving new PolicyAlias");
-                oid = policyAliasManager.save(pa);
+                goid = policyAliasManager.save(pa);
             }
         } catch (SaveException e) {
             throw e;
@@ -260,7 +260,7 @@ public class PolicyAdminImpl implements PolicyAdmin {
             throw new SaveException("Couldn't update policy", e);
         }
 
-        return oid;
+        return goid;
     }
 
     @Override
@@ -269,15 +269,15 @@ public class PolicyAdminImpl implements PolicyAdmin {
             if (!activateAsWell)
                 return saveWithoutActivating(policy);
 
-            if (policy.getOid() == Policy.DEFAULT_OID) {
+            if (Goid.isDefault(policy.getGoid()) ) {
                 ensureGuid( policy );
                 policyChecker.checkPolicy(policy);
-                final long oid = policyManager.save(policy);
+                final Goid goid = policyManager.save(policy);
                 final PolicyVersion checkpoint = policyVersionManager.checkpointPolicy(policy, activateAsWell, true);
                 policyManager.addManagePolicyRole(policy);
-                return new PolicyCheckpointState(oid, policy.getGuid(), checkpoint.getOrdinal(), checkpoint.isActive());
+                return new PolicyCheckpointState(goid, policy.getGuid(), checkpoint.getOrdinal(), checkpoint.isActive());
             } else {
-                final Policy existing = policyManager.findByPrimaryKey(policy.getOid());
+                final Policy existing = policyManager.findByPrimaryKey(policy.getGoid());
                 if (!existing.getXml().equals(policy.getXml())) {
                     // only check rbac for assertions if the policy xml has changed
                     policyChecker.checkPolicy(policy);
@@ -285,7 +285,7 @@ public class PolicyAdminImpl implements PolicyAdmin {
                 policyManager.update(policy);
                 final PolicyVersion checkpoint = policyVersionManager.checkpointPolicy(policy, true, false);
                 long versionOrdinal = checkpoint.getOrdinal();
-                return new PolicyCheckpointState(policy.getOid(), policy.getGuid(), versionOrdinal, checkpoint.isActive());
+                return new PolicyCheckpointState(policy.getGoid(), policy.getGuid(), versionOrdinal, checkpoint.isActive());
             }
         } catch (SaveException e) {
             /* RETHROW to screen of ObjectModelException catch block below */
@@ -381,7 +381,7 @@ public class PolicyAdminImpl implements PolicyAdmin {
                     Policy p = policyManager.findByGuid(dependencyNode.policy.getGuid());
                     if (p == null) {
                         action = FragmentImportAction.CREATE;
-                    } else if (dependencyNode.policy.getOid() > 0L ) {
+                    } else if (!Goid.isDefault(dependencyNode.policy.getGoid()) ) {
                         fragmentNameGuidMap.put(dependencyNode.policy.getName(), p.getGuid());
                     }
                 } catch (FindException e) {
@@ -391,7 +391,7 @@ public class PolicyAdminImpl implements PolicyAdmin {
                 if (action == FragmentImportAction.CREATE) {
                     checkPermitted( OperationType.CREATE, EntityType.POLICY );
 
-                    dependencyNode.policy.setOid(Policy.DEFAULT_OID);
+                    dependencyNode.policy.setGoid(Policy.DEFAULT_GOID);
                     policyChecker.checkPolicy(dependencyNode.policy);
                     policyManager.save(dependencyNode.policy);
                     policyVersionManager.checkpointPolicy(dependencyNode.policy, activateAsWell, true);
@@ -477,13 +477,13 @@ public class PolicyAdminImpl implements PolicyAdmin {
     }
 
     private PolicyCheckpointState saveWithoutActivating(Policy policy) throws ObjectModelException {
-        long policyOid = policy.getOid();
-        if (policyOid == Policy.DEFAULT_OID) {
+        Goid policyGoid = policy.getGoid();
+        if (Goid.isDefault(policyGoid)) {
             // Save new policy without activating it
             String revisionXml = policy.getXml();
             policy.disable();
             ensureGuid( policy );
-            long oid = policyManager.save(policy);
+            Goid goid = policyManager.save(policy);
             policyManager.addManagePolicyRole(policy);
             try {
                 policyChecker.checkPolicy(policy);
@@ -493,22 +493,22 @@ public class PolicyAdminImpl implements PolicyAdmin {
             Policy toCheckpoint = makeCopyWithDifferentXml(policy, revisionXml);
             toCheckpoint.setVersion(toCheckpoint.getVersion() - 1);
             final PolicyVersion checkpoint = policyVersionManager.checkpointPolicy(toCheckpoint, false, true);
-            return new PolicyCheckpointState(oid, policy.getGuid(), checkpoint.getOrdinal(), checkpoint.isActive());
+            return new PolicyCheckpointState(goid, policy.getGuid(), checkpoint.getOrdinal(), checkpoint.isActive());
         }
 
         try {
             // Save updated policy without activating it or changing the enable/disable state of the currently-in-effect policy
             String revisionXml = policy.getXml();
-            Policy curPolicy = policyManager.findByPrimaryKey(policyOid);
+            Policy curPolicy = policyManager.findByPrimaryKey(policyGoid);
             if (curPolicy == null)
-                throw new SaveException("No existing policy found with OID=" + policyOid);
+                throw new SaveException("No existing policy found with GOID=" + policyGoid);
             String curXml = curPolicy.getXml();
             BeanUtils.copyProperties(policy, curPolicy, OMIT_VERSION_AND_XML);
             curPolicy.setXml(curXml + ' '); // leave policy semantics unchanged but bump the version number
             policyManager.update(curPolicy);
             policyChecker.checkPolicy(curPolicy);
             final PolicyVersion checkpoint = policyVersionManager.checkpointPolicy(makeCopyWithDifferentXml(curPolicy, revisionXml), false, false);
-            return new PolicyCheckpointState(policyOid, policy.getGuid(), checkpoint.getOrdinal(), checkpoint.isActive());
+            return new PolicyCheckpointState(policyGoid, policy.getGuid(), checkpoint.getOrdinal(), checkpoint.isActive());
         } catch (InvocationTargetException | IOException | IllegalAccessException e) {
             throw new SaveException(e);
         }
@@ -525,35 +525,35 @@ public class PolicyAdminImpl implements PolicyAdmin {
     }
 
     @Override
-    public Set<Policy> findUsages(long oid) throws FindException {
-        return policyCache.findUsages(oid);
+    public Set<Policy> findUsages(Goid goid) throws FindException {
+        return policyCache.findUsages(goid);
     }
 
     @Override
-    public PolicyVersion findPolicyVersionByPrimaryKey(long policyOid, long versionOid) throws FindException {
-        return policyVersionManager.findByPrimaryKey(policyOid, versionOid);
+    public PolicyVersion findPolicyVersionByPrimaryKey(Goid policyGoid, Goid versionGoid) throws FindException {
+        return policyVersionManager.findByPrimaryKey(policyGoid, versionGoid);
     }
 
     @Override
-    public PolicyVersion findLatestRevisionForPolicy(final long policyOid) {
-        return policyVersionManager.findLatestRevisionForPolicy(policyOid);
+    public PolicyVersion findLatestRevisionForPolicy(final Goid policyGoid) {
+        return policyVersionManager.findLatestRevisionForPolicy(policyGoid);
     }
 
     @Override
-    public Policy findByAlias(final long aliasOid) throws FindException {
+    public Policy findByAlias(final Goid aliasGoid) throws FindException {
         Policy found = null;
-        final PolicyAlias alias = policyAliasManager.findByPrimaryKey(aliasOid);
+        final PolicyAlias alias = policyAliasManager.findByPrimaryKey(aliasGoid);
         if (alias != null) {
-            found = findPolicyByPrimaryKey(alias.getEntityOid());
+            found = findPolicyByPrimaryKey(alias.getEntityGoid());
         }
         return found;
     }
 
     @Override
-    public List<PolicyVersion> findPolicyVersionHeadersByPolicy(long policyOid) throws FindException {
+    public List<PolicyVersion> findPolicyVersionHeadersByPolicy(Goid policyGoid) throws FindException {
         final Set<PropertyDescriptor> allButXml = BeanUtils.omitProperties(BeanUtils.getProperties(PolicyVersion.class), "xml");
 
-        return map(policyVersionManager.findAllForPolicy(policyOid), new Unary<PolicyVersion, PolicyVersion>() {
+        return map(policyVersionManager.findAllForPolicy(policyGoid), new Unary<PolicyVersion, PolicyVersion>() {
             @Override
             public PolicyVersion call(PolicyVersion version) {
                 PolicyVersion ret = new PolicyVersion();
@@ -568,42 +568,42 @@ public class PolicyAdminImpl implements PolicyAdmin {
     }
 
     @Override
-    public void setPolicyVersionComment(long policyOid, long versionOid, String comment) throws FindException, UpdateException {
-        PolicyVersion ver = policyVersionManager.findByPrimaryKey(policyOid, versionOid);
-        if (ver == null) throw new FindException("No PolicyVersion found with policyOid=" + policyOid + " and oid=" + versionOid);
+    public void setPolicyVersionComment(Goid policyGoid, Goid versionGoid, String comment) throws FindException, UpdateException {
+        PolicyVersion ver = policyVersionManager.findByPrimaryKey(policyGoid, versionGoid);
+        if (ver == null) throw new FindException("No PolicyVersion found with policyGoid=" + policyGoid + " and goid=" + versionGoid);
         ver.setName(comment);
         policyVersionManager.update(ver);
     }
 
     @Override
-    public void setActivePolicyVersion(long policyOid, long versionOid) throws FindException, UpdateException {
-        PolicyVersion ver = policyVersionManager.findByPrimaryKey(policyOid, versionOid);
-        if (ver == null) throw new FindException("No PolicyVersion found with policyOid=" + policyOid + " and oid=" + versionOid);
+    public void setActivePolicyVersion(Goid policyGoid, Goid versionGoid) throws FindException, UpdateException {
+        PolicyVersion ver = policyVersionManager.findByPrimaryKey(policyGoid, versionGoid);
+        if (ver == null) throw new FindException("No PolicyVersion found with policyGoid=" + policyGoid + " and goid=" + versionGoid);
 
-        Policy policy = policyManager.findByPrimaryKey(policyOid);
-        if (policy == null) throw new FindException("No Policy found with policyOid=" + policyOid); // shouldn't be possible
+        Policy policy = policyManager.findByPrimaryKey(policyGoid);
+        if (policy == null) throw new FindException("No Policy found with policyGoid=" + policyGoid); // shouldn't be possible
 
         policy.setXml(ver.getXml());
         ver.setActive(true);
         policyManager.update(policy);
         policyVersionManager.update(ver);
-        policyVersionManager.deactivateVersions(policyOid, versionOid);
+        policyVersionManager.deactivateVersions(policyGoid, versionGoid);
     }
 
     @Override
-    public PolicyVersion findActivePolicyVersionForPolicy(long policyOid) throws FindException {
-        return policyVersionManager.findActiveVersionForPolicy(policyOid);
+    public PolicyVersion findActivePolicyVersionForPolicy(Goid policyGoid) throws FindException {
+        return policyVersionManager.findActiveVersionForPolicy(policyGoid);
     }
 
     @Override
-    public void clearActivePolicyVersion(long policyOid) throws FindException, UpdateException {
-        Policy policy = policyManager.findByPrimaryKey(policyOid);
-        if (policy == null) throw new FindException("No Policy found with policyOid=" + policyOid);
+    public void clearActivePolicyVersion(Goid policyGoid) throws FindException, UpdateException {
+        Policy policy = policyManager.findByPrimaryKey(policyGoid);
+        if (policy == null) throw new FindException("No Policy found with policyGoid=" + policyGoid);
         if (isAuditSinkPolicy(policy)) throw new UpdateException("Not allowed to clear active version for the audit sink policy");
 
         policy.disable();
         policyManager.update(policy);
-        policyVersionManager.deactivateVersions(policyOid, PolicyVersion.DEFAULT_OID);
+        policyVersionManager.deactivateVersions(policyGoid, PolicyVersion.DEFAULT_GOID);
     }
 
     public void setServerConfig(Config config ) {

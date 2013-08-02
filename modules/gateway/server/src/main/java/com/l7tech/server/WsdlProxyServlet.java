@@ -1,11 +1,10 @@
 package com.l7tech.server;
 
 import com.l7tech.common.io.DocumentReferenceProcessor;
-import com.l7tech.gateway.common.audit.AuditFactory;
-import com.l7tech.util.InetAddressUtil;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.gateway.common.LicenseException;
+import com.l7tech.gateway.common.audit.AuditFactory;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceDocument;
 import com.l7tech.gateway.common.transport.SsgConnector;
@@ -14,12 +13,12 @@ import com.l7tech.identity.IssuedCertNotPresentedException;
 import com.l7tech.identity.MissingCredentialsException;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyPathBuilder;
 import com.l7tech.policy.PolicyPathBuilderFactory;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
-import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.assertion.xmlsec.WssVersionAssertion;
 import com.l7tech.policy.wsp.WspReader;
@@ -30,7 +29,9 @@ import com.l7tech.server.policy.filter.FilterManager;
 import com.l7tech.server.policy.filter.FilteringException;
 import com.l7tech.server.policy.filter.IdentityRule;
 import com.l7tech.server.service.ServiceDocumentManager;
-import com.l7tech.server.service.resolution.*;
+import com.l7tech.server.service.resolution.ServiceResolutionException;
+import com.l7tech.server.service.resolution.SoapActionResolver;
+import com.l7tech.server.service.resolution.UrnResolver;
 import com.l7tech.server.transport.ListenerException;
 import com.l7tech.util.*;
 import com.l7tech.wsdl.WsdlUtil;
@@ -225,15 +226,20 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         String serviceStr = req.getParameter(SecureSpanConstants.HttpQueryParameters.PARAM_SERVICEOID);
         if (serviceStr != null) {
             PublishedService ps;
-            long serviceId;
+            Goid serviceId = null;
+            Long serviceOid = null;
             try {
-                serviceId = Long.parseLong(serviceStr);
-                ps = resolveService(serviceId);
-                if ( ps == null || (ps.isDisabled() && !permitDisabledService) ) {
-                    throw new FindException("Service id " + serviceStr + " did not resolve any service.");
+                serviceId = Goid.parseGoid(serviceStr);
+            } catch (IllegalArgumentException e) {
+                try {
+                    serviceOid = Long.parseLong(serviceStr);
+                } catch (NumberFormatException e2) {
+                    throw new FindException("cannot parse service id from " + serviceStr, e);
                 }
-            } catch (NumberFormatException e) {
-                throw new FindException("cannot parse long from " + serviceStr, e);
+            }
+            ps = serviceId != null ? resolveService(serviceId) : resolveService(serviceOid);
+            if (ps == null || (ps.isDisabled() && !permitDisabledService)) {
+                throw new FindException("Service id " + serviceStr + " did not resolve any service.");
             }
             return ps;
         }
@@ -330,7 +336,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
                 }
             }
             outputServiceDescription(req, res, svc, results);
-            logger.info("Returned description for service, " + svc.getOid());
+            logger.info("Returned description for service, " + svc.getGoid());
         } else { // HANDLE REQUEST FOR LIST OF SERVICES
             ListResults listres;
 
@@ -502,7 +508,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
      */
     private void addOrUpdateEndpoints( final Document wsdl,
                                        final URL newURL,
-                                       final Long serviceId ) {
+                                       final Goid serviceId ) {
         final String location = newURL.toString();
         final boolean[] updatedAddress = {false};
 
@@ -645,11 +651,11 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
                                           final AuthenticationResult[] results) throws IOException {
         final boolean enableImportProxy = svc.isInternal() || proxyRequired(svc) || config.getBooleanProperty(PROPERTY_WSDL_IMPORT_PROXY, false);
         final Collection<ServiceDocument> documents;
-        Long serviceId = null;
+        Goid serviceId = null;
         Document wsdlDoc = null;
         try {
             documents = enableImportProxy ?
-                    serviceDocumentManager.findByServiceIdAndType(svc.getOid(), "WSDL-IMPORT") :
+                    serviceDocumentManager.findByServiceIdAndType(svc.getGoid(), "WSDL-IMPORT") :
                     Collections.<ServiceDocument>emptyList();
 
             String documentOid = req.getParameter(SecureSpanConstants.HttpQueryParameters.PARAM_SERVICEDOCOID);
@@ -661,12 +667,12 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
                 }
 
                 if ( wsdlDoc == null ) {
-                    logger.log(Level.WARNING, "Cannot find imported document with oid '"+documentOid+"' for service '"+svc.getOid()+"'.");
+                    logger.log(Level.WARNING, "Cannot find imported document with oid '"+documentOid+"' for service '"+svc.getGoid()+"'.");
                     res.sendError(HttpServletResponse.SC_NOT_FOUND, "service has no wsdl");
                     return;
                 }
             } else {
-                serviceId = svc.getOid();
+                serviceId = svc.getGoid();
                 wsdlDoc = parse(svc.getWsdlUrl(), svc.getWsdlXml());
             }
         } catch (SAXException e) {
@@ -728,7 +734,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         if (routinguri == null || routinguri.length() < 1) {
             ssgurl = new URL(proto + "://" + InetAddressUtil.getHostForUrl(req.getServerName()) +
                              portStr + SecureSpanConstants.SERVICE_FILE +
-                             Long.toString(svc.getOid()));
+                             Goid.toString(svc.getGoid()));
         } else {
             ssgurl = new URL(proto + "://" + InetAddressUtil.getHostForUrl(req.getServerName()) +
                              portStr + routinguri);
@@ -927,7 +933,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
                     if (isResModeRequested) {
                         query = resModeQueryString(svc);
                     } else {
-                        query = SecureSpanConstants.HttpQueryParameters.PARAM_SERVICEOID + "=" + Long.toString(svc.getOid());
+                        query = SecureSpanConstants.HttpQueryParameters.PARAM_SERVICEOID + "=" + Goid.toString(svc.getGoid());
                     }
                     outDoc.append("\t<service>\n");
                     outDoc.append("\t\t<abstract>").append(svc.getName()).append("</abstract>\n");
@@ -937,7 +943,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
                     outDoc.append("\"/>\n");
                     outDoc.append("\t</service>\n");
                 } catch (ServiceResolutionException sre) {
-                    logger.log(Level.WARNING, "Could not process service with oid '" + svc.getOid() + "'.", sre);
+                    logger.log(Level.WARNING, "Could not process service with goid '" + svc.getGoid() + "'.", sre);
                 }
             }
         }
