@@ -229,7 +229,7 @@ public class HttpConfigurationManagerDialog extends JDialog {
         if ( selectedRow >= 0 ) {
             final int modelRow = httpConfigurationTable.convertRowIndexToModel( selectedRow );
             final HttpConfiguration httpConfiguration = new HttpConfiguration( httpConfigurationTableModel.getRowObject( modelRow ), false );
-            httpConfiguration.setOid( HttpConfiguration.DEFAULT_OID );
+            httpConfiguration.setGoid( HttpConfiguration.DEFAULT_GOID );
             httpConfiguration.setVersion( 0 );
             doEdit( httpConfiguration, false );
         }

@@ -1,9 +1,6 @@
 package com.l7tech.gateway.common.resources;
 
-import com.l7tech.objectmodel.DeleteException;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.objectmodel.*;
 import com.l7tech.util.Functions;
 
 import java.io.IOException;
@@ -186,7 +183,7 @@ public class ResourceAdminStub implements ResourceAdmin {
     }
 
     @Override
-    public HttpConfiguration findHttpConfigurationByPrimaryKey( final long oid ) throws FindException {
+    public HttpConfiguration findHttpConfigurationByPrimaryKey( final Goid goid ) throws FindException {
         return null;
     }
 
@@ -195,8 +192,8 @@ public class ResourceAdminStub implements ResourceAdmin {
     }
 
     @Override
-    public long saveHttpConfiguration( final HttpConfiguration httpConfiguration ) throws SaveException, UpdateException {
-        return 0;
+    public Goid saveHttpConfiguration( final HttpConfiguration httpConfiguration ) throws SaveException, UpdateException {
+        return new Goid(0, 0);
     }
 
     public void setResolver( final Functions.UnaryThrows<String,String,IOException> resolver ) {

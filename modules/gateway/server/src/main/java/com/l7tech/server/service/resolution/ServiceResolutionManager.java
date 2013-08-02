@@ -10,7 +10,7 @@ import com.l7tech.message.Message;
 import com.l7tech.message.SoapKnob;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.server.event.EntityInvalidationEvent;
+import com.l7tech.server.event.EntityClassEvent;
 import com.l7tech.server.transport.ResolutionConfigurationManager;
 import com.l7tech.server.util.PostStartupApplicationListener;
 import com.l7tech.util.Functions;
@@ -266,9 +266,9 @@ public class ServiceResolutionManager implements PostStartupApplicationListener,
 
     @Override
     public void onApplicationEvent( final ApplicationEvent event ) {
-        if ( event instanceof EntityInvalidationEvent ) {
-            final EntityInvalidationEvent invalidationEvent = (EntityInvalidationEvent) event;
-            if ( ResolutionConfiguration.class.equals( invalidationEvent.getEntityClass() ) ) {
+        if ( event instanceof EntityClassEvent) {
+            final EntityClassEvent classEvent = (EntityClassEvent) event;
+            if ( ResolutionConfiguration.class.equals( classEvent.getEntityClass() ) ) {
                 reloadResolverConfiguration();
             }
         }

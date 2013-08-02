@@ -994,7 +994,7 @@ CREATE TABLE secure_password (
 
 DROP TABLE IF EXISTS http_configuration;
 CREATE TABLE http_configuration (
-  objectid bigint(20) NOT NULL,
+  goid binary(16) NOT NULL,
   version integer NOT NULL,
   host varchar(128) NOT NULL,
   port int(5) NOT NULL DEFAULT 0,
@@ -1018,6 +1018,7 @@ CREATE TABLE http_configuration (
   proxy_username varchar(255) DEFAULT NULL,
   proxy_password_oid bigint(20) DEFAULT NULL,
   security_zone_goid binary(16),
+  primary key(goid),
   FOREIGN KEY (password_oid) REFERENCES secure_password (objectid),
   FOREIGN KEY (proxy_password_oid) REFERENCES secure_password (objectid),
   CONSTRAINT http_config_security_zone FOREIGN KEY (security_zone_goid) REFERENCES security_zone (goid) ON DELETE SET NULL

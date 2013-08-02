@@ -14,7 +14,7 @@ import com.l7tech.server.ServerConfig;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.cluster.ClusterContextFactory;
 import com.l7tech.server.cluster.ClusterInfoManager;
-import com.l7tech.server.event.EntityInvalidationEvent;
+import com.l7tech.server.event.EntityClassEvent;
 import com.l7tech.server.event.system.SyslogEvent;
 import com.l7tech.server.log.syslog.SyslogConnectionListener;
 import com.l7tech.server.log.syslog.SyslogManager;
@@ -503,8 +503,8 @@ public class SinkManagerImpl
      * Handle application event
      */
     private void handleEvent(final ApplicationEvent event) {
-        if ( event instanceof EntityInvalidationEvent) {
-            EntityInvalidationEvent evt = (EntityInvalidationEvent) event;
+        if ( event instanceof EntityClassEvent) {
+            EntityClassEvent evt = (EntityClassEvent) event;
 
             if ( SinkConfiguration.class.isAssignableFrom(evt.getEntityClass()) ) {
                 rebuildLogSinks();

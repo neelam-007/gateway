@@ -11,7 +11,6 @@ import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.TextListCellRenderer;
-import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.EntityUtil;
 import com.l7tech.util.Functions;
 
@@ -211,7 +210,7 @@ public class HttpConfigurationPropertiesDialog extends JDialog {
                 doCancel();
             }
         } );
-        zoneControl.configure(httpConfiguration.getOid() == HttpConfiguration.DEFAULT_OID ? OperationType.CREATE : readOnly ? OperationType.READ : OperationType.UPDATE, httpConfiguration);
+        zoneControl.configure(HttpConfiguration.DEFAULT_GOID.equals(httpConfiguration.getGoid()) ? OperationType.CREATE : readOnly ? OperationType.READ : OperationType.UPDATE, httpConfiguration);
         pack();
         setMinimumSize( getMinimumSize() );
         getRootPane().setDefaultButton( cancelButton );

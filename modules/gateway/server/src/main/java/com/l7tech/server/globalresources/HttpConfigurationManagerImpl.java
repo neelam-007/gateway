@@ -2,7 +2,7 @@ package com.l7tech.server.globalresources;
 
 import com.l7tech.gateway.common.resources.HttpConfiguration;
 import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.server.HibernateEntityManager;
+import com.l7tech.server.HibernateGoidEntityManager;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,7 +15,7 @@ import java.util.Map;
  * HTTP configuration manager implementation.
  */
 @Transactional(propagation=Propagation.SUPPORTS, rollbackFor=Throwable.class)
-public class HttpConfigurationManagerImpl extends HibernateEntityManager<HttpConfiguration, EntityHeader> implements HttpConfigurationManager {
+public class HttpConfigurationManagerImpl extends HibernateGoidEntityManager<HttpConfiguration, EntityHeader> implements HttpConfigurationManager {
 
     //- PUBLIC
 

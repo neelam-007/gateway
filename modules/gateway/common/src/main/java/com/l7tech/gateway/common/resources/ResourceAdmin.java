@@ -3,11 +3,7 @@ package com.l7tech.gateway.common.resources;
 import com.l7tech.gateway.common.admin.Administrative;
 import com.l7tech.gateway.common.security.rbac.MethodStereotype;
 import com.l7tech.gateway.common.security.rbac.Secured;
-import com.l7tech.objectmodel.DeleteException;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.objectmodel.*;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -238,13 +234,13 @@ public interface ResourceAdmin {
     /**
      * Find an HTTP configuration by primary key.
      *
-     * @param oid The primary key of the HTTP configuration (required)
+     * @param goid The primary key of the HTTP configuration (required)
      * @return The HTTP configuration or null
      * @throws FindException If an error occurs
      */
     @Secured(types=EntityType.HTTP_CONFIGURATION, stereotype=MethodStereotype.FIND_ENTITY)
     @Transactional(readOnly=true)
-    HttpConfiguration findHttpConfigurationByPrimaryKey( long oid ) throws FindException;
+    HttpConfiguration findHttpConfigurationByPrimaryKey( Goid goid ) throws FindException;
 
     /**
      * Delete the given HTTP configuration.
@@ -264,7 +260,7 @@ public interface ResourceAdmin {
      * @throws UpdateException If an error occurs
      */
     @Secured(types=EntityType.HTTP_CONFIGURATION, stereotype=MethodStereotype.SAVE_OR_UPDATE)
-    long saveHttpConfiguration( HttpConfiguration httpConfiguration ) throws SaveException, UpdateException;
+    Goid saveHttpConfiguration( HttpConfiguration httpConfiguration ) throws SaveException, UpdateException;
 
     /**
      * Get a resource from a URL.

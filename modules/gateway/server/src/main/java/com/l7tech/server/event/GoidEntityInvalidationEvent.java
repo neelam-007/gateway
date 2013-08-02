@@ -3,7 +3,6 @@ package com.l7tech.server.event;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.GoidEntity;
-import org.springframework.context.ApplicationEvent;
 
 /**
  * Event raised when a database change is detected.
@@ -15,7 +14,7 @@ import org.springframework.context.ApplicationEvent;
  * @author Steve Jones, $Author$
  * @version $Revision$
  */
-public class GoidEntityInvalidationEvent extends ApplicationEvent {
+public class GoidEntityInvalidationEvent extends EntityClassEvent {
     public static final char DELETE = 'D';
     public static final char UPDATE = 'U';
     public static final char CREATE = 'C';

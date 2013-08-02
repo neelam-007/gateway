@@ -29,6 +29,7 @@ import com.l7tech.test.BugId;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
@@ -155,14 +156,14 @@ public class EntityNameResolverTest {
         config.setProtocol(HttpConfiguration.Protocol.HTTP);
         config.setHost("localhost");
         config.setPort(8080);
-        when(resourceAdmin.findHttpConfigurationByPrimaryKey(OID)).thenReturn(config);
-        assertEquals("HTTP localhost 8080", resolver.getNameForHeader(new EntityHeader(OID, EntityType.HTTP_CONFIGURATION, null, null)));
+        when(resourceAdmin.findHttpConfigurationByPrimaryKey(GOID)).thenReturn(config);
+        assertEquals("HTTP localhost 8080", resolver.getNameForHeader(new EntityHeader(GOID, EntityType.HTTP_CONFIGURATION, null, null)));
     }
 
     @Test(expected = FindException.class)
     public void getNameForHttpConfigurationHeaderNotFound() throws Exception {
-        when(resourceAdmin.findHttpConfigurationByPrimaryKey(anyLong())).thenReturn(null);
-        resolver.getNameForHeader(new EntityHeader(OID, EntityType.HTTP_CONFIGURATION, null, null));
+        when(resourceAdmin.findHttpConfigurationByPrimaryKey(Matchers.<Goid>anyObject())).thenReturn(null);
+        resolver.getNameForHeader(new EntityHeader(GOID, EntityType.HTTP_CONFIGURATION, null, null));
     }
 
     @Test

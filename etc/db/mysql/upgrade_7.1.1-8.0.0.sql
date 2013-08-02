@@ -494,6 +494,17 @@ update rbac_predicate_oid oid1 left join rbac_predicate on rbac_predicate.object
 update rbac_role set entity_goid = toGoid(@jms_endpoint_prefix,entity_oid) where entity_oid is not null and entity_type='JMS_ENDPOINT';
 update rbac_predicate_oid oid1 left join rbac_predicate on rbac_predicate.objectid = oid1.objectid left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid set oid1.entity_id = goidToString(toGoid(@jms_endpoint_prefix,oid1.entity_id)) where rbac_permission.entity_type = 'JMS_ENDPOINT';
 
+-- http_configuration
+
+ALTER TABLE http_configuration ADD COLUMN old_objectid BIGINT(20);
+update http_configuration set old_objectid=objectid;
+ALTER TABLE http_configuration CHANGE COLUMN objectid goid binary(16);
+-- For manual runs use: set @http_configuration_prefix=createUnreservedPoorRandomPrefix();
+SET @http_configuration_prefix=#RANDOM_LONG_NOT_RESERVED#;
+update http_configuration set goid = toGoid(@http_configuration_prefix,old_objectid);
+
+update rbac_role set entity_goid = toGoid(@jms_connection_prefix,entity_oid) where entity_oid is not null and entity_type='HTTP_CONFIGURATION';
+update rbac_predicate_oid oid1 left join rbac_predicate on rbac_predicate.objectid = oid1.objectid left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid set oid1.entity_id = hex(toGoid(@jms_connection_prefix,oid1.entity_id)) where rbac_permission.entity_type = 'HTTP_CONFIGURATION';
 
 -- active connector
 

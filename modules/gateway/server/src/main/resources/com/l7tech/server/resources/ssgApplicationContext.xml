@@ -1661,7 +1661,6 @@
                 <ref bean="uddiServiceControlManager"/>
                 <ref bean="uddiProxiedServiceInfoManager"/>
                 <ref bean="securePasswordManager"/>
-                <ref bean="httpConfigurationManager"/>
                 <ref bean="resolutionConfigurationManager"/>
                 <ref bean="passwordPolicyManger"/>
             </list>
@@ -1681,6 +1680,7 @@
                 <ref bean="encapsulatedAssertionConfigManager"/>
                 <ref bean="jmsConnectionManager"/>
                 <ref bean="jmsEndpointManager"/>
+                <ref bean="httpConfigurationManager"/>
                 <ref bean="policyManager"/>
                 <ref bean="serviceManager"/>
                 <ref bean="policyVersionManager"/>

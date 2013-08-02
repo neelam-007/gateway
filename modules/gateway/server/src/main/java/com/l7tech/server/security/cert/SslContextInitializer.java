@@ -6,7 +6,7 @@ import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.ObjectNotFoundException;
 import com.l7tech.security.cert.TrustedCert;
-import com.l7tech.server.event.EntityInvalidationEvent;
+import com.l7tech.server.event.EntityClassEvent;
 import com.l7tech.server.security.keystore.KeystoreFile;
 import com.l7tech.server.security.keystore.SsgKeyFinder;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
@@ -74,8 +74,8 @@ public class SslContextInitializer {
     private ApplicationListener applicationListener = new ApplicationListener(){
         @Override
         public void onApplicationEvent( final ApplicationEvent applicationEvent) {
-            if ( applicationEvent instanceof EntityInvalidationEvent ) {
-                final EntityInvalidationEvent event = (EntityInvalidationEvent) applicationEvent;
+            if ( applicationEvent instanceof EntityClassEvent) {
+                final EntityClassEvent event = (EntityClassEvent) applicationEvent;
                 if ( KeystoreFile.class.equals(event.getEntityClass()) || TrustedCert.class.equals(event.getEntityClass()) ) {
                     updateDefaultSslContext();
                 }

@@ -2,7 +2,6 @@ package com.l7tech.server.event;
 
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.PersistentEntity;
-import org.springframework.context.ApplicationEvent;
 
 /**
  * Event raised when a database change is detected.
@@ -13,7 +12,7 @@ import org.springframework.context.ApplicationEvent;
  * @version $Revision$
  */
 @Deprecated // deprecated by com.l7tech.server.event.GoidEntityInvalidationEvent
-public class EntityInvalidationEvent extends ApplicationEvent {
+public class EntityInvalidationEvent extends EntityClassEvent {
     public static final char DELETE = 'D';
     public static final char UPDATE = 'U';
     public static final char CREATE = 'C';
@@ -49,11 +48,7 @@ public class EntityInvalidationEvent extends ApplicationEvent {
         this.entityOperations = myEntityOps;
     }
 
-    /**
-     * Get the class of entity being invalidated.
-     *
-     * @return The Entity sub-class
-     */
+    @Override
     public Class<? extends Entity> getEntityClass() {
         return entityClass;
     }

@@ -1,12 +1,11 @@
 package com.l7tech.server.security;
 
-import com.l7tech.gateway.common.Component;
-import com.l7tech.common.password.PasswordHasher;
 import com.l7tech.common.password.IncorrectPasswordException;
+import com.l7tech.common.password.PasswordHasher;
+import com.l7tech.gateway.common.Component;
 import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.IdentityProviderPasswordPolicy;
-import static com.l7tech.identity.IdentityProviderPasswordPolicy.*;
 import com.l7tech.identity.IdentityProviderPasswordPolicyManager;
 import com.l7tech.identity.User;
 import com.l7tech.identity.internal.InternalUser;
@@ -14,7 +13,7 @@ import com.l7tech.identity.internal.PasswordChangeRecord;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.InvalidPasswordException;
 import com.l7tech.server.ServerConfigParams;
-import com.l7tech.server.event.EntityInvalidationEvent;
+import com.l7tech.server.event.EntityClassEvent;
 import com.l7tech.server.event.system.ReadyForMessages;
 import com.l7tech.server.event.system.SystemEvent;
 import com.l7tech.server.security.rbac.RoleManager;
@@ -34,6 +33,8 @@ import java.text.MessageFormat;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static com.l7tech.identity.IdentityProviderPasswordPolicy.*;
 
 /**
  * This manager provides implementation that will enforce conditions that has to do with password.  For example,
@@ -81,8 +82,8 @@ public class PasswordEnforcerManager implements PropertyChangeListener, Applicat
     public void onApplicationEvent(ApplicationEvent applicationEvent) {
         if (applicationEvent instanceof ReadyForMessages) {
             auditPasswordPolicyMinimums(!config.getBooleanProperty( ServerConfigParams.PARAM_PCIDSS_ENABLED, false), internalIdpPasswordPolicy);
-        } else if (applicationEvent instanceof EntityInvalidationEvent) {
-            EntityInvalidationEvent eie = (EntityInvalidationEvent) applicationEvent;
+        } else if (applicationEvent instanceof EntityClassEvent) {
+            EntityClassEvent eie = (EntityClassEvent) applicationEvent;
             if (IdentityProviderPasswordPolicy.class.equals(eie.getEntityClass())) {
                 internalIdpPasswordPolicy = getInternalIdpPasswordPolicy();
                 auditPasswordPolicyMinimums(!config.getBooleanProperty( ServerConfigParams.PARAM_PCIDSS_ENABLED, false), internalIdpPasswordPolicy);

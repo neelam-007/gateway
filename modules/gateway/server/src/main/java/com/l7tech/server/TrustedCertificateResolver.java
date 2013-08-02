@@ -11,7 +11,7 @@ import com.l7tech.security.token.KerberosSigningSecurityToken;
 import com.l7tech.security.xml.SecurityTokenResolver;
 import com.l7tech.security.xml.SignerInfo;
 import com.l7tech.security.xml.SimpleSecurityTokenResolver;
-import com.l7tech.server.event.EntityInvalidationEvent;
+import com.l7tech.server.event.EntityClassEvent;
 import com.l7tech.server.security.keystore.KeystoreFile;
 import com.l7tech.server.security.keystore.SsgKeyFinder;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
@@ -254,8 +254,8 @@ public class TrustedCertificateResolver implements SecurityTokenResolver, PostSt
 
     @Override
     public void onApplicationEvent(ApplicationEvent applicationEvent) {
-        if (applicationEvent instanceof EntityInvalidationEvent) {
-            EntityInvalidationEvent event = (EntityInvalidationEvent)applicationEvent;
+        if (applicationEvent instanceof EntityClassEvent) {
+            EntityClassEvent event = (EntityClassEvent)applicationEvent;
             if (KeystoreFile.class.equals(event.getEntityClass())) {
                 // Invalidate key cache so it gets rebuilt on next use
                 keyCache = null;

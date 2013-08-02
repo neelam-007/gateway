@@ -3,32 +3,27 @@ package com.l7tech.server.globalresources;
 import com.l7tech.common.http.GenericHttpRequestParams;
 import com.l7tech.common.io.PermissiveHostnameVerifier;
 import com.l7tech.common.io.PermissiveX509TrustManager;
-import static com.l7tech.gateway.common.resources.HttpConfiguration.Option.*;
-import static com.l7tech.gateway.common.resources.HttpConfiguration.Protocol.*;
 import com.l7tech.gateway.common.resources.HttpConfiguration;
 import com.l7tech.gateway.common.resources.HttpProxyConfiguration;
 import com.l7tech.gateway.common.security.password.SecurePassword;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.MockClusterPropertyManager;
 import com.l7tech.server.TestDefaultKey;
 import com.l7tech.server.security.keystore.SsgKeyStoreManagerStub;
 import com.l7tech.server.security.password.SecurePasswordManagerStub;
 import com.l7tech.util.MockConfig;
-
-import static org.junit.Assert.*;
 import org.junit.Test;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.net.Authenticator;
-import java.net.InetSocketAddress;
-import java.net.PasswordAuthentication;
-import java.net.Proxy;
-import java.net.ProxySelector;
-import java.net.URI;
-import java.net.URL;
+import java.net.*;
 import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
+
+import static com.l7tech.gateway.common.resources.HttpConfiguration.Option.*;
+import static com.l7tech.gateway.common.resources.HttpConfiguration.Protocol.HTTP;
+import static org.junit.Assert.*;
 
 /**
  * 
@@ -206,7 +201,7 @@ public class HttpConfigurationCacheTest {
 
         final HttpConfiguration[] httpConfigurations = new HttpConfiguration[3];
         httpConfigurations[0] = new HttpConfiguration();
-        httpConfigurations[0].setOid( ++httpConfigurationCount );
+        httpConfigurations[0].setGoid( nextGoid() );
         httpConfigurations[0].setHost( "host1" );
         httpConfigurations[0].setUsername( "username1" );
         httpConfigurations[0].setPasswordOid( 1L );
@@ -216,7 +211,7 @@ public class HttpConfigurationCacheTest {
         httpConfigurations[0].setProxyUse( NONE );
 
         httpConfigurations[1] = new HttpConfiguration();
-        httpConfigurations[1].setOid( ++httpConfigurationCount );
+        httpConfigurations[1].setGoid( nextGoid() );
         httpConfigurations[1].setHost( "host2" );
         httpConfigurations[1].setUsername( "username2" );
         httpConfigurations[1].setPasswordOid( 2L );
@@ -228,7 +223,7 @@ public class HttpConfigurationCacheTest {
         httpConfigurations[1].setProxyUse( DEFAULT );
 
         httpConfigurations[2] = new HttpConfiguration();
-        httpConfigurations[2].setOid( ++httpConfigurationCount );
+        httpConfigurations[2].setGoid( nextGoid() );
         httpConfigurations[2].setHost( "host3" );
         httpConfigurations[2].setProxyUse( CUSTOM );
         httpConfigurations[2].setProxyConfiguration( customProxy );
@@ -308,12 +303,17 @@ public class HttpConfigurationCacheTest {
         );
     }
 
-    private static long httpConfigurationCount = 0;
+    private static long httpConfigurationCountLow = 0;
+    private static Goid nextGoid() {
+        return new Goid(0, httpConfigurationCountLow++);
+    }
+
+
     private HttpConfiguration newHttpConfiguration( final String host,
                                                     final HttpConfiguration.Option proxyUse,
                                                     final HttpProxyConfiguration proxyConfig ) {
         final HttpConfiguration config = new HttpConfiguration();
-        config.setOid( ++httpConfigurationCount );
+        config.setGoid( nextGoid() );
         config.setHost( host );
         config.setProxyUse( proxyUse );
         if (proxyConfig != null) config.setProxyConfiguration( proxyConfig );
@@ -325,7 +325,7 @@ public class HttpConfigurationCacheTest {
                                                     final long passwordOid,
                                                     final String ntlmDomain ) {
         final HttpConfiguration config = new HttpConfiguration();
-        config.setOid( ++httpConfigurationCount );
+        config.setGoid( nextGoid() );
         config.setHost( host );
         config.setUsername( username );
         config.setPasswordOid( passwordOid );
@@ -340,7 +340,7 @@ public class HttpConfigurationCacheTest {
                                                     final String username,
                                                     final long passwordOid ) {
         final HttpConfiguration config = new HttpConfiguration();
-        config.setOid( ++httpConfigurationCount );
+        config.setGoid( nextGoid() );
         config.setHost( host );
         config.setPort( port );
         config.setProtocol( protocol );

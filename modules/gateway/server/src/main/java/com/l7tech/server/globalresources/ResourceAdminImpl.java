@@ -1,17 +1,8 @@
 package com.l7tech.server.globalresources;
 
-import com.l7tech.gateway.common.resources.HttpConfiguration;
-import com.l7tech.gateway.common.resources.HttpProxyConfiguration;
-import com.l7tech.gateway.common.resources.ResourceAdmin;
-import com.l7tech.gateway.common.resources.ResourceEntry;
-import com.l7tech.gateway.common.resources.ResourceEntryBag;
-import com.l7tech.gateway.common.resources.ResourceEntryHeader;
-import com.l7tech.gateway.common.resources.ResourceType;
+import com.l7tech.gateway.common.resources.*;
 import com.l7tech.gateway.common.service.ServiceAdmin;
-import com.l7tech.objectmodel.DeleteException;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.objectmodel.*;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.service.ServiceDocumentResolver;
 import com.l7tech.util.Charsets;
@@ -21,11 +12,7 @@ import com.l7tech.util.ResourceUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.logging.Logger;
 
 /**
@@ -213,30 +200,30 @@ public class ResourceAdminImpl implements ResourceAdmin {
     }
 
     @Override
-    public HttpConfiguration findHttpConfigurationByPrimaryKey( final long oid ) throws FindException {
-        return httpConfigurationManager.findByPrimaryKey( oid );
+    public HttpConfiguration findHttpConfigurationByPrimaryKey( final Goid goid ) throws FindException {
+        return httpConfigurationManager.findByPrimaryKey( goid );
     }
 
     @Override
     public void deleteHttpConfiguration( final HttpConfiguration httpConfiguration ) throws DeleteException {
-        if ( httpConfiguration.getOid() == ResourceEntry.DEFAULT_OID ) {
+        if ( HttpConfiguration.DEFAULT_GOID.equals(httpConfiguration.getGoid() ) ) {
             throw new DeleteException( "Cannot delete, entity not persistent" );
         }
         httpConfigurationManager.delete( httpConfiguration );
     }
 
     @Override
-    public long saveHttpConfiguration( final HttpConfiguration httpConfiguration ) throws SaveException, UpdateException {
-        final long oid;
+    public Goid saveHttpConfiguration( final HttpConfiguration httpConfiguration ) throws SaveException, UpdateException {
+        final Goid goid;
 
-        if ( httpConfiguration.getOid() == HttpConfiguration.DEFAULT_OID ) {
-            oid = httpConfigurationManager.save( httpConfiguration );
+        if ( HttpConfiguration.DEFAULT_GOID.equals(httpConfiguration.getGoid()) ) {
+            goid = httpConfigurationManager.save( httpConfiguration );
         } else {
-            oid = httpConfiguration.getOid();
+            goid = httpConfiguration.getGoid();
             httpConfigurationManager.update( httpConfiguration );
         }
 
-        return oid;
+        return goid;
     }
 
     @Override

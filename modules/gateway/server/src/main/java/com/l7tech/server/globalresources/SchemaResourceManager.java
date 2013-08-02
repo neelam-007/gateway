@@ -9,7 +9,7 @@ import com.l7tech.gateway.common.resources.ResourceType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.communityschemas.SchemaHandle;
 import com.l7tech.server.communityschemas.SchemaManager;
-import com.l7tech.server.event.EntityInvalidationEvent;
+import com.l7tech.server.event.EntityClassEvent;
 import com.l7tech.server.util.PostStartupApplicationListener;
 import com.l7tech.util.Config;
 import com.l7tech.util.ExceptionUtils;
@@ -120,9 +120,9 @@ public class SchemaResourceManager implements PostStartupApplicationListener, In
 
     @Override
     public void onApplicationEvent( final ApplicationEvent event ) {
-        if ( event instanceof EntityInvalidationEvent ) {
-            final EntityInvalidationEvent invalidationEvent = (EntityInvalidationEvent) event;
-            if ( ResourceEntry.class.isAssignableFrom(invalidationEvent.getEntityClass()) ) {
+        if ( event instanceof EntityClassEvent) {
+            final EntityClassEvent classEvent = (EntityClassEvent) event;
+            if ( ResourceEntry.class.isAssignableFrom(classEvent.getEntityClass()) ) {
                 invalidationTime.set( System.currentTimeMillis() );
             }
         }

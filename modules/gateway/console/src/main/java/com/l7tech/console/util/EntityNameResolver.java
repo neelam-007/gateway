@@ -149,7 +149,7 @@ public class EntityNameResolver {
                     entity = resourceEntry;
                     break;
                 case HTTP_CONFIGURATION:
-                    final HttpConfiguration httpConfig = resourceAdmin.findHttpConfigurationByPrimaryKey(header.getOid());
+                    final HttpConfiguration httpConfig = resourceAdmin.findHttpConfigurationByPrimaryKey(header.getGoid());
                     validateFoundEntity(header, httpConfig);
                     entity = httpConfig;
                     break;

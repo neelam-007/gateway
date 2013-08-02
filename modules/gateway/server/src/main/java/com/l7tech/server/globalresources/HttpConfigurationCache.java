@@ -11,16 +11,12 @@ import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.server.DefaultKey;
-import com.l7tech.server.event.EntityInvalidationEvent;
+import com.l7tech.server.event.EntityClassEvent;
 import com.l7tech.server.security.keystore.KeystoreFile;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.server.util.PostStartupApplicationListener;
-import com.l7tech.util.Config;
-import com.l7tech.util.ConfigFactory;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.Functions;
-import com.l7tech.util.Pair;
+import com.l7tech.util.*;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.jmx.export.annotation.ManagedAttribute;
@@ -161,8 +157,8 @@ public class HttpConfigurationCache implements PostStartupApplicationListener, I
 
     @Override
     public void onApplicationEvent( final ApplicationEvent event ) {
-        if ( event instanceof EntityInvalidationEvent ) {
-            final EntityInvalidationEvent invalidationEvent = (EntityInvalidationEvent) event;
+        if ( event instanceof EntityClassEvent) {
+            final EntityClassEvent invalidationEvent = (EntityClassEvent) event;
             if ( HttpConfiguration.class.isAssignableFrom( invalidationEvent.getEntityClass() ) ||
                  SecurePassword.class.isAssignableFrom( invalidationEvent.getEntityClass() ) ) {
                 loadConfiguration();

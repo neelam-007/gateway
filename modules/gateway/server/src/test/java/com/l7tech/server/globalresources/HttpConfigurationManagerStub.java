@@ -2,12 +2,12 @@ package com.l7tech.server.globalresources;
 
 import com.l7tech.gateway.common.resources.HttpConfiguration;
 import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.server.OidEntityManagerStub;
+import com.l7tech.server.GoidEntityManagerStub;
 
 /**
  * 
  */
-public class HttpConfigurationManagerStub extends OidEntityManagerStub<HttpConfiguration,EntityHeader> implements HttpConfigurationManager {
+public class HttpConfigurationManagerStub extends GoidEntityManagerStub<HttpConfiguration,EntityHeader> implements HttpConfigurationManager {
 
 
     public HttpConfigurationManagerStub() {

@@ -9,7 +9,7 @@ import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.security.token.UsernamePasswordSecurityToken;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.cluster.ClusterMaster;
-import com.l7tech.server.event.EntityInvalidationEvent;
+import com.l7tech.server.event.EntityClassEvent;
 import com.l7tech.server.event.admin.Updated;
 import com.l7tech.server.event.system.ReadyForMessages;
 import com.l7tech.server.identity.AuthenticatingIdentityProvider;
@@ -86,8 +86,8 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
      */
     @Override
     public void onApplicationEvent(final ApplicationEvent event) {
-        if (event instanceof EntityInvalidationEvent) {
-            EntityInvalidationEvent eie = (EntityInvalidationEvent) event;
+        if (event instanceof EntityClassEvent) {
+            EntityClassEvent eie = (EntityClassEvent) event;
             if (eie.getEntityClass() == IdentityProviderConfig.class) {
                 setupAdminProviders();
             }

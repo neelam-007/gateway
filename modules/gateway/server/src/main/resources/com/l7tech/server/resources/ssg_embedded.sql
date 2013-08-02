@@ -404,7 +404,7 @@ create table folder (
 );
 
 create table http_configuration (
-    objectid bigint not null,
+    goid CHAR(16) FOR BIT DATA not null,
     timeout_connect integer,
     follow_redirects smallint,
     host varchar(128) not null,
@@ -428,7 +428,7 @@ create table http_configuration (
     username varchar(255),
     version integer,
     security_zone_goid CHAR(16) FOR BIT DATA references security_zone(goid) on delete set null,
-    primary key (objectid)
+    primary key (goid)
 );
 
 create table identity_provider (

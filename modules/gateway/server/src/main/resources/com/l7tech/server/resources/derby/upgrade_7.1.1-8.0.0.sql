@@ -442,6 +442,20 @@ update rbac_predicate_oid oid1 set oid1.entity_id = ifnull((select goidToString(
 update rbac_role set entity_goid = toGoid(cast(getVariable('jms_endpoint_prefix') as bigint),entity_oid) where entity_oid is not null and entity_type='JMS_ENDPOINT';
 update rbac_predicate_oid oid1 set oid1.entity_id = ifnull((select goidToString(toGoid(cast(getVariable('jms_endpoint_prefix') as bigint),cast(oid1.entity_id as bigint))) from rbac_predicate left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid where rbac_predicate.objectid = oid1.objectid and rbac_permission.entity_type = 'JMS_ENDPOINT'), oid1.entity_id);
 
+-- http configuration
+
+ALTER TABLE http_configuration ADD COLUMN old_objectid bigint;
+UPDATE  http_configuration SET old_objectid = objectid;
+ALTER TABLE http_configuration DROP COLUMN objectid;
+ALTER TABLE http_configuration ADD COLUMN goid CHAR(16) FOR BIT DATA;
+call setVariable('http_configuration_prefix', cast(randomLongNotReserved() as char(21)));
+update http_configuration set goid = toGoid(cast(getVariable('http_configuration_prefix') as bigint), old_objectid);
+ALTER TABLE http_configuration ALTER COLUMN goid NOT NULL;
+ALTER TABLE http_configuration ADD PRIMARY KEY (goid);
+
+update rbac_role set entity_goid = toGoid(cast(getVariable('http_configuration_prefix') as bigint),entity_oid) where entity_oid is not null and entity_type='HTTP_CONFIGURATION';
+update rbac_predicate_oid oid1 set oid1.entity_id = ifnull((select goidToString(toGoid(cast(getVariable('http_configuration_prefix') as bigint),cast(oid1.entity_id as bigint))) from rbac_predicate left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid where rbac_predicate.objectid = oid1.objectid and rbac_permission.entity_type = 'HTTP_CONFIGURATION'), oid1.entity_id);
+
 -- active connectors
 
 ALTER TABLE active_connector ADD COLUMN old_objectid bigint;
