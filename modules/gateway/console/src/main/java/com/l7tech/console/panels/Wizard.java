@@ -18,8 +18,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.event.KeyEvent;
-import java.util.EventListener;
-import java.util.NoSuchElementException;
+import java.util.*;
 import java.lang.reflect.InvocationTargetException;
 
 /**
@@ -49,6 +48,7 @@ public class Wizard<ST> extends JDialog {
     private JButton buttonNext;
     private JButton buttonBack;
     private JButton buttonHelp;
+    private java.util.List<WizardLabel> stepLabels = new ArrayList<>();
 
     protected EventListenerList listenerList = new EventListenerList();
     protected InputValidator inputValidator = new InputValidator(this, "Wizard Warning");
@@ -220,6 +220,7 @@ public class Wizard<ST> extends JDialog {
             String label = "" + (++i) + ". " + p.getStepLabel();
             WizardLabel l = new WizardLabel(label, p, true);
             stepLabelsPanel.add(l);
+            stepLabels.add(l);
             addWizardListener(l);
             p = p.nextPanel();
         }
@@ -531,6 +532,10 @@ public class Wizard<ST> extends JDialog {
         buttonBack.setEnabled(wizardIterator.hasPrevious() && enableBackButton);
         stepDescriptionTextPane.setText(getSelectedWizardPanel().getDescription());
         stepDescriptionTextPane.setCaretPosition( 0 );
+        for (final WizardLabel stepLabel : stepLabels) {
+            // dynamically disable the step label if the current settings would cause the step to be skipped
+            stepLabel.setEnabled(!stepLabel.wizardPanel.canSkip(wizardInput));
+        }
         wizardStepPanel.updateUI();
     }
 

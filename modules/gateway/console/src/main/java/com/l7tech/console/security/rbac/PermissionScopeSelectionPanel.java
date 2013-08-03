@@ -4,7 +4,6 @@ import com.l7tech.console.panels.WizardStepPanel;
 import com.l7tech.console.util.SecurityZoneUtil;
 import com.l7tech.gui.CheckBoxSelectableTableModel;
 import com.l7tech.gui.util.TableUtil;
-import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.SecurityZone;
 import com.l7tech.util.Functions;
 import org.apache.commons.lang.StringUtils;
@@ -58,13 +57,20 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
     }
 
     @Override
-    public void readSettings(final Object settings) throws IllegalArgumentException {
+    public boolean canSkip(final Object settings) {
+        boolean canSkip = false;
         if (settings instanceof AddPermissionsWizard.PermissionConfig) {
             final AddPermissionsWizard.PermissionConfig config = (AddPermissionsWizard.PermissionConfig) settings;
-            setSkipped(!config.isHasScope());
+            canSkip = !config.isHasScope();
         } else {
-            logger.log(Level.WARNING, "Cannot read settings because received invalid settings object: " + settings);
+            logger.log(Level.WARNING, "Cannot handle settings because received invalid settings object: " + settings);
         }
+        return canSkip;
+    }
+
+    @Override
+    public void readSettings(final Object settings) throws IllegalArgumentException {
+        setSkipped(canSkip(settings));
     }
 
     @Override
@@ -108,6 +114,6 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
                 }
             }
         });
-        tablePanel.configure(zonesModel, new int[]{NAME_COL_INDEX}, EntityType.SECURITY_ZONE.getPluralName().toLowerCase());
+        tablePanel.configure(zonesModel, new int[]{NAME_COL_INDEX}, "zones");
     }
 }

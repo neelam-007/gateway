@@ -2,6 +2,8 @@ package com.l7tech.console.panels;
 
 import com.l7tech.console.event.WeakEventListenerList;
 import com.l7tech.gui.util.InputValidator;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
@@ -132,6 +134,18 @@ public abstract class WizardStepPanel<ST> extends JPanel {
     public boolean canFinish() {
         return (canAdvance() || isSkipped())
                 && (nextPanel == null || nextPanel.canFinish());
+    }
+
+    /**
+     * Given the current settings, determine whether this step can be skipped. Default is false.
+     *
+     * Override to customize behaviour - settings should not be mutated.
+     *
+     * @param settings the current wizard input settings (may be null).
+     * @return true if the step can be skipped, false otherwise.
+     */
+    public boolean canSkip(@Nullable final Object settings) {
+        return false;
     }
 
 

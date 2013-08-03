@@ -29,22 +29,34 @@ public class PermissionOptionsPanel extends WizardStepPanel {
     private JCheckBox updateCheckBox;
     private JCheckBox deleteCheckBox;
     private JRadioButton conditionRadio;
+    private AddPermissionsWizard.PermissionConfig config;
 
     public PermissionOptionsPanel() {
         super(null);
         setLayout(new BorderLayout());
         setShowDescriptionPanel(false);
         add(contentPanel);
-        final RunOnChangeListener changeListener = new RunOnChangeListener(new Runnable() {
+        final RunOnChangeListener checkBoxListener = new RunOnChangeListener(new Runnable() {
             @Override
             public void run() {
                 notifyListeners();
             }
         });
-        createCheckBox.addChangeListener(changeListener);
-        readCheckBox.addChangeListener(changeListener);
-        updateCheckBox.addChangeListener(changeListener);
-        deleteCheckBox.addChangeListener(changeListener);
+        createCheckBox.addChangeListener(checkBoxListener);
+        readCheckBox.addChangeListener(checkBoxListener);
+        updateCheckBox.addChangeListener(checkBoxListener);
+        deleteCheckBox.addChangeListener(checkBoxListener);
+        final RunOnChangeListener radioListener = new RunOnChangeListener(new Runnable() {
+            @Override
+            public void run() {
+                if (config != null) {
+                    setScopeFlag(config);
+                    notifyListeners();
+                }
+            }
+        });
+        allTypesRadio.addItemListener(radioListener);
+        allObjectsRadio.addItemListener(radioListener);
     }
 
     @Override
@@ -63,6 +75,14 @@ public class PermissionOptionsPanel extends WizardStepPanel {
     }
 
     @Override
+    public void readSettings(final Object settings) throws IllegalArgumentException {
+        super.readSettings(settings);
+        if (settings instanceof AddPermissionsWizard.PermissionConfig) {
+            config = (AddPermissionsWizard.PermissionConfig) settings;
+        }
+    }
+
+    @Override
     public void storeSettings(final Object settings) throws IllegalArgumentException {
         if (settings instanceof AddPermissionsWizard.PermissionConfig) {
             final AddPermissionsWizard.PermissionConfig config = (AddPermissionsWizard.PermissionConfig) settings;
@@ -72,14 +92,18 @@ public class PermissionOptionsPanel extends WizardStepPanel {
                 // TODO
             }
             setOpsOnConfig(config);
-            if (allObjectsRadio.isSelected()) {
-                config.setHasScope(false);
-            } else {
-                config.setHasScope(true);
-            }
+            setScopeFlag(config);
 
         } else {
             logger.log(Level.WARNING, "Cannot store settings because received invalid settings object: " + settings);
+        }
+    }
+
+    private void setScopeFlag(final AddPermissionsWizard.PermissionConfig config) {
+        if (allObjectsRadio.isSelected()) {
+            config.setHasScope(false);
+        } else {
+            config.setHasScope(true);
         }
     }
 

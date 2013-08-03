@@ -85,6 +85,7 @@ public class RolePermissionsPanel extends JPanel {
         this.role = role;
         this.permissions = role == null ? null : role.getPermissions();
         loadTable();
+        loadCount();
     }
 
     /**
