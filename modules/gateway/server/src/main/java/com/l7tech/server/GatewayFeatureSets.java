@@ -745,13 +745,13 @@ public class GatewayFeatureSets {
                 mass("assertion:SiteMinderAuthenticate"),
                 mass("assertion:SiteMinderAuthorize"));
 
-//        GatewayFeatureSet salesForceInstallerAssertion = fsr("set:SalesforceInstaller:Assertions",
-//                "The necessary assertions to enable the Salesforce Installer",
-//                mass("assertion:SalesforceInstaller"));
-//
-//        GatewayFeatureSet salesForceAssertion = fsr("set:Salesforce:Assertions",
-//                "The necessary assertions to enable Salesforce functionality",
-//                mass("assertion:Salesforce"));
+        GatewayFeatureSet salesForceInstallerAssertion = fsr("set:SalesforceInstaller:Assertions",
+                "The necessary assertions to enable the Salesforce Installer",
+                mass("assertion:SalesforceInstaller"));
+
+        GatewayFeatureSet salesForceAssertion = fsr("set:Salesforce:Assertions",
+                "The necessary assertions to enable Salesforce functionality",
+                mass("assertion:Salesforce"));
 
         // US (NCES)
         GatewayFeatureSet usAssertions =
@@ -934,6 +934,8 @@ public class GatewayFeatureSets {
             fs(policyBundleInstaller),
             fs(splitJoinAssertions),
             fs(siteMinderAssertions),
+            fs(salesForceAssertion),
+            fs(salesForceInstallerAssertion),
             mass("assertion:ValidateCertificate"));
 
         fsp("set:Profile:CloudControl", "CloudSpan CloudControl",
@@ -999,6 +1001,8 @@ public class GatewayFeatureSets {
             fs(splitJoinAssertions),
             fs(jsonTransformationAssertion),
             fs(siteMinderAssertions),
+            fs(salesForceAssertion),
+            fs(salesForceInstallerAssertion),
             mass("assertion:ValidateCertificate"));
 
         GatewayFeatureSet profileApi =
@@ -1047,7 +1051,9 @@ public class GatewayFeatureSets {
                 mass("assertion:SamlIssuer"),
                 mass("assertion:ValidateNonSoapSamlToken"),
                 fs(trustStore),
-                fs(siteMinderAssertions));
+                fs(siteMinderAssertions),
+                fs(salesForceAssertion),
+                fs(salesForceInstallerAssertion));
 
         PROFILE_ALL =
         fsp("set:Profile:Development", "Development Mode",
