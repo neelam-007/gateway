@@ -10,10 +10,13 @@ import com.l7tech.gateway.common.admin.FolderAdmin;
 import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.gateway.common.service.PublishedService;
 import org.apache.commons.lang.StringUtils;
+import org.jetbrains.annotations.Nullable;
 
 import java.text.MessageFormat;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -87,4 +90,22 @@ public class RbacUtilities {
 
         return MessageFormat.format(description, args);
     }
+
+    /**
+     * Get a copy of the given scope, detaching each predicate from its permission as well as setting its oid to default oid.
+     *
+     * @param   in the scope to copy (optional).
+     * @return  a copy of the given scope with its predicates detached and oids set to default or an empty set if the given scope is null.
+     */
+    public static Set<ScopePredicate> getAnonymousNoOidsCopyOfScope(@Nullable final Set<ScopePredicate> in) {
+       final Set<ScopePredicate> out = new HashSet<>();
+       if (in != null) {
+           for (final ScopePredicate scopePredicate : in) {
+               final ScopePredicate clone = scopePredicate.createAnonymousClone();
+               clone.setOid(ScopePredicate.DEFAULT_OID);
+               out.add(clone);
+           }
+       }
+       return out;
+   }
 }

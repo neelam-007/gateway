@@ -2,6 +2,7 @@ package com.l7tech.console.security.rbac;
 
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.security.rbac.Permission;
+import com.l7tech.gateway.common.security.rbac.RbacUtilities;
 import com.l7tech.gateway.common.security.rbac.ScopePredicate;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.util.Pair;
@@ -78,7 +79,7 @@ public class PermissionGroup {
         final Map<Pair<EntityType, Set<ScopePredicate>>, PermissionGroup> groups = new LinkedHashMap<>();
         for (final Permission permission : permissions) {
             final EntityType entityType = permission.getEntityType();
-            final Set<ScopePredicate> scope = getAnonymousNoOidsCopyOfScope(permission.getScope());
+            final Set<ScopePredicate> scope = RbacUtilities.getAnonymousNoOidsCopyOfScope(permission.getScope());
             // Create lookup key (entity type and scope)
             final Pair<EntityType, Set<ScopePredicate>> key = new Pair<>(entityType, scope);
             PermissionGroup group = groups.get(key);
@@ -91,19 +92,7 @@ public class PermissionGroup {
         return new HashSet<>(groups.values());
     }
 
-    private static Set<ScopePredicate> getAnonymousNoOidsCopyOfScope(final Set<ScopePredicate> in) {
-        final Set<ScopePredicate> out = new HashSet<>();
-        if (in != null) {
-            for (final ScopePredicate scopePredicate : in) {
-                final ScopePredicate clone = scopePredicate.createAnonymousClone();
-                clone.setOid(ScopePredicate.DEFAULT_OID);
-                out.add(clone);
-            }
-        }
-        return out;
-    }
-
     private static boolean scopesAreEqual(final Set<ScopePredicate> left, final Set<ScopePredicate> right) {
-        return getAnonymousNoOidsCopyOfScope(left).equals(getAnonymousNoOidsCopyOfScope(right));
+        return RbacUtilities.getAnonymousNoOidsCopyOfScope(left).equals(RbacUtilities.getAnonymousNoOidsCopyOfScope(right));
     }
 }

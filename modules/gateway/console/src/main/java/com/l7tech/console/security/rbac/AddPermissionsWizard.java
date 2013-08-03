@@ -1,16 +1,16 @@
 package com.l7tech.console.security.rbac;
 
+import com.l7tech.console.action.Actions;
 import com.l7tech.console.panels.Wizard;
 import com.l7tech.console.panels.WizardStepPanel;
-import com.l7tech.gateway.common.security.rbac.OperationType;
-import com.l7tech.gateway.common.security.rbac.Permission;
-import com.l7tech.gateway.common.security.rbac.Role;
+import com.l7tech.gateway.common.security.rbac.*;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.SecurityZone;
 import org.jetbrains.annotations.NotNull;
 
 import java.awt.*;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.logging.Level;
@@ -39,6 +39,12 @@ public class AddPermissionsWizard extends Wizard {
         setTitle(ADD_PERMISSIONS_TO_ROLE_WIZARD);
         this.role = role;
         this.wizardInput = new PermissionConfig(role);
+        getButtonHelp().addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                Actions.invokeHelp(AddPermissionsWizard.this);
+            }
+        });
     }
 
     @Override
@@ -62,15 +68,20 @@ public class AddPermissionsWizard extends Wizard {
         boolean alreadyExists = false;
         for (final Permission existing : role.getPermissions()) {
             final Permission existingCopy = existing.getAnonymousClone();
-            existingCopy.setOid(Permission.DEFAULT_OID);
+            resetOids(existingCopy);
             final Permission toCheck = permission.getAnonymousClone();
-            toCheck.setOid(Permission.DEFAULT_OID);
+            resetOids(toCheck);
             if (existingCopy.equals(toCheck)) {
                 alreadyExists = true;
                 break;
             }
         }
         return alreadyExists;
+    }
+
+    private void resetOids(final Permission permission) {
+        permission.setOid(Permission.DEFAULT_OID);
+        permission.setScope(RbacUtilities.getAnonymousNoOidsCopyOfScope(permission.getScope()));
     }
 
     public class PermissionConfig {
