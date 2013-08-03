@@ -1,11 +1,10 @@
 package com.l7tech.console.security.rbac;
 
-import com.l7tech.console.panels.FilterPanel;
 import com.l7tech.console.panels.WizardStepPanel;
 import com.l7tech.console.util.SecurityZoneUtil;
 import com.l7tech.gui.CheckBoxSelectableTableModel;
 import com.l7tech.gui.util.TableUtil;
-import com.l7tech.gui.util.Utilities;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.SecurityZone;
 import com.l7tech.util.Functions;
 import org.apache.commons.lang.StringUtils;
@@ -13,10 +12,7 @@ import org.apache.commons.lang.StringUtils;
 import javax.swing.*;
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
-import javax.swing.table.TableRowSorter;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.logging.Level;
@@ -35,12 +31,7 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
     private JPanel contentPanel;
     private JTabbedPane tabPanel;
     private JPanel zonesPanel;
-    private FilterPanel filterPanel;
-    private JTable zonesTable;
-    private JButton selectAllButton;
-    private JButton clearAllButton;
-    private JLabel countLabel;
-    private JLabel selectionLabel;
+    private SelectableFilterableTablePanel tablePanel;
     private CheckBoxSelectableTableModel<SecurityZone> zonesModel;
 
     public PermissionScopeSelectionPanel() {
@@ -49,10 +40,6 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
         setShowDescriptionPanel(false);
         add(contentPanel);
         initTable();
-        initFiltering();
-        initBtns();
-        loadCount();
-        loadSelectionCount();
     }
 
     @Override
@@ -92,7 +79,7 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
 
 
     private void initTable() {
-        zonesModel = TableUtil.configureSelectableTable(zonesTable, CHECK_COL_INDEX,
+        zonesModel = TableUtil.configureSelectableTable(tablePanel.getSelectableTable(), CHECK_COL_INDEX,
                 column(StringUtils.EMPTY, 30, 30, 99999, new Functions.Unary<Boolean, SecurityZone>() {
                     @Override
                     public Boolean call(final SecurityZone zone) {
@@ -121,50 +108,6 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
                 }
             }
         });
-        Utilities.setRowSorter(zonesTable, zonesModel);
-    }
-
-    private void initBtns() {
-        Utilities.buttonToLink(selectAllButton);
-        Utilities.buttonToLink(clearAllButton);
-        selectAllButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(final ActionEvent e) {
-                zonesModel.selectAll();
-            }
-        });
-        clearAllButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(final ActionEvent e) {
-                zonesModel.deselectAll();
-            }
-        });
-    }
-
-    private void setButtonTexts() {
-        final String label = filterPanel.isFiltered() ? "visible" : "all";
-        selectAllButton.setText("select " + label);
-        clearAllButton.setText("clear " + label);
-    }
-
-    private void initFiltering() {
-        filterPanel.registerFilterCallback(new Runnable() {
-            @Override
-            public void run() {
-                loadCount();
-                setButtonTexts();
-            }
-        });
-        filterPanel.attachRowSorter((TableRowSorter) (zonesTable.getRowSorter()), new int[]{NAME_COL_INDEX});
-    }
-
-    private void loadCount() {
-        final int visible = zonesTable.getRowCount();
-        final int total = zonesModel.getRowCount();
-        countLabel.setText("showing " + visible + " of " + total + " items");
-    }
-
-    private void loadSelectionCount() {
-        selectionLabel.setText(zonesModel.getSelected().size() + " items selected");
+        tablePanel.configure(zonesModel, new int[]{NAME_COL_INDEX}, EntityType.SECURITY_ZONE.getPluralName().toLowerCase());
     }
 }

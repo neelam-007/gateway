@@ -1,6 +1,5 @@
 package com.l7tech.console.security.rbac;
 
-import com.l7tech.console.panels.FilterPanel;
 import com.l7tech.console.policy.ConsoleAssertionRegistry;
 import com.l7tech.console.tree.ServicesAndPoliciesTree;
 import com.l7tech.console.tree.identity.IdentityProvidersTree;
@@ -35,7 +34,6 @@ import javax.swing.*;
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
 import javax.swing.table.TableColumn;
-import javax.swing.table.TableRowSorter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -56,27 +54,19 @@ public class AssignSecurityZonesDialog extends JDialog {
     private static final Logger logger = Logger.getLogger(AssignSecurityZonesDialog.class.getName());
     private static ResourceBundle RESOURCES = ResourceBundle.getBundle(AssignSecurityZonesDialog.class.getName());
     private static final String MAX_CHAR_NAME_DISPLAY = "max.char.name.display";
-    private static final int HEADER_COL_INDEX = 1;
-    private static final int ZONE_COL_INDEX = 2;
     private static final int CHECK_BOX_COL_INDEX = 0;
+    private static final int NAME_COL_INDEX = 1;
+    private static final int ZONE_COL_INDEX = 2;
     private static final int PATH_COL_INDEX = 3;
     private static final String NO_SECURITY_ZONE = RESOURCES.getString("no.zone.label");
     private JPanel contentPanel;
     private JComboBox typeComboBox;
-    private JPanel entitiesPanel;
-    private JTable entitiesTable;
-    private JButton selectAllBtn;
-    private JButton selectNoneBtn;
-    private JPanel btnPanel;
     private JComboBox zoneComboBox;
     private JButton setBtn;
     private JButton closeBtn;
-    private JLabel filterLabel;
-    private JLabel selectedLabel;
-    private FilterPanel filterPanel;
-    private JPanel noEntitiesPanel;
-    private JLabel noEntitiesLabel;
-    private JScrollPane scrollPane;
+    private SelectableFilterableTablePanel tablePanel;
+    private JPanel borderPanel;
+    private JLabel setLabel;
     private CheckBoxSelectableTableModel<EntityHeader> dataModel;
     private Map<EntityType, List<SecurityZone>> entityTypes;
     private TableColumn pathColumn;
@@ -93,40 +83,10 @@ public class AssignSecurityZonesDialog extends JDialog {
         this.entityTypes = entityTypes;
         initBtns();
         initComboBoxes();
-        setPanelTitle();
+        setTypeSpecificLabels();
         initTable();
         loadTable();
-        loadCount();
-        initFiltering();
         enableDisable();
-    }
-
-    private void initFiltering() {
-        filterPanel.attachRowSorter(((TableRowSorter) entitiesTable.getRowSorter()), new int[]{HEADER_COL_INDEX});
-        filterPanel.registerFilterCallback(new Runnable() {
-            @Override
-            public void run() {
-                loadCount();
-                setButtonTexts();
-            }
-        });
-    }
-
-    private void setButtonTexts() {
-        final String label = filterPanel.isFiltered() ? "visible" : "all";
-        selectAllBtn.setText("select " + label);
-        selectNoneBtn.setText("clear " + label);
-    }
-
-    private void loadCount() {
-        final EntityType selectedEntityType = getSelectedEntityType();
-        if (selectedEntityType != null) {
-            final int showCount = entitiesTable.getRowCount();
-            final int total = entitiesTable.getModel().getRowCount();
-            filterLabel.setText("showing " + showCount + " of " + total + " " + selectedEntityType.getPluralName().toLowerCase());
-        } else {
-            filterLabel.setText(StringUtils.EMPTY);
-        }
     }
 
     private void initComboBoxes() {
@@ -143,11 +103,14 @@ public class AssignSecurityZonesDialog extends JDialog {
         typeComboBox.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(final ActionEvent e) {
-                setPanelTitle();
+                setTypeSpecificLabels();
                 loadTable();
-                loadCount();
                 reloadZoneComboBox();
                 enableDisable();
+                if (dataModel != null) {
+                    final EntityType type = getSelectedEntityType();
+                    tablePanel.configure(dataModel, new int[]{NAME_COL_INDEX}, type == null ? null : type.getPluralName().toLowerCase());
+                }
             }
         });
         typeComboBox.setSelectedItem(null);
@@ -171,45 +134,34 @@ public class AssignSecurityZonesDialog extends JDialog {
         }
     }
 
-    private void setPanelTitle() {
+    private void setTypeSpecificLabels() {
         final EntityType selectedEntityType = getSelectedEntityType();
+        final String type;
         if (selectedEntityType != null) {
-            entitiesPanel.setBorder(BorderFactory.createTitledBorder("Available " + selectedEntityType.getPluralName()));
+            type = selectedEntityType.getPluralName().toLowerCase();
         } else {
-            entitiesPanel.setBorder(BorderFactory.createEmptyBorder());
+            type = "entities";
         }
+        borderPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.BLACK), "Available " + type));
+        setLabel.setText("Set zone on selected " + type);
     }
 
     private void initBtns() {
         getRootPane().setDefaultButton(closeBtn);
         Utilities.setEscAction(this, closeBtn);
-        Utilities.buttonToLink(selectAllBtn);
-        Utilities.buttonToLink(selectNoneBtn);
-        selectAllBtn.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(final ActionEvent e) {
-                dataModel.selectAll();
-            }
-        });
-        selectNoneBtn.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(final ActionEvent e) {
-                dataModel.deselectAll();
-            }
-        });
         closeBtn.addActionListener(Utilities.createDisposeAction(this));
         setBtn.addActionListener(new BulkUpdateActionListener());
     }
 
     private void initTable() {
-        dataModel = TableUtil.configureSelectableTable(entitiesTable, CHECK_BOX_COL_INDEX,
+        dataModel = TableUtil.configureSelectableTable(tablePanel.getSelectableTable(), CHECK_BOX_COL_INDEX,
                 column(StringUtils.EMPTY, 30, 30, 99999, new Functions.Unary<Boolean, EntityHeader>() {
                     @Override
                     public Boolean call(final EntityHeader header) {
                         return dataModel.isSelected(header);
                     }
                 }),
-                column("Name", 30, 200, 99999, new Functions.Unary<String, EntityHeader>() {
+                column("Name", 30, 250, 99999, new Functions.Unary<String, EntityHeader>() {
                     @Override
                     public String call(final EntityHeader header) {
                         String name = "unavailable";
@@ -221,7 +173,7 @@ public class AssignSecurityZonesDialog extends JDialog {
                         return name;
                     }
                 }),
-                column("Current Zone", 30, 200, 99999, new Functions.Unary<String, EntityHeader>() {
+                column("Current Zone", 30, 250, 99999, new Functions.Unary<String, EntityHeader>() {
                     @Override
                     public String call(final EntityHeader header) {
                         String zoneName = StringUtils.EMPTY;
@@ -249,22 +201,14 @@ public class AssignSecurityZonesDialog extends JDialog {
                         return path;
                     }
                 }));
-        pathColumn = entitiesTable.getColumnModel().getColumn(PATH_COL_INDEX);
+        pathColumn = tablePanel.getSelectableTable().getColumnModel().getColumn(PATH_COL_INDEX);
         dataModel.addTableModelListener(new TableModelListener() {
             @Override
             public void tableChanged(final TableModelEvent e) {
-                final EntityType selectedEntityType = getSelectedEntityType();
-                if (selectedEntityType != null) {
-                    final int numSelected = dataModel.getSelected().size();
-                    selectedLabel.setText(numSelected + " " + selectedEntityType.getPluralName().toLowerCase() + " selected");
-                } else {
-                    selectedLabel.setText(StringUtils.EMPTY);
-                }
                 enableDisable();
             }
         });
-        Utilities.setRowSorter(entitiesTable, dataModel, new int[]{CHECK_BOX_COL_INDEX, HEADER_COL_INDEX, ZONE_COL_INDEX, PATH_COL_INDEX}, new boolean[]{true, true, true, true},
-                new Comparator[]{null, null, null, null});
+        tablePanel.configure(dataModel, new int[]{NAME_COL_INDEX}, null);
     }
 
     @Nullable
@@ -403,24 +347,17 @@ public class AssignSecurityZonesDialog extends JDialog {
     }
 
     private void showHidePathColumn(final boolean show) {
-        final boolean pathColumnVisible = entitiesTable.getColumnCount() > PATH_COL_INDEX;
+        final boolean pathColumnVisible = tablePanel.getSelectableTable().getColumnCount() > PATH_COL_INDEX;
         if (!show && pathColumnVisible) {
-            entitiesTable.getColumnModel().removeColumn(pathColumn);
+            tablePanel.getSelectableTable().getColumnModel().removeColumn(pathColumn);
         } else if (show && !pathColumnVisible) {
-            entitiesTable.getColumnModel().addColumn(pathColumn);
+            tablePanel.getSelectableTable().getColumnModel().addColumn(pathColumn);
         }
     }
 
     private void enableDisable() {
-        final boolean hasRows = entitiesTable.getModel().getRowCount() > 0;
-        scrollPane.setVisible(hasRows);
+        final boolean hasRows = tablePanel.getSelectableTable().getModel().getRowCount() > 0;
         setBtn.setEnabled(hasRows && getSelectedZone() != null && !dataModel.getSelected().isEmpty());
-        filterPanel.allowFiltering(hasRows);
-        noEntitiesPanel.setVisible(!hasRows);
-        if (noEntitiesPanel.isVisible()) {
-            final EntityType selectedEntityType = getSelectedEntityType();
-            noEntitiesLabel.setText(selectedEntityType == null ? "no entities are available" : "no " + selectedEntityType.getPluralName().toLowerCase() + " are available");
-        }
     }
 
     private class BulkUpdateActionListener implements ActionListener {

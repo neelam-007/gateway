@@ -77,7 +77,7 @@ public class FilterPanel extends JPanel {
     }
 
     public boolean isFiltered() {
-        return rowSorter.getRowFilter() != null;
+        return rowSorter == null ? false : rowSorter.getRowFilter() != null;
     }
 
     /**
