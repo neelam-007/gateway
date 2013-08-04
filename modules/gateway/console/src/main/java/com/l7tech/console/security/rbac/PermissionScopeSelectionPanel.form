@@ -34,6 +34,47 @@
         <properties/>
         <border type="none"/>
         <children>
+          <grid id="e849e" binding="folderPanel" layout-manager="GridLayoutManager" row-count="4" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+            <margin top="0" left="0" bottom="0" right="0"/>
+            <constraints>
+              <tabbedpane title="Folders"/>
+            </constraints>
+            <properties/>
+            <border type="none"/>
+            <children>
+              <nested-form id="42670" form-file="com/l7tech/console/security/rbac/SelectableFilterableTablePanel.form" binding="foldersTablePanel">
+                <constraints>
+                  <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                </constraints>
+              </nested-form>
+              <component id="6d2e0" class="javax.swing.JLabel">
+                <constraints>
+                  <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties>
+                  <text value="Apply to objects in each of the selected folders:"/>
+                </properties>
+              </component>
+              <component id="afc18" class="javax.swing.JCheckBox" binding="transitiveCheckBox">
+                <constraints>
+                  <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties>
+                  <selected value="true"/>
+                  <text value="Apply to objects in all subfolders"/>
+                </properties>
+              </component>
+              <component id="d692e" class="javax.swing.JCheckBox" binding="ancestryCheckBox">
+                <constraints>
+                  <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties>
+                  <selected value="true"/>
+                  <text value="Grant read access to all necessary folders"/>
+                </properties>
+              </component>
+            </children>
+          </grid>
           <grid id="ecdb6" binding="zonesPanel" layout-manager="GridLayoutManager" row-count="2" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
             <margin top="5" left="5" bottom="5" right="5"/>
             <constraints>
@@ -50,7 +91,7 @@
                   <text value="Apply to objects in each of the selected security zones:"/>
                 </properties>
               </component>
-              <nested-form id="da2c1" form-file="com/l7tech/console/security/rbac/SelectableFilterableTablePanel.form" binding="tablePanel">
+              <nested-form id="da2c1" form-file="com/l7tech/console/security/rbac/SelectableFilterableTablePanel.form" binding="zonesTablePanel">
                 <constraints>
                   <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
                 </constraints>

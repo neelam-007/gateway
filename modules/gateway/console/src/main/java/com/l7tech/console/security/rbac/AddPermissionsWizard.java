@@ -3,9 +3,13 @@ package com.l7tech.console.security.rbac;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.panels.Wizard;
 import com.l7tech.console.panels.WizardStepPanel;
-import com.l7tech.gateway.common.security.rbac.*;
+import com.l7tech.gateway.common.security.rbac.OperationType;
+import com.l7tech.gateway.common.security.rbac.Permission;
+import com.l7tech.gateway.common.security.rbac.RbacUtilities;
+import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.SecurityZone;
+import com.l7tech.objectmodel.folder.FolderHeader;
 import org.jetbrains.annotations.NotNull;
 
 import java.awt.*;
@@ -90,6 +94,9 @@ public class AddPermissionsWizard extends Wizard {
         private Set<OperationType> operations;
         private boolean hasScope;
         private Set<SecurityZone> selectedZones = new HashSet<>();
+        private Set<FolderHeader> selectedFolders = new HashSet<>();
+        private boolean folderTransitive;
+        private boolean folderAncestry;
         private Set<Permission> generatedPermissions = new HashSet<>();
 
         public PermissionConfig(@NotNull final Role role) {
@@ -134,6 +141,31 @@ public class AddPermissionsWizard extends Wizard {
 
         public void setSelectedZones(@NotNull final Set<SecurityZone> selectedZones) {
             this.selectedZones = selectedZones;
+        }
+
+        @NotNull
+        public Set<FolderHeader> getSelectedFolders() {
+            return selectedFolders;
+        }
+
+        public void setSelectedFolders(@NotNull final Set<FolderHeader> selectedFolders) {
+            this.selectedFolders = selectedFolders;
+        }
+
+        public boolean isFolderTransitive() {
+            return folderTransitive;
+        }
+
+        public void setFolderTransitive(boolean folderTransitive) {
+            this.folderTransitive = folderTransitive;
+        }
+
+        public boolean isFolderAncestry() {
+            return folderAncestry;
+        }
+
+        public void setFolderAncestry(boolean folderAncestry) {
+            this.folderAncestry = folderAncestry;
         }
 
         @NotNull

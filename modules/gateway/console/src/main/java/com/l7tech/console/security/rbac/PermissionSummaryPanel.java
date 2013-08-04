@@ -1,12 +1,14 @@
 package com.l7tech.console.security.rbac;
 
 import com.l7tech.console.panels.WizardStepPanel;
-import com.l7tech.gateway.common.security.rbac.OperationType;
-import com.l7tech.gateway.common.security.rbac.Permission;
-import com.l7tech.gateway.common.security.rbac.ScopePredicate;
-import com.l7tech.gateway.common.security.rbac.SecurityZonePredicate;
+import com.l7tech.console.util.Registry;
+import com.l7tech.gateway.common.security.rbac.*;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SecurityZone;
+import com.l7tech.objectmodel.folder.Folder;
+import com.l7tech.objectmodel.folder.FolderHeader;
+import com.l7tech.util.ExceptionUtils;
 import org.apache.commons.lang.StringUtils;
 
 import javax.swing.*;
@@ -61,27 +63,57 @@ public class PermissionSummaryPanel extends WizardStepPanel {
             // start fresh
             config.getGeneratedPermissions().clear();
             if (config.isHasScope()) {
-                restrictScopeLabel.setText("All objects of the specified type");
-                for (final SecurityZone zone : config.getSelectedZones()) {
-                    for (final OperationType op : config.getOperations()) {
-                        final Permission zonePermission = new Permission(config.getRole(), op, config.getType());
-                        final SecurityZonePredicate predicate = new SecurityZonePredicate(zonePermission, zone);
-                        zonePermission.getScope().add(predicate);
-                        config.getGeneratedPermissions().add(zonePermission);
-                    }
-                }
-            } else {
                 restrictScopeLabel.setText("Objects matching a set of conditions");
-                for (final OperationType operationType : config.getOperations()) {
-                    final Permission unrestricted = new Permission(config.getRole(), operationType, config.getType());
-                    unrestricted.setScope(Collections.<ScopePredicate>emptySet());
-                    config.getGeneratedPermissions().add(unrestricted);
-                }
+                generateZonePermissions(config);
+                generateFolderPermissions(config);
+            } else {
+                restrictScopeLabel.setText("All objects of the specified type");
+                generateUnrestrictedPermissions(config);
             }
-
             permissionsPanel.configure(config.getGeneratedPermissions());
         } else {
             logger.log(Level.WARNING, "Cannot read settings because received invalid settings object: " + settings);
+        }
+    }
+
+    private void generateUnrestrictedPermissions(final AddPermissionsWizard.PermissionConfig config) {
+        for (final OperationType operationType : config.getOperations()) {
+            final Permission unrestricted = new Permission(config.getRole(), operationType, config.getType());
+            unrestricted.setScope(Collections.<ScopePredicate>emptySet());
+            config.getGeneratedPermissions().add(unrestricted);
+        }
+    }
+
+    private void generateFolderPermissions(final AddPermissionsWizard.PermissionConfig config) {
+        for (final FolderHeader header : config.getSelectedFolders()) {
+            try {
+                final Folder folder = Registry.getDefault().getFolderAdmin().findByPrimaryKey(header.getGoid());
+                for (final OperationType op : config.getOperations()) {
+                    final Permission folderPermission = new Permission(config.getRole(), op, config.getType());
+                    final FolderPredicate predicate = new FolderPredicate(folderPermission, folder, config.isFolderTransitive());
+                    folderPermission.getScope().add(predicate);
+                    config.getGeneratedPermissions().add(folderPermission);
+                }
+                if (config.isFolderAncestry()) {
+                    final Permission ancestryPermission = new Permission(config.getRole(), OperationType.READ, config.getType());
+                    final EntityFolderAncestryPredicate predicate = new EntityFolderAncestryPredicate(ancestryPermission, EntityType.FOLDER, folder.getGoid());
+                    ancestryPermission.getScope().add(predicate);
+                    config.getGeneratedPermissions().add(ancestryPermission);
+                }
+            } catch (final FindException e) {
+                logger.log(Level.WARNING, "Unable to retrieve folder from header: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            }
+        }
+    }
+
+    private void generateZonePermissions(final AddPermissionsWizard.PermissionConfig config) {
+        for (final SecurityZone zone : config.getSelectedZones()) {
+            for (final OperationType op : config.getOperations()) {
+                final Permission zonePermission = new Permission(config.getRole(), op, config.getType());
+                final SecurityZonePredicate predicate = new SecurityZonePredicate(zonePermission, zone);
+                zonePermission.getScope().add(predicate);
+                config.getGeneratedPermissions().add(zonePermission);
+            }
         }
     }
 }
