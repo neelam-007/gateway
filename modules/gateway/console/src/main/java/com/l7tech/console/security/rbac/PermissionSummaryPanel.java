@@ -66,6 +66,7 @@ public class PermissionSummaryPanel extends WizardStepPanel {
                 restrictScopeLabel.setText("Objects matching a set of conditions");
                 generateZonePermissions(config);
                 generateFolderPermissions(config);
+                generateAttributePermissions(config);
             } else {
                 restrictScopeLabel.setText("All objects of the specified type");
                 generateUnrestrictedPermissions(config);
@@ -73,6 +74,20 @@ public class PermissionSummaryPanel extends WizardStepPanel {
             permissionsPanel.configure(config.getGeneratedPermissions());
         } else {
             logger.log(Level.WARNING, "Cannot read settings because received invalid settings object: " + settings);
+        }
+    }
+
+    private void generateAttributePermissions(final AddPermissionsWizard.PermissionConfig config) {
+        if (!config.getAttributePredicates().isEmpty()) {
+            for (final OperationType op : config.getOperations()) {
+                final Permission permission = new Permission(config.getRole(), op, config.getType());
+                for (final AttributePredicate attribute : config.getAttributePredicates()) {
+                    final AttributePredicate predicate = new AttributePredicate(permission, attribute.getAttribute(), attribute.getValue());
+                    predicate.setMode(attribute.getMode());
+                    permission.getScope().add(predicate);
+                }
+                config.getGeneratedPermissions().add(permission);
+            }
         }
     }
 

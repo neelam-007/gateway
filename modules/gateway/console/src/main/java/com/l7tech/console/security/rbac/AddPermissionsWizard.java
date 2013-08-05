@@ -3,10 +3,7 @@ package com.l7tech.console.security.rbac;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.panels.Wizard;
 import com.l7tech.console.panels.WizardStepPanel;
-import com.l7tech.gateway.common.security.rbac.OperationType;
-import com.l7tech.gateway.common.security.rbac.Permission;
-import com.l7tech.gateway.common.security.rbac.RbacUtilities;
-import com.l7tech.gateway.common.security.rbac.Role;
+import com.l7tech.gateway.common.security.rbac.*;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.SecurityZone;
 import com.l7tech.objectmodel.folder.FolderHeader;
@@ -97,6 +94,7 @@ public class AddPermissionsWizard extends Wizard {
         private Set<FolderHeader> selectedFolders = new HashSet<>();
         private boolean folderTransitive;
         private boolean folderAncestry;
+        private Set<AttributePredicate> attributePredicates = new HashSet<>();
         private Set<Permission> generatedPermissions = new HashSet<>();
 
         public PermissionConfig(@NotNull final Role role) {
@@ -166,6 +164,15 @@ public class AddPermissionsWizard extends Wizard {
 
         public void setFolderAncestry(boolean folderAncestry) {
             this.folderAncestry = folderAncestry;
+        }
+
+        @NotNull
+        public Set<AttributePredicate> getAttributePredicates() {
+            return attributePredicates;
+        }
+
+        public void setAttributePredicates(@NotNull final Set<AttributePredicate> attributePredicates) {
+            this.attributePredicates = attributePredicates;
         }
 
         @NotNull

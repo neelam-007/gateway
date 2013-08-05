@@ -3,23 +3,36 @@ package com.l7tech.console.security.rbac;
 import com.l7tech.console.panels.WizardStepPanel;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.SecurityZoneUtil;
+import com.l7tech.gateway.common.security.rbac.AttributePredicate;
 import com.l7tech.gui.CheckBoxSelectableTableModel;
+import com.l7tech.gui.SimpleTableModel;
 import com.l7tech.gui.util.TableUtil;
+import com.l7tech.gui.util.Utilities;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SecurityZone;
 import com.l7tech.objectmodel.folder.FolderHeader;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import org.apache.commons.lang.StringUtils;
+import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
 import java.awt.*;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
+import java.beans.BeanInfo;
+import java.beans.IntrospectionException;
+import java.beans.Introspector;
+import java.beans.PropertyDescriptor;
+import java.lang.reflect.Method;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -41,6 +54,13 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
     private static final String DESCRIPTION = "Description";
     private static final int MAX_WIDTH = 99999;
     private static final int CHECK_BOX_WIDTH = 30;
+    private static final String ATTRIBUTE = "Attribute";
+    private static final String COMPARISON = "Comparison";
+    private static final String VALUE = "Value";
+    private static final String EQUALS = "equals";
+    private static final String STARTS_WITH = "starts with";
+    private static final String EQ = "eq";
+    private static final String SW = "sw";
     private JPanel contentPanel;
     private JTabbedPane tabPanel;
     private JPanel zonesPanel;
@@ -49,8 +69,24 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
     private JCheckBox transitiveCheckBox;
     private JCheckBox ancestryCheckBox;
     private SelectableFilterableTablePanel foldersTablePanel;
+    private JPanel attributesPanel;
+    private JTable attributePredicatesTable;
+    private JButton removeButton;
+    private JButton addButton;
+    private JPanel criteriaPanel;
+    private JComboBox attributeComboBox;
+    private JComboBox comparisonComboBox;
+    private JTextField attributeValueTextField;
     private CheckBoxSelectableTableModel<SecurityZone> zonesModel;
     private CheckBoxSelectableTableModel<FolderHeader> foldersModel;
+    private SimpleTableModel<AttributePredicate> attributesModel;
+    private static Map<String, String> validComparisons = new HashMap<>();
+    private AddPermissionsWizard.PermissionConfig config;
+
+    static {
+        validComparisons.put(EQUALS, EQ);
+        validComparisons.put(STARTS_WITH, SW);
+    }
 
     public PermissionScopeSelectionPanel() {
         super(null);
@@ -67,7 +103,7 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
 
     @Override
     public boolean canAdvance() {
-        return !zonesModel.getSelected().isEmpty() || !foldersModel.getSelected().isEmpty();
+        return !zonesModel.getSelected().isEmpty() || !foldersModel.getSelected().isEmpty() || attributesModel.getRowCount() > 0;
     }
 
     @Override
@@ -89,6 +125,9 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
 
     @Override
     public void readSettings(final Object settings) throws IllegalArgumentException {
+        if (settings instanceof AddPermissionsWizard.PermissionConfig) {
+            config = (AddPermissionsWizard.PermissionConfig) settings;
+        }
         setSkipped(canSkip(settings));
     }
 
@@ -100,6 +139,7 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
             config.setSelectedFolders(new HashSet<>(foldersModel.getSelected()));
             config.setFolderTransitive(transitiveCheckBox.isSelected());
             config.setFolderAncestry(ancestryCheckBox.isSelected());
+            config.setAttributePredicates(new HashSet<>(attributesModel.getRows()));
         } else {
             logger.log(Level.WARNING, "Cannot store settings because received invalid settings object: " + settings);
         }
@@ -107,29 +147,102 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
 
     private void initTables() {
         final TableListener tableListener = new TableListener();
-        zonesModel = TableUtil.configureSelectableTable(zonesTablePanel.getSelectableTable(), CHECK_COL_INDEX,
-                column(StringUtils.EMPTY, CHECK_BOX_WIDTH, CHECK_BOX_WIDTH, MAX_WIDTH, new Functions.Unary<Boolean, SecurityZone>() {
+        initZonesTable(tableListener);
+        initFoldersTable(tableListener);
+        initAttributes(tableListener);
+    }
+
+    private void initAttributes(final TableListener tableListener) {
+        attributesModel = TableUtil.configureTable(attributePredicatesTable,
+                column(ATTRIBUTE, 30, 200, MAX_WIDTH, new Functions.Unary<String, AttributePredicate>() {
                     @Override
-                    public Boolean call(final SecurityZone zone) {
-                        return zonesModel.isSelected(zone);
+                    public String call(final AttributePredicate predicate) {
+                        return predicate.getAttribute();
                     }
                 }),
-                column(NAME, 30, 200, MAX_WIDTH, new Functions.Unary<String, SecurityZone>() {
+                column(COMPARISON, 30, 200, MAX_WIDTH, new Functions.Unary<String, AttributePredicate>() {
                     @Override
-                    public String call(final SecurityZone zone) {
-                        return zone.getName();
+                    public String call(final AttributePredicate predicate) {
+                        return predicate.getMode();
                     }
                 }),
-                column(DESCRIPTION, 30, 400, MAX_WIDTH, new Functions.Unary<String, SecurityZone>() {
+                column(VALUE, 30, 200, MAX_WIDTH, new Functions.Unary<String, AttributePredicate>() {
                     @Override
-                    public String call(final SecurityZone zone) {
-                        return zone.getDescription();
+                    public String call(final AttributePredicate predicate) {
+                        return predicate.getValue();
                     }
                 }));
-        zonesModel.setSelectableObjects(new ArrayList<>(SecurityZoneUtil.getSortedReadableSecurityZones()));
-        zonesModel.addTableModelListener(tableListener);
-        zonesTablePanel.configure(zonesModel, new int[]{NAME_COL_INDEX}, "zones");
+        attributesModel.addTableModelListener(tableListener);
+        attributesModel.setRows(new ArrayList<AttributePredicate>());
+        attributePredicatesTable.getSelectionModel().setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+        attributePredicatesTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+            @Override
+            public void valueChanged(final ListSelectionEvent e) {
+                if (!e.getValueIsAdjusting()) {
+                    removeButton.setEnabled(attributePredicatesTable.getSelectedRows().length > 0);
+                }
+            }
+        });
+        Utilities.setRowSorter(attributePredicatesTable, attributesModel);
 
+        attributeComboBox.setModel(new DefaultComboBoxModel(findAttributeNames(config == null ? EntityType.ANY : config.getType()).toArray()));
+        comparisonComboBox.setModel(new DefaultComboBoxModel(validComparisons.keySet().toArray()));
+
+        addButton.setEnabled(false);
+        addButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(final ActionEvent e) {
+                final Object selectedAttribute = attributeComboBox.getSelectedItem();
+                final Object selectedComparison = comparisonComboBox.getSelectedItem();
+                if (selectedAttribute instanceof String && selectedComparison instanceof String) {
+                    final String mode = validComparisons.get(selectedComparison);
+                    if (mode != null) {
+                        final AttributePredicate predicate = new AttributePredicate(null, selectedAttribute.toString(), attributeValueTextField.getText().trim());
+                        predicate.setMode(mode);
+                        attributesModel.addRow(predicate);
+                    } else {
+                        logger.log(Level.WARNING, "Unrecognized comparison mode: " + selectedComparison);
+                    }
+                }
+            }
+        });
+
+        removeButton.setEnabled(false);
+        removeButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(final ActionEvent e) {
+                final int[] selectedRows = attributePredicatesTable.getSelectedRows();
+                for (int i = 0; i < selectedRows.length; i++) {
+                    final int selectedRow = selectedRows[i];
+                    if (selectedRow >= 0) {
+                        final int modelIndex = attributePredicatesTable.convertRowIndexToModel(selectedRow);
+                        if (modelIndex >= 0) {
+                            attributesModel.removeRowAt(modelIndex);
+                        }
+                    }
+                }
+            }
+        });
+
+        attributeValueTextField.addKeyListener(new KeyListener() {
+            @Override
+            public void keyTyped(final KeyEvent e) {
+            }
+
+            @Override
+            public void keyPressed(final KeyEvent e) {
+            }
+
+            @Override
+            public void keyReleased(final KeyEvent e) {
+                addButton.setEnabled(attributeComboBox.getSelectedItem() != null &&
+                        comparisonComboBox.getSelectedItem() != null &&
+                        StringUtils.isNotBlank(attributeValueTextField.getText()));
+            }
+        });
+    }
+
+    private void initFoldersTable(final TableListener tableListener) {
         foldersModel = TableUtil.configureSelectableTable(foldersTablePanel.getSelectableTable(), CHECK_COL_INDEX,
                 column(StringUtils.EMPTY, CHECK_BOX_WIDTH, CHECK_BOX_WIDTH, MAX_WIDTH, new Functions.Unary<Boolean, FolderHeader>() {
                     @Override
@@ -181,10 +294,74 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
         foldersTablePanel.configure(foldersModel, new int[]{NAME_COL_INDEX}, "folders");
     }
 
+    private void initZonesTable(final TableListener tableListener) {
+        zonesModel = TableUtil.configureSelectableTable(zonesTablePanel.getSelectableTable(), CHECK_COL_INDEX,
+                column(StringUtils.EMPTY, CHECK_BOX_WIDTH, CHECK_BOX_WIDTH, MAX_WIDTH, new Functions.Unary<Boolean, SecurityZone>() {
+                    @Override
+                    public Boolean call(final SecurityZone zone) {
+                        return zonesModel.isSelected(zone);
+                    }
+                }),
+                column(NAME, 30, 200, MAX_WIDTH, new Functions.Unary<String, SecurityZone>() {
+                    @Override
+                    public String call(final SecurityZone zone) {
+                        return zone.getName();
+                    }
+                }),
+                column(DESCRIPTION, 30, 400, MAX_WIDTH, new Functions.Unary<String, SecurityZone>() {
+                    @Override
+                    public String call(final SecurityZone zone) {
+                        return zone.getDescription();
+                    }
+                }));
+        zonesModel.setSelectableObjects(new ArrayList<>(SecurityZoneUtil.getSortedReadableSecurityZones()));
+        zonesModel.addTableModelListener(tableListener);
+        zonesTablePanel.configure(zonesModel, new int[]{NAME_COL_INDEX}, "zones");
+    }
+
+    private Collection<String> findAttributeNames(@NotNull final EntityType entityType) {
+        final Collection<String> names = new ArrayList<String>();
+        final Class eClazz = entityType.getEntityClass();
+        if (eClazz != null) {
+            try {
+                final BeanInfo info = Introspector.getBeanInfo(eClazz);
+                final PropertyDescriptor[] props = info.getPropertyDescriptors();
+                for (final PropertyDescriptor propertyDescriptor : props) {
+                    final Method getter = propertyDescriptor.getReadMethod();
+                    if (getter != null) {
+                        final Class rtype = getter.getReturnType();
+                        if (Number.class.isAssignableFrom(rtype) ||
+                                rtype == Long.TYPE ||
+                                rtype == Integer.TYPE ||
+                                rtype == Byte.TYPE ||
+                                rtype == Short.TYPE ||
+                                CharSequence.class.isAssignableFrom(rtype) ||
+                                rtype == Boolean.TYPE ||
+                                Boolean.class.isAssignableFrom(rtype) ||
+                                Enum.class.isAssignableFrom(rtype)) {
+                            //there is a getter for this property, so use it in the list
+                            names.add(propertyDescriptor.getName());
+                        }
+                    }
+                }
+
+                // Allow attempts to use Name for ANY entity, since in practice most will be NamedEntity subclasses
+                if (EntityType.ANY.equals(entityType)) {
+                    names.add("name");
+                }
+            } catch (final IntrospectionException e) {
+                logger.log(Level.WARNING, "Unable to introspect " + entityType, e);
+                JOptionPane.showMessageDialog(this, "Unable to determine available attributes", "Error", JOptionPane.ERROR_MESSAGE, null);
+            }
+        }
+        return names;
+    }
+
     private class TableListener implements TableModelListener {
         @Override
         public void tableChanged(final TableModelEvent e) {
-            if (e.getType() == TableModelEvent.UPDATE) {
+            final int type = e.getType();
+            if (type == TableModelEvent.UPDATE || type == TableModelEvent.INSERT || type == TableModelEvent.DELETE) {
                 notifyListeners();
             }
         }
