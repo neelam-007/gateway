@@ -38,7 +38,7 @@ RETURN lower(hex(goid));
 -- The dropForeignKey function will drop a foreign key constraint on a table where the constraint does not have a name.
 -- The first parameter is the table name that has the constraint. The second parameter is the table that the constraint
 -- references. If there are 2 different foreign key references to the same table an error will be returned. This only
--- works for foreign keys that are on primary keys of the foreign table
+-- works for foreign keys that are on primary keys of the foreign table. A
 DROP PROCEDURE IF EXISTS dropForeignKey;
 delimiter //
 create procedure dropForeignKey(in tableName varchar(255), in referenceTableName varchar(255))
@@ -47,13 +47,22 @@ begin
 	set @ssgSchema = SCHEMA();
 	SELECT count(*) into @constraint_count FROM information_schema.REFERENTIAL_CONSTRAINTS
 	WHERE constraint_schema = @ssgSchema AND table_name = tableName and referenced_table_name=referenceTableName and unique_constraint_name=@constraintName;
-    if @constraint_count > 1 then set @error_message = concat('\'',tableName, '\' table has more then one foreign key references to \'', referenceTableName,'\''); SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = @error_message; end if;
-	SELECT constraint_name into @constraint_name FROM information_schema.REFERENTIAL_CONSTRAINTS
-	WHERE constraint_schema = @ssgSchema AND table_name = tableName and referenced_table_name=referenceTableName;
-	SET @s = CONCAT('ALTER TABLE ', tableName, ' DROP FOREIGN KEY ', @constraint_name);
-	PREPARE stmt FROM @s;
-	EXECUTE stmt;
-	DEALLOCATE PREPARE stmt;
+	-- throw an error if there are more then one foreign keys found
+    if @constraint_count > 1 then
+        set @error_message = concat('\'',tableName, '\' table has more then one foreign key references to \'', referenceTableName,'\'');
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = @error_message;
+    elseif @constraint_count = 1 then
+        SELECT constraint_name into @constraint_name FROM information_schema.REFERENTIAL_CONSTRAINTS
+        WHERE constraint_schema = @ssgSchema AND table_name = tableName and referenced_table_name=referenceTableName;
+        SET @s = CONCAT('ALTER TABLE ', tableName, ' DROP FOREIGN KEY ', @constraint_name);
+        PREPARE stmt FROM @s;
+        EXECUTE stmt;
+        DEALLOCATE PREPARE stmt;
+    elseif @constraint_count = 0 then
+        -- warn if there are no foreign keys found
+        set @error_message = concat('No foreign key found from table \'',tableName, '\' to table \'', referenceTableName,'\'');
+        SIGNAL SQLSTATE '01000' SET MESSAGE_TEXT = @error_message;
+    end if;
 end//
 delimiter ;
 
