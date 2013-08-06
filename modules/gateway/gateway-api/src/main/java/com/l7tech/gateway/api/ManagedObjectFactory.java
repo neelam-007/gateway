@@ -407,6 +407,15 @@ public class ManagedObjectFactory {
     }
 
     /**
+     * Create a new SecurityZoneMO instance.
+     *
+     * @return The new instance
+     */
+    public static SecurityZoneMO createSecurityZone() {
+        return new SecurityZoneMO();
+    }
+
+    /**
      * Read a managed object from the given data.
      *
      * @param in The input data.
@@ -494,7 +503,8 @@ public class ManagedObjectFactory {
                 StoredPasswordMO.class,
                 TrustedCertificateMO.class,
                 CustomKeyValueStoreMO.class,
-                ActiveConnectorMO.class
+                ActiveConnectorMO.class,
+                SecurityZoneMO.class
         };
     }
 

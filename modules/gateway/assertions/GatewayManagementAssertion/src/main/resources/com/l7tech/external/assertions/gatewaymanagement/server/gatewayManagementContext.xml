@@ -163,6 +163,9 @@
                 <bean class="com.l7tech.external.assertions.gatewaymanagement.server.ActiveConnectorResourceFactory" parent="resourceFactoryParent">
                     <constructor-arg index="3" ref="ssgActiveConnectorManager"/>
                 </bean>
+                <bean class="com.l7tech.external.assertions.gatewaymanagement.server.SecurityZoneResourceFactory" parent="resourceFactoryParent">
+                    <constructor-arg index="3" ref="securityZoneManager"/>
+                </bean>
             </list>
         </constructor-arg>
     </bean>
