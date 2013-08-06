@@ -203,11 +203,12 @@ public class SiteMinderConfigurationWindow extends JDialog {
     private void enableOrDisableButtons(){
 
         int selectedRow = configurationTable.getSelectedRow();
+        int count = configurationTableModel.getRowCount();
 
         boolean addEnabled = true;
-        boolean editEnabled = selectedRow >= 0;
-        boolean removeEnabled = selectedRow >= 0;
-        boolean copyEnabled = selectedRow >= 0;
+        boolean editEnabled = selectedRow >= 0 && count > 0;
+        boolean removeEnabled = selectedRow >= 0 && count > 0;
+        boolean copyEnabled = selectedRow >= 0 && count > 0;
 
         addButton.setEnabled(flags.canCreateSome() && addEnabled);
         editButton.setEnabled(editEnabled);  // Not using flags.canUpdateSome(), since we still allow users to view the properties.
