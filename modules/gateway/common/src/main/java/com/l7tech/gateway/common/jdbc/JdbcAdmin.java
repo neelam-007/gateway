@@ -11,7 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
-import static com.l7tech.gateway.common.security.rbac.MethodStereotype.FIND_ENTITIES;
+import static com.l7tech.gateway.common.security.rbac.MethodStereotype.TEST_CONFIGURATION;
 import static org.springframework.transaction.annotation.Propagation.REQUIRED;
 
 /**
@@ -98,7 +98,7 @@ public interface JdbcAdmin extends AsyncAdminMethods{
      * @return null if the testing is successful.  Otherwise, return an error message with testing failure detail.
      */
     @Transactional(readOnly=true)
-    @Secured(types = EntityType.JDBC_CONNECTION, stereotype = FIND_ENTITIES)
+    @Secured(types = EntityType.JDBC_CONNECTION, stereotype = TEST_CONFIGURATION)
     AsyncAdminMethods.JobId<String> testJdbcConnection(JdbcConnection connection);
 
     /**
