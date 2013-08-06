@@ -54,41 +54,52 @@ public class RbacUtilities {
         return ConfigFactory.getBooleanProperty( SYSTEM_PROP_ENABLE_BUILTIN_ROLEEDIT, false );
     }
 
+    /**
+     * Get description for the role. Non user-created roles may have formatted descriptions.
+     *
+     * @param role      the Role for which to get a description.
+     * @param asHtml    true if the description should be formatted in html if possible (only applies to non-user-created roles).
+     * @return a description for the role which may be formatted if it is a non user-created role.
+     */
     public static String getDescriptionString(Role role, boolean asHtml) {
-        String name = role.getName();
-        Matcher mat = removeOidPattern.matcher(name);
-        if (mat.matches()) name = mat.group(1);
+        if (role.isUserCreated()) {
+            return role.getDescription();
+        } else {
+            String name = role.getName();
+            Matcher mat = removeOidPattern.matcher(name);
+            if (mat.matches()) name = mat.group(1);
 
-        String description = role.getDescription();
-        if (StringUtils.isEmpty(name) || StringUtils.isEmpty(description))
-            return "";
+            String description = role.getDescription();
+            if (StringUtils.isEmpty(name) || StringUtils.isEmpty(description))
+                return "";
 
-        String entityName = null;
-        EntityType type = role.getEntityType();
-        if (type != null) {
-            if (patternMap.containsKey(type)) {
-                Pattern pat = patternMap.get(type);
-                mat = pat.matcher(name);
-                if (mat.matches()) {
-                    entityName = mat.group(1);
-                    Entity entity = role.getCachedSpecificEntity();
-                    if (entity instanceof PublishedService) {
-                        String uri = ((PublishedService) entity).getRoutingUri();
-                        if (uri != null) entityName += " [" + uri + "]";
+            String entityName = null;
+            EntityType type = role.getEntityType();
+            if (type != null) {
+                if (patternMap.containsKey(type)) {
+                    Pattern pat = patternMap.get(type);
+                    mat = pat.matcher(name);
+                    if (mat.matches()) {
+                        entityName = mat.group(1);
+                        Entity entity = role.getCachedSpecificEntity();
+                        if (entity instanceof PublishedService) {
+                            String uri = ((PublishedService) entity).getRoutingUri();
+                            if (uri != null) entityName += " [" + uri + "]";
+                        }
                     }
                 }
             }
-        }
 
-        String[] args;
-        String nameMaybeHtml = asHtml ? "<strong>" + name + "</strong>" : name;
-        if (entityName == null) {
-            args = new String[] { nameMaybeHtml };
-        } else {
-            args = new String[] { nameMaybeHtml, entityName };
-        }
+            String[] args;
+            String nameMaybeHtml = asHtml ? "<strong>" + name + "</strong>" : name;
+            if (entityName == null) {
+                args = new String[] { nameMaybeHtml };
+            } else {
+                args = new String[] { nameMaybeHtml, entityName };
+            }
 
-        return MessageFormat.format(description, args);
+            return MessageFormat.format(description, args);
+        }
     }
 
     /**
