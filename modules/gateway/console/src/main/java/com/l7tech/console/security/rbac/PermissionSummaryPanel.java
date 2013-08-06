@@ -85,12 +85,18 @@ public class PermissionSummaryPanel extends WizardStepPanel {
 
     private static void generateScopedPermissions(final PermissionsConfig config, final FolderAdmin folderAdmin) {
         if (config.isFolderAncestry()) {
-            // provide read access for ancestry of each selected folder
+            // provide read access for ancestry of each selected folder and the selected folder itself
             for (final FolderHeader folderHeader : config.getSelectedFolders()) {
                 final Permission ancestryPermission = new Permission(config.getRole(), OperationType.READ, EntityType.FOLDER);
                 final EntityFolderAncestryPredicate ancestryPredicate = new EntityFolderAncestryPredicate(ancestryPermission, EntityType.FOLDER, folderHeader.getGoid());
                 ancestryPermission.getScope().add(ancestryPredicate);
                 config.getGeneratedPermissions().add(ancestryPermission);
+
+                final Permission readFolderPermission = new Permission(config.getRole(), OperationType.READ, EntityType.FOLDER);
+                final ObjectIdentityPredicate specificFolderPredicate = new ObjectIdentityPredicate(readFolderPermission, folderHeader.getStrId());
+                specificFolderPredicate.setHeader(folderHeader);
+                readFolderPermission.getScope().add(specificFolderPredicate);
+                config.getGeneratedPermissions().add(readFolderPermission);
             }
         }
         for (final OperationType op : config.getOperations()) {

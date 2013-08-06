@@ -190,9 +190,10 @@ public class PermissionSummaryPanelTest {
         when(folderAdmin.findByPrimaryKey(goid)).thenReturn(folder2);
         PermissionSummaryPanel.generatePermissions(config, folderAdmin);
 
-        assertEquals(4, config.getGeneratedPermissions().size());
+        assertEquals(6, config.getGeneratedPermissions().size());
         int ancestryPermissionCount = 0;
         int folderPermissionCount = 0;
+        int specificFolderPermissionCount = 0;
         for (final Permission permission : config.getGeneratedPermissions()) {
             final Map<Class, Integer> predicateTypes = countPredicateTypes(permission);
             if (predicateTypes.containsKey(FolderPredicate.class)) {
@@ -200,14 +201,19 @@ public class PermissionSummaryPanelTest {
                 assertEquals(new Integer(1), predicateTypes.get(FolderPredicate.class));
                 folderPermissionCount++;
                 assertTrue(((FolderPredicate) permission.getScope().iterator().next()).isTransitive());
-            } else {
+            } else if (predicateTypes.containsKey(EntityFolderAncestryPredicate.class)) {
                 // should be the ancestry permission
                 assertEquals(new Integer(1), predicateTypes.get(EntityFolderAncestryPredicate.class));
                 ancestryPermissionCount++;
+            } else {
+                // should be the read folder permission
+                assertEquals(new Integer(1), predicateTypes.get(ObjectIdentityPredicate.class));
+                specificFolderPermissionCount++;
             }
         }
         assertEquals(2, ancestryPermissionCount);
         assertEquals(2, folderPermissionCount);
+        assertEquals(2, specificFolderPermissionCount);
     }
 
     @Test
@@ -226,9 +232,10 @@ public class PermissionSummaryPanelTest {
         when(folderAdmin.findByPrimaryKey(goid)).thenReturn(folder2);
         PermissionSummaryPanel.generatePermissions(config, folderAdmin);
 
-        assertEquals(6, config.getGeneratedPermissions().size());
+        assertEquals(8, config.getGeneratedPermissions().size());
         int ancestryPermissionCount = 0;
         int folderPermissionCount = 0;
+        int specificFolderPermissionCount = 0;
         final Set<OperationType> foundOps = new HashSet<>();
         for (final Permission permission : config.getGeneratedPermissions()) {
             foundOps.add(permission.getOperation());
@@ -238,14 +245,19 @@ public class PermissionSummaryPanelTest {
                 assertEquals(new Integer(1), predicateTypes.get(FolderPredicate.class));
                 folderPermissionCount++;
                 assertTrue(((FolderPredicate) permission.getScope().iterator().next()).isTransitive());
-            } else {
+            } else if (predicateTypes.containsKey(EntityFolderAncestryPredicate.class)) {
                 // should be the ancestry permission
                 assertEquals(new Integer(1), predicateTypes.get(EntityFolderAncestryPredicate.class));
                 ancestryPermissionCount++;
+            } else {
+                // should be the read folder permission
+                assertEquals(new Integer(1), predicateTypes.get(ObjectIdentityPredicate.class));
+                specificFolderPermissionCount++;
             }
         }
         assertEquals(2, ancestryPermissionCount);
         assertEquals(4, folderPermissionCount);
+        assertEquals(2, specificFolderPermissionCount);
         assertEquals(2, foundOps.size());
         assertTrue(foundOps.contains(OperationType.READ));
         assertTrue(foundOps.contains(OperationType.UPDATE));
