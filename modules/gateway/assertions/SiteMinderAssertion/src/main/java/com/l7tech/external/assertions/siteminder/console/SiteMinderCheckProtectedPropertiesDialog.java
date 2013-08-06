@@ -61,6 +61,14 @@ public class SiteMinderCheckProtectedPropertiesDialog extends AssertionPropertie
             public void stateChanged(ChangeEvent e) {
                 enableDisableComponents();
             }
+
+        });
+
+        agentComboBox.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                enableDisableComponents();
+            }
         });
 
         actionComboBox.addActionListener(new ActionListener() {
@@ -90,6 +98,7 @@ public class SiteMinderCheckProtectedPropertiesDialog extends AssertionPropertie
         inputValidator.constrainTextFieldToBeNonEmpty("Protected Resource", resourceTextField, null);
         inputValidator.ensureComboBoxSelection("Action", actionComboBox);
         inputValidator.attachToButton(getOkButton(), super.createOkAction());
+        enableDisableComponents();
 
     }
 
@@ -111,7 +120,11 @@ public class SiteMinderCheckProtectedPropertiesDialog extends AssertionPropertie
     }
 
     private void enableDisableComponents() {
-        getOkButton().setEnabled(prefixTargetVariablePanel.isEntryValid() && actionComboBox.getSelectedIndex() > -1 && !resourceTextField.getText().isEmpty());
+        getOkButton().setEnabled(prefixTargetVariablePanel.isEntryValid() &&
+                actionComboBox.getSelectedIndex() > -1 &&
+                !resourceTextField.getText().isEmpty() &&
+                agentComboBox.getSelectedIndex() > -1
+        );
     }
     /**
      * Configure the view with the data from the specified assertion bean.
