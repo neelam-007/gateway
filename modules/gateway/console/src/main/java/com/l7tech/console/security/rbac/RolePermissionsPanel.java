@@ -1,8 +1,6 @@
 package com.l7tech.console.security.rbac;
 
 import com.l7tech.console.panels.FilterPanel;
-import com.l7tech.console.util.EntityNameResolver;
-import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.security.rbac.Permission;
@@ -11,8 +9,6 @@ import com.l7tech.gateway.common.security.rbac.ScopePredicate;
 import com.l7tech.gui.SimpleTableModel;
 import com.l7tech.gui.util.*;
 import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import org.apache.commons.collections.ComparatorUtils;
 import org.apache.commons.lang.StringUtils;
@@ -28,7 +24,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.*;
 import java.util.List;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.l7tech.gui.util.TableUtil.column;
@@ -49,12 +44,18 @@ public class RolePermissionsPanel extends JPanel {
     private static final String UPDATE = "U";
     private static final String DELETE = "D";
     private static final String OTHER = "O";
+    private static final String COMPLEX_SCOPE = "<complex scope>";
+    private static final int COMPLEX_SCOPE_SIZE = 3;
+    private static final int MAX_WIDTH = 99999;
+    private static final int SMALL_COL_WIDTH = 7;
     private JPanel contentPanel;
     private JTable permissionsTable;
     private FilterPanel filterPanel;
     private JLabel countLabel;
     private JButton removeButton;
     private JButton addButton;
+    private JButton propertiesButton;
+    private JPanel editableButtonPanel;
     private Role role;
     private Set<Permission> permissions;
     private SimpleTableModel<PermissionGroup> permissionsModel;
@@ -100,7 +101,18 @@ public class RolePermissionsPanel extends JPanel {
     }
 
     private void initButtons() {
-        removeButton.setVisible(!readOnly);
+        propertiesButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(final ActionEvent e) {
+                final PermissionGroup selected = getFirstSelected();
+                if (selected != null) {
+                    final PermissionGroupPropertiesDialog groupPropertiesDialog = new PermissionGroupPropertiesDialog(TopComponents.getInstance().getTopParent(), selected);
+                    groupPropertiesDialog.pack();
+                    Utilities.centerOnParentWindow(groupPropertiesDialog);
+                    DialogDisplayer.display(groupPropertiesDialog);
+                }
+            }
+        });
         removeButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(final ActionEvent e) {
@@ -113,7 +125,6 @@ public class RolePermissionsPanel extends JPanel {
                 }
             }
         });
-        addButton.setVisible(!readOnly);
         addButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(final ActionEvent e) {
@@ -129,75 +140,64 @@ public class RolePermissionsPanel extends JPanel {
                 }
             }
         });
+        editableButtonPanel.setVisible(!readOnly);
+        Utilities.setDoubleClickAction(permissionsTable, propertiesButton);
     }
 
     private void initTable() {
         final List<TableUtil.Col<PermissionGroup>> columns = new ArrayList<>();
         if (!readOnly) {
-            columns.add(column(NEW, 7, 7, 99999, new Functions.Unary<Boolean, PermissionGroup>() {
+            columns.add(column(NEW, SMALL_COL_WIDTH, SMALL_COL_WIDTH, MAX_WIDTH, new Functions.Unary<Boolean, PermissionGroup>() {
                 @Override
                 public Boolean call(final PermissionGroup permissionGroup) {
                     return hasNewPermission(permissionGroup);
                 }
             }));
         }
-        columns.add(column(TYPE, 30, 60, 99999, new Functions.Unary<String, PermissionGroup>() {
+        columns.add(column(TYPE, 30, 60, MAX_WIDTH, new Functions.Unary<String, PermissionGroup>() {
             @Override
             public String call(final PermissionGroup permissionGroup) {
                 return permissionGroup.getEntityType() == EntityType.ANY ? ALL : permissionGroup.getEntityType().getPluralName();
             }
         }));
-        columns.add(column(SCOPE, 30, 175, 99999, new Functions.Unary<String, PermissionGroup>() {
+        columns.add(column(SCOPE, 30, 175, MAX_WIDTH, new Functions.Unary<String, PermissionGroup>() {
             @Override
             public String call(final PermissionGroup permissionGroup) {
-                final StringBuilder sb = new StringBuilder();
+                final String scopeDescription;
                 final Set<ScopePredicate> scope = permissionGroup.getScope();
-                if (scope.isEmpty()) {
-                    sb.append(ALL);
+                if (scope.size() < COMPLEX_SCOPE_SIZE) {
+                    scopeDescription = PermissionGroupPropertiesDialog.getScopeDescription(permissionGroup);
                 } else {
-                    final Iterator<ScopePredicate> iterator = scope.iterator();
-                    final EntityNameResolver resolver = Registry.getDefault().getEntityNameResolver();
-                    for (int i = 0; i < scope.size(); i++) {
-                        try {
-                            sb.append(resolver.getNameForEntity(iterator.next(), true));
-                        } catch (final FindException e) {
-                            logger.log(Level.WARNING, "Unable to get name for scope predicate: " +
-                                    ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-                            sb.append("name unavailable");
-                        }
-                        if (i < scope.size() - 1) {
-                            sb.append(", ");
-                        }
-                    }
+                    scopeDescription = COMPLEX_SCOPE;
                 }
-                return sb.toString();
+                return scopeDescription;
             }
         }));
-        columns.add(column(CREATE, 7, 7, 99999, new Functions.Unary<Boolean, PermissionGroup>() {
+        columns.add(column(CREATE, SMALL_COL_WIDTH, SMALL_COL_WIDTH, MAX_WIDTH, new Functions.Unary<Boolean, PermissionGroup>() {
             @Override
             public Boolean call(final PermissionGroup permissionGroup) {
                 return permissionGroup.getOperations().contains(OperationType.CREATE);
             }
         }));
-        columns.add(column(READ, 7, 7, 99999, new Functions.Unary<Boolean, PermissionGroup>() {
+        columns.add(column(READ, SMALL_COL_WIDTH, SMALL_COL_WIDTH, MAX_WIDTH, new Functions.Unary<Boolean, PermissionGroup>() {
             @Override
             public Boolean call(final PermissionGroup permissionGroup) {
                 return permissionGroup.getOperations().contains(OperationType.READ);
             }
         }));
-        columns.add(column(UPDATE, 7, 7, 99999, new Functions.Unary<Boolean, PermissionGroup>() {
+        columns.add(column(UPDATE, SMALL_COL_WIDTH, SMALL_COL_WIDTH, MAX_WIDTH, new Functions.Unary<Boolean, PermissionGroup>() {
             @Override
             public Boolean call(final PermissionGroup permissionGroup) {
                 return permissionGroup.getOperations().contains(OperationType.UPDATE);
             }
         }));
-        columns.add(column(DELETE, 7, 7, 99999, new Functions.Unary<Boolean, PermissionGroup>() {
+        columns.add(column(DELETE, SMALL_COL_WIDTH, SMALL_COL_WIDTH, MAX_WIDTH, new Functions.Unary<Boolean, PermissionGroup>() {
             @Override
             public Boolean call(final PermissionGroup permissionGroup) {
                 return permissionGroup.getOperations().contains(OperationType.DELETE);
             }
         }));
-        columns.add(column(OTHER, 7, 7, 99999, new Functions.Unary<Boolean, PermissionGroup>() {
+        columns.add(column(OTHER, SMALL_COL_WIDTH, SMALL_COL_WIDTH, MAX_WIDTH, new Functions.Unary<Boolean, PermissionGroup>() {
             @Override
             public Boolean call(final PermissionGroup permissionGroup) {
                 final Set<OperationType> operations = permissionGroup.getOperations();
@@ -249,18 +249,18 @@ public class RolePermissionsPanel extends JPanel {
         }
         Utilities.setRowSorter(permissionsTable, permissionsModel, cols, order, comparators);
 
-        if (!readOnly) {
-            permissionsTable.getSelectionModel().addListSelectionListener(new RunOnChangeListener(new Runnable() {
-                @Override
-                public void run() {
-                    enableDisable();
-                }
-            }));
-        }
+        permissionsTable.getSelectionModel().addListSelectionListener(new RunOnChangeListener(new Runnable() {
+            @Override
+            public void run() {
+                enableDisable();
+            }
+        }));
     }
 
     private void enableDisable() {
-        removeButton.setEnabled(!getSelected().isEmpty());
+        final boolean hasSelection = !getSelected().isEmpty();
+        removeButton.setEnabled(hasSelection);
+        propertiesButton.setEnabled(hasSelection);
     }
 
     private void loadTable() {
@@ -318,6 +318,16 @@ public class RolePermissionsPanel extends JPanel {
         return selected;
     }
 
+    private PermissionGroup getFirstSelected() {
+        PermissionGroup selected = null;
+        final int rowIndex = permissionsTable.getSelectedRow();
+        if (rowIndex >= 0) {
+            final int modelIndex = permissionsTable.convertRowIndexToModel(rowIndex);
+            selected = permissionsModel.getRowObject(modelIndex);
+        }
+        return selected;
+    }
+
     /**
      * Displays a check or X icon instead of the boolean value.
      */
@@ -342,7 +352,6 @@ public class RolePermissionsPanel extends JPanel {
                                 otherOps.add(OperationType.NONE.getName());
                             }
                         }
-                        label.setToolTipText(StringUtils.join(otherOps, ","));
                     }
                 }
             }

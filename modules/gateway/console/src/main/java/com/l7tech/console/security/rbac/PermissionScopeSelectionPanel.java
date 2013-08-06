@@ -199,7 +199,9 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
                     if (mode != null) {
                         final AttributePredicate predicate = new AttributePredicate(null, selectedAttribute.toString(), attributeValueTextField.getText().trim());
                         predicate.setMode(mode);
-                        attributesModel.addRow(predicate);
+                        if (!attributesModel.getRows().contains(predicate)) {
+                            attributesModel.addRow(predicate);
+                        }
                     } else {
                         logger.log(Level.WARNING, "Unrecognized comparison mode: " + selectedComparison);
                     }

@@ -57,10 +57,10 @@ public class RolePropertiesDialog extends JDialog {
         this.readOnly = readOnly;
         this.afterEditListener = afterEditListener;
         setContentPane(contentPanel);
-        getRootPane().setDefaultButton(okCancelPanel.getOkButton());
-        Utilities.setEscAction(this, okCancelPanel.getCancelButton());
         initComponents();
         initValidation();
+        getRootPane().setDefaultButton(okCancelPanel.getOkButton());
+        Utilities.setEscAction(this, okCancelPanel.getCancelButton());
     }
 
     public void setDataOnRole(@NotNull final Role role) {
