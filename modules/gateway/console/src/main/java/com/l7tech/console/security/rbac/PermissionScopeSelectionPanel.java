@@ -81,7 +81,7 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
     private CheckBoxSelectableTableModel<FolderHeader> foldersModel;
     private SimpleTableModel<AttributePredicate> attributesModel;
     private static Map<String, String> validComparisons = new HashMap<>();
-    private AddPermissionsWizard.PermissionConfig config;
+    private PermissionsConfig config;
 
     static {
         validComparisons.put(EQUALS, EQ);
@@ -114,10 +114,10 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
     @Override
     public boolean canSkip(final Object settings) {
         boolean canSkip = false;
-        if (settings instanceof AddPermissionsWizard.PermissionConfig) {
-            final AddPermissionsWizard.PermissionConfig config = (AddPermissionsWizard.PermissionConfig) settings;
+        if (settings instanceof PermissionsConfig) {
+            final PermissionsConfig config = (PermissionsConfig) settings;
             canSkip = !config.isHasScope();
-        } else {
+        } else if (settings != null) {
             logger.log(Level.WARNING, "Cannot handle settings because received invalid settings object: " + settings);
         }
         return canSkip;
@@ -125,16 +125,16 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
 
     @Override
     public void readSettings(final Object settings) throws IllegalArgumentException {
-        if (settings instanceof AddPermissionsWizard.PermissionConfig) {
-            config = (AddPermissionsWizard.PermissionConfig) settings;
+        if (settings instanceof PermissionsConfig) {
+            config = (PermissionsConfig) settings;
         }
         setSkipped(canSkip(settings));
     }
 
     @Override
     public void storeSettings(final Object settings) throws IllegalArgumentException {
-        if (settings instanceof AddPermissionsWizard.PermissionConfig) {
-            final AddPermissionsWizard.PermissionConfig config = (AddPermissionsWizard.PermissionConfig) settings;
+        if (settings instanceof PermissionsConfig) {
+            final PermissionsConfig config = (PermissionsConfig) settings;
             config.setSelectedZones(new HashSet<>(zonesModel.getSelected()));
             config.setSelectedFolders(new HashSet<>(foldersModel.getSelected()));
             config.setFolderTransitive(transitiveCheckBox.isSelected());

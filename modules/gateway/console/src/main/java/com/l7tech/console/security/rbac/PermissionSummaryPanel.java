@@ -10,6 +10,7 @@ import com.l7tech.objectmodel.SecurityZone;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.FolderHeader;
 import org.apache.commons.lang.StringUtils;
+import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import java.awt.*;
@@ -46,8 +47,8 @@ public class PermissionSummaryPanel extends WizardStepPanel {
 
     @Override
     public void readSettings(final Object settings) throws IllegalArgumentException {
-        if (settings instanceof AddPermissionsWizard.PermissionConfig) {
-            final AddPermissionsWizard.PermissionConfig config = (AddPermissionsWizard.PermissionConfig) settings;
+        if (settings instanceof PermissionsConfig) {
+            final PermissionsConfig config = (PermissionsConfig) settings;
             if (config.getType() == EntityType.ANY) {
                 applyToLabel.setText("All object types");
             } else {
@@ -60,55 +61,80 @@ public class PermissionSummaryPanel extends WizardStepPanel {
             }
             permittedOperationsLabel.setText(StringUtils.join(ops, ", "));
 
-            // start fresh
-            config.getGeneratedPermissions().clear();
             if (config.isHasScope()) {
                 restrictScopeLabel.setText("Objects matching a set of conditions");
-                generateScopedPermissions(config);
             } else {
                 restrictScopeLabel.setText("All objects of the specified type");
-                generateUnrestrictedPermissions(config);
             }
+            generatePermissions(config, Registry.getDefault().getFolderAdmin());
             permissionsPanel.configure(config.getGeneratedPermissions());
         } else {
             logger.log(Level.WARNING, "Cannot read settings because received invalid settings object: " + settings);
         }
     }
 
-    private void generateScopedPermissions(final AddPermissionsWizard.PermissionConfig config) {
-        final FolderAdmin folderAdmin = Registry.getDefault().getFolderAdmin();
+    static void generatePermissions(@NotNull final PermissionsConfig config, @NotNull FolderAdmin folderAdmin) {
+        // start fresh
+        config.getGeneratedPermissions().clear();
+        if (config.isHasScope()) {
+            generateScopedPermissions(config, folderAdmin);
+        } else {
+            generateUnrestrictedPermissions(config);
+        }
+    }
+
+    private static void generateScopedPermissions(final PermissionsConfig config, final FolderAdmin folderAdmin) {
+        if (config.isFolderAncestry()) {
+            // provide read access for ancestry of each selected folder
+            for (final FolderHeader folderHeader : config.getSelectedFolders()) {
+                final Permission ancestryPermission = new Permission(config.getRole(), OperationType.READ, EntityType.FOLDER);
+                final EntityFolderAncestryPredicate ancestryPredicate = new EntityFolderAncestryPredicate(ancestryPermission, EntityType.FOLDER, folderHeader.getGoid());
+                ancestryPermission.getScope().add(ancestryPredicate);
+                config.getGeneratedPermissions().add(ancestryPermission);
+            }
+        }
         for (final OperationType op : config.getOperations()) {
+            if (config.getSelectedFolders().isEmpty()) {
+                // no folders were selected
+                config.getSelectedFolders().add(null);
+            }
+            if (config.getSelectedZones().isEmpty()) {
+                // no zones were selected
+                config.getSelectedZones().add(null);
+            }
             // permission created for each zone-folder pair
             for (final SecurityZone zone : config.getSelectedZones()) {
                 for (final FolderHeader folderHeader : config.getSelectedFolders()) {
                     try {
-                        final Folder folder = folderAdmin.findByPrimaryKey(folderHeader.getGoid());
-                        if (folder != null) {
-                            final Permission permission = new Permission(config.getRole(), op, config.getType());
+                        final Permission permission = new Permission(config.getRole(), op, config.getType());
+                        if (zone != null) {
                             permission.getScope().add(new SecurityZonePredicate(permission, zone));
-                            permission.getScope().add(new FolderPredicate(permission, folder, config.isFolderTransitive()));
-                            if (config.isFolderAncestry()) {
-                                permission.getScope().add(new EntityFolderAncestryPredicate(permission, EntityType.FOLDER, folder.getGoid()));
-                            }
-                            for (final AttributePredicate attribute : config.getAttributePredicates()) {
-                                final AttributePredicate attributePredicate = new AttributePredicate(permission, attribute.getAttribute(), attribute.getValue());
-                                attributePredicate.setMode(attribute.getMode());
-                                permission.getScope().add(attributePredicate);
-                            }
-                            config.getGeneratedPermissions().add(permission);
-                        } else {
-                            throw new FindException("No folder exists with goid: " + folderHeader.getGoid());
                         }
+                        if (folderHeader != null) {
+                            final Folder folder = folderAdmin.findByPrimaryKey(folderHeader.getGoid());
+                            if (folder != null) {
+                                permission.getScope().add(new FolderPredicate(permission, folder, config.isFolderTransitive()));
+                            } else {
+                                throw new FindException("No folder exists with goid: " + folderHeader.getGoid());
+                            }
+                        }
+                        for (final AttributePredicate attribute : config.getAttributePredicates()) {
+                            final AttributePredicate attributePredicate = new AttributePredicate(permission, attribute.getAttribute(), attribute.getValue());
+                            attributePredicate.setMode(attribute.getMode());
+                            permission.getScope().add(attributePredicate);
+                        }
+                        config.getGeneratedPermissions().add(permission);
                     } catch (final FindException e) {
                         logger.log(Level.WARNING, "Skipping permission because unable to retrieve folder for header: " + folderHeader);
                     }
 
                 }
             }
+
         }
     }
 
-    private void generateUnrestrictedPermissions(final AddPermissionsWizard.PermissionConfig config) {
+    private static void generateUnrestrictedPermissions(final PermissionsConfig config) {
         for (final OperationType operationType : config.getOperations()) {
             final Permission unrestricted = new Permission(config.getRole(), operationType, config.getType());
             unrestricted.setScope(Collections.<ScopePredicate>emptySet());

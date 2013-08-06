@@ -3,17 +3,14 @@ package com.l7tech.console.security.rbac;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.panels.Wizard;
 import com.l7tech.console.panels.WizardStepPanel;
-import com.l7tech.gateway.common.security.rbac.*;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.SecurityZone;
-import com.l7tech.objectmodel.folder.FolderHeader;
+import com.l7tech.gateway.common.security.rbac.Permission;
+import com.l7tech.gateway.common.security.rbac.RbacUtilities;
+import com.l7tech.gateway.common.security.rbac.Role;
 import org.jetbrains.annotations.NotNull;
 
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -39,7 +36,7 @@ public class AddPermissionsWizard extends Wizard {
         super(parent, firstPanel);
         setTitle(ADD_PERMISSIONS_TO_ROLE_WIZARD);
         this.role = role;
-        this.wizardInput = new PermissionConfig(role);
+        this.wizardInput = new PermissionsConfig(role);
         getButtonHelp().addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -50,8 +47,8 @@ public class AddPermissionsWizard extends Wizard {
 
     @Override
     protected void finish(final ActionEvent evt) {
-        if (wizardInput instanceof PermissionConfig) {
-            final PermissionConfig config = (PermissionConfig) wizardInput;
+        if (wizardInput instanceof PermissionsConfig) {
+            final PermissionsConfig config = (PermissionsConfig) wizardInput;
             for (final Permission added : config.getGeneratedPermissions()) {
                 if (!containsPermission(added)) {
                     role.getPermissions().add(added);
@@ -83,105 +80,5 @@ public class AddPermissionsWizard extends Wizard {
     private void resetOids(final Permission permission) {
         permission.setOid(Permission.DEFAULT_OID);
         permission.setScope(RbacUtilities.getAnonymousNoOidsCopyOfScope(permission.getScope()));
-    }
-
-    public class PermissionConfig {
-        private final Role role;
-        private EntityType type;
-        private Set<OperationType> operations;
-        private boolean hasScope;
-        private Set<SecurityZone> selectedZones = new HashSet<>();
-        private Set<FolderHeader> selectedFolders = new HashSet<>();
-        private boolean folderTransitive;
-        private boolean folderAncestry;
-        private Set<AttributePredicate> attributePredicates = new HashSet<>();
-        private Set<Permission> generatedPermissions = new HashSet<>();
-
-        public PermissionConfig(@NotNull final Role role) {
-            this.role = role;
-        }
-
-        @NotNull
-        public Role getRole() {
-            return role;
-        }
-
-        @NotNull
-        public EntityType getType() {
-            return type;
-        }
-
-        public void setType(@NotNull final EntityType type) {
-            this.type = type;
-        }
-
-        @NotNull
-        public Set<OperationType> getOperations() {
-            return operations;
-        }
-
-        public void setOperations(@NotNull final Set<OperationType> operations) {
-            this.operations = operations;
-        }
-
-        public boolean isHasScope() {
-            return hasScope;
-        }
-
-        public void setHasScope(boolean hasScope) {
-            this.hasScope = hasScope;
-        }
-
-        @NotNull
-        public Set<SecurityZone> getSelectedZones() {
-            return selectedZones;
-        }
-
-        public void setSelectedZones(@NotNull final Set<SecurityZone> selectedZones) {
-            this.selectedZones = selectedZones;
-        }
-
-        @NotNull
-        public Set<FolderHeader> getSelectedFolders() {
-            return selectedFolders;
-        }
-
-        public void setSelectedFolders(@NotNull final Set<FolderHeader> selectedFolders) {
-            this.selectedFolders = selectedFolders;
-        }
-
-        public boolean isFolderTransitive() {
-            return folderTransitive;
-        }
-
-        public void setFolderTransitive(boolean folderTransitive) {
-            this.folderTransitive = folderTransitive;
-        }
-
-        public boolean isFolderAncestry() {
-            return folderAncestry;
-        }
-
-        public void setFolderAncestry(boolean folderAncestry) {
-            this.folderAncestry = folderAncestry;
-        }
-
-        @NotNull
-        public Set<AttributePredicate> getAttributePredicates() {
-            return attributePredicates;
-        }
-
-        public void setAttributePredicates(@NotNull final Set<AttributePredicate> attributePredicates) {
-            this.attributePredicates = attributePredicates;
-        }
-
-        @NotNull
-        public Set<Permission> getGeneratedPermissions() {
-            return generatedPermissions;
-        }
-
-        public void setGeneratedPermissions(@NotNull final Set<Permission> generatedPermissions) {
-            this.generatedPermissions = generatedPermissions;
-        }
     }
 }

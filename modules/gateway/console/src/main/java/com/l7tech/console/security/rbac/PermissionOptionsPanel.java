@@ -29,7 +29,7 @@ public class PermissionOptionsPanel extends WizardStepPanel {
     private JCheckBox updateCheckBox;
     private JCheckBox deleteCheckBox;
     private JRadioButton conditionRadio;
-    private AddPermissionsWizard.PermissionConfig config;
+    private PermissionsConfig config;
 
     public PermissionOptionsPanel() {
         super(null);
@@ -77,15 +77,15 @@ public class PermissionOptionsPanel extends WizardStepPanel {
     @Override
     public void readSettings(final Object settings) throws IllegalArgumentException {
         super.readSettings(settings);
-        if (settings instanceof AddPermissionsWizard.PermissionConfig) {
-            config = (AddPermissionsWizard.PermissionConfig) settings;
+        if (settings instanceof PermissionsConfig) {
+            config = (PermissionsConfig) settings;
         }
     }
 
     @Override
     public void storeSettings(final Object settings) throws IllegalArgumentException {
-        if (settings instanceof AddPermissionsWizard.PermissionConfig) {
-            final AddPermissionsWizard.PermissionConfig config = (AddPermissionsWizard.PermissionConfig) settings;
+        if (settings instanceof PermissionsConfig) {
+            final PermissionsConfig config = (PermissionsConfig) settings;
             if (allTypesRadio.isSelected()) {
                 config.setType(EntityType.ANY);
             } else {
@@ -99,7 +99,7 @@ public class PermissionOptionsPanel extends WizardStepPanel {
         }
     }
 
-    private void setScopeFlag(final AddPermissionsWizard.PermissionConfig config) {
+    private void setScopeFlag(final PermissionsConfig config) {
         if (allObjectsRadio.isSelected()) {
             config.setHasScope(false);
         } else {
@@ -107,7 +107,7 @@ public class PermissionOptionsPanel extends WizardStepPanel {
         }
     }
 
-    private void setOpsOnConfig(AddPermissionsWizard.PermissionConfig config) {
+    private void setOpsOnConfig(PermissionsConfig config) {
         final Set<OperationType> ops = new HashSet<>();
         if (createCheckBox.isSelected()) {
             ops.add(OperationType.CREATE);

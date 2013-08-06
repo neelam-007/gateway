@@ -164,6 +164,7 @@
                 <properties>
                   <selected value="true"/>
                   <text value="Grant read access to all necessary folders"/>
+                  <toolTipText value="&lt;html&gt;With this option unchecked users assigned to&lt;br/&gt;this role may not be able to access the folder&lt;br/&gt;path or navigate a folder tree to the&lt;br/&gt;permitted objects.&lt;/html&gt;"/>
                 </properties>
               </component>
             </children>
