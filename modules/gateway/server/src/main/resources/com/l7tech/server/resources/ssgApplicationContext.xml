@@ -1686,6 +1686,7 @@
                 <ref bean="policyVersionManager"/>
                 <ref bean="folderManager"/>
                 <ref bean="ssgActiveConnectorManager"/>
+                <ref bean="siteMinderConfigurationManager"/>
             </list>
         </property>
         <property name="timer" ref="entityVersionCheckerTimer"/>
