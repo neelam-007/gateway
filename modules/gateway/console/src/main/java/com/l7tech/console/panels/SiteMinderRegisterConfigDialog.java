@@ -124,7 +124,6 @@ public class SiteMinderRegisterConfigDialog extends JDialog {
 
                 //call to Register utility
                 register();
-                dispose();
             }
         });
 
@@ -236,8 +235,10 @@ public class SiteMinderRegisterConfigDialog extends JDialog {
             property.left = "SiteMinder Host Configuration";
             property.right = siteMinderHost;
 
+            dispose();
         } catch (InterruptedException e) {
             // do nothing, user cancelled
+            dispose();
 
         } catch (InvocationTargetException e) {
             DialogDisplayer.showMessageDialog(this, MessageFormat.format(resources.getString("message.register.siteminder.config.failed"), e.getMessage()),
