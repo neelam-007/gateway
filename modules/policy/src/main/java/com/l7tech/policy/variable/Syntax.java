@@ -1,5 +1,6 @@
 package com.l7tech.policy.variable;
 
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.DateUtils;
 import org.apache.xml.serialize.OutputFormat;
 import org.apache.xml.serialize.XMLSerializer;
@@ -91,6 +92,7 @@ public abstract class Syntax {
         add(Integer.TYPE);
         add(Boolean.class);
         add(Boolean.TYPE);
+        add(Goid.class);
     }});
 
     /**
