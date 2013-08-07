@@ -63,6 +63,7 @@ public class GenericUserPanel extends UserPanel {
     private UserGroupsPanel groupPanel; // membership
     private UserCertPanel certPanel; //certificate
     private UserSshPanel sshPanel;
+    private UserStatusPanel statusPanel;
 
     // Apply/Revert buttons
     private JButton okButton;
@@ -97,12 +98,13 @@ public class GenericUserPanel extends UserPanel {
     private void initialize() {
         try {
             // Initialize form components
-            rolesPanel = new UserRoleAssignmentsPanel(user, config.isAdminEnabled(), canUpdate);
+            rolesPanel = new UserRoleAssignmentsPanel(user, config.isAdminEnabled());
             groupPanel = new UserGroupsPanel(this, config, config.isWritable() && canUpdate);
             certPanel = new NonFederatedUserCertPanel(this, config.isWritable() ? passwordChangeListener : null, canUpdate);
             if (config.type().equals(IdentityProviderType.INTERNAL) && user instanceof InternalUser) {
                 sshPanel = new UserSshPanel((InternalUser) user, config.isWritable(), canUpdate);
             }
+            statusPanel = new UserStatusPanel();
             layoutComponents();
             this.addHierarchyListener(hierarchyListener);
             applyFormSecurity();
@@ -345,9 +347,31 @@ public class GenericUserPanel extends UserPanel {
                         GridBagConstraints.VERTICAL,
                         new Insets(10, 0, 0, 0), 0, 0));
 
+        statusPanel.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
+        statusPanel.getStatusButton().addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                try {
+                    Registry.getDefault().getIdentityAdmin().activateUser(user);
+                    populateStatus(user);
+                } catch (FindException e1) {
+                    JOptionPane.showMessageDialog(TopComponents.getInstance().getTopParent(), e1.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                    log.log(Level.SEVERE, "Error updating User: " + e.toString(), e);
+                } catch (UpdateException e1) {
+                    JOptionPane.showMessageDialog(TopComponents.getInstance().getTopParent(), e1.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                    log.log(Level.SEVERE, "Error updating User: " + e.toString(), e);
+                }
+            }
+        });
+
+        final JPanel headerStatusPanel = new JPanel();
+        headerStatusPanel.setLayout(new BorderLayout());
+        headerStatusPanel.add(headerPanel, BorderLayout.NORTH);
+        headerStatusPanel.add(statusPanel, BorderLayout.SOUTH);
+
         JPanel outerDetailsPanel = new JPanel();
         outerDetailsPanel.setLayout(new BorderLayout());
-        outerDetailsPanel.add(headerPanel, BorderLayout.NORTH);
+        outerDetailsPanel.add(headerStatusPanel, BorderLayout.NORTH);
         outerDetailsPanel.add(detailsPanel, BorderLayout.CENTER);
         detailsPanel = outerDetailsPanel;
 
@@ -663,7 +687,7 @@ public class GenericUserPanel extends UserPanel {
         expiresLabel.setEnabled(neverExpire);
         expireStateLabel.setVisible(!notExpired && !neverExpire);
         enabledCheckBox.setEnabled(neverExpire || notExpired);
-        rolesPanel.enableDisableState(enabledCheckBox.isSelected() && (neverExpire || notExpired));
+        enableDisableStatus(enabledCheckBox.isSelected() && (neverExpire || notExpired));
     }
 
     /**
@@ -684,7 +708,7 @@ public class GenericUserPanel extends UserPanel {
                                         iu, passwordChangeListener, CHANGE_PASSWORD_LABEL), new Runnable(){
                                     @Override
                                     public void run() {
-                                        rolesPanel.reloadUserLogonState();
+                                        populateStatus(user);
                                         enableDisableComponents();
                                     }
                                 });
@@ -742,6 +766,7 @@ public class GenericUserPanel extends UserPanel {
         getFirstNameTextField().setText(user.getFirstName());
         getLastNameTextField().setText(user.getLastName());
         getEmailTextField().setText(user.getEmail());
+        populateStatus(user);
         setModified(false);
     }
 
@@ -902,6 +927,68 @@ public class GenericUserPanel extends UserPanel {
         }
 
         return true;
+    }
+
+    private void populateStatus(final User user) {
+        if (user instanceof LdapUser ||
+                user instanceof InternalUser) {
+
+            LogonInfo.State userState = null;
+            try {
+                userState = Registry.getDefault().getIdentityAdmin().getLogonState(user);
+            } catch (final FindException e) {
+                log.log(Level.WARNING, "Unable to determine logon state for user: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            }
+            if (userState == null) {
+                userState = LogonInfo.State.ACTIVE;
+            }
+
+            statusPanel.getDynamicStatusLabel().setText(getStateString(userState));
+
+            statusPanel.getStatusButton().setVisible(canUpdate && userState != LogonInfo.State.ACTIVE);
+
+            boolean isUserEnabledAndNotExpired = true;
+            if (user instanceof InternalUser) {
+                isUserEnabledAndNotExpired = ((InternalUser) user).isEnabled();
+                long expiry = ((InternalUser) user).getExpiration();
+
+                isUserEnabledAndNotExpired = isUserEnabledAndNotExpired && (expiry < 0 || expiry > System.currentTimeMillis());
+            }
+            enableDisableStatus(config.isAdminEnabled() && isUserEnabledAndNotExpired);
+
+            String statusButtonText = null;
+            if (userState == LogonInfo.State.INACTIVE)
+                statusButtonText = "Activate";
+            else if (userState == LogonInfo.State.EXCEED_ATTEMPT)
+                statusButtonText = "Unlock";
+            statusPanel.getStatusButton().setText(statusButtonText);
+        } else {
+            statusPanel.getStatusLabel().setVisible(false);
+            statusPanel.getDynamicStatusLabel().setVisible(false);
+            statusPanel.getStatusButton().setVisible(false);
+        }
+
+    }
+
+    private void enableDisableStatus(boolean isUserEnabledAndNotExpired) {
+        if (statusPanel.getStatusLabel().isVisible()) {
+            statusPanel.getDynamicStatusLabel().setEnabled(isUserEnabledAndNotExpired);
+            statusPanel.getStatusLabel().setEnabled(isUserEnabledAndNotExpired);
+            statusPanel.getStatusButton().setEnabled(isUserEnabledAndNotExpired);
+        }
+    }
+
+    private String getStateString(LogonInfo.State state) {
+        switch (state) {
+            case ACTIVE:
+                return "Active";
+            case INACTIVE:
+                return "Inactive";
+            case EXCEED_ATTEMPT:
+                return "Locked";
+            default:
+                return null;
+        }
     }
 
     // debug
