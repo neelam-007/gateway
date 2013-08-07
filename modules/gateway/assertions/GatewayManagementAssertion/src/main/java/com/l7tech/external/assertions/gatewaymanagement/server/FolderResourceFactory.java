@@ -2,6 +2,7 @@ package com.l7tech.external.assertions.gatewaymanagement.server;
 
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory.InvalidResourceException.ExceptionType;
 import com.l7tech.gateway.api.FolderMO;
+import com.l7tech.gateway.api.ManagedObject;
 import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.objectmodel.*;
@@ -32,6 +33,8 @@ import static com.l7tech.util.Option.some;
  */
 @ResourceFactory.ResourceType(type=FolderMO.class)
 public class FolderResourceFactory extends GoidEntityManagerResourceFactory<FolderMO, Folder, FolderHeader> {
+    //The old root folder oid
+    private static final String ROOT_FOLDER_OID = "-5002";
 
     //- PUBLIC
 
@@ -68,7 +71,7 @@ public class FolderResourceFactory extends GoidEntityManagerResourceFactory<Fold
         try {
             folderEntity = new Folder(
                     asName(folderResource.getName()),
-                    folderResource.getFolderId()==null ? null : selectEntity( Collections.singletonMap( IDENTITY_SELECTOR, folderResource.getFolderId() ) ) );
+                    folderResource.getFolderId()==null ? null : selectEntity( Collections.singletonMap( IDENTITY_SELECTOR, handleRootFolderOid(folderResource.getFolderId()) ) ) );
         } catch ( ResourceNotFoundException e ) {
             throw new InvalidResourceException(InvalidResourceException.ExceptionType.INVALID_VALUES, "invalid parent folder");
         }
@@ -118,7 +121,7 @@ public class FolderResourceFactory extends GoidEntityManagerResourceFactory<Fold
     private Folder selectFolder(Map<String, String> selectorMap) throws ResourceAccessException, ResourceNotFoundException {
 
         Folder folder = null;
-        final String id = selectorMap.get( IDENTITY_SELECTOR );
+        final String id = handleRootFolderOid(selectorMap.get(IDENTITY_SELECTOR));
         final String name = selectorMap.get( NAME_SELECTOR );
 
         if ( id == null && name == null ) {
@@ -165,6 +168,30 @@ public class FolderResourceFactory extends GoidEntityManagerResourceFactory<Fold
         return folder;
     }
 
+    /**
+     * This will return the root folder goid if the root folder oid ig given. Otherwise it will return the id given.
+     *
+     * @param id The id to check to see if it is a root folder oid
+     * @return the id, or the root folder goid if the id is -5002
+     */
+    private String handleRootFolderOid(String id) {
+        return ROOT_FOLDER_OID.equals(id) ? Folder.ROOT_FOLDER_ID.toHexString() : id;
+    }
+
+    /**
+     * This is overridden so that the old root folder oid can still be handled properly.
+     */
+    @Override
+    public FolderMO putResource( final Map<String, String> selectorMap, final Object resource ) throws ResourceNotFoundException, InvalidResourceException {
+        final String id = selectorMap.get( IDENTITY_SELECTOR );
+        selectorMap.put(IDENTITY_SELECTOR, handleRootFolderOid(id));
+        if ( resource instanceof ManagedObject) {
+            final ManagedObject managedResource = (ManagedObject) resource;
+            managedResource.setId(handleRootFolderOid(managedResource.getId()));
+        }
+        return super.putResource(selectorMap, resource);
+    }
+
     //- PACKAGE
 
     /**
@@ -181,7 +208,7 @@ public class FolderResourceFactory extends GoidEntityManagerResourceFactory<Fold
             @Override
             public Goid call( final String value ) {
                 try {
-                    return Goid.parseGoid( value );
+                    return Goid.parseGoid( handleRootFolderOid(value) );
                 } catch( IllegalArgumentException nfe ) {
                     return GoidEntity.DEFAULT_GOID; // will not match any folder
                 }
