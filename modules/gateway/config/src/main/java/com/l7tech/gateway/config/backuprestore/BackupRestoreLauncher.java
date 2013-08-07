@@ -26,7 +26,7 @@ public class BackupRestoreLauncher {
     private static final String SSGRESTORE_SH = "ssgrestore.sh";
     private static final String SSGMIGRATE_SH = "ssgmigrate.sh";
     private static final Logger logger = Logger.getLogger(BackupRestoreLauncher.class.getName());
-    private static final String SECURE_SPAN_HOME = "C:\\Users\\vkazakov\\Workspaces\\SSG\\build\\deploy";
+    private static final String SECURE_SPAN_HOME = "/opt/SecureSpan";
 
     public enum UTILITY_TYPE{
         BACKUP("Backup"),
