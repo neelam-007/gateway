@@ -1,6 +1,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.console.security.rbac.BasicRolePropertiesPanel;
+import com.l7tech.console.security.rbac.RoleSelectionDialog;
 import com.l7tech.console.security.rbac.UserRoleRemovalDialog;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
@@ -69,7 +70,30 @@ public class UserRoleAssignmentsPanel extends JPanel {
         addButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(final ActionEvent e) {
-                // TODO
+                final RoleSelectionDialog selectDialog = new RoleSelectionDialog(TopComponents.getInstance().getTopParent(), user.getName());
+                selectDialog.pack();
+                Utilities.centerOnParentWindow(selectDialog);
+                DialogDisplayer.display(selectDialog, new Runnable() {
+                    @Override
+                    public void run() {
+                        if (selectDialog.isConfirmed()) {
+                            final RbacAdmin rbacAdmin = Registry.getDefault().getRbacAdmin();
+                            final List<Role> selectedRoles = selectDialog.getSelectedRoles();
+                            if (!selectedRoles.isEmpty()) {
+                                try {
+                                    for (final Role selectedRole : selectedRoles) {
+                                        selectedRole.addAssignedUser(user);
+                                        rbacAdmin.saveRole(selectedRole);
+                                    }
+                                } catch (final SaveException e) {
+                                    log.log(Level.WARNING, "Error adding role assignment: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                                    DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(), "Could not add role assignment", "Error", JOptionPane.ERROR_MESSAGE, null);
+                                }
+                                loadTable();
+                            }
+                        }
+                    }
+                });
             }
         });
         removeButton.addActionListener(new ActionListener() {
