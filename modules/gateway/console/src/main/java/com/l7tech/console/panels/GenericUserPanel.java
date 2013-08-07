@@ -72,7 +72,7 @@ public class GenericUserPanel extends UserPanel {
     // Titles/Labels
     private static final String DETAILS_LABEL = "General";
     private static final String MEMBERSHIP_LABEL = "Groups";
-    private static final String ROLES_LABEL = "Administration";
+    private static final String ROLES_LABEL = "Roles";
     private static final String CERTIFICATE_LABEL = "Certificate";
     private static final String SSH_LABEL = "SSH";
 
@@ -98,7 +98,7 @@ public class GenericUserPanel extends UserPanel {
     private void initialize() {
         try {
             // Initialize form components
-            rolesPanel = new UserRoleAssignmentsPanel(user, config.isAdminEnabled());
+            rolesPanel = new UserRoleAssignmentsPanel(user, userGroups, config.isAdminEnabled());
             groupPanel = new UserGroupsPanel(this, config, config.isWritable() && canUpdate);
             certPanel = new NonFederatedUserCertPanel(this, config.isWritable() ? passwordChangeListener : null, canUpdate);
             if (config.type().equals(IdentityProviderType.INTERNAL) && user instanceof InternalUser) {
@@ -206,8 +206,8 @@ public class GenericUserPanel extends UserPanel {
         if (user != null)
             this.setName(user.getName());
         this.setLayout(new BorderLayout());
-        this.setMaximumSize(new Dimension(380, 450));
-        this.setPreferredSize(new Dimension(380, 450));
+        this.setMaximumSize(new Dimension(600, 450));
+        this.setPreferredSize(new Dimension(600, 450));
 
         // Add the main panel
         add(getMainPanel(), BorderLayout.CENTER);

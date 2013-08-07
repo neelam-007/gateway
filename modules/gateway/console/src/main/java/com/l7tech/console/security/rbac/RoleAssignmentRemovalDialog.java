@@ -23,7 +23,7 @@ import java.util.ResourceBundle;
 import static com.l7tech.gui.util.TableUtil.column;
 
 /**
- * Confirmation dialog for removal of role assignments from a role.
+ * Confirmation dialog for removal of users from a role.
  */
 public class RoleAssignmentRemovalDialog extends JDialog {
     private static final ResourceBundle RESOURCES = ResourceBundle.getBundle(RoleAssignmentRemovalDialog.class.getName());

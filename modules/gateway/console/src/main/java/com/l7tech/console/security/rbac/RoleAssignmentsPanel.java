@@ -1,8 +1,6 @@
 package com.l7tech.console.security.rbac;
 
 import com.l7tech.console.panels.FilterPanel;
-import com.l7tech.console.panels.GroupPanel;
-import com.l7tech.console.panels.UserPanel;
 import com.l7tech.console.panels.identity.finder.FindIdentitiesDialog;
 import com.l7tech.console.panels.identity.finder.Options;
 import com.l7tech.console.panels.identity.finder.SearchType;
@@ -13,7 +11,10 @@ import com.l7tech.gateway.common.security.rbac.RbacAdmin;
 import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.gateway.common.security.rbac.RoleAssignment;
 import com.l7tech.gui.SimpleTableModel;
-import com.l7tech.gui.util.*;
+import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gui.util.RunOnChangeListener;
+import com.l7tech.gui.util.TableUtil;
+import com.l7tech.gui.util.Utilities;
 import com.l7tech.identity.Group;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderConfigManager;
@@ -39,12 +40,9 @@ import static com.l7tech.gui.util.TableUtil.column;
 
 public class RoleAssignmentsPanel extends JPanel {
     private static final Logger logger = Logger.getLogger(RoleAssignmentsPanel.class.getName());
-    private static final ResourceBundle RESOURCES = ResourceBundle.getBundle("com.l7tech.console.resources.RbacGui");
     private static final int NAME_COL_INDEX = 0;
     private static final int TYPE_COL_INDEX = 1;
     private static final int PROVIDER_COL_INDEX = 2;
-    private Icon GROUP_ICON = ImageCache.getInstance().getIconAsIcon(GroupPanel.GROUP_ICON_RESOURCE);
-    private Icon USER_ICON = ImageCache.getInstance().getIconAsIcon(UserPanel.USER_ICON_RESOURCE);
     private static final String UNKNOWN = "unknown";
     private static final String UNAVAILABLE = "unavailable";
     private JPanel assignmentsContentPanel;
