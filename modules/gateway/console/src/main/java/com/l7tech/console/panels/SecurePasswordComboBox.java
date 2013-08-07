@@ -37,6 +37,7 @@ public class SecurePasswordComboBox extends JComboBox {
 
     public void reloadPasswordList(SecurePassword.SecurePasswordType typeFilter) {
         try {
+            SecurePassword selectedSecurePassword = this.getSelectedSecurePassword();
             securePasswords = new ArrayList<SecurePassword>(Registry.getDefault().getTrustedCertManager().findAllSecurePasswords());
             for (Iterator<SecurePassword> iterator = securePasswords.iterator(); iterator.hasNext(); ) {
                 SecurePassword securePassword =  iterator.next();
@@ -51,6 +52,11 @@ public class SecurePasswordComboBox extends JComboBox {
                 }
             }, false ) );
             setModel(new DefaultComboBoxModel(securePasswords.toArray()));
+
+            if (selectedSecurePassword != null && this.containsItem(selectedSecurePassword.getOid())) {
+                // Select currently selected item.
+                this.setSelectedSecurePassword(selectedSecurePassword.getOid());
+            }
         } catch (FindException e) {
             final String msg = "Unable to list stored passwords: " + ExceptionUtils.getMessage(e);
             //noinspection ThrowableResultOfMethodCallIgnored
