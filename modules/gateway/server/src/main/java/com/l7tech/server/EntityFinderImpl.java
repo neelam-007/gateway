@@ -190,12 +190,12 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
                 throw new FindException("Error looking up key for: " + keyHeader, e);
             }
         } else if (EntityType.POLICY == header.getType()) {
-            // some policies are identified by OID, others by GUID
-            // prefer the strID/GUID, but also handle the cases when the strId is an OID
+            // some policies are identified by GOID, others by GUID
+            // prefer the strID/GUID, but also handle the cases when the strId is an GOID
             String id = header.getStrId();
             try {
-                return policyManager.findByPrimaryKey(Long.parseLong(id));
-            } catch (NumberFormatException e) {
+                return policyManager.findByPrimaryKey(Goid.parseGoid(id));
+            } catch (IllegalArgumentException e) {
                 return policyManager.findByGuid(id);
             }
         } else if (EntityType.ENCAPSULATED_ASSERTION == header.getType()) {
@@ -205,7 +205,7 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
                 if (guid != null)
                     return encapsulatedAssertionConfigManager.findByGuid(guid);
             }
-            return encapsulatedAssertionConfigManager.findByPrimaryKey(header.getOid());
+            return encapsulatedAssertionConfigManager.findByPrimaryKey(header.getGoid());
         } else if (header instanceof ExternalAuditRecordHeader){
             // use mock entity objects for audit records from the external audits system
             ExternalAuditRecordHeader auditHeader = (ExternalAuditRecordHeader) header;
