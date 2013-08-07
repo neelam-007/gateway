@@ -272,7 +272,7 @@ public class EntityNameResolver {
             if (predicate.getRequiredZone() != null) {
                 name = "in security zone \"" + predicate.getRequiredZone().getName() + "\"";
             } else {
-                name = "not in any security zone";
+                name = "without a security zone";
             }
         } else if (entity instanceof FolderPredicate) {
             final FolderPredicate predicate = (FolderPredicate) entity;

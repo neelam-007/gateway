@@ -2,6 +2,7 @@ package com.l7tech.console.security.rbac;
 
 import com.l7tech.console.panels.WizardStepPanel;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.SecurityZoneUtil;
 import com.l7tech.gateway.common.admin.FolderAdmin;
 import com.l7tech.gateway.common.security.rbac.*;
 import com.l7tech.objectmodel.EntityType;
@@ -114,7 +115,7 @@ public class PermissionSummaryPanel extends WizardStepPanel {
                     try {
                         final Permission permission = new Permission(config.getRole(), op, config.getType());
                         if (zone != null) {
-                            permission.getScope().add(new SecurityZonePredicate(permission, zone));
+                            permission.getScope().add(new SecurityZonePredicate(permission, zone.equals(SecurityZoneUtil.getNullZone()) ? null : zone));
                         }
                         if (folderHeader != null) {
                             final Folder folder = folderAdmin.findByPrimaryKey(folderHeader.getGoid());

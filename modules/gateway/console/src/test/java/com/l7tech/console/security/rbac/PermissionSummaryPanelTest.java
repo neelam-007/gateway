@@ -1,5 +1,6 @@
 package com.l7tech.console.security.rbac;
 
+import com.l7tech.console.util.SecurityZoneUtil;
 import com.l7tech.gateway.common.admin.FolderAdmin;
 import com.l7tech.gateway.common.security.rbac.*;
 import com.l7tech.objectmodel.FindException;
@@ -7,6 +8,7 @@ import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.SecurityZone;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.FolderHeader;
+import com.l7tech.test.BugId;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -106,6 +108,21 @@ public class PermissionSummaryPanelTest {
             final Map<Class, Integer> predicateTypes = countPredicateTypes(permission);
             assertEquals(new Integer(1), predicateTypes.get(SecurityZonePredicate.class));
         }
+    }
+
+    @BugId("SSG-6918")
+    @Test
+    public void generatePermissionsNullZone() {
+        config.setHasScope(true);
+        operations.add(OperationType.READ);
+        selectedZones.add(SecurityZoneUtil.getNullZone());
+        PermissionSummaryPanel.generatePermissions(config, folderAdmin);
+
+        assertEquals(1, config.getGeneratedPermissions().size());
+        final Permission permission = config.getGeneratedPermissions().iterator().next();
+        assertEquals(1, permission.getScope().size());
+        final SecurityZonePredicate zonePred = (SecurityZonePredicate) permission.getScope().iterator().next();
+        assertNull(zonePred.getRequiredZone());
     }
 
     @Test

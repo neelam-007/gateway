@@ -640,7 +640,7 @@ public class EntityNameResolverTest {
     @Test
     public void getNameForSecurityZonePredicateNullZone() throws Exception {
         final SecurityZonePredicate predicate = new SecurityZonePredicate(new Permission(new Role(), OperationType.READ, EntityType.POLICY), null);
-        assertEquals("not in any security zone", resolver.getNameForEntity(predicate, false));
+        assertEquals("without a security zone", resolver.getNameForEntity(predicate, false));
     }
 
     @Test

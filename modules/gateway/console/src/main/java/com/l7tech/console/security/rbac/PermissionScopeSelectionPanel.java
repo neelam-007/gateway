@@ -61,6 +61,7 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
     private static final String STARTS_WITH = "starts with";
     private static final String EQ = "eq";
     private static final String SW = "sw";
+    private static final String ENTITIES_WITH_NO_ZONE = "All entities that are not assigned a security zone";
     private JPanel contentPanel;
     private JTabbedPane tabPanel;
     private JPanel zonesPanel;
@@ -307,16 +308,19 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
                 column(NAME, 30, 200, MAX_WIDTH, new Functions.Unary<String, SecurityZone>() {
                     @Override
                     public String call(final SecurityZone zone) {
-                        return zone.getName();
+                        return zone.equals(SecurityZoneUtil.getNullZone()) ? NO_SECURITY_ZONE : zone.getName();
                     }
                 }),
                 column(DESCRIPTION, 30, 400, MAX_WIDTH, new Functions.Unary<String, SecurityZone>() {
                     @Override
                     public String call(final SecurityZone zone) {
-                        return zone.getDescription();
+                        return zone.equals(SecurityZoneUtil.getNullZone()) ? ENTITIES_WITH_NO_ZONE : zone.getDescription();
                     }
                 }));
-        zonesModel.setSelectableObjects(new ArrayList<>(SecurityZoneUtil.getSortedReadableSecurityZones()));
+        final ArrayList<SecurityZone> zones = new ArrayList<>();
+        zones.add(SecurityZoneUtil.getNullZone());
+        zones.addAll(SecurityZoneUtil.getSortedReadableSecurityZones());
+        zonesModel.setSelectableObjects(zones);
         zonesModel.addTableModelListener(tableListener);
         zonesTablePanel.configure(zonesModel, new int[]{NAME_COL_INDEX}, "zones");
     }
