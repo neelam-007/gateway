@@ -142,14 +142,14 @@ public class SiteMinderAdminImpl  extends AsyncAdminMethodsImpl implements SiteM
                 } catch (SmAgentApiException e){
                     final String msg = "Unable to register SiteMinder configuration. Check policy server address, username, password, and host configuration";
                     logger.log(Level.WARNING, msg + " " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-                    return siteMinderHost;
+                    throw e;
                 } catch (IOException e){
                     final String msg = "Unable to register SiteMinder configuration. Check connection with policy server";
                     logger.log(Level.WARNING, msg + " " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-                    return null;
+                    throw e;
                 }
-                    return siteMinderHost;
-                }
+                return siteMinderHost;
+            }
         }));
 
         Background.scheduleOneShot(new TimerTask() {
@@ -202,7 +202,7 @@ public class SiteMinderAdminImpl  extends AsyncAdminMethodsImpl implements SiteM
                                                  Long passwordOid,
                                                  String hostname,
                                                  String hostconfig,
-                                                 Integer fipsMode) throws SmAgentApiException, IOException{
+                                                 Integer fipsMode) throws SmAgentApiException, IOException, ParseException, FindException {
 
         String password = "";
         try{
@@ -211,11 +211,11 @@ public class SiteMinderAdminImpl  extends AsyncAdminMethodsImpl implements SiteM
         } catch (FindException e){
             final String msg = "Unable to find password oid entity.";
             logger.log(Level.WARNING, msg + " " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-            return null;
+            throw e;
         } catch (ParseException e) {
             final String msg = "Parse exception during decrypting password.";
             logger.log(Level.WARNING, msg + " " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-            return null;
+            throw e;
         }
         return SiteMinderUtil.regHost(address, username, password, hostname, hostconfig, fipsMode);
     }

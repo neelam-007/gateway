@@ -1,15 +1,12 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gateway.common.siteminder.SiteMinderHost;
-import com.l7tech.console.util.PasswordGuiUtils;
 import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.siteminder.SiteMinderAdmin;
 import com.l7tech.gui.util.*;
 import com.l7tech.gui.widgets.TextListCellRenderer;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityType;
+import com.l7tech.util.Either;
 import com.l7tech.util.MutablePair;
 import sun.security.util.Resources;
 
@@ -206,14 +203,23 @@ public class SiteMinderRegisterConfigDialog extends JDialog {
         }
 
         try {
-            SiteMinderHost siteMinderHost = doAsyncAdmin(admin,
-                                          SiteMinderRegisterConfigDialog.this,
-                                          resources.getString("message.registering.progress"),
-                                          resources.getString("message.registering"),
-                                          admin.registerSiteMinderConfiguration(address, userName, password, hostName, hostConfiguration, fipsMode)).right();
+            Either<String, SiteMinderHost> either = doAsyncAdmin(admin,
+                    SiteMinderRegisterConfigDialog.this,
+                    resources.getString("message.registering.progress"),
+                    resources.getString("message.registering"),
+                    admin.registerSiteMinderConfiguration(address, userName, password, hostName, hostConfiguration, fipsMode));
+
+            if (either.isLeft()) {
+                DialogDisplayer.showMessageDialog(this, MessageFormat.format(resources.getString("message.register.siteminder.config.failed"), either.left()),
+                        resources.getString("dialog.title.siteminder.configuration.register"),
+                        JOptionPane.WARNING_MESSAGE, null);
+                return;
+            }
+
+            SiteMinderHost siteMinderHost = either.right();
 
             String message = siteMinderHost != null ?
-                    resources.getString("message.register.siteminder.config.passed") : MessageFormat.format(resources.getString("message.register.siteminder.config.failed"), "message.register.siteminder.config.message");
+                    resources.getString("message.register.siteminder.config.passed") : MessageFormat.format(resources.getString("message.register.siteminder.config.failed"), resources.getString("message.register.siteminder.config.message"));
 
             DialogDisplayer.showMessageDialog(this, message, resources.getString("dialog.title.siteminder.configuration.register"),
                     siteMinderHost != null ? JOptionPane.INFORMATION_MESSAGE : JOptionPane.WARNING_MESSAGE, null);
