@@ -69,6 +69,11 @@ public class MockRoleManager extends OidEntityManagerStub<Role,EntityHeader> imp
         return assignedRoles;
     }
 
+    @Override
+    public Collection<Role> getAssignedRoles(@NotNull Group group) throws FindException {
+        return null;
+    }
+
     private Map<Long, IdentityHeader> getThisGuysGroups(User thisGuy) throws FindException {
         if (groupManager == null) return Collections.emptyMap();
         final Map<Long, IdentityHeader> thisGuysGroupMap = new HashMap<Long, IdentityHeader>();

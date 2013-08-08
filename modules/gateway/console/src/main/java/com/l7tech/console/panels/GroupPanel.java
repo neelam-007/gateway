@@ -51,6 +51,7 @@ public abstract class GroupPanel<GT extends Group> extends EntityEditorPanel {
 
     protected JTabbedPane tabbedPane;
 
+    private IdentityRoleAssignmentsPanel rolesPanel;
     // Apply/Revert buttons
     private JButton okButton;
     private JButton cancelButton;
@@ -63,6 +64,7 @@ public abstract class GroupPanel<GT extends Group> extends EntityEditorPanel {
     protected static final String DETAILS_LABEL = "General";
     protected static final String MEMBERSHIP_LABEL = "Membership";
     private static final String GROUP_DESCRIPTION_TITLE = "Description:";
+    private static final String ROLES_LABEL = "Roles";
 
     private static final String CANCEL_BUTTON = "Cancel";
     private static final int MAX_DESC_LENGTH = 256;
@@ -226,8 +228,8 @@ public abstract class GroupPanel<GT extends Group> extends EntityEditorPanel {
         // Set layout
         this.setName("Group");
         this.setLayout(new GridBagLayout());
-        this.setMaximumSize(new Dimension(380, 450));
-        this.setPreferredSize(new Dimension(380, 450));
+        this.setMaximumSize(new Dimension(600, 450));
+        this.setPreferredSize(new Dimension(600, 450));
 
         // Add the main panel
         add(getMainPanel(),
@@ -279,6 +281,7 @@ public abstract class GroupPanel<GT extends Group> extends EntityEditorPanel {
             // Add all tabs
             tabbedPane.add(getDetailsPanel(), DETAILS_LABEL);
             tabbedPane.add(getMembershipPanel(), MEMBERSHIP_LABEL);
+            tabbedPane.add(getRolesPanel(), ROLES_LABEL);
         }
 
         // Return tabbed pane
@@ -288,6 +291,13 @@ public abstract class GroupPanel<GT extends Group> extends EntityEditorPanel {
     protected abstract JPanel getDetailsPanel();
 
     protected abstract JPanel getMembershipPanel();
+
+    protected IdentityRoleAssignmentsPanel getRolesPanel() {
+        if (rolesPanel == null) {
+            rolesPanel = new IdentityRoleAssignmentsPanel(group, null, config.isAdminEnabled());
+        }
+        return rolesPanel;
+    }
 
     /**
      * Returns descriptionLabel

@@ -4,6 +4,7 @@
 package com.l7tech.server.security.rbac;
 
 import com.l7tech.gateway.common.security.rbac.*;
+import com.l7tech.identity.Group;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.AssertionAccess;
@@ -78,6 +79,18 @@ public class RbacAdminImpl implements RbacAdmin {
     public Collection<Role> findRolesForUser(User user) throws FindException {
         if (user == null) throw new IllegalArgumentException("User cannot be null.");
         final Collection<Role> assignedRoles = roleManager.getAssignedRoles(user, true, false);
+        for (final Role assignedRole : assignedRoles) {
+            attachEntities(assignedRole);
+        }
+        return assignedRoles;
+    }
+
+    /**
+     * Does not validate the group - do not use for authorization.
+     */
+    @Override
+    public Collection<Role> findRolesForGroup(@NotNull final Group group) throws FindException {
+        final Collection<Role> assignedRoles = roleManager.getAssignedRoles(group);
         for (final Role assignedRole : assignedRoles) {
             attachEntities(assignedRole);
         }

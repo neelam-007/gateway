@@ -36,6 +36,9 @@ import java.util.regex.Pattern;
 public class RoleManagerImpl extends HibernateEntityManager<Role, EntityHeader> implements RoleManager, RbacServices {
     @SuppressWarnings({ "FieldNameHidesFieldInSuperclass" })
     private static final Logger logger = Logger.getLogger(RoleManagerImpl.class.getName());
+    private static final String IDENTITY_ID = "identityId";
+    private static final String PROVIDER_ID = "providerId";
+    private static final String ENTITY_TYPE = "entityType";
 
     private RbacServices rbacServices;
 
@@ -94,6 +97,30 @@ public class RoleManagerImpl extends HibernateEntityManager<Role, EntityHeader> 
     @Transactional(readOnly=true)
     public Collection<Role> getAssignedRoles(final User user) throws FindException {
         return getAssignedRoles0(user, false ,false);
+    }
+
+    @Override
+    public Collection<Role> getAssignedRoles(@NotNull final Group group) throws FindException {
+        try {
+            //noinspection unchecked
+            return (Collection<Role>)getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
+                @Override
+                protected Collection<Role> doInHibernateReadOnly(final Session session) throws HibernateException, SQLException {
+                    final Set<Role> roles = new HashSet<Role>();
+                    final Criteria criteria = session.createCriteria(RoleAssignment.class);
+                    criteria.add(Restrictions.eq(IDENTITY_ID, group.getId()));
+                    criteria.add(Restrictions.eq(PROVIDER_ID, group.getProviderId()));
+                    criteria.add(Restrictions.eq(ENTITY_TYPE, EntityType.GROUP.getName()));
+                    final List<RoleAssignment> roleAssignments = (List<RoleAssignment>) criteria.list();
+                    for ( final RoleAssignment assignment : roleAssignments ) {
+                        roles.add( assignment.getRole() );
+                    }
+                    return roles;
+                }
+            });
+        } catch (final Exception e) {
+            throw new FindException("Error retrieving roles for group", e);
+        }
     }
 
     @Override

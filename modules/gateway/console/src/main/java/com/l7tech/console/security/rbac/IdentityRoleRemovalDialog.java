@@ -5,6 +5,9 @@ import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.gui.SimpleTableModel;
 import com.l7tech.gui.util.TableUtil;
 import com.l7tech.gui.util.Utilities;
+import com.l7tech.identity.Group;
+import com.l7tech.identity.Identity;
+import com.l7tech.identity.User;
 import com.l7tech.util.Functions;
 import com.l7tech.util.TextUtils;
 import org.apache.commons.lang.StringUtils;
@@ -21,10 +24,10 @@ import java.util.Map;
 import static com.l7tech.gui.util.TableUtil.column;
 
 /**
- * Confirmation dialog for removal of roles from a user.
+ * Confirmation dialog for removal of roles from a user/group.
  */
-public class UserRoleRemovalDialog extends JDialog {
-    private static final String CONFIRMATION_FORMAT = "Remove these roles from the user ''{0}''?";
+public class IdentityRoleRemovalDialog extends JDialog {
+    private static final String CONFIRMATION_FORMAT = "Remove these roles from the {0} ''{1}''?";
     private static final String NAME_UNAVAILABLE = "name unavailable";
     private static final int MAX_NAME_CHARS = 30;
     private JPanel contentPanel;
@@ -32,16 +35,18 @@ public class UserRoleRemovalDialog extends JDialog {
     private JTable rolesTable;
     private JLabel confirmationLabel;
     private SimpleTableModel<Role> roleModel;
-    private String userName;
     private Map<Role, String> toRemove;
     private boolean confirmed;
 
-    public UserRoleRemovalDialog(@NotNull final Window owner, @NotNull final String userName, @NotNull final Map<Role, String> toRemove) {
+    public IdentityRoleRemovalDialog(@NotNull final Window owner, @NotNull final Identity identity, @NotNull final Map<Role, String> toRemove) {
         super(owner, "Remove Roles", DEFAULT_MODALITY_TYPE);
+        if (!(identity instanceof User) && !(identity instanceof Group)) {
+            throw new IllegalArgumentException("Identity must be a user or group.");
+        }
         setContentPane(contentPanel);
-        this.userName = userName;
         this.toRemove = toRemove;
-        this.confirmationLabel.setText(MessageFormat.format(CONFIRMATION_FORMAT, TextUtils.truncateStringAtEnd(userName, MAX_NAME_CHARS)));
+        this.confirmationLabel.setText(MessageFormat.format(CONFIRMATION_FORMAT, identity instanceof User ? "user" : "group",
+                TextUtils.truncateStringAtEnd(identity.getName(), MAX_NAME_CHARS)));
         initButtons();
         initTable();
     }

@@ -25,7 +25,7 @@ import java.util.logging.Logger;
 import static com.l7tech.gui.util.TableUtil.column;
 
 /**
- * Dialog which allows selection of roles for which a user should be assigned.
+ * Dialog which allows selection of roles for which a user/group should be assigned.
  */
 public class RoleSelectionDialog extends JDialog {
     private static final Logger logger = Logger.getLogger(RoleSelectionDialog.class.getName());
@@ -43,8 +43,8 @@ public class RoleSelectionDialog extends JDialog {
     private boolean confirmed;
     private CheckBoxSelectableTableModel<Role> rolesModel;
 
-    public RoleSelectionDialog(@NotNull final Window owner, @NotNull final String userName) {
-        super(owner, "Add Roles to " + userName, DEFAULT_MODALITY_TYPE);
+    public RoleSelectionDialog(@NotNull final Window owner, @NotNull final String identityName) {
+        super(owner, "Add Roles to " + identityName, DEFAULT_MODALITY_TYPE);
         setContentPane(contentPanel);
         initButtons();
         initTable();

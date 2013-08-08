@@ -59,7 +59,7 @@ public class GenericUserPanel extends UserPanel {
     private JPanel buttonPanel;
 
     private JTabbedPane tabbedPane;
-    private UserRoleAssignmentsPanel rolesPanel;
+    private IdentityRoleAssignmentsPanel rolesPanel;
     private UserGroupsPanel groupPanel; // membership
     private UserCertPanel certPanel; //certificate
     private UserSshPanel sshPanel;
@@ -98,7 +98,7 @@ public class GenericUserPanel extends UserPanel {
     private void initialize() {
         try {
             // Initialize form components
-            rolesPanel = new UserRoleAssignmentsPanel(user, userGroups, config.isAdminEnabled());
+            rolesPanel = new IdentityRoleAssignmentsPanel(user, userGroups, config.isAdminEnabled());
             groupPanel = new UserGroupsPanel(this, config, config.isWritable() && canUpdate);
             certPanel = new NonFederatedUserCertPanel(this, config.isWritable() ? passwordChangeListener : null, canUpdate);
             if (config.type().equals(IdentityProviderType.INTERNAL) && user instanceof InternalUser) {

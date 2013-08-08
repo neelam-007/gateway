@@ -10,6 +10,7 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.objectmodel.imp.NamedGoidEntityImp;
 import com.l7tech.util.Pair;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collection;
@@ -25,6 +26,16 @@ public interface RoleManager extends EntityManager<Role, EntityHeader>, RbacServ
 
     @Transactional(readOnly=true)
     Collection<Role> getAssignedRoles(User user) throws FindException;
+
+    /**
+     * Get Roles that a Group is assigned to.
+     *
+     * @param group the group for which to retrieve roles it is assigned to.
+     * @return a list of Roles which the given Group is assigned to.
+     * @throws FindException if a db error occurs retrieving the roles.
+     */
+    @Transactional(readOnly = true)
+    Collection<Role> getAssignedRoles(@NotNull final Group group) throws FindException;
 
     /**
      * Finds the roles assigned to this user, optionally skipping validation of the account for expiry, disablement etc.

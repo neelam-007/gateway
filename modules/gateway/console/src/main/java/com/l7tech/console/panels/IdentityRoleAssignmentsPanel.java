@@ -1,8 +1,8 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.console.security.rbac.BasicRolePropertiesPanel;
+import com.l7tech.console.security.rbac.IdentityRoleRemovalDialog;
 import com.l7tech.console.security.rbac.RoleSelectionDialog;
-import com.l7tech.console.security.rbac.UserRoleRemovalDialog;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.security.rbac.RbacAdmin;
@@ -12,6 +12,8 @@ import com.l7tech.gui.SimpleTableModel;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.TableUtil;
 import com.l7tech.gui.util.Utilities;
+import com.l7tech.identity.Group;
+import com.l7tech.identity.Identity;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
@@ -25,6 +27,7 @@ import org.jetbrains.annotations.Nullable;
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
+import javax.swing.table.DefaultTableCellRenderer;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -36,12 +39,10 @@ import java.util.logging.Logger;
 import static com.l7tech.gui.util.TableUtil.column;
 
 /**
- * User: megery
- * Date: Oct 16, 2006
- * Time: 4:10:41 PM
+ * Panel for displaying/modifying the Roles that an Identity (User/Group) is assigned to.
  */
-public class UserRoleAssignmentsPanel extends JPanel {
-    static Logger log = Logger.getLogger(UserRoleAssignmentsPanel.class.getName());
+public class IdentityRoleAssignmentsPanel extends JPanel {
+    static Logger log = Logger.getLogger(IdentityRoleAssignmentsPanel.class.getName());
     private static final int NAME_COL_INDEX = 0;
     private static final int INHERITED_COL_INDEX = 2;
     private static final String NAME_UNAVAILABLE = "name unavailable";
@@ -52,12 +53,15 @@ public class UserRoleAssignmentsPanel extends JPanel {
     private JButton addButton;
     private boolean isAdminEnabled;
     private SimpleTableModel<Role> rolesModel;
-    private User user;
-    private Set<IdentityHeader> userGroups;
+    private Identity identity;
+    private Set<IdentityHeader> identityGroups;
 
-    public UserRoleAssignmentsPanel(@NotNull final User whichUser, @Nullable Set<IdentityHeader> userGroups, boolean isAdminEnabled) throws FindException {
-        this.user = whichUser;
-        this.userGroups = userGroups;
+    public IdentityRoleAssignmentsPanel(@NotNull final Identity identity, @Nullable Set<IdentityHeader> identityGroups, boolean isAdminEnabled) {
+        if (!(identity instanceof User) && !(identity instanceof Group)) {
+            throw new IllegalArgumentException("Identity must be a user or group.");
+        }
+        this.identity = identity;
+        this.identityGroups = identityGroups;
         this.isAdminEnabled = isAdminEnabled;
         setLayout(new BorderLayout());
         add(mainPanel, BorderLayout.CENTER);
@@ -70,7 +74,7 @@ public class UserRoleAssignmentsPanel extends JPanel {
         addButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(final ActionEvent e) {
-                final RoleSelectionDialog selectDialog = new RoleSelectionDialog(TopComponents.getInstance().getTopParent(), user.getName());
+                final RoleSelectionDialog selectDialog = new RoleSelectionDialog(TopComponents.getInstance().getTopParent(), identity.getName());
                 selectDialog.pack();
                 Utilities.centerOnParentWindow(selectDialog);
                 DialogDisplayer.display(selectDialog, new Runnable() {
@@ -82,7 +86,11 @@ public class UserRoleAssignmentsPanel extends JPanel {
                             if (!selectedRoles.isEmpty()) {
                                 try {
                                     for (final Role selectedRole : selectedRoles) {
-                                        selectedRole.addAssignedUser(user);
+                                        if (identity instanceof User) {
+                                            selectedRole.addAssignedUser((User) identity);
+                                        } else {
+                                            selectedRole.addAssignedGroup((Group) identity);
+                                        }
                                         rbacAdmin.saveRole(selectedRole);
                                     }
                                 } catch (final SaveException e) {
@@ -115,7 +123,7 @@ public class UserRoleAssignmentsPanel extends JPanel {
                             toRemove.put(selectedRole, name);
                         }
                     }
-                    final UserRoleRemovalDialog confirmation = new UserRoleRemovalDialog(TopComponents.getInstance().getTopParent(), user.getName(), toRemove);
+                    final IdentityRoleRemovalDialog confirmation = new IdentityRoleRemovalDialog(TopComponents.getInstance().getTopParent(), identity, toRemove);
                     confirmation.pack();
                     Utilities.centerOnParentWindow(confirmation);
                     DialogDisplayer.display(confirmation, new Runnable() {
@@ -125,7 +133,11 @@ public class UserRoleAssignmentsPanel extends JPanel {
                                 final RbacAdmin rbacAdmin = Registry.getDefault().getRbacAdmin();
                                 try {
                                     for (final Role role : toRemove.keySet()) {
-                                        role.removeAssignedUser(user);
+                                        if (identity instanceof User) {
+                                            role.removeAssignedUser((User) identity);
+                                        } else {
+                                            role.removeAssignedGroup((Group) identity);
+                                        }
                                         rbacAdmin.saveRole(role);
                                         rolesModel.removeRow(role);
                                     }
@@ -160,10 +172,10 @@ public class UserRoleAssignmentsPanel extends JPanel {
                 column("Inherited", 40, 80, 99999, new Functions.Unary<Boolean, Role>() {
                     @Override
                     public Boolean call(final Role role) {
-                        if (userGroups != null) {
+                        if (identityGroups != null) {
                             for (final RoleAssignment assignment : role.getRoleAssignments()) {
                                 if (EntityType.GROUP.getName().equals(assignment.getEntityType())) {
-                                    for (final IdentityHeader userGroup : userGroups) {
+                                    for (final IdentityHeader userGroup : identityGroups) {
                                         if (userGroup.getProviderOid() == assignment.getProviderId() &&
                                                 userGroup.getStrId().equals(assignment.getIdentityId())) {
                                             return true;
@@ -182,6 +194,17 @@ public class UserRoleAssignmentsPanel extends JPanel {
             }
         });
         rolesTable.getSelectionModel().setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+        rolesTable.getColumnModel().getColumn(INHERITED_COL_INDEX).setCellRenderer(new DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(final JTable table, Object value, final boolean isSelected, final boolean hasFocus, final int row, final int column) {
+                if (value.equals(Boolean.FALSE)) {
+                    value = "No";
+                } else if (value.equals(Boolean.TRUE)) {
+                    value = "Yes";
+                }
+                return super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+            }
+        });
         Utilities.setRowSorter(rolesTable, rolesModel);
         loadTable();
     }
@@ -231,7 +254,12 @@ public class UserRoleAssignmentsPanel extends JPanel {
     private void loadTable() {
         if (isAdminEnabled) {
             try {
-                final java.util.List<Role> roles = new ArrayList<>(Registry.getDefault().getRbacAdmin().findRolesForUser(user));
+                final List<Role> roles = new ArrayList<>();
+                if (identity instanceof User) {
+                    roles.addAll(Registry.getDefault().getRbacAdmin().findRolesForUser((User) identity));
+                } else {
+                    roles.addAll(Registry.getDefault().getRbacAdmin().findRolesForGroup((Group) identity));
+                }
                 rolesModel.setRows(roles);
             } catch (final FindException e) {
                 log.log(Level.WARNING, "Unable to retrieve user roles: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));

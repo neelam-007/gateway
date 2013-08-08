@@ -3,7 +3,9 @@ package com.l7tech.server.security.rbac;
 import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.identity.Group;
 import com.l7tech.identity.User;
+import com.l7tech.identity.internal.InternalGroup;
 import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.AssertionRegistry;
@@ -27,8 +29,8 @@ import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
 public class RbacAdminImplTest {
-    private static final Goid ZONE_GOID = new Goid(0,1234L);
-    private static final Goid GOID = new Goid(0,5678L);
+    private static final Goid ZONE_GOID = new Goid(0, 1234L);
+    private static final Goid GOID = new Goid(0, 5678L);
     private RbacAdminImpl admin;
     @Mock
     private RoleManager roleManager;
@@ -130,6 +132,23 @@ public class RbacAdminImplTest {
         when(entityCrud.find(EntityType.JDBC_CONNECTION.getEntityClass(), ZONE_GOID)).thenReturn(connection);
 
         final Collection<Role> assignedRoles = admin.findRolesForUser(user);
+        assertEquals(1, assignedRoles.size());
+        final Role assignedRole = assignedRoles.iterator().next();
+        assertEquals(connection, assignedRole.getCachedSpecificEntity());
+    }
+
+    @Test
+    public void findRolesForGroup() throws Exception {
+        final Role role = new Role();
+        role.setName("Manage Test Service (#1234)");
+        role.setEntityType(EntityType.JDBC_CONNECTION);
+        role.setEntityGoid(GOID);
+        final Group group = new InternalGroup("test");
+        final JdbcConnection connection = new JdbcConnection();
+        when(roleManager.getAssignedRoles(group)).thenReturn(Arrays.asList(role));
+        when(entityCrud.find(EntityType.JDBC_CONNECTION.getEntityClass(), GOID)).thenReturn(connection);
+
+        final Collection<Role> assignedRoles = admin.findRolesForGroup(group);
         assertEquals(1, assignedRoles.size());
         final Role assignedRole = assignedRoles.iterator().next();
         assertEquals(connection, assignedRole.getCachedSpecificEntity());

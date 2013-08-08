@@ -4,6 +4,7 @@
 package com.l7tech.gateway.common.security.rbac;
 
 import com.l7tech.gateway.common.admin.Administrative;
+import com.l7tech.identity.Group;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.AssertionAccess;
@@ -66,6 +67,18 @@ public interface RbacAdmin {
     @Administrative(licensed=false)
     Collection<Role> findRolesForUser(User user) throws FindException;
 
+    /**
+     * Gets the roles assigned to the given group.
+     *
+     * This method does <em>not</em> check the validity of the group and should not be used for authorization.
+     * @param group the group for which to look up roles it has been assigned to.
+     * @return a collection of roles to which the group is assigned.
+     * @throws FindException
+     */
+    @NotNull
+    @Transactional(readOnly = true)
+    @Secured(stereotype = FIND_ENTITIES)
+    Collection<Role> findRolesForGroup(@NotNull final Group group) throws FindException;
     /**
      * Saves the specified Role.
      * @return the OID of the role that was saved

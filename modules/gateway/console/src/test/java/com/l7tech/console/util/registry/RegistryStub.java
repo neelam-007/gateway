@@ -31,6 +31,7 @@ import com.l7tech.gateway.common.transport.ftp.FtpAdmin;
 import com.l7tech.gateway.common.transport.ftp.FtpAdminStub;
 import com.l7tech.gateway.common.transport.jms.JmsAdmin;
 import com.l7tech.gateway.common.transport.jms.JmsAdminStub;
+import com.l7tech.identity.Group;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.User;
@@ -217,6 +218,12 @@ public class RegistryStub extends Registry {
             @Override
             public Collection<Role> findRolesForUser(User user) throws FindException {
                 return findAllRoles();
+            }
+
+            @NotNull
+            @Override
+            public Collection<Role> findRolesForGroup(@NotNull Group group) throws FindException {
+                return null;
             }
 
             @Override
