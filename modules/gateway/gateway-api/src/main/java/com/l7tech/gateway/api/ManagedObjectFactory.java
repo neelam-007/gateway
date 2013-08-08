@@ -416,6 +416,15 @@ public class ManagedObjectFactory {
     }
 
     /**
+     * Create a new SiteMinderConfigurationMO instance.
+     *
+     * @return The new instance
+     */
+    public static SiteMinderConfigurationMO createSiteMinderConfiguration() {
+        return new SiteMinderConfigurationMO();
+    }
+
+    /**
      * Read a managed object from the given data.
      *
      * @param in The input data.
@@ -504,7 +513,8 @@ public class ManagedObjectFactory {
                 TrustedCertificateMO.class,
                 CustomKeyValueStoreMO.class,
                 ActiveConnectorMO.class,
-                SecurityZoneMO.class
+                SecurityZoneMO.class,
+                SiteMinderConfigurationMO.class
         };
     }
 

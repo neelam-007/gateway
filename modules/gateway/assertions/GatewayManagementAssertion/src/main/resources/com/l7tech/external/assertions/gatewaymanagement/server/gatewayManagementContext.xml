@@ -166,6 +166,10 @@
                 <bean class="com.l7tech.external.assertions.gatewaymanagement.server.SecurityZoneResourceFactory" parent="resourceFactoryParent">
                     <constructor-arg index="3" ref="securityZoneManager"/>
                 </bean>
+                <bean class="com.l7tech.external.assertions.gatewaymanagement.server.SiteMinderConfigurationResourceFactory" parent="resourceFactoryParent">
+                    <constructor-arg index="3" ref="siteMinderConfigurationManager"/>
+                    <constructor-arg index="4" ref="securePasswordManager"/>
+                </bean>
             </list>
         </constructor-arg>
     </bean>
