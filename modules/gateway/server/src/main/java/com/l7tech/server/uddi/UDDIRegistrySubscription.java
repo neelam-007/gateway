@@ -1,13 +1,14 @@
 package com.l7tech.server.uddi;
 
+import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.imp.GoidEntityImp;
 import org.hibernate.annotations.Proxy;
+import org.hibernate.annotations.Type;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Table;
-import javax.persistence.Column;
 import javax.persistence.Version;
-
-import com.l7tech.objectmodel.imp.PersistentEntityImp;
 
 /**
  * Subscription information for a UDDI registry
@@ -15,17 +16,18 @@ import com.l7tech.objectmodel.imp.PersistentEntityImp;
 @Entity
 @Proxy(lazy=false)
 @Table(name="uddi_registry_subscription")
-public class UDDIRegistrySubscription extends PersistentEntityImp {
+public class UDDIRegistrySubscription extends GoidEntityImp {
 
    //- PUBLIC
 
-    @Column(name = "uddi_registry_oid")
-    public long getUddiRegistryOid() {
-        return uddiRegistryOid;
+    @Column(name = "uddi_registry_goid")
+    @Type(type = "com.l7tech.server.util.GoidType")
+    public Goid getUddiRegistryGoid() {
+        return uddiRegistryGoid;
     }
 
-    public void setUddiRegistryOid( final long uddiRegistryOid ) {
-        this.uddiRegistryOid = uddiRegistryOid;
+    public void setUddiRegistryGoid( final Goid uddiRegistryGoid ) {
+        this.uddiRegistryGoid = uddiRegistryGoid;
     }
 
     @Column(name = "uddi_subscription_key")
@@ -73,7 +75,7 @@ public class UDDIRegistrySubscription extends PersistentEntityImp {
 
     //- PRIVATE
 
-    private long uddiRegistryOid;
+    private Goid uddiRegistryGoid;
     private String subscriptionKey;
     private long subscriptionExpiryTime;
     private long subscriptionNotifiedTime;

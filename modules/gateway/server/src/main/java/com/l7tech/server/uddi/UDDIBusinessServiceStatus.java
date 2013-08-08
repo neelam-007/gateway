@@ -1,7 +1,7 @@
 package com.l7tech.server.uddi;
 
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.imp.PersistentEntityImp;
+import com.l7tech.objectmodel.imp.GoidEntityImp;
 import org.hibernate.annotations.Proxy;
 import org.hibernate.annotations.Type;
 
@@ -15,7 +15,7 @@ import javax.persistence.*;
 @Entity
 @Proxy(lazy=false)
 @Table(name="uddi_business_service_status")
-public class UDDIBusinessServiceStatus extends PersistentEntityImp {
+public class UDDIBusinessServiceStatus extends GoidEntityImp {
 
     //- PUBLIC
     
@@ -29,13 +29,14 @@ public class UDDIBusinessServiceStatus extends PersistentEntityImp {
         this.publishedServiceGoid = publishedServiceGoid;
     }
 
-    @Column(name = "uddi_registry_oid", updatable=false)
-    public long getUddiRegistryOid() {
-        return uddiRegistryOid;
+    @Column(name = "uddi_registry_goid", updatable=false)
+    @Type(type = "com.l7tech.server.util.GoidType")
+    public Goid getUddiRegistryGoid() {
+        return uddiRegistryGoid;
     }
 
-    public void setUddiRegistryOid( final long uddiRegistryOid ) {
-        this.uddiRegistryOid = uddiRegistryOid;
+    public void setUddiRegistryGoid( final Goid uddiRegistryGoid ) {
+        this.uddiRegistryGoid = uddiRegistryGoid;
     }
 
     @Column(name = "uddi_service_key")
@@ -144,7 +145,7 @@ public class UDDIBusinessServiceStatus extends PersistentEntityImp {
     //- PRIVATE
 
     private Goid publishedServiceGoid;
-    private long uddiRegistryOid;
+    private Goid uddiRegistryGoid;
     private String uddiServiceKey;
     private String uddiServiceName;
     private String uddiPolicyPublishUrl;

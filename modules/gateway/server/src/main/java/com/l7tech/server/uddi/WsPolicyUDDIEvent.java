@@ -1,5 +1,7 @@
 package com.l7tech.server.uddi;
 
+import com.l7tech.objectmodel.Goid;
+
 /**
  * 
  */
@@ -7,16 +9,16 @@ class WsPolicyUDDIEvent extends UDDIEvent {
 
     //- PACKAGE
 
-    WsPolicyUDDIEvent( final long registryOid ) {
-        this.registryOid = registryOid;
+    WsPolicyUDDIEvent( final Goid registryGoid ) {
+        this.registryGoid = registryGoid;
     }
 
-    long getRegistryOid() {
-        return registryOid;
+    Goid getRegistryGoid() {
+        return registryGoid;
     }
 
     //- PRIVATE
 
-    private final long registryOid;
+    private final Goid registryGoid;
     
 }

@@ -1,7 +1,7 @@
 package com.l7tech.server.uddi;
 
-import com.l7tech.uddi.UDDIException;
 import com.l7tech.gateway.common.audit.AuditDetailMessage;
+import com.l7tech.objectmodel.Goid;
 
 /**
  * Factory for UDDI Tasks.
@@ -17,8 +17,8 @@ public abstract class UDDITaskFactory {
     public abstract UDDITask buildUDDITask( UDDIEvent event );
 
     public interface UDDITaskContext {
-        String getSubscriptionNotificationURL( long registryOid );
-        String getSubscriptionBindingKey( long registryOid );
+        String getSubscriptionNotificationURL( Goid registryGoid );
+        String getSubscriptionBindingKey( Goid registryGoid );
         void notifyEvent( UDDIEvent event );
         void logAndAudit( AuditDetailMessage msg, Throwable e, String... params );
         void logAndAudit( AuditDetailMessage msg, String... params );

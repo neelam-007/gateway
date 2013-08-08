@@ -1,5 +1,7 @@
 package com.l7tech.server.uddi;
 
+import com.l7tech.objectmodel.Goid;
+
 /**
  * UDDIEvent for ad-hoc polling.
  */
@@ -7,17 +9,17 @@ public class PollUDDIEvent extends UDDIEvent {
 
     //- PUBLIC
 
-    public PollUDDIEvent( final long registryOid,
+    public PollUDDIEvent( final Goid registryGoid,
                           final long startTime,
                           final long endTime ) {
         super( false );
-        this.registryOid = registryOid;
+        this.registryGoid = registryGoid;
         this.startTime = startTime;
         this.endTime = endTime;
     }
 
-    public long getRegistryOid() {
-        return registryOid;
+    public Goid getRegistryGoid() {
+        return registryGoid;
     }
 
     public long getStartTime() {
@@ -30,7 +32,7 @@ public class PollUDDIEvent extends UDDIEvent {
 
     //- PRIVATE
 
-    private final long registryOid;
+    private final Goid registryGoid;
     private final long startTime;
     private final long endTime;
 }

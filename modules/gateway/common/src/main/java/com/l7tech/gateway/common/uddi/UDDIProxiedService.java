@@ -1,11 +1,9 @@
-
 package com.l7tech.gateway.common.uddi;
 
+import com.l7tech.objectmodel.imp.GoidEntityImp;
 import org.hibernate.annotations.Proxy;
 
 import javax.persistence.*;
-
-import com.l7tech.objectmodel.imp.PersistentEntityImp;
 
 /**
  * Copyright (C) 2008, Layer 7 Technologies Inc.
@@ -17,7 +15,7 @@ import com.l7tech.objectmodel.imp.PersistentEntityImp;
 @Entity
 @Proxy(lazy=false)
 @Table(name="uddi_proxied_service")
-public class UDDIProxiedService extends PersistentEntityImp {
+public class UDDIProxiedService extends GoidEntityImp {
 
     public UDDIProxiedService() {
     }
@@ -77,7 +75,7 @@ public class UDDIProxiedService extends PersistentEntityImp {
     }
 
     @ManyToOne(optional=false)
-    @JoinColumn(name="uddi_proxied_service_info_oid", nullable=false)
+    @JoinColumn(name="uddi_proxied_service_info_goid", nullable=false)
     public UDDIProxiedServiceInfo getUddiProxiedServiceInfo() {
         return uddiProxiedServiceInfo;
     }

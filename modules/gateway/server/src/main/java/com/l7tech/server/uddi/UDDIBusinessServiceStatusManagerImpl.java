@@ -1,28 +1,28 @@
 package com.l7tech.server.uddi;
 
-import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.Entity;
+import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.server.HibernateEntityManager;
+import com.l7tech.server.HibernateGoidEntityManager;
 
 import java.util.Collection;
-import java.util.Map;
-import java.util.HashMap;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  *
  */
-public class UDDIBusinessServiceStatusManagerImpl extends HibernateEntityManager<UDDIBusinessServiceStatus, EntityHeader> implements UDDIBusinessServiceStatusManager {
+public class UDDIBusinessServiceStatusManagerImpl extends HibernateGoidEntityManager<UDDIBusinessServiceStatus, EntityHeader> implements UDDIBusinessServiceStatusManager {
 
     //- PUBLIC
 
     @Override
-    public Collection<UDDIBusinessServiceStatus> findByRegistryAndMetricsStatus( final long registryOid,
+    public Collection<UDDIBusinessServiceStatus> findByRegistryAndMetricsStatus( final Goid registryGoid,
                                                                                  final UDDIBusinessServiceStatus.Status status ) throws FindException {
         final Map<String,Object> matchMap = new HashMap<String,Object>();
-        matchMap.put( "uddiRegistryOid", registryOid );
+        matchMap.put( "uddiRegistryGoid", registryGoid );
         if ( status != null ) {
             matchMap.put( "uddiMetricsReferenceStatus", status );
         }
@@ -30,10 +30,10 @@ public class UDDIBusinessServiceStatusManagerImpl extends HibernateEntityManager
     }
 
     @Override
-    public Collection<UDDIBusinessServiceStatus> findByRegistryAndWsPolicyPublishStatus( final long registryOid,
+    public Collection<UDDIBusinessServiceStatus> findByRegistryAndWsPolicyPublishStatus( final Goid registryGoid,
                                                                                          final UDDIBusinessServiceStatus.Status status ) throws FindException {
         final Map<String,Object> matchMap = new HashMap<String,Object>();
-        matchMap.put( "uddiRegistryOid", registryOid );
+        matchMap.put( "uddiRegistryGoid", registryGoid );
         if ( status != null ) {
             matchMap.put( "uddiPolicyStatus", status );
         }

@@ -5,17 +5,18 @@
 package com.l7tech.server.uddi;
 
 import com.l7tech.gateway.common.uddi.UDDIServiceControlRuntime;
-import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.Entity;
+import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.server.HibernateEntityManager;
+import com.l7tech.objectmodel.Goid;
+import com.l7tech.server.HibernateGoidEntityManager;
 
-import java.util.Map;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.Arrays;
+import java.util.Map;
 
-public class UDDIServiceControlRuntimeManagerImpl extends HibernateEntityManager<UDDIServiceControlRuntime,EntityHeader> implements UDDIServiceControlRuntimeManager {
+public class UDDIServiceControlRuntimeManagerImpl extends HibernateGoidEntityManager<UDDIServiceControlRuntime,EntityHeader> implements UDDIServiceControlRuntimeManager {
 
     @Override
     public Class<? extends Entity> getImpClass() {
@@ -23,8 +24,8 @@ public class UDDIServiceControlRuntimeManagerImpl extends HibernateEntityManager
     }
 
     @Override
-    public UDDIServiceControlRuntime findByServiceControlOid( final long uddiServiceControlOid) throws FindException {
-        return findByUniqueKey("uddiServiceControlOid", uddiServiceControlOid);
+    public UDDIServiceControlRuntime findByServiceControlGoid( final Goid uddiServiceControlGoid) throws FindException {
+        return findByUniqueKey("uddiServiceControlGoid", uddiServiceControlGoid);
     }
 
     //- PROTECTED
@@ -37,7 +38,7 @@ public class UDDIServiceControlRuntimeManagerImpl extends HibernateEntityManager
     @Override
     protected Collection<Map<String, Object>> getUniqueConstraints( final UDDIServiceControlRuntime controlMonitorRuntime ) {
         Map<String,Object> serviceOidMap = new HashMap<String, Object>();
-        serviceOidMap.put( "uddiServiceControlOid", controlMonitorRuntime.getUddiServiceControlOid() );
+        serviceOidMap.put( "uddiServiceControlGoid", controlMonitorRuntime.getUddiServiceControlGoid() );
         return Arrays.asList(serviceOidMap);
     }
 

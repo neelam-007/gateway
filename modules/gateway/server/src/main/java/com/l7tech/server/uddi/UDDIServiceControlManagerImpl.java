@@ -1,22 +1,18 @@
 package com.l7tech.server.uddi;
 
 import com.l7tech.gateway.common.uddi.UDDIServiceControl;
-import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.Entity;
+import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.server.HibernateEntityManager;
+import com.l7tech.server.HibernateGoidEntityManager;
 
-import java.util.Map;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Arrays;
-import java.util.Collections;
+import java.util.*;
 
 /**
  *
  */
-public class UDDIServiceControlManagerImpl extends HibernateEntityManager<UDDIServiceControl,EntityHeader> implements UDDIServiceControlManager {
+public class UDDIServiceControlManagerImpl extends HibernateGoidEntityManager<UDDIServiceControl,EntityHeader> implements UDDIServiceControlManager {
 
     //- PUBLIC
 
@@ -26,8 +22,8 @@ public class UDDIServiceControlManagerImpl extends HibernateEntityManager<UDDISe
     }
 
     @Override
-    public Collection<UDDIServiceControl> findByUDDIRegistryOid( final long registryOid ) throws FindException {
-        return findByPropertyMaybeNull( "uddiRegistryOid", registryOid);
+    public Collection<UDDIServiceControl> findByUDDIRegistryGoid( final Goid registryGoid ) throws FindException {
+        return findByPropertyMaybeNull( "uddiRegistryGoid", registryGoid);
     }
 
     @Override
@@ -36,11 +32,11 @@ public class UDDIServiceControlManagerImpl extends HibernateEntityManager<UDDISe
     }
 
     @Override
-    public Collection<UDDIServiceControl> findByUDDIRegistryAndServiceKey( final long registryOid,
+    public Collection<UDDIServiceControl> findByUDDIRegistryAndServiceKey( final Goid registryGoid,
                                                                            final String serviceKey,
                                                                            final Boolean uddiControlled ) throws FindException {
         final Map<String,Object> matchMap = new HashMap<String,Object>();
-        matchMap.put( "uddiRegistryOid", registryOid );
+        matchMap.put( "uddiRegistryGoid", registryGoid );
         matchMap.put( "uddiServiceKey", serviceKey );
         if ( uddiControlled != null ) {
             matchMap.put( "underUddiControl", uddiControlled );
@@ -49,10 +45,10 @@ public class UDDIServiceControlManagerImpl extends HibernateEntityManager<UDDISe
     }
 
     @Override
-    public Collection<UDDIServiceControl> findByUDDIRegistryAndMetricsState( final long registryOid,
+    public Collection<UDDIServiceControl> findByUDDIRegistryAndMetricsState( final Goid registryGoid,
                                                                              final boolean metricsEnabled ) throws FindException {
         final Map<String,Object> matchMap = new HashMap<String,Object>();
-        matchMap.put( "uddiRegistryOid", registryOid );
+        matchMap.put( "uddiRegistryGoid", registryGoid );
         matchMap.put( "metricsEnabled", metricsEnabled );
         return findMatching( Collections.singletonList( matchMap ) );
     }

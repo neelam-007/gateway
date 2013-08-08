@@ -90,11 +90,11 @@ public class BulkZoneUpdater {
                     for (final EntityHeader service : entities) {
                         final UDDIServiceControl uddiServiceControl = uddiAdmin.getUDDIServiceControl(service.getGoid());
                         if (uddiServiceControl != null) {
-                            serviceControlOids.add(uddiServiceControl.getOid());
+                            serviceControlOids.add(uddiServiceControl.getGoid());
                         }
                         final UDDIProxiedServiceInfo proxiedServiceInfo = uddiAdmin.findProxiedServiceInfoForPublishedService(service.getGoid());
                         if (proxiedServiceInfo != null) {
-                            proxiedServiceInfoOids.add(proxiedServiceInfo.getOid());
+                            proxiedServiceInfoOids.add(proxiedServiceInfo.getGoid());
                         }
                         if (service instanceof ServiceHeader) {
                             final Goid policyGoid = ((ServiceHeader) service).getPolicyGoid();

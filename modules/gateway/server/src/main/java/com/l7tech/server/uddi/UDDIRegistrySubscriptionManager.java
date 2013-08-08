@@ -1,24 +1,25 @@
 package com.l7tech.server.uddi;
 
 import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityManager;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.GoidEntityManager;
 
 import java.util.Collection;
 
 /**
  * Entity manager for UDDIRegistrySubscriptions
  */
-public interface UDDIRegistrySubscriptionManager extends EntityManager<UDDIRegistrySubscription, EntityHeader> {
+public interface UDDIRegistrySubscriptionManager extends GoidEntityManager<UDDIRegistrySubscription, EntityHeader> {
 
     /**
      * Find the UDDIRuntimeServiceInfos for a UDDI registry.
      *
-     * @param uddiRegistryOid The oid of the UDDI registry
+     * @param uddiRegistryGoid The goid of the UDDI registry
      * @return the related subscription or null
      * @throws FindException If an error occurs
      */
-    UDDIRegistrySubscription findByUDDIRegistryOid( long uddiRegistryOid ) throws FindException;
+    UDDIRegistrySubscription findByUDDIRegistryGoid( Goid uddiRegistryGoid ) throws FindException;
 
     /**
      * Find the UDDIRuntimeServiceInfos that match a subscription key.

@@ -1,10 +1,11 @@
 package com.l7tech.gateway.common.uddi;
 
+import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.imp.GoidEntityImp;
 import org.hibernate.annotations.Proxy;
+import org.hibernate.annotations.Type;
 
 import javax.persistence.*;
-
-import com.l7tech.objectmodel.imp.PersistentEntityImp;
 
 /**
  * Copyright (C) 2008, Layer 7 Technologies Inc.
@@ -18,7 +19,7 @@ import com.l7tech.objectmodel.imp.PersistentEntityImp;
 @Entity
 @Proxy(lazy=false)
 @Table(name="uddi_publish_status")
-public class UDDIPublishStatus extends PersistentEntityImp {
+public class UDDIPublishStatus extends GoidEntityImp {
 
     /**
      * This enum is the life cycle of published proxied information in UDDI
@@ -64,9 +65,9 @@ public class UDDIPublishStatus extends PersistentEntityImp {
         this.publishStatus = PublishStatus.PUBLISH;
     }
 
-    public UDDIPublishStatus(long uddiProxiedServiceInfoOid, PublishStatus publishStatus) {
+    public UDDIPublishStatus(Goid uddiProxiedServiceInfoGoid, PublishStatus publishStatus) {
         this.publishStatus = publishStatus;
-        this.uddiProxiedServiceInfoOid = uddiProxiedServiceInfoOid;
+        this.uddiProxiedServiceInfoGoid = uddiProxiedServiceInfoGoid;
     }
 
     @Override
@@ -76,13 +77,14 @@ public class UDDIPublishStatus extends PersistentEntityImp {
         return super.getVersion();
     }
 
-    @Column(name="uddi_proxied_service_info_oid", nullable=false)
-    public long getUddiProxiedServiceInfoOid() {
-        return uddiProxiedServiceInfoOid;
+    @Column(name="uddi_proxied_service_info_goid", nullable=false)
+    @Type(type = "com.l7tech.server.util.GoidType")
+    public Goid getUddiProxiedServiceInfoGoid() {
+        return uddiProxiedServiceInfoGoid;
     }
 
-    public void setUddiProxiedServiceInfoOid(long uddiProxiedServiceInfoOid) {
-        this.uddiProxiedServiceInfoOid = uddiProxiedServiceInfoOid;
+    public void setUddiProxiedServiceInfoGoid(Goid uddiProxiedServiceInfoGoid) {
+        this.uddiProxiedServiceInfoGoid = uddiProxiedServiceInfoGoid;
     }
 
     @Column(name = "publish_status")
@@ -116,7 +118,7 @@ public class UDDIPublishStatus extends PersistentEntityImp {
         this.failCount = failCount;
     }
 
-    private long uddiProxiedServiceInfoOid;
+    private Goid uddiProxiedServiceInfoGoid;
     private PublishStatus publishStatus;
     private int failCount;
 }

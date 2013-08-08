@@ -71,7 +71,7 @@ public class ServiceUDDISettingsDialog extends JDialog {//TODO rename to Publish
     private boolean canUpdate;
     private boolean confirmed;
     private Map<String, UDDIRegistry> allRegistries;
-    private Map<Long, Boolean> registryMetricsEnabled = new HashMap<Long,Boolean>();
+    private Map<Goid, Boolean> registryMetricsEnabled = new HashMap<Goid,Boolean>();
     private UDDIProxiedServiceInfo uddiProxyServiceInfo;
     private UDDIServiceControl uddiServiceControl;
     private UDDIRegistry originalServiceRegistry;
@@ -207,7 +207,7 @@ public class ServiceUDDISettingsDialog extends JDialog {//TODO rename to Publish
             if(uddiProxyServiceInfo != null){
                 try {
                     publishStatus =
-                            Registry.getDefault().getUDDIRegistryAdmin().getPublishStatusForProxy(uddiProxyServiceInfo.getOid(), service.getGoid());
+                            Registry.getDefault().getUDDIRegistryAdmin().getPublishStatusForProxy(uddiProxyServiceInfo.getGoid(), service.getGoid());
                 } catch (FindException e) {
                     showErrorMessage("Cannot get publish status", "Cannot find the publish status for information in UDDI", ExceptionUtils.getDebugException(e), true);
                     dispose();
@@ -220,7 +220,7 @@ public class ServiceUDDISettingsDialog extends JDialog {//TODO rename to Publish
         try {
             uddiServiceControl = getUDDIRegistryAdmin().getUDDIServiceControl(service.getGoid());
             if(uddiServiceControl != null){
-                originalServiceRegistry = getUDDIRegistryAdmin().findByPrimaryKey(uddiServiceControl.getUddiRegistryOid());
+                originalServiceRegistry = getUDDIRegistryAdmin().findByPrimaryKey(uddiServiceControl.getUddiRegistryGoid());
             }
         } catch (FindException e) {
             uddiServiceControl = null;
@@ -274,10 +274,10 @@ public class ServiceUDDISettingsDialog extends JDialog {//TODO rename to Publish
         //publish tab configuration
         if (uddiProxyServiceInfo != null) {
             //find which registry to select
-            long uddiRegOid = uddiProxyServiceInfo.getUddiRegistryOid();
+            Goid uddiRegGoid = uddiProxyServiceInfo.getUddiRegistryGoid();
             boolean found = false;
             for(UDDIRegistry registries: allRegistries.values()){
-                if(registries.getOid() == uddiRegOid){
+                if(Goid.equals(registries.getGoid(), uddiRegGoid)){
                     String regName = registries.getName();
                     uddiRegistriesComboBox.setSelectedItem(regName);
                     found = true;
@@ -452,7 +452,7 @@ public class ServiceUDDISettingsDialog extends JDialog {//TODO rename to Publish
 
             //metrics tab
             boolean enableMetrics = uddiProxyServiceInfo != null &&
-                    isMetricsEnabled(uddiProxyServiceInfo.getUddiRegistryOid()) &&
+                    isMetricsEnabled(uddiProxyServiceInfo.getUddiRegistryGoid()) &&
                     uddiProxyServiceInfo != null &&
                     publishStatus.getPublishStatus() == UDDIPublishStatus.PublishStatus.PUBLISHED &&
                     uddiProxyServiceInfo.getPublishType() == PROXY;
@@ -835,7 +835,7 @@ public class ServiceUDDISettingsDialog extends JDialog {//TODO rename to Publish
             UDDIRegistryAdmin uddiRegistryAdmin = Registry.getDefault().getUDDIRegistryAdmin();
             UDDIRegistry uddiRegistry = allRegistries.get(uddiRegistriesComboBox.getSelectedItem().toString());
             try {
-                uddiRegistryAdmin.publishGatewayWsdl(service, uddiRegistry.getOid(), selectedBusinessKey, selectedBusinessName, updateWhenGatewayWSDLCheckBox.isSelected(), service.getSecurityZone());
+                uddiRegistryAdmin.publishGatewayWsdl(service, uddiRegistry.getGoid(), selectedBusinessKey, selectedBusinessName, updateWhenGatewayWSDLCheckBox.isSelected(), service.getSecurityZone());
 
                 JOptionPane.showMessageDialog(ServiceUDDISettingsDialog.this,
                     "Task to publish Gateway WSDL to UDDI created successfully", "Successful Task Creation", JOptionPane.INFORMATION_MESSAGE);
@@ -941,7 +941,7 @@ public class ServiceUDDISettingsDialog extends JDialog {//TODO rename to Publish
     private boolean othersAffectedByModifyingOriginal(){
         try {
             final Collection<UDDIServiceControl> controls =
-                    Registry.getDefault().getUDDIRegistryAdmin().getAllServiceControlsForRegistry(uddiServiceControl.getUddiRegistryOid());
+                    Registry.getDefault().getUDDIRegistryAdmin().getAllServiceControlsForRegistry(uddiServiceControl.getUddiRegistryGoid());
 
             int numOfAffectedControls = 0;
             for(UDDIServiceControl control: controls){
@@ -980,17 +980,17 @@ public class ServiceUDDISettingsDialog extends JDialog {//TODO rename to Publish
         }
     }
 
-    private boolean isMetricsEnabled( long registryOid ) {
-        Boolean enabled = registryMetricsEnabled.get( registryOid );
+    private boolean isMetricsEnabled( Goid registryGoid ) {
+        Boolean enabled = registryMetricsEnabled.get( registryGoid );
 
         if ( enabled == null ) {
             UDDIRegistryAdmin uddiRegistryAdmin = getUDDIRegistryAdmin();
             try {
-                enabled = uddiRegistryAdmin.metricsAvailable( registryOid );
+                enabled = uddiRegistryAdmin.metricsAvailable( registryGoid );
             } catch (FindException e) {
                 enabled = false;
             }
-            registryMetricsEnabled.put( registryOid, enabled );
+            registryMetricsEnabled.put( registryGoid, enabled );
         }
 
         return enabled;

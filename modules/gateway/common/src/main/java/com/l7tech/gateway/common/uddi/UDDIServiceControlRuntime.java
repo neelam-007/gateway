@@ -4,14 +4,15 @@
  */
 package com.l7tech.gateway.common.uddi;
 
-import com.l7tech.objectmodel.imp.PersistentEntityImp;
+import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.imp.GoidEntityImp;
+import org.hibernate.annotations.Proxy;
+import org.hibernate.annotations.Type;
 
-import javax.persistence.Version;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Table;
-
-import org.hibernate.annotations.Proxy;
+import javax.persistence.Version;
 
 /**
  * Represents the runtime information for a UDDI BusinessService which we are monitoring.
@@ -20,7 +21,7 @@ import org.hibernate.annotations.Proxy;
 @Entity
 @Proxy(lazy=false)
 @Table(name="uddi_service_control_monitor_runtime")
-public class UDDIServiceControlRuntime extends PersistentEntityImp{
+public class UDDIServiceControlRuntime extends GoidEntityImp{
 
     // - PUBLIC
 
@@ -31,23 +32,24 @@ public class UDDIServiceControlRuntime extends PersistentEntityImp{
      *
      * @param accessPointURL String must not be null or empty.
      */
-    public UDDIServiceControlRuntime(final long uddiServiceControlOid,
+    public UDDIServiceControlRuntime(final Goid uddiServiceControlGoid,
                                      final long lastUDDIModifiedTimeStamp,
                                      final String accessPointURL) {
         if(accessPointURL == null || accessPointURL.trim().isEmpty()) throw new IllegalArgumentException("accessPoint must not be null or empty");
         this.accessPointURL = accessPointURL;
         
-        this.uddiServiceControlOid = uddiServiceControlOid;
+        this.uddiServiceControlGoid = uddiServiceControlGoid;
         this.lastUDDIModifiedTimeStamp = lastUDDIModifiedTimeStamp;
     }
 
-    @Column(name = "uddi_service_control_oid")
-    public long getUddiServiceControlOid() {
-        return uddiServiceControlOid;
+    @Column(name = "uddi_service_control_goid")
+    @Type(type = "com.l7tech.server.util.GoidType")
+    public Goid getUddiServiceControlGoid() {
+        return uddiServiceControlGoid;
     }
 
-    public void setUddiServiceControlOid(long uddiServiceControlOid) {
-        this.uddiServiceControlOid = uddiServiceControlOid;
+    public void setUddiServiceControlGoid(Goid uddiServiceControlGoid) {
+        this.uddiServiceControlGoid = uddiServiceControlGoid;
     }
 
     /**
@@ -81,7 +83,7 @@ public class UDDIServiceControlRuntime extends PersistentEntityImp{
     
     // - PRIVATE
 
-    private long uddiServiceControlOid;
+    private Goid uddiServiceControlGoid;
     private long lastUDDIModifiedTimeStamp;
     private String accessPointURL;
 }

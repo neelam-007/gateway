@@ -2,6 +2,7 @@ package com.l7tech.server.uddi;
 
 import com.l7tech.gateway.common.uddi.UDDIRegistry;
 import com.l7tech.gateway.common.audit.SystemMessages;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.uddi.UDDIException;
 import com.l7tech.uddi.UDDIClient;
 import com.l7tech.uddi.UDDIInvalidKeyException;
@@ -39,7 +40,7 @@ public class WsPolicyAttachmentTaskFactory extends UDDITaskFactory {
             WsPolicyUDDIEvent wsPolicyEvent = (WsPolicyUDDIEvent) event;
             task = new WsPolicyPublishUDDITask(
                     this,
-                    wsPolicyEvent.getRegistryOid() );
+                    wsPolicyEvent.getRegistryGoid() );
         }
 
         return task;
@@ -63,19 +64,19 @@ public class WsPolicyAttachmentTaskFactory extends UDDITaskFactory {
         private static final String DEFAULT_DESCRIPTION = "Associated Policy";
 
         private final WsPolicyAttachmentTaskFactory factory;
-        private final long registryOid;
+        private final Goid registryGoid;
 
         WsPolicyPublishUDDITask( final WsPolicyAttachmentTaskFactory factory,
-                                 final long registryOid ) {
+                                 final Goid registryGoid ) {
             this.factory = factory;
-            this.registryOid = registryOid;
+            this.registryGoid = registryGoid;
         }
 
         @Override
         public void apply( final UDDITaskContext context ) {
-            logger.fine( "Updating ws-policy attachments in UDDI for registry (#"+registryOid+")" );
+            logger.fine( "Updating ws-policy attachments in UDDI for registry (#"+registryGoid+")" );
             try {
-                UDDIRegistry uddiRegistry = factory.uddiRegistryManager.findByPrimaryKey( registryOid );
+                UDDIRegistry uddiRegistry = factory.uddiRegistryManager.findByPrimaryKey( registryGoid );
                 if ( uddiRegistry != null && uddiRegistry.isEnabled() ) {
                     final UDDITemplate template = factory.uddiTemplateManager.getUDDITemplate( uddiRegistry.getUddiRegistryType() );
                     if ( template == null ) {
@@ -83,10 +84,10 @@ public class WsPolicyAttachmentTaskFactory extends UDDITaskFactory {
                     }
 
                     final Collection<UDDIBusinessServiceStatus> toPublish =
-                            factory.uddiBusinessServiceStatusManager.findByRegistryAndWsPolicyPublishStatus( registryOid, UDDIBusinessServiceStatus.Status.PUBLISH );
+                            factory.uddiBusinessServiceStatusManager.findByRegistryAndWsPolicyPublishStatus( registryGoid, UDDIBusinessServiceStatus.Status.PUBLISH );
 
                     final Collection<UDDIBusinessServiceStatus> toDelete =
-                            factory.uddiBusinessServiceStatusManager.findByRegistryAndWsPolicyPublishStatus( registryOid, UDDIBusinessServiceStatus.Status.DELETE );
+                            factory.uddiBusinessServiceStatusManager.findByRegistryAndWsPolicyPublishStatus( registryGoid, UDDIBusinessServiceStatus.Status.DELETE );
 
                     UDDIClient client = null;
                     try {
@@ -170,10 +171,10 @@ public class WsPolicyAttachmentTaskFactory extends UDDITaskFactory {
                         ResourceUtils.closeQuietly( client );
                     }
                 } else {
-                    logger.info( "Ignoring ws-policy event for UDDI registry (#"+registryOid+"), registry not found or is disabled." );
+                    logger.info( "Ignoring ws-policy event for UDDI registry (#"+registryGoid+"), registry not found or is disabled." );
                 }
             } catch (ObjectModelException e) {
-                context.logAndAudit( SystemMessages.UDDI_WSPOLICY_PUBLISH_FAILED, e, "Database error when publishing ws-policy for registry #"+registryOid+".");
+                context.logAndAudit( SystemMessages.UDDI_WSPOLICY_PUBLISH_FAILED, e, "Database error when publishing ws-policy for registry #"+registryGoid+".");
             } catch (UDDIException ue) {
                 context.logAndAudit(SystemMessages.UDDI_WSPOLICY_PUBLISH_FAILED, ExceptionUtils.getDebugException(ue), ExceptionUtils.getMessage(ue));
             }

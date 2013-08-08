@@ -78,9 +78,9 @@ public class BulkZoneUpdaterTest {
         policy.setGoid(new Goid(0, 3L));
         serviceWithPolicy.setPolicy(policy);
         final UDDIProxiedServiceInfo info = new UDDIProxiedServiceInfo();
-        info.setOid(4L);
+        info.setGoid(new Goid(0,4L));
         final UDDIServiceControl control = new UDDIServiceControl();
-        control.setOid(5L);
+        control.setGoid(new Goid(0,5L));
         headers.add(new ServiceHeader(serviceWithUddi));
         headers.add(new ServiceHeader(serviceWithPolicy));
         when(uddiAdmin.findProxiedServiceInfoForPublishedService(new Goid(0,1L))).thenReturn(info);
@@ -90,8 +90,8 @@ public class BulkZoneUpdaterTest {
         updater.bulkUpdate(ZONE_GOID, EntityType.SERVICE, headers);
         final Map<EntityType, Collection<Serializable>> expected = new HashMap<>();
         expected.put(EntityType.SERVICE, Arrays.<Serializable>asList(new Goid(0,1L), new Goid(0,2L)));
-        expected.put(EntityType.UDDI_PROXIED_SERVICE_INFO, Arrays.<Serializable>asList(4L));
-        expected.put(EntityType.UDDI_SERVICE_CONTROL, Arrays.<Serializable>asList(5L));
+        expected.put(EntityType.UDDI_PROXIED_SERVICE_INFO, Arrays.<Serializable>asList(new Goid(0,4L)));
+        expected.put(EntityType.UDDI_SERVICE_CONTROL, Arrays.<Serializable>asList(new Goid(0,5L)));
         expected.put(EntityType.POLICY, Arrays.<Serializable>asList(new Goid(0,3L)));
         verify(rbacAdmin).setSecurityZoneForEntities(ZONE_GOID, expected);
     }

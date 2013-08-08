@@ -4,18 +4,19 @@
  */
 package com.l7tech.server.uddi;
 
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.Entity;
-import com.l7tech.objectmodel.FindException;
 import com.l7tech.gateway.common.uddi.UDDIPublishStatus;
-import com.l7tech.server.HibernateEntityManager;
+import com.l7tech.objectmodel.Entity;
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
+import com.l7tech.server.HibernateGoidEntityManager;
 
-import java.util.Map;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.Arrays;
+import java.util.Map;
 
-public class UDDIPublishStatusManagerImpl extends HibernateEntityManager<UDDIPublishStatus, EntityHeader> implements UDDIPublishStatusManager  {
+public class UDDIPublishStatusManagerImpl extends HibernateGoidEntityManager<UDDIPublishStatus, EntityHeader> implements UDDIPublishStatusManager  {
 
     @Override
     public Class<? extends Entity> getImpClass() {
@@ -30,12 +31,12 @@ public class UDDIPublishStatusManagerImpl extends HibernateEntityManager<UDDIPub
     @Override
     protected Collection<Map<String, Object>> getUniqueConstraints(UDDIPublishStatus entity) {
         Map<String,Object> serviceOidMap = new HashMap<String, Object>();
-        serviceOidMap.put("uddiProxiedServiceInfoOid", entity.getUddiProxiedServiceInfoOid());
+        serviceOidMap.put("uddiProxiedServiceInfoGoid", entity.getUddiProxiedServiceInfoGoid());
         return Arrays.asList(serviceOidMap);
     }
 
     @Override
-    public UDDIPublishStatus findByProxiedSerivceInfoOid(long proxiedServiceOid) throws FindException {
-        return findByUniqueKey( "uddiProxiedServiceInfoOid", proxiedServiceOid );
+    public UDDIPublishStatus findByProxiedSerivceInfoGoid(Goid proxiedServiceGoid) throws FindException {
+        return findByUniqueKey( "uddiProxiedServiceInfoGoid", proxiedServiceGoid );
     }
 }

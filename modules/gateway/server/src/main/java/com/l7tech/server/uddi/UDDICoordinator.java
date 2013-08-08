@@ -12,7 +12,6 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.server.audit.AuditContextUtils;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.cluster.ClusterMaster;
-import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.event.GoidEntityInvalidationEvent;
 import com.l7tech.server.event.system.ReadyForMessages;
 import com.l7tech.server.event.system.UDDISystemEvent;
@@ -79,8 +78,8 @@ public class UDDICoordinator implements ApplicationContextAware, InitializingBea
         this.taskContext = new UDDICoordinatorTaskContext( this, config );
     }
 
-    public boolean isNotificationServiceAvailable( final long registryOid ) {
-        return getServiceForHandlingUDDINotifications( registryOid ) != null;            
+    public boolean isNotificationServiceAvailable( final Goid registryGoid ) {
+        return getServiceForHandlingUDDINotifications( registryGoid ) != null;
     }
 
     /**
@@ -115,20 +114,20 @@ public class UDDICoordinator implements ApplicationContextAware, InitializingBea
     }
 
     public void onApplicationEvent( final ApplicationEvent applicationEvent ) {
-        if ( applicationEvent instanceof EntityInvalidationEvent ) {
-            EntityInvalidationEvent entityInvalidationEvent = (EntityInvalidationEvent) applicationEvent;
+        if ( applicationEvent instanceof GoidEntityInvalidationEvent ) {
+            GoidEntityInvalidationEvent entityInvalidationEvent = (GoidEntityInvalidationEvent) applicationEvent;
             if ( UDDIRegistry.class.equals(entityInvalidationEvent.getEntityClass()) ) {
                 loadUDDIRegistries(true);
             } else if (
                     UDDIPublishStatus.class.equals(entityInvalidationEvent.getEntityClass())) {
 
-                long[] entityIds = entityInvalidationEvent.getEntityIds();
+                Goid[] entityIds = entityInvalidationEvent.getEntityIds();
                 char[] entityOps = entityInvalidationEvent.getEntityOperations();
 
                 for ( int i=0; i<entityIds.length; i++ ) {
-                    long id = entityIds[i];
+                    Goid id = entityIds[i];
                     char op = entityOps[i];
-                    if(EntityInvalidationEvent.CREATE == op || EntityInvalidationEvent.UPDATE == op){
+                    if(GoidEntityInvalidationEvent.CREATE == op || GoidEntityInvalidationEvent.UPDATE == op){
                         try {
                             final UDDIPublishStatus uddiPublishStatus = uddiPublishStatusManager.findByPrimaryKey(id);
                             if(uddiPublishStatus == null){
@@ -137,7 +136,7 @@ public class UDDICoordinator implements ApplicationContextAware, InitializingBea
                             }
 
                             final UDDIProxiedServiceInfo uddiProxiedServiceInfo =
-                                    uddiProxiedServiceInfoManager.findByPrimaryKey(uddiPublishStatus.getUddiProxiedServiceInfoOid());
+                                    uddiProxiedServiceInfoManager.findByPrimaryKey(uddiPublishStatus.getUddiProxiedServiceInfoGoid());
 
                             final UDDIPublishStatus.PublishStatus status = uddiPublishStatus.getPublishStatus();
 
@@ -162,10 +161,7 @@ public class UDDICoordinator implements ApplicationContextAware, InitializingBea
                 timer.schedule( new BusinessServiceStatusTimerTask(this), 0 );
             } else if ( UDDIServiceControl.class.equals(entityInvalidationEvent.getEntityClass()) ) {
                 timer.schedule( new BusinessServiceStatusTimerTask(this), 0 );
-            }
-        } else if (applicationEvent instanceof GoidEntityInvalidationEvent){
-            GoidEntityInvalidationEvent entityInvalidationEvent = (GoidEntityInvalidationEvent) applicationEvent;
-            if (PublishedService.class.equals(entityInvalidationEvent.getEntityClass())) {
+            } else if (PublishedService.class.equals(entityInvalidationEvent.getEntityClass())) {
                 final boolean publishedServiceUpdate = PublishedService.class.equals(entityInvalidationEvent.getEntityClass());
 
                 Goid[] entityIds = entityInvalidationEvent.getEntityIds();
@@ -183,7 +179,7 @@ public class UDDICoordinator implements ApplicationContextAware, InitializingBea
                             uddiProxiedServiceInfo = uddiProxiedServiceInfoManager.findByPublishedServiceGoid(service.getGoid());
                             if(uddiProxiedServiceInfo == null) return;
 
-                            uddiPublishStatus = uddiPublishStatusManager.findByProxiedSerivceInfoOid(uddiProxiedServiceInfo.getOid());
+                            uddiPublishStatus = uddiPublishStatusManager.findByProxiedSerivceInfoGoid(uddiProxiedServiceInfo.getGoid());
                             if(uddiPublishStatus == null) return;
                         } catch (FindException e) {
                             logger.log(Level.WARNING, "Problem looking up UDDIProxiedServiceInfo with service id #(" + service.getGoid()+") ");
@@ -214,7 +210,7 @@ public class UDDICoordinator implements ApplicationContextAware, InitializingBea
         }
         else if ( applicationEvent instanceof ReadyForMessages  ) {
             if (clusterMaster.isMaster()){
-                checkSubscriptions( Collections.<Long,UDDIRegistryRuntime>emptyMap(), registryRuntimes.get(), true );
+                checkSubscriptions( Collections.<Goid,UDDIRegistryRuntime>emptyMap(), registryRuntimes.get(), true );
             }
 
             final long maintenanceFrequency = ConfigFactory.getLongProperty( PROP_PUBLISH_PROXY_MAINTAIN_FREQUENCY, 900000 );
@@ -262,13 +258,13 @@ public class UDDICoordinator implements ApplicationContextAware, InitializingBea
     private final Timer timer;
     private final UDDITaskFactory.UDDITaskContext taskContext;
     private final SessionFactory sessionFactory;
-    private final AtomicReference<Map<Long,UDDIRegistryRuntime>> registryRuntimes = // includes disabled registries
-            new AtomicReference<Map<Long,UDDIRegistryRuntime>>( Collections.<Long,UDDIRegistryRuntime>emptyMap() );
+    private final AtomicReference<Map<Goid,UDDIRegistryRuntime>> registryRuntimes = // includes disabled registries
+            new AtomicReference<Map<Goid,UDDIRegistryRuntime>>( Collections.<Goid,UDDIRegistryRuntime>emptyMap() );
     private ApplicationEventPublisher eventPublisher;
     private Audit auditor;
 
 
-    private PublishedService getServiceForHandlingUDDINotifications( final long registryOid ) {
+    private PublishedService getServiceForHandlingUDDINotifications( final Goid registryGoid ) {
         PublishedService notificationService = null;
 
         for( PublishedService service : serviceCache.getInternalServices( )) {
@@ -279,11 +275,11 @@ public class UDDICoordinator implements ApplicationContextAware, InitializingBea
                 } catch (FindException e) {
                     logger.log( Level.WARNING, "Error finding uddi proxied service", e );
                 }
-                boolean registryMatch = uddiService != null && uddiService.getUddiRegistryOid() == registryOid;
+                boolean registryMatch = uddiService != null && Goid.equals(uddiService.getUddiRegistryGoid(), registryGoid);
 
                 if ( registryMatch ) {
                     if(notificationService != null){
-                        logger.log( Level.WARNING, "Found multiple services for the same UDDI registry: " + registryOid );
+                        logger.log( Level.WARNING, "Found multiple services for the same UDDI registry: " + registryGoid );
                     }
                     notificationService = service;
                 }
@@ -297,10 +293,10 @@ public class UDDICoordinator implements ApplicationContextAware, InitializingBea
     /**
      * Get the URL to use for Subscription Notifications or null if not found.
      */
-    private String getSubscriptionNotificationUrl( final long registryOid ) {
+    private String getSubscriptionNotificationUrl( final Goid registryGoid ) {
         String notificationUrl = null;
 
-        PublishedService service = getServiceForHandlingUDDINotifications( registryOid );
+        PublishedService service = getServiceForHandlingUDDINotifications( registryGoid );
         if ( service != null ) {
             notificationUrl = uddiHelper.getExternalUrlForService( service.getGoid() ); //TODO Add option to get secure URL once we publish SSL endpoint?
         }
@@ -311,12 +307,12 @@ public class UDDICoordinator implements ApplicationContextAware, InitializingBea
     /**
      * Get the binding key to use for Subscription Notifications or null if not found.
      */
-    private String getSubscriptionNotificationBindingKey( final long registryOid ) {
+    private String getSubscriptionNotificationBindingKey( final Goid registryGoid ) {
         String bindingKey = null;
 
-        UDDIRegistryRuntime urr = registryRuntimes.get().get( registryOid );
+        UDDIRegistryRuntime urr = registryRuntimes.get().get( registryGoid );
         if ( urr != null && urr.registry.isEnabled() ) {
-            PublishedService service = getServiceForHandlingUDDINotifications( registryOid );
+            PublishedService service = getServiceForHandlingUDDINotifications( registryGoid );
             if ( service != null ) {
                 UDDIClient uddiClient = null;
                 try {
@@ -356,17 +352,17 @@ public class UDDICoordinator implements ApplicationContextAware, InitializingBea
      * registries that need timed events.
      */
     private synchronized void loadUDDIRegistries( final boolean doUpdates ) {
-        final Map<Long,UDDIRegistryRuntime> registries = new HashMap<Long,UDDIRegistryRuntime>();
+        final Map<Goid,UDDIRegistryRuntime> registries = new HashMap<Goid,UDDIRegistryRuntime>();
 
         try {
             for ( UDDIRegistry registry : uddiRegistryManager.findAll() ) {
-                registries.put( registry.getOid(), new UDDIRegistryRuntime( this, uddiHelper, registry, timer ) );
+                registries.put( registry.getGoid(), new UDDIRegistryRuntime( this, uddiHelper, registry, timer ) );
             }
         } catch (FindException e) {
             logger.log( Level.WARNING, "Error loading UDDI registries.", e );
         }
 
-        Map<Long,UDDIRegistryRuntime> oldRegistries = registryRuntimes.get();
+        Map<Goid,UDDIRegistryRuntime> oldRegistries = registryRuntimes.get();
         for ( UDDIRegistryRuntime runtime : oldRegistries.values() ) {
             runtime.dispose();
         }
@@ -374,11 +370,11 @@ public class UDDICoordinator implements ApplicationContextAware, InitializingBea
         if ( doUpdates && clusterMaster.isMaster() ) {
             checkSubscriptions( oldRegistries, registries, false );
 
-            Collection<Long> registryOids = registriesUpdated( oldRegistries, registries );
-            if ( !registryOids.isEmpty() ) {
+            Collection<Goid> registryGoids = registriesUpdated( oldRegistries, registries );
+            if ( !registryGoids.isEmpty() ) {
                 timer.schedule( new PublishedProxyMaintenanceTimerTask(this), 0);
-                for ( long uddiRegistryOid : registryOids ) {
-                    notifyEvent(new WsPolicyUDDIEvent(uddiRegistryOid));
+                for ( Goid uddiRegistryGoid : registryGoids ) {
+                    notifyEvent(new WsPolicyUDDIEvent(uddiRegistryGoid));
                 }
             }
         }
@@ -389,21 +385,21 @@ public class UDDICoordinator implements ApplicationContextAware, InitializingBea
         }
     }
 
-    private void checkSubscriptions( final Map<Long,UDDIRegistryRuntime> oldRegistries,
-                                     final Map<Long,UDDIRegistryRuntime> newRegistries,
+    private void checkSubscriptions( final Map<Goid,UDDIRegistryRuntime> oldRegistries,
+                                     final Map<Goid,UDDIRegistryRuntime> newRegistries,
                                      final boolean checkExpired ) {
-        for ( long registryOid : newRegistries.keySet() ) {
-            final UDDIRegistryRuntime oldurr = oldRegistries.get( registryOid );
-            final UDDIRegistryRuntime newurr = newRegistries.get( registryOid );
+        for ( Goid registryGoid : newRegistries.keySet() ) {
+            final UDDIRegistryRuntime oldurr = oldRegistries.get( registryGoid );
+            final UDDIRegistryRuntime newurr = newRegistries.get( registryGoid );
 
             if ( newurr.registry.isMonitoringEnabled() &&
                  ( oldurr==null ||
                    !oldurr.registry.isMonitoringEnabled() ||
                    newurr.registry.getMonitoringFrequency() != oldurr.registry.getMonitoringFrequency() ||
                    newurr.registry.isSubscribeForNotifications() != oldurr.registry.isSubscribeForNotifications())) {
-                notifyEvent( new SubscribeUDDIEvent( registryOid, SubscribeUDDIEvent.Type.SUBSCRIBE, checkExpired ) );
+                notifyEvent( new SubscribeUDDIEvent( registryGoid, SubscribeUDDIEvent.Type.SUBSCRIBE, checkExpired ) );
             } else if ( !newurr.registry.isMonitoringEnabled() && (oldurr!=null && oldurr.registry.isMonitoringEnabled())) {
-                notifyEvent( new SubscribeUDDIEvent( registryOid, SubscribeUDDIEvent.Type.UNSUBSCRIBE ) );
+                notifyEvent( new SubscribeUDDIEvent( registryGoid, SubscribeUDDIEvent.Type.UNSUBSCRIBE ) );
             }
         }
     }
@@ -411,23 +407,23 @@ public class UDDICoordinator implements ApplicationContextAware, InitializingBea
     /**
      * Check if any existing registry has been updated and is currently enabled, if so we should retry any UDDI updates.
      */
-    private Collection<Long> registriesUpdated( final Map<Long,UDDIRegistryRuntime> oldr,
-                                                final Map<Long,UDDIRegistryRuntime> newr ) {
-        Collection<Long> oids = new ArrayList<Long>();
+    private Collection<Goid> registriesUpdated( final Map<Goid,UDDIRegistryRuntime> oldr,
+                                                final Map<Goid,UDDIRegistryRuntime> newr ) {
+        Collection<Goid> goids = new ArrayList<Goid>();
 
         if ( !oldr.isEmpty() ) {
-            for ( Map.Entry<Long,UDDIRegistryRuntime> registryEntry : newr.entrySet() ) {
+            for ( Map.Entry<Goid,UDDIRegistryRuntime> registryEntry : newr.entrySet() ) {
                 UDDIRegistryRuntime oldRuntime = oldr.get(registryEntry.getKey());
                 if ( oldRuntime != null ) {
                     if ( oldRuntime.registry.getVersion() != registryEntry.getValue().registry.getVersion() &&
                          registryEntry.getValue().registry.isEnabled() ) {
-                        oids.add( registryEntry.getValue().registry.getOid() );    
+                        goids.add( registryEntry.getValue().registry.getGoid() );
                     }
                 }
             }
         }
 
-        return oids;
+        return goids;
     }
 
     /**
@@ -442,7 +438,7 @@ public class UDDICoordinator implements ApplicationContextAware, InitializingBea
         final UDDIProxiedServiceInfo uddiProxiedServiceInfo = uddiProxiedServiceInfoManager.findByPublishedServiceGoid(service.getGoid());
         if(uddiProxiedServiceInfo == null) return;
 
-        final UDDIPublishStatus uddiPublishStatus = uddiPublishStatusManager.findByProxiedSerivceInfoOid(uddiProxiedServiceInfo.getOid());
+        final UDDIPublishStatus uddiPublishStatus = uddiPublishStatusManager.findByProxiedSerivceInfoGoid(uddiProxiedServiceInfo.getGoid());
         if(uddiPublishStatus == null) return;
         
         final String updatedWsdlHash;
@@ -479,9 +475,9 @@ public class UDDICoordinator implements ApplicationContextAware, InitializingBea
      */
     private void fireMaintenancePublishEvents() throws ObjectModelException {
         final Collection<UDDIProxiedServiceInfo> proxiedServices = uddiProxiedServiceInfoManager.findAll();
-        final Map<Long, UDDIProxiedServiceInfo> oidToProxyServiceMap = new HashMap<Long, UDDIProxiedServiceInfo>();
+        final Map<Goid, UDDIProxiedServiceInfo> oidToProxyServiceMap = new HashMap<Goid, UDDIProxiedServiceInfo>();
         for(UDDIProxiedServiceInfo serviceInfo: proxiedServices){
-            oidToProxyServiceMap.put(serviceInfo.getOidAsLong(), serviceInfo);
+            oidToProxyServiceMap.put(serviceInfo.getGoid(), serviceInfo);
         }
 
         final Collection<UDDIPublishStatus> allPublishStatus = uddiPublishStatusManager.findAll();
@@ -495,7 +491,7 @@ public class UDDICoordinator implements ApplicationContextAware, InitializingBea
             if(status != UDDIPublishStatus.PublishStatus.CANNOT_PUBLISH &&
                     status != UDDIPublishStatus.PublishStatus.CANNOT_DELETE &&
                     status != UDDIPublishStatus.PublishStatus.PUBLISHED){
-                final UDDIProxiedServiceInfo info = oidToProxyServiceMap.get(publishStatus.getUddiProxiedServiceInfoOid());
+                final UDDIProxiedServiceInfo info = oidToProxyServiceMap.get(publishStatus.getUddiProxiedServiceInfoGoid());
                 logger.log(Level.FINE, "Creating event to update published proxy service info in UDDI. Service #("
                         + info.getPublishedServiceGoid()+") in status " + status.toString());
                 final UDDIServiceControl serviceControl =
@@ -518,7 +514,7 @@ public class UDDICoordinator implements ApplicationContextAware, InitializingBea
 
         final Collection<UDDIProxiedServiceInfo> infoCollection = uddiProxiedServiceInfoManager.findAll();
         for (UDDIProxiedServiceInfo serviceInfo : infoCollection) {
-            final UDDIPublishStatus publishStatus = uddiPublishStatusManager.findByProxiedSerivceInfoOid(serviceInfo.getOid());
+            final UDDIPublishStatus publishStatus = uddiPublishStatusManager.findByProxiedSerivceInfoGoid(serviceInfo.getGoid());
             if(publishStatus.getPublishStatus() == UDDIPublishStatus.PublishStatus.PUBLISHED){
 
                 final Set<EndpointPair> allEndpointPairs;
@@ -569,13 +565,13 @@ public class UDDICoordinator implements ApplicationContextAware, InitializingBea
         final Collection<UDDIBusinessServiceStatus> status = uddiBusinessServiceStatusManager.findAll();
 
         // Build key set
-        final Map<Triple<Long,Goid,String>,UDDIBusinessServiceStatus> registryServiceMap = new HashMap<Triple<Long,Goid,String>,UDDIBusinessServiceStatus>();
+        final Map<Triple<Goid,Goid,String>,UDDIBusinessServiceStatus> registryServiceMap = new HashMap<Triple<Goid,Goid,String>,UDDIBusinessServiceStatus>();
         for ( UDDIProxiedServiceInfo proxiedServiceInfo : proxiedServices ) {
             if ( proxiedServiceInfo.getProxiedServices() != null ) {
                 for ( UDDIProxiedService proxiedService : proxiedServiceInfo.getProxiedServices() ) {
                     if ( proxiedService.getUddiServiceKey() != null ) {
-                        registryServiceMap.put( new Triple<Long,Goid,String>(
-                                proxiedServiceInfo.getUddiRegistryOid(),
+                        registryServiceMap.put( new Triple<Goid,Goid,String>(
+                                proxiedServiceInfo.getUddiRegistryGoid(),
                                 proxiedServiceInfo.getPublishedServiceGoid(),
                                 proxiedService.getUddiServiceKey() ), null );
                     }
@@ -583,18 +579,18 @@ public class UDDICoordinator implements ApplicationContextAware, InitializingBea
             }
         }
         for ( UDDIServiceControl origService : origServices ) {
-            registryServiceMap.put( new Triple<Long,Goid,String>(
-                    origService.getUddiRegistryOid(),
+            registryServiceMap.put( new Triple<Goid,Goid,String>(
+                    origService.getUddiRegistryGoid(),
                     origService.getPublishedServiceGoid(),
                     origService.getUddiServiceKey() ), null );
         }
 
-        final Map<Long,WsPolicyUDDIEvent> wsPolicyEventMap = new HashMap<Long,WsPolicyUDDIEvent>(); // one event per registry
+        final Map<Goid,WsPolicyUDDIEvent> wsPolicyEventMap = new HashMap<Goid,WsPolicyUDDIEvent>(); // one event per registry
 
         // Delete stale entries
-        final Set<Triple<Long,Goid,String>> registryServiceKeys = registryServiceMap.keySet();
+        final Set<Triple<Goid,Goid,String>> registryServiceKeys = registryServiceMap.keySet();
         for ( UDDIBusinessServiceStatus serviceStatus : status ) {
-            Triple<Long,Goid,String> key = new Triple<Long,Goid,String>( serviceStatus.getUddiRegistryOid(), serviceStatus.getPublishedServiceGoid(), serviceStatus.getUddiServiceKey() );
+            Triple<Goid,Goid,String> key = new Triple<Goid,Goid,String>( serviceStatus.getUddiRegistryGoid(), serviceStatus.getPublishedServiceGoid(), serviceStatus.getUddiServiceKey() );
             if ( !registryServiceKeys.contains(key) ) {
                 if ( serviceStatus.getUddiMetricsReferenceStatus() == UDDIBusinessServiceStatus.Status.NONE &&
                      serviceStatus.getUddiPolicyStatus() == UDDIBusinessServiceStatus.Status.NONE ) {
@@ -606,7 +602,7 @@ public class UDDICoordinator implements ApplicationContextAware, InitializingBea
                             registryServiceMap,
                             wsPolicyEventMap,
                             serviceStatus.getPublishedServiceGoid(),
-                            serviceStatus.getUddiRegistryOid(),
+                            serviceStatus.getUddiRegistryGoid(),
                             serviceStatus.getUddiServiceKey(),
                             serviceStatus.getUddiServiceName(),
                             false,
@@ -623,7 +619,7 @@ public class UDDICoordinator implements ApplicationContextAware, InitializingBea
         for ( UDDIProxiedServiceInfo proxiedServiceInfo : proxiedServices ) {
             if ( proxiedServiceInfo.getProxiedServices() != null ) {
                 final Goid publishedServiceGoid = proxiedServiceInfo.getPublishedServiceGoid();
-                final long uddiRegistryOid = proxiedServiceInfo.getUddiRegistryOid();
+                final Goid uddiRegistryGoid = proxiedServiceInfo.getUddiRegistryGoid();
                 final boolean isMetricsEnabled = proxiedServiceInfo.isMetricsEnabled();
                 final boolean isPublishWsPolicyEnabled = proxiedServiceInfo.isPublishWsPolicyEnabled() && autoRepublish;
                 final String wsPolicyUrl = uddiHelper.getExternalPolicyUrlForService(
@@ -640,7 +636,7 @@ public class UDDICoordinator implements ApplicationContextAware, InitializingBea
                                 registryServiceMap,
                                 wsPolicyEventMap,
                                 publishedServiceGoid,
-                                uddiRegistryOid,
+                                uddiRegistryGoid,
                                 serviceKey,
                                 serviceName,
                                 isMetricsEnabled,
@@ -652,7 +648,7 @@ public class UDDICoordinator implements ApplicationContextAware, InitializingBea
         }
         for ( UDDIServiceControl origService : origServices ) {
             final Goid publishedServiceGoid = origService.getPublishedServiceGoid();
-            final long uddiRegistryOid = origService.getUddiRegistryOid();
+            final Goid uddiRegistryGoid = origService.getUddiRegistryGoid();
             final String serviceKey = origService.getUddiServiceKey();
             final String serviceName = origService.getUddiServiceName();
             final boolean isMetricsEnabled = origService.isMetricsEnabled();
@@ -666,7 +662,7 @@ public class UDDICoordinator implements ApplicationContextAware, InitializingBea
                     registryServiceMap,
                     wsPolicyEventMap,
                     publishedServiceGoid,
-                    uddiRegistryOid,
+                    uddiRegistryGoid,
                     serviceKey,
                     serviceName,
                     isMetricsEnabled,
@@ -679,16 +675,16 @@ public class UDDICoordinator implements ApplicationContextAware, InitializingBea
         }
     }
 
-    private void updateUDDIBusinessServiceStatus( final Map<Triple<Long,Goid,String>,UDDIBusinessServiceStatus> registryServiceMap,
-                                                  final Map<Long,WsPolicyUDDIEvent> wsPolicyEventMap,
+    private void updateUDDIBusinessServiceStatus( final Map<Triple<Goid,Goid,String>,UDDIBusinessServiceStatus> registryServiceMap,
+                                                  final Map<Goid,WsPolicyUDDIEvent> wsPolicyEventMap,
                                                   final Goid publishedServiceGoid,
-                                                  final long uddiRegistryOid,
+                                                  final Goid uddiRegistryGoid,
                                                   final String serviceKey,
                                                   final String serviceName,
                                                   final boolean metricsEnabled,
                                                   final boolean publishWsPolicyEnabled,
                                                   final String publishWsPolicyUrl ) throws SaveException, UpdateException {
-        final Triple<Long,Goid,String> key = new Triple<Long,Goid,String>( uddiRegistryOid, publishedServiceGoid, serviceKey );
+        final Triple<Goid,Goid,String> key = new Triple<Goid,Goid,String>( uddiRegistryGoid, publishedServiceGoid, serviceKey );
 
         boolean updated = false;
 
@@ -697,7 +693,7 @@ public class UDDICoordinator implements ApplicationContextAware, InitializingBea
             updated = true;
             serviceStatus = buildUDDIBusinessServiceStatus(
                     publishedServiceGoid,
-                    uddiRegistryOid,
+                    uddiRegistryGoid,
                     serviceKey,
                     serviceName );
         }
@@ -708,11 +704,11 @@ public class UDDICoordinator implements ApplicationContextAware, InitializingBea
 
         if ( updateWsPolicyStatus( serviceStatus, publishWsPolicyEnabled, publishWsPolicyUrl ) ) {
             updated = true;
-            wsPolicyEventMap.put( uddiRegistryOid, new WsPolicyUDDIEvent(uddiRegistryOid) );
+            wsPolicyEventMap.put( uddiRegistryGoid, new WsPolicyUDDIEvent(uddiRegistryGoid) );
         }
 
         if ( updated ) {
-            if ( serviceStatus.getOid() == UDDIBusinessServiceStatus.DEFAULT_OID ) {
+            if ( Goid.isDefault(serviceStatus.getGoid()) ) {
                 logger.info( "Creating business service status for " + key + "." );
                 uddiBusinessServiceStatusManager.save( serviceStatus );
             } else {
@@ -773,12 +769,12 @@ public class UDDICoordinator implements ApplicationContextAware, InitializingBea
     }
 
     private UDDIBusinessServiceStatus buildUDDIBusinessServiceStatus( final Goid publishedServiceGoid,
-                                                                      final long uddiRegistryOid,
+                                                                      final Goid uddiRegistryGoid,
                                                                       final String serviceKey,
                                                                       final String serviceName ) {
         UDDIBusinessServiceStatus serviceStatus = new UDDIBusinessServiceStatus();
         serviceStatus.setPublishedServiceGoid( publishedServiceGoid );
-        serviceStatus.setUddiRegistryOid( uddiRegistryOid );
+        serviceStatus.setUddiRegistryGoid( uddiRegistryGoid );
         serviceStatus.setUddiServiceKey( serviceKey );
         serviceStatus.setUddiServiceName( serviceName );
         serviceStatus.setUddiMetricsReferenceStatus( UDDIBusinessServiceStatus.Status.NONE );
@@ -850,7 +846,7 @@ public class UDDICoordinator implements ApplicationContextAware, InitializingBea
             StringBuilder description = new StringBuilder();
             description.append( registry.getName() );
             description.append( "(#" );
-            description.append( registry.getOid() );
+            description.append( registry.getGoid() );
             description.append( ',' );
             description.append( registry.getVersion() );
             description.append( ')' );
@@ -864,19 +860,19 @@ public class UDDICoordinator implements ApplicationContextAware, InitializingBea
             if ( registry.isEnabled() ) {
                 if ( registry.isMonitoringEnabled() && !registry.isSubscribeForNotifications() &&
                         validInterval( "subscription poll", registry.getMonitoringFrequency() ) ) {
-                    TimerUDDIEvent event = new TimerUDDIEvent( registry.getOid(), TimerUDDIEvent.Type.SUBSCRIPTION_POLL );
+                    TimerUDDIEvent event = new TimerUDDIEvent( registry.getGoid(), TimerUDDIEvent.Type.SUBSCRIPTION_POLL );
                     tasks.add( new Pair<Long,TimerTask>(
                             registry.getMonitoringFrequency(),
                             new UDDIEventTimerTask( coordinator, event ) ) );
                 }
 
                 if ( registry.isMetricsEnabled() && validInterval( "metrics publish", registry.getMetricPublishFrequency() ) ) {
-                    TimerUDDIEvent publishEvent = new TimerUDDIEvent( registry.getOid(), TimerUDDIEvent.Type.METRICS_PUBLISH );
+                    TimerUDDIEvent publishEvent = new TimerUDDIEvent( registry.getGoid(), TimerUDDIEvent.Type.METRICS_PUBLISH );
                     tasks.add( new Pair<Long,TimerTask>(
                             registry.getMetricPublishFrequency(),
                             new UDDIEventTimerTask( coordinator, publishEvent ) ) );
 
-                    TimerUDDIEvent cleanupEvent = new TimerUDDIEvent( registry.getOid(), TimerUDDIEvent.Type.METRICS_CLEANUP );
+                    TimerUDDIEvent cleanupEvent = new TimerUDDIEvent( registry.getGoid(), TimerUDDIEvent.Type.METRICS_CLEANUP );
                     tasks.add( new Pair<Long,TimerTask>(
                             METRICS_CLEANUP_INTERVAL,
                             new UDDIEventTimerTask( coordinator, cleanupEvent ) ) );
@@ -1104,13 +1100,13 @@ public class UDDICoordinator implements ApplicationContextAware, InitializingBea
         }
 
         @Override
-        public String getSubscriptionNotificationURL( final long registryOid ) {
-            return this.coordinator.getSubscriptionNotificationUrl( registryOid );
+        public String getSubscriptionNotificationURL( final Goid registryGoid ) {
+            return this.coordinator.getSubscriptionNotificationUrl( registryGoid );
         }
 
         @Override
-        public String getSubscriptionBindingKey(final long registryOid) {
-            return this.coordinator.getSubscriptionNotificationBindingKey( registryOid );
+        public String getSubscriptionBindingKey(final Goid registryGoid) {
+            return this.coordinator.getSubscriptionNotificationBindingKey( registryGoid );
         }
 
         @Override

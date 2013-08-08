@@ -27,7 +27,7 @@ import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
 public class UDDIRegistryAdminImplTest {
-    private static final long OID = 1234L;
+    private static final Goid GOID = new Goid(0,1234L);
     private UDDIRegistryAdmin admin;
     @Mock
     private UDDIRegistryManager uddiRegistryManager;
@@ -65,7 +65,7 @@ public class UDDIRegistryAdminImplTest {
                 serviceCache, uddiProxiedServiceInfoManager, uddiPublishStatusManager, uddiServiceControlRuntimeManager,
                 businessServiceStatusManager, serviceManager);
         info = new UDDIProxiedServiceInfo();
-        info.setOid(OID);
+        info.setGoid(GOID);
         zone = new SecurityZone();
         properties = new HashMap<>();
         control = new UDDIServiceControl();
@@ -75,10 +75,10 @@ public class UDDIRegistryAdminImplTest {
     @Test
     public void updateProxiedServiceOnlySecurityZoneChangedFromNull() throws Exception {
         final UDDIProxiedServiceInfo existing = new UDDIProxiedServiceInfo();
-        existing.setOid(OID);
+        existing.setGoid(GOID);
         existing.setSecurityZone(null);
         info.setSecurityZone(zone);
-        when(uddiProxiedServiceInfoManager.findByPrimaryKey(OID)).thenReturn(existing);
+        when(uddiProxiedServiceInfoManager.findByPrimaryKey(GOID)).thenReturn(existing);
 
         admin.updateProxiedServiceOnly(info);
 
@@ -89,10 +89,10 @@ public class UDDIRegistryAdminImplTest {
     @Test
     public void updateProxiedServiceOnlySecurityZoneChangedToNull() throws Exception {
         final UDDIProxiedServiceInfo existing = new UDDIProxiedServiceInfo();
-        existing.setOid(OID);
+        existing.setGoid(GOID);
         existing.setSecurityZone(zone);
         info.setSecurityZone(null);
-        when(uddiProxiedServiceInfoManager.findByPrimaryKey(OID)).thenReturn(existing);
+        when(uddiProxiedServiceInfoManager.findByPrimaryKey(GOID)).thenReturn(existing);
 
         admin.updateProxiedServiceOnly(info);
 
@@ -105,10 +105,10 @@ public class UDDIRegistryAdminImplTest {
         final SecurityZone oldZone = new SecurityZone();
         oldZone.setName("oldZone");
         final UDDIProxiedServiceInfo existing = new UDDIProxiedServiceInfo();
-        existing.setOid(OID);
+        existing.setGoid(GOID);
         existing.setSecurityZone(oldZone);
         info.setSecurityZone(zone);
-        when(uddiProxiedServiceInfoManager.findByPrimaryKey(OID)).thenReturn(existing);
+        when(uddiProxiedServiceInfoManager.findByPrimaryKey(GOID)).thenReturn(existing);
 
         admin.updateProxiedServiceOnly(info);
 
@@ -119,10 +119,10 @@ public class UDDIRegistryAdminImplTest {
     @Test
     public void updateProxiedServiceOnlySecurityZoneNotChangedFromNull() throws Exception {
         final UDDIProxiedServiceInfo existing = new UDDIProxiedServiceInfo();
-        existing.setOid(OID);
+        existing.setGoid(GOID);
         existing.setSecurityZone(null);
         info.setSecurityZone(null);
-        when(uddiProxiedServiceInfoManager.findByPrimaryKey(OID)).thenReturn(existing);
+        when(uddiProxiedServiceInfoManager.findByPrimaryKey(GOID)).thenReturn(existing);
 
         admin.updateProxiedServiceOnly(info);
 
@@ -132,10 +132,10 @@ public class UDDIRegistryAdminImplTest {
     @Test
     public void updateProxiedServiceOnlySecurityZoneNotChanged() throws Exception {
         final UDDIProxiedServiceInfo existing = new UDDIProxiedServiceInfo();
-        existing.setOid(OID);
+        existing.setGoid(GOID);
         existing.setSecurityZone(zone);
         info.setSecurityZone(zone);
-        when(uddiProxiedServiceInfoManager.findByPrimaryKey(OID)).thenReturn(existing);
+        when(uddiProxiedServiceInfoManager.findByPrimaryKey(GOID)).thenReturn(existing);
 
         admin.updateProxiedServiceOnly(info);
 
@@ -146,7 +146,7 @@ public class UDDIRegistryAdminImplTest {
     public void publishGatewayEndpointSetsSecurityZone() throws Exception {
         when(serviceCache.getCachedService(any(Goid.class))).thenReturn(service);
         when(uddiServiceControlManager.findByPublishedServiceGoid(any(Goid.class))).thenReturn(control);
-        when(uddiRegistryManager.findByPrimaryKey(anyLong())).thenReturn(registry);
+        when(uddiRegistryManager.findByPrimaryKey(any(Goid.class))).thenReturn(registry);
         when(service.parsedWsdl()).thenReturn(wsdl);
         when(wsdl.getHash()).thenReturn("abc123");
 
@@ -161,7 +161,7 @@ public class UDDIRegistryAdminImplTest {
         properties.put(UDDIProxiedServiceInfo.GIF_SCHEME, UDDIRegistryAdmin.EndpointScheme.HTTP);
         when(serviceCache.getCachedService(any(Goid.class))).thenReturn(service);
         when(uddiServiceControlManager.findByPublishedServiceGoid(any(Goid.class))).thenReturn(control);
-        when(uddiRegistryManager.findByPrimaryKey(anyLong())).thenReturn(registry);
+        when(uddiRegistryManager.findByPrimaryKey(any(Goid.class))).thenReturn(registry);
         when(service.parsedWsdl()).thenReturn(wsdl);
         when(wsdl.getHash()).thenReturn("abc123");
 
@@ -186,12 +186,12 @@ public class UDDIRegistryAdminImplTest {
 
     @Test
     public void publishGatewayWsdlSetsSecurityZone() throws Exception {
-        when(uddiRegistryManager.findByPrimaryKey(anyLong())).thenReturn(registry);
+        when(uddiRegistryManager.findByPrimaryKey(any(Goid.class))).thenReturn(registry);
         when(serviceCache.getCachedService(any(Goid.class))).thenReturn(service);
         when(service.parsedWsdl()).thenReturn(wsdl);
         when(wsdl.getHash()).thenReturn("abc123");
 
-        admin.publishGatewayWsdl(service, 1234L, "bKey", "bName", false, zone);
+        admin.publishGatewayWsdl(service, new Goid(0,1234L), "bKey", "bName", false, zone);
 
         verify(uddiProxiedServiceInfoManager).save(argThat(infoWithSecurityZone(zone)));
         verify(uddiPublishStatusManager).save(any(UDDIPublishStatus.class));

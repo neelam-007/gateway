@@ -64,7 +64,7 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
     }
 
     @Override
-    public JobId<WsdlPortInfo[]> findWsdlInfosForSingleBusinessService(long registryOid, String serviceKey, boolean getFirstOnly) throws FindException {
+    public JobId<WsdlPortInfo[]> findWsdlInfosForSingleBusinessService(Goid registryOid, String serviceKey, boolean getFirstOnly) throws FindException {
         return null;
     }
 
@@ -249,17 +249,17 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
     }
 
     @Override
-    public JobId<WsdlPortInfo[]> findWsdlInfosFromUDDIRegistry(long registryOid, String namePattern, boolean caseSensitive, boolean getWsdlURL) {
+    public JobId<WsdlPortInfo[]> findWsdlInfosFromUDDIRegistry(Goid registryOid, String namePattern, boolean caseSensitive, boolean getWsdlURL) {
         return null;
     }
 
     @Override
-    public JobId<UDDINamedEntity[]> findBusinessesFromUDDIRegistry(long registryOid, String namePattern, boolean caseSensitive) {
+    public JobId<UDDINamedEntity[]> findBusinessesFromUDDIRegistry(Goid registryOid, String namePattern, boolean caseSensitive) {
         return null;
     }
 
     @Override
-    public UDDINamedEntity[] findPoliciesFromUDDIRegistry( final long registryOid, final String namePattern ) throws FindException {
+    public UDDINamedEntity[] findPoliciesFromUDDIRegistry( final Goid registryOid, final String namePattern ) throws FindException {
         return new UDDINamedEntity[0];
     }
 

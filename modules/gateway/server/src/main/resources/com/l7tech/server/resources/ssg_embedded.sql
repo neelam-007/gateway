@@ -956,7 +956,7 @@ create table trusted_esm_user (
 );
 
 create table uddi_business_service_status (
-    objectid bigint not null,
+    goid CHAR(16) FOR BIT DATA not null,
     published_service_goid CHAR(16) FOR BIT DATA,
     metrics_reference_status varchar(255),
     uddi_metrics_tmodel_key varchar(255),
@@ -964,26 +964,26 @@ create table uddi_business_service_status (
     policy_status varchar(255),
     uddi_policy_tmodel_key varchar(255),
     uddi_policy_url varchar(4096),
-    uddi_registry_oid bigint,
+    uddi_registry_goid CHAR(16) FOR BIT DATA,
     uddi_service_key varchar(255),
     uddi_service_name varchar(255),
     version integer,
-    primary key (objectid)
+    primary key (goid)
 );
 
 create table uddi_proxied_service (
-    objectid bigint not null,
+    goid CHAR(16) FOR BIT DATA not null,
     uddi_service_key varchar(255),
     uddi_service_name varchar(255),
     version integer,
     wsdl_service_name varchar(255),
     wsdl_service_namespace varchar(255),
-    uddi_proxied_service_info_oid bigint not null,
-    primary key (objectid)
+    uddi_proxied_service_info_goid CHAR(16) FOR BIT DATA not null,
+    primary key (goid)
 );
 
 create table uddi_proxied_service_info (
-    objectid bigint not null,
+    goid CHAR(16) FOR BIT DATA not null,
     created_from_existing smallint,
     metrics_enabled smallint,
     publish_type varchar(255),
@@ -995,25 +995,25 @@ create table uddi_proxied_service_info (
     properties clob(2147483647),
     uddi_business_key varchar(255),
     uddi_business_name varchar(255),
-    uddi_registry_oid bigint,
+    uddi_registry_goid CHAR(16) FOR BIT DATA,
     update_proxy_on_local_change smallint,
     version integer,
     wsdl_hash varchar(512),
     security_zone_goid CHAR(16) FOR BIT DATA references security_zone(goid) on delete set null,
-    primary key (objectid)
+    primary key (goid)
 );
 
 create table uddi_publish_status (
-    objectid bigint not null,
+    goid CHAR(16) FOR BIT DATA not null,
     fail_count integer,
     publish_status varchar(255),
-    uddi_proxied_service_info_oid bigint not null,
+    uddi_proxied_service_info_goid CHAR(16) FOR BIT DATA not null,
     version integer,
-    primary key (objectid)
+    primary key (goid)
 );
 
 create table uddi_registries (
-    objectid bigint not null,
+    goid CHAR(16) FOR BIT DATA not null,
     name varchar(128) not null,
     version integer,
     base_url varchar(4096),
@@ -1034,22 +1034,22 @@ create table uddi_registries (
     subscription_url varchar(4096),
     registry_type varchar(255),
     security_zone_goid CHAR(16) FOR BIT DATA references security_zone(goid) on delete set null,
-    primary key (objectid)
+    primary key (goid)
 );
 
 create table uddi_registry_subscription (
-    objectid bigint not null,
+    goid CHAR(16) FOR BIT DATA not null,
     uddi_subscription_check_time bigint,
     uddi_subscription_expiry_time bigint,
     uddi_subscription_key varchar(255),
     uddi_subscription_notified_time bigint,
-    uddi_registry_oid bigint,
+    uddi_registry_goid CHAR(16) FOR BIT DATA,
     version integer,
-    primary key (objectid)
+    primary key (goid)
 );
 
 create table uddi_service_control (
-    objectid bigint not null,
+    goid CHAR(16) FOR BIT DATA not null,
     disable_service_on_change smallint,
     has_been_overwritten smallint,
     has_had_endpoints_removed smallint,
@@ -1061,7 +1061,7 @@ create table uddi_service_control (
     published_service_goid CHAR(16) FOR BIT DATA,
     uddi_business_key varchar(255),
     uddi_business_name varchar(255),
-    uddi_registry_oid bigint,
+    uddi_registry_goid CHAR(16) FOR BIT DATA,
     uddi_service_key varchar(255),
     uddi_service_name varchar(255),
     under_uddi_control smallint,
@@ -1072,16 +1072,16 @@ create table uddi_service_control (
     wsdl_port_name varchar(255),
     wsdl_service_name varchar(255),
     security_zone_goid CHAR(16) FOR BIT DATA references security_zone(goid) on delete set null,
-    primary key (objectid)
+    primary key (goid)
 );
 
 create table uddi_service_control_monitor_runtime (
-    objectid bigint not null,
+    goid CHAR(16) FOR BIT DATA not null,
     access_point_url varchar(4096),
     last_uddi_modified_timestamp bigint,
-    uddi_service_control_oid bigint,
+    uddi_service_control_goid CHAR(16) FOR BIT DATA,
     version integer,
-    primary key (objectid)
+    primary key (goid)
 );
 
 create table wsdm_subscription (
@@ -1232,7 +1232,7 @@ alter table trusted_esm_user
 
 alter table uddi_proxied_service
     add constraint FK127C390874249C8B
-    foreign key (uddi_proxied_service_info_oid)
+    foreign key (uddi_proxied_service_info_goid)
     references uddi_proxied_service_info
     on delete cascade;
 

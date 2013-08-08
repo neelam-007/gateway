@@ -5,12 +5,15 @@
 package com.l7tech.server.uddi;
 
 import com.l7tech.gateway.common.uddi.UDDIProxiedServiceInfo;
-import com.l7tech.objectmodel.*;
-import com.l7tech.server.HibernateEntityManager;
+import com.l7tech.objectmodel.Entity;
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
+import com.l7tech.server.HibernateGoidEntityManager;
 
 import java.util.*;
 
-public class UDDIProxiedServiceInfoManagerImpl extends HibernateEntityManager<UDDIProxiedServiceInfo, EntityHeader>
+public class UDDIProxiedServiceInfoManagerImpl extends HibernateGoidEntityManager<UDDIProxiedServiceInfo, EntityHeader>
 implements UDDIProxiedServiceInfoManager{
 
     //- PUBLIC
@@ -29,17 +32,17 @@ implements UDDIProxiedServiceInfoManager{
     }
 
     @Override
-    public Collection<UDDIProxiedServiceInfo> findByUDDIRegistryAndMetricsState( final long registryOid,
+    public Collection<UDDIProxiedServiceInfo> findByUDDIRegistryAndMetricsState( final Goid registryGoid,
                                                                              final boolean metricsEnabled ) throws FindException {
         final Map<String,Object> matchMap = new HashMap<String,Object>();
-        matchMap.put( "uddiRegistryOid", registryOid );
+        matchMap.put( "uddiRegistryGoid", registryGoid );
         matchMap.put( "metricsEnabled", metricsEnabled );
         return findMatching( Collections.singletonList( matchMap ) );
     }
 
     @Override
-    public Collection<UDDIProxiedServiceInfo> findByUDDIRegistryOid(long registryOid) throws FindException {
-        return findByPropertyMaybeNull("uddiRegistryOid", registryOid);
+    public Collection<UDDIProxiedServiceInfo> findByUDDIRegistryOid(Goid registryGoid) throws FindException {
+        return findByPropertyMaybeNull("uddiRegistryGoid", registryGoid);
     }
 
     //- PROTECTED

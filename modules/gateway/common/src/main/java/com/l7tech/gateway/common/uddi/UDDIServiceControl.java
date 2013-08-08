@@ -1,7 +1,7 @@
 package com.l7tech.gateway.common.uddi;
 
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.imp.ZoneablePersistentEntityImp;
+import com.l7tech.objectmodel.imp.ZoneableGoidEntityImp;
 import com.l7tech.util.BeanUtils;
 import org.hibernate.annotations.Proxy;
 import org.hibernate.annotations.Type;
@@ -16,13 +16,13 @@ import javax.persistence.Version;
 @Entity
 @Proxy(lazy=false)
 @Table(name="uddi_service_control")
-public class UDDIServiceControl extends ZoneablePersistentEntityImp {
+public class UDDIServiceControl extends ZoneableGoidEntityImp {
     public static final String ATTR_SERVICE_GOID = "publishedServiceGoid";
 
     //- PUBLIC
 
     public UDDIServiceControl(Goid publishedServiceGoid,
-                              long uddiRegistryOid,
+                              Goid uddiRegistryGoid,
                               String uddiBusinessKey,
                               String uddiBusinessName,
                               String uddiServiceKey,
@@ -33,7 +33,7 @@ public class UDDIServiceControl extends ZoneablePersistentEntityImp {
                               String wsdlPortBindingNamespace,
                               boolean underUddiControl) {
         this.publishedServiceGoid = publishedServiceGoid;
-        this.uddiRegistryOid = uddiRegistryOid;
+        this.uddiRegistryGoid = uddiRegistryGoid;
         this.uddiBusinessKey = uddiBusinessKey;
         this.uddiBusinessName = uddiBusinessName;
         this.uddiServiceKey = uddiServiceKey;
@@ -58,13 +58,14 @@ public class UDDIServiceControl extends ZoneablePersistentEntityImp {
         this.publishedServiceGoid = publishedServiceGoid;
     }
 
-    @Column(name = "uddi_registry_oid", updatable = false)
-    public long getUddiRegistryOid() {
-        return uddiRegistryOid;
+    @Column(name = "uddi_registry_goid", updatable = false)
+    @Type(type = "com.l7tech.server.util.GoidType")
+    public Goid getUddiRegistryGoid() {
+        return uddiRegistryGoid;
     }
 
-    public void setUddiRegistryOid( final long uddiRegistryOid ) {
-        this.uddiRegistryOid = uddiRegistryOid;
+    public void setUddiRegistryGoid( final Goid uddiRegistryGoid ) {
+        this.uddiRegistryGoid = uddiRegistryGoid;
     }
 
     @Column(name = "uddi_business_key", updatable = false)
@@ -263,7 +264,7 @@ public class UDDIServiceControl extends ZoneablePersistentEntityImp {
         if (publishWsPolicyFull != that.publishWsPolicyFull) return false;
         if (publishWsPolicyInlined != that.publishWsPolicyInlined) return false;
         if (!Goid.equals(publishedServiceGoid, that.publishedServiceGoid)) return false;
-        if (uddiRegistryOid != that.uddiRegistryOid) return false;
+        if (!Goid.equals(uddiRegistryGoid, that.uddiRegistryGoid)) return false;
         if (underUddiControl != that.underUddiControl) return false;
         if (updateWsdlOnChange != that.updateWsdlOnChange) return false;
         if (!uddiBusinessKey.equals(that.uddiBusinessKey)) return false;
@@ -284,7 +285,7 @@ public class UDDIServiceControl extends ZoneablePersistentEntityImp {
     public int hashCode() {
         int result = super.hashCode();
         result = 31 * result + (publishedServiceGoid != null ? publishedServiceGoid.hashCode() : 0);
-        result = 31 * result + (int) (uddiRegistryOid ^ (uddiRegistryOid >>> 32));
+        result = 31 * result + (uddiRegistryGoid != null ? uddiRegistryGoid.hashCode() : 0);
         result = 31 * result + uddiBusinessKey.hashCode();
         result = 31 * result + uddiBusinessName.hashCode();
         result = 31 * result + uddiServiceKey.hashCode();
@@ -321,7 +322,7 @@ public class UDDIServiceControl extends ZoneablePersistentEntityImp {
     //- PRIVATE
 
     private Goid publishedServiceGoid;
-    private long uddiRegistryOid;
+    private Goid uddiRegistryGoid;
     private String uddiBusinessKey;
     private String uddiBusinessName;
     private String uddiServiceKey;

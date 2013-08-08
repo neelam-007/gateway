@@ -379,7 +379,7 @@ public class ServicePropertiesDialog extends JDialog {
 
                 if(uddiServiceControl == null) return;//this is a programming error
 
-                if(uddiServiceControl.getOid() == UDDIServiceControl.DEFAULT_OID){
+                if(Goid.isDefault(uddiServiceControl.getGoid())){
                     clearLocalUDDIServiceControl();
                 }else{
                     try {
@@ -388,7 +388,7 @@ public class ServicePropertiesDialog extends JDialog {
                         if(serviceInfo == null || serviceInfo.getPublishType() == UDDIProxiedServiceInfo.PublishType.PROXY){
                             int selection = JOptionPane.showConfirmDialog(ServicePropertiesDialog.this, "The association to the original UDDI BusinessService will be lost.", "Remove BusinessService Association", JOptionPane.WARNING_MESSAGE);
                             if (selection == 0) {
-                                Registry.getDefault().getUDDIRegistryAdmin().deleteUDDIServiceControl(uddiServiceControl.getOid());
+                                Registry.getDefault().getUDDIRegistryAdmin().deleteUDDIServiceControl(uddiServiceControl.getGoid());
                                 clearLocalUDDIServiceControl();
                             } else {
                                 return;
@@ -481,7 +481,7 @@ public class ServicePropertiesDialog extends JDialog {
         try {
             uddiServiceControl = Registry.getDefault().getUDDIRegistryAdmin().getUDDIServiceControl(subject.getGoid());
             if(uddiServiceControl != null){
-                originalServiceEndPoint = Registry.getDefault().getUDDIRegistryAdmin().getOriginalServiceEndPoint(uddiServiceControl.getOid());
+                originalServiceEndPoint = Registry.getDefault().getUDDIRegistryAdmin().getOriginalServiceEndPoint(uddiServiceControl.getGoid());
             }
             uddiProxiedServiceInfo = Registry.getDefault().getUDDIRegistryAdmin().findProxiedServiceInfoForPublishedService(subject.getGoid());
         } catch (FindException e) {
@@ -552,7 +552,7 @@ public class ServicePropertiesDialog extends JDialog {
     }
 
     private UDDIServiceControl getNewUDDIServiceControl(WsdlPortInfo wsdlPortInfo) {
-        return new UDDIServiceControl(subject.getGoid(), wsdlPortInfo.getUddiRegistryOid(),
+        return new UDDIServiceControl(subject.getGoid(), Goid.parseGoid(wsdlPortInfo.getUddiRegistryId()),
                 wsdlPortInfo.getBusinessEntityKey(), wsdlPortInfo.getBusinessEntityName(), wsdlPortInfo.getBusinessServiceKey(),
                 wsdlPortInfo.getBusinessServiceName(), wsdlPortInfo.getWsdlServiceName(), wsdlPortInfo.getWsdlPortName(),
                 wsdlPortInfo.getWsdlPortBinding(), wsdlPortInfo.getWsdlPortBindingNamespace(),
@@ -566,7 +566,7 @@ public class ServicePropertiesDialog extends JDialog {
 
         if(uddiServiceControl != null){
             try {
-                final UDDIRegistry uddiRegistry = Registry.getDefault().getUDDIRegistryAdmin().findByPrimaryKey(uddiServiceControl.getUddiRegistryOid());
+                final UDDIRegistry uddiRegistry = Registry.getDefault().getUDDIRegistryAdmin().findByPrimaryKey(uddiServiceControl.getUddiRegistryGoid());
                 uddiRegistryTextField.setText(uddiRegistry.getName());
             } catch (FindException e) {
                 showErrorMessage("Cannot find UDDI Registry", "UDDI Registry cannot be found", e, true);
@@ -906,7 +906,7 @@ public class ServicePropertiesDialog extends JDialog {
                     enableMonitoring != uddiServiceControl.isMonitoringEnabled() ||
                     updateWsdlOnChange != uddiServiceControl.isUpdateWsdlOnChange() ||
                     disableServiceOnChange != uddiServiceControl.isDisableServiceOnChange() ||
-                    uddiServiceControl.getOid() == UDDIServiceControl.DEFAULT_OID ||
+                    Goid.isDefault(uddiServiceControl.getGoid()) ||
                     !ObjectUtils.equals(existingSecurityZone, selectedSecurityZone)){
 
                     uddiServiceControl.setUnderUddiControl( wsdlUnderUDDIControlCheckBox.isSelected() );

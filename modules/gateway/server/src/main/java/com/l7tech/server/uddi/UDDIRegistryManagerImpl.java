@@ -4,16 +4,17 @@
  */
 package com.l7tech.server.uddi;
 
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.Entity;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.server.HibernateEntityManager;
-import com.l7tech.gateway.common.uddi.UDDIRegistry;
 import com.l7tech.gateway.common.uddi.UDDIProxiedServiceInfo;
+import com.l7tech.gateway.common.uddi.UDDIRegistry;
+import com.l7tech.objectmodel.Entity;
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
+import com.l7tech.server.HibernateGoidEntityManager;
 
 import java.util.*;
 
-public class UDDIRegistryManagerImpl extends HibernateEntityManager<UDDIRegistry, EntityHeader>
+public class UDDIRegistryManagerImpl extends HibernateGoidEntityManager<UDDIRegistry, EntityHeader>
     implements UDDIRegistryManager {
 
     private UDDIProxiedServiceInfoManager proxiedServiceInfoManager;
@@ -46,14 +47,14 @@ public class UDDIRegistryManagerImpl extends HibernateEntityManager<UDDIRegistry
     }
 
     @Override
-    public Collection<UDDIProxiedServiceInfo> findAllByRegistryOid(long registryOid) throws FindException {
-        UDDIRegistry uddiRegistry = findByPrimaryKey(registryOid);
+    public Collection<UDDIProxiedServiceInfo> findAllByRegistryGoid(Goid registryGoid) throws FindException {
+        UDDIRegistry uddiRegistry = findByPrimaryKey(registryGoid);
         if(uddiRegistry == null) throw new FindException("Could not find UDDI Registry");
 
         Collection<UDDIProxiedServiceInfo> allProxiedServices = proxiedServiceInfoManager.findAll();
         List<UDDIProxiedServiceInfo> returnList = new ArrayList<UDDIProxiedServiceInfo>();
         for(UDDIProxiedServiceInfo proxiedService: allProxiedServices){
-            if(proxiedService.getUddiRegistryOid() != uddiRegistry.getOid()) continue;
+            if(!Goid.equals(proxiedService.getUddiRegistryGoid(), uddiRegistry.getGoid())) continue;
             returnList.add(proxiedService);
         }
         return returnList;

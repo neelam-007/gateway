@@ -1,6 +1,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.gui.util.*;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.uddi.UDDINamedEntity;
 import com.l7tech.uddi.WsdlPortInfo;
 import com.l7tech.util.ConfigFactory;
@@ -218,7 +219,7 @@ public class SearchUddiDialog extends JDialog {
                             final CancelableOperationDialog cancelDlg =
                                     new CancelableOperationDialog(SearchUddiDialog.this, "Searching UDDI", "Please wait, retrieving BusinessService details from UDDI...", bar);
                             try {
-                                final Callable<WsdlPortInfo[]> wsdlInfoCallable = getWsdlPortSearchCallable(uddiRegistry.getOid(), selectedWsdlInfo.getBusinessServiceKey(), false);
+                                final Callable<WsdlPortInfo[]> wsdlInfoCallable = getWsdlPortSearchCallable(uddiRegistry.getGoid(), selectedWsdlInfo.getBusinessServiceKey(), false);
                                 final WsdlPortInfo [] wsdlPortsFound = Utilities.doWithDelayedCancelDialog(wsdlInfoCallable, cancelDlg, DELAY_INITIAL);
                                 portDialog = new SelectWsdlPortDialog(SearchUddiDialog.this, wsdlPortsFound);
 
@@ -267,7 +268,7 @@ public class SearchUddiDialog extends JDialog {
                                     final CancelableOperationDialog cancelDlg =
                                             new CancelableOperationDialog(SearchUddiDialog.this, "Searching UDDI", "Please wait, Searching UDDI for WSDL URL...", bar);
 
-                                    final Callable<WsdlPortInfo[]> wsdlInfoCallable = getWsdlPortSearchCallable(uddiRegistry.getOid(), selectedWsdlInfo.getBusinessServiceKey(), true);
+                                    final Callable<WsdlPortInfo[]> wsdlInfoCallable = getWsdlPortSearchCallable(uddiRegistry.getGoid(), selectedWsdlInfo.getBusinessServiceKey(), true);
                                     final WsdlPortInfo[] allApplicableWsdlInfos = Utilities.doWithDelayedCancelDialog(wsdlInfoCallable, cancelDlg, DELAY_INITIAL);
                                     if (allApplicableWsdlInfos == null || allApplicableWsdlInfos.length == 0) {
                                         throw new FindException("No WSDL URL could be found for BusinessService");
@@ -514,7 +515,7 @@ public class SearchUddiDialog extends JDialog {
                 final String regName = (String) uddiRegistryComboBox.getSelectedItem();
                 final UDDIRegistry uddiRegistry = allRegistries.get(regName);
                 final AsyncAdminMethods.JobId<UDDINamedEntity[]> jobId =
-                        serviceAdmin.findBusinessesFromUDDIRegistry(uddiRegistry.getOid(), searchString, caseSensitiveCheckBox.isSelected());
+                        serviceAdmin.findBusinessesFromUDDIRegistry(uddiRegistry.getGoid(), searchString, caseSensitiveCheckBox.isSelected());
 
                 try {
                     UDDINamedEntity [] result = null;
@@ -564,7 +565,7 @@ public class SearchUddiDialog extends JDialog {
                 final UDDIRegistry uddiRegistry = allRegistries.get(regName);
                 final AsyncAdminMethods.JobId<WsdlPortInfo[]> jobId =
                         serviceAdmin.findWsdlInfosFromUDDIRegistry(
-                                uddiRegistry.getOid(), searchString, caseSensitiveCheckBox.isSelected(), retrieveWSDLURLCheckBox.isSelected());
+                                uddiRegistry.getGoid(), searchString, caseSensitiveCheckBox.isSelected(), retrieveWSDLURLCheckBox.isSelected());
 
                 return getAsyncResult( serviceAdmin, jobId );
             }
@@ -606,12 +607,12 @@ public class SearchUddiDialog extends JDialog {
 
     /**
      * This callable does not return null.
-     * @param registryOid long oid of the uddi registry to search. Do not get this from the UI as it may have changed
+     * @param registryGoid Goid goid of the uddi registry to search. Do not get this from the UI as it may have changed
      * @param serviceKey String serviceKey of the BusinessService to search for applicable wsdl:ports
      * @param getFirstOnly
      * @return Callable WsdlPortInfo[] which can be run async to search UDDI
      */
-    private Callable<WsdlPortInfo[]> getWsdlPortSearchCallable(final long registryOid,
+    private Callable<WsdlPortInfo[]> getWsdlPortSearchCallable(final Goid registryGoid,
                                                                final String serviceKey,
                                                                final boolean getFirstOnly) {
         return new Callable<WsdlPortInfo[]>() {
@@ -621,7 +622,7 @@ public class SearchUddiDialog extends JDialog {
                 if (serviceAdmin == null) throw new RuntimeException("Service Admin reference not found");
 
                 final AsyncAdminMethods.JobId<WsdlPortInfo[]> jobId =
-                        serviceAdmin.findWsdlInfosForSingleBusinessService(registryOid, serviceKey, getFirstOnly);
+                        serviceAdmin.findWsdlInfosForSingleBusinessService(registryGoid, serviceKey, getFirstOnly);
 
                 return getAsyncResult( serviceAdmin, jobId );
             }

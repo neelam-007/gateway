@@ -1,5 +1,6 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.wsp.WspConstants;
 import com.l7tech.uddi.UDDINamedEntity;
 import com.l7tech.gui.widgets.TextListCellRenderer;
@@ -170,7 +171,7 @@ public class ImportPolicyFromUDDIWizardStep extends WizardStepPanel {
     private void find() {
         String filter = nameField.getText();
         try {
-            UDDINamedEntity[] policies = getServiceAdmin().findPoliciesFromUDDIRegistry(getSelectedRegistryOid(), filter);
+            UDDINamedEntity[] policies = getServiceAdmin().findPoliciesFromUDDIRegistry(getSelectedRegistryGoid(), filter);
             policyList.setListData(policies);
         } catch (Throwable e) {
             logger.log(Level.WARNING, "Error getting find result", e);
@@ -178,9 +179,9 @@ public class ImportPolicyFromUDDIWizardStep extends WizardStepPanel {
         }
     }
 
-    private long getSelectedRegistryOid() {
+    private Goid getSelectedRegistryGoid() {
         UDDIRegistry registry = (UDDIRegistry) uddiRegistriesComboBox.getSelectedItem();
-        return registry.getOid();
+        return registry.getGoid();
     }
 
     @Override

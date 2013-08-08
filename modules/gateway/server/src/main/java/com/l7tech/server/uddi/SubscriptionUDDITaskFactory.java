@@ -76,7 +76,7 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
             if ( timerEvent.getType() == TimerUDDIEvent.Type.SUBSCRIPTION_POLL ) {
                 task = new SubscriptionPollUDDITask(
                         this,
-                        timerEvent.getRegistryOid(),
+                        timerEvent.getRegistryGoid(),
                         -1L,
                         -1L );
             }
@@ -84,7 +84,7 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
             PollUDDIEvent pollEvent = (PollUDDIEvent) event;
             task = new SubscriptionPollUDDITask(
                     this,
-                    pollEvent.getRegistryOid(),
+                    pollEvent.getRegistryGoid(),
                     pollEvent.getStartTime(),
                     pollEvent.getEndTime());
         } else if ( event instanceof SubscribeUDDIEvent ) {
@@ -93,13 +93,13 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
                 case SUBSCRIBE:
                     task = new SubscribeUDDITask(
                             this,
-                            subscribeEvent.getRegistryOid(),
+                            subscribeEvent.getRegistryGoid(),
                             subscribeEvent.isExpiredOnly() );
                     break;
                 case UNSUBSCRIBE:
                     task = new UnsubscribeUDDITask(
                             this,
-                            subscribeEvent.getRegistryOid() );
+                            subscribeEvent.getRegistryGoid() );
                     break;
             }
         } else if ( event instanceof NotificationUDDIEvent ) {
@@ -113,12 +113,12 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
             task = new BusinessServiceUpdateUDDITask(
                     this,
                     busEvent.getServiceKey(),
-                    busEvent.getRegistryOid(),
+                    busEvent.getRegistryGoid(),
                     busEvent.isDeleted(),
                     busEvent.isForceUpdate());
         } else if(event instanceof UpdateAllMonitoredServicesUDDIEvent){
             UpdateAllMonitoredServicesUDDIEvent updateEvent = (UpdateAllMonitoredServicesUDDIEvent) event;
-            task = new UpdateAllMonitoredServicesUDDITask(this, updateEvent.getRegistryOid());
+            task = new UpdateAllMonitoredServicesUDDITask(this, updateEvent.getRegistryGoid());
         }
 
         return task;
@@ -140,38 +140,38 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
     private final Config config;
 
     private static String describe( final UDDIRegistry uddiRegistry ) {
-        return uddiRegistry.getName()+" (#"+uddiRegistry.getOid()+")";
+        return uddiRegistry.getName()+" (#"+uddiRegistry.getGoid()+")";
     }
 
     private static final class SubscribeUDDITask extends SubscriptionProcessingUDDITask {
         private static final Logger logger = Logger.getLogger( SubscribeUDDITask.class.getName() );
 
         private final SubscriptionUDDITaskFactory factory;
-        private final long registryOid;
+        private final Goid registryGoid;
         private final boolean expiredOnly;
 
         private SubscribeUDDITask( final SubscriptionUDDITaskFactory factory,
-                                   final long registryOid,
+                                   final Goid registryGoid,
                                    final boolean expiredOnly ) {
             super( logger, null );
             this.factory = factory;
-            this.registryOid = registryOid;
+            this.registryGoid = registryGoid;
             this.expiredOnly = expiredOnly;
         }
 
         @Override
         public void apply( final UDDITaskContext context ) {
             // TODO Renew subscription rather than delete and replace?
-            logger.fine( "Checking subscription for UDDI registry "+registryOid+"." );
+            logger.fine( "Checking subscription for UDDI registry "+registryGoid+"." );
             try {
-                final UDDIRegistry uddiRegistry = factory.uddiRegistryManager.findByPrimaryKey( registryOid );
+                final UDDIRegistry uddiRegistry = factory.uddiRegistryManager.findByPrimaryKey( registryGoid );
                 if ( uddiRegistry != null && uddiRegistry.isEnabled() ) {
                     UDDIClient uddiClient = null;
                     try {
                         uddiClient = factory.uddiHelper.newUDDIClient( uddiRegistry );
 
                         UDDIRegistrySubscription uddiRegistrySubscription =
-                                factory.uddiRegistrySubscriptionManager.findByUDDIRegistryOid( registryOid );
+                                factory.uddiRegistrySubscriptionManager.findByUDDIRegistryGoid( registryGoid );
                         if ( uddiRegistrySubscription != null && uddiRegistrySubscription.getSubscriptionKey()!=null ) {
                             if ( expiredOnly && !isExpiring(uddiRegistrySubscription) ) {
                                 return;
@@ -190,7 +190,7 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
                         String bindingKey = null;
                         long monitoringInterval = 0L;
                         if ( uddiRegistry.isSubscribeForNotifications() ) {
-                            bindingKey = context.getSubscriptionBindingKey( registryOid );
+                            bindingKey = context.getSubscriptionBindingKey( registryGoid );
                             if ( bindingKey == null ) {
                                 throw new UDDIException("Error subscribing for notifications, UDDI notification service missing or unpublished.");
                             }
@@ -206,7 +206,7 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
 
                         if ( uddiRegistrySubscription == null ) {
                             uddiRegistrySubscription = new UDDIRegistrySubscription();
-                            uddiRegistrySubscription.setUddiRegistryOid( registryOid );
+                            uddiRegistrySubscription.setUddiRegistryGoid( registryGoid );
                         }
 
                         uddiRegistrySubscription.setSubscriptionKey( subscriptionKey );
@@ -216,7 +216,7 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
                         uddiRegistrySubscription.setSubscriptionNotifiedTime( 0L );
 
                         try {
-                            if ( uddiRegistrySubscription.getOid()==UDDIRegistrySubscription.DEFAULT_OID ) {
+                            if ( Goid.isDefault(uddiRegistrySubscription.getGoid()) ) {
                                 factory.uddiRegistrySubscriptionManager.save( uddiRegistrySubscription );
                             } else {
                                 factory.uddiRegistrySubscriptionManager.update( uddiRegistrySubscription );
@@ -234,12 +234,12 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
                         ResourceUtils.closeQuietly( uddiClient );
                     }
                 } else if ( uddiRegistry == null ) {
-                    logger.log( Level.WARNING, "UDDIRegistry (#"+registryOid+") not found for subscription." );
+                    logger.log( Level.WARNING, "UDDIRegistry (#"+registryGoid+") not found for subscription." );
                 } else {
                     throw new UDDIException("UDDI registry "+describe(uddiRegistry)+" is disabled.");
                 }
             } catch (ObjectModelException e) {
-                context.logAndAudit( SystemMessages.UDDI_SUBSCRIPTION_SUBSCRIBE_FAILED, e, "Database error when polling subscription for registry #"+registryOid+".");
+                context.logAndAudit( SystemMessages.UDDI_SUBSCRIPTION_SUBSCRIBE_FAILED, e, "Database error when polling subscription for registry #"+registryGoid+".");
             } catch (UDDIException ue) {
                 context.logAndAudit(SystemMessages.UDDI_SUBSCRIPTION_SUBSCRIBE_FAILED, ExceptionUtils.getDebugException(ue), ExceptionUtils.getMessage(ue));
             }
@@ -250,21 +250,21 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
         private static final Logger logger = Logger.getLogger( UnsubscribeUDDITask.class.getName() );
 
         private final SubscriptionUDDITaskFactory factory;
-        private final long registryOid;
+        private final Goid registryGoid;
 
         private UnsubscribeUDDITask( final SubscriptionUDDITaskFactory factory,
-                                     final long registryOid ) {
+                                     final Goid registryGoid ) {
             this.factory = factory;
-            this.registryOid = registryOid;
+            this.registryGoid = registryGoid;
         }
 
         @Override
         public void apply( final UDDITaskContext context ) {
-            logger.fine( "Processing unsubscribe for UDDI registry "+registryOid+"." );
+            logger.fine( "Processing unsubscribe for UDDI registry "+registryGoid+"." );
             try {
-                UDDIRegistry uddiRegistry = factory.uddiRegistryManager.findByPrimaryKey( registryOid );
+                UDDIRegistry uddiRegistry = factory.uddiRegistryManager.findByPrimaryKey( registryGoid );
                 if ( uddiRegistry != null && uddiRegistry.isEnabled() ) {
-                    UDDIRegistrySubscription uddiRegistrySubscription = factory.uddiRegistrySubscriptionManager.findByUDDIRegistryOid( registryOid );
+                    UDDIRegistrySubscription uddiRegistrySubscription = factory.uddiRegistrySubscriptionManager.findByUDDIRegistryGoid( registryGoid );
                     if ( uddiRegistrySubscription != null ) {
                         final String subscriptionKey = uddiRegistrySubscription.getSubscriptionKey();
                         if ( subscriptionKey != null ) {
@@ -285,12 +285,12 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
                         logger.log( Level.WARNING, "Cannot find subscription information for registry "+describe(uddiRegistry)+", unsubscription not performed." );
                     }
                 } else if ( uddiRegistry == null ) {
-                    logger.log( Level.WARNING, "UDDIRegistry (#"+registryOid+") not found for unsubscription." );
+                    logger.log( Level.WARNING, "UDDIRegistry (#"+registryGoid+") not found for unsubscription." );
                 } else {
                     throw new UDDIException("UDDI registry "+describe(uddiRegistry)+" is disabled.");
                 }
             } catch (ObjectModelException e) {
-                context.logAndAudit( SystemMessages.UDDI_SUBSCRIPTION_UNSUBSCRIBE_FAILED, e, "Database error when polling subscription for registry #"+registryOid+".");
+                context.logAndAudit( SystemMessages.UDDI_SUBSCRIPTION_UNSUBSCRIBE_FAILED, e, "Database error when polling subscription for registry #"+registryGoid+".");
             } catch (UDDIException ue) {
                 context.logAndAudit(SystemMessages.UDDI_SUBSCRIPTION_UNSUBSCRIBE_FAILED, ExceptionUtils.getDebugException(ue), ExceptionUtils.getMessage(ue));
             }
@@ -311,25 +311,25 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
                                          final UDDIRegistrySubscription uddiRegistrySubscription,
                                          final UDDISubscriptionResults results,
                                          final boolean renewIfExpiring ) throws FindException {
-            final long registryOid = uddiRegistrySubscription.getUddiRegistryOid();
+            final Goid registryGoid = uddiRegistrySubscription.getUddiRegistryGoid();
             for ( UDDISubscriptionResults.Result result : results.getResults() ) {
                 Collection<UDDIServiceControl> controls = uddiServiceControlManager.findByUDDIRegistryAndServiceKey(
-                        registryOid,
+                        registryGoid,
                         result.getEntityKey(),
                         true );
 
                 if ( !controls.isEmpty() ) {
                     // Fire event for update from UDDI
                     context.notifyEvent( new BusinessServiceUpdateUDDIEvent(
-                            registryOid,
+                            registryGoid,
                             result.getEntityKey(),
                             result.isDeleted(), false) );
                 }
             }
 
             if ( renewIfExpiring && isExpiring( uddiRegistrySubscription ) ) {
-                logger.info( "Notifying subscribe event for UDDI registry (#"+registryOid+")." );
-                context.notifyEvent( new SubscribeUDDIEvent( registryOid, SubscribeUDDIEvent.Type.SUBSCRIBE ) );
+                logger.info( "Notifying subscribe event for UDDI registry (#"+registryGoid+")." );
+                context.notifyEvent( new SubscribeUDDIEvent( registryGoid, SubscribeUDDIEvent.Type.SUBSCRIBE ) );
             }
         }
 
@@ -343,17 +343,17 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
         private static final Logger logger = Logger.getLogger( SubscriptionPollUDDITask.class.getName() );
 
         private final SubscriptionUDDITaskFactory factory;
-        private final long registryOid;
+        private final Goid registryGoid;
         private final long startTime;
         private final long endTime;
 
         SubscriptionPollUDDITask( final SubscriptionUDDITaskFactory factory,
-                                  final long registryOid,
+                                  final Goid registryGoid,
                                   final long startTime,
                                   final long endTime ) {
             super(logger,factory.uddiServiceControlManager);
             this.factory = factory;
-            this.registryOid = registryOid;
+            this.registryGoid = registryGoid;
             this.startTime = startTime;
             this.endTime = endTime;
         }
@@ -362,9 +362,9 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
         public void apply( final UDDITaskContext context ) {
             logger.fine( "Polling UDDI registry subscriptions." );
             try {
-                UDDIRegistry uddiRegistry = factory.uddiRegistryManager.findByPrimaryKey( registryOid );
+                UDDIRegistry uddiRegistry = factory.uddiRegistryManager.findByPrimaryKey( registryGoid );
                 if ( uddiRegistry != null && uddiRegistry.isEnabled() ) {
-                    UDDIRegistrySubscription uddiRegistrySubscription = factory.uddiRegistrySubscriptionManager.findByUDDIRegistryOid( registryOid );
+                    UDDIRegistrySubscription uddiRegistrySubscription = factory.uddiRegistrySubscriptionManager.findByUDDIRegistryGoid( registryGoid );
                     if ( uddiRegistrySubscription != null ) {
                         final boolean isNotificationPoll = startTime > 0L;
                         final String subscriptionKey = uddiRegistrySubscription.getSubscriptionKey();
@@ -397,10 +397,10 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
                         context.logAndAudit( SystemMessages.UDDI_SUBSCRIPTION_POLL_FAILED, "Missing subscription for registry "+describe(uddiRegistry)+".");
                     }
                 } else if (uddiRegistry == null) {
-                    logger.log( Level.WARNING, "UDDIRegistry (#"+registryOid+") not found for subscription poll." );
+                    logger.log( Level.WARNING, "UDDIRegistry (#"+registryGoid+") not found for subscription poll." );
                 }
             } catch (ObjectModelException e) {
-                context.logAndAudit( SystemMessages.UDDI_SUBSCRIPTION_POLL_FAILED, e, "Database error when polling subscription for registry #"+registryOid+".");
+                context.logAndAudit( SystemMessages.UDDI_SUBSCRIPTION_POLL_FAILED, e, "Database error when polling subscription for registry #"+registryGoid+".");
             } catch (UDDIException ue) {
                 context.logAndAudit(SystemMessages.UDDI_SUBSCRIPTION_POLL_FAILED, ExceptionUtils.getDebugException(ue), ExceptionUtils.getMessage(ue));
             }
@@ -441,7 +441,7 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
                         Collection<UDDIServiceControl> controls = factory.uddiServiceControlManager.findByUDDIServiceKey( result.getEntityKey() );
                         for ( UDDIServiceControl control : controls ) {
                             for ( UDDIRegistrySubscription sub : subscriptions ) {
-                                if ( sub.getUddiRegistryOid() == control.getUddiRegistryOid() ) {
+                                if ( Goid.equals(sub.getUddiRegistryGoid(), control.getUddiRegistryGoid()) ) {
                                     subscription = sub;
                                     break outer;
                                 }
@@ -455,13 +455,13 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
                 }
 
                 if ( subscription != null ) {
-                    UDDIRegistry uddiRegistry = factory.uddiRegistryManager.findByPrimaryKey( subscription.getUddiRegistryOid() );
+                    UDDIRegistry uddiRegistry = factory.uddiRegistryManager.findByPrimaryKey( subscription.getUddiRegistryGoid() );
                     if ( uddiRegistry != null && uddiRegistry.isEnabled() ) {
                         processSubscriptionResults( context, subscription, results, true );
                         long lastEndTime = subscription.getSubscriptionNotifiedTime();
                         if ( lastEndTime < (results.getStartTime()-SUBSCRIPTION_TOLERANCE) ) {
                             logger.warning( "Missed subscription notifications for period "+formatDate(lastEndTime)+" to "+formatDate(results.getStartTime())+" for registry "+describe(uddiRegistry)+"." );
-                            context.notifyEvent( new PollUDDIEvent( subscription.getUddiRegistryOid(), lastEndTime, results.getStartTime() ) );
+                            context.notifyEvent( new PollUDDIEvent( subscription.getUddiRegistryGoid(), lastEndTime, results.getStartTime() ) );
                         }
                         subscription.setSubscriptionNotifiedTime( results.getEndTime() );
                         factory.uddiRegistrySubscriptionManager.update( subscription );
@@ -485,19 +485,19 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
         private static final Logger logger = Logger.getLogger( UpdateAllMonitoredServicesUDDITask.class.getName() );
         
         private final SubscriptionUDDITaskFactory factory;
-        private final long registryOid;
+        private final Goid registryGoid;
 
-        private UpdateAllMonitoredServicesUDDITask(SubscriptionUDDITaskFactory factory, long registryOid) {
+        private UpdateAllMonitoredServicesUDDITask(SubscriptionUDDITaskFactory factory, Goid registryGoid) {
             this.factory = factory;
-            this.registryOid = registryOid;
+            this.registryGoid = registryGoid;
         }
 
         @Override
         public void apply(UDDITaskContext context) throws UDDITaskException {
             try {
-                final UDDIRegistry uddiRegistry = factory.uddiRegistryManager.findByPrimaryKey(registryOid);
+                final UDDIRegistry uddiRegistry = factory.uddiRegistryManager.findByPrimaryKey(registryGoid);
                 if(uddiRegistry == null) {
-                    logger.log(Level.FINE, "UDDI Registry with id#(" + registryOid+") not found");
+                    logger.log(Level.FINE, "UDDI Registry with id#(" + registryGoid+") not found");
                     return;
                 }
                 if(!uddiRegistry.isMonitoringEnabled()) {
@@ -506,13 +506,13 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
                 }
                 logger.log(Level.INFO, "Forcing refresh of all published services which are monitoring UDDI Registry " + describe(uddiRegistry));
 
-                final Collection<UDDIServiceControl> allControlsForRegistry = factory.uddiServiceControlManager.findByUDDIRegistryOid(registryOid);
+                final Collection<UDDIServiceControl> allControlsForRegistry = factory.uddiServiceControlManager.findByUDDIRegistryGoid(registryGoid);
                 for(UDDIServiceControl serviceControl: allControlsForRegistry){
                     if(!serviceControl.isMonitoringEnabled()) continue;
-                    context.notifyEvent(new BusinessServiceUpdateUDDIEvent(registryOid, serviceControl.getUddiServiceKey(), false, true));
+                    context.notifyEvent(new BusinessServiceUpdateUDDIEvent(registryGoid, serviceControl.getUddiServiceKey(), false, true));
                 }
             } catch (ObjectModelException e) {
-                context.logAndAudit( SystemMessages.UDDI_NOTIFICATION_TRIGGERING_FAILED, e, Long.toString(registryOid));
+                context.logAndAudit( SystemMessages.UDDI_NOTIFICATION_TRIGGERING_FAILED, e, Goid.toString(registryGoid));
             }
         }
     }
@@ -522,18 +522,18 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
 
         private final SubscriptionUDDITaskFactory factory;
         private final String serviceKey;
-        private final long registryOid;
+        private final Goid registryGoid;
         private final boolean isDeleted;
         private final boolean forceUpdate;
 
         private BusinessServiceUpdateUDDITask(final SubscriptionUDDITaskFactory factory,
                                               final String serviceKey,
-                                              final long registryOid,
+                                              final Goid registryGoid,
                                               final boolean deleted,
                                               final boolean forceUpdate) {
             this.factory = factory;
             this.serviceKey = serviceKey;
-            this.registryOid = registryOid;
+            this.registryGoid = registryGoid;
             this.isDeleted = deleted;
             this.forceUpdate = forceUpdate;
         }
@@ -546,13 +546,13 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
                 //each result is for a unique PublishedService. More than one results is when more than one
                 //published service has the same original service in UDDI
                 final Collection<UDDIServiceControl> allApplicableServiceControls =
-                        factory.uddiServiceControlManager.findByUDDIRegistryAndServiceKey(registryOid, serviceKey, null);
+                        factory.uddiServiceControlManager.findByUDDIRegistryAndServiceKey(registryGoid, serviceKey, null);
 
-                logger.log(Level.FINE, "Processing business service update. UDDIRegistry #id("+registryOid+") for serviceKey: " + serviceKey+" isDeleted = " + isDeleted);
+                logger.log(Level.FINE, "Processing business service update. UDDIRegistry #id("+registryGoid+") for serviceKey: " + serviceKey+" isDeleted = " + isDeleted);
 
                 if ( isDeleted ) {
                     logger.log(Level.INFO, "Service with key: " + serviceKey +
-                            " has been deleted from UDDI Registry #(" + registryOid + "). Removing record of UDDI BusinessService.");
+                            " has been deleted from UDDI Registry #(" + registryGoid + "). Removing record of UDDI BusinessService.");
                     //will not ignore reality, if we know the service is gone from uddi, then no point having a record of it
 
                     boolean deleted = false;
@@ -572,7 +572,7 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
                     }
                 } else {
                     //Get the last modified time stamp
-                    final UDDIRegistry uddiRegistry = factory.uddiRegistryManager.findByPrimaryKey(registryOid);
+                    final UDDIRegistry uddiRegistry = factory.uddiRegistryManager.findByPrimaryKey(registryGoid);
                     if ( uddiRegistry != null && uddiRegistry.isEnabled() ) {
                         final List<UDDIHandledTaskException> caughtExceptions = new ArrayList<UDDIHandledTaskException>();
                         UDDIClient uddiClient = null;
@@ -587,7 +587,7 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
                                 context.logAndAudit(SystemMessages.UDDI_NOTIFICATION_PROCESSING_FAILED, ExceptionUtils.getDebugException(e),
                                         "Could not get operation information for serviceKey: " + serviceKey);
                                 throw new UDDITaskException("Cannot find Operational Information for serviceKey: "
-                                        + serviceKey + " from UDDIRegistry #(" + uddiRegistry.getOid() + ")");
+                                        + serviceKey + " from UDDIRegistry #(" + uddiRegistry.getGoid() + ")");
                             }
 
                             for(UDDIServiceControl serviceControl: allApplicableServiceControls) {
@@ -604,7 +604,7 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
                                 final PublishedService ps =
                                         factory.serviceManager.findByPrimaryKey(serviceControl.getPublishedServiceGoid());
                                 final UDDIServiceControlRuntime monitorRuntime =
-                                        factory.uddiServiceControlRuntimeManager.findByServiceControlOid(serviceControl.getOid());
+                                        factory.uddiServiceControlRuntimeManager.findByServiceControlGoid(serviceControl.getGoid());
                                 if(!forceUpdate){
                                     if(monitorRuntime != null){
                                         final long lastKnownModificationTime = monitorRuntime.getLastUDDIModifiedTimeStamp();
@@ -641,7 +641,7 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
                                             serviceControl.getWsdlPortBinding(),
                                             (serviceControl.getWsdlPortBindingNamespace() != null) ? "namespace '" + serviceControl.getWsdlPortBindingNamespace() + "'" : "",
                                             describe(uddiRegistry));
-                                    processInvalidOriginalService(factory, context, uddiRegistry, serviceControl.getOid(), ps.getGoid());
+                                    processInvalidOriginalService(factory, context, uddiRegistry, serviceControl.getGoid(), ps.getGoid());
                                     continue;
                                 }
 
@@ -781,14 +781,14 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
                 }
             } catch (ObjectModelException e) {
                 context.logAndAudit( SystemMessages.UDDI_NOTIFICATION_PROCESSING_FAILED, e,
-                        "Database error when processing notification for registry #"+registryOid+" and serviceKey: " + serviceKey+".");
+                        "Database error when processing notification for registry #"+registryGoid+" and serviceKey: " + serviceKey+".");
             }
         }
 
         private void processInvalidOriginalService(final SubscriptionUDDITaskFactory factory,
                                                    final UDDITaskContext context,
                                                    final UDDIRegistry uddiRegistry,
-                                                   final long serviceControlOid,
+                                                   final Goid serviceControlGoid,
                                                    final Goid serviceGoid) throws UpdateException, FindException {
             //set defaultRoutingURL to be empty
             final PublishedService ps = factory.serviceManager.findByPrimaryKey(serviceGoid);
@@ -798,7 +798,7 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
             factory.serviceManager.update(ps);
             logger.log(Level.INFO, "Cleared context variable ${service.defaultRoutingURL} of UDDI endpoint value for published service #(" + String.valueOf(ps.getGoid()) + ").");
 
-            final UDDIServiceControl serviceControl = factory.uddiServiceControlManager.findByPrimaryKey(serviceControlOid);
+            final UDDIServiceControl serviceControl = factory.uddiServiceControlManager.findByPrimaryKey(serviceControlGoid);
             if(serviceControl != null) {
                 context.logAndAudit(SystemMessages.UDDI_ORIGINAL_SERVICE_INVALIDATED, serviceKey, describe(uddiRegistry), String.valueOf(ps.getGoid()) );
                 serviceControl.setUnderUddiControl(false);
@@ -864,7 +864,7 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
                         @Override
                         public void handleTaskError() {
                             try {
-                                processInvalidOriginalService(factory, context, uddiRegistry, serviceControl.getOid(), ps.getGoid());
+                                processInvalidOriginalService(factory, context, uddiRegistry, serviceControl.getGoid(), ps.getGoid());
                             } catch (UpdateException e) {
                                 context.logAndAudit(SystemMessages.DATABASE_ERROR, e,
                                         "Database error updating Published Service / UDDIServiceControl.");

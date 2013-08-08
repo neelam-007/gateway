@@ -60,11 +60,11 @@ public class MetricsUDDITaskFactory extends UDDITaskFactory {
             if ( timerEvent.getType()==TimerUDDIEvent.Type.METRICS_PUBLISH ) {
                 task = new MetricsPublishUDDITask(
                         this,
-                        timerEvent.getRegistryOid() );
+                        timerEvent.getRegistryGoid() );
             } else if ( timerEvent.getType()==TimerUDDIEvent.Type.METRICS_CLEANUP ) {
                 task = new MetricsCleanupUDDITask(
                         this,
-                        timerEvent.getRegistryOid() );
+                        timerEvent.getRegistryGoid() );
             }
         }
 
@@ -104,20 +104,20 @@ public class MetricsUDDITaskFactory extends UDDITaskFactory {
         private static final String DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ss";
 
         private final MetricsUDDITaskFactory factory;
-        private final long registryOid;
+        private final Goid registryGoid;
         private final NumberFormat percentFormat = new DecimalFormat("0.0");
 
         MetricsPublishUDDITask( final MetricsUDDITaskFactory factory,
-                                final long registryOid ) {
+                                final Goid registryGoid ) {
             this.factory = factory;
-            this.registryOid = registryOid;
+            this.registryGoid = registryGoid;
         }
 
         @Override
         public void apply( final UDDITaskContext context ) {
-            logger.fine( "Publishing metrics to UDDI for registry (#"+registryOid+")" );
+            logger.fine( "Publishing metrics to UDDI for registry (#"+registryGoid+")" );
             try {
-                UDDIRegistry uddiRegistry = factory.uddiRegistryManager.findByPrimaryKey( registryOid );
+                UDDIRegistry uddiRegistry = factory.uddiRegistryManager.findByPrimaryKey( registryGoid );
                 if ( uddiRegistry != null && uddiRegistry.isEnabled() && uddiRegistry.isMetricsEnabled() ) {
                     final UDDITemplate template = factory.uddiTemplateManager.getUDDITemplate( uddiRegistry.getUddiRegistryType() );
                     if ( template == null ) {
@@ -127,10 +127,10 @@ public class MetricsUDDITaskFactory extends UDDITaskFactory {
                     final long endTime = System.currentTimeMillis();
 
                     final Collection<UDDIBusinessServiceStatus> toPublish =
-                            factory.uddiBusinessServiceStatusManager.findByRegistryAndMetricsStatus( registryOid, UDDIBusinessServiceStatus.Status.PUBLISH );
+                            factory.uddiBusinessServiceStatusManager.findByRegistryAndMetricsStatus( registryGoid, UDDIBusinessServiceStatus.Status.PUBLISH );
 
                     final Collection<UDDIBusinessServiceStatus> toUpdate =
-                            factory.uddiBusinessServiceStatusManager.findByRegistryAndMetricsStatus( registryOid, UDDIBusinessServiceStatus.Status.PUBLISHED );
+                            factory.uddiBusinessServiceStatusManager.findByRegistryAndMetricsStatus( registryGoid, UDDIBusinessServiceStatus.Status.PUBLISHED );
 
                     final Map<Goid,MetricsRequestContext> metricsMap = new HashMap<Goid,MetricsRequestContext>();
 
@@ -178,12 +178,12 @@ public class MetricsUDDITaskFactory extends UDDITaskFactory {
                         ResourceUtils.closeQuietly( client );
                     }
                 } else {
-                    logger.info( "Ignoring metrics event for UDDI registry (#"+registryOid+"), registry not found or is disabled." );
+                    logger.info( "Ignoring metrics event for UDDI registry (#"+registryGoid+"), registry not found or is disabled." );
                 }
             } catch (ValueException ve) {
-                context.logAndAudit( SystemMessages.UDDI_METRICS_PUBLISH_FAILED, "Error when publishing metrics for registry #"+registryOid+"; "+ExceptionUtils.getMessage(ve));
+                context.logAndAudit( SystemMessages.UDDI_METRICS_PUBLISH_FAILED, "Error when publishing metrics for registry #"+registryGoid+"; "+ExceptionUtils.getMessage(ve));
             } catch (ObjectModelException e) {
-                context.logAndAudit( SystemMessages.UDDI_METRICS_PUBLISH_FAILED, e, "Database error when publishing metrics for registry #"+registryOid+".");
+                context.logAndAudit( SystemMessages.UDDI_METRICS_PUBLISH_FAILED, e, "Database error when publishing metrics for registry #"+registryGoid+".");
             } catch (UDDIException ue) {
                 context.logAndAudit(SystemMessages.UDDI_METRICS_PUBLISH_FAILED, ExceptionUtils.getDebugException(ue), ExceptionUtils.getMessage(ue));
             }
@@ -361,19 +361,19 @@ public class MetricsUDDITaskFactory extends UDDITaskFactory {
         private static final Logger logger = Logger.getLogger( MetricsCleanupUDDITask.class.getName() );
 
         private final MetricsUDDITaskFactory factory;
-        private final long registryOid;
+        private final Goid registryGoid;
 
         MetricsCleanupUDDITask( final MetricsUDDITaskFactory factory,
-                                final long registryOid ) {
+                                final Goid registryGoid ) {
             this.factory = factory;
-            this.registryOid = registryOid;
+            this.registryGoid = registryGoid;
         }
 
         @Override
         public void apply( final UDDITaskContext context ) {
-            logger.fine( "Cleanup metrics in UDDI for registry (#"+registryOid+")" );
+            logger.fine( "Cleanup metrics in UDDI for registry (#"+registryGoid+")" );
             try {
-                UDDIRegistry uddiRegistry = factory.uddiRegistryManager.findByPrimaryKey( registryOid );
+                UDDIRegistry uddiRegistry = factory.uddiRegistryManager.findByPrimaryKey( registryGoid );
                 if ( uddiRegistry != null && uddiRegistry.isEnabled() ) {  // cleanup even if metrics is not enabled
                     final UDDITemplate template = factory.uddiTemplateManager.getUDDITemplate( uddiRegistry.getUddiRegistryType() );
                     if ( template == null ) {
@@ -385,7 +385,7 @@ public class MetricsUDDITaskFactory extends UDDITaskFactory {
                             template.getServiceMetricsKeyedReference().getKey();
                     if ( referenceKey != null ) {
                         final Collection<UDDIBusinessServiceStatus> toDelete =
-                                factory.uddiBusinessServiceStatusManager.findByRegistryAndMetricsStatus( registryOid, UDDIBusinessServiceStatus.Status.DELETE );
+                                factory.uddiBusinessServiceStatusManager.findByRegistryAndMetricsStatus( registryGoid, UDDIBusinessServiceStatus.Status.DELETE );
 
                         UDDIClient client = null;
                         try {
@@ -416,10 +416,10 @@ public class MetricsUDDITaskFactory extends UDDITaskFactory {
                         }
                     }
                 } else {
-                    logger.fine( "Ignoring metrics event for UDDI registry (#"+registryOid+"), registry not found or is disabled." );
+                    logger.fine( "Ignoring metrics event for UDDI registry (#"+registryGoid+"), registry not found or is disabled." );
                 }
             } catch (ObjectModelException e) {
-                context.logAndAudit( SystemMessages.UDDI_METRICS_CLEANUP_FAILED, e, "Database error when removing metrics for registry #"+registryOid+".");
+                context.logAndAudit( SystemMessages.UDDI_METRICS_CLEANUP_FAILED, e, "Database error when removing metrics for registry #"+registryGoid+".");
             } catch (UDDIException ue) {
                 context.logAndAudit(SystemMessages.UDDI_METRICS_CLEANUP_FAILED, ExceptionUtils.getDebugException(ue), ExceptionUtils.getMessage(ue));
             }

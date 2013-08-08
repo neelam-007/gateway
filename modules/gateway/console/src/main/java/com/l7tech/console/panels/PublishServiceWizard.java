@@ -253,7 +253,7 @@ public class PublishServiceWizard extends Wizard {
                     //was the service created from UDDI, if the WSDL url still matches what was saved, then
                     //record this
                     if( saBundle.isServiceControlRequired() ){
-                        UDDIServiceControl uddiServiceControl = new UDDIServiceControl(goid, wsdlPortInfo.getUddiRegistryOid(),
+                        UDDIServiceControl uddiServiceControl = new UDDIServiceControl(goid, Goid.parseGoid(wsdlPortInfo.getUddiRegistryId()),
                                 wsdlPortInfo.getBusinessEntityKey(), wsdlPortInfo.getBusinessEntityName(),
                                 wsdlPortInfo.getBusinessServiceKey(), wsdlPortInfo.getBusinessServiceName(),
                                 wsdlPortInfo.getWsdlServiceName(), wsdlPortInfo.getWsdlPortName(), wsdlPortInfo.getWsdlPortBinding(),

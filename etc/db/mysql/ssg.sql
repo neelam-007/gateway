@@ -1123,7 +1123,7 @@ CREATE TABLE siteminder_configuration_property (
 --
 DROP TABLE IF EXISTS uddi_registries;
 CREATE TABLE uddi_registries (
-  objectid bigint(20) NOT NULL,
+  goid binary(16) NOT NULL,
   version integer NOT NULL,
   name varchar(128) NOT NULL,
   enabled tinyint(1) NOT NULL DEFAULT 0,
@@ -1144,7 +1144,7 @@ CREATE TABLE uddi_registries (
   subscribe_for_notifications tinyint(1) NOT NULL DEFAULT 0,
   monitor_frequency integer NOT NULL DEFAULT 0,
   security_zone_goid binary(16),
-  PRIMARY KEY (objectid),
+  PRIMARY KEY (goid),
   UNIQUE(name),
   CONSTRAINT uddi_reg_security_zone FOREIGN KEY (security_zone_goid) REFERENCES security_zone (goid) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
@@ -1154,16 +1154,16 @@ CREATE TABLE uddi_registries (
 --
 DROP TABLE IF EXISTS uddi_registry_subscription;
 CREATE TABLE uddi_registry_subscription (
-  objectid bigint(20) NOT NULL,
+  goid binary(16) NOT NULL,
   version integer NOT NULL,
-  uddi_registry_oid bigint(20) NOT NULL,
+  uddi_registry_goid binary(16) NOT NULL,
   uddi_subscription_key varchar(255),
   uddi_subscription_expiry_time bigint NOT NULL,
   uddi_subscription_notified_time bigint NOT NULL,
   uddi_subscription_check_time bigint NOT NULL,
-  PRIMARY KEY (objectid),
-  UNIQUE KEY  (uddi_registry_oid),
-  FOREIGN KEY (uddi_registry_oid) REFERENCES uddi_registries (objectid) ON DELETE CASCADE
+  PRIMARY KEY (goid),
+  UNIQUE KEY  (uddi_registry_goid),
+  FOREIGN KEY (uddi_registry_goid) REFERENCES uddi_registries (goid) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --
@@ -1173,9 +1173,9 @@ CREATE TABLE uddi_registry_subscription (
 --
 DROP TABLE IF EXISTS uddi_proxied_service_info;
 CREATE TABLE uddi_proxied_service_info (
-  objectid bigint(20) NOT NULL,
+  goid binary(16) NOT NULL,
   published_service_goid binary(16) NOT NULL,
-  uddi_registry_oid bigint(20) NOT NULL,
+  uddi_registry_goid binary(16) NOT NULL,
   version integer NOT NULL,
   uddi_business_key varchar(255) NOT NULL,
   uddi_business_name varchar(255) NOT NULL,
@@ -1190,10 +1190,10 @@ CREATE TABLE uddi_proxied_service_info (
   wsdl_hash varchar(32) NOT NULL,
   properties mediumtext,
   security_zone_goid binary(16),
-  PRIMARY KEY (objectid),
+  PRIMARY KEY (goid),
   UNIQUE KEY  (published_service_goid),
   FOREIGN KEY (published_service_goid) REFERENCES published_service (goid) ON DELETE CASCADE,
-  FOREIGN KEY (uddi_registry_oid) REFERENCES uddi_registries (objectid) ON DELETE CASCADE,
+  FOREIGN KEY (uddi_registry_goid) REFERENCES uddi_registries (goid) ON DELETE CASCADE,
   CONSTRAINT uddi_prox_svc_info_security_zone FOREIGN KEY (security_zone_goid) REFERENCES security_zone (goid) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
@@ -1202,17 +1202,17 @@ CREATE TABLE uddi_proxied_service_info (
 --
 DROP TABLE IF EXISTS uddi_proxied_service;
 CREATE TABLE uddi_proxied_service (
-  objectid bigint(20) NOT NULL,
+  goid binary(16) NOT NULL,
   version integer NOT NULL,
-  uddi_proxied_service_info_oid bigint(20) NOT NULL,
+  uddi_proxied_service_info_goid binary(16) NOT NULL,
   uddi_service_key varchar(255) NOT NULL,
   uddi_service_name varchar(255) NOT NULL,
   wsdl_service_name varchar(255) NOT NULL,
   wsdl_service_namespace varchar(255) NOT NULL,
-  PRIMARY KEY (objectid),
-  UNIQUE KEY (uddi_proxied_service_info_oid, wsdl_service_name, wsdl_service_namespace),
+  PRIMARY KEY (goid),
+  UNIQUE KEY (uddi_proxied_service_info_goid, wsdl_service_name, wsdl_service_namespace),
   UNIQUE (uddi_service_key),
-  FOREIGN KEY (uddi_proxied_service_info_oid) REFERENCES uddi_proxied_service_info (objectid) ON DELETE CASCADE
+  FOREIGN KEY (uddi_proxied_service_info_goid) REFERENCES uddi_proxied_service_info (goid) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --
@@ -1220,14 +1220,14 @@ CREATE TABLE uddi_proxied_service (
 --
 DROP TABLE IF EXISTS uddi_publish_status;
 CREATE TABLE uddi_publish_status (
-  objectid bigint(20) NOT NULL,
+  goid binary(16) NOT NULL,
   version integer NOT NULL,
-  uddi_proxied_service_info_oid bigint(20) NOT NULL,
+  uddi_proxied_service_info_goid binary(16) NOT NULL,
   publish_status varchar(32) NOT NULL,
   fail_count integer NOT NULL DEFAULT 0,
-  PRIMARY KEY (objectid),
-  UNIQUE (uddi_proxied_service_info_oid),
-  FOREIGN KEY (uddi_proxied_service_info_oid) REFERENCES uddi_proxied_service_info (objectid) ON DELETE CASCADE
+  PRIMARY KEY (goid),
+  UNIQUE (uddi_proxied_service_info_goid),
+  FOREIGN KEY (uddi_proxied_service_info_goid) REFERENCES uddi_proxied_service_info (goid) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --
@@ -1252,10 +1252,10 @@ INSERT INTO password_policy (objectid, version, properties, internal_identity_pr
 --
 DROP TABLE IF EXISTS uddi_business_service_status;
 CREATE TABLE uddi_business_service_status (
-  objectid bigint(20) NOT NULL,
+  goid binary(16) NOT NULL,
   version integer NOT NULL,
   published_service_goid binary(16) NOT NULL,
-  uddi_registry_oid bigint(20) NOT NULL,
+  uddi_registry_goid binary(16) NOT NULL,
   uddi_service_key varchar(255) NOT NULL,
   uddi_service_name varchar(255) NOT NULL,
   uddi_policy_publish_url varchar(255),
@@ -1264,9 +1264,9 @@ CREATE TABLE uddi_business_service_status (
   policy_status varchar(32) NOT NULL,
   uddi_metrics_tmodel_key varchar(255),
   metrics_reference_status varchar(32) NOT NULL,
-  PRIMARY KEY (objectid),
+  PRIMARY KEY (goid),
   FOREIGN KEY (published_service_goid) REFERENCES published_service (goid) ON DELETE CASCADE,
-  FOREIGN KEY (uddi_registry_oid) REFERENCES uddi_registries (objectid) ON DELETE CASCADE
+  FOREIGN KEY (uddi_registry_goid) REFERENCES uddi_registries (goid) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --
@@ -1274,10 +1274,10 @@ CREATE TABLE uddi_business_service_status (
 --
 DROP TABLE IF EXISTS uddi_service_control;
 CREATE TABLE uddi_service_control (
-  objectid bigint(20) NOT NULL,
+  goid binary(16) NOT NULL,
   version integer NOT NULL,
   published_service_goid binary(16) NOT NULL,
-  uddi_registry_oid bigint(20) NOT NULL,
+  uddi_registry_goid binary(16) NOT NULL,
   uddi_business_key varchar(255) NOT NULL,
   uddi_business_name varchar(255) NOT NULL,
   uddi_service_key varchar(255) NOT NULL,
@@ -1285,7 +1285,7 @@ CREATE TABLE uddi_service_control (
   wsdl_service_name varchar(255) NOT NULL,
   wsdl_port_name varchar(255) NOT NULL,
   wsdl_port_binding varchar(255) NOT NULL,
-  wsdl_port_binding_namespace varchar(255) NOT NULL,        
+  wsdl_port_binding_namespace varchar(255) NOT NULL,
   under_uddi_control tinyint(1) NOT NULL DEFAULT 0,
   monitoring_enabled tinyint(1) NOT NULL DEFAULT 0,
   update_wsdl_on_change tinyint(1) NOT NULL DEFAULT 0,
@@ -1297,10 +1297,10 @@ CREATE TABLE uddi_service_control (
   has_had_endpoints_removed tinyint(1) NOT NULL DEFAULT 0,
   has_been_overwritten tinyint(1) NOT NULL DEFAULT 0,
   security_zone_goid binary(16),
-  PRIMARY KEY (objectid),
+  PRIMARY KEY (goid),
   UNIQUE KEY  (published_service_goid),
   FOREIGN KEY (published_service_goid) REFERENCES published_service (goid) ON DELETE CASCADE,
-  FOREIGN KEY (uddi_registry_oid) REFERENCES uddi_registries (objectid) ON DELETE CASCADE,
+  FOREIGN KEY (uddi_registry_goid) REFERENCES uddi_registries (goid) ON DELETE CASCADE,
   CONSTRAINT uddi_svc_ctrl_security_zone FOREIGN KEY (security_zone_goid) REFERENCES security_zone (goid) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
@@ -1310,14 +1310,14 @@ CREATE TABLE uddi_service_control (
 --
 DROP TABLE IF EXISTS uddi_service_control_monitor_runtime;
 CREATE TABLE uddi_service_control_monitor_runtime (
-  objectid bigint(20) NOT NULL,
+  goid binary(16) NOT NULL,
   version integer NOT NULL,
-  uddi_service_control_oid bigint(20) NOT NULL,
+  uddi_service_control_goid binary(16) NOT NULL,
   last_uddi_modified_timestamp bigint(20) NOT NULL,
   access_point_url varchar(4096) NOT NULL,
-  PRIMARY KEY (objectid),
-  UNIQUE KEY  (uddi_service_control_oid),
-  FOREIGN KEY (uddi_service_control_oid) REFERENCES uddi_service_control (objectid) ON DELETE CASCADE
+  PRIMARY KEY (goid),
+  UNIQUE KEY  (uddi_service_control_goid),
+  FOREIGN KEY (uddi_service_control_goid) REFERENCES uddi_service_control (goid) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --

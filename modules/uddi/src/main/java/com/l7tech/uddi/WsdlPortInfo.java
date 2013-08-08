@@ -25,16 +25,16 @@ public interface WsdlPortInfo {
 
     String getBusinessEntityName();
 
-    long getUddiRegistryOid();
+    String getUddiRegistryId();
 
     String getWsdlServiceName();
     
     /**
      * Unfortuantly this information is required in this data structure for now anyway
      *
-     * @param oid long oid of the Entity from another package which we have no knowledge about here
+     * @param id String id of the Entity from another package which we have no knowledge about here
      */
-    void setUddiRegistryOid(long oid);
+    void setUddiRegistryId(String id);
 
     /**
      * Return true when absoutely certain that the WSDL url contained in this class is from this SecureSpan Gate

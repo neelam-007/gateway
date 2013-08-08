@@ -669,6 +669,110 @@ update rbac_predicate_entityfolder set entity_id = goidToString(toGoid(cast(getV
 update rbac_predicate_entityfolder set entity_id = goidToString(toGoid(0, -5002)) where entity_type='FOLDER' and entity_id=goidToString(toGoid(cast(getVariable('folder_prefix') as bigint), -5002));
 update rbac_predicate_entityfolder set entity_id = goidToString(toGoid(cast(getVariable('policy_prefix') as bigint), cast(entity_id as bigint))) where entity_type='POLICY';
 
+-- UDDI
+
+ALTER TABLE uddi_registries ADD COLUMN goid CHAR(16) FOR BIT DATA;
+call setVariable('uddi_registries_prefix', cast(randomLongNotReserved() as char(21)));
+update uddi_registries set goid = toGoid(cast(getVariable('uddi_registries_prefix') as bigint), objectid);
+ALTER TABLE uddi_registries ALTER COLUMN goid NOT NULL;
+ALTER TABLE uddi_registries DROP COLUMN objectid;
+ALTER TABLE uddi_registries ADD PRIMARY KEY (goid);
+
+update rbac_role set entity_goid = toGoid(cast(getVariable('uddi_registries_prefix') as bigint),entity_oid) where entity_oid is not null and entity_type='UDDI_REGISTRY';
+update rbac_predicate_oid oid1 set oid1.entity_id = ifnull((select goidToString(toGoid(cast(getVariable('uddi_registries_prefix') as bigint),cast(oid1.entity_id as bigint))) from rbac_predicate left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid where rbac_predicate.objectid = oid1.objectid and rbac_permission.entity_type = 'UDDI_REGISTRY'), oid1.entity_id);
+
+
+ALTER TABLE uddi_registry_subscription ADD COLUMN goid CHAR(16) FOR BIT DATA;
+call setVariable('uddi_registry_subscription_prefix', cast(randomLongNotReserved() as char(21)));
+update uddi_registry_subscription set goid = toGoid(cast(getVariable('uddi_registry_subscription_prefix') as bigint), objectid);
+ALTER TABLE uddi_registry_subscription ALTER COLUMN goid NOT NULL;
+ALTER TABLE uddi_registry_subscription DROP COLUMN objectid;
+ALTER TABLE uddi_registry_subscription ADD PRIMARY KEY (goid);
+
+ALTER TABLE uddi_registry_subscription ADD COLUMN uddi_registry_goid CHAR(16) FOR BIT DATA;
+update uddi_registry_subscription set uddi_registry_goid = toGoid(cast(getVariable('uddi_registries_prefix') as bigint), uddi_registry_oid);
+ALTER TABLE uddi_registry_subscription DROP COLUMN uddi_registry_oid;
+
+
+ALTER TABLE uddi_proxied_service_info ADD COLUMN goid CHAR(16) FOR BIT DATA;
+call setVariable('uddi_proxied_service_info_prefix', cast(randomLongNotReserved() as char(21)));
+update uddi_proxied_service_info set goid = toGoid(cast(getVariable('uddi_proxied_service_info_prefix') as bigint), objectid);
+ALTER TABLE uddi_proxied_service_info ALTER COLUMN goid NOT NULL;
+ALTER TABLE uddi_proxied_service_info DROP COLUMN objectid;
+ALTER TABLE uddi_proxied_service_info ADD PRIMARY KEY (goid);
+
+ALTER TABLE uddi_proxied_service_info ADD COLUMN uddi_registry_goid CHAR(16) FOR BIT DATA;
+update uddi_proxied_service_info set uddi_registry_goid = toGoid(cast(getVariable('uddi_registries_prefix') as bigint), uddi_registry_oid);
+ALTER TABLE uddi_proxied_service_info DROP COLUMN uddi_registry_oid;
+
+update rbac_role set entity_goid = toGoid(cast(getVariable('uddi_proxied_service_info_prefix') as bigint),entity_oid) where entity_oid is not null and entity_type='UDDI_PROXIED_SERVICE_INFO';
+update rbac_predicate_oid oid1 set oid1.entity_id = ifnull((select goidToString(toGoid(cast(getVariable('uddi_proxied_service_info_prefix') as bigint),cast(oid1.entity_id as bigint))) from rbac_predicate left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid where rbac_predicate.objectid = oid1.objectid and rbac_permission.entity_type = 'UDDI_PROXIED_SERVICE_INFO'), oid1.entity_id);
+
+
+ALTER TABLE uddi_proxied_service ADD COLUMN goid CHAR(16) FOR BIT DATA;
+call setVariable('uddi_proxied_service_prefix', cast(randomLongNotReserved() as char(21)));
+update uddi_proxied_service set goid = toGoid(cast(getVariable('uddi_proxied_service_prefix') as bigint), objectid);
+ALTER TABLE uddi_proxied_service ALTER COLUMN goid NOT NULL;
+ALTER TABLE uddi_proxied_service DROP COLUMN objectid;
+ALTER TABLE uddi_proxied_service ADD PRIMARY KEY (goid);
+
+ALTER TABLE uddi_proxied_service ADD COLUMN uddi_proxied_service_info_goid CHAR(16) FOR BIT DATA;
+update uddi_proxied_service set uddi_proxied_service_info_goid = toGoid(cast(getVariable('uddi_proxied_service_info_prefix') as bigint), uddi_proxied_service_info_oid);
+ALTER TABLE uddi_proxied_service DROP COLUMN uddi_proxied_service_info_oid;
+ALTER TABLE uddi_proxied_service add constraint FK127C390874249C8B foreign key (uddi_proxied_service_info_goid) references uddi_proxied_service_info on delete cascade;
+
+
+ALTER TABLE uddi_publish_status ADD COLUMN goid CHAR(16) FOR BIT DATA;
+call setVariable('uddi_publish_status_prefix', cast(randomLongNotReserved() as char(21)));
+update uddi_publish_status set goid = toGoid(cast(getVariable('uddi_publish_status_prefix') as bigint), objectid);
+ALTER TABLE uddi_publish_status ALTER COLUMN goid NOT NULL;
+ALTER TABLE uddi_publish_status DROP COLUMN objectid;
+ALTER TABLE uddi_publish_status ADD PRIMARY KEY (goid);
+
+ALTER TABLE uddi_publish_status ADD COLUMN uddi_proxied_service_info_goid CHAR(16) FOR BIT DATA;
+update uddi_publish_status set uddi_proxied_service_info_goid = toGoid(cast(getVariable('uddi_proxied_service_info_prefix') as bigint), uddi_proxied_service_info_oid);
+ALTER TABLE uddi_publish_status DROP COLUMN uddi_proxied_service_info_oid;
+
+
+ALTER TABLE uddi_business_service_status ADD COLUMN goid CHAR(16) FOR BIT DATA;
+call setVariable('uddi_business_service_status_prefix', cast(randomLongNotReserved() as char(21)));
+update uddi_business_service_status set goid = toGoid(cast(getVariable('uddi_business_service_status_prefix') as bigint), objectid);
+ALTER TABLE uddi_business_service_status ALTER COLUMN goid NOT NULL;
+ALTER TABLE uddi_business_service_status DROP COLUMN objectid;
+ALTER TABLE uddi_business_service_status ADD PRIMARY KEY (goid);
+
+ALTER TABLE uddi_business_service_status ADD COLUMN uddi_registry_goid CHAR(16) FOR BIT DATA;
+update uddi_business_service_status set uddi_registry_goid = toGoid(cast(getVariable('uddi_registries_prefix') as bigint), uddi_registry_oid);
+ALTER TABLE uddi_business_service_status DROP COLUMN uddi_registry_oid;
+
+
+ALTER TABLE uddi_service_control ADD COLUMN goid CHAR(16) FOR BIT DATA;
+call setVariable('uddi_service_control_prefix', cast(randomLongNotReserved() as char(21)));
+update uddi_service_control set goid = toGoid(cast(getVariable('uddi_service_control_prefix') as bigint), objectid);
+ALTER TABLE uddi_service_control ALTER COLUMN goid NOT NULL;
+ALTER TABLE uddi_service_control DROP COLUMN objectid;
+ALTER TABLE uddi_service_control ADD PRIMARY KEY (goid);
+
+ALTER TABLE uddi_service_control ADD COLUMN uddi_registry_goid CHAR(16) FOR BIT DATA;
+update uddi_service_control set uddi_registry_goid = toGoid(cast(getVariable('uddi_registries_prefix') as bigint), uddi_registry_oid);
+ALTER TABLE uddi_service_control DROP COLUMN uddi_registry_oid;
+
+update rbac_role set entity_goid = toGoid(cast(getVariable('uddi_service_control_prefix') as bigint),entity_oid) where entity_oid is not null and entity_type='UDDI_SERVICE_CONTROL';
+update rbac_predicate_oid oid1 set oid1.entity_id = ifnull((select goidToString(toGoid(cast(getVariable('uddi_service_control_prefix') as bigint),cast(oid1.entity_id as bigint))) from rbac_predicate left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid where rbac_predicate.objectid = oid1.objectid and rbac_permission.entity_type = 'UDDI_SERVICE_CONTROL'), oid1.entity_id);
+
+
+ALTER TABLE uddi_service_control_monitor_runtime ADD COLUMN goid CHAR(16) FOR BIT DATA;
+call setVariable('uddi_service_control_monitor_runtime_prefix', cast(randomLongNotReserved() as char(21)));
+update uddi_service_control_monitor_runtime set goid = toGoid(cast(getVariable('uddi_service_control_monitor_runtime_prefix') as bigint), objectid);
+ALTER TABLE uddi_service_control_monitor_runtime ALTER COLUMN goid NOT NULL;
+ALTER TABLE uddi_service_control_monitor_runtime DROP COLUMN objectid;
+ALTER TABLE uddi_service_control_monitor_runtime ADD PRIMARY KEY (goid);
+
+ALTER TABLE uddi_service_control_monitor_runtime ADD COLUMN uddi_service_control_goid CHAR(16) FOR BIT DATA;
+update uddi_service_control_monitor_runtime set uddi_service_control_goid = toGoid(cast(getVariable('uddi_service_control_prefix') as bigint), uddi_service_control_oid);
+ALTER TABLE uddi_service_control_monitor_runtime DROP COLUMN uddi_service_control_oid;
+
+
 --
 -- Register upgrade task for upgrading sink configuration references to GOIDs
 --

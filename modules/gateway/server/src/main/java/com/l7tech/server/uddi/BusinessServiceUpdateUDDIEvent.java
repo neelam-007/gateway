@@ -1,5 +1,7 @@
 package com.l7tech.server.uddi;
 
+import com.l7tech.objectmodel.Goid;
+
 /**
  * UDDIEvent for notification of an updated (or deleted) UDDI business service. 
  */
@@ -7,19 +9,19 @@ class BusinessServiceUpdateUDDIEvent extends UDDIEvent {
 
     //- PACKAGE
 
-    BusinessServiceUpdateUDDIEvent(final long registryOid,
+    BusinessServiceUpdateUDDIEvent(final Goid registryGoid,
                                    final String serviceKey,
                                    final boolean deleted,
                                    boolean forceUpdate) {
         super(false);
-        this.registryOid = registryOid;
+        this.registryGoid = registryGoid;
         this.serviceKey = serviceKey;
         this.deleted = deleted;
         this.forceUpdate = forceUpdate;
     }
 
-    long getRegistryOid() {
-        return registryOid;
+    Goid getRegistryGoid() {
+        return registryGoid;
     }
 
     String getServiceKey() {
@@ -40,7 +42,7 @@ class BusinessServiceUpdateUDDIEvent extends UDDIEvent {
 
     //- PRIVATE
 
-    private final long registryOid;
+    private final Goid registryGoid;
     private final String serviceKey;
     private final boolean deleted;
     private final boolean forceUpdate;

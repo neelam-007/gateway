@@ -8,7 +8,7 @@ import com.l7tech.gateway.common.uddi.UDDIProxiedServiceInfo;
 import com.l7tech.objectmodel.*;
 import java.util.Collection;
 
-public interface UDDIProxiedServiceInfoManager extends EntityManager<UDDIProxiedServiceInfo, EntityHeader> {
+public interface UDDIProxiedServiceInfoManager extends GoidEntityManager<UDDIProxiedServiceInfo, EntityHeader> {
 
     /**
      * Find a UDDIProxiedService by published service identifier (GOID)
@@ -22,19 +22,19 @@ public interface UDDIProxiedServiceInfoManager extends EntityManager<UDDIProxied
     /**
      * Find UDDIProxiedServiceInfos with metrics enabled for the given registry.
      *
-     * @param registryOid The registry OID.
+     * @param registryGoid The registry GOID.
      * @param metricsEnabled The metrics enabled state to match
      * @return The collection of UDDIProxiedServiceInfos (may be emptry but never null)
      * @throws FindException If an error occurs
      */
-    Collection<UDDIProxiedServiceInfo> findByUDDIRegistryAndMetricsState( long registryOid,
+    Collection<UDDIProxiedServiceInfo> findByUDDIRegistryAndMetricsState( Goid registryGoid,
                                                                           boolean metricsEnabled ) throws FindException;
 
     /**
      * Get all UDDIProxiedServicInfo entities for a given UDDI Registry
-     * @param registryOid long oid of the UDDI Registry
+     * @param registryGoid Goid goid of the UDDI Registry
      * @return Collection UDDIProxiedServiceInfo of all information published as proxy info to the registry
      * @throws FindException if problem searching the db
      */
-    Collection<UDDIProxiedServiceInfo> findByUDDIRegistryOid( long registryOid) throws FindException;
+    Collection<UDDIProxiedServiceInfo> findByUDDIRegistryOid( Goid registryGoid) throws FindException;
 }

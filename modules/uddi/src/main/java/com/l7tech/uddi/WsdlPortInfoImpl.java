@@ -23,7 +23,7 @@ public class WsdlPortInfoImpl implements WsdlPortInfo, Serializable {
     private String businessEntityKey;
     private String businessEntityName;
     private String wsdlServiceName;
-    private long uddiRegistryOid;
+    private String uddiRegistryId;
     private boolean gatewayWsdl;
     private boolean likelyGatewayWsdl;
     private String accessPointURL;
@@ -88,13 +88,13 @@ public class WsdlPortInfoImpl implements WsdlPortInfo, Serializable {
     }
 
     @Override
-    public long getUddiRegistryOid() {
-        return uddiRegistryOid;
+    public String getUddiRegistryId() {
+        return uddiRegistryId;
     }
 
     @Override
-    public void setUddiRegistryOid(long uddiRegistryOid) {
-        this.uddiRegistryOid = uddiRegistryOid;
+    public void setUddiRegistryId(String uddiRegistryId) {
+        this.uddiRegistryId = uddiRegistryId;
     }
 
     @Override

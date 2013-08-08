@@ -147,7 +147,7 @@ public class UddiRegistryManagerWindow extends JDialog {
         UDDIRegistryAdmin uddiRegistryAdmin = Registry.getDefault().getUDDIRegistryAdmin();
         final Collection<UDDIProxiedServiceInfo> proxiedServicesInfos;
         try {
-            proxiedServicesInfos = uddiRegistryAdmin.getAllProxiedServicesForRegistry(uddiRegistry.getOid());
+            proxiedServicesInfos = uddiRegistryAdmin.getAllProxiedServicesForRegistry(uddiRegistry.getGoid());
         } catch (FindException e) {
             showErrorMessage("Cannot Delete UDDI Registry", "Cannot determine if UDDI Registry contains published information", e);
             return;
@@ -155,7 +155,7 @@ public class UddiRegistryManagerWindow extends JDialog {
 
         final Collection<UDDIServiceControl> serviceControls;
         try{
-            serviceControls = uddiRegistryAdmin.getAllServiceControlsForRegistry(uddiRegistry.getOid());
+            serviceControls = uddiRegistryAdmin.getAllServiceControlsForRegistry(uddiRegistry.getGoid());
         } catch (FindException e) {
             showErrorMessage("Cannot Delete UDDI Registry", "Cannot determine if services were created from this registry.", e);
             return;
@@ -189,7 +189,7 @@ public class UddiRegistryManagerWindow extends JDialog {
                             return;
 
                         try {
-                            getUDDIRegistryAdmin().deleteUDDIRegistry(uddiRegistry.getOid());
+                            getUDDIRegistryAdmin().deleteUDDIRegistry(uddiRegistry.getGoid());
                             loadUddiRegistries();
                         } catch (DeleteException e) {
                             showErrorMessage("Remove Failed", "Failed to remove UDDI Registry: " + ExceptionUtils.getMessage(e), e);
@@ -206,7 +206,7 @@ public class UddiRegistryManagerWindow extends JDialog {
 
     private void editAndSave(final UDDIRegistry uddiRegistry, final boolean selectNameField) {
         //Safely check for UDDIRegistry existence when it has a non default OID.
-        if(uddiRegistry.getOid() != UDDIRegistry.DEFAULT_OID){
+        if(!Goid.isDefault(uddiRegistry.getGoid())){
             final Runnable errorFunction = new Runnable() {
                 @Override
                 public void run() {
@@ -215,7 +215,7 @@ public class UddiRegistryManagerWindow extends JDialog {
             };
             
             try {
-                final UDDIRegistry reg = getUDDIRegistryAdmin().findByPrimaryKey(uddiRegistry.getOid());
+                final UDDIRegistry reg = getUDDIRegistryAdmin().findByPrimaryKey(uddiRegistry.getGoid());
                 if (reg == null) {
                     //if the registry is not found and has a non default id, then it was deleted by another manager
                     errorFunction.run();
@@ -230,7 +230,7 @@ public class UddiRegistryManagerWindow extends JDialog {
         }
         boolean readOnly = false;
         final SecurityProvider securityProvider = Registry.getDefault().getSecurityProvider();
-        if (uddiRegistry.getOid() != UDDIRegistry.DEFAULT_OID) {
+        if (!Goid.isDefault(uddiRegistry.getGoid())) {
             readOnly = !securityProvider.hasPermission(new AttemptedUpdate(EntityType.UDDI_REGISTRY, uddiRegistry));
         }
         final UddiRegistryPropertiesDialog dlg = new UddiRegistryPropertiesDialog(this, uddiRegistry, readOnly);
@@ -251,8 +251,8 @@ public class UddiRegistryManagerWindow extends JDialog {
                     };
 
                     try {
-                        long oid = getUDDIRegistryAdmin().saveUDDIRegistry(uddiRegistry);
-                        if (oid != uddiRegistry.getOid()) uddiRegistry.setOid(oid);
+                        Goid goid = getUDDIRegistryAdmin().saveUDDIRegistry(uddiRegistry);
+                        if (!Goid.equals(goid, uddiRegistry.getGoid())) uddiRegistry.setGoid(goid);
                         reedit = null;
                         loadUddiRegistries();
                         uddiRegistryTable.setSelectedUddiRegistry(uddiRegistry);
@@ -354,7 +354,7 @@ public class UddiRegistryManagerWindow extends JDialog {
         }
 
         public void setSelectedUddiRegistry(UDDIRegistry uddiRegistry) {
-            int rowNum = model.findRowByRegistryOid(uddiRegistry.getOid());
+            int rowNum = model.findRowByRegistryGoid(uddiRegistry.getGoid());
             if (rowNum >= 0)
                 getSelectionModel().setSelectionInterval(rowNum, rowNum);
             else
@@ -363,7 +363,7 @@ public class UddiRegistryManagerWindow extends JDialog {
     }
 
     private static class UddiRegistryTableModel extends AbstractTableModel {
-        private Map<Long, Integer> rowMap;
+        private Map<Goid, Integer> rowMap;
 
         private abstract class Col {
             final String name;
@@ -493,25 +493,25 @@ public class UddiRegistryManagerWindow extends JDialog {
             return rows.get(rowIndex);
         }
 
-        /** @return a Map of Connector OID -> row number */
-        private Map<Long, Integer> getRowMap() {
+        /** @return a Map of Connector GOID -> row number */
+        private Map<Goid, Integer> getRowMap() {
             if (rowMap != null)
                 return rowMap;
-            Map<Long, Integer> ret = new LinkedHashMap<Long, Integer>();
+            Map<Goid, Integer> ret = new LinkedHashMap<Goid, Integer>();
             for (int i = 0; i < rows.size(); i++) {
                 UddiRegistryTableRow row = rows.get(i);
-                final long oid = row.getUddiRegistry().getOid();
-                ret.put(oid, i);
+                final Goid goid = row.getUddiRegistry().getGoid();
+                ret.put(goid, i);
             }
             return rowMap = ret;
         }
 
         /**
-         * @param oid OID of the UDDIRegistry whose row to find
-         * @return the row number of the UDDIRegistry with a matching oid, or -1 if no match found
+         * @param goid GOID of the UDDIRegistry whose row to find
+         * @return the row number of the UDDIRegistry with a matching goid, or -1 if no match found
          */
-        public int findRowByRegistryOid(long oid) {
-            return getRowMap().containsKey(oid) ? getRowMap().get(oid) : -1;
+        public int findRowByRegistryGoid(Goid goid) {
+            return getRowMap().containsKey(goid) ? getRowMap().get(goid) : -1;
         }
     }
 

@@ -805,6 +805,146 @@ update rbac_predicate_entityfolder set entity_id = goidToString(toGoid(@publishe
 update rbac_predicate_entityfolder set entity_id = goidToString(toGoid(@folder_prefix, entity_id)) where entity_type='FOLDER';
 update rbac_predicate_entityfolder set entity_id = goidToString(toGoid(0, -5002)) where entity_type='FOLDER' and entity_id=goidToString(toGoid(@folder_prefix, -5002));
 update rbac_predicate_entityfolder set entity_id = goidToString(toGoid(@policy_prefix, entity_id)) where entity_type='POLICY';
+
+-- UDDI
+call dropForeignKey('uddi_registry_subscription','uddi_registries');
+call dropForeignKey('uddi_proxied_service_info','uddi_registries');
+call dropForeignKey('uddi_proxied_service','uddi_proxied_service_info');
+call dropForeignKey('uddi_publish_status','uddi_proxied_service_info');
+call dropForeignKey('uddi_business_service_status','uddi_registries');
+call dropForeignKey('uddi_service_control','uddi_registries');
+call dropForeignKey('uddi_service_control_monitor_runtime','uddi_service_control');
+
+ALTER TABLE uddi_registries ADD COLUMN objectid_backup BIGINT(20);
+update uddi_registries set objectid_backup=objectid;
+ALTER TABLE uddi_registries CHANGE COLUMN objectid goid binary(16);
+-- For manual runs use: set @uddi_registries_prefix=createUnreservedPoorRandomPrefix();
+SET @uddi_registries_prefix=#RANDOM_LONG_NOT_RESERVED#;
+update uddi_registries set goid = toGoid(@uddi_registries_prefix,objectid_backup);
+ALTER TABLE uddi_registries DROP COLUMN objectid_backup;
+
+update rbac_role set entity_goid = toGoid(@uddi_registries_prefix,entity_oid) where entity_oid is not null and entity_type='UDDI_REGISTRY';
+update rbac_predicate_oid oid1 left join rbac_predicate on rbac_predicate.objectid = oid1.objectid left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid set oid1.entity_id = goidToString(toGoid(@uddi_registries_prefix,oid1.entity_id)) where rbac_permission.entity_type = 'UDDI_REGISTRY';
+
+
+ALTER TABLE uddi_registry_subscription ADD COLUMN objectid_backup BIGINT(20);
+update uddi_registry_subscription set objectid_backup=objectid;
+ALTER TABLE uddi_registry_subscription CHANGE COLUMN objectid goid binary(16);
+-- For manual runs use: set @uddi_registry_subscription_prefix=createUnreservedPoorRandomPrefix();
+SET @uddi_registry_subscription_prefix=#RANDOM_LONG_NOT_RESERVED#;
+update uddi_registry_subscription set goid = toGoid(@uddi_registry_subscription_prefix,objectid_backup);
+ALTER TABLE uddi_registry_subscription DROP COLUMN objectid_backup;
+
+ALTER TABLE uddi_registry_subscription ADD COLUMN uddi_registry_oid_backup BIGINT(20);
+update uddi_registry_subscription set uddi_registry_oid_backup=uddi_registry_oid;
+ALTER TABLE uddi_registry_subscription CHANGE COLUMN uddi_registry_oid uddi_registry_goid binary(16);
+update uddi_registry_subscription set uddi_registry_goid = toGoid(@uddi_registries_prefix,uddi_registry_oid_backup);
+ALTER TABLE uddi_registry_subscription DROP COLUMN uddi_registry_oid_backup;
+
+
+ALTER TABLE uddi_proxied_service_info ADD COLUMN objectid_backup BIGINT(20);
+update uddi_proxied_service_info set objectid_backup=objectid;
+ALTER TABLE uddi_proxied_service_info CHANGE COLUMN objectid goid binary(16);
+-- For manual runs use: set @uddi_proxied_service_info_prefix=createUnreservedPoorRandomPrefix();
+SET @uddi_proxied_service_info_prefix=#RANDOM_LONG_NOT_RESERVED#;
+update uddi_proxied_service_info set goid = toGoid(@uddi_proxied_service_info_prefix,objectid_backup);
+ALTER TABLE uddi_proxied_service_info DROP COLUMN objectid_backup;
+
+ALTER TABLE uddi_proxied_service_info ADD COLUMN uddi_registry_oid_backup BIGINT(20);
+update uddi_proxied_service_info set uddi_registry_oid_backup=uddi_registry_oid;
+ALTER TABLE uddi_proxied_service_info CHANGE COLUMN uddi_registry_oid uddi_registry_goid binary(16);
+update uddi_proxied_service_info set uddi_registry_goid = toGoid(@uddi_registries_prefix,uddi_registry_oid_backup);
+ALTER TABLE uddi_proxied_service_info DROP COLUMN uddi_registry_oid_backup;
+
+update rbac_role set entity_goid = toGoid(@uddi_proxied_service_info_prefix,entity_oid) where entity_oid is not null and entity_type='UDDI_PROXIED_SERVICE_INFO';
+update rbac_predicate_oid oid1 left join rbac_predicate on rbac_predicate.objectid = oid1.objectid left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid set oid1.entity_id = goidToString(toGoid(@uddi_proxied_service_info_prefix,oid1.entity_id)) where rbac_permission.entity_type = 'UDDI_PROXIED_SERVICE_INFO';
+
+
+ALTER TABLE uddi_proxied_service ADD COLUMN objectid_backup BIGINT(20);
+update uddi_proxied_service set objectid_backup=objectid;
+ALTER TABLE uddi_proxied_service CHANGE COLUMN objectid goid binary(16);
+-- For manual runs use: set @uddi_proxied_service_prefix=createUnreservedPoorRandomPrefix();
+SET @uddi_proxied_service_prefix=#RANDOM_LONG_NOT_RESERVED#;
+update uddi_proxied_service set goid = toGoid(@uddi_proxied_service_prefix,objectid_backup);
+ALTER TABLE uddi_proxied_service DROP COLUMN objectid_backup;
+
+ALTER TABLE uddi_proxied_service ADD COLUMN uddi_proxied_service_info_oid_backup BIGINT(20);
+update uddi_proxied_service set uddi_proxied_service_info_oid_backup=uddi_proxied_service_info_oid;
+ALTER TABLE uddi_proxied_service CHANGE COLUMN uddi_proxied_service_info_oid uddi_proxied_service_info_goid binary(16);
+update uddi_proxied_service set uddi_proxied_service_info_goid = toGoid(@uddi_proxied_service_info_prefix,uddi_proxied_service_info_oid_backup);
+ALTER TABLE uddi_proxied_service DROP COLUMN uddi_proxied_service_info_oid_backup;
+
+
+ALTER TABLE uddi_publish_status ADD COLUMN objectid_backup BIGINT(20);
+update uddi_publish_status set objectid_backup=objectid;
+ALTER TABLE uddi_publish_status CHANGE COLUMN objectid goid binary(16);
+-- For manual runs use: set @uddi_publish_status_prefix=createUnreservedPoorRandomPrefix();
+SET @uddi_publish_status_prefix=#RANDOM_LONG_NOT_RESERVED#;
+update uddi_publish_status set goid = toGoid(@uddi_publish_status_prefix,objectid_backup);
+ALTER TABLE uddi_publish_status DROP COLUMN objectid_backup;
+
+ALTER TABLE uddi_publish_status ADD COLUMN uddi_proxied_service_info_oid_backup BIGINT(20);
+update uddi_publish_status set uddi_proxied_service_info_oid_backup=uddi_proxied_service_info_oid;
+ALTER TABLE uddi_publish_status CHANGE COLUMN uddi_proxied_service_info_oid uddi_proxied_service_info_goid binary(16);
+update uddi_publish_status set uddi_proxied_service_info_goid = toGoid(@uddi_proxied_service_info_prefix,uddi_proxied_service_info_oid_backup);
+ALTER TABLE uddi_publish_status DROP COLUMN uddi_proxied_service_info_oid_backup;
+
+
+ALTER TABLE uddi_business_service_status ADD COLUMN objectid_backup BIGINT(20);
+update uddi_business_service_status set objectid_backup=objectid;
+ALTER TABLE uddi_business_service_status CHANGE COLUMN objectid goid binary(16);
+-- For manual runs use: set @uddi_business_service_status_prefix=createUnreservedPoorRandomPrefix();
+SET @uddi_business_service_status_prefix=#RANDOM_LONG_NOT_RESERVED#;
+update uddi_business_service_status set goid = toGoid(@uddi_business_service_status_prefix,objectid_backup);
+ALTER TABLE uddi_business_service_status DROP COLUMN objectid_backup;
+
+ALTER TABLE uddi_business_service_status ADD COLUMN uddi_registry_oid_backup BIGINT(20);
+update uddi_business_service_status set uddi_registry_oid_backup=uddi_registry_oid;
+ALTER TABLE uddi_business_service_status CHANGE COLUMN uddi_registry_oid uddi_registry_goid binary(16);
+update uddi_business_service_status set uddi_registry_goid = toGoid(@uddi_registries_prefix,uddi_registry_oid_backup);
+ALTER TABLE uddi_business_service_status DROP COLUMN uddi_registry_oid_backup;
+
+
+ALTER TABLE uddi_service_control ADD COLUMN objectid_backup BIGINT(20);
+update uddi_service_control set objectid_backup=objectid;
+ALTER TABLE uddi_service_control CHANGE COLUMN objectid goid binary(16);
+-- For manual runs use: set @uddi_service_control_prefix=createUnreservedPoorRandomPrefix();
+SET @uddi_service_control_prefix=#RANDOM_LONG_NOT_RESERVED#;
+update uddi_service_control set goid = toGoid(@uddi_service_control_prefix,objectid_backup);
+ALTER TABLE uddi_service_control DROP COLUMN objectid_backup;
+
+ALTER TABLE uddi_service_control ADD COLUMN uddi_registry_oid_backup BIGINT(20);
+update uddi_service_control set uddi_registry_oid_backup=uddi_registry_oid;
+ALTER TABLE uddi_service_control CHANGE COLUMN uddi_registry_oid uddi_registry_goid binary(16);
+update uddi_service_control set uddi_registry_goid = toGoid(@uddi_registries_prefix,uddi_registry_oid_backup);
+ALTER TABLE uddi_service_control DROP COLUMN uddi_registry_oid_backup;
+
+update rbac_role set entity_goid = toGoid(@uddi_service_control_prefix,entity_oid) where entity_oid is not null and entity_type='UDDI_SERVICE_CONTROL';
+update rbac_predicate_oid oid1 left join rbac_predicate on rbac_predicate.objectid = oid1.objectid left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid set oid1.entity_id = goidToString(toGoid(@uddi_service_control_prefix,oid1.entity_id)) where rbac_permission.entity_type = 'UDDI_SERVICE_CONTROL';
+
+
+ALTER TABLE uddi_service_control_monitor_runtime ADD COLUMN objectid_backup BIGINT(20);
+update uddi_service_control_monitor_runtime set objectid_backup=objectid;
+ALTER TABLE uddi_service_control_monitor_runtime CHANGE COLUMN objectid goid binary(16);
+-- For manual runs use: set @uddi_service_control_monitor_runtime_prefix=createUnreservedPoorRandomPrefix();
+SET @uddi_service_control_monitor_runtime_prefix=#RANDOM_LONG_NOT_RESERVED#;
+update uddi_service_control_monitor_runtime set goid = toGoid(@uddi_service_control_monitor_runtime_prefix,objectid_backup);
+ALTER TABLE uddi_service_control_monitor_runtime DROP COLUMN objectid_backup;
+
+ALTER TABLE uddi_service_control_monitor_runtime ADD COLUMN uddi_service_control_oid_backup BIGINT(20);
+update uddi_service_control_monitor_runtime set uddi_service_control_oid_backup=uddi_service_control_oid;
+ALTER TABLE uddi_service_control_monitor_runtime CHANGE COLUMN uddi_service_control_oid uddi_service_control_goid binary(16);
+update uddi_service_control_monitor_runtime set uddi_service_control_goid = toGoid(@uddi_service_control_prefix,uddi_service_control_oid_backup);
+ALTER TABLE uddi_service_control_monitor_runtime DROP COLUMN uddi_service_control_oid_backup;
+
+
+ALTER TABLE uddi_registry_subscription ADD FOREIGN KEY (uddi_registry_goid) REFERENCES uddi_registries (goid) ON DELETE CASCADE;
+ALTER TABLE uddi_proxied_service_info ADD FOREIGN KEY (uddi_registry_goid) REFERENCES uddi_registries (goid) ON DELETE CASCADE;
+ALTER TABLE uddi_proxied_service ADD FOREIGN KEY (uddi_proxied_service_info_goid) REFERENCES uddi_proxied_service_info (goid) ON DELETE CASCADE;
+ALTER TABLE uddi_publish_status ADD FOREIGN KEY (uddi_proxied_service_info_goid) REFERENCES uddi_proxied_service_info (goid) ON DELETE CASCADE;
+ALTER TABLE uddi_business_service_status ADD FOREIGN KEY (uddi_registry_goid) REFERENCES uddi_registries (goid) ON DELETE CASCADE;
+ALTER TABLE uddi_service_control ADD FOREIGN KEY (uddi_registry_goid) REFERENCES uddi_registries (goid) ON DELETE CASCADE;
+ALTER TABLE uddi_service_control_monitor_runtime ADD FOREIGN KEY (uddi_service_control_goid) REFERENCES uddi_service_control (goid) ON DELETE CASCADE;
 --
 -- Register upgrade task for upgrading sink configuration references to GOIDs
 --

@@ -36,7 +36,7 @@ public interface UDDIRegistryAdmin {
     enum EndpointScheme {HTTP, HTTPS}
     
     @Secured(types=EntityType.UDDI_REGISTRY, stereotype= MethodStereotype.SAVE_OR_UPDATE)
-    long saveUDDIRegistry(UDDIRegistry uddiRegistry) throws SaveException, UpdateException, FindException;
+    Goid saveUDDIRegistry(UDDIRegistry uddiRegistry) throws SaveException, UpdateException, FindException;
 
     /**
      * Download all UDDI Registry records on this cluster.
@@ -51,33 +51,33 @@ public interface UDDIRegistryAdmin {
     /**
      * Find a UDDIRegistry with by it's primary key
      *
-     * @param registryOid long id of registry to find
+     * @param registryGoid Goid id of registry to find
      * @return UDDIRegistry. Null if not found e.g. does not exist.
      * @throws FindException Never thrown for the entity not existing. Any db exception is wrapped in a FindException.
      */
     @Transactional(readOnly=true)
     @Secured(types=EntityType.UDDI_REGISTRY, stereotype=MethodStereotype.FIND_ENTITY)
-    UDDIRegistry findByPrimaryKey(long registryOid) throws FindException;
+    UDDIRegistry findByPrimaryKey(Goid registryGoid) throws FindException;
 
     @Transactional(readOnly=true)
     @Secured(types=EntityType.UDDI_REGISTRY, stereotype=MethodStereotype.GET_PROPERTY_BY_ID)
-    boolean subscriptionNotificationsAvailable(long registryOid);
+    boolean subscriptionNotificationsAvailable(Goid registryGoid);
 
     @Transactional(readOnly=true)
     @Secured(types=EntityType.UDDI_REGISTRY, stereotype=MethodStereotype.GET_PROPERTY_BY_ID)
-    boolean metricsAvailable(long registryOid) throws FindException;
+    boolean metricsAvailable(Goid registryGoid) throws FindException;
 
     /**
      * Before the UDDIRegistry is deleted, all data published to the registry should be attempted to be removed.
      *
-     * @param oid long oid of the UDDI Registry to delete
+     * @param goid Goid goid of the UDDI Registry to delete
      * @throws DeleteException any problems deleting
      * @throws FindException any problems find the UDDI Registry
      * @throws com.l7tech.uddi.UDDIException if there are any problems removing data from UDDI
      * @throws com.l7tech.gateway.common.admin.UDDIRegistryAdmin.UDDIRegistryNotEnabledException if the registry is not enabled
      */
     @Secured(types=EntityType.UDDI_REGISTRY, stereotype=DELETE_BY_ID)
-    void deleteUDDIRegistry(long oid) throws DeleteException, FindException, UDDIException, UDDIRegistryNotEnabledException;
+    void deleteUDDIRegistry(Goid goid) throws DeleteException, FindException, UDDIException, UDDIRegistryNotEnabledException;
 
     /**
      * Test if it is possible to connect to the UDDI Registry with the settings contained in the supplied UDDIRegistry
@@ -99,8 +99,8 @@ public interface UDDIRegistryAdmin {
      * Publish the WSDL for a PublishedService for the first time. This will create as many BusinessServices in UDDI
      * as there are wsdl:service's in the PublishedService's WSDL
      *
-     * @param publishedService long oid of the published service
-     * @param uddiRegistryOid long oid of the UDDIRegistry
+     * @param publishedService Goid goid of the published service
+     * @param uddiRegistryGoid Goid goid of the UDDIRegistry
      * @param uddiBusinessKey String key of the owning BusinessEntity from UDDI
      * @param uddiBusinessName String name of the owning BusinessEntity from UDDI
      * @param updateWhenGatewayWsdlChanges boolean if true, then the proxied published service will be udpated as the
@@ -114,7 +114,7 @@ public interface UDDIRegistryAdmin {
      * @throws com.l7tech.gateway.common.admin.UDDIRegistryAdmin.UDDIRegistryNotEnabledException if the registry is not enabled
      */
     @Secured(types = EntityType.SERVICE, stereotype = MethodStereotype.SAVE_OR_UPDATE, relevantArg = 0)
-    void publishGatewayWsdl(PublishedService publishedService, long uddiRegistryOid, String uddiBusinessKey, String uddiBusinessName,
+    void publishGatewayWsdl(PublishedService publishedService, Goid uddiRegistryGoid, String uddiBusinessKey, String uddiBusinessName,
                             boolean updateWhenGatewayWsdlChanges, @Nullable SecurityZone securityZone)
             throws FindException, PublishProxiedServiceException, VersionException, UpdateException, SaveException, UDDIRegistryNotEnabledException;
 
@@ -177,7 +177,7 @@ public interface UDDIRegistryAdmin {
      * This only exists so that the UI can trigger an update to UDDI when the 'Update when gateway wsdl changes'
      * check box is checked
      * 
-     * @param uddiProxiedServiceInfoOid long oid of the UDDIProxiedServiceInfo
+     * @param uddiProxiedServiceInfoGoid Goid goid of the UDDIProxiedServiceInfo
      *
      * @throws FindException
      * @throws UDDIRegistryNotEnabledException
@@ -186,7 +186,7 @@ public interface UDDIRegistryAdmin {
      * @throws VersionException
      */
     @Secured(types = EntityType.UDDI_PROXIED_SERVICE_INFO, stereotype = MethodStereotype.SAVE_OR_UPDATE)
-    void updatePublishedGatewayWsdl(long uddiProxiedServiceInfoOid)
+    void updatePublishedGatewayWsdl(Goid uddiProxiedServiceInfoGoid)
             throws FindException, UDDIRegistryNotEnabledException, PublishProxiedServiceException, UpdateException, VersionException;
 
     /**
@@ -251,18 +251,18 @@ public interface UDDIRegistryAdmin {
      */
     @Transactional(readOnly = true)
     @Secured(types = EntityType.SERVICE, stereotype = MethodStereotype.GET_PROPERTY_BY_ID, relevantArg = 1)
-    UDDIPublishStatus getPublishStatusForProxy(long uddiProxiedServiceInfo, Goid publishedServiceGoid) throws FindException;
+    UDDIPublishStatus getPublishStatusForProxy(Goid uddiProxiedServiceInfo, Goid publishedServiceGoid) throws FindException;
 
     /**
      * Find all UDDIProxiedServices which have been published to a UDDIRegistry
      *
-     * @param registryOid the UDDIRegistry to search
+     * @param registryGoid the UDDIRegistry to search
      * @return Collection<UDDIProxiedService> of all proxied services published to the UDDI Registry
      * @throws FindException if any problems reading from the database or the UDDIRegistry cannot be found
      */
     @Transactional(readOnly = true)
     @Secured(types = EntityType.UDDI_REGISTRY, stereotype = MethodStereotype.FIND_ENTITIES)
-    Collection<UDDIProxiedServiceInfo> getAllProxiedServicesForRegistry(long registryOid) throws FindException;
+    Collection<UDDIProxiedServiceInfo> getAllProxiedServicesForRegistry(Goid registryGoid) throws FindException;
 
     /**
      * Save / Update UDDIServiceControl without changes to related UDDI.
@@ -282,7 +282,7 @@ public interface UDDIRegistryAdmin {
      *                         if the UDDI Registry is not enabled
      */
     @Secured(types = EntityType.UDDI_SERVICE_CONTROL, stereotype = MethodStereotype.SAVE_OR_UPDATE, relevantArg = 0)
-    long saveUDDIServiceControlOnly(final UDDIServiceControl uddiServiceControl, String serviceEndPoint, Long lastModifiedServiceTimeStamp)
+    Goid saveUDDIServiceControlOnly(final UDDIServiceControl uddiServiceControl, String serviceEndPoint, Long lastModifiedServiceTimeStamp)
             throws UpdateException, SaveException, FindException, UDDIRegistryNotEnabledException;
 
     /**
@@ -291,13 +291,13 @@ public interface UDDIRegistryAdmin {
      * Cannot delete successfully if the UDDIServiceControl has had an endpoint added to it, or if it has been
      * overwritten
      *
-     * @param uddiServiceControlOid long id of the UDDIServiceControl to delete
+     * @param uddiServiceControlGoid Goid id of the UDDIServiceControl to delete
      * @throws FindException   if there is a problem reading from the database or if the UDDIServiceControl is not found
      * @throws DeleteException any problems deleting from the database
      * @throws UpdateException any problems updating the database
      */
     @Secured(types = EntityType.UDDI_SERVICE_CONTROL, stereotype = MethodStereotype.DELETE_BY_ID)
-    void deleteUDDIServiceControl(final long uddiServiceControlOid) throws FindException, DeleteException, UpdateException;
+    void deleteUDDIServiceControl(final Goid uddiServiceControlGoid) throws FindException, DeleteException, UpdateException;
 
     /**
      * Find the UDDIServiceControl for a service, if it exists
@@ -314,25 +314,25 @@ public interface UDDIRegistryAdmin {
      * Find the value of the endpoint of the Original Service. This value is used to populate the ${service.defaultRoutingURL}
      * context variable. This is the most upto date value of this value, which may be updated from UDDI.
      *
-     * @param serviceControlOid the oid of UDDIServiceControl to retireve the original business service end point value
+     * @param serviceControlGoid the goid of UDDIServiceControl to retireve the original business service end point value
      * from.
      * @return String most uptodate value of the endPoint of the original business service. Never null or empty.  
      * @throws com.l7tech.objectmodel.FindException Any problem finding the end point
      */
     @Transactional(readOnly=true)
     @Secured(types=EntityType.UDDI_SERVICE_CONTROL, stereotype= MethodStereotype.GET_PROPERTY_BY_ID)
-    String getOriginalServiceEndPoint(long serviceControlOid) throws FindException;
+    String getOriginalServiceEndPoint(Goid serviceControlGoid) throws FindException;
 
     /**
      * Find all UDDIServiceControls for a UDDIRegistry
      *
-     * @param registryOid the UDDIRegistry to search
+     * @param registryGoid the UDDIRegistry to search
      * @return Collection<UDDIServiceControl> of all service controls for the UDDI Registry
      * @throws FindException if any problems occur
      */
     @Transactional(readOnly=true)
     @Secured(types={EntityType.UDDI_REGISTRY}, stereotype= MethodStereotype.FIND_ENTITIES)
-    Collection<UDDIServiceControl> getAllServiceControlsForRegistry(long registryOid) throws FindException;
+    Collection<UDDIServiceControl> getAllServiceControlsForRegistry(Goid registryGoid) throws FindException;
 
     /**
      * Get the list of services headers from the supplied list which have information published to UDDI

@@ -11,6 +11,7 @@ import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.TextListCellRenderer;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.uddi.UDDIException;
 import com.l7tech.uddi.UDDIRegistryInfo;
 import com.l7tech.util.ExceptionUtils;
@@ -228,7 +229,7 @@ public class UddiRegistryPropertiesDialog extends JDialog {
                 }
             }
         });
-        zoneControl.configure(uddiRegistry.getOid() == UDDIRegistry.DEFAULT_OID ? OperationType.CREATE : !readOnly ? OperationType.UPDATE : OperationType.READ, uddiRegistry);
+        zoneControl.configure(Goid.isDefault(uddiRegistry.getGoid()) ? OperationType.CREATE : !readOnly ? OperationType.UPDATE : OperationType.READ, uddiRegistry);
 
         //field validation
         inputValidator.constrainTextFieldToBeNonEmpty("UDDI Registry Name", registryNameTextField, null);
@@ -663,10 +664,10 @@ public class UddiRegistryPropertiesDialog extends JDialog {
     private boolean isSubscriptionServiceAvailable( final UDDIRegistry registry ) {
         boolean available = false;
 
-        if ( registry != null && registry.getOid()!=UDDIRegistry.DEFAULT_OID ) {
+        if ( registry != null && !Goid.isDefault(registry.getGoid()) ) {
             UDDIRegistryAdmin admin = getUDDIRegistryAdmin();
             if ( admin != null ) {
-                available = admin.subscriptionNotificationsAvailable( registry.getOid() );   
+                available = admin.subscriptionNotificationsAvailable( registry.getGoid() );
             }
         }
 

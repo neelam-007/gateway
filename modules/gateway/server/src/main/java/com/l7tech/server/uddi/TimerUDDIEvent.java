@@ -1,5 +1,7 @@
 package com.l7tech.server.uddi;
 
+import com.l7tech.objectmodel.Goid;
+
 /**
  * UDDIEvent for scheduled event.
  */
@@ -9,14 +11,14 @@ class TimerUDDIEvent extends UDDIEvent {
 
     enum Type { METRICS_PUBLISH, METRICS_CLEANUP, SUBSCRIPTION_POLL }
 
-    TimerUDDIEvent( final long registryOid,
+    TimerUDDIEvent( final Goid registryGoid,
                     final Type type ) {
-        this.registryOid = registryOid;
+        this.registryGoid = registryGoid;
         this.type = type;
     }
 
-    long getRegistryOid() {
-        return registryOid;
+    Goid getRegistryGoid() {
+        return registryGoid;
     }
 
     Type getType() {
@@ -25,7 +27,7 @@ class TimerUDDIEvent extends UDDIEvent {
 
     //- PRIVATE
 
-    private final long registryOid;
+    private final Goid registryGoid;
     private final Type type;
 
 }

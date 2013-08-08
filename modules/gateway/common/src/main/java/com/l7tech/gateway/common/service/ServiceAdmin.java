@@ -255,7 +255,7 @@ public interface ServiceAdmin extends AsyncAdminMethods, AliasAdmin<PublishedSer
     /**
      * Asynchronously find all URLs of the WSDLs from UDDI Registry given the service name pattern.
      *
-     * @param registryOid   long oid of the UDDIRegistry to search
+     * @param registryGoid   Goid goid of the UDDIRegistry to search
      * @param namePattern   The string of the service name (wildcard % is supported)
      * @param caseSensitive True if case sensitive, false otherwise.
      * @param getWsdlURL    boolean if true then the WSDL URL is inculded in each returned WsdlPortInfo. Setting to false
@@ -268,7 +268,7 @@ public interface ServiceAdmin extends AsyncAdminMethods, AliasAdmin<PublishedSer
     @Transactional(readOnly = true)
     @Secured(types = EntityType.UDDI_REGISTRY, stereotype = GET_PROPERTY_BY_ID, relevantArg = 0)
     JobId<WsdlPortInfo[]>
-    findWsdlInfosFromUDDIRegistry(long registryOid, String namePattern, boolean caseSensitive, boolean getWsdlURL);
+    findWsdlInfosFromUDDIRegistry(Goid registryGoid, String namePattern, boolean caseSensitive, boolean getWsdlURL);
 
     /**
      * Asynchronously get all bindingTemplates for a BusinessService as an array of WsdlPortInfo's
@@ -280,7 +280,7 @@ public interface ServiceAdmin extends AsyncAdminMethods, AliasAdmin<PublishedSer
      *
      * Only soap bindings are retrieved
      *
-     * @param registryOid long oid of the UDDIRegistry to search
+     * @param registryGoid Goid goid of the UDDIRegistry to search
      * @param serviceKey String serviceKey of the BusinessService to retrieve wsdl:port infomration for
      * @param getFirstOnly if true, the first value result will be returned. Useful when only a WSDL URL is required.
      * @return WsdlPortInfo array.
@@ -289,12 +289,12 @@ public interface ServiceAdmin extends AsyncAdminMethods, AliasAdmin<PublishedSer
     @Transactional(readOnly = true)
     @Secured(types=EntityType.UDDI_REGISTRY, stereotype=GET_PROPERTY_BY_ID, relevantArg = 0)
     JobId<WsdlPortInfo[]>
-    findWsdlInfosForSingleBusinessService(long registryOid, String serviceKey, boolean getFirstOnly) throws FindException;
+    findWsdlInfosForSingleBusinessService(Goid registryGoid, String serviceKey, boolean getFirstOnly) throws FindException;
 
     /**
      * Asynchronously find all Businesses from the UDDI Registry given the service name pattern.
      *
-     * @param registryOid   long oid of the UDDIRegistry to search
+     * @param registryGoid   Goid goid of the UDDIRegistry to search
      * @param namePattern   The string of the business name (wildcard % is supported)
      * @param caseSensitive True if case sensitive, false otherwise.
      * @return the job identifier of the uddi search job.
@@ -304,19 +304,19 @@ public interface ServiceAdmin extends AsyncAdminMethods, AliasAdmin<PublishedSer
      */
     @Transactional(readOnly = true)
     @Secured(types=EntityType.UDDI_REGISTRY, stereotype=GET_PROPERTY_BY_ID, relevantArg = 0)
-    JobId<UDDINamedEntity[]> findBusinessesFromUDDIRegistry(long registryOid, String namePattern, boolean caseSensitive);
+    JobId<UDDINamedEntity[]> findBusinessesFromUDDIRegistry(Goid registryGoid, String namePattern, boolean caseSensitive);
 
     /**
      * Find all WS-Policy attachments from the UDDI registry that match the given name pattern.
      *
-     * @param registryOid Identifier of the UDDIRegistry to search
+     * @param registryGoid Identifier of the UDDIRegistry to search
      * @param namePattern The string of the policy tModel name
      * @return A list of UDDINamedEntities of policies whose name matches the namePattern.
      * @throws FindException if there was a problem accessing the requested information.
      */
     @Transactional(readOnly = true)
     @Secured(types=EntityType.UDDI_REGISTRY, stereotype=GET_PROPERTY_BY_ID, relevantArg = 0)
-    UDDINamedEntity[] findPoliciesFromUDDIRegistry(long registryOid, String namePattern) throws FindException;
+    UDDINamedEntity[] findPoliciesFromUDDIRegistry(Goid registryGoid, String namePattern) throws FindException;
 
     /**
      * Finds the {@link SampleMessage} instance with the specified GOID, or null if it does not exist.

@@ -1,5 +1,7 @@
 package com.l7tech.server.uddi;
 
+import com.l7tech.objectmodel.Goid;
+
 /**
  * UDDI Event for subscription updates
  */
@@ -9,22 +11,22 @@ class SubscribeUDDIEvent extends UDDIEvent {
 
     enum Type { SUBSCRIBE, UNSUBSCRIBE }
 
-    SubscribeUDDIEvent( final long registryOid,
+    SubscribeUDDIEvent( final Goid registryGoid,
                         final Type type  ) {
-        this( registryOid, type, false );
+        this( registryGoid, type, false );
     }
 
-    SubscribeUDDIEvent( final long registryOid,
+    SubscribeUDDIEvent( final Goid registryGoid,
                         final Type type,
                         final boolean expiredOnly ) {
         super(false);
-        this.registryOid = registryOid;
+        this.registryGoid = registryGoid;
         this.type = type;
         this.expiredOnly = expiredOnly;
     }
 
-    long getRegistryOid() {
-        return registryOid;
+    Goid getRegistryGoid() {
+        return registryGoid;
     }
 
     Type getType() {
@@ -37,7 +39,7 @@ class SubscribeUDDIEvent extends UDDIEvent {
 
     //- PRIVATE
 
-    private final long registryOid;
+    private final Goid registryGoid;
     private final Type type;
     private final boolean expiredOnly;
 }
