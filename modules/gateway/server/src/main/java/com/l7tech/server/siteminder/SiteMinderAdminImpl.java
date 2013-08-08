@@ -1,7 +1,6 @@
 package com.l7tech.server.siteminder;
 
 import com.ca.siteminder.SiteMinderApiClassException;
-import com.ca.siteminder.sdk.agentapi.SmAgentApiException;
 import com.ca.siteminder.util.SiteMinderUtil;
 import com.l7tech.gateway.common.AsyncAdminMethods;
 import com.l7tech.gateway.common.security.password.SecurePassword;
@@ -139,10 +138,6 @@ public class SiteMinderAdminImpl  extends AsyncAdminMethodsImpl implements SiteM
 
                 try{
                     siteMinderHost =  registerSiteMinderHost(address, username, password, hostname, hostconfig, fipsMode);
-                } catch (SmAgentApiException e){
-                    final String msg = "Unable to register SiteMinder configuration. Check policy server address, username, password, and host configuration";
-                    logger.log(Level.WARNING, msg + " " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-                    throw e;
                 } catch (IOException e){
                     final String msg = "Unable to register SiteMinder configuration. Check connection with policy server";
                     logger.log(Level.WARNING, msg + " " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
@@ -202,7 +197,7 @@ public class SiteMinderAdminImpl  extends AsyncAdminMethodsImpl implements SiteM
                                                  Long passwordOid,
                                                  String hostname,
                                                  String hostconfig,
-                                                 Integer fipsMode) throws SmAgentApiException, IOException, ParseException, FindException {
+                                                 Integer fipsMode) throws IOException, ParseException, FindException {
 
         String password = "";
         try{

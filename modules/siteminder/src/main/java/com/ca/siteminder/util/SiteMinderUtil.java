@@ -1,11 +1,9 @@
 package com.ca.siteminder.util;
 
-import com.ca.siteminder.sdk.agentapi.SmAgentApiException;
-import com.ca.siteminder.sdk.agentapi.SmRegHost;
-import com.ca.siteminder.sdk.agentapi.Util;
+import com.l7tech.common.io.ProcUtils;
 import com.l7tech.gateway.common.siteminder.SiteMinderHost;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.FileUtils;
-import com.netegrity.util.Fips140Mode;
 import netegrity.siteminder.javaagent.UserCredentials;
 
 import java.io.File;
@@ -14,6 +12,8 @@ import java.io.UnsupportedEncodingException;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.text.ParseException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Copyright: Layer 7 Technologies, 2013
@@ -21,8 +21,10 @@ import java.text.ParseException;
  * Date: 6/20/13
  */
 public abstract class SiteMinderUtil {
-
+    private static final Logger logger = Logger.getLogger(SiteMinderUtil.class.getName());
     private static final char[] HEXADECIMAL_DIGITS = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
+    private static final String DEFAULT_SMREGHOST_PROGRAM = "/opt/CA/sdk/bin64/smreghost";
+    private static final String SYSPROP_SMREGHOST_PROGRAM = "com.l7tech.server.smreghost.program";
 
     private SiteMinderUtil() {}
 
@@ -216,33 +218,59 @@ public abstract class SiteMinderUtil {
      * @param fipsMode fibs mode
      * @return
      * @throws IOException
-     * @throws SmAgentApiException
      */
     public static SiteMinderHost regHost(String address,
                                          String username,
                                          String password,
                                          String hostname,
                                          String hostconfig,
-                                         Integer fipsMode) throws IOException, SmAgentApiException {
+                                         Integer fipsMode) throws IOException {
+
         File tmpDir = null;
+        File program = null;
         try {
             tmpDir = FileUtils.createTempDirectory("SMHOST", null, null, false);
             String smHostConfig = tmpDir.getAbsolutePath() + File.separator + "smHost.conf";
 
-            Fips140Mode fm = Fips140Mode.getFips140ModeObject();
-            fm.setMode(Util.resolveSetting());
-            if (fipsMode != null) {
-                fm.setMode(fipsMode);
-            }
+            program = getSmRegHost();
+            if (program == null)
+                throw new IOException("Unable to find smreghost");
 
-            SmRegHost regHost = new SmRegHost(address, smHostConfig,
-                    hostname, hostconfig, username, password, false, true);
-            regHost.register();
+            logger.log(Level.FINE, "registering SiteMinder agent with program: " + program);
+
+            ProcUtils.exec(null,program, new String[]{ "-i", address, "-u", username, "-p", password, "-hn", hostname, "-hc",  hostconfig, "-f", smHostConfig, "-cf", getFipsMode(fipsMode), "-o"}, (byte[]) null, false);
+
             return new SiteMinderHost(smHostConfig);
+
         } finally {
             if (tmpDir != null && tmpDir.exists()) {
                 FileUtils.deleteDir(tmpDir);
             }
         }
+    }
+
+
+    /** @return the program to be run whenever the firewall rules change, or null to take no such action. */
+    private static File getSmRegHost() {
+        File defaultProgram = new File(DEFAULT_SMREGHOST_PROGRAM);
+        String program = ConfigFactory.getProperty(SYSPROP_SMREGHOST_PROGRAM, defaultProgram.getAbsolutePath());
+        if (program == null || program.length() < 1)
+            return null;
+        File file = new File(program);
+        return file.exists() && file.canExecute() ? file : null;
+    }
+
+    public static String getFipsMode(int fipsMode) {
+        switch(fipsMode) {
+            case 0:
+                return "UNSET";
+            case 1:
+                return "COMPAT";
+            case 2:
+                return "MIGRATE";
+            case 3:
+                return "ONLY";
+        }
+        return null;
     }
 }

@@ -39,7 +39,7 @@ public class SiteMinderAgentTest {
 
            @Override
            public String getSecret() {
-               return "{RC2}kZiLwNZObmPrkGIxDIr+wjLr92OMIXTySRn0YWaQ8uMEHNgyN6BqDYMDq434h37fVCRBGT/nM1gDWZDq9SG/TAx12EAJbItKxyj7SH4Obq25R8gwxXl/Xh2WvoYOfpX0SbxyYAdiWyE1rwZVhpnmm1ToIEZjypTbNtM3VQS7PflzMeoXDMkNlP0Na9PGxB+X";
+               return "{RC2}AWKd1Ha8fZSLj6fMiOWQqX1d8AN5QGeeWKYpuaSFfKJRD6pg9nqUXP/lVuYI1Pm6rqYxpwHaeja24zrd60Zj4pCJmpTTItGtRFhzvxciEhunW9P8YjA/3Fu5XYg++Kagf7FHThTV5MdRrKx/QIV7i6y5gDp0YwAbQoibCw43SUGwXsPNC+zh5zM76kmVsmr/";
            }
 
            @Override
@@ -49,7 +49,7 @@ public class SiteMinderAgentTest {
 
            @Override
            public String getHostname() {
-               return "aw80Compat";
+               return "yuri-sm12sp3-native";
            }
 
            @Override
@@ -69,7 +69,7 @@ public class SiteMinderAgentTest {
 
            @Override
            public boolean isUpdateSSOToken() {
-               return true;
+               return false;
            }
 
            @Override
@@ -99,7 +99,7 @@ public class SiteMinderAgentTest {
 
     @After
     public void tearDown() throws Exception {
-
+       agent.unInitialize();
     }
 
     @Ignore("Requires connection to the SiteMinder Policy Server")
@@ -123,7 +123,7 @@ public class SiteMinderAgentTest {
             System.out.println(attr.getKey() + ": " + attr.getValue());
         }
         String smsession = context.getSsoToken();
-        assertEquals(1, fixture.processAuthenticationRequest(new SiteMinderCredentials(), "127.0.0.1", smsession, context));
+        assertEquals(1, fixture.processAuthorizationRequest("127.0.0.1", null, context));
         System.out.println("SMSESSION=" + context.getSsoToken());
     }
 

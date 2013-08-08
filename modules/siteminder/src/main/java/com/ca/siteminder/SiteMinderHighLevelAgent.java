@@ -173,26 +173,41 @@ public class SiteMinderHighLevelAgent {
             // attempt to authorize with existing cookie
             result = agent.validateSession( userCreds, userIp, ssoCookie,  context.getTransactionId(), context);
             if(result != AgentAPI.YES) {
-                logger.log(Level.WARNING, "Unable to validate user session!");
+                logger.log(Level.FINE, "Unable to validate user session!");
                 //TODO: should we logout the session?
             }
-//            else {
-//                result=agent.authorize(ssoCookie, userIp, context.getTransactionId(), context);
-//                if(result != AgentAPI.YES) {
-//                    logger.log(Level.WARNING, "SiteMinder SSO Token cannot be authorized!");
-//                }
-//            }
+            else {
+                logger.log(Level.FINE, "Authenticated user using third-party cookie:" + ssoCookie);
+            }
         }
         else {
-            // authenticate and authorize
-            result = agent.authenticate( userCreds, userIp, context.getTransactionId(), context);
-//            if(result == AgentAPI.SUCCESS ){
-//                newSsoCookie = context.getSsoToken();
-//                if(newSsoCookie != null) {
-//                    result = agent.authorize(newSsoCookie, userIp, context.getTransactionId(), context);
-//                }
-//            }
+            // authenticate using credentials
+            result = agent.authenticate(userCreds, userIp, context.getTransactionId(), context);
+            if(result != AgentAPI.YES) {
+               logger.log(Level.FINE, "Unable to authenticate user: " + getCredentialsAsString(userCreds));
+            }
+            else {
+                logger.log(Level.FINE, "Authenticated user via user credentials" + getCredentialsAsString(userCreds));
+            }
+
         }
         return result;
+    }
+
+    private String getCredentialsAsString(final UserCredentials creds) {
+        String s = null;
+        if(creds.name != null && !creds.name.isEmpty()) {
+            s = creds.name;
+        }
+        else if (creds.certBinary != null && creds.certBinary.length > 0){
+            s = "<binary cert>";
+        }
+        else if (creds.certIssuerDN != null && !creds.certIssuerDN.isEmpty()){
+            s = creds.certIssuerDN;
+        }
+        else if (creds.certUserDN != null && !creds.certUserDN.isEmpty()){
+            s = creds.certUserDN;
+        }
+        return s;
     }
 }

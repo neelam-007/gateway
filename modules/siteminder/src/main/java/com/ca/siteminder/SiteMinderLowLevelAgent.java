@@ -92,10 +92,6 @@ public class SiteMinderLowLevelAgent {
             agentApi.getConfig(initDef, agentName, null); //the last parameter is used to configure ACO
 
             int retcode = agentApi.init(initDef);
-            //TODO: remove this code from the final version
-            for(Provider prov : Security.getProviders()){
-                logger.log(Level.FINE, prov.getName() + ":" + prov.getInfo());
-            }
 
             if (retcode == AgentAPI.SUCCESS) {
                 //TODO: check if the management info is correct and if we need to put it into the cluster property
@@ -140,6 +136,10 @@ public class SiteMinderLowLevelAgent {
         }
 
         return initialized;
+    }
+
+    public int unInitialize() {
+        return agentApi.unInit();
     }
 
     public boolean isInitialized() {
