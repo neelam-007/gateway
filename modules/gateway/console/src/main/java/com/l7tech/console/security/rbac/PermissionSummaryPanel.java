@@ -7,6 +7,7 @@ import com.l7tech.gateway.common.admin.FolderAdmin;
 import com.l7tech.gateway.common.security.rbac.*;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.SecurityZone;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.FolderHeader;
@@ -15,9 +16,7 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import java.awt.*;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -85,19 +84,33 @@ public class PermissionSummaryPanel extends WizardStepPanel {
     }
 
     private static void generateScopedPermissions(final PermissionsConfig config, final FolderAdmin folderAdmin) {
+        final Map<Goid, Folder> retrievedFolders = new HashMap<>();
         if (config.isFolderAncestry()) {
-            // provide read access for ancestry of each selected folder and the selected folder itself
+            // provide read access for ancestry of each selected folder, the selected folder itself and its subfolders
             for (final FolderHeader folderHeader : config.getSelectedFolders()) {
-                final Permission ancestryPermission = new Permission(config.getRole(), OperationType.READ, EntityType.FOLDER);
-                final EntityFolderAncestryPredicate ancestryPredicate = new EntityFolderAncestryPredicate(ancestryPermission, EntityType.FOLDER, folderHeader.getGoid());
-                ancestryPermission.getScope().add(ancestryPredicate);
-                config.getGeneratedPermissions().add(ancestryPermission);
+                try {
+                    final Folder folder = folderAdmin.findByPrimaryKey(folderHeader.getGoid());
+                    if (folder == null) {
+                        throw new FindException("No folder exists with goid: " + folderHeader.getGoid());
+                    } else {
+                        retrievedFolders.put(folderHeader.getGoid(), folder);
+                        final Permission ancestryPermission = new Permission(config.getRole(), OperationType.READ, EntityType.FOLDER);
+                        ancestryPermission.getScope().add(new EntityFolderAncestryPredicate(ancestryPermission, EntityType.FOLDER, folderHeader.getGoid()));
+                        config.getGeneratedPermissions().add(ancestryPermission);
 
-                final Permission readFolderPermission = new Permission(config.getRole(), OperationType.READ, EntityType.FOLDER);
-                final ObjectIdentityPredicate specificFolderPredicate = new ObjectIdentityPredicate(readFolderPermission, folderHeader.getStrId());
-                specificFolderPredicate.setHeader(folderHeader);
-                readFolderPermission.getScope().add(specificFolderPredicate);
-                config.getGeneratedPermissions().add(readFolderPermission);
+                        final Permission readFolderPermission = new Permission(config.getRole(), OperationType.READ, EntityType.FOLDER);
+                        final ObjectIdentityPredicate specificFolderPredicate = new ObjectIdentityPredicate(readFolderPermission, folderHeader.getStrId());
+                        specificFolderPredicate.setHeader(folderHeader);
+                        readFolderPermission.getScope().add(specificFolderPredicate);
+                        config.getGeneratedPermissions().add(readFolderPermission);
+
+                        final Permission readSubfoldersPermission = new Permission(config.getRole(), OperationType.READ, EntityType.FOLDER);
+                        readSubfoldersPermission.getScope().add(new FolderPredicate(readSubfoldersPermission, folder, true));
+                        config.getGeneratedPermissions().add(readSubfoldersPermission);
+                    }
+                } catch (final FindException e) {
+                    logger.log(Level.WARNING, "Skipping ancestry permissions because unable to retrieve folder for header: " + folderHeader);
+                }
             }
         }
         for (final OperationType op : config.getOperations()) {
@@ -118,7 +131,12 @@ public class PermissionSummaryPanel extends WizardStepPanel {
                             permission.getScope().add(new SecurityZonePredicate(permission, zone.equals(SecurityZoneUtil.getNullZone()) ? null : zone));
                         }
                         if (folderHeader != null) {
-                            final Folder folder = folderAdmin.findByPrimaryKey(folderHeader.getGoid());
+                            final Folder folder;
+                            if (retrievedFolders.containsKey(folderHeader.getGoid())) {
+                                folder = retrievedFolders.get(folderHeader.getGoid());
+                            } else {
+                                folder = folderAdmin.findByPrimaryKey(folderHeader.getGoid());
+                            }
                             if (folder != null) {
                                 permission.getScope().add(new FolderPredicate(permission, folder, config.isFolderTransitive()));
                             } else {

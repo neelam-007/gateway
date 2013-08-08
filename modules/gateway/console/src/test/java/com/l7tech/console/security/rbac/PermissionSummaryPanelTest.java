@@ -207,7 +207,7 @@ public class PermissionSummaryPanelTest {
         when(folderAdmin.findByPrimaryKey(goid)).thenReturn(folder2);
         PermissionSummaryPanel.generatePermissions(config, folderAdmin);
 
-        assertEquals(6, config.getGeneratedPermissions().size());
+        assertEquals(8, config.getGeneratedPermissions().size());
         int ancestryPermissionCount = 0;
         int folderPermissionCount = 0;
         int specificFolderPermissionCount = 0;
@@ -229,7 +229,7 @@ public class PermissionSummaryPanelTest {
             }
         }
         assertEquals(2, ancestryPermissionCount);
-        assertEquals(2, folderPermissionCount);
+        assertEquals(4, folderPermissionCount);
         assertEquals(2, specificFolderPermissionCount);
     }
 
@@ -249,7 +249,7 @@ public class PermissionSummaryPanelTest {
         when(folderAdmin.findByPrimaryKey(goid)).thenReturn(folder2);
         PermissionSummaryPanel.generatePermissions(config, folderAdmin);
 
-        assertEquals(8, config.getGeneratedPermissions().size());
+        assertEquals(10, config.getGeneratedPermissions().size());
         int ancestryPermissionCount = 0;
         int folderPermissionCount = 0;
         int specificFolderPermissionCount = 0;
@@ -273,7 +273,7 @@ public class PermissionSummaryPanelTest {
             }
         }
         assertEquals(2, ancestryPermissionCount);
-        assertEquals(4, folderPermissionCount);
+        assertEquals(6, folderPermissionCount);
         assertEquals(2, specificFolderPermissionCount);
         assertEquals(2, foundOps.size());
         assertTrue(foundOps.contains(OperationType.READ));
