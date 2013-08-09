@@ -78,7 +78,7 @@ public class AssignSecurityZonesDialog extends JDialog {
      * @param entityTypes map where key = entity types that contain at least one modifiable entity and value = list of zones that can be set for the entity type
      */
     public AssignSecurityZonesDialog(@NotNull final Window owner, @NotNull final Map<EntityType, List<SecurityZone>> entityTypes) {
-        super(owner, "Assign Security Zones");
+        super(owner, "Assign Security Zones", DEFAULT_MODALITY_TYPE);
         setContentPane(contentPanel);
         this.entityTypes = entityTypes;
         initBtns();
