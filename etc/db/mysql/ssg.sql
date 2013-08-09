@@ -544,7 +544,7 @@ CREATE TABLE trusted_esm (
   objectid bigint NOT NULL,
   version integer NOT NULL,
   name varchar(128) NOT NULL,
-  trusted_cert_goid bigint(20) NOT NULL,
+  trusted_cert_goid binary(16) NOT NULL,
   primary key(objectid),
   FOREIGN KEY (trusted_cert_goid) REFERENCES trusted_cert (goid)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
