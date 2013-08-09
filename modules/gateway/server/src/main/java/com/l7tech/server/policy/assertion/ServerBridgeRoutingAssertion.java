@@ -1,7 +1,6 @@
 package com.l7tech.server.policy.assertion;
 
 import com.l7tech.common.http.*;
-import com.l7tech.common.http.prov.apache.CommonsHttpClient;
 import com.l7tech.common.http.prov.apache.components.HttpComponentsClient;
 import com.l7tech.common.io.AliasNotFoundException;
 import com.l7tech.common.io.ByteLimitInputStream;
@@ -15,6 +14,7 @@ import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.message.*;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.NoSuchVariableException;
@@ -163,7 +163,7 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
         messageProcessor = new MessageProcessor();
     }
 
-    private X509Certificate findCert(long oid) throws FindException, IOException, CertificateException {
+    private X509Certificate findCert(Goid oid) throws FindException, IOException, CertificateException {
         TrustedCert tc = trustedCertManager.findByPrimaryKey(oid);
         if (tc == null)
             return null;
@@ -986,7 +986,7 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
 
         @Override
         public void installSsgServerCertificate( Ssg ssg, PasswordAuthentication credentials) throws IOException, BadCredentialsException, OperationCanceledException, KeyStoreCorruptException, CertificateException, KeyStoreException {
-            Long loid = assertion.getServerCertificateOid();
+            Goid loid = assertion.getServerCertificateGoid();
             if (loid == null) {
                 // Attempt normal cert discovery
                 super.installSsgServerCertificate(ssg, credentials);

@@ -2,16 +2,9 @@ package com.l7tech.server;
 
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.gateway.common.esmtrust.TrustedEsm;
-import com.l7tech.objectmodel.EntityType;
-import static com.l7tech.objectmodel.EntityType.TRUSTED_CERT;
-import static com.l7tech.objectmodel.EntityType.TRUSTED_ESM;
 import com.l7tech.gateway.common.security.rbac.OperationType;
-import static com.l7tech.gateway.common.security.rbac.OperationType.*;
 import com.l7tech.identity.User;
-import com.l7tech.objectmodel.Entity;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.ObjectModelException;
-import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.*;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.security.cert.TrustedCertManager;
 import com.l7tech.server.security.rbac.RoleManager;
@@ -24,6 +17,11 @@ import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.List;
+
+import static com.l7tech.gateway.common.security.rbac.OperationType.CREATE;
+import static com.l7tech.gateway.common.security.rbac.OperationType.READ;
+import static com.l7tech.objectmodel.EntityType.TRUSTED_CERT;
+import static com.l7tech.objectmodel.EntityType.TRUSTED_ESM;
 
 /**
  * Entity manager for {@link com.l7tech.gateway.common.esmtrust.TrustedEsm}.
@@ -98,7 +96,7 @@ public class TrustedEsmManagerImpl extends HibernateEntityManager<TrustedEsm, En
             trustedCert.setRevocationCheckPolicyType(TrustedCert.PolicyUsageType.NONE);
 
             require(user, CREATE, TRUSTED_CERT);
-            trustedCert.setOid(trustedCertManager.save(trustedCert));
+            trustedCert.setGoid(trustedCertManager.save(trustedCert));
         }
 
         trustedEms = new TrustedEsm();

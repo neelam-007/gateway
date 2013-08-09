@@ -19,6 +19,7 @@ import com.l7tech.kerberos.KerberosException;
 import com.l7tech.kerberos.KerberosServiceTicket;
 import com.l7tech.message.*;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.security.xml.SignerInfo;
@@ -140,8 +141,8 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             }
             sslContext = SSLContext.getInstance("TLS");
 
-            final Long[] tlsTrustedCertOids = assertion.getTlsTrustedCertOids();
-            Set<Long> customTrustedCerts = tlsTrustedCertOids == null ? null : new HashSet<Long>(Arrays.asList(tlsTrustedCertOids));
+            final Goid[] tlsTrustedCertOids = assertion.getTlsTrustedCertGoids();
+            Set<Goid> customTrustedCerts = tlsTrustedCertOids == null ? null : new HashSet<Goid>(Arrays.asList(tlsTrustedCertOids));
 
             final SslClientTrustManager sslClientTrustManager = applicationContext.getBean("routingTrustManager", SslClientTrustManager.class);
             final X509TrustManager trustManager = customTrustedCerts != null

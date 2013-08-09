@@ -51,6 +51,13 @@ public abstract class GoidEntityImp implements GoidEntity, Serializable {
         this.goid = goid.clone();
     }
 
+    @Override
+    @Transient
+    @XmlTransient
+    public boolean isUnsaved() {
+        return DEFAULT_GOID.equals(goid);
+    }
+
     /**
      * Any subclasses which has a version column must override this method and map it manually as it is transient.
      */

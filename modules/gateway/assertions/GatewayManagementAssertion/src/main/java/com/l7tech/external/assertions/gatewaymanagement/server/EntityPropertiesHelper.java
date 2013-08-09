@@ -303,6 +303,7 @@ class EntityPropertiesHelper {
             "oid",
             "serializedProps",
             "trustedCertOids",
+            "trustedCertGoids",
             "typeVal",
             "version",
             "securityZone"
@@ -461,7 +462,9 @@ class EntityPropertiesHelper {
             "thumbprintSha1",
             "issuerDn",
             "id",
+            "goid",
             "oid",
+            "oldOid",
             "name",
             "serial",
             "subjectDn",

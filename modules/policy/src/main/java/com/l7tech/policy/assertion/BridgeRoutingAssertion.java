@@ -7,10 +7,12 @@ package com.l7tech.policy.assertion;
 
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.assertion.annotation.RequiresSOAP;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
@@ -36,7 +38,7 @@ public class BridgeRoutingAssertion extends HttpRoutingAssertion implements Uses
     public void copyFrom( final BridgeRoutingAssertion source ) {
         super.copyFrom(source);
         this.setPolicyXml(source.getPolicyXml());
-        this.setServerCertificateOid(source.getServerCertificateOid());
+        this.setServerCertificateGoid(source.getServerCertificateGoid());
         this.setUseSslByDefault(source.isUseSslByDefault());
         this.setHttpPort(source.getHttpPort());
         this.setHttpsPort(source.getHttpsPort());
@@ -54,21 +56,35 @@ public class BridgeRoutingAssertion extends HttpRoutingAssertion implements Uses
     }
 
     /**
-     * @return the OID of a certificate in the Trusted Certificates table that will be used as the server certificate for
-     *          both SSL and message-level crypto, or null if the BRA should attempt to discover the server cert
-     *          automatically (by sniffing from an SSL connection, after ensuring server cert is in the Trusted Certs table).
+     * The GOID of a server cert.
+     * <p/>
+     * If serverCertificateGoid is null,
+     * the BRA will attempt to discover the server cert
+     * automatically (by sniffing from an SSL connection, after ensuring presented server cert is in the Trusted Certs table
+     * trusted for outbound TLS).
+     *
+     * @return the GOID of a certificate in the Trusted Certificates table that will be used as the server certificate for
+     *          both SSL and message-level crypto, or null if no GOID is set.
      */
-    public Long getServerCertificateOid() {
-        return serverCertificateOid;
+    @Nullable
+    public Goid getServerCertificateGoid() {
+        return serverCertificateGoid;
     }
 
     /**
-     * @param serverCertificateOid the OID of a certificate in the Trusted Certificates table that will be used as
+     * @param serverCertificateGoid the GOID of a certificate in the Trusted Certificates table that will be used as
      *                             the server certificate for both SSL and message-level crypto, or null
      *                             to attempt to discover the server cert automatically.
      */
-    public void setServerCertificateOid(Long serverCertificateOid) {
-        this.serverCertificateOid = serverCertificateOid;
+    public void setServerCertificateGoid(@Nullable Goid serverCertificateGoid) {
+        this.serverCertificateGoid = serverCertificateGoid;
+    }
+
+    // For backward compat while parsing pre-GOID policies.  Not needed for new assertions.
+    @Deprecated
+    @SuppressWarnings("UnusedDeclaration")
+    public void setServerCertificateOid( @Nullable Long serverCertificateOid ) {
+        this.serverCertificateGoid = Goid.wrapOid(serverCertificateOid);
     }
 
     public void setServerCertificateName(String name) {
@@ -156,8 +172,8 @@ public class BridgeRoutingAssertion extends HttpRoutingAssertion implements Uses
     @Migration(mapName = MigrationMappingSelection.REQUIRED, resolver = PropertyResolver.Type.ASSERTION)
     public EntityHeader[] getEntitiesUsed() {
         List<EntityHeader> ret = new ArrayList<EntityHeader>();
-        if (serverCertificateOid != null)
-            ret.add( new EntityHeader(serverCertificateOid.toString(), EntityType.TRUSTED_CERT, serverCertificateName, "Trusted certificate to be used by the bridge routing assertion") );
+        if (serverCertificateGoid != null)
+            ret.add( new EntityHeader(serverCertificateGoid.toString(), EntityType.TRUSTED_CERT, serverCertificateName, "Trusted certificate to be used by the bridge routing assertion") );
         ret.addAll(Arrays.asList(super.getEntitiesUsed()));
         return ret.toArray(new EntityHeader[ret.size()]);
     }
@@ -165,10 +181,10 @@ public class BridgeRoutingAssertion extends HttpRoutingAssertion implements Uses
     @Override
     public void replaceEntity(EntityHeader oldEntityHeader, EntityHeader newEntityHeader) {
         super.replaceEntity(oldEntityHeader, newEntityHeader);
-        if(oldEntityHeader.getType().equals(EntityType.TRUSTED_CERT) && serverCertificateOid != null &&
-                oldEntityHeader.getOid() == serverCertificateOid && newEntityHeader.getType().equals(EntityType.TRUSTED_CERT))
+        if(oldEntityHeader.getType().equals(EntityType.TRUSTED_CERT) && serverCertificateGoid != null &&
+                serverCertificateGoid.equals(oldEntityHeader.getGoid()) && newEntityHeader.getType().equals(EntityType.TRUSTED_CERT))
         {
-            serverCertificateOid = newEntityHeader.getOid();
+            serverCertificateGoid = newEntityHeader.getGoid();
             serverCertificateName = newEntityHeader.getName();
         }
     }
@@ -186,7 +202,7 @@ public class BridgeRoutingAssertion extends HttpRoutingAssertion implements Uses
         @Override
         public String getAssertionName( final HttpRoutingAssertion assertion, final boolean decorate) {
             if(!decorate) return baseName;
-            StringBuffer assertionName = new StringBuffer(baseName);
+            StringBuilder assertionName = new StringBuilder(baseName);
             String url = assertion.getProtectedServiceUrl();
             if(url != null){
                 assertionName.append(" to ").append(url);
@@ -213,7 +229,7 @@ public class BridgeRoutingAssertion extends HttpRoutingAssertion implements Uses
 
     private Map<String,String> clientPolicyProperties = new LinkedHashMap<String,String>();
     private String policyXml = null;
-    private Long serverCertificateOid = null;
+    private Goid serverCertificateGoid = null;
     private String serverCertificateName = null;
     private boolean useSslByDefault = true;
     private int httpPort = 0;

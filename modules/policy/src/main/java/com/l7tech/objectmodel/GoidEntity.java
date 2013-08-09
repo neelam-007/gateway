@@ -25,6 +25,14 @@ public interface GoidEntity extends Entity {
     void setGoid(Goid goid);
 
     /**
+     * Check if this entity is using a GOID equivalent to {@link #DEFAULT_GOID}, indicating that it
+     * has never been saved.
+     *
+     * @return true if DEFAULT_GOID.equals(getGoid()).
+     */
+    boolean isUnsaved();
+
+    /**
      * return the version of the entity
      *
      * @return the version of the entity

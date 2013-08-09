@@ -3,20 +3,22 @@ package com.l7tech.console.panels;
 import com.l7tech.console.event.CertEvent;
 import com.l7tech.console.event.CertListener;
 import com.l7tech.console.event.CertListenerAdapter;
-import com.l7tech.policy.exporter.TrustedCertReference;
 import com.l7tech.console.table.TrustedCertTableSorter;
 import com.l7tech.console.table.TrustedCertsTable;
 import com.l7tech.console.util.Registry;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.security.cert.TrustedCert;
-import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gui.util.Utilities;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
+import com.l7tech.policy.exporter.TrustedCertReference;
+import com.l7tech.security.cert.TrustedCert;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -143,7 +145,7 @@ public class ResolveForeignTrustedCertificatePanel extends WizardStepPanel {
     public boolean onNextButton() {
         // collect actions details and store in the reference for resolution
         if (changeRadio.isSelected()) {
-            Long newCertObjectId = selectedServerCert.getOid();
+            Goid newCertObjectId = selectedServerCert.getGoid();
             if (newCertObjectId == null) {
                 // this cannot happen
                 logger.severe("Could not get trusted certificate ID.");

@@ -33,7 +33,7 @@ import java.util.Set;
 public class ExternalReferenceFinderStub implements ExternalReferenceFinder {
 
     @Override
-    public TrustedCert findCertByPrimaryKey( final long certOid ) throws FindException {
+    public TrustedCert findCertByPrimaryKey(Goid certGoid) throws FindException {
         return null;
     }
 
@@ -78,7 +78,7 @@ public class ExternalReferenceFinderStub implements ExternalReferenceFinder {
     }
 
     @Override
-    public JmsEndpoint findEndpointByOidorGoid(Either<Long, Goid> endpointId) throws FindException {
+    public JmsEndpoint findEndpointByOidOrGoid(Either<Long, Goid> endpointId) throws FindException {
         return null;
     }
 
@@ -98,7 +98,7 @@ public class ExternalReferenceFinderStub implements ExternalReferenceFinder {
     }
 
     @Override
-    public SsgActiveConnector findConnectorByOidorGoid(Either<Long, Goid> connectorId) throws FindException {
+    public SsgActiveConnector findConnectorByOidOrGoid(Either<Long, Goid> connectorId) throws FindException {
         return null;
     }
 

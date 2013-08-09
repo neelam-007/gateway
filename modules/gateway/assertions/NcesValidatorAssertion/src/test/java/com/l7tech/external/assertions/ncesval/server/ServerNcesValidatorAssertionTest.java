@@ -1,27 +1,30 @@
 package com.l7tech.external.assertions.ncesval.server;
 
-import org.junit.Test;
-import org.junit.Assert;
+import com.l7tech.common.TestDocuments;
+import com.l7tech.common.io.XmlUtil;
 import com.l7tech.external.assertions.ncesval.NcesValidatorAssertion;
+import com.l7tech.message.Message;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
+import com.l7tech.policy.CertificateInfo;
+import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.security.types.CertificateValidationType;
 import com.l7tech.security.xml.SecurityTokenResolver;
 import com.l7tech.security.xml.SimpleSecurityTokenResolver;
-import com.l7tech.security.cert.TrustedCert;
-import com.l7tech.policy.CertificateInfo;
-import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.common.TestDocuments;
-import com.l7tech.common.io.XmlUtil;
-import com.l7tech.server.security.cert.CertValidationProcessor;
-import com.l7tech.server.security.cert.TestCertValidationProcessor;
 import com.l7tech.server.identity.cert.TrustedCertServices;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.message.Message;
+import com.l7tech.server.security.cert.CertValidationProcessor;
+import com.l7tech.server.security.cert.TestCertValidationProcessor;
+import org.junit.Assert;
+import org.junit.Test;
 
-import java.util.*;
-import java.security.cert.X509Certificate;
 import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Set;
 
 /**
  * Test the NcesValidatorAssertion.
@@ -89,13 +92,13 @@ public class ServerNcesValidatorAssertionTest {
     private TrustedCertServices getTrustedCertServices() {
         return new TrustedCertServices(){
             @Override
-            public void checkSslTrust(X509Certificate[] serverCertChain, Set<Long> requiredOids) throws CertificateException {
+            public void checkSslTrust(X509Certificate[] serverCertChain, Set<Goid> requiredOids) throws CertificateException {
             }
             @Override
             public Collection<TrustedCert> getCertsBySubjectDnFiltered(String subjectDn,
                                                                        boolean omitExpired,
                                                                        Set<TrustedCert.TrustedFor> requiredTrustFlags,
-                                                                       Set<Long> requiredOids) throws FindException {
+                                                                       Set<Goid> requiredOids) throws FindException {
                 return Collections.emptyList();
             }
             @Override

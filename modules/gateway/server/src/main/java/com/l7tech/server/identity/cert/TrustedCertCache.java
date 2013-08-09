@@ -1,6 +1,7 @@
 package com.l7tech.server.identity.cert;
 
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.util.Cacheable;
 
@@ -19,7 +20,7 @@ public interface TrustedCertCache {
      * @throws com.l7tech.objectmodel.FindException if an error occurs.
      */
     @Cacheable(relevantArg=0,maxAge=5000)
-    TrustedCert findByPrimaryKey( long oid ) throws FindException;
+    TrustedCert findByPrimaryKey( Goid oid ) throws FindException;
 
     /**
      * Retrieves immutable TrustedCert instances with the specified subject DN.

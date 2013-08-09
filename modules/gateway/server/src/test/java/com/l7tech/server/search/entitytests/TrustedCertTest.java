@@ -27,8 +27,8 @@ public class TrustedCertTest extends DependencyTestBaseClass {
         mockEntity(securityZone, new EntityHeader(securityZoneGoid, EntityType.SECURITY_ZONE, null, null));
 
         TrustedCert trustedCert = new TrustedCert();
-        final long trustedCertOid = idCount.getAndIncrement();
-        trustedCert.setOid(trustedCertOid);
+        final Goid trustedCertOid = new Goid(0, idCount.getAndIncrement());
+        trustedCert.setGoid(trustedCertOid);
         trustedCert.setSecurityZone(securityZone);
 
         final EntityHeader trustedCertHeader = new EntityHeader(trustedCertOid, EntityType.TRUSTED_CERT, null, null);
@@ -38,7 +38,7 @@ public class TrustedCertTest extends DependencyTestBaseClass {
         DependencySearchResults result = dependencyAnalyzer.getDependencies(trustedCertHeader);
 
         Assert.assertNotNull(result);
-        Assert.assertEquals(trustedCertOid, Long.parseLong(((DependentEntity) result.getDependent()).getInternalID()));
+        Assert.assertEquals(trustedCertOid, new Goid(((DependentEntity) result.getDependent()).getInternalID()));
         Assert.assertEquals(EntityType.TRUSTED_CERT, ((DependentEntity) result.getDependent()).getEntityType());
         Assert.assertNotNull(result.getDependencies());
         Assert.assertEquals(securityZoneGoid.toHexString(), ((DependentEntity) result.getDependencies().get(0).getDependent()).getInternalID());

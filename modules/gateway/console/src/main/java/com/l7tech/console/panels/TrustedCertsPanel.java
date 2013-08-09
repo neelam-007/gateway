@@ -9,12 +9,13 @@ import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.CertificateInfo;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.util.ArrayUtils;
-import static com.l7tech.util.CollectionUtils.toList;
 import com.l7tech.util.Resolver;
 import com.l7tech.util.ResolvingComparator;
+import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
@@ -30,6 +31,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.l7tech.objectmodel.EntityType.TRUSTED_CERT;
+import static com.l7tech.util.CollectionUtils.toList;
 
 /**
  * Component for selection of Trusted Certificates.
@@ -69,7 +71,7 @@ public class TrustedCertsPanel extends JPanel {
     public TrustedCertsPanel( final boolean readOnly,
                               final int maximumItems,
                               final TrustedCertListener listener,
-                              final Collection<RevocationCheckPolicy> policies ) {
+                              @Nullable final Collection<RevocationCheckPolicy> policies ) {
         this.readOnly = readOnly;
         this.maximumItems = maximumItems <= 0 ? Integer.MAX_VALUE : maximumItems;
         this.listener = listener == null ? new TrustedCertListenerSupport(this) : listener;
@@ -101,26 +103,26 @@ public class TrustedCertsPanel extends JPanel {
     }
 
     /**
-     * Set the selected certificates by OIDs.
+     * Set the selected certificates by GOIDs.
      *
-     * <p>Any OIDs that do not have corresponding trusted certificate entries
+     * <p>Any GOIDs that do not have corresponding trusted certificate entries
      * are ignored.</p>
      *
-     * @param oids The OIDs to use.
+     * @param goids The GOIDs to use.
      */
-    public void setCertificateOids( final long[] oids ) {
+    public void setCertificateGoids(final Goid[] goids) {
         certificates.clear();
-        populateTrustedCerts( certificates, oids );
+        populateTrustedCerts( certificates, goids );
         sortTrustedCerts();
     }
 
     /**
-     * Get the selected certificate OIDs.
+     * Get the selected certificate GOIDs.
      *
      * @return The selected certificates.
      */
-    public long[] getCertificateOids() {
-        return getTrustedSignerOids( certificates );
+    public Goid[] getCertificateGoids() {
+        return getTrustedSignerGoids(certificates);
     }
 
     /**
@@ -431,12 +433,12 @@ public class TrustedCertsPanel extends JPanel {
     /**
      * Get cert OIDs from a list of trusted certs
      */
-    private long[] getTrustedSignerOids( java.util.List<TrustedCert> trustedCerts) {
-        long[] signers = new long[trustedCerts.size()];
+    private Goid[] getTrustedSignerGoids(java.util.List<TrustedCert> trustedCerts) {
+        Goid[] signers = new Goid[trustedCerts.size()];
 
         int index = 0;
         for ( TrustedCert cert : trustedCerts ) {
-            signers[index++] = cert.getOid();
+            signers[index++] = cert.getGoid();
         }
 
         return signers;
@@ -520,15 +522,15 @@ public class TrustedCertsPanel extends JPanel {
     /**
      * Populate the given list of trusted certs using the given list of oids
      */
-    private void populateTrustedCerts( java.util.List<TrustedCert> certs, long[] oids ) {
-        if ( oids != null ) {
+    private void populateTrustedCerts( java.util.List<TrustedCert> certs, Goid[] goids ) {
+        if ( goids != null ) {
             try {
                 TrustedCertAdmin tca = getTrustedCertAdmin();
                 
-                if ( oids.length < 10 ) {
-                    for ( Long oid : oids ) {
-                        if ( oid != null ) {
-                            TrustedCert cert = tca.findCertByPrimaryKey( oid );
+                if ( goids.length < 10 ) {
+                    for ( Goid goid : goids ) {
+                        if ( goid != null ) {
+                            TrustedCert cert = tca.findCertByPrimaryKey( goid );
                             if ( cert != null ) {
                                 certs.add(cert);
                             }
@@ -537,7 +539,7 @@ public class TrustedCertsPanel extends JPanel {
                 } else {
                     java.util.List<TrustedCert> trustedCertificates = tca.findAllCerts();
                     for ( TrustedCert cert : trustedCertificates ) {
-                        if ( ArrayUtils.contains( oids, cert.getOid() )) {
+                        if ( ArrayUtils.contains( goids, cert.getGoid() )) {
                             certs.add(cert);
                         }
                     }

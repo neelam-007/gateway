@@ -1,6 +1,7 @@
 package com.l7tech.identity;
 
 import com.l7tech.common.io.NonCloseableOutputStream;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.imp.ZoneableNamedEntityImp;
 import com.l7tech.security.types.CertificateValidationType;
 import com.l7tech.util.*;
@@ -103,6 +104,7 @@ public class IdentityProviderConfig extends ZoneableNamedEntityImp {
                 try {
                     output = new PoolByteArrayOutputStream();
                     encoder = new java.beans.XMLEncoder(new NonCloseableOutputStream(output));
+                    encoder.setPersistenceDelegate( Goid.class, Goid.getPersistenceDelegate() );
                     encoder.setExceptionListener( new ExceptionListener() {
                         @Override
                         public void exceptionThrown( final Exception e ) {

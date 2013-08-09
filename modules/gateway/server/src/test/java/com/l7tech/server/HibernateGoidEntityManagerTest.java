@@ -91,6 +91,11 @@ public class HibernateGoidEntityManagerTest {
         }
 
         @Override
+        public boolean isUnsaved() {
+            return GoidEntity.DEFAULT_GOID.equals(goid);
+        }
+
+        @Override
         public String getId() {
             return String.valueOf(goid);
         }

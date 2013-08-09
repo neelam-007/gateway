@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.xmlsec;
 
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
@@ -68,11 +69,11 @@ public class NonSoapVerifyElementAssertion extends NonSoapSecurityAssertionBase 
         config.setVerifyCertificateName(verifyCertificateName);
     }
 
-    public long getVerifyCertificateOid() {
+    public Goid getVerifyCertificateOid() {
         return config.getVerifyCertificateOid();
     }
 
-    public void setVerifyCertificateOid(long verifyCertificateOid) {
+    public void setVerifyCertificateOid(Goid verifyCertificateOid) {
         config.setVerifyCertificateOid(verifyCertificateOid);
     }
 

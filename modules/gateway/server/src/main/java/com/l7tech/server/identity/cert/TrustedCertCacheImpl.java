@@ -1,10 +1,12 @@
 package com.l7tech.server.identity.cert;
 
-import com.l7tech.security.cert.TrustedCertManager;
-import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
+import com.l7tech.security.cert.TrustedCert;
+import com.l7tech.security.cert.TrustedCertManager;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
 
 /**
  * Used with a caching interceptor.
@@ -18,7 +20,7 @@ public class TrustedCertCacheImpl implements TrustedCertCache {
     }
 
     @Override
-    public TrustedCert findByPrimaryKey( final long oid ) throws FindException {
+    public TrustedCert findByPrimaryKey( final Goid oid ) throws FindException {
         return immutable( trustedCertManager.findByPrimaryKey( oid ) );
     }
 

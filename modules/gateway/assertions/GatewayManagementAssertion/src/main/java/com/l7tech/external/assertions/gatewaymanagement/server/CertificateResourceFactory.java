@@ -22,7 +22,7 @@ import java.security.cert.X509Certificate;
  * 
  */
 @ResourceFactory.ResourceType(type=TrustedCertificateMO.class)
-public class CertificateResourceFactory extends EntityManagerResourceFactory<TrustedCertificateMO, TrustedCert, EntityHeader> {
+public class CertificateResourceFactory extends GoidEntityManagerResourceFactory<TrustedCertificateMO, TrustedCert, EntityHeader> {
 
     //- PUBLIC
 
@@ -51,7 +51,7 @@ public class CertificateResourceFactory extends EntityManagerResourceFactory<Tru
         }
         certificate.setRevocationCheckingPolicyId( trustedCert.getRevocationCheckPolicyOid()==null ?
                 null :
-                Long.toString(trustedCert.getRevocationCheckPolicyOid()) );
+                trustedCert.getRevocationCheckPolicyOid().toString() );
         certificate.setProperties( getProperties( trustedCert, TrustedCert.class ) );
         certificate.getProperties().put(
                 "revocationCheckingEnabled",

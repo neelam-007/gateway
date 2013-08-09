@@ -1,28 +1,23 @@
 package com.l7tech.console.panels;
 
-import java.awt.event.ActionListener;
+import com.l7tech.gateway.common.security.RevocationCheckPolicy;
+import com.l7tech.gateway.common.security.RevocationCheckPolicyItem;
+import com.l7tech.gui.MaxLengthDocument;
+import com.l7tech.gui.util.Utilities;
+import com.l7tech.gui.widgets.TextListCellRenderer;
+import com.l7tech.objectmodel.Goid;
+import com.l7tech.util.Functions;
+import com.l7tech.util.ValidationUtils;
+
+import javax.swing.*;
+import java.awt.*;
 import java.awt.event.ActionEvent;
-import java.awt.Dialog;
-import java.awt.Frame;
-import java.awt.BorderLayout;
-import java.util.ResourceBundle;
-import java.util.Locale;
-import java.util.Arrays;
-import java.util.Collection;
+import java.awt.event.ActionListener;
+import java.text.MessageFormat;
+import java.util.*;
 import java.util.List;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
-import java.text.MessageFormat;
-import javax.swing.*;
-
-import com.l7tech.gateway.common.security.RevocationCheckPolicyItem;
-import com.l7tech.gateway.common.security.RevocationCheckPolicy;
-import com.l7tech.gui.util.Utilities;
-import com.l7tech.gui.MaxLengthDocument;
-import com.l7tech.gui.widgets.TextListCellRenderer;
-import com.l7tech.util.ValidationUtils;
-import com.l7tech.util.Functions;
-import com.l7tech.util.ArrayUtils;
 
 /**
  * Properties dialog for Revocation Checking Policy Items.
@@ -242,7 +237,7 @@ public class RevocationCheckPolicyItemPropertiesDialog extends JDialog {
 
         RevocationCheckPolicyItem.Type type = (RevocationCheckPolicyItem.Type) typeComboBox.getSelectedItem();
         if( type != null ) {
-            if ( !allowIssuerSignatureCheckBox.isSelected() && trustedCertsPanel.getCertificateOids().length==0 ) {
+            if ( !allowIssuerSignatureCheckBox.isSelected() && trustedCertsPanel.getCertificateGoids().length==0 ) {
                 JOptionPane.showMessageDialog(this,
                         resources.getString(RES_VALIDATE_SIGNER_TEXT),
                         resources.getString(RES_VALIDATE_SIGNER_TITLE),
@@ -301,8 +296,8 @@ public class RevocationCheckPolicyItemPropertiesDialog extends JDialog {
             urlRegexTextField.setText(revocationCheckPolicyItem.getUrl());
         }
         allowIssuerSignatureCheckBox.setSelected(revocationCheckPolicyItem.isAllowIssuerSignature());
-        List<Long> signers = revocationCheckPolicyItem.getTrustedSigners();
-        trustedCertsPanel.setCertificateOids(ArrayUtils.unbox( signers.toArray(new Long[signers.size()])));
+        List<Goid> signers = revocationCheckPolicyItem.getTrustedSigners();
+        trustedCertsPanel.setCertificateGoids(signers.toArray(new Goid[signers.size()]));
     }
 
     /**
@@ -316,7 +311,7 @@ public class RevocationCheckPolicyItemPropertiesDialog extends JDialog {
             revocationCheckPolicyItem.setUrl(urlRegexTextField.getText());
         }
         revocationCheckPolicyItem.setAllowIssuerSignature(allowIssuerSignatureCheckBox.isSelected());
-        revocationCheckPolicyItem.setTrustedSigners(Arrays.asList(ArrayUtils.box(trustedCertsPanel.getCertificateOids())));
+        revocationCheckPolicyItem.setTrustedSigners(Arrays.<Goid>asList(trustedCertsPanel.getCertificateGoids()));
     }
 
     /**

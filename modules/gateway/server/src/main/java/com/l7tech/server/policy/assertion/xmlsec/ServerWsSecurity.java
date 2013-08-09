@@ -4,6 +4,7 @@ import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.message.Message;
 import com.l7tech.message.SecurityKnob;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -258,13 +259,13 @@ public class ServerWsSecurity extends AbstractMessageTargetableServerAssertion<W
      * 
      */
     private void processRecipientCertificate( final DecorationRequirements decoration,
-                                              final long trustedCertificateOid,
+                                              final Goid trustedCertificateOid,
                                               @Nullable final String trustedCertificateName,
                                               @Nullable final X509Certificate recipientCertificate ) throws AssertionStatusException {
         String description = "";
 
         try {
-            if ( trustedCertificateOid > 0L ) {
+            if ( trustedCertificateOid != null ) {
                 description = "id #" + trustedCertificateOid;
                 TrustedCert trustedCertificate = trustedCertCache.findByPrimaryKey( trustedCertificateOid );
                 if ( trustedCertificate != null ) {
@@ -308,7 +309,7 @@ public class ServerWsSecurity extends AbstractMessageTargetableServerAssertion<W
         try {
             expired = trustedCert.isExpiredCert();
         } catch (CertificateException e) {
-            logAndAudit( AssertionMessages.WSSECURITY_RECIP_CERT_EXP, new String[]{ trustedCert.getName() + " (#" + trustedCert.getOid() + ")" }, e );
+            logAndAudit( AssertionMessages.WSSECURITY_RECIP_CERT_EXP, new String[]{ trustedCert.getName() + " (#" + trustedCert.getGoid() + ")" }, e );
         }
 
         return expired;

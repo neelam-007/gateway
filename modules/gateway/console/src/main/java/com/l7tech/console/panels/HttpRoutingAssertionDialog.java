@@ -20,6 +20,7 @@ import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.assertion.*;
@@ -879,18 +880,18 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         assertion.setTlsVersion(tlsVersion == null || ANY_TLS_VERSION.equals(tlsVersion) ? null : tlsVersion);
         assertion.setTlsCipherSuites(tlsCipherSuites);
         if (tlsTrustedCerts == null) {
-            assertion.setTlsTrustedCertOids(null);
+            assertion.setTlsTrustedCertGoids((Goid[]) null);
             assertion.setTlsTrustedCertNames(null);
         } else {
             EntityHeader[] certs = tlsTrustedCerts.toArray(new EntityHeader[tlsTrustedCerts.size()]);
-            Long[] oids = new Long[certs.length];
+            Goid[] oids = new Goid[certs.length];
             String[] names = new String[certs.length];
             for (int i = 0; i < certs.length; i++) {
                 EntityHeader cert = certs[i];
-                oids[i] = cert.getOid();
+                oids[i] = cert.getGoid();
                 names[i] = cert.getName();
             }
-            assertion.setTlsTrustedCertOids(oids);
+            assertion.setTlsTrustedCertGoids(oids);
             assertion.setTlsTrustedCertNames(names);
         }
 
@@ -1041,13 +1042,13 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         tlsCipherSuites = assertion.getTlsCipherSuites();
         cipherSuitesButton.setEnabled(!bra);
 
-        if (assertion.getTlsTrustedCertOids() == null) {
+        if (assertion.getTlsTrustedCertGoids() == null) {
             tlsTrustedCerts = null;
         } else {
             tlsTrustedCerts = new LinkedHashSet<EntityHeader>();
-            Long[] oids = assertion.getTlsTrustedCertOids();
+            Goid[] oids = assertion.getTlsTrustedCertGoids();
             for (int i = 0; i < oids.length; i++) {
-                Long oid = oids[i];
+                Goid oid = oids[i];
                 String name = assertion.certName(i);
                 if (name == null || name.trim().length() < 1) {
                     // Look up name (Bug #12127)
@@ -1063,7 +1064,7 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         enableOrDisableProxyFields();
     }
 
-    private String lookUpTrustedCertName(long oid) {
+    private String lookUpTrustedCertName(Goid oid) {
         try {
             TrustedCert cert = Registry.getDefault().getTrustedCertManager().findCertByPrimaryKey(oid);
             return cert == null ? null : cert.getName();

@@ -1,37 +1,34 @@
 package com.l7tech.policy.exporter;
 
+import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.IdentityProviderType;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
-import com.l7tech.policy.assertion.AssertionMetadata;
-import com.l7tech.policy.assertion.DefaultAssertionMetadata;
-import com.l7tech.policy.assertion.GlobalResourceInfo;
-import com.l7tech.policy.assertion.Include;
-import com.l7tech.policy.assertion.JdbcConnectionable;
-import com.l7tech.policy.assertion.xml.SchemaValidation;
-import com.l7tech.policy.assertion.xmlsec.AddWssTimestamp;
-import com.l7tech.policy.assertion.xmlsec.WsSecurity;
-import com.l7tech.util.DomUtils;
-import com.l7tech.common.io.XmlUtil;
-import com.l7tech.identity.IdentityProviderConfigManager;
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.CustomAssertionHolder;
-import com.l7tech.policy.assertion.JmsRoutingAssertion;
+import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.ext.CustomAssertion;
 import com.l7tech.policy.assertion.identity.SpecificUser;
+import com.l7tech.policy.assertion.xml.SchemaValidation;
+import com.l7tech.policy.assertion.xmlsec.AddWssTimestamp;
+import com.l7tech.policy.assertion.xmlsec.WsSecurity;
+import com.l7tech.util.DomUtils;
 import org.junit.Test;
-
-import static org.junit.Assert.*;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.UUID;
+
+import static org.junit.Assert.*;
 
 /**
  * Test class for the policy exporter.
@@ -143,7 +140,7 @@ public class PolicyExporterTest {
 
         // TrustedCertReference
         WsSecurity wsass = new WsSecurity();
-        wsass.setRecipientTrustedCertificateOid( 1234 );
+        wsass.setRecipientTrustedCertificateOid( new Goid(0, 1234L) );
         root.addChild( wsass );
 
         return root;

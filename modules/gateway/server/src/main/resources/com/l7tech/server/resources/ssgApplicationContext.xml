@@ -1651,8 +1651,6 @@
                 <ref bean="resourceEntryManager"/>
                 <ref bean="roleManager"/>
                 <ref bean="identityProviderConfigManager"/>
-                <ref bean="trustedCertManager"/>
-                <ref bean="revocationCheckPolicyManager"/>
                 <ref bean="sinkManager"/>
                 <ref bean="keystoreFileManager"/>
                 <ref bean="messageContextMappingKeyManager"/>
@@ -1679,6 +1677,8 @@
                 <ref bean="ssgFirewallRuleManager"/>
                 <ref bean="encapsulatedAssertionConfigManager"/>
                 <ref bean="jmsConnectionManager"/>
+                <ref bean="trustedCertManager"/>
+                <ref bean="revocationCheckPolicyManager"/>
                 <ref bean="jmsEndpointManager"/>
                 <ref bean="httpConfigurationManager"/>
                 <ref bean="policyManager"/>

@@ -7,6 +7,7 @@ import com.l7tech.gateway.common.audit.SystemMessages;
 import com.l7tech.gateway.common.security.RevocationCheckPolicy;
 import com.l7tech.gateway.common.security.RevocationCheckPolicyItem;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.security.cert.KeyUsageActivity;
 import com.l7tech.security.cert.KeyUsageChecker;
 import com.l7tech.security.cert.TrustedCert;
@@ -52,8 +53,8 @@ public class RevocationCheckerFactory {
         // initialize maps and map lock
         // use Whirlycache for checkers by cert as this could be large
         this.mapLock = new ReentrantReadWriteLock();
-        this.keysByTrustedCertOid = new HashMap<Long,Set<CertKey>>();
-        this.keysByRevocationCheckPolicyOid = new HashMap<Long,Set<CertKey>>();
+        this.keysByTrustedCertOid = new HashMap<Goid,Set<CertKey>>();
+        this.keysByRevocationCheckPolicyOid = new HashMap<Goid,Set<CertKey>>();
         this.checkersByCert =
                 WhirlycacheFactory.createCache("RevocationPolicyCache", 1000, 66, WhirlycacheFactory.POLICY_LRU);
     }
@@ -88,10 +89,10 @@ public class RevocationCheckerFactory {
                     checkersByCert.store(key, checker);
 
                     if (trustedCert != null)
-                        addChecker(keysByTrustedCertOid, trustedCert.getOid(), checker);
+                        addChecker(keysByTrustedCertOid, trustedCert.getGoid(), checker);
 
-                    if (policy != null && policy.getOid()!=RevocationCheckPolicy.DEFAULT_OID)
-                        addChecker(keysByRevocationCheckPolicyOid, policy.getOid(), checker);
+                    if (policy != null && !RevocationCheckPolicy.DEFAULT_GOID.equals(policy.getGoid()))
+                        addChecker(keysByRevocationCheckPolicyOid, policy.getGoid(), checker);
                 } finally {
                     mapLock.writeLock().unlock();                    
                 }
@@ -118,7 +119,7 @@ public class RevocationCheckerFactory {
      *
      * @param revocationCheckPolicyOid The key for the changed policy
      */
-    public void invalidateRevocationCheckPolicy(long revocationCheckPolicyOid) {
+    public void invalidateRevocationCheckPolicy(Goid revocationCheckPolicyOid) {
         invalidateForProvider(
                 revocationCheckPolicyOid,
                 null,
@@ -134,12 +135,12 @@ public class RevocationCheckerFactory {
      *
      * @param trustedCertOid The key for the changed trusted certificate
      */
-    public void invalidateTrustedCert(long trustedCertOid) {
+    public void invalidateTrustedCert(Goid trustedCertOid) {
         invalidateForProvider(
                 trustedCertOid,
-                new Functions.Unary<X509Certificate, Long>() {
+                new Functions.Unary<X509Certificate, Goid>() {
                     @Override
-                    public X509Certificate call(Long oid) {
+                    public X509Certificate call(Goid oid) {
                         final TrustedCert cert = certValidationProcessor.getTrustedCertByOid(oid);
                         return cert == null ? null : cert.getCertificate();
                     }
@@ -157,18 +158,18 @@ public class RevocationCheckerFactory {
 
     private final ReadWriteLock mapLock;
     private final Cache checkersByCert;
-    private final Map<Long,Set<CertKey>> keysByTrustedCertOid;
-    private final Map<Long,Set<CertKey>> keysByRevocationCheckPolicyOid;
+    private final Map<Goid,Set<CertKey>> keysByTrustedCertOid;
+    private final Map<Goid,Set<CertKey>> keysByRevocationCheckPolicyOid;
 
     /**
      * Add info to the map, caller is responsible for getting a write lock
      */
-    private void addChecker(Map<Long,Set<CertKey>> keysByoid, long oid, CompositeRevocationChecker checker) {
-        Set<CertKey> keySet = keysByoid.get(oid);
+    private void addChecker(Map<Goid,Set<CertKey>> keysByoid, Goid goid, CompositeRevocationChecker checker) {
+        Set<CertKey> keySet = keysByoid.get(goid);
 
         if (keySet == null) {
             keySet = new HashSet<CertKey>();
-            keysByoid.put(oid, keySet);
+            keysByoid.put(goid, keySet);
         }
 
         keySet.add(checker.key);
@@ -180,8 +181,8 @@ public class RevocationCheckerFactory {
      * For trusted certs this will also invalidate by certificate key in case
      * we already have a cached revocation checker for the certificate .
      */
-    private void invalidateForProvider(long oid, Functions.Unary<X509Certificate, Long> certGetter, Map<Long,Set<CertKey>> keysForProvider) {
-        Set<Long> providerMappingsToPurge = new HashSet<Long>();
+    private void invalidateForProvider(Goid oid, Functions.Unary<X509Certificate, Goid> certGetter, Map<Goid,Set<CertKey>> keysForProvider) {
+        Set<Goid> providerMappingsToPurge = new HashSet<Goid>();
         Set<CertKey> certKeysToPurge = new HashSet<CertKey>();
 
         // find checker for trusted cert
@@ -227,10 +228,10 @@ public class RevocationCheckerFactory {
     /**
      * Load the certificates for the given list of trusted cert oids
      */
-    private X509Certificate[] loadCerts(List<Long> tcOids) throws FindException, CertificateException {
+    private X509Certificate[] loadCerts(List<Goid> tcOids) throws FindException, CertificateException {
         List<X509Certificate> certs = new ArrayList<X509Certificate>();
 
-        for (Long oid : tcOids) {
+        for (Goid oid : tcOids) {
             TrustedCert tc = certValidationProcessor.getTrustedCertByOid(oid);
             if (tc != null) {
                 certs.add(tc.getCertificate());

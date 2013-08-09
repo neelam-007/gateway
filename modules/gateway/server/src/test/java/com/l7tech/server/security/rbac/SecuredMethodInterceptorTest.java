@@ -630,5 +630,10 @@ public class SecuredMethodInterceptorTest {
         public void setGoid(Goid goid) {
             this.goid = goid;
         }
+
+        @Override
+        public boolean isUnsaved() {
+            return GoidEntity.DEFAULT_GOID.equals(goid);
+        }
     }
 }

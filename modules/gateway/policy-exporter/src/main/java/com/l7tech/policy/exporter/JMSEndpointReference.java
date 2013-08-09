@@ -34,7 +34,7 @@ public class JMSEndpointReference extends ExternalReference {
         this( context );
         JmsConnection jmsConnection = null;
         try {
-            JmsEndpoint jmsEndpoint = getFinder().findEndpointByOidorGoid(endpointId);
+            JmsEndpoint jmsEndpoint = getFinder().findEndpointByOidOrGoid(endpointId);
             if (jmsEndpoint != null) {
                 goid = jmsEndpoint.getGoid();
                 name = jmsEndpoint.getName();

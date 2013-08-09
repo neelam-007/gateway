@@ -13,7 +13,7 @@ import org.springframework.transaction.PlatformTransactionManager;
  *
  */
 @ResourceFactory.ResourceType(type=RevocationCheckingPolicyMO.class)
-public class RevocationCheckingPolicyResourceFactory extends EntityManagerResourceFactory<RevocationCheckingPolicyMO, RevocationCheckPolicy, EntityHeader> {
+public class RevocationCheckingPolicyResourceFactory extends GoidEntityManagerResourceFactory<RevocationCheckingPolicyMO, RevocationCheckPolicy, EntityHeader> {
 
     //- PUBLIC
 

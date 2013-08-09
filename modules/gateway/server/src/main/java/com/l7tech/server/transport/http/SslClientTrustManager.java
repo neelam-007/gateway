@@ -2,6 +2,7 @@ package com.l7tech.server.transport.http;
 
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.gateway.common.audit.LoggingAudit;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.security.cert.KeyUsageActivity;
 import com.l7tech.security.cert.KeyUsageChecker;
 import com.l7tech.security.cert.KeyUsageException;
@@ -29,7 +30,7 @@ public class SslClientTrustManager implements X509TrustManager {
     private final TrustedCertServices trustedCertServices;
     private final CertValidationProcessor certValidationProcessor;
     private final CertValidationProcessor.Facility facility;
-    @Nullable private final Set<Long> trustedCertOids; // Non-null if only a subset of trusted certs should be trusted by this trust manager
+    @Nullable private final Set<Goid> trustedCertOids; // Non-null if only a subset of trusted certs should be trusted by this trust manager
 
     public SslClientTrustManager(final TrustedCertServices trustedCertServices,
                                  final CertValidationProcessor certValidationProcessor,
@@ -40,7 +41,7 @@ public class SslClientTrustManager implements X509TrustManager {
     public SslClientTrustManager(final TrustedCertServices trustedCertServices,
                                  final CertValidationProcessor certValidationProcessor,
                                  final CertValidationProcessor.Facility facility,
-                                 @Nullable final Set<Long> trustedCertOids) {
+                                 @Nullable final Set<Goid> trustedCertOids) {
         if (trustedCertServices == null)  throw new IllegalArgumentException("Trusted Cert Services is required");
         if (certValidationProcessor == null)  throw new IllegalArgumentException("Cert Validation Processor is required");
         if (facility == null)  throw new IllegalArgumentException("Facility is required");
@@ -106,7 +107,7 @@ public class SslClientTrustManager implements X509TrustManager {
      * @param customTrustedCerts certs to trust, or null to trust all registered trusted certs.
      * @return a new X509TrustManager instance.  Never null.
      */
-    public X509TrustManager createTrustManagerWithCustomTrustedCerts(Set<Long> customTrustedCerts) {
+    public X509TrustManager createTrustManagerWithCustomTrustedCerts(Set<Goid> customTrustedCerts) {
         return new SslClientTrustManager(trustedCertServices, certValidationProcessor, facility, customTrustedCerts);
     }
 }

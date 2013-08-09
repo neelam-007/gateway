@@ -741,7 +741,7 @@ public class ServerGatewayManagementAssertionTest {
                 "        </Property>\n" +
                 "    </Properties>\n" +
                 "</TrustedCertificate>";
-        String expectedId = "3";
+        String expectedId = new Goid(0,3).toHexString();
         doCreate( resourceUri, payload, expectedId );
     }
 
@@ -1419,7 +1419,7 @@ public class ServerGatewayManagementAssertionTest {
     @Test
     public void testPutCertificate() throws Exception {
         final String message =
-                "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns:n1=\"http://ns.l7tech.com/2010/04/gateway-management\"><s:Header><wsa:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Put</wsa:Action><wsa:To s:mustUnderstand=\"true\">http://127.0.0.1:8080/wsman</wsa:To><wsman:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/trustedCertificates</wsman:ResourceURI><wsa:MessageID s:mustUnderstand=\"true\">uuid:afad2993-7d39-1d39-8002-481688002100</wsa:MessageID><wsa:ReplyTo><wsa:Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo><wsman:SelectorSet><wsman:Selector Name=\"id\">2</wsman:Selector></wsman:SelectorSet><wsman:RequestEPR/></s:Header><s:Body><TrustedCertificate xmlns=\"http://ns.l7tech.com/2010/04/gateway-management\" id=\"2\" version=\"0\">\n" +
+                "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns:n1=\"http://ns.l7tech.com/2010/04/gateway-management\"><s:Header><wsa:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Put</wsa:Action><wsa:To s:mustUnderstand=\"true\">http://127.0.0.1:8080/wsman</wsa:To><wsman:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/trustedCertificates</wsman:ResourceURI><wsa:MessageID s:mustUnderstand=\"true\">uuid:afad2993-7d39-1d39-8002-481688002100</wsa:MessageID><wsa:ReplyTo><wsa:Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo><wsman:SelectorSet><wsman:Selector Name=\"id\">" + new Goid(0,2).toHexString() + "</wsman:Selector></wsman:SelectorSet><wsman:RequestEPR/></s:Header><s:Body><TrustedCertificate xmlns=\"http://ns.l7tech.com/2010/04/gateway-management\" id=\"" + new Goid(0,2).toHexString() + "\" version=\"0\">\n" +
                 "    <Name>Bob (updated)</Name>\n" +
                 "    <CertificateData>\n" +
                 "        <Encoded>MIIDCjCCAfKgAwIBAgIQYDju2/6sm77InYfTq65x+DANBgkqhkiG9w0BAQUFADAwMQ4wDAYDVQQKDAVPQVNJUzEeMBwGA1UEAwwVT0FTSVMgSW50ZXJvcCBUZXN0IENBMB4XDTA1MDMxOTAwMDAwMFoXDTE4MDMxOTIzNTk1OVowQDEOMAwGA1UECgwFT0FTSVMxIDAeBgNVBAsMF09BU0lTIEludGVyb3AgVGVzdCBDZXJ0MQwwCgYDVQQDDANCb2IwgZ8wDQYJKoZIhvcNAQEBBQADgY0AMIGJAoGBAMCquMva4lFDrv3fXQnKK8CkSU7HvVZ0USyJtlL/yhmHH/FQXHyYY+fTcSyWYItWJYiTZ99PAbD+6EKBGbdfuJNUJCGaTWc5ZDUISqM/SGtacYe/PD/4+g3swNPzTUQAIBLRY1pkr2cm3s5Ch/f+mYVNBR41HnBeIxybw25kkoM7AgMBAAGjgZMwgZAwCQYDVR0TBAIwADAzBgNVHR8ELDAqMCiiJoYkaHR0cDovL2ludGVyb3AuYmJ0ZXN0Lm5ldC9jcmwvY2EuY3JsMA4GA1UdDwEB/wQEAwIEsDAdBgNVHQ4EFgQUXeg55vRyK3ZhAEhEf+YT0z986L0wHwYDVR0jBBgwFoAUwJ0o/MHrNaEd1qqqoBwaTcJJDw8wDQYJKoZIhvcNAQEFBQADggEBAIiVGv2lGLhRvmMAHSlY7rKLVkv+zEUtSyg08FBT8z/RepUbtUQShcIqwWsemDU8JVtsucQLc+g6GCQXgkCkMiC8qhcLAt3BXzFmLxuCEAQeeFe8IATr4wACmEQE37TEqAuWEIanPYIplbxYgwP0OBWBSjcRpKRAxjEzuwObYjbll6vKdFHYIweWhhWPrefquFp7TefTkF4D3rcctTfWJ76I5NrEVld+7PBnnJNpdDEuGsoaiJrwTW3Ixm40RXvG3fYS4hIAPeTCUk3RkYfUkqlaaLQnUrF2hZSgiBNLPe8gGkYORccRIlZCGQDEpcWl1Uf9OHw6fC+3hkqolFd5CVI=</Encoded>\n" +
@@ -2432,7 +2432,7 @@ public class ServerGatewayManagementAssertionTest {
                         "            &lt;/wsp:Policy&gt;\n" +
                         "        &lt;/IncludedPolicyReference&gt;\n" +
                         "        &lt;TrustedCertificateReference RefType=\"com.l7tech.console.policy.exporter.TrustedCertReference\"&gt;\n" +
-                        "            &lt;OID&gt;2&lt;/OID&gt;\n" +
+                        "            &lt;GOID&gt;" + new Goid(0,2).toHexString() + "&lt;/GOID&gt;\n" +
                         "            &lt;CertificateName&gt;Bob&lt;/CertificateName&gt;\n" +
                         "            &lt;CertificateIssuerDn&gt;CN=OASIS Interop Test CA, O=OASIS&lt;/CertificateIssuerDn&gt;\n" +
                         "            &lt;CertificateSerialNum&gt;127901500862700997089151460209364726264&lt;/CertificateSerialNum&gt;\n" +
@@ -2552,7 +2552,7 @@ public class ServerGatewayManagementAssertionTest {
                         "            &lt;/wsp:Policy&gt;\n" +
                         "        &lt;/IncludedPolicyReference&gt;\n" +
                         "        &lt;TrustedCertificateReference RefType=\"com.l7tech.console.policy.exporter.TrustedCertReference\"&gt;\n" +
-                        "            &lt;OID&gt;129630208&lt;/OID&gt;\n" +
+                        "            &lt;GOID&gt;00000000000000030000000007ba0000&lt;/GOID&gt;\n" +
                         "            &lt;CertificateName&gt;Invalid&lt;/CertificateName&gt;\n" +
                         "            &lt;CertificateIssuerDn&gt;CN=Invalid&lt;/CertificateIssuerDn&gt;\n" +
                         "            &lt;CertificateSerialNum&gt;997089151460209364726264&lt;/CertificateSerialNum&gt;\n" +
@@ -2593,7 +2593,7 @@ public class ServerGatewayManagementAssertionTest {
                         "                &lt;L7p:PolicyGuid stringValue=\"006ece03-a64c-4c17-93cf-ce49e7265daa\"/&gt;\n" +
                         "            &lt;/L7p:Include&gt;\n" +
                         "            &lt;L7p:WsSecurity&gt;\n" +
-                        "                &lt;L7p:RecipientTrustedCertificateOid longValue=\"129630208\"/&gt;\n" +
+                        "                &lt;L7p:RecipientTrustedCertificateGoid goidValue=\"00000000000000030000000007ba0000\"/&gt;\n" +
                         "            &lt;/L7p:WsSecurity&gt;\n" +
                         "            &lt;L7p:JmsRoutingAssertion&gt;\n" +
                         "                &lt;L7p:EndpointName stringValue=\"Invalid Test Endpoint\"/&gt;\n" +
@@ -2619,7 +2619,7 @@ public class ServerGatewayManagementAssertionTest {
                         "    <PolicyReferenceInstruction type=\"Ignore\" referenceType=\"com.l7tech.console.policy.exporter.JdbcConnectionReference\" referenceId=\"syn:70ab8caf-35e4-3c3f-a3ae-3685e4b296e0\" />\n" +
                         "    <PolicyReferenceInstruction type=\"Delete\" referenceType=\"com.l7tech.console.policy.exporter.ExternalSchemaReference\" referenceId=\"syn:e69a8c36-66c6-3f0b-ba67-74749c1c62b5\" />\n" +
                         "    <PolicyReferenceInstruction type=\"Rename\" referenceType=\"com.l7tech.console.policy.exporter.IncludedPolicyReference\" referenceId=\"006ece03-a64c-4c17-93cf-ce49e7265daa\" mappedName=\"Renamed Imported Policy Include Fragment\"/>\n" +
-                        "    <PolicyReferenceInstruction type=\"Ignore\" referenceType=\"com.l7tech.console.policy.exporter.TrustedCertReference\"    referenceId=\"129630208\" />\n" +
+                        "    <PolicyReferenceInstruction type=\"Ignore\" referenceType=\"com.l7tech.console.policy.exporter.TrustedCertReference\"    referenceId=\"00000000000000030000000007ba0000\" />\n" +
                         "    <PolicyReferenceInstruction type=\"Ignore\" referenceType=\"com.l7tech.console.policy.exporter.JMSEndpointReference\"    referenceId=\"33\" />\n" +
                         "    <PolicyReferenceInstruction type=\"Ignore\" referenceType=\"com.l7tech.console.policy.exporter.PrivateKeyReference\"     referenceId=\"2:invalid\" />\n" +
                         "</PolicyReferenceInstructions>\n" +
@@ -3019,8 +3019,8 @@ public class ServerGatewayManagementAssertionTest {
                 prop( new Goid(0,5), "keyStore.defaultSsl.alias", "0:bob" ) );
         beanFactory.addBean( "serverConfig", new MockConfig( new Properties() ) );
         beanFactory.addBean( "trustedCertManager", new TestTrustedCertManager(
-                cert( 1L, "Alice", TestDocuments.getWssInteropAliceCert()),
-                cert( 2L, "Bob", TestDocuments.getWssInteropBobCert()) ) );
+                cert( new Goid(0, 1L), "Alice", TestDocuments.getWssInteropAliceCert()),
+                cert( new Goid(0, 2L), "Bob", TestDocuments.getWssInteropBobCert()) ) );
         beanFactory.addBean( "clusterPropertyCache", new ClusterPropertyCache(){{ setClusterPropertyManager( clusterPropertyManager ); }});
         beanFactory.addBean( "clusterPropertyManager", clusterPropertyManager);
         beanFactory.addBean( "resourceEntryManager", new ResourceEntryManagerStub(
@@ -3142,9 +3142,9 @@ public class ServerGatewayManagementAssertionTest {
 
     }
 
-    private static TrustedCert cert( final long oid, final String name, final X509Certificate x509Certificate ) {
+    private static TrustedCert cert( final Goid oid, final String name, final X509Certificate x509Certificate ) {
         final TrustedCert cert = new TrustedCert();
-        cert.setOid( oid );
+        cert.setGoid(oid);
         cert.setName( name );
         cert.setCertificate( x509Certificate );
         cert.setRevocationCheckPolicyType( TrustedCert.PolicyUsageType.USE_DEFAULT );

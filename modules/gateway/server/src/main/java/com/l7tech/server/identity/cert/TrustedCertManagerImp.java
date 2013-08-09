@@ -12,7 +12,7 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.security.cert.TrustedCertManager;
-import com.l7tech.server.HibernateEntityManager;
+import com.l7tech.server.HibernateGoidEntityManager;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.audit.AuditContextFactory;
 import com.l7tech.server.audit.Auditor;
@@ -50,7 +50,7 @@ import java.util.logging.Logger;
  */
 @Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
 public class TrustedCertManagerImp
-        extends HibernateEntityManager<TrustedCert, EntityHeader>
+        extends HibernateGoidEntityManager<TrustedCert, EntityHeader>
         implements TrustedCertManager, ApplicationContextAware, InitializingBean, PropertyChangeListener
 {
     private static final Logger logger = Logger.getLogger(TrustedCertManagerImp.class.getName());
@@ -119,6 +119,11 @@ public class TrustedCertManagerImp
     public Collection<TrustedCert> findByTrustFlag(final TrustedCert.TrustedFor trustFlag) throws FindException {
         // TODO optimize this query so it does the filtering inside the database rather than here, then update the javadoc
         return Functions.grep(findAll(), TrustedCert.TrustedFor.predicate(trustFlag));
+    }
+
+    @Override
+    public TrustedCert findByOldOid(long oid) throws FindException {
+        return findUnique( Collections.<String,Object>singletonMap("oldOid", oid) );
     }
 
     @SuppressWarnings({"unchecked"})
@@ -344,7 +349,7 @@ public class TrustedCertManagerImp
         private CertExpiryWarningDetail(AuditDetailMessage detail, TrustedCert trustedCert, String howLongStr) {
             this.detail = detail;
             this.level = detail.getLevel();
-            this.oidStr = Long.toString(trustedCert.getOid());
+            this.oidStr = trustedCert.getGoid().toString();
             this.subjectDnStr = trustedCert.getSubjectDn();
             this.howLongStr = howLongStr;
         }

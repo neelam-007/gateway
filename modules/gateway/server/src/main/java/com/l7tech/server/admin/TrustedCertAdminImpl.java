@@ -134,8 +134,8 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
     }
 
     @Override
-    public TrustedCert findCertByPrimaryKey(final long oid) throws FindException {
-        return getManager().findByPrimaryKey(oid);
+    public TrustedCert findCertByPrimaryKey(final Goid goid) throws FindException {
+        return getManager().findByPrimaryKey(goid);
     }
 
     @Override
@@ -144,35 +144,35 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
     }
 
     @Override
-    public long saveCert(final TrustedCert cert) throws SaveException, UpdateException {
+    public Goid saveCert(final TrustedCert cert) throws SaveException, UpdateException {
         checkLicenseHeavy();
-        long oid;
+        Goid goid;
 
         // validate settings
         if (cert.getRevocationCheckPolicyType() == null) {
             cert.setRevocationCheckPolicyType(TrustedCert.PolicyUsageType.USE_DEFAULT);
         } else if (cert.getRevocationCheckPolicyType() == TrustedCert.PolicyUsageType.SPECIFIED &&
                 cert.getRevocationCheckPolicyOid()==null) {
-            if (cert.getOid() == TrustedCert.DEFAULT_OID) {
+            if (cert.isUnsaved()) {
                 throw new SaveException("A revocation checking policy must be specified for this revocation checking type.");
             } else {
                 throw new UpdateException("A revocation checking policy must be specified for this revocation checking type.");
             }
         }
 
-        if (cert.getOid() == TrustedCert.DEFAULT_OID) {
-            oid = getManager().save(cert);
+        if (cert.isUnsaved()) {
+            goid = getManager().save(cert);
         } else {
             getManager().update(cert);
-            oid = cert.getOid();
+            goid = cert.getGoid();
         }
-        return oid;
+        return goid;
     }
 
     @Override
-    public void deleteCert(final long oid) throws FindException, DeleteException {
+    public void deleteCert(final Goid goid) throws FindException, DeleteException {
         checkLicenseHeavy();
-        getManager().delete(oid);
+        getManager().delete(goid);
     }
 
     @Override
@@ -181,28 +181,28 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
     }
 
     @Override
-    public RevocationCheckPolicy findRevocationCheckPolicyByPrimaryKey(long oid) throws FindException {
+    public RevocationCheckPolicy findRevocationCheckPolicyByPrimaryKey(Goid oid) throws FindException {
         return getRevocationCheckPolicyManager().findByPrimaryKey(oid);
     }
 
     @Override
-    public long saveRevocationCheckPolicy(RevocationCheckPolicy revocationCheckPolicy) throws SaveException, UpdateException, VersionException {
+    public Goid saveRevocationCheckPolicy(RevocationCheckPolicy revocationCheckPolicy) throws SaveException, UpdateException, VersionException {
         checkLicenseHeavy();
 
-        long oid;
+        Goid oid;
         RevocationCheckPolicyManager manager = getRevocationCheckPolicyManager();
-        if (revocationCheckPolicy.getOid() == RevocationCheckPolicy.DEFAULT_OID) {
+        if (RevocationCheckPolicy.DEFAULT_GOID.equals(revocationCheckPolicy.getGoid())) {
             oid = manager.save(revocationCheckPolicy);
         } else {
             manager.update(revocationCheckPolicy);
-            oid = revocationCheckPolicy.getOid();
+            oid = revocationCheckPolicy.getGoid();
         }
 
         return oid;
     }
 
     @Override
-    public void deleteRevocationCheckPolicy(long oid) throws FindException, DeleteException {
+    public void deleteRevocationCheckPolicy(Goid oid) throws FindException, DeleteException {
         checkLicenseHeavy();
         getRevocationCheckPolicyManager().delete(oid);
     }

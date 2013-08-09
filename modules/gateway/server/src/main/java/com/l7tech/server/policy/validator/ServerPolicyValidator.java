@@ -688,7 +688,7 @@ public class ServerPolicyValidator extends AbstractPolicyValidator implements In
                         val = ID_FIP;
                         FederatedIdentityProviderConfig cfg = (FederatedIdentityProviderConfig)prov.getConfig();
                         boolean certmissing = false;
-                        if (cfg.getTrustedCertOids().length==0 && idexists && !idhascert) {
+                        if (cfg.getTrustedCertGoids().length == 0 && !idhascert) {
                             certmissing = true;
                         }
                         if (cfg.isSamlSupported() && !cfg.isX509Supported()) {

@@ -160,7 +160,7 @@ public class ServerOAuthValidationAssertion extends AbstractServerAssertion<OAut
         try {
             expired = trustedCert.isExpiredCert();
         } catch (CertificateException e) {
-            logAndAudit(AssertionMessages.WSSECURITY_RECIP_CERT_EXP, new String[]{ trustedCert.getName() + " (#"+trustedCert.getOid()+")"}, e);
+            logAndAudit(AssertionMessages.WSSECURITY_RECIP_CERT_EXP, new String[]{ trustedCert.getName() + " (#"+trustedCert.getGoid()+")"}, e);
         }
 
         return expired;

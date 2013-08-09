@@ -3,17 +3,19 @@
  */
 package com.l7tech.server.identity.fed;
 
+import com.l7tech.common.io.CertUtils;
 import com.l7tech.identity.*;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.identity.fed.FederatedGroup;
 import com.l7tech.identity.fed.FederatedIdentityProviderConfig;
 import com.l7tech.identity.fed.FederatedUser;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.security.cert.CertVerifier;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.security.cert.TrustedCertManager;
-import com.l7tech.security.cert.CertVerifier;
 import com.l7tech.security.token.SecurityToken;
 import com.l7tech.security.token.SessionSecurityToken;
 import com.l7tech.server.audit.Auditor;
@@ -24,7 +26,6 @@ import com.l7tech.server.identity.SessionAuthenticator;
 import com.l7tech.server.identity.cert.TrustedCertServices;
 import com.l7tech.server.security.cert.CertValidationProcessor;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.common.io.CertUtils;
 import com.l7tech.util.HexUtils;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -67,7 +68,7 @@ public class FederatedIdentityProviderImpl
 
     @Override
     @Transactional(propagation=Propagation.SUPPORTS)
-    public Set<Long> getValidTrustedCertOids() {
+    public Set<Goid> getValidTrustedCertOids() {
         return Collections.unmodifiableSet(validTrustedCertOids);
     }
 
@@ -176,8 +177,8 @@ public class FederatedIdentityProviderImpl
         userManager.configure( this );
         groupManager.configure( this );
 
-        long[] certOids = providerConfig.getTrustedCertOids();
-        for (long certOid : certOids) {
+        Goid[] certOids = providerConfig.getTrustedCertGoids();
+        for (Goid certOid : certOids) {
             String msg = "Federated Identity Provider '" + providerConfig.getName() + "' refers to Trusted Cert #" + certOid;
             try {
                 TrustedCert trust = trustedCertManager.getCachedEntity(certOid, MAX_CACHE_AGE);
@@ -288,7 +289,7 @@ public class FederatedIdentityProviderImpl
     private TrustedCertServices trustedCertServices;
     private CertValidationProcessor certValidationProcessor;
 
-    private final Set<Long> validTrustedCertOids = new HashSet<Long>();
+    private final Set<Goid> validTrustedCertOids = new HashSet<>();
 
     private static final Logger logger = Logger.getLogger(FederatedIdentityProviderImpl.class.getName());
     private static final int MAX_CACHE_AGE = 5000;

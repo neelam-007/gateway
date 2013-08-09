@@ -64,7 +64,7 @@ abstract class WssEncryptingDecorationAssertionValidator extends WssDecorationAs
                 WsSecurity wsSecurity = (WsSecurity) a;
                 if ( wsSecurity.isApplyWsSecurity() &&
                      ( wsSecurity.getRecipientTrustedCertificateName() != null ||
-                       wsSecurity.getRecipientTrustedCertificateOid() > 0 ) ) {
+                       wsSecurity.getRecipientTrustedCertificateOid() != null ) ) {
                         requiresTargetEncKey = false;
                 }
             }

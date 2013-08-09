@@ -14,7 +14,7 @@ import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.identity.fed.FederatedIdentityProviderConfig;
 import com.l7tech.identity.fed.FederatedUser;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.security.cert.TrustedCertManager;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.security.types.CertificateValidationResult;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.identity.cert.TrustedCertServices;
@@ -100,7 +100,7 @@ class FederatedAuthorizationHandler {
     protected final TrustedCertServices trustedCertServices;
     protected final CertValidationProcessor certValidationProcessor;
     protected final Auditor auditor;
-    protected final Set<Long> certOidSet;
+    protected final Set<Goid> certOidSet;
     protected final FederatedIdentityProviderConfig providerConfig;
     protected final ClientCertManager clientCertManager;
 }

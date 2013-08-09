@@ -1,6 +1,7 @@
 package com.l7tech.server.identity.cert;
 
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.security.cert.TrustedCert;
 
 import java.security.cert.CertificateException;
@@ -24,7 +25,7 @@ public interface TrustedCertServices {
      * @param trustedCertOids a list of OIDs of trusted certificates to trust, or null to use the list from the database.
      * @throws java.security.cert.CertificateException if there is a problem decoding a certificate
      */
-    void checkSslTrust(X509Certificate[] serverCertChain, Set<Long> trustedCertOids) throws CertificateException;
+    void checkSslTrust(X509Certificate[] serverCertChain, Set<Goid> trustedCertOids) throws CertificateException;
 
     /**
      * Perform a cached lookup of trusted certs by subject DN, filtered to include only TrustedCert instances
@@ -41,7 +42,7 @@ public interface TrustedCertServices {
      * @return a Collection of read-only TrustedCert instances that match the specified criteria.  May be empty, but never null.
      * @throws com.l7tech.objectmodel.FindException if there is a problem reading TrustedCert instances from the database.
      */
-    Collection<TrustedCert> getCertsBySubjectDnFiltered(String subjectDn, boolean omitExpired, Set<TrustedCert.TrustedFor> requiredTrustFlags, Set<Long> requiredOids) throws FindException;
+    Collection<TrustedCert> getCertsBySubjectDnFiltered(String subjectDn, boolean omitExpired, Set<TrustedCert.TrustedFor> requiredTrustFlags, Set<Goid> requiredOids) throws FindException;
 
     /**
      * Perform a cached lookup of all trusted certs that are trusted for the specified activities.

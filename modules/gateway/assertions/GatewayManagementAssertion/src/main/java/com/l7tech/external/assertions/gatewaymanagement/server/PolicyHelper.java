@@ -452,7 +452,7 @@ public class PolicyHelper {
         }
 
         @Override
-        public TrustedCert findCertByPrimaryKey( final long certOid ) throws FindException {
+        public TrustedCert findCertByPrimaryKey( final Goid certOid ) throws FindException {
             return filter( trustedCertManager.findByPrimaryKey( certOid ) );
         }
 
@@ -509,7 +509,7 @@ public class PolicyHelper {
         }
 
         @Override
-        public JmsEndpoint findEndpointByOidorGoid(Either<Long, Goid> endpointId) throws FindException {
+        public JmsEndpoint findEndpointByOidOrGoid(Either<Long, Goid> endpointId) throws FindException {
             if(endpointId.isLeft())
                 return filter(jmsEndpointManager.findByOldOid(endpointId.left()));
             return filter(jmsEndpointManager.findByPrimaryKey(endpointId.right()));
@@ -531,7 +531,7 @@ public class PolicyHelper {
         }
 
         @Override
-        public SsgActiveConnector findConnectorByOidorGoid(Either<Long, Goid> endpointId) throws FindException {
+        public SsgActiveConnector findConnectorByOidOrGoid(Either<Long, Goid> endpointId) throws FindException {
             if(endpointId.isLeft())
                 return filter(ssgActiveConnectorManager.findByOldOid(endpointId.left()));
             return filter(ssgActiveConnectorManager.findByPrimaryKey(endpointId.right()));

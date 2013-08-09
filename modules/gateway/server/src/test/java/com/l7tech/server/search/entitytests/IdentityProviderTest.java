@@ -29,7 +29,7 @@ public class IdentityProviderTest extends DependencyTestBaseClass {
     public void test() throws FindException {
 
         SecurityZone securityZone = new SecurityZone();
-        Goid securityZoneGoid = new Goid(0,idCount.getAndIncrement());
+        Goid securityZoneGoid = nextGoid();
         securityZone.setGoid(securityZoneGoid);
         mockEntity(securityZone, new EntityHeader(securityZoneGoid, EntityType.SECURITY_ZONE, null, null));
 
@@ -71,18 +71,20 @@ public class IdentityProviderTest extends DependencyTestBaseClass {
         Assert.assertEquals(0, result.getDependencies().size());
     }
 
+
+
     @Test
     public void testFederated1TrustedCert() throws FindException {
 
         TrustedCert trustedCert = new TrustedCert();
-        long trustedCertOid = idCount.getAndIncrement();
-        trustedCert.setOid(trustedCertOid);
+        Goid trustedCertOid = nextGoid();
+        trustedCert.setGoid(trustedCertOid);
         mockEntity(trustedCert, new EntityHeader(trustedCertOid, EntityType.TRUSTED_CERT, null, null));
 
         FederatedIdentityProviderConfig identityProviderConfig = new FederatedIdentityProviderConfig();
         final long identityProviderOid = idCount.getAndIncrement();
         identityProviderConfig.setOid(identityProviderOid);
-        identityProviderConfig.setTrustedCertOids(new long[]{trustedCertOid});
+        identityProviderConfig.setTrustedCertGoids(new Goid[]{trustedCertOid});
 
         final EntityHeader IdentityProviderConfigEntityHeader = new EntityHeader(identityProviderOid, EntityType.ID_PROVIDER_CONFIG, null, null);
 
@@ -94,32 +96,36 @@ public class IdentityProviderTest extends DependencyTestBaseClass {
         Assert.assertEquals(identityProviderOid, Long.parseLong(((DependentEntity) result.getDependent()).getInternalID()));
         Assert.assertEquals(EntityType.ID_PROVIDER_CONFIG, ((DependentEntity) result.getDependent()).getEntityType());
         Assert.assertNotNull(result.getDependencies());
-        Assert.assertEquals(trustedCertOid, Long.parseLong(((DependentEntity) result.getDependencies().get(0).getDependent()).getInternalID()));
+        Assert.assertEquals(trustedCertOid, new Goid(((DependentEntity) result.getDependencies().get(0).getDependent()).getInternalID()));
         Assert.assertEquals(EntityType.TRUSTED_CERT, ((DependentEntity) result.getDependencies().get(0).getDependent()).getEntityType());
+    }
+
+    private Goid nextGoid() {
+        return new Goid(0, idCount.getAndIncrement());
     }
 
     @Test
     public void testFederated3TrustedCert() throws FindException {
 
         TrustedCert trustedCert = new TrustedCert();
-        long trustedCertOid = idCount.getAndIncrement();
-        trustedCert.setOid(trustedCertOid);
+        Goid trustedCertOid = nextGoid();
+        trustedCert.setGoid(trustedCertOid);
         mockEntity(trustedCert, new EntityHeader(trustedCertOid, EntityType.TRUSTED_CERT, null, null));
 
         TrustedCert trustedCert2 = new TrustedCert();
-        long trustedCert2Oid = idCount.getAndIncrement();
-        trustedCert.setOid(trustedCert2Oid);
+        Goid trustedCert2Oid = nextGoid();
+        trustedCert.setGoid(trustedCert2Oid);
         mockEntity(trustedCert2, new EntityHeader(trustedCert2Oid, EntityType.TRUSTED_CERT, null, null));
 
         TrustedCert trustedCert3 = new TrustedCert();
-        long trustedCert3Oid = idCount.getAndIncrement();
-        trustedCert.setOid(trustedCert3Oid);
+        Goid trustedCert3Oid = nextGoid();
+        trustedCert.setGoid(trustedCert3Oid);
         mockEntity(trustedCert3, new EntityHeader(trustedCert3Oid, EntityType.TRUSTED_CERT, null, null));
 
         FederatedIdentityProviderConfig identityProviderConfig = new FederatedIdentityProviderConfig();
         final long identityProviderOid = idCount.getAndIncrement();
         identityProviderConfig.setOid(identityProviderOid);
-        identityProviderConfig.setTrustedCertOids(new long[]{trustedCertOid, trustedCert2Oid, trustedCert3Oid});
+        identityProviderConfig.setTrustedCertGoids(new Goid[]{trustedCertOid, trustedCert2Oid, trustedCert3Oid});
 
         final EntityHeader IdentityProviderConfigEntityHeader = new EntityHeader(identityProviderOid, EntityType.ID_PROVIDER_CONFIG, null, null);
 

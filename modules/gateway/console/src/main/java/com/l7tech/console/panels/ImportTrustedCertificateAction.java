@@ -128,7 +128,7 @@ public class ImportTrustedCertificateAction extends SecureAction {
                     public void run() {
 
                         try {
-                            tc.setOid(getTrustedCertAdmin().saveCert(tc));
+                            tc.setGoid(getTrustedCertAdmin().saveCert(tc));
 
                             // reload all certs from server
                             if (listener != null) {

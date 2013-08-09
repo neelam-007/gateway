@@ -9,6 +9,7 @@ import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.security.cert.KeyUsageActivity;
 import com.l7tech.security.cert.KeyUsageChecker;
@@ -210,12 +211,12 @@ public class XmlElementVerifier {
         X509Certificate selectedCert = null;
         String description = "";
         try {
-            final long certOid = config.getVerifyCertificateOid();
+            final Goid certOid = config.getVerifyCertificateOid();
             final String certName = config.getVerifyCertificateName();
 
-            if ( certOid > 0 ) {
+            if ( certOid != null ) {
                 description = "id #" + certOid;
-                TrustedCert trustedCertificate = trustedCertCache.findByPrimaryKey( certOid );
+                TrustedCert trustedCertificate = trustedCertCache.findByPrimaryKey(certOid);
                 if ( trustedCertificate != null ) {
                     selectedCert = trustedCertificate.getCertificate();
                 } else {
@@ -260,7 +261,7 @@ public class XmlElementVerifier {
         try {
             expired = trustedCert.isExpiredCert();
         } catch (CertificateException e) {
-            audit.logAndAudit(AssertionMessages.WSSECURITY_RECIP_CERT_EXP, new String[]{trustedCert.getName() + " (#" + trustedCert.getOid() + ")"}, e);
+            audit.logAndAudit(AssertionMessages.WSSECURITY_RECIP_CERT_EXP, new String[]{trustedCert.getName() + " (#" + trustedCert.getGoid() + ")"}, e);
         }
 
         return expired;

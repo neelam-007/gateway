@@ -7,6 +7,8 @@ import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.fed.FederatedIdentityProviderConfig;
 import com.l7tech.identity.ldap.*;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.GoidEntity;
 import com.l7tech.security.types.CertificateValidationType;
 import com.l7tech.server.identity.ldap.LdapConfigTemplateManager;
 import com.l7tech.server.security.rbac.RbacServices;
@@ -159,14 +161,14 @@ public class IdentityProviderResourceFactory extends EntityManagerResourceFactor
     private void asResource( final IdentityProviderMO identityProvider,
                              final FederatedIdentityProviderConfig federatedIdentityProviderConfig ) {
         identityProvider.setProperties( getProperties( federatedIdentityProviderConfig, FederatedIdentityProviderConfig.class ) );
-        if ( federatedIdentityProviderConfig.getTrustedCertOids() != null &&
-             federatedIdentityProviderConfig.getTrustedCertOids().length > 0 ) {
+        if ( federatedIdentityProviderConfig.getTrustedCertGoids() != null &&
+             federatedIdentityProviderConfig.getTrustedCertGoids().length > 0 ) {
             final FederatedIdentityProviderDetail detail = identityProvider.getFederatedIdentityProviderDetail();
             if ( detail != null ) {
-                detail.setCertificateReferences( Functions.map( Arrays.asList(ArrayUtils.box(federatedIdentityProviderConfig.getTrustedCertOids())), new Functions.Unary<String,Long>(){
+                detail.setCertificateReferences( Functions.map( Arrays.asList(federatedIdentityProviderConfig.getTrustedCertGoids()), new Functions.Unary<String,Goid>(){
                     @Override
-                    public String call( final Long aLong ) {
-                        return aLong.toString();
+                    public String call( final Goid goid ) {
+                        return goid.toString();
                     }
                 } ));
             }
@@ -179,12 +181,17 @@ public class IdentityProviderResourceFactory extends EntityManagerResourceFactor
         final FederatedIdentityProviderDetail detail = identityProviderResource.getFederatedIdentityProviderDetail();
         if ( detail != null && detail.getCertificateReferences() != null ) {
             try {
-                federatedIdentityProviderConfig.setTrustedCertOids( ArrayUtils.unbox( Functions.map( detail.getCertificateReferences(), new Functions.Unary<Long,String>(){
+                List<Goid> goids = Functions.map(detail.getCertificateReferences(), new Functions.Unary<Goid, String>() {
                     @Override
-                    public Long call( final String s ) {
-                        return Long.parseLong( s );
+                    public Goid call(final String s) {
+                        try {
+                            return new Goid(s);
+                        } catch ( IllegalArgumentException nfe ) {
+                            return GoidEntity.DEFAULT_GOID; // will not match any certificate
+                        }
                     }
-                } ) ));
+                });
+                federatedIdentityProviderConfig.setTrustedCertGoids(goids.toArray(new Goid[goids.size()]));
             } catch ( NumberFormatException nfe ) {
                 throw new InvalidResourceException( InvalidResourceException.ExceptionType.INVALID_VALUES, "invalid certificate reference");
             }
@@ -481,7 +488,7 @@ public class IdentityProviderResourceFactory extends EntityManagerResourceFactor
         updateBaseConfig( oldConfig, newConfig );
         oldConfig.setSamlSupported( newConfig.isSamlSupported() );
         oldConfig.setX509Supported( newConfig.isX509Supported() );
-        oldConfig.setTrustedCertOids( newConfig.getTrustedCertOids() );
+        oldConfig.setTrustedCertGoids(newConfig.getTrustedCertGoids());
     }
 
     private void updateLdapBaseConfig( final LdapUrlBasedIdentityProviderConfig oldConfig,

@@ -315,7 +315,7 @@ public class ManageCertificateValidationDialog extends JDialog {
             DefaultListModel model = (DefaultListModel) policyList.getModel();
             RevocationCheckPolicy revocationCheckPolicy = (RevocationCheckPolicy) model.get(row);
             try {
-                getTrustedCertAdmin().deleteRevocationCheckPolicy(revocationCheckPolicy.getOid());
+                getTrustedCertAdmin().deleteRevocationCheckPolicy(revocationCheckPolicy.getGoid());
                 model.remove(row);
             } catch (ConstraintViolationException cve) {
                 String msg = resources.getString("error.revocationpolicyinuse.text");

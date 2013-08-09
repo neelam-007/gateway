@@ -12,26 +12,27 @@ import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.admin.IdentityAdmin;
 import com.l7tech.gui.util.Utilities;
-import static com.l7tech.gui.util.Utilities.listModel;
 import com.l7tech.gui.widgets.WrappingLabel;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.fed.FederatedIdentityProviderConfig;
 import com.l7tech.objectmodel.EntityHeader;
-import static com.l7tech.objectmodel.EntityUtil.name;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.security.cert.TrustedCert;
-import static com.l7tech.util.ArrayUtils.box;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.CollectionUtils.MapBuilder;
 import com.l7tech.util.Functions.Binary;
-import static com.l7tech.util.Functions.map;
-import static com.l7tech.util.Functions.reduce;
-import static java.util.Collections.sort;
 
 import javax.swing.*;
 import java.awt.*;
 import java.util.*;
 import java.util.logging.Level;
+
+import static com.l7tech.gui.util.Utilities.listModel;
+import static com.l7tech.objectmodel.EntityUtil.name;
+import static com.l7tech.util.Functions.map;
+import static com.l7tech.util.Functions.reduce;
+import static java.util.Collections.sort;
 
 /**
  * This class provides the step panel for the Federated Identity Provider dialog.
@@ -95,7 +96,7 @@ public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel {
 
         oid = iProviderConfig.getOid();
         x509CertSelected = iProviderConfig.isX509Supported();
-        trustedCertsPanel.setCertificateOids( iProviderConfig.getTrustedCertOids() );
+        trustedCertsPanel.setCertificateGoids(iProviderConfig.getTrustedCertGoids());
     }
 
 
@@ -112,7 +113,7 @@ public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel {
             throw new IllegalArgumentException("The settings object must be FederatedIdentityProviderConfig");
 
         FederatedIdentityProviderConfig iProviderConfig = (FederatedIdentityProviderConfig) settings;
-        iProviderConfig.setTrustedCertOids(trustedCertsPanel.getCertificateOids());
+        iProviderConfig.setTrustedCertGoids(trustedCertsPanel.getCertificateGoids());
 
     }
 
@@ -134,7 +135,7 @@ public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel {
         final JDialog owner = getOwner();
 
         Collection<TrustedCert> certsInUse;
-        if ( trustedCertsPanel.getCertificateOids().length == 0 ) {
+        if ( trustedCertsPanel.getCertificateGoids().length == 0 ) {
             final FederatedIPWarningDialog d = new FederatedIPWarningDialog(owner, createMsgPanel());
             d.pack();
             d.addWizardListener(wizardListener);
@@ -228,21 +229,21 @@ public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel {
                 }
             }
 
-            final Map<Long,TrustedCert> trustedCertificates = reduce(
+            final Map<Goid,TrustedCert> trustedCertificates = reduce(
                     trustedCertsPanel.getTrustedCertificates(),
-                    CollectionUtils.<Long,TrustedCert>mapBuilder(),
-                    new Binary<MapBuilder<Long, TrustedCert>,MapBuilder<Long,TrustedCert>,TrustedCert>(){
+                    CollectionUtils.<Goid,TrustedCert>mapBuilder(),
+                    new Binary<MapBuilder<Goid, TrustedCert>,MapBuilder<Goid,TrustedCert>,TrustedCert>(){
                 @Override
-                public MapBuilder<Long, TrustedCert> call( final MapBuilder<Long, TrustedCert> builder, final TrustedCert trustedCert ) {
-                    builder.put( trustedCert.getOid(), trustedCert );
+                public MapBuilder<Goid, TrustedCert> call( final MapBuilder<Goid, TrustedCert> builder, final TrustedCert trustedCert ) {
+                    builder.put( trustedCert.getGoid(), trustedCert );
                     return builder;
                 }
             } ).map();
 
-            final Set<Long> usedTrustedCertificateOids = reduce( fedIdProvConfigs, new HashSet<Long>(), new Binary<Set<Long>,Set<Long>,FederatedIdentityProviderConfig>(){
+            final Set<Goid> usedTrustedCertificateOids = reduce( fedIdProvConfigs, new HashSet<Goid>(), new Binary<Set<Goid>,Set<Goid>,FederatedIdentityProviderConfig>(){
                 @Override
-                public Set<Long> call( final Set<Long> oids, final FederatedIdentityProviderConfig config ) {
-                    oids.addAll( CollectionUtils.list( box( config.getTrustedCertOids() ) ) );
+                public Set<Goid> call( final Set<Goid> oids, final FederatedIdentityProviderConfig config ) {
+                    oids.addAll( CollectionUtils.list( config.getTrustedCertGoids() ) );
                     return oids;
                 }
             } );

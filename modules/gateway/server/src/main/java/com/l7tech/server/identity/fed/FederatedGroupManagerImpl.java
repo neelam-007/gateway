@@ -77,7 +77,7 @@ public class FederatedGroupManagerImpl
 
     @Override
     protected void preSave(FederatedGroup group) throws SaveException {
-        if ( group instanceof VirtualGroup && providerConfig.getTrustedCertOids().length == 0 )
+        if ( group instanceof VirtualGroup && providerConfig.getTrustedCertGoids().length == 0 )
             throw new NoTrustedCertsSaveException("Virtual groups cannot be created in a Federated Identity Provider with no Trusted Certificates");
     }
 

@@ -245,7 +245,7 @@ create table active_connector_property (
 );
 
 create table client_cert (
-    objectid bigint not null,
+    goid CHAR(16) FOR BIT DATA not null,
     cert clob(2147483647),
     issuer_dn varchar(2048),
     serial varchar(255),
@@ -256,7 +256,7 @@ create table client_cert (
     provider bigint not null,
     reset_counter integer not null,
     user_id varchar(255),
-    primary key (objectid)
+    primary key (goid)
 );
 
 create table cluster_info (
@@ -802,7 +802,7 @@ create table resource_entry (
 );
 
 create table revocation_check_policy (
-    objectid bigint not null,
+    goid CHAR(16) FOR BIT DATA not null,
     name varchar(128) not null,
     version integer,
     continue_server_unavailable smallint default 0,
@@ -810,7 +810,7 @@ create table revocation_check_policy (
     default_success smallint default 0,
     revocation_policy_xml clob(2147483647),
     security_zone_goid CHAR(16) FOR BIT DATA references security_zone(goid) on delete set null,
-    primary key (objectid)
+    primary key (goid)
 );
 
 create table sample_messages (
@@ -914,7 +914,7 @@ create table sink_config (
 );
 
 create table trusted_cert (
-    objectid bigint not null,
+    goid CHAR(16) FOR BIT DATA not null,
     cert_base64 clob(2147483647),
     issuer_dn varchar(2048),
     serial varchar(1024),
@@ -922,7 +922,7 @@ create table trusted_cert (
     subject_dn varchar(2048),
     thumbprint_sha1 varchar(64),
     name varchar(128) not null,
-    revocation_policy_oid bigint,
+    revocation_check_policy_goid CHAR(16) FOR BIT DATA,
     revocation_type varchar(128) not null,
     trust_anchor smallint,
     trusted_as_saml_attesting_entity smallint default 0,
@@ -933,14 +933,15 @@ create table trusted_cert (
     verify_hostname smallint default 0,
     version integer,
     security_zone_goid CHAR(16) FOR BIT DATA references security_zone(goid) on delete set null,
-    primary key (objectid)
+    old_objectid bigint,
+    primary key (goid)
 );
 
 create table trusted_esm (
     objectid bigint not null,
     name varchar(128) not null,
     version integer,
-    trusted_cert_oid bigint not null,
+    trusted_cert_goid CHAR(16) FOR BIT DATA not null,
     primary key (objectid)
 );
 
@@ -1221,7 +1222,7 @@ alter table rbac_predicate_oid
 
 alter table trusted_esm
     add constraint FK581D7A373ACD94B6
-    foreign key (trusted_cert_oid)
+    foreign key (trusted_cert_goid)
     references trusted_cert;
 
 alter table trusted_esm_user

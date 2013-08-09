@@ -9,6 +9,7 @@ import com.l7tech.common.http.GenericHttpRequestParams;
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
@@ -22,7 +23,9 @@ import com.l7tech.policy.wsp.WspSensitive;
 import com.l7tech.search.Dependency;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.*;
 import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
@@ -118,7 +121,7 @@ public class HttpRoutingAssertion extends RoutingAssertionWithSamlSV implements 
 
     protected String tlsVersion;
     protected String tlsCipherSuites;
-    protected Long[] tlsTrustedCertOids;
+    protected Goid[] tlsTrustedCertGoids;
     protected String[] tlsTrustedCertNames;
 
     private boolean forceIncludeRequestBody = false;
@@ -187,7 +190,7 @@ public class HttpRoutingAssertion extends RoutingAssertionWithSamlSV implements 
         this.setPassThroughSoapFaults(source.isPassThroughSoapFaults());
         this.setTlsCipherSuites(source.getTlsCipherSuites());
         this.setTlsVersion(source.getTlsVersion());
-        this.setTlsTrustedCertOids(source.getTlsTrustedCertOids());
+        this.setTlsTrustedCertGoids(source.getTlsTrustedCertGoids());
         this.setTlsTrustedCertNames(source.getTlsTrustedCertNames());
         this.setHttpVersion(source.getHttpVersion());
     }
@@ -445,14 +448,21 @@ public class HttpRoutingAssertion extends RoutingAssertionWithSamlSV implements 
     }
 
     /**
-     * @return OIDs of a subset of trusted certs to trust as server certs for outbound TLS, or null.
+     * @return GOIDs of a subset of trusted certs to trust as server certs for outbound TLS, or null.
      */
-    public Long[] getTlsTrustedCertOids() {
-        return tlsTrustedCertOids;
+    public Goid[] getTlsTrustedCertGoids() {
+        return tlsTrustedCertGoids;
     }
 
-    public void setTlsTrustedCertOids(@Nullable Long[] tlsTrustedCertOids) {
-        this.tlsTrustedCertOids = tlsTrustedCertOids;
+    public void setTlsTrustedCertGoids(@Nullable Goid[] tlsTrustedCertGoids) {
+        this.tlsTrustedCertGoids = tlsTrustedCertGoids;
+    }
+
+    // For backward compat while parsing pre-GOID policies.  Not needed for new assertions.
+    @Deprecated
+    @SuppressWarnings("UnusedDeclaration")
+    public void setTlsTrustedCertOids(@Nullable Long[] oids) {
+        this.tlsTrustedCertGoids = Goid.wrapOids(oids);
     }
 
     /**
@@ -482,12 +492,12 @@ public class HttpRoutingAssertion extends RoutingAssertionWithSamlSV implements 
     @Override
     @Migration(mapName = MigrationMappingSelection.REQUIRED, resolver = PropertyResolver.Type.ASSERTION)
     public EntityHeader[] getEntitiesUsed() {
-        if (tlsTrustedCertOids == null || tlsTrustedCertOids.length < 1)
+        if (tlsTrustedCertGoids == null || tlsTrustedCertGoids.length < 1)
             return new EntityHeader[0];
         
-        EntityHeader[] ret = new EntityHeader[tlsTrustedCertOids.length];
-        for (int i = 0; i < tlsTrustedCertOids.length; i++) {
-            long oid = tlsTrustedCertOids[i];
+        EntityHeader[] ret = new EntityHeader[tlsTrustedCertGoids.length];
+        for (int i = 0; i < tlsTrustedCertGoids.length; i++) {
+            Goid oid = tlsTrustedCertGoids[i];
             String name = certName(i);
             ret[i] = new EntityHeader(oid, EntityType.TRUSTED_CERT, name, "Server certificate trusted for outbound SSL/TLS connection");
         }
@@ -496,14 +506,14 @@ public class HttpRoutingAssertion extends RoutingAssertionWithSamlSV implements 
     
     @Override
     public void replaceEntity(EntityHeader oldEntityHeader, EntityHeader newEntityHeader) {
-        if (tlsTrustedCertOids == null || 
+        if (tlsTrustedCertGoids == null ||
                 !EntityType.TRUSTED_CERT.equals(oldEntityHeader.getType()) || 
                 !EntityType.TRUSTED_CERT.equals(newEntityHeader.getType()))
             return;
 
-        for (int i = 0; i < tlsTrustedCertOids.length; i++) {
-            if (tlsTrustedCertOids[i] == oldEntityHeader.getOid()) {
-                tlsTrustedCertOids[i] = newEntityHeader.getOid();
+        for (int i = 0; i < tlsTrustedCertGoids.length; i++) {
+            if (tlsTrustedCertGoids[i] == oldEntityHeader.getGoid()) {
+                tlsTrustedCertGoids[i] = newEntityHeader.getGoid();
                 if (tlsTrustedCertNames != null && tlsTrustedCertNames.length > i)
                     tlsTrustedCertNames[i] = newEntityHeader.getName();
             }

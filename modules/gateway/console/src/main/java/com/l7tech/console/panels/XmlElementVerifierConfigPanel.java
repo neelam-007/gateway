@@ -9,6 +9,8 @@ import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.ValidatedPanel;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.GoidEntity;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.security.xml.XmlElementVerifierConfig;
@@ -51,7 +53,7 @@ public class XmlElementVerifierConfigPanel extends ValidatedPanel<XmlElementVeri
 
     private final XmlElementVerifierConfig model;
     private DefaultListModel customIdAttrListModel;
-    private long selectedVerifyCertificateOid;
+    private Goid selectedVerifyCertificateOid;
 
     public XmlElementVerifierConfigPanel(XmlElementVerifierConfig model) {
         super("model");
@@ -175,7 +177,7 @@ public class XmlElementVerifierConfigPanel extends ValidatedPanel<XmlElementVeri
     }
 
     public void setData(XmlElementVerifierConfig model) {
-        if (model.getVerifyCertificateOid() > 0L) {
+        if (model.getVerifyCertificateOid() != null) {
             certSelectRadioButton.setSelected(true);
             keyInfoOverrideCheckBox.setSelected(model.isIgnoreKeyInfo());
             selectedVerifyCertificateOid = model.getVerifyCertificateOid();
@@ -195,18 +197,18 @@ public class XmlElementVerifierConfigPanel extends ValidatedPanel<XmlElementVeri
 
         } else if (model.getVerifyCertificateName() != null && model.getVerifyCertificateName().length() > 0) {
             certLookupRadioButton.setSelected(true);
-            selectedVerifyCertificateOid = -1;
+            selectedVerifyCertificateOid = GoidEntity.DEFAULT_GOID;
             lookupCertificateTextField.setText(model.getVerifyCertificateName());
             keyInfoOverrideCheckBox.setSelected(model.isIgnoreKeyInfo());
         } else if (model.getVerifyCertificateVariableName() != null && !model.getVerifyCertificateVariableName().isEmpty()) {
             certVariableRadioButton.setSelected(true);
             certVariableNameField.setVariable(model.getVerifyCertificateVariableName());
-            selectedVerifyCertificateOid = -1;
+            selectedVerifyCertificateOid = GoidEntity.DEFAULT_GOID;
             lookupCertificateTextField.setText(null);
             keyInfoOverrideCheckBox.setSelected(model.isIgnoreKeyInfo());
         } else {
             certExpectKeyInfoRadioButton.setSelected(true);
-            selectedVerifyCertificateOid = -1;
+            selectedVerifyCertificateOid = GoidEntity.DEFAULT_GOID;
             lookupCertificateTextField.setText(null);
             keyInfoOverrideCheckBox.setSelected(false);
         }
@@ -235,7 +237,7 @@ public class XmlElementVerifierConfigPanel extends ValidatedPanel<XmlElementVeri
     protected void doUpdateModel() {
         model.setVerifyCertificateName(null);
         model.setVerifyCertificateVariableName(null);
-        model.setVerifyCertificateOid(-1);
+        model.setVerifyCertificateOid(GoidEntity.DEFAULT_GOID);
         model.setIgnoreKeyInfo(keyInfoOverrideCheckBox.isSelected());
 
         if (certSelectRadioButton.isSelected()) {
@@ -303,7 +305,7 @@ public class XmlElementVerifierConfigPanel extends ValidatedPanel<XmlElementVeri
             @Override
             public void certSelected(final CertEvent ce) {
                 TrustedCert cert = ce.getCert();
-                selectedVerifyCertificateOid = cert.getOid();
+                selectedVerifyCertificateOid = cert.getGoid();
                 selectedCertificateNameTextField.setText(cert.getName());
                 selectedCertificateSubjectTextField.setText(cert.getCertificate().getSubjectDN().toString());
                 selectedCertificateIssuerTextField.setText(cert.getCertificate().getIssuerDN().toString());

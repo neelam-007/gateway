@@ -2,6 +2,7 @@ package com.l7tech.console;
 
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.console.util.Registry;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.util.HexUtils;
 import org.junit.BeforeClass;
@@ -91,16 +92,16 @@ public class TrustedCertAdminTest {
     @Test
     public void testUpdateCert() throws Exception {
         final TrustedCert tc = getTrustedCert();
-        final Long oid =
+        final Goid oid =
                 registry.getTrustedCertManager().saveCert( tc );
         System.out.println("Saved " + oid);
 
         tc.setSubjectDn("The other one");
         tc.setTrustedForSsl(true);
-        tc.setOid(oid.longValue());
+        tc.setGoid(oid);
 
-        new Long( registry.getTrustedCertManager().saveCert(tc));
-        System.out.println("Updated " + oid);
+        Goid saved = registry.getTrustedCertManager().saveCert(tc);
+        System.out.println("Updated " + oid + " " + saved);
 
         TrustedCert tc2 = registry.getTrustedCertManager().findCertByPrimaryKey( oid );
 
@@ -114,7 +115,7 @@ public class TrustedCertAdminTest {
     public void testFindAllCerts() throws Exception {
         final TrustedCert tc = getTrustedCert();
 
-        Set<Long> oids = new HashSet<Long>();
+        Set<Goid> oids = new HashSet<Goid>();
         oids.add( registry.getTrustedCertManager().saveCert( tc ) );
         oids.add( registry.getTrustedCertManager().saveCert( tc ) );
 
@@ -122,17 +123,17 @@ public class TrustedCertAdminTest {
 
         List<TrustedCert> all = registry.getTrustedCertManager().findAllCerts();
 
-        Set<Long> foundOids = new HashSet<Long>();
+        Set<Goid> foundOids = new HashSet<Goid>();
         for (TrustedCert tc2 : all) {
-            foundOids.add( tc2.getOid() );
+            foundOids.add( tc2.getGoid() );
         }
 
         System.out.println("Found " + foundOids);
 
         assertTrue(foundOids.containsAll(oids));
 
-        final Set<Long> deletedOids = new HashSet<Long>();
-        for (Long oid : oids) {
+        final Set<Goid> deletedOids = new HashSet<Goid>();
+        for (Goid oid : oids) {
             registry.getTrustedCertManager().deleteCert( oid );
             deletedOids.add(oid);
         }
@@ -158,7 +159,7 @@ public class TrustedCertAdminTest {
         X509Certificate cert = tc.getCertificate();
         System.out.println("Saving cert with dn '" + cert.getSubjectDN().getName() + "' and usage '" + tc.getUsageDescription() + "'");
 
-        final Long oid = registry.getTrustedCertManager().saveCert( tc );
+        final Goid oid = registry.getTrustedCertManager().saveCert( tc );
         System.out.println("Saved cert " + oid);
 
 

@@ -5,6 +5,7 @@ import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.gateway.common.audit.SystemMessages;
 import com.l7tech.gateway.common.security.RevocationCheckPolicy;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.security.cert.TrustedCertManager;
 import com.l7tech.security.prov.JceProvider;
@@ -12,10 +13,11 @@ import com.l7tech.security.types.CertificateValidationResult;
 import com.l7tech.security.types.CertificateValidationType;
 import com.l7tech.security.xml.SignerInfo;
 import com.l7tech.server.DefaultKey;
-import com.l7tech.server.event.EntityInvalidationEvent;
+import com.l7tech.server.event.GoidEntityInvalidationEvent;
 import com.l7tech.server.identity.cert.RevocationCheckPolicyManager;
 import com.l7tech.server.util.PostStartupApplicationListener;
 import com.l7tech.util.*;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationEvent;
 import sun.security.provider.certpath.AdjacencyList;
@@ -67,10 +69,10 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, Pos
     private final Map<String, CertValidationCacheEntry> trustedCertsBySKI;
     private final Map<String, List<CertValidationCacheEntry>> trustedCertsByDn; // DN strings in RFC2253 format
     private final Map<IDNSerialKey, CertValidationCacheEntry> trustedCertsByIssuerDnAndSerial;
-    private final Map<Long, CertValidationCacheEntry> trustedCertsByOid;
-    private final Map<Long, RevocationCheckPolicy> revocationPoliciesByOid;
+    private final Map<Goid, CertValidationCacheEntry> trustedCertsByOid;
+    private final Map<Goid, RevocationCheckPolicy> revocationPoliciesByOid;
     private Map<String, List<TrustAnchor>> trustAnchorsByDn;  // DN strings in RFC2253 format
-    private final Set<String> permittedCriticalExtensions = new HashSet<String>();
+    private final Set<String> permittedCriticalExtensions = new HashSet<>();
     private CertStore certStore;
     private boolean cacheIsDirty = false;
     private RevocationCheckPolicy currentDefaultRevocationPolicy;
@@ -90,11 +92,11 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, Pos
         this.permissiveRcp.setDefaultSuccess(true);
         this.config = config;
 
-        Map<String, List<CertValidationCacheEntry>> myDnCache = new HashMap<String, List<CertValidationCacheEntry>>();
-        Map<IDNSerialKey, CertValidationCacheEntry> myIssuerDnCache = new HashMap<IDNSerialKey, CertValidationCacheEntry>();
-        Map<Long, CertValidationCacheEntry> myOidCache = new HashMap<Long, CertValidationCacheEntry>();
-        Map<String, CertValidationCacheEntry> mySkiCache = new HashMap<String, CertValidationCacheEntry>();
-        Map<Long, RevocationCheckPolicy> myRCPByIdCache = new HashMap<Long, RevocationCheckPolicy>();
+        Map<String, List<CertValidationCacheEntry>> myDnCache = new HashMap<>();
+        Map<IDNSerialKey, CertValidationCacheEntry> myIssuerDnCache = new HashMap<>();
+        Map<Goid, CertValidationCacheEntry> myOidCache = new HashMap<>();
+        Map<String, CertValidationCacheEntry> mySkiCache = new HashMap<>();
+        Map<Goid, RevocationCheckPolicy> myRCPByIdCache = new HashMap<>();
 
         populateCaches(myDnCache, myIssuerDnCache, myOidCache, mySkiCache, myRCPByIdCache);
 
@@ -234,7 +236,7 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, Pos
     }
 
     @Override
-    public TrustedCert getTrustedCertByOid(long oid) {
+    public TrustedCert getTrustedCertByOid(Goid oid) {
         lock.readLock().lock();
         try {
             TrustedCert trustedCert = null;
@@ -411,7 +413,7 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, Pos
         try {
             sel = new X509CertSelector();
             sel.setCertificate(endEntityCertificatePath[0]);
-            Set<TrustAnchor> tempAnchors = new HashSet<TrustAnchor>();
+            Set<TrustAnchor> tempAnchors = new HashSet<>();
             tempAnchors.addAll( CollectionUtils.join( trustAnchorsByDn.values() ) );
             PKIXBuilderParameters pbp = new PKIXBuilderParameters(tempAnchors, sel);
             pbp.setRevocationEnabled(false); // We'll do our own
@@ -460,7 +462,7 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, Pos
 
     @Override
     public void onApplicationEvent(ApplicationEvent applicationEvent) {
-        if (applicationEvent instanceof EntityInvalidationEvent) {
+        if (applicationEvent instanceof GoidEntityInvalidationEvent) {
             boolean isDirty = false;
             lock.readLock().lock();
             try {
@@ -471,7 +473,7 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, Pos
 
             if ( !isDirty ) {
                 // incremental update
-                processEntityInvalidationEvent((EntityInvalidationEvent) applicationEvent);
+                processEntityInvalidationEvent((GoidEntityInvalidationEvent) applicationEvent);
             } else {
                 // full reload
                 lock.writeLock().lock();
@@ -490,9 +492,9 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, Pos
 
     private void populateCaches(Map<String, List<CertValidationCacheEntry>> myDnCache,
                                 Map<IDNSerialKey, CertValidationCacheEntry> myIssuerDnCache,
-                                Map<Long, CertValidationCacheEntry> myOidCache,
+                                Map<Goid, CertValidationCacheEntry> myOidCache,
                                 Map<String, CertValidationCacheEntry> mySkiCache,
-                                Map<Long, RevocationCheckPolicy> myRcpsByOid) {
+                                Map<Goid, RevocationCheckPolicy> myRcpsByOid) {
         logger.info("(Re-)Populating certificate validation caches.");
 
         // clear existing data
@@ -517,7 +519,7 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, Pos
                 if (defaultRcp != null) throw new IllegalStateException("Multiple RevocationCheckPolicies are flagged as default");
                 defaultRcp = rcp;
             }
-            myRcpsByOid.put(rcp.getOid(), rcp);
+            myRcpsByOid.put(rcp.getGoid(), rcp);
         }
         if (defaultRcp == null) defaultRcp = new RevocationCheckPolicy(); // Always fails
         this.currentDefaultRevocationPolicy = defaultRcp;
@@ -534,14 +536,12 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, Pos
             try {
                 final CertValidationCacheEntry entry = new CertValidationCacheEntry(tce);
                 addToEntryList( myDnCache, tce.getSubjectDn(), entry );
-                myOidCache.put(tce.getOid(), entry);
+                myOidCache.put(tce.getGoid(), entry);
                 mySkiCache.put(tce.getSki(), entry);
                 // last since it may throw on invalid data
                 myIssuerDnCache.put(new IDNSerialKey(entry.issuerDn, entry.serial), entry);
-            } catch (CertificateException e) {
-                logger.log(Level.WARNING, "Couldn't load TrustedCert #{0} ({1}): " + ExceptionUtils.getMessage(e), new Object[] { tce.getOid(), tce.getSubjectDn() });
-            } catch (IllegalArgumentException e) {
-                logger.log(Level.WARNING, "Couldn't load TrustedCert #{0} ({1}): " + ExceptionUtils.getMessage(e), new Object[] { tce.getOid(), tce.getSubjectDn() });
+            } catch (CertificateException | IllegalArgumentException e) {
+                logger.log(Level.WARNING, "Couldn't load TrustedCert #{0} ({1}): " + ExceptionUtils.getMessage(e), new Object[] { tce.getGoid(), tce.getSubjectDn() });
             }
         }
 
@@ -552,18 +552,18 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, Pos
         cacheIsDirty = false;
     }
 
-    private void processEntityInvalidationEvent(final EntityInvalidationEvent eie) {
+    private void processEntityInvalidationEvent(final GoidEntityInvalidationEvent eie) {
         if (TrustedCert.class.isAssignableFrom(eie.getEntityClass())) {
-            final long[] ids = eie.getEntityIds();
+            final Goid[] ids = eie.getEntityIds();
             final char[] ops = eie.getEntityOperations();
             lock.writeLock().lock();
             try {
                 nextOid: for (int i = 0; i < ids.length; i++) {
-                    long oid = ids[i];
+                    Goid oid = ids[i];
                     char op = ops[i];
                     switch(op) {
-                        case EntityInvalidationEvent.CREATE:
-                        case EntityInvalidationEvent.UPDATE:
+                        case GoidEntityInvalidationEvent.CREATE:
+                        case GoidEntityInvalidationEvent.UPDATE:
                             if (logger.isLoggable(Level.FINE) ) {
                                 logger.log(Level.FINE, "Updating cache due to trusted certificate add/update, OID is {0}.", oid);
                             }
@@ -575,7 +575,7 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, Pos
                                 logger.log(Level.WARNING, "Couldn't load recently created or updated TrustedCert #" + oid, e);
                                 continue nextOid;
                             }
-                        case EntityInvalidationEvent.DELETE:
+                        case GoidEntityInvalidationEvent.DELETE:
                             if (logger.isLoggable(Level.FINE) ) {
                                 logger.log(Level.FINE, "Updating cache due to trusted certificate deletion, OID is {0}.", oid);
                             }
@@ -589,16 +589,16 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, Pos
                 lock.writeLock().unlock();
             }
         } else if (RevocationCheckPolicy.class.isAssignableFrom(eie.getEntityClass())) {
-            final long[] ids = eie.getEntityIds();
+            final Goid[] ids = eie.getEntityIds();
             final char[] ops = eie.getEntityOperations();
             lock.writeLock().lock();
             try {
                 nextOid: for (int i = 0; i < ids.length; i++) {
-                    long oid = ids[i];
+                    Goid oid = ids[i];
                     char op = ops[i];
                     switch(op) {
-                        case EntityInvalidationEvent.CREATE:
-                        case EntityInvalidationEvent.UPDATE:
+                        case GoidEntityInvalidationEvent.CREATE:
+                        case GoidEntityInvalidationEvent.UPDATE:
                             if (logger.isLoggable(Level.FINE) ) {
                                 logger.log(Level.FINE, "Updating cache due to revocation check policy add/update, OID is {0}.", oid);
                             }
@@ -610,7 +610,7 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, Pos
                                 logger.log(Level.WARNING, "Couldn't load recently created or updated RevocationCheckPolicy #" + oid, e);
                                 continue nextOid;
                             }
-                        case EntityInvalidationEvent.DELETE:
+                        case GoidEntityInvalidationEvent.DELETE:
                             if (logger.isLoggable(Level.FINE) ) {
                                 logger.log(Level.FINE, "Updating cache due to revocation check policy deletion, OID is {0}.", oid);
                             }
@@ -628,8 +628,8 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, Pos
 
     /** Caller must hold write lock (or be the constructor) */
     private void initializeCertStoreAndTrustAnchors(Collection<TrustedCert> tces, boolean includeDefaults) {
-        Map<String, List<TrustAnchor>> anchors = new HashMap<String, List<TrustAnchor>>();
-        Set<X509Certificate> nonAnchors = new HashSet<X509Certificate>();
+        Map<String, List<TrustAnchor>> anchors = new HashMap<>();
+        Set<X509Certificate> nonAnchors = new HashSet<>();
 
         SignerInfo caInfo = defaultKey.getCaInfo();
         if (caInfo != null)
@@ -642,10 +642,7 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, Pos
                 Provider prov = JceProvider.getInstance().getProviderFor("TrustManagerFactory." + alg);
                 tmf = prov == null ? TrustManagerFactory.getInstance(alg) : TrustManagerFactory.getInstance(alg, prov);
                 tmf.init((KeyStore)null);
-            } catch (NoSuchAlgorithmException e) {
-                logger.log(Level.SEVERE, e.toString(), e);
-                throw new RuntimeException(e);
-            } catch (KeyStoreException e) {
+            } catch (NoSuchAlgorithmException | KeyStoreException e) {
                 logger.log(Level.SEVERE, e.toString(), e);
                 throw new RuntimeException(e);
             }
@@ -687,10 +684,10 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, Pos
     }
 
     /** Caller must hold write lock */
-    private void removeRCPFromCaches(long oid) {
+    private void removeRCPFromCaches(Goid oid) {
         revocationCheckerFactory.invalidateRevocationCheckPolicy( oid );
         revocationPoliciesByOid.remove( oid );
-        if (currentDefaultRevocationPolicy.getOid() == oid) {
+        if (currentDefaultRevocationPolicy.getGoid() == oid) {
             currentDefaultRevocationPolicy = null;
             logger.fine("Default revocation policy deleted; hopefully soon we'll be notified that a new one was set as default");
         }
@@ -700,15 +697,17 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, Pos
     private void addRCPToCaches(RevocationCheckPolicy policy) {
         if ( policy.isDefaultPolicy() ) {
             currentDefaultRevocationPolicy = policy;
-        } else if (currentDefaultRevocationPolicy!=null && currentDefaultRevocationPolicy.getOid()==policy.getOid()) {
+        } else if (currentDefaultRevocationPolicy!=null &&
+            currentDefaultRevocationPolicy.getGoid() != null &&
+            currentDefaultRevocationPolicy.getGoid().equals(policy.getGoid())) {
             currentDefaultRevocationPolicy = null;
         }
-        revocationPoliciesByOid.put( policy.getOid(), policy );
-        revocationCheckerFactory.invalidateRevocationCheckPolicy(policy.getOid());
+        revocationPoliciesByOid.put( policy.getGoid(), policy );
+        revocationCheckerFactory.invalidateRevocationCheckPolicy(policy.getGoid());
     }
 
     /** Caller must hold write lock */
-    private void removeTrustedCertFromCaches(long oid) {
+    private void removeTrustedCertFromCaches(Goid oid) {
         revocationCheckerFactory.invalidateTrustedCert(oid);
         CertValidationCacheEntry entry = trustedCertsByOid.remove(oid);
         if (entry == null) return;
@@ -716,7 +715,7 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, Pos
         trustedCertsBySKI.remove(entry.ski);
         trustedCertsByIssuerDnAndSerial.remove(new IDNSerialKey(entry.issuerDn, entry.serial));
         if(trustAnchorsByDn.containsKey(entry.subjectDn)) {
-            final Map<String, List<TrustAnchor>> updatedTrustAnchors = new HashMap<String, List<TrustAnchor>>(trustAnchorsByDn);
+            final Map<String, List<TrustAnchor>> updatedTrustAnchors = new HashMap<>(trustAnchorsByDn);
             removeFromEntryList( updatedTrustAnchors, entry.subjectDn, trustAnchorMatcher( entry.cert ) );
             trustAnchorsByDn = Collections.unmodifiableMap(updatedTrustAnchors);
         }
@@ -728,14 +727,14 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, Pos
         CertValidationCacheEntry entry = new CertValidationCacheEntry(tce);
         addToEntryList( trustedCertsByDn, tce.getSubjectDn(), entry, certValidationCacheEntryMatcher(entry.cert) );
         trustedCertsBySKI.put( entry.ski, entry );
-        trustedCertsByOid.put( tce.getOid(), entry );
+        trustedCertsByOid.put( tce.getGoid(), entry );
         trustedCertsByIssuerDnAndSerial.put( new IDNSerialKey( entry.issuerDn, entry.serial ), entry );
         if ( logger.isLoggable( Level.FINE ) ) {
             logger.log(Level.FINE, "Added certificate ''{0}'', to anchors store.", entry.subjectDn);
         }
 
         // update TrustAnchors and known certs
-        Map<String, List<TrustAnchor>> anchors = new HashMap<String, List<TrustAnchor>>(trustAnchorsByDn);
+        Map<String, List<TrustAnchor>> anchors = new HashMap<>(trustAnchorsByDn);
         if ( tce.isTrustAnchor() ) {
             final TrustAnchor old = addToEntryList(anchors, tce.getSubjectDn(), new TrustAnchor(entry.cert, null), trustAnchorMatcher(entry.cert));
             if ( logger.isLoggable(Level.FINE) ) {
@@ -752,7 +751,7 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, Pos
         trustAnchorsByDn = Collections.unmodifiableMap(anchors);
 
         try {
-            Set<Certificate> nonAnchors = new HashSet<Certificate>(certStore.getCertificates(null));
+            Set<Certificate> nonAnchors = new HashSet<>(certStore.getCertificates(null));
             if ( tce.isTrustAnchor() ) {
                 boolean removed = nonAnchors.remove(entry.cert);
                 if ( logger.isLoggable(Level.FINE) ) {
@@ -772,7 +771,7 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, Pos
         }
 
         //
-        revocationCheckerFactory.invalidateTrustedCert(tce.getOid());
+        revocationCheckerFactory.invalidateTrustedCert(tce.getGoid());
     }
 
     private <K,V> void addToEntryList( final Map<K,List<V>> map,
@@ -784,18 +783,18 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, Pos
     private <K,V> V addToEntryList( final Map<K,List<V>> map,
                                     final K key,
                                     final V value,
-                                    final Functions.Unary<Boolean,V> matcher ) {
+                                    @Nullable final Functions.Unary<Boolean,V> matcher ) {
         V replaced = null;
         final List<V> values = map.get( key );
         final List<V> updatedList;
         if ( values == null ) {
             updatedList = Collections.singletonList( value );
         } else if ( matcher == null ) {
-            final List<V> valuesCopy = new ArrayList<V>( values );
+            final List<V> valuesCopy = new ArrayList<>( values );
             valuesCopy.add( value );
             updatedList = Collections.unmodifiableList( valuesCopy );
         } else {
-            final List<V> valuesCopy = new ArrayList<V>( values );
+            final List<V> valuesCopy = new ArrayList<>( values );
             int replaceIndex = -1;
             for ( int i=0; i<valuesCopy.size(); i++ ) {
                 if ( matcher.call( valuesCopy.get( i ) ) ) {
@@ -825,7 +824,7 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, Pos
         final List<V> values = map.get( key );
         List<V> updatedList = null;
         if ( values != null ) {
-            final List<V> valuesCopy = new ArrayList<V>( values );
+            final List<V> valuesCopy = new ArrayList<>( values );
             int removeIndex = -1;
             for ( int i=0; i<valuesCopy.size(); i++ ) {
                 if ( matcher.call( valuesCopy.get( i ) ) ) {
@@ -936,7 +935,7 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, Pos
         private final Set<String> extensions;
         
         private PermitCriticalExtensionPKIXCertPathChecker( final Set<String> extensions ) {
-            this.extensions = Collections.unmodifiableSet( new HashSet<String>(extensions) );
+            this.extensions = Collections.unmodifiableSet( new HashSet<>(extensions) );
         }
 
         @Override
@@ -991,10 +990,11 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, Pos
                 final SunCertPathBuilderException sunException = (SunCertPathBuilderException) exception;
                 final AdjacencyList list = sunException.getAdjacencyList();
                 if ( list != null ) {
-                    final List<String> errorsDuringBuild = new ArrayList<String>();
+                    final List<String> errorsDuringBuild = new ArrayList<>();
                     final Iterator<BuildStep> stepIterator = list.iterator();
                     while ( stepIterator.hasNext() ) {
                         final BuildStep buildStep = stepIterator.next();
+                        //noinspection ThrowableResultOfMethodCallIgnored
                         if ( buildStep.getThrowable() != null ) {
                             errorsDuringBuild.add( ExceptionUtils.getMessage( buildStep.getThrowable() ) );
                         }

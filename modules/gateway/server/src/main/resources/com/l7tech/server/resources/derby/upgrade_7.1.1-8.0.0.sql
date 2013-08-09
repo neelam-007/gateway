@@ -476,6 +476,45 @@ ALTER TABLE active_connector_property add constraint FK58920F603AEA90B6 foreign 
 update rbac_role set entity_goid = toGoid(cast(getVariable('active_connector_prefix') as bigint),entity_oid) where entity_oid is not null and entity_type='SSG_ACTIVE_CONNECTOR';
 update rbac_predicate_oid oid1 set oid1.entity_id = ifnull((select goidToString(toGoid(cast(getVariable('active_connector_prefix') as bigint),cast(oid1.entity_id as bigint))) from rbac_predicate left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid where rbac_predicate.objectid = oid1.objectid and rbac_permission.entity_type = 'SSG_ACTIVE_CONNECTOR'), oid1.entity_id);
 
+-- client_cert
+
+ALTER TABLE client_cert ADD COLUMN old_objectid bigint;
+update client_cert set old_objectid = objectid;
+ALTER TABLE client_cert DROP COLUMN objectid;
+ALTER TABLE client_cert ADD COLUMN goid CHAR(16) FOR BIT DATA;
+call setVariable('client_cert_prefix', cast(randomLongNotReserved() as char(21)));
+update client_cert set goid = toGoid(cast(getVariable('client_cert_prefix') as bigint), old_objectid);
+ALTER TABLE client_cert ALTER COLUMN goid NOT NULL;
+ALTER TABLE client_cert ADD PRIMARY KEY (goid);
+
+-- trusted cert
+
+ALTER TABLE trusted_cert ADD COLUMN old_objectid bigint;
+update trusted_cert set old_objectid = objectid;
+ALTER TABLE trusted_cert DROP COLUMN objectid;
+ALTER TABLE trusted_cert ADD COLUMN goid CHAR(16) FOR BIT DATA;
+call setVariable('trusted_cert_prefix', cast(randomLongNotReserved() as char(21)));
+update trusted_cert set goid = toGoid(cast(getVariable('trusted_cert_prefix') as bigint), old_objectid);
+ALTER TABLE trusted_cert ALTER COLUMN goid NOT NULL;
+ALTER TABLE trusted_cert ADD PRIMARY KEY (goid);
+
+update rbac_role set entity_goid = toGoid(cast(getVariable('trusted_cert_prefix') as bigint),entity_oid) where entity_oid is not null and entity_type='TRUSTED_CERT';
+update rbac_predicate_oid oid1 set oid1.entity_id = ifnull((select goidToString(toGoid(cast(getVariable('trusted_cert_prefix') as bigint),cast(oid1.entity_id as bigint))) from rbac_predicate left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid where rbac_predicate.objectid = oid1.objectid and rbac_permission.entity_type = 'TRUSTED_CERT'), oid1.entity_id);
+
+-- revocation check policy
+
+ALTER TABLE revocation_check_policy ADD COLUMN old_objectid bigint;
+update revocation_check_policy set old_objectid = objectid;
+ALTER TABLE revocation_check_policy DROP COLUMN objectid;
+ALTER TABLE revocation_check_policy ADD COLUMN goid CHAR(16) FOR BIT DATA;
+call setVariable('revocation_check_policy_prefix', cast(randomLongNotReserved() as char(21)));
+update revocation_check_policy set goid = toGoid(cast(getVariable('revocation_check_policy_prefix') as bigint), old_objectid);
+ALTER TABLE revocation_check_policy ALTER COLUMN goid NOT NULL;
+ALTER TABLE revocation_check_policy ADD PRIMARY KEY (goid);
+
+update rbac_role set entity_goid = toGoid(cast(getVariable('revocation_check_policy_prefix') as bigint),entity_oid) where entity_oid is not null and entity_type='REVOCATION_CHECK_POLICY';
+update rbac_predicate_oid oid1 set oid1.entity_id = ifnull((select goidToString(toGoid(cast(getVariable('revocation_check_policy_prefix') as bigint),cast(oid1.entity_id as bigint))) from rbac_predicate left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid where rbac_predicate.objectid = oid1.objectid and rbac_permission.entity_type = 'REVOCATION_CHECK_POLICY'), oid1.entity_id);
+
 -- services/policies/folders
 ALTER TABLE folder ADD COLUMN goid CHAR(16) FOR BIT DATA;
 call setVariable('folder_prefix', cast(randomLongNotReserved() as char(21)));
@@ -779,7 +818,7 @@ ALTER TABLE uddi_service_control_monitor_runtime DROP COLUMN uddi_service_contro
 INSERT INTO cluster_properties
     (goid, version, propkey, propvalue, properties)
     values (toGoid(0,-800001), 0, 'upgrade.task.800001', 'com.l7tech.server.upgrade.Upgrade71To80SinkConfig', null),
-           (toGoid(0,-800002), 0, 'upgrade.task.800002', 'com.l7tech.server.upgrade.Upgrade71To80OidReferences', null);
+           (toGoid(0,-800002), 0, 'upgrade.task.800002', 'com.l7tech.server.upgrade.Upgrade71To80IdReferences', null);
 
 
 --

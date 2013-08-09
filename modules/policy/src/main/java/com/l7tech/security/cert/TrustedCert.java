@@ -1,5 +1,6 @@
 package com.l7tech.security.cert;
 
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.NamedEntity;
 import com.l7tech.objectmodel.SecurityZone;
 import com.l7tech.objectmodel.ZoneableEntity;
@@ -284,12 +285,12 @@ public class TrustedCert extends X509Entity implements NamedEntity, Cloneable, Z
         this.revocationCheckPolicyType = revocationCheckPolicyType;
     }
 
-    @Column(name="revocation_policy_oid")
-    public Long getRevocationCheckPolicyOid() {
+    @Column(name="revocation_check_policy_goid")
+    public Goid getRevocationCheckPolicyOid() {
         return revocationCheckPolicyOid;
     }
 
-    public void setRevocationCheckPolicyOid(Long oid) {
+    public void setRevocationCheckPolicyOid(Goid oid) {
         mutate();
         this.revocationCheckPolicyOid = oid;
     }
@@ -348,6 +349,17 @@ public class TrustedCert extends X509Entity implements NamedEntity, Cloneable, Z
         return super.getVersion();
     }
 
+    @Column(name="old_objectid")
+    public Long getOldOid() {
+        return oldOid;
+    }
+
+    // only for hibernate
+    @Deprecated
+    public void setOldOid(Long oldOid) {
+        this.oldOid = oldOid;
+    }
+
     @Override
     @ManyToOne
     @JoinColumn(name = "security_zone_goid")
@@ -393,6 +405,7 @@ public class TrustedCert extends X509Entity implements NamedEntity, Cloneable, Z
     private boolean verifyHostname;
     private boolean trustAnchor;
     private PolicyUsageType revocationCheckPolicyType;
-    private Long revocationCheckPolicyOid;
+    private Goid revocationCheckPolicyOid;
     private SecurityZone securityZone;
+    private Long oldOid = null;
 }

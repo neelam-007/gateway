@@ -2,7 +2,8 @@ package com.l7tech.security.xml;
 
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.PersistentEntity;
+import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.GoidEntity;
 import com.l7tech.policy.assertion.UsesEntities;
 import com.l7tech.policy.assertion.UsesVariables;
 import com.l7tech.util.FullQName;
@@ -28,7 +29,7 @@ public class XmlElementVerifierConfig implements Serializable, UsesVariables, Us
     }});
 
     private String verifyCertificateName;
-    private long verifyCertificateOid;
+    private Goid verifyCertificateOid;
     private String verifyCertificateVariableName;
     private boolean ignoreKeyInfo;
     private FullQName[] customIdAttrs;
@@ -41,11 +42,11 @@ public class XmlElementVerifierConfig implements Serializable, UsesVariables, Us
         this.verifyCertificateName = verifyCertificateName;
     }
 
-    public long getVerifyCertificateOid() {
+    public Goid getVerifyCertificateOid() {
         return verifyCertificateOid;
     }
 
-    public void setVerifyCertificateOid(long verifyCertificateOid) {
+    public void setVerifyCertificateOid(Goid verifyCertificateOid) {
         this.verifyCertificateOid = verifyCertificateOid;
     }
 
@@ -85,7 +86,7 @@ public class XmlElementVerifierConfig implements Serializable, UsesVariables, Us
     public EntityHeader[] getEntitiesUsed() {
         EntityHeader[] headers = new EntityHeader[0];
 
-        if (verifyCertificateOid != PersistentEntity.DEFAULT_OID) {
+        if ( !GoidEntity.DEFAULT_GOID.equals(verifyCertificateOid) ) {
             headers = new EntityHeader[] {new EntityHeader(verifyCertificateOid, EntityType.TRUSTED_CERT, null, null)};
         }
 
@@ -96,8 +97,9 @@ public class XmlElementVerifierConfig implements Serializable, UsesVariables, Us
     public void replaceEntity(EntityHeader oldEntityHeader, EntityHeader newEntityHeader) {
         if( oldEntityHeader.getType() == EntityType.TRUSTED_CERT &&
                 newEntityHeader.getType() == EntityType.TRUSTED_CERT &&
-                verifyCertificateOid == oldEntityHeader.getOid()) {
-            verifyCertificateOid = newEntityHeader.getOid();
+                verifyCertificateOid != null &&
+                verifyCertificateOid.equals(oldEntityHeader.getGoid())) {
+            verifyCertificateOid = newEntityHeader.getGoid();
         }
     }
 }

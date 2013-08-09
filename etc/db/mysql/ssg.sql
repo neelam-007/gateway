@@ -343,7 +343,7 @@ CREATE TABLE policy_alias (
 
 DROP TABLE IF EXISTS client_cert;
 CREATE TABLE client_cert (
-  objectid bigint NOT NULL,
+  goid binary(16) NOT NULL,
   provider bigint NOT NULL,
   user_id varchar(255),
   login varchar(255),
@@ -354,7 +354,7 @@ CREATE TABLE client_cert (
   subject_dn varchar(2048),
   issuer_dn varchar(2048),
   serial varchar(64),
-  PRIMARY KEY  (objectid),
+  PRIMARY KEY  (goid),
   FOREIGN KEY (provider) REFERENCES identity_provider (objectid) ON DELETE CASCADE,
   UNIQUE KEY i_identity (provider, user_id),
   INDEX i_subject_dn (subject_dn(255)),
@@ -488,7 +488,7 @@ CREATE TABLE jms_endpoint(
 
 DROP TABLE IF EXISTS revocation_check_policy;
 CREATE TABLE revocation_check_policy (
-  objectid bigint(20) NOT NULL,
+  goid binary(16) NOT NULL,
   version int(11) default NULL,
   name varchar(128) NOT NULL,
   revocation_policy_xml mediumtext,
@@ -496,7 +496,7 @@ CREATE TABLE revocation_check_policy (
   default_success tinyint default '0',
   continue_server_unavailable tinyint default '0',
   security_zone_goid binary(16),
-  PRIMARY KEY  (objectid),
+  PRIMARY KEY  (goid),
   UNIQUE KEY rcp_name_idx (name),
   CONSTRAINT rcp_security_zone FOREIGN KEY (security_zone_goid) REFERENCES security_zone (goid) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
@@ -509,7 +509,7 @@ CREATE TABLE revocation_check_policy (
 
 DROP TABLE IF EXISTS trusted_cert;
 CREATE TABLE trusted_cert (
-  objectid bigint NOT NULL,
+  goid binary(16) NOT NULL,
   version integer NOT NULL,
   name varchar(128) NOT NULL,
   subject_dn varchar(2048),
@@ -524,16 +524,18 @@ CREATE TABLE trusted_cert (
   ski varchar(64),
   trust_anchor tinyint default 1,
   revocation_type varchar(128) NOT NULL DEFAULT 'USE_DEFAULT',
-  revocation_policy_oid bigint(20),
+  revocation_check_policy_goid binary(16),
   issuer_dn varchar(2048),
   serial varchar(64),
   security_zone_goid binary(16),
-  PRIMARY KEY (objectid),
+  old_objectid bigint(20),
+  PRIMARY KEY  (goid),
+  UNIQUE i_old_objectid (old_objectid),
   UNIQUE i_thumb (thumbprint_sha1),
   INDEX i_ski (ski),
   INDEX i_subject_dn (subject_dn(255)),
   INDEX i_issuer_dn (issuer_dn(255)),
-  FOREIGN KEY (revocation_policy_oid) REFERENCES revocation_check_policy (objectid),
+  FOREIGN KEY (revocation_check_policy_goid) REFERENCES revocation_check_policy (goid),
   CONSTRAINT trusted_cert_security_zone FOREIGN KEY (security_zone_goid) REFERENCES security_zone (goid) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
@@ -542,9 +544,9 @@ CREATE TABLE trusted_esm (
   objectid bigint NOT NULL,
   version integer NOT NULL,
   name varchar(128) NOT NULL,
-  trusted_cert_oid bigint(20) NOT NULL,
+  trusted_cert_goid bigint(20) NOT NULL,
   primary key(objectid),
-  FOREIGN KEY (trusted_cert_oid) REFERENCES trusted_cert (objectid)
+  FOREIGN KEY (trusted_cert_goid) REFERENCES trusted_cert (goid)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
 DROP TABLE IF EXISTS trusted_esm_user;

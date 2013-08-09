@@ -29,7 +29,7 @@ import java.util.*;
  *
  */
 public class TrustedCertAdminStub implements TrustedCertAdmin {
-    public Map<Long,SecurePassword> securePasswords = new LinkedHashMap<Long,SecurePassword>();
+    public Map<Long,SecurePassword> securePasswords = new LinkedHashMap<>();
     public int nextId = 5501;
 
     @Override
@@ -38,7 +38,7 @@ public class TrustedCertAdminStub implements TrustedCertAdmin {
     }
 
     @Override
-    public TrustedCert findCertByPrimaryKey(long oid) throws FindException {
+    public TrustedCert findCertByPrimaryKey(Goid goid2) throws FindException {
         return null;
     }
 
@@ -48,12 +48,12 @@ public class TrustedCertAdminStub implements TrustedCertAdmin {
     }
 
     @Override
-    public long saveCert(TrustedCert cert) throws SaveException, UpdateException, VersionException {
-        return 0;
+    public Goid saveCert(TrustedCert cert) throws SaveException, UpdateException, VersionException {
+        return new Goid(0, 0);
     }
 
     @Override
-    public void deleteCert(long oid) throws FindException, DeleteException, ConstraintViolationException {
+    public void deleteCert(Goid goid) throws FindException, DeleteException, ConstraintViolationException {
     }
 
     @Override
@@ -62,17 +62,17 @@ public class TrustedCertAdminStub implements TrustedCertAdmin {
     }
 
     @Override
-    public RevocationCheckPolicy findRevocationCheckPolicyByPrimaryKey(long oid) throws FindException {
+    public RevocationCheckPolicy findRevocationCheckPolicyByPrimaryKey(Goid oid) throws FindException {
         return null;
     }
 
     @Override
-    public long saveRevocationCheckPolicy(RevocationCheckPolicy revocationCheckPolicy) throws SaveException, UpdateException, VersionException {
-        return 0;
+    public Goid saveRevocationCheckPolicy(RevocationCheckPolicy revocationCheckPolicy) throws SaveException, UpdateException, VersionException {
+        return new Goid(0, 0);
     }
 
     @Override
-    public void deleteRevocationCheckPolicy(long oid) throws FindException, DeleteException, ConstraintViolationException {
+    public void deleteRevocationCheckPolicy(Goid oid) throws FindException, DeleteException, ConstraintViolationException {
     }
 
     @Override
@@ -171,7 +171,7 @@ public class TrustedCertAdminStub implements TrustedCertAdmin {
 
     @Override
     public List<SecurePassword> findAllSecurePasswords() throws FindException {
-        return new ArrayList<SecurePassword>(securePasswords.values());
+        return new ArrayList<>(securePasswords.values());
     }
 
     @Override

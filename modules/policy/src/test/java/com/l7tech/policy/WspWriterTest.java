@@ -1,6 +1,7 @@
 package com.l7tech.policy;
 
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
@@ -397,14 +398,14 @@ public class WspWriterTest {
     @Test
     public void testBraServerCertOid() throws Exception {
         BridgeRoutingAssertion bra = new BridgeRoutingAssertion();
-        bra.setServerCertificateOid(232L);
+        bra.setServerCertificateGoid(new Goid(0, 232L));
 
         String xml = WspWriter.getPolicyXml(bra);
         log.info("Bra with server cert oid: " + xml);
 
         Assertion got = WspReader.getDefault().parsePermissively(xml, WspReader.INCLUDE_DISABLED);
         assertTrue(got instanceof BridgeRoutingAssertion);
-        assertEquals((long)((BridgeRoutingAssertion)got).getServerCertificateOid(), 232L);
+        assertEquals(((BridgeRoutingAssertion)got).getServerCertificateGoid(), new Goid(0, 232L));
     }
 
     @Test

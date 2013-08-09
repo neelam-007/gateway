@@ -2,8 +2,8 @@ package com.l7tech.server.identity.cert;
 
 import com.l7tech.gateway.common.security.RevocationCheckPolicy;
 import com.l7tech.objectmodel.*;
+import com.l7tech.server.HibernateGoidEntityManager;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
-import com.l7tech.server.HibernateEntityManager;
 import org.hibernate.HibernateException;
 import org.hibernate.Session;
 import org.hibernate.criterion.DetachedCriteria;
@@ -19,7 +19,7 @@ import java.util.Collection;
  * @see com.l7tech.gateway.common.security.RevocationCheckPolicy RevocationCheckPolicy
  */
 public class RevocationCheckPolicyManagerImpl
-        extends HibernateEntityManager<RevocationCheckPolicy, EntityHeader>
+        extends HibernateGoidEntityManager<RevocationCheckPolicy, EntityHeader>
         implements RevocationCheckPolicyManager {
 
     //- PUBLIC
@@ -34,8 +34,8 @@ public class RevocationCheckPolicyManagerImpl
      * @return The oid of the entity.
      * @throws SaveException if the save failed
      */
-    public long save(RevocationCheckPolicy revocationCheckPolicy) throws SaveException {
-        long oid = super.save(revocationCheckPolicy);
+    public Goid save(RevocationCheckPolicy revocationCheckPolicy) throws SaveException {
+        Goid oid = super.save(revocationCheckPolicy);
         try {
             updateDefault(oid, revocationCheckPolicy);
         } catch( ObjectModelException ome) {
@@ -56,7 +56,7 @@ public class RevocationCheckPolicyManagerImpl
     public void update(RevocationCheckPolicy revocationCheckPolicy) throws UpdateException {
         super.update(revocationCheckPolicy);
         try {
-            updateDefault(revocationCheckPolicy.getOid(), revocationCheckPolicy);
+            updateDefault(revocationCheckPolicy.getGoid(), revocationCheckPolicy);
         } catch( ObjectModelException ome) {
             throw new UpdateException(ome);
         }
@@ -80,12 +80,13 @@ public class RevocationCheckPolicyManagerImpl
 
     private static final String TABLE_NAME = "rcp";
 
-    public void updateDefault(long oid, RevocationCheckPolicy revocationCheckPolicy) throws FindException, UpdateException {
+    @Override
+    public void updateDefault(Goid oid, RevocationCheckPolicy revocationCheckPolicy) throws FindException, UpdateException {
         // set default
         if ( revocationCheckPolicy.isDefaultPolicy() ) {
             Collection<RevocationCheckPolicy> policies =  findAll();
             for (RevocationCheckPolicy policy : policies) {
-                if (policy.isDefaultPolicy() && policy.getOid()!=oid) {
+                if (policy.isDefaultPolicy() && !policy.getGoid().equals(oid)) {
                     policy.setDefaultPolicy(false);
                     update(policy);
                 }
@@ -96,10 +97,11 @@ public class RevocationCheckPolicyManagerImpl
     private final DetachedCriteria getDefaultCriteria =
             DetachedCriteria.forClass(getImpClass()).add(Restrictions.eq("defaultPolicy", Boolean.TRUE));
 
+    @Override
     public RevocationCheckPolicy getDefaultPolicy() throws FindException {
-        return (RevocationCheckPolicy) getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
-            protected Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
-                return getDefaultCriteria.getExecutableCriteria(session).uniqueResult();
+        return getHibernateTemplate().execute(new ReadOnlyHibernateCallback<RevocationCheckPolicy>() {
+            protected RevocationCheckPolicy doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
+                return (RevocationCheckPolicy) getDefaultCriteria.getExecutableCriteria(session).uniqueResult();
             }
         });
     }

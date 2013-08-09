@@ -1,8 +1,10 @@
 package com.l7tech.gateway.common.security;
 
-import java.util.List;
-import java.util.ArrayList;
+import com.l7tech.objectmodel.Goid;
+
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * An Item in a Certificate Revocation Checking Policy.
@@ -55,7 +57,7 @@ public class RevocationCheckPolicyItem implements Serializable {
      * Create an uninitialized RevocationCheckPolicyItem
      */
     public RevocationCheckPolicyItem() {
-        trustedSigners = new ArrayList<Long>();
+        trustedSigners = new ArrayList<Goid>();
     }
 
     /**
@@ -117,8 +119,8 @@ public class RevocationCheckPolicyItem implements Serializable {
      *
      * @return The list of Signers (will not be null)
      */
-    public List<Long> getTrustedSigners() {
-        return new ArrayList<Long>(trustedSigners);
+    public List<Goid> getTrustedSigners() {
+        return new ArrayList<Goid>(trustedSigners);
     }
 
     /**
@@ -126,11 +128,11 @@ public class RevocationCheckPolicyItem implements Serializable {
      *
      * @param trustedSigners The list of signers
      */
-    public void setTrustedSigners(List<Long> trustedSigners) {
+    public void setTrustedSigners(List<Goid> trustedSigners) {
         if (trustedSigners == null) {
-            this.trustedSigners = new ArrayList<Long>();
+            this.trustedSigners = new ArrayList<Goid>();
         } else {
-            this.trustedSigners = new ArrayList<Long>(trustedSigners);
+            this.trustedSigners = new ArrayList<Goid>(trustedSigners);
         }
     }
 
@@ -166,6 +168,6 @@ public class RevocationCheckPolicyItem implements Serializable {
     private Type type;
     private String url;
     private boolean allowIssuerSignature;
-    private List<Long> trustedSigners;
+    private List<Goid> trustedSigners;
 
 }

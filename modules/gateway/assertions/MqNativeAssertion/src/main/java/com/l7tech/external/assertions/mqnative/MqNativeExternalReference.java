@@ -58,7 +58,7 @@ public class MqNativeExternalReference extends ExternalReference {
         this(finder);
 
         try {
-            SsgActiveConnector connector = getFinder().findConnectorByOidorGoid(connectorId);
+            SsgActiveConnector connector = getFinder().findConnectorByOidOrGoid(connectorId);
             if (connector == null)
                 throw new IllegalArgumentException("The MQ Native Queue (oid = " + oid + ") does not exist");
 

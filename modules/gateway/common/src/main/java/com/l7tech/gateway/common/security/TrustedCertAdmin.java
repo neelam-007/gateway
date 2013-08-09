@@ -63,14 +63,14 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
     public List<TrustedCert> findAllCerts() throws FindException;
 
     /**
-     * Retrieves the {@link TrustedCert} with the specified oid.
-     * @param oid the oid of the {@link TrustedCert} to retrieve
-     * @return the TrustedCert or null if no cert for that oid
+     * Retrieves the {@link TrustedCert} with the specified goid.
+     * @param goid the goid of the {@link TrustedCert} to retrieve
+     * @return the TrustedCert or null if no cert for that goid
      * @throws FindException if there was a server-side problem accessing the requested information
      */
     @Transactional(readOnly=true)
     @Secured(stereotype=FIND_ENTITY)
-    public TrustedCert findCertByPrimaryKey(long oid) throws FindException;
+    public TrustedCert findCertByPrimaryKey(Goid goid) throws FindException;
 
     /**
      * Retrieves every {@link com.l7tech.security.cert.TrustedCert} with the specified subject DN.
@@ -86,23 +86,23 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
     /**
      * Saves a new or existing {@link com.l7tech.security.cert.TrustedCert} to the database.
      * @param cert the {@link TrustedCert} to be saved
-     * @return the object id (oid) of the newly saved cert
+     * @return the object id (goid) of the newly saved cert
      * @throws SaveException if there was a server-side problem saving the cert
      * @throws UpdateException if there was a server-side problem updating the cert
      * @throws VersionException if the updated cert was not up-to-date (updating an old version)
      */
     @Secured(stereotype=SAVE_OR_UPDATE)
-    public long saveCert(TrustedCert cert) throws SaveException, UpdateException, VersionException;
+    public Goid saveCert(TrustedCert cert) throws SaveException, UpdateException, VersionException;
 
     /**
      * Removes the specified {@link TrustedCert} from the database.
-     * @param oid the oid of the {@link TrustedCert} to be deleted
+     * @param goid the goid of the {@link TrustedCert} to be deleted
      * @throws FindException if the {@link TrustedCert} cannot be found
      * @throws DeleteException if the {@link TrustedCert} cannot be deleted
      * @throws ConstraintViolationException if the {@link TrustedCert} cannot be deleted
      */
     @Secured(stereotype= DELETE_BY_ID)
-    public void deleteCert(long oid) throws FindException, DeleteException, ConstraintViolationException;
+    public void deleteCert(Goid goid) throws FindException, DeleteException, ConstraintViolationException;
 
     /**
      * Retrieves all {@link RevocationCheckPolicy}s from the database.
@@ -123,7 +123,7 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
      */
     @Transactional(readOnly=true)
     @Secured(types=REVOCATION_CHECK_POLICY, stereotype=FIND_ENTITY)
-    public RevocationCheckPolicy findRevocationCheckPolicyByPrimaryKey(long oid) throws FindException;
+    public RevocationCheckPolicy findRevocationCheckPolicyByPrimaryKey(Goid oid) throws FindException;
 
     /**
      * Saves a new or existing {@link RevocationCheckPolicy} to the database.
@@ -138,7 +138,7 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
      * @throws VersionException if the updated policy was not up-to-date (updating an old version)
      */
     @Secured(types=REVOCATION_CHECK_POLICY,stereotype=SAVE_OR_UPDATE)
-    public long saveRevocationCheckPolicy(RevocationCheckPolicy revocationCheckPolicy) throws SaveException, UpdateException, VersionException;
+    public Goid saveRevocationCheckPolicy(RevocationCheckPolicy revocationCheckPolicy) throws SaveException, UpdateException, VersionException;
 
     /**
      * Removes the specified {@link RevocationCheckPolicy} from the database.
@@ -149,7 +149,7 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
      * @throws ConstraintViolationException if the {@link RevocationCheckPolicy} cannot be deleted
      */
     @Secured(types=REVOCATION_CHECK_POLICY,stereotype= DELETE_BY_ID)
-    public void deleteRevocationCheckPolicy(long oid) throws FindException, DeleteException, ConstraintViolationException;
+    public void deleteRevocationCheckPolicy(Goid oid) throws FindException, DeleteException, ConstraintViolationException;
 
 
     public static class HostnameMismatchException extends Exception {

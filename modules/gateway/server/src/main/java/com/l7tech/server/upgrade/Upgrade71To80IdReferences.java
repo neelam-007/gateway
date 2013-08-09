@@ -4,12 +4,20 @@ import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.gateway.common.transport.email.EmailListener;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
+import com.l7tech.identity.IdProviderConfigUpgradeHelper;
+import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.identity.IdentityProviderConfigManager;
+import com.l7tech.identity.fed.FederatedIdentityProviderConfig;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.security.cert.TrustedCert;
+import com.l7tech.security.cert.TrustedCertManager;
 import com.l7tech.server.service.ServiceManager;
 import com.l7tech.server.transport.SsgConnectorManager;
 import com.l7tech.server.transport.email.EmailListenerManager;
 import com.l7tech.server.transport.jms.JmsConnectionManager;
+import com.l7tech.util.ExceptionUtils;
 import org.hibernate.SessionFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
@@ -19,7 +27,7 @@ import java.util.Properties;
 /**
  * This is used to upgrade the entity oid references to goid's saved in property maps
  */
-public class Upgrade71To80OidReferences implements UpgradeTask {
+public class Upgrade71To80IdReferences implements UpgradeTask {
 
     protected ApplicationContext applicationContext;
     protected SessionFactory sessionFactory;
@@ -31,6 +39,8 @@ public class Upgrade71To80OidReferences implements UpgradeTask {
         ServiceManager serviceManager = getBean("serviceManager", ServiceManager.class);
         JmsConnectionManager jmsConnectionManager = getBean("jmsConnectionManager", JmsConnectionManager.class);
         EmailListenerManager emailListenerManager = getBean("emailListenerManager", EmailListenerManager.class);
+        IdentityProviderConfigManager identityProviderConfigManager = getBean("identityProviderConfigManager", IdentityProviderConfigManager.class);
+        TrustedCertManager trustedCertManager = getBean("trustedCertManager", TrustedCertManager.class);
 
         try {
             for(SsgConnector ssgConnector : ssgConnectorManager.findAll()){
@@ -103,6 +113,30 @@ public class Upgrade71To80OidReferences implements UpgradeTask {
             }
         } catch (FindException e) {
             throw new FatalUpgradeException("Could not retrieve connectors", e);
+        }
+
+        try {
+            for (IdentityProviderConfig idProviderConfig : identityProviderConfigManager.findAll()) {
+                long[] oids = IdProviderConfigUpgradeHelper.getProperty(idProviderConfig, "trustedCertOids");
+                if (oids != null) {
+                    Goid[] goids = new Goid[oids.length];
+                    for (int i = 0; i < oids.length; i++) {
+                        long oid = oids[i];
+                        TrustedCert cert = trustedCertManager.findByOldOid(oid);
+                        if (cert == null)
+                            throw new FatalUpgradeException("Cannot find trusted cert with old oid: " + oid);
+                        goids[i] = cert.getGoid();
+                    }
+                    IdProviderConfigUpgradeHelper.setProperty(idProviderConfig, FederatedIdentityProviderConfig.PROP_CERT_GOIDS, goids);
+                    try {
+                        identityProviderConfigManager.update(idProviderConfig);
+                    } catch (UpdateException e) {
+                        throw new FatalUpgradeException("Error saving ID provider configuration: " + ExceptionUtils.getMessage(e), e);
+                    }
+                }
+            }
+        } catch (FindException e) {
+            throw new FatalUpgradeException("Could not retrieve identity provider configs", e);
         }
     }
 

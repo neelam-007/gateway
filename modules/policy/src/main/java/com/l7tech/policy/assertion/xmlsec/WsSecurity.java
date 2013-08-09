@@ -1,16 +1,17 @@
 package com.l7tech.policy.assertion.xmlsec;
 
-import com.l7tech.policy.assertion.annotation.RequiresSOAP;
-import com.l7tech.policy.assertion.*;
-import com.l7tech.policy.wsp.TypeMapping;
-import com.l7tech.policy.wsp.Java5EnumTypeMapping;
-import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
-import com.l7tech.security.xml.WsSecurityVersion;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
+import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.assertion.annotation.RequiresSOAP;
+import com.l7tech.policy.wsp.Java5EnumTypeMapping;
+import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
+import com.l7tech.policy.wsp.TypeMapping;
+import com.l7tech.security.xml.WsSecurityVersion;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Collections;
@@ -54,11 +55,11 @@ public class WsSecurity extends MessageTargetableAssertion implements UsesEntiti
         this.recipientTrustedCertificateVariable = recipientTrustedCertificateVariable;
     }
 
-    public long getRecipientTrustedCertificateOid() {
+    public Goid getRecipientTrustedCertificateOid() {
         return recipientTrustedCertificateOid;
     }
 
-    public void setRecipientTrustedCertificateOid(long recipientTrustedCertificateOid) {
+    public void setRecipientTrustedCertificateOid( @Nullable Goid recipientTrustedCertificateOid) {
         this.recipientTrustedCertificateOid = recipientTrustedCertificateOid;
     }
 
@@ -116,7 +117,7 @@ public class WsSecurity extends MessageTargetableAssertion implements UsesEntiti
     public EntityHeader[] getEntitiesUsed() {
         EntityHeader[] headers = new EntityHeader[0];
 
-        if ( recipientTrustedCertificateOid != 0 ) {
+        if ( recipientTrustedCertificateOid != null ) {
             headers = new EntityHeader[]{ new EntityHeader( recipientTrustedCertificateOid, EntityType.TRUSTED_CERT, null, null) };
         }
 
@@ -127,9 +128,10 @@ public class WsSecurity extends MessageTargetableAssertion implements UsesEntiti
     public void replaceEntity( final EntityHeader oldEntityHeader, final EntityHeader newEntityHeader ) {
         if( oldEntityHeader.getType() == EntityType.TRUSTED_CERT &&
             newEntityHeader.getType() == EntityType.TRUSTED_CERT &&
-            recipientTrustedCertificateOid == oldEntityHeader.getOid())
+            recipientTrustedCertificateOid != null &&
+            recipientTrustedCertificateOid.equals(oldEntityHeader.getGoid()))
         {
-            recipientTrustedCertificateOid = newEntityHeader.getOid();
+            recipientTrustedCertificateOid = newEntityHeader.getGoid();
         }
     }
 
@@ -196,7 +198,7 @@ public class WsSecurity extends MessageTargetableAssertion implements UsesEntiti
     private boolean clearDecorationRequirements = false;
     private boolean applyWsSecurity = true;
     private WsSecurityVersion wsSecurityVersion;
-    private long recipientTrustedCertificateOid;
+    private Goid recipientTrustedCertificateOid;
     private String recipientTrustedCertificateName;
     private String recipientTrustedCertificateVariable;
 

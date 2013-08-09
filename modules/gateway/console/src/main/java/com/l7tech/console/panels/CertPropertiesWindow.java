@@ -10,22 +10,18 @@ import com.l7tech.gateway.common.security.rbac.AttemptedCreate;
 import com.l7tech.gateway.common.security.rbac.AttemptedOperation;
 import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
 import com.l7tech.gateway.common.security.rbac.OperationType;
-import com.l7tech.objectmodel.EntityType;
+import com.l7tech.gui.util.DocumentSizeFilter;
 import com.l7tech.gui.util.GuiCertUtil;
 import com.l7tech.gui.util.Utilities;
-import com.l7tech.gui.util.DocumentSizeFilter;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.UpdateException;
-import com.l7tech.objectmodel.VersionException;
+import com.l7tech.objectmodel.*;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.util.Resolver;
 import com.l7tech.util.ResolvingComparator;
 
 import javax.swing.*;
-import javax.swing.text.AbstractDocument;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import javax.swing.text.AbstractDocument;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -127,7 +123,7 @@ public class CertPropertiesWindow extends JDialog {
         }
 
         AttemptedOperation ao;
-        if (tc.getOid() == TrustedCert.DEFAULT_OID) {
+        if ( tc.isUnsaved() ) {
             ao = new AttemptedCreate(EntityType.TRUSTED_CERT);
         } else {
             ao = new AttemptedUpdate(EntityType.TRUSTED_CERT, tc);
@@ -202,7 +198,7 @@ public class CertPropertiesWindow extends JDialog {
         });
         revocationCheckPolicyComboBox.setRenderer(new Renderers.RevocationCheckPolicyRenderer());
 
-        zoneControl.configure(trustedCert.getOid() == TrustedCert.DEFAULT_OID ? OperationType.CREATE : editable ? OperationType.UPDATE : OperationType.READ, trustedCert);
+        zoneControl.configure(trustedCert.isUnsaved() ? OperationType.CREATE : editable ? OperationType.UPDATE : OperationType.READ, trustedCert);
 
         populateData();
         setRevocationCheckPolicyComboState(editable);
@@ -483,13 +479,13 @@ public class CertPropertiesWindow extends JDialog {
     /**
      *
      */
-    private RevocationCheckPolicy findRevocationCheckPolicyByOid(long oid) {
+    private RevocationCheckPolicy findRevocationCheckPolicyByOid(Goid oid) {
         RevocationCheckPolicy policy = null;
 
         ComboBoxModel model = (DefaultComboBoxModel) revocationCheckPolicyComboBox.getModel();
         for (int i=0; i<model.getSize(); i++) {
             RevocationCheckPolicy current = (RevocationCheckPolicy) model.getElementAt(i);
-            if (current.getOid() == oid) {
+            if (oid != null && oid.equals(current.getGoid())) {
                 policy = current;
                 break;
             }
@@ -534,7 +530,7 @@ public class CertPropertiesWindow extends JDialog {
             tc.setTrustAnchor(certificateIsATrustCheckBox.isSelected());
             if (revocationCheckSelectedRadioButton.isSelected()) {
                 tc.setRevocationCheckPolicyType(TrustedCert.PolicyUsageType.SPECIFIED);
-                tc.setRevocationCheckPolicyOid(((RevocationCheckPolicy)revocationCheckPolicyComboBox.getSelectedItem()).getOid());
+                tc.setRevocationCheckPolicyOid(((RevocationCheckPolicy)revocationCheckPolicyComboBox.getSelectedItem()).getGoid());
             } else if (revocationCheckDisabledRadioButton.isSelected()) {
                 tc.setRevocationCheckPolicyType(TrustedCert.PolicyUsageType.NONE);
                 tc.setRevocationCheckPolicyOid(null);

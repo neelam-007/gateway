@@ -7,6 +7,7 @@ import com.l7tech.identity.InvalidIdProviderCfgException;
 import com.l7tech.identity.fed.FederatedIdentityProviderConfig;
 import com.l7tech.identity.fed.FederatedUser;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.security.token.SamlSecurityToken;
@@ -90,7 +91,7 @@ public class FederatedIdentityProviderTest {
         final FederatedIdentityProviderConfig config = new FederatedIdentityProviderConfig();
         config.setName( "TEST-FIP" );
         if ( includeCerts ) {
-            config.setTrustedCertOids( new long[]{1} );
+            config.setTrustedCertGoids( new Goid[]{new Goid(0, 1)} );
         }
         config.setSamlSupported( true );
         config.setX509Supported( false );
@@ -118,17 +119,17 @@ public class FederatedIdentityProviderTest {
                         CertificateValidationResult.CANT_BUILD_PATH;
             }
         } );
-        provider.setTrustedCertManager( new TestTrustedCertManager( new TrustedCert(){{ setOid(1); setCertBase64(SAML_ISSUER_B64); }} ) );
+        provider.setTrustedCertManager( new TestTrustedCertManager( new TrustedCert(){{ setGoid(new Goid(0, 1)); setCertBase64(SAML_ISSUER_B64); }} ) );
         provider.setTrustedCertServices( new TrustedCertServices(){
             @Override
-            public void checkSslTrust( final X509Certificate[] serverCertChain, Set<Long> requiredOids ) throws CertificateException {
+            public void checkSslTrust( final X509Certificate[] serverCertChain, Set<Goid> requiredOids ) throws CertificateException {
             }
 
             @Override
             public Collection<TrustedCert> getCertsBySubjectDnFiltered( final String subjectDn,
                                                                         final boolean omitExpired,
                                                                         final Set<TrustedCert.TrustedFor> requiredTrustFlags,
-                                                                        final Set<Long> requiredOids ) throws FindException {
+                                                                        final Set<Goid> requiredOids ) throws FindException {
                 return Collections.<TrustedCert>singleton( new TrustedCert(){{ setCertBase64(SAML_ISSUER_B64); }} );
             }
 

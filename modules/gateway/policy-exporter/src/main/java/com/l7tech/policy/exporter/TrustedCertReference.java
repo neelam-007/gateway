@@ -1,14 +1,13 @@
 package com.l7tech.policy.exporter;
 
-import com.l7tech.common.io.XmlUtil;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.*;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.BridgeRoutingAssertion;
 import com.l7tech.policy.assertion.UsesEntities;
 import com.l7tech.policy.wsp.InvalidPolicyStreamException;
 import com.l7tech.security.cert.TrustedCert;
+import com.l7tech.util.DomUtils;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.InvalidDocumentFormatException;
 import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Element;
@@ -26,32 +25,32 @@ import java.util.logging.Logger;
 public class TrustedCertReference extends ExternalReference {
     private final Logger logger = Logger.getLogger(TrustedCertReference.class.getName());
 
-
     public static final String REF_EL_NAME = "TrustedCertificateReference";
-    public static final String OID_EL_NAME = "OID";
+    public static final String OLD_OID_EL_NAME = "OID";
+    public static final String GOID_EL_NAME = "GOID";
     public static final String CERTNAME_EL_NAME = "CertificateName";
     public static final String ISSUERDN_EL_NAME = "CertificateIssuerDn";
     public static final String CERTSERIAL_EL_NAME = "CertificateSerialNum";
 
-    private long oid;
+    private Goid goid;
     private String certName;
     private String  certIssuerDn;
     private BigInteger certSerial;
     private LocalizeAction localizeType = null;
-    private long localCertOid;
+    private Goid localCertId;
 
     public TrustedCertReference( final ExternalReferenceFinder finder ) {
-        super( finder );
+        super(finder);
     }
 
     public TrustedCertReference( final ExternalReferenceFinder finder,
-                                 final long certOid) {
+                                 final Goid certId ) {
         this( finder );
-        oid = certOid;
         TrustedCert cert;
         try {
-            cert = finder.findCertByPrimaryKey(certOid);
+            cert = finder.findCertByPrimaryKey(certId);
             if (cert != null) {
+                goid = cert.getGoid();
                 certName = cert.getName();
                 certIssuerDn = cert.getCertificate().getIssuerDN().getName();
                 certSerial = cert.getCertificate().getSerialNumber();
@@ -65,8 +64,8 @@ public class TrustedCertReference extends ExternalReference {
     public String getRefId() {
         String id = null;
 
-        if ( oid > 0 ) {
-            id = Long.toString( oid );
+        if ( !goid.equals(TrustedCert.DEFAULT_GOID)) {
+            id = goid.toString();
         }
 
         return id;
@@ -75,35 +74,30 @@ public class TrustedCertReference extends ExternalReference {
     @Override
     protected void serializeToRefElement(Element referencesParentElement) {
         Element refEl = referencesParentElement.getOwnerDocument().createElement(REF_EL_NAME);
-        setTypeAttribute( refEl );
+        setTypeAttribute(refEl);
         referencesParentElement.appendChild(refEl);
-        Element oidEl = referencesParentElement.getOwnerDocument().createElement(OID_EL_NAME);
-        Text txt = XmlUtil.createTextNode(referencesParentElement, Long.toString(oid));
-        oidEl.appendChild(txt);
-        refEl.appendChild(oidEl);
-        Element certNameEl = referencesParentElement.getOwnerDocument().createElement(CERTNAME_EL_NAME);
-        refEl.appendChild(certNameEl);
-        Element issuerDnEl = referencesParentElement.getOwnerDocument().createElement(ISSUERDN_EL_NAME);
-        refEl.appendChild(issuerDnEl);
-        Element certSerialEl = referencesParentElement.getOwnerDocument().createElement(CERTSERIAL_EL_NAME);
-        refEl.appendChild(certSerialEl);
-        if (certName != null) {
-            txt = XmlUtil.createTextNode(referencesParentElement, certName);
-            certNameEl.appendChild(txt);
-        }
-        if (certIssuerDn != null) {
-            txt = XmlUtil.createTextNode(referencesParentElement, certIssuerDn);
-            issuerDnEl.appendChild(txt);
-        }
-        if (certSerial!= null) {
-            txt = XmlUtil.createTextNode(referencesParentElement, certSerial.toString());
-            certSerialEl.appendChild(txt);
+
+        addElement( refEl, GOID_EL_NAME, goid == null ? null : goid.toString() );
+        addElement( refEl, CERTNAME_EL_NAME, certName );
+        addElement( refEl, ISSUERDN_EL_NAME, certIssuerDn );
+        addElement( refEl, CERTSERIAL_EL_NAME, certSerial == null ? null : certSerial.toString() );
+    }
+
+    private void addElement( final Element parent,
+                             final String childElementName,
+                             final String text ) {
+        Element childElement = parent.getOwnerDocument().createElement( childElementName );
+        parent.appendChild(childElement);
+
+        if ( text != null ) {
+            Text textNode = DomUtils.createTextNode(parent, text);
+            childElement.appendChild( textNode );
         }
     }
 
     @Override
     protected boolean verifyReference() throws InvalidPolicyStreamException {
-        Collection<TrustedCert> tempMatches = new ArrayList<TrustedCert>();
+        Collection<TrustedCert> tempMatches = new ArrayList<>();
         Collection<TrustedCert> allCerts;
         try {
             allCerts = getFinder().findAllCerts();
@@ -123,19 +117,19 @@ public class TrustedCertReference extends ExternalReference {
         } else {
             // Try to discriminate using name property
             for (TrustedCert aMatch : tempMatches) {
-                if (aMatch.getName().equals(certName) && permitMapping( oid, aMatch.getOid() )) {
+                if (aMatch.getName().equals(certName) && permitMapping( goid, aMatch.getGoid() )) {
                     // WE HAVE A PERFECT MATCH!
-                    logger.fine("The local trusted certificate was resolved from oid " + oid + " to " + aMatch.getOid());
-                    localCertOid = aMatch.getOid();
+                    logger.fine("The local trusted certificate was resolved from goid " + goid + " to " + aMatch.getGoid());
+                    localCertId = aMatch.getGoid();
                     localizeType = LocalizeAction.REPLACE;
                     return true;
                 }
             }
             // Otherwise, use a partial match
             for ( TrustedCert aMatch : tempMatches ) {
-                if ( permitMapping( oid, aMatch.getOid() ) ) {
-                    logger.fine("The local trusted cert was resolved from oid " + oid + " to " +  aMatch.getOid());
-                    localCertOid =  aMatch.getOid();
+                if ( permitMapping( goid, aMatch.getGoid() ) ) {
+                    logger.fine("The local trusted cert was resolved from goid " + goid + " to " +  aMatch.getGoid());
+                    localCertId = aMatch.getGoid();
                     localizeType = LocalizeAction.REPLACE;
                     return true;
                 }
@@ -149,13 +143,12 @@ public class TrustedCertReference extends ExternalReference {
         if (localizeType != LocalizeAction.IGNORE) {
             if (assertionToLocalize instanceof BridgeRoutingAssertion) {
                 BridgeRoutingAssertion bra = (BridgeRoutingAssertion) assertionToLocalize;
-                if (bra.getServerCertificateOid() != null &&
-                    bra.getServerCertificateOid() == oid) {
+                if ( goid != null && goid.equals(bra.getServerCertificateGoid()) ) {
                     if (localizeType == LocalizeAction.REPLACE) {
                         // replace server cert oid
-                        bra.setServerCertificateOid(localCertOid);
-                        logger.info("The server certificate oid of the imported bridge routing assertion has been changed " +
-                                    "from " + oid + " to " + localCertOid);
+                        bra.setServerCertificateGoid(localCertId);
+                        logger.info("The server certificate goid of the imported bridge routing assertion has been changed " +
+                                    "from " + goid + " to " + localCertId);
                     } else if (localizeType == LocalizeAction.DELETE) {
                         logger.info("Deleted this assertion from the tree.");
                         return false;
@@ -164,13 +157,13 @@ public class TrustedCertReference extends ExternalReference {
             } else if ( assertionToLocalize instanceof UsesEntities ) {
                 UsesEntities entitiesUser = (UsesEntities)assertionToLocalize;
                 for(EntityHeader entityHeader : entitiesUser.getEntitiesUsed()) {
-                    if(entityHeader.getType().equals(EntityType.TRUSTED_CERT) && entityHeader.getOid() == oid) {
+                    if ( entityHeader.getType().equals(EntityType.TRUSTED_CERT) && entityHeader.equalsId(goid, null) ) {
                         if(localizeType == LocalizeAction.REPLACE) {
-                            if(localCertOid != oid) {
-                                EntityHeader newEntityHeader = new EntityHeader(localCertOid, EntityType.TRUSTED_CERT, null, null);
+                            if ( !localCertId.equals(goid)) {
+                                EntityHeader newEntityHeader = new EntityHeader(localCertId, EntityType.TRUSTED_CERT, null, null);
                                 entitiesUser.replaceEntity(entityHeader, newEntityHeader);
-                                logger.info("The server certificate oid of the imported assertion has been changed " +
-                                            "from " + oid + " to " + localCertOid);
+                                logger.info("The server certificate goid of the imported assertion has been changed " +
+                                            "from " + goid + " to " + localCertId);
                                 break;
                             }
                         } else if(localizeType == LocalizeAction.DELETE) {
@@ -191,9 +184,22 @@ public class TrustedCertReference extends ExternalReference {
             throw new InvalidDocumentFormatException("Expecting element of name " + REF_EL_NAME);
         }
         TrustedCertReference output = new TrustedCertReference( context );
-        String val = getParamFromEl(el, OID_EL_NAME);
+        String val = getParamFromEl(el, OLD_OID_EL_NAME);
         if (val != null) {
-            output.oid = Long.parseLong(val);
+            try {
+                output.goid = Goid.wrapOid(Long.parseLong(val));
+            } catch (NumberFormatException nfe) {
+                output.goid = GoidEntity.DEFAULT_GOID;
+            }
+        }
+
+        val = getParamFromEl(el, GOID_EL_NAME);
+        if (val != null) {
+            try {
+                output.goid = new Goid(val);
+            } catch (IllegalArgumentException e) {
+                throw new InvalidDocumentFormatException("Invalid trusted certificate goid: " + ExceptionUtils.getMessage(e), e);
+            }
         }
 
         output.certName = getParamFromEl(el, CERTNAME_EL_NAME);
@@ -205,8 +211,8 @@ public class TrustedCertReference extends ExternalReference {
         return output;
     }
 
-    public long getOid() {
-        return oid;
+    public Goid getGoid() {
+        return goid;
     }
 
     public String getCertName() {
@@ -221,26 +227,10 @@ public class TrustedCertReference extends ExternalReference {
         return certSerial;
     }
 
-    public void setOid(long oid) {
-        this.oid = oid;
-    }
-
-    public void setCertName(String certName) {
-        this.certName = certName;
-    }
-
-    public void setCertIssuerDn(String certIssuerDn) {
-        this.certIssuerDn = certIssuerDn;
-    }
-
-    public void setCertSerial(BigInteger certSerial) {
-        this.certSerial = certSerial;
-    }
-
     @Override
-    public boolean setLocalizeReplace(long newCertOid) {
+    public boolean setLocalizeReplace(Goid identifier) {
         localizeType = LocalizeAction.REPLACE;
-        localCertOid = newCertOid;
+        localCertId = identifier;
         return true;
     }
 
@@ -263,13 +253,17 @@ public class TrustedCertReference extends ExternalReference {
 
         final TrustedCertReference that = (TrustedCertReference) o;
 
-        if ( oid != that.oid ) return false;
+        if ( ((goid == null) != (that.goid == null) || (goid != null && !goid.equals(that.goid))) )
+            return false;
 
         return true;
     }
 
     @Override
     public int hashCode() {
-        return (int) (oid ^ (oid >>> 32));
+        int h = 0;
+        if (goid != null)
+            h += 23L * goid.hashCode();
+        return h;
     }
 }

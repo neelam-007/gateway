@@ -536,6 +536,47 @@ ALTER TABLE active_connector_property  ADD FOREIGN KEY (connector_goid) REFERENC
 update rbac_role set entity_goid = toGoid(@active_connector_prefix,entity_oid) where entity_oid is not null and entity_type='SSG_ACTIVE_CONNECTOR';
 update rbac_predicate_oid oid1 left join rbac_predicate on rbac_predicate.objectid = oid1.objectid left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid set oid1.entity_id = goidToString(toGoid(@active_connector_prefix,oid1.entity_id)) where rbac_permission.entity_type = 'SSG_ACTIVE_CONNECTOR';
 
+-- client cert
+
+ALTER TABLE client_cert ADD COLUMN old_objectid BIGINT(20);
+update client_cert set old_objectid=objectid;
+ALTER TABLE client_cert CHANGE COLUMN objectid goid binary(16);
+-- For manual runs use: set @client_cert_prefix=createUnreservedPoorRandomPrefix();
+SET @client_cert_prefix=#RANDOM_LONG_NOT_RESERVED#;
+update client_cert set goid = toGoid(@client_cert_prefix,old_objectid);
+
+-- trusted cert
+
+call dropForeignKey('trusted_esm', 'trusted_cert');
+
+ALTER TABLE trusted_cert ADD COLUMN old_objectid BIGINT(20);
+update trusted_cert set old_objectid=objectid;
+ALTER TABLE trusted_cert CHANGE COLUMN objectid goid binary(16);
+-- For manual runs use: set @trusted_cert_prefix=createUnreservedPoorRandomPrefix();
+SET @trusted_cert_prefix=#RANDOM_LONG_NOT_RESERVED#;
+update trusted_cert set goid = toGoid(@trusted_cert_prefix,old_objectid);
+
+ALTER TABLE trusted_esm ADD FOREIGN KEY (trusted_cert_goid) REFERENCES trusted_cert (goid);
+
+update rbac_role set entity_goid = toGoid(@trusted_cert_prefix,entity_oid) where entity_oid is not null and entity_type='TRUSTED_CERT';
+update rbac_predicate_oid oid1 left join rbac_predicate on rbac_predicate.objectid = oid1.objectid left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid set oid1.entity_id = goidToString(toGoid(@trusted_cert_prefix,oid1.entity_id)) where rbac_permission.entity_type = 'TRUSTED_CERT';
+
+-- revocation check policy
+
+call dropForeignKey('trusted_cert', 'revocation_check_policy');
+
+ALTER TABLE revocation_check_policy ADD COLUMN old_objectid BIGINT(20);
+update revocation_check_policy set old_objectid=objectid;
+ALTER TABLE revocation_check_policy CHANGE COLUMN objectid goid binary(16);
+-- For manual runs use: set @revocation_check_policy_prefix=createUnreservedPoorRandomPrefix();
+SET @revocation_check_policy_prefix=#RANDOM_LONG_NOT_RESERVED#;
+update revocation_check_policy set goid = toGoid(@revocation_check_policy_prefix,old_objectid);
+
+ALTER TABLE trusted_cert ADD FOREIGN KEY (revocation_check_policy_goid) REFERENCES revocation_check_policy (goid);
+
+update rbac_role set entity_goid = toGoid(@revocation_check_policy_prefix,entity_oid) where entity_oid is not null and entity_type='REVOCATION_CHECK_POLICY';
+update rbac_predicate_oid oid1 left join rbac_predicate on rbac_predicate.objectid = oid1.objectid left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid set oid1.entity_id = goidToString(toGoid(@revocation_check_policy_prefix,oid1.entity_id)) where rbac_permission.entity_type = 'REVOCATION_CHECK_POLICY';
+
 -- Service/Policy/Folder/Alias's
 call dropForeignKey('folder','folder');
 call dropForeignKey('published_service','folder');
@@ -951,7 +992,7 @@ ALTER TABLE uddi_service_control_monitor_runtime ADD FOREIGN KEY (uddi_service_c
 INSERT INTO cluster_properties
     (goid, version, propkey, propvalue, properties)
     values (toGoid(0,-800001), 0, 'upgrade.task.800001', 'com.l7tech.server.upgrade.Upgrade71To80SinkConfig', null),
-           (toGoid(0,-800002), 0, 'upgrade.task.800002', 'com.l7tech.server.upgrade.Upgrade71To80OidReferences', null);
+           (toGoid(0,-800002), 0, 'upgrade.task.800002', 'com.l7tech.server.upgrade.Upgrade71To80IdReferences', null);
 
 
 --

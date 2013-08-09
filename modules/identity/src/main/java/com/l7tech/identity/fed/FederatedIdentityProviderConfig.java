@@ -8,6 +8,7 @@ package com.l7tech.identity.fed;
 
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderType;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.search.Dependency;
 import org.hibernate.annotations.Proxy;
 
@@ -81,24 +82,24 @@ public class FederatedIdentityProviderConfig extends IdentityProviderConfig {
     }
 
     @Transient
-    @Dependency(methodReturnType = Dependency.MethodReturnType.OID, type = Dependency.DependencyType.TRUSTED_CERT)
-    public long[] getTrustedCertOids() {
-        long[] oids = (long[])getProperty(PROP_CERT_OIDS);
-        if ( oids == null ) {
-            oids = new long[0];
-            setProperty(PROP_CERT_OIDS, oids);
+    @Dependency(methodReturnType = Dependency.MethodReturnType.GOID, type = Dependency.DependencyType.TRUSTED_CERT)
+    public Goid[] getTrustedCertGoids() {
+        Goid[] goids = (Goid[])getProperty(PROP_CERT_GOIDS);
+        if ( goids == null ) {
+            goids = new Goid[0];
+            setProperty(PROP_CERT_GOIDS, goids);
         }
-        return oids;
+        return goids;
     }
 
-    public void setTrustedCertOids(long[] oids) {
-        setProperty(PROP_CERT_OIDS, oids);
+    public void setTrustedCertGoids(Goid[] goids) {
+        setProperty(PROP_CERT_GOIDS, goids);
     }
 
     @Override
     @Transient
     protected String[] getUnexportablePropKeys() {
-        return new String[] {PROP_CERT_OIDS};
+        return new String[] {PROP_CERT_OIDS, PROP_CERT_GOIDS};
     }
 
     @Transient
@@ -131,7 +132,7 @@ public class FederatedIdentityProviderConfig extends IdentityProviderConfig {
 
     @Override
     public String toString() {
-        StringBuffer sb = new StringBuffer("<FederatedIdentityProviderConfig ");
+        StringBuilder sb = new StringBuilder("<FederatedIdentityProviderConfig ");
         sb.append("oid=\"").append(_oid).append("\" ");
         sb.append("name=\"").append(_name).append("\" ");
         sb.append("samlSupported=\"").append(isSamlSupported()).append("\" ");
@@ -144,6 +145,9 @@ public class FederatedIdentityProviderConfig extends IdentityProviderConfig {
     private static final String PROP_SAML_SUPPORTED = "samlSupported";
     private static final String PROP_X509_SUPPORTED = "x509Supported";
     private static final String PROP_X509_CONFIG = "x509Config";
+    public static final String PROP_CERT_GOIDS = "trustedCertGoids";
+
+    // Should not be used any more -- should be present only in upgraded databases
     private static final String PROP_CERT_OIDS = "trustedCertOids";
 
     private HashMap<String, FederatedUser> importedUsers;

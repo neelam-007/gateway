@@ -61,9 +61,9 @@ public class ConsoleExternalReferenceFinder implements ExternalReferenceFinder, 
     //- PUBLIC
 
     @Override
-    public TrustedCert findCertByPrimaryKey( long certOid ) throws FindException {
+    public TrustedCert findCertByPrimaryKey(Goid certGoid) throws FindException {
         final TrustedCertAdmin admin =  getAdminInterface( TrustedCertAdmin.class );
-        return admin.findCertByPrimaryKey(certOid);
+        return admin.findCertByPrimaryKey(certGoid);
     }
 
     @Override
@@ -125,7 +125,7 @@ public class ConsoleExternalReferenceFinder implements ExternalReferenceFinder, 
     }
 
     @Override
-    public JmsEndpoint findEndpointByOidorGoid(Either<Long, Goid> endpointId) throws FindException {
+    public JmsEndpoint findEndpointByOidOrGoid(Either<Long, Goid> endpointId) throws FindException {
         JmsAdmin jmsAdmin = getAdminInterface( JmsAdmin.class );
         if(endpointId.isLeft())
             return jmsAdmin.findEndpointByOldId(endpointId.left());
@@ -151,7 +151,7 @@ public class ConsoleExternalReferenceFinder implements ExternalReferenceFinder, 
     }
 
     @Override
-    public SsgActiveConnector findConnectorByOidorGoid(Either<Long, Goid> endpointId) throws FindException {
+    public SsgActiveConnector findConnectorByOidOrGoid(Either<Long, Goid> endpointId) throws FindException {
         TransportAdmin transportAdmin = getAdminInterface( TransportAdmin.class );
         if(endpointId.isLeft())
             return transportAdmin.findSsgActiveConnectorByOldId(endpointId.left());

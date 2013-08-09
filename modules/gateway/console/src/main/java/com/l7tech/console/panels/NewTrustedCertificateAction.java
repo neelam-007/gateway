@@ -1,33 +1,31 @@
 package com.l7tech.console.panels;
 
-import java.awt.event.ActionEvent;
-import java.awt.Window;
-import java.awt.Component;
-import java.awt.Frame;
-import java.awt.Dialog;
-import java.util.ResourceBundle;
-import java.util.Locale;
-import java.security.cert.CertificateExpiredException;
-import java.security.cert.CertificateNotYetValidException;
-import javax.swing.*;
-
-import static com.l7tech.objectmodel.EntityType.TRUSTED_CERT;
 import com.l7tech.console.action.SecureAction;
-import com.l7tech.console.event.WizardEvent;
 import com.l7tech.console.event.CertEvent;
 import com.l7tech.console.event.CertListener;
 import com.l7tech.console.event.WizardAdapter;
+import com.l7tech.console.event.WizardEvent;
 import com.l7tech.console.util.Registry;
-import com.l7tech.gateway.common.security.rbac.AttemptedCreate;
-import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.gui.util.Utilities;
+import com.l7tech.gateway.common.security.rbac.AttemptedCreate;
 import com.l7tech.gui.util.DialogDisplayer;
-import com.l7tech.objectmodel.SaveException;
+import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.DuplicateObjectException;
-import com.l7tech.objectmodel.VersionException;
 import com.l7tech.objectmodel.ObjectModelException;
+import com.l7tech.objectmodel.SaveException;
+import com.l7tech.objectmodel.VersionException;
+import com.l7tech.security.cert.TrustedCert;
+import com.l7tech.util.ExceptionUtils;
+
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.security.cert.CertificateExpiredException;
+import java.security.cert.CertificateNotYetValidException;
+import java.util.Locale;
+import java.util.ResourceBundle;
+
+import static com.l7tech.objectmodel.EntityType.TRUSTED_CERT;
 
 /**
  * Action for addition of trusted certificates.
@@ -144,7 +142,7 @@ public class NewTrustedCertificateAction extends SecureAction {
                     public void run() {
 
                         try {
-                            tc.setOid(getTrustedCertAdmin().saveCert(tc));
+                            tc.setGoid(getTrustedCertAdmin().saveCert(tc));
 
                             // reload all certs from server
                             if (listener != null) {

@@ -1,22 +1,21 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.security.cert.TrustedCert;
+import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.security.RevocationCheckPolicy;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.util.ResolvingComparator;
+import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.util.Resolver;
-import com.l7tech.console.util.Registry;
+import com.l7tech.util.ResolvingComparator;
 
 import javax.swing.*;
-import javax.swing.event.ChangeListener;
 import javax.swing.event.ChangeEvent;
-import java.util.ResourceBundle;
+import javax.swing.event.ChangeListener;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.awt.*;
 
 /**
  * @author ghuang
@@ -94,7 +93,7 @@ public class CertValidationPanel extends WizardStepPanel {
 
                 if (revocationCheckSelectedRadioButton.isSelected()) {
                     tc.setRevocationCheckPolicyType(TrustedCert.PolicyUsageType.SPECIFIED);
-                    tc.setRevocationCheckPolicyOid(((RevocationCheckPolicy)revocationCheckPolicyComboBox.getSelectedItem()).getOid());
+                    tc.setRevocationCheckPolicyOid(((RevocationCheckPolicy)revocationCheckPolicyComboBox.getSelectedItem()).getGoid());
                 } else if (revocationCheckDisabledRadioButton.isSelected()) {
                     tc.setRevocationCheckPolicyType(TrustedCert.PolicyUsageType.NONE);
                     tc.setRevocationCheckPolicyOid(null);

@@ -33,8 +33,8 @@ import java.util.Set;
  * found. Methods returning collections should never return null.</p>
  */
 public interface ExternalReferenceFinder {
-    
-    TrustedCert findCertByPrimaryKey( long certOid ) throws FindException;
+
+    TrustedCert findCertByPrimaryKey( Goid certGoid ) throws FindException;
 
     Collection<TrustedCert> findAllCerts() throws FindException;
 
@@ -52,13 +52,13 @@ public interface ExternalReferenceFinder {
 
     JdbcConnection getJdbcConnection( String name ) throws FindException;
 
-    JmsEndpoint findEndpointByOidorGoid(Either<Long,Goid> endpointId) throws FindException;
+    JmsEndpoint findEndpointByOidOrGoid(Either<Long, Goid> endpointId) throws FindException;
 
     JmsEndpoint findEndpointByPrimaryKey( Goid goid ) throws FindException;
 
     JmsConnection findConnectionByPrimaryKey( Goid goid ) throws FindException;
 
-    SsgActiveConnector findConnectorByOidorGoid (Either<Long,Goid>  connectorId) throws FindException;
+    SsgActiveConnector findConnectorByOidOrGoid(Either<Long, Goid> connectorId) throws FindException;
 
     SsgActiveConnector findConnectorByPrimaryKey (Goid oid) throws FindException;
 

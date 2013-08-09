@@ -4,8 +4,8 @@
 package com.l7tech.security.cert;
 
 import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityManager;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.GoidEntityManager;
 
 import javax.security.auth.x500.X500Principal;
 import java.math.BigInteger;
@@ -16,7 +16,7 @@ import java.util.List;
 /**
  * Provides access to CRUD functionality for {@link TrustedCert} objects.
  */
-public interface TrustedCertManager extends EntityManager<TrustedCert, EntityHeader> {
+public interface TrustedCertManager extends GoidEntityManager<TrustedCert, EntityHeader> {
     /**
      * Retrieves every {@link TrustedCert} with the specified DN.
      *
@@ -66,6 +66,18 @@ public interface TrustedCertManager extends EntityManager<TrustedCert, EntityHea
      * @throws FindException if the retrieval fails for any reason other than nonexistence
      */
     Collection<TrustedCert> findByTrustFlag(TrustedCert.TrustedFor trustFlag) throws FindException;
+
+    /**
+     * Finds TrustedCert with a legacy OID matching the specified value.
+     * <p/>
+     * This will only find anything if the system is running with a database that has been upgraded
+     * from a version that used OIDs insteadof GOIDs.
+     *
+     * @param oid sought-after legacy OID
+     * @return the matching TrustedCert entry, or null
+     * @throws FindException if the retrieval fails for any reason other than nonexistence
+     */
+    TrustedCert findByOldOid(long oid) throws FindException;
 
     /**
      * Subclass of certificate exception thrown when a certificate is not known.

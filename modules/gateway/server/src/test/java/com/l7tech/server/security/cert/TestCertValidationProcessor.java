@@ -1,15 +1,16 @@
 package com.l7tech.server.security.cert;
 
-import java.security.cert.X509Certificate;
-import java.security.cert.CertificateException;
-import java.security.SignatureException;
-import java.math.BigInteger;
-
 import com.l7tech.gateway.common.audit.Audit;
-import com.l7tech.security.types.CertificateValidationType;
-import com.l7tech.security.types.CertificateValidationResult;
 import com.l7tech.gateway.common.security.RevocationCheckPolicy;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.security.cert.TrustedCert;
+import com.l7tech.security.types.CertificateValidationResult;
+import com.l7tech.security.types.CertificateValidationType;
+
+import java.math.BigInteger;
+import java.security.SignatureException;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 
 /**
  * @author Steve Jones
@@ -47,7 +48,7 @@ public class TestCertValidationProcessor implements CertValidationProcessor {
     }
 
     @Override
-    public TrustedCert getTrustedCertByOid(long oid) {
+    public TrustedCert getTrustedCertByOid(Goid oid) {
         return null;
     }
 

@@ -3,28 +3,29 @@
  */
 package com.l7tech.console.panels;
 
-import com.l7tech.gui.NumberField;
-import com.l7tech.gui.widgets.SquigglyTextField;
-import com.l7tech.gui.widgets.PropertyPanel;
-import com.l7tech.gui.util.DialogDisplayer;
-import com.l7tech.gui.util.InputValidator;
-import com.l7tech.gui.util.Utilities;
-import com.l7tech.policy.Policy;
-import com.l7tech.wsdl.Wsdl;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.console.event.*;
 import com.l7tech.console.table.TrustedCertTableSorter;
 import com.l7tech.console.table.TrustedCertsTable;
 import com.l7tech.console.util.Registry;
+import com.l7tech.gui.NumberField;
+import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gui.util.InputValidator;
+import com.l7tech.gui.util.Utilities;
+import com.l7tech.gui.widgets.PropertyPanel;
+import com.l7tech.gui.widgets.SquigglyTextField;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.AssertionPath;
+import com.l7tech.policy.Policy;
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.BridgeRoutingAssertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
+import com.l7tech.policy.assertion.BridgeRoutingAssertion;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.wsdl.Wsdl;
 import org.xml.sax.SAXException;
 
 import javax.swing.*;
@@ -281,7 +282,7 @@ public class BridgeRoutingAssertionPropertiesDialog extends LegacyAssertionPrope
 
         propertyPanel.setProperties( new LinkedHashMap<String,String>(assertion.getClientPolicyProperties()) );
 
-        Long certOid = assertion.getServerCertificateOid();
+        Goid certOid = assertion.getServerCertificateGoid();
         if (certOid != null) {
             try {
                 serverCert = Registry.getDefault().getTrustedCertManager().findCertByPrimaryKey(certOid);
@@ -320,10 +321,10 @@ public class BridgeRoutingAssertionPropertiesDialog extends LegacyAssertionPrope
         assertion.setClientPolicyProperties( propertyPanel.getProperties() );
 
         if (rbServerCertManual.isSelected()) {
-            assertion.setServerCertificateOid(serverCert.getOid());
+            assertion.setServerCertificateGoid(serverCert.getGoid());
         }
         else {
-            assertion.setServerCertificateOid(null);
+            assertion.setServerCertificateGoid((Goid) null);
         }
     }
 

@@ -1,31 +1,29 @@
 package com.l7tech.console.panels;
 
-import java.awt.Dialog;
-import java.awt.Frame;
-import java.awt.event.ActionListener;
-import java.awt.event.ActionEvent;
-import java.util.ArrayList;
-import java.util.ResourceBundle;
-import java.util.Locale;
-import java.util.Collection;
-import java.text.MessageFormat;
-import javax.swing.*;
-import javax.swing.event.ListSelectionListener;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListDataListener;
-import javax.swing.event.ListDataEvent;
-
 import com.l7tech.console.util.SecurityZoneWidget;
-import com.l7tech.gateway.common.security.rbac.OperationType;
-import com.l7tech.gui.util.Utilities;
-import com.l7tech.gui.util.DialogDisplayer;
-import com.l7tech.gui.FilterDocument;
-import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.gateway.common.security.RevocationCheckPolicy;
 import com.l7tech.gateway.common.security.RevocationCheckPolicyItem;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.util.ValidationUtils;
+import com.l7tech.gateway.common.security.rbac.OperationType;
+import com.l7tech.gui.FilterDocument;
+import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gui.util.Utilities;
+import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.util.Functions;
+import com.l7tech.util.ValidationUtils;
+
+import javax.swing.*;
+import javax.swing.event.ListDataEvent;
+import javax.swing.event.ListDataListener;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Locale;
+import java.util.ResourceBundle;
 
 /**
  * Properties dialog for Revocation Checking Policies.
@@ -204,7 +202,7 @@ public class RevocationCheckPolicyPropertiesDialog extends JDialog {
         policyItemList.setCellRenderer(new TextListCellRenderer(new RevocationCheckPolicyItemAccessor()));
         policyItemList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         Utilities.setDoubleClickAction(policyItemList, editButton);
-        zoneControl.configure(revocationCheckPolicy.getOid() == RevocationCheckPolicy.DEFAULT_OID ? OperationType.CREATE : readOnly ? OperationType.READ : OperationType.UPDATE, revocationCheckPolicy);
+        zoneControl.configure(RevocationCheckPolicy.DEFAULT_GOID.equals(revocationCheckPolicy.getGoid()) ? OperationType.CREATE : readOnly ? OperationType.READ : OperationType.UPDATE, revocationCheckPolicy);
 
         // Set data
         nameTextField.setDocument(new FilterDocument(64, new FilterDocument.Filter(){

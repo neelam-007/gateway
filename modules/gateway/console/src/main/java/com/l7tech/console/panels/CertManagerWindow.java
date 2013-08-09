@@ -3,7 +3,6 @@
  */
 package com.l7tech.console.panels;
 
-import com.l7tech.common.io.CertUtils;
 import com.l7tech.console.event.CertEvent;
 import com.l7tech.console.event.CertListener;
 import com.l7tech.console.security.SecurityProvider;
@@ -13,13 +12,12 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.security.RevocationCheckPolicy;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gui.util.DialogDisplayer;
-import com.l7tech.gui.util.GuiCertUtil;
-import com.l7tech.gui.util.GuiPasswordCallbackHandler;
 import com.l7tech.gui.util.Utilities;
-import com.l7tech.objectmodel.*;
+import com.l7tech.objectmodel.ConstraintViolationException;
+import com.l7tech.objectmodel.DeleteException;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.security.cert.TrustedCert;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.Functions;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
@@ -27,14 +25,11 @@ import javax.swing.event.ListSelectionListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.lang.reflect.InvocationTargetException;
-import java.security.NoSuchAlgorithmException;
-import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
-import java.util.*;
-import java.util.List;
-import java.util.concurrent.Callable;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Locale;
+import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -151,7 +146,7 @@ public class CertManagerWindow extends JDialog {
 
                 // retrieve the latest version
                 try {
-                    TrustedCert updatedTrustedCert = getTrustedCertAdmin().findCertByPrimaryKey(tc.getOid());
+                    TrustedCert updatedTrustedCert = getTrustedCertAdmin().findCertByPrimaryKey(tc.getGoid());
                     if (updatedTrustedCert == null) {
                         JOptionPane.showMessageDialog(mainPanel, resources.getString("cert.deleted.error"),
                                                       resources.getString("view.error.title"),
@@ -182,7 +177,7 @@ public class CertManagerWindow extends JDialog {
             @Override
             public void actionPerformed(ActionEvent event) {
                 int[] srs = trustedCertTable.getSelectedRows();
-                long[] oids = new long[srs.length];
+                Goid[] oids = new Goid[srs.length];
 
                 String message;
                 if ( srs.length == 1 ) {
@@ -192,14 +187,14 @@ public class CertManagerWindow extends JDialog {
                                                           certName + "?<br>" +
                                                           "<center>This action cannot be undone." +
                                                           "</center></html>";
-                    oids[0] = tc.getOid();
+                    oids[0] = tc.getGoid();
                 } else {
                     message = "<html>Are you sure you want to remove " +srs.length+ " certificates?<br>" +
                                                           "<center>This action cannot be undone." +
                                                           "</center></html>";
                     for ( int i = 0; i < srs.length; i++ ) {
                         TrustedCert tc = (TrustedCert)trustedCertTable.getTableSorter().getData(srs[i]);
-                        oids[i] = tc.getOid();
+                        oids[i] = tc.getGoid();
                     }
                 }
 
@@ -211,7 +206,7 @@ public class CertManagerWindow extends JDialog {
                                                           null, options, options[1]);
                 if (result == 0) {
                     try {
-                        for ( long oid : oids ) {
+                        for ( Goid oid : oids ) {
                             getTrustedCertAdmin().deleteCert(oid);
                         }
 

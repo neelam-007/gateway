@@ -1,15 +1,16 @@
 package com.l7tech.server.security.cert;
 
 import com.l7tech.gateway.common.audit.Audit;
+import com.l7tech.gateway.common.security.RevocationCheckPolicy;
+import com.l7tech.objectmodel.Goid;
+import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.security.types.CertificateValidationResult;
 import com.l7tech.security.types.CertificateValidationType;
-import com.l7tech.security.cert.TrustedCert;
-import com.l7tech.gateway.common.security.RevocationCheckPolicy;
 
-import java.security.cert.X509Certificate;
-import java.security.cert.CertificateException;
-import java.security.SignatureException;
 import java.math.BigInteger;
+import java.security.SignatureException;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 
 /**
  * Interface for Certificate Validation Processors.
@@ -75,7 +76,7 @@ public interface CertValidationProcessor {
      * @param oid The key for the certificate
      * @return The trusted certificate or null
      */
-    TrustedCert getTrustedCertByOid(long oid);
+    TrustedCert getTrustedCertByOid(Goid oid);
 
     /**
      * Get a Trusted Certificate by certificate.

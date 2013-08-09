@@ -59,7 +59,7 @@ public class TrustedCertsDialog extends JDialog {
             final TrustedCertAdmin trustedCertManager = Registry.getDefault().getTrustedCertManager();
             for (final EntityHeader trustedCert : trustedCerts) {
                 try {
-                    final TrustedCert found = trustedCertManager.findCertByPrimaryKey(trustedCert.getOid());
+                    final TrustedCert found = trustedCertManager.findCertByPrimaryKey(trustedCert.getGoid());
                     if (found == null) {
                         missingCerts.put(trustedCert.getOid(), trustedCert.getName());
                     }
@@ -96,7 +96,7 @@ public class TrustedCertsDialog extends JDialog {
                     public void certSelected(CertEvent ce) {
                         TrustedCert cert = ce.getCert();
                         if (cert != null) {
-                            EntityHeader header = new EntityHeader(cert.getOid(), EntityType.TRUSTED_CERT, cert.getName(), null);
+                            EntityHeader header = new EntityHeader(cert.getGoid(), EntityType.TRUSTED_CERT, cert.getName(), null);
                             if (certsTableModel.getRowIndex(header) >= 0) {
                                 DialogDisplayer.showMessageDialog(TrustedCertsDialog.this, "The selected certificate is already present in the table.", "Certificate Already Added", JOptionPane.ERROR_MESSAGE, null);
                             } else {

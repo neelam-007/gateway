@@ -1,6 +1,7 @@
 package com.l7tech.policy;
 
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
@@ -935,6 +936,27 @@ public class WspReaderTest {
         assertEquals("Assertion ordinals should remain the same when disabled assertions are omitted at parsing time", laterOnFromIncludeDisabled.getOrdinal(), laterOnFromOmitDisabled.getOrdinal());
     }
 
+    @Test
+    public void testAutomaticLongToGoidConverstion() throws Exception {
+        Assertion ass = WspReader.getDefault().parseStrictly(PRE80_CERT_OID_BRIDGE_ROUTING_POLICY, OMIT_DISABLED);
+        BridgeRoutingAssertion bra = (BridgeRoutingAssertion) ass;
+        Goid goid = bra.getServerCertificateGoid();
+        assertNotNull(goid);
+        assertEquals(Goid.wrapOid(-484L), goid);
+    }
+
+    @Test
+    public void testAutomaticLongArrayToGoidArrayConversion() throws Exception {
+        Assertion ass = WspReader.getDefault().parseStrictly(PRE80_CERT_OIDS_ARRAY_HTTP_ROUTING_POLICY, OMIT_DISABLED);
+        HttpRoutingAssertion hra = (HttpRoutingAssertion) ass;
+        Goid[] goids = hra.getTlsTrustedCertGoids();
+        assertNotNull(goids);
+        assertEquals(goids.length, 3);
+        assertEquals(Goid.wrapOid(44L), goids[0]);
+        assertEquals(Goid.wrapOid(22L), goids[1]);
+        assertEquals(Goid.wrapOid(-23L), goids[2]);
+    }
+
 
     private static final String BUG_3456_POLICY = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
     "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
@@ -1079,4 +1101,64 @@ public class WspReaderTest {
             "        </L7p:CommentAssertion>\n" +
             "    </wsp:All>\n" +
             "</wsp:Policy>";
+
+    public static final String PRE80_CERT_OID_BRIDGE_ROUTING_POLICY =
+        "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+        "    <L7p:BridgeRoutingAssertion>\n" +
+        "        <L7p:RequestHeaderRules httpPassthroughRuleSet=\"included\">\n" +
+        "            <L7p:Rules httpPassthroughRules=\"included\">\n" +
+        "                <L7p:item httpPassthroughRule=\"included\">\n" +
+        "                    <L7p:Name stringValue=\"Cookie\"/>\n" +
+        "                </L7p:item>\n" +
+        "                <L7p:item httpPassthroughRule=\"included\">\n" +
+        "                    <L7p:Name stringValue=\"SOAPAction\"/>\n" +
+        "                </L7p:item>\n" +
+        "            </L7p:Rules>\n" +
+        "        </L7p:RequestHeaderRules>\n" +
+        "        <L7p:RequestParamRules httpPassthroughRuleSet=\"included\">\n" +
+        "            <L7p:ForwardAll booleanValue=\"true\"/>\n" +
+        "            <L7p:Rules httpPassthroughRules=\"included\"/>\n" +
+        "        </L7p:RequestParamRules>\n" +
+        "        <L7p:ResponseHeaderRules httpPassthroughRuleSet=\"included\">\n" +
+        "            <L7p:Rules httpPassthroughRules=\"included\">\n" +
+        "                <L7p:item httpPassthroughRule=\"included\">\n" +
+        "                    <L7p:Name stringValue=\"Set-Cookie\"/>\n" +
+        "                </L7p:item>\n" +
+        "            </L7p:Rules>\n" +
+        "        </L7p:ResponseHeaderRules>\n" +
+        "        <L7p:ServerCertificateOid boxedLongValue=\"-484\"/>\n" +
+        "    </L7p:BridgeRoutingAssertion>\n" +
+        "</wsp:Policy>";
+
+    public static final String PRE80_CERT_OIDS_ARRAY_HTTP_ROUTING_POLICY =
+        "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+        "    <L7p:HttpRoutingAssertion>\n" +
+        "        <L7p:RequestHeaderRules httpPassthroughRuleSet=\"included\">\n" +
+        "            <L7p:Rules httpPassthroughRules=\"included\">\n" +
+        "                <L7p:item httpPassthroughRule=\"included\">\n" +
+        "                    <L7p:Name stringValue=\"Cookie\"/>\n" +
+        "                </L7p:item>\n" +
+        "                <L7p:item httpPassthroughRule=\"included\">\n" +
+        "                    <L7p:Name stringValue=\"SOAPAction\"/>\n" +
+        "                </L7p:item>\n" +
+        "            </L7p:Rules>\n" +
+        "        </L7p:RequestHeaderRules>\n" +
+        "        <L7p:RequestParamRules httpPassthroughRuleSet=\"included\">\n" +
+        "            <L7p:ForwardAll booleanValue=\"true\"/>\n" +
+        "            <L7p:Rules httpPassthroughRules=\"included\"/>\n" +
+        "        </L7p:RequestParamRules>\n" +
+        "        <L7p:ResponseHeaderRules httpPassthroughRuleSet=\"included\">\n" +
+        "            <L7p:Rules httpPassthroughRules=\"included\">\n" +
+        "                <L7p:item httpPassthroughRule=\"included\">\n" +
+        "                    <L7p:Name stringValue=\"Set-Cookie\"/>\n" +
+        "                </L7p:item>\n" +
+        "            </L7p:Rules>\n" +
+        "        </L7p:ResponseHeaderRules>\n" +
+        "        <L7p:TlsTrustedCertOids longArrayValue=\"included\">\n" +
+        "            <L7p:item boxedLongValue=\"44\"/>\n" +
+        "            <L7p:item boxedLongValue=\"22\"/>\n" +
+        "            <L7p:item boxedLongValue=\"-23\"/>\n" +
+        "        </L7p:TlsTrustedCertOids>\n" +
+        "    </L7p:HttpRoutingAssertion>\n" +
+        "</wsp:Policy>";
 }

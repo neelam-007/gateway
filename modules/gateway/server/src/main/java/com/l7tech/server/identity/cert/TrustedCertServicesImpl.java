@@ -2,6 +2,7 @@ package com.l7tech.server.identity.cert;
 
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.security.cert.CertVerifier;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.security.cert.TrustedCertManager;
@@ -29,7 +30,7 @@ public class TrustedCertServicesImpl implements TrustedCertServices {
     }
 
     @Override
-    public void checkSslTrust(X509Certificate[] serverCertChain, Set<Long> trustedCertOids) throws CertificateException {
+    public void checkSslTrust(X509Certificate[] serverCertChain, Set<Goid> trustedCertOids) throws CertificateException {
         String issuerDn = CertUtils.getIssuerDN(serverCertChain[0]);
         try {
             // Check if this cert is trusted as-is
@@ -49,7 +50,7 @@ public class TrustedCertServicesImpl implements TrustedCertServices {
     }
 
     @Override
-    public Collection<TrustedCert> getCertsBySubjectDnFiltered(String subjectDn, boolean omitExpired, Set<TrustedCert.TrustedFor> requiredTrustFlags, Set<Long> requiredOids) throws FindException {
+    public Collection<TrustedCert> getCertsBySubjectDnFiltered(String subjectDn, boolean omitExpired, Set<TrustedCert.TrustedFor> requiredTrustFlags, Set<Goid> requiredOids) throws FindException {
         Collection<TrustedCert> trustedsWithDn = trustedCertCache.findBySubjectDn(subjectDn);
         List<TrustedCert> ret = new ArrayList<TrustedCert>();
         for (TrustedCert trusted : trustedsWithDn) {
@@ -57,7 +58,7 @@ public class TrustedCertServicesImpl implements TrustedCertServices {
                 continue;
             if (requiredTrustFlags != null && !trusted.isTrustedForAll(requiredTrustFlags))
                 continue;
-            if (requiredOids != null && !requiredOids.contains(trusted.getOid()))
+            if (requiredOids != null && !requiredOids.contains(trusted.getGoid()))
                 continue;
             trusted.setReadOnly();
             ret.add(trusted);
@@ -74,7 +75,7 @@ public class TrustedCertServicesImpl implements TrustedCertServices {
         return Collections.unmodifiableCollection(ret);
     }
 
-    private void checkIssuerIsTrusted(X509Certificate[] serverCertChain, String issuerDn, Set<Long> trustedCertOids) throws FindException, CertificateException, NoSuchProviderException, NoSuchAlgorithmException, SignatureException, InvalidKeyException {
+    private void checkIssuerIsTrusted(X509Certificate[] serverCertChain, String issuerDn, Set<Goid> trustedCertOids) throws FindException, CertificateException, NoSuchProviderException, NoSuchAlgorithmException, SignatureException, InvalidKeyException {
         Collection<TrustedCert> caTrusts = getCertsBySubjectDnFiltered(issuerDn, true, EnumSet.of(TrustedCert.TrustedFor.SIGNING_SERVER_CERTS), trustedCertOids);
 
         if (caTrusts.isEmpty()) {
@@ -95,7 +96,7 @@ public class TrustedCertServicesImpl implements TrustedCertServices {
         throw new CertificateException("CA Cert(s) with DN '" + issuerDn + "' found but not trusted for signing SSL Server Certs");
     }
 
-    private boolean isTrustedAsIs(X509Certificate[] serverCertChain, Set<Long> trustedCertOids) throws CertificateException {
+    private boolean isTrustedAsIs(X509Certificate[] serverCertChain, Set<Goid> trustedCertOids) throws CertificateException {
         try {
             String subjectDn = CertUtils.getSubjectDN(serverCertChain[0]);
             Collection<TrustedCert> selfTrusts = getCertsBySubjectDnFiltered(subjectDn, true, EnumSet.of(TrustedCert.TrustedFor.SSL), trustedCertOids);

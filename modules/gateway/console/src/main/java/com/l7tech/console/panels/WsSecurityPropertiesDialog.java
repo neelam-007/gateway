@@ -3,16 +3,14 @@ package com.l7tech.console.panels;
 import com.l7tech.console.event.CertEvent;
 import com.l7tech.console.event.CertListenerAdapter;
 import com.l7tech.console.util.Registry;
-import static com.l7tech.console.util.VariablePrefixUtil.fixVariableName;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
-import static com.l7tech.gui.util.Utilities.comboBoxModel;
 import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.xmlsec.WsSecurity;
-import static com.l7tech.policy.variable.VariableMetadata.validateName;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.security.xml.WsSecurityVersion;
 import com.l7tech.util.ExceptionUtils;
@@ -26,6 +24,10 @@ import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.logging.Logger;
+
+import static com.l7tech.console.util.VariablePrefixUtil.fixVariableName;
+import static com.l7tech.gui.util.Utilities.comboBoxModel;
+import static com.l7tech.policy.variable.VariableMetadata.validateName;
 
 /**
  * Assertion properties dialog for WssDecoration assertion.
@@ -54,7 +56,7 @@ public class WsSecurityPropertiesDialog extends AssertionPropertiesOkCancelSuppo
         if ( applyWsSecurityCheckBox.isSelected() ) {
             assertion.setWsSecurityVersion( (WsSecurityVersion) wssVersionComboBox.getSelectedItem());
 
-            assertion.setRecipientTrustedCertificateOid( 0L );
+            assertion.setRecipientTrustedCertificateOid( null );
             assertion.setRecipientTrustedCertificateName( null );
             assertion.setRecipientTrustedCertificateVariable( null );
             if ( selectedRecipientCertificateRadioButton.isSelected() ) {
@@ -66,7 +68,7 @@ public class WsSecurityPropertiesDialog extends AssertionPropertiesOkCancelSuppo
             }
         } else {
             assertion.setWsSecurityVersion(null);
-            assertion.setRecipientTrustedCertificateOid( 0L );
+            assertion.setRecipientTrustedCertificateOid( null );
             assertion.setRecipientTrustedCertificateName( null );
         }
         return assertion;
@@ -86,7 +88,7 @@ public class WsSecurityPropertiesDialog extends AssertionPropertiesOkCancelSuppo
 
         wssVersionComboBox.setSelectedItem( assertion.getWsSecurityVersion() );
 
-        if ( assertion.getRecipientTrustedCertificateOid() > 0L ) {
+        if ( assertion.getRecipientTrustedCertificateOid() != null ) {
             selectedRecipientCertificateRadioButton.setSelected( true );
             recipientCertificateOid = assertion.getRecipientTrustedCertificateOid();
             try {
@@ -190,7 +192,7 @@ public class WsSecurityPropertiesDialog extends AssertionPropertiesOkCancelSuppo
     private JPanel applySecuritySettingsPanel;
     private JCheckBox clearWsSecurityCheckBox;
 
-    private long recipientCertificateOid;
+    private Goid recipientCertificateOid;
     private boolean isResponse;
 
     private void doSelectRecipientTrustedCertificate() {
@@ -199,7 +201,7 @@ public class WsSecurityPropertiesDialog extends AssertionPropertiesOkCancelSuppo
             @Override
             public void certSelected( final CertEvent ce ) {
                 TrustedCert cert = ce.getCert();
-                recipientCertificateOid = cert.getOid();
+                recipientCertificateOid = cert.getGoid();
                 selectedCertificateNameTextField.setText( cert.getName() );
                 selectedCertificateSubjectTextField.setText( cert.getCertificate().getSubjectDN().toString() );
                 selectedCertificateIssuerTextField.setText( cert.getCertificate().getIssuerDN().toString() );
