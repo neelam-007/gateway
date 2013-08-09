@@ -17,7 +17,7 @@ import com.l7tech.objectmodel.GoidEntity;
 import com.l7tech.server.service.PersistentServiceDocumentWsdlStrategy;
 import com.l7tech.server.service.ServiceDocumentManagerStub;
 import com.l7tech.server.transport.ResolutionConfigurationManagerStub;
-import com.l7tech.server.util.GoidUpgradeMapperTestUtil;
+import com.l7tech.util.GoidUpgradeMapperTestUtil;
 import com.l7tech.test.BugNumber;
 import com.l7tech.xml.soap.SoapVersion;
 import org.junit.BeforeClass;

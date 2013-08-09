@@ -1,4 +1,4 @@
-package com.l7tech.server.util;
+package com.l7tech.util;
 
 /**
  * This is used to help in unit tests that expect goid prefixes to be available.

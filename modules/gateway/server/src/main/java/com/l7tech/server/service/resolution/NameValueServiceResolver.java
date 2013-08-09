@@ -5,7 +5,7 @@ import com.l7tech.message.Message;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.server.util.GoidUpgradeMapper;
+import com.l7tech.util.GoidUpgradeMapper;
 
 import java.io.Serializable;
 import java.util.*;

@@ -1,7 +1,6 @@
-package com.l7tech.server.util;
+package com.l7tech.util;
 
 import com.l7tech.objectmodel.EntityType;
-import com.l7tech.util.ResourceUtils;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.jdbc.Work;
@@ -98,7 +97,7 @@ public class GoidUpgradeMapper extends ApplicationObjectSupport implements Initi
         if (!hasPrefixes)
             return false;
         Long prefixFound = getPrefix(entityType);
-        return prefixFound != null ? prefixFound == prefix : false;
+        return prefixFound != null && prefixFound == prefix;
     }
 
     /**

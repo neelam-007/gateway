@@ -10,7 +10,7 @@ import com.l7tech.message.HttpRequestKnob;
 import com.l7tech.message.Message;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.server.util.GoidUpgradeMapper;
+import com.l7tech.util.GoidUpgradeMapper;
 
 import java.util.ArrayList;
 import java.util.List;

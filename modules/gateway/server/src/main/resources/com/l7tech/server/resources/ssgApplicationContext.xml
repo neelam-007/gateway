@@ -31,7 +31,7 @@
 
     <bean id="gatewayDbVersionChecker" class="com.l7tech.server.util.GatewayDbVersionChecker" depends-on="goidUpgradeMapper"/>
 
-    <bean id="goidUpgradeMapper" class="com.l7tech.server.util.GoidUpgradeMapper"/>
+    <bean id="goidUpgradeMapper" class="com.l7tech.util.GoidUpgradeMapper"/>
 
     <bean id="applicationEventPublisher" class="com.l7tech.server.util.ApplicationEventPublisherFactoryBean"/>
 
