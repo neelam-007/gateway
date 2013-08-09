@@ -498,6 +498,12 @@ update trusted_cert set goid = toGoid(cast(getVariable('trusted_cert_prefix') as
 ALTER TABLE trusted_cert ALTER COLUMN goid NOT NULL;
 ALTER TABLE trusted_cert ADD PRIMARY KEY (goid);
 
+ALTER TABLE trusted_esm ADD COLUMN trusted_cert_goid CHAR(16) FOR BIT DATA;
+update trusted_esm set trusted_cert_goid = toGoid(cast(getVariable('trusted_cert_prefix') as bigint), trusted_cert_oid);
+ALTER TABLE trusted_esm ALTER COLUMN trusted_cert_goid NOT NULL;
+ALTER TABLE trusted_esm DROP COLUMN trusted_cert_oid;
+ALTER TABLE trusted_esm add constraint FK_trusted_esm_trusted_cert foreign key (trusted_cert_goid) references trusted_cert on delete cascade;
+
 update rbac_role set entity_goid = toGoid(cast(getVariable('trusted_cert_prefix') as bigint),entity_oid) where entity_oid is not null and entity_type='TRUSTED_CERT';
 update rbac_predicate_oid oid1 set oid1.entity_id = ifnull((select goidToString(toGoid(cast(getVariable('trusted_cert_prefix') as bigint),cast(oid1.entity_id as bigint))) from rbac_predicate left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid where rbac_predicate.objectid = oid1.objectid and rbac_permission.entity_type = 'TRUSTED_CERT'), oid1.entity_id);
 
@@ -511,6 +517,13 @@ call setVariable('revocation_check_policy_prefix', cast(randomLongNotReserved() 
 update revocation_check_policy set goid = toGoid(cast(getVariable('revocation_check_policy_prefix') as bigint), old_objectid);
 ALTER TABLE revocation_check_policy ALTER COLUMN goid NOT NULL;
 ALTER TABLE revocation_check_policy ADD PRIMARY KEY (goid);
+
+-- Note that old column name was revocation_policy_oid rather than revocation_check_policy_oid
+ALTER TABLE trusted_cert ADD COLUMN revocation_check_policy_goid CHAR(16) FOR BIT DATA;
+update trusted_cert set revocation_check_policy_goid = toGoid(cast(getVariable('revocation_check_policy_prefix') as bigint), revocation_policy_oid);
+ALTER TABLE trusted_cert ALTER COLUMN revocation_check_policy_goid NOT NULL;
+ALTER TABLE trusted_cert DROP COLUMN revocation_policy_oid;
+ALTER TABLE trusted_cert add constraint FK_trusted_cert_revocation_check_policy foreign key (revocation_check_policy_goid) references revocation_check_policy on delete cascade;
 
 update rbac_role set entity_goid = toGoid(cast(getVariable('revocation_check_policy_prefix') as bigint),entity_oid) where entity_oid is not null and entity_type='REVOCATION_CHECK_POLICY';
 update rbac_predicate_oid oid1 set oid1.entity_id = ifnull((select goidToString(toGoid(cast(getVariable('revocation_check_policy_prefix') as bigint),cast(oid1.entity_id as bigint))) from rbac_predicate left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid where rbac_predicate.objectid = oid1.objectid and rbac_permission.entity_type = 'REVOCATION_CHECK_POLICY'), oid1.entity_id);

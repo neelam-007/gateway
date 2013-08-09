@@ -50,7 +50,7 @@ begin
 	-- throw an error if there are more then one foreign keys found
     if @constraint_count > 1 then
         set @error_message = concat('\'',tableName, '\' table has more then one foreign key references to \'', referenceTableName,'\'');
-        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = @error_message;
+        -- SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = @error_message;
     elseif @constraint_count = 1 then
         SELECT constraint_name into @constraint_name FROM information_schema.REFERENTIAL_CONSTRAINTS
         WHERE constraint_schema = @ssgSchema AND table_name = tableName and referenced_table_name=referenceTableName;
@@ -61,7 +61,7 @@ begin
     elseif @constraint_count = 0 then
         -- warn if there are no foreign keys found
         set @error_message = concat('No foreign key found from table \'',tableName, '\' to table \'', referenceTableName,'\'');
-        SIGNAL SQLSTATE '01000' SET MESSAGE_TEXT = @error_message;
+        -- SIGNAL SQLSTATE '01000' SET MESSAGE_TEXT = @error_message;
     end if;
 end//
 delimiter ;
@@ -556,6 +556,11 @@ ALTER TABLE trusted_cert CHANGE COLUMN objectid goid binary(16);
 SET @trusted_cert_prefix=#RANDOM_LONG_NOT_RESERVED#;
 update trusted_cert set goid = toGoid(@trusted_cert_prefix,old_objectid);
 
+ALTER TABLE trusted_esm ADD COLUMN trusted_cert_oid_backup BIGINT(20);
+UPDATE  trusted_esm SET trusted_cert_oid_backup = trusted_cert_oid;
+ALTER TABLE trusted_esm CHANGE COLUMN trusted_cert_oid trusted_cert_goid binary(16);
+UPDATE trusted_esm SET trusted_cert_goid = toGoid(@trusted_cert_prefix,trusted_cert_oid_backup);
+ALTER TABLE trusted_esm DROP COLUMN trusted_cert_oid_backup;
 ALTER TABLE trusted_esm ADD FOREIGN KEY (trusted_cert_goid) REFERENCES trusted_cert (goid);
 
 update rbac_role set entity_goid = toGoid(@trusted_cert_prefix,entity_oid) where entity_oid is not null and entity_type='TRUSTED_CERT';
@@ -572,6 +577,12 @@ ALTER TABLE revocation_check_policy CHANGE COLUMN objectid goid binary(16);
 SET @revocation_check_policy_prefix=#RANDOM_LONG_NOT_RESERVED#;
 update revocation_check_policy set goid = toGoid(@revocation_check_policy_prefix,old_objectid);
 
+-- Note that old column name was revocation_policy_oid rather than revocation_check_policy_oid
+ALTER TABLE trusted_cert ADD COLUMN revocation_check_policy_oid_backup BIGINT(20);
+UPDATE  trusted_cert SET revocation_check_policy_oid_backup = revocation_policy_oid;
+ALTER TABLE trusted_cert CHANGE COLUMN revocation_policy_oid revocation_check_policy_goid binary(16);
+UPDATE trusted_cert SET revocation_check_policy_goid = toGoid(@revocation_check_policy_prefix,revocation_check_policy_oid_backup);
+ALTER TABLE trusted_cert DROP COLUMN revocation_check_policy_oid_backup;
 ALTER TABLE trusted_cert ADD FOREIGN KEY (revocation_check_policy_goid) REFERENCES revocation_check_policy (goid);
 
 update rbac_role set entity_goid = toGoid(@revocation_check_policy_prefix,entity_oid) where entity_oid is not null and entity_type='REVOCATION_CHECK_POLICY';
