@@ -512,8 +512,8 @@ ALTER TABLE http_configuration CHANGE COLUMN objectid goid binary(16);
 SET @http_configuration_prefix=#RANDOM_LONG_NOT_RESERVED#;
 update http_configuration set goid = toGoid(@http_configuration_prefix,old_objectid);
 
-update rbac_role set entity_goid = toGoid(@jms_connection_prefix,entity_oid) where entity_oid is not null and entity_type='HTTP_CONFIGURATION';
-update rbac_predicate_oid oid1 left join rbac_predicate on rbac_predicate.objectid = oid1.objectid left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid set oid1.entity_id = hex(toGoid(@jms_connection_prefix,oid1.entity_id)) where rbac_permission.entity_type = 'HTTP_CONFIGURATION';
+update rbac_role set entity_goid = toGoid(@http_configuration_prefix,entity_oid) where entity_oid is not null and entity_type='HTTP_CONFIGURATION';
+update rbac_predicate_oid oid1 left join rbac_predicate on rbac_predicate.objectid = oid1.objectid left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid set oid1.entity_id = hex(toGoid(@http_configuration_prefix,oid1.entity_id)) where rbac_permission.entity_type = 'HTTP_CONFIGURATION';
 
 -- active connector
 
@@ -689,12 +689,13 @@ call dropForeignKey('uddi_business_service_status','published_service');
 call dropForeignKey('uddi_proxied_service_info','published_service');
 call dropForeignKey('uddi_service_control','published_service');
 
-ALTER TABLE published_service ADD COLUMN old_objectid BIGINT(20);
-update published_service set old_objectid=objectid;
+ALTER TABLE published_service ADD COLUMN objectid_backup BIGINT(20);
+update published_service set objectid_backup=objectid;
 ALTER TABLE published_service CHANGE COLUMN objectid goid binary(16);
 -- For manual runs use: set @published_service_prefix=createUnreservedPoorRandomPrefix();
 SET @published_service_prefix=#RANDOM_LONG_NOT_RESERVED#;
-update published_service set goid = toGoid(@published_service_prefix,old_objectid);
+update published_service set goid = toGoid(@published_service_prefix,objectid_backup);
+ALTER TABLE published_service DROP COLUMN objectid_backup;
 
 ALTER TABLE published_service ADD COLUMN folder_oid_backup BIGINT(20);
 update published_service set folder_oid_backup=folder_oid;
@@ -1015,6 +1016,51 @@ CREATE TABLE license_document (
   contents mediumtext,
   PRIMARY KEY (objectid)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
+
+
+CREATE TABLE goid_upgrade_map (
+  prefix bigint NOT NULL,
+  table_name varchar(255) NOT NULL,
+  PRIMARY KEY (prefix, table_name)
+);
+
+INSERT INTO goid_upgrade_map (table_name, prefix) VALUES
+      ('jdbc_connection', @jdbc_prefix),
+      ('logon_info', @logonInfo_prefix),
+      ('service_metrics', @metrics_prefix),
+      ('sample_messages', @sample_messages_prefix),
+      ('cluster_properties', @cluster_properties_prefix),
+      ('email_listener', @email_prefix),
+      ('email_listener_state', @emailState_prefix),
+      ('generic_entity', @generic_entity_prefix),
+      ('connector', @connector_prefix),
+      ('firewall_rule', @firewall_prefix),
+      ('encapsulated_assertion', @encapsulated_assertion_prefix),
+      ('encapsulated_assertion_argument', @encapsulated_assertion_argument_prefix),
+      ('encapsulated_assertion_result', @encapsulated_assertion_result_prefix),
+      ('jms_connection', @jms_connection_prefix),
+      ('jms_endpoint', @jms_endpoint_prefix),
+      ('http_configuration', @http_configuration_prefix),
+      ('active_connector', @active_connector_prefix),
+      ('folder', @folder_prefix),
+      ('policy', @policy_prefix),
+      ('policy_alias', @policy_alias_prefix),
+      ('policy_version', @policy_version_prefix),
+      ('published_service', @published_service_prefix),
+      ('published_service_alias', @published_service_alias_prefix),
+      ('service_documents', @service_documents_prefix),
+      ('uddi_registries', @uddi_registries_prefix),
+      ('uddi_registry_subscription', @uddi_registry_subscription_prefix),
+      ('uddi_proxied_service_info', @uddi_proxied_service_info_prefix),
+      ('uddi_proxied_service', @uddi_proxied_service_prefix),
+      ('uddi_publish_status', @uddi_publish_status_prefix),
+      ('uddi_business_service_status', @uddi_business_service_status_prefix),
+      ('uddi_service_control', @uddi_service_control_prefix),
+      ('uddi_service_control_monitor_runtime', @uddi_service_control_monitor_runtime_prefix),
+      ('client_cert', @client_cert_prefix),
+      ('trusted_cert', @trusted_cert_prefix),
+      ('revocation_check_policy', @revocation_check_policy_prefix);
+
 
 --
 -- Reenable FK at very end of script

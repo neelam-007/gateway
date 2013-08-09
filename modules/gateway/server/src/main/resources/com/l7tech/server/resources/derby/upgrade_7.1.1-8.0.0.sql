@@ -597,13 +597,11 @@ ALTER TABLE policy_version DROP COLUMN policy_oid;
 update rbac_role set entity_goid = toGoid(cast(getVariable('policy_version_prefix') as bigint),entity_oid) where entity_oid is not null and entity_type='POLICY_VERSION';
 update rbac_predicate_oid oid1 set oid1.entity_id = ifnull((select goidToString(toGoid(cast(getVariable('policy_version_prefix') as bigint),cast(oid1.entity_id as bigint))) from rbac_predicate left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid where rbac_predicate.objectid = oid1.objectid and rbac_permission.entity_type = 'POLICY_VERSION'), oid1.entity_id);
 
-ALTER TABLE published_service ADD COLUMN old_objectid bigint;
-update published_service set old_objectid = objectid;
-ALTER TABLE published_service DROP COLUMN objectid;
 ALTER TABLE published_service ADD COLUMN goid CHAR(16) FOR BIT DATA;
 call setVariable('published_service_prefix', cast(randomLongNotReserved() as char(21)));
-update published_service set goid = toGoid(cast(getVariable('published_service_prefix') as bigint), old_objectid);
+update published_service set goid = toGoid(cast(getVariable('published_service_prefix') as bigint), objectid);
 ALTER TABLE published_service ALTER COLUMN goid NOT NULL;
+ALTER TABLE published_service DROP COLUMN objectid;
 ALTER TABLE published_service ADD PRIMARY KEY (goid);
 
 ALTER TABLE published_service ADD COLUMN folder_goid CHAR(16) FOR BIT DATA;
@@ -843,3 +841,46 @@ CREATE TABLE license_document (
   contents clob(2147483647),
   PRIMARY KEY (objectid)
 );
+
+
+CREATE TABLE goid_upgrade_map (
+  prefix bigint NOT NULL,
+  table_name varchar(255) NOT NULL,
+  PRIMARY KEY (prefix, table_name)
+);
+
+INSERT INTO goid_upgrade_map (table_name, prefix) VALUES
+      ('jdbc_connection', cast(getVariable('jdbc_connection_prefix') as bigint)),
+      ('logon_info', cast(getVariable('logon_info_prefix') as bigint)),
+      ('sample_messages', cast(getVariable('sample_messages_prefix') as bigint)),
+      ('cluster_properties', cast(getVariable('cluster_properties_prefix') as bigint)),
+      ('email_listener', cast(getVariable('email_listener_prefix') as bigint)),
+      ('email_listener_state', cast(getVariable('email_listener_state_prefix') as bigint)),
+      ('generic_entity', cast(getVariable('generic_entity_prefix') as bigint)),
+      ('connector', cast(getVariable('connector_prefix') as bigint)),
+      ('firewall_rule', cast(getVariable('firewall_rule_prefix') as bigint)),
+      ('encapsulated_assertion', cast(getVariable('encass_prefix') as bigint)),
+      ('encapsulated_assertion_argument', cast(getVariable('encass_argument_prefix') as bigint)),
+      ('encapsulated_assertion_result', cast(getVariable('encass_result_prefix') as bigint)),
+      ('jms_connection', cast(getVariable('jms_connection_prefix') as bigint)),
+      ('jms_endpoint', cast(getVariable('jms_endpoint_prefix') as bigint)),
+      ('http_configuration', cast(getVariable('http_configuration_prefix') as bigint)),
+      ('active_connector', cast(getVariable('active_connector_prefix') as bigint)),
+      ('folder', cast(getVariable('folder_prefix') as bigint)),
+      ('policy', cast(getVariable('policy_prefix') as bigint)),
+      ('policy_alias', cast(getVariable('policy_alias_prefix') as bigint)),
+      ('policy_version', cast(getVariable('policy_version_prefix') as bigint)),
+      ('published_service', cast(getVariable('published_service_prefix') as bigint)),
+      ('published_service_alias', cast(getVariable('published_service_alias_prefix') as bigint)),
+      ('service_documents', cast(getVariable('service_documents_prefix') as bigint)),
+      ('uddi_registries', cast(getVariable('uddi_registries_prefix') as bigint)),
+      ('uddi_registry_subscription', cast(getVariable('uddi_registry_subscription_prefix') as bigint)),
+      ('uddi_proxied_service_info', cast(getVariable('uddi_proxied_service_info_prefix') as bigint)),
+      ('uddi_proxied_service', cast(getVariable('uddi_proxied_service_prefix') as bigint)),
+      ('uddi_publish_status', cast(getVariable('uddi_publish_status_prefix') as bigint)),
+      ('uddi_business_service_status', cast(getVariable('uddi_business_service_status_prefix') as bigint)),
+      ('uddi_service_control', cast(getVariable('uddi_service_control_prefix') as bigint)),
+      ('uddi_service_control_monitor_runtime', cast(getVariable('uddi_service_control_monitor_runtime_prefix') as bigint)),
+      ('client_cert', cast(getVariable('client_cert_prefix') as bigint)),
+      ('trusted_cert', cast(getVariable('trusted_cert_prefix') as bigint)),
+      ('revocation_check_policy', cast(getVariable('revocation_check_policy_prefix') as bigint));

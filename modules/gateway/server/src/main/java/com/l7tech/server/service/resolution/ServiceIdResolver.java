@@ -8,7 +8,9 @@ import com.l7tech.gateway.common.transport.ResolutionConfiguration;
 import com.l7tech.message.HasServiceGoid;
 import com.l7tech.message.HttpRequestKnob;
 import com.l7tech.message.Message;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.server.util.GoidUpgradeMapper;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -57,8 +59,9 @@ public class ServiceIdResolver extends NameValueServiceResolver<String> {
     protected List<String> buildTargetValues(PublishedService service) {
         ArrayList<String> targetValues = new ArrayList<>();
         targetValues.add(Goid.toString(service.getGoid()));
-        if(service.getOldOid() != null)
-            targetValues.add(Long.toString(service.getOldOid()));
+        //This is needed to handle the services being referenced by their old oid's
+        if(GoidUpgradeMapper.prefixMatches(EntityType.SERVICE, service.getGoid().getHi()))
+            targetValues.add(Long.toString(service.getGoid().getLow()));
         return targetValues;
     }
 

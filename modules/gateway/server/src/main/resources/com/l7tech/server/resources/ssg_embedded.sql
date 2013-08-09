@@ -660,7 +660,6 @@ create table policy_version (
 
 create table published_service (
     goid CHAR(16) FOR BIT DATA not null,
-    old_objectid bigint,
     version integer not null,
     name varchar(255),
     wsdl_url varchar(4096),

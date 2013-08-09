@@ -231,7 +231,6 @@ CREATE TABLE password_history (
 DROP TABLE IF EXISTS published_service;
 CREATE TABLE published_service (
   goid binary(16) NOT NULL,
-  old_objectid bigint(20),
   version int(11) NOT NULL,
   name varchar(255) NOT NULL,
   policy_xml mediumtext,

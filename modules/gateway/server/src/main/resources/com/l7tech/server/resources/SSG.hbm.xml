@@ -45,7 +45,6 @@
         <property name="wssProcessingEnabled" column="wss_processing" type="boolean"/>
         <property name="tracingEnabled" column="tracing" type="boolean"/>
         <property name="soapVersion" column="soap_version" type="soap_version_type"/>
-        <property name="oldOid" column="old_objectid" type="long"/>
 
         <many-to-one class="com.l7tech.policy.Policy"
                      name="policy" lazy="false" column="policy_goid" unique="true" cascade="persist,merge,save-update,delete"/>

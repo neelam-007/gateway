@@ -3,7 +3,9 @@ package com.l7tech.server.service.resolution;
 import com.l7tech.gateway.common.audit.AuditFactory;
 import com.l7tech.message.Message;
 import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.server.util.GoidUpgradeMapper;
 
 import java.io.Serializable;
 import java.util.*;
@@ -23,13 +25,13 @@ public abstract class NameValueServiceResolver<T> extends ServiceResolver<T> {
     @Override
     public void serviceDeleted( final PublishedService service ) {
         Goid goid = service.getGoid();
-        Long oid = service.getOldOid();
 
         _rwlock.writeLock().lock();
         try {
             serviceIdToValueListMap.remove(goid);
-            if(oid != null)
-                serviceIdToValueListMap.remove(oid);
+            //This is needed to handle the services being referenced by their old oid's
+            if(GoidUpgradeMapper.prefixMatches(EntityType.SERVICE, goid.getHi()))
+                serviceIdToValueListMap.remove(Long.valueOf(goid.getLow()));
 
             for (Map serviceMap : _valueToServiceMapMap.values()) {
                 serviceMap.remove(goid);
@@ -53,13 +55,13 @@ public abstract class NameValueServiceResolver<T> extends ServiceResolver<T> {
     @Override
     protected void updateServiceValues( final PublishedService service, final List<T> targetValues ) {
         final Goid goid = service.getGoid();
-        final Long oid = service.getOldOid();
 
         _rwlock.writeLock().lock();
         try {
             serviceIdToValueListMap.put(goid, targetValues);
-            if(oid != null)
-                serviceIdToValueListMap.put( oid, targetValues );
+            //This is needed to handle the services being referenced by their old oid's
+            if(GoidUpgradeMapper.prefixMatches(EntityType.SERVICE, goid.getHi()))
+                serviceIdToValueListMap.put( Long.valueOf(goid.getLow()), targetValues );
 
             for ( T targetValue : targetValues ) {
                 Map<Goid, PublishedService> serviceMap = getServiceMap(targetValue);
@@ -76,7 +78,6 @@ public abstract class NameValueServiceResolver<T> extends ServiceResolver<T> {
             return buildTargetValues(service);
         } else {
             Goid goid = service.getGoid();
-            Long oid = service.getOldOid();
             Lock read = _rwlock.readLock();
             read.lock();
             try {
@@ -88,8 +89,9 @@ public abstract class NameValueServiceResolver<T> extends ServiceResolver<T> {
                     _rwlock.writeLock().lock();
                     try {
                         serviceIdToValueListMap.put(goid, values);
-                        if(oid!= null)
-                            serviceIdToValueListMap.put(oid, values);
+                        //This is needed to handle the services being referenced by their old oid's
+                        if(GoidUpgradeMapper.prefixMatches(EntityType.SERVICE, goid.getHi()))
+                            serviceIdToValueListMap.put(Long.valueOf(goid.getLow()), values);
                     } finally {
                         _rwlock.writeLock().unlock();
                     }

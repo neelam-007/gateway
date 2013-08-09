@@ -17,7 +17,6 @@ import com.l7tech.wsdl.Wsdl;
 import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.xml.soap.SoapVersion;
 
-import javax.persistence.Column;
 import javax.persistence.Transient;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -30,7 +29,6 @@ import javax.wsdl.extensions.ExtensibilityElement;
 import javax.wsdl.extensions.soap.SOAPOperation;
 import javax.wsdl.extensions.soap12.SOAP12Operation;
 import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlTransient;
 import java.io.Flushable;
 import java.io.IOException;
 import java.io.InputStream;
@@ -60,8 +58,6 @@ public class PublishedService extends ZoneableNamedGoidEntityImp implements Flus
     public static final EnumSet<HttpMethod> METHODS_REST = EnumSet.of(POST, GET, PUT, DELETE, HEAD);
 
     private Policy policy;
-
-    private Long oldOid;
 
     public PublishedService() {
         setVersion(1);
@@ -105,44 +101,9 @@ public class PublishedService extends ZoneableNamedGoidEntityImp implements Flus
         _wsdlUrl = objToCopy._wsdlUrl;
         setWsdlXml(objToCopy.getWsdlXml());
         setSecurityZone(objToCopy.getSecurityZone());
-        setOldOid(objToCopy.getOldOid());
         if (lock) {
             GoidEntityUtil.lock(policy);
             lock();
-        }
-    }
-
-    /**
-     * Returns the services old oid. If it does not have one null is returned.
-     * @return The old oid or null
-     */
-    @XmlTransient
-    @Column(name="old_objectid")
-    public Long getOldOid() {
-        return oldOid;
-    }
-
-    /**
-     * @deprecated This is only to be used for testing purposes. It should never need to be used otherwise.
-     * @param oldOid The services old oid
-     */
-    @Deprecated
-    public void setOldOid(Long oldOid){
-        this.oldOid = oldOid;
-    }
-
-    @Deprecated // only for XML, likely to throw NFE
-    @Override
-    public void setId(String id) {
-        checkLocked();
-        if (id == null || id.length() == 0) {
-            setGoid(DEFAULT_GOID);
-        } else {
-            try {
-                setGoid(new Goid(id));
-            } catch (IllegalArgumentException e) {
-                setOldOid(Long.parseLong(id));
-            }
         }
     }
 
