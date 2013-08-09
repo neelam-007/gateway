@@ -478,8 +478,8 @@ public class AssignSecurityZonesDialog extends JDialog {
         }
 
         private void setZoneOnHeader(final SecurityZone selectedZone, final EntityHeader header) {
-            if (header instanceof ZoneableEntityHeader) {
-                final ZoneableEntityHeader zoneable = (ZoneableEntityHeader) header;
+            if (header instanceof HasSecurityZoneGoid) {
+                final HasSecurityZoneGoid zoneable = (HasSecurityZoneGoid) header;
                 zoneable.setSecurityZoneGoid(selectedZone == null ? null : selectedZone.getGoid());
             }
         }
