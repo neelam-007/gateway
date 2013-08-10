@@ -251,8 +251,16 @@ public interface ClusterStatusAdmin {
     void uninstallLicense(FeatureLicense license) throws LicenseRemovalException;
 
     /**
-     * @return whether collection of service metrics is currently enabled
+     * @return the upgrade map for mapping legacy OIDs to GOIDs.  Never null.  Will be empty if this Gateway was not
+     *         upgrade from pre-8.0.
      */
+    @Transactional(readOnly=true)
+    @Administrative(licensed=false)
+    Map<String,Long> getGoidUpgradeMap();
+
+    /**
+    * @return whether collection of service metrics is currently enabled
+    */
     @Transactional(readOnly=true)
     @Administrative(background = true)
     boolean isMetricsEnabled();

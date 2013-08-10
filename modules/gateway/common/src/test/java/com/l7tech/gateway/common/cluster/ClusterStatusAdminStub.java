@@ -200,6 +200,11 @@ public class ClusterStatusAdminStub implements ClusterStatusAdmin {
     }
 
     @Override
+    public Map<String, Long> getGoidUpgradeMap() {
+        return GoidUpgradeMapper.getTableNamePrefixMap();
+    }
+
+    @Override
     public boolean isMetricsEnabled() {
         throw new UnsupportedOperationException();
     }

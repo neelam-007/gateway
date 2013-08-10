@@ -3882,6 +3882,8 @@ public class MainWindow extends JFrame implements SheetHolder {
         /* invoked on authentication success */
         @Override
         public void onAuthSuccess(final String id, final boolean usedCertificate) {
+            ConsoleGoidUpgradeMapper.updatePrefixesFromGateway();
+
             final boolean isApplet = isApplet();
 
             if (isApplet) {

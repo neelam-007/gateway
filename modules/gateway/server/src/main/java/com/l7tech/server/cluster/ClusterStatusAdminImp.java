@@ -335,6 +335,11 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin, ApplicationCon
     }
 
     @Override
+    public Map<String, Long> getGoidUpgradeMap() {
+        return GoidUpgradeMapper.getTableNamePrefixMap();
+    }
+
+    @Override
     public boolean isMetricsEnabled() {
         return serviceMetricsServices.isEnabled();
     }
