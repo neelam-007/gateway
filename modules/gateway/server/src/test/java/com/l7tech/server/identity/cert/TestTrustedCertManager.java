@@ -104,11 +104,6 @@ public class TestTrustedCertManager extends GoidEntityManagerStub<TrustedCert,En
     }
 
     @Override
-    public TrustedCert findByOldOid(long oid) throws FindException {
-        return null;
-    }
-
-    @Override
     public Class<TrustedCert> getImpClass() {
         return TrustedCert.class;
     }

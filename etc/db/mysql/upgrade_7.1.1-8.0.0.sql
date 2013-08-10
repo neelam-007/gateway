@@ -544,6 +544,7 @@ ALTER TABLE client_cert CHANGE COLUMN objectid goid binary(16);
 -- For manual runs use: set @client_cert_prefix=createUnreservedPoorRandomPrefix();
 SET @client_cert_prefix=#RANDOM_LONG_NOT_RESERVED#;
 update client_cert set goid = toGoid(@client_cert_prefix,old_objectid);
+ALTER TABLE client_cert DROP COLUMN old_objectid;
 
 -- trusted cert
 
@@ -555,6 +556,7 @@ ALTER TABLE trusted_cert CHANGE COLUMN objectid goid binary(16);
 -- For manual runs use: set @trusted_cert_prefix=createUnreservedPoorRandomPrefix();
 SET @trusted_cert_prefix=#RANDOM_LONG_NOT_RESERVED#;
 update trusted_cert set goid = toGoid(@trusted_cert_prefix,old_objectid);
+ALTER TABLE trusted_cert DROP COLUMN old_objectid;
 
 ALTER TABLE trusted_esm ADD COLUMN trusted_cert_oid_backup BIGINT(20);
 UPDATE  trusted_esm SET trusted_cert_oid_backup = trusted_cert_oid;
@@ -576,6 +578,7 @@ ALTER TABLE revocation_check_policy CHANGE COLUMN objectid goid binary(16);
 -- For manual runs use: set @revocation_check_policy_prefix=createUnreservedPoorRandomPrefix();
 SET @revocation_check_policy_prefix=#RANDOM_LONG_NOT_RESERVED#;
 update revocation_check_policy set goid = toGoid(@revocation_check_policy_prefix,old_objectid);
+ALTER TABLE revocation_check_policy DROP COLUMN old_objectid;
 
 -- Note that old column name was revocation_policy_oid rather than revocation_check_policy_oid
 ALTER TABLE trusted_cert ADD COLUMN revocation_check_policy_oid_backup BIGINT(20);

@@ -486,6 +486,7 @@ call setVariable('client_cert_prefix', cast(randomLongNotReserved() as char(21))
 update client_cert set goid = toGoid(cast(getVariable('client_cert_prefix') as bigint), old_objectid);
 ALTER TABLE client_cert ALTER COLUMN goid NOT NULL;
 ALTER TABLE client_cert ADD PRIMARY KEY (goid);
+ALTER TABLE client_cert DROP COLUMN old_objectid;
 
 -- trusted cert
 
@@ -497,6 +498,7 @@ call setVariable('trusted_cert_prefix', cast(randomLongNotReserved() as char(21)
 update trusted_cert set goid = toGoid(cast(getVariable('trusted_cert_prefix') as bigint), old_objectid);
 ALTER TABLE trusted_cert ALTER COLUMN goid NOT NULL;
 ALTER TABLE trusted_cert ADD PRIMARY KEY (goid);
+ALTER TABLE trusted_cert DROP COLUMN old_objectid;
 
 ALTER TABLE trusted_esm ADD COLUMN trusted_cert_goid CHAR(16) FOR BIT DATA;
 update trusted_esm set trusted_cert_goid = toGoid(cast(getVariable('trusted_cert_prefix') as bigint), trusted_cert_oid);
@@ -517,6 +519,7 @@ call setVariable('revocation_check_policy_prefix', cast(randomLongNotReserved() 
 update revocation_check_policy set goid = toGoid(cast(getVariable('revocation_check_policy_prefix') as bigint), old_objectid);
 ALTER TABLE revocation_check_policy ALTER COLUMN goid NOT NULL;
 ALTER TABLE revocation_check_policy ADD PRIMARY KEY (goid);
+ALTER TABLE revocation_check_policy DROP COLUMN old_objectid;
 
 -- Note that old column name was revocation_policy_oid rather than revocation_check_policy_oid
 ALTER TABLE trusted_cert ADD COLUMN revocation_check_policy_goid CHAR(16) FOR BIT DATA;

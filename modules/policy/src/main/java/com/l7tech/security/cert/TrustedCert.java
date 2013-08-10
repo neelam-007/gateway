@@ -349,17 +349,6 @@ public class TrustedCert extends X509Entity implements NamedEntity, Cloneable, Z
         return super.getVersion();
     }
 
-    @Column(name="old_objectid")
-    public Long getOldOid() {
-        return oldOid;
-    }
-
-    // only for hibernate
-    @Deprecated
-    public void setOldOid(Long oldOid) {
-        this.oldOid = oldOid;
-    }
-
     @Override
     @ManyToOne
     @JoinColumn(name = "security_zone_goid")
@@ -407,5 +396,4 @@ public class TrustedCert extends X509Entity implements NamedEntity, Cloneable, Z
     private PolicyUsageType revocationCheckPolicyType;
     private Goid revocationCheckPolicyOid;
     private SecurityZone securityZone;
-    private Long oldOid = null;
 }

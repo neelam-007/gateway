@@ -932,7 +932,6 @@ create table trusted_cert (
     verify_hostname smallint default 0,
     version integer,
     security_zone_goid CHAR(16) FOR BIT DATA references security_zone(goid) on delete set null,
-    old_objectid bigint,
     primary key (goid)
 );
 

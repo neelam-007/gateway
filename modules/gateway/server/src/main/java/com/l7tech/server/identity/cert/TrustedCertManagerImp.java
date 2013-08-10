@@ -121,11 +121,6 @@ public class TrustedCertManagerImp
         return Functions.grep(findAll(), TrustedCert.TrustedFor.predicate(trustFlag));
     }
 
-    @Override
-    public TrustedCert findByOldOid(long oid) throws FindException {
-        return findUnique( Collections.<String,Object>singletonMap("oldOid", oid) );
-    }
-
     @SuppressWarnings({"unchecked"})
     @Override
     @Transactional(readOnly=true)

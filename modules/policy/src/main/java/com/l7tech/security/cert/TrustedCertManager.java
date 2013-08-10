@@ -68,18 +68,6 @@ public interface TrustedCertManager extends GoidEntityManager<TrustedCert, Entit
     Collection<TrustedCert> findByTrustFlag(TrustedCert.TrustedFor trustFlag) throws FindException;
 
     /**
-     * Finds TrustedCert with a legacy OID matching the specified value.
-     * <p/>
-     * This will only find anything if the system is running with a database that has been upgraded
-     * from a version that used OIDs insteadof GOIDs.
-     *
-     * @param oid sought-after legacy OID
-     * @return the matching TrustedCert entry, or null
-     * @throws FindException if the retrieval fails for any reason other than nonexistence
-     */
-    TrustedCert findByOldOid(long oid) throws FindException;
-
-    /**
      * Subclass of certificate exception thrown when a certificate is not known.
      */
     public static final class UnknownCertificateException extends CertificateException {
