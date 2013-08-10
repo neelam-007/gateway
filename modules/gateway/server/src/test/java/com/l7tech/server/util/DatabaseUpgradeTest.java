@@ -1,5 +1,6 @@
 package com.l7tech.server.util;
 
+import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.DbUpgradeUtil;
 import com.l7tech.util.FileUtils;
 import org.apache.derby.jdbc.EmbeddedDataSource40;
@@ -104,10 +105,16 @@ public class DatabaseUpgradeTest {
             Map<String, Map<String, String>> newTableColumnsInfo = getResultSetInfo(newDatabaseMetadata.getColumns(null, "APP", tableName, null), 4);
             Map<String, Map<String, String>> upgradedTableColumnsInfo = getResultSetInfo(upgradedDatabaseMetadata.getColumns(null, "APP", tableName, null), 4);
 
-//            compareResultInfo(newTableColumnsInfo, upgradedTableColumnsInfo,
-//                    "Table " + tableName + " has a different number of columns",
-//                    "The upgraded database is missing column: %1$s for table " + tableName,
-//                    "For table " + tableName + " the new column and upgrade column have different values for a property. Column: %1$s property: %2$s", CollectionUtils.set("ORDINAL_POSITION"));
+            //Remove the old_objectId column for now.
+            //TODO: remove this!
+            newTableColumnsInfo.remove("OLD_OBJECTID".toUpperCase());
+            upgradedTableColumnsInfo.remove("OLD_OBJECTID".toUpperCase());
+
+            // ignore Ordinal position for now. We will not enforce column ordering for derby.
+            compareResultInfo(newTableColumnsInfo, upgradedTableColumnsInfo,
+                    "Table " + tableName + " has a different number of columns",
+                    "The upgraded database is missing column: %1$s for table " + tableName,
+                    "For table " + tableName + " the new column and upgrade column have different values for a property. Column: %1$s property: %2$s", CollectionUtils.set("ORDINAL_POSITION"));
         }
     }
 
@@ -118,18 +125,18 @@ public class DatabaseUpgradeTest {
     private void compareResultInfo(Map<String, Map<String, String>> newInfo, Map<String, Map<String, String>> upgradedInfo, String differentSizesErrorMessage, String missingRowErrorMessage, String propertyValueMismatchErrorMessage, Set<String> ignoreProperties) {
         Assert.assertEquals(differentSizesErrorMessage, newInfo.size(), upgradedInfo.size());
 
-        for (String tableName : newInfo.keySet()) {
-            Map<String, String> newTableInfo = newInfo.get(tableName);
-            Map<String, String> upgradedTableInfo = upgradedInfo.get(tableName);
+        for (String rowName : newInfo.keySet()) {
+            Map<String, String> newTableInfo = newInfo.get(rowName);
+            Map<String, String> upgradedTableInfo = upgradedInfo.get(rowName);
 
-            Assert.assertNotNull(String.format(missingRowErrorMessage, tableName), upgradedTableInfo);
+            Assert.assertNotNull(String.format(missingRowErrorMessage, rowName), upgradedTableInfo);
 
             for (String tableProperty : newTableInfo.keySet()) {
-                if (ignoreProperties.contains(tableName)) continue;
+                if (ignoreProperties.contains(tableProperty)) continue;
                 String newTablePropertyValue = newTableInfo.get(tableProperty);
                 String upgradedTablePropertyValue = upgradedTableInfo.get(tableProperty);
 
-                Assert.assertEquals(String.format(propertyValueMismatchErrorMessage, tableName, tableProperty), newTablePropertyValue, upgradedTablePropertyValue);
+                Assert.assertEquals(String.format(propertyValueMismatchErrorMessage, rowName, tableProperty), newTablePropertyValue, upgradedTablePropertyValue);
             }
         }
     }

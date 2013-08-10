@@ -246,8 +246,8 @@ ALTER TABLE service_metrics ADD PRIMARY KEY (goid);
 ALTER TABLE service_metrics_details DROP PRIMARY KEY;
 ALTER TABLE service_metrics_details ADD COLUMN service_metrics_goid CHAR(16) FOR BIT DATA;
 ALTER TABLE service_metrics_details ALTER COLUMN service_metrics_goid NOT NULL;
-ALTER TABLE service_metrics_details DROP COLUMN service_metrics_goid;
-ALTER TABLE service_metrics_details ADD PRIMARY KEY (service_metrics_oid, mapping_values_oid);
+ALTER TABLE service_metrics_details DROP COLUMN service_metrics_oid;
+ALTER TABLE service_metrics_details ADD PRIMARY KEY (service_metrics_goid, mapping_values_oid);
 
 -- LogonInfo
 ALTER TABLE logon_info ADD COLUMN goid CHAR(16) FOR BIT DATA;
@@ -521,7 +521,6 @@ ALTER TABLE revocation_check_policy ADD PRIMARY KEY (goid);
 -- Note that old column name was revocation_policy_oid rather than revocation_check_policy_oid
 ALTER TABLE trusted_cert ADD COLUMN revocation_check_policy_goid CHAR(16) FOR BIT DATA;
 update trusted_cert set revocation_check_policy_goid = toGoid(cast(getVariable('revocation_check_policy_prefix') as bigint), revocation_policy_oid);
-ALTER TABLE trusted_cert ALTER COLUMN revocation_check_policy_goid NOT NULL;
 ALTER TABLE trusted_cert DROP COLUMN revocation_policy_oid;
 ALTER TABLE trusted_cert add constraint FK_trusted_cert_revocation_check_policy foreign key (revocation_check_policy_goid) references revocation_check_policy on delete cascade;
 
@@ -649,6 +648,7 @@ ALTER TABLE active_connector DROP COLUMN hardwired_service_oid;
 ALTER TABLE rbac_predicate_folder ADD COLUMN folder_goid CHAR(16) FOR BIT DATA;
 update rbac_predicate_folder set folder_goid = toGoid(cast(getVariable('folder_prefix') as bigint), folder_oid);
 update rbac_predicate_folder set folder_goid = toGoid(0, -5002) where folder_goid = toGoid(cast(getVariable('folder_prefix') as bigint), -5002);
+ALTER TABLE rbac_predicate_folder ALTER COLUMN folder_goid NOT NULL;
 ALTER TABLE rbac_predicate_folder DROP COLUMN folder_oid;
 
 ALTER TABLE sample_messages ADD COLUMN published_service_goid CHAR(16) FOR BIT DATA;
@@ -699,14 +699,17 @@ ALTER TABLE uddi_service_control DROP COLUMN published_service_oid;
 
 ALTER TABLE wsdm_subscription ADD COLUMN published_service_goid CHAR(16) FOR BIT DATA;
 update wsdm_subscription set published_service_goid = toGoid(cast(getVariable('published_service_prefix') as bigint), published_service_oid);
+ALTER TABLE wsdm_subscription ALTER COLUMN published_service_goid NOT NULL;
 ALTER TABLE wsdm_subscription DROP COLUMN published_service_oid;
 
 ALTER TABLE wsdm_subscription ADD COLUMN esm_service_goid CHAR(16) FOR BIT DATA;
 update wsdm_subscription set esm_service_goid = toGoid(cast(getVariable('published_service_prefix') as bigint), esm_service_oid);
+ALTER TABLE wsdm_subscription ALTER COLUMN esm_service_goid NOT NULL;
 ALTER TABLE wsdm_subscription DROP COLUMN esm_service_oid;
 
 ALTER TABLE encapsulated_assertion ADD COLUMN policy_goid CHAR(16) FOR BIT DATA;
 update encapsulated_assertion set policy_goid = toGoid(cast(getVariable('policy_prefix') as bigint), policy_oid);
+ALTER TABLE encapsulated_assertion ALTER COLUMN policy_goid NOT NULL;
 ALTER TABLE encapsulated_assertion DROP COLUMN policy_oid;
 alter table encapsulated_assertion add constraint FK_ENCASS_POL foreign key (policy_goid) references policy;
 
@@ -768,6 +771,7 @@ ALTER TABLE uddi_proxied_service ADD PRIMARY KEY (goid);
 
 ALTER TABLE uddi_proxied_service ADD COLUMN uddi_proxied_service_info_goid CHAR(16) FOR BIT DATA;
 update uddi_proxied_service set uddi_proxied_service_info_goid = toGoid(cast(getVariable('uddi_proxied_service_info_prefix') as bigint), uddi_proxied_service_info_oid);
+ALTER TABLE uddi_proxied_service ALTER COLUMN uddi_proxied_service_info_goid NOT NULL;
 ALTER TABLE uddi_proxied_service DROP COLUMN uddi_proxied_service_info_oid;
 ALTER TABLE uddi_proxied_service add constraint FK127C390874249C8B foreign key (uddi_proxied_service_info_goid) references uddi_proxied_service_info on delete cascade;
 
@@ -781,6 +785,7 @@ ALTER TABLE uddi_publish_status ADD PRIMARY KEY (goid);
 
 ALTER TABLE uddi_publish_status ADD COLUMN uddi_proxied_service_info_goid CHAR(16) FOR BIT DATA;
 update uddi_publish_status set uddi_proxied_service_info_goid = toGoid(cast(getVariable('uddi_proxied_service_info_prefix') as bigint), uddi_proxied_service_info_oid);
+ALTER TABLE uddi_publish_status ALTER COLUMN uddi_proxied_service_info_goid NOT NULL;
 ALTER TABLE uddi_publish_status DROP COLUMN uddi_proxied_service_info_oid;
 
 
