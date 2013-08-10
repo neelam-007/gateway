@@ -7,7 +7,7 @@ import org.jetbrains.annotations.NotNull;
  */
 public enum GoidRange {
     DEFAULT(0, -1, 0, -1),
-    WRAPPED_OID(3, Long.MIN_VALUE, 1, Long.MAX_VALUE),
+    WRAPPED_OID(3, Long.MIN_VALUE, 3, Long.MAX_VALUE),
     ;
 
     /**

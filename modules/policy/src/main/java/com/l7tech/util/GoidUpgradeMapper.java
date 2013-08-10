@@ -1,9 +1,12 @@
 package com.l7tech.util;
 
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.GoidRange;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.jdbc.Work;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ApplicationObjectSupport;
@@ -115,7 +118,7 @@ public class GoidUpgradeMapper extends ApplicationObjectSupport implements Initi
      * Returns a prefix for a table given the entity type. If the gateway never went through an 8.0.0 upgrade this will
      * always return null.
      *
-     * @param entityType The entity type to get the prefix for.
+     * @param entityType The entity type to get the prefix for.  If null, this method will return null.
      * @return The prefix for the entity type. Null if there is not a prefix for the given entity type.
      */
     public static Long getPrefix(EntityType entityType) {
@@ -214,6 +217,77 @@ public class GoidUpgradeMapper extends ApplicationObjectSupport implements Initi
     }
 
     /**
+     * Map or wrap the specified legacy OID into a GOID, mapping it to the correct GOID for an entity from an updated
+     * database, if applicable; otherwise, wrapping it as a Goid within the range reserved for a wrapped OID
+     * (for temporary use within a Gateway upgraded from a pre-GOID database).
+     * <p/>
+     * <b>NOTE:</b> Mapped (upgraded prefix) GOIDs created by this method are the actual, real GOIDs of entities that
+     * have been upgraded to GOID from OID.  They can be used anywhere like any other GOID.
+     * <p/>
+     * Wrapped (prefix 0003) GOIDs created by this method are to be used for transitional purposes and
+     * must not be persisted or externalized as identifiers for persisted entities -- doing so would defeat the purpose of using GOIDs.
+     * It is OK to use such GOIDs as placeholders for references to entities that do not exist, as long as the
+     * GOIDs never validly point at any real saved entities.
+     * <p/>
+     * You can use {@link GoidRange#WRAPPED_OID}'s {@link GoidRange#isInRange(com.l7tech.objectmodel.Goid)} method
+     * to test whether a returned GOID has been wrapped vs mapped.
+     *
+     * @param entityType the entity type associated with the OID, or null to avoid checking for an upgraded prefix
+     *                   and just always use the WRAPPED_OID prefix.
+     * @param oid the objectid to wrap, or null to just return null.
+     * @return a new Goid encoding this object ID with the upgraded prefix for this entity type, if available, or
+     *         else with the WRAPPED_OID prefix, or null if oid was null.
+     */
+    public static Goid mapOid(@Nullable EntityType entityType, @Nullable Long oid) {
+        Long prefix = entityType == null ? null : getPrefix(entityType);
+        if (prefix == null)
+            prefix = GoidRange.WRAPPED_OID.getFirstHi();
+
+        return oid == null
+            ? null
+            : new Goid( prefix, oid );
+    }
+
+    /**
+     * Map or wrap legacy OIDs in the specified array to GOIDs, mapping them to the correct GOIDs for
+     * entities from an updated database, if applicable; otherwise, wrapping them to GOIDs within the range reserved
+     * for wrapped OIDs (for temporary use within a Gateway upgraded from a pre-GOID database).
+     * <p/>
+     * <b>NOTE:</b> Mapped (upgraded prefix) GOIDs created by this method are the actual, real GOIDs of entities that
+     * have been upgraded to GOID from OID.  They can be used anywhere like any other GOID.
+     * <p/>
+     * Wrapped (prefix 0003) GOIDs created by this method are to be used for transitional purposes and
+     * must not be persisted or externalized as identifiers for persisted entities -- doing so would defeat the purpose of using GOIDs.
+     * It is OK to use such GOIDs as placeholders for references to entities that do not exist, as long as the
+     * GOIDs never validly point at any real saved entities.
+     * <p/>
+     * You can use {@link GoidRange#WRAPPED_OID}'s {@link GoidRange#isInRange(com.l7tech.objectmodel.Goid)} method
+     * to test whether a returned GOID has been wrapped vs mapped.
+     *
+     * @param entityType the entity type associated with the OID, or null to avoid checking for an upgraded prefix
+     *                   and just always use WRAPPED_OID prefixes.
+     * @param oids the objectid array to wrap, or null to just return null.
+     * @return an array of new Goid instances encoding the specified object ID with the upgraded prefix for this
+     *         entity type, if available, or else with the WRAPPED_OID prefix, or null if oids was null.
+     *         <p/>
+     *         Elements of the returned array will be null if the correponding element in the input array was null.
+     */
+    public static Goid[] mapOids(@Nullable EntityType entityType, @Nullable Long[] oids) {
+        if ( oids == null )
+            return null;
+        Long prefix = entityType == null ? null : getPrefix(entityType);
+        if (prefix == null)
+            prefix = GoidRange.WRAPPED_OID.getFirstHi();
+        Goid[] goids = new Goid[oids.length];
+        for ( int i = 0; i < oids.length; i++ ) {
+            Long oid = oids[i];
+            Goid goid = oid == null ? null : new Goid( prefix, oid );
+            goids[i] = goid;
+        }
+        return goids;
+    }
+
+    /**
      * DO NOT USE!!! This is only to be used for testing purposed! To set a prefix in a unit test call
      * GoidUpgradeMapperTestUtil.addPrefix()
      *
@@ -221,6 +295,15 @@ public class GoidUpgradeMapper extends ApplicationObjectSupport implements Initi
      * @param prefix    The prefix value.
      */
     protected static void addPrefix(String tableName, long prefix) {
+        hasPrefixes = true;
         tableNamePrefixMap.put(tableName, prefix);
+    }
+
+    /**
+     * DO NOT USE!!! This is only to be used for testing purposes!  To clear all prefixes in a unit test
+     * call GoidUpgradeMapperTestUtil.clearAllPrefixes().
+     */
+    static void clearAllPrefixes() {
+        tableNamePrefixMap.clear();
     }
 }

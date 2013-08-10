@@ -8,6 +8,7 @@ import com.l7tech.policy.wsp.InvalidPolicyStreamException;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.util.DomUtils;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.GoidUpgradeMapper;
 import com.l7tech.util.InvalidDocumentFormatException;
 import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Element;
@@ -187,7 +188,7 @@ public class TrustedCertReference extends ExternalReference {
         String val = getParamFromEl(el, OLD_OID_EL_NAME);
         if (val != null) {
             try {
-                output.goid = Goid.wrapOid(Long.parseLong(val));
+                output.goid = GoidUpgradeMapper.mapOid(EntityType.TRUSTED_CERT, Long.parseLong(val));
             } catch (NumberFormatException nfe) {
                 output.goid = GoidEntity.DEFAULT_GOID;
             }

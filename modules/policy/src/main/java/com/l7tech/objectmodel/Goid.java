@@ -175,42 +175,6 @@ public final class Goid implements Comparable<Goid>, Serializable {
     }
 
     /**
-     * Wrap the specified OID in a Goid within the range reserved for a wrapped OID (for temporary use
-     * within a Gateway upgraded from a pre-GOID database).
-     * <p/>
-     * <b>NOTE:</b> GOIDs created by this method are to be used for transitional purposes and
-     * must not be persisted or externalized in any way -- doing so would defeat the purpose of using GOIDs.
-     *
-     * @param oid the objectid to wrap, or null to just return null.
-     * @return a new Goid encoding this object ID with the WRAPPED_OID prefix, or null if oid was null.
-     */
-    public static Goid wrapOid( @Nullable Long oid) {
-        return oid == null
-            ? null
-            : new Goid(GoidRange.WRAPPED_OID.getFirstHi(), oid);
-    }
-
-    /**
-     * Wrap the elemetns of the specific OID array in Goid instances within the range reserved for wrapped OIDs
-     * (for temporary use with a Gateway upgraded from a pre-GOID database).
-     * <p/>
-     * <b>NOTE:</b> GOIDs created by thsi method are to be used for transitional purposes and
-     * must not be persisted or externalized in any way -- doing so would defeat the purpose of using GOIDs.
-     *
-     * @param oids the objectid array to wrap, or null to just return null.
-     * @return an array of new Goid instances encoding the specified object ID with the WRAPPED_OID prefix, or null if oids was null.
-     */
-    public static Goid[] wrapOids( @Nullable Long[] oids) {
-        if (oids == null)
-            return null;
-        Goid[] goids = new Goid[oids.length];
-        for (int i = 0; i < oids.length; i++) {
-            goids[i] = wrapOid(oids[i]);
-        }
-        return goids;
-    }
-
-    /**
      * Return a Goid from a string.
      *
      * @param goid The string representation of the goid.

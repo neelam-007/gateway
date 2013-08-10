@@ -1,6 +1,7 @@
 package com.l7tech.policy;
 
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
@@ -18,6 +19,8 @@ import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.GoidUpgradeMapper;
+import com.l7tech.util.GoidUpgradeMapperTestUtil;
 import com.l7tech.util.SyspropUtil;
 import com.l7tech.wsdl.BindingInfo;
 import com.l7tech.wsdl.BindingOperationInfo;
@@ -937,26 +940,59 @@ public class WspReaderTest {
     }
 
     @Test
-    public void testAutomaticLongToGoidConverstion() throws Exception {
+    public void testAutomaticLongToGoidConverstion_wrapped() throws Exception {
+        GoidUpgradeMapperTestUtil.clearAllPrefixes();
+
         Assertion ass = WspReader.getDefault().parseStrictly(PRE80_CERT_OID_BRIDGE_ROUTING_POLICY, OMIT_DISABLED);
         BridgeRoutingAssertion bra = (BridgeRoutingAssertion) ass;
         Goid goid = bra.getServerCertificateGoid();
         assertNotNull(goid);
-        assertEquals(Goid.wrapOid(-484L), goid);
+        assertEquals(GoidUpgradeMapper.mapOid(null, -484L), goid);
     }
 
     @Test
-    public void testAutomaticLongArrayToGoidArrayConversion() throws Exception {
+    public void testAutomaticLongArrayToGoidArrayConversion_wrapped() throws Exception {
+        GoidUpgradeMapperTestUtil.clearAllPrefixes();
+
         Assertion ass = WspReader.getDefault().parseStrictly(PRE80_CERT_OIDS_ARRAY_HTTP_ROUTING_POLICY, OMIT_DISABLED);
         HttpRoutingAssertion hra = (HttpRoutingAssertion) ass;
         Goid[] goids = hra.getTlsTrustedCertGoids();
         assertNotNull(goids);
         assertEquals(goids.length, 3);
-        assertEquals(Goid.wrapOid(44L), goids[0]);
-        assertEquals(Goid.wrapOid(22L), goids[1]);
-        assertEquals(Goid.wrapOid(-23L), goids[2]);
+        assertEquals(GoidUpgradeMapper.mapOid(null, 44L), goids[0]);
+        assertEquals(GoidUpgradeMapper.mapOid(null, 22L), goids[1]);
+        assertEquals(GoidUpgradeMapper.mapOid(null, -23L), goids[2]);
     }
 
+    @Test
+    public void testAutomaticLongToGoidConverstion_mapped() throws Exception {
+        GoidUpgradeMapperTestUtil.clearAllPrefixes();
+        GoidUpgradeMapperTestUtil.addPrefix("trusted_cert", 8989L);
+
+        Assertion ass = WspReader.getDefault().parseStrictly(PRE80_CERT_OID_BRIDGE_ROUTING_POLICY, OMIT_DISABLED);
+        BridgeRoutingAssertion bra = (BridgeRoutingAssertion) ass;
+        Goid goid = bra.getServerCertificateGoid();
+        assertNotNull(goid);
+        final Goid expected = GoidUpgradeMapper.mapOid(EntityType.TRUSTED_CERT, -484L);
+        assertEquals(new Goid(8989L, -484L), expected);
+        assertEquals(expected, goid);
+    }
+
+    @Test
+    public void testAutomaticLongArrayToGoidArrayConversion_mapped() throws Exception {
+        GoidUpgradeMapperTestUtil.clearAllPrefixes();
+        GoidUpgradeMapperTestUtil.addPrefix("trusted_cert", 8987L);
+        assertNotNull(GoidUpgradeMapper.getPrefix(EntityType.TRUSTED_CERT));
+
+        Assertion ass = WspReader.getDefault().parseStrictly(PRE80_CERT_OIDS_ARRAY_HTTP_ROUTING_POLICY, OMIT_DISABLED);
+        HttpRoutingAssertion hra = (HttpRoutingAssertion) ass;
+        Goid[] goids = hra.getTlsTrustedCertGoids();
+        assertNotNull(goids);
+        assertEquals(goids.length, 3);
+        assertEquals(GoidUpgradeMapper.mapOid(EntityType.TRUSTED_CERT, 44L), goids[0]);
+        assertEquals(GoidUpgradeMapper.mapOid(EntityType.TRUSTED_CERT, 22L), goids[1]);
+        assertEquals(GoidUpgradeMapper.mapOid(EntityType.TRUSTED_CERT, -23L), goids[2]);
+    }
 
     private static final String BUG_3456_POLICY = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
     "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +

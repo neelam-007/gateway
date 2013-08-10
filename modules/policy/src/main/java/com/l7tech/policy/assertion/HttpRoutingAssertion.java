@@ -21,6 +21,7 @@ import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
 import com.l7tech.policy.wsp.TypeMapping;
 import com.l7tech.policy.wsp.WspSensitive;
 import com.l7tech.search.Dependency;
+import com.l7tech.util.GoidUpgradeMapper;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -462,7 +463,7 @@ public class HttpRoutingAssertion extends RoutingAssertionWithSamlSV implements 
     @Deprecated
     @SuppressWarnings("UnusedDeclaration")
     public void setTlsTrustedCertOids(@Nullable Long[] oids) {
-        this.tlsTrustedCertGoids = Goid.wrapOids(oids);
+        this.tlsTrustedCertGoids = GoidUpgradeMapper.mapOids(EntityType.TRUSTED_CERT, oids);
     }
 
     /**

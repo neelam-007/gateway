@@ -12,6 +12,7 @@ import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.assertion.annotation.RequiresSOAP;
+import com.l7tech.util.GoidUpgradeMapper;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
@@ -84,7 +85,7 @@ public class BridgeRoutingAssertion extends HttpRoutingAssertion implements Uses
     @Deprecated
     @SuppressWarnings("UnusedDeclaration")
     public void setServerCertificateOid( @Nullable Long serverCertificateOid ) {
-        this.serverCertificateGoid = Goid.wrapOid(serverCertificateOid);
+        this.serverCertificateGoid = GoidUpgradeMapper.mapOid(EntityType.TRUSTED_CERT, serverCertificateOid);
     }
 
     public void setServerCertificateName(String name) {
