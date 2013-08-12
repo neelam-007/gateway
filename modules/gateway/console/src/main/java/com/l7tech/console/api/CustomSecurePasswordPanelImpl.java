@@ -149,5 +149,8 @@ public class CustomSecurePasswordPanelImpl implements CustomSecurePasswordPanel 
         for (ManagePasswordsDialogClosedListener listener : managePasswordsDialogClosedListeners) {
             listener.onClosed();
         }
+
+        // Repack the parent when the password dialog disposes, just in case the size of the parent dialog is changed.
+        DialogDisplayer.pack(parent);
     }
 }
