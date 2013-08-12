@@ -2,9 +2,12 @@ package com.l7tech.server.admin;
 
 import com.l7tech.identity.*;
 import com.l7tech.identity.internal.InternalGroup;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.identity.TestIdentityProvider;
 import com.l7tech.objectmodel.IdentityHeader;
 
+import java.util.Collections;
 import java.util.Set;
 import java.util.HashSet;
 import java.lang.reflect.Method;
@@ -13,6 +16,10 @@ import static org.junit.Assert.*;
 import org.junit.Test;
 import org.junit.Before;
 import org.junit.After;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.runners.MockitoJUnitRunner;
+import static org.mockito.Mockito.*;
 
 /**
  * Created by IntelliJ IDEA.
@@ -20,17 +27,27 @@ import org.junit.After;
  * Date: Jul 28, 2008
  * Time: 1:56:03 PM
  */
+@RunWith(MockitoJUnitRunner.class)
 public class GroupCacheTest {
 
     private static final String USER_NAME = "admin";
     private static final String PASSWORD = "password";
+    private static final long PROVIDER_ID = 1L;
 
     private GroupCache cache = null;
+    @Mock IdentityProvider identityProvider;
+    @Mock
+    private GroupManager groupManager;
 
     @Before
     public void setUp() throws Exception{
         cache = getGroupCache();
         assertNotNull(cache);
+
+        final IdentityProviderConfig config = new IdentityProviderConfig();
+        config.setOid(PROVIDER_ID);
+        when(identityProvider.getConfig()).thenReturn(config);
+        when(identityProvider.getGroupManager()).thenReturn(groupManager);
     }
 
     @After
@@ -158,7 +175,7 @@ public class GroupCacheTest {
         assertNotNull(m);
         m.setAccessible(true);
 
-        GroupCache.CacheKey cKey = new GroupCache.CacheKey(tIP.getConfig().getOid(), ub.getLogin());
+        GroupCache.CacheKey cKey = new GroupCache.CacheKey(tIP.getConfig().getOid(), EntityType.USER, ub.getLogin());
         Object o = m.invoke(cache, cKey, ub.getLogin(), tIP, 1000);
         assertNotNull(o);
         assertTrue(o instanceof Set);
@@ -199,15 +216,50 @@ public class GroupCacheTest {
         m.setAccessible(true);
         //Sleep just to ensure that the expiry time of 1 second below will work
         Thread.sleep(1000);
-        GroupCache.CacheKey cKey = new GroupCache.CacheKey(tIP.getConfig().getOid(), ub.getLogin());
+        GroupCache.CacheKey cKey = new GroupCache.CacheKey(tIP.getConfig().getOid(), EntityType.USER, ub.getLogin());
         Object o = m.invoke(cache, cKey, ub.getLogin(), tIP, 1);
         assertNull(o);
+    }
+
+    @Test
+    public void getCachedGroups() throws FindException {
+        when(groupManager.getGroupHeadersForNestedGroup("1234")).thenReturn(Collections.singleton(new IdentityHeader(PROVIDER_ID, 1L, EntityType.GROUP, null, null, null, 0)));
+        final InternalGroup group = new InternalGroup("TestGroup");
+        group.setOid(1234L);
+        final Set<IdentityHeader> result = cache.getCachedGroups(group, identityProvider);
+        assertEquals(1, result.size());
+    }
+
+    @Test
+    public void getCachedGroupsNone() throws FindException {
+        when(groupManager.getGroupHeadersForNestedGroup("1234")).thenReturn(Collections.emptySet());
+        final InternalGroup group = new InternalGroup("TestGroup");
+        group.setOid(1234L);
+        assertTrue(cache.getCachedGroups(group, identityProvider).isEmpty());
+    }
+
+    @Test
+    public void getCachedGroupsOverMax() throws Exception {
+        final GroupCache cacheWith1MaxGroup = getGroupCache(1);
+        final Set<IdentityHeader> groups = new HashSet<>();
+        groups.add(new IdentityHeader(PROVIDER_ID, 1L, EntityType.GROUP, null, null, null, 0));
+        groups.add(new IdentityHeader(PROVIDER_ID, 2L, EntityType.GROUP, null, null, null, 0));
+        when(groupManager.getGroupHeadersForNestedGroup("1234")).thenReturn(groups);
+        final InternalGroup group = new InternalGroup("TestGroup");
+        group.setOid(1234L);
+
+        final Set<IdentityHeader> result = cacheWith1MaxGroup.getCachedGroups(group, identityProvider);
+        assertEquals(1, result.size());
     }
 
     /*
     * Get the cache via reflection as it's a singleton, and want a separate cache per test method
     * */
     private GroupCache getGroupCache() throws Exception{
-        return new GroupCache( "testgroupcache", 100, 1000, 50 );
+        return getGroupCache(50);
+    }
+
+    private GroupCache getGroupCache(final int maxGroups) throws Exception{
+        return new GroupCache( "testgroupcache", 100, 1000, maxGroups );
     }
 }

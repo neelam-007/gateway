@@ -235,6 +235,11 @@ public class IdentityAdminStub implements IdentityAdmin {
     }
 
     @Override
+    public Set<IdentityHeader> getGroupHeadersForGroup(long providerId, String groupId) throws FindException {
+        return Collections.emptySet();
+    }
+
+    @Override
     public Set<IdentityHeader> getUserHeaders(long providerId, String groupId) throws FindException {
         final StubDataStore store = StubDataStore.defaultStore();
         Set<GroupMembership> memberships = store.getGroupMemberships();

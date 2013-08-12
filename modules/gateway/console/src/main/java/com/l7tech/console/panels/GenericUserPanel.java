@@ -98,7 +98,7 @@ public class GenericUserPanel extends UserPanel {
     private void initialize() {
         try {
             // Initialize form components
-            rolesPanel = new IdentityRoleAssignmentsPanel(user, userGroups, config.isAdminEnabled());
+            rolesPanel = new IdentityRoleAssignmentsPanel(user, userGroups);
             groupPanel = new UserGroupsPanel(this, config, config.isWritable() && canUpdate);
             certPanel = new NonFederatedUserCertPanel(this, config.isWritable() ? passwordChangeListener : null, canUpdate);
             if (config.type().equals(IdentityProviderType.INTERNAL) && user instanceof InternalUser) {
@@ -247,7 +247,9 @@ public class GenericUserPanel extends UserPanel {
 
         // Add all tabs
         tabbedPane.add(getDetailsPanel(), DETAILS_LABEL);
-        tabbedPane.add(rolesPanel, ROLES_LABEL);  tabbedPane.setEnabledAt(1,rolesPanel.isEnabled());
+        if (config.isAdminEnabled()) {
+            tabbedPane.add(rolesPanel, ROLES_LABEL);
+        }
         tabbedPane.add(groupPanel, MEMBERSHIP_LABEL);
         tabbedPane.add(certPanel, CERTIFICATE_LABEL);
         if (config.type().equals(IdentityProviderType.INTERNAL) && sshPanel != null) {

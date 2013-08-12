@@ -12,6 +12,7 @@ import com.l7tech.common.io.WhirlycacheFactory;
 import com.l7tech.server.Lifecycle;
 import com.l7tech.server.LifecycleException;
 import com.whirlycott.cache.Cache;
+import org.jetbrains.annotations.NotNull;
 
 import javax.naming.*;
 import javax.naming.ldap.LdapName;
@@ -31,6 +32,9 @@ import java.util.logging.Logger;
  */
 @LdapClassLoaderRequired
 public class LdapGroupManagerImpl implements LdapGroupManager, Lifecycle {
+
+    // TODO should be configurable
+    private static final int SUB_GROUP_DEPTH = 2;
 
     public LdapGroupManagerImpl() {
     }
@@ -543,7 +547,7 @@ public class LdapGroupManagerImpl implements LdapGroupManager, Lifecycle {
                                 // check if this group is a member of other groups. if so, then user belongs to those
                                 // groups too.
                                 if ( groupNestingEnabled()  ) {
-                                    getSubGroups(searchContext, output, header, 2);
+                                    getSubGroups(searchContext, output, header, SUB_GROUP_DEPTH);
                                 }
                             }
 
@@ -572,6 +576,21 @@ public class LdapGroupManagerImpl implements LdapGroupManager, Lifecycle {
             }
         }
 
+        return output;
+    }
+
+    @Override
+    public Set<IdentityHeader> getGroupHeadersForNestedGroup(@NotNull final String groupId) throws FindException {
+        final EntityHeaderSet<IdentityHeader> output = new EntityHeaderSet<>();
+        if (groupNestingEnabled()) {
+            final IdentityHeader header = new IdentityHeader(getProviderOid(), groupId, EntityType.GROUP, null, null, null, null);
+            try {
+                final DirContext context = getIdentityProvider().getBrowseContext();
+                getSubGroups(context, output, header, SUB_GROUP_DEPTH);
+            } catch (final NamingException e) {
+                throw new FindException("Unable to retrieve groups for group: " + groupId, e);
+            }
+        }
         return output;
     }
 

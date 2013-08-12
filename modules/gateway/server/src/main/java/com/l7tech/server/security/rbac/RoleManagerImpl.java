@@ -72,6 +72,11 @@ public class RoleManagerImpl extends HibernateEntityManager<Role, EntityHeader> 
         public Set<IdentityHeader> getGroups(User user, boolean skipAccountValidation) throws FindException {
             return Collections.emptySet();
         }
+
+        @Override
+        public Set<IdentityHeader> getGroups(Group group) throws FindException {
+            return Collections.emptySet();
+        }
     };
 
     public static void setIdentitySource(RoleManagerIdentitySource groupProvider) {
@@ -101,26 +106,12 @@ public class RoleManagerImpl extends HibernateEntityManager<Role, EntityHeader> 
 
     @Override
     public Collection<Role> getAssignedRoles(@NotNull final Group group) throws FindException {
-        try {
-            //noinspection unchecked
-            return (Collection<Role>)getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
-                @Override
-                protected Collection<Role> doInHibernateReadOnly(final Session session) throws HibernateException, SQLException {
-                    final Set<Role> roles = new HashSet<Role>();
-                    final Criteria criteria = session.createCriteria(RoleAssignment.class);
-                    criteria.add(Restrictions.eq(IDENTITY_ID, group.getId()));
-                    criteria.add(Restrictions.eq(PROVIDER_ID, group.getProviderId()));
-                    criteria.add(Restrictions.eq(ENTITY_TYPE, EntityType.GROUP.getName()));
-                    final List<RoleAssignment> roleAssignments = (List<RoleAssignment>) criteria.list();
-                    for ( final RoleAssignment assignment : roleAssignments ) {
-                        roles.add( assignment.getRole() );
-                    }
-                    return roles;
-                }
-            });
-        } catch (final Exception e) {
-            throw new FindException("Error retrieving roles for group", e);
+        final Collection<Role> roles = new ArrayList<>(getDirectlyAssignedRolesForGroup(group.getProviderId(), group.getId()));
+        final Set<IdentityHeader> groups = groupProvider.getGroups(group);
+        for (final IdentityHeader header : groups) {
+            roles.addAll(getDirectlyAssignedRolesForGroup(header.getProviderOid(), header.getStrId()));
         }
+        return roles;
     }
 
     @Override
@@ -153,6 +144,29 @@ public class RoleManagerImpl extends HibernateEntityManager<Role, EntityHeader> 
             }
         });
     }
+
+    private Collection<Role> getDirectlyAssignedRolesForGroup(final long providerId, final String groupId) throws FindException {
+       try {
+           //noinspection unchecked
+           return (Collection<Role>) getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
+               @Override
+               protected Collection<Role> doInHibernateReadOnly(final Session session) throws HibernateException, SQLException {
+                   final Set<Role> roles = new HashSet<>();
+                   final Criteria criteria = session.createCriteria(RoleAssignment.class);
+                   criteria.add(Restrictions.eq(IDENTITY_ID, groupId));
+                   criteria.add(Restrictions.eq(PROVIDER_ID, providerId));
+                   criteria.add(Restrictions.eq(ENTITY_TYPE, EntityType.GROUP.getName()));
+                   final List<RoleAssignment> roleAssignments = (List<RoleAssignment>) criteria.list();
+                   for (final RoleAssignment assignment : roleAssignments) {
+                       roles.add(assignment.getRole());
+                   }
+                   return roles;
+               }
+           });
+       } catch (final Exception e) {
+           throw new FindException("Error retrieving roles for group", e);
+       }
+   }
 
     private Collection<Role> getAssignedRoles0( final User user,
                                                 final boolean skipAccountValidation,

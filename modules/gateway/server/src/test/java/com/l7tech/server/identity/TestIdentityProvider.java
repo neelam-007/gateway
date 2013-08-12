@@ -363,6 +363,11 @@ public class TestIdentityProvider implements AuthenticatingIdentityProvider<User
         }
 
         @Override
+        public Set<IdentityHeader> getGroupHeadersForNestedGroup(String groupId) throws FindException {
+            return Collections.emptySet();
+        }
+
+        @Override
         public void setGroupHeaders(User user, Set<IdentityHeader> groupHeaders) throws FindException, UpdateException {
             throw new UnsupportedOperationException("not supported for TestIdentityProvider");
         }

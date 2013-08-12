@@ -37,6 +37,7 @@ import com.l7tech.util.Config;
 import com.l7tech.util.Functions;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.Pair;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.ApplicationEventPublisherAware;
@@ -815,6 +816,11 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
     @Override
     public Set<IdentityHeader> getGroupHeaders(long providerId, String userId) throws FindException {
         return retrieveGroupManager(providerId).getGroupHeaders(userId);
+    }
+
+    @Override
+    public Set<IdentityHeader> getGroupHeadersForGroup(final long providerId, @NotNull final String groupId) throws FindException {
+        return retrieveGroupManager(providerId).getGroupHeadersForNestedGroup(groupId);
     }
 
     public void setGroupHeaders(long providerId, String userId, Set<IdentityHeader> groupHeaders) throws FindException, UpdateException {

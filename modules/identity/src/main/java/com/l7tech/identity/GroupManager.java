@@ -1,6 +1,7 @@
 package com.l7tech.identity;
 
 import com.l7tech.objectmodel.*;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
 import java.util.Set;
@@ -92,6 +93,15 @@ public interface GroupManager<UT extends User, GT extends Group> {
     Set<IdentityHeader> getGroupHeaders(UT user) throws FindException;
 
     Set<IdentityHeader> getGroupHeaders(String userId) throws FindException;
+
+    /**
+     * Retrieve the set of groups to which a particular group belongs.
+     * @param groupId the id of the group which may belong to other groups (is nested).
+     * @return a set of groups to which the given group belongs. If nested groups are not supported, returns an empty collection.
+     * @throws FindException
+     */
+    @NotNull
+    Set<IdentityHeader> getGroupHeadersForNestedGroup(@NotNull final String groupId) throws FindException;
 
     void setGroupHeaders(UT user, Set<IdentityHeader> groupHeaders ) throws FindException, UpdateException;
     void setGroupHeaders(String userId, Set<IdentityHeader> groupHeaders ) throws FindException, UpdateException;

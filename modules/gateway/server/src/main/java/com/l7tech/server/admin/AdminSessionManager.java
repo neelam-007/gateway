@@ -26,6 +26,7 @@ import com.l7tech.server.security.rbac.RoleManagerIdentitySourceSupport;
 import com.l7tech.server.util.PostStartupApplicationListener;
 import com.l7tech.util.*;
 import org.apache.commons.collections.map.LRUMap;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.context.ApplicationEvent;
 
 import javax.security.auth.login.LoginException;
@@ -522,6 +523,23 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
             }
         }
 
+        return Collections.emptySet();
+    }
+
+    @Override
+    public Set<IdentityHeader> getGroups(@NotNull final Group group) throws FindException {
+        final Long pId = group.getProviderId();
+        final Set<IdentityProvider> providers = getAdminIdentityProviders();
+        final Set<IdentityHeader> pSet = new HashSet<>();
+        for (final IdentityProvider iP : providers) {
+            if (iP.getConfig().getOid() == pId) {
+                final Set<IdentityHeader> groupPrincipals = this.groupCache.getCachedGroups(group, iP);
+                if (groupPrincipals != null) {
+                    pSet.addAll(groupPrincipals);
+                }
+                return pSet;
+            }
+        }
         return Collections.emptySet();
     }
 

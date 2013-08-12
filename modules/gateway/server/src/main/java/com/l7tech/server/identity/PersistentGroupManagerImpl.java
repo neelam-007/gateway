@@ -533,6 +533,12 @@ public abstract class PersistentGroupManagerImpl<UT extends PersistentUser, GT e
     }
 
     @Override
+    public Set<IdentityHeader> getGroupHeadersForNestedGroup(String groupId) throws FindException {
+        // nested groups are not supported
+        return Collections.emptySet();
+    }
+
+    @Override
     public void setGroupHeaders(UT user, Set<IdentityHeader> groupHeaders) throws FindException, UpdateException {
         setGroupHeaders(user.getId(), groupHeaders);
     }

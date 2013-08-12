@@ -5,6 +5,7 @@ import com.l7tech.gateway.common.security.rbac.Secured;
 import com.l7tech.identity.*;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.objectmodel.*;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -420,6 +421,19 @@ public interface IdentityAdmin {
     @Transactional(readOnly = true)
     @Secured(types = USER, stereotype = GET_IDENTITY_PROPERTY_BY_ID, relevantArg = 1)
     Set<IdentityHeader> getGroupHeaders(long providerId, String userId) throws FindException;
+
+    /**
+     * Get the specified {@link Group}'s set of group membership {@link IdentityHeader}s.
+     *
+     * @param providerId the object ID of the {@link IdentityProviderConfig} in which this group can be found
+     * @param groupId     the unique identifier of the {@link Group} whose {@link Group} memberships to look up.  Must not be null.
+     * @return the Set of {@link IdentityHeader}s corresponding to {@link Group}s that this {@link Group} belongs to.
+     *         May be empty but not null.
+     * @throws FindException if the specified information could not be accessed
+     */
+    @Transactional(readOnly = true)
+    @Secured(types = GROUP, stereotype = GET_IDENTITY_PROPERTY_BY_ID, relevantArg = 1)
+    Set<IdentityHeader> getGroupHeadersForGroup(final long providerId, @NotNull final String groupId) throws FindException;
 
     /**
      * Get the specified {@link Group}'s set of member user {@link IdentityHeader}s.

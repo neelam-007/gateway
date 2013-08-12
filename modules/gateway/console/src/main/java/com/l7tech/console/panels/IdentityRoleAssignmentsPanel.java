@@ -51,18 +51,16 @@ public class IdentityRoleAssignmentsPanel extends JPanel {
     private BasicRolePropertiesPanel rolePropertiesPanel;
     private JButton removeButton;
     private JButton addButton;
-    private boolean isAdminEnabled;
     private SimpleTableModel<Role> rolesModel;
     private Identity identity;
     private Set<IdentityHeader> identityGroups;
 
-    public IdentityRoleAssignmentsPanel(@NotNull final Identity identity, @Nullable Set<IdentityHeader> identityGroups, boolean isAdminEnabled) {
+    public IdentityRoleAssignmentsPanel(@NotNull final Identity identity, @Nullable Set<IdentityHeader> identityGroups) {
         if (!(identity instanceof User) && !(identity instanceof Group)) {
             throw new IllegalArgumentException("Identity must be a user or group.");
         }
         this.identity = identity;
         this.identityGroups = identityGroups;
-        this.isAdminEnabled = isAdminEnabled;
         setLayout(new BorderLayout());
         add(mainPanel, BorderLayout.CENTER);
         initTable();
@@ -252,18 +250,16 @@ public class IdentityRoleAssignmentsPanel extends JPanel {
     }
 
     private void loadTable() {
-        if (isAdminEnabled) {
-            try {
-                final List<Role> roles = new ArrayList<>();
-                if (identity instanceof User) {
-                    roles.addAll(Registry.getDefault().getRbacAdmin().findRolesForUser((User) identity));
-                } else {
-                    roles.addAll(Registry.getDefault().getRbacAdmin().findRolesForGroup((Group) identity));
-                }
-                rolesModel.setRows(roles);
-            } catch (final FindException e) {
-                log.log(Level.WARNING, "Unable to retrieve user roles: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+        try {
+            final List<Role> roles = new ArrayList<>();
+            if (identity instanceof User) {
+                roles.addAll(Registry.getDefault().getRbacAdmin().findRolesForUser((User) identity));
+            } else {
+                roles.addAll(Registry.getDefault().getRbacAdmin().findRolesForGroup((Group) identity));
             }
+            rolesModel.setRows(roles);
+        } catch (final FindException e) {
+            log.log(Level.WARNING, "Unable to retrieve user roles: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
         }
     }
 

@@ -2,8 +2,10 @@ package com.l7tech.server.admin;
 
 import com.l7tech.identity.*;
 import com.l7tech.common.io.WhirlycacheFactory;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.IdentityHeader;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.util.Either;
 import com.l7tech.util.ExceptionUtils;
 import com.whirlycott.cache.Cache;
 
@@ -53,7 +55,7 @@ class GroupCache {
                                                          final boolean skipAccountValidation ) throws ValidationException {
 
         final long providerOid = ip.getConfig().getOid();
-        final CacheKey ckey = new CacheKey(providerOid, u.getId());
+        final CacheKey ckey = new CacheKey(providerOid, EntityType.USER, u.getId());
         final Set<IdentityHeader> cached = getCacheEntry(ckey, u.getLogin(), ip, cacheMaxTime.get());
 
         if ( cached != null ) {
@@ -61,6 +63,23 @@ class GroupCache {
         }
 
         return getAndCacheNewResult(u, ckey, ip, skipAccountValidation);
+    }
+
+    /**
+     * Look up the group in the cache and return it's Set<IdentityHeader> representing its entire group membership
+     * @param g the Group to look up.
+     * @param ip the IdentityProvider the group belongs to.
+     * @return null if the group has no group membership, otherwise a a set of Identity headers for each group the group is a member of
+     * @throws FindException
+     */
+    public Set<IdentityHeader> getCachedGroups(final Group g, final IdentityProvider ip) throws FindException {
+        final long providerOid = ip.getConfig().getOid();
+        final CacheKey ckey = new CacheKey(providerOid, EntityType.GROUP, g.getId());
+        final Set<IdentityHeader> cached = getCacheEntry(ckey, g.getName(), ip, cacheMaxTime.get());
+        if ( cached != null ) {
+            return cached;
+        }
+        return getAndCacheNewResult(g, ckey, ip);
     }
 
     /**
@@ -80,7 +99,7 @@ class GroupCache {
     * @return either Set<Group> or Long
     * */
     @SuppressWarnings({"unchecked"})
-    private Set<IdentityHeader> getCacheEntry(CacheKey ckey, String login, IdentityProvider idp, int maxAge) {
+    private Set<IdentityHeader> getCacheEntry(CacheKey ckey, String identityId, IdentityProvider idp, int maxAge) {
 
         if (cache == null) return null; // fail fast if cache is disabled
 
@@ -99,11 +118,11 @@ class GroupCache {
         final Long invalidationTime = providerInvalidation.get( ckey.providerOid );
         if ( (cacheAddedTime + (long)maxAge > System.currentTimeMillis()) && (invalidationTime==null || invalidationTime < cacheAddedTime) ) {
             if (logger.isLoggable(Level.FINE))
-                logger.log(Level.FINE, "Cache hit for user {0} from IdP \"{1}\"", new String[] {login, idp.getConfig().getName()});
+                logger.log(Level.FINE, "Cache hit for user/group {0} from IdP \"{1}\"", new String[] {identityId, idp.getConfig().getName()});
             return (Set<IdentityHeader>) groups.getCachedObject();
         } else {
             if (logger.isLoggable(Level.FINE)) {
-                logger.log(Level.FINE, "Cache expiry for user {0} is stale on IdP \"{1}\"; will revalidate", new String[] { login, idp.getConfig().getName()});
+                logger.log(Level.FINE, "Cache expiry for user/group {0} is stale on IdP \"{1}\"; will revalidate", new String[] { identityId, idp.getConfig().getName()});
             }
             return null;
         }
@@ -112,7 +131,7 @@ class GroupCache {
 
     // If caller wants only one thread at a time to authenticate any given username,
     // caller is responsible for ensuring that only one thread at a time calls this per username,
-    private <UT extends User, GMT extends GroupManager<UT,?>>
+    private <UT extends User, GT extends Group, GMT extends GroupManager<UT,GT>>
     Set<IdentityHeader> getAndCacheNewResult(final User uu, final CacheKey ckey, final IdentityProvider<UT,?,?,GMT> idp, final boolean skipAccountValidation) throws ValidationException {
         final UT u;
         if (uu instanceof UserBean) {
@@ -122,7 +141,6 @@ class GroupCache {
             u = (UT)uu;
         }
 
-        int cacheMaxGroups = this.cacheMaxGroups.get();
         if (!skipAccountValidation) idp.validate(u);
         //download group info and any other info to be added as a gP as and when required here..
 
@@ -135,12 +153,45 @@ class GroupCache {
             throw new ValidationException("Error accessing groups for user '"+u.getId()+"'.");
         }
 
+        return capAndCacheGroups(ckey, idp, Either.<UT, GT>left(u), gHeaders);
+    }
+
+    private <UT extends User, GT extends Group, GMT extends GroupManager<UT,GT>>
+        Set<IdentityHeader> getAndCacheNewResult(final Group group, final CacheKey ckey, final IdentityProvider<UT,?,?,GMT> idp) throws FindException {
+        final GT g;
+        if (group instanceof GroupBean) {
+            g = idp.getGroupManager().reify((GroupBean) group);
+        } else {
+            //noinspection unchecked
+            g = (GT)group;
+        }
+
+        GMT gM = idp.getGroupManager();
+        Set<IdentityHeader> gHeaders = gM.getGroupHeadersForNestedGroup(group.getId());
+
+        return capAndCacheGroups(ckey, idp, Either.<UT, GT>right(g), gHeaders);
+    }
+
+    /**
+     * @return a subset of the given group identity headers which have been capped at the max number allowed and cached.
+     */
+    private <UT extends User, GT extends Group, GMT extends GroupManager<UT, ?>> Set<IdentityHeader> capAndCacheGroups(CacheKey ckey,
+                                                                                                                       IdentityProvider<UT, ?, ?, GMT> idp,
+                                                                                                                       Either<UT, GT> identity,
+                                                                                                                       Set<IdentityHeader> gHeaders) {
         if( gHeaders != null ){
-            Set<IdentityHeader> groupSet = new HashSet<IdentityHeader>();
+            int cacheMaxGroups = this.cacheMaxGroups.get();
+            Set<IdentityHeader> groupSet = new HashSet<>();
             int count = 1;
+            String id = null;
+            if (identity.isLeft()) {
+                id = identity.left().getLogin();
+            } else {
+                id = identity.right().getName();
+            }
             for(IdentityHeader iH: gHeaders){
                 if(count > cacheMaxGroups){
-                   logger.log(Level.INFO, "Capping group membership for user '"+u.getId()+"' at " + cacheMaxGroups);
+                   logger.log(Level.INFO, "Capping group membership for user/group '"+id+"' at " + cacheMaxGroups);
                    break;
                 }
                 groupSet.add(iH);
@@ -150,8 +201,8 @@ class GroupCache {
             this.cache.store(ckey, groupPrincipals);
             if (logger.isLoggable(Level.FINE))
                 logger.log(Level.FINE,
-                           "Cached group membership principals for user {0} on IdP \"{1}\"",
-                           new String[]{u.getLogin(), idp.getConfig().getName()});
+                           "Cached group membership principals for user/group {0} on IdP \"{1}\"",
+                           new String[]{id, idp.getConfig().getName()});
 
             return groupSet;
         }else{
@@ -167,11 +218,14 @@ class GroupCache {
     public static class CacheKey {
         private int cachedHashcode = -1;
         private final long providerOid;
-        private final String userId;
+        // user/group
+        private final EntityType entityType;
+        private final String identityId;
 
-        public CacheKey(long providerOid, String userId) {
+        public CacheKey(long providerOid, final EntityType entityType, String identityId) {
             this.providerOid = providerOid;
-            this.userId = userId;
+            this.entityType = entityType;
+            this.identityId = identityId;
         }
 
         /** @noinspection RedundantIfStatement*/
@@ -183,7 +237,8 @@ class GroupCache {
             final CacheKey cacheKey = (CacheKey)o;
 
             if (providerOid != cacheKey.providerOid) return false;
-            if (userId != null ? !userId.equals(cacheKey.userId) : cacheKey.userId != null) return false;
+            if (entityType != cacheKey.entityType) return false;
+            if (identityId != null ? !identityId.equals(cacheKey.identityId) : cacheKey.identityId != null) return false;
 
             return true;
         }
@@ -193,7 +248,8 @@ class GroupCache {
             if (cachedHashcode == -1) {
                 int result;
                 result = (int)(providerOid ^ (providerOid >>> 32));
-                result = 31 * result + (userId != null ? userId.hashCode() : 0);
+                result = 31 * result + (entityType != null ? entityType.hashCode() : 0);
+                result = 31 * result + (identityId != null ? identityId.hashCode() : 0);
                 cachedHashcode = result;
             }
             return cachedHashcode;

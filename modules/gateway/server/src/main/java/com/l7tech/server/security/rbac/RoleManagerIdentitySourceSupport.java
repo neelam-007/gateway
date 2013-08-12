@@ -1,5 +1,6 @@
 package com.l7tech.server.security.rbac;
 
+import com.l7tech.identity.Group;
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.User;
 import com.l7tech.identity.internal.InternalGroup;
@@ -106,6 +107,10 @@ public abstract class RoleManagerIdentitySourceSupport implements RoleManagerIde
     }
 
     public Set<IdentityHeader> getGroups(final User user, boolean skipAccountValidation) throws FindException {
+        return Collections.emptySet();
+    }
+
+    public Set<IdentityHeader> getGroups(final Group group) throws FindException {
         return Collections.emptySet();
     }
 

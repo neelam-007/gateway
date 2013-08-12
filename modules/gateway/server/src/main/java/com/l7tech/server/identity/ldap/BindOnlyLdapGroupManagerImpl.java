@@ -123,6 +123,11 @@ public class BindOnlyLdapGroupManagerImpl implements BindOnlyLdapGroupManager {
     }
 
     @Override
+    public Set<IdentityHeader> getGroupHeadersForNestedGroup(String groupId) throws FindException {
+        return Collections.emptySet();
+    }
+
+    @Override
     public void setGroupHeaders(BindOnlyLdapUser user, Set<IdentityHeader> groupHeaders) throws FindException, UpdateException {
         throw new UnsupportedOperationException();
     }

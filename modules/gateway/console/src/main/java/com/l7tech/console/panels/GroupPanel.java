@@ -29,6 +29,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.HierarchyEvent;
 import java.awt.event.HierarchyListener;
+import java.util.HashSet;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.logging.Level;
@@ -281,7 +282,9 @@ public abstract class GroupPanel<GT extends Group> extends EntityEditorPanel {
             // Add all tabs
             tabbedPane.add(getDetailsPanel(), DETAILS_LABEL);
             tabbedPane.add(getMembershipPanel(), MEMBERSHIP_LABEL);
-            tabbedPane.add(getRolesPanel(), ROLES_LABEL);
+            if (config.isAdminEnabled()) {
+                tabbedPane.add(getRolesPanel(), ROLES_LABEL);
+            }
         }
 
         // Return tabbed pane
@@ -294,7 +297,13 @@ public abstract class GroupPanel<GT extends Group> extends EntityEditorPanel {
 
     protected IdentityRoleAssignmentsPanel getRolesPanel() {
         if (rolesPanel == null) {
-            rolesPanel = new IdentityRoleAssignmentsPanel(group, null, config.isAdminEnabled());
+            final Set<IdentityHeader> groupHeaders = new HashSet<>();
+            try {
+                groupHeaders.addAll(Registry.getDefault().getIdentityAdmin().getGroupHeadersForGroup(group.getProviderId(), group.getId()));
+            } catch (final FindException e) {
+                log.log(Level.WARNING, "Unable to retrieve parent groups: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            }
+            rolesPanel = new IdentityRoleAssignmentsPanel(group, groupHeaders);
         }
         return rolesPanel;
     }
