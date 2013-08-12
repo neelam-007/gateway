@@ -681,7 +681,7 @@ public class MqNativePropertiesDialog extends JDialog {
                 if (mqNativeActiveConnector.getHardwiredServiceGoid() != null && !Goid.isDefault(mqNativeActiveConnector.getHardwiredServiceGoid())){
                     associateQueue = ServiceComboBox.populateAndSelect(serviceNameCombo, true, mqNativeActiveConnector.getHardwiredServiceGoid());
                 }else{
-                    associateQueue = ServiceComboBox.populateAndSelect(serviceNameCombo, true, GoidEntity.DEFAULT_GOID);
+                    associateQueue = ServiceComboBox.populateAndSelect(serviceNameCombo, false, GoidEntity.DEFAULT_GOID);
                 }
                 if(associateQueue) {
                     associateQueueWithPublishedService.setSelected(true);
@@ -789,7 +789,7 @@ public class MqNativePropertiesDialog extends JDialog {
         );
 
         if(!populatedTheServiceList)
-            ServiceComboBox.populateAndSelect(serviceNameCombo, true, GoidEntity.DEFAULT_GOID);
+            ServiceComboBox.populateAndSelect(serviceNameCombo, false, GoidEntity.DEFAULT_GOID);
         enableOrDisableComponents();
     }
 
