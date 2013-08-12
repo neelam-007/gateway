@@ -3,6 +3,7 @@ package com.l7tech.console.panels;
 import com.l7tech.console.action.ChangePasswordAction;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.jcalendar.JDateTimeChooser;
+import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.identity.User;
@@ -19,8 +20,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -45,16 +46,10 @@ public class MyAccountDialog extends JDialog {
     private IdentityRoleAssignmentsPanel assignedRolesPanel;
     private JButton closeButton;
     private User user;
-    private Set<IdentityHeader> groups;
 
     public MyAccountDialog(@NotNull Window owner, @NotNull final User user) {
         super(owner, MY_ACCOUNT, DEFAULT_MODALITY_TYPE);
         this.user = user;
-        try {
-            this.groups = Registry.getDefault().getIdentityAdmin().getGroupHeaders(user.getProviderId(), user.getId());
-        } catch (FindException e) {
-            this.groups = Collections.emptySet();
-        }
         setContentPane(contentPanel);
         initButtons();
         initTextFields(user);
@@ -104,6 +99,13 @@ public class MyAccountDialog extends JDialog {
             rolesForUser.addAll(Registry.getDefault().getRbacAdmin().findRolesForUser(user));
         } catch (final FindException e) {
             logger.log(Level.WARNING, "Unable to retrieve roles for user: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+        }
+
+        Set<IdentityHeader> groups = null;
+        try {
+            groups = new HashSet<>(Registry.getDefault().getIdentityAdmin().getGroupHeaders(user.getProviderId(), user.getId()));
+        } catch (final FindException | PermissionDeniedException e) {
+            logger.log(Level.WARNING, "Unable to find user's groups: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
         }
         assignedRolesPanel = new IdentityRoleAssignmentsPanel(EntityType.USER, user.getName(), rolesForUser, groups, true);
     }

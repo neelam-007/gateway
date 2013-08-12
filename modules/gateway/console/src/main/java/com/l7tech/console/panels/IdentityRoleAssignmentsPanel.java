@@ -22,7 +22,6 @@ import org.jetbrains.annotations.Nullable;
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
-import javax.swing.table.DefaultTableCellRenderer;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -41,6 +40,9 @@ public class IdentityRoleAssignmentsPanel extends JPanel {
     private static final int NAME_COL_INDEX = 0;
     private static final int INHERITED_COL_INDEX = 2;
     private static final String NAME_UNAVAILABLE = "name unavailable";
+    private static final String YES = "Yes";
+    private static final String UNKNOWN = "Unknown";
+    private static final String NO = "No";
     private JPanel mainPanel;
     private JTable rolesTable;
     private BasicRolePropertiesPanel rolePropertiesPanel;
@@ -57,7 +59,8 @@ public class IdentityRoleAssignmentsPanel extends JPanel {
      * @param entityType     the identity type for which this panel is displaying roles (EntityType.USER or EntityType.GROUP).
      * @param identityName   the display name of the identity.
      * @param assignedRoles  the Roles assigned to the identity.
-     * @param identityGroups the groups that the identity is contained in (can be null).
+     * @param identityGroups the groups that the identity is contained in.
+     *                       If null, the panel cannot determine if a role assignment is inherited and therefore cannot allow role assignment removal.
      * @param readOnly       true if the panel should only display the roles, and not allow any changes.
      */
     public IdentityRoleAssignmentsPanel(@NotNull final EntityType entityType, @NotNull final String identityName, @NotNull List<Role> assignedRoles, @Nullable Set<IdentityHeader> identityGroups, final boolean readOnly) {
@@ -188,22 +191,24 @@ public class IdentityRoleAssignmentsPanel extends JPanel {
                         return role.isUserCreated() ? BasicRolePropertiesPanel.CUSTOM : BasicRolePropertiesPanel.SYSTEM;
                     }
                 }),
-                column("Inherited", 40, 80, 99999, new Functions.Unary<Boolean, Role>() {
+                column("Inherited", 40, 80, 99999, new Functions.Unary<String, Role>() {
                     @Override
-                    public Boolean call(final Role role) {
+                    public String call(final Role role) {
                         if (identityGroups != null) {
                             for (final RoleAssignment assignment : role.getRoleAssignments()) {
                                 if (EntityType.GROUP.getName().equals(assignment.getEntityType())) {
                                     for (final IdentityHeader userGroup : identityGroups) {
                                         if (userGroup.getProviderOid() == assignment.getProviderId() &&
                                                 userGroup.getStrId().equals(assignment.getIdentityId())) {
-                                            return true;
+                                            return YES;
                                         }
                                     }
                                 }
                             }
+                        } else {
+                            return UNKNOWN;
                         }
-                        return false;
+                        return NO;
                     }
                 }));
         rolesTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
@@ -213,17 +218,6 @@ public class IdentityRoleAssignmentsPanel extends JPanel {
             }
         });
         rolesTable.getSelectionModel().setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
-        rolesTable.getColumnModel().getColumn(INHERITED_COL_INDEX).setCellRenderer(new DefaultTableCellRenderer() {
-            @Override
-            public Component getTableCellRendererComponent(final JTable table, Object value, final boolean isSelected, final boolean hasFocus, final int row, final int column) {
-                if (value.equals(Boolean.FALSE)) {
-                    value = "No";
-                } else if (value.equals(Boolean.TRUE)) {
-                    value = "Yes";
-                }
-                return super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-            }
-        });
         Utilities.setRowSorter(rolesTable, rolesModel);
         // use a copy of the assigned roles so that the original collection is not mutated
         rolesModel.setRows(new ArrayList<>(assignedRoles));
@@ -240,8 +234,8 @@ public class IdentityRoleAssignmentsPanel extends JPanel {
         if (role != null) {
             final int row = rolesModel.getRowIndex(role);
             final Object inheritedVal = rolesModel.getValueAt(row, INHERITED_COL_INDEX);
-            if (inheritedVal instanceof Boolean) {
-                inherited = (Boolean) inheritedVal;
+            if (inheritedVal.equals(YES)) {
+                inherited = true;
             }
         }
         return inherited;

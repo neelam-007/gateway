@@ -63,7 +63,7 @@ public class RoleAssignmentsPanel extends JPanel {
         initButtons();
     }
 
-    public void configure(@Nullable final Role role) {
+    public void configure(@Nullable final Role role, final boolean readOnly) {
         this.role = role;
         if (this.role != null) {
             String name = "name unavailable";
@@ -77,6 +77,8 @@ public class RoleAssignmentsPanel extends JPanel {
             assignmentsRoleTextField.setText(StringUtils.EMPTY);
         }
         reloadAssignments();
+        addButton.setVisible(!readOnly);
+        removeButton.setVisible(!readOnly);
     }
 
     private void reloadAssignments() {

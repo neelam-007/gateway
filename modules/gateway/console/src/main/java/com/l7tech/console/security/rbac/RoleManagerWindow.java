@@ -195,10 +195,10 @@ public class RoleManagerWindow extends JDialog {
     private void handleTableChange() {
         final Role selectedRole = getSelectedRole();
         propertiesPanel.configure(selectedRole, selectedRole == null ? null : getNameForRole(selectedRole));
-        assignmentsPanel.configure(selectedRole);
         final SecurityProvider securityProvider = Registry.getDefault().getSecurityProvider();
-        editButton.setEnabled(selectedRole != null && selectedRole.isUserCreated() &&
-                securityProvider.hasPermission(new AttemptedUpdate(EntityType.RBAC_ROLE, selectedRole)));
+        final boolean canUpdate = securityProvider.hasPermission(new AttemptedUpdate(EntityType.RBAC_ROLE, selectedRole));
+        assignmentsPanel.configure(selectedRole, !canUpdate);
+        editButton.setEnabled(selectedRole != null && selectedRole.isUserCreated() && canUpdate);
         removeButton.setEnabled(selectedRole != null && selectedRole.isUserCreated() &&
                 securityProvider.hasPermission(new AttemptedDeleteSpecific(EntityType.RBAC_ROLE, selectedRole)));
         filterPanel.allowFiltering(rolesTableModel.getRowCount() > 0);
