@@ -19,6 +19,8 @@ import javax.swing.event.DocumentListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.util.regex.Pattern;
 
 /**
@@ -78,6 +80,23 @@ public class SiteMinderCheckProtectedPropertiesDialog extends AssertionPropertie
             }
         });
 
+        actionComboBox.getEditor().getEditorComponent().addKeyListener(new KeyListener() {
+            @Override
+            public void keyTyped(KeyEvent e) {
+                enableDisableComponents();
+            }
+
+            @Override
+            public void keyPressed(KeyEvent e) {
+                enableDisableComponents();
+            }
+
+            @Override
+            public void keyReleased(KeyEvent e) {
+                enableDisableComponents();
+            }
+        });
+
         resourceTextField.getDocument().addDocumentListener(new DocumentListener() {
             @Override
             public void insertUpdate(DocumentEvent e) {
@@ -99,7 +118,6 @@ public class SiteMinderCheckProtectedPropertiesDialog extends AssertionPropertie
         inputValidator.ensureComboBoxSelection("Action", actionComboBox);
         inputValidator.attachToButton(getOkButton(), super.createOkAction());
         enableDisableComponents();
-
     }
 
     /**
@@ -120,8 +138,10 @@ public class SiteMinderCheckProtectedPropertiesDialog extends AssertionPropertie
     }
 
     private void enableDisableComponents() {
+        String action = (String) actionComboBox.getEditor().getItem();
+
         getOkButton().setEnabled(prefixTargetVariablePanel.isEntryValid() &&
-                actionComboBox.getSelectedIndex() > -1 &&
+                (action.length() > 0) &&
                 !resourceTextField.getText().isEmpty() &&
                 agentComboBox.getSelectedIndex() > -1
         );
