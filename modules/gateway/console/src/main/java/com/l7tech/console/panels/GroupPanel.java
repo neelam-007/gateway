@@ -303,7 +303,7 @@ public abstract class GroupPanel<GT extends Group> extends EntityEditorPanel {
             } catch (final FindException e) {
                 log.log(Level.WARNING, "Unable to retrieve parent groups: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             }
-            rolesPanel = new IdentityRoleAssignmentsPanel(group, groupHeaders);
+            rolesPanel = new IdentityRoleAssignmentsPanel(group, groupHeaders, false);
         }
         return rolesPanel;
     }

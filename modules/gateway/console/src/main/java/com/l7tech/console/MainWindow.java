@@ -131,7 +131,7 @@ public class MainWindow extends JFrame implements SheetHolder {
 
     private JMenuItem connectMenuItem = null;
     private JMenuItem disconnectMenuItem = null;
-    private JMenuItem changePasswordMenuItem = null;
+    private JMenuItem myAccountMenuItem = null;
     private JMenuItem exitMenuItem = null;
     private JMenuItem menuItemPref = null;
     private JMenuItem auditMenuItem = null;
@@ -168,6 +168,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     private Action toggleStatusBarAction = null;
     private Action togglePolicyMessageArea = null;
     private ChangePasswordAction changePasswordAction = null;
+    private MyAccountAction myAccountAction = null;
     private PublishServiceAction publishServiceAction = null;
     private PublishNonSoapServiceAction publishNonSoapServiceAction = null;
     private PublishRestServiceAction publishRestServiceAction = null;
@@ -442,29 +443,24 @@ public class MainWindow extends JFrame implements SheetHolder {
         return disconnectMenuItem;
     }
 
-
     /**
-     * Return the ChangePasswordMenuItem property value.
+     * Return the My Account menu item.
      *
      * @param accel if true, an accelerator key will be set on the menu item if it is created.
      * @return JMenuItem
      */
-    private JMenuItem getChangePasswordMenuItem(final boolean accel) {
-        if (changePasswordMenuItem != null)
-            return changePasswordMenuItem;
-
-        changePasswordMenuItem = new JMenuItem(getChangePasswordAction());
-
+    private JMenuItem getMyAccountMenuItem(final boolean accel) {
+        if (myAccountMenuItem == null) {
+            myAccountMenuItem = new JMenuItem(getMyAccountAction());
+        }
         if (accel) {
-            int mnemonic = changePasswordMenuItem.getText().toCharArray()[2];
-            changePasswordMenuItem.setMnemonic(mnemonic);
-            changePasswordMenuItem.setAccelerator(
+            int mnemonic = myAccountMenuItem.getText().toCharArray()[2];
+            myAccountMenuItem.setMnemonic(mnemonic);
+            myAccountMenuItem.setAccelerator(
                     KeyStroke.getKeyStroke(Character.toUpperCase(mnemonic), ActionEvent.ALT_MASK));
         }
-
-        return changePasswordMenuItem;
+        return myAccountMenuItem;
     }
-
 
     /**
      * Return the menuItemPref property value.
@@ -552,7 +548,7 @@ public class MainWindow extends JFrame implements SheetHolder {
 
             menu.add(getConnectMenuItem());
             menu.add(getDisconnectMenuItem());
-            menu.add(getChangePasswordMenuItem(true));
+            menu.add(getMyAccountMenuItem(true));
             if (!isApplet()) {
                 menu.add(getMenuItemPreferences(true));
                 menu.add(getExitMenuItem());
@@ -1356,13 +1352,12 @@ public class MainWindow extends JFrame implements SheetHolder {
         return disconnectAction;
     }
 
-    private ChangePasswordAction getChangePasswordAction() {
-        if (changePasswordAction != null) {
-            return changePasswordAction;
+    private MyAccountAction getMyAccountAction() {
+        if (myAccountAction == null) {
+            myAccountAction = new MyAccountAction();
         }
-        changePasswordAction = new ChangePasswordAction();
-        disableUntilLogin(changePasswordAction);
-        return changePasswordAction;
+        disableUntilLogin(myAccountAction);
+        return myAccountAction;
     }
 
     /**
@@ -2633,7 +2628,7 @@ public class MainWindow extends JFrame implements SheetHolder {
                 manageMenu.add(getManageSecurityZonesAction());
                 manageMenu.add(getManageAuditAlertOptionsMenuItem());
                 manageMenu.add(getManageClusterLicensesMenuItem());
-                manageMenu.add(getChangePasswordMenuItem(false));
+                manageMenu.add(getMyAccountMenuItem(false));
                 manageMenu.add(getManageLogSinksAction());
                 manageMenu.add(getManageEmailListenersAction());
                 manageMenu.add(getConfigureFtpAuditArchiverAction());
@@ -4562,7 +4557,6 @@ public class MainWindow extends JFrame implements SheetHolder {
             manageRolesMenuItem = null;
             manageAuditAlertsMenuItem = null;
             manageClusterLicensesMenuItem = null;
-            changePasswordMenuItem = null;
             configureFtpAuditArchiver = null;
             manageServiceResolutionMenuItem = null;
             customGlobalActionsMenu = null;

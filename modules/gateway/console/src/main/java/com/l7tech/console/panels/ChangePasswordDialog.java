@@ -1,14 +1,11 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.identity.AuthenticationException;
-import com.l7tech.identity.User;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.util.ExceptionUtils;
 
@@ -19,10 +16,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.net.PasswordAuthentication;
-import java.text.MessageFormat;
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.LinkedHashSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -163,7 +157,6 @@ public class ChangePasswordDialog extends JDialog {
 
     public void setLoggedIn(boolean loggedIn) {
         isLoggedIn = loggedIn;
-        tabbedPane1.setEnabledAt(ROLES_TAB, isLoggedIn);
         updateButtons();
     }
 
@@ -181,9 +174,6 @@ public class ChangePasswordDialog extends JDialog {
     private JLabel infoLabel;
     private JPanel mainPanel;
     private JButton helpBtn;
-    private JTabbedPane tabbedPane1;
-    private JLabel rolesLabel;
-    private JList<Role> rolesList;
 
     private final boolean usernameEditable;
     private String username;
@@ -192,8 +182,6 @@ public class ChangePasswordDialog extends JDialog {
     private boolean help;
     private String passwordPolicyDescription = null;
     private static boolean isLoggedIn = true;
-
-    private static int ROLES_TAB = 1;
 
     private void initComponents(String message) {
         this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
@@ -271,47 +259,11 @@ public class ChangePasswordDialog extends JDialog {
             }
         });
 
-        rolesLabel.setText(MessageFormat.format(rolesLabel.getText(), username == null ? "" : username));
-        populateRolesList();
-
         Utilities.equalizeButtonSizes(new JButton[] { okButton, cancelButton });
         getRootPane().setDefaultButton(okButton);
         updateButtons();
         this.pack();
         Utilities.centerOnScreen(this);
-    }
-
-    private void populateRolesList() {
-        Collection<Role> roles = new LinkedHashSet<Role>();
-
-        if (Registry.getDefault().isAdminContextPresent()) {
-            SecurityProvider sec = Registry.getDefault().getSecurityProvider();
-            User user = sec.getUser();
-            if (user != null) {
-                try {
-                    roles.addAll(Registry.getDefault().getRbacAdmin().findRolesForUser(user));
-                } catch (FindException e) {
-                    logger.log(Level.WARNING, "Unable to look up user roles: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-                }
-            }
-        }
-
-        rolesList.setModel(new DefaultComboBoxModel<Role>(roles.toArray(new Role[roles.size()])));
-        rolesList.setCellRenderer(new DefaultListCellRenderer() {
-            @Override
-            public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
-                if (value instanceof Role) {
-                    Role role = (Role) value;
-                    try {
-                        value = Registry.getDefault().getEntityNameResolver().getNameForEntity(role, true);
-                    } catch (final FindException e) {
-                        logger.log(Level.WARNING, "Unable to resolve name for role: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-                        value = role.getDescriptiveName();
-                    }
-                }
-                return super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
-            }
-        });
     }
 
     private void blank(char[] password) {
