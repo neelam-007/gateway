@@ -5,8 +5,6 @@ import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
 
-import java.util.logging.Logger;
-
 import static com.l7tech.policy.assertion.AssertionMetadata.*;
 
 /**
@@ -64,6 +62,8 @@ public class ManipulateMultiValuedVariableAssertion extends Assertion implements
         meta.put(PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.manipulatemultivaluedvariable.console.ManipulateMultiValuedVariableAssertionDialog");
 
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
+
+        meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
 
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;

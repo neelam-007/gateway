@@ -45,16 +45,16 @@ public class GatewayFeatureSets {
     private static final Logger logger = Logger.getLogger(GatewayFeatureSets.class.getName());
 
     /** All pre-configured FeatureSets. */
-    private static final Map<String, GatewayFeatureSet> sets = new LinkedHashMap<String, GatewayFeatureSet>();
+    private static final Map<String, GatewayFeatureSet> sets = new LinkedHashMap<>();
 
     /** Only the root-level FeatureSets. */
-    private static final Map<String, GatewayFeatureSet> rootSets = new LinkedHashMap<String, GatewayFeatureSet>();
+    private static final Map<String, GatewayFeatureSet> rootSets = new LinkedHashMap<>();
 
     /** Only the root-level Product Profile feature sets. */
-    private static final Map<String, GatewayFeatureSet> profileSets = new LinkedHashMap<String, GatewayFeatureSet>();
+    private static final Map<String, GatewayFeatureSet> profileSets = new LinkedHashMap<>();
 
     /** Feature sets that won't work unless SERVICE_MODULELOADER is also available. */
-    private static final Set<String> optionalModules = new HashSet<String>();
+    private static final Set<String> optionalModules = new HashSet<>();
 
     /** The ultimate Product Profile that enables every possible feature. */
     public static final GatewayFeatureSet PROFILE_ALL;
@@ -528,6 +528,7 @@ public class GatewayFeatureSets {
             mass("assertion:EchoRouting"),
             mass("assertion:HardcodedResponse"),
             mass("assertion:UUIDGenerator"),
+            mass("assertion:ManipulateMultiValuedVariable"),
             ass(MapValueAssertion.class));
 
         GatewayFeatureSet threatIps =
