@@ -112,6 +112,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     private final boolean enableUddi;
     private final PolicyValidator policyValidator;
     private final PolicyAdmin policyAdmin;
+    private final Map<String, String> registeredCustomAssertionFeatureSets = new HashMap<>();
     private Long overrideVersionNumber = null;
     private Boolean overrideVersionActive = null;
     private SearchForm searchForm;
@@ -164,6 +165,11 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         this.policyTree.setWriteAccess(subject.hasWriteAccess());
         this.policyValidator = Registry.getDefault().getPolicyValidator();
         this.policyAdmin = Registry.getDefault().getPolicyAdmin();
+
+        for (CustomAssertionHolder customAssertionHolder : TopComponents.getInstance().getAssertionRegistry().getCustomAssertions()) {
+            registeredCustomAssertionFeatureSets.put(customAssertionHolder.getCustomAssertion().getClass().getName(), customAssertionHolder.getRegisteredCustomFeatureSetName());
+        }
+
         layoutComponents();
 
         renderPolicy();
@@ -336,6 +342,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                 	}
                     final PolicyValidationContext pvc = new PolicyValidationContext(policy.getType(), policy.getInternalTag(), wsdlLocator, soap, soapVersion);
                     pvc.setPermittedAssertionClasses(new HashSet<>(TopComponents.getInstance().getAssertionRegistry().getPermittedAssertionClasses()));
+                    pvc.getRegisteredCustomAssertionFeatureSets().putAll(registeredCustomAssertionFeatureSets);
                     PolicyValidatorResult r = policyValidator.validate(assertion, pvc, licenseManager);
                     policyValidator.checkForCircularIncludes(policy.getGuid(), policy.getName(), assertion, r);
                     return r;
@@ -967,6 +974,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                     final Policy policy = getPolicyNode().getPolicy();
                     final PolicyValidationContext pvc = new PolicyValidationContext(type, internalTag, wsdlLocator, soap, soapVersion);
                     pvc.setPermittedAssertionClasses(new HashSet<>(TopComponents.getInstance().getAssertionRegistry().getPermittedAssertionClasses()));
+                    pvc.getRegisteredCustomAssertionFeatureSets().putAll(registeredCustomAssertionFeatureSets);
                     final PolicyValidatorResult result = policyValidator.validate(assertion, pvc, licenseManager);
                     policyValidator.checkForCircularIncludes(policy.getGuid(), policy.getName(), assertion, result);
                     final ServiceAdmin serviceAdmin = Registry.getDefault().getServiceManager();

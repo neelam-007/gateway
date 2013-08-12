@@ -38,6 +38,8 @@ public class PolicyValidationContext implements Serializable {
     private transient Either<WSDLException,Wsdl> wsdl;
     private Set<String> permittedAssertionClasses;
 
+    private Map<String, String> registeredCustomAssertionFeatureSets = new HashMap<>();
+
     /**
      * Create a policy validation context.
      *
@@ -139,6 +141,13 @@ public class PolicyValidationContext implements Serializable {
     @Nullable
     public Set<String> getPermittedAssertionClasses() {
         return permittedAssertionClasses;
+    }
+
+    /**
+     * @return feature sets registered by each custom assertion module
+     */
+    public Map<String, String> getRegisteredCustomAssertionFeatureSets() {
+        return registeredCustomAssertionFeatureSets;
     }
 
     AssertionValidator getValidator( final Assertion assertion ) {

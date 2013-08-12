@@ -18,10 +18,7 @@ import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.AssertionAccess;
 import com.l7tech.policy.AssertionRegistry;
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.AssertionMetadata;
-import com.l7tech.policy.assertion.DefaultAssertionMetadata;
-import com.l7tech.policy.assertion.MetadataFinder;
+import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.wsp.ClassLoaderUtil;
 import com.l7tech.util.*;
 import org.jetbrains.annotations.NotNull;
@@ -52,6 +49,7 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
 
     /** Prototype instances of assertions loaded from the server. */
     private final Set<Assertion> modulePrototypes = new HashSet<>();
+    private final Map<String, CustomAssertionHolder> customAssertions =  new HashMap<>();
 
     /** Base packages of every modular assertion, for recognizing NoClassDefFoundErrors due to module unload. */
     private final Map<String, String> moduleNameByBasePackage = new ConcurrentHashMap<>();
@@ -154,6 +152,17 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
             throw new RuntimeException("Unexpected error getting modular assertion info: " + ExceptionUtils.getMessage(e), e);
         } finally {
             logger.info( "Loading modular assertions took " +(System.currentTimeMillis()-startTime)+ "ms." );
+        }
+    }
+
+    public void updateCustomAssertions() {
+        Registry registry = Registry.getDefault();
+        if (!registry.isAdminContextPresent()) {
+            throw new RuntimeException("Unable to load custom assertions -- not connected to Gateway");
+        }
+        this.customAssertions.clear();
+        for (CustomAssertionHolder customAssertionHolder : registry.getCustomAssertionsRegistrar().getAssertions()) {
+            this.customAssertions.put(customAssertionHolder.getCustomAssertion().getClass().getName(), customAssertionHolder);
         }
     }
 
@@ -387,6 +396,10 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
      */
     public Collection<AssertionAccess> getPermittedAssertions() {
         return permittedAssertionClasses.values();
+    }
+
+    public Collection<CustomAssertionHolder> getCustomAssertions() {
+        return Collections.unmodifiableCollection(customAssertions.values());
     }
 
     private static class PaletteNodeFactoryMetadataFinder<AT extends Assertion> implements MetadataFinder {

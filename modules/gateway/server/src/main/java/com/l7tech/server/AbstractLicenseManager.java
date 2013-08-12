@@ -6,6 +6,7 @@ import com.l7tech.gateway.common.LicenseException;
 import com.l7tech.gateway.common.audit.AuditDetailMessage;
 import com.l7tech.gateway.common.audit.SystemMessages;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
+import com.l7tech.gateway.common.custom.CustomAssertionsRegistrar;
 import com.l7tech.gateway.common.licensing.FeatureSetExpander;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.ObjectModelException;
@@ -13,6 +14,7 @@ import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.policy.AssertionLicense;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
+import com.l7tech.policy.assertion.CustomAssertionHolder;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.event.admin.ClusterPropertyEvent;
 import com.l7tech.server.event.system.LicenseEvent;
@@ -145,12 +147,23 @@ public abstract class AbstractLicenseManager extends ApplicationObjectSupport im
         Functions.Unary<Set<String>,Assertion> extraFeaturesFactory =
             (Functions.Unary<Set<String>,Assertion>) assertion.meta().get(AssertionMetadata.FEATURE_SET_FACTORY);
 
+        if (assertion instanceof CustomAssertionHolder) {
+            // Override custom feature set name of the individual custom assertion serialized in policy, with the one from
+            // the registrar prototype.  This enables feature control from the module (e.g. change feature set name in the jar).
+            CustomAssertionHolder customAssertionHolder = (CustomAssertionHolder) assertion;
+            try {
+                CustomAssertionHolder registeredCustomAssertionHolder = getCustomAssertionsRegistrar().getAssertion(customAssertionHolder.getCustomAssertion().getClass().getName());
+                customAssertionHolder.setRegisteredCustomFeatureSetName(registeredCustomAssertionHolder.getRegisteredCustomFeatureSetName());
+            } catch (Exception e) {
+                logger.log(Level.WARNING, "Unable to get custom feature set name from registrar: " + e.getMessage(), ExceptionUtils.getDebugException(e));
+            }
+        }
+
         String assertionFeatureSetName = assertion.getFeatureSetName();
         boolean enabled = isFeatureEnabled( assertionFeatureSetName );
 
         if ( enabled && extraFeaturesFactory != null ) {
-            // If there is an extra features checker it will return the
-            // required features for the given assertion
+            // If there is an extra features checker it will return the required features for the given assertion
             Set<String> features = extraFeaturesFactory.call(assertion);
 
             if ( features != null ) {
@@ -250,20 +263,22 @@ public abstract class AbstractLicenseManager extends ApplicationObjectSupport im
     private static final Object LICENSE_PROPERTY_VAL = getVal();
     private static final long TIME_CHECK_NOW = -20000L;// Filled in by Spring
 
-    private final List<ApplicationEvent> events = new ArrayList<ApplicationEvent>();
+    private final List<ApplicationEvent> events = new ArrayList<>();
     private final AtomicBoolean started = new AtomicBoolean(false);
     private final Logger logger;
     private final ClusterPropertyManager clusterPropertyManager;// Brake to prevent calls to System.currentTimeMillis every time a license check is made.
-    // This is unsynchronized because we don't care if some writes to it are lost, or if some reads are out-of-date.
+    // This is un-synchronized because we don't care if some writes to it are lost, or if some reads are out-of-date.
     private final Lock licenseUpdateLock = new ReentrantLock();
     private final AtomicLong lastCheck = new AtomicLong(TIME_CHECK_NOW);
     private boolean licenseSet = false;
-    private final AtomicReference<License> current = new AtomicReference<License>(null);
+    private final AtomicReference<License> current = new AtomicReference<>(null);
     private InvalidLicenseException licenseLastError = null;
     private long licenseLoaded = TIME_CHECK_NOW;
 
+    private CustomAssertionsRegistrar customAssertionsRegistrar;
+
     /** Update the license if we haven't done so in a while.  Returns quickly if no update is indicated. */
-    private void check() {
+    protected final void check() {
         long now = System.currentTimeMillis();
         if ((now - lastCheck.get()) <= CHECK_INTERVAL)
             return;
@@ -488,5 +503,14 @@ public abstract class AbstractLicenseManager extends ApplicationObjectSupport im
         finally {
             licenseUpdateLock.unlock();
         }
+    }
+
+    public CustomAssertionsRegistrar getCustomAssertionsRegistrar() {
+        if (customAssertionsRegistrar == null) {
+            // license manager is instantiated very early, before custom assertions registrar
+            // must create custom assertions registrar later (not in license manager constructor) to avoid unresolvable circular reference
+            customAssertionsRegistrar = getApplicationContext().getBean("customAssertionRegistrar", CustomAssertionsRegistrar.class);
+        }
+        return customAssertionsRegistrar;
     }
 }

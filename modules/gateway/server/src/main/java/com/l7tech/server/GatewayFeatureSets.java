@@ -746,13 +746,14 @@ public class GatewayFeatureSets {
                 mass("assertion:SiteMinderAuthenticate"),
                 mass("assertion:SiteMinderAuthorize"));
 
-        GatewayFeatureSet salesForceInstallerAssertion = fsr("set:SalesforceInstaller:Assertions",
-                "The necessary assertions to enable the Salesforce Installer",
-                mass("assertion:SalesforceInstaller"));
-
-        GatewayFeatureSet salesForceAssertion = fsr("set:Salesforce:Assertions",
-                "The necessary assertions to enable Salesforce functionality",
-                mass("assertion:Salesforce"));
+        /**
+         * This assertion requires the policy bundle installer assertion so it cannot be added to a license without
+         * the policy bundle installer module also being added.
+         */
+        GatewayFeatureSet salesforceAssertions =
+                fsr("set:SalesforceInstallerAssertion:Assertions", "The necessary assertions to install the Salesforce Connector",
+                        mass("assertion:SalesforceInstaller"),
+                        cass("assertion:SalesforceOperation"));
 
         // US (NCES)
         GatewayFeatureSet usAssertions =
@@ -935,8 +936,7 @@ public class GatewayFeatureSets {
             fs(policyBundleInstaller),
             fs(splitJoinAssertions),
             fs(siteMinderAssertions),
-            fs(salesForceAssertion),
-            fs(salesForceInstallerAssertion),
+            fs(salesforceAssertions),
             mass("assertion:ValidateCertificate"));
 
         fsp("set:Profile:CloudControl", "CloudSpan CloudControl",
@@ -1002,8 +1002,7 @@ public class GatewayFeatureSets {
             fs(splitJoinAssertions),
             fs(jsonTransformationAssertion),
             fs(siteMinderAssertions),
-            fs(salesForceAssertion),
-            fs(salesForceInstallerAssertion),
+            fs(salesforceAssertions),
             mass("assertion:ValidateCertificate"));
 
         GatewayFeatureSet profileApi =
@@ -1053,8 +1052,7 @@ public class GatewayFeatureSets {
                 mass("assertion:ValidateNonSoapSamlToken"),
                 fs(trustStore),
                 fs(siteMinderAssertions),
-                fs(salesForceAssertion),
-                fs(salesForceInstallerAssertion));
+                fs(salesforceAssertions));
 
         PROFILE_ALL =
         fsp("set:Profile:Development", "Development Mode",
@@ -1200,6 +1198,11 @@ public class GatewayFeatureSets {
     /** Create (and register, if new) a feature set for the specified optional modular assertion, and return it. */
     private static GatewayFeatureSet mass(String fsName) {
         return mass(fsName, false);
+    }
+
+    /** Create (and register, if new) a feature set for the specified optional custom assertion, and return it. */
+    private static GatewayFeatureSet cass(String fsName) {
+        return mass(fsName);
     }
 
     /**

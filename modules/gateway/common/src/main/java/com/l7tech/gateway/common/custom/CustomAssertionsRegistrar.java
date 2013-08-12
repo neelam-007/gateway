@@ -55,7 +55,7 @@ public interface CustomAssertionsRegistrar {
      * @return the list of all assertions known to the runtime
      */
     @Administrative(licensed=false)
-    Collection getAssertions();
+    Collection<CustomAssertionHolder> getAssertions();
 
     /**
      * @param c the category to query for
@@ -63,7 +63,7 @@ public interface CustomAssertionsRegistrar {
      *         for a give n category
      */
     @Administrative(licensed=false)
-    Collection getAssertions( Category c);
+    Collection<CustomAssertionHolder> getAssertions( Category c);
 
     /**
      * Checks if there is a CustomAssertion registered which either, implements the

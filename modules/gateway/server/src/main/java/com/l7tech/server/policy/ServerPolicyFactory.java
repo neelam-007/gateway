@@ -35,7 +35,7 @@ public class ServerPolicyFactory implements ApplicationContextAware {
     private static ThreadLocal<LinkedList<Boolean>> licenseEnforcement = new ThreadLocal<LinkedList<Boolean>>() {
         @Override
         protected LinkedList<Boolean> initialValue() {
-            return new LinkedList<Boolean>();
+            return new LinkedList<>();
         }
     };
 
@@ -113,13 +113,13 @@ public class ServerPolicyFactory implements ApplicationContextAware {
      * This should only be called from within server composite assertion constructors; others should use
      * {@link #compilePolicy} instead to set an initial license enforcement mode.
      *
-     * @param genericAsertion  root of the assertion subtree to compile.  Must not be null.
+     * @param genericAssertion  root of the assertion subtree to compile.  Must not be null.
      * @return the server assertion subtree for this generic subtree.  Never null.
      * @throws ServerPolicyException if this policy subtree could not be compiled
      * @throws LicenseException if this policy subtree made use of an unlicensed assertion
      */
-    public ServerAssertion compileSubtree(Assertion genericAsertion) throws ServerPolicyException, LicenseException {
-        return doMakeServerAssertion(genericAsertion);
+    public ServerAssertion compileSubtree(Assertion genericAssertion) throws ServerPolicyException, LicenseException {
+        return doMakeServerAssertion(genericAssertion);
     }
 
     /**
@@ -132,7 +132,7 @@ public class ServerPolicyFactory implements ApplicationContextAware {
 
         try {
             if (isLicenseEnforcement() && !licenseManager.isAssertionEnabled(genericAssertion))
-                throw new LicenseException("The specified assertion is not supported on this Gateway: " + genericAssertion.getClass());
+                throw new LicenseException("The specified assertion is not supported on this Gateway: " + genericAssertion.getFeatureSetClassName());
 
             // Disabled assertions and comment assertions are expected to have been filtered out (eg, by the PolicyCache) before making it here
             if (!genericAssertion.isEnabled())
@@ -208,10 +208,8 @@ public class ServerPolicyFactory implements ApplicationContextAware {
             if (cause instanceof LicenseException)
                 throw (LicenseException) cause;
             throw new ServerPolicyException(genericAssertion, "Error creating specific assertion for '"+genericAssertion.getClass().getName()+"': " + ExceptionUtils.getMessage(ite), ite);
-        } catch (Exception ie) {
+        } catch (Throwable ie) {
             throw new ServerPolicyException(genericAssertion, "Error creating specific assertion for '"+genericAssertion.getClass().getName()+"': " + ExceptionUtils.getMessage(ie), ie);
-        } catch (Throwable t) {
-            throw new ServerPolicyException(genericAssertion, "Error creating specific assertion for '"+genericAssertion.getClass().getName()+"': " + ExceptionUtils.getMessage(t), t);
         }
     }
 

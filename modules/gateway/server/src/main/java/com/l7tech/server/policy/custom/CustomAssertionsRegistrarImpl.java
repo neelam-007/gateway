@@ -221,7 +221,7 @@ public class CustomAssertionsRegistrarImpl extends ApplicationObjectSupport impl
      * @return the list of all assertions known to the runtime
      */
     @Override
-    public Collection getAssertions() {
+    public Collection<CustomAssertionHolder> getAssertions() {
         Set customAssertionDescriptors = CustomAssertions.getDescriptors();
         return asCustomAssertionHolders(customAssertionDescriptors);
     }
@@ -232,7 +232,7 @@ public class CustomAssertionsRegistrarImpl extends ApplicationObjectSupport impl
      *         for a give n category
      */
     @Override
-    public Collection getAssertions( Category c) {
+    public Collection<CustomAssertionHolder> getAssertions( Category c) {
         final Set customAssertionDescriptors = CustomAssertions.getDescriptors(c);
         return asCustomAssertionHolders(customAssertionDescriptors);
     }
@@ -268,14 +268,14 @@ public class CustomAssertionsRegistrarImpl extends ApplicationObjectSupport impl
         return false;
     }
 
-    /**
-     * Return the <code>CustomAssertionDescriptor</code> for a given assertion or <b>null<b>.
-     * Note that this method may not be invoked from management console.
-     * Server classes may not de-serialize into the ssm environment.
-     *
-     * @param a the assertion class
-     * @return the custom assertion descriptor class or <b>null</b>
-     */
+        /**
+        * Return the <code>CustomAssertionDescriptor</code> for a given assertion or <b>null<b>.
+        * Note that this method may not be invoked from management console.
+        * Server classes may not de-serialize into the ssm environment.
+        *
+        * @param a the assertion class
+        * @return the custom assertion descriptor class or <b>null</b>
+        */
     @Override
     public CustomAssertionDescriptor getDescriptor(Class a) {
         return CustomAssertions.getDescriptor(a);
@@ -356,7 +356,7 @@ public class CustomAssertionsRegistrarImpl extends ApplicationObjectSupport impl
     private SecurePasswordManager securePasswordManager;
     private CustomKeyValueStoreManager customKeyValueStoreManager;
 
-    private Collection asCustomAssertionHolders(final Set customAssertionDescriptors) {
+    private Collection<CustomAssertionHolder> asCustomAssertionHolders(final Set customAssertionDescriptors) {
         Collection<CustomAssertionHolder> result = new ArrayList<>();
         for (Object customAssertionDescriptor : customAssertionDescriptors) {
             CustomAssertionHolder customAssertionHolder = asCustomAssertionHolder((CustomAssertionDescriptor) customAssertionDescriptor);
@@ -379,7 +379,8 @@ public class CustomAssertionsRegistrarImpl extends ApplicationObjectSupport impl
             customAssertionHolder.setPaletteNodeName(customAssertionDescriptor.getPaletteNodeName());
             customAssertionHolder.setPolicyNodeName(customAssertionDescriptor.getPolicyNodeName());
             customAssertionHolder.setIsUiAutoOpen(customAssertionDescriptor.getIsUiAutoOpen());
-            customAssertionHolder.setModuleFileName(customAssertionDescriptor.getModuleFileName());
+            customAssertionHolder.setRegisteredModuleFileName(customAssertionDescriptor.getModuleFileName());
+            customAssertionHolder.setRegisteredCustomFeatureSetName(customAssertionDescriptor.getFeatureSetName());
         } catch (Exception e) {
             logger.log(Level.WARNING, "Unable to instantiate custom assertion", e);
         }
@@ -517,6 +518,7 @@ public class CustomAssertionsRegistrarImpl extends ApplicationObjectSupport impl
             eh.setUiAllowedResources((String) properties.get(baseKey + ".ui.allowed.resources"));
             eh.setPaletteNodeName((String) properties.get(baseKey + ".palette.node.name"));
             eh.setPolicyNodeName((String) properties.get(baseKey + ".policy.node.name"));
+            eh.setFeatureSetName((String) properties.get(baseKey + ".feature.set.name"));
             eh.setModuleFileName(moduleFileName);
             CustomAssertions.register(eh);
 

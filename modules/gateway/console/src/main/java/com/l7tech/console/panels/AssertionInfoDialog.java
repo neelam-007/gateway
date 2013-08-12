@@ -1,6 +1,6 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.*;
@@ -150,16 +150,21 @@ public class AssertionInfoDialog extends JDialog {
             CustomAssertionHolder customAssertionHolder = (CustomAssertionHolder) assertion;
             CustomAssertionHolder registeredCustomAssertionPrototype = null;
             try {
-                registeredCustomAssertionPrototype = Registry.getDefault().getCustomAssertionsRegistrar().getAssertion(customAssertionHolder.getCustomAssertion().getClass().getName());
+                for (Object registeredAssertion : TopComponents.getInstance().getAssertionRegistry().getCustomAssertions()) {
+                    if (customAssertionHolder.getCustomAssertion().getClass() == ((CustomAssertionHolder) registeredAssertion).getCustomAssertion().getClass()) {
+                        registeredCustomAssertionPrototype = (CustomAssertionHolder) registeredAssertion;
+                        break;
+                    }
+                }
             } catch (Exception e) {
                 LOGGER.log(Level.WARNING, "Error retrieving registered custom assertion module file name from Custom Assertions Registrar: " + e.getMessage(), ExceptionUtils.getDebugException(e));
             }
-            if (registeredCustomAssertionPrototype != null && registeredCustomAssertionPrototype.getModuleFileName() != null) {
+            if (registeredCustomAssertionPrototype != null && registeredCustomAssertionPrototype.getRegisteredModuleFileName() != null) {
                 // use file name from registrar
-                assertionType = "Custom (" + registeredCustomAssertionPrototype.getModuleFileName() + ")";
-            } else if (customAssertionHolder.getModuleFileName() != null) {
+                assertionType = "Custom (" + registeredCustomAssertionPrototype.getRegisteredModuleFileName() + ")";
+            } else if (customAssertionHolder.getRegisteredModuleFileName() != null) {
                 // use de-serialized file name from WspReader thawed assertion
-                assertionType = "Custom (" + customAssertionHolder.getModuleFileName() + ")";
+                assertionType = "Custom (" + customAssertionHolder.getRegisteredModuleFileName() + ")";
             } else {
                 assertionType = "Custom";
             }

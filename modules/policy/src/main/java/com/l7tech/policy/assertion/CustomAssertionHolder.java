@@ -6,6 +6,10 @@
 
 package com.l7tech.policy.assertion;
 
+import com.l7tech.common.io.ClassLoaderObjectInputStream;
+import com.l7tech.objectmodel.migration.Migration;
+import com.l7tech.objectmodel.migration.MigrationMappingSelection;
+import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.ext.CustomAssertion;
 import com.l7tech.policy.assertion.ext.CustomCredentialSource;
@@ -13,19 +17,10 @@ import com.l7tech.policy.assertion.ext.targetable.CustomMessageTargetable;
 import com.l7tech.policy.assertion.ext.targetable.CustomMessageTargetableSupport;
 import com.l7tech.policy.assertion.ext.validator.CustomPolicyValidator;
 import com.l7tech.policy.variable.VariableMetadata;
-import com.l7tech.common.io.ClassLoaderObjectInputStream;
 import com.l7tech.util.ResourceUtils;
-import com.l7tech.objectmodel.migration.Migration;
-import com.l7tech.objectmodel.migration.MigrationMappingSelection;
-import com.l7tech.objectmodel.migration.PropertyResolver;
-
 import org.jetbrains.annotations.NotNull;
 
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
+import java.io.*;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.logging.Level;
@@ -60,7 +55,8 @@ public class CustomAssertionHolder extends Assertion implements UsesVariables, S
     private String paletteNodeName;
     private String policyNodeName;
     private boolean isUiAutoOpen;
-    private String customModuleFileName;
+    private String registeredCustomModuleFileName;
+    private String registeredCustomFeatureSetName;
 
     // add categories set
     private Set<Category> categories;
@@ -194,12 +190,12 @@ public class CustomAssertionHolder extends Assertion implements UsesVariables, S
         return b.append(']').toString();
     }
 
-    public String getModuleFileName() {
-        return customModuleFileName;
+    public String getRegisteredModuleFileName() {
+        return registeredCustomModuleFileName;
     }
 
-    public void setModuleFileName(String moduleFileName) {
-        this.customModuleFileName = moduleFileName;
+    public void setRegisteredModuleFileName(String registeredCustomModuleFileName) {
+        this.registeredCustomModuleFileName = registeredCustomModuleFileName;
     }
 
     public String getDescriptionText() {
@@ -234,6 +230,14 @@ public class CustomAssertionHolder extends Assertion implements UsesVariables, S
         this.isUiAutoOpen = isUiAutoOpen;
     }
 
+    public String getRegisteredCustomFeatureSetName() {
+        return registeredCustomFeatureSetName;
+    }
+
+    public void setRegisteredCustomFeatureSetName(String registeredCustomFeatureSetName) {
+        this.registeredCustomFeatureSetName = registeredCustomFeatureSetName;
+    }
+
     @Override
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {
@@ -264,7 +268,7 @@ public class CustomAssertionHolder extends Assertion implements UsesVariables, S
         clone.paletteNodeName = this.paletteNodeName;
         clone.policyNodeName = this.policyNodeName;
         clone.isUiAutoOpen = this.isUiAutoOpen;
-        clone.customModuleFileName = this.customModuleFileName;
+        clone.registeredCustomModuleFileName = this.registeredCustomModuleFileName;
 
         // do shallow copy, since Category instances are singletons.
         clone.categories = this.categories != null ? new HashSet<>(this.categories) : null;

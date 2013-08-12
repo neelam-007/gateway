@@ -43,7 +43,6 @@ import com.l7tech.objectmodel.folder.FolderHeader;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
-import com.l7tech.policy.assertion.ext.CustomAssertion;
 import com.l7tech.policy.assertion.ext.action.CustomTaskActionUI;
 import com.l7tech.util.*;
 
@@ -286,7 +285,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     private static final String PATH_SEPARATOR = "/";
     private static final String ELLIPSIS = "...";
 
-    private List<Action> customAssertionActions = null;
+    private List<Action> customAssertionActions = new ArrayList<>();
 
     /**
      * MainWindow constructor comment.
@@ -2131,36 +2130,26 @@ public class MainWindow extends JFrame implements SheetHolder {
     }
 
     private List<Action> getCustomAssertionActions() {
-        if (customAssertionActions == null) {
-            // This method is called twice on login by this.updateCustomGlobalActionsMenu(...), which is triggered
-            // by LicenseListener.licenseChanged(...) and this.initalizeWorkspace(...).
-            // To improve performance initialize customAssertionActions once. Each call to CustomAssertionsRegistrar
-            // is going to the Gateway.
-            // Another way would be to store custom assertions in ConsoleAssertionRegistry, instead
-            // of store them here, similar to how module assertions are stored
-            // (ie. ConsoleAssertionRegistry.updateModularAssertions(...) and AssertionRegistry.getAssertions(...).
-            //
-            customAssertionActions = new ArrayList<>();
-            CustomAssertionsRegistrar registrar = Registry.getDefault().getCustomAssertionsRegistrar();
-            Collection customAssertions = registrar.getAssertions();
+        // This method is called twice on login by this.updateCustomGlobalActionsMenu(...):
+        //  - once by LicenseListener.licenseChanged(...) before ConsoleAssertionRegistry.updateCustomAssertions()
+        //  - then again by this.initalizeWorkspace(...) after updateCustomAssertions.updateCustomAssertions().
 
-            for (Object customAssertion : customAssertions) {
-                CustomAssertionHolder cah = (CustomAssertionHolder) customAssertion;
-                CustomAssertion ca = cah.getCustomAssertion();
-                CustomTaskActionUI taskActionUI = registrar.getTaskActionUI(ca.getClass().getName());
-                if (taskActionUI != null) {
-                    customAssertionActions.add(new CustomAssertionHolderAction(taskActionUI));
+        if (customAssertionActions.size() <= 0) {
+            Collection<CustomAssertionHolder> customAssertionHolders = TopComponents.getInstance().getAssertionRegistry().getCustomAssertions();
+            ConsoleLicenseManager consoleLicenseManager = Registry.getDefault().getLicenseManager();
+            for (CustomAssertionHolder customAssertionHolder : customAssertionHolders) {
+                if (consoleLicenseManager.isAssertionEnabled(customAssertionHolder)) {
+                    // over the wire call to Gateway (there's possible performance improvement here)
+                    CustomAssertionsRegistrar registrar = Registry.getDefault().getCustomAssertionsRegistrar();
+                    CustomTaskActionUI taskActionUI = registrar.getTaskActionUI(customAssertionHolder.getCustomAssertion().getClass().getName());
+                    if (taskActionUI != null) {
+                        customAssertionActions.add(new CustomAssertionHolderAction(taskActionUI));
+                    }
                 }
             }
         }
 
-        if (Registry.getDefault().getLicenseManager().isAssertionEnabled(new CustomAssertionHolder())) {
-            // All custom assertions are stored in CustomAssertionHolder.
-            //
-            return customAssertionActions;
-        } else {
-            return Collections.emptyList();
-        }
+        return customAssertionActions;
     }
 
     /**
@@ -3932,6 +3921,7 @@ public class MainWindow extends JFrame implements SheetHolder {
             // Gather any modular assertions offered by this gateway early on as well, for the assertion palette
             try {
                 TopComponents.getInstance().getAssertionRegistry().updateModularAssertions();
+                TopComponents.getInstance().getAssertionRegistry().updateCustomAssertions();
                 TopComponents.getInstance().getEncapsulatedAssertionRegistry().updateEncapsulatedAssertions();
                 SecurityZoneUtil.flushCachedSecurityZones();
             } catch (RuntimeException e) {

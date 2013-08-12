@@ -4,12 +4,14 @@ import com.l7tech.gateway.common.InvalidLicenseException;
 import com.l7tech.gateway.common.LicenseException;
 import com.l7tech.gateway.common.audit.AuditDetailMessage;
 import com.l7tech.gateway.common.audit.SystemMessages;
+import com.l7tech.gateway.common.custom.CustomAssertionsRegistrar;
 import com.l7tech.gateway.common.licensing.*;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
+import com.l7tech.policy.assertion.CustomAssertionHolder;
 import com.l7tech.server.event.GoidEntityInvalidationEvent;
 import com.l7tech.server.event.system.LicenseEvent;
 import com.l7tech.util.*;
@@ -17,6 +19,7 @@ import org.apache.commons.lang.ObjectUtils;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.*;
+import org.springframework.context.support.ApplicationObjectSupport;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.ByteArrayInputStream;
@@ -37,7 +40,7 @@ import java.util.logging.Logger;
 /**
  * @author Jamie Williams - wilja33 - jamie.williams2@ca.com
  */
-public abstract class AbstractCompositeLicenseManager implements UpdatableCompositeLicenseManager, Lifecycle, Phased,
+public abstract class AbstractCompositeLicenseManager extends ApplicationObjectSupport implements UpdatableCompositeLicenseManager, Lifecycle, Phased,
         ApplicationListener<GoidEntityInvalidationEvent>, ApplicationEventPublisherAware {
 
     /* ---- Issuer Certificate(s) ---- */
@@ -69,6 +72,8 @@ public abstract class AbstractCompositeLicenseManager implements UpdatableCompos
 
     @Autowired
     private LicenseDocumentManager licenseDocumentManager;
+
+    private CustomAssertionsRegistrar customAssertionsRegistrar;
 
     protected AbstractCompositeLicenseManager(final Logger logger) {
         this.logger = logger;
@@ -175,6 +180,18 @@ public abstract class AbstractCompositeLicenseManager implements UpdatableCompos
         // Get extra features factory for this assertion, if there is one
         Functions.Unary<Set<String>,Assertion> extraFeaturesFactory =
                 assertion.meta().get(AssertionMetadata.FEATURE_SET_FACTORY);
+
+        if (assertion instanceof CustomAssertionHolder) {
+            // Override custom feature set name of the individual custom assertion serialized in policy, with the one from
+            // the registrar prototype.  This enables feature control from the module (e.g. change feature set name in the jar).
+            CustomAssertionHolder customAssertionHolder = (CustomAssertionHolder) assertion;
+            try {
+                CustomAssertionHolder registeredCustomAssertionHolder = getCustomAssertionsRegistrar().getAssertion(customAssertionHolder.getCustomAssertion().getClass().getName());
+                customAssertionHolder.setRegisteredCustomFeatureSetName(registeredCustomAssertionHolder.getRegisteredCustomFeatureSetName());
+            } catch (Exception e) {
+                logger.log(Level.WARNING, "Unable to get custom feature set name from registrar: " + e.getMessage(), ExceptionUtils.getDebugException(e));
+            }
+        }
 
         String assertionFeatureSetName = assertion.getFeatureSetName();
         boolean enabled = isFeatureEnabled(assertionFeatureSetName);
@@ -557,5 +574,14 @@ public abstract class AbstractCompositeLicenseManager implements UpdatableCompos
         public void close() {
             service.shutdown();
         }
+    }
+
+    public CustomAssertionsRegistrar getCustomAssertionsRegistrar() {
+        if (customAssertionsRegistrar == null) {
+            // license manager is instantiated very early, before custom assertions registrar
+            // must create custom assertions registrar later (not @Autowired, nor in license manager constructor) to avoid unresolvable circular reference
+            customAssertionsRegistrar = getApplicationContext().getBean("customAssertionRegistrar", CustomAssertionsRegistrar.class);
+        }
+        return customAssertionsRegistrar;
     }
 }

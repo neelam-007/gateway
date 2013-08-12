@@ -197,6 +197,7 @@ public class ManageLicensesDialog extends JDialog {
         // update the console assertion registry, flush cached security zones
         try {
             TopComponents.getInstance().getAssertionRegistry().updateModularAssertions();
+            TopComponents.getInstance().getAssertionRegistry().updateCustomAssertions();
             TopComponents.getInstance().getEncapsulatedAssertionRegistry().updateEncapsulatedAssertions();
             SecurityZoneUtil.flushCachedSecurityZones();
         } catch (RuntimeException e) {

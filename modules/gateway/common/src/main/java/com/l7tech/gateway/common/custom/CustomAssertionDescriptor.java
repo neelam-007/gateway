@@ -29,6 +29,7 @@ import java.util.*;
  * <li> display name for the node in the left palette
  * <li> display name for the node in the right policy editor
  * <li> display module file name in the Assertion View Info dialog
+ * <li> feature set name used for licensing
  * </ul>
  */
 public class CustomAssertionDescriptor {
@@ -48,6 +49,7 @@ public class CustomAssertionDescriptor {
     private boolean isUiAutoOpen;
     private String[] uiAllowedPackages = new String[0];
     private Set<String> uiAllowedResources = new HashSet<>();
+    private String featureSetName;
 
     /**
      * Create the new extensibility holder instance with the assertion and server assertion class.
@@ -176,6 +178,13 @@ public class CustomAssertionDescriptor {
         return taskActionUiClass;
     }
 
+    /**
+     * @return the license feature set name or <b>null</b> if it has not been set
+     */
+    public String getFeatureSetName() {
+        return featureSetName;
+    }
+
     public String toString() {
         return "[" + "; name='" + name + "'" + "; categories=" + categoriesFriendlyPrintString + "; assertion=" +
                 safeName(assertion) + "; serverAssertion=" + safeName(serverAssertion) + "; editorClass=" +
@@ -263,5 +272,12 @@ public class CustomAssertionDescriptor {
                 this.uiAllowedResources.add(aSplit.trim());
             }
         }
+    }
+
+    /**
+     * @param featureSetName license feature set name
+     */
+    public void setFeatureSetName(String featureSetName) {
+        this.featureSetName = featureSetName;
     }
 }

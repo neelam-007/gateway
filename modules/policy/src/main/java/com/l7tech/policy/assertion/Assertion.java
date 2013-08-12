@@ -40,7 +40,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @noinspection unchecked,ForLoopReplaceableByForEach,EqualsWhichDoesntCheckParameterClass
  */
 public abstract class Assertion implements Cloneable, Serializable {
-    private static final Map<String, DefaultAssertionMetadata> metadataCache = new ConcurrentHashMap<String, DefaultAssertionMetadata>();
+    private static final Map<String, DefaultAssertionMetadata> metadataCache = new ConcurrentHashMap<>();
 
     /**
      * This is the minimum ordinal value displayed in the SSM
@@ -775,9 +775,7 @@ public abstract class Assertion implements Cloneable, Serializable {
             meta = new DefaultAssertionMetadata((Assertion)getClass().newInstance());
             metadataCache.put(classname, meta);
             return meta;
-        } catch (InstantiationException e) {
-            throw needsMeta(classname, e);
-        } catch (IllegalAccessException e) {
+        } catch (InstantiationException | IllegalAccessException e) {
             throw needsMeta(classname, e);
         }
     }
@@ -838,9 +836,32 @@ public abstract class Assertion implements Cloneable, Serializable {
     }
 
     final String getDefaultFeatureSetName() {
-        String fullName = getClass().getName();
-        String basePackage = (String)meta().get(AssertionMetadata.BASE_PACKAGE);
+        String fullName = getFeatureSetClassName();
+        String basePackage;
+        if (this instanceof CustomAssertionHolder) {
+            CustomAssertionHolder customAssertionHolder = (CustomAssertionHolder) this;
+            if ("(fromCustomAssertionClass)".equals(customAssertionHolder.getRegisteredCustomFeatureSetName()) && customAssertionHolder.getCustomAssertion() != null) {
+                basePackage = customAssertionHolder.getCustomAssertion().getClass().getPackage().getName();
+            } else {
+                basePackage = (String)meta().get(AssertionMetadata.BASE_PACKAGE);
+            }
+        } else {
+            basePackage = (String)meta().get(AssertionMetadata.BASE_PACKAGE);
+        }
         return makeDefaultFeatureSetName(fullName, basePackage);
+    }
+
+    public final String getFeatureSetClassName() {
+        if (this instanceof CustomAssertionHolder) {
+            CustomAssertionHolder customAssertionHolder = (CustomAssertionHolder) this;
+            if ("(fromCustomAssertionClass)".equals(customAssertionHolder.getRegisteredCustomFeatureSetName()) && customAssertionHolder.getCustomAssertion() != null) {
+                return customAssertionHolder.getCustomAssertion().getClass().getName();
+            } else {
+                return getClass().getName();
+            }
+        } else {
+            return getClass().getName();
+        }
     }
 
     static String makeDefaultFeatureSetName(String fullClassname, String basePackage) {
@@ -863,9 +884,7 @@ public abstract class Assertion implements Cloneable, Serializable {
         final Assertion assertion;
         try {
             assertion = (Assertion)assertionClass.newInstance();
-        } catch (InstantiationException e) {
-            throw new RuntimeException(e); // assertion must have default c'tor
-        } catch (IllegalAccessException e) {
+        } catch (InstantiationException | IllegalAccessException e) {
             throw new RuntimeException(e); // assertion must have default c'tor
         }
 
@@ -947,7 +966,7 @@ public abstract class Assertion implements Cloneable, Serializable {
         public final static String LEFT_COMMENT = "LEFT.COMMENT";
         public final static String RIGHT_COMMENT = "RIGHT.COMMENT";
 
-        private Map<String, String> properties = new HashMap<String, String>();
+        private Map<String, String> properties = new HashMap<>();
 
         public Comment() {
         }

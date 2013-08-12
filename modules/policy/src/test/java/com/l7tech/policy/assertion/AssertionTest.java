@@ -21,6 +21,7 @@ import org.junit.Test;
 import org.junit.Assert;
 
 import static org.hamcrest.CoreMatchers.*;
+import static junit.framework.Assert.assertEquals;
 
 /**
  * Test Assertion/CompositeAssertion data structure management.
@@ -260,5 +261,35 @@ public class AssertionTest {
         Assert.assertThat("right comment has different value",
                 assertion.getAssertionComment().getAssertionComment(Assertion.Comment.RIGHT_COMMENT),
                 not(equalTo(cloneAssertion.getAssertionComment().getAssertionComment(Assertion.Comment.RIGHT_COMMENT))));
+    }
+
+    @Test
+    /**
+     * Verify against expected parse of feature set names
+     */
+    public void getFeatureSetName() throws Exception {
+        assertEquals("set:modularAssertions", new MyAssertion().getFeatureSetName());
+        assertEquals("assertion:composite.All", new AllAssertion().getFeatureSetName());
+        assertEquals("assertion:Unknown", new UnknownAssertion().getFeatureSetName());
+        assertEquals("assertion:CustomAssertionHolder", new CustomAssertionHolder().getFeatureSetName());
+
+        CustomAssertionHolder customAssertionHolder = new CustomAssertionHolder();
+        customAssertionHolder.setCustomAssertion(new CustomAssertion() {
+            @Override
+            public String getName() {
+                return "My Custom Assertion";
+            }
+        });
+        customAssertionHolder.setRegisteredCustomFeatureSetName("(fromCustomAssertionClass)");
+        assertEquals("assertion:AssertionTest$1", customAssertionHolder.getFeatureSetName());
+    }
+
+    private class MyAssertion extends Assertion {
+        @Override
+        public AssertionMetadata meta() {
+            DefaultAssertionMetadata meta = new DefaultAssertionMetadata(this);
+            meta.put(AssertionMetadata.FEATURE_SET_NAME, "set:modularAssertions");
+            return meta;
+        }
     }
 }

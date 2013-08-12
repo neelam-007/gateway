@@ -17,7 +17,6 @@ import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.credential.http.HttpNegotiate;
 import com.l7tech.policy.assertion.credential.wss.EncryptedUsernameTokenAssertion;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
-import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.identity.AuthenticationAssertion;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.assertion.identity.SpecificUser;
@@ -26,6 +25,7 @@ import com.l7tech.policy.assertion.xmlsec.*;
 import com.l7tech.policy.validator.DefaultPolicyValidator.DeferredValidate;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.security.token.SecurityTokenType;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.wsdl.Wsdl;
 
@@ -38,12 +38,14 @@ import java.nio.charset.Charset;
 import java.nio.charset.IllegalCharsetNameException;
 import java.text.MessageFormat;
 import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * validate single path, and collect the validation results in the
  * <code>PolicyValidatorResult</code>.
  * <p/>
- * TODO: refactor this into asserton specific validators.
+ * TODO: refactor this into assertion specific validators.
  *
  * TODO: change assertion validators so that they are instantiated once per assertion instance, at the start of
  * validation, instead of once per assertion instance per path.  Validators would do assertion-specific validation
@@ -52,7 +54,7 @@ import java.util.*;
  * PathValidator would be passed a map of assertion instances to validator instances.
  */
 public class PathValidator {
-
+    private static final Logger logger = Logger.getLogger(PathValidator.class.getName());
     private static final ResourceBundle bundle = ResourceBundle.getBundle( PathValidator.class.getName() );
 
     private static final Class<? extends Assertion> ASSERTION_HTTPBASIC = HttpBasic.class;
@@ -72,10 +74,10 @@ public class PathValidator {
     /**
      * result accumulator
      */
-    private final List<DeferredValidate> deferredValidators = new ArrayList<DeferredValidate>();
+    private final List<DeferredValidate> deferredValidators = new ArrayList<>();
     private final PolicyValidationContext pvc;
     private final AssertionLicense assertionLicense;
-    private final Map<String, MessageTargetContext> messageTargetContexts = new HashMap<String, MessageTargetContext>();
+    private final Map<String, MessageTargetContext> messageTargetContexts = new HashMap<>();
     private final Wsdl wsdl;
     private final boolean soap;
 
@@ -90,11 +92,11 @@ public class PathValidator {
     boolean seenResponseSecurityToken = false;
 
     private final static class MessageTargetContext {
-        private Set<Class<? extends Assertion>> seenAssertionClasses = new HashSet<Class<? extends Assertion>>();
-        private Map<String, Boolean> seenCredentials = new HashMap<String, Boolean>();  // actor to flag
-        private Map<String, Boolean> seenCredentialsSinceModified = new HashMap<String, Boolean>(); // actor to flag
-        private Map<String, Boolean> seenWssSignature = new HashMap<String, Boolean>(); // actor to flag
-        private Map<String, Boolean> seenSamlSecurity = new HashMap<String, Boolean>(); // actor to flag
+        private Set<Class<? extends Assertion>> seenAssertionClasses = new HashSet<>();
+        private Map<String, Boolean> seenCredentials = new HashMap<>();  // actor to flag
+        private Map<String, Boolean> seenCredentialsSinceModified = new HashMap<>(); // actor to flag
+        private Map<String, Boolean> seenWssSignature = new HashMap<>(); // actor to flag
+        private Map<String, Boolean> seenSamlSecurity = new HashMap<>(); // actor to flag
         private boolean seenSpecificUserAssertion = false;
         private boolean seenAuthenticationAssertion = false;
         private boolean allowsMultipleSignatures = false;
@@ -128,6 +130,17 @@ public class PathValidator {
 
         // Check licensing
         if (assertionLicense != null) {
+            if (a instanceof CustomAssertionHolder) {
+                // Override custom feature set name of the individual custom assertion serialized in policy, with the one from
+                // the registrar prototype.  This enables feature control from the module (e.g. change feature set name in the jar).
+                CustomAssertionHolder customAssertionHolder = (CustomAssertionHolder) a;
+                try {
+                    customAssertionHolder.setRegisteredCustomFeatureSetName(pvc.getRegisteredCustomAssertionFeatureSets().get(customAssertionHolder.getCustomAssertion().getClass().getName()));
+                } catch (Exception e) {
+                    logger.log(Level.WARNING, "Unable to get custom feature set name from registrar: " + e.getMessage(), ExceptionUtils.getDebugException(e));
+                }
+            }
+
             if (!assertionLicense.isAssertionEnabled(a)) {
                 result.addWarning(new PolicyValidatorResult.Warning(
                         a, bundle.getString("assertion.unknown"), null));
@@ -656,7 +669,7 @@ public class PathValidator {
                         bundle.getString("routing.emptyurl"), null));
             } else {
                 // only do this if the url has no context variables
-                if (url.indexOf("${") < 0) {
+                if (!url.contains("${")) {
                     try {
                         new URL(url);
                     } catch (MalformedURLException e) {
@@ -690,7 +703,7 @@ public class PathValidator {
                     this.msgname = msgname;
                 }
             }
-            Collection<RelativeURINamespaceProblemFeedback> feedback = new ArrayList<RelativeURINamespaceProblemFeedback>();
+            Collection<RelativeURINamespaceProblemFeedback> feedback = new ArrayList<>();
             for (BindingOperation operation : wsdlBindingOperations) {
                 String ns = wsdl.getBindingInputNS(operation);
                 if (ns != null && ns.indexOf(':') < 0) {
@@ -706,7 +719,7 @@ public class PathValidator {
                 }
             }
             if (!feedback.isEmpty()) {
-                StringBuffer msg = new StringBuffer(bundle.getString("wssecurity.dsig.relativenamespaceuri"));
+                StringBuilder msg = new StringBuilder(bundle.getString("wssecurity.dsig.relativenamespaceuri"));
                 for (Object aFeedback : feedback) {
                     RelativeURINamespaceProblemFeedback fb = (RelativeURINamespaceProblemFeedback)aFeedback;
                     msg.append("<br>Namespace: ").append(fb.ns);
@@ -794,8 +807,8 @@ public class PathValidator {
     }
 
     boolean seenCredentials( final String actor, final String targetName ) {
-        Boolean currentvalue = getMessageTargetContext(targetName).seenCredentials.get(actor);
-        return currentvalue != null && currentvalue;
+        Boolean currentValue = getMessageTargetContext(targetName).seenCredentials.get(actor);
+        return currentValue != null && currentValue;
     }
 
     boolean seenAccessControl( final String targetName ) {
@@ -817,8 +830,8 @@ public class PathValidator {
     }
 
     private boolean seenCredentialsSinceModified(String actor, String targetName) {
-        Boolean currentvalue = getMessageTargetContext(targetName).seenCredentialsSinceModified.get(actor);
-        return currentvalue != null && currentvalue;
+        Boolean currentValue = getMessageTargetContext(targetName).seenCredentialsSinceModified.get(actor);
+        return currentValue != null && currentValue;
     }
 
     private void setSeenCredentialsSinceModified(Assertion context, boolean value) {
@@ -828,8 +841,8 @@ public class PathValidator {
 
     private boolean seenWssSignature(Assertion context, String targetName) {
         String actor = assertionToActor(context);
-        Boolean currentvalue = getMessageTargetContext(targetName).seenWssSignature.get(actor);
-        return currentvalue != null && currentvalue;
+        Boolean currentValue = getMessageTargetContext(targetName).seenWssSignature.get(actor);
+        return currentValue != null && currentValue;
     }
 
     private void setSeenWssSignature(Assertion context, String targetName) {
@@ -839,8 +852,8 @@ public class PathValidator {
 
     private boolean seenSamlSecurity(Assertion context) {
         String actor = assertionToActor(context);
-        Boolean currentvalue = getMessageTargetContext(AssertionUtils.getTargetName(context)).seenSamlSecurity.get(actor);
-        return currentvalue != null && currentvalue;
+        Boolean currentValue = getMessageTargetContext(AssertionUtils.getTargetName(context)).seenSamlSecurity.get(actor);
+        return currentValue != null && currentValue;
     }
 
     private void setSeenSamlStatement(Assertion context, boolean value) {

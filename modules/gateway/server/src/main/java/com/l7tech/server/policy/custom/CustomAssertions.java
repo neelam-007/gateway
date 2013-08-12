@@ -90,7 +90,7 @@ class CustomAssertions {
      *
      * @return the registered descriptors
      */
-    static Set getAllDescriptors() {
+    static Set<CustomAssertionDescriptor> getAllDescriptors() {
         Set<CustomAssertionDescriptor> descriptors = new HashSet<>();
         for (CustomAssertionDescriptor cd : assertions.values()) {
             descriptors.add(cd);
@@ -101,7 +101,7 @@ class CustomAssertions {
     /**
      * @return the set of all descriptors
      */
-    static Set getDescriptors() {
+    static Set<CustomAssertionDescriptor> getDescriptors() {
         Set<CustomAssertionDescriptor> descriptors = new HashSet<>();
         descriptors.addAll(assertions.values());
         return descriptors;
@@ -111,7 +111,7 @@ class CustomAssertions {
     /**
      * @return the set of all assertions registered
      */
-    static Set getDescriptors( Category cat) {
+    static Set<CustomAssertionDescriptor> getDescriptors( Category cat) {
         Set<CustomAssertionDescriptor> descriptors = new HashSet<>();
         for (CustomAssertionDescriptor cd : assertions.values()) {
             if (cd.hasCategory(cat)) {
@@ -154,7 +154,7 @@ class CustomAssertions {
     /**
      * @return the set of all assertions registered
      */
-    static Set getAssertions() {
+    static Set<Class> getAssertions() {
         Set<Class> allAssertions = new HashSet<>();
         for (CustomAssertionDescriptor eh : assertions.values()) {
             allAssertions.add(eh.getAssertion());
@@ -165,7 +165,7 @@ class CustomAssertions {
     /**
      * @return the set of all assertions registered
      */
-    static Set getAssertions(Category cat) {
+    static Set<Class> getAssertions(Category cat) {
         Set<Class> allAssertions = new HashSet<>();
         for (CustomAssertionDescriptor eh : assertions.values()) {
             if (eh.hasCategory(cat)) {
