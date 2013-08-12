@@ -3,6 +3,7 @@ package com.l7tech.server.util;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.DbUpgradeUtil;
 import com.l7tech.util.FileUtils;
+import com.l7tech.util.Functions;
 import org.apache.derby.jdbc.EmbeddedDataSource40;
 import org.hibernate.SessionFactory;
 import org.junit.Assert;
@@ -116,6 +117,32 @@ public class DatabaseUpgradeTest {
                     "The upgraded database is missing column: %1$s for table " + tableName,
                     "For table " + tableName + " the new column and upgrade column have different values for a property. Column: %1$s property: %2$s", CollectionUtils.set("ORDINAL_POSITION"));
         }
+
+        // ***************************** Check table constraints ******************************************//
+        for (String tableName : newTablesInfo.keySet()) {
+            Set<Map<String, String>> newTableColumnsInfo = getResultSetInfo(newDatabaseMetadata.getImportedKeys(null, "APP", tableName));
+            Set<Map<String, String>> upgradedTableColumnsInfo = getResultSetInfo(upgradedDatabaseMetadata.getImportedKeys(null, "APP", tableName));
+
+
+            // ignore Ordinal position for now. We will not enforce column ordering for derby.
+            compareResultInfo(newTableColumnsInfo, upgradedTableColumnsInfo,
+                    "Table " + tableName + " has a different number of foreign key references.",
+                    "The upgraded database is missing foreign key reference on table " + tableName,
+                    CollectionUtils.set("PK_NAME", "FK_NAME"));
+        }
+
+        // ***************************** Check table index's ******************************************//
+        for (String tableName : newTablesInfo.keySet()) {
+            Set<Map<String, String>> newTableColumnsInfo = getResultSetInfo(newDatabaseMetadata.getIndexInfo(null, "APP", tableName, false, true));
+            Set<Map<String, String>> upgradedTableColumnsInfo = getResultSetInfo(upgradedDatabaseMetadata.getIndexInfo(null, "APP", tableName, false, true));
+
+
+            // ignore Ordinal position for now. We will not enforce column ordering for derby.
+            compareResultInfo(newTableColumnsInfo, upgradedTableColumnsInfo,
+                    "Table " + tableName + " has a different number of indexes.",
+                    "The upgraded database is missing index on table " + tableName,
+                    CollectionUtils.set("INDEX_NAME"));
+        }
     }
 
     private void compareResultInfo(Map<String, Map<String, String>> newInfo, Map<String, Map<String, String>> upgradedInfo, String differentSizesErrorMessage, String missingRowErrorMessage, String propertyValueMismatchErrorMessage) {
@@ -123,13 +150,13 @@ public class DatabaseUpgradeTest {
     }
 
     private void compareResultInfo(Map<String, Map<String, String>> newInfo, Map<String, Map<String, String>> upgradedInfo, String differentSizesErrorMessage, String missingRowErrorMessage, String propertyValueMismatchErrorMessage, Set<String> ignoreProperties) {
-        Assert.assertEquals(differentSizesErrorMessage, newInfo.size(), upgradedInfo.size());
+        Assert.assertEquals(differentSizesErrorMessage + "\nNew db items:      " + newInfo.toString() + "\nUpgraded db items: " + upgradedInfo.toString() + "\n", newInfo.size(), upgradedInfo.size());
 
         for (String rowName : newInfo.keySet()) {
             Map<String, String> newTableInfo = newInfo.get(rowName);
             Map<String, String> upgradedTableInfo = upgradedInfo.get(rowName);
 
-            Assert.assertNotNull(String.format(missingRowErrorMessage, rowName), upgradedTableInfo);
+            Assert.assertNotNull(String.format(missingRowErrorMessage, rowName) + "\nMissing Row: " + newTableInfo.toString(), upgradedTableInfo);
 
             for (String tableProperty : newTableInfo.keySet()) {
                 if (ignoreProperties.contains(tableProperty)) continue;
@@ -138,6 +165,30 @@ public class DatabaseUpgradeTest {
 
                 Assert.assertEquals(String.format(propertyValueMismatchErrorMessage, rowName, tableProperty), newTablePropertyValue, upgradedTablePropertyValue);
             }
+        }
+    }
+
+    private void compareResultInfo(Set<Map<String, String>> newInfo, Set<Map<String, String>> upgradedInfo, String differentSizesErrorMessage, String missingRowErrorMessage, final Set<String> ignoreProperties) {
+        Assert.assertEquals(differentSizesErrorMessage + "\nNew db items:      " + newInfo.toString() + "\nUpgraded db items: " + upgradedInfo.toString() + "\n", newInfo.size(), upgradedInfo.size());
+
+        for (final Map<String, String> newTableInfo : newInfo) {
+
+            boolean containsRow = Functions.exists(upgradedInfo, new Functions.Unary<Boolean, Map<String, String>>() {
+                @Override
+                public Boolean call(Map<String, String> upgradedTableInfo) {
+                    for (String tableProperty : newTableInfo.keySet()) {
+                        if (ignoreProperties.contains(tableProperty)) continue;
+                        String newTablePropertyValue = newTableInfo.get(tableProperty);
+                        String upgradedTablePropertyValue = upgradedTableInfo.get(tableProperty);
+
+                        if ((newTablePropertyValue != null && !newTablePropertyValue.equals(upgradedTablePropertyValue)) || (newTablePropertyValue == null && upgradedTablePropertyValue != null))
+                            return false;
+                    }
+                    return true;
+                }
+            });
+
+            Assert.assertTrue(String.format(missingRowErrorMessage) + "\nMissing Row: " + newTableInfo.toString(), containsRow);
         }
     }
 
@@ -152,8 +203,26 @@ public class DatabaseUpgradeTest {
             for (int i = 1; i < resultSet.getMetaData().getColumnCount() + 1; i++) {
                 rowMap.put(columnList.get(i - 1), resultSet.getString(i));
             }
-            resultSetInfoMap.put(resultSet.getString(idColumn), rowMap);
+            final String key = resultSet.getString(idColumn);
+            Assert.assertNotNull("The row key cannot be null.", key);
+            resultSetInfoMap.put(key, rowMap);
         }
         return resultSetInfoMap;
+    }
+
+    private Set<Map<String, String>> getResultSetInfo(ResultSet resultSet) throws SQLException {
+        HashSet<Map<String, String>> resultSetInfoSet = new HashSet<>();
+        ArrayList<String> columnList = new ArrayList<>();
+        for (int i = 1; i < resultSet.getMetaData().getColumnCount() + 1; i++) {
+            columnList.add(resultSet.getMetaData().getColumnName(i));
+        }
+        while (resultSet.next()) {
+            HashMap<String, String> rowMap = new HashMap<>();
+            for (int i = 1; i < resultSet.getMetaData().getColumnCount() + 1; i++) {
+                rowMap.put(columnList.get(i - 1), resultSet.getString(i));
+            }
+            resultSetInfoSet.add(rowMap);
+        }
+        return resultSetInfoSet;
     }
 }

@@ -340,6 +340,7 @@ update connector_property set connector_goid = toGoid(cast(getVariable('connecto
 ALTER TABLE connector_property ALTER COLUMN connector_goid NOT NULL;
 ALTER TABLE connector_property DROP COLUMN connector_oid;
 ALTER TABLE connector_property add constraint FK7EC2A187BA66EE5C foreign key (connector_goid) references connector on delete cascade;
+ALTER TABLE connector_property ADD PRIMARY KEY (connector_goid, name);
 
 update rbac_role set entity_goid = toGoid(cast(getVariable('connector_prefix') as bigint),entity_oid) where entity_oid is not null and entity_type='SSG_CONNECTOR';
 update rbac_predicate_oid oid1 set oid1.entity_id = ifnull((select goidToString(toGoid(cast(getVariable('connector_prefix') as bigint),cast(oid1.entity_id as bigint))) from rbac_predicate left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid where rbac_predicate.objectid = oid1.objectid and rbac_permission.entity_type = 'SSG_CONNECTOR'), oid1.entity_id);
@@ -472,6 +473,7 @@ update active_connector_property set connector_goid = toGoid(cast(getVariable('a
 ALTER TABLE active_connector_property ALTER COLUMN connector_goid NOT NULL;
 ALTER TABLE active_connector_property DROP COLUMN connector_oid;
 ALTER TABLE active_connector_property add constraint FK58920F603AEA90B6 foreign key (connector_goid) references active_connector on delete cascade;
+ALTER TABLE active_connector_property ADD PRIMARY KEY (connector_goid, name);
 
 update rbac_role set entity_goid = toGoid(cast(getVariable('active_connector_prefix') as bigint),entity_oid) where entity_oid is not null and entity_type='SSG_ACTIVE_CONNECTOR';
 update rbac_predicate_oid oid1 set oid1.entity_id = ifnull((select goidToString(toGoid(cast(getVariable('active_connector_prefix') as bigint),cast(oid1.entity_id as bigint))) from rbac_predicate left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid where rbac_predicate.objectid = oid1.objectid and rbac_permission.entity_type = 'SSG_ACTIVE_CONNECTOR'), oid1.entity_id);
@@ -504,7 +506,7 @@ ALTER TABLE trusted_esm ADD COLUMN trusted_cert_goid CHAR(16) FOR BIT DATA;
 update trusted_esm set trusted_cert_goid = toGoid(cast(getVariable('trusted_cert_prefix') as bigint), trusted_cert_oid);
 ALTER TABLE trusted_esm ALTER COLUMN trusted_cert_goid NOT NULL;
 ALTER TABLE trusted_esm DROP COLUMN trusted_cert_oid;
-ALTER TABLE trusted_esm add constraint FK_trusted_esm_trusted_cert foreign key (trusted_cert_goid) references trusted_cert on delete cascade;
+ALTER TABLE trusted_esm add constraint FK_trusted_esm_trusted_cert foreign key (trusted_cert_goid) references trusted_cert;
 
 update rbac_role set entity_goid = toGoid(cast(getVariable('trusted_cert_prefix') as bigint),entity_oid) where entity_oid is not null and entity_type='TRUSTED_CERT';
 update rbac_predicate_oid oid1 set oid1.entity_id = ifnull((select goidToString(toGoid(cast(getVariable('trusted_cert_prefix') as bigint),cast(oid1.entity_id as bigint))) from rbac_predicate left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid where rbac_predicate.objectid = oid1.objectid and rbac_permission.entity_type = 'TRUSTED_CERT'), oid1.entity_id);
@@ -525,7 +527,7 @@ ALTER TABLE revocation_check_policy DROP COLUMN old_objectid;
 ALTER TABLE trusted_cert ADD COLUMN revocation_check_policy_goid CHAR(16) FOR BIT DATA;
 update trusted_cert set revocation_check_policy_goid = toGoid(cast(getVariable('revocation_check_policy_prefix') as bigint), revocation_policy_oid);
 ALTER TABLE trusted_cert DROP COLUMN revocation_policy_oid;
-ALTER TABLE trusted_cert add constraint FK_trusted_cert_revocation_check_policy foreign key (revocation_check_policy_goid) references revocation_check_policy on delete cascade;
+ALTER TABLE trusted_cert add constraint FK_trusted_cert_revocation_check_policy foreign key (revocation_check_policy_goid) references revocation_check_policy;
 
 update rbac_role set entity_goid = toGoid(cast(getVariable('revocation_check_policy_prefix') as bigint),entity_oid) where entity_oid is not null and entity_type='REVOCATION_CHECK_POLICY';
 update rbac_predicate_oid oid1 set oid1.entity_id = ifnull((select goidToString(toGoid(cast(getVariable('revocation_check_policy_prefix') as bigint),cast(oid1.entity_id as bigint))) from rbac_predicate left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid where rbac_predicate.objectid = oid1.objectid and rbac_permission.entity_type = 'REVOCATION_CHECK_POLICY'), oid1.entity_id);
@@ -576,7 +578,7 @@ ALTER TABLE policy_alias ADD COLUMN folder_goid CHAR(16) FOR BIT DATA;
 update policy_alias set folder_goid = toGoid(cast(getVariable('folder_prefix') as bigint), folder_oid);
 update policy_alias set folder_goid = toGoid(0, -5002) where folder_goid = toGoid(cast(getVariable('folder_prefix') as bigint), -5002);
 ALTER TABLE policy_alias DROP COLUMN folder_oid;
-ALTER TABLE policy_alias add constraint FKA07B7103DB935A63 foreign key (folder_goid) references folder;
+ALTER TABLE policy_alias add constraint FKA07B7103DB935A63 foreign key (folder_goid) references folder on delete cascade;
 
 ALTER TABLE policy_alias ADD COLUMN policy_goid CHAR(16) FOR BIT DATA;
 update policy_alias set policy_goid = toGoid(cast(getVariable('policy_prefix') as bigint), policy_oid);
@@ -631,7 +633,7 @@ ALTER TABLE published_service_alias ADD COLUMN folder_goid CHAR(16) FOR BIT DATA
 update published_service_alias set folder_goid = toGoid(cast(getVariable('folder_prefix') as bigint), folder_oid);
 update published_service_alias set folder_goid = toGoid(0, -5002) where folder_goid = toGoid(cast(getVariable('folder_prefix') as bigint), -5002);
 ALTER TABLE published_service_alias DROP COLUMN folder_oid;
-ALTER TABLE published_service_alias add constraint FK6AE79FB5DB935A63 foreign key (folder_goid) references folder;
+ALTER TABLE published_service_alias add constraint FK6AE79FB5DB935A63 foreign key (folder_goid) references folder on delete cascade;
 
 ALTER TABLE published_service_alias ADD COLUMN published_service_goid CHAR(16) FOR BIT DATA;
 update published_service_alias set published_service_goid = toGoid(cast(getVariable('published_service_prefix') as bigint), published_service_oid);
@@ -652,6 +654,7 @@ ALTER TABLE rbac_predicate_folder ADD COLUMN folder_goid CHAR(16) FOR BIT DATA;
 update rbac_predicate_folder set folder_goid = toGoid(cast(getVariable('folder_prefix') as bigint), folder_oid);
 update rbac_predicate_folder set folder_goid = toGoid(0, -5002) where folder_goid = toGoid(cast(getVariable('folder_prefix') as bigint), -5002);
 ALTER TABLE rbac_predicate_folder ALTER COLUMN folder_goid NOT NULL;
+alter table rbac_predicate_folder add constraint FKF111A643DB935A63 foreign key (folder_goid) references folder on delete cascade;
 ALTER TABLE rbac_predicate_folder DROP COLUMN folder_oid;
 
 ALTER TABLE sample_messages ADD COLUMN published_service_goid CHAR(16) FOR BIT DATA;

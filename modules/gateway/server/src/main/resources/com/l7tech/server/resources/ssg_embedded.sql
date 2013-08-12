@@ -921,7 +921,7 @@ create table trusted_cert (
     subject_dn varchar(2048),
     thumbprint_sha1 varchar(64),
     name varchar(128) not null,
-    revocation_check_policy_goid CHAR(16) FOR BIT DATA,
+    revocation_check_policy_goid CHAR(16) FOR BIT DATA CONSTRAINT FK_trusted_cert_revocation_check_policy references revocation_check_policy (goid),
     revocation_type varchar(128) not null,
     trust_anchor smallint,
     trusted_as_saml_attesting_entity smallint default 0,
