@@ -210,7 +210,7 @@ public class HttpConfigurationPropertiesDialog extends JDialog {
                 doCancel();
             }
         } );
-        zoneControl.configure(HttpConfiguration.DEFAULT_GOID.equals(httpConfiguration.getGoid()) ? OperationType.CREATE : readOnly ? OperationType.READ : OperationType.UPDATE, httpConfiguration);
+        zoneControl.configure(httpConfiguration);
         pack();
         setMinimumSize( getMinimumSize() );
         getRootPane().setDefaultButton( cancelButton );

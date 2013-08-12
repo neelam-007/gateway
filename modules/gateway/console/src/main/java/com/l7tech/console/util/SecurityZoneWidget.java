@@ -3,9 +3,7 @@ package com.l7tech.console.util;
 import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
 import com.l7tech.gateway.common.security.rbac.OperationType;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.SecurityZone;
-import com.l7tech.objectmodel.ZoneableEntity;
+import com.l7tech.objectmodel.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -17,6 +15,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.ResourceBundle;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -97,8 +96,41 @@ public class SecurityZoneWidget extends JPanel {
     }
 
     /**
+     * Configure the widget for a specific ZoneableEntity. Configuration will determine which SecurityZones are avaialable to the user.
+     * <p/>
+     * The operation on the entity will be logically deduced by analyzing its GOID/oid and/or user permissions.
+     *
+     * @param entity the ZoneableEntity being operated on.
+     */
+    public void configure(@NotNull final ZoneableEntity entity) {
+        this.specificEntity = entity;
+        final EntityType entityType = EntityType.findTypeByEntity(entity.getClass());
+        OperationType operation = OperationType.READ;
+        if (entity instanceof GoidEntity) {
+            final GoidEntity goidEntity = (GoidEntity) entity;
+            if (GoidEntity.DEFAULT_GOID.equals(goidEntity.getGoid())) {
+                operation = OperationType.CREATE;
+            } else if (Registry.getDefault().getSecurityProvider().hasPermission(new AttemptedUpdate(entityType, entity))) {
+                operation = OperationType.UPDATE;
+            }
+        } else if (entity instanceof PersistentEntity) {
+            final PersistentEntity persistentEntity = (PersistentEntity) entity;
+            if (PersistentEntity.DEFAULT_OID == persistentEntity.getOid()) {
+                operation = OperationType.CREATE;
+            } else if (Registry.getDefault().getSecurityProvider().hasPermission(new AttemptedUpdate(entityType, entity))) {
+                operation = OperationType.UPDATE;
+            }
+        } else {
+            logger.log(Level.WARNING, "Can only determine operations for GoidEntity or PersistentEntity: " + entity);
+        }
+
+        configure(entityType, operation, entity.getSecurityZone());
+    }
+
+    /**
      * Reload the list of zones from the server.
      */
+
     public void reloadZones() {
         zoneLoadAttempted = true;
         final Object oldSelection = zonesComboBox.getSelectedItem();
