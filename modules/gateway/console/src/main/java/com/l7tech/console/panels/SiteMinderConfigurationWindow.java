@@ -316,14 +316,16 @@ public class SiteMinderConfigurationWindow extends JDialog {
                 configurationTableModel.fireTableDataChanged();
 
                 int currentRow = -1;
-                for (SiteMinderConfiguration config: configurationList){
-                    if (config.getName().equals(configuration.getName())){
-                        break;
+                if (configuration.getName() != null && configuration.getName().length() > 0) {
+                    for (SiteMinderConfiguration config: configurationList){
+                        currentRow ++;
+                        if (config.getName().equals(configuration.getName())){
+                            break;
+                        }
                     }
-                    currentRow ++;
-                }
 
-                configurationTable.getSelectionModel().setSelectionInterval(currentRow, currentRow);
+                    configurationTable.getSelectionModel().setSelectionInterval(currentRow, currentRow);
+                }
             }
         }) ;
     }
