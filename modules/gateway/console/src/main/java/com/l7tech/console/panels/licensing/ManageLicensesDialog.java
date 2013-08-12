@@ -140,6 +140,9 @@ public class ManageLicensesDialog extends JDialog {
         String licenseXml;
 
         try (InputStream is = getLicenseInputStream()) {
+            if (null == is) // user cancelled, or there was an error reading the file
+                return;
+
             licenseXml = XmlUtil.nodeToString(XmlUtil.parse(is));
         } catch (IOException e) {
             DialogDisplayer.showMessageDialog(ManageLicensesDialog.this,
@@ -372,6 +375,8 @@ public class ManageLicensesDialog extends JDialog {
     private InputStream getLicenseStreamFromFile() throws AccessControlException, IOException {
         JFileChooser fc = FileChooserUtil.createJFileChooser();
 
+        fc.setDialogTitle("Select license file to install");
+
         fc.setFileFilter(new FileFilter() {
             @Override
             public String getDescription() {
@@ -384,8 +389,6 @@ public class ManageLicensesDialog extends JDialog {
                 return f.isDirectory() || name.endsWith(".xml");
             }
         });
-
-        fc.setDialogTitle("Select license file to install");
 
         int result = fc.showOpenDialog(ManageLicensesDialog.this);
 
