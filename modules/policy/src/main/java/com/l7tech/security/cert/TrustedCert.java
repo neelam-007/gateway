@@ -7,6 +7,7 @@ import com.l7tech.objectmodel.ZoneableEntity;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.util.Functions;
 import org.hibernate.annotations.Proxy;
+import org.hibernate.annotations.Type;
 import org.jetbrains.annotations.Nullable;
 
 import javax.persistence.*;
@@ -286,6 +287,7 @@ public class TrustedCert extends X509Entity implements NamedEntity, Cloneable, Z
     }
 
     @Column(name="revocation_check_policy_goid")
+    @Type(type = "com.l7tech.server.util.GoidType")
     public Goid getRevocationCheckPolicyOid() {
         return revocationCheckPolicyOid;
     }
