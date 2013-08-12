@@ -244,8 +244,6 @@ public class SiteMinderRegisterConfigDialog extends JDialog {
             dispose();
         } catch (InterruptedException e) {
             // do nothing, user cancelled
-            dispose();
-
         } catch (InvocationTargetException e) {
             DialogDisplayer.showMessageDialog(this, MessageFormat.format(resources.getString("message.register.siteminder.config.failed"), e.getMessage()),
                     resources.getString("dialog.title.siteminder.configuration.register"),
