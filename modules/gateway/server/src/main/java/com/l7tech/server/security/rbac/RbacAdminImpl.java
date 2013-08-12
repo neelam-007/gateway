@@ -217,16 +217,16 @@ public class RbacAdminImpl implements RbacAdmin {
     }
 
     @Override
-    public long saveAssertionAccess(AssertionAccess assertionAccess) throws UpdateException {
+    public Goid saveAssertionAccess(AssertionAccess assertionAccess) throws UpdateException {
         String assname = assertionAccess.getName();
         if (assname == null)
             throw new IllegalArgumentException("AssertionAccess must have an assertion class name");
 
         try {
-            long oid = assertionAccess.getOid();
-            if (AssertionAccess.DEFAULT_OID == oid) {
+            Goid oid = assertionAccess.getGoid();
+            if (assertionAccess.isUnsaved()) {
                 oid = assertionAccessManager.save(assertionAccess);
-                assertionAccess.setOid(oid);
+                assertionAccess.setGoid(oid);
                 return oid;
             } else {
                 AssertionAccess existing = assertionAccessManager.findByPrimaryKey(oid);

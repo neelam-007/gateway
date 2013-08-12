@@ -94,11 +94,11 @@ CREATE TABLE rbac_predicate_security_zone (
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
 CREATE TABLE assertion_access (
-  objectid bigint(20) NOT NULL,
+  goid binary(16) NOT NULL,
   version int(11) NOT NULL,
   name varchar(255) NOT NULL,
   security_zone_goid BINARY(16),
-  PRIMARY KEY (objectid),
+  PRIMARY KEY (goid),
   UNIQUE KEY i_name (name),
   CONSTRAINT assertion_access_security_zone FOREIGN KEY (security_zone_goid) REFERENCES security_zone (goid) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;

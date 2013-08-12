@@ -1,8 +1,8 @@
 package com.l7tech.server.policy;
 
 import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityManager;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.GoidEntityManager;
 import com.l7tech.policy.AssertionAccess;
 import com.l7tech.policy.assertion.Assertion;
 import org.jetbrains.annotations.NotNull;
@@ -16,7 +16,7 @@ import java.util.Collection;
  * {@link com.l7tech.policy.AssertionRegistry}.  It is possible to add additional metadata (such as
  * security zones) that is persisted to the database.
  */
-public interface AssertionAccessManager extends EntityManager<AssertionAccess, EntityHeader> {
+public interface AssertionAccessManager extends GoidEntityManager<AssertionAccess, EntityHeader> {
     /**
      * Get all AssertionAccess instances, including one per registered assertion.
      * <p/>

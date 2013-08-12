@@ -169,5 +169,5 @@ public interface RbacAdmin {
      * @throws UpdateException
      */
     @Secured(types=EntityType.ASSERTION_ACCESS, stereotype=UPDATE)
-    long saveAssertionAccess(AssertionAccess assertionAccess) throws UpdateException;
+    Goid saveAssertionAccess(AssertionAccess assertionAccess) throws UpdateException;
 }

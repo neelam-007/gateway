@@ -6,7 +6,18 @@ import org.jetbrains.annotations.NotNull;
  * Reserved GOID ranges.
  */
 public enum GoidRange {
+    /**
+     * Represents a new, not-yet-saved entity.  Equivalent to GoidEntity.DEFAULT_GOID and
+     * analagous to the old PersistentEntity.DEFAULT_OID.
+     */
     DEFAULT(0, -1, 0, -1),
+
+    /**
+     * Represents a temporary GOID value to use for a wrapped OID.
+     * This is an OID that cannot be mapped to a (reserved or upgraded) GOID value.
+     * Such wrapped OID GOIDs should be used only for transitional purposes
+     * and must never be persisted as the GOID of some entity.
+     */
     WRAPPED_OID(3, Long.MIN_VALUE, 3, Long.MAX_VALUE),
     ;
 

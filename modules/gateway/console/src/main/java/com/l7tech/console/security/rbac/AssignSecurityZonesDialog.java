@@ -71,7 +71,7 @@ public class AssignSecurityZonesDialog extends JDialog {
     private Map<EntityType, List<SecurityZone>> entityTypes;
     private TableColumn pathColumn;
     // key = assertion access oid, value = class name
-    private Map<Long, String> assertionNames = new HashMap<>();
+    private Map<Goid, String> assertionNames = new HashMap<>();
 
     /**
      * @param owner       owner of this Dialog.
@@ -252,7 +252,7 @@ public class AssignSecurityZonesDialog extends JDialog {
                             // encapsulated assertions are handled by their config entity type
                             continue;
                         }
-                        assertionNames.put(header.getOid(), assertionClassName);
+                        assertionNames.put(header.getGoid(), assertionClassName);
                     }
                     headers.add(header);
                 }
@@ -275,7 +275,8 @@ public class AssignSecurityZonesDialog extends JDialog {
             if (header instanceof HasFolderGoid) {
                 path = entityNameResolver.getPath((HasFolderGoid) header);
             } else if (header.getType() == EntityType.ASSERTION_ACCESS) {
-                final Assertion assertion = assertionRegistry.findByClassName(assertionNames.get(header.getOid()));
+                final String assname = assertionNames.get(header.getGoid());
+                final Assertion assertion = assname == null ? null : assertionRegistry.findByClassName(assname);
                 if (assertion != null) {
                     path = entityNameResolver.getPaletteFolders(assertion);
                 }
@@ -301,13 +302,13 @@ public class AssignSecurityZonesDialog extends JDialog {
                     // bundle all CustomAssertions as one
                     continue;
                 }
-                long oid = assertionAccess.getOid();
-                if (oid == PersistentEntity.DEFAULT_OID) {
+                Goid goid = assertionAccess.getGoid();
+                if (assertionAccess.isUnsaved()) {
                     // this assertion access is not yet persisted
-                    // give it some negative dummy oid so that it won't be considered 'equal' to the other headers
-                    oid = --nonPersistedAssertions;
+                    // give it some wrapped dummy goid so that it won't be considered 'equal' to the other headers
+                    goid = new Goid(GoidRange.WRAPPED_OID.getFirstHi(), --nonPersistedAssertions);
                 }
-                final ZoneableEntityHeader assertionHeader = new ZoneableEntityHeader(oid, EntityType.ASSERTION_ACCESS, assertionAccess.getName(), null, assertionAccess.getVersion());
+                final ZoneableEntityHeader assertionHeader = new ZoneableEntityHeader(goid, EntityType.ASSERTION_ACCESS, assertionAccess.getName(), null, assertionAccess.getVersion());
                 assertionHeader.setSecurityZoneGoid(assertionAccess.getSecurityZone() == null ? null : assertionAccess.getSecurityZone().getGoid());
                 entities.add(assertionHeader);
             }
@@ -374,16 +375,16 @@ public class AssignSecurityZonesDialog extends JDialog {
                 try {
                     final RbacAdmin rbacAdmin = Registry.getDefault().getRbacAdmin();
                     for (final EntityHeader header : selectedEntities) {
-                        if (header.getOid() < 0) {
+                        if (GoidEntity.DEFAULT_GOID.equals(header.getGoid()) || GoidRange.WRAPPED_OID.isInRange(header.getGoid())) {
                             final int rowIndex = dataModel.getRowIndexForSelectableObject(header);
                             // save a new assertion access
-                            final String assertionClassName = assertionNames.get(header.getOid());
+                            final String assertionClassName = assertionNames.get(header.getGoid());
                             final AssertionAccess assertionAccess = new AssertionAccess(assertionClassName);
                             assertionAccess.setSecurityZone(selectedZone);
-                            final long savedOid = rbacAdmin.saveAssertionAccess(assertionAccess);
-                            assertionNames.remove(header.getOid());
-                            assertionNames.put(savedOid, assertionClassName);
-                            header.setOid(savedOid);
+                            final Goid savedGoid = rbacAdmin.saveAssertionAccess(assertionAccess);
+                            assertionNames.remove(header.getGoid());
+                            assertionNames.put(savedGoid, assertionClassName);
+                            header.setGoid(savedGoid);
                             setZoneOnHeader(selectedZone, header);
                             dataModel.fireTableRowsUpdated(rowIndex, rowIndex);
                         } else {

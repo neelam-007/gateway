@@ -282,7 +282,7 @@ public class RegistryStub extends Registry {
             }
 
             @Override
-            public long saveAssertionAccess(AssertionAccess assertionAccess) throws UpdateException {
+            public Goid saveAssertionAccess(AssertionAccess assertionAccess) throws UpdateException {
                 throw new UpdateException("not impl in stub");
             }
         };

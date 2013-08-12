@@ -764,11 +764,11 @@ create table rbac_role (
 );
 
 create table assertion_access (
-  objectid bigint not null,
+  goid CHAR(16) FOR BIT DATA not null,
   version integer,
   name varchar(255) not null unique,
   security_zone_goid CHAR(16) FOR BIT DATA references security_zone(goid) on delete set null,
-  primary key (objectid)
+  primary key (goid)
 );
 
 create table resolution_configuration (
