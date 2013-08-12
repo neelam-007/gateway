@@ -235,7 +235,7 @@ CREATE INDEX i_issuer_dn ON client_cert (issuer_dn(255));
 --
 CREATE TABLE keystore_key_metadata (
   objectid bigint(20) NOT NULL,
-  version int(11) NOT NULL,
+  version int(11) NOT NULL default 0,
   keystore_file_oid bigint(20) NOT NULL,
   alias varchar(255) NOT NULL,
   security_zone_goid BINARY(16),
@@ -277,7 +277,7 @@ INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_
 -- JdbcConnection
 ALTER TABLE jdbc_connection ADD COLUMN objectid_backup BIGINT(20);
 update jdbc_connection set objectid_backup=objectid;
-ALTER TABLE jdbc_connection CHANGE COLUMN objectid goid BINARY(16);
+ALTER TABLE jdbc_connection CHANGE COLUMN objectid goid BINARY(16) NOT NULL;
 -- For manual runs use: set @jdbc_prefix=createUnreservedPoorRandomPrefix();
 set @jdbc_prefix=#RANDOM_LONG_NOT_RESERVED#;
 update jdbc_connection set goid = toGoid(@jdbc_prefix,objectid_backup);
@@ -290,7 +290,7 @@ call dropForeignKey('service_metrics_details','service_metrics');
 
 ALTER TABLE service_metrics ADD COLUMN objectid_backup BIGINT(20);
 UPDATE service_metrics SET objectid_backup=objectid;
-ALTER TABLE service_metrics CHANGE COLUMN objectid goid BINARY(16);
+ALTER TABLE service_metrics CHANGE COLUMN objectid goid BINARY(16) NOT NULL;
 -- For manual runs use: set @metrics_prefix=createUnreservedPoorRandomPrefix();
 SET @metrics_prefix=#RANDOM_LONG_NOT_RESERVED#;
 UPDATE service_metrics SET goid = toGoid(@metrics_prefix,objectid_backup);
@@ -298,7 +298,7 @@ ALTER TABLE service_metrics DROP COLUMN objectid_backup;
 
 ALTER TABLE service_metrics_details ADD COLUMN service_metrics_oid_backup BIGINT(20);
 UPDATE service_metrics_details SET service_metrics_oid_backup=service_metrics_oid;
-ALTER TABLE service_metrics_details CHANGE COLUMN service_metrics_oid service_metrics_goid BINARY(16);
+ALTER TABLE service_metrics_details CHANGE COLUMN service_metrics_oid service_metrics_goid BINARY(16) NOT NULL;
 UPDATE service_metrics_details SET service_metrics_goid = toGoid(@metrics_prefix,service_metrics_oid_backup);
 ALTER TABLE service_metrics_details DROP COLUMN service_metrics_oid_backup;
 
@@ -310,7 +310,7 @@ update rbac_predicate_oid oid1 left join rbac_predicate on rbac_predicate.object
 -- Logon info
 ALTER TABLE logon_info ADD COLUMN objectid_backup BIGINT(20);
 update logon_info set objectid_backup=objectid;
-ALTER TABLE logon_info CHANGE COLUMN objectid goid BINARY(16);
+ALTER TABLE logon_info CHANGE COLUMN objectid goid BINARY(16) NOT NULL;
 -- For manual runs use: set @logonInfo_prefix=createUnreservedPoorRandomPrefix();
 SET @logonInfo_prefix=#RANDOM_LONG_NOT_RESERVED#;
 UPDATE logon_info SET goid = toGoid(@logonInfo_prefix,objectid_backup);
@@ -319,7 +319,7 @@ ALTER TABLE logon_info DROP COLUMN objectid_backup;
 -- SampleMessage
 ALTER TABLE sample_messages ADD COLUMN objectid_backup BIGINT(20);
 update sample_messages set objectid_backup=objectid;
-ALTER TABLE sample_messages CHANGE COLUMN objectid goid BINARY(16);
+ALTER TABLE sample_messages CHANGE COLUMN objectid goid BINARY(16) NOT NULL;
 -- For manual runs use: set @sample_messages_prefix=createUnreservedPoorRandomPrefix();
 set @sample_messages_prefix=#RANDOM_LONG_NOT_RESERVED#;
 update sample_messages set goid = toGoid(@sample_messages_prefix,objectid_backup);
@@ -331,7 +331,7 @@ update rbac_predicate_oid oid1 left join rbac_predicate on rbac_predicate.object
 -- ClusterProperty
 ALTER TABLE cluster_properties ADD COLUMN objectid_backup BIGINT(20);
 update cluster_properties set objectid_backup=objectid;
-ALTER TABLE cluster_properties CHANGE COLUMN objectid goid BINARY(16);
+ALTER TABLE cluster_properties CHANGE COLUMN objectid goid BINARY(16) NOT NULL;
 -- For manual runs use: set @cluster_properties_prefix=createUnreservedPoorRandomPrefix();
 set @cluster_properties_prefix=#RANDOM_LONG_NOT_RESERVED#;
 update cluster_properties set goid = toGoid(@cluster_properties_prefix,objectid_backup);
@@ -344,7 +344,7 @@ update rbac_predicate_oid oid1 left join rbac_predicate on rbac_predicate.object
 -- EmailListener
 ALTER TABLE email_listener ADD COLUMN objectid_backup BIGINT(20);
 UPDATE email_listener SET objectid_backup=objectid;
-ALTER TABLE email_listener CHANGE COLUMN objectid goid BINARY(16);
+ALTER TABLE email_listener CHANGE COLUMN objectid goid BINARY(16) NOT NULL;
 -- For manual runs use: set @email_prefix=createUnreservedPoorRandomPrefix();
 SET @email_prefix=#RANDOM_LONG_NOT_RESERVED#;
 UPDATE email_listener SET goid = toGoid(@email_prefix,objectid_backup);
@@ -352,13 +352,13 @@ ALTER TABLE email_listener DROP COLUMN objectid_backup;
 
 ALTER TABLE email_listener_state ADD COLUMN email_listener_id_backup BIGINT(20);
 UPDATE email_listener_state SET email_listener_id_backup=email_listener_id;
-ALTER TABLE email_listener_state CHANGE COLUMN email_listener_id email_listener_goid BINARY(16);
+ALTER TABLE email_listener_state CHANGE COLUMN email_listener_id email_listener_goid BINARY(16) NOT NULL;
 UPDATE email_listener_state SET email_listener_goid = toGoid(@email_prefix,email_listener_id_backup);
 ALTER TABLE email_listener_state DROP COLUMN email_listener_id_backup;
 
 ALTER TABLE email_listener_state ADD COLUMN objectid_backup BIGINT(20);
 UPDATE email_listener_state SET objectid_backup=objectid;
-ALTER TABLE email_listener_state CHANGE COLUMN objectid goid BINARY(16);
+ALTER TABLE email_listener_state CHANGE COLUMN objectid goid BINARY(16) NOT NULL;
 -- For manual runs use: set @emailState_prefix=createUnreservedPoorRandomPrefix();
 SET @emailState_prefix=#RANDOM_LONG_NOT_RESERVED#;
 UPDATE email_listener_state SET goid = toGoid(@emailState_prefix,objectid_backup);
@@ -370,7 +370,7 @@ update rbac_predicate_oid oid1 left join rbac_predicate on rbac_predicate.object
 -- GenericEntity
 ALTER TABLE generic_entity ADD COLUMN objectid_backup BIGINT(20);
 update generic_entity set objectid_backup=objectid;
-ALTER TABLE generic_entity CHANGE COLUMN objectid goid BINARY(16);
+ALTER TABLE generic_entity CHANGE COLUMN objectid goid BINARY(16) NOT NULL;
 -- For manual runs use: set @generic_entity_prefix=createUnreservedPoorRandomPrefix();
 set @generic_entity_prefix=#RANDOM_LONG_NOT_RESERVED#;
 update generic_entity set goid = toGoid(@generic_entity_prefix,objectid_backup);
@@ -384,7 +384,7 @@ call dropForeignKey('connector_property','connector');
 
 ALTER TABLE connector ADD COLUMN objectid_backup BIGINT(20);
 UPDATE connector SET objectid_backup=objectid;
-ALTER TABLE connector CHANGE COLUMN objectid goid binary(16);
+ALTER TABLE connector CHANGE COLUMN objectid goid binary(16) NOT NULL;
 -- For manual runs use: set @connector_prefix=createUnreservedPoorRandomPrefix();
 SET @connector_prefix=#RANDOM_LONG_NOT_RESERVED#;
 UPDATE connector SET goid = toGoid(@connector_prefix,objectid_backup);
@@ -392,7 +392,7 @@ ALTER TABLE connector DROP COLUMN objectid_backup;
 
 ALTER TABLE connector_property ADD COLUMN connector_oid_backup BIGINT(20);
 UPDATE connector_property SET connector_oid_backup=connector_oid;
-ALTER TABLE connector_property CHANGE COLUMN connector_oid connector_goid binary(16);
+ALTER TABLE connector_property CHANGE COLUMN connector_oid connector_goid binary(16) NOT NULL;
 UPDATE connector_property SET connector_goid = toGoid(@connector_prefix,connector_oid_backup);
 ALTER TABLE connector_property DROP COLUMN connector_oid_backup;
 ALTER TABLE connector_property ADD FOREIGN KEY (connector_goid) REFERENCES connector (goid) ON DELETE CASCADE;
@@ -406,7 +406,7 @@ call dropForeignKey('firewall_rule_property','firewall_rule');
 
 ALTER TABLE firewall_rule ADD COLUMN objectid_backup BIGINT(20);
 update firewall_rule set objectid_backup=objectid;
-ALTER TABLE firewall_rule CHANGE COLUMN objectid goid binary(16);
+ALTER TABLE firewall_rule CHANGE COLUMN objectid goid binary(16) NOT NULL;
 -- For manual runs use: set @firewall_prefix=createUnreservedPoorRandomPrefix();
 SET @firewall_prefix=#RANDOM_LONG_NOT_RESERVED#;
 update firewall_rule set goid = toGoid(@firewall_prefix,objectid_backup);
@@ -414,7 +414,7 @@ ALTER TABLE firewall_rule DROP COLUMN objectid_backup;
 
 ALTER TABLE firewall_rule_property ADD COLUMN firewall_rule_oid_backup BIGINT(20);
 UPDATE  firewall_rule_property SET firewall_rule_oid_backup = firewall_rule_oid;
-ALTER TABLE firewall_rule_property CHANGE COLUMN firewall_rule_oid firewall_rule_goid binary(16);
+ALTER TABLE firewall_rule_property CHANGE COLUMN firewall_rule_oid firewall_rule_goid binary(16) NOT NULL;
 UPDATE firewall_rule_property SET firewall_rule_goid = toGoid(@firewall_prefix,firewall_rule_oid_backup);
 ALTER TABLE firewall_rule_property DROP COLUMN firewall_rule_oid_backup;
 ALTER TABLE firewall_rule_property  ADD FOREIGN KEY (firewall_rule_goid) REFERENCES firewall_rule (goid) ON DELETE CASCADE;
@@ -430,7 +430,7 @@ call dropForeignKey('encapsulated_assertion_result','encapsulated_assertion');
 
 ALTER TABLE encapsulated_assertion ADD COLUMN objectid_backup BIGINT(20);
 update encapsulated_assertion set objectid_backup=objectid;
-ALTER TABLE encapsulated_assertion CHANGE COLUMN objectid goid binary(16);
+ALTER TABLE encapsulated_assertion CHANGE COLUMN objectid goid binary(16) NOT NULL;
 -- For manual runs use: set @encapsulated_assertion_prefix=createUnreservedPoorRandomPrefix();
 SET @encapsulated_assertion_prefix=#RANDOM_LONG_NOT_RESERVED#;
 update encapsulated_assertion set goid = toGoid(@encapsulated_assertion_prefix,objectid_backup);
@@ -438,14 +438,14 @@ ALTER TABLE encapsulated_assertion DROP COLUMN objectid_backup;
 
 ALTER TABLE encapsulated_assertion_property ADD COLUMN encapsulated_assertion_oid_backup BIGINT(20);
 UPDATE  encapsulated_assertion_property SET encapsulated_assertion_oid_backup = encapsulated_assertion_oid;
-ALTER TABLE encapsulated_assertion_property CHANGE COLUMN encapsulated_assertion_oid encapsulated_assertion_goid binary(16);
+ALTER TABLE encapsulated_assertion_property CHANGE COLUMN encapsulated_assertion_oid encapsulated_assertion_goid binary(16) NOT NULL;
 UPDATE encapsulated_assertion_property SET encapsulated_assertion_goid = toGoid(@encapsulated_assertion_prefix,encapsulated_assertion_oid_backup);
 ALTER TABLE encapsulated_assertion_property DROP COLUMN encapsulated_assertion_oid_backup;
 ALTER TABLE encapsulated_assertion_property  ADD FOREIGN KEY (encapsulated_assertion_goid) REFERENCES encapsulated_assertion (goid) ON DELETE CASCADE;
 
 ALTER TABLE encapsulated_assertion_argument ADD COLUMN objectid_backup BIGINT(20);
 update encapsulated_assertion_argument set objectid_backup=objectid;
-ALTER TABLE encapsulated_assertion_argument CHANGE COLUMN objectid goid binary(16);
+ALTER TABLE encapsulated_assertion_argument CHANGE COLUMN objectid goid binary(16) NOT NULL;
 -- For manual runs use: set @encapsulated_assertion_argument_prefix=createUnreservedPoorRandomPrefix();
 SET @encapsulated_assertion_argument_prefix=#RANDOM_LONG_NOT_RESERVED#;
 update encapsulated_assertion_argument set goid = toGoid(@encapsulated_assertion_argument_prefix,objectid_backup);
@@ -453,14 +453,14 @@ ALTER TABLE encapsulated_assertion_argument DROP COLUMN objectid_backup;
 
 ALTER TABLE encapsulated_assertion_argument ADD COLUMN encapsulated_assertion_oid_backup BIGINT(20);
 UPDATE  encapsulated_assertion_argument SET encapsulated_assertion_oid_backup = encapsulated_assertion_oid;
-ALTER TABLE encapsulated_assertion_argument CHANGE COLUMN encapsulated_assertion_oid encapsulated_assertion_goid binary(16);
+ALTER TABLE encapsulated_assertion_argument CHANGE COLUMN encapsulated_assertion_oid encapsulated_assertion_goid binary(16) NOT NULL;
 UPDATE encapsulated_assertion_argument SET encapsulated_assertion_goid = toGoid(@encapsulated_assertion_prefix,encapsulated_assertion_oid_backup);
 ALTER TABLE encapsulated_assertion_argument DROP COLUMN encapsulated_assertion_oid_backup;
 ALTER TABLE encapsulated_assertion_argument  ADD FOREIGN KEY (encapsulated_assertion_goid) REFERENCES encapsulated_assertion (goid) ON DELETE CASCADE;
 
 ALTER TABLE encapsulated_assertion_result ADD COLUMN objectid_backup BIGINT(20);
 update encapsulated_assertion_result set objectid_backup=objectid;
-ALTER TABLE encapsulated_assertion_result CHANGE COLUMN objectid goid binary(16);
+ALTER TABLE encapsulated_assertion_result CHANGE COLUMN objectid goid binary(16) NOT NULL;
 -- For manual runs use: set @encapsulated_assertion_result_prefix=createUnreservedPoorRandomPrefix();
 SET @encapsulated_assertion_result_prefix=#RANDOM_LONG_NOT_RESERVED#;
 update encapsulated_assertion_result set goid = toGoid(@encapsulated_assertion_result_prefix,objectid_backup);
@@ -468,7 +468,7 @@ ALTER TABLE encapsulated_assertion_result DROP COLUMN objectid_backup;
 
 ALTER TABLE encapsulated_assertion_result ADD COLUMN encapsulated_assertion_oid_backup BIGINT(20);
 UPDATE  encapsulated_assertion_result SET encapsulated_assertion_oid_backup = encapsulated_assertion_oid;
-ALTER TABLE encapsulated_assertion_result CHANGE COLUMN encapsulated_assertion_oid encapsulated_assertion_goid binary(16);
+ALTER TABLE encapsulated_assertion_result CHANGE COLUMN encapsulated_assertion_oid encapsulated_assertion_goid binary(16) NOT NULL;
 UPDATE encapsulated_assertion_result SET encapsulated_assertion_goid = toGoid(@encapsulated_assertion_prefix,encapsulated_assertion_oid_backup);
 ALTER TABLE encapsulated_assertion_result DROP COLUMN encapsulated_assertion_oid_backup;
 ALTER TABLE encapsulated_assertion_result  ADD FOREIGN KEY (encapsulated_assertion_goid) REFERENCES encapsulated_assertion (goid) ON DELETE CASCADE;
@@ -480,20 +480,20 @@ update rbac_predicate_oid oid1 left join rbac_predicate on rbac_predicate.object
 
 ALTER TABLE jms_endpoint ADD COLUMN old_objectid BIGINT(20);
 update jms_endpoint set old_objectid=objectid;
-ALTER TABLE jms_endpoint CHANGE COLUMN objectid goid binary(16);
+ALTER TABLE jms_endpoint CHANGE COLUMN objectid goid binary(16) NOT NULL;
 -- For manual runs use: set @jms_endpoint_prefix=createUnreservedPoorRandomPrefix();
 SET @jms_endpoint_prefix=#RANDOM_LONG_NOT_RESERVED#;
 update jms_endpoint set goid = toGoid(@jms_endpoint_prefix,old_objectid);
 
 ALTER TABLE jms_connection ADD COLUMN objectid_backup BIGINT(20);
 update jms_connection set objectid_backup=objectid;
-ALTER TABLE jms_connection CHANGE COLUMN objectid goid binary(16);
+ALTER TABLE jms_connection CHANGE COLUMN objectid goid binary(16) NOT NULL;
 -- For manual runs use: set @jms_connection_prefix=createUnreservedPoorRandomPrefix();
 SET @jms_connection_prefix=#RANDOM_LONG_NOT_RESERVED#;
 update jms_connection set goid = toGoid(@jms_connection_prefix,objectid_backup);
 ALTER TABLE jms_connection DROP COLUMN objectid_backup;
 
-ALTER TABLE jms_endpoint ADD COLUMN connection_goid binary(16);
+ALTER TABLE jms_endpoint ADD COLUMN connection_goid binary(16) NOT NULL;
 update jms_endpoint set connection_goid = toGoid(@jms_connection_prefix,connection_oid);
 ALTER TABLE jms_endpoint DROP COLUMN connection_oid;
 
@@ -507,7 +507,8 @@ update rbac_predicate_oid oid1 left join rbac_predicate on rbac_predicate.object
 
 ALTER TABLE http_configuration ADD COLUMN old_objectid BIGINT(20);
 update http_configuration set old_objectid=objectid;
-ALTER TABLE http_configuration CHANGE COLUMN objectid goid binary(16);
+-- need to add goid as primary key, in 7.1.0 does not have object id set as the primary key
+ALTER TABLE http_configuration CHANGE COLUMN objectid goid binary(16) NOT NULL PRIMARY KEY ;
 -- For manual runs use: set @http_configuration_prefix=createUnreservedPoorRandomPrefix();
 SET @http_configuration_prefix=#RANDOM_LONG_NOT_RESERVED#;
 update http_configuration set goid = toGoid(@http_configuration_prefix,old_objectid);
@@ -521,14 +522,14 @@ call dropForeignKey('active_connector_property','active_connector');
 
 ALTER TABLE active_connector ADD COLUMN old_objectid BIGINT(20);
 update active_connector set old_objectid=objectid;
-ALTER TABLE active_connector CHANGE COLUMN objectid goid binary(16);
+ALTER TABLE active_connector CHANGE COLUMN objectid goid binary(16) NOT NULL;
 -- For manual runs use: set @active_connector_prefix=createUnreservedPoorRandomPrefix();
 SET @active_connector_prefix=#RANDOM_LONG_NOT_RESERVED#;
 update active_connector set goid = toGoid(@active_connector_prefix,old_objectid);
 
 ALTER TABLE active_connector_property ADD COLUMN connector_oid_backup BIGINT(20);
 UPDATE  active_connector_property SET connector_oid_backup = connector_oid;
-ALTER TABLE active_connector_property CHANGE COLUMN connector_oid connector_goid binary(16);
+ALTER TABLE active_connector_property CHANGE COLUMN connector_oid connector_goid binary(16) NOT NULL;
 UPDATE active_connector_property SET connector_goid = toGoid(@active_connector_prefix,connector_oid_backup);
 ALTER TABLE active_connector_property DROP COLUMN connector_oid_backup;
 ALTER TABLE active_connector_property  ADD FOREIGN KEY (connector_goid) REFERENCES active_connector (goid) ON DELETE CASCADE;
@@ -540,7 +541,7 @@ update rbac_predicate_oid oid1 left join rbac_predicate on rbac_predicate.object
 
 ALTER TABLE client_cert ADD COLUMN old_objectid BIGINT(20);
 update client_cert set old_objectid=objectid;
-ALTER TABLE client_cert CHANGE COLUMN objectid goid binary(16);
+ALTER TABLE client_cert CHANGE COLUMN objectid goid binary(16) NOT NULL;
 -- For manual runs use: set @client_cert_prefix=createUnreservedPoorRandomPrefix();
 SET @client_cert_prefix=#RANDOM_LONG_NOT_RESERVED#;
 update client_cert set goid = toGoid(@client_cert_prefix,old_objectid);
@@ -552,7 +553,7 @@ call dropForeignKey('trusted_esm', 'trusted_cert');
 
 ALTER TABLE trusted_cert ADD COLUMN old_objectid BIGINT(20);
 update trusted_cert set old_objectid=objectid;
-ALTER TABLE trusted_cert CHANGE COLUMN objectid goid binary(16);
+ALTER TABLE trusted_cert CHANGE COLUMN objectid goid binary(16) NOT NULL;
 -- For manual runs use: set @trusted_cert_prefix=createUnreservedPoorRandomPrefix();
 SET @trusted_cert_prefix=#RANDOM_LONG_NOT_RESERVED#;
 update trusted_cert set goid = toGoid(@trusted_cert_prefix,old_objectid);
@@ -560,7 +561,7 @@ ALTER TABLE trusted_cert DROP COLUMN old_objectid;
 
 ALTER TABLE trusted_esm ADD COLUMN trusted_cert_oid_backup BIGINT(20);
 UPDATE  trusted_esm SET trusted_cert_oid_backup = trusted_cert_oid;
-ALTER TABLE trusted_esm CHANGE COLUMN trusted_cert_oid trusted_cert_goid binary(16);
+ALTER TABLE trusted_esm CHANGE COLUMN trusted_cert_oid trusted_cert_goid binary(16) NOT NULL;
 UPDATE trusted_esm SET trusted_cert_goid = toGoid(@trusted_cert_prefix,trusted_cert_oid_backup);
 ALTER TABLE trusted_esm DROP COLUMN trusted_cert_oid_backup;
 ALTER TABLE trusted_esm ADD FOREIGN KEY (trusted_cert_goid) REFERENCES trusted_cert (goid);
@@ -574,7 +575,7 @@ call dropForeignKey('trusted_cert', 'revocation_check_policy');
 
 ALTER TABLE revocation_check_policy ADD COLUMN old_objectid BIGINT(20);
 update revocation_check_policy set old_objectid=objectid;
-ALTER TABLE revocation_check_policy CHANGE COLUMN objectid goid binary(16);
+ALTER TABLE revocation_check_policy CHANGE COLUMN objectid goid binary(16) NOT NULL;
 -- For manual runs use: set @revocation_check_policy_prefix=createUnreservedPoorRandomPrefix();
 SET @revocation_check_policy_prefix=#RANDOM_LONG_NOT_RESERVED#;
 update revocation_check_policy set goid = toGoid(@revocation_check_policy_prefix,old_objectid);
@@ -602,7 +603,7 @@ call dropForeignKey('rbac_predicate_folder','folder');
 ALTER TABLE folder ADD COLUMN objectid_backup BIGINT(20);
 update folder set objectid_backup=objectid;
 DROP INDEX i_name_parent ON folder;
-ALTER TABLE folder CHANGE COLUMN objectid goid binary(16);
+ALTER TABLE folder CHANGE COLUMN objectid goid binary(16) NOT NULL;
 -- For manual runs use: set @folder_prefix=createUnreservedPoorRandomPrefix();
 SET @folder_prefix=#RANDOM_LONG_NOT_RESERVED#;
 update folder set goid = toGoid(@folder_prefix,objectid_backup);
@@ -628,7 +629,7 @@ call dropForeignKey('encapsulated_assertion','policy');
 
 ALTER TABLE policy ADD COLUMN objectid_backup BIGINT(20);
 update policy set objectid_backup=objectid;
-ALTER TABLE policy CHANGE COLUMN objectid goid binary(16);
+ALTER TABLE policy CHANGE COLUMN objectid goid binary(16) NOT NULL;
 -- For manual runs use: set @policy_prefix=createUnreservedPoorRandomPrefix();
 SET @policy_prefix=#RANDOM_LONG_NOT_RESERVED#;
 update policy set goid = toGoid(@policy_prefix,objectid_backup);
@@ -646,7 +647,7 @@ update rbac_predicate_oid oid1 left join rbac_predicate on rbac_predicate.object
 
 ALTER TABLE policy_alias ADD COLUMN objectid_backup BIGINT(20);
 update policy_alias set objectid_backup=objectid;
-ALTER TABLE policy_alias CHANGE COLUMN objectid goid binary(16);
+ALTER TABLE policy_alias CHANGE COLUMN objectid goid binary(16) NOT NULL;
 -- For manual runs use: set @policy_alias_prefix=createUnreservedPoorRandomPrefix();
 SET @policy_alias_prefix=#RANDOM_LONG_NOT_RESERVED#;
 update policy_alias set goid = toGoid(@policy_alias_prefix,objectid_backup);
@@ -654,13 +655,13 @@ ALTER TABLE policy_alias DROP COLUMN objectid_backup;
 
 ALTER TABLE policy_alias ADD COLUMN policy_oid_backup BIGINT(20);
 update policy_alias set policy_oid_backup=policy_oid;
-ALTER TABLE policy_alias CHANGE COLUMN policy_oid policy_goid binary(16);
+ALTER TABLE policy_alias CHANGE COLUMN policy_oid policy_goid binary(16) NOT NULL;
 update policy_alias set policy_goid = toGoid(@policy_prefix,policy_oid_backup);
 ALTER TABLE policy_alias DROP COLUMN policy_oid_backup;
 
 ALTER TABLE policy_alias ADD COLUMN folder_oid_backup BIGINT(20);
 update policy_alias set folder_oid_backup=folder_oid;
-ALTER TABLE policy_alias CHANGE COLUMN folder_oid folder_goid binary(16);
+ALTER TABLE policy_alias CHANGE COLUMN folder_oid folder_goid binary(16) NOT NULL;
 update policy_alias set folder_goid = toGoid(@folder_prefix,folder_oid_backup);
 update policy_alias set folder_goid = toGoid(0, -5002) where folder_goid = toGoid(@folder_prefix, -5002);
 ALTER TABLE policy_alias DROP COLUMN folder_oid_backup;
@@ -670,7 +671,7 @@ update rbac_predicate_oid oid1 left join rbac_predicate on rbac_predicate.object
 
 ALTER TABLE policy_version ADD COLUMN objectid_backup BIGINT(20);
 update policy_version set objectid_backup=objectid;
-ALTER TABLE policy_version CHANGE COLUMN objectid goid binary(16);
+ALTER TABLE policy_version CHANGE COLUMN objectid goid binary(16) NOT NULL;
 -- For manual runs use: set @policy_version_prefix=createUnreservedPoorRandomPrefix();
 SET @policy_version_prefix=#RANDOM_LONG_NOT_RESERVED#;
 update policy_version set goid = toGoid(@policy_version_prefix,objectid_backup);
@@ -678,7 +679,7 @@ ALTER TABLE policy_version DROP COLUMN objectid_backup;
 
 ALTER TABLE policy_version ADD COLUMN policy_oid_backup BIGINT(20);
 update policy_version set policy_oid_backup=policy_oid;
-ALTER TABLE policy_version CHANGE COLUMN policy_oid policy_goid binary(16);
+ALTER TABLE policy_version CHANGE COLUMN policy_oid policy_goid binary(16) NOT NULL;
 update policy_version set policy_goid = toGoid(@policy_prefix,policy_oid_backup);
 ALTER TABLE policy_version DROP COLUMN policy_oid_backup;
 
@@ -694,7 +695,7 @@ call dropForeignKey('uddi_service_control','published_service');
 
 ALTER TABLE published_service ADD COLUMN objectid_backup BIGINT(20);
 update published_service set objectid_backup=objectid;
-ALTER TABLE published_service CHANGE COLUMN objectid goid binary(16);
+ALTER TABLE published_service CHANGE COLUMN objectid goid binary(16) NOT NULL;
 -- For manual runs use: set @published_service_prefix=createUnreservedPoorRandomPrefix();
 SET @published_service_prefix=#RANDOM_LONG_NOT_RESERVED#;
 update published_service set goid = toGoid(@published_service_prefix,objectid_backup);
@@ -718,7 +719,7 @@ update rbac_predicate_oid oid1 left join rbac_predicate on rbac_predicate.object
 
 ALTER TABLE published_service_alias ADD COLUMN objectid_backup BIGINT(20);
 update published_service_alias set objectid_backup=objectid;
-ALTER TABLE published_service_alias CHANGE COLUMN objectid goid binary(16);
+ALTER TABLE published_service_alias CHANGE COLUMN objectid goid binary(16) NOT NULL;
 -- For manual runs use: set @published_service_alias_prefix=createUnreservedPoorRandomPrefix();
 SET @published_service_alias_prefix=#RANDOM_LONG_NOT_RESERVED#;
 update published_service_alias set goid = toGoid(@published_service_alias_prefix,objectid_backup);
@@ -726,14 +727,14 @@ ALTER TABLE published_service_alias DROP COLUMN objectid_backup;
 
 ALTER TABLE published_service_alias ADD COLUMN folder_oid_backup BIGINT(20);
 update published_service_alias set folder_oid_backup=folder_oid;
-ALTER TABLE published_service_alias CHANGE COLUMN folder_oid folder_goid binary(16);
+ALTER TABLE published_service_alias CHANGE COLUMN folder_oid folder_goid binary(16) NOT NULL;
 update published_service_alias set folder_goid = toGoid(@folder_prefix,folder_oid_backup);
 update published_service_alias set folder_goid = toGoid(0, -5002) where folder_goid = toGoid(@folder_prefix, -5002);
 ALTER TABLE published_service_alias DROP COLUMN folder_oid_backup;
 
 ALTER TABLE published_service_alias ADD COLUMN published_service_oid_backup BIGINT(20);
 update published_service_alias set published_service_oid_backup=published_service_oid;
-ALTER TABLE published_service_alias CHANGE COLUMN published_service_oid published_service_goid binary(16);
+ALTER TABLE published_service_alias CHANGE COLUMN published_service_oid published_service_goid binary(16) NOT NULL;
 update published_service_alias set published_service_goid = toGoid(@published_service_prefix,published_service_oid_backup);
 ALTER TABLE published_service_alias DROP COLUMN published_service_oid_backup;
 
@@ -754,7 +755,7 @@ ALTER TABLE active_connector DROP COLUMN hardwired_service_oid_backup;
 
 ALTER TABLE rbac_predicate_folder ADD COLUMN folder_oid_backup BIGINT(20);
 update rbac_predicate_folder set folder_oid_backup=folder_oid;
-ALTER TABLE rbac_predicate_folder CHANGE COLUMN folder_oid folder_goid binary(16);
+ALTER TABLE rbac_predicate_folder CHANGE COLUMN folder_oid folder_goid binary(16) NOT NULL;
 update rbac_predicate_folder set folder_goid = toGoid(@folder_prefix,folder_oid_backup);
 update rbac_predicate_folder set folder_goid = toGoid(0, -5002) where folder_goid = toGoid(@folder_prefix, -5002);
 ALTER TABLE rbac_predicate_folder DROP COLUMN folder_oid_backup;
@@ -767,7 +768,7 @@ ALTER TABLE sample_messages DROP COLUMN published_service_oid_backup;
 
 ALTER TABLE service_documents ADD COLUMN objectid_backup BIGINT(20);
 update service_documents set objectid_backup=objectid;
-ALTER TABLE service_documents CHANGE COLUMN objectid goid binary(16);
+ALTER TABLE service_documents CHANGE COLUMN objectid goid binary(16) NOT NULL;
 -- For manual runs use: set @published_service_alias_prefix=createUnreservedPoorRandomPrefix();
 SET @service_documents_prefix=#RANDOM_LONG_NOT_RESERVED#;
 update service_documents set goid = toGoid(@service_documents_prefix,objectid_backup);
@@ -778,19 +779,19 @@ update rbac_predicate_oid oid1 left join rbac_predicate on rbac_predicate.object
 
 ALTER TABLE service_documents ADD COLUMN service_oid_backup BIGINT(20);
 update service_documents set service_oid_backup=service_oid;
-ALTER TABLE service_documents CHANGE COLUMN service_oid service_goid binary(16);
+ALTER TABLE service_documents CHANGE COLUMN service_oid service_goid binary(16) NOT NULL;
 update service_documents set service_goid = toGoid(@published_service_prefix,service_oid_backup);
 ALTER TABLE service_documents DROP COLUMN service_oid_backup;
 
 ALTER TABLE service_metrics ADD COLUMN published_service_oid_backup BIGINT(20);
 update service_metrics set published_service_oid_backup=published_service_oid;
-ALTER TABLE service_metrics CHANGE COLUMN published_service_oid published_service_goid binary(16);
+ALTER TABLE service_metrics CHANGE COLUMN published_service_oid published_service_goid binary(16) NOT NULL;
 update service_metrics set published_service_goid = toGoid(@published_service_prefix,published_service_oid_backup);
 ALTER TABLE service_metrics DROP COLUMN published_service_oid_backup;
 
 ALTER TABLE service_usage ADD COLUMN serviceid_backup BIGINT(20);
 update service_usage set serviceid_backup=serviceid;
-ALTER TABLE service_usage CHANGE COLUMN serviceid serviceid binary(16);
+ALTER TABLE service_usage CHANGE COLUMN serviceid serviceid binary(16) NOT NULL;
 update service_usage set serviceid = toGoid(@published_service_prefix,serviceid_backup);
 ALTER TABLE service_usage DROP COLUMN serviceid_backup;
 
@@ -799,37 +800,37 @@ update rbac_predicate_oid oid1 left join rbac_predicate on rbac_predicate.object
 
 ALTER TABLE uddi_business_service_status ADD COLUMN published_service_oid_backup BIGINT(20);
 update uddi_business_service_status set published_service_oid_backup=published_service_oid;
-ALTER TABLE uddi_business_service_status CHANGE COLUMN published_service_oid published_service_goid binary(16);
+ALTER TABLE uddi_business_service_status CHANGE COLUMN published_service_oid published_service_goid binary(16) NOT NULL;
 update uddi_business_service_status set published_service_goid = toGoid(@published_service_prefix,published_service_oid_backup);
 ALTER TABLE uddi_business_service_status DROP COLUMN published_service_oid_backup;
 
 ALTER TABLE uddi_proxied_service_info ADD COLUMN published_service_oid_backup BIGINT(20);
 update uddi_proxied_service_info set published_service_oid_backup=published_service_oid;
-ALTER TABLE uddi_proxied_service_info CHANGE COLUMN published_service_oid published_service_goid binary(16);
+ALTER TABLE uddi_proxied_service_info CHANGE COLUMN published_service_oid published_service_goid binary(16) NOT NULL;
 update uddi_proxied_service_info set published_service_goid = toGoid(@published_service_prefix,published_service_oid_backup);
 ALTER TABLE uddi_proxied_service_info DROP COLUMN published_service_oid_backup;
 
 ALTER TABLE uddi_service_control ADD COLUMN published_service_oid_backup BIGINT(20);
 update uddi_service_control set published_service_oid_backup=published_service_oid;
-ALTER TABLE uddi_service_control CHANGE COLUMN published_service_oid published_service_goid binary(16);
+ALTER TABLE uddi_service_control CHANGE COLUMN published_service_oid published_service_goid binary(16) NOT NULL;
 update uddi_service_control set published_service_goid = toGoid(@published_service_prefix,published_service_oid_backup);
 ALTER TABLE uddi_service_control DROP COLUMN published_service_oid_backup;
 
 ALTER TABLE wsdm_subscription ADD COLUMN published_service_oid_backup BIGINT(20);
 update wsdm_subscription set published_service_oid_backup=published_service_oid;
-ALTER TABLE wsdm_subscription CHANGE COLUMN published_service_oid published_service_goid binary(16);
+ALTER TABLE wsdm_subscription CHANGE COLUMN published_service_oid published_service_goid binary(16) NOT NULL;
 update wsdm_subscription set published_service_goid = toGoid(@published_service_prefix,published_service_oid_backup);
 ALTER TABLE wsdm_subscription DROP COLUMN published_service_oid_backup;
 
 ALTER TABLE wsdm_subscription ADD COLUMN esm_service_oid_backup BIGINT(20);
 update wsdm_subscription set esm_service_oid_backup=esm_service_oid;
-ALTER TABLE wsdm_subscription CHANGE COLUMN esm_service_oid esm_service_goid binary(16);
+ALTER TABLE wsdm_subscription CHANGE COLUMN esm_service_oid esm_service_goid binary(16) NOT NULL DEFAULT X'0000000000000000FFFFFFFFFFFFFFFF';
 update wsdm_subscription set esm_service_goid = toGoid(@published_service_prefix,esm_service_oid_backup);
 ALTER TABLE wsdm_subscription DROP COLUMN esm_service_oid_backup;
 
 ALTER TABLE encapsulated_assertion ADD COLUMN policy_oid_backup BIGINT(20);
 update encapsulated_assertion set policy_oid_backup=policy_oid;
-ALTER TABLE encapsulated_assertion CHANGE COLUMN policy_oid policy_goid binary(16);
+ALTER TABLE encapsulated_assertion CHANGE COLUMN policy_oid policy_goid binary(16) NOT NULL;
 update encapsulated_assertion set policy_goid = toGoid(@policy_prefix,policy_oid_backup);
 ALTER TABLE encapsulated_assertion DROP COLUMN policy_oid_backup;
 
@@ -873,7 +874,7 @@ call dropForeignKey('uddi_service_control_monitor_runtime','uddi_service_control
 
 ALTER TABLE uddi_registries ADD COLUMN objectid_backup BIGINT(20);
 update uddi_registries set objectid_backup=objectid;
-ALTER TABLE uddi_registries CHANGE COLUMN objectid goid binary(16);
+ALTER TABLE uddi_registries CHANGE COLUMN objectid goid binary(16) NOT NULL;
 -- For manual runs use: set @uddi_registries_prefix=createUnreservedPoorRandomPrefix();
 SET @uddi_registries_prefix=#RANDOM_LONG_NOT_RESERVED#;
 update uddi_registries set goid = toGoid(@uddi_registries_prefix,objectid_backup);
@@ -885,7 +886,7 @@ update rbac_predicate_oid oid1 left join rbac_predicate on rbac_predicate.object
 
 ALTER TABLE uddi_registry_subscription ADD COLUMN objectid_backup BIGINT(20);
 update uddi_registry_subscription set objectid_backup=objectid;
-ALTER TABLE uddi_registry_subscription CHANGE COLUMN objectid goid binary(16);
+ALTER TABLE uddi_registry_subscription CHANGE COLUMN objectid goid binary(16) NOT NULL;
 -- For manual runs use: set @uddi_registry_subscription_prefix=createUnreservedPoorRandomPrefix();
 SET @uddi_registry_subscription_prefix=#RANDOM_LONG_NOT_RESERVED#;
 update uddi_registry_subscription set goid = toGoid(@uddi_registry_subscription_prefix,objectid_backup);
@@ -893,14 +894,14 @@ ALTER TABLE uddi_registry_subscription DROP COLUMN objectid_backup;
 
 ALTER TABLE uddi_registry_subscription ADD COLUMN uddi_registry_oid_backup BIGINT(20);
 update uddi_registry_subscription set uddi_registry_oid_backup=uddi_registry_oid;
-ALTER TABLE uddi_registry_subscription CHANGE COLUMN uddi_registry_oid uddi_registry_goid binary(16);
+ALTER TABLE uddi_registry_subscription CHANGE COLUMN uddi_registry_oid uddi_registry_goid binary(16) NOT NULL;
 update uddi_registry_subscription set uddi_registry_goid = toGoid(@uddi_registries_prefix,uddi_registry_oid_backup);
 ALTER TABLE uddi_registry_subscription DROP COLUMN uddi_registry_oid_backup;
 
 
 ALTER TABLE uddi_proxied_service_info ADD COLUMN objectid_backup BIGINT(20);
 update uddi_proxied_service_info set objectid_backup=objectid;
-ALTER TABLE uddi_proxied_service_info CHANGE COLUMN objectid goid binary(16);
+ALTER TABLE uddi_proxied_service_info CHANGE COLUMN objectid goid binary(16) NOT NULL;
 -- For manual runs use: set @uddi_proxied_service_info_prefix=createUnreservedPoorRandomPrefix();
 SET @uddi_proxied_service_info_prefix=#RANDOM_LONG_NOT_RESERVED#;
 update uddi_proxied_service_info set goid = toGoid(@uddi_proxied_service_info_prefix,objectid_backup);
@@ -908,7 +909,7 @@ ALTER TABLE uddi_proxied_service_info DROP COLUMN objectid_backup;
 
 ALTER TABLE uddi_proxied_service_info ADD COLUMN uddi_registry_oid_backup BIGINT(20);
 update uddi_proxied_service_info set uddi_registry_oid_backup=uddi_registry_oid;
-ALTER TABLE uddi_proxied_service_info CHANGE COLUMN uddi_registry_oid uddi_registry_goid binary(16);
+ALTER TABLE uddi_proxied_service_info CHANGE COLUMN uddi_registry_oid uddi_registry_goid binary(16) NOT NULL;
 update uddi_proxied_service_info set uddi_registry_goid = toGoid(@uddi_registries_prefix,uddi_registry_oid_backup);
 ALTER TABLE uddi_proxied_service_info DROP COLUMN uddi_registry_oid_backup;
 
@@ -918,7 +919,7 @@ update rbac_predicate_oid oid1 left join rbac_predicate on rbac_predicate.object
 
 ALTER TABLE uddi_proxied_service ADD COLUMN objectid_backup BIGINT(20);
 update uddi_proxied_service set objectid_backup=objectid;
-ALTER TABLE uddi_proxied_service CHANGE COLUMN objectid goid binary(16);
+ALTER TABLE uddi_proxied_service CHANGE COLUMN objectid goid binary(16) NOT NULL;
 -- For manual runs use: set @uddi_proxied_service_prefix=createUnreservedPoorRandomPrefix();
 SET @uddi_proxied_service_prefix=#RANDOM_LONG_NOT_RESERVED#;
 update uddi_proxied_service set goid = toGoid(@uddi_proxied_service_prefix,objectid_backup);
@@ -926,14 +927,14 @@ ALTER TABLE uddi_proxied_service DROP COLUMN objectid_backup;
 
 ALTER TABLE uddi_proxied_service ADD COLUMN uddi_proxied_service_info_oid_backup BIGINT(20);
 update uddi_proxied_service set uddi_proxied_service_info_oid_backup=uddi_proxied_service_info_oid;
-ALTER TABLE uddi_proxied_service CHANGE COLUMN uddi_proxied_service_info_oid uddi_proxied_service_info_goid binary(16);
+ALTER TABLE uddi_proxied_service CHANGE COLUMN uddi_proxied_service_info_oid uddi_proxied_service_info_goid binary(16) NOT NULL;
 update uddi_proxied_service set uddi_proxied_service_info_goid = toGoid(@uddi_proxied_service_info_prefix,uddi_proxied_service_info_oid_backup);
 ALTER TABLE uddi_proxied_service DROP COLUMN uddi_proxied_service_info_oid_backup;
 
 
 ALTER TABLE uddi_publish_status ADD COLUMN objectid_backup BIGINT(20);
 update uddi_publish_status set objectid_backup=objectid;
-ALTER TABLE uddi_publish_status CHANGE COLUMN objectid goid binary(16);
+ALTER TABLE uddi_publish_status CHANGE COLUMN objectid goid binary(16) NOT NULL;
 -- For manual runs use: set @uddi_publish_status_prefix=createUnreservedPoorRandomPrefix();
 SET @uddi_publish_status_prefix=#RANDOM_LONG_NOT_RESERVED#;
 update uddi_publish_status set goid = toGoid(@uddi_publish_status_prefix,objectid_backup);
@@ -941,14 +942,14 @@ ALTER TABLE uddi_publish_status DROP COLUMN objectid_backup;
 
 ALTER TABLE uddi_publish_status ADD COLUMN uddi_proxied_service_info_oid_backup BIGINT(20);
 update uddi_publish_status set uddi_proxied_service_info_oid_backup=uddi_proxied_service_info_oid;
-ALTER TABLE uddi_publish_status CHANGE COLUMN uddi_proxied_service_info_oid uddi_proxied_service_info_goid binary(16);
+ALTER TABLE uddi_publish_status CHANGE COLUMN uddi_proxied_service_info_oid uddi_proxied_service_info_goid binary(16) NOT NULL;
 update uddi_publish_status set uddi_proxied_service_info_goid = toGoid(@uddi_proxied_service_info_prefix,uddi_proxied_service_info_oid_backup);
 ALTER TABLE uddi_publish_status DROP COLUMN uddi_proxied_service_info_oid_backup;
 
 
 ALTER TABLE uddi_business_service_status ADD COLUMN objectid_backup BIGINT(20);
 update uddi_business_service_status set objectid_backup=objectid;
-ALTER TABLE uddi_business_service_status CHANGE COLUMN objectid goid binary(16);
+ALTER TABLE uddi_business_service_status CHANGE COLUMN objectid goid binary(16) NOT NULL;
 -- For manual runs use: set @uddi_business_service_status_prefix=createUnreservedPoorRandomPrefix();
 SET @uddi_business_service_status_prefix=#RANDOM_LONG_NOT_RESERVED#;
 update uddi_business_service_status set goid = toGoid(@uddi_business_service_status_prefix,objectid_backup);
@@ -956,14 +957,14 @@ ALTER TABLE uddi_business_service_status DROP COLUMN objectid_backup;
 
 ALTER TABLE uddi_business_service_status ADD COLUMN uddi_registry_oid_backup BIGINT(20);
 update uddi_business_service_status set uddi_registry_oid_backup=uddi_registry_oid;
-ALTER TABLE uddi_business_service_status CHANGE COLUMN uddi_registry_oid uddi_registry_goid binary(16);
+ALTER TABLE uddi_business_service_status CHANGE COLUMN uddi_registry_oid uddi_registry_goid binary(16) NOT NULL;
 update uddi_business_service_status set uddi_registry_goid = toGoid(@uddi_registries_prefix,uddi_registry_oid_backup);
 ALTER TABLE uddi_business_service_status DROP COLUMN uddi_registry_oid_backup;
 
 
 ALTER TABLE uddi_service_control ADD COLUMN objectid_backup BIGINT(20);
 update uddi_service_control set objectid_backup=objectid;
-ALTER TABLE uddi_service_control CHANGE COLUMN objectid goid binary(16);
+ALTER TABLE uddi_service_control CHANGE COLUMN objectid goid binary(16) NOT NULL;
 -- For manual runs use: set @uddi_service_control_prefix=createUnreservedPoorRandomPrefix();
 SET @uddi_service_control_prefix=#RANDOM_LONG_NOT_RESERVED#;
 update uddi_service_control set goid = toGoid(@uddi_service_control_prefix,objectid_backup);
@@ -971,7 +972,7 @@ ALTER TABLE uddi_service_control DROP COLUMN objectid_backup;
 
 ALTER TABLE uddi_service_control ADD COLUMN uddi_registry_oid_backup BIGINT(20);
 update uddi_service_control set uddi_registry_oid_backup=uddi_registry_oid;
-ALTER TABLE uddi_service_control CHANGE COLUMN uddi_registry_oid uddi_registry_goid binary(16);
+ALTER TABLE uddi_service_control CHANGE COLUMN uddi_registry_oid uddi_registry_goid binary(16) NOT NULL;
 update uddi_service_control set uddi_registry_goid = toGoid(@uddi_registries_prefix,uddi_registry_oid_backup);
 ALTER TABLE uddi_service_control DROP COLUMN uddi_registry_oid_backup;
 
@@ -981,7 +982,7 @@ update rbac_predicate_oid oid1 left join rbac_predicate on rbac_predicate.object
 
 ALTER TABLE uddi_service_control_monitor_runtime ADD COLUMN objectid_backup BIGINT(20);
 update uddi_service_control_monitor_runtime set objectid_backup=objectid;
-ALTER TABLE uddi_service_control_monitor_runtime CHANGE COLUMN objectid goid binary(16);
+ALTER TABLE uddi_service_control_monitor_runtime CHANGE COLUMN objectid goid binary(16) NOT NULL;
 -- For manual runs use: set @uddi_service_control_monitor_runtime_prefix=createUnreservedPoorRandomPrefix();
 SET @uddi_service_control_monitor_runtime_prefix=#RANDOM_LONG_NOT_RESERVED#;
 update uddi_service_control_monitor_runtime set goid = toGoid(@uddi_service_control_monitor_runtime_prefix,objectid_backup);
@@ -989,7 +990,7 @@ ALTER TABLE uddi_service_control_monitor_runtime DROP COLUMN objectid_backup;
 
 ALTER TABLE uddi_service_control_monitor_runtime ADD COLUMN uddi_service_control_oid_backup BIGINT(20);
 update uddi_service_control_monitor_runtime set uddi_service_control_oid_backup=uddi_service_control_oid;
-ALTER TABLE uddi_service_control_monitor_runtime CHANGE COLUMN uddi_service_control_oid uddi_service_control_goid binary(16);
+ALTER TABLE uddi_service_control_monitor_runtime CHANGE COLUMN uddi_service_control_oid uddi_service_control_goid binary(16) NOT NULL;
 update uddi_service_control_monitor_runtime set uddi_service_control_goid = toGoid(@uddi_service_control_prefix,uddi_service_control_oid_backup);
 ALTER TABLE uddi_service_control_monitor_runtime DROP COLUMN uddi_service_control_oid_backup;
 

@@ -1,105 +1,37 @@
-package com.l7tech.server.util;
+package com.l7tech.util.db;
 
 import com.l7tech.util.CollectionUtils;
-import com.l7tech.util.DbUpgradeUtil;
-import com.l7tech.util.FileUtils;
 import com.l7tech.util.Functions;
-import org.apache.derby.jdbc.EmbeddedDataSource40;
-import org.hibernate.SessionFactory;
+import com.l7tech.util.Pair;
 import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
-import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 
-import java.io.File;
-import java.io.IOException;
-import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * This test will compare a freshly created database to one that has been created using the upgrade scripts from an old
- * version.
+ * This was created: 8/12/13 as 1:26 PM
  *
  * @author Victor Kazakov
  */
-@RunWith(MockitoJUnitRunner.class)
-public class DatabaseUpgradeTest {
-    private static final String DB_FOLDER = "_dbtest";
-    private static final String NEW_DATABASE_NAME = DB_FOLDER + "/ssg_new_db_test";
-    private static final String UPGRADED_DATABASE_NAME = DB_FOLDER + "/ssg_upgraded_db_test";
-    //This will need to be upgraded for every
-    private String softwareVersion = "";
+public class DbCompareTestUtils {
 
-    private EmbeddedDataSource40 newDBDataSource;
-    private EmbeddedDataSource40 upgradeDBDataSource;
-
-    @Mock
-    private SessionFactory sessionFactory;
-
-    @Before
-    public void before() throws IOException, SQLException {
-        File fileDbFolder = new File(DB_FOLDER);
-        FileUtils.deleteDir(fileDbFolder);
-
-        newDBDataSource = new EmbeddedDataSource40();
-        newDBDataSource.setDatabaseName(NEW_DATABASE_NAME);
-        newDBDataSource.setCreateDatabase("create");
-
-        //The new freshly created database
-        Resource[] resources = new PathMatchingResourcePatternResolver().getResources("com/l7tech/server/resources/ssg_embedded.sql");
-        DerbyDbHelper.runScripts(newDBDataSource.getConnection(), resources, false);
-
-        // Gets the version of the new database;
-        Connection newDBConnection = newDBDataSource.getConnection();
-        softwareVersion = DbUpgradeUtil.checkVersionFromDatabaseVersion(newDBConnection);
-        newDBConnection.close();
-
-        upgradeDBDataSource = new EmbeddedDataSource40();
-        upgradeDBDataSource.setDatabaseName(UPGRADED_DATABASE_NAME);
-        upgradeDBDataSource.setCreateDatabase("create");
-
-        //create a database from the 7.1.0 sql script
-        resources = new PathMatchingResourcePatternResolver().getResources("com/l7tech/server/resources/ssg_embedded_7.1.0.sql");
-        DerbyDbHelper.runScripts(upgradeDBDataSource.getConnection(), resources, false);
-
-        final DataSourceTransactionManager transactionManager = new DataSourceTransactionManager(upgradeDBDataSource);
-        EmbeddedDbSchemaUpdater dbUpdater = new EmbeddedDbSchemaUpdater(transactionManager, "com/l7tech/server/resources/derby") {
-            @Override
-            String getProductVersion() {
-                return softwareVersion;
-            }
-        };
-        dbUpdater.setDataSource(upgradeDBDataSource);
-
-        //upgrade the 7.1.0 database to the latest version
-        dbUpdater.ensureCurrentSchema();
-    }
-
-    @Test
-    public void compareNewToUpgradedDatabase() throws SQLException {
-        DatabaseMetaData newDatabaseMetadata = newDBDataSource.getConnection().getMetaData();
-        DatabaseMetaData upgradedDatabaseMetadata = upgradeDBDataSource.getConnection().getMetaData();
+    public static void compareNewToUpgradedDatabase(DatabaseMetaData newDatabaseMetadata, DatabaseMetaData upgradedDatabaseMetadata) throws SQLException {
 
         // ******************************* Compare tables ********************************************* //
         Map<String, Map<String, String>> newTablesInfo = getResultSetInfo(newDatabaseMetadata.getTables(null, "APP", null, null), 3);
         Map<String, Map<String, String>> upgradedTablesInfo = getResultSetInfo(upgradedDatabaseMetadata.getTables(null, "APP", null, null), 3);
 
         // remove the goid_upgrade_map table as it will never be in a newly created schema.
+        upgradedTablesInfo.remove("goid_upgrade_map");
         upgradedTablesInfo.remove("goid_upgrade_map".toUpperCase());
-
 
         compareResultInfo(newTablesInfo, upgradedTablesInfo,
                 "The table sizes need to be equal.",
                 "The upgraded database is missing table: %1$s",
-                "The new table and upgrade table have different values for a property. Table: %1$s property: %2$s");
+                "The new table and upgrade table have different values for a property. Table: %1$s property: %2$s", CollectionUtils.set("TABLE_CAT"));
 
         // ******************************* Compare table Columns ********************************************* //
         for (String tableName : newTablesInfo.keySet()) {
@@ -108,14 +40,16 @@ public class DatabaseUpgradeTest {
 
             //Remove the old_objectId column for now.
             //TODO: remove this!
-            newTableColumnsInfo.remove("OLD_OBJECTID".toUpperCase());
-            upgradedTableColumnsInfo.remove("OLD_OBJECTID".toUpperCase());
+            newTableColumnsInfo.remove("old_objectid");
+            upgradedTableColumnsInfo.remove("old_objectid");
+            newTableColumnsInfo.remove("old_objectid".toUpperCase());
+            upgradedTableColumnsInfo.remove("old_objectid".toUpperCase());
 
             // ignore Ordinal position for now. We will not enforce column ordering for derby.
             compareResultInfo(newTableColumnsInfo, upgradedTableColumnsInfo,
                     "Table " + tableName + " has a different number of columns",
                     "The upgraded database is missing column: %1$s for table " + tableName,
-                    "For table " + tableName + " the new column and upgrade column have different values for a property. Column: %1$s property: %2$s", CollectionUtils.set("ORDINAL_POSITION"));
+                    "For table " + tableName + " the new column and upgrade column have different values for a property. Column: %1$s property: %2$s", CollectionUtils.set("TABLE_CAT", "ORDINAL_POSITION"));
         }
 
         // ***************************** Check table constraints ******************************************//
@@ -128,7 +62,7 @@ public class DatabaseUpgradeTest {
             compareResultInfo(newTableColumnsInfo, upgradedTableColumnsInfo,
                     "Table " + tableName + " has a different number of foreign key references.",
                     "The upgraded database is missing foreign key reference on table " + tableName,
-                    CollectionUtils.set("PK_NAME", "FK_NAME"));
+                    CollectionUtils.set("FKTABLE_CAT", "PKTABLE_CAT", "PK_NAME", "FK_NAME"));
         }
 
         // ***************************** Check table index's ******************************************//
@@ -141,16 +75,16 @@ public class DatabaseUpgradeTest {
             compareResultInfo(newTableColumnsInfo, upgradedTableColumnsInfo,
                     "Table " + tableName + " has a different number of indexes.",
                     "The upgraded database is missing index on table " + tableName,
-                    CollectionUtils.set("INDEX_NAME"));
+                    CollectionUtils.set("TABLE_CAT", "INDEX_NAME", "CARDINALITY"));
         }
     }
 
-    private void compareResultInfo(Map<String, Map<String, String>> newInfo, Map<String, Map<String, String>> upgradedInfo, String differentSizesErrorMessage, String missingRowErrorMessage, String propertyValueMismatchErrorMessage) {
+    private static void compareResultInfo(Map<String, Map<String, String>> newInfo, Map<String, Map<String, String>> upgradedInfo, String differentSizesErrorMessage, String missingRowErrorMessage, String propertyValueMismatchErrorMessage) {
         compareResultInfo(newInfo, upgradedInfo, differentSizesErrorMessage, missingRowErrorMessage, propertyValueMismatchErrorMessage, Collections.<String>emptySet());
     }
 
-    private void compareResultInfo(Map<String, Map<String, String>> newInfo, Map<String, Map<String, String>> upgradedInfo, String differentSizesErrorMessage, String missingRowErrorMessage, String propertyValueMismatchErrorMessage, Set<String> ignoreProperties) {
-        Assert.assertEquals(differentSizesErrorMessage + "\nNew db items:      " + newInfo.toString() + "\nUpgraded db items: " + upgradedInfo.toString() + "\n", newInfo.size(), upgradedInfo.size());
+    private static void compareResultInfo(Map<String, Map<String, String>> newInfo, Map<String, Map<String, String>> upgradedInfo, String differentSizesErrorMessage, String missingRowErrorMessage, String propertyValueMismatchErrorMessage, Set<String> ignoreProperties) {
+        Assert.assertEquals(differentSizesErrorMessage + "\nNew db items:      " + newInfo.keySet().toString() + "\nUpgraded db items: " + upgradedInfo.keySet().toString() + "\n", newInfo.size(), upgradedInfo.size());
 
         for (String rowName : newInfo.keySet()) {
             Map<String, String> newTableInfo = newInfo.get(rowName);
@@ -168,31 +102,41 @@ public class DatabaseUpgradeTest {
         }
     }
 
-    private void compareResultInfo(Set<Map<String, String>> newInfo, Set<Map<String, String>> upgradedInfo, String differentSizesErrorMessage, String missingRowErrorMessage, final Set<String> ignoreProperties) {
+    private static void compareResultInfo(Set<Map<String, String>> newInfo, Set<Map<String, String>> upgradedInfo, String differentSizesErrorMessage, String missingRowErrorMessage, final Set<String> ignoreProperties) {
         Assert.assertEquals(differentSizesErrorMessage + "\nNew db items:      " + newInfo.toString() + "\nUpgraded db items: " + upgradedInfo.toString() + "\n", newInfo.size(), upgradedInfo.size());
 
         for (final Map<String, String> newTableInfo : newInfo) {
 
+            final AtomicReference<Pair<Integer, Map<String, String>>> closestMatch = new AtomicReference<>(new Pair<Integer, Map<String, String>>(-1, null));
+
             boolean containsRow = Functions.exists(upgradedInfo, new Functions.Unary<Boolean, Map<String, String>>() {
                 @Override
                 public Boolean call(Map<String, String> upgradedTableInfo) {
+                    boolean matched = true;
+                    int numMatches = 0;
                     for (String tableProperty : newTableInfo.keySet()) {
                         if (ignoreProperties.contains(tableProperty)) continue;
                         String newTablePropertyValue = newTableInfo.get(tableProperty);
                         String upgradedTablePropertyValue = upgradedTableInfo.get(tableProperty);
 
-                        if ((newTablePropertyValue != null && !newTablePropertyValue.equals(upgradedTablePropertyValue)) || (newTablePropertyValue == null && upgradedTablePropertyValue != null))
-                            return false;
+                        if ((newTablePropertyValue != null && !newTablePropertyValue.equals(upgradedTablePropertyValue)) || (newTablePropertyValue == null && upgradedTablePropertyValue != null)) {
+                            matched = false;
+                        } else {
+                            numMatches++;
+                        }
                     }
-                    return true;
+                    if (matched || closestMatch.get().getKey() < numMatches) {
+                        closestMatch.set(new Pair<>(numMatches, upgradedTableInfo));
+                    }
+                    return matched;
                 }
             });
 
-            Assert.assertTrue(String.format(missingRowErrorMessage) + "\nMissing Row: " + newTableInfo.toString(), containsRow);
+            Assert.assertTrue(String.format(missingRowErrorMessage) + "\nMissing Row:   " + newTableInfo.toString() + "\nClosest Match: " + (closestMatch.get().getValue() != null ? closestMatch.get().getValue().toString() : "null") + "\nUpgraded DB rows: " + upgradedInfo.toString(), containsRow);
         }
     }
 
-    private Map<String, Map<String, String>> getResultSetInfo(ResultSet resultSet, int idColumn) throws SQLException {
+    private static Map<String, Map<String, String>> getResultSetInfo(ResultSet resultSet, int idColumn) throws SQLException {
         HashMap<String, Map<String, String>> resultSetInfoMap = new HashMap<>();
         ArrayList<String> columnList = new ArrayList<>();
         for (int i = 1; i < resultSet.getMetaData().getColumnCount() + 1; i++) {
@@ -210,7 +154,7 @@ public class DatabaseUpgradeTest {
         return resultSetInfoMap;
     }
 
-    private Set<Map<String, String>> getResultSetInfo(ResultSet resultSet) throws SQLException {
+    private static Set<Map<String, String>> getResultSetInfo(ResultSet resultSet) throws SQLException {
         HashSet<Map<String, String>> resultSetInfoSet = new HashSet<>();
         ArrayList<String> columnList = new ArrayList<>();
         for (int i = 1; i < resultSet.getMetaData().getColumnCount() + 1; i++) {
