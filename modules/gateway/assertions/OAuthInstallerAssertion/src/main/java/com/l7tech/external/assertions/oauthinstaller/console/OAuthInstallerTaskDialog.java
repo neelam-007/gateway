@@ -12,6 +12,7 @@ import com.l7tech.external.assertions.oauthinstaller.OAuthInstallerAssertion;
 import com.l7tech.gui.util.*;
 import com.l7tech.gui.widgets.SquigglyTextField;
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.policy.bundle.BundleInfo;
 import com.l7tech.policy.bundle.BundleMapping;
 import com.l7tech.external.assertions.oauthinstaller.OAuthInstallerAdmin;
@@ -141,12 +142,12 @@ public class OAuthInstallerTaskDialog extends JDialog {
             }
 
             if (parentFolderGoid == null) {
-                final RootNode rootNode = tree.getRootNode();
-                parentFolderGoid = rootNode.getGoid();
+                parentFolderGoid = Folder.ROOT_FOLDER_ID;
                 folderPath = "/";
             }
         }
-        return new Pair<String, Goid>(folderPath, parentFolderGoid);
+
+        return new Pair<>(folderPath, parentFolderGoid);
     }
 
     private void initialize(){
@@ -177,8 +178,7 @@ public class OAuthInstallerTaskDialog extends JDialog {
                     extraPanel.add(Box.createHorizontalGlue());
                 }
                 componentsToInstallPanel.add(Box.createRigidArea(new Dimension(10, 10)));
-                final Pair<BundleComponent, BundleInfo> checkBoxBundleInfoPair =
-                        new Pair<BundleComponent, BundleInfo>(bundleComp, bundleInfo);
+                final Pair<BundleComponent, BundleInfo> checkBoxBundleInfoPair = new Pair<>(bundleComp, bundleInfo);
 
                 availableBundles.put(bundleInfo.getId(), checkBoxBundleInfoPair);
             }
@@ -272,9 +272,9 @@ public class OAuthInstallerTaskDialog extends JDialog {
 
     private void onOK() {
 
-        final List<String> bundlesToInstall = new ArrayList<String>();
-        final List<BundleInfo> bundlesSelected = new ArrayList<BundleInfo>();
-        final Map<String, BundleMapping> bundleMappings = new HashMap<String, BundleMapping>();
+        final List<String> bundlesToInstall = new ArrayList<>();
+        final List<BundleInfo> bundlesSelected = new ArrayList<>();
+        final Map<String, BundleMapping> bundleMappings = new HashMap<>();
         boolean doApiIntegration = false;
         for (Map.Entry<String, Pair<BundleComponent, BundleInfo>> entry : availableBundles.entrySet()) {
             final BundleComponent bundleComponent = entry.getValue().left;

@@ -10,12 +10,14 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
-import com.l7tech.server.event.EntityClassEvent;
+import com.l7tech.server.event.GoidEntityInvalidationEvent;
 import com.l7tech.server.event.system.LicenseEvent;
 import com.l7tech.util.*;
+import org.apache.commons.lang.ObjectUtils;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.*;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.ByteArrayInputStream;
 import java.security.cert.Certificate;
@@ -35,15 +37,15 @@ import java.util.logging.Logger;
 /**
  * @author Jamie Williams - wilja33 - jamie.williams2@ca.com
  */
-public abstract class AbstractCompositeLicenseManager implements Lifecycle, Phased, ApplicationEventPublisherAware,
-        ApplicationListener<EntityClassEvent>, UpdatableCompositeLicenseManager {
+public abstract class AbstractCompositeLicenseManager implements UpdatableCompositeLicenseManager, Lifecycle, Phased,
+        ApplicationListener<GoidEntityInvalidationEvent>, ApplicationEventPublisherAware {
 
     /* ---- Issuer Certificate(s) ---- */
     private static final X509Certificate[] TRUSTED_ISSUERS_X509_CERTIFICATES = generateTrustedIssuerCertificates();
 
     public static final int PHASE = -10000;
-    private static final long REFRESH_INTERVAL = 6L * 60L * 60L * 1000L;
-    private static final long DB_RETRY_INTERVAL = 5L * 60L * 1000L;
+    private static final long REFRESH_INTERVAL = 6L * 60L * 60L * 1000L; // rebuild the composite license every 6 hours, even if not notified of a change
+    private static final long DB_RETRY_INTERVAL = 5L * 60L * 1000L; // in case of a db failure, retry rebuilding the composite license every 5 minutes
     private static final long DB_FAILURE_GRACE_PERIOD = 72L * 60L * 60L * 1000L; // ignore a DB failure for up to 72 hours before canceling any current license
     private static final String BUILD_PRODUCT_NAME = BuildInfo.getProductName();
     private static final String BUILD_VERSION_MAJOR = BuildInfo.getProductVersionMajor();
@@ -60,6 +62,7 @@ public abstract class AbstractCompositeLicenseManager implements Lifecycle, Phas
     private ApplicationEventPublisher eventPublisher;
 
     private volatile boolean running = false;
+    private volatile boolean licenseSet = false;
 
     @Autowired
     private FeatureLicenseFactory licenseFactory;
@@ -76,7 +79,7 @@ public abstract class AbstractCompositeLicenseManager implements Lifecycle, Phas
         updateLock.lock();
 
         try {
-            rebuildCompositeLicense();
+            checkLicenseCurrent();
             return compositeLicense.get();
         } finally {
             updateLock.unlock();
@@ -97,12 +100,13 @@ public abstract class AbstractCompositeLicenseManager implements Lifecycle, Phas
     }
 
     @Override
+    @Transactional
     public void installLicense(FeatureLicense license) throws LicenseInstallationException {
         updateLock.lock();
 
         try {
             // save to DB, other cluster nodes will rebuild their CompositeLicenses on EntityInvalidationEvent
-            licenseDocumentManager.save(license.getLicenseDocument());
+            licenseDocumentManager.saveWithImmediateFlush(license.getLicenseDocument());
 
             // rebuild our CompositeLicense immediately to ensure calling code will have access to up-to-date info
             rebuildCompositeLicense();
@@ -214,9 +218,9 @@ public abstract class AbstractCompositeLicenseManager implements Lifecycle, Phas
             return false;
         }
 
-        CompositeLicense l = compositeLicense.get();
-
         checkLicenseCurrent();
+
+        CompositeLicense l = compositeLicense.get();
 
         return l != null && l.isFeatureEnabled(featureName);
     }
@@ -226,9 +230,7 @@ public abstract class AbstractCompositeLicenseManager implements Lifecycle, Phas
      * rebuild the CompositeLicense.
      */
     private void checkLicenseCurrent() {
-        long now = System.currentTimeMillis();
-
-        if (now - lastCheck.get() < REFRESH_INTERVAL)
+        if (System.currentTimeMillis() - lastCheck.get() < REFRESH_INTERVAL)
             return;
 
         boolean gotLock = false;
@@ -246,6 +248,8 @@ public abstract class AbstractCompositeLicenseManager implements Lifecycle, Phas
                 return;
 
             rebuildCompositeLicense();
+
+            lastCheck.set(System.currentTimeMillis());
         } finally {
             if (gotLock) updateLock.unlock();
         }
@@ -254,9 +258,23 @@ public abstract class AbstractCompositeLicenseManager implements Lifecycle, Phas
     // --- LicenseDocument change event handling: reload LicenseDocuments, regenerate CompositeLicense --- ///
 
     @Override
-    public void onApplicationEvent(EntityClassEvent event) {
+    public void onApplicationEvent(GoidEntityInvalidationEvent event) {
         if (LicenseDocument.class.equals(event.getEntityClass())) {
-            rebuildCompositeLicense();
+            requestReload();
+        }
+    }
+
+    /**
+     * Ensure that the next time a license query is performed, the license will be reloaded from the database.
+     */
+    private void requestReload() {
+        updateLock.lock();
+
+        try {
+            lastCheck.set(-1L);
+        }
+        finally {
+            updateLock.unlock();
         }
     }
 
@@ -371,9 +389,7 @@ public abstract class AbstractCompositeLicenseManager implements Lifecycle, Phas
                 setCompositeLicense(newCompositeLicense);
             }
 
-            lastUpdate.set(System.currentTimeMillis());
         } finally {
-            lastCheck.set(System.currentTimeMillis());
             updateLock.unlock();
         }
     }
@@ -383,9 +399,22 @@ public abstract class AbstractCompositeLicenseManager implements Lifecycle, Phas
      *
      * @param newCompositeLicense the new CompositeLicense value
      */
-    private void setCompositeLicense(@Nullable CompositeLicense newCompositeLicense) {
-        if (newCompositeLicense != compositeLicense.getAndSet(newCompositeLicense)) {
+    private void setCompositeLicense(@Nullable final CompositeLicense newCompositeLicense) {
+        updateLock.lock();
+
+        try {
+            CompositeLicense current = compositeLicense.get();
+
+            if (licenseSet && ObjectUtils.equals(current, newCompositeLicense))
+                return;
+
+            compositeLicense.set(newCompositeLicense);
+            lastUpdate.set(System.currentTimeMillis());
+            licenseSet = true;
+
             fireEvent("Updated", SystemMessages.LICENSE_UPDATED);
+        } finally {
+            updateLock.unlock();
         }
     }
 

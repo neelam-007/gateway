@@ -1,6 +1,6 @@
 package com.l7tech.gateway.common.licensing;
 
-import org.apache.commons.lang.builder.EqualsBuilder;
+import org.apache.commons.lang.ObjectUtils;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 
 import java.io.Serializable;
@@ -202,26 +202,23 @@ public class FeatureLicense implements Serializable {
 
         FeatureLicense that = (FeatureLicense) o;
 
-        return new EqualsBuilder()
-                .appendSuper(super.equals(that))
-                .append(id, that.getId())
-                .append(description, that.getDescription())
-                .append(licenseeName, that.getLicenseeName())
-                .append(licenseeContactEmail, that.getLicenseeContactEmail())
-                .append(startDate, that.getStartDate())
-                .append(expiryDate, that.getExpiryDate())
-                .append(eulaText, that.getEulaText())
-                .append(attributes, that.getAttributes())
-                .append(featureSets, that.getFeatureSets())
-                .append(hostname, that.getHostname())
-                .append(ip, that.getIp())
-                .append(productName, that.getProductName())
-                .append(majorVersion, that.getMajorVersion())
-                .append(minorVersion, that.getMinorVersion())
-                .append(featureLabel, that.getFeatureLabel())
-                .append(trustedIssuer, that.getTrustedIssuer())
-                .append(licenseDocument, that.getLicenseDocument())
-                .isEquals();
+        return ObjectUtils.equals(this.id, that.id) &&
+                ObjectUtils.equals(this.description, that.getDescription()) &&
+                ObjectUtils.equals(this.licenseeName, that.getLicenseeName()) &&
+                ObjectUtils.equals(this.licenseeContactEmail, that.getLicenseeContactEmail()) &&
+                ObjectUtils.equals(this.startDate, that.getStartDate()) &&
+                ObjectUtils.equals(this.expiryDate, that.getExpiryDate()) &&
+                ObjectUtils.equals(this.eulaText, that.getEulaText()) &&
+                ObjectUtils.equals(this.attributes, that.getAttributes()) &&
+                ObjectUtils.equals(this.featureSets, that.getFeatureSets()) &&
+                ObjectUtils.equals(this.hostname, that.getHostname()) &&
+                ObjectUtils.equals(this.ip, that.getIp()) &&
+                ObjectUtils.equals(this.productName, that.getProductName()) &&
+                ObjectUtils.equals(this.majorVersion, that.getMajorVersion()) &&
+                ObjectUtils.equals(this.minorVersion, that.getMinorVersion()) &&
+                ObjectUtils.equals(this.featureLabel, that.getFeatureLabel()) &&
+                ObjectUtils.equals(this.trustedIssuer, that.getTrustedIssuer()) &&
+                ObjectUtils.equals(this.licenseDocument, that.getLicenseDocument());
     }
 
     public String toString() {

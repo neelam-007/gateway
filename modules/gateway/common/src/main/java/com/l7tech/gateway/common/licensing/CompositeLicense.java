@@ -1,5 +1,7 @@
 package com.l7tech.gateway.common.licensing;
 
+import org.apache.commons.lang.ObjectUtils;
+import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -107,5 +109,35 @@ public class CompositeLicense implements Serializable {
 
     public boolean hasInvalidLicenseDocuments() {
         return !invalidLicenseDocuments.isEmpty();
+    }
+
+    @Override
+    public int hashCode() {
+        return new HashCodeBuilder(43, 47)
+                .append(enabledFeatures)
+                .append(validFeatureLicenses)
+                .append(expiredFeatureLicenses)
+                .append(invalidFeatureLicenses)
+                .append(invalidLicenseDocuments)
+                .toHashCode();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+
+        if (null == o || getClass() != o.getClass()) {
+            return false;
+        }
+
+        CompositeLicense that = (CompositeLicense) o;
+
+        return ObjectUtils.equals(this.enabledFeatures, that.enabledFeatures) &&
+                ObjectUtils.equals(this.validFeatureLicenses, that.validFeatureLicenses) &&
+                ObjectUtils.equals(this.expiredFeatureLicenses, that.expiredFeatureLicenses) &&
+                ObjectUtils.equals(this.invalidFeatureLicenses, that.invalidFeatureLicenses) &&
+                ObjectUtils.equals(this.invalidLicenseDocuments, that.invalidLicenseDocuments);
     }
 }

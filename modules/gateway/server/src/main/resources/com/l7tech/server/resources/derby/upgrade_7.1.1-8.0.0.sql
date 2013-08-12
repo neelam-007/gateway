@@ -845,9 +845,10 @@ INSERT INTO cluster_properties
 --
 
 CREATE TABLE license_document (
-  objectid bigint NOT NULL,
+  goid CHAR(16) FOR BIT DATA NOT NULL,
+  version integer NOT NULL,
   contents clob(2147483647),
-  PRIMARY KEY (objectid)
+  PRIMARY KEY (goid)
 );
 
 

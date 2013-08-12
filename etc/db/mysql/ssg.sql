@@ -2067,9 +2067,10 @@ CREATE TABLE custom_key_value_store (
 
 DROP TABLE IF EXISTS license_document;
 CREATE TABLE license_document (
-  objectid bigint(20) NOT NULL,
+  goid binary(16) NOT NULL,
+  version integer NOT NULL,
   contents mediumtext,
-  PRIMARY KEY (objectid)
+  PRIMARY KEY (goid)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
 DROP TABLE IF EXISTS ssg_version;

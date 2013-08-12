@@ -191,10 +191,7 @@ public class ManageLicensesDialog extends JDialog {
             return;
         }
 
-        // make sure ConsoleLicenseManager gets the update
-        updateConsoleLicenseManager();
-
-        // rerun licensing checks to enable any affected assertions
+        // update the console assertion registry, flush cached security zones
         try {
             TopComponents.getInstance().getAssertionRegistry().updateModularAssertions();
             TopComponents.getInstance().getEncapsulatedAssertionRegistry().updateEncapsulatedAssertions();
@@ -207,6 +204,7 @@ public class ManageLicensesDialog extends JDialog {
                     ExceptionUtils.getDebugException(e));
         }
 
+        updateConsoleLicenseManager();
         populateLicenseTable();
         selectTableRowByLicenseId(newLicense.getId());
         viewDetails();
@@ -236,13 +234,13 @@ public class ManageLicensesDialog extends JDialog {
 
                         try {
                             admin.uninstallLicense(selected);
+                            disconnectManagerOnClose = true;
                         } catch (LicenseRemovalException e) {
                             DialogDisplayer.showMessageDialog(ManageLicensesDialog.this, ExceptionUtils.getMessage(e),
                                     "Unable to remove license", JOptionPane.ERROR_MESSAGE, null);
                             return;
                         }
 
-                        disconnectManagerOnClose = true;
                         updateConsoleLicenseManager();
                         populateLicenseTable();
                     }
@@ -403,8 +401,8 @@ public class ManageLicensesDialog extends JDialog {
     }
 
     private void updateConsoleLicenseManager() {
-        CompositeLicense compositeLicense = admin.getCompositeLicense();
-        Registry.getDefault().getLicenseManager().setLicense(compositeLicense);
+        // set the new composite license in the Console License Manager
+        Registry.getDefault().getLicenseManager().setLicense(admin.getCompositeLicense());
     }
 
     private void selectTableRowByLicenseId(long id) {
