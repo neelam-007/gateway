@@ -18,6 +18,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -37,14 +38,18 @@ public class RoleSelectionDialog extends JDialog {
     private static final int MAX_WIDTH = 99999;
     private static final int CHECK_BOX_WIDTH = 30;
     private static final String ROLES = "roles";
+    private static final String ADD = "Add";
+    private static final String UNAVAILABLE = "unavailable";
     private JPanel contentPanel;
     private OkCancelPanel okCancelPanel;
     private SelectableFilterableTablePanel tablePanel;
     private boolean confirmed;
     private CheckBoxSelectableTableModel<Role> rolesModel;
+    private Collection<Role> rolesToFilter;
 
-    public RoleSelectionDialog(@NotNull final Window owner, @NotNull final String identityName) {
+    public RoleSelectionDialog(@NotNull final Window owner, @NotNull final String identityName, @NotNull Collection<Role> rolesToFilter) {
         super(owner, "Add Roles to " + identityName, DEFAULT_MODALITY_TYPE);
+        this.rolesToFilter = rolesToFilter;
         setContentPane(contentPanel);
         initButtons();
         initTable();
@@ -62,7 +67,7 @@ public class RoleSelectionDialog extends JDialog {
     }
 
     private void initButtons() {
-        okCancelPanel.setOkButtonText("Add");
+        okCancelPanel.setOkButtonText(ADD);
         okCancelPanel.getOkButton().addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(final ActionEvent e) {
@@ -86,7 +91,7 @@ public class RoleSelectionDialog extends JDialog {
                 column(NAME, 30, 200, MAX_WIDTH, new Functions.Unary<String, Role>() {
                     @Override
                     public String call(final Role role) {
-                        String name = "unavailable";
+                        String name = UNAVAILABLE;
                         try {
                             name = Registry.getDefault().getEntityNameResolver().getNameForEntity(role, true);
                         } catch (final FindException e) {
@@ -108,7 +113,14 @@ public class RoleSelectionDialog extends JDialog {
                     }
                 }));
         try {
-            rolesModel.setSelectableObjects(new ArrayList<>(Registry.getDefault().getRbacAdmin().findAllRoles()));
+            final ArrayList<Role> rows = new ArrayList<>();
+            final Collection<Role> allRoles = Registry.getDefault().getRbacAdmin().findAllRoles();
+            for (final Role role : allRoles) {
+                if (!rolesToFilter.contains(role)) {
+                    rows.add(role);
+                }
+            }
+            rolesModel.setSelectableObjects(rows);
         } catch (final FindException e) {
             logger.log(Level.WARNING, "Unable to retrieve roles: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             rolesModel.setSelectableObjects(Collections.<Role>emptyList());

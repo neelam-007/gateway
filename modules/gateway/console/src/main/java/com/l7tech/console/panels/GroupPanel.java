@@ -1,10 +1,8 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.gateway.common.security.rbac.*;
 import com.l7tech.gui.util.Utilities;
-import com.l7tech.gateway.common.security.rbac.AttemptedCreate;
-import com.l7tech.gateway.common.security.rbac.AttemptedCreateSpecific;
-import com.l7tech.gateway.common.security.rbac.AttemptedOperation;
-import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
+
 import static com.l7tech.objectmodel.EntityType.GROUP;
 import com.l7tech.console.action.SecureAction;
 import com.l7tech.console.logging.ErrorManager;
@@ -29,9 +27,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.HierarchyEvent;
 import java.awt.event.HierarchyListener;
-import java.util.HashSet;
-import java.util.NoSuchElementException;
-import java.util.Set;
+import java.util.*;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -303,7 +300,13 @@ public abstract class GroupPanel<GT extends Group> extends EntityEditorPanel {
             } catch (final FindException e) {
                 log.log(Level.WARNING, "Unable to retrieve parent groups: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             }
-            rolesPanel = new IdentityRoleAssignmentsPanel(group, groupHeaders, false);
+            final List<Role> rolesForGroup = new ArrayList<>();
+            try {
+                rolesForGroup.addAll(Registry.getDefault().getRbacAdmin().findRolesForGroup(group));
+            } catch (final FindException e) {
+                log.log(Level.WARNING, "Unable to retrieve groups: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            }
+            rolesPanel = new IdentityRoleAssignmentsPanel(EntityType.GROUP, group.getName(), rolesForGroup, groupHeaders, false);
         }
         return rolesPanel;
     }
@@ -486,6 +489,17 @@ public abstract class GroupPanel<GT extends Group> extends EntityEditorPanel {
             if (groupHeader.getStrId() == null) {
                 groupHeader.setStrId(id);
             }
+
+            final RbacAdmin rbacAdmin = Registry.getDefault().getRbacAdmin();
+            for (final Role addedRole : rolesPanel.getAddedRoles()) {
+                addedRole.addAssignedGroup(group);
+                rbacAdmin.saveRole(addedRole);
+            }
+            for (final Role removedRole : rolesPanel.getRemovedRoles()) {
+                removedRole.removeAssignedGroup(group);
+                rbacAdmin.saveRole(removedRole);
+            }
+
         } catch (ObjectNotFoundException e) {
             JOptionPane.showMessageDialog(topParent, GROUP_DOES_NOT_EXIST_MSG, "Warning", JOptionPane.WARNING_MESSAGE);
             result = true;

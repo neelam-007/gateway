@@ -5,9 +5,7 @@ import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.gui.SimpleTableModel;
 import com.l7tech.gui.util.TableUtil;
 import com.l7tech.gui.util.Utilities;
-import com.l7tech.identity.Group;
-import com.l7tech.identity.Identity;
-import com.l7tech.identity.User;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.util.Functions;
 import com.l7tech.util.TextUtils;
 import org.apache.commons.lang.StringUtils;
@@ -38,15 +36,21 @@ public class IdentityRoleRemovalDialog extends JDialog {
     private Map<Role, String> toRemove;
     private boolean confirmed;
 
-    public IdentityRoleRemovalDialog(@NotNull final Window owner, @NotNull final Identity identity, @NotNull final Map<Role, String> toRemove) {
+    /**
+     * @param owner        the owner of this dialog.
+     * @param entityType   the identity type of the identity this panel is referencing (user/group).
+     * @param identityName the display name of the identity that this dialog is referencing.
+     * @param toRemove     a map of roles to remove from the identity role assignments where key = role and value = display name for the role.
+     */
+    public IdentityRoleRemovalDialog(@NotNull final Window owner, @NotNull final EntityType entityType, @NotNull final String identityName, @NotNull final Map<Role, String> toRemove) {
         super(owner, "Remove Roles", DEFAULT_MODALITY_TYPE);
-        if (!(identity instanceof User) && !(identity instanceof Group)) {
+        if (entityType != EntityType.USER && entityType != EntityType.GROUP) {
             throw new IllegalArgumentException("Identity must be a user or group.");
         }
         setContentPane(contentPanel);
         this.toRemove = toRemove;
-        this.confirmationLabel.setText(MessageFormat.format(CONFIRMATION_FORMAT, identity instanceof User ? "user" : "group",
-                TextUtils.truncateStringAtEnd(identity.getName(), MAX_NAME_CHARS)));
+        this.confirmationLabel.setText(MessageFormat.format(CONFIRMATION_FORMAT, entityType == EntityType.USER ? "user" : "group",
+                TextUtils.truncateStringAtEnd(identityName, MAX_NAME_CHARS)));
         initButtons();
         initTable();
     }

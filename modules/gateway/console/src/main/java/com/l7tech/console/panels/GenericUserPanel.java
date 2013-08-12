@@ -9,10 +9,7 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.util.jcalendar.JDateTimeChooser;
 import com.l7tech.gateway.common.admin.IdentityAdmin;
-import com.l7tech.gateway.common.security.rbac.AttemptedCreate;
-import com.l7tech.gateway.common.security.rbac.AttemptedCreateSpecific;
-import com.l7tech.gateway.common.security.rbac.AttemptedOperation;
-import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
+import com.l7tech.gateway.common.security.rbac.*;
 import com.l7tech.gui.MaxLengthDocument;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.ImageCache;
@@ -28,8 +25,7 @@ import java.awt.*;
 import java.awt.event.*;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-import java.util.Date;
-import java.util.NoSuchElementException;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -98,7 +94,8 @@ public class GenericUserPanel extends UserPanel {
     private void initialize() {
         try {
             // Initialize form components
-            rolesPanel = new IdentityRoleAssignmentsPanel(user, userGroups, false);
+            final Collection<Role> rolesForUser = Registry.getDefault().getRbacAdmin().findRolesForUser(user);
+            rolesPanel = new IdentityRoleAssignmentsPanel(EntityType.USER, user.getName(), new ArrayList<>(rolesForUser), userGroups, false);
             groupPanel = new UserGroupsPanel(this, config, config.isWritable() && canUpdate);
             certPanel = new NonFederatedUserCertPanel(this, config.isWritable() ? passwordChangeListener : null, canUpdate);
             if (config.type().equals(IdentityProviderType.INTERNAL) && user instanceof InternalUser) {
@@ -832,6 +829,16 @@ public class GenericUserPanel extends UserPanel {
             } else {
                 id = getIdentityAdmin().saveUser(config.getOid(), user, userGroups);
                 userHeader.setStrId(id);
+            }
+
+            final RbacAdmin rbacAdmin = Registry.getDefault().getRbacAdmin();
+            for (final Role addedRole : rolesPanel.getAddedRoles()) {
+                addedRole.addAssignedUser(user);
+                rbacAdmin.saveRole(addedRole);
+            }
+            for (final Role removedRole : rolesPanel.getRemovedRoles()) {
+                removedRole.removeAssignedUser(user);
+                rbacAdmin.saveRole(removedRole);
             }
 
             // Cleanup

@@ -3,11 +3,14 @@ package com.l7tech.console.panels;
 import com.l7tech.console.action.ChangePasswordAction;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.jcalendar.JDateTimeChooser;
+import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.identity.User;
 import com.l7tech.identity.internal.InternalUser;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.IdentityHeader;
+import com.l7tech.util.ExceptionUtils;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
@@ -15,14 +18,18 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Displays account info for a user and the roles they are in.
  */
 public class MyAccountDialog extends JDialog {
+    private static final Logger logger = Logger.getLogger(MyAccountDialog.class.getName());
     private static final String MY_ACCOUNT = "My Account";
     private static final String NEVER = "Never";
     private JPanel contentPanel;
@@ -92,6 +99,12 @@ public class MyAccountDialog extends JDialog {
     }
 
     private void createUIComponents() {
-        assignedRolesPanel = new IdentityRoleAssignmentsPanel(user, groups, true);
+        final java.util.List<Role> rolesForUser = new ArrayList<>();
+        try {
+            rolesForUser.addAll(Registry.getDefault().getRbacAdmin().findRolesForUser(user));
+        } catch (final FindException e) {
+            logger.log(Level.WARNING, "Unable to retrieve roles for user: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+        }
+        assignedRolesPanel = new IdentityRoleAssignmentsPanel(EntityType.USER, user.getName(), rolesForUser, groups, true);
     }
 }

@@ -5,20 +5,15 @@ import com.l7tech.console.security.rbac.IdentityRoleRemovalDialog;
 import com.l7tech.console.security.rbac.RoleSelectionDialog;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.gateway.common.security.rbac.RbacAdmin;
 import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.gateway.common.security.rbac.RoleAssignment;
 import com.l7tech.gui.SimpleTableModel;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.TableUtil;
 import com.l7tech.gui.util.Utilities;
-import com.l7tech.identity.Group;
-import com.l7tech.identity.Identity;
-import com.l7tech.identity.User;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.IdentityHeader;
-import com.l7tech.objectmodel.SaveException;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import org.jetbrains.annotations.NotNull;
@@ -52,15 +47,26 @@ public class IdentityRoleAssignmentsPanel extends JPanel {
     private JButton removeButton;
     private JButton addButton;
     private SimpleTableModel<Role> rolesModel;
-    private Identity identity;
+    private EntityType entityType;
+    private String identityName;
+    private List<Role> assignedRoles;
     private Set<IdentityHeader> identityGroups;
     private boolean readOnly;
 
-    public IdentityRoleAssignmentsPanel(@NotNull final Identity identity, @Nullable Set<IdentityHeader> identityGroups, final boolean readOnly) {
-        if (!(identity instanceof User) && !(identity instanceof Group)) {
+    /**
+     * @param entityType     the identity type for which this panel is displaying roles (EntityType.USER or EntityType.GROUP).
+     * @param identityName   the display name of the identity.
+     * @param assignedRoles  the Roles assigned to the identity.
+     * @param identityGroups the groups that the identity is contained in (can be null).
+     * @param readOnly       true if the panel should only display the roles, and not allow any changes.
+     */
+    public IdentityRoleAssignmentsPanel(@NotNull final EntityType entityType, @NotNull final String identityName, @NotNull List<Role> assignedRoles, @Nullable Set<IdentityHeader> identityGroups, final boolean readOnly) {
+        if (entityType != EntityType.USER && entityType != EntityType.GROUP) {
             throw new IllegalArgumentException("Identity must be a user or group.");
         }
-        this.identity = identity;
+        this.entityType = entityType;
+        this.identityName = identityName;
+        this.assignedRoles = assignedRoles;
         this.identityGroups = identityGroups;
         this.readOnly = readOnly;
         setLayout(new BorderLayout());
@@ -70,6 +76,33 @@ public class IdentityRoleAssignmentsPanel extends JPanel {
         handleSelectionChange();
     }
 
+    /**
+     * @return a list of Roles that the user has selected to be added to the role assignments for the identity.
+     */
+    public List<Role> getAddedRoles() {
+        final List<Role> addedRoles = new ArrayList<>();
+        for (final Role modelRow : rolesModel.getRows()) {
+            if (!assignedRoles.contains(modelRow)) {
+                addedRoles.add(modelRow);
+            }
+        }
+        return addedRoles;
+    }
+
+    /**
+     * @return a list of Roles that the user has selected to be removed from the role assignments for the identity.
+     */
+    public List<Role> getRemovedRoles() {
+        final List<Role> removedRoles = new ArrayList<>();
+        final List<Role> modelRows = rolesModel.getRows();
+        for (final Role assignedRole : assignedRoles) {
+            if (!modelRows.contains(assignedRole)) {
+                removedRoles.add(assignedRole);
+            }
+        }
+        return removedRoles;
+    }
+
     private void initButtons() {
         addButton.setVisible(!readOnly);
         removeButton.setVisible(!readOnly);
@@ -77,30 +110,18 @@ public class IdentityRoleAssignmentsPanel extends JPanel {
             addButton.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(final ActionEvent e) {
-                    final RoleSelectionDialog selectDialog = new RoleSelectionDialog(TopComponents.getInstance().getTopParent(), identity.getName());
+                    final RoleSelectionDialog selectDialog = new RoleSelectionDialog(TopComponents.getInstance().getTopParent(), identityName, rolesModel.getRows());
                     selectDialog.pack();
                     Utilities.centerOnParentWindow(selectDialog);
                     DialogDisplayer.display(selectDialog, new Runnable() {
                         @Override
                         public void run() {
                             if (selectDialog.isConfirmed()) {
-                                final RbacAdmin rbacAdmin = Registry.getDefault().getRbacAdmin();
                                 final List<Role> selectedRoles = selectDialog.getSelectedRoles();
                                 if (!selectedRoles.isEmpty()) {
-                                    try {
-                                        for (final Role selectedRole : selectedRoles) {
-                                            if (identity instanceof User) {
-                                                selectedRole.addAssignedUser((User) identity);
-                                            } else {
-                                                selectedRole.addAssignedGroup((Group) identity);
-                                            }
-                                            rbacAdmin.saveRole(selectedRole);
-                                        }
-                                    } catch (final SaveException e) {
-                                        log.log(Level.WARNING, "Error adding role assignment: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-                                        DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(), "Could not add role assignment", "Error", JOptionPane.ERROR_MESSAGE, null);
+                                    for (final Role selectedRole : selectedRoles) {
+                                        rolesModel.addRow(selectedRole);
                                     }
-                                    loadTable();
                                 }
                             }
                         }
@@ -112,9 +133,11 @@ public class IdentityRoleAssignmentsPanel extends JPanel {
                 public void actionPerformed(final ActionEvent e) {
                     final List<Role> selectedRoles = getSelected();
                     if (!selectedRoles.isEmpty()) {
-                        final Map<Role, String> toRemove = new HashMap<>(selectedRoles.size());
+                        final Map<Role, String> assignedRolesToRemove = new HashMap<>(selectedRoles.size());
                         for (final Role selectedRole : selectedRoles) {
-                            if (!isRoleInherited(selectedRole)) {
+                            final boolean currentlyAssigned = assignedRoles.contains(selectedRole);
+                            final boolean roleInherited = isRoleInherited(selectedRole);
+                            if (!roleInherited && currentlyAssigned) {
                                 final int row = rolesModel.getRowIndex(selectedRole);
                                 final Object nameVal = rolesModel.getValueAt(row, NAME_COL_INDEX);
                                 final String name;
@@ -123,34 +146,27 @@ public class IdentityRoleAssignmentsPanel extends JPanel {
                                 } else {
                                     name = NAME_UNAVAILABLE;
                                 }
-                                toRemove.put(selectedRole, name);
+                                assignedRolesToRemove.put(selectedRole, name);
+                            } else if (!roleInherited && !currentlyAssigned) {
+                                // role was added then removed - don't need confirmation
+                                rolesModel.removeRow(selectedRole);
                             }
                         }
-                        final IdentityRoleRemovalDialog confirmation = new IdentityRoleRemovalDialog(TopComponents.getInstance().getTopParent(), identity, toRemove);
-                        confirmation.pack();
-                        Utilities.centerOnParentWindow(confirmation);
-                        DialogDisplayer.display(confirmation, new Runnable() {
-                            @Override
-                            public void run() {
-                                if (confirmation.isConfirmed()) {
-                                    final RbacAdmin rbacAdmin = Registry.getDefault().getRbacAdmin();
-                                    try {
-                                        for (final Role role : toRemove.keySet()) {
-                                            if (identity instanceof User) {
-                                                role.removeAssignedUser((User) identity);
-                                            } else {
-                                                role.removeAssignedGroup((Group) identity);
-                                            }
-                                            rbacAdmin.saveRole(role);
+                        if (!assignedRolesToRemove.isEmpty()) {
+                            final IdentityRoleRemovalDialog confirmation = new IdentityRoleRemovalDialog(TopComponents.getInstance().getTopParent(), entityType, identityName, assignedRolesToRemove);
+                            confirmation.pack();
+                            Utilities.centerOnParentWindow(confirmation);
+                            DialogDisplayer.display(confirmation, new Runnable() {
+                                @Override
+                                public void run() {
+                                    if (confirmation.isConfirmed()) {
+                                        for (final Role role : assignedRolesToRemove.keySet()) {
                                             rolesModel.removeRow(role);
                                         }
-                                    } catch (final SaveException ex) {
-                                        log.log(Level.WARNING, "Error removing role assignment: " + ExceptionUtils.getMessage(ex), ExceptionUtils.getDebugException(ex));
-                                        DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(), "Could not remove role assignment", "Error", JOptionPane.ERROR_MESSAGE, null);
                                     }
                                 }
-                            }
-                        });
+                            });
+                        }
                     }
                 }
             }
@@ -209,7 +225,8 @@ public class IdentityRoleAssignmentsPanel extends JPanel {
             }
         });
         Utilities.setRowSorter(rolesTable, rolesModel);
-        loadTable();
+        // use a copy of the assigned roles so that the original collection is not mutated
+        rolesModel.setRows(new ArrayList<>(assignedRoles));
     }
 
     private void handleSelectionChange() {
@@ -252,20 +269,6 @@ public class IdentityRoleAssignmentsPanel extends JPanel {
             }
         }
         return role;
-    }
-
-    private void loadTable() {
-        try {
-            final List<Role> roles = new ArrayList<>();
-            if (identity instanceof User) {
-                roles.addAll(Registry.getDefault().getRbacAdmin().findRolesForUser((User) identity));
-            } else {
-                roles.addAll(Registry.getDefault().getRbacAdmin().findRolesForGroup((Group) identity));
-            }
-            rolesModel.setRows(roles);
-        } catch (final FindException e) {
-            log.log(Level.WARNING, "Unable to retrieve user roles: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-        }
     }
 
     private String getNameForRole(final Role role) {
