@@ -150,11 +150,6 @@ public class ServiceManagerStub extends EntityManagerStub<PublishedService, Serv
         return ret;
     }
 
-    @Override
-    public PublishedService findByOldOid(long oid) throws FindException {
-        return null;
-    }
-
     /**
      * updates a policy service. call this instead of save if the service
      * has an history. on the console side implementation, you can call save

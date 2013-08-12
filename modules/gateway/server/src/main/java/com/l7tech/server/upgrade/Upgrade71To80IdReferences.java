@@ -48,7 +48,7 @@ public class Upgrade71To80IdReferences implements UpgradeTask {
             for(SsgConnector ssgConnector : ssgConnectorManager.findAll()){
                 String serviceOid = ssgConnector.getProperty(SsgConnector.PROP_HARDWIRED_SERVICE_ID);
                 if(serviceOid != null){
-                    PublishedService service = serviceManager.findByOldOid(Long.parseLong(serviceOid));
+                    PublishedService service = serviceManager.findByPrimaryKey(GoidUpgradeMapper.mapOid(EntityType.SERVICE,Long.parseLong(serviceOid)));
                     if(service != null) {
                         ssgConnector.putProperty(SsgConnector.PROP_HARDWIRED_SERVICE_ID, service.getGoid().toHexString());
                     } else {
@@ -71,7 +71,7 @@ public class Upgrade71To80IdReferences implements UpgradeTask {
                 if (isHardwiredService != null) {
                     if (Boolean.parseBoolean(isHardwiredService)) {
                         String serviceOid = jmsConnection.properties().getProperty(JmsConnection.PROP_HARDWIRED_SERVICE_ID);
-                        PublishedService service = serviceManager.findByOldOid(Long.parseLong(serviceOid));
+                        PublishedService service = serviceManager.findByPrimaryKey(GoidUpgradeMapper.mapOid(EntityType.SERVICE,Long.parseLong(serviceOid)));
                         if(service != null) {
                             Properties properties = jmsConnection.properties();
                             properties.setProperty(JmsConnection.PROP_HARDWIRED_SERVICE_ID, service.getGoid().toHexString());
@@ -97,7 +97,7 @@ public class Upgrade71To80IdReferences implements UpgradeTask {
                 if (isHardwiredService != null) {
                     if (Boolean.parseBoolean(isHardwiredService)) {
                         String serviceOid = emailListener.properties().getProperty(EmailListener.PROP_HARDWIRED_SERVICE_ID);
-                        PublishedService service = serviceManager.findByOldOid(Long.parseLong(serviceOid));
+                        PublishedService service = serviceManager.findByPrimaryKey(GoidUpgradeMapper.mapOid(EntityType.SERVICE,Long.parseLong(serviceOid)));
                         if(service != null) {
                             Properties properties = emailListener.properties();
                             properties.setProperty(EmailListener.PROP_HARDWIRED_SERVICE_ID, service.getGoid().toHexString());

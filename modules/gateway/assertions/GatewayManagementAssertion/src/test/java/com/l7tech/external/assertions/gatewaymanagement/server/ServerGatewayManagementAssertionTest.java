@@ -3462,11 +3462,6 @@ public class ServerGatewayManagementAssertionTest {
         public Collection<PublishedService> findByRoutingUri(String routingUri) throws FindException {
             throw new FindException("Not implemented");
         }
-
-        @Override
-        public PublishedService findByOldOid(long oid) throws FindException {
-            throw new FindException("Not implemented");
-        }
     }
 
 }

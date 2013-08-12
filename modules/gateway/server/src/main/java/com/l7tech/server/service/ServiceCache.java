@@ -784,23 +784,6 @@ public class ServiceCache
     }
 
     /**
-     * Returns the service by its old oid. This will bypass the service cache.
-     *
-     * @param oid The oid of the service to find
-     * @return The service or null if it cannot find it.
-     * @throws FindException
-     */
-    public PublishedService findByOldOid(long oid) {
-        try {
-            return serviceManager.findByOldOid(oid);
-        } catch (FindException e) {
-            //return null if there was an exception looking fo the service by oid.
-            logger.info("Error finding service by oid: " + oid + " message: " + e.getMessage());
-            return null;
-        }
-    }
-
-    /**
      * gets a service from the cache
      */
     public PublishedService getCachedServiceByPolicy(Goid policyGoid) {

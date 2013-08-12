@@ -50,11 +50,6 @@ public class PolicyVersioningServiceManager implements ServiceManager {
     }
 
     @Override
-    public PublishedService findByOldOid(long oid) throws FindException {
-        return serviceManager.findByOldOid(oid);
-    }
-
-    @Override
     public String resolveWsdlTarget(String url) {
         return serviceManager.resolveWsdlTarget(url);
     }

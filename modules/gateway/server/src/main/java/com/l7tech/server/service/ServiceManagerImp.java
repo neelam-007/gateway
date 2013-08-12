@@ -28,7 +28,6 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.wsdl.WSDLException;
 import java.text.MessageFormat;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
@@ -81,11 +80,6 @@ public class ServiceManagerImp
         if(!includeAliases) return origHeaders;
 
         return serviceAliasManager.expandEntityWithAliases(origHeaders);
-    }
-
-    @Override
-    public PublishedService findByOldOid(long oid) throws FindException{
-        return findUnique( Collections.<String,Object>singletonMap("oldOid", oid) );
     }
 
     @Override

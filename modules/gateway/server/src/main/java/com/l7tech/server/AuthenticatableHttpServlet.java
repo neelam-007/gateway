@@ -11,6 +11,7 @@ import com.l7tech.identity.*;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.identity.ldap.LdapUser;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.IncludeAssertionDereferenceTranslator;
@@ -33,10 +34,7 @@ import com.l7tech.server.service.ServiceCache;
 import com.l7tech.server.transport.ListenerException;
 import com.l7tech.server.transport.http.HttpTransportModule;
 import com.l7tech.server.util.ServletUtils;
-import com.l7tech.util.CausedIOException;
-import com.l7tech.util.Charsets;
-import com.l7tech.util.Config;
-import com.l7tech.util.ConfigFactory;
+import com.l7tech.util.*;
 import com.l7tech.util.Functions.Unary;
 import org.springframework.context.ApplicationContext;
 import org.springframework.web.context.WebApplicationContext;
@@ -657,6 +655,6 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
     }
 
     protected PublishedService resolveService(Long oid) {
-        return serviceCache.findByOldOid(oid);
+        return serviceCache.getCachedService(GoidUpgradeMapper.mapOid(EntityType.SERVICE, oid));
     }
 }

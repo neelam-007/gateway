@@ -50,13 +50,4 @@ public interface ServiceManager extends PropertySearchableEntityManager<ServiceH
      */
     public Collection<PublishedService> findByRoutingUri(String routingUri) throws FindException;
 
-    /**
-     * Finds a published service by its old oid
-     *
-     * @param oid the oid of the service.  Required.
-     * @return the published service if found, null otherwise.
-     * @throws FindException if there is a problem accessing the information.
-     */
-    public PublishedService findByOldOid(long oid) throws FindException;
-
 }
