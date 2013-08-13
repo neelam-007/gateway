@@ -29,16 +29,18 @@ public class ZoneUpdateSecurityCheckerImpl implements ZoneUpdateSecurityChecker 
             zoneToSet = entityFinder.find(SecurityZone.class, securityZoneGoid);
             Validate.notNull(zoneToSet, "No security zone with goid " + securityZoneGoid.toHexString() + " exists.");
         }
-
-        for (final Serializable id : entityIds) {
-            final Entity entity = entityFinder.find(entityType.getEntityClass(), id);
-            if (entity instanceof ZoneableEntity) {
-                final ZoneableEntity zoneable = (ZoneableEntity) entity;
-                checkPermittedForEntity(user, entity);
-                zoneable.setSecurityZone(zoneToSet);
-                checkPermittedForEntity(user, entity);
-            } else {
-                throw new IllegalArgumentException("Entity with id " + id + " does not exist or is not Security Zoneable");
+        if (!rbacServices.isPermittedForAnyEntityOfType(user, OperationType.UPDATE, entityType)) {
+            // have to check permission for each entity
+            for (final Serializable id : entityIds) {
+                final Entity entity = entityFinder.find(entityType.getEntityClass(), id);
+                if (entity instanceof ZoneableEntity) {
+                    final ZoneableEntity zoneable = (ZoneableEntity) entity;
+                    checkPermittedForEntity(user, entity);
+                    zoneable.setSecurityZone(zoneToSet);
+                    checkPermittedForEntity(user, entity);
+                } else {
+                    throw new IllegalArgumentException("Entity with id " + id + " does not exist or is not Security Zoneable");
+                }
             }
         }
     }

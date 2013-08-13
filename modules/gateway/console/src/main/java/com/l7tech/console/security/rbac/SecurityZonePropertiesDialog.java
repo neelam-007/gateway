@@ -58,7 +58,6 @@ public class SecurityZonePropertiesDialog extends JDialog {
         this.afterEditListener = afterEditListener;
         setContentPane(contentPane);
         getRootPane().setDefaultButton(okCancelPanel.getOkButton());
-        Utilities.setEscAction(this, okCancelPanel.getCancelButton());
         this.securityZone = securityZone;
         this.readOnly = readOnly;
         operation = readOnly ? OperationType.READ : SecurityZone.DEFAULT_GOID.equals(securityZone.getGoid()) ? OperationType.CREATE : OperationType.UPDATE;
@@ -66,6 +65,7 @@ public class SecurityZonePropertiesDialog extends JDialog {
             originalSupportedEntityTypes.addAll(securityZone.getPermittedEntityTypes().contains(EntityType.ANY) ? SecurityZoneUtil.getNonHiddenZoneableEntityTypes() : securityZone.getPermittedEntityTypes());
         }
         initComponents();
+        Utilities.setEscAction(this, okCancelPanel.getCancelButton());
         setData();
         initValidation();
     }

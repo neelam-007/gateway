@@ -4,6 +4,7 @@ import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
+import com.l7tech.identity.User;
 import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.EntityType;
@@ -28,11 +29,12 @@ import static org.junit.Assert.*;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ZoneUpdateSecurityCheckerTest {
-    private static final Goid ZONE_GOID = new Goid(0,1234L);
+    private static final Goid ZONE_GOID = new Goid(0, 1234L);
     private ZoneUpdateSecurityChecker checker;
     @Mock
     private EntityFinder entityFinder;
@@ -81,8 +83,8 @@ public class ZoneUpdateSecurityCheckerTest {
 
     @Test
     public void checkUpdatePermittedGoid() throws Throwable {
-        Goid goid1 = new Goid(0,1);
-        Goid goid2 = new Goid(0,2);
+        Goid goid1 = new Goid(0, 1);
+        Goid goid2 = new Goid(0, 2);
         ids.add(goid1);
         ids.add(goid2);
         when(entityFinder.find(Policy.class, goid1)).thenReturn(policy);
@@ -114,7 +116,7 @@ public class ZoneUpdateSecurityCheckerTest {
 
     @Test
     public void nonNullSecurityZoneOidLooksUpZoneGoid() throws Throwable {
-        Goid goid1 = new Goid(0,1);
+        Goid goid1 = new Goid(0, 1);
         ids.add(goid1);
         when(entityFinder.find(SecurityZone.class, ZONE_GOID)).thenReturn(zone);
         when(entityFinder.find(Policy.class, goid1)).thenReturn(policy);
@@ -157,8 +159,8 @@ public class ZoneUpdateSecurityCheckerTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void atLeastOneGoidEntityDoesNotExist() throws Throwable {
-        Goid goid1 = new Goid(0,1);
-        Goid goid2 = new Goid(0,2);
+        Goid goid1 = new Goid(0, 1);
+        Goid goid2 = new Goid(0, 2);
         ids.add(goid1);
         ids.add(goid2);
         when(entityFinder.find(Policy.class, goid1)).thenReturn(policy);
@@ -169,7 +171,7 @@ public class ZoneUpdateSecurityCheckerTest {
             checker.checkBulkUpdatePermitted(user, null, EntityType.POLICY, ids);
             fail("Expected IllegalArgumentException");
         } catch (final IllegalArgumentException e) {
-            assertEquals("Entity with id "+goid2.toString()+" does not exist or is not Security Zoneable", e.getMessage());
+            assertEquals("Entity with id " + goid2.toString() + " does not exist or is not Security Zoneable", e.getMessage());
             throw e;
         }
     }
@@ -212,8 +214,8 @@ public class ZoneUpdateSecurityCheckerTest {
 
     @Test
     public void checkUpdatePermittedForMultipleGoidEntityTypes() throws Throwable {
-        Goid goid1 = new Goid(0,1);
-        Goid goid2 = new Goid(0,2);
+        Goid goid1 = new Goid(0, 1);
+        Goid goid2 = new Goid(0, 2);
         idMap.put(EntityType.JMS_CONNECTION, Collections.<Serializable>singleton(goid1));
         idMap.put(EntityType.JMS_ENDPOINT, Collections.<Serializable>singleton(goid2));
         when(entityFinder.find(JmsConnection.class, goid1)).thenReturn(connection);
@@ -244,5 +246,19 @@ public class ZoneUpdateSecurityCheckerTest {
             assertTrue(e.getEntity().equals(connection) || e.getEntity().equals(endpoint));
             throw e;
         }
+    }
+
+    /**
+     * If user can modify any entity of that type, don't need to cycle through each entity to determine if permission is allowed.
+     */
+    @Test
+    public void checkUpdatePermittedForAnyEntityOfType() throws Throwable {
+        ids.add(1L);
+        when(rbacServices.isPermittedForAnyEntityOfType(user, OperationType.UPDATE, EntityType.POLICY)).thenReturn(true);
+
+        checker.checkBulkUpdatePermitted(user, null, EntityType.POLICY, ids);
+
+        verify(entityFinder, never()).find(any(Class.class), anyLong());
+        verify(rbacServices, never()).isPermittedForEntity(any(User.class), any(Entity.class), any(OperationType.class), anyString());
     }
 }

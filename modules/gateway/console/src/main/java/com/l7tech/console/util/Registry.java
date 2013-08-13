@@ -264,6 +264,11 @@ public abstract class Registry {
      */
     public abstract CustomKeyValueStoreAdmin getCustomKeyValueStoreAdmin();
 
+    /**
+     * Get an EntityNameResolver which can be used to determine display names for entities and/or headers.
+     *
+     * @return an EntityNameResolver which can be used to determine display names for entities and/or headers.
+     */
     public abstract EntityNameResolver getEntityNameResolver();
 
     /**
