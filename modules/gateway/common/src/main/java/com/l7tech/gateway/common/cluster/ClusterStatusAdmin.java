@@ -238,17 +238,17 @@ public interface ClusterStatusAdmin {
     void installLicense(FeatureLicense license) throws LicenseInstallationException;
 
     /**
-     * Uninstalls the specified FeatureLicense. Of any features that are not enabled by other installed licenses, most
+     * Uninstalls the specified LicenseDocument. Of any features that are not enabled by other installed licenses, most
      * will automatically become unavailable. Policies containing Assertions that are no longer enabled will fail.
      * Some subsystems will not be disabled until the Gateway is restarted.
      *
-     * @param license the Feature License to uninstall
+     * @param document the LicenseDocument to uninstall
      * @throws LicenseRemovalException if an error is encountered in uninstalling the license
      */
     @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Throwable.class)
     @Secured(types=EntityType.LICENSE_DOCUMENT, stereotype=MethodStereotype.DELETE_MULTI)
     @Administrative(licensed=false)
-    void uninstallLicense(FeatureLicense license) throws LicenseRemovalException;
+    void uninstallLicense(LicenseDocument document) throws LicenseRemovalException;
 
     /**
      * @return the upgrade map for mapping legacy OIDs to GOIDs.  Never null.  Will be empty if this Gateway was not

@@ -46,10 +46,10 @@ public interface UpdatableCompositeLicenseManager extends CompositeLicenseManage
     public void installLicense(FeatureLicense license) throws LicenseInstallationException;
 
     /**
-     * Uninstalls the specified FeatureLicense from the control of the LicenseManager.
+     * Uninstalls the License described by the specified LicenseDocument from the control of the LicenseManager.
      *
-     * @param license the FeatureLicense to uninstall
+     * @param licenseDocument the LicenseDocument to uninstall
      * @throws LicenseRemovalException if an error was encountered in the uninstallation attempt
      */
-    public void uninstallLicense(FeatureLicense license) throws LicenseRemovalException;
+    public void uninstallLicense(LicenseDocument licenseDocument) throws LicenseRemovalException;
 }

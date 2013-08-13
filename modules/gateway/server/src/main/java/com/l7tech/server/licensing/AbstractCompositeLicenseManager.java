@@ -126,12 +126,12 @@ public abstract class AbstractCompositeLicenseManager extends ApplicationObjectS
     }
 
     @Override
-    public void uninstallLicense(FeatureLicense license) throws LicenseRemovalException {
+    public void uninstallLicense(LicenseDocument licenseDocument) throws LicenseRemovalException {
         updateLock.lock();
 
         try {
             // save to DB, other cluster nodes will rebuild their CompositeLicenses on EntityInvalidationEvent
-            licenseDocumentManager.delete(license.getLicenseDocument());
+            licenseDocumentManager.delete(licenseDocument);
 
             // rebuild our CompositeLicense immediately to ensure calling code will have access to up-to-date info
             rebuildCompositeLicense();
@@ -207,11 +207,9 @@ public abstract class AbstractCompositeLicenseManager extends ApplicationObjectS
                     if (license == null || !license.isFeatureEnabled(feature)) {
                         enabled = false;
 
-                        if (logger.isLoggable(Level.INFO)) {
-                            logger.log(Level.INFO,
-                                    "Assertion ''{0}'', is disabled due to unlicensed feature ''{1}''.",
-                                    new String[] {assertionFeatureSetName, feature});
-                        }
+                        logger.log(Level.INFO,
+                                "Assertion ''{0}'', is disabled due to unlicensed feature ''{1}''.",
+                                new String[] {assertionFeatureSetName, feature});
 
                         break;
                     }

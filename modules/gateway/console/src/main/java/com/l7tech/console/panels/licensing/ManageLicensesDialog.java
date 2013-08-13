@@ -215,7 +215,7 @@ public class ManageLicensesDialog extends JDialog {
     }
 
     private void doRemoveSelectedLicense() {
-        final FeatureLicense selected = getSelectedFeatureLicense();
+        final LicenseDocument selected = getSelectedRow().getLicenseDocument();
 
         String confirmationDialogTitle = "Confirm License Removal";
         String confirmationDialogMessage = "This will irrevocably destroy the existing gateway license and cannot\n" +
@@ -253,9 +253,12 @@ public class ManageLicensesDialog extends JDialog {
     }
 
     private void viewDetails() {
-        FeatureLicense featureLicense = getSelectedFeatureLicense();
+        FeatureLicense featureLicense = getSelectedRow().getFeatureLicense();
 
-        if (featureLicense != null) {
+        if (featureLicense == null) {
+            DialogDisplayer.showMessageDialog(ManageLicensesDialog.this,
+                    "That license could not be parsed.", "Cannot view invalid license", JOptionPane.OK_OPTION, null);
+        } else {
             LicenseDetailsDialog detailsDialog = new LicenseDetailsDialog(this, featureLicense);
             Utilities.centerOnParentWindow(detailsDialog);
             DialogDisplayer.display(detailsDialog);
@@ -421,12 +424,13 @@ public class ManageLicensesDialog extends JDialog {
         // shouldn't ever reach here, and it's not a disaster if the row can't be found
     }
 
-    private FeatureLicense getSelectedFeatureLicense() {
-        LicenseTableRow row = licenseTableModel.getRowObject(licenseTable.getSelectedRow());
-        return row.getFeatureLicense();
+    private LicenseTableRow getSelectedRow() {
+        return licenseTableModel.getRowObject(licenseTable.getSelectedRow());
     }
 
     private void configureLicenseTable() {
+        licenseTable.setAutoCreateRowSorter(true);
+
         Col<LicenseTableRow> descriptionCol = column("Description", 100, 200, 1000,
                 Functions.<String, LicenseTableRow>propertyTransform(LicenseTableRow.class, "description"), String.class);
         Col<LicenseTableRow> expiryCol = column("Expiry", 100, 300, 1000,

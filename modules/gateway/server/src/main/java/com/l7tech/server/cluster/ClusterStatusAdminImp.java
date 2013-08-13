@@ -327,8 +327,8 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin, ApplicationCon
     }
 
     @Override
-    public void uninstallLicense(FeatureLicense license) throws LicenseRemovalException {
-        licenseManager.uninstallLicense(license);
+    public void uninstallLicense(LicenseDocument document) throws LicenseRemovalException {
+        licenseManager.uninstallLicense(document);
 
         // Make sure we don't return until any module updating has been dealt with
         assertionRegistry.runNeededScan();

@@ -195,7 +195,7 @@ public class ClusterStatusAdminStub implements ClusterStatusAdmin {
     }
 
     @Override
-    public void uninstallLicense(FeatureLicense license) throws LicenseRemovalException {
+    public void uninstallLicense(LicenseDocument document) throws LicenseRemovalException {
         throw new LicenseRemovalException("Not implemented");
     }
 
