@@ -524,7 +524,11 @@ public class CustomAssertionsRegistrarImpl extends ApplicationObjectSupport impl
 
             registerCustomExtensionInterface((String) properties.get(baseKey + ".extension.interface"), classLoader);
 
-            logger.info("Registered custom assertion " + eh);
+            logger.info("Registered custom assertion " + eh.getAssertion().getName() + " from module " + moduleFileName);
+            if (logger.isLoggable(Level.FINEST)) {
+                logger.finest("Custom assertion " + eh);
+            }
+
         } catch (ClassNotFoundException e) {
             StringBuilder sb = new StringBuilder("Cannot load class(es) for custom assertion, skipping...\n");
             sb.append("[ assertion class=").append(assertionClass);
