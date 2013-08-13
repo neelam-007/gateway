@@ -2,7 +2,6 @@ package com.l7tech.external.assertions.siteminder.server;
 
 import com.ca.siteminder.SiteMinderApiClassException;
 import com.ca.siteminder.SiteMinderContext;
-import com.ca.siteminder.SiteMinderHighLevelAgent;
 import com.l7tech.common.http.HttpCookie;
 import com.l7tech.external.assertions.siteminder.SiteMinderAuthorizeAssertion;
 import com.l7tech.external.assertions.siteminder.util.SiteMinderAssertionUtil;
@@ -118,7 +117,7 @@ public class ServerSiteMinderAuthorizeAssertion extends AbstractServerSiteMinder
         //TODO: this should go into Manage Cookies modular assertion
         //get cookie params  directly from assertion
         String domain = SiteMinderAssertionUtil.extractContextVarValue(assertion.getCookieDomain(), varMap, getAudit());
-        String secure = SiteMinderAssertionUtil.extractContextVarValue(assertion.isCookieSecure(), varMap, getAudit());
+        String secure = SiteMinderAssertionUtil.extractContextVarValue(assertion.getCookieSecure(), varMap, getAudit());
         boolean isSecure = Boolean.parseBoolean(secure);
         String version = SiteMinderAssertionUtil.extractContextVarValue(assertion.getCookieVersion(), varMap, getAudit());
         int iVer = 0;

@@ -9,8 +9,7 @@ import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.logging.Logger;
 
 import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
@@ -24,8 +23,7 @@ public class SiteMinderAuthenticateAssertion extends Assertion implements UsesVa
     public static final String DEFAULT_SMSESSION_NAME = "SMSESSION";
     public static final String DEFAULT_PREFIX = "siteminder";
 
-    private String agentID;
-    private String cookieNameVariable;
+    private String cookieName;
     private boolean useVarAsCookieSource;
     private String cookieSourceVar;
     private boolean useSMCookie;
@@ -33,12 +31,7 @@ public class SiteMinderAuthenticateAssertion extends Assertion implements UsesVa
     private String prefix;
     private boolean isLastCredential = true;
     private String login;
-    private String cookieDomain;
-    private String cookiePath;
-    private String cookieComment;
-    private String cookieSecure;
-    private String cookieVersion;
-    private String cookieMaxAge;
+
 
     public String getLogin() {
         return login;
@@ -46,56 +39,6 @@ public class SiteMinderAuthenticateAssertion extends Assertion implements UsesVa
 
     public void setLogin(String login) {
         this.login = login;
-    }
-
-    public String getCookieDomain() {
-        return cookieDomain;
-    }
-
-    public void setCookieDomain(String cookieDomain) {
-        this.cookieDomain = cookieDomain;
-    }
-
-    public String getCookiePath() {
-        return cookiePath;
-    }
-
-    public void setCookiePath(String cookiePath) {
-        this.cookiePath = cookiePath;
-    }
-
-    public String isCookieSecure() {
-        return cookieSecure;
-    }
-
-    public void setCookieSecure(String cookieSecure) {
-        this.cookieSecure = cookieSecure;
-    }
-
-    public String getCookieComment() {
-        return cookieComment;
-    }
-
-    public void setCookieComment(String cookieComment) {
-        this.cookieComment = cookieComment;
-    }
-
-    public String getCookieVersion() {
-        return cookieVersion;
-    }
-
-    public void setCookieVersion(String cookieVersion) {
-        this.cookieVersion = cookieVersion;
-    }
-
-
-
-    public String getCookieMaxAge() {
-        return cookieMaxAge;
-    }
-
-    public void setCookieMaxAge(String s) {
-        cookieMaxAge = s;
     }
 
     public boolean isLastCredential() {
@@ -106,21 +49,12 @@ public class SiteMinderAuthenticateAssertion extends Assertion implements UsesVa
         isLastCredential = lastCredential;
     }
 
-    public String getAgentID() {
-        return agentID;
+    public String getCookieName() {
+        return cookieName;
     }
 
-    public void setAgentID(String agentID) {
-        this.agentID = agentID;
-    }
-
-
-    public String getCookieNameVariable() {
-        return cookieNameVariable;
-    }
-
-    public void setCookieNameVariable(String cookieNameVariable) {
-        this.cookieNameVariable = cookieNameVariable;
+    public void setCookieName(String cookieName) {
+        this.cookieName = cookieName;
     }
 
     public boolean isUseVarAsCookieSource() {
@@ -166,7 +100,14 @@ public class SiteMinderAuthenticateAssertion extends Assertion implements UsesVa
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     @Override
     public String[] getVariablesUsed() {
-        return Syntax.getReferencedNames(cookieNameVariable, cookieSourceVar, cookieDomain, cookieComment, cookiePath, cookieSecure, cookieVersion, prefix);
+        List<String> varsUsed = new ArrayList<>();
+        varsUsed.add(prefix + ".smcontext");
+        if(cookieSourceVar != null && !cookieSourceVar.isEmpty()) {
+            varsUsed.add(cookieSourceVar);
+        }
+        String[] refNames =  Syntax.getReferencedNames(cookieName, login);
+        varsUsed.addAll(Arrays.asList(refNames));
+        return varsUsed.toArray(new String[0]);
     }
 
     //
@@ -188,8 +129,8 @@ public class SiteMinderAuthenticateAssertion extends Assertion implements UsesVa
         meta.put(AssertionMetadata.CLUSTER_PROPERTIES, props);
 
         // Set description for GUI
-        meta.put(AssertionMetadata.SHORT_NAME, "Authenticate with SiteMinder Policy Server");
-        meta.put(AssertionMetadata.LONG_NAME, "Authenticate user with CA SiteMinder Policy Server");
+        meta.put(AssertionMetadata.SHORT_NAME, "Authenticate via SiteMinder Policy Server");
+        meta.put(AssertionMetadata.LONG_NAME, "Authenticate via CA SiteMinder Policy Server");
 
         // Add to palette folder
         //   accessControl,

@@ -66,7 +66,7 @@ public class SiteMinderCheckProtectedAssertion extends Assertion implements Uses
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     @Override
     public String[] getVariablesUsed() {
-        return Syntax.getReferencedNames(action, protectedResource, prefix);
+        return Syntax.getReferencedNames(action, protectedResource);
     }
 
     //

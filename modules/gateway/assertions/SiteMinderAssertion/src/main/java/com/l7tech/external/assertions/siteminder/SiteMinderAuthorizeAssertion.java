@@ -26,7 +26,6 @@ public class SiteMinderAuthorizeAssertion extends Assertion implements UsesVaria
     public static final String DEFAULT_SMSESSION_NAME = "SMSESSION";
     public static final String DEFAULT_PREFIX = "siteminder";
 
-    private String agentID;
     private boolean useVarAsCookieSource;
     private String cookieSourceVar;
     private boolean useCustomCookieName;
@@ -57,7 +56,7 @@ public class SiteMinderAuthorizeAssertion extends Assertion implements UsesVaria
         this.cookiePath = cookiePath;
     }
 
-    public String isCookieSecure() {
+    public String getCookieSecure() {
         return cookieSecure;
     }
 
@@ -89,15 +88,6 @@ public class SiteMinderAuthorizeAssertion extends Assertion implements UsesVaria
 
     public void setCookieMaxAge(String s) {
         cookieMaxAge = s;
-    }
-
-
-    public String getAgentID() {
-        return agentID;
-    }
-
-    public void setAgentID(String agentID) {
-        this.agentID = agentID;
     }
 
     public boolean isUseVarAsCookieSource() {
@@ -151,13 +141,13 @@ public class SiteMinderAuthorizeAssertion extends Assertion implements UsesVaria
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     @Override
     public String[] getVariablesUsed() {
-        String[] array = Syntax.getReferencedNames(cookieDomain, cookieComment, cookiePath, cookieSecure, cookieVersion);
         List<String> varsUsed = new ArrayList<>();
-        varsUsed.add(prefix);
+        varsUsed.add(prefix + ".smcontext");
         if(cookieSourceVar != null && !cookieSourceVar.isEmpty()) {
             varsUsed.add(cookieSourceVar);
         }
-        varsUsed.addAll(Arrays.asList(array));
+        String[] refNames = Syntax.getReferencedNames(cookieName, cookieDomain, cookieComment, cookiePath, cookieSecure, cookieVersion);
+        varsUsed.addAll(Arrays.asList(refNames));
         return varsUsed.toArray(new String[0]);
     }
 

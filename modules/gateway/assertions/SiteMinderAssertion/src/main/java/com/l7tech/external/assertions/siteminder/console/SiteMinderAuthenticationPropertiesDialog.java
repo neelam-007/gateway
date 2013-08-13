@@ -24,8 +24,6 @@ import java.util.regex.Pattern;
  */
 public class SiteMinderAuthenticationPropertiesDialog extends AssertionPropertiesOkCancelSupport<SiteMinderAuthenticateAssertion> {
     
-    private static final Pattern AGENTID_PATTERN = Pattern.compile("^\\s*([a-zA-Z0-9]+).name\\s*=",Pattern.CASE_INSENSITIVE|Pattern.MULTILINE);
-    
     private JPanel propertyPanel;
     private JRadioButton useLastCredentialsRadioButton;
     private JRadioButton specifyCredentialsRadioButton;
@@ -37,7 +35,6 @@ public class SiteMinderAuthenticationPropertiesDialog extends AssertionPropertie
     private TargetVariablePanel siteminderPrefixVariablePanel;
     private TargetVariablePanel cookieVariablePanel;
     private final InputValidator inputValidator;
-//    private ClusterStatusAdmin clusterStatusAdmin;
 
     public SiteMinderAuthenticationPropertiesDialog(final Frame owner, final SiteMinderAuthenticateAssertion assertion) {
         super(SiteMinderAuthenticateAssertion.class, owner, assertion, true);
@@ -49,7 +46,6 @@ public class SiteMinderAuthenticationPropertiesDialog extends AssertionPropertie
     @Override
     protected void initComponents() {
         super.initComponents();
-//        initAdminConnection();
         siteminderPrefixVariablePanel.setVariable(SiteMinderAuthenticateAssertion.DEFAULT_PREFIX);
         siteminderPrefixVariablePanel.setDefaultVariableOrPrefix(SiteMinderAuthenticateAssertion.DEFAULT_PREFIX);
 
@@ -94,49 +90,35 @@ public class SiteMinderAuthenticationPropertiesDialog extends AssertionPropertie
                 enableDisableComponents();
             }
         });
+        cookieVariablePanel.addChangeListener(new ChangeListener() {
+            @Override
+            public void stateChanged(ChangeEvent e) {
+                enableDisableComponents();
+            }
+        });
         inputValidator.constrainTextField(credentialsTextField, new InputValidator.ValidationRule() {
             @Override
             public String getValidationError() {
-                if(specifyCredentialsRadioButton.isSelected()){
-                    if(credentialsTextField.getText().isEmpty()){
+                if (specifyCredentialsRadioButton.isSelected()) {
+                    if (credentialsTextField.getText().isEmpty()) {
                         return "User credentials must not be empty";
                     }
                 }
                 return null;
             }
         });
+
         inputValidator.attachToButton(getOkButton(), super.createOkAction());
 
     }
 
-    /**
-     * populates agent combo box with agent IDs
-     * TODO: move to generic entity model instead of cluster properties
-     */
-/*    private void populateAgentComboBoxModel(DefaultComboBoxModel<String> agentComboBoxModel) {
-        try {
-            ClusterProperty smConfigProperty = clusterStatusAdmin.findPropertyByName("siteminder12.agent.configuration");
-            String smConfig = smConfigProperty.getValue();
-            //search for agent name in the cluster property file
-            String agentId = null;
-            Matcher m = AGENTID_PATTERN.matcher(smConfig);
-            while (m.find()) {
-                agentId = m.group(1);
-                agentComboBoxModel.addElement(agentId);
-            }
-
-        } catch (FindException e) {
-            //do not throw any exceptions at this point. leave agent combo box empty
-        }
-    }*/
-
     private void enableDisableComponents() {
         useCookieFromRequestRadioButton.setEnabled(authenticateViaSiteMinderCookieCheckBox.isSelected());
         useCookieFromContextRadioButton.setEnabled(authenticateViaSiteMinderCookieCheckBox.isSelected());
-        smCookieNameTextField.setEnabled(useCookieFromRequestRadioButton.isSelected());
-        cookieVariablePanel.setEnabled(useCookieFromContextRadioButton.isSelected());
+        smCookieNameTextField.setEnabled(authenticateViaSiteMinderCookieCheckBox.isSelected() && useCookieFromRequestRadioButton.isSelected());
+        cookieVariablePanel.setEnabled(authenticateViaSiteMinderCookieCheckBox.isSelected() && useCookieFromContextRadioButton.isSelected());
         credentialsTextField.setEnabled(specifyCredentialsRadioButton.isSelected());
-        getOkButton().setEnabled(siteminderPrefixVariablePanel.isEntryValid());
+        getOkButton().setEnabled(siteminderPrefixVariablePanel.isEntryValid() && (!cookieVariablePanel.isEnabled() || cookieVariablePanel.isEntryValid()));
     }
     /**
      * Configure the view with the data from the specified assertion bean.
@@ -148,8 +130,8 @@ public class SiteMinderAuthenticationPropertiesDialog extends AssertionPropertie
     public void setData(SiteMinderAuthenticateAssertion assertion) {
         authenticateViaSiteMinderCookieCheckBox.setSelected(assertion.isUseSMCookie());
         useCookieFromRequestRadioButton.setSelected(assertion.isUseCustomCookieName());
-        if(assertion.getCookieNameVariable() != null && !assertion.getCookieNameVariable().isEmpty()) {
-            smCookieNameTextField.setText(assertion.getCookieNameVariable());
+        if(assertion.getCookieName() != null && !assertion.getCookieName().isEmpty()) {
+            smCookieNameTextField.setText(assertion.getCookieName());
         }
         else {
             smCookieNameTextField.setText(SiteMinderAuthenticateAssertion.DEFAULT_SMSESSION_NAME);
@@ -182,7 +164,7 @@ public class SiteMinderAuthenticationPropertiesDialog extends AssertionPropertie
     public SiteMinderAuthenticateAssertion getData(SiteMinderAuthenticateAssertion assertion) throws ValidationException {
         assertion.setUseSMCookie(authenticateViaSiteMinderCookieCheckBox.isSelected());
         assertion.setUseCustomCookieName(useCookieFromRequestRadioButton.isSelected());
-        assertion.setCookieNameVariable(smCookieNameTextField.getText());
+        assertion.setCookieName(smCookieNameTextField.getText());
         assertion.setUseVarAsCookieSource(useCookieFromContextRadioButton.isSelected());
         assertion.setCookieSourceVar(cookieVariablePanel.getVariable());
         assertion.setPrefix(siteminderPrefixVariablePanel.getVariable());
@@ -208,9 +190,4 @@ public class SiteMinderAuthenticationPropertiesDialog extends AssertionPropertie
         // returns a no-op action so we can add our own Ok listener
         return new RunOnChangeListener();
     }
-
-/*    private void initAdminConnection() {
-        clusterStatusAdmin = Registry.getDefault().getClusterStatusAdmin();
-    }*/
-
 }

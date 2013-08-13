@@ -15,8 +15,6 @@ import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.util.*;
-import com.l7tech.util.Config;
-import org.apache.commons.lang.StringUtils;
 import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
@@ -44,7 +42,7 @@ public class ServerSiteMinderAuthenticateAssertion extends AbstractServerSiteMin
 
         final Map<String, Object> variableMap = context.getVariableMap(variablesUsed, getAudit());
         String varPrefix = SiteMinderAssertionUtil.extractContextVarValue(assertion.getPrefix(), variableMap, getAudit());
-        String smCookieName = SiteMinderAssertionUtil.extractContextVarValue(assertion.getCookieNameVariable(), variableMap, getAudit());
+        String smCookieName = SiteMinderAssertionUtil.extractContextVarValue(assertion.getCookieName(), variableMap, getAudit());
 
         //
         String ssoToken = extractSsoToken(context, variableMap, smCookieName);
@@ -163,54 +161,6 @@ public class ServerSiteMinderAuthenticateAssertion extends AbstractServerSiteMin
             //TODO: collect credentials of a different type (SAML, Kerberos, NTLM, etc.)
         }
         return new SiteMinderCredentials();
-    }
-
-    /*
-    * Creates a cookie from the SiteMinder SSO Token and its details and adds it to the HttpServletResponse.
-    *
-    * @param res
-    * @param ssoCookie
-    * @param cookieParams
-    */
-    void setSessionCookie(PolicyEnforcementContext pec, SiteMinderContext smContext, Map<String, Object> varMap) {
-        //TODO: use logAndAudit instead
-        String ssoCookie = smContext.getSsoToken();
-        if(StringUtils.isBlank(ssoCookie)) {
-            logger.log(Level.WARNING, "SMSESSION cookie is blank! Cookie is not set");
-            return;
-        }
-
-        logger.log(Level.FINE, "Adding the SiteMinder SSO cookie to the response. Cookie is '" + ssoCookie + "'");
-        //TODO: this should go into Manage Cookies modular assertion
-        //get cookie params  directly from assertion
-        String domain = SiteMinderAssertionUtil.extractContextVarValue(assertion.getCookieDomain(), varMap, getAudit());
-        String secure = SiteMinderAssertionUtil.extractContextVarValue(assertion.isCookieSecure(), varMap, getAudit());
-        boolean isSecure = Boolean.parseBoolean(secure);
-        String version = SiteMinderAssertionUtil.extractContextVarValue(assertion.getCookieVersion(), varMap, getAudit());
-        int iVer = 0;
-        if (version != null && version.length() > 0) {
-            try {
-                iVer = Integer.parseInt(version);
-            } catch (NumberFormatException nfe) {
-                logger.log(Level.FINE, "Version was set in the context but was not a number");
-            }
-        }
-        String maxAge = SiteMinderAssertionUtil.extractContextVarValue(assertion.getCookieMaxAge(), varMap, getAudit());
-        int iMaxAge = -1;
-        if (maxAge != null && maxAge.length() > 0) {
-            try {
-                iMaxAge = Integer.parseInt(maxAge);
-            } catch (NumberFormatException nfe) {
-                logger.log(Level.FINE, "Max Age was set in the context but was not a number");
-            }
-        }
-        String comment = SiteMinderAssertionUtil.extractContextVarValue(assertion.getCookieComment(), varMap, getAudit());
-        String path = SiteMinderAssertionUtil.extractContextVarValue(assertion.getCookiePath(), varMap, getAudit());
-
-        HttpCookie cookie = new HttpCookie(assertion.getCookieNameVariable(), ssoCookie, iVer, path, domain, iMaxAge, isSecure, comment);
-
-        pec.getResponse().getHttpResponseKnob().addCookie(cookie);
-
     }
 
     /*

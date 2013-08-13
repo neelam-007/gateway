@@ -2,21 +2,18 @@ package com.l7tech.external.assertions.siteminder.console;
 
 import com.l7tech.console.panels.AssertionPropertiesOkCancelSupport;
 import com.l7tech.console.panels.TargetVariablePanel;
-import com.l7tech.console.util.Registry;
 import com.l7tech.external.assertions.siteminder.SiteMinderAuthenticateAssertion;
 import com.l7tech.external.assertions.siteminder.SiteMinderAuthorizeAssertion;
-import com.l7tech.gateway.common.cluster.ClusterProperty;
-import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.RunOnChangeListener;
-import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.variable.Syntax;
 
 import javax.swing.*;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
@@ -25,8 +22,6 @@ import java.util.regex.Pattern;
  * Date: 6/25/13
  */
 public class SiteMinderAuthorizationPropertiesDialog extends AssertionPropertiesOkCancelSupport<SiteMinderAuthorizeAssertion> {
-
-    private static final Pattern AGENTID_PATTERN = Pattern.compile("^\\s*([a-zA-Z0-9]+).name\\s*=",Pattern.CASE_INSENSITIVE|Pattern.MULTILINE);
 
     private JRadioButton useCookieFromSmContextRadioButton;
     private JRadioButton useCookieFromContextRadioButton;
@@ -42,7 +37,6 @@ public class SiteMinderAuthorizationPropertiesDialog extends AssertionProperties
     private JCheckBox setSiteMinderCookieCheckBox;
     private JTextField cookieNameTextField;
     private final InputValidator inputValidator;
-//    private ClusterStatusAdmin clusterStatusAdmin;
 
     public SiteMinderAuthorizationPropertiesDialog(final Frame owner, final SiteMinderAuthorizeAssertion assertion) {
         super(SiteMinderAuthorizeAssertion.class, owner, assertion, true);
@@ -54,7 +48,6 @@ public class SiteMinderAuthorizationPropertiesDialog extends AssertionProperties
     @Override
     protected void initComponents() {
         super.initComponents();
-//        initAdminConnection();
         siteminderPrefixVariablePanel.setVariable(SiteMinderAuthenticateAssertion.DEFAULT_PREFIX);
         siteminderPrefixVariablePanel.setDefaultVariableOrPrefix(SiteMinderAuthenticateAssertion.DEFAULT_PREFIX);
 
@@ -79,6 +72,13 @@ public class SiteMinderAuthorizationPropertiesDialog extends AssertionProperties
             }
         });
 
+        cookieVariablePanel.addChangeListener(new ChangeListener() {
+            @Override
+            public void stateChanged(ChangeEvent e) {
+                enableDisableComponents();
+            }
+        });
+
         inputValidator.constrainTextField(cookieMaxAgeTextField, new InputValidator.ValidationRule() {
             @Override
             public String getValidationError() {
@@ -93,7 +93,7 @@ public class SiteMinderAuthorizationPropertiesDialog extends AssertionProperties
                         return "Version value must be a valid integer or a context variable";
                     }
                 }
-                return null;  //To change body of implemented methods use File | Settings | File Templates.
+                return null;
             }
         });
         inputValidator.constrainTextField(cookieVersionTextField, new InputValidator.ValidationRule() {
@@ -110,7 +110,7 @@ public class SiteMinderAuthorizationPropertiesDialog extends AssertionProperties
                         return "Version value must be a valid integer or a context variable";
                     }
                 }
-                return null;  //To change body of implemented methods use File | Settings | File Templates.
+                return null;
             }
         });
         inputValidator.constrainTextField(cookieSecureTextField, new InputValidator.ValidationRule() {
@@ -122,33 +122,12 @@ public class SiteMinderAuthorizationPropertiesDialog extends AssertionProperties
                 if(!val.isEmpty() && !(val.trim().equalsIgnoreCase("true") || val.trim().equalsIgnoreCase("false"))) {
                    return "Is Secure value must be either \"true\" or \"false\" or a context variable";
                 }
-                return null;  //To change body of implemented methods use File | Settings | File Templates.
+                return null;
             }
         });
         inputValidator.attachToButton(getOkButton(), super.createOkAction());
 
     }
-
-    /**
-     * populates agent combo box with agent IDs
-     * TODO: move to generic entity model instead of cluster properties
-     */
-/*    private void populateAgentComboBoxModel(DefaultComboBoxModel<String> agentComboBoxModel) {
-        try {
-            ClusterProperty smConfigProperty = clusterStatusAdmin.findPropertyByName("siteminder12.agent.configuration");
-            String smConfig = smConfigProperty.getValue();
-            //search for agent name in the cluster property file
-            String agentId = null;
-            Matcher m = AGENTID_PATTERN.matcher(smConfig);
-            while (m.find()) {
-                agentId = m.group(1);
-                agentComboBoxModel.addElement(agentId);
-            }
-
-        } catch (FindException e) {
-            //do not throw any exceptions at this point. leave agent combo box empty
-        }
-    }*/
 
     private void enableDisableComponents() {
         cookieVariablePanel.setEnabled(useCookieFromContextRadioButton.isSelected());
@@ -159,7 +138,7 @@ public class SiteMinderAuthorizationPropertiesDialog extends AssertionProperties
         cookieSecureTextField.setEnabled(setSiteMinderCookieCheckBox.isSelected());
         cookieVersionTextField.setEnabled(setSiteMinderCookieCheckBox.isSelected());
         cookieCommentTextField.setEnabled(setSiteMinderCookieCheckBox.isSelected());
-        getOkButton().setEnabled(siteminderPrefixVariablePanel.isEntryValid());
+        getOkButton().setEnabled(siteminderPrefixVariablePanel.isEntryValid() && (!cookieVariablePanel.isEnabled() || cookieVariablePanel.isEntryValid()));
     }
     /**
      * Configure the view with the data from the specified assertion bean.
@@ -188,7 +167,7 @@ public class SiteMinderAuthorizationPropertiesDialog extends AssertionProperties
         cookieDomainTextField.setText(assertion.getCookieDomain());
         cookiePathTextField.setText(assertion.getCookiePath());
         cookieMaxAgeTextField.setText(assertion.getCookieMaxAge());
-        cookieSecureTextField.setText(assertion.isCookieSecure());
+        cookieSecureTextField.setText(assertion.getCookieSecure());
         cookieVersionTextField.setText(assertion.getCookieVersion());
         cookieCommentTextField.setText(assertion.getCookieComment());
 
@@ -231,7 +210,7 @@ public class SiteMinderAuthorizationPropertiesDialog extends AssertionProperties
      */
     @Override
     protected JPanel createPropertyPanel() {
-        return propertyPanel;  //To change body of implemented methods use File | Settings | File Templates.
+        return propertyPanel;
     }
 
     @Override
@@ -239,9 +218,4 @@ public class SiteMinderAuthorizationPropertiesDialog extends AssertionProperties
         // returns a no-op action so we can add our own Ok listener
         return new RunOnChangeListener();
     }
-
-/*    private void initAdminConnection() {
-        clusterStatusAdmin = Registry.getDefault().getClusterStatusAdmin();
-    }*/
-
 }
