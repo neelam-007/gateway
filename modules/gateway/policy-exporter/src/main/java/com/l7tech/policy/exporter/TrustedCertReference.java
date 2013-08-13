@@ -246,25 +246,20 @@ public class TrustedCertReference extends ExternalReference {
         localizeType = LocalizeAction.IGNORE;
     }
 
-    @SuppressWarnings({ "RedundantIfStatement" })
     @Override
-    public boolean equals( final Object o ) {
+    public boolean equals(Object o) {
         if ( this == o ) return true;
         if ( o == null || getClass() != o.getClass() ) return false;
 
         final TrustedCertReference that = (TrustedCertReference) o;
 
-        if ( ((goid == null) != (that.goid == null) || (goid != null && !goid.equals(that.goid))) )
-            return false;
+        if (goid != null ? !goid.equals(that.goid) : that.goid != null) return false;
 
         return true;
     }
 
     @Override
     public int hashCode() {
-        int h = 0;
-        if (goid != null)
-            h += 23L * goid.hashCode();
-        return h;
+        return goid != null ? goid.hashCode() : 0;
     }
 }

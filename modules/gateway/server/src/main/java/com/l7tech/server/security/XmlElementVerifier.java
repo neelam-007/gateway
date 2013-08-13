@@ -211,7 +211,7 @@ public class XmlElementVerifier {
         X509Certificate selectedCert = null;
         String description = "";
         try {
-            final Goid certOid = config.getVerifyCertificateOid();
+            final Goid certOid = config.getVerifyCertificateGoid();
             final String certName = config.getVerifyCertificateName();
 
             if ( certOid != null ) {

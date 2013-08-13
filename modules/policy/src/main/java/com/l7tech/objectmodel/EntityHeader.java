@@ -44,11 +44,11 @@ public class EntityHeader extends EntityHeaderRef {
         this(Long.toString(oid), type, name, description, null);
     }
 
-    public EntityHeader(Goid goid, EntityType type, String name, String description, Integer version) {
+    public EntityHeader(@NotNull Goid goid, EntityType type, String name, String description, Integer version) {
         this(goid.toString(), type, name, description, version);
     }
 
-    public EntityHeader(Goid goid, EntityType type, String name, String description) {
+    public EntityHeader(@NotNull Goid goid, EntityType type, String name, String description) {
         this(goid.toString(), type, name, description, null);
     }
 

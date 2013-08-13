@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.xmlsec;
 
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
@@ -11,6 +12,7 @@ import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.security.xml.XmlElementVerifierConfig;
 import com.l7tech.util.FullQName;
+import com.l7tech.util.GoidUpgradeMapper;
 
 /**
  * Immediately verify one or more signed Elements in a non-SOAP XML message.
@@ -69,12 +71,19 @@ public class NonSoapVerifyElementAssertion extends NonSoapSecurityAssertionBase 
         config.setVerifyCertificateName(verifyCertificateName);
     }
 
-    public Goid getVerifyCertificateOid() {
-        return config.getVerifyCertificateOid();
+    public Goid getVerifyCertificateGoid() {
+        return config.getVerifyCertificateGoid();
     }
 
-    public void setVerifyCertificateOid(Goid verifyCertificateOid) {
-        config.setVerifyCertificateOid(verifyCertificateOid);
+    public void setVerifyCertificateGoid(Goid verifyCertificateGoid) {
+        config.setVerifyCertificateGoid(verifyCertificateGoid);
+    }
+
+    // For backward compat while parsing pre-GOID policies.  Not needed for new assertions.
+    @Deprecated
+    @SuppressWarnings("UnusedDeclaration")
+    public void setVerifyCertificateOid(long verifyCertificateOid) {
+        setVerifyCertificateGoid( GoidUpgradeMapper.mapOid(EntityType.TRUSTED_CERT, verifyCertificateOid) );
     }
 
     public FullQName[] getCustomIdAttrs() {

@@ -7,6 +7,7 @@ import com.l7tech.objectmodel.GoidEntity;
 import com.l7tech.policy.assertion.UsesEntities;
 import com.l7tech.policy.assertion.UsesVariables;
 import com.l7tech.util.FullQName;
+import com.l7tech.util.GoidUpgradeMapper;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.Serializable;
@@ -29,7 +30,7 @@ public class XmlElementVerifierConfig implements Serializable, UsesVariables, Us
     }});
 
     private String verifyCertificateName;
-    private Goid verifyCertificateOid;
+    private Goid verifyCertificateGoid;
     private String verifyCertificateVariableName;
     private boolean ignoreKeyInfo;
     private FullQName[] customIdAttrs;
@@ -42,12 +43,19 @@ public class XmlElementVerifierConfig implements Serializable, UsesVariables, Us
         this.verifyCertificateName = verifyCertificateName;
     }
 
-    public Goid getVerifyCertificateOid() {
-        return verifyCertificateOid;
+    public Goid getVerifyCertificateGoid() {
+        return verifyCertificateGoid;
     }
 
-    public void setVerifyCertificateOid(Goid verifyCertificateOid) {
-        this.verifyCertificateOid = verifyCertificateOid;
+    public void setVerifyCertificateGoid(Goid verifyCertificateGoid) {
+        this.verifyCertificateGoid = verifyCertificateGoid;
+    }
+
+    // For backward compat while parsing pre-GOID policies.  Not needed for new assertions.
+    @Deprecated
+    @SuppressWarnings("UnusedDeclaration")
+    public void setVerifyCertificateOid(long verifyCertificateOid) {
+        setVerifyCertificateGoid( GoidUpgradeMapper.mapOid( EntityType.TRUSTED_CERT, verifyCertificateOid ) );
     }
 
     public String getVerifyCertificateVariableName() {
@@ -86,8 +94,8 @@ public class XmlElementVerifierConfig implements Serializable, UsesVariables, Us
     public EntityHeader[] getEntitiesUsed() {
         EntityHeader[] headers = new EntityHeader[0];
 
-        if ( !GoidEntity.DEFAULT_GOID.equals(verifyCertificateOid) ) {
-            headers = new EntityHeader[] {new EntityHeader(verifyCertificateOid, EntityType.TRUSTED_CERT, null, null)};
+        if ( verifyCertificateGoid != null && !GoidEntity.DEFAULT_GOID.equals(verifyCertificateGoid) ) {
+            headers = new EntityHeader[] {new EntityHeader(verifyCertificateGoid, EntityType.TRUSTED_CERT, null, null)};
         }
 
         return headers;
@@ -97,9 +105,9 @@ public class XmlElementVerifierConfig implements Serializable, UsesVariables, Us
     public void replaceEntity(EntityHeader oldEntityHeader, EntityHeader newEntityHeader) {
         if( oldEntityHeader.getType() == EntityType.TRUSTED_CERT &&
                 newEntityHeader.getType() == EntityType.TRUSTED_CERT &&
-                verifyCertificateOid != null &&
-                verifyCertificateOid.equals(oldEntityHeader.getGoid())) {
-            verifyCertificateOid = newEntityHeader.getGoid();
+                verifyCertificateGoid != null &&
+                verifyCertificateGoid.equals(oldEntityHeader.getGoid())) {
+            verifyCertificateGoid = newEntityHeader.getGoid();
         }
     }
 }
