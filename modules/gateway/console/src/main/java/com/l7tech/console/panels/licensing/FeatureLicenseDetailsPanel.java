@@ -1,5 +1,6 @@
 package com.l7tech.console.panels.licensing;
 
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.licensing.FeatureLicense;
 import com.l7tech.gateway.common.licensing.LicenseUtils;
 import com.l7tech.gui.widgets.WrappingLabel;
@@ -21,6 +22,7 @@ public class FeatureLicenseDetailsPanel extends JPanel {
 
     private JPanel rootPanel;
     private JPanel grantsPanel;
+    private JLabel gatewayField;
     private JLabel statusField;
     private JLabel idField;
     private JLabel descriptionField;
@@ -44,6 +46,7 @@ public class FeatureLicenseDetailsPanel extends JPanel {
 
         setStatus();
 
+        gatewayField.setText(TopComponents.getInstance().ssgURL().getHost());
         idField.setText(Long.toString(featureLicense.getId()));
         descriptionField.setText(featureLicense.getDescription());
         licenseeField.setText(featureLicense.getLicenseeName());
