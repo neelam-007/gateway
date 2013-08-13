@@ -56,11 +56,11 @@ public class WsSecurityPropertiesDialog extends AssertionPropertiesOkCancelSuppo
         if ( applyWsSecurityCheckBox.isSelected() ) {
             assertion.setWsSecurityVersion( (WsSecurityVersion) wssVersionComboBox.getSelectedItem());
 
-            assertion.setRecipientTrustedCertificateOid( null );
+            assertion.setRecipientTrustedCertificateGoid(null);
             assertion.setRecipientTrustedCertificateName( null );
             assertion.setRecipientTrustedCertificateVariable( null );
             if ( selectedRecipientCertificateRadioButton.isSelected() ) {
-                assertion.setRecipientTrustedCertificateOid( recipientCertificateOid );
+                assertion.setRecipientTrustedCertificateGoid(recipientCertificateOid);
             } else if ( namedRecipientCertificateRadioButton.isSelected() ) {
                 assertion.setRecipientTrustedCertificateName( lookupCertificateTextField.getText().trim() );
             } else if ( useCertificateFromVariableRadioButton.isSelected() ) {
@@ -68,7 +68,7 @@ public class WsSecurityPropertiesDialog extends AssertionPropertiesOkCancelSuppo
             }
         } else {
             assertion.setWsSecurityVersion(null);
-            assertion.setRecipientTrustedCertificateOid( null );
+            assertion.setRecipientTrustedCertificateGoid(null);
             assertion.setRecipientTrustedCertificateName( null );
         }
         return assertion;
@@ -88,9 +88,9 @@ public class WsSecurityPropertiesDialog extends AssertionPropertiesOkCancelSuppo
 
         wssVersionComboBox.setSelectedItem( assertion.getWsSecurityVersion() );
 
-        if ( assertion.getRecipientTrustedCertificateOid() != null ) {
+        if ( assertion.getRecipientTrustedCertificateGoid() != null ) {
             selectedRecipientCertificateRadioButton.setSelected( true );
-            recipientCertificateOid = assertion.getRecipientTrustedCertificateOid();
+            recipientCertificateOid = assertion.getRecipientTrustedCertificateGoid();
             try {
                 TrustedCert certificate = Registry.getDefault().getTrustedCertManager().findCertByPrimaryKey( recipientCertificateOid );
                 selectedCertificateNameTextField.setText( certificate==null ? "<Not Found>" : certificate.getName() );

@@ -140,7 +140,7 @@ public class PolicyExporterTest {
 
         // TrustedCertReference
         WsSecurity wsass = new WsSecurity();
-        wsass.setRecipientTrustedCertificateOid( new Goid(0, 1234L) );
+        wsass.setRecipientTrustedCertificateGoid(new Goid(0, 1234L));
         root.addChild( wsass );
 
         return root;

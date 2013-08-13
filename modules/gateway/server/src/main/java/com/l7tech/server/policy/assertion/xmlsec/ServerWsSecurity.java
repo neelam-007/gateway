@@ -102,7 +102,7 @@ public class ServerWsSecurity extends AbstractMessageTargetableServerAssertion<W
                         // process certificate
                         processRecipientCertificate(
                                         decoration,
-                                        assertion.getRecipientTrustedCertificateOid(),
+                                        assertion.getRecipientTrustedCertificateGoid(),
                                         expandVariables(context, assertion.getRecipientTrustedCertificateName()),
                                         expandCertificate( context, assertion.getRecipientTrustedCertificateVariable() ));
 

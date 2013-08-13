@@ -45,7 +45,7 @@ public class WsSecurityValidator implements AssertionValidator {
         if ( !Assertion.isResponse( wsSecurity ) &&
              wsSecurity.isApplyWsSecurity() && 
              wsSecurity.getRecipientTrustedCertificateName() == null &&
-             wsSecurity.getRecipientTrustedCertificateOid() == null &&
+             wsSecurity.getRecipientTrustedCertificateGoid() == null &&
              wsSecurity.getRecipientTrustedCertificateVariable() == null) {
             errString = "A \"default recipient certificate\" must be selected for encryption. This assertion will always fail.";
         }
