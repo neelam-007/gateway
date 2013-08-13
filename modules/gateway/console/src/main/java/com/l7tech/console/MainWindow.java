@@ -285,8 +285,6 @@ public class MainWindow extends JFrame implements SheetHolder {
     private static final String PATH_SEPARATOR = "/";
     private static final String ELLIPSIS = "...";
 
-    private List<Action> customAssertionActions = new ArrayList<>();
-
     /**
      * MainWindow constructor comment.
      *
@@ -2135,17 +2133,16 @@ public class MainWindow extends JFrame implements SheetHolder {
         //  - once by LicenseListener.licenseChanged(...) before ConsoleAssertionRegistry.updateCustomAssertions()
         //  - then again by this.initializeWorkspace(...) after updateCustomAssertions.updateCustomAssertions().
 
-        if (customAssertionActions.size() <= 0) {
-            Collection<CustomAssertionHolder> customAssertionHolders = TopComponents.getInstance().getAssertionRegistry().getCustomAssertions();
-            ConsoleLicenseManager consoleLicenseManager = Registry.getDefault().getLicenseManager();
-            for (CustomAssertionHolder customAssertionHolder : customAssertionHolders) {
-                if (consoleLicenseManager.isAssertionEnabled(customAssertionHolder)) {
-                    // over the wire call to Gateway (there's possible performance improvement here)
-                    CustomAssertionsRegistrar registrar = Registry.getDefault().getCustomAssertionsRegistrar();
-                    CustomTaskActionUI taskActionUI = registrar.getTaskActionUI(customAssertionHolder.getCustomAssertion().getClass().getName());
-                    if (taskActionUI != null) {
-                        customAssertionActions.add(new CustomAssertionHolderAction(taskActionUI));
-                    }
+        List<Action> customAssertionActions = new ArrayList<>();
+        Collection<CustomAssertionHolder> customAssertionHolders = TopComponents.getInstance().getAssertionRegistry().getCustomAssertions();
+        ConsoleLicenseManager consoleLicenseManager = Registry.getDefault().getLicenseManager();
+        for (CustomAssertionHolder customAssertionHolder : customAssertionHolders) {
+            if (consoleLicenseManager.isAssertionEnabled(customAssertionHolder)) {
+                // over the wire call to Gateway (there's possible performance improvement here)
+                CustomAssertionsRegistrar registrar = Registry.getDefault().getCustomAssertionsRegistrar();
+                CustomTaskActionUI taskActionUI = registrar.getTaskActionUI(customAssertionHolder.getCustomAssertion().getClass().getName());
+                if (taskActionUI != null) {
+                    customAssertionActions.add(new CustomAssertionHolderAction(taskActionUI));
                 }
             }
         }
