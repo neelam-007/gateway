@@ -1,6 +1,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.gateway.common.security.rbac.*;
+import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
 
 import static com.l7tech.objectmodel.EntityType.GROUP;
@@ -294,19 +295,13 @@ public abstract class GroupPanel<GT extends Group> extends EntityEditorPanel {
 
     protected IdentityRoleAssignmentsPanel getRolesPanel() {
         if (rolesPanel == null) {
-            final Set<IdentityHeader> groupHeaders = new HashSet<>();
-            try {
-                groupHeaders.addAll(Registry.getDefault().getIdentityAdmin().getGroupHeadersForGroup(group.getProviderId(), group.getId()));
-            } catch (final FindException e) {
-                log.log(Level.WARNING, "Unable to retrieve parent groups: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-            }
-            final List<Role> rolesForGroup = new ArrayList<>();
+            final Set<Role> rolesForGroup = new HashSet<>();
             try {
                 rolesForGroup.addAll(Registry.getDefault().getRbacAdmin().findRolesForGroup(group));
             } catch (final FindException e) {
                 log.log(Level.WARNING, "Unable to retrieve groups: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             }
-            rolesPanel = new IdentityRoleAssignmentsPanel(EntityType.GROUP, group.getName(), rolesForGroup, groupHeaders, !Registry.getDefault().getSecurityProvider().hasPermission(new AttemptedUpdate(EntityType.GROUP, group)));
+            rolesPanel = new IdentityRoleAssignmentsPanel(group, rolesForGroup, !Registry.getDefault().getSecurityProvider().hasPermission(new AttemptedUpdate(EntityType.GROUP, group)));
         }
         return rolesPanel;
     }
@@ -489,17 +484,6 @@ public abstract class GroupPanel<GT extends Group> extends EntityEditorPanel {
             if (groupHeader.getStrId() == null) {
                 groupHeader.setStrId(id);
             }
-
-            final RbacAdmin rbacAdmin = Registry.getDefault().getRbacAdmin();
-            for (final Role addedRole : rolesPanel.getAddedRoles()) {
-                addedRole.addAssignedGroup(group);
-                rbacAdmin.saveRole(addedRole);
-            }
-            for (final Role removedRole : rolesPanel.getRemovedRoles()) {
-                removedRole.removeAssignedGroup(group);
-                rbacAdmin.saveRole(removedRole);
-            }
-
         } catch (ObjectNotFoundException e) {
             JOptionPane.showMessageDialog(topParent, GROUP_DOES_NOT_EXIST_MSG, "Warning", JOptionPane.WARNING_MESSAGE);
             result = true;
@@ -512,6 +496,18 @@ public abstract class GroupPanel<GT extends Group> extends EntityEditorPanel {
             result = false;
         }
         return result;
+    }
+
+    private void saveRoleChanges() throws SaveException {
+        final RbacAdmin rbacAdmin = Registry.getDefault().getRbacAdmin();
+        for (final Role addedRole : rolesPanel.getAddedRoles()) {
+            addedRole.addAssignedGroup(group);
+            rbacAdmin.saveRole(addedRole);
+        }
+        for (final Role removedRole : rolesPanel.getRemovedRoles()) {
+            removedRole.removeAssignedGroup(group);
+            rbacAdmin.saveRole(removedRole);
+        }
     }
 
     protected abstract String save() throws SaveException, UpdateException, ObjectNotFoundException;
@@ -580,6 +576,12 @@ public abstract class GroupPanel<GT extends Group> extends EntityEditorPanel {
                         return;
                     }
                 }
+            }
+            try {
+                saveRoleChanges();
+            } catch (final SaveException e) {
+                log.log(Level.WARNING, "Error saving Group role assignments: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(), "Error saving role assignments.", "Error", JOptionPane.ERROR_MESSAGE, null);
             }
             Utilities.dispose(Utilities.getRootPaneContainerAncestor(GroupPanel.this));
             wasoked = true;

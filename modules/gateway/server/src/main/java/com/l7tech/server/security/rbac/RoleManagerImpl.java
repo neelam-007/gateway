@@ -74,7 +74,7 @@ public class RoleManagerImpl extends HibernateEntityManager<Role, EntityHeader> 
         }
 
         @Override
-        public Set<IdentityHeader> getGroups(Group group) throws FindException {
+        public Set<IdentityHeader> getGroups(@NotNull final Group group) throws FindException {
             return Collections.emptySet();
         }
     };
@@ -106,10 +106,10 @@ public class RoleManagerImpl extends HibernateEntityManager<Role, EntityHeader> 
 
     @Override
     public Collection<Role> getAssignedRoles(@NotNull final Group group) throws FindException {
-        final Collection<Role> roles = new ArrayList<>(getDirectlyAssignedRolesForGroup(group.getProviderId(), group.getId()));
+        final Collection<Role> roles = new ArrayList<>(getDirectlyAssignedRolesForGroup(group.getProviderId(), group.getId(), false));
         final Set<IdentityHeader> groups = groupProvider.getGroups(group);
         for (final IdentityHeader header : groups) {
-            roles.addAll(getDirectlyAssignedRolesForGroup(header.getProviderOid(), header.getStrId()));
+            roles.addAll(getDirectlyAssignedRolesForGroup(header.getProviderOid(), header.getStrId(), true));
         }
         return roles;
     }
@@ -145,7 +145,7 @@ public class RoleManagerImpl extends HibernateEntityManager<Role, EntityHeader> 
         });
     }
 
-    private Collection<Role> getDirectlyAssignedRolesForGroup(final long providerId, final String groupId) throws FindException {
+    private Collection<Role> getDirectlyAssignedRolesForGroup(final long providerId, final String groupId, final boolean inherited) throws FindException {
        try {
            //noinspection unchecked
            return (Collection<Role>) getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
@@ -158,6 +158,7 @@ public class RoleManagerImpl extends HibernateEntityManager<Role, EntityHeader> 
                    criteria.add(Restrictions.eq(ENTITY_TYPE, EntityType.GROUP.getName()));
                    final List<RoleAssignment> roleAssignments = (List<RoleAssignment>) criteria.list();
                    for (final RoleAssignment assignment : roleAssignments) {
+                       assignment.setInherited(inherited);
                        roles.add(assignment.getRole());
                    }
                    return roles;
@@ -205,6 +206,7 @@ public class RoleManagerImpl extends HibernateEntityManager<Role, EntityHeader> 
                 groupQuery.add(Restrictions.eq("entityType", EntityType.GROUP.getName()));
                 final List<RoleAssignment> gList = (List<RoleAssignment>) groupQuery.list();
                 for ( final RoleAssignment ra : gList) {
+                    ra.setInherited(true);
                     IdentityHeader header = null;
                     for ( final IdentityHeader groupHeader : groupHeaders ) {
                         if ( ra.getIdentityId()!=null && ra.getIdentityId().equals( groupHeader.getStrId() )  ) {

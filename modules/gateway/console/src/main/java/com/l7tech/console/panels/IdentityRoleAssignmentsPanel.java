@@ -1,7 +1,6 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.console.security.rbac.BasicRolePropertiesPanel;
-import com.l7tech.console.security.rbac.IdentityRoleRemovalDialog;
 import com.l7tech.console.security.rbac.RoleSelectionDialog;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
@@ -11,13 +10,14 @@ import com.l7tech.gui.SimpleTableModel;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.TableUtil;
 import com.l7tech.gui.util.Utilities;
+import com.l7tech.identity.Group;
+import com.l7tech.identity.Identity;
+import com.l7tech.identity.User;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.IdentityHeader;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
@@ -25,8 +25,9 @@ import javax.swing.event.ListSelectionListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.*;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -37,11 +38,9 @@ import static com.l7tech.gui.util.TableUtil.column;
  */
 public class IdentityRoleAssignmentsPanel extends JPanel {
     static Logger log = Logger.getLogger(IdentityRoleAssignmentsPanel.class.getName());
-    private static final int NAME_COL_INDEX = 0;
     private static final int INHERITED_COL_INDEX = 2;
     private static final String NAME_UNAVAILABLE = "name unavailable";
     private static final String YES = "Yes";
-    private static final String UNKNOWN = "Unknown";
     private static final String NO = "No";
     private JPanel mainPanel;
     private JTable rolesTable;
@@ -49,28 +48,23 @@ public class IdentityRoleAssignmentsPanel extends JPanel {
     private JButton removeButton;
     private JButton addButton;
     private SimpleTableModel<Role> rolesModel;
+    private Identity identity;
     private EntityType entityType;
-    private String identityName;
-    private List<Role> assignedRoles;
-    private Set<IdentityHeader> identityGroups;
+    private Set<Role> assignedRoles;
     private boolean readOnly;
 
     /**
-     * @param entityType     the identity type for which this panel is displaying roles (EntityType.USER or EntityType.GROUP).
-     * @param identityName   the display name of the identity.
-     * @param assignedRoles  the Roles assigned to the identity.
-     * @param identityGroups the groups that the identity is contained in.
-     *                       If null, the panel cannot determine if a role assignment is inherited and therefore cannot allow role assignment removal.
-     * @param readOnly       true if the panel should only display the roles, and not allow any changes.
+     * @param identity  the Identity that this panel is displaying role assignments for.
+     * @param assignedRoles the Roles assigned to the identity.
+     * @param readOnly      true if the panel should only display the roles, and not allow any changes.
      */
-    public IdentityRoleAssignmentsPanel(@NotNull final EntityType entityType, @NotNull final String identityName, @NotNull List<Role> assignedRoles, @Nullable Set<IdentityHeader> identityGroups, final boolean readOnly) {
-        if (entityType != EntityType.USER && entityType != EntityType.GROUP) {
-            throw new IllegalArgumentException("Identity must be a user or group.");
+    public IdentityRoleAssignmentsPanel(@NotNull final Identity identity, @NotNull Set<Role> assignedRoles, final boolean readOnly) {
+        if (!(identity instanceof User) && !(identity instanceof Group)) {
+            throw new IllegalArgumentException("Identity must be a user or group");
         }
-        this.entityType = entityType;
-        this.identityName = identityName;
+        this.identity = identity;
+        this.entityType = identity instanceof User ? EntityType.USER : EntityType.GROUP;
         this.assignedRoles = assignedRoles;
-        this.identityGroups = identityGroups;
         this.readOnly = readOnly;
         setLayout(new BorderLayout());
         add(mainPanel, BorderLayout.CENTER);
@@ -113,7 +107,7 @@ public class IdentityRoleAssignmentsPanel extends JPanel {
             addButton.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(final ActionEvent e) {
-                    final RoleSelectionDialog selectDialog = new RoleSelectionDialog(TopComponents.getInstance().getTopParent(), identityName, rolesModel.getRows());
+                    final RoleSelectionDialog selectDialog = new RoleSelectionDialog(TopComponents.getInstance().getTopParent(), identity.getName(), rolesModel.getRows());
                     selectDialog.pack();
                     Utilities.centerOnParentWindow(selectDialog);
                     DialogDisplayer.display(selectDialog, new Runnable() {
@@ -136,39 +130,8 @@ public class IdentityRoleAssignmentsPanel extends JPanel {
                 public void actionPerformed(final ActionEvent e) {
                     final List<Role> selectedRoles = getSelected();
                     if (!selectedRoles.isEmpty()) {
-                        final Map<Role, String> assignedRolesToRemove = new HashMap<>(selectedRoles.size());
                         for (final Role selectedRole : selectedRoles) {
-                            final boolean currentlyAssigned = assignedRoles.contains(selectedRole);
-                            final boolean roleInherited = isRoleInherited(selectedRole);
-                            if (!roleInherited && currentlyAssigned) {
-                                final int row = rolesModel.getRowIndex(selectedRole);
-                                final Object nameVal = rolesModel.getValueAt(row, NAME_COL_INDEX);
-                                final String name;
-                                if (nameVal instanceof String) {
-                                    name = (String) nameVal;
-                                } else {
-                                    name = NAME_UNAVAILABLE;
-                                }
-                                assignedRolesToRemove.put(selectedRole, name);
-                            } else if (!roleInherited && !currentlyAssigned) {
-                                // role was added then removed - don't need confirmation
-                                rolesModel.removeRow(selectedRole);
-                            }
-                        }
-                        if (!assignedRolesToRemove.isEmpty()) {
-                            final IdentityRoleRemovalDialog confirmation = new IdentityRoleRemovalDialog(TopComponents.getInstance().getTopParent(), entityType, identityName, assignedRolesToRemove);
-                            confirmation.pack();
-                            Utilities.centerOnParentWindow(confirmation);
-                            DialogDisplayer.display(confirmation, new Runnable() {
-                                @Override
-                                public void run() {
-                                    if (confirmation.isConfirmed()) {
-                                        for (final Role role : assignedRolesToRemove.keySet()) {
-                                            rolesModel.removeRow(role);
-                                        }
-                                    }
-                                }
-                            });
+                            rolesModel.removeRow(selectedRole);
                         }
                     }
                 }
@@ -194,21 +157,24 @@ public class IdentityRoleAssignmentsPanel extends JPanel {
                 column("Inherited", 40, 80, 99999, new Functions.Unary<String, Role>() {
                     @Override
                     public String call(final Role role) {
-                        if (identityGroups != null) {
-                            for (final RoleAssignment assignment : role.getRoleAssignments()) {
-                                if (EntityType.GROUP.getName().equals(assignment.getEntityType())) {
-                                    for (final IdentityHeader userGroup : identityGroups) {
-                                        if (userGroup.getProviderOid() == assignment.getProviderId() &&
-                                                userGroup.getStrId().equals(assignment.getIdentityId())) {
-                                            return YES;
-                                        }
-                                    }
+                        final String inherited;
+                        final Set<RoleAssignment> roleAssignments = role.getRoleAssignments();
+                        if (!roleAssignments.isEmpty()) {
+                            boolean directlyAssigned = false;
+                            // it is possible for the same role to be assigned more than once to an identity via its groups
+                            // if at least one of the assignments is a direct assignment, we allow them to remove the role
+                            for (final RoleAssignment assignment : roleAssignments) {
+                                if (!assignment.isInherited()) {
+                                    directlyAssigned = true;
+                                    break;
                                 }
                             }
+                            inherited = directlyAssigned ? NO : YES;
                         } else {
-                            return UNKNOWN;
+                            // role was added by the user
+                            inherited = NO;
                         }
-                        return NO;
+                        return inherited;
                     }
                 }));
         rolesTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
@@ -225,20 +191,20 @@ public class IdentityRoleAssignmentsPanel extends JPanel {
 
     private void handleSelectionChange() {
         final Role selected = roleFromRowIndex(rolesTable.getSelectedRow());
-        removeButton.setEnabled(selected != null && !isRoleInherited(selected));
+        removeButton.setEnabled(selected != null && canRemove(selected));
         rolePropertiesPanel.configure(selected, selected == null ? null : getNameForRole(selected));
     }
 
-    private boolean isRoleInherited(final Role role) {
-        boolean inherited = false;
+    private boolean canRemove(final Role role) {
+        boolean canRemove = true;
         if (role != null) {
             final int row = rolesModel.getRowIndex(role);
             final Object inheritedVal = rolesModel.getValueAt(row, INHERITED_COL_INDEX);
             if (inheritedVal.equals(YES)) {
-                inherited = true;
+                canRemove = false;
             }
         }
-        return inherited;
+        return canRemove;
     }
 
     private java.util.List<Role> getSelected() {

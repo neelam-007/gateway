@@ -15,6 +15,7 @@ import com.l7tech.server.identity.internal.InternalGroupManager;
 import com.l7tech.util.TimeUnit;
 import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.gateway.common.security.rbac.RoleAssignment;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Set;
 import java.util.HashSet;
@@ -110,7 +111,7 @@ public abstract class RoleManagerIdentitySourceSupport implements RoleManagerIde
         return Collections.emptySet();
     }
 
-    public Set<IdentityHeader> getGroups(final Group group) throws FindException {
+    public Set<IdentityHeader> getGroups(@NotNull final Group group) throws FindException {
         return Collections.emptySet();
     }
 

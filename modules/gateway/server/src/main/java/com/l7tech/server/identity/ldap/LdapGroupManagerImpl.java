@@ -33,9 +33,6 @@ import java.util.logging.Logger;
 @LdapClassLoaderRequired
 public class LdapGroupManagerImpl implements LdapGroupManager, Lifecycle {
 
-    // TODO should be configurable
-    private static final int SUB_GROUP_DEPTH = 2;
-
     public LdapGroupManagerImpl() {
     }
 
@@ -547,7 +544,7 @@ public class LdapGroupManagerImpl implements LdapGroupManager, Lifecycle {
                                 // check if this group is a member of other groups. if so, then user belongs to those
                                 // groups too.
                                 if ( groupNestingEnabled()  ) {
-                                    getSubGroups(searchContext, output, header, SUB_GROUP_DEPTH);
+                                    getSubGroups(searchContext, output, header, 2);
                                 }
                             }
 
@@ -586,7 +583,7 @@ public class LdapGroupManagerImpl implements LdapGroupManager, Lifecycle {
             final IdentityHeader header = new IdentityHeader(getProviderOid(), groupId, EntityType.GROUP, null, null, null, null);
             try {
                 final DirContext context = getIdentityProvider().getBrowseContext();
-                getSubGroups(context, output, header, SUB_GROUP_DEPTH);
+                getSubGroups(context, output, header, 1);
             } catch (final NamingException e) {
                 throw new FindException("Unable to retrieve groups for group: " + groupId, e);
             }

@@ -95,7 +95,7 @@ public class GenericUserPanel extends UserPanel {
         try {
             // Initialize form components
             final Collection<Role> rolesForUser = Registry.getDefault().getRbacAdmin().findRolesForUser(user);
-            rolesPanel = new IdentityRoleAssignmentsPanel(EntityType.USER, user.getName(), new ArrayList<>(rolesForUser), userGroups, !Registry.getDefault().getSecurityProvider().hasPermission(new AttemptedUpdate(EntityType.USER, user)));
+            rolesPanel = new IdentityRoleAssignmentsPanel(user, new HashSet<>(rolesForUser), !Registry.getDefault().getSecurityProvider().hasPermission(new AttemptedUpdate(EntityType.USER, user)));
             groupPanel = new UserGroupsPanel(this, config, config.isWritable() && canUpdate);
             certPanel = new NonFederatedUserCertPanel(this, config.isWritable() ? passwordChangeListener : null, canUpdate);
             if (config.type().equals(IdentityProviderType.INTERNAL) && user instanceof InternalUser) {
@@ -831,16 +831,6 @@ public class GenericUserPanel extends UserPanel {
                 userHeader.setStrId(id);
             }
 
-            final RbacAdmin rbacAdmin = Registry.getDefault().getRbacAdmin();
-            for (final Role addedRole : rolesPanel.getAddedRoles()) {
-                addedRole.addAssignedUser(user);
-                rbacAdmin.saveRole(addedRole);
-            }
-            for (final Role removedRole : rolesPanel.getRemovedRoles()) {
-                removedRole.removeAssignedUser(user);
-                rbacAdmin.saveRole(removedRole);
-            }
-
             // Cleanup
             formModified = false;
         } catch (ObjectNotFoundException e) {
@@ -860,6 +850,17 @@ public class GenericUserPanel extends UserPanel {
         return result;
     }
 
+    private void saveRoleChanges() throws SaveException {
+        final RbacAdmin rbacAdmin = Registry.getDefault().getRbacAdmin();
+        for (final Role addedRole : rolesPanel.getAddedRoles()) {
+            addedRole.addAssignedUser(user);
+            rbacAdmin.saveRole(addedRole);
+        }
+        for (final Role removedRole : rolesPanel.getRemovedRoles()) {
+            removedRole.removeAssignedUser(user);
+            rbacAdmin.saveRole(removedRole);
+        }
+    }
 
     private final ActionListener closeDlgListener = new ActionListener() {
         public void actionPerformed(ActionEvent e) {
@@ -893,6 +894,12 @@ public class GenericUserPanel extends UserPanel {
                 } else {
                     log.log(Level.WARNING, "IdentityProviderConfig is not writable or user does not have permission to save changes.");
                 }
+            }
+            try {
+                saveRoleChanges();
+            } catch (final SaveException e) {
+                log.log(Level.WARNING, "Error saving User role assignments: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(), "Error saving role assignments.", "Error", JOptionPane.ERROR_MESSAGE, null);
             }
             Utilities.dispose(Utilities.getRootPaneContainerAncestor(GenericUserPanel.this));
         }

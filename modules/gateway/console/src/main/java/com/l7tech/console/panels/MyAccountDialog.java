@@ -94,19 +94,12 @@ public class MyAccountDialog extends JDialog {
     }
 
     private void createUIComponents() {
-        final java.util.List<Role> rolesForUser = new ArrayList<>();
+        final Set<Role> rolesForUser = new HashSet<>();
         try {
             rolesForUser.addAll(Registry.getDefault().getRbacAdmin().findRolesForUser(user));
         } catch (final FindException e) {
             logger.log(Level.WARNING, "Unable to retrieve roles for user: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
         }
-
-        Set<IdentityHeader> groups = null;
-        try {
-            groups = new HashSet<>(Registry.getDefault().getIdentityAdmin().getGroupHeaders(user.getProviderId(), user.getId()));
-        } catch (final FindException | PermissionDeniedException e) {
-            logger.log(Level.WARNING, "Unable to find user's groups: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-        }
-        assignedRolesPanel = new IdentityRoleAssignmentsPanel(EntityType.USER, user.getName(), rolesForUser, groups, true);
+        assignedRolesPanel = new IdentityRoleAssignmentsPanel(user, rolesForUser, true);
     }
 }

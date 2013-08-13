@@ -7,12 +7,7 @@ import com.l7tech.identity.User;
 import com.l7tech.objectmodel.imp.PersistentEntityImp;
 import com.l7tech.objectmodel.EntityType;
 
-import javax.persistence.Table;
-import javax.persistence.Entity;
-import javax.persistence.Column;
-import javax.persistence.UniqueConstraint;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
+import javax.persistence.*;
 
 import org.hibernate.annotations.Proxy;
 
@@ -33,6 +28,7 @@ public class RoleAssignment extends PersistentEntityImp {
     private Role role;
 
     private String entityType;
+    private boolean inherited;
 
     public RoleAssignment(Role role, long providerId, String identityId, EntityType entityType) {
         if (role == null) throw new IllegalArgumentException("Role cannot be null");
@@ -79,6 +75,21 @@ public class RoleAssignment extends PersistentEntityImp {
 
     public void setEntityType(String type) {
         this.entityType = type;
+    }
+
+    /**
+     * @return true if this role assignment is applicable due to group membership, not because the identity is directly assigned to this role.
+     */
+    @Transient
+    public boolean isInherited() {
+        return inherited;
+    }
+
+    /**
+     * @param inherited set to true if this role assignment is applicable due to group membership, not because the identity is directly assigned to this role.
+     */
+    public void setInherited(final boolean inherited) {
+        this.inherited = inherited;
     }
 
     @SuppressWarnings({"RedundantIfStatement"})
