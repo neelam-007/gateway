@@ -2,6 +2,7 @@ package com.l7tech.console.panels;
 
 import com.japisoft.xmlpad.UIAccessibility;
 import com.japisoft.xmlpad.XMLContainer;
+import com.l7tech.common.io.DtdUtils;
 import com.l7tech.common.io.SchemaUtil;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.console.SsmApplication;
@@ -17,9 +18,8 @@ import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.FileChooserUtil;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.OkCancelDialog;
-import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.EntityUtil;
-import com.l7tech.common.io.DtdUtils;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.TextUtils;
@@ -31,11 +31,7 @@ import org.xml.sax.SAXException;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.KeyEvent;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
+import java.awt.event.*;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
@@ -158,7 +154,7 @@ public class ResourceEntryEditor extends JDialog {
         Utilities.setButtonAccelerator(this, helpButton, KeyEvent.VK_F1);
         setMinimumSize( getContentPane().getMinimumSize() );
 
-        zoneControl.configure(resourceEntry.getOid() == ResourceEntry.DEFAULT_OID ? OperationType.CREATE : canEdit ? OperationType.UPDATE : OperationType.READ, resourceEntry);
+        zoneControl.configure(Goid.isDefault(resourceEntry.getGoid()) ? OperationType.CREATE : canEdit ? OperationType.UPDATE : OperationType.READ, resourceEntry);
 
         enableDisableComponents();
 

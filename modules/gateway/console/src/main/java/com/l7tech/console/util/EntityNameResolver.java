@@ -144,7 +144,7 @@ public class EntityNameResolver {
                     entity = metadata;
                     break;
                 case RESOURCE_ENTRY:
-                    final ResourceEntry resourceEntry = resourceAdmin.findResourceEntryByPrimaryKey(header.getOid());
+                    final ResourceEntry resourceEntry = resourceAdmin.findResourceEntryByPrimaryKey(header.getGoid());
                     validateFoundEntity(header, resourceEntry);
                     entity = resourceEntry;
                     break;

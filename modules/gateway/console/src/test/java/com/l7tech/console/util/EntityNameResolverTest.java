@@ -140,14 +140,14 @@ public class EntityNameResolverTest {
         final String uri = "http://localhost:8080";
         final ResourceEntry resourceEntry = new ResourceEntry();
         resourceEntry.setUri(uri);
-        when(resourceAdmin.findResourceEntryByPrimaryKey(OID)).thenReturn(resourceEntry);
-        assertEquals(uri, resolver.getNameForHeader(new EntityHeader(OID, EntityType.RESOURCE_ENTRY, null, null)));
+        when(resourceAdmin.findResourceEntryByPrimaryKey(GOID)).thenReturn(resourceEntry);
+        assertEquals(uri, resolver.getNameForHeader(new EntityHeader(GOID, EntityType.RESOURCE_ENTRY, null, null)));
     }
 
     @Test(expected = FindException.class)
     public void getNameForResourceEntryHeaderNotFound() throws Exception {
-        when(resourceAdmin.findResourceEntryByPrimaryKey(anyLong())).thenReturn(null);
-        resolver.getNameForHeader(new EntityHeader(OID, EntityType.RESOURCE_ENTRY, null, null));
+        when(resourceAdmin.findResourceEntryByPrimaryKey(any(Goid.class))).thenReturn(null);
+        resolver.getNameForHeader(new EntityHeader(GOID, EntityType.RESOURCE_ENTRY, null, null));
     }
 
     @Test

@@ -31,13 +31,13 @@ public interface ResourceAdmin {
     /**
      * Find a resource entry by primary key.
      *
-     * @param oid The primary key
+     * @param goid The primary key
      * @return The resource or null if not found
      * @throws FindException If an error occurs
      */
     @Transactional(readOnly=true)
     @Secured(stereotype=MethodStereotype.FIND_ENTITY)
-    ResourceEntry findResourceEntryByPrimaryKey(long oid) throws FindException;
+    ResourceEntry findResourceEntryByPrimaryKey(Goid goid) throws FindException;
 
     /**
      * Find a resource entry by URI and type.
@@ -63,12 +63,12 @@ public interface ResourceAdmin {
     /**
      * Delete the resource entry with the given identifier if it exists.
      *
-     * @param resourceEntryOid The primary key of the resource entry to delete
+     * @param resourceEntryGoid The primary key of the resource entry to delete
      * @throws FindException If an error occurs
      * @throws DeleteException If an error occurs
      */
     @Secured(stereotype=MethodStereotype.DELETE_BY_ID)
-    void deleteResourceEntry(long resourceEntryOid) throws FindException, DeleteException;
+    void deleteResourceEntry(Goid resourceEntryGoid) throws FindException, DeleteException;
 
     /**
      * Save the given resource entry.
@@ -79,7 +79,7 @@ public interface ResourceAdmin {
      * @throws UpdateException If an error occurs
      */
     @Secured(stereotype=MethodStereotype.SAVE_OR_UPDATE)
-    long saveResourceEntry(ResourceEntry resourceEntry) throws SaveException, UpdateException;
+    Goid saveResourceEntry(ResourceEntry resourceEntry) throws SaveException, UpdateException;
 
     /**
      * Save a bag of resource entries.
@@ -183,12 +183,12 @@ public interface ResourceAdmin {
      * <p>This will count the number of given resources that are either
      * registered, or are dependencies of registered resources.</p>
      *
-     * @param resourceOids The set of resources to check.
+     * @param resourceGoids The set of resources to check.
      * @return The count of registered resources.
      * @throws FindException If an error occurs.
      */
     @Transactional(readOnly=true)
-    int countRegisteredSchemas( Collection<Long> resourceOids ) throws FindException;
+    int countRegisteredSchemas( Collection<Goid> resourceGoids ) throws FindException;
 
     /**
      * Are schema doctypes currently permitted.

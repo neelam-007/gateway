@@ -1,32 +1,20 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.common.io.ResourceDocument;
-import com.l7tech.common.io.ResourceDocumentResolver;
-import com.l7tech.common.io.ResourceDocumentResolverSupport;
-import com.l7tech.common.io.URIResourceDocument;
-import com.l7tech.common.io.XmlUtil;
-import static com.l7tech.console.panels.GlobalResourceImportContext.*;
-import static com.l7tech.console.panels.GlobalResourceImportWizard.*;
-import com.l7tech.gateway.common.resources.ResourceAdmin;
-import com.l7tech.gateway.common.resources.ResourceAdminStub;
-import com.l7tech.gateway.common.resources.ResourceEntry;
-import com.l7tech.gateway.common.resources.ResourceEntryHeader;
-import com.l7tech.gateway.common.resources.ResourceType;
-import static org.junit.Assert.*;
-
+import com.l7tech.common.io.*;
+import com.l7tech.gateway.common.resources.*;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.Functions;
 import org.junit.Test;
 
 import java.io.IOException;
 import java.net.URI;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
+import java.util.*;
 import java.util.logging.Logger;
+
+import static com.l7tech.console.panels.GlobalResourceImportContext.*;
+import static com.l7tech.console.panels.GlobalResourceImportWizard.*;
+import static org.junit.Assert.*;
 
 /**
  * Unit tests for global resource import wizard.
@@ -535,7 +523,7 @@ public class GlobalResourceImportWizardTest {
     private ResourceEntry resource( final String uri, final String content, final String key ) {
         final ResourceEntry resourceEntry = new ResourceEntry();
 
-        resourceEntry.setOid( oid() );
+        resourceEntry.setGoid(new Goid(0,oid()));
         resourceEntry.setUri( uri );
         resourceEntry.setType( uri.endsWith( ".dtd" ) ? ResourceType.DTD : ResourceType.XML_SCHEMA );
         resourceEntry.setContentType( resourceEntry.getType().getMimeType() );

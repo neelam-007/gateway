@@ -44,8 +44,8 @@ public class ResourceAdminImpl implements ResourceAdmin {
     }
 
     @Override
-    public ResourceEntry findResourceEntryByPrimaryKey( final long oid ) throws FindException {
-        return resourceEntryManager.findByPrimaryKey( oid );
+    public ResourceEntry findResourceEntryByPrimaryKey( final Goid goid ) throws FindException {
+        return resourceEntryManager.findByPrimaryKey( goid );
     }
 
     @Override
@@ -54,17 +54,17 @@ public class ResourceAdminImpl implements ResourceAdmin {
     }
 
     @Override
-    public long saveResourceEntry( final ResourceEntry resourceEntry ) throws SaveException, UpdateException {
-        long oid;
+    public Goid saveResourceEntry( final ResourceEntry resourceEntry ) throws SaveException, UpdateException {
+        Goid goid;
 
-        if ( resourceEntry.getOid() == ResourceEntry.DEFAULT_OID ) {
-            oid = resourceEntryManager.save( resourceEntry );
+        if ( Goid.isDefault(resourceEntry.getGoid()) ) {
+            goid = resourceEntryManager.save( resourceEntry );
         } else {
-            oid = resourceEntry.getOid();
+            goid = resourceEntry.getGoid();
             resourceEntryManager.update( resourceEntry );
         }
 
-        return oid;
+        return goid;
     }
 
     @Override
@@ -76,18 +76,18 @@ public class ResourceAdminImpl implements ResourceAdmin {
 
     @Override
     public void deleteResourceEntry( final ResourceEntry resourceEntry ) throws DeleteException {
-        if ( resourceEntry.getOid() == ResourceEntry.DEFAULT_OID ) {
+        if ( Goid.isDefault(resourceEntry.getGoid()) ) {
             throw new DeleteException( "Cannot delete, entity not persistent" );
         } 
         resourceEntryManager.delete( resourceEntry );
     }
 
     @Override
-    public void deleteResourceEntry( final long resourceEntryOid ) throws FindException, DeleteException {
-        if ( resourceEntryOid == ResourceEntry.DEFAULT_OID ) {
+    public void deleteResourceEntry( final Goid resourceEntryGoid ) throws FindException, DeleteException {
+        if ( Goid.isDefault(resourceEntryGoid) ) {
             throw new DeleteException( "Cannot delete, entity not persistent" );
         }
-        resourceEntryManager.delete( resourceEntryOid );
+        resourceEntryManager.delete( resourceEntryGoid );
     }
 
     @Override
@@ -159,11 +159,11 @@ public class ResourceAdminImpl implements ResourceAdmin {
     }
 
     @Override
-    public int countRegisteredSchemas( final Collection<Long> resourceOids ) throws FindException {
+    public int countRegisteredSchemas( final Collection<Goid> resourceGoids ) throws FindException {
         final Collection<String> uris = new ArrayList<String>();
-        for ( final Long oid : resourceOids ) {
-            if ( oid == null ) continue;
-            final ResourceEntry entry = resourceEntryManager.findByPrimaryKey( oid );
+        for ( final Goid goid : resourceGoids ) {
+            if ( goid == null ) continue;
+            final ResourceEntry entry = resourceEntryManager.findByPrimaryKey( goid );
             if ( entry != null ) {
                 uris.add( entry.getUri() );
             }
@@ -286,7 +286,7 @@ public class ResourceAdminImpl implements ResourceAdmin {
             }
 
             final ResourceEntryHeader header = new ResourceEntryHeader(
-                    Long.toString(ResourceEntry.DEFAULT_OID),
+                    Goid.toString(ResourceEntry.DEFAULT_GOID),
                     uriAndRefKey1[0],
                     null,
                     headerType,

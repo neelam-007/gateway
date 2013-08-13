@@ -7,6 +7,7 @@ import com.l7tech.gateway.common.resources.ResourceEntry;
 import com.l7tech.gateway.common.resources.ResourceEntryHeader;
 import com.l7tech.gateway.common.resources.ResourceType;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.communityschemas.SchemaHandle;
 import com.l7tech.server.communityschemas.SchemaManager;
 import com.l7tech.server.event.EntityClassEvent;
@@ -182,7 +183,7 @@ public class SchemaResourceManager implements PostStartupApplicationListener, In
                 processedTargetNamespaces.add( entry.getResourceKey1() );
 
                 DependencyReferenceInfo info = resourceDependencies.get( entry.getUri() );
-                if ( info == null || info.oid!=entry.getOid() || info.version!=entry.getVersion() ) {
+                if ( info == null || !Goid.equals(info.goid, entry.getGoid()) || info.version!=entry.getVersion() ) {
                     Collection<ResourceReference> references = Collections.emptyList();
 
                     try {
@@ -197,7 +198,7 @@ public class SchemaResourceManager implements PostStartupApplicationListener, In
                                 ExceptionUtils.getDebugException( e ) );
                     }
 
-                    info = new DependencyReferenceInfo( entry.getOid(), entry.getVersion(), entry.getUri(), entry.getResourceKey1(), references );
+                    info = new DependencyReferenceInfo( entry.getGoid(), entry.getVersion(), entry.getUri(), entry.getResourceKey1(), references );
 
                     resourceDependencies.put( entry.getUri(), info );
 
@@ -388,18 +389,18 @@ public class SchemaResourceManager implements PostStartupApplicationListener, In
     }
 
     private static final class DependencyReferenceInfo {
-        private final long oid;
+        private final Goid goid;
         private final int version;
         private final String uri;
         private final String targetNamespace;
         private final Collection<ResourceReference> references;
 
-        private DependencyReferenceInfo( final long oid,
+        private DependencyReferenceInfo( final Goid goid,
                                          final int version,
                                          final String uri,
                                          final String targetNamespace,
                                          final Collection<ResourceReference> references ) {
-            this.oid = oid;
+            this.goid = goid;
             this.version = version;
             this.uri = uri;
             this.targetNamespace = targetNamespace;

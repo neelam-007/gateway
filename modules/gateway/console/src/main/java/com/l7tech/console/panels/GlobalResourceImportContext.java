@@ -1,12 +1,7 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.common.io.ResourceDocument;
-import com.l7tech.common.io.ResourceDocumentResolver;
-import com.l7tech.common.io.ResourceDocumentResolverSupport;
-import com.l7tech.common.io.URIResourceDocument;
-import com.l7tech.common.io.XmlUtil;
+import com.l7tech.common.io.*;
 import com.l7tech.common.mime.ContentTypeHeader;
-import static com.l7tech.console.panels.GlobalResourceImportContext.ImportChoice.*;
 import com.l7tech.gateway.common.resources.ResourceAdmin;
 import com.l7tech.gateway.common.resources.ResourceEntry;
 import com.l7tech.gateway.common.resources.ResourceEntryHeader;
@@ -28,18 +23,9 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
+
+import static com.l7tech.console.panels.GlobalResourceImportContext.ImportChoice.*;
 
 /**
  * Context for global resource imports.
@@ -1296,7 +1282,7 @@ class GlobalResourceImportContext {
         public String getContent() throws IOException {
             if ( resourceEntry == null ) {
                 try {
-                    resourceEntry = resourceAdmin.findResourceEntryByPrimaryKey( resourceEntryHeader.getOid() );
+                    resourceEntry = resourceAdmin.findResourceEntryByPrimaryKey( resourceEntryHeader.getGoid() );
                 } catch ( FindException e ) {
                     throw new IOException(e);
                 }

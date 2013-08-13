@@ -5,21 +5,17 @@ import com.l7tech.gateway.common.resources.ResourceEntryHeader;
 import com.l7tech.gateway.common.resources.ResourceType;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.server.HibernateEntityManager;
+import com.l7tech.server.HibernateGoidEntityManager;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Resource entry manager implementation.
  */
 @Transactional(propagation=Propagation.SUPPORTS, rollbackFor=Throwable.class)
-public class ResourceEntryManagerImpl extends HibernateEntityManager<ResourceEntry, ResourceEntryHeader>  implements ResourceEntryManager
+public class ResourceEntryManagerImpl extends HibernateGoidEntityManager<ResourceEntry, ResourceEntryHeader> implements ResourceEntryManager
 {
     //- PUBLIC
 

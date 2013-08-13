@@ -341,6 +341,19 @@ ALTER TABLE cluster_properties DROP COLUMN objectid_backup;
 update rbac_role set entity_goid = toGoid(@cluster_properties_prefix,entity_oid) where entity_oid is not null and entity_type='CLUSTER_PROPERTY';
 update rbac_predicate_oid oid1 left join rbac_predicate on rbac_predicate.objectid = oid1.objectid left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid set oid1.entity_id = goidToString(toGoid(@cluster_properties_prefix,oid1.entity_id)) where rbac_permission.entity_type = 'CLUSTER_PROPERTY';
 
+-- Resource Entry
+ALTER TABLE resource_entry ADD COLUMN objectid_backup BIGINT(20);
+update resource_entry set objectid_backup=objectid;
+ALTER TABLE resource_entry CHANGE COLUMN objectid goid BINARY(16) NOT NULL;
+-- For manual runs use: set @resource_entry_prefix=createUnreservedPoorRandomPrefix();
+set @resource_entry_prefix=#RANDOM_LONG_NOT_RESERVED#;
+update resource_entry set goid = toGoid(@resource_entry_prefix,objectid_backup);
+update resource_entry set goid = toGoid(0,objectid_backup) where objectid_backup in (-3,-4,-5,-6,-7);
+ALTER TABLE resource_entry DROP COLUMN objectid_backup;
+
+update rbac_role set entity_goid = toGoid(@resource_entry_prefix,entity_oid) where entity_oid is not null and entity_type='RESOURCE_ENTRY';
+update rbac_predicate_oid oid1 left join rbac_predicate on rbac_predicate.objectid = oid1.objectid left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid set oid1.entity_id = goidToString(toGoid(@resource_entry_prefix,oid1.entity_id)) where rbac_permission.entity_type = 'RESOURCE_ENTRY';
+
 -- EmailListener
 ALTER TABLE email_listener ADD COLUMN objectid_backup BIGINT(20);
 UPDATE email_listener SET objectid_backup=objectid;
@@ -1064,7 +1077,8 @@ INSERT INTO goid_upgrade_map (table_name, prefix) VALUES
       ('uddi_service_control_monitor_runtime', @uddi_service_control_monitor_runtime_prefix),
       ('client_cert', @client_cert_prefix),
       ('trusted_cert', @trusted_cert_prefix),
-      ('revocation_check_policy', @revocation_check_policy_prefix);
+      ('revocation_check_policy', @revocation_check_policy_prefix),
+      ('resource_entry', @resource_entry_prefix);
 
 
 --

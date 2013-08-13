@@ -5,10 +5,10 @@ import com.l7tech.gateway.common.resources.ResourceEntry;
 import com.l7tech.gateway.common.resources.ResourceEntryHeader;
 import com.l7tech.gateway.common.resources.ResourceType;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.communityschemas.SchemaSourceResolver;
-import com.l7tech.server.event.EntityInvalidationEvent;
+import com.l7tech.server.event.GoidEntityInvalidationEvent;
 import com.l7tech.server.util.PostStartupApplicationListener;
-import com.l7tech.util.ArrayUtils;
 import com.l7tech.util.CausedIOException;
 import com.l7tech.util.Functions;
 import org.springframework.context.ApplicationEvent;
@@ -19,13 +19,7 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -172,8 +166,8 @@ public class ResourceEntrySchemaSourceResolver implements PostStartupApplication
 
     @Override
     public void onApplicationEvent( final ApplicationEvent event ) {
-        if ( event instanceof EntityInvalidationEvent ) {
-            final EntityInvalidationEvent invalidationEvent = (EntityInvalidationEvent) event;
+        if ( event instanceof GoidEntityInvalidationEvent) {
+            final GoidEntityInvalidationEvent invalidationEvent = (GoidEntityInvalidationEvent) event;
             if ( ResourceEntry.class.isAssignableFrom(invalidationEvent.getEntityClass()) ) {
                 invalidateSchemas( invalidationEvent.getEntityIds() );
             }
@@ -183,8 +177,8 @@ public class ResourceEntrySchemaSourceResolver implements PostStartupApplication
     //- PRIVATE
 
     private final ResourceEntryManager resourceEntryManager;
-    private final Object oidToUriMapLock = new Object();
-    private final Map<Long, Set<String>> oidToUriMap = new HashMap<Long,Set<String>>();
+    private final Object goidToUriMapLock = new Object();
+    private final Map<Goid, Set<String>> goidToUriMap = new HashMap<Goid,Set<String>>();
     private final AtomicReference<SchemaInvalidationListener> listenerRef = new AtomicReference<SchemaInvalidationListener>();
 
     /**
@@ -194,13 +188,13 @@ public class ResourceEntrySchemaSourceResolver implements PostStartupApplication
         SchemaSource schema = null;
 
         if ( resourceEntry != null ) {
-            synchronized( oidToUriMapLock ) {
-                Set<String> urisForOid = oidToUriMap.get( resourceEntry.getOid() );
-                if ( urisForOid == null ) {
-                    urisForOid = new HashSet<String>();
-                    oidToUriMap.put( resourceEntry.getOid(), urisForOid );
+            synchronized( goidToUriMapLock ) {
+                Set<String> urisForGoid = goidToUriMap.get( resourceEntry.getGoid() );
+                if ( urisForGoid == null ) {
+                    urisForGoid = new HashSet<String>();
+                    goidToUriMap.put( resourceEntry.getGoid(), urisForGoid );
                 }
-                urisForOid.add( resourceEntry.getUri() );
+                urisForGoid.add( resourceEntry.getUri() );
             }
             schema = new DefaultSchemaSource( resourceEntry.getUri(), resourceEntry.getContent(), this );
         }
@@ -224,21 +218,21 @@ public class ResourceEntrySchemaSourceResolver implements PostStartupApplication
     /**
      *
      */
-    private void invalidateSchemas( final long[] resourceEntryOids ) {
+    private void invalidateSchemas( final Goid[] resourceEntryGoids ) {
         final SchemaInvalidationListener listener = listenerRef.get();
         if ( listener != null ) {
-            final Collection<Long> resourceEntryOidCollection = Arrays.asList(ArrayUtils.box(resourceEntryOids));
-            final Map<Long, Set<String>> oidToUriMap;
-            synchronized( oidToUriMapLock ) {
-                oidToUriMap = new HashMap<Long,Set<String>>( this.oidToUriMap );
-                this.oidToUriMap.keySet().removeAll( resourceEntryOidCollection );
+            final Collection<Goid> resourceEntryGoidCollection = Arrays.asList(resourceEntryGoids);
+            final Map<Goid, Set<String>> goidToUriMap;
+            synchronized( goidToUriMapLock ) {
+                goidToUriMap = new HashMap<Goid,Set<String>>( this.goidToUriMap );
+                this.goidToUriMap.keySet().removeAll( resourceEntryGoidCollection );
             }
 
-            oidToUriMap.keySet().retainAll(resourceEntryOidCollection);
-            final Set<String> uris = Functions.reduce( oidToUriMap.values(), new HashSet<String>(), new Functions.Binary<Set<String>,Set<String>,Set<String>>(){
+            goidToUriMap.keySet().retainAll(resourceEntryGoidCollection);
+            final Set<String> uris = Functions.reduce( goidToUriMap.values(), new HashSet<String>(), new Functions.Binary<Set<String>,Set<String>,Set<String>>(){
                 @Override
-                public Set<String> call( final Set<String> aggregated, final Set<String> urisForOid ) {
-                    aggregated.addAll( urisForOid );
+                public Set<String> call( final Set<String> aggregated, final Set<String> urisForGoid ) {
+                    aggregated.addAll( urisForGoid );
                     return aggregated;
                 }
             } );

@@ -1271,7 +1271,7 @@ public class ServerGatewayManagementAssertionTest {
                 "        </Property>\n" +
                 "    </Properties>\n" +
                 "</ResourceDocument>";
-        doCreate( resourceUri, payload, "4", "5" );
+        doCreate( resourceUri, payload, new Goid(0,4).toString(), new Goid(0,5).toString() );
     }
 
     @Test
@@ -1281,7 +1281,7 @@ public class ServerGatewayManagementAssertionTest {
                 "<ResourceDocument xmlns=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
                 "    <Resource sourceUrl=\"books2.xsd\" type=\"xmlschema\">&lt;xs:schema targetNamespace=\"urn:books2\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"&gt;&lt;xs:element name=\"book\" type=\"xs:string\"/&gt;&lt;/xs:schema&gt;</Resource>\n" +
                 "</ResourceDocument>";
-        doCreate( resourceUri, payload, "4", "5" );
+        doCreate( resourceUri, payload, new Goid(0,4).toString(), new Goid(0,5).toString() );
     }
 
     @Test
@@ -1924,8 +1924,8 @@ public class ServerGatewayManagementAssertionTest {
 
     @Test
     public void testPutResourceDocument() throws Exception {
-        final String message = "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\"><s:Header><wsa:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Put</wsa:Action><wsa:To s:mustUnderstand=\"true\">http://127.0.0.1:8080/wsman</wsa:To><wsman:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/resources</wsman:ResourceURI><wsa:MessageID s:mustUnderstand=\"true\">uuid:afad2993-7d39-1d39-8002-481688002100</wsa:MessageID><wsa:ReplyTo><wsa:Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo><wsman:SelectorSet><wsman:Selector Name=\"id\">1</wsman:Selector></wsman:SelectorSet><wsman:RequestEPR/></s:Header><s:Body>" +
-                "    <l7:ResourceDocument id=\"1\" version=\"0\">\n" +
+        final String message = "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\"><s:Header><wsa:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Put</wsa:Action><wsa:To s:mustUnderstand=\"true\">http://127.0.0.1:8080/wsman</wsa:To><wsman:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/resources</wsman:ResourceURI><wsa:MessageID s:mustUnderstand=\"true\">uuid:afad2993-7d39-1d39-8002-481688002100</wsa:MessageID><wsa:ReplyTo><wsa:Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo><wsman:SelectorSet><wsman:Selector Name=\"id\">"+new Goid(0,1)+"</wsman:Selector></wsman:SelectorSet><wsman:RequestEPR/></s:Header><s:Body>" +
+                "    <l7:ResourceDocument id=\""+new Goid(0,1)+"\" version=\"0\">\n" +
                 "        <l7:Resource sourceUrl=\"books2.xsd\" type=\"xmlschema\">&lt;xs:schema xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"&gt;&lt;xs:element name=\"book\" type=\"xs:string\"/&gt;&lt;/xs:schema&gt;</l7:Resource>\n" +
                 "    </l7:ResourceDocument>\n" +
                 "</s:Body></s:Envelope>";
@@ -1939,7 +1939,7 @@ public class ServerGatewayManagementAssertionTest {
                 final Element resourceDocument = XmlUtil.findExactlyOneChildElementByName(soapBody, NS_GATEWAY_MANAGEMENT, "ResourceDocument");
                 final Element resource = XmlUtil.findExactlyOneChildElementByName(resourceDocument, NS_GATEWAY_MANAGEMENT, "Resource");
 
-                assertEquals("Resource document id", "1", resourceDocument.getAttribute( "id" ));
+                assertEquals("Resource document id", new Goid(0,1).toString(), resourceDocument.getAttribute( "id" ));
                 assertEquals("Resource document version", Integer.toString( expectedVersion++ ), resourceDocument.getAttribute( "version" ));
                 assertEquals("Resource document resource sourceUrl", "books2.xsd", resource.getAttribute( "sourceUrl" ));
             }
@@ -3024,9 +3024,9 @@ public class ServerGatewayManagementAssertionTest {
         beanFactory.addBean( "clusterPropertyCache", new ClusterPropertyCache(){{ setClusterPropertyManager( clusterPropertyManager ); }});
         beanFactory.addBean( "clusterPropertyManager", clusterPropertyManager);
         beanFactory.addBean( "resourceEntryManager", new ResourceEntryManagerStub(
-                resource( 1L,"books.xsd", ResourceType.XML_SCHEMA, "urn:books", "<xs:schema xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"><xs:element name=\"book\" type=\"xs:string\"/></xs:schema>", null),
-                resource( 2L,"books_refd.xsd", ResourceType.XML_SCHEMA, "urn:booksr", "<xs:schema xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"><xs:element name=\"book\" type=\"xs:string\"/></xs:schema>", "The booksr schema."),
-                resource( 3L,"books.dtd", ResourceType.DTD, "books", "<!ELEMENT book ANY>", "The books DTD.")) );
+                resource( new Goid(0,1L),"books.xsd", ResourceType.XML_SCHEMA, "urn:books", "<xs:schema xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"><xs:element name=\"book\" type=\"xs:string\"/></xs:schema>", null),
+                resource( new Goid(0,2L),"books_refd.xsd", ResourceType.XML_SCHEMA, "urn:booksr", "<xs:schema xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"><xs:element name=\"book\" type=\"xs:string\"/></xs:schema>", "The booksr schema."),
+                resource( new Goid(0,3L),"books.dtd", ResourceType.DTD, "books", "<!ELEMENT book ANY>", "The books DTD.")) );
         beanFactory.addBean( "folderManager", new FolderManagerStub(
                 rootFolder,
                 testFolder,
@@ -3229,9 +3229,9 @@ public class ServerGatewayManagementAssertionTest {
         return new SsgKeyEntry( keystoreOid, alias, new X509Certificate[]{cert}, privateKey);
     }
 
-    private static ResourceEntry resource( final long oid, final String uri, final ResourceType type, final String key, final String content, final String desc ) {
+    private static ResourceEntry resource( final Goid goid, final String uri, final ResourceType type, final String key, final String content, final String desc ) {
         final ResourceEntry entry = new ResourceEntry();
-        entry.setOid( oid );
+        entry.setGoid(goid);
         entry.setUri( uri );
         entry.setType( type );
         entry.setContentType( type.getMimeType() );

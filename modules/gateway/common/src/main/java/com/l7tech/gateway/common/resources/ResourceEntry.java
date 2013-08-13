@@ -1,18 +1,11 @@
 package com.l7tech.gateway.common.resources;
 
-import com.l7tech.objectmodel.imp.PersistentEntityImp;
-import com.l7tech.objectmodel.imp.ZoneablePersistentEntityImp;
+import com.l7tech.objectmodel.imp.ZoneableGoidEntityImp;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.HexUtils;
 import org.hibernate.annotations.Proxy;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
-import javax.persistence.Lob;
-import javax.persistence.Table;
-import javax.persistence.Version;
+import javax.persistence.*;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 
@@ -22,7 +15,7 @@ import javax.validation.constraints.Size;
 @Entity
 @Proxy(lazy = false)
 @Table(name = "resource_entry")
-public class ResourceEntry extends ZoneablePersistentEntityImp {
+public class ResourceEntry extends ZoneableGoidEntityImp {
 
     //- PUBLIC
 

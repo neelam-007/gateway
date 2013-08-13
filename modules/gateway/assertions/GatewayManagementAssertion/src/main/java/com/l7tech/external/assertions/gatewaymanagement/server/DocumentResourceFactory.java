@@ -1,19 +1,15 @@
 package com.l7tech.external.assertions.gatewaymanagement.server;
 
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.gateway.api.FolderMO;
 import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.gateway.api.Resource;
 import com.l7tech.gateway.api.ResourceDocumentMO;
 import com.l7tech.gateway.common.resources.ResourceEntry;
 import com.l7tech.gateway.common.resources.ResourceEntryHeader;
-import static com.l7tech.gateway.common.resources.ResourceType.*;
-
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.ObjectModelException;
-import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.server.globalresources.ResourceEntryManager;
 import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.security.rbac.SecurityFilter;
@@ -21,15 +17,17 @@ import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.Either;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Option;
-
-import static com.l7tech.util.Either.left;
-import static com.l7tech.util.Either.right;
-import static com.l7tech.util.Eithers.extract;
-import static com.l7tech.util.TextUtils.trim;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.xml.sax.EntityResolver;
 
 import java.util.Map;
+
+import static com.l7tech.gateway.common.resources.ResourceType.DTD;
+import static com.l7tech.gateway.common.resources.ResourceType.XML_SCHEMA;
+import static com.l7tech.util.Either.left;
+import static com.l7tech.util.Either.right;
+import static com.l7tech.util.Eithers.extract;
+import static com.l7tech.util.TextUtils.trim;
 
 /**
  * The DocumentResourceFactory is a general purpose resource factory.
@@ -41,7 +39,7 @@ import java.util.Map;
  * for the various resource types.</p>
  */                                                
 @ResourceFactory.ResourceType(type=ResourceDocumentMO.class)
-public class DocumentResourceFactory extends EntityManagerResourceFactory<ResourceDocumentMO, ResourceEntry, ResourceEntryHeader> {
+public class DocumentResourceFactory extends GoidEntityManagerResourceFactory<ResourceDocumentMO, ResourceEntry, ResourceEntryHeader> {
 
     //- PUBLIC
 

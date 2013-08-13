@@ -3,8 +3,8 @@ package com.l7tech.server.globalresources;
 import com.l7tech.gateway.common.resources.ResourceEntry;
 import com.l7tech.gateway.common.resources.ResourceEntryHeader;
 import com.l7tech.gateway.common.resources.ResourceType;
-import com.l7tech.objectmodel.EntityManager;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.GoidEntityManager;
 import com.l7tech.objectmodel.PropertySearchableEntityManager;
 import org.jetbrains.annotations.Nullable;
 
@@ -13,7 +13,7 @@ import java.util.Collection;
 /**
  * Entity manager for resource entries.
  */
-public interface ResourceEntryManager extends EntityManager<ResourceEntry, ResourceEntryHeader>, PropertySearchableEntityManager<ResourceEntryHeader> {
+public interface ResourceEntryManager extends GoidEntityManager<ResourceEntry, ResourceEntryHeader>, PropertySearchableEntityManager<ResourceEntryHeader> {
 
     /**
      * Find a resource entry by URI.

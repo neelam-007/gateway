@@ -108,7 +108,7 @@ public class ResourceAdminEntityResolver implements EntityResolver2 {
         if ( publicId != null ) {
             final Collection<ResourceEntryHeader> headers = resourceAdmin.findResourceHeadersByPublicIdentifier( publicId );
             if ( headers.size() == 1 ) {
-                resourceEntry = resourceAdmin.findResourceEntryByPrimaryKey( headers.iterator().next().getOid() );
+                resourceEntry = resourceAdmin.findResourceEntryByPrimaryKey( headers.iterator().next().getGoid() );
             }
         }
 

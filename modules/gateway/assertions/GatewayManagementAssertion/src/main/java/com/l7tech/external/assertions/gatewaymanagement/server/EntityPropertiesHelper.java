@@ -435,7 +435,7 @@ class EntityPropertiesHelper {
             "content",
             "contentType",
             "id",
-            "oid",
+            "goid",
             "resourceKey1",
             "resourceKey2",
             "resourceKey3",

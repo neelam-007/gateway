@@ -13,10 +13,7 @@ import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.TableUtil;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.TextListCellRenderer;
-import com.l7tech.objectmodel.DuplicateObjectException;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.ObjectModelException;
+import com.l7tech.objectmodel.*;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 
@@ -335,7 +332,7 @@ public class GlobalResourcesDialog extends JDialog {
         final ResourceEntryHeader header = resourcesTableModel.getRowObject( resourcesTable.convertRowIndexToModel(selectedRow) );        
         final ResourceEntry resourceEntry;
         try {
-            resourceEntry = resourceAdmin.findResourceEntryByPrimaryKey( header.getOid() );
+            resourceEntry = resourceAdmin.findResourceEntryByPrimaryKey( header.getGoid() );
         } catch ( FindException e ) {
             logger.log( Level.WARNING, "Error accessing resource entry.", e );
             showErrorMessage( "Error Accessing Resource", "Unable to access resource due to:\n" + ExceptionUtils.getMessage(e) );
@@ -403,9 +400,9 @@ public class GlobalResourcesDialog extends JDialog {
                 @Override
                 public void run() {
                     try {
-                        final Collection<Long> resourceOids = new ArrayList<Long>();
+                        final Collection<Goid> resourceGoids = new ArrayList<Goid>();
                         for ( final ResourceEntryHeader resourceEntryHeader : toRemove ) {
-                            resourceOids.add( resourceEntryHeader.getOid() );
+                            resourceGoids.add( resourceEntryHeader.getGoid() );
                         }
 
                         final Runnable deletionRunnable = new Runnable() {
@@ -413,7 +410,7 @@ public class GlobalResourcesDialog extends JDialog {
                             public void run() {
                                 try {
                                     for ( final ResourceEntryHeader resourceEntryHeader : toRemove ) {
-                                        resourceAdmin.deleteResourceEntry( resourceEntryHeader.getOid() );
+                                        resourceAdmin.deleteResourceEntry( resourceEntryHeader.getGoid() );
                                     }
                                 } catch ( ObjectModelException e ) {
                                     logger.log( Level.WARNING, "Error deleting resource entry.", e );
@@ -422,16 +419,16 @@ public class GlobalResourcesDialog extends JDialog {
                             }
                         };
 
-                        final int useCount = resourceAdmin.countRegisteredSchemas( resourceOids );
+                        final int useCount = resourceAdmin.countRegisteredSchemas( resourceGoids );
                         if ( useCount > 0 ) {
                             final String usageConfirmationMessage;
-                            if ( resourceOids.size() == 1 ) {
+                            if ( resourceGoids.size() == 1 ) {
                                 usageConfirmationMessage =
                                         "The selected resource is currently used from policies\n" +
                                         "or registered for hardware use.\n\n" + toRemove.get( 0 ).getUri() +
                                         "\n\nReally delete selected resource?";
                             } else {
-                                usageConfirmationMessage = useCount + " of " +resourceOids.size()+
+                                usageConfirmationMessage = useCount + " of " +resourceGoids.size()+
                                         " selected resources are currently used from\npolicies or registered for hardware use." +
                                         "\n\nReally delete selected resources?";
                             }

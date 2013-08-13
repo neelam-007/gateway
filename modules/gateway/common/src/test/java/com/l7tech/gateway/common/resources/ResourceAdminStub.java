@@ -45,11 +45,11 @@ public class ResourceAdminStub implements ResourceAdmin {
     }
 
     @Override
-    public ResourceEntry findResourceEntryByPrimaryKey( final long oid ) throws FindException {
+    public ResourceEntry findResourceEntryByPrimaryKey( final Goid goid ) throws FindException {
         return Functions.reduce( resources, null, new Functions.Binary<ResourceEntry,ResourceEntry,ResourceEntry>(){
             @Override
             public ResourceEntry call( final ResourceEntry resourceEntry, final ResourceEntry resourceEntry1 ) {
-                return resourceEntry!=null ? resourceEntry : resourceEntry1.getOid()==oid ? resourceEntry1 : null;
+                return resourceEntry!=null ? resourceEntry : Goid.equals(resourceEntry1.getGoid(), goid) ? resourceEntry1 : null;
             }
         } );
     }
@@ -70,24 +70,24 @@ public class ResourceAdminStub implements ResourceAdmin {
     }
 
     @Override
-    public void deleteResourceEntry( final long resourceEntryOid ) throws FindException, DeleteException {
-        final ResourceEntry resourceEntry = findResourceEntryByPrimaryKey( resourceEntryOid );
+    public void deleteResourceEntry( final Goid resourceEntryGoid ) throws FindException, DeleteException {
+        final ResourceEntry resourceEntry = findResourceEntryByPrimaryKey( resourceEntryGoid );
         if (resourceEntry != null) resources.remove( resourceEntry );
     }
 
     @Override
-    public long saveResourceEntry( final ResourceEntry resourceEntry ) throws SaveException, UpdateException {
-        if ( resourceEntry.getOid()==ResourceEntry.DEFAULT_OID ) {
+    public Goid saveResourceEntry( final ResourceEntry resourceEntry ) throws SaveException, UpdateException {
+        if ( Goid.isDefault(resourceEntry.getGoid()) ) {
             final long nextId = Functions.reduce( resources, 0L, new Functions.Binary<Long,Long,ResourceEntry>(){
                 @Override
                 public Long call( final Long oid, final ResourceEntry resourceEntry1 ) {
-                    return Math.max( oid, resourceEntry1.getOid() );
+                    return Math.max( oid, resourceEntry1.getGoid().getLow() );
                 }
             } );
-            resourceEntry.setOid( nextId+1 );
+            resourceEntry.setGoid(new Goid(0,nextId + 1));
         }
         resources.add( resourceEntry );
-        return resourceEntry.getOid();
+        return resourceEntry.getGoid();
     }
 
     @Override
@@ -163,7 +163,7 @@ public class ResourceAdminStub implements ResourceAdmin {
     }
 
     @Override
-    public int countRegisteredSchemas( final Collection<Long> resourceOids ) throws FindException {
+    public int countRegisteredSchemas( final Collection<Goid> resourceOids ) throws FindException {
         return 0;
     }
 

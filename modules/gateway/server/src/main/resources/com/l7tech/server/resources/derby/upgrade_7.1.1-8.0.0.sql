@@ -284,6 +284,19 @@ ALTER TABLE cluster_properties ADD PRIMARY KEY (goid);
 update rbac_role set entity_goid = toGoid(cast(getVariable('cluster_properties_prefix') as bigint),entity_oid) where entity_oid is not null and entity_type='CLUSTER_PROPERTY';
 update rbac_predicate_oid oid1 set oid1.entity_id = ifnull((select goidToString(toGoid(cast(getVariable('cluster_properties_prefix') as bigint),cast(oid1.entity_id as bigint))) from rbac_predicate left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid where rbac_predicate.objectid = oid1.objectid and rbac_permission.entity_type = 'CLUSTER_PROPERTY'), oid1.entity_id);
 
+-- Resource Entry
+ALTER TABLE resource_entry ADD COLUMN goid CHAR(16) FOR BIT DATA;
+call setVariable('resource_entry_prefix', cast(randomLongNotReserved() as char(21)));
+update resource_entry set goid = toGoid(cast(getVariable('resource_entry_prefix') as bigint), objectid);
+update resource_entry set goid = toGoid(0, objectid) where objectid in (-3,-4,-5,-6,-7);
+ALTER TABLE resource_entry ALTER COLUMN goid NOT NULL;
+ALTER TABLE resource_entry DROP PRIMARY KEY;
+ALTER TABLE resource_entry DROP COLUMN objectid;
+ALTER TABLE resource_entry ADD PRIMARY KEY (goid);
+
+update rbac_role set entity_goid = toGoid(cast(getVariable('resource_entry_prefix') as bigint),entity_oid) where entity_oid is not null and entity_type='RESOURCE_ENTRY';
+update rbac_predicate_oid oid1 set oid1.entity_id = ifnull((select goidToString(toGoid(cast(getVariable('resource_entry_prefix') as bigint),cast(oid1.entity_id as bigint))) from rbac_predicate left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid where rbac_predicate.objectid = oid1.objectid and rbac_permission.entity_type = 'RESOURCE_ENTRY'), oid1.entity_id);
+
 -- EmailListener
 ALTER TABLE email_listener_state DROP CONSTRAINT FK5A708C492FC43EC3;
 ALTER TABLE email_listener ADD COLUMN goid CHAR(16) FOR BIT DATA;
@@ -895,4 +908,5 @@ INSERT INTO goid_upgrade_map (table_name, prefix) VALUES
       ('uddi_service_control_monitor_runtime', cast(getVariable('uddi_service_control_monitor_runtime_prefix') as bigint)),
       ('client_cert', cast(getVariable('client_cert_prefix') as bigint)),
       ('trusted_cert', cast(getVariable('trusted_cert_prefix') as bigint)),
-      ('revocation_check_policy', cast(getVariable('revocation_check_policy_prefix') as bigint));
+      ('revocation_check_policy', cast(getVariable('revocation_check_policy_prefix') as bigint)),
+      ('resource_entry', cast(getVariable('resource_entry_prefix') as bigint));
