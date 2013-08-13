@@ -39,7 +39,7 @@ import com.l7tech.security.xml.processor.ProcessorException;
 import com.l7tech.server.DefaultStashManagerFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.variable.ExpandVariables;
-import com.l7tech.server.transport.http.HttpConnectionIdleTimeoutManager2;
+import com.l7tech.server.transport.http.HttpConnectionIdleTimeoutManager;
 import com.l7tech.server.util.HttpForwardingRuleEnforcer;
 import com.l7tech.util.*;
 import org.apache.http.impl.conn.PoolingClientConnectionManager;
@@ -73,7 +73,7 @@ import static com.l7tech.common.io.failover.AbstractFailoverStrategy.makeSynchro
 public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutingAssertion<BridgeRoutingAssertion> {
 
     private final String[] varNames;
-    private HttpConnectionIdleTimeoutManager2 listener;
+    private HttpConnectionIdleTimeoutManager listener;
     private PoolingClientConnectionManager connectionManager;
 
     private static final Managers.BridgeStashManagerFactory BRIDGE_STASH_MANAGER_FACTORY =
@@ -99,7 +99,7 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
         hostnameVerifier = applicationContext.getBean("hostnameVerifier", HostnameVerifier.class);
         trustedCertManager = applicationContext.getBean("trustedCertManager", TrustedCertManager.class);
         wspReader = applicationContext.getBean("wspReader", WspReader.class);
-        listener = applicationContext.getBean("httpConnectionIdleTimeoutManager2", HttpConnectionIdleTimeoutManager2.class);
+        listener = applicationContext.getBean("httpConnectionIdleTimeoutManager", HttpConnectionIdleTimeoutManager.class);
 
         try {
             signerInfo = ServerAssertionUtils.getSignerInfo(ctx, assertion);

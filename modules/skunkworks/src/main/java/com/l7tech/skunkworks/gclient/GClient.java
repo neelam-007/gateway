@@ -2,7 +2,6 @@ package com.l7tech.skunkworks.gclient;
 
 import com.l7tech.common.http.*;
 import com.l7tech.common.http.HttpCookie;
-import com.l7tech.common.http.prov.apache.CommonsHttpClient;
 import com.l7tech.common.http.prov.apache.components.HttpComponentsClient;
 import com.l7tech.common.io.*;
 import com.l7tech.common.mime.ContentTypeHeader;
@@ -31,7 +30,6 @@ import com.l7tech.wsdl.PrettyGoodWSDLLocator;
 import com.l7tech.wsdl.WsdlEntityResolver;
 import com.l7tech.xml.soap.SoapMessageGenerator;
 import com.l7tech.xml.soap.SoapUtil;
-import org.apache.commons.httpclient.SimpleHttpConnectionManager;
 import org.apache.http.impl.conn.BasicClientConnectionManager;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;

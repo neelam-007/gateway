@@ -2,26 +2,22 @@ package com.l7tech.server.util;
 
 import com.l7tech.common.http.*;
 import com.l7tech.util.IOUtils;
-import com.l7tech.util.SyspropUtil;
 import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
 
 import static junit.framework.Assert.assertEquals;
 
-public class IdentityBindingHttpClientFactory2Test {
+public class IdentityBindingHttpClientFactoryTest {
 
-    private IdentityBindingHttpClientFactory2 factory;
+    private IdentityBindingHttpClientFactory factory;
     private MockHttpServer httpServer;
 
     @Before
     public void setUp() throws Exception {
-        factory = new IdentityBindingHttpClientFactory2();
+        factory = new IdentityBindingHttpClientFactory();
         //Setup Http server
         httpServer = new MockHttpServer(17800);
         httpServer.start();

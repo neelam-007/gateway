@@ -1,7 +1,6 @@
 package com.l7tech.skunkworks.oauth.toolkit;
 
 import com.l7tech.common.http.*;
-import com.l7tech.common.http.prov.apache.CommonsHttpClient;
 import com.l7tech.common.http.prov.apache.components.HttpComponentsClient;
 import org.scribe.builder.api.DefaultApi10a;
 import org.scribe.model.Token;

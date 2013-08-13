@@ -1,7 +1,6 @@
 package com.l7tech.skunkworks.http;
 
 import com.l7tech.common.http.*;
-import com.l7tech.common.http.prov.apache.CommonsHttpClient;
 import com.l7tech.common.http.prov.apache.components.HttpComponentsClient;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.util.Charsets;

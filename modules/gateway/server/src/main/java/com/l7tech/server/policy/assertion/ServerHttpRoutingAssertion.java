@@ -32,7 +32,7 @@ import com.l7tech.server.policy.variable.ServerVariables;
 import com.l7tech.server.security.kerberos.KerberosRoutingClient;
 import com.l7tech.server.transport.http.SslClientTrustManager;
 import com.l7tech.server.util.HttpForwardingRuleEnforcer;
-import com.l7tech.server.util.IdentityBindingHttpClientFactory2;
+import com.l7tech.server.util.IdentityBindingHttpClientFactory;
 import com.l7tech.util.*;
 import org.apache.http.conn.ConnectTimeoutException;
 import org.jaaslounge.decoding.kerberos.KerberosEncData;
@@ -176,7 +176,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             httpClientFactory = makeHttpClientFactory();
         } catch (Exception e) {
             logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { "Could not create HTTP client factory." }, e);
-            httpClientFactory = new IdentityBindingHttpClientFactory2();
+            httpClientFactory = new IdentityBindingHttpClientFactory();
         }
         this.httpClientFactory = httpClientFactory;
 

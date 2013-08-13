@@ -2,7 +2,7 @@ package com.l7tech.server.globalresources;
 
 import com.l7tech.common.http.GenericHttpClient;
 import com.l7tech.common.http.prov.apache.components.HttpComponentsClient;
-import com.l7tech.server.transport.http.HttpConnectionManagerListener2;
+import com.l7tech.server.transport.http.HttpConnectionManagerListener;
 import com.l7tech.util.ConfigFactory;
 import org.apache.http.impl.conn.PoolingClientConnectionManager;
 
@@ -16,7 +16,7 @@ public class ConfiguredCommonsHttpClientFactory extends ConfiguredHttpClientFact
     //- PUBLIC
 
     public ConfiguredCommonsHttpClientFactory( final HttpConfigurationCache httpConfigurationCache,
-                                               final HttpConnectionManagerListener2 listener,
+                                               final HttpConnectionManagerListener listener,
                                                final boolean useSslKeyForDefault ) {
         super( httpConfigurationCache, useSslKeyForDefault );
         if ( notifiedConnectionManager.compareAndSet( false, true ) ) {

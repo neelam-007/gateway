@@ -309,7 +309,7 @@
 
 
     <!-- Http connection clean up for http client 4.X -->
-    <bean id="httpConnectionIdleTimeoutManager2" class="com.l7tech.server.transport.http.HttpConnectionIdleTimeoutManager2">
+    <bean id="httpConnectionIdleTimeoutManager" class="com.l7tech.server.transport.http.HttpConnectionIdleTimeoutManager">
         <constructor-arg index="0" ref="serverConfig"/>
         <constructor-arg index="1">
             <bean class="com.l7tech.server.util.ManagedTimer">

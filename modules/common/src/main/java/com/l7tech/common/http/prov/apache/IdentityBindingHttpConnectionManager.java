@@ -9,11 +9,11 @@ import org.apache.http.protocol.HttpContext;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
-public class IdentityBindingHttpConnectionManager2 extends PoolingClientConnectionManager {
+public class IdentityBindingHttpConnectionManager extends PoolingClientConnectionManager {
 
     private static final boolean BINDING_ENABLED = ConfigFactory.getBooleanProperty("com.l7tech.common.http.prov.apache.identityBindingEnabled", true);
     private static final int DEFAULT_BINDING_TIMEOUT = ConfigFactory.getIntProperty("com.l7tech.common.http.prov.apache.identityBindingTimeout", 30000);
-    private static final Logger logger = Logger.getLogger(IdentityBindingHttpConnectionManager2.class.getName());
+    private static final Logger logger = Logger.getLogger(IdentityBindingHttpConnectionManager.class.getName());
     private int bindingTimeout = DEFAULT_BINDING_TIMEOUT;
     private ThreadLocal<ThreadLocalInfo> info = new ThreadLocal<ThreadLocalInfo>();
 

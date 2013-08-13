@@ -1,6 +1,5 @@
 package com.l7tech.server.transport.http;
 
-import com.l7tech.server.transport.http.HttpConnectionManagerListener2.HttpConnectionManagerListenerAdapter2;
 import com.l7tech.server.util.ManagedTimerTask;
 import static com.l7tech.util.CollectionUtils.foreach;
 import com.l7tech.util.Config;
@@ -24,12 +23,12 @@ import java.util.concurrent.TimeUnit;
  * <p>Based on Apache HTTP Client IdleConnectionTimeoutThread, but uses weak
  * references to allow GC of connection managers.</p>
  */
-public class HttpConnectionIdleTimeoutManager2 extends HttpConnectionManagerListenerAdapter2 implements Ordered, Lifecycle {
+public class HttpConnectionIdleTimeoutManager extends HttpConnectionManagerListener.HttpConnectionManagerListenerAdapter implements Ordered, Lifecycle {
 
     //- PUBLIC
 
-    public HttpConnectionIdleTimeoutManager2(final Config config,
-                                             final Timer timer) {
+    public HttpConnectionIdleTimeoutManager(final Config config,
+                                            final Timer timer) {
         this.config = config;
         this.timer = timer;
     }

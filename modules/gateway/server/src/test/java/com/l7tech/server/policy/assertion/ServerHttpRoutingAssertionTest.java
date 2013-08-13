@@ -865,7 +865,7 @@ public class ServerHttpRoutingAssertionTest {
         assertArrayEquals(expectedResult.toByteArray(), data);
     }
 
-    private static class HttpClientFactory extends IdentityBindingHttpClientFactory2 {
+    private static class HttpClientFactory extends IdentityBindingHttpClientFactory {
 
         public PoolStats getStats() {
             return getTotalStats();

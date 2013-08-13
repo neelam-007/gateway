@@ -5,7 +5,7 @@ import org.apache.http.conn.ClientConnectionManager;
 /**
  * Listener for HttpConnectionManagerListener events.
  */
-public interface HttpConnectionManagerListener2 {
+public interface HttpConnectionManagerListener {
 
     /**
      * Notify the listener of HttpConnectionManager instance creation.
@@ -25,7 +25,7 @@ public interface HttpConnectionManagerListener2 {
     /**
      * Adapter for listener implementations.
      */
-    class HttpConnectionManagerListenerAdapter2 implements HttpConnectionManagerListener2 {
+    class HttpConnectionManagerListenerAdapter implements HttpConnectionManagerListener {
         @Override
         public void notifyHttpConnectionManagerCreated( final ClientConnectionManager manager ) {
         }

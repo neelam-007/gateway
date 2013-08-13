@@ -1159,7 +1159,7 @@
     </bean>
 
     <!-- Http connection clean up for http client 4.X -->
-    <bean id="httpConnectionIdleTimeoutManager2" class="com.l7tech.server.transport.http.HttpConnectionIdleTimeoutManager2">
+    <bean id="httpConnectionIdleTimeoutManager" class="com.l7tech.server.transport.http.HttpConnectionIdleTimeoutManager">
         <constructor-arg index="0" ref="serverConfig"/>
         <constructor-arg index="1">
             <bean class="com.l7tech.server.util.ManagedTimer">
@@ -1170,9 +1170,9 @@
 
     <!-- server side HTTP routing HTTP client factory for Http client 4.X-->
     <bean id="httpRoutingHttpClientFactory2"
-          class="com.l7tech.server.util.IdentityBindingHttpClientFactory2"
+          class="com.l7tech.server.util.IdentityBindingHttpClientFactory"
           scope="prototype">
-        <property name="listener" ref="httpConnectionIdleTimeoutManager2"/>
+        <property name="listener" ref="httpConnectionIdleTimeoutManager"/>
     </bean>
 
     <!-- SSL hostname verifier for internode communication -->
@@ -1706,13 +1706,13 @@
 
     <bean id="httpClientFactory" class="com.l7tech.server.globalresources.ConfiguredCommonsHttpClientFactory">
         <constructor-arg index="0" ref="httpConfigurationCache"/>
-        <constructor-arg index="1" ref="httpConnectionIdleTimeoutManager2"/>
+        <constructor-arg index="1" ref="httpConnectionIdleTimeoutManager"/>
         <constructor-arg index="2" value="true"/>
     </bean>
 
     <bean id="anonHttpClientFactory" class="com.l7tech.server.globalresources.ConfiguredCommonsHttpClientFactory">
         <constructor-arg index="0" ref="httpConfigurationCache"/>
-        <constructor-arg index="1" ref="httpConnectionIdleTimeoutManager2"/>
+        <constructor-arg index="1" ref="httpConnectionIdleTimeoutManager"/>
         <constructor-arg index="2" value="false"/>
     </bean>
 

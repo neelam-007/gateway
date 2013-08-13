@@ -2,8 +2,7 @@ package com.l7tech.common.http.prov.apache.components;
 
 import com.l7tech.common.http.*;
 import com.l7tech.common.http.HttpHeaders;
-import com.l7tech.common.http.prov.apache.CommonsHttpClient;
-import com.l7tech.common.http.prov.apache.IdentityBindingHttpConnectionManager2;
+import com.l7tech.common.http.prov.apache.IdentityBindingHttpConnectionManager;
 import com.l7tech.common.io.NonCloseableOutputStream;
 import com.l7tech.common.io.SSLSocketWrapper;
 import com.l7tech.common.io.SocketWrapper;
@@ -72,17 +71,22 @@ import java.util.zip.GZIPOutputStream;
  *
  */
 public class HttpComponentsClient implements RerunnableGenericHttpClient{
+
+    //Retain the old version of Apache HTTP Client configuration prefix
+    private static final String COMMONS_HTTP_CLIENT = "com.l7tech.common.http.prov.apache.CommonsHttpClient";
+
     private static final Logger logger = Logger.getLogger(HttpComponentsClient.class.getName());
     private static final Logger traceLogger = Logger.getLogger( "com.l7tech.server.routing.http.trace");
     private static final Logger traceSecureLogger = Logger.getLogger("com.l7tech.server.routing.https.trace");
-    public static final String PROP_MAX_CONN_PER_HOST = CommonsHttpClient.class.getName() + ".maxConnectionsPerHost";
-    public static final String PROP_MAX_TOTAL_CONN = CommonsHttpClient.class.getName() + ".maxTotalConnections";
-    public static final String PROP_HTTP_EXPECT_CONTINUE = CommonsHttpClient.class.getName() + ".useExpectContinue";
-    public static final String PROP_HTTP_DISABLE_KEEP_ALIVE = CommonsHttpClient.class.getName() + ".noKeepAlive";
-    public static final String PROP_DEFAULT_CONNECT_TIMEOUT = CommonsHttpClient.class.getName() + ".defaultConnectTimeout";
-    public static final String PROP_DEFAULT_READ_TIMEOUT = CommonsHttpClient.class.getName() + ".defaultReadTimeout";
-    public static final String PROP_CREDENTIAL_CHARSET = CommonsHttpClient.class.getName() + ".credentialCharset";
-    public static final String PROP_GZIP_STREAMING_THRESHOLD = CommonsHttpClient.class.getName() + ".gzipStreamThreshold";
+
+    public static final String PROP_MAX_CONN_PER_HOST = COMMONS_HTTP_CLIENT + ".maxConnectionsPerHost";
+    public static final String PROP_MAX_TOTAL_CONN = COMMONS_HTTP_CLIENT + ".maxTotalConnections";
+    public static final String PROP_HTTP_EXPECT_CONTINUE = COMMONS_HTTP_CLIENT + ".useExpectContinue";
+    public static final String PROP_HTTP_DISABLE_KEEP_ALIVE = COMMONS_HTTP_CLIENT + ".noKeepAlive";
+    public static final String PROP_DEFAULT_CONNECT_TIMEOUT = COMMONS_HTTP_CLIENT + ".defaultConnectTimeout";
+    public static final String PROP_DEFAULT_READ_TIMEOUT = COMMONS_HTTP_CLIENT + ".defaultReadTimeout";
+    public static final String PROP_CREDENTIAL_CHARSET = COMMONS_HTTP_CLIENT + ".credentialCharset";
+    public static final String PROP_GZIP_STREAMING_THRESHOLD = COMMONS_HTTP_CLIENT + ".gzipStreamThreshold";
 
     public static final String DEFAULT_CREDENTIAL_CHARSET = "ISO-8859-1"; // see bugzilla #5729
     public static final int DEFAULT_CONNECT_TIMEOUT = ConfigFactory.getIntProperty( PROP_DEFAULT_CONNECT_TIMEOUT, 30000 );
@@ -95,17 +99,13 @@ public class HttpComponentsClient implements RerunnableGenericHttpClient{
     public static final Pattern INTERNET_PATTERN = Pattern.compile("([a-zA-Z0-9._%-]+)@([a-zA-Z0-9.-]+(\\\\.[a-zA-Z0-9.-])*)");
     public static final Pattern NETBIOS_PATTERN = Pattern.compile("([^\\*/?\":|+]+)\\\\([^\\*/?\":|+]+)");
 
-//    private static final Map<SSLSocketFactory, Protocol> protoBySockFac = Collections.synchronizedMap(new WeakHashMap<SSLSocketFactory, Protocol>());
-
-    //TODO: use http cache to cache parameters instead of static field
     private static HttpParams defaultHttpParams;
 
     /**
      * This property was true in 5.1, switched to false in 5.2, URLs should be encoded by the caller (see bug 7598).
      */
-    private static final boolean encodePath = ConfigFactory.getBooleanProperty( CommonsHttpClient.class.getName() + ".encodePath", false );
     private static final int gzipThreshold = ConfigFactory.getIntProperty(PROP_GZIP_STREAMING_THRESHOLD, DEFAULT_GZIP_STREAMING_THRESHOLD);
-    private static final boolean enableTrace = ConfigFactory.getBooleanProperty(CommonsHttpClient.class.getName() + ".enableTrace", true);
+    private static final boolean enableTrace = ConfigFactory.getBooleanProperty(COMMONS_HTTP_CLIENT + ".enableTrace", true);
 
     private static final SchemeSocketFactory traceSocketFactory = new TraceSocketFactory();
 
@@ -115,11 +115,9 @@ public class HttpComponentsClient implements RerunnableGenericHttpClient{
 
         if ( ConfigFactory.getProperty( PROP_HTTP_EXPECT_CONTINUE ) != null) {
             HttpProtocolParams.setUseExpectContinue(defaultHttpParams, ConfigFactory.getBooleanProperty(PROP_HTTP_EXPECT_CONTINUE, false));
-            //defaultParams.setBooleanParameter( "http.protocol.expect-continue", ConfigFactory.getBooleanProperty( PROP_HTTP_EXPECT_CONTINUE, false ) );
         }
         if ( ConfigFactory.getBooleanProperty( PROP_HTTP_DISABLE_KEEP_ALIVE, false ) ) {
             defaultHttpParams.setParameter(ClientPNames.DEFAULT_HEADERS, Collections.singletonList(new BasicHeader("Connection", "close")));
-            //defaultParams.setParameter( "http.default-headers", Collections.singletonList( new Header( "Connection", "close" ) ) );
         }
     }
 
@@ -164,7 +162,7 @@ public class HttpComponentsClient implements RerunnableGenericHttpClient{
     public HttpComponentsClient(ClientConnectionManager cman, Object identity, int connectionTimeout, int timeout, String proxyHost, int proxyPort, String proxyUsername, String proxyPassword) {
         this.cman = cman;
         this.identity = identity;
-        this.isBindingManager = cman instanceof IdentityBindingHttpConnectionManager2;
+        this.isBindingManager = cman instanceof IdentityBindingHttpConnectionManager;
         this.connectionTimeout = connectionTimeout <= 0 ? DEFAULT_CONNECT_TIMEOUT : connectionTimeout;
         this.timeout = timeout <= 0 ? DEFAULT_READ_TIMEOUT : timeout;
         this.proxyHost = proxyHost;
@@ -205,8 +203,6 @@ public class HttpComponentsClient implements RerunnableGenericHttpClient{
         }
     }
 
-
-    //TODO: throw exception if sslContext is null
     private SSLSocketFactory buildSSLSocketFactory(javax.net.ssl.SSLSocketFactory socketFactory, final HostnameVerifier verifier) {
         SSLSocketFactory sf = null;
 
@@ -269,8 +265,6 @@ public class HttpComponentsClient implements RerunnableGenericHttpClient{
         final DefaultHttpClient client = new DefaultHttpClient(cman);
 
         final HttpParams clientParams = new DefaultedHttpParams(client.getParams(), defaultHttpParams);
-        //TODO:implement caching
-        //client.setParams(getOrBuildCachingHttpParams(clientParams));
         client.setParams(clientParams);
 
 
@@ -291,8 +285,6 @@ public class HttpComponentsClient implements RerunnableGenericHttpClient{
             // default is to close so add keep-alive
             clientParams.setParameter(ClientPNames.DEFAULT_HEADERS, Collections.singletonList(new BasicHeader("Connection", "keep-alive")));//"http.default-headers"
         }
-        //TODO: get the stored HttpContext. Potentially we can cache the context instead of storing it in the generic params
-        //final HttpState state = getHttpState(client, params);
         final HttpContext state = getHttpState(params);
 
         String methodString = params.getMethodAsString();
@@ -308,19 +300,6 @@ public class HttpComponentsClient implements RerunnableGenericHttpClient{
         methodParams.setParameter(ClientPNames.COOKIE_POLICY, CookiePolicy.BROWSER_COMPATIBILITY);
         if (virtualHost != null && virtualHost.length() > 0) {
             methodParams.setParameter(ClientPNames.VIRTUAL_HOST, virtualHost);
-            //if this doesn't work we need to try different approach
-            /*
-            client.addRequestInterceptor(new HttpRequestInterceptor() {
-
-                public void process(
-                        final HttpRequest request,
-                        final HttpContext context) throws HttpException, IOException {
-                    request.setHeader(ClientPNames.VIRTUAL_HOST, virtualHost);
-                }
-            });
-            in this case virtual host can contain the port that is overridden unlike the previous version
-           */
-
         }
 
         final Long contentLen = params.getContentLength();
@@ -481,7 +460,7 @@ public class HttpComponentsClient implements RerunnableGenericHttpClient{
                             }
                         }
                     };
-                    method = null;//TODO: do we really need this?
+                    method = null;
                     return genericHttpResponse;
 
                 } catch (UnsupportedTlsVersionsException e) {
@@ -521,8 +500,8 @@ public class HttpComponentsClient implements RerunnableGenericHttpClient{
 
     private void stampBindingIdentity() {
         if (isBindingManager) {
-            IdentityBindingHttpConnectionManager2 bcm =
-                    (IdentityBindingHttpConnectionManager2) cman;
+            IdentityBindingHttpConnectionManager bcm =
+                    (IdentityBindingHttpConnectionManager) cman;
 
             bcm.setId(identity);
         }
@@ -538,8 +517,8 @@ public class HttpComponentsClient implements RerunnableGenericHttpClient{
                         if (logger.isLoggable(Level.FINE)) {
                             logger.log(Level.FINE, "Binding authorization header '"+value+"'.");
                         }
-                        IdentityBindingHttpConnectionManager2 bcm =
-                                (IdentityBindingHttpConnectionManager2) cman;
+                        IdentityBindingHttpConnectionManager bcm =
+                                (IdentityBindingHttpConnectionManager) cman;
                         bcm.bind(context);
                         context.setAttribute(ClientContext.USER_TOKEN, identity);
                     }
@@ -560,7 +539,6 @@ public class HttpComponentsClient implements RerunnableGenericHttpClient{
             final HttpHost proxyHost = new HttpHost(host, port);
             clientParams.setParameter(ConnRoutePNames.DEFAULT_PROXY, proxyHost);
             proxyCredProvider.setCredentials(new AuthScope(proxyHost,AuthScope.ANY_REALM,"basic"), new UsernamePasswordCredentials(username, password));
-            //TODO: add digest authentication
             NTCredentials ntCredentials =  buildNTCredentials(username, password);
             if(ntCredentials != null) {
                 proxyCredProvider.setCredentials(new AuthScope(proxyHost, AuthScope.ANY_REALM, "ntlm"),ntCredentials);
@@ -581,43 +559,19 @@ public class HttpComponentsClient implements RerunnableGenericHttpClient{
                 configureProxyAuthentication(proxyCredProvider, clientParams, params.getProxyHost(), params.getProxyPort(), proxyAuthentication.getUserName(), new String(proxyAuthentication.getPassword()));
                 client.setCredentialsProvider(proxyCredProvider);
                 proxyConfigured = true;
-                /*HttpHost proxy = new HttpHost(params.getProxyHost(), params.getProxyPort());
-                clientParams.setParameter(ConnRoutePNames.DEFAULT_PROXY, proxy);
-                // Choose BASIC over DIGEST for proxy authentication
-                List<String> authpref = new ArrayList<String>();
-                authpref.add(AuthPolicy.BASIC);
-                authpref.add(AuthPolicy.DIGEST);
-                clientParams.setParameter(AuthPNames.PROXY_AUTH_PREF,authpref );
-
-                proxyCredProvider.setCredentials(
-                        new AuthScope(params.getProxyHost(), params.getProxyPort()),
-                        new UsernamePasswordCredentials(proxyAuthentication.getUserName(), new String(proxyAuthentication.getPassword())));*/
             }
         } else if (proxyUsername != null && proxyUsername.length() > 0) {
             configureProxyAuthentication(proxyCredProvider, clientParams, proxyHost, proxyPort, proxyUsername, proxyPassword);
             client.setCredentialsProvider(proxyCredProvider);
             proxyConfigured = true;
-            /*           HttpHost proxy = new HttpHost(proxyHost, proxyPort);
-        clientParams.setParameter(ConnRoutePNames.DEFAULT_PROXY, proxy);
-
-        // Choose BASIC over DIGEST for proxy authentication
-        List<String> authpref = new ArrayList<String>();
-        authpref.add(AuthPolicy.BASIC);
-        authpref.add(AuthPolicy.DIGEST);
-        clientParams.setParameter(AuthPNames.PROXY_AUTH_PREF,authpref );
-        proxyCredProvider.setCredentials(new AuthScope(proxy), new UsernamePasswordCredentials(proxyUsername, proxyPassword));*/
         }
 
         clientParams.setParameter(ClientPNames.HANDLE_REDIRECTS, params.isFollowRedirects());
-//        final HttpMethodParams methodParams = httpMethod.getParams();
         clientParams.setParameter(CoreConnectionPNames.SO_TIMEOUT, params.getReadTimeout()>=0 ? params.getReadTimeout() : timeout);
-//        methodParams.setSoTimeout(params.getReadTimeout()>=0 ? params.getReadTimeout() : timeout);
         clientParams.setParameter(ClientPNames.CONN_MANAGER_TIMEOUT, (long) (params.getConnectionTimeout() >= 0 ? params.getConnectionTimeout() : connectionTimeout));
         clientParams.setParameter(CoreConnectionPNames.CONNECTION_TIMEOUT, (params.getConnectionTimeout() >= 0 ? params.getConnectionTimeout() : connectionTimeout));
- //       clientParams.setConnectionManagerTimeout( (long) (params.getConnectionTimeout() >= 0 ? params.getConnectionTimeout() : connectionTimeout) );
         if (params.getMaxRetries() >= 0) {
             client.setHttpRequestRetryHandler( new DefaultHttpRequestRetryHandler(params.getMaxRetries(), false ));
-//            methodParams.setParameter(HttpMethodParams.RETRY_HANDLER, new DefaultHttpMethodRetryHandler( params.getMaxRetries(), false ));
         }
 
         final PasswordAuthentication pw = params.getPasswordAuthentication();
@@ -630,25 +584,12 @@ public class HttpComponentsClient implements RerunnableGenericHttpClient{
                     ntlm.getDomain()
             );
             client.getCredentialsProvider().setCredentials(AuthScope.ANY, creds);
-/*            httpMethod.setDoAuthentication(true);
-            state.setCredentials(AuthScope.ANY,
-                    new NTCredentials(
-                            ntlm.getUsername(),
-                            new String(ntlm.getPassword()),
-                            ntlm.getHost(),
-                            ntlm.getDomain()
-                    )
-            );*/
             //http client does not support preemptive authentication out of the box
-//            clientParams.setAuthenticationPreemptive(false);
         } else if (pw != null) {
-//            httpMethod.setDoAuthentication(true);
             String username = pw.getUserName();
             char[] password = pw.getPassword();
             UsernamePasswordCredentials creds =  new UsernamePasswordCredentials(username, new String(password));
             client.getCredentialsProvider().setCredentials(AuthScope.ANY, creds);
-/*            state.setCredentials(AuthScope.ANY,
-                    new UsernamePasswordCredentials(username, new String(password)));*/
             if(params.isPreemptiveAuthentication()) { //set preemptive authentication
                 // Create AuthCache instance
                 AuthCache authCache = new BasicAuthCache();
@@ -659,14 +600,10 @@ public class HttpComponentsClient implements RerunnableGenericHttpClient{
                 // Add AuthCache to the execution context
                 state.setAttribute(ClientContext.AUTH_CACHE, authCache);
             }
-//            clientParams.setAuthenticationPreemptive(params.isPreemptiveAuthentication());
             clientParams.setParameter(AuthPNames.CREDENTIAL_CHARSET, ConfigFactory.getProperty(PROP_CREDENTIAL_CHARSET, DEFAULT_CREDENTIAL_CHARSET));
         } else if ( !proxyConfigured ) {
-//            httpMethod.setDoAuthentication(false);
             client.getCredentialsProvider().clear();
             state.removeAttribute(ClientContext.AUTH_CACHE);
-//            state.clearCredentials();
-//            clientParams.setAuthenticationPreemptive(false);
         }
     }
 
@@ -707,7 +644,6 @@ public class HttpComponentsClient implements RerunnableGenericHttpClient{
                 return new HttpHead(uri);
             case OPTIONS:
                 return new HttpOptions(uri);
-            //TODO: confirm that patch method does not follow redirects
             case PATCH:
                 //RFC 5789 HTTP Patch method
                 return new HttpPatch(uri);
@@ -720,23 +656,9 @@ public class HttpComponentsClient implements RerunnableGenericHttpClient{
                         return methodAsString;
                     }
                 };
-            //TODO: add HttpTrace method
             default:
                 throw new IllegalStateException("Method " + method + " not supported");
         }
-    }
-
-    @SuppressWarnings("Unused")
-    private HttpParams getOrBuildCachingHttpParams(HttpParams params) {
-        HttpParams defaultParams = defaultHttpParams;
-
-        if (defaultParams == null) {
-            defaultParams = new BasicHttpParams();
-            DefaultHttpClient.setDefaultHttpParams(defaultParams);
-            defaultHttpParams = defaultParams;
-        }
-
-        return defaultParams;
     }
 
     private HttpContext getHttpState(GenericHttpRequestParams params) {
@@ -1039,7 +961,6 @@ public class HttpComponentsClient implements RerunnableGenericHttpClient{
      * @return
      */
     private static NTCredentials buildNTCredentials(String acctname, String password) {
-        //TODO: get proper domain from configuration
         Matcher m = INTERNET_PATTERN.matcher(acctname);
         if(m.find()){
             String accountName = m.group(1);

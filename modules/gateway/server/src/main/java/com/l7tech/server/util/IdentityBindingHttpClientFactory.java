@@ -2,17 +2,17 @@ package com.l7tech.server.util;
 
 import com.l7tech.common.http.GenericHttpClient;
 import com.l7tech.common.http.GenericHttpClientFactory;
-import com.l7tech.common.http.prov.apache.IdentityBindingHttpConnectionManager2;
+import com.l7tech.common.http.prov.apache.IdentityBindingHttpConnectionManager;
 import com.l7tech.common.http.prov.apache.components.HttpComponentsClient;
-import com.l7tech.server.transport.http.HttpConnectionManagerListener2;
+import com.l7tech.server.transport.http.HttpConnectionManagerListener;
 import org.apache.http.conn.ClientConnectionManager;
 import org.apache.http.impl.conn.PoolingClientConnectionManager;
 import org.apache.http.pool.PoolStats;
 
-public class IdentityBindingHttpClientFactory2 implements GenericHttpClientFactory {
+public class IdentityBindingHttpClientFactory implements GenericHttpClientFactory {
 
     private ClientConnectionManager connectionManager;
-    private HttpConnectionManagerListener2 listener = new HttpConnectionManagerListener2.HttpConnectionManagerListenerAdapter2();
+    private HttpConnectionManagerListener listener = new HttpConnectionManagerListener.HttpConnectionManagerListenerAdapter();
 
     @Override
     public GenericHttpClient createHttpClient() {
@@ -32,9 +32,9 @@ public class IdentityBindingHttpClientFactory2 implements GenericHttpClientFacto
      *
      * @param listener The HttpConnectionManagerListener to use.
      */
-    public void setListener(final HttpConnectionManagerListener2 listener) {
+    public void setListener(final HttpConnectionManagerListener listener) {
         this.listener = listener == null ?
-                new HttpConnectionManagerListener2.HttpConnectionManagerListenerAdapter2() :
+                new HttpConnectionManagerListener.HttpConnectionManagerListenerAdapter() :
                 listener;
     }
 
@@ -44,7 +44,7 @@ public class IdentityBindingHttpClientFactory2 implements GenericHttpClientFacto
                 hostConnections = HttpComponentsClient.getDefaultMaxConnectionsPerHost();
                 totalConnections = HttpComponentsClient.getDefaultMaxTotalConnections();
             }
-            PoolingClientConnectionManager manager = new IdentityBindingHttpConnectionManager2();
+            PoolingClientConnectionManager manager = new IdentityBindingHttpConnectionManager();
             manager.setDefaultMaxPerRoute(hostConnections);
             manager.setMaxTotal(totalConnections);
             this.connectionManager = manager;

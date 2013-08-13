@@ -1,7 +1,6 @@
 package com.l7tech.skunkworks.gclient;
 
 import com.l7tech.common.http.*;
-import com.l7tech.common.http.prov.apache.CommonsHttpClient;
 import com.l7tech.common.http.prov.apache.components.HttpComponentsClient;
 import com.l7tech.util.IOUtils;
 import com.l7tech.common.io.NullOutputStream;
