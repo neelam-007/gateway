@@ -1955,7 +1955,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     /**
      * Initialize the workspace. Invoked on successful login.
      */
-    private void initalizeWorkspace() {
+    private void initializeWorkspace() {
         DefaultTreeModel treeModel = new FilteredTreeModel(null);
         final AbstractTreeNode paletteRootNode = new AssertionsPaletteRootNode("Policy Assertions");
         treeModel.setRoot(paletteRootNode);
@@ -2097,7 +2097,8 @@ public class MainWindow extends JFrame implements SheetHolder {
         JMenu menu = getCustomGlobalActionsMenu();
         menu.removeAll();
 
-        List<Action> menuActions = new ArrayList<Action>();
+        List<Action> menuActions = new ArrayList<>();
+
         boolean added = false;
         Set<Assertion> assertions = TopComponents.getInstance().getAssertionRegistry().getAssertions();
         for (Assertion assertion : assertions) {
@@ -2132,7 +2133,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     private List<Action> getCustomAssertionActions() {
         // This method is called twice on login by this.updateCustomGlobalActionsMenu(...):
         //  - once by LicenseListener.licenseChanged(...) before ConsoleAssertionRegistry.updateCustomAssertions()
-        //  - then again by this.initalizeWorkspace(...) after updateCustomAssertions.updateCustomAssertions().
+        //  - then again by this.initializeWorkspace(...) after updateCustomAssertions.updateCustomAssertions().
 
         if (customAssertionActions.size() <= 0) {
             Collection<CustomAssertionHolder> customAssertionHolders = TopComponents.getInstance().getAssertionRegistry().getCustomAssertions();
@@ -3956,7 +3957,7 @@ public class MainWindow extends JFrame implements SheetHolder {
                     getStatusMsgLeft().setText(message);
                     boolean success = false;
                     try {
-                        initalizeWorkspace();
+                        initializeWorkspace();
                         toggleConnectedMenus(true);
                         homeAction.actionPerformed(null);
                         MainWindow.this.
@@ -4072,8 +4073,8 @@ public class MainWindow extends JFrame implements SheetHolder {
                 if (expiredFeatureLicenses.size() == 1) {
                     message.append("A license installed on this gateway has expired:\n");
                 } else {
-                    message.append(expiredFeatureLicenses.size());
-                    message.append(" of the licenses installed on this gateway have expired:\n");
+                    message.append(expiredFeatureLicenses.size())
+                            .append(" of the licenses installed on this gateway have expired:\n");
                 }
 
                 for (Long idKey : expiredFeatureLicenses.keySet()) {
@@ -4089,31 +4090,40 @@ public class MainWindow extends JFrame implements SheetHolder {
             if (compositeLicense.hasInvalidLicenseDocuments() || compositeLicense.hasInvalidFeatureLicenses()) {
                 final Map<Long, FeatureLicense> invalidFeatureLicenses = compositeLicense.getInvalidFeatureLicenses();
 
-                int invalid = compositeLicense.getInvalidFeatureLicenses().size() +
+                int invalidCount = compositeLicense.getInvalidFeatureLicenses().size() +
                                 compositeLicense.getInvalidLicenseDocuments().size();
 
-                if (invalid == 1) {
+                if (invalidCount == 1) {
                     message.append("A license installed on this gateway is invalid.\n");
                 } else {
-                    message.append(invalid);
-                    message.append(" of the licenses installed on this gateway are invalid.\n");
+                    message.append(invalidCount)
+                            .append(" of the licenses installed on this gateway are invalid.\n");
                 }
 
                 for (Long idKey : invalidFeatureLicenses.keySet()) {
-                    message.append("- License ").append(idKey);
+                    FeatureLicense l = invalidFeatureLicenses.get(idKey);
 
-                    message.append(" expired ");
+                    message.append("- License ")
+                            .append(idKey);
+
+                    if (!l.hasTrustedIssuer()) {
+                        message.append(" was not signed by a trusted issuer.");
+                    } else if (!l.isProductEnabled(BuildInfo.getProductName()) ||
+                            !l.isVersionEnabled(BuildInfo.getProductVersionMajor(), BuildInfo.getProductVersionMinor())) {
+                        message.append(" does not grant access to this version of this product.");
+                    }
+
                     message.append("\n");
                 }
 
-                int invalidDocs = compositeLicense.getInvalidLicenseDocuments().size();
+                int invalidDocsCount = compositeLicense.getInvalidLicenseDocuments().size();
 
-                if (invalidDocs == 1) {
+                if (invalidDocsCount == 1) {
                     message.append("- One license is malformed.\n");
-                } else if (invalidDocs > 1) {
-                    message.append("- ");
-                    message.append(invalidDocs);
-                    message.append(" licenses are malformed.\n");
+                } else if (invalidDocsCount > 1) {
+                    message.append("- ")
+                            .append(invalidDocsCount)
+                            .append(" licenses are malformed.\n");
                 }
             }
         }
@@ -4572,7 +4582,7 @@ public class MainWindow extends JFrame implements SheetHolder {
             return;
         }
 
-        initalizeWorkspace();
+        initializeWorkspace();
         toggleConnectedMenus(true);
 
         // If there is a node such as service, policy, or folder selected before font changed,

@@ -455,21 +455,21 @@ public class ManageLicensesDialog extends JDialog {
         if (null != compositeLicense) {
             for (FeatureLicense license : compositeLicense.getValidFeatureLicenses().values()) {
                 tableRows.add(new LicenseTableRow(license,
-                        license.getLicenseDocument(), license.getDescription(), license.getExpiryDate()));
+                        license.getLicenseDocument(), license.getDescription(), license.getExpiryDate(), false));
             }
 
             for (FeatureLicense license : compositeLicense.getExpiredFeatureLicenses().values()) {
                 tableRows.add(new LicenseTableRow(license,
-                        license.getLicenseDocument(), license.getDescription(), license.getExpiryDate()));
+                        license.getLicenseDocument(), license.getDescription(), license.getExpiryDate(), true));
             }
 
             for (FeatureLicense license : compositeLicense.getInvalidFeatureLicenses().values()) {
                 tableRows.add(new LicenseTableRow(license,
-                        license.getLicenseDocument(), license.getDescription(), license.getExpiryDate()));
+                        license.getLicenseDocument(), license.getDescription(), license.getExpiryDate(), false));
             }
 
             for (LicenseDocument document : compositeLicense.getInvalidLicenseDocuments()) {
-                tableRows.add(new LicenseTableRow(null, document, INVALID_LICENSE, null));
+                tableRows.add(new LicenseTableRow(null, document, INVALID_LICENSE, null, false));
             }
         }
 
@@ -481,13 +481,15 @@ public class ManageLicensesDialog extends JDialog {
         private final LicenseDocument licenseDocument;
         private final String description;
         private final Date expiry;
+        private final boolean expired;
 
-        public LicenseTableRow(FeatureLicense featureLicense,
-                               LicenseDocument licenseDocument, String description, Date expiry) {
+        public LicenseTableRow(FeatureLicense featureLicense, LicenseDocument licenseDocument,
+                               String description, Date expiry, boolean expired) {
             this.featureLicense = featureLicense;
             this.licenseDocument = licenseDocument;
             this.description = description;
             this.expiry = expiry;
+            this.expired = expired;
         }
 
         public FeatureLicense getFeatureLicense() {
@@ -504,6 +506,10 @@ public class ManageLicensesDialog extends JDialog {
 
         public Date getExpiry() {
             return expiry;
+        }
+
+        public boolean isExpired() {
+            return expired;
         }
     }
 
@@ -544,13 +550,15 @@ public class ManageLicensesDialog extends JDialog {
             if (null == value) {
                 setWarningText(NA);
             } else {
-                Date expiry = (Date) value;
+                LicenseTableRow rowObject = licenseTableModel.getRowObject(row);
 
-                if (System.currentTimeMillis() < expiry.getTime()) {
+                if (rowObject.isExpired()) {
+                    setWarningText(EXPIRED);
+                } else {
+                    Date expiry = (Date) value;
+
                     setPlainText(new SimpleDateFormat("yyyy-MM-dd").format(expiry) +
                             " (" + DateUtils.makeRelativeDateMessage(expiry, false) + ")");
-                } else {
-                    setWarningText(EXPIRED);
                 }
             }
 
