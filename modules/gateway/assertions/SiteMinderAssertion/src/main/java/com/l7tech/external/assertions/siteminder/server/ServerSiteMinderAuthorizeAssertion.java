@@ -10,7 +10,9 @@ import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.variable.NoSuchVariableException;
+import com.l7tech.policy.variable.Syntax;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.util.ExceptionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.context.ApplicationContext;
@@ -72,15 +74,19 @@ public class ServerSiteMinderAuthorizeAssertion extends AbstractServerSiteMinder
 
         String ssoToken = null;
 
-        if(assertion.isUseVarAsCookieSource()){
-            ssoToken = SiteMinderAssertionUtil.extractContextVarValue(assertion.getCookieSourceVar(), variableMap, getAudit());
+        if(assertion.isUseVarAsCookieSource() && StringUtils.isNotBlank(assertion.getCookieSourceVar())) {
+            //TODO: find better solution
+            ssoToken = ExpandVariables.process(Syntax.SYNTAX_PREFIX + assertion.getCookieSourceVar() + Syntax.SYNTAX_SUFFIX, variableMap, getAudit());
         }
         //
         try {
             int result = hla.processAuthorizationRequest(getClientIp(context), ssoToken, smContext);
             if(result == 1) {
                 context.setVariable(varPrefix + "." + smCookieName, smContext.getSsoToken());
-                setSessionCookie(context, smContext, variableMap);
+                if(assertion.isSetSMCookie()) {
+                    //set session cookie
+                    setSessionCookie(context, smContext, variableMap);
+                }
                 status = AssertionStatus.NONE;
             }
             populateContextVariables(context, varPrefix, smContext);

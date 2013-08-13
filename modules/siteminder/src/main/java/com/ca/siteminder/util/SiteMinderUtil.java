@@ -5,6 +5,7 @@ import com.l7tech.gateway.common.siteminder.SiteMinderHost;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.FileUtils;
 import netegrity.siteminder.javaagent.UserCredentials;
+import netegrity.siteminder.javaagent.Attribute;
 
 import java.io.File;
 import java.io.IOException;
@@ -14,6 +15,8 @@ import java.security.cert.X509Certificate;
 import java.text.ParseException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Copyright: Layer 7 Technologies, 2013
@@ -183,6 +186,36 @@ public abstract class SiteMinderUtil {
 
     public static String safeNull(String s) {
         return s == null ? "" : s;
+    }
+
+    private static Pattern NULL_CHAR = Pattern.compile("\\u0000$");
+
+    /**
+     * converts SiteMinder Attribute value to int
+     * @param attribute
+     * @return
+     */
+    public static int convertAttributeValueToInt(Attribute attribute) {
+        int attrVal = -1;//default
+        if(attribute == null || attribute.value == null) return -1;
+
+        String sVal = new String(attribute.value);//convert to string
+        sVal = chopNull(sVal);
+        try{
+            attrVal = Integer.parseInt(sVal);
+        } catch (NumberFormatException nfe) {
+            logger.log(Level.FINE, "Invalid attribute value: " + sVal);
+        }
+        return attrVal;
+    }
+
+    public static String chopNull(String sVal) {
+        Matcher m = NULL_CHAR.matcher(sVal);
+        if(m.find()){
+            //chop NULL value
+            sVal = m.replaceAll("");
+        }
+        return sVal;
     }
 
     /**

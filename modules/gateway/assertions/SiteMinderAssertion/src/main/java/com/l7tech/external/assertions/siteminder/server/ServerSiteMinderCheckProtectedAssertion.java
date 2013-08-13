@@ -24,14 +24,10 @@ import java.util.logging.Level;
 public class ServerSiteMinderCheckProtectedAssertion extends AbstractServerSiteMinderAssertion<SiteMinderCheckProtectedAssertion> {
     private final String[] variablesUsed;
 
-//    private SiteMinderHighLevelAgent hla;
-//    private Config config;
 
     public ServerSiteMinderCheckProtectedAssertion(final SiteMinderCheckProtectedAssertion assertion, ApplicationContext springContext) throws PolicyAssertionException {
         super(assertion, springContext);
         this.variablesUsed = assertion.getVariablesUsed();
-        //TODO: replace with the real config
-//        checkSmAgentConfig();
     }
 
     /**
@@ -80,21 +76,5 @@ public class ServerSiteMinderCheckProtectedAssertion extends AbstractServerSiteM
         return status;
     }
 
-/*    //TODO: replace with the proper one that reads configuration from the database
-    private void checkSmAgentConfig() throws PolicyAssertionException {
-        try {
-            final String smAgentConfig = config.getProperty("smAgentConfig");
-            if(hla == null){
-                hla = new SiteMinderHighLevelAgent(smAgentConfig, getAgentIdOrDefault());
-            }
-            else {
-                SiteMinderHighLevelAgent.checkAndInitialize(smAgentConfig, getAgentIdOrDefault());
-            }
-        } catch (SiteMinderAgentConfigurationException e) {
-            throw new PolicyAssertionException(assertion, "SiteMinder agent configuration is invalid", ExceptionUtils.getDebugException(e));
-        } catch (SiteMinderApiClassException e) {
-            throw new PolicyAssertionException(assertion, "SiteMinder agent API exception", e);
-        }
-    }*/
 
 }

@@ -420,47 +420,26 @@ public class SiteMinderLowLevelAgent {
 
             if (AgentAPI.ATTR_SESSIONID == attrId) {
                 //fill in the session id
-                sd.id =  new String(att.value);
+                sd.id =  SiteMinderUtil.chopNull(new String(att.value));
             } else if (AgentAPI.ATTR_SESSIONSPEC == attrId) {
                 //fill in the session spec
-                sd.spec = new String(att.value);
+                sd.spec = SiteMinderUtil.chopNull(new String(att.value));
             }
             else if (AgentAPI.ATTR_STARTSESSIONTIME == attrId) {
-                try {
-                    sd.sessionStartTime = Integer.parseInt(new String(att.value));
-                    sd.currentServerTime = sd.sessionStartTime;
-                } catch (NumberFormatException e) {
-                    sd.sessionStartTime = -1;
-                    sd.currentServerTime = -1;
-                }
+                sd.sessionStartTime = SiteMinderUtil.convertAttributeValueToInt(att);
+                sd.currentServerTime = sd.sessionStartTime;
             }
             else if(AgentAPI.ATTR_LASTSESSIONTIME == attrId) {
-                try {
-                    sd.sessionLastTime = Integer.parseInt(new String(att.value));
-                } catch (NumberFormatException e) {
-                    sd.sessionLastTime = -1;
-                }
+                sd.sessionLastTime = SiteMinderUtil.convertAttributeValueToInt(att);
             }
             else if(AgentAPI.ATTR_LASTSESSIONTIME == attrId) {
-                try {
-                    sd.sessionLastTime = Integer.parseInt(new String(att.value));
-                } catch (NumberFormatException e) {
-                    sd.sessionLastTime = -1;
-                }
+                sd.sessionLastTime = SiteMinderUtil.convertAttributeValueToInt(att);
             }
             else if(AgentAPI.ATTR_IDLESESSIONTIMEOUT == attrId) {
-                try {
-                    sd.idleTimeout = Integer.parseInt(new String(att.value));
-                } catch (NumberFormatException e) {
-                    sd.idleTimeout = -1;
-                }
+                sd.idleTimeout = SiteMinderUtil.convertAttributeValueToInt(att);
             }
             else if(AgentAPI.ATTR_MAXSESSIONTIMEOUT == attrId) {
-                try {
-                    sd.maxTimeout = Integer.parseInt(new String(att.value));
-                } catch (NumberFormatException e) {
-                    sd.maxTimeout = -1;
-                }
+                sd.maxTimeout = SiteMinderUtil.convertAttributeValueToInt(att);
             }
         }
 

@@ -8,9 +8,9 @@ import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
+import org.apache.commons.lang.ArrayUtils;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.logging.Logger;
 
 import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
@@ -151,7 +151,14 @@ public class SiteMinderAuthorizeAssertion extends Assertion implements UsesVaria
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     @Override
     public String[] getVariablesUsed() {
-        return Syntax.getReferencedNames(cookieSourceVar, cookieDomain, cookieComment, cookiePath, cookieSecure, cookieVersion, prefix, prefix + "." + SiteMinderAssertionUtil.SMCONTEXT);
+        String[] array = Syntax.getReferencedNames(cookieDomain, cookieComment, cookiePath, cookieSecure, cookieVersion);
+        List<String> varsUsed = new ArrayList<>();
+        varsUsed.add(prefix);
+        if(cookieSourceVar != null && !cookieSourceVar.isEmpty()) {
+            varsUsed.add(cookieSourceVar);
+        }
+        varsUsed.addAll(Arrays.asList(array));
+        return varsUsed.toArray(new String[0]);
     }
 
     //

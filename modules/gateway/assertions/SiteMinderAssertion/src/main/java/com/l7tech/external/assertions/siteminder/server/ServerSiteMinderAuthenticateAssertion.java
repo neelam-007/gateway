@@ -69,7 +69,6 @@ public class ServerSiteMinderAuthenticateAssertion extends AbstractServerSiteMin
             int result = hla.processAuthenticationRequest(credentials, getClientIp(context), ssoToken, smContext);
             if(result == 1) {
                 context.setVariable(varPrefix + "." + smCookieName, smContext.getSsoToken());
-//                setSessionCookie(context, smContext, variableMap);
                 status = AssertionStatus.NONE;
             }
             populateContextVariables(context, varPrefix, smContext);
@@ -154,14 +153,15 @@ public class ServerSiteMinderAuthenticateAssertion extends AbstractServerSiteMin
                 }
             }
         }
-        //BASIC authentication scheme
-        if(supportedAuthSchemes.contains(SiteMinderContext.AuthenticationScheme.BASIC)){
-            if(loginCredentials.getFormat() == CredentialFormat.CLEARTEXT || loginCredentials.getFormat() == CredentialFormat.BASIC) {
-                return new SiteMinderCredentials(loginCredentials.getLogin(), new String(loginCredentials.getCredentials()));
+        if(loginCredentials != null) {
+            //BASIC authentication scheme
+            if(supportedAuthSchemes.contains(SiteMinderContext.AuthenticationScheme.BASIC)){
+                if(loginCredentials.getFormat() == CredentialFormat.CLEARTEXT || loginCredentials.getFormat() == CredentialFormat.BASIC) {
+                    return new SiteMinderCredentials(loginCredentials.getLogin(), new String(loginCredentials.getCredentials()));
+                }
             }
+            //TODO: collect credentials of a different type (SAML, Kerberos, NTLM, etc.)
         }
-        //TODO: collect credentials of a different type (SAML, Kerberos, NTLM, etc.)
-
         return new SiteMinderCredentials();
     }
 
