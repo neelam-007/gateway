@@ -95,7 +95,7 @@ public class GenericUserPanel extends UserPanel {
         try {
             // Initialize form components
             final Collection<Role> rolesForUser = Registry.getDefault().getRbacAdmin().findRolesForUser(user);
-            rolesPanel = new IdentityRoleAssignmentsPanel(EntityType.USER, user.getName(), new ArrayList<>(rolesForUser), userGroups, false);
+            rolesPanel = new IdentityRoleAssignmentsPanel(EntityType.USER, user.getName(), new ArrayList<>(rolesForUser), userGroups, !Registry.getDefault().getSecurityProvider().hasPermission(new AttemptedUpdate(EntityType.USER, user)));
             groupPanel = new UserGroupsPanel(this, config, config.isWritable() && canUpdate);
             certPanel = new NonFederatedUserCertPanel(this, config.isWritable() ? passwordChangeListener : null, canUpdate);
             if (config.type().equals(IdentityProviderType.INTERNAL) && user instanceof InternalUser) {
@@ -890,6 +890,8 @@ public class GenericUserPanel extends UserPanel {
                         // Error - just return
                         return;
                     }
+                } else {
+                    log.log(Level.WARNING, "IdentityProviderConfig is not writable or user does not have permission to save changes.");
                 }
             }
             Utilities.dispose(Utilities.getRootPaneContainerAncestor(GenericUserPanel.this));

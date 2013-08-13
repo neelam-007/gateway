@@ -1,12 +1,15 @@
 package com.l7tech.console.security.rbac;
 
 import com.l7tech.console.panels.OkCancelPanel;
+import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.util.Registry;
+import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
 import com.l7tech.gateway.common.security.rbac.RbacUtilities;
 import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.gui.CheckBoxSelectableTableModel;
 import com.l7tech.gui.util.TableUtil;
 import com.l7tech.gui.util.Utilities;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
@@ -115,8 +118,9 @@ public class RoleSelectionDialog extends JDialog {
         try {
             final ArrayList<Role> rows = new ArrayList<>();
             final Collection<Role> allRoles = Registry.getDefault().getRbacAdmin().findAllRoles();
+            final SecurityProvider securityProvider = Registry.getDefault().getSecurityProvider();
             for (final Role role : allRoles) {
-                if (!rolesToFilter.contains(role)) {
+                if (!rolesToFilter.contains(role) && securityProvider.hasPermission(new AttemptedUpdate(EntityType.RBAC_ROLE, role))) {
                     rows.add(role);
                 }
             }

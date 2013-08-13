@@ -306,7 +306,7 @@ public abstract class GroupPanel<GT extends Group> extends EntityEditorPanel {
             } catch (final FindException e) {
                 log.log(Level.WARNING, "Unable to retrieve groups: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             }
-            rolesPanel = new IdentityRoleAssignmentsPanel(EntityType.GROUP, group.getName(), rolesForGroup, groupHeaders, false);
+            rolesPanel = new IdentityRoleAssignmentsPanel(EntityType.GROUP, group.getName(), rolesForGroup, groupHeaders, !Registry.getDefault().getSecurityProvider().hasPermission(new AttemptedUpdate(EntityType.GROUP, group)));
         }
         return rolesPanel;
     }
