@@ -182,7 +182,7 @@ public class SecurityZoneUtilTest {
 
     @Test
     public void getEntityTypesWithInheritedZones() {
-        final Map<EntityType, Collection<EntityType>> inheritanceMap = SecurityZoneUtil.getEntityTypesWithInheritedZones();
+        final Map<EntityType, Collection<EntityType>> inheritanceMap = SecurityZoneUtil.getEntityTypesWithInferredZones();
         assertEquals(3, inheritanceMap.size());
         final Collection<EntityType> inheritedFromService = inheritanceMap.get(EntityType.SERVICE);
         assertEquals(3, inheritedFromService.size());

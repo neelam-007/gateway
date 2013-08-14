@@ -240,7 +240,7 @@ public class SecurityZonePropertiesDialog extends JDialog {
         }
 
         // ensure that any 'hidden' types are selected as well
-        for (final Map.Entry<EntityType, Collection<EntityType>> entry : SecurityZoneUtil.getEntityTypesWithInheritedZones().entrySet()) {
+        for (final Map.Entry<EntityType, Collection<EntityType>> entry : SecurityZoneUtil.getEntityTypesWithInferredZones().entrySet()) {
             if (permittedTypes.contains(entry.getKey())) {
                 permittedTypes.addAll(entry.getValue());
             }

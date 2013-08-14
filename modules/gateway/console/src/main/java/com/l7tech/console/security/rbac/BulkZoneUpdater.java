@@ -79,7 +79,7 @@ public class BulkZoneUpdater {
         }
         logger.log(Level.FINE, selectedIds.size() + " " + entityType.getPluralName() + " require update.");
         entitiesToUpdate.put(entityType, selectedIds);
-        if (SecurityZoneUtil.getEntityTypesWithInheritedZones().keySet().contains(entityType)) {
+        if (SecurityZoneUtil.getEntityTypesWithInferredZones().keySet().contains(entityType)) {
             // selected entity type is a 'parent' type
             // we need to also update the entities that inherit the zone from this entity type
             switch (entityType) {

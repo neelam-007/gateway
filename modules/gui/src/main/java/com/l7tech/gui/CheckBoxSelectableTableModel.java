@@ -145,6 +145,7 @@ public class CheckBoxSelectableTableModel<T> extends SimpleTableModel<Selectable
         final SelectableObject<T> selectable = getRowObject(index);
         if (selectable != null) {
             selectable.setSelected(select);
+            fireTableRowsUpdated(index, index);
         }
     }
 }

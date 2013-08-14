@@ -26,22 +26,22 @@ public class SecurityZoneUtil {
     private static final Logger logger = Logger.getLogger(SecurityZoneUtil.class.getName());
 
     private static final AtomicReference<Map<Goid, SecurityZone>> securityZones = new AtomicReference<>();
-    private static final Map<EntityType, Collection<EntityType>> TYPES_WITH_INHERITED_ZONES;
+    private static final Map<EntityType, Collection<EntityType>> TYPES_WITH_INFERRED_ZONES;
     private static final Set<EntityType> HIDDEN_TYPES;
     private static final String ELLIPSIS = "...";
 
     static {
-        TYPES_WITH_INHERITED_ZONES = new HashMap<>();
+        TYPES_WITH_INFERRED_ZONES = new HashMap<>();
         // do not support audits as there may be a LOT of them in the zone
         // user is not aware of the UDDI entities under the hood - they inherit the security zone from the published service
-        TYPES_WITH_INHERITED_ZONES.put(EntityType.SERVICE, Arrays.asList(EntityType.AUDIT_MESSAGE, EntityType.UDDI_PROXIED_SERVICE_INFO, EntityType.UDDI_SERVICE_CONTROL));
+        TYPES_WITH_INFERRED_ZONES.put(EntityType.SERVICE, Arrays.asList(EntityType.AUDIT_MESSAGE, EntityType.UDDI_PROXIED_SERVICE_INFO, EntityType.UDDI_SERVICE_CONTROL));
         // user is not aware that JMS involves two entity types - they share the same security zone
-        TYPES_WITH_INHERITED_ZONES.put(EntityType.JMS_CONNECTION, Arrays.asList(EntityType.JMS_ENDPOINT));
+        TYPES_WITH_INFERRED_ZONES.put(EntityType.JMS_CONNECTION, Arrays.asList(EntityType.JMS_ENDPOINT));
         // key metadata is fronted by ssg key entry
-        TYPES_WITH_INHERITED_ZONES.put(EntityType.SSG_KEY_ENTRY, Arrays.asList(EntityType.SSG_KEY_METADATA));
+        TYPES_WITH_INFERRED_ZONES.put(EntityType.SSG_KEY_ENTRY, Arrays.asList(EntityType.SSG_KEY_METADATA));
 
         HIDDEN_TYPES = new HashSet<>();
-        for (final Collection<EntityType> typesThatInherit : TYPES_WITH_INHERITED_ZONES.values()) {
+        for (final Collection<EntityType> typesThatInherit : TYPES_WITH_INFERRED_ZONES.values()) {
             HIDDEN_TYPES.addAll(typesThatInherit);
         }
     }
@@ -165,13 +165,13 @@ public class SecurityZoneUtil {
     }
 
     /**
-     * Some EntityTypes cannot have their SecurityZone set via the SSM. These EntityTypes 'inherit' their SecurityZone from other entities.
+     * Some EntityTypes cannot have their SecurityZone set via the SSM. These EntityTypes 'infer' their SecurityZone from other entities.
      *
-     * @return a map of EntityTypes that inherit their SecurityZone from other EntityTypes where key = the EntityType that is inherited from
+     * @return a map of EntityTypes that inherit their SecurityZone from other EntityTypes where key = the EntityType that is inferred from
      *         and value = collection of EntityTypes which inherit the SecurityZone from the parent.
      */
-    public static Map<EntityType, Collection<EntityType>> getEntityTypesWithInheritedZones() {
-        return TYPES_WITH_INHERITED_ZONES;
+    public static Map<EntityType, Collection<EntityType>> getEntityTypesWithInferredZones() {
+        return TYPES_WITH_INFERRED_ZONES;
     }
 
     /**

@@ -78,19 +78,38 @@ public class SelectableFilterableTablePanel extends JPanel {
         selectAllButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(final ActionEvent e) {
-                if (model != null) {
-                    model.selectAll();
-                }
+                selectDeselectVisible(true);
             }
         });
         clearAllButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(final ActionEvent e) {
-                if (model != null) {
-                    model.deselectAll();
-                }
+                selectDeselectVisible(false);
             }
         });
+    }
+
+    private void selectDeselectVisible(final boolean select) {
+        if (model != null) {
+            if (!filterPanel.isFiltered()) {
+                if (select) {
+                    model.selectAll();
+                } else {
+                    model.deselectAll();
+                }
+            } else {
+                for (int i = 0; i < model.getRowCount(); i++) {
+                    if (selectableTable.getRowSorter().convertRowIndexToView(i) >= 0) {
+                        // it's visible
+                        if (select) {
+                            model.select(i);
+                        } else {
+                            model.deselect(i);
+                        }
+                    }
+                }
+            }
+        }
     }
 
     private void setButtonTexts() {
