@@ -823,13 +823,13 @@ public class ServerVariablesTest {
     @Test
     public void testSecurePasswordSelector() throws Exception {
         SecurePassword test1 = new SecurePassword("test1");
-        test1.setOid(990);
+        test1.setGoid(new Goid(0,990));
         test1.setDescription("Test Pass One");
         test1.setEncodedPassword("FOOOO");
         test1.setUsageFromVariable(true);
 
         SecurePassword test2 = new SecurePassword("test2");
-        test2.setOid(991);
+        test2.setGoid(new Goid(0,991));
         test2.setDescription("Test Pass Two");
         test2.setEncodedPassword("BAAAAR");
         test2.setUsageFromVariable(true);
@@ -868,31 +868,31 @@ public class ServerVariablesTest {
         SecurePasswordManager spm = new SecurePasswordManagerStub(
                 new SecurePassword("test1") {
                     {
-                        setOid(1);
+                        setGoid(new Goid(0,1));
                         setEncodedPassword("TEST-PASSWORD1");
                         setUsageFromVariable(true);
                     } },
                 new SecurePassword("test2") {
                     {
-                        setOid(2);
+                        setGoid(new Goid(0,2));
                         setEncodedPassword("TEST-PASSWORD2");
                         setUsageFromVariable(true);
                     } },
                 new SecurePassword("emptypass") {
                     {
-                        setOid(3);
+                        setGoid(new Goid(0,3));
                         setEncodedPassword("");
                         setUsageFromVariable(true);
                     } },
                 new SecurePassword("nullpass") {
                     {
-                        setOid(4);
+                        setGoid(new Goid(0,4));
                         setEncodedPassword(null);
                         setUsageFromVariable(true);
                     } },
                 new SecurePassword("nocontext") {
                     {
-                        setOid(5);
+                        setGoid(new Goid(0,5));
                         setEncodedPassword("TEST-PASSWORD3");
                         setUsageFromVariable(false);
                     } }
@@ -925,31 +925,31 @@ public class ServerVariablesTest {
         SecurePasswordManager spm = new SecurePasswordManagerStub(
                 new SecurePassword("test1") {
                     {
-                        setOid(1);
+                        setGoid(new Goid(0,1));
                         setEncodedPassword("TEST-PASSWORD1");
                         setUsageFromVariable(true);
                     } },
                 new SecurePassword("test2") {
                     {
-                        setOid(2);
+                        setGoid(new Goid(0,2));
                         setEncodedPassword("TEST-PASSWORD2");
                         setUsageFromVariable(true);
                     } },
                 new SecurePassword("emptypass") {
                     {
-                        setOid(3);
+                        setGoid(new Goid(0,3));
                         setEncodedPassword("");
                         setUsageFromVariable(true);
                     } },
                 new SecurePassword("nullpass") {
                     {
-                        setOid(4);
+                        setGoid(new Goid(0,4));
                         setEncodedPassword(null);
                         setUsageFromVariable(true);
                     } },
                 new SecurePassword("nocontext") {
                     {
-                        setOid(5);
+                        setGoid(new Goid(0,5));
                         setEncodedPassword("TEST-PASSWORD3");
                         setUsageFromVariable(false);
                     } }

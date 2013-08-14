@@ -4,6 +4,7 @@ import com.l7tech.external.assertions.ssh.SshCredentialAssertion;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.objectmodel.Entity;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.LifecycleException;
 import com.l7tech.server.search.DependencyProcessorRegistry;
@@ -11,6 +12,7 @@ import com.l7tech.server.search.objects.Dependency;
 import com.l7tech.server.search.processors.BaseDependencyProcessor;
 import com.l7tech.server.search.processors.DependencyFinder;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.GoidUpgradeMapper;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.context.ApplicationContext;
 
@@ -47,7 +49,7 @@ public class SshServerModuleLoadListener {
                     List<Entity> dependentEntities = null;
                     //adds the ssh password as a dependency if one is defined.
                     if (connector.getProperty(SshCredentialAssertion.LISTEN_PROP_HOST_PRIVATE_KEY) != null) {
-                        dependentEntities = finder.retrieveEntities(connector.getProperty(SshCredentialAssertion.LISTEN_PROP_HOST_PRIVATE_KEY), com.l7tech.search.Dependency.DependencyType.SECURE_PASSWORD, com.l7tech.search.Dependency.MethodReturnType.OID);
+                        dependentEntities = finder.retrieveEntities(GoidUpgradeMapper.mapId(EntityType.SECURE_PASSWORD, connector.getProperty(SshCredentialAssertion.LISTEN_PROP_HOST_PRIVATE_KEY)), com.l7tech.search.Dependency.DependencyType.SECURE_PASSWORD, com.l7tech.search.Dependency.MethodReturnType.GOID);
                     }
                     return finder.getDependenciesFromEntities(connector, finder, dependentEntities);
                 }

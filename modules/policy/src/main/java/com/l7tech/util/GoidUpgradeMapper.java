@@ -2,6 +2,7 @@ package com.l7tech.util;
 
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.GoidEntity;
 import com.l7tech.objectmodel.GoidRange;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -160,6 +161,7 @@ public class GoidUpgradeMapper {
      * Map or wrap the specified legacy OID into a GOID, mapping it to the correct GOID for an entity from an updated
      * database, if applicable; otherwise, wrapping it as a Goid within the range reserved for a wrapped OID
      * (for temporary use within a Gateway upgraded from a pre-GOID database).
+     * If a default oid is give (-1) the default goid will be returned.
      * <p/>
      * <b>NOTE:</b> Mapped (upgraded prefix) GOIDs created by this method are the actual, real GOIDs of entities that
      * have been upgraded to GOID from OID.  They can be used anywhere like any other GOID.
@@ -176,22 +178,55 @@ public class GoidUpgradeMapper {
      *                   and just always use the WRAPPED_OID prefix.
      * @param oid the objectid to wrap, or null to just return null.
      * @return a new Goid encoding this object ID with the upgraded prefix for this entity type, if available, or
-     *         else with the WRAPPED_OID prefix, or null if oid was null.
+     *         else with the WRAPPED_OID prefix, or null if oid was null or DefaultGoid if oid was -1.
      */
     public static Goid mapOid(@Nullable EntityType entityType, @Nullable Long oid) {
+        if(oid == null)
+            return null;
+        else if(oid == -1)
+            return GoidEntity.DEFAULT_GOID;
         Long prefix = entityType == null ? null : getPrefix(entityType);
         if (prefix == null)
             prefix = GoidRange.WRAPPED_OID.getFirstHi();
 
-        return oid == null
-            ? null
-            : new Goid( prefix, oid );
+        return new Goid( prefix, oid );
+    }
+
+    /**
+     * Map a String to a Goid. This will convert a String id which either be a String representation of a Goid or a oid
+     * into a Goid. If the String is already a goid hex string then it is converted to a Goid and that is returned. If
+     * the String is a String representation of a long (oid) then the long is mapped using GoidUpgradeMapper#mapOid().
+     * <p/>
+     * If the given string is not a Hex goid representation or a long id then an IllegalArgumentException is thrown.
+     *
+     * @param entityType the entity type associated with the OID, or null to avoid checking for an upgraded prefix and
+     *                   just always use the WRAPPED_OID prefix.
+     * @param id         the id to parse, either a Goid hex String or a String long oid or null to just return null.
+     * @return a new Goid encoding this object ID with the upgraded prefix for this entity type, if available, or else
+     *         with the WRAPPED_OID prefix, or null if oid was null or DefaultGoid if oid was -1 or a Goid
+     *         representation of the id if it was a Hex String.
+     */
+    public static Goid mapId(@Nullable EntityType entityType, @Nullable String id) {
+        if(id == null)
+            return null;
+        try {
+            Goid goid = new Goid(id);
+            return goid;
+        } catch (IllegalArgumentException e) {
+            //do nothing, try it as an oid
+        }
+        try {
+            return mapOid(entityType, Long.parseLong(id));
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Id is neither a goid or an oid. ID: " + id);
+        }
     }
 
     /**
      * Map or wrap legacy OIDs in the specified array to GOIDs, mapping them to the correct GOIDs for
      * entities from an updated database, if applicable; otherwise, wrapping them to GOIDs within the range reserved
-     * for wrapped OIDs (for temporary use within a Gateway upgraded from a pre-GOID database).
+     * for wrapped OIDs (for temporary use within a Gateway upgraded from a pre-GOID database). If a default oid is give
+     * (-1) the default goid will be returned.
      * <p/>
      * <b>NOTE:</b> Mapped (upgraded prefix) GOIDs created by this method are the actual, real GOIDs of entities that
      * have been upgraded to GOID from OID.  They can be used anywhere like any other GOID.
@@ -208,7 +243,7 @@ public class GoidUpgradeMapper {
      *                   and just always use WRAPPED_OID prefixes.
      * @param oids the objectid array to wrap, or null to just return null.
      * @return an array of new Goid instances encoding the specified object ID with the upgraded prefix for this
-     *         entity type, if available, or else with the WRAPPED_OID prefix, or null if oids was null.
+     *         entity type, if available, or else with the WRAPPED_OID prefix, or null if oids was null or DefaultGoid if oid was -1..
      *         <p/>
      *         Elements of the returned array will be null if the correponding element in the input array was null.
      */
@@ -221,7 +256,13 @@ public class GoidUpgradeMapper {
         Goid[] goids = new Goid[oids.length];
         for ( int i = 0; i < oids.length; i++ ) {
             Long oid = oids[i];
-            Goid goid = oid == null ? null : new Goid( prefix, oid );
+            Goid goid;
+            if(oid == null)
+                goid = null;
+            else if(oid == -1)
+                goid = GoidEntity.DEFAULT_GOID;
+            else
+                goid = new Goid( prefix, oid );
             goids[i] = goid;
         }
         return goids;

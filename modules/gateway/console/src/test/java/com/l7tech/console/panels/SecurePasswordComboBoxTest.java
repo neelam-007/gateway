@@ -5,6 +5,7 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.registry.RegistryStub;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gui.util.Utilities;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.test.util.GuiTestException;
 import com.l7tech.test.util.GuiTestLauncher;
 import com.l7tech.test.util.GuiTestMethod;
@@ -29,9 +30,9 @@ public class SecurePasswordComboBoxTest {
     public void testPasswordComboBox(JFrame frame) throws Exception {
         Registry.setDefault(new RegistryStub());
         TrustedCertAdminStub tcas = (TrustedCertAdminStub) Registry.getDefault().getTrustedCertManager();
-        tcas.securePasswords.put(444L, new SecurePassword("foo.test1", new Date().getTime()));
-        tcas.securePasswords.put(445L, new SecurePassword("foo.test2", new Date().getTime()));
-        tcas.securePasswords.put(446L, new SecurePassword("wsdl.server", new Date().getTime()));
+        tcas.securePasswords.put(new Goid(0,444L), new SecurePassword("foo.test1", new Date().getTime()));
+        tcas.securePasswords.put(new Goid(0,445L), new SecurePassword("foo.test2", new Date().getTime()));
+        tcas.securePasswords.put(new Goid(0,446L), new SecurePassword("wsdl.server", new Date().getTime()));
         JDialog dlg = new JDialog(frame, "Doing-Something-with-a-Password Properties", true);
         final Container p = dlg.getContentPane();
         p.setLayout(new BorderLayout(8, 8));

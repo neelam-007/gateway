@@ -977,7 +977,7 @@ CREATE TABLE shared_keys (
 -- Secure password storage
 DROP TABLE IF EXISTS secure_password;
 CREATE TABLE secure_password (
-  objectid bigint(20) NOT NULL,
+  goid binary(16) NOT NULL,
   version integer NOT NULL,
   name varchar(128) NOT NULL,
   description varchar(256),
@@ -986,7 +986,7 @@ CREATE TABLE secure_password (
   last_update bigint(20) NOT NULL DEFAULT 0,
   type varchar(64) NOT NULL DEFAULT 'PASSWORD',
   security_zone_goid binary(16),
-  PRIMARY KEY (objectid),
+  PRIMARY KEY (goid),
   UNIQUE(name),
   CONSTRAINT secure_password_security_zone FOREIGN KEY (security_zone_goid) REFERENCES security_zone (goid) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
@@ -1000,7 +1000,7 @@ CREATE TABLE http_configuration (
   protocol varchar(8) DEFAULT NULL,
   path varchar(4096) DEFAULT NULL,
   username varchar(255) DEFAULT NULL,
-  password_oid bigint(20) DEFAULT NULL,
+  password_goid binary(16) DEFAULT NULL,
   ntlm_host varchar(128) DEFAULT NULL,
   ntlm_domain varchar(255) DEFAULT NULL,
   tls_version varchar(8) DEFAULT NULL,
@@ -1015,11 +1015,11 @@ CREATE TABLE http_configuration (
   proxy_host varchar(128) DEFAULT NULL,
   proxy_port int(5) NOT NULL DEFAULT 0,
   proxy_username varchar(255) DEFAULT NULL,
-  proxy_password_oid bigint(20) DEFAULT NULL,
+  proxy_password_goid binary(16) DEFAULT NULL,
   security_zone_goid binary(16),
   primary key(goid),
-  FOREIGN KEY (password_oid) REFERENCES secure_password (objectid),
-  FOREIGN KEY (proxy_password_oid) REFERENCES secure_password (objectid),
+  FOREIGN KEY (password_goid) REFERENCES secure_password (goid),
+  FOREIGN KEY (proxy_password_goid) REFERENCES secure_password (goid),
   CONSTRAINT http_config_security_zone FOREIGN KEY (security_zone_goid) REFERENCES security_zone (goid) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
@@ -1093,11 +1093,11 @@ CREATE TABLE siteminder_configuration (
   fipsmode integer NOT NULL DEFAULT 0,
   host_configuration varchar(256) DEFAULT NULL,
   user_name varchar(256) DEFAULT NULL,
-  password_oid bigint(20) DEFAULT NULL, 
+  password_goid binary(16) DEFAULT NULL,
   noncluster_failover boolean DEFAULT false NOT NULL,
   cluster_threshold integer DEFAULT 50,
   security_zone_goid binary(16),
-  FOREIGN KEY (password_oid) REFERENCES secure_password (objectid),
+  FOREIGN KEY (password_goid) REFERENCES secure_password (goid),
   PRIMARY KEY (goid),
   CONSTRAINT siteminder_configuration_security_zone FOREIGN KEY (security_zone_goid) REFERENCES security_zone (goid) ON DELETE SET NULL,
   INDEX i_name (name),

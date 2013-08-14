@@ -1,14 +1,18 @@
 package com.l7tech.external.assertions.kerberos.authentication;
 
+import com.l7tech.console.util.ConsoleGoidUpgradeMapper;
+import com.l7tech.gateway.common.security.password.SecurePassword;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.UsesVariables;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.DefaultAssertionMetadata;
+import com.l7tech.policy.assertion.UsesVariables;
 import com.l7tech.policy.assertion.credential.http.HttpNegotiate;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.assertion.xmlsec.RequestWssKerberos;
@@ -40,7 +44,7 @@ public class KerberosAuthenticationAssertion extends Assertion implements UsesVa
     protected boolean krbDelegatedAuthentication = true;
     protected boolean krbUseGatewayKeytab = true;
     protected String krbConfiguredAccount;
-    protected long krbSecurePasswordReference = -1L;
+    protected Goid krbSecurePasswordReference = SecurePassword.DEFAULT_GOID;
     protected boolean s4U2Self;
     protected boolean s4U2Proxy;
     protected String userRealm;
@@ -101,13 +105,21 @@ public class KerberosAuthenticationAssertion extends Assertion implements UsesVa
         this.krbConfiguredAccount = krbConfiguredAccount;
     }
 
-    @Dependency(type = Dependency.DependencyType.SECURE_PASSWORD, methodReturnType = Dependency.MethodReturnType.OID)
-    public long getKrbSecurePasswordReference() {
+    @Dependency(type = Dependency.DependencyType.SECURE_PASSWORD, methodReturnType = Dependency.MethodReturnType.GOID)
+    public Goid getKrbSecurePasswordReference() {
         return krbSecurePasswordReference;
     }
 
+    /**
+     * @deprecated passwords now use Goid not long oid's
+     */
+    @Deprecated
     public void setKrbSecurePasswordReference(long securePasswordOid) {
-        this.krbSecurePasswordReference = securePasswordOid;
+        this.krbSecurePasswordReference = ConsoleGoidUpgradeMapper.mapOid(EntityType.SECURE_PASSWORD, securePasswordOid);
+    }
+
+    public void setKrbSecurePasswordReference(Goid securePasswordGoid) {
+        this.krbSecurePasswordReference = securePasswordGoid;
     }
 
     public boolean isS4U2Self() {

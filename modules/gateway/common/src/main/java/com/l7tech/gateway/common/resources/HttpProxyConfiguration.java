@@ -1,6 +1,8 @@
 package com.l7tech.gateway.common.resources;
 
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.search.Dependency;
+import org.hibernate.annotations.Type;
 
 import javax.persistence.Column;
 import javax.persistence.Embeddable;
@@ -25,7 +27,7 @@ public class HttpProxyConfiguration implements Serializable {
             this.host = httpProxyConfiguration.host;
             this.port = httpProxyConfiguration.port;
             this.username = httpProxyConfiguration.username;
-            this.passwordOid = httpProxyConfiguration.passwordOid;
+            this.passwordGoid = httpProxyConfiguration.passwordGoid;
         }
     }
 
@@ -59,15 +61,16 @@ public class HttpProxyConfiguration implements Serializable {
         this.username = username;
     }
 
-    @Column(name="proxy_password_oid")
-    @Dependency(methodReturnType = Dependency.MethodReturnType.OID, type = Dependency.DependencyType.SECURE_PASSWORD)
-    public Long getPasswordOid() {
-        return passwordOid;
+    @Column(name="proxy_password_goid")
+    @Type(type = "com.l7tech.server.util.GoidType")
+    @Dependency(methodReturnType = Dependency.MethodReturnType.GOID, type = Dependency.DependencyType.SECURE_PASSWORD)
+    public Goid getPasswordGoid() {
+        return passwordGoid;
     }
 
-    public void setPasswordOid( final Long passwordOid ) {
+    public void setPasswordGoid(final Goid passwordGoid) {
         checkLocked();
-        this.passwordOid = passwordOid;
+        this.passwordGoid = passwordGoid;
     }
 
     //- PRIVATE
@@ -76,7 +79,7 @@ public class HttpProxyConfiguration implements Serializable {
     private String host;
     private int port;
     private String username;
-    private Long passwordOid;
+    private Goid passwordGoid;
 
     private void checkLocked() {
         if ( locked ) throw new IllegalStateException("Cannot update locked configuration");

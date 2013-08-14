@@ -12,6 +12,8 @@ import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.message.CommandKnob;
+import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.imp.GoidEntityUtil;
 import com.l7tech.policy.assertion.MessageTargetable;
 import com.l7tech.policy.assertion.MessageTargetableSupport;
 import com.l7tech.policy.assertion.TargetMessageType;
@@ -25,7 +27,6 @@ import java.awt.event.ActionListener;
 import java.text.MessageFormat;
 import java.util.ResourceBundle;
 
-import static com.l7tech.objectmodel.imp.PersistentEntityUtil.oid;
 import static com.l7tech.util.Option.optional;
 
 public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCancelSupport<SshRouteAssertion> {
@@ -132,16 +133,16 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
                 dialog.pack();
                 Utilities.centerOnScreen(dialog);
                 // save selection
-                final Option<Long> selectedPasswordOid = optional( passwordField.getSelectedSecurePassword() ).map( oid() );
-                final Option<Long> selectedPrivateKeyOid = optional( privateKeyField.getSelectedSecurePassword() ).map( oid() );
+                final Option<Goid> selectedPasswordGoid = optional(passwordField.getSelectedSecurePassword()).map(GoidEntityUtil.goid());
+                final Option<Goid> selectedPrivateKeyGoid = optional( privateKeyField.getSelectedSecurePassword() ).map( GoidEntityUtil.goid() );
                 DialogDisplayer.display(dialog, new Runnable() {
                     @Override
                     public void run() {
                         passwordField.reloadPasswordList(SecurePassword.SecurePasswordType.PASSWORD);
                         privateKeyField.reloadPasswordList(SecurePassword.SecurePasswordType.PEM_PRIVATE_KEY);
                         // load selection
-                        if (selectedPasswordOid.isSome()) passwordField.setSelectedSecurePassword(selectedPasswordOid.some());
-                        if (selectedPrivateKeyOid.isSome()) privateKeyField.setSelectedSecurePassword(selectedPrivateKeyOid.some());
+                        if (selectedPasswordGoid.isSome()) passwordField.setSelectedSecurePassword(selectedPasswordGoid.some());
+                        if (selectedPrivateKeyGoid.isSome()) privateKeyField.setSelectedSecurePassword(selectedPrivateKeyGoid.some());
                         pack();
                     }
                 });
@@ -462,13 +463,13 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
         // populate authorization settings
         specifyUserCredentialsRadioButton.setSelected(assertion.isCredentialsSourceSpecified());
         passThroughCredentialsInRadioButton.setSelected(!assertion.isCredentialsSourceSpecified());
-        if(assertion.getPasswordOid() != null) {
-            passwordField.setSelectedSecurePassword(assertion.getPasswordOid());
+        if(assertion.getPasswordGoid() != null) {
+            passwordField.setSelectedSecurePassword(assertion.getPasswordGoid());
         }
 
-        if(assertion.isUsePrivateKey() && assertion.getPrivateKeyOid() != null) {
+        if(assertion.isUsePrivateKey() && assertion.getPrivateKeyGoid() != null) {
             privateKeyRadioButton.setSelected(true);
-            privateKeyField.setSelectedSecurePassword(assertion.getPrivateKeyOid());
+            privateKeyField.setSelectedSecurePassword(assertion.getPrivateKeyGoid());
         } else {
             passwordRadioButton.setSelected(true);
         }
@@ -569,12 +570,12 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
             assertion.setUsername(usernameField.getText().trim());
             if(passwordRadioButton.isSelected()) {
                 assertion.setUsePrivateKey(false);
-                assertion.setPasswordOid(passwordField.getSelectedSecurePassword().getOid());
-                assertion.setPrivateKeyOid(null);
+                assertion.setPasswordGoid(passwordField.getSelectedSecurePassword().getGoid());
+                assertion.setPrivateKeyGoid(null);
             } else if (privateKeyRadioButton.isSelected()) {
                 assertion.setUsePrivateKey(true);
-                assertion.setPrivateKeyOid(privateKeyField.getSelectedSecurePassword().getOid());
-                assertion.setPasswordOid(null);
+                assertion.setPrivateKeyGoid(privateKeyField.getSelectedSecurePassword().getGoid());
+                assertion.setPasswordGoid(null);
             }
         }
 

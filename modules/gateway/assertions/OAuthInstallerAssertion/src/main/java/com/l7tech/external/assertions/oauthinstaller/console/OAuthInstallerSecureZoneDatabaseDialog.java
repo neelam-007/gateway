@@ -170,7 +170,7 @@ public class OAuthInstallerSecureZoneDatabaseDialog extends JDialog {
                 securePasswordComboBox.reloadPasswordList(SecurePassword.SecurePasswordType.PASSWORD);
                 // load selection
                 if(password != null) {
-                    securePasswordComboBox.setSelectedSecurePassword(password.getOid());
+                    securePasswordComboBox.setSelectedSecurePassword(password.getGoid());
                 }
                 pack();
             }
@@ -277,7 +277,7 @@ public class OAuthInstallerSecureZoneDatabaseDialog extends JDialog {
                     OAuthInstallerSecureZoneDatabaseDialog.this,
                     "Creating OTK Database",
                     "The OTK Database is being created.",
-                    admin.createOtkDatabase(mysqlHost, mysqlPort, adminUser, adminPassword, otkDbName, otkDbUsername, securePassword.getOid(), newJdbcConnName, getHostGrants(), createUserCheckBox.isSelected(), failIfUserAlreadyCheckBox.isSelected()));
+                    admin.createOtkDatabase(mysqlHost, mysqlPort, adminUser, adminPassword, otkDbName, otkDbUsername, securePassword.getGoid(), newJdbcConnName, getHostGrants(), createUserCheckBox.isSelected(), failIfUserAlreadyCheckBox.isSelected()));
             if (either.isRight()) {
                 if (!either.right().isEmpty()) {
                     DialogDisplayer.showMessageDialog(this, either.right(), "Problem creating OTK Database", JOptionPane.WARNING_MESSAGE, null);

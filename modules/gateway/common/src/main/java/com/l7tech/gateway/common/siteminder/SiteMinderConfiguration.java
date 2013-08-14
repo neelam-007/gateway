@@ -1,10 +1,13 @@
 package com.l7tech.gateway.common.siteminder;
 
+import com.l7tech.gateway.common.security.password.SecurePassword;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.imp.ZoneableNamedGoidEntityImp;
 import com.l7tech.search.Dependency;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
 import org.hibernate.annotations.Proxy;
+import org.hibernate.annotations.Type;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
@@ -41,7 +44,7 @@ public class SiteMinderConfiguration extends ZoneableNamedGoidEntityImp implemen
     private int cluster_threshold;
     private String hostConfiguration;
     private String userName;
-    private Long passwordOid;
+    private Goid passwordGoid;
     private boolean updateSSOToken;
     private Map<String, String> properties;
 
@@ -58,7 +61,7 @@ public class SiteMinderConfiguration extends ZoneableNamedGoidEntityImp implemen
         enabled = true;
         hostConfiguration = "";
         userName = "";
-        passwordOid = 0L;
+        passwordGoid = SecurePassword.DEFAULT_GOID;
         updateSSOToken = false;
     }
 
@@ -225,15 +228,16 @@ public class SiteMinderConfiguration extends ZoneableNamedGoidEntityImp implemen
      *
      * @return The identifier or null.
      */
-    @Column(name="password_oid")
-    @Dependency(type = Dependency.DependencyType.SECURE_PASSWORD, methodReturnType = Dependency.MethodReturnType.OID)
-    public Long getPasswordOid() {
-        return passwordOid;
+    @Column(name="password_goid")
+    @Type(type = "com.l7tech.server.util.GoidType")
+    @Dependency(type = Dependency.DependencyType.SECURE_PASSWORD, methodReturnType = Dependency.MethodReturnType.GOID)
+    public Goid getPasswordGoid() {
+        return passwordGoid;
     }
 
-    public void setPasswordOid( final Long passwordOid ) {
+    public void setPasswordGoid(final Goid passwordGoid) {
         checkLocked();
-        this.passwordOid = passwordOid;
+        this.passwordGoid = passwordGoid;
     }
 
     /**
@@ -290,7 +294,7 @@ public class SiteMinderConfiguration extends ZoneableNamedGoidEntityImp implemen
         this.setUpdateSSOToken(other.isUpdateSSOToken());
         this.setHostConfiguration(other.getHostConfiguration());
         this.setUserName(other.getUserName());
-        this.setPasswordOid(other.getPasswordOid());
+        this.setPasswordGoid(other.getPasswordGoid());
         this.setSecurityZone(other.getSecurityZone());
         this.setProperties(other.getProperties());
     }

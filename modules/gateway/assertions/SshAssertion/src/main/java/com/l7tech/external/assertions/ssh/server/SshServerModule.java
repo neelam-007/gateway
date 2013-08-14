@@ -10,6 +10,7 @@ import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.gateway.common.transport.TransportDescriptor;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.security.keys.PemUtils;
@@ -61,7 +62,6 @@ import org.apache.sshd.server.session.ServerSession;
 import org.apache.sshd.server.session.SessionFactory;
 import org.apache.sshd.server.sftp.SftpSubsystem;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.jetbrains.annotations.NotNull;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
@@ -459,14 +459,14 @@ public class SshServerModule extends TransportModule implements ApplicationListe
         sshd.setBacklog( connector.getIntProperty( LISTEN_PROP_ACCEPT_BACLKOG, DEFAULT_ACCEPT_BACKLOG ) );
 
         // set server host private key
-        final long hostPrivateKeyOid = connector.getLongProperty(SshCredentialAssertion.LISTEN_PROP_HOST_PRIVATE_KEY, SecurePassword.DEFAULT_OID);
-        final SecurePassword securePassword = securePasswordManager.findByPrimaryKey(hostPrivateKeyOid);
+        final Goid hostPrivateKeyGoid = GoidUpgradeMapper.mapId(EntityType.SECURE_PASSWORD, connector.getProperty(SshCredentialAssertion.LISTEN_PROP_HOST_PRIVATE_KEY));
+        final SecurePassword securePassword = securePasswordManager.findByPrimaryKey(hostPrivateKeyGoid != null ? hostPrivateKeyGoid : SecurePassword.DEFAULT_GOID);
         if (securePassword != null) {
             final String encryptedHostPrivateKey = securePassword.getEncodedPassword();
             final char[] hostPrivateKey = securePasswordManager.decryptPassword(encryptedHostPrivateKey);
             sshd.setKeyPairProvider(new PemSshHostKeyProvider(String.valueOf(hostPrivateKey)));
         } else {
-            LOGGER.log(Level.WARNING, "Unable to find private key OID: " + hostPrivateKeyOid + ".  KeyPairProvider not set.");
+            LOGGER.log(Level.WARNING, "Unable to find private key GOID: " + hostPrivateKeyGoid + ".  KeyPairProvider not set.");
         }
 
         // configure connection idle timeout in ms (min=60sec*1000ms)

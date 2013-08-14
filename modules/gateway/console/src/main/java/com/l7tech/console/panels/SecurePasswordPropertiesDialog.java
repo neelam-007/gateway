@@ -12,6 +12,7 @@ import com.l7tech.gui.widgets.SquigglyTextField;
 import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.objectmodel.EntityUtil;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.ObjectNotFoundException;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.ExceptionUtils;
@@ -82,7 +83,7 @@ public class SecurePasswordPropertiesDialog extends JDialog {
 
         this.securePassword = securePassword;
 
-        newRecord = securePassword.getOid() == SecurePassword.DEFAULT_OID;
+        newRecord = Goid.isDefault(securePassword.getGoid());
 
         buttonCancel.addActionListener(new ActionListener() {
             @Override
@@ -234,7 +235,7 @@ public class SecurePasswordPropertiesDialog extends JDialog {
         Utilities.setMaxLength(confirmPasswordField.getDocument(), maxPasswordLength);
         Utilities.setMaxLength(pemPrivateKeyField.getDocument(), maxPasswordLength);
 
-        zoneControl.configure(securePassword.getOid() == SecurePassword.DEFAULT_OID ? OperationType.CREATE : readOnly ? OperationType.READ : OperationType.UPDATE, securePassword);
+        zoneControl.configure(Goid.isDefault(securePassword.getGoid()) ? OperationType.CREATE : readOnly ? OperationType.READ : OperationType.UPDATE, securePassword);
 
         enableOrDisableComponents();
         modelToView();
@@ -266,7 +267,7 @@ public class SecurePasswordPropertiesDialog extends JDialog {
 
         if ( publicKey == null ) {
             try {
-                publicKey = pemPublicKey = Registry.getDefault().getTrustedCertManager().getSecurePasswordPublicKey( securePassword.getOid() );
+                publicKey = pemPublicKey = Registry.getDefault().getTrustedCertManager().getSecurePasswordPublicKey( securePassword.getGoid() );
             } catch ( IllegalStateException e ) {
                 // not connected
             } catch ( ObjectNotFoundException e ) {

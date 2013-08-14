@@ -1,7 +1,6 @@
 package com.l7tech.gateway.common.transport.email;
 
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.imp.ZoneableNamedEntityImp;
 import com.l7tech.objectmodel.imp.ZoneableNamedGoidEntityImp;
 import com.l7tech.policy.wsp.WspSensitive;
 import com.l7tech.search.Dependency;
@@ -179,7 +178,7 @@ public class EmailListener extends ZoneableNamedGoidEntityImp {
         this.properties = properties;
     }
 
-    @Dependency(key = PROP_HARDWIRED_SERVICE_ID, methodReturnType = Dependency.MethodReturnType.OID, type = Dependency.DependencyType.SERVICE)
+    @Dependency(key = PROP_HARDWIRED_SERVICE_ID, methodReturnType = Dependency.MethodReturnType.GOID, type = Dependency.DependencyType.SERVICE)
     public Properties properties() {
         Properties properties = new Properties();
         try {

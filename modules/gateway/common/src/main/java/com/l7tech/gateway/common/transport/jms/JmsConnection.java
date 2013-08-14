@@ -223,7 +223,7 @@ public class JmsConnection extends ZoneableNamedGoidEntityImp implements UsesPri
     }
 
     @Dependencies({
-            @Dependency(methodReturnType = Dependency.MethodReturnType.OID, type = Dependency.DependencyType.SERVICE, key = PROP_HARDWIRED_SERVICE_ID),
+            @Dependency(methodReturnType = Dependency.MethodReturnType.GOID, type = Dependency.DependencyType.SERVICE, key = PROP_HARDWIRED_SERVICE_ID),
             @Dependency(methodReturnType = Dependency.MethodReturnType.VARIABLE, type = Dependency.DependencyType.SECURE_PASSWORD, key = Context.SECURITY_CREDENTIALS)
     })
     public Properties properties() {

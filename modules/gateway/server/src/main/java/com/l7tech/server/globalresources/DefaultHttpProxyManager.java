@@ -3,6 +3,7 @@ package com.l7tech.server.globalresources;
 import com.l7tech.common.io.NonCloseableOutputStream;
 import com.l7tech.gateway.common.resources.HttpProxyConfiguration;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.server.cluster.ClusterPropertyManager;
@@ -66,6 +67,7 @@ public class DefaultHttpProxyManager {
             try {
                 output = new PoolByteArrayOutputStream();
                 encoder = new XMLEncoder(new NonCloseableOutputStream(output));
+                encoder.setPersistenceDelegate( Goid.class, Goid.getPersistenceDelegate() );
                 encoder.setExceptionListener( new ExceptionListener() {
                     @Override
                     public void exceptionThrown( final Exception e ) {

@@ -75,8 +75,8 @@ public class HttpProxyPropertiesDialog extends OkCancelDialog<HttpProxyConfigura
             setText( hostTextField, httpProxyConfiguration.getHost() );
             setText( portTextField, httpProxyConfiguration.getPort() > 0 ? Integer.toString( httpProxyConfiguration.getPort()) : "" );
             setText( usernameTextField, httpProxyConfiguration.getUsername() );
-            if ( httpProxyConfiguration.getPasswordOid() != null )
-                ((SecurePasswordComboBox)passwordComboBox).setSelectedSecurePassword( httpProxyConfiguration.getPasswordOid() );
+            if ( httpProxyConfiguration.getPasswordGoid() != null )
+                ((SecurePasswordComboBox)passwordComboBox).setSelectedSecurePassword( httpProxyConfiguration.getPasswordGoid() );
 
             enableAndDisableComponents();            
         }
@@ -94,15 +94,15 @@ public class HttpProxyPropertiesDialog extends OkCancelDialog<HttpProxyConfigura
                 httpProxyConfiguration.setHost( null );
                 httpProxyConfiguration.setPort( 0 );
                 httpProxyConfiguration.setUsername( null );
-                httpProxyConfiguration.setPasswordOid( null );
+                httpProxyConfiguration.setPasswordGoid(null);
             } else {
                 httpProxyConfiguration.setHost( hostTextField.getText().trim() );
                 httpProxyConfiguration.setPort( Integer.parseInt(portTextField.getText().trim()) );
                 httpProxyConfiguration.setUsername( usernameTextField.getText() );
                 if ( passwordComboBox.isEnabled() ) {
-                    httpProxyConfiguration.setPasswordOid( ((SecurePasswordComboBox)passwordComboBox).getSelectedSecurePassword().getOid() );
+                    httpProxyConfiguration.setPasswordGoid(((SecurePasswordComboBox) passwordComboBox).getSelectedSecurePassword().getGoid());
                 } else {
-                    httpProxyConfiguration.setPasswordOid( null );
+                    httpProxyConfiguration.setPasswordGoid(null);
                 }
             }
         }

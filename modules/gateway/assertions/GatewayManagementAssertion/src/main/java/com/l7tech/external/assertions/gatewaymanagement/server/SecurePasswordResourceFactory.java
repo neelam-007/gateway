@@ -15,7 +15,7 @@ import org.springframework.transaction.PlatformTransactionManager;
  * Resource factory for stored/secure passwords.
  */
 @ResourceFactory.ResourceType(type=StoredPasswordMO.class)
-public class SecurePasswordResourceFactory extends EntityManagerResourceFactory<StoredPasswordMO, SecurePassword, EntityHeader> {
+public class SecurePasswordResourceFactory extends GoidEntityManagerResourceFactory<StoredPasswordMO, SecurePassword, EntityHeader> {
 
     //- PUBLIC
 

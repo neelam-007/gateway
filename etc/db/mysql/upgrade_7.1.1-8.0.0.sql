@@ -37,7 +37,7 @@ RETURN lower(hex(goid));
 
 -- The dropForeignKey function will drop a foreign key constraint on a table where the constraint does not have a name.
 -- The first parameter is the table name that has the constraint. The second parameter is the table that the constraint
--- references. If there are 2 different foreign key references to the same table an error will be returned. This only
+-- references. If there are 2 or more different foreign key references to the same table all will be dropped. This only
 -- works for foreign keys that are on primary keys of the foreign table. A
 DROP PROCEDURE IF EXISTS dropForeignKey;
 delimiter //
@@ -47,22 +47,18 @@ begin
 	set @ssgSchema = SCHEMA();
 	SELECT count(*) into @constraint_count FROM information_schema.REFERENTIAL_CONSTRAINTS
 	WHERE constraint_schema = @ssgSchema AND table_name = tableName and referenced_table_name=referenceTableName and unique_constraint_name=@constraintName;
-	-- throw an error if there are more then one foreign keys found
-    if @constraint_count > 1 then
-        set @error_message = concat('\'',tableName, '\' table has more then one foreign key references to \'', referenceTableName,'\'');
-        -- SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = @error_message;
-    elseif @constraint_count = 1 then
+
+	while @constraint_count > 0 do
         SELECT constraint_name into @constraint_name FROM information_schema.REFERENTIAL_CONSTRAINTS
-        WHERE constraint_schema = @ssgSchema AND table_name = tableName and referenced_table_name=referenceTableName;
+        WHERE constraint_schema = @ssgSchema AND table_name = tableName and referenced_table_name=referenceTableName LIMIT 1;
         SET @s = CONCAT('ALTER TABLE ', tableName, ' DROP FOREIGN KEY ', @constraint_name);
         PREPARE stmt FROM @s;
         EXECUTE stmt;
         DEALLOCATE PREPARE stmt;
-    elseif @constraint_count = 0 then
-        -- warn if there are no foreign keys found
-        set @error_message = concat('No foreign key found from table \'',tableName, '\' to table \'', referenceTableName,'\'');
-        -- SIGNAL SQLSTATE '01000' SET MESSAGE_TEXT = @error_message;
-    end if;
+
+		SELECT count(*) into @constraint_count FROM information_schema.REFERENTIAL_CONSTRAINTS
+	    WHERE constraint_schema = @ssgSchema AND table_name = tableName and referenced_table_name=referenceTableName and unique_constraint_name=@constraintName;
+	end while;
 end//
 delimiter ;
 
@@ -340,6 +336,44 @@ update cluster_properties set goid = toGoid(0,objectid_backup) where propkey lik
 ALTER TABLE cluster_properties DROP COLUMN objectid_backup;
 update rbac_role set entity_goid = toGoid(@cluster_properties_prefix,entity_oid) where entity_oid is not null and entity_type='CLUSTER_PROPERTY';
 update rbac_predicate_oid oid1 left join rbac_predicate on rbac_predicate.objectid = oid1.objectid left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid set oid1.entity_id = goidToString(toGoid(@cluster_properties_prefix,oid1.entity_id)) where rbac_permission.entity_type = 'CLUSTER_PROPERTY';
+
+-- SecurePassword
+call dropForeignKey('http_configuration','secure_password');
+call dropForeignKey('siteminder_configuration','secure_password');
+
+ALTER TABLE secure_password ADD COLUMN objectid_backup BIGINT(20);
+update secure_password set objectid_backup=objectid;
+ALTER TABLE secure_password CHANGE COLUMN objectid goid BINARY(16) NOT NULL;
+-- For manual runs use: set @secure_password_prefix=createUnreservedPoorRandomPrefix();
+set @secure_password_prefix=#RANDOM_LONG_NOT_RESERVED#;
+update secure_password set goid = toGoid(@secure_password_prefix,objectid_backup);
+ALTER TABLE secure_password DROP COLUMN objectid_backup;
+
+update rbac_role set entity_goid = toGoid(@secure_password_prefix,entity_oid) where entity_oid is not null and entity_type='SECURE_PASSWORD';
+update rbac_predicate_oid oid1 left join rbac_predicate on rbac_predicate.objectid = oid1.objectid left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid set oid1.entity_id = goidToString(toGoid(@secure_password_prefix,oid1.entity_id)) where rbac_permission.entity_type = 'SECURE_PASSWORD';
+
+ALTER TABLE http_configuration ADD COLUMN password_oid_backup BIGINT(20);
+UPDATE http_configuration SET password_oid_backup=password_oid;
+ALTER TABLE http_configuration CHANGE COLUMN password_oid password_goid BINARY(16) DEFAULT NULL;
+UPDATE http_configuration SET password_goid = toGoid(@secure_password_prefix,password_oid_backup);
+ALTER TABLE http_configuration DROP COLUMN password_oid_backup;
+
+ALTER TABLE http_configuration ADD COLUMN proxy_password_oid_backup BIGINT(20);
+UPDATE http_configuration SET proxy_password_oid_backup=proxy_password_oid;
+ALTER TABLE http_configuration CHANGE COLUMN proxy_password_oid proxy_password_goid BINARY(16) DEFAULT NULL;
+UPDATE http_configuration SET proxy_password_goid = toGoid(@secure_password_prefix,proxy_password_oid_backup);
+ALTER TABLE http_configuration DROP COLUMN proxy_password_oid_backup;
+
+ALTER TABLE http_configuration ADD FOREIGN KEY (password_goid) REFERENCES secure_password (goid);
+ALTER TABLE http_configuration ADD FOREIGN KEY (proxy_password_goid) REFERENCES secure_password (goid);
+
+ALTER TABLE siteminder_configuration ADD COLUMN password_oid_backup BIGINT(20);
+UPDATE siteminder_configuration SET password_oid_backup=password_oid;
+ALTER TABLE siteminder_configuration CHANGE COLUMN password_oid password_goid BINARY(16) DEFAULT NULL;
+UPDATE siteminder_configuration SET password_goid = toGoid(@secure_password_prefix,password_oid_backup);
+ALTER TABLE siteminder_configuration DROP COLUMN password_oid_backup;
+
+ALTER TABLE siteminder_configuration ADD FOREIGN KEY (password_goid) REFERENCES secure_password (goid);
 
 -- Resource Entry
 ALTER TABLE resource_entry ADD COLUMN objectid_backup BIGINT(20);
@@ -1078,7 +1112,8 @@ INSERT INTO goid_upgrade_map (table_name, prefix) VALUES
       ('client_cert', @client_cert_prefix),
       ('trusted_cert', @trusted_cert_prefix),
       ('revocation_check_policy', @revocation_check_policy_prefix),
-      ('resource_entry', @resource_entry_prefix);
+      ('resource_entry', @resource_entry_prefix),
+      ('secure_password', @secure_password_prefix);
 
 
 --

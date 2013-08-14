@@ -2,6 +2,7 @@ package com.l7tech.util;
 
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.GoidEntity;
 import com.l7tech.objectmodel.GoidRange;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -68,5 +69,10 @@ public class GoidUpgradeMapperTest {
         assertNull(goids[2]);
         assertEquals(new Goid(WRAP, 222L), goids[3]);
         assertTrue(GoidRange.WRAPPED_OID.isInRange(goids[3]));
+    }
+
+    @Test
+    public void test(){
+        System.out.println(GoidEntity.DEFAULT_GOID.toString());
     }
 }

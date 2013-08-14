@@ -5,7 +5,6 @@ import com.l7tech.console.util.SecurityZoneWidget;
 import com.l7tech.gateway.common.resources.HttpConfiguration;
 import com.l7tech.gateway.common.resources.HttpProxyConfiguration;
 import com.l7tech.gateway.common.security.password.SecurePassword;
-import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.RunOnChangeListener;
@@ -271,10 +270,10 @@ public class HttpConfigurationPropertiesDialog extends JDialog {
                 proxyPasswordComboBox.reloadPasswordList();
 
                 if ( password != null ) {
-                    passwordComboBox.setSelectedSecurePassword( password.getOid() );
+                    passwordComboBox.setSelectedSecurePassword( password.getGoid() );
                 }
                 if ( proxyPassword != null ) {
-                    proxyPasswordComboBox.setSelectedSecurePassword( proxyPassword.getOid() );
+                    proxyPasswordComboBox.setSelectedSecurePassword( proxyPassword.getGoid() );
                 }
             }
         });
@@ -287,8 +286,8 @@ public class HttpConfigurationPropertiesDialog extends JDialog {
         if ( protocolComboBox.getSelectedItem()==null ) protocolComboBox.setSelectedIndex( 0 );
         setText( pathTextField, httpConfiguration.getPath() );
         setText( usernameTextField, httpConfiguration.getUsername() );
-        if ( httpConfiguration.getPasswordOid()!=null )
-            ((SecurePasswordComboBox)passwordComboBox).setSelectedSecurePassword( httpConfiguration.getPasswordOid() );
+        if ( httpConfiguration.getPasswordGoid()!=null )
+            ((SecurePasswordComboBox)passwordComboBox).setSelectedSecurePassword( httpConfiguration.getPasswordGoid() );
         setText( ntlmDomainTextField, httpConfiguration.getNtlmDomain() );
         setText( ntlmHostTextField, httpConfiguration.getNtlmHost() );
 
@@ -342,8 +341,8 @@ public class HttpConfigurationPropertiesDialog extends JDialog {
                     setText( proxyHostTextField, proxyConfiguration.getHost() );
                     setText( proxyPortTextField, proxyConfiguration.getPort() );
                     setText( proxyUsernameTextField, proxyConfiguration.getUsername() );
-                    if ( proxyConfiguration.getPasswordOid()!=null )
-                        ((SecurePasswordComboBox)proxyPasswordComboBox).setSelectedSecurePassword( proxyConfiguration.getPasswordOid() );
+                    if ( proxyConfiguration.getPasswordGoid()!=null )
+                        ((SecurePasswordComboBox)proxyPasswordComboBox).setSelectedSecurePassword( proxyConfiguration.getPasswordGoid() );
                 }
                 break;
         }
@@ -365,9 +364,9 @@ public class HttpConfigurationPropertiesDialog extends JDialog {
 
         httpConfiguration.setUsername( getText( usernameTextField, true ) );
         if ( passwordComboBox.isEnabled() ) {
-            httpConfiguration.setPasswordOid( ((SecurePasswordComboBox)passwordComboBox).getSelectedSecurePassword().getOid() );
+            httpConfiguration.setPasswordGoid(((SecurePasswordComboBox) passwordComboBox).getSelectedSecurePassword().getGoid());
         } else {
-            httpConfiguration.setPasswordOid( null );
+            httpConfiguration.setPasswordGoid(null);
         }
         httpConfiguration.setNtlmDomain( getText( ntlmDomainTextField, true ) );
         httpConfiguration.setNtlmHost( getText( ntlmHostTextField, true ) );
@@ -421,9 +420,9 @@ public class HttpConfigurationPropertiesDialog extends JDialog {
             proxyConfiguration.setPort( Integer.parseInt( proxyPortTextField.getText() ) );
             proxyConfiguration.setUsername( getText( proxyUsernameTextField, true ) );
             if ( proxyPasswordComboBox.isEnabled() ) {
-                proxyConfiguration.setPasswordOid( ((SecurePasswordComboBox)proxyPasswordComboBox).getSelectedSecurePassword().getOid() );
+                proxyConfiguration.setPasswordGoid(((SecurePasswordComboBox) proxyPasswordComboBox).getSelectedSecurePassword().getGoid());
             } else {
-                proxyConfiguration.setPasswordOid( null );    
+                proxyConfiguration.setPasswordGoid(null);
             }
             httpConfiguration.setProxyUse( HttpConfiguration.Option.CUSTOM );
             httpConfiguration.setProxyConfiguration( proxyConfiguration );

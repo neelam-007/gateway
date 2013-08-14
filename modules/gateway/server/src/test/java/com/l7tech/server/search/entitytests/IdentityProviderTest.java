@@ -161,18 +161,18 @@ public class IdentityProviderTest extends DependencyTestBaseClass {
     @Test
     public void lDAPtest() throws FindException {
         SecurePassword securePassword = new SecurePassword();
-        long securePasswordOid = idCount.getAndIncrement();
-        securePassword.setOid(securePasswordOid);
+        Goid securePasswordGoid = new Goid(0,idCount.getAndIncrement());
+        securePassword.setGoid(securePasswordGoid);
         final String securePasswordName = "pass1";
         securePassword.setName(securePasswordName);
-        mockEntity(securePassword, new EntityHeader(securePasswordOid, EntityType.SECURE_PASSWORD, securePasswordName, null));
+        mockEntity(securePassword, new EntityHeader(securePasswordGoid, EntityType.SECURE_PASSWORD, securePasswordName, null));
 
         SecurePassword securePassword2 = new SecurePassword();
-        long securePasswordOid2 = idCount.getAndIncrement();
-        securePassword2.setOid(securePasswordOid2);
+        Goid securePasswordGoid2 = new Goid(0,idCount.getAndIncrement());
+        securePassword2.setGoid(securePasswordGoid2);
         final String securePasswordName2 = "pass2";
         securePassword2.setName(securePasswordName2);
-        mockEntity(securePassword2, new EntityHeader(securePasswordOid2, EntityType.SECURE_PASSWORD, securePasswordName2, null));
+        mockEntity(securePassword2, new EntityHeader(securePasswordGoid2, EntityType.SECURE_PASSWORD, securePasswordName2, null));
 
         LdapIdentityProviderConfig ldapIdentityProviderConfig = new LdapIdentityProviderConfig();
         final long identityProviderOid = idCount.getAndIncrement();
@@ -180,7 +180,7 @@ public class IdentityProviderTest extends DependencyTestBaseClass {
         ldapIdentityProviderConfig.setBindPasswd("${secpass." + securePasswordName + ".plaintext}");
         ldapIdentityProviderConfig.setNtlmAuthenticationProviderProperties(new TreeMap<>(CollectionUtils.MapBuilder.<String, String>builder()
                 .put("enabled", "true")
-                .put("service.passwordOid", String.valueOf(securePasswordOid2))
+                .put("service.passwordOid", String.valueOf(securePasswordGoid2))
                 .map()));
 
         final EntityHeader identityProviderConfigEntityHeader = new EntityHeader(identityProviderOid, EntityType.ID_PROVIDER_CONFIG, null, null);

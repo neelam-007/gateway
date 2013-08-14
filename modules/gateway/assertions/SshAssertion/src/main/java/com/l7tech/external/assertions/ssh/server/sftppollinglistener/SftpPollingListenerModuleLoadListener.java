@@ -3,6 +3,7 @@ package com.l7tech.external.assertions.ssh.server.sftppollinglistener;
 import com.l7tech.external.assertions.ssh.SftpPollingListenerConstants;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import com.l7tech.objectmodel.Entity;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.LifecycleException;
 import com.l7tech.server.ServerConfig;
@@ -13,6 +14,7 @@ import com.l7tech.server.search.processors.DependencyFinder;
 import com.l7tech.server.util.Injector;
 import com.l7tech.server.util.ThreadPoolBean;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.GoidUpgradeMapper;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.context.ApplicationContext;
 
@@ -71,9 +73,9 @@ public class SftpPollingListenerModuleLoadListener implements SftpPollingListene
                     List<Entity> dependentEntities;
                     //add the password as a dependency
                     if (activeConnector.getProperty(SsgActiveConnector.PROPERTIES_KEY_SFTP_SECURE_PASSWORD_OID) != null) {
-                        dependentEntities = finder.retrieveEntities(activeConnector.getProperty(SsgActiveConnector.PROPERTIES_KEY_SFTP_SECURE_PASSWORD_OID), com.l7tech.search.Dependency.DependencyType.SECURE_PASSWORD, com.l7tech.search.Dependency.MethodReturnType.OID);
+                        dependentEntities = finder.retrieveEntities(GoidUpgradeMapper.mapId(EntityType.SECURE_PASSWORD, activeConnector.getProperty(SsgActiveConnector.PROPERTIES_KEY_SFTP_SECURE_PASSWORD_OID)), com.l7tech.search.Dependency.DependencyType.SECURE_PASSWORD, com.l7tech.search.Dependency.MethodReturnType.GOID);
                     } else {
-                        dependentEntities = finder.retrieveEntities(activeConnector.getProperty(SsgActiveConnector.PROPERTIES_KEY_SFTP_SECURE_PASSWORD_KEY_OID), com.l7tech.search.Dependency.DependencyType.SECURE_PASSWORD, com.l7tech.search.Dependency.MethodReturnType.OID);
+                        dependentEntities = finder.retrieveEntities(GoidUpgradeMapper.mapId(EntityType.SECURE_PASSWORD, activeConnector.getProperty(SsgActiveConnector.PROPERTIES_KEY_SFTP_SECURE_PASSWORD_KEY_OID)), com.l7tech.search.Dependency.DependencyType.SECURE_PASSWORD, com.l7tech.search.Dependency.MethodReturnType.GOID);
                     }
                     return finder.getDependenciesFromEntities(activeConnector, finder, dependentEntities);
                 }

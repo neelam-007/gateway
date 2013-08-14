@@ -11,6 +11,7 @@ import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.identity.User;
 import com.l7tech.message.*;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.PolicyHeader;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.SslAssertion;
@@ -1339,7 +1340,7 @@ public class ServerVariables {
         }
     }
 
-    public static String getSecurePasswordByOid(Audit audit, long oid) throws FindException {
+    public static String getSecurePasswordByGoid(Audit audit, Goid goid) throws FindException {
 
 
         if (securePasswordManager == null) {
@@ -1348,15 +1349,15 @@ public class ServerVariables {
             return null;
         }
 
-        SecurePassword secpass = securePasswordManager.findByPrimaryKey(oid);
+        SecurePassword secpass = securePasswordManager.findByPrimaryKey(goid);
         if (secpass == null) {
-            audit.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "Oid: " + oid + " referred to a nonexistent secure password; using empty string as password"); // avoid logging possible password material
+            audit.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "Goid: " + goid + " referred to a nonexistent secure password; using empty string as password"); // avoid logging possible password material
             return "";
         }
         try {
             char[] plaintext = getPlaintextPassword(secpass);
             if (plaintext == null) {
-                audit.logAndAudit(AssertionMessages.EXCEPTION_INFO_WITH_MORE_INFO, "Oid: " + oid + " referred to a secure password with an empty password; using empty string as password");
+                audit.logAndAudit(AssertionMessages.EXCEPTION_INFO_WITH_MORE_INFO, "Goid: " + goid + " referred to a secure password with an empty password; using empty string as password");
                 return "";
             } else {
                 return new String(plaintext);
@@ -1364,7 +1365,7 @@ public class ServerVariables {
         } catch (ParseException e) {
             // avoid chaining parse exception in case it contains password material, as callers are quite likely to just dump it into the log if we do
             // to allow debugging we will log it if debug exceptions are enabled and the log level for this class is elevated
-            final String msg = "Oid: " + oid + " referred to secure password that could not be decrypted";
+            final String msg = "Goid: " + goid + " referred to secure password that could not be decrypted";
             //noinspection ThrowableResultOfMethodCallIgnored
             logger.log(Level.FINER, msg, getDebugException( e ));
             throw new FindException(msg);

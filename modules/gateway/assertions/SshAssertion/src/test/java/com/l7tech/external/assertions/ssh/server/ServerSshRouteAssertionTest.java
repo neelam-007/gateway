@@ -15,6 +15,7 @@ import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.message.CommandKnob;
 import com.l7tech.message.Message;
 import com.l7tech.message.SshKnob;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.MessageTargetableSupport;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -72,7 +73,7 @@ public class ServerSshRouteAssertionTest {
     private static final String fileDir = "myDir/";
     private static final long fileLength = 100;
     private static final long fileOffset = 0;
-    private static final Long passwordOid = 123L;
+    private static final Goid passwordGoid = new Goid(0, 123L);
     private static final String username = "myUser";
     private static final String host = "myhost";
     private static final int port = 22;
@@ -139,7 +140,7 @@ public class ServerSshRouteAssertionTest {
         Mockito.when(sshSession.getKey()).thenReturn(key);
         SecurePassword password = new SecurePassword();
         password.setEncodedPassword("drowssap");
-        Mockito.when(securePasswordManager.findByPrimaryKey(Matchers.eq(passwordOid))).thenReturn(password);
+        Mockito.when(securePasswordManager.findByPrimaryKey(Matchers.eq(passwordGoid))).thenReturn(password);
         Mockito.when(securePasswordManager.decryptPassword(Matchers.eq(password.getEncodedPassword()))).thenReturn("password".toCharArray());
 
         Mockito.when(sshSessionPool.borrowObject(Matchers.eq(key))).thenReturn(sshSession);
@@ -167,7 +168,7 @@ public class ServerSshRouteAssertionTest {
         assertion.setFileLength(String.valueOf(fileLength));
         assertion.setHost("myhost");
         assertion.setUsername("myUser");
-        assertion.setPasswordOid(123L);
+        assertion.setPasswordGoid(new Goid(0,123L));
         assertion.setCredentialsSourceSpecified(true);
         assertion.setRequestTarget(new MessageTargetableSupport(TargetMessageType.REQUEST, false));
         assertion.setResponseTarget(new MessageTargetableSupport(TargetMessageType.RESPONSE, false));

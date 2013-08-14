@@ -426,7 +426,6 @@ class EntityPropertiesHelper {
             "laxResolution",
             "tracingEnabled",
             "goid",
-            "oldOid",
             "disabled",
             "soapVersion",
             "securityZone"
@@ -451,7 +450,7 @@ class EntityPropertiesHelper {
             "id",
             "lastUpdate",
             "name",
-            "oid",
+            "goid",
             "version",
             "securityZone"
         ))

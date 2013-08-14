@@ -1,9 +1,12 @@
 package com.l7tech.external.assertions.ssh;
 
+import com.l7tech.console.util.ConsoleGoidUpgradeMapper;
 import com.l7tech.gateway.common.transport.ftp.FtpCredentialsSource;
 import com.l7tech.gateway.common.transport.ftp.FtpFileNameSource;
 import com.l7tech.gateway.common.transport.ftp.FtpSecurity;
 import com.l7tech.message.CommandKnob;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
@@ -42,8 +45,8 @@ public class SshRouteAssertion extends RoutingAssertion implements UsesVariables
     private static final Logger logger = Logger.getLogger(SshRouteAssertion.class.getName());
 
     private String username;   // Username. Can contain context variables.
-    private Long privateKeyOid;   // privateKey.
-    private Long passwordOid = null;   // password.
+    private Goid privateKeyGoid;   // privateKey.
+    private Goid passwordGoid = null;   // password.
     private String hostName;   // SSH server host name. Can contain context variables.
     private String port = Integer.toString(DEFAULT_SSH_PORT);   // Port number. Can contain context variables.
     private String directory;   // Destination directory. Can contain context variables.
@@ -188,13 +191,21 @@ public class SshRouteAssertion extends RoutingAssertion implements UsesVariables
         this.username = username;
     }
 
-    @Dependency(methodReturnType = Dependency.MethodReturnType.OID, type = Dependency.DependencyType.SECURE_PASSWORD)
-    public Long getPrivateKeyOid() {
-        return privateKeyOid;
+    @Dependency(methodReturnType = Dependency.MethodReturnType.GOID, type = Dependency.DependencyType.SECURE_PASSWORD)
+    public Goid getPrivateKeyGoid() {
+        return privateKeyGoid;
     }
 
+    public void setPrivateKeyGoid(@Nullable Goid privateKeyGoid) {
+        this.privateKeyGoid = privateKeyGoid;
+    }
+
+    /**
+     * @deprecated Secure passwords use goids now.
+     */
+    @Deprecated
     public void setPrivateKeyOid(@Nullable Long privateKeyOid) {
-        this.privateKeyOid = privateKeyOid;
+        this.privateKeyGoid = ConsoleGoidUpgradeMapper.mapOid(EntityType.SECURE_PASSWORD, privateKeyOid);
     }
 
      public String getSshPublicKey() {
@@ -205,13 +216,21 @@ public class SshRouteAssertion extends RoutingAssertion implements UsesVariables
         this.sshPublicKey = sshPublicKey;
     }
 
-    @Dependency(methodReturnType = Dependency.MethodReturnType.OID, type = Dependency.DependencyType.SECURE_PASSWORD)
-    public Long getPasswordOid() {
-        return passwordOid;
+    @Dependency(methodReturnType = Dependency.MethodReturnType.GOID, type = Dependency.DependencyType.SECURE_PASSWORD)
+    public Goid getPasswordGoid() {
+        return passwordGoid;
     }
 
+    public void setPasswordGoid(@Nullable Goid passwordGoid) {
+        this.passwordGoid = passwordGoid;
+    }
+
+    /**
+     * @deprecated Secure passwords use goids now.
+     */
+    @Deprecated
     public void setPasswordOid(@Nullable Long passwordOid) {
-        this.passwordOid = passwordOid;
+        this.passwordGoid = ConsoleGoidUpgradeMapper.mapOid(EntityType.SECURE_PASSWORD, passwordOid);
     }
 
     public String getDirectory() {

@@ -610,34 +610,34 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
     }
 
     @Override
-    public long saveSecurePassword(SecurePassword securePassword) throws UpdateException, SaveException, FindException {
-        if (securePassword.getOid() == SecurePassword.DEFAULT_OID) {
+    public Goid saveSecurePassword(SecurePassword securePassword) throws UpdateException, SaveException, FindException {
+        if (Goid.isDefault(securePassword.getGoid())) {
             return saveNewSecurePassword(securePassword);
         } else {
             return updateExistingSecurePassword(securePassword);
         }
     }
 
-    private long saveNewSecurePassword(SecurePassword securePassword) throws SaveException {
+    private Goid saveNewSecurePassword(SecurePassword securePassword) throws SaveException {
         // Set initial placeholder encoded password
         securePassword.setEncodedPassword( "" );
         securePassword.setLastUpdate( 0L );
         return securePasswordManager.save(securePassword);
     }
 
-    private long updateExistingSecurePassword(SecurePassword securePassword) throws FindException, UpdateException {
+    private Goid updateExistingSecurePassword(SecurePassword securePassword) throws FindException, UpdateException {
         // Preserve existing encoded password, ignoring any from client
-        final long oid = securePassword.getOid();
-        SecurePassword existing = securePasswordManager.findByPrimaryKey(oid);
-        if (existing == null) throw new ObjectNotFoundException("No stored password exists with object ID " + oid);
+        final Goid goid = securePassword.getGoid();
+        SecurePassword existing = securePasswordManager.findByPrimaryKey(goid);
+        if (existing == null) throw new ObjectNotFoundException("No stored password exists with ID " + goid);
         securePassword.setEncodedPassword( existing.getEncodedPassword() );
         securePasswordManager.update(securePassword);
-        return oid;
+        return goid;
     }
 
     @Override
-    public void setSecurePassword(long securePasswordOid, char[] newPassword) throws FindException, UpdateException {
-        SecurePassword existing = securePasswordManager.findByPrimaryKey(securePasswordOid);
+    public void setSecurePassword(Goid securePasswordGoid, char[] newPassword) throws FindException, UpdateException {
+        SecurePassword existing = securePasswordManager.findByPrimaryKey(securePasswordGoid);
         if (existing == null) throw new ObjectNotFoundException();
         existing.setEncodedPassword(securePasswordManager.encryptPassword(newPassword));
         existing.setLastUpdate(System.currentTimeMillis());
@@ -645,18 +645,18 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
     }
 
     @Override
-    public JobId<Boolean> setGeneratedSecurePassword( final long securePasswordOid,
+    public JobId<Boolean> setGeneratedSecurePassword( final Goid securePasswordGoid,
                                                       final int keybits ) throws FindException, UpdateException  {
         if ( keybits < 512 || keybits > 16384 ) throw new UpdateException("Invalid key size " + keybits);
         // Verify that password exists and is the correct type
-        getSecurePasswordOfType( securePasswordOid, SecurePasswordType.PEM_PRIVATE_KEY );
+        getSecurePasswordOfType( securePasswordGoid, SecurePasswordType.PEM_PRIVATE_KEY );
 
         final FutureTask<Boolean> keyGenerator = new FutureTask<Boolean>( find( false ).wrapCallable( new Callable<Boolean>(){
             @Override
             public Boolean call() throws Exception {
                 final KeyPairGenerator generator = KeyPairGenerator.getInstance( "RSA", new BouncyCastleProvider() );
                 generator.initialize( keybits, JceProvider.getInstance().getSecureRandom() );
-                final SecurePassword existing = getSecurePasswordOfType( securePasswordOid, SecurePasswordType.PEM_PRIVATE_KEY );
+                final SecurePassword existing = getSecurePasswordOfType( securePasswordGoid, SecurePasswordType.PEM_PRIVATE_KEY );
                 final String pemKey = PemUtils.doWriteKeyPair( generator.genKeyPair().getPrivate() );
                 existing.setEncodedPassword(securePasswordManager.encryptPassword(pemKey.toCharArray()));
                 existing.setLastUpdate(System.currentTimeMillis());
@@ -675,16 +675,16 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
         return registerJob( keyGenerator, Boolean.class );
     }
 
-    private SecurePassword getSecurePasswordOfType( final long securePasswordOid, final SecurePasswordType type ) throws FindException, UpdateException {
-        final SecurePassword existing = securePasswordManager.findByPrimaryKey(securePasswordOid);
+    private SecurePassword getSecurePasswordOfType( final Goid securePasswordGoid, final SecurePasswordType type ) throws FindException, UpdateException {
+        final SecurePassword existing = securePasswordManager.findByPrimaryKey(securePasswordGoid);
         if (existing == null) throw new ObjectNotFoundException();
         if (existing.getType() != type) throw new UpdateException("Cannot generate password for type");
         return existing;
     }
 
     @Override
-    public String getSecurePasswordPublicKey( final long securePasswordOid ) throws FindException  {
-        final SecurePassword existing = securePasswordManager.findByPrimaryKey(securePasswordOid);
+    public String getSecurePasswordPublicKey( final Goid securePasswordGoid ) throws FindException  {
+        final SecurePassword existing = securePasswordManager.findByPrimaryKey(securePasswordGoid);
         if (existing == null) throw new ObjectNotFoundException();
         if (existing.getType() != SecurePasswordType.PEM_PRIVATE_KEY) throw new FindException("Unexpected password type");
 
@@ -702,8 +702,8 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
     }
 
     @Override
-    public void deleteSecurePassword(long oid) throws DeleteException, FindException {
-        securePasswordManager.delete(oid);
+    public void deleteSecurePassword(Goid goid) throws DeleteException, FindException {
+        securePasswordManager.delete(goid);
     }
 
     @Override

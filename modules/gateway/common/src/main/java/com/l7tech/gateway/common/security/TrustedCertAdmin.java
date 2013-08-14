@@ -481,37 +481,37 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
     /**
      * Retrieves the public PEM key for PEM private key stored password.
      *
-     * @param securePasswordOid the objectid of the SecurePassword to access. Required.
+     * @param securePasswordGoid the goid of the SecurePassword to access. Required.
      * @return the PEM encoded public key
      * @throws ObjectNotFoundException If the referenced secure password could not be found.
      * @throws FindException If there was an error accessing the password
      */
     @Transactional(propagation=Propagation.REQUIRED, readOnly=true)
     @Secured(types=SECURE_PASSWORD,stereotype=GET_PROPERTY_BY_ID,relevantArg=0)
-    String getSecurePasswordPublicKey( long securePasswordOid ) throws FindException;
+    String getSecurePasswordPublicKey( Goid securePasswordGoid ) throws FindException;
 
     /**
      * Save a new or updated SecurePassword.
      *
      * @param securePassword the new or updated SecurePassword to save.  Required.
-     *                       If this has the objectid {@link SecurePassword#DEFAULT_OID}, this will be saved as a new SecurePassword.
+     *                       If this has the goid {@link SecurePassword#DEFAULT_GOID}, this will be saved as a new SecurePassword.
      *                       Otherwise, it will attempt to update an existing password.
      *                       Any encodedPassword field present in the securePassword will be ignored.  To set or change
-     *                       the actual raw password characters, use the {@link #setSecurePassword(long, char[])} method.
-     * @return the objectid of the securePassword instance that was saved or updated.
+     *                       the actual raw password characters, use the {@link #setSecurePassword(Goid, char[])} method.
+     * @return the goid of the securePassword instance that was saved or updated.
      * @throws UpdateException if there is a problem updating an existing entity.
      * @throws FindException if there is a problem locating an existing entity in order to update it.
      * @throws SaveException if there is a problem saving a new entity.
      */
     @Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
     @Secured(types=SECURE_PASSWORD,stereotype=SAVE_OR_UPDATE)
-    long saveSecurePassword(SecurePassword securePassword) throws UpdateException, SaveException, FindException;
+    Goid saveSecurePassword(SecurePassword securePassword) throws UpdateException, SaveException, FindException;
 
     /**
-     * Set or update the password field for the specified SecurePassword objectid.
+     * Set or update the password field for the specified SecurePassword goid.
      * As a side-effect, this will set the lastUpdate timestamp.
      *
-     * @param securePasswordOid the objectid of the SecurePassword to modify. Required.
+     * @param securePasswordGoid the goid of the SecurePassword to modify. Required.
      * @param newPassword the new plaintext password to assign for this SecurePassword instance.  Required.
      * @throws FindException if there is a problem locating the specified secure password.
      * @throws UpdateException if there is a problem updating the secure password.
@@ -519,7 +519,7 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
     // TODO need an annotation to note that this methods arguments must never be persisted in any debug or audit traces
     @Transactional(propagation=Propagation.REQUIRED)
     @Secured(types=SECURE_PASSWORD,stereotype=SET_PROPERTY_BY_ID,relevantArg=0)
-    void setSecurePassword(long securePasswordOid, char[] newPassword) throws FindException, UpdateException;
+    void setSecurePassword(Goid securePasswordGoid, char[] newPassword) throws FindException, UpdateException;
 
     /**
      * Set or update the password fields for the specified SecurePassword.
@@ -527,25 +527,25 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
      * <p>Generates an RSA key and assigns to the secure password. As a
      * side-effect, this will set the lastUpdate timestamp.</p>
      *
-     * @param securePasswordOid the objectid of the SecurePassword to modify. Required.
+     * @param securePasswordGoid the goid of the SecurePassword to modify. Required.
      * @param keybits The size in bits of the RSA key to generate
      * @return The asynchronous job identifier
      * @throws FindException If the referenced secure password could not be found.
      * @throws UpdateException If the referenced secure password is not of the expected type.
      */
-    public JobId<Boolean> setGeneratedSecurePassword( final long securePasswordOid, final int keybits ) throws FindException, UpdateException;
+    public JobId<Boolean> setGeneratedSecurePassword( final Goid securePasswordGoid, final int keybits ) throws FindException, UpdateException;
 
     /**
      * Destroy a SecurePassword instance.
      *
-     * @param oid the objectid of the SecurePassword to delete.  Required.
+     * @param goid the goid of the SecurePassword to delete.  Required.
      * @throws FindException if there is a problem locating the specified secure password.
      * @throws ConstraintViolationException if the secure password cannot be deleted because it is in use.
      * @throws DeleteException if there is some other problem deleting the SecurePassword.
      */
     @Transactional(propagation=Propagation.REQUIRED)
     @Secured(types=SECURE_PASSWORD,stereotype=DELETE_BY_ID, relevantArg=0)
-    void deleteSecurePassword(long oid) throws ConstraintViolationException, DeleteException, FindException;
+    void deleteSecurePassword(Goid goid) throws ConstraintViolationException, DeleteException, FindException;
 
     /**
      * Get the properties of a CSR, such as Subject DN and Public Key details (key type, key size, and other parameters).

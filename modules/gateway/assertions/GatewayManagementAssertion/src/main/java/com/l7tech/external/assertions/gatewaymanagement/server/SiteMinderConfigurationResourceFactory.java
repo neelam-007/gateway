@@ -6,6 +6,7 @@ import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.siteminder.SiteMinderConfiguration;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.security.rbac.SecurityFilter;
@@ -47,7 +48,7 @@ public class SiteMinderConfigurationResourceFactory extends GoidEntityManagerRes
         smResource.setHostname( siteMinderCfg.getHostname() );
         smResource.setHostConfiguration( siteMinderCfg.getHostConfiguration() );
         smResource.setUserName( siteMinderCfg.getUserName() );
-        smResource.setPasswordId(siteMinderCfg.getPasswordOid().toString());
+        smResource.setPasswordId(siteMinderCfg.getPasswordGoid().toString());
         smResource.setIpCheck( siteMinderCfg.isIpcheck() );
         smResource.setUpdateSsoToken( siteMinderCfg.isUpdateSSOToken() );
         smResource.setEnabled( siteMinderCfg.isEnabled() );
@@ -85,12 +86,12 @@ public class SiteMinderConfigurationResourceFactory extends GoidEntityManagerRes
         smConfiguration.setUserName( smResource.getUserName() );
         if ( smResource.getPasswordId() != null && !smResource.getPasswordId().isEmpty() ) {
             try {
-                SecurePassword password = securePasswordManager.findByPrimaryKey( Long.parseLong( smResource.getPasswordId() ) );
+                SecurePassword password = securePasswordManager.findByPrimaryKey( Goid.parseGoid( smResource.getPasswordId() ) );
 
                 if (password == null) {
                     throw new InvalidResourceException(InvalidResourceException.ExceptionType.INVALID_VALUES, "invalid or unknown secure password reference");
                 }
-                smConfiguration.setPasswordOid( Long.parseLong( smResource.getPasswordId() ) );
+                smConfiguration.setPasswordGoid(Goid.parseGoid(smResource.getPasswordId()));
             } catch (FindException e) {
                 throw new InvalidResourceException(InvalidResourceException.ExceptionType.INVALID_VALUES, "invalid or unknown secure password reference");
             }
@@ -126,7 +127,7 @@ public class SiteMinderConfigurationResourceFactory extends GoidEntityManagerRes
         oldEntity.setHostname( newEntity.getHostname() );
         oldEntity.setHostConfiguration( newEntity.getHostConfiguration() );
         oldEntity.setUserName( newEntity.getUserName() );
-        oldEntity.setPasswordOid( newEntity.getPasswordOid() );
+        oldEntity.setPasswordGoid(newEntity.getPasswordGoid());
         oldEntity.setIpcheck( newEntity.isIpcheck() );
         oldEntity.setUpdateSSOToken( newEntity.isUpdateSSOToken() );
         oldEntity.setEnabled( newEntity.isEnabled() );

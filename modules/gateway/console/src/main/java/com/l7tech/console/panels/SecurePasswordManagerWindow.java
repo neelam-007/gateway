@@ -1,7 +1,6 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.console.action.Actions;
-import static com.l7tech.console.util.AdminGuiUtils.doAsyncAdmin;
 import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gateway.common.security.password.SecurePassword;
@@ -28,6 +27,7 @@ import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static com.l7tech.console.util.AdminGuiUtils.doAsyncAdmin;
 import static com.l7tech.gui.util.TableUtil.column;
 import static com.l7tech.util.Functions.propertyTransform;
 
@@ -88,16 +88,16 @@ public class SecurePasswordManagerWindow extends JDialog {
                     @Override
                     public void run() {
                         if (dlg.isConfirmed()) {
-                            Long oid = null;
+                            Goid goid = null;
                             try {
                                 final TrustedCertAdmin admin = Registry.getDefault().getTrustedCertManager();
-                                oid = admin.saveSecurePassword( securePassword );
-                                securePassword.setOid(oid);
+                                goid = admin.saveSecurePassword( securePassword );
+                                securePassword.setGoid(goid);
 
                                 // Update password field, if necessary
                                 char[] newpass = dlg.getEnteredPassword();
                                 if (newpass != null)
-                                    admin.setSecurePassword( oid, newpass );
+                                    admin.setSecurePassword( goid, newpass );
 
                                 int keybits = dlg.getGenerateKeybits();
                                 if ( keybits > 0 ) {
@@ -106,7 +106,7 @@ public class SecurePasswordManagerWindow extends JDialog {
                                             SecurePasswordManagerWindow.this,
                                             "Generating Key",
                                             "Generating PEM private key ...",
-                                            admin.setGeneratedSecurePassword( oid, keybits )
+                                            admin.setGeneratedSecurePassword( goid, keybits )
                                     );
                                 }
                             } catch (UpdateException e1) {
@@ -120,7 +120,7 @@ public class SecurePasswordManagerWindow extends JDialog {
                             } catch ( InvocationTargetException e1 ) {
                                 showError( "Generate stored password key", e1.getCause() );
                             } finally {
-                                loadSecurePasswords(oid);
+                                loadSecurePasswords(goid);
                             }
 
                         }
@@ -148,7 +148,7 @@ public class SecurePasswordManagerWindow extends JDialog {
                         if (option != JOptionPane.OK_OPTION)
                             return;
                         try {
-                            Registry.getDefault().getTrustedCertManager().deleteSecurePassword(securePassword.getOid());
+                            Registry.getDefault().getTrustedCertManager().deleteSecurePassword(securePassword.getGoid());
                             loadSecurePasswords(null);
                         } catch (DeleteException de) {
                             showError("delete stored password", de);
@@ -194,16 +194,16 @@ public class SecurePasswordManagerWindow extends JDialog {
         loadSecurePasswords( null );
     }
 
-    private void loadSecurePasswords( @Nullable final Long oidToSelect ) {
+    private void loadSecurePasswords( @Nullable final Goid goidToSelect ) {
         try {
             java.util.List<SecurePassword> passes = new ArrayList<SecurePassword>(Registry.getDefault().getTrustedCertManager().findAllSecurePasswords());
             passwordTableModel.setRows(passes);
 
-            if (oidToSelect != null) {
+            if (goidToSelect != null) {
                 int row = passwordTableModel.findFirstRow(new Functions.Unary<Boolean, SecurePassword>() {
                     @Override
                     public Boolean call(SecurePassword securePassword) {
-                        return oidToSelect.equals(securePassword.getOid());
+                        return Goid.equals(goidToSelect, securePassword.getGoid());
                     }
                 });
                 if (row >= 0)

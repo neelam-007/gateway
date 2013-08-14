@@ -4,10 +4,7 @@ import com.l7tech.gateway.config.manager.db.DBActions;
 import com.l7tech.server.management.config.node.DatabaseConfig;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.db.DbCompareTestUtils;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.runner.RunWith;
 import org.mockito.runners.MockitoJUnitRunner;
 
@@ -54,10 +51,15 @@ public class MysqlDatabaseUpgradeTest {
         dbActions.dropDatabase(newDBConfig, hosts, true, true, null);
         dbActions.dropDatabase(upgradeDBConfig, hosts, true, true, null);
 
-        dbActions.createDb(newDBConfig, hosts, "etc/db/mysql/ssg.sql", false);
+        DBActions.DBActionsResult results = dbActions.createDb(newDBConfig, hosts, "etc/db/mysql/ssg.sql", false);
+        Assert.assertEquals("Could not create mysql new database: " + results.getErrorMessage(), DBActions.StatusType.SUCCESS, results.getStatus());
 
-        dbActions.createDb(upgradeDBConfig, hosts, "modules/gateway/config/src/test/resources/com/l7tech/server/resources/ssg_7.1.0.sql", false);
-        dbActions.upgradeDbSchema(upgradeDBConfig,true, "7.1.0", dbActions.checkDbVersion(newDBConfig),"etc/db/mysql/ssg.sql", null);
+        results = dbActions.createDb(upgradeDBConfig, hosts, "modules/gateway/config/src/test/resources/com/l7tech/server/resources/ssg_7.1.0.sql", false);
+        Assert.assertEquals("Could not create mysql upgraded database: " + results.getErrorMessage(), DBActions.StatusType.SUCCESS, results.getStatus());
+
+        results = dbActions.upgradeDbSchema(upgradeDBConfig,true, "7.1.0", dbActions.checkDbVersion(newDBConfig),"etc/db/mysql/ssg.sql", null);
+        Assert.assertEquals("Could not upgrade mysql database: " + results.getErrorMessage(), DBActions.StatusType.SUCCESS, results.getStatus());
+
     }
 
     @After

@@ -606,11 +606,11 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
         String password = null;
         if (assertion.isCredentialsSourceSpecified()) {
             username = ExpandVariables.process(assertion.getUsername(), variables, getAudit());
-            if (assertion.getPasswordOid() != null) {
+            if (assertion.getPasswordGoid() != null) {
                 try {
-                    SecurePassword securePassword = securePasswordManager.findByPrimaryKey(assertion.getPasswordOid());
+                    SecurePassword securePassword = securePasswordManager.findByPrimaryKey(assertion.getPasswordGoid());
                     if (securePassword == null) {
-                        logAndAudit(SSH_ROUTING_ERROR, "Unable to find stored password for OID: " + assertion.getPasswordOid());
+                        logAndAudit(SSH_ROUTING_ERROR, "Unable to find stored password for GOID: " + assertion.getPasswordGoid());
                         throw new AssertionStatusException(AssertionStatus.FAILED);
                     }
                     password = new String(securePasswordManager.decryptPassword(securePassword.getEncodedPassword()));
@@ -654,11 +654,11 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
         }
 
         String privateKeyText = null;
-        if (assertion.isUsePrivateKey() && assertion.getPrivateKeyOid() != null) {
+        if (assertion.isUsePrivateKey() && assertion.getPrivateKeyGoid() != null) {
             try {
-                SecurePassword securePemPrivateKey = securePasswordManager.findByPrimaryKey(assertion.getPrivateKeyOid());
+                SecurePassword securePemPrivateKey = securePasswordManager.findByPrimaryKey(assertion.getPrivateKeyGoid());
                 if (securePemPrivateKey == null) {
-                    logAndAudit(SSH_ROUTING_ERROR, "Unable to find stored PEM private key for OID: " + assertion.getPrivateKeyOid());
+                    logAndAudit(SSH_ROUTING_ERROR, "Unable to find stored PEM private key for GOID: " + assertion.getPrivateKeyGoid());
                     throw new AssertionStatusException(AssertionStatus.FAILED);
                 }
                 privateKeyText = new String(securePasswordManager.decryptPassword(securePemPrivateKey.getEncodedPassword()));

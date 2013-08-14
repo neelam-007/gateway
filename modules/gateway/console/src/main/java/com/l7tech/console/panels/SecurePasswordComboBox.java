@@ -4,6 +4,7 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Resolver;
 import com.l7tech.util.ResolvingComparator;
@@ -53,9 +54,9 @@ public class SecurePasswordComboBox extends JComboBox {
             }, false ) );
             setModel(new DefaultComboBoxModel(securePasswords.toArray()));
 
-            if (selectedSecurePassword != null && this.containsItem(selectedSecurePassword.getOid())) {
+            if (selectedSecurePassword != null && this.containsItem(selectedSecurePassword.getGoid())) {
                 // Select currently selected item.
-                this.setSelectedSecurePassword(selectedSecurePassword.getOid());
+                this.setSelectedSecurePassword(selectedSecurePassword.getGoid());
             }
         } catch (FindException e) {
             final String msg = "Unable to list stored passwords: " + ExceptionUtils.getMessage(e);
@@ -70,25 +71,25 @@ public class SecurePasswordComboBox extends JComboBox {
     }
 
     /**
-     * @param oid the oid of the SecurePassword to select in the dropdown or #SecurePassword.DEFAULT_OID if none should be selected.
-     *            If the oid does not correspond to an available SecurePassword, the selected item will be shown as 'password details are unavailable'.
+     * @param goid the goid of the SecurePassword to select in the dropdown or #SecurePassword.DEFAULT_GOID if none should be selected.
+     *            If the goid does not correspond to an available SecurePassword, the selected item will be shown as 'password details are unavailable'.
      */
-    public void setSelectedSecurePassword(long oid) {
+    public void setSelectedSecurePassword(Goid goid) {
         Integer selectedIndex = null;
         for (int i = 0; i < securePasswords.size(); i++) {
             SecurePassword securePassword = securePasswords.get(i);
-            if (oid == securePassword.getOid()) {
+            if (Goid.equals(goid, securePassword.getGoid())) {
                 selectedIndex = i;
                 break;
             }
         }
         if (selectedIndex != null) {
             setSelectedIndex(selectedIndex);
-        } else if (SecurePassword.DEFAULT_OID != oid) {
+        } else if (!Goid.isDefault(goid)) {
             // oid not found in available passwords - could be not readable by current user
             logger.log(Level.WARNING, "Password oid not available to current user");
             final SecurePassword unavailablePassword = new SecurePassword();
-            unavailablePassword.setOid(oid);
+            unavailablePassword.setGoid(goid);
             unavailablePassword.setName("Current password (password details are unavailable)");
             securePasswords.add(0, unavailablePassword);
             setModel(new DefaultComboBoxModel(securePasswords.toArray()));
@@ -99,9 +100,9 @@ public class SecurePasswordComboBox extends JComboBox {
         }
     }
 
-    public boolean containsItem(long oid) {
+    public boolean containsItem(Goid goid) {
         for(int i = 0; i< securePasswords.size(); i++) {
-            if(securePasswords.get(i).getOid() == oid) {
+            if(Goid.equals(securePasswords.get(i).getGoid(), goid)) {
                 return true;
             }
         }

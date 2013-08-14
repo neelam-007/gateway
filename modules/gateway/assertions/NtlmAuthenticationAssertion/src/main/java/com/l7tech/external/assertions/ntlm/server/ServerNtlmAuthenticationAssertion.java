@@ -13,7 +13,9 @@ import com.l7tech.ntlm.protocol.AuthenticationManagerException;
 import com.l7tech.ntlm.protocol.AuthenticationProvider;
 import com.l7tech.ntlm.protocol.NtlmAuthenticationProvider;
 import com.l7tech.ntlm.protocol.NtlmAuthenticationServer;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.credential.CredentialFinderException;
@@ -27,6 +29,7 @@ import com.l7tech.server.policy.assertion.credential.http.ServerHttpCredentialSo
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.server.policy.variable.ServerVariables;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.GoidUpgradeMapper;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.Pair;
 import jcifs.smb.SID;
@@ -267,8 +270,8 @@ public class ServerNtlmAuthenticationAssertion extends ServerHttpCredentialSourc
             //find password property and replace it if password is stored as a secure password
             if (props.containsKey("service.passwordOid")) {
                 try {
-                    long oid = Long.parseLong(props.get("service.passwordOid"));
-                    String plaintextPassword = ServerVariables.getSecurePasswordByOid(new LoggingAudit(logger), oid);
+                    Goid goid = GoidUpgradeMapper.mapId(EntityType.SECURE_PASSWORD, props.get("service.passwordOid"));
+                    String plaintextPassword = ServerVariables.getSecurePasswordByGoid(new LoggingAudit(logger), goid);
                     props.put("service.password", plaintextPassword);
                 } catch (FindException | NumberFormatException e) {
                     throw new CredentialFinderException("Password is invalid");

@@ -32,11 +32,7 @@ import com.l7tech.server.policy.variable.ServerVariables;
 import com.l7tech.server.security.PasswordEnforcerManager;
 import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.server.util.JaasUtils;
-import com.l7tech.util.Charsets;
-import com.l7tech.util.Config;
-import com.l7tech.util.Functions;
-import com.l7tech.util.HexUtils;
-import com.l7tech.util.Pair;
+import com.l7tech.util.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.context.ApplicationEventPublisher;
@@ -778,13 +774,13 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
         Map<String, String> p = new HashMap<String, String>(props);
         if(p.containsKey("service.passwordOid")) {
             try {
-                long oid = Long.parseLong(p.get("service.passwordOid"));
-                String plaintextPassword = ServerVariables.getSecurePasswordByOid(new LoggingAudit(logger), oid);
+                Goid goid = GoidUpgradeMapper.mapId(EntityType.SECURE_PASSWORD, p.get("service.passwordOid"));
+                String plaintextPassword = ServerVariables.getSecurePasswordByGoid(new LoggingAudit(logger), goid);
                 p.put("service.password", plaintextPassword);
             } catch (FindException e) {
                 throw new InvalidIdProviderCfgException("Password is invalid", e);
-            } catch(NumberFormatException ne){
-                throw new InvalidIdProviderCfgException("Password is invalid", ne);
+            } catch(IllegalArgumentException e){
+                throw new InvalidIdProviderCfgException("Password is invalid", e);
             }
         }
 

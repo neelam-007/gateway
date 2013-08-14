@@ -1,6 +1,8 @@
 package com.l7tech.gateway.common.siteminder;
 
 
+import com.l7tech.objectmodel.Goid;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -29,9 +31,9 @@ public class SiteMinderHost implements Serializable {
     private Long sharedSecretTime;
     private Integer fipsMode;
     private String userName;
-    private Long passwordOid;
+    private Goid passwordGoid;
 
-    public SiteMinderHost(String hostName, String policyServer, String hostConfigObject, Integer fipsMode, String userName, Long passwordOid){
+    public SiteMinderHost(String hostName, String policyServer, String hostConfigObject, Integer fipsMode, String userName, Goid passwordGoid){
         this.hostname = hostName;
         this.hostConfigObject = hostConfigObject;
         this.policyServer = policyServer;
@@ -40,7 +42,7 @@ public class SiteMinderHost implements Serializable {
         this.sharedSecretTime = 0L;
         this.fipsMode = fipsMode;
         this.userName = userName;
-        this.passwordOid = passwordOid;
+        this.passwordGoid = passwordGoid;
     }
 
 
@@ -133,11 +135,11 @@ public class SiteMinderHost implements Serializable {
         return userName;
     }
 
-    public void setPasswordOid(Long passwordOid){
-        this.passwordOid = passwordOid;
+    public void setPasswordGoid(Goid passwordGoid){
+        this.passwordGoid = passwordGoid;
     }
 
-    public Long getPasswordOid() {
-        return passwordOid;
+    public Goid getPasswordGoid() {
+        return passwordGoid;
     }
 }

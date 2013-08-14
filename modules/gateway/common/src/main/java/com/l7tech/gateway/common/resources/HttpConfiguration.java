@@ -1,10 +1,12 @@
 package com.l7tech.gateway.common.resources;
 
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.SsgKeyHeader;
 import com.l7tech.objectmodel.imp.ZoneableGoidEntityImp;
 import com.l7tech.policy.UsesPrivateKeys;
 import com.l7tech.search.Dependency;
 import org.hibernate.annotations.Proxy;
+import org.hibernate.annotations.Type;
 
 import javax.persistence.*;
 
@@ -78,7 +80,7 @@ public class HttpConfiguration extends ZoneableGoidEntityImp implements UsesPriv
         setProtocol( httpConfiguration.getProtocol() );
         setPath( httpConfiguration.getPath() );
         setUsername( httpConfiguration.getUsername() );
-        setPasswordOid( httpConfiguration.getPasswordOid() );
+        setPasswordGoid(httpConfiguration.getPasswordGoid());
         setNtlmHost( httpConfiguration.getNtlmHost() );
         setNtlmDomain( httpConfiguration.getNtlmDomain() );
         setTlsVersion( httpConfiguration.getTlsVersion() );
@@ -158,15 +160,16 @@ public class HttpConfiguration extends ZoneableGoidEntityImp implements UsesPriv
      *
      * @return The identifier or null.
      */
-    @Column(name="password_oid")
-    @Dependency(type = Dependency.DependencyType.SECURE_PASSWORD, methodReturnType = Dependency.MethodReturnType.OID)
-    public Long getPasswordOid() {
-        return passwordOid;
+    @Column(name="password_goid")
+    @Type(type = "com.l7tech.server.util.GoidType")
+    @Dependency(type = Dependency.DependencyType.SECURE_PASSWORD, methodReturnType = Dependency.MethodReturnType.GOID)
+    public Goid getPasswordGoid() {
+        return passwordGoid;
     }
 
-    public void setPasswordOid( final Long passwordOid ) {
+    public void setPasswordGoid(final Goid passwordGoid) {
         checkLocked();
-        this.passwordOid = passwordOid;
+        this.passwordGoid = passwordGoid;
     }
 
     @Column(name="ntlm_host", length=128)
@@ -316,7 +319,7 @@ public class HttpConfiguration extends ZoneableGoidEntityImp implements UsesPriv
     private Protocol protocol;
     private String path;
     private String username;
-    private Long passwordOid;
+    private Goid passwordGoid;
     private String ntlmHost;
     private String ntlmDomain;
     private String tlsVersion;

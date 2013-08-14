@@ -148,7 +148,7 @@ public class KerberosAuthenticationDialog extends AssertionPropertiesOkCancelSup
                 securePasswordComboBox.reloadPasswordList();
 
                 if ( password != null ) {
-                    securePasswordComboBox.setSelectedSecurePassword( password.getOid() );
+                    securePasswordComboBox.setSelectedSecurePassword( password.getGoid() );
                     enableDisableComponents();
                     DialogDisplayer.pack(KerberosAuthenticationDialog.this);
                 }
@@ -204,7 +204,7 @@ public class KerberosAuthenticationDialog extends AssertionPropertiesOkCancelSup
         assertion.setKrbUseGatewayKeytab(useGatewayKeytabRadioButton.isSelected());
         assertion.setKrbConfiguredAccount(gatewayAccountName.getText());
         if(securePasswordComboBox.getSelectedSecurePassword() != null) {
-            assertion.setKrbSecurePasswordReference(securePasswordComboBox.getSelectedSecurePassword().getOid());
+            assertion.setKrbSecurePasswordReference(securePasswordComboBox.getSelectedSecurePassword().getGoid());
         }
         assertion.setS4U2Self(protocolTransitionRadioButton.isSelected());
         assertion.setS4U2Proxy(constrainedProxyRadioButton.isSelected());

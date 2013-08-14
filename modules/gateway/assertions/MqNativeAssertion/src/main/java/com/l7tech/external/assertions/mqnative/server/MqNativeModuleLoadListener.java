@@ -5,6 +5,7 @@ import com.l7tech.external.assertions.mqnative.MqNativeRoutingAssertion;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import com.l7tech.message.HasHeaders;
 import com.l7tech.objectmodel.Entity;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SsgKeyHeader;
 import com.l7tech.server.LifecycleException;
@@ -19,6 +20,7 @@ import com.l7tech.server.search.processors.DependencyFinder;
 import com.l7tech.server.util.Injector;
 import com.l7tech.server.util.ThreadPoolBean;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.GoidUpgradeMapper;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.context.ApplicationContext;
 
@@ -117,7 +119,7 @@ public class MqNativeModuleLoadListener {
                     List<Entity> dependentEntities = new ArrayList<>();
                     //add the mq password as a dependency if it is set
                     if (activeConnector.getBooleanProperty(SsgActiveConnector.PROPERTIES_KEY_MQ_NATIVE_IS_QUEUE_CREDENTIAL_REQUIRED)) {
-                        dependentEntities.addAll(finder.retrieveEntities(activeConnector.getProperty(SsgActiveConnector.PROPERTIES_KEY_MQ_NATIVE_SECURE_PASSWORD_OID), com.l7tech.search.Dependency.DependencyType.SECURE_PASSWORD, com.l7tech.search.Dependency.MethodReturnType.OID));
+                        dependentEntities.addAll(finder.retrieveEntities(GoidUpgradeMapper.mapId(EntityType.SECURE_PASSWORD,activeConnector.getProperty(SsgActiveConnector.PROPERTIES_KEY_MQ_NATIVE_SECURE_PASSWORD_OID)), com.l7tech.search.Dependency.DependencyType.SECURE_PASSWORD, com.l7tech.search.Dependency.MethodReturnType.GOID));
                     }
                     //add the ssl key used if it is set
                     if (activeConnector.getBooleanProperty(SsgActiveConnector.PROPERTIES_KEY_MQ_NATIVE_IS_SSL_ENABLED) && activeConnector.getBooleanProperty(SsgActiveConnector.PROPERTIES_KEY_MQ_NATIVE_IS_SSL_KEYSTORE_USED)) {

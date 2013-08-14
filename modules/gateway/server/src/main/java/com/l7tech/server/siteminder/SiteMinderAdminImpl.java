@@ -126,7 +126,7 @@ public class SiteMinderAdminImpl  extends AsyncAdminMethodsImpl implements SiteM
     @Override
     public AsyncAdminMethods.JobId<SiteMinderHost> registerSiteMinderConfiguration(final String address,
                                                                                    final String username,
-                                                                                   final Long password,
+                                                                                   final Goid password,
                                                                                    final String hostname,
                                                                                    final String hostconfig,
                                                                                    final Integer fipsMode){
@@ -186,7 +186,7 @@ public class SiteMinderAdminImpl  extends AsyncAdminMethodsImpl implements SiteM
      * Register SiteMinder Configuration
      * @param address: Policy Server Address
      * @param username: Username to login to PolicyServer
-     * @param passwordOid: Password to login to PolicyServer
+     * @param passwordGoid: Password to login to PolicyServer
      * @param hostname: Registered hostname
      * @param hostconfig: Host's configuration
      * @param fipsMode: FIPS mode
@@ -194,14 +194,14 @@ public class SiteMinderAdminImpl  extends AsyncAdminMethodsImpl implements SiteM
      */
     public SiteMinderHost registerSiteMinderHost(String address,
                                                  String username,
-                                                 Long passwordOid,
+                                                 Goid passwordGoid,
                                                  String hostname,
                                                  String hostconfig,
                                                  Integer fipsMode) throws IOException, ParseException, FindException {
 
         String password = "";
         try{
-            SecurePassword securePassword = securePasswordManager.findByPrimaryKey(passwordOid);
+            SecurePassword securePassword = securePasswordManager.findByPrimaryKey(passwordGoid);
             password = new String(securePasswordManager.decryptPassword(securePassword.getEncodedPassword()));
         } catch (FindException e){
             final String msg = "Unable to find password oid entity.";

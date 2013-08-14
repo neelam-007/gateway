@@ -32,8 +32,8 @@ public class HttpConfigurationCacheTest {
 
     @Test
     public void testProxySelector() throws Exception {
-        final HttpProxyConfiguration defaultProxy = newHttpProxyConfiguration( "default-proxy-host", 8888, "default-proxy-user", 1 );
-        final HttpProxyConfiguration customProxy = newHttpProxyConfiguration( "custom-proxy-host", 99, "custom-proxy-user", 2 );
+        final HttpProxyConfiguration defaultProxy = newHttpProxyConfiguration( "default-proxy-host", 8888, "default-proxy-user", new Goid(0,1) );
+        final HttpProxyConfiguration customProxy = newHttpProxyConfiguration( "custom-proxy-host", 99, "custom-proxy-user", new Goid(0,2) );
         final HttpConfiguration[] httpConfigurations = new HttpConfiguration[3];
         httpConfigurations[0] = newHttpConfiguration( "host1", DEFAULT, null );
         httpConfigurations[1] = newHttpConfiguration( "host2", NONE, null );
@@ -70,9 +70,9 @@ public class HttpConfigurationCacheTest {
      */
     @Test
     public void testProxyAuthenticator() throws Exception {
-        final HttpProxyConfiguration defaultProxy = newHttpProxyConfiguration( "default-proxy-host", 8888, "default-proxy-user", 1 );
-        final HttpProxyConfiguration customProxy = newHttpProxyConfiguration( "custom-proxy-host", 99, "custom-proxy-user", 2 );
-        final HttpProxyConfiguration customProxy2 = newHttpProxyConfiguration( "custom-proxy-host2", 77, null, 0 );
+        final HttpProxyConfiguration defaultProxy = newHttpProxyConfiguration( "default-proxy-host", 8888, "default-proxy-user", new Goid(0,1) );
+        final HttpProxyConfiguration customProxy = newHttpProxyConfiguration( "custom-proxy-host", 99, "custom-proxy-user", new Goid(0,2) );
+        final HttpProxyConfiguration customProxy2 = newHttpProxyConfiguration( "custom-proxy-host2", 77, null, new Goid(0,0) );
         final HttpConfiguration[] httpConfigurations = new HttpConfiguration[4];
         httpConfigurations[0] = newHttpConfiguration( "host1", DEFAULT, null );
         httpConfigurations[1] = newHttpConfiguration( "host2", NONE, null );
@@ -114,9 +114,9 @@ public class HttpConfigurationCacheTest {
     @Test
     public void testAuthenticator() throws Exception {
         final HttpConfiguration[] httpConfigurations = new HttpConfiguration[3];
-        httpConfigurations[0] = newHttpConfiguration( "host1", "username1", 1, null );
-        httpConfigurations[1] = newHttpConfiguration( "host2", "username2", 2, "TEST-DOMAIN" );
-        httpConfigurations[2] = newHttpConfiguration( "host3", null, 0, null );
+        httpConfigurations[0] = newHttpConfiguration( "host1", "username1", new Goid(0,1), null );
+        httpConfigurations[1] = newHttpConfiguration( "host2", "username2", new Goid(0,2), "TEST-DOMAIN" );
+        httpConfigurations[2] = newHttpConfiguration( "host3", null, new Goid(0,0), null );
 
         final Authenticator[] authenticatorHolder = new Authenticator[1];
         buildCache( null, httpConfigurations, authenticatorHolder, null );
@@ -147,11 +147,11 @@ public class HttpConfigurationCacheTest {
     @Test
     public void testHttpConfigurationPreference() throws Exception {
         final HttpConfiguration[] httpConfigurations = new HttpConfiguration[5];
-        httpConfigurations[0] = newHttpConfiguration( "host1", 0, null, null, "username1", 1 );
-        httpConfigurations[1] = newHttpConfiguration( "host1", 80, null, null, "username2", 1  );
-        httpConfigurations[2] = newHttpConfiguration( "host1", 0, HTTP, null, "username3", 1  );
-        httpConfigurations[3] = newHttpConfiguration( "host1", 0, HTTP, "/folder1", "username4", 1 );
-        httpConfigurations[4] = newHttpConfiguration( "host1", 0, HTTP, "/folder1/folder2", "username5", 1 );
+        httpConfigurations[0] = newHttpConfiguration( "host1", 0, null, null, "username1", new Goid(0,1) );
+        httpConfigurations[1] = newHttpConfiguration( "host1", 80, null, null, "username2", new Goid(0,1)  );
+        httpConfigurations[2] = newHttpConfiguration( "host1", 0, HTTP, null, "username3", new Goid(0,1)  );
+        httpConfigurations[3] = newHttpConfiguration( "host1", 0, HTTP, "/folder1", "username4", new Goid(0,1) );
+        httpConfigurations[4] = newHttpConfiguration( "host1", 0, HTTP, "/folder1/folder2", "username5", new Goid(0,1) );
 
         final HttpConfigurationCache cache = buildCache( null, httpConfigurations, null, null );
 
@@ -196,15 +196,15 @@ public class HttpConfigurationCacheTest {
 
     @Test
     public void testHttpConfiguration() throws Exception {
-        final HttpProxyConfiguration defaultProxy = newHttpProxyConfiguration( "default-proxy-host", 8888, "default-proxy-user", 1 );
-        final HttpProxyConfiguration customProxy = newHttpProxyConfiguration( "custom-proxy-host", 99, "custom-proxy-user", 2 );
+        final HttpProxyConfiguration defaultProxy = newHttpProxyConfiguration( "default-proxy-host", 8888, "default-proxy-user", new Goid(0,1) );
+        final HttpProxyConfiguration customProxy = newHttpProxyConfiguration( "custom-proxy-host", 99, "custom-proxy-user", new Goid(0,2) );
 
         final HttpConfiguration[] httpConfigurations = new HttpConfiguration[3];
         httpConfigurations[0] = new HttpConfiguration();
         httpConfigurations[0].setGoid( nextGoid() );
         httpConfigurations[0].setHost( "host1" );
         httpConfigurations[0].setUsername( "username1" );
-        httpConfigurations[0].setPasswordOid( 1L );
+        httpConfigurations[0].setPasswordGoid(new Goid(0,1L));
         httpConfigurations[0].setConnectTimeout( 1000 );
         httpConfigurations[0].setReadTimeout( 2000 );
         httpConfigurations[0].setFollowRedirects( true );
@@ -214,7 +214,7 @@ public class HttpConfigurationCacheTest {
         httpConfigurations[1].setGoid( nextGoid() );
         httpConfigurations[1].setHost( "host2" );
         httpConfigurations[1].setUsername( "username2" );
-        httpConfigurations[1].setPasswordOid( 2L );
+        httpConfigurations[1].setPasswordGoid(new Goid(0,2L));
         httpConfigurations[1].setNtlmDomain( "TEST" );
         httpConfigurations[1].setNtlmHost( "ntlmhost" );
         httpConfigurations[1].setConnectTimeout( -1 );
@@ -322,13 +322,13 @@ public class HttpConfigurationCacheTest {
 
     private HttpConfiguration newHttpConfiguration( final String host,
                                                     final String username,
-                                                    final long passwordOid,
+                                                    final Goid passwordGoid,
                                                     final String ntlmDomain ) {
         final HttpConfiguration config = new HttpConfiguration();
         config.setGoid( nextGoid() );
         config.setHost( host );
         config.setUsername( username );
-        config.setPasswordOid( passwordOid );
+        config.setPasswordGoid(passwordGoid);
         config.setNtlmDomain( ntlmDomain );
         return new HttpConfiguration( config, true );
     }
@@ -338,7 +338,7 @@ public class HttpConfigurationCacheTest {
                                                     final HttpConfiguration.Protocol protocol,
                                                     final String path,
                                                     final String username,
-                                                    final long passwordOid ) {
+                                                    final Goid passwordGoid ) {
         final HttpConfiguration config = new HttpConfiguration();
         config.setGoid( nextGoid() );
         config.setHost( host );
@@ -346,19 +346,19 @@ public class HttpConfigurationCacheTest {
         config.setProtocol( protocol );
         config.setPath( path );
         config.setUsername( username );
-        config.setPasswordOid( passwordOid );
+        config.setPasswordGoid(passwordGoid);
         return new HttpConfiguration( config, true );
     }
 
     private HttpProxyConfiguration newHttpProxyConfiguration( final String host,
                                                               final int port,
                                                               final String username,
-                                                              final long passwordOid ) {
+                                                              final Goid passwordGoid ) {
         final HttpProxyConfiguration proxy = new HttpProxyConfiguration();
         proxy.setHost( host );
         proxy.setPort( port );
         proxy.setUsername( username );
-        proxy.setPasswordOid( passwordOid );
+        proxy.setPasswordGoid(passwordGoid);
         return new HttpProxyConfiguration( proxy, true );
     }
 
@@ -377,8 +377,8 @@ public class HttpConfigurationCacheTest {
             defaultHttpProxyManager,
             new HttpConfigurationManagerStub(httpConfigurations==null ? new HttpConfiguration[0] : httpConfigurations),
             new SecurePasswordManagerStub(
-                    new SecurePassword("test1"){{ setOid(1); setEncodedPassword("TEST-PASSWORD1"); } },
-                    new SecurePassword("test2"){{ setOid(2); setEncodedPassword("TEST-PASSWORD2"); } }
+                    new SecurePassword("test1"){{ setGoid(new Goid(0,1)); setEncodedPassword("TEST-PASSWORD1"); } },
+                    new SecurePassword("test2"){{ setGoid(new Goid(0,2)); setEncodedPassword("TEST-PASSWORD2"); } }
             ),
             new PermissiveHostnameVerifier(),
             new SsgKeyStoreManagerStub(),

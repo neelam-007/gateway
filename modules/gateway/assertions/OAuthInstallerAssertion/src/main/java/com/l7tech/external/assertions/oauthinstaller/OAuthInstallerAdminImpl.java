@@ -243,7 +243,7 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
                                            final String adminPassword,
                                            final String otkDbName,
                                            final String otkDbUsername,
-                                           final long otkUserPasswordOid,
+                                           final Goid otkUserPasswordGoid,
                                            final String newJdbcConnName,
                                            final List<String> grantHostNames,
                                            final boolean createUser,
@@ -348,9 +348,9 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
                                     }
                                 }
 
-                                String otkUserPassword = findPassword(otkUserPasswordOid);
+                                String otkUserPassword = findPassword(otkUserPasswordGoid);
                                 if (otkUserPassword == null) {
-                                    return "Could not find password referenced by: " + otkUserPasswordOid;
+                                    return "Could not find password referenced by: " + otkUserPasswordGoid;
                                 }
 
                                 //create the user and grants.
@@ -479,9 +479,9 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
         return registerJob(future, String.class);
     }
 
-    private String findPassword(long otkUserPasswordOid) {
+    private String findPassword(Goid otkUserPasswordGoid) {
         try {
-            SecurePassword securePassword = securePasswordManager.findByPrimaryKey(otkUserPasswordOid);
+            SecurePassword securePassword = securePasswordManager.findByPrimaryKey(otkUserPasswordGoid);
             if (securePassword == null) {
                 return null;
             }

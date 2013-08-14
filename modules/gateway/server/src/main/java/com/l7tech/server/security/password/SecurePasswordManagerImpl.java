@@ -1,8 +1,10 @@
 package com.l7tech.server.security.password;
 
 import com.l7tech.gateway.common.security.password.SecurePassword;
-import com.l7tech.objectmodel.*;
-import com.l7tech.server.HibernateEntityManager;
+import com.l7tech.objectmodel.Entity;
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.server.HibernateGoidEntityManager;
 import com.l7tech.server.security.sharedkey.SharedKeyManager;
 import com.l7tech.util.MasterPasswordManager;
 import org.springframework.transaction.annotation.Propagation;
@@ -15,7 +17,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * Implementation of {@link SecurePasswordManager}.
  */
 @Transactional(propagation=Propagation.SUPPORTS, rollbackFor=Throwable.class)
-public class SecurePasswordManagerImpl extends HibernateEntityManager<SecurePassword, EntityHeader> implements SecurePasswordManager {
+public class SecurePasswordManagerImpl extends HibernateGoidEntityManager<SecurePassword, EntityHeader> implements SecurePasswordManager {
     private final SharedKeyManager sharedKeyManager;
     private final AtomicReference<MasterPasswordManager> encryptor = new AtomicReference<MasterPasswordManager>();
 

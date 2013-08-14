@@ -84,7 +84,7 @@ public class SiteMinderExternalReference extends ExternalReference {
             SiteMinderConfiguration copy = new SiteMinderConfiguration();
             copy.copyFrom(siteMinderConfiguration);
             copy.setSecret(null);
-            copy.setPasswordOid(null);
+            copy.setPasswordGoid(null);
             copy.setGoid(GoidEntity.DEFAULT_GOID);
             marshaller.marshal(copy, referenceElement);
 
@@ -149,7 +149,7 @@ public class SiteMinderExternalReference extends ExternalReference {
                     Unmarshaller unmarshaller = context.createUnmarshaller();
                     SiteMinderConfiguration siteMinderConfiguration = (SiteMinderConfiguration) unmarshaller.unmarshal(child);
                     siteMinderConfiguration.setGoid(GoidEntity.DEFAULT_GOID);
-                    siteMinderConfiguration.setPasswordOid(null);
+                    siteMinderConfiguration.setPasswordGoid(null);
                     return new SiteMinderExternalReference(finder, siteMinderConfiguration);
 
                 } catch (JAXBException e) {

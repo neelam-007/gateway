@@ -19,6 +19,7 @@ import java.util.logging.Logger;
  * @author alex, $Author$
  * @version $Revision$
  */
+@Deprecated
 public abstract class PeriodicVersionCheck extends TimerTask {
 
     /**

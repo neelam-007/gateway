@@ -1,16 +1,18 @@
 package com.l7tech.external.assertions.ssh.console;
 
 import com.l7tech.console.panels.*;
+import com.l7tech.console.util.ConsoleGoidUpgradeMapper;
 import com.l7tech.external.assertions.ssh.SshCredentialAssertion;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.TextListCellRenderer;
-import static com.l7tech.objectmodel.imp.PersistentEntityUtil.oid;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.imp.GoidEntityUtil;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.Option;
-import static com.l7tech.util.Option.optional;
 
 import javax.swing.*;
 import java.awt.*;
@@ -18,6 +20,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.HashMap;
 import java.util.Map;
+
+import static com.l7tech.util.Option.optional;
 
 /**
  *
@@ -125,7 +129,7 @@ public class SshTransportPropertiesPanel extends CustomTransportPropertiesPanel 
         maxConcurrentSessionsField.setText(getStringProp(props, SshCredentialAssertion.LISTEN_PROP_MAX_SESSIONS,
                 // Not a mistake, we default to the per user value
                 ConfigFactory.getProperty("com.l7tech.external.assertions.ssh.defaultMaxConcurrentSessionsPerUser", "10")));
-        privateKeyField.setSelectedSecurePassword(getLongProp(props, SshCredentialAssertion.LISTEN_PROP_HOST_PRIVATE_KEY, SecurePassword.DEFAULT_OID));
+        privateKeyField.setSelectedSecurePassword(ConsoleGoidUpgradeMapper.mapId(EntityType.SECURE_PASSWORD, getStringProp(props, SshCredentialAssertion.LISTEN_PROP_HOST_PRIVATE_KEY, SecurePassword.DEFAULT_GOID.toHexString())));
         enableDisableComponents();
     }
 
@@ -152,7 +156,7 @@ public class SshTransportPropertiesPanel extends CustomTransportPropertiesPanel 
         data.put(SshCredentialAssertion.LISTEN_PROP_IDLE_TIMEOUT_MINUTES, nullIfEmpty( idleTimeoutMinsField.getText() ));
         data.put(SshCredentialAssertion.LISTEN_PROP_MAX_CONCURRENT_SESSIONS_PER_USER, nullIfEmpty( maxConcurrentSessionsPerUserField.getText() ));
         data.put(SshCredentialAssertion.LISTEN_PROP_MAX_SESSIONS, nullIfEmpty( maxConcurrentSessionsField.getText() ));
-        data.put(SshCredentialAssertion.LISTEN_PROP_HOST_PRIVATE_KEY, String.valueOf(privateKeyField.getSelectedSecurePassword().getOid()));
+        data.put(SshCredentialAssertion.LISTEN_PROP_HOST_PRIVATE_KEY, String.valueOf(privateKeyField.getSelectedSecurePassword().getGoid()));
         return data;
     }
 
@@ -246,12 +250,12 @@ public class SshTransportPropertiesPanel extends CustomTransportPropertiesPanel 
                 final SecurePasswordManagerWindow dialog = new SecurePasswordManagerWindow(ownerJDialog);
                 dialog.pack();
                 Utilities.centerOnParentWindow(dialog);
-                final Option<Long> selectedPrivateKeyOid = optional( privateKeyField.getSelectedSecurePassword() ).map( oid() );
+                final Option<Goid> selectedPrivateKeyGoid = optional(privateKeyField.getSelectedSecurePassword()).map(GoidEntityUtil.goid());
                 DialogDisplayer.display(dialog, new Runnable() {
                     @Override
                     public void run() {
                         privateKeyField.reloadPasswordList(SecurePassword.SecurePasswordType.PEM_PRIVATE_KEY);
-                        if (selectedPrivateKeyOid.isSome()) privateKeyField.setSelectedSecurePassword(selectedPrivateKeyOid.some());
+                        if (selectedPrivateKeyGoid.isSome()) privateKeyField.setSelectedSecurePassword(selectedPrivateKeyGoid.some());
                         if (ownerJDialog != null) {
                             DialogDisplayer.pack(ownerJDialog);
                         }

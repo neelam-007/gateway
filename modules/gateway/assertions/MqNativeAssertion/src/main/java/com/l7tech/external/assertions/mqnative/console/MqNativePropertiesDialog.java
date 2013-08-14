@@ -10,7 +10,10 @@ import com.l7tech.external.assertions.mqnative.MqNativeAdmin;
 import com.l7tech.external.assertions.mqnative.MqNativeAdmin.MqNativeTestException;
 import com.l7tech.external.assertions.mqnative.MqNativeMessageFormatType;
 import com.l7tech.external.assertions.mqnative.MqNativeReplyType;
-import com.l7tech.gateway.common.security.rbac.*;
+import com.l7tech.gateway.common.security.rbac.AttemptedCreateSpecific;
+import com.l7tech.gateway.common.security.rbac.AttemptedOperation;
+import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
+import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import com.l7tech.gateway.common.transport.TransportAdmin;
@@ -43,9 +46,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.l7tech.console.panels.CancelableOperationDialog.doWithDelayedCancelDialog;
-import static com.l7tech.external.assertions.mqnative.MqNativeAcknowledgementType.AUTOMATIC;
-import static com.l7tech.external.assertions.mqnative.MqNativeAcknowledgementType.ON_COMPLETION;
-import static com.l7tech.external.assertions.mqnative.MqNativeAcknowledgementType.values;
+import static com.l7tech.external.assertions.mqnative.MqNativeAcknowledgementType.*;
 import static com.l7tech.external.assertions.mqnative.MqNativeReplyType.*;
 import static com.l7tech.gateway.common.transport.SsgActiveConnector.*;
 import static com.l7tech.gui.util.DialogDisplayer.showMessageDialog;
@@ -436,7 +437,7 @@ public class MqNativePropertiesDialog extends JDialog {
             }
         });
 
-        acknowledgementModeComboBox.setModel(new DefaultComboBoxModel(values()));
+        acknowledgementModeComboBox.setModel(new DefaultComboBoxModel(MqNativeAcknowledgementType.values()));
         acknowledgementModeComboBox.setRenderer(new TextListCellRenderer<MqNativeAcknowledgementType>(new Functions.Unary<String, MqNativeAcknowledgementType>() {
             @Override
             public String call(final MqNativeAcknowledgementType type) {
@@ -578,13 +579,13 @@ public class MqNativePropertiesDialog extends JDialog {
             enabledCheckBox.setSelected(mqNativeActiveConnector.isEnabled());
 
             final String userId = mqNativeActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_USERID);
-            final long passwordOid = mqNativeActiveConnector.getLongProperty(PROPERTIES_KEY_MQ_NATIVE_SECURE_PASSWORD_OID, -1L);
+            final Goid passwordGoid = ConsoleGoidUpgradeMapper.mapId(EntityType.SECURE_PASSWORD, mqNativeActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_SECURE_PASSWORD_OID));
 
-            credentialsAreRequiredToCheckBox.setSelected(!StringUtils.isEmpty(userId) || passwordOid > -1L);
+            credentialsAreRequiredToCheckBox.setSelected(!StringUtils.isEmpty(userId) || (passwordGoid != null && !Goid.isDefault(passwordGoid)));
             authUserNameTextBox.setText(userId);
             authUserNameTextBox.setCaretPosition( 0 );
-            if(passwordOid > -1L) {
-                securePasswordComboBox.setSelectedSecurePassword(passwordOid);
+            if(passwordGoid != null && !Goid.isDefault(passwordGoid)) {
+                securePasswordComboBox.setSelectedSecurePassword(passwordGoid);
             }
 
             final boolean isSslEnabled = mqNativeActiveConnector.getBooleanProperty(PROPERTIES_KEY_MQ_NATIVE_IS_SSL_ENABLED);
@@ -1022,7 +1023,7 @@ public class MqNativePropertiesDialog extends JDialog {
         if (isCredentialsRequired) {
             connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_USERID, authUserNameTextBox.getText());
             connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_SECURE_PASSWORD_OID,
-                Long.toString(securePasswordComboBox.getSelectedSecurePassword().getOid()));
+                Goid.toString(securePasswordComboBox.getSelectedSecurePassword().getGoid()));
         } else {
             connector.removeProperty(PROPERTIES_KEY_MQ_NATIVE_USERID);
             connector.removeProperty(PROPERTIES_KEY_MQ_NATIVE_SECURE_PASSWORD_OID);

@@ -11,7 +11,9 @@ import com.l7tech.external.assertions.ssh.server.sftppollinglistener.SftpClient.
 import com.l7tech.gateway.common.Component;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.LifecycleException;
 import com.l7tech.server.event.system.TransportEvent;
 import com.l7tech.server.security.password.SecurePasswordManager;
@@ -193,8 +195,8 @@ abstract class SftpPollingListener {
         final int port = getConnectorIntegerProperty( PROPERTIES_KEY_SFTP_PORT, 0 );
         final String username = getConnectorProperty( PROPERTIES_KEY_SFTP_USERNAME );
         final long pollingInterval = getConnectorLongProperty( PROPERTIES_KEY_POLLING_INTERVAL, 60L );
-        final long passwordOid = getConnectorLongProperty( PROPERTIES_KEY_SFTP_SECURE_PASSWORD_OID, -1L );
-        final String password = passwordOid == -1L ? null : getDecryptedPassword( passwordOid );
+        final Goid passwordGoid = GoidUpgradeMapper.mapId(EntityType.SECURE_PASSWORD, getConnectorProperty( PROPERTIES_KEY_SFTP_SECURE_PASSWORD_OID ));
+        final String password = passwordGoid == null || Goid.isDefault(passwordGoid) ? null : getDecryptedPassword( passwordGoid );
         final String directory = getConnectorProperty( PROPERTIES_KEY_SFTP_DIRECTORY );
         final long timeout = TimeUnit.SECONDS.toMillis( pollingInterval + 3L );
 
@@ -225,8 +227,8 @@ abstract class SftpPollingListener {
             sshParams.setHostKeyVerifier(new HostKeyFingerprintVerifier(sshHostKeys));
         }
 
-        final long privateKeyOid = getConnectorLongProperty( PROPERTIES_KEY_SFTP_SECURE_PASSWORD_KEY_OID, -1L );
-        final String privateKeyText = privateKeyOid == -1L ? null : getDecryptedPassword( privateKeyOid );
+        final Goid privateKeyGoid = GoidUpgradeMapper.mapId(EntityType.SECURE_PASSWORD, getConnectorProperty( PROPERTIES_KEY_SFTP_SECURE_PASSWORD_KEY_OID));
+        final String privateKeyText = (privateKeyGoid == null || Goid.isDefault(privateKeyGoid)) ? null : getDecryptedPassword( privateKeyGoid );
         if( privateKeyText != null ) {
             sshParams.setSshPassword(null);
             if( password == null ) {
@@ -405,10 +407,10 @@ abstract class SftpPollingListener {
         logger.log(level, messageKey, ex);
     }
 
-    private SecurePassword getSecurePassword( final long passwordOid ) {
+    private SecurePassword getSecurePassword( final Goid passwordGoid ) {
         SecurePassword securePassword = null;
         try {
-            securePassword = securePasswordManager.findByPrimaryKey(passwordOid);
+            securePassword = securePasswordManager.findByPrimaryKey(passwordGoid);
         } catch (FindException fe) {
             logger.log( Level.WARNING, "The password could not be found in the password manager storage.  The password should be fixed or set in the password manager."
                     + ExceptionUtils.getMessage( fe ), ExceptionUtils.getDebugException( fe ) );
@@ -416,10 +418,10 @@ abstract class SftpPollingListener {
         return securePassword;
     }
 
-    private String getDecryptedPassword( final long passwordOid ) {
+    private String getDecryptedPassword( final Goid passwordGoid ) {
         String decrypted = null;
         try {
-            final SecurePassword securePassword = getSecurePassword( passwordOid );
+            final SecurePassword securePassword = getSecurePassword( passwordGoid );
             if ( securePassword != null ) {
                 final String encrypted = securePassword.getEncodedPassword();
                 final char[] pwd = securePasswordManager.decryptPassword(encrypted);

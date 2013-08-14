@@ -410,12 +410,12 @@ create table http_configuration (
     host varchar(128) not null,
     ntlm_domain varchar(255),
     ntlm_host varchar(128),
-    password_oid bigint,
+    password_goid CHAR(16) FOR BIT DATA,
     path varchar(4096),
     port integer,
     protocol varchar(255),
     proxy_host varchar(128),
-    proxy_password_oid bigint,
+    proxy_password_goid CHAR(16) FOR BIT DATA,
     proxy_port integer,
     proxy_username varchar(255),
     proxy_use varchar(255),
@@ -510,7 +510,7 @@ create table siteminder_configuration (
   fipsmode integer not null default 0,
   host_configuration varchar(256),
   user_name varchar(256),
-  password_oid bigint,
+  password_goid CHAR(16) FOR BIT DATA,
   noncluster_failover smallint default 0,
   cluster_threshold integer DEFAULT 50,
   security_zone_goid CHAR(16) FOR BIT DATA references security_zone(goid) on delete set null,
@@ -823,7 +823,7 @@ create table sample_messages (
 );
 
 create table secure_password (
-    objectid bigint not null,
+    goid CHAR(16) FOR BIT DATA not null,
     name varchar(128) not null,
     version integer,
     description varchar(256),
@@ -832,7 +832,7 @@ create table secure_password (
     type varchar(64) not null,
     usage_from_variable smallint,
     security_zone_goid CHAR(16) FOR BIT DATA references security_zone(goid) on delete set null,
-    primary key (objectid)
+    primary key (goid)
 );
 
 create table service_documents (

@@ -2,10 +2,7 @@ package com.l7tech.external.assertions.ssh.console;
 
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.console.panels.*;
-import com.l7tech.console.util.Registry;
-import com.l7tech.console.util.SecurityZoneWidget;
-import com.l7tech.console.util.SquigglyFieldUtils;
-import com.l7tech.console.util.TopComponents;
+import com.l7tech.console.util.*;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.service.PublishedService;
@@ -18,6 +15,8 @@ import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.SquigglyTextField;
 import com.l7tech.gui.widgets.TextListCellRenderer;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.GoidEntity;
 import com.l7tech.util.Pair;
 import org.apache.commons.lang.StringUtils;
@@ -362,13 +361,13 @@ public class SftpPollingListenerPropertiesDialog extends JDialog {
         }
         usernameField.setText( connector.getProperty( PROPERTIES_KEY_SFTP_USERNAME, "" ) );
 
-        final long passwordOid = connector.getLongProperty( SsgActiveConnector.PROPERTIES_KEY_SFTP_SECURE_PASSWORD_OID, -1L);
-        final long keyOid = connector.getLongProperty( SsgActiveConnector.PROPERTIES_KEY_SFTP_SECURE_PASSWORD_KEY_OID, -1L);
-        if( passwordOid != -1L ) {
-            passwordField.setSelectedSecurePassword( passwordOid );
+        final Goid passwordGoid = ConsoleGoidUpgradeMapper.mapId(EntityType.SECURE_PASSWORD, connector.getProperty( SsgActiveConnector.PROPERTIES_KEY_SFTP_SECURE_PASSWORD_OID));
+        final Goid keyGoid = ConsoleGoidUpgradeMapper.mapId(EntityType.SECURE_PASSWORD, connector.getProperty( SsgActiveConnector.PROPERTIES_KEY_SFTP_SECURE_PASSWORD_KEY_OID));
+        if( passwordGoid != null && !Goid.isDefault(passwordGoid) ) {
+            passwordField.setSelectedSecurePassword( passwordGoid );
             passwordRadioButton.setSelected(true);
-        } else if ( keyOid != -1L ) {
-            privateKeyField.setSelectedSecurePassword( keyOid );
+        } else if ( keyGoid != null && !Goid.isDefault(keyGoid) ) {
+            privateKeyField.setSelectedSecurePassword( keyGoid );
             privateKeyRadioButton.setSelected(true);
         } else {
            passwordRadioButton.setSelected(true);
@@ -450,12 +449,12 @@ public class SftpPollingListenerPropertiesDialog extends JDialog {
             if(passwordField.getSelectedSecurePassword() != null) {
                 connector.setProperty(
                         PROPERTIES_KEY_SFTP_SECURE_PASSWORD_OID,
-                        Long.toString( passwordField.getSelectedSecurePassword().getOid() ) );
+                        Goid.toString( passwordField.getSelectedSecurePassword().getGoid() ) );
             }
         } else if( privateKeyRadioButton.isSelected() ) {
             connector.setProperty(
                     PROPERTIES_KEY_SFTP_SECURE_PASSWORD_KEY_OID,
-                    Long.toString( privateKeyField.getSelectedSecurePassword().getOid() ) );
+                    Goid.toString( privateKeyField.getSelectedSecurePassword().getGoid() ) );
         }
 
         setProperty( connector, PROPERTIES_KEY_SFTP_DIRECTORY, directoryField.getText() );

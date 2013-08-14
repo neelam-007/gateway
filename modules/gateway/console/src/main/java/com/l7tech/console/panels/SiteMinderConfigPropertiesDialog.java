@@ -251,7 +251,7 @@ public class SiteMinderConfigPropertiesDialog extends JDialog {
                 configuration.setSecret(siteMinderHost.getSharedSecret());
                 configuration.setAddress("127.0.0.1");
                 configuration.setFipsmode(siteMinderHost.getFipsMode());
-                configuration.setPasswordOid(siteMinderHost.getPasswordOid());
+                configuration.setPasswordGoid(siteMinderHost.getPasswordGoid());
                 configuration.setHostConfiguration(siteMinderHost.getHostConfigObject());
                 configuration.setUserName(siteMinderHost.getUserName());
 
@@ -456,7 +456,7 @@ public class SiteMinderConfigPropertiesDialog extends JDialog {
                                                                                                     configuration.getHostConfiguration(),
                                                                                                     configuration.getFipsmode(),
                                                                                                     configuration.getUserName(),
-                                                                                                    configuration.getPasswordOid())));
+                                                                                                    configuration.getPasswordGoid())));
     }
 
     private void register(final MutablePair<String, SiteMinderHost> property) {

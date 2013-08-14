@@ -93,7 +93,7 @@ public abstract class DependencyTestBaseClass {
             Mockito.when(identityProviderConfigManager.findByHeader(entityHeader)).thenReturn((IdentityProviderConfig) entity);
         } else if(entity instanceof SecurePassword){
             Mockito.when(securePasswordManager.findByUniqueName(entityHeader.getName())).thenReturn((SecurePassword) entity);
-            Mockito.when(securePasswordManager.findByPrimaryKey(entityHeader.getOid())).thenReturn((SecurePassword) entity);
+            Mockito.when(securePasswordManager.findByPrimaryKey(entityHeader.getGoid())).thenReturn((SecurePassword) entity);
         }
     }
 }

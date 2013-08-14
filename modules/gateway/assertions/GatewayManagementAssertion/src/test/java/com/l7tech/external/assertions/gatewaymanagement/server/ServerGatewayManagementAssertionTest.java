@@ -1292,7 +1292,7 @@ public class ServerGatewayManagementAssertionTest {
                 "    <Name>Stored Password</Name>\n" +
                 "    <Password>password</Password>\n" +
                 "</StoredPassword>";
-        doCreate( resourceUri, payload, "2", "3" );
+        doCreate( resourceUri, payload, new Goid(0,2).toString(), new Goid(0,3).toString() );
     }
 
     @Test
@@ -1308,7 +1308,7 @@ public class ServerGatewayManagementAssertionTest {
                 "        </Property>\n" +
                 "    </Properties>\n" +
                 "</StoredPassword>";
-        doCreate( resourceUri, payload, "2", "3" );
+        doCreate( resourceUri, payload, new Goid(0,2).toString(), new Goid(0,3).toString() );
     }
 
     @Test
@@ -2029,8 +2029,8 @@ public class ServerGatewayManagementAssertionTest {
 
     @Test
     public void testPutStoredPassword() throws Exception {
-        final String message = "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns=\"http://ns.l7tech.com/2010/04/gateway-management\"><s:Header><wsa:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Put</wsa:Action><wsa:To s:mustUnderstand=\"true\">http://127.0.0.1:8080/wsman</wsa:To><wsman:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/storedPasswords</wsman:ResourceURI><wsa:MessageID s:mustUnderstand=\"true\">uuid:afad2993-7d39-1d39-8002-481688002101</wsa:MessageID><wsa:ReplyTo><wsa:Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo><wsman:SelectorSet><wsman:Selector Name=\"id\">1</wsman:Selector></wsman:SelectorSet><wsman:RequestEPR/></s:Header><s:Body>" +
-                "<StoredPassword version=\"0\" id=\"1\">\n" +
+        final String message = "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns=\"http://ns.l7tech.com/2010/04/gateway-management\"><s:Header><wsa:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Put</wsa:Action><wsa:To s:mustUnderstand=\"true\">http://127.0.0.1:8080/wsman</wsa:To><wsman:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/storedPasswords</wsman:ResourceURI><wsa:MessageID s:mustUnderstand=\"true\">uuid:afad2993-7d39-1d39-8002-481688002101</wsa:MessageID><wsa:ReplyTo><wsa:Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo><wsman:SelectorSet><wsman:Selector Name=\"id\">"+new Goid(0,1)+"</wsman:Selector></wsman:SelectorSet><wsman:RequestEPR/></s:Header><s:Body>" +
+                "<StoredPassword version=\"0\" id=\""+new Goid(0,1)+"\">\n" +
                 "    <Name>test updated</Name>\n" +
                 "    <Properties>\n" +
                 "        <Property key=\"usageFromVariable\">\n" +
@@ -2053,7 +2053,7 @@ public class ServerGatewayManagementAssertionTest {
                 final Element name = XmlUtil.findExactlyOneChildElementByName(storedPassword, NS_GATEWAY_MANAGEMENT, "Name");
                 final Element properties = XmlUtil.findExactlyOneChildElementByName(storedPassword, NS_GATEWAY_MANAGEMENT, "Properties");
 
-                assertEquals("Stored password id", "1", storedPassword.getAttribute( "id" ));
+                assertEquals("Stored password id", new Goid(0,1).toString(), storedPassword.getAttribute( "id" ));
                 assertEquals("Stored password version", Integer.toString( expectedVersion++ ), storedPassword.getAttribute( "version" ));
                 assertEquals("Stored password name", "test updated", XmlUtil.getTextValue(name));
                 assertEquals("Stored password description", "description updated", getPropertyValue(properties, "description"));
@@ -3065,7 +3065,7 @@ public class ServerGatewayManagementAssertionTest {
             }
         } );
         beanFactory.addBean( "securePasswordManager", new SecurePasswordManagerStub(
-                securePassword(1L, "test", "password", true, SecurePassword.SecurePasswordType.PASSWORD)
+                securePassword(new Goid(0,1L), "test", "password", true, SecurePassword.SecurePasswordType.PASSWORD)
         ) );
         beanFactory.addBean( "encapsulatedAssertionConfigManager", new EncapsulatedAssertionConfigManagerStub(
                 encapsulatedAssertion( new Goid(0,1L), "Test Encass Config 1", "ABCD-0001", testPolicy1, null, null, null)
@@ -3295,9 +3295,9 @@ public class ServerGatewayManagementAssertionTest {
         return config;
     }
 
-    private static SecurePassword securePassword( final long oid, final String name, final String password, final boolean fromVariable, final SecurePassword.SecurePasswordType type) {
+    private static SecurePassword securePassword( final Goid goid, final String name, final String password, final boolean fromVariable, final SecurePassword.SecurePasswordType type) {
         final SecurePassword securePassword = new SecurePassword();
-        securePassword.setOid( oid );
+        securePassword.setGoid(goid);
         securePassword.setName( name );
         securePassword.setEncodedPassword( password );
         securePassword.setUsageFromVariable( fromVariable );

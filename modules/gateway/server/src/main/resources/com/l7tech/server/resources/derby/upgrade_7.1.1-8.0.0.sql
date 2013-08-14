@@ -284,6 +284,30 @@ ALTER TABLE cluster_properties ADD PRIMARY KEY (goid);
 update rbac_role set entity_goid = toGoid(cast(getVariable('cluster_properties_prefix') as bigint),entity_oid) where entity_oid is not null and entity_type='CLUSTER_PROPERTY';
 update rbac_predicate_oid oid1 set oid1.entity_id = ifnull((select goidToString(toGoid(cast(getVariable('cluster_properties_prefix') as bigint),cast(oid1.entity_id as bigint))) from rbac_predicate left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid where rbac_predicate.objectid = oid1.objectid and rbac_permission.entity_type = 'CLUSTER_PROPERTY'), oid1.entity_id);
 
+-- ClusterProperty
+ALTER TABLE secure_password ADD COLUMN goid CHAR(16) FOR BIT DATA;
+call setVariable('secure_password_prefix', cast(randomLongNotReserved() as char(21)));
+update secure_password set goid = toGoid(cast(getVariable('secure_password_prefix') as bigint), objectid);
+ALTER TABLE secure_password ALTER COLUMN goid NOT NULL;
+ALTER TABLE secure_password DROP PRIMARY KEY;
+ALTER TABLE secure_password DROP COLUMN objectid;
+ALTER TABLE secure_password ADD PRIMARY KEY (goid);
+
+update rbac_role set entity_goid = toGoid(cast(getVariable('secure_password_prefix') as bigint),entity_oid) where entity_oid is not null and entity_type='SECURE_PASSWORD';
+update rbac_predicate_oid oid1 set oid1.entity_id = ifnull((select goidToString(toGoid(cast(getVariable('secure_password_prefix') as bigint),cast(oid1.entity_id as bigint))) from rbac_predicate left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid where rbac_predicate.objectid = oid1.objectid and rbac_permission.entity_type = 'SECURE_PASSWORD'), oid1.entity_id);
+
+ALTER TABLE http_configuration ADD COLUMN password_goid CHAR(16) FOR BIT DATA;
+update http_configuration set password_goid = toGoid(cast(getVariable('secure_password_prefix') as bigint), password_oid);
+ALTER TABLE http_configuration DROP COLUMN password_oid;
+
+ALTER TABLE http_configuration ADD COLUMN proxy_password_goid CHAR(16) FOR BIT DATA;
+update http_configuration set proxy_password_goid = toGoid(cast(getVariable('secure_password_prefix') as bigint), proxy_password_oid);
+ALTER TABLE http_configuration DROP COLUMN proxy_password_oid;
+
+ALTER TABLE siteminder_configuration ADD COLUMN password_goid CHAR(16) FOR BIT DATA;
+update siteminder_configuration set password_goid = toGoid(cast(getVariable('secure_password_prefix') as bigint), password_oid);
+ALTER TABLE siteminder_configuration DROP COLUMN password_oid;
+
 -- Resource Entry
 ALTER TABLE resource_entry ADD COLUMN goid CHAR(16) FOR BIT DATA;
 call setVariable('resource_entry_prefix', cast(randomLongNotReserved() as char(21)));
@@ -909,4 +933,5 @@ INSERT INTO goid_upgrade_map (table_name, prefix) VALUES
       ('client_cert', cast(getVariable('client_cert_prefix') as bigint)),
       ('trusted_cert', cast(getVariable('trusted_cert_prefix') as bigint)),
       ('revocation_check_policy', cast(getVariable('revocation_check_policy_prefix') as bigint)),
-      ('resource_entry', cast(getVariable('resource_entry_prefix') as bigint));
+      ('resource_entry', cast(getVariable('resource_entry_prefix') as bigint)),
+      ('secure_password', cast(getVariable('secure_password_prefix') as bigint));

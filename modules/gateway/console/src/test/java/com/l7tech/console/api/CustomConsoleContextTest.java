@@ -3,6 +3,7 @@ package com.l7tech.console.api;
 import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gateway.common.security.password.SecurePassword;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
 import com.l7tech.policy.assertion.ext.cei.CustomExtensionInterfaceFinder;
 import com.l7tech.policy.assertion.ext.commonui.CommonUIServices;
@@ -156,10 +157,10 @@ public class CustomConsoleContextTest {
         assertNotNull(securePasswordPanel.getPanel());
 
         // check that only passwords are populated. Not PEM private keys.
-        assertTrue(securePasswordPanel.containsItem(1000L));
-        assertTrue(securePasswordPanel.containsItem(1001L));
-        assertFalse(securePasswordPanel.containsItem(1002L));
-        assertFalse(securePasswordPanel.containsItem(1003L));
+        assertTrue(securePasswordPanel.containsItem(new Goid(0,1000L).toString()));
+        assertTrue(securePasswordPanel.containsItem(new Goid(0,1001L).toString()));
+        assertFalse(securePasswordPanel.containsItem(new Goid(0,1002L).toString()));
+        assertFalse(securePasswordPanel.containsItem(new Goid(0,1003L).toString()));
     }
 
     @Test
@@ -179,10 +180,10 @@ public class CustomConsoleContextTest {
         assertNotNull(securePasswordPanel.getPanel());
 
         // check that only PEM private keys are populated. Not passwords.
-        assertFalse(securePasswordPanel.containsItem(1000L));
-        assertFalse(securePasswordPanel.containsItem(1001L));
-        assertTrue(securePasswordPanel.containsItem(1002L));
-        assertTrue(securePasswordPanel.containsItem(1003L));
+        assertFalse(securePasswordPanel.containsItem(new Goid(0,1000L).toString()));
+        assertFalse(securePasswordPanel.containsItem(new Goid(0,1001L).toString()));
+        assertTrue(securePasswordPanel.containsItem(new Goid(0,1002L).toString()));
+        assertTrue(securePasswordPanel.containsItem(new Goid(0,1003L).toString()));
     }
 
     @Test
@@ -218,28 +219,28 @@ public class CustomConsoleContextTest {
         List<SecurePassword> passwords = new ArrayList<>(4);
 
         SecurePassword password = new SecurePassword();
-        password.setOid(1000L);
+        password.setGoid(new Goid(0,1000L));
         password.setName("pass1");
         password.setType(SecurePassword.SecurePasswordType.PASSWORD);
         password.setEncodedPassword("");
         passwords.add(password);
 
         password = new SecurePassword();
-        password.setOid(1001L);
+        password.setGoid(new Goid(0,1001L));
         password.setName("pass2");
         password.setType(SecurePassword.SecurePasswordType.PASSWORD);
         password.setEncodedPassword("");
         passwords.add(password);
 
         password = new SecurePassword();
-        password.setOid(1002L);
+        password.setGoid(new Goid(0,1002L));
         password.setName("pem1");
         password.setType(SecurePassword.SecurePasswordType.PEM_PRIVATE_KEY);
         password.setEncodedPassword("");
         passwords.add(password);
 
         password = new SecurePassword();
-        password.setOid(1003L);
+        password.setGoid(new Goid(0,1003L));
         password.setName("pem2");
         password.setType(SecurePassword.SecurePasswordType.PEM_PRIVATE_KEY);
         password.setEncodedPassword("");

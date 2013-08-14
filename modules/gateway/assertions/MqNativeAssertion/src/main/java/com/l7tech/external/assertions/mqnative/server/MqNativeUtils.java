@@ -13,6 +13,7 @@ import com.l7tech.external.assertions.mqnative.MqNativeConstants;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import com.l7tech.message.OutboundHeaderSupport;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.GoidEntity;
@@ -23,12 +24,9 @@ import com.l7tech.server.transport.http.AnonymousSslClientSocketFactory;
 import com.l7tech.server.transport.http.SslClientSocketFactory;
 import com.l7tech.server.transport.jms.JmsConfigException;
 import com.l7tech.server.transport.jms.JmsSslCustomizerSupport;
-import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.*;
 import com.l7tech.util.Functions.Unary;
 import com.l7tech.util.Functions.UnaryVoidThrows;
-import com.l7tech.util.HexUtils;
-import com.l7tech.util.Option;
-import com.l7tech.util.Pair;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -104,10 +102,10 @@ public class MqNativeUtils {
         Option<String> password = none();
 
         if ( connector.getBooleanProperty(PROPERTIES_KEY_MQ_NATIVE_IS_QUEUE_CREDENTIAL_REQUIRED) ) {
-            final long passwordOid = connector.getLongProperty(PROPERTIES_KEY_MQ_NATIVE_SECURE_PASSWORD_OID, -1L);
-            password = passwordOid == -1L ?
+            final Goid passwordGoid = GoidUpgradeMapper.mapId(EntityType.SECURE_PASSWORD, connector.getProperty(PROPERTIES_KEY_MQ_NATIVE_SECURE_PASSWORD_OID));
+            password = (passwordGoid == null || Goid.isDefault(passwordGoid)) ?
                     password :
-                    some( getDecryptedPassword( securePasswordManager, passwordOid ) );
+                    some( getDecryptedPassword( securePasswordManager, passwordGoid ) );
         }
 
         return password;
@@ -436,10 +434,10 @@ public class MqNativeUtils {
     }
 
     private static SecurePassword getSecurePassword( final SecurePasswordManager securePasswordManager,
-                                                     final long passwordOid ) {
+                                                     final Goid passwordGoid ) {
         SecurePassword securePassword = null;
         try {
-            securePassword = securePasswordManager.findByPrimaryKey(passwordOid);
+            securePassword = securePasswordManager.findByPrimaryKey(passwordGoid);
         } catch (FindException fe) {
             logger.log( Level.WARNING, "The password could not be found in the password manager storage.  The password should be fixed or set in the password manager."
                     + ExceptionUtils.getMessage( fe ), ExceptionUtils.getDebugException( fe ) );
@@ -448,10 +446,10 @@ public class MqNativeUtils {
     }
 
     private static String getDecryptedPassword( final SecurePasswordManager securePasswordManager,
-                                                final long passwordOid ) {
+                                                final Goid passwordGoid ) {
         String decrypted = null;
         try {
-            final SecurePassword securePassword = getSecurePassword( securePasswordManager, passwordOid );
+            final SecurePassword securePassword = getSecurePassword( securePasswordManager, passwordGoid );
             if ( securePassword != null ) {
                 final String encrypted = securePassword.getEncodedPassword();
                 final char[] pwd = securePasswordManager.decryptPassword(encrypted);

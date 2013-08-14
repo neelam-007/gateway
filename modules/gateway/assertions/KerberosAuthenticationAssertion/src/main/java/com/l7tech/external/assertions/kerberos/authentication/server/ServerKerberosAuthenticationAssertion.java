@@ -154,7 +154,7 @@ public class ServerKerberosAuthenticationAssertion extends AbstractServerAsserti
                     }
                 } else {
                     PrincipalName userPrincipal = new PrincipalName(krbServiceAccount, realm);
-                    String plaintextPassword = ServerVariables.getSecurePasswordByOid(new LoggingAudit(logger), assertion.getKrbSecurePasswordReference());
+                    String plaintextPassword = ServerVariables.getSecurePasswordByGoid(new LoggingAudit(logger), assertion.getKrbSecurePasswordReference());
                     if (userRealm == null || userRealm.trim().length() == 0 || userRealm.equalsIgnoreCase(realm)) {
                         kerberosServiceTicket = client.getKerberosProxyServiceTicket(targetPrincipalName.getName(), userPrincipal.getName(), plaintextPassword, authenticatedUserAccount);
                     } else {
@@ -193,7 +193,7 @@ public class ServerKerberosAuthenticationAssertion extends AbstractServerAsserti
                 }
                 else {
                     PrincipalName userPrincipal = new PrincipalName(krbServiceAccount, realm);
-                    String plaintextPassword = ServerVariables.getSecurePasswordByOid(new LoggingAudit(logger), assertion.getKrbSecurePasswordReference());
+                    String plaintextPassword = ServerVariables.getSecurePasswordByGoid(new LoggingAudit(logger), assertion.getKrbSecurePasswordReference());
                     kerberosServiceTicket = client.getKerberosProxyServiceTicket(targetPrincipalName.getName(), userPrincipal.getName(), plaintextPassword, serviceTicket);
                 }
             }

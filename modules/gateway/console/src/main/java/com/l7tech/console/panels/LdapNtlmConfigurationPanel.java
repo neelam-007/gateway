@@ -7,7 +7,10 @@ import com.l7tech.gui.SimpleTableModel;
 import com.l7tech.gui.util.*;
 import com.l7tech.identity.InvalidIdProviderCfgException;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.Functions;
+import com.l7tech.util.GoidUpgradeMapper;
 import com.l7tech.util.NameValuePair;
 import com.l7tech.util.Pair;
 
@@ -132,14 +135,14 @@ public class LdapNtlmConfigurationPanel extends IdentityProviderStepPanel {
         }
         if(props.containsKey("service.passwordOid")) {
             SecurePasswordComboBox securePasswordComboBox = (SecurePasswordComboBox)passwordComboBox;
-            long oid = -1L;
+            Goid goid = SecurePassword.DEFAULT_GOID;
             try {
-               oid = Long.parseLong(props.remove("service.passwordOid"));
-            } catch (NumberFormatException e) {
+                goid = GoidUpgradeMapper.mapId(EntityType.SECURE_PASSWORD, props.remove("service.passwordOid"));
+            } catch (IllegalArgumentException e) {
                 //this shouldn't happen; swallow the exception
             }
-            if(oid != -1L) {
-                securePasswordComboBox.setSelectedSecurePassword(oid);
+            if(!Goid.isDefault(goid)) {
+                securePasswordComboBox.setSelectedSecurePassword(goid);
             }
             else {
                 securePasswordComboBox.setSelectedItem(null);
@@ -190,8 +193,8 @@ public class LdapNtlmConfigurationPanel extends IdentityProviderStepPanel {
         props.put("service.account", serviceAccountTextField.getText().trim());
         SecurePassword securePassword = ((SecurePasswordComboBox) passwordComboBox).getSelectedSecurePassword();
         if(securePassword != null) {
-            Long  passwordOid = securePassword.getOidAsLong();
-            props.put("service.passwordOid", passwordOid.toString());
+            Goid passwordGoid = securePassword.getGoid();
+            props.put("service.passwordOid", passwordGoid.toString());
         }
         props.put("domain.dns.name", domainDnsTextField.getText().trim());
         props.put("domain.netbios.name", domainNetbiosTextField.getText().trim());
@@ -316,8 +319,8 @@ public class LdapNtlmConfigurationPanel extends IdentityProviderStepPanel {
                 props.put("service.account", serviceAccountTextField.getText().trim());
                 SecurePassword securePassword = ((SecurePasswordComboBox) passwordComboBox).getSelectedSecurePassword();
                 if(securePassword != null) {
-                    Long  passwordOid = securePassword.getOidAsLong();
-                    props.put("service.passwordOid", passwordOid.toString());
+                    Goid passwordGoid = securePassword.getGoid();
+                    props.put("service.passwordOid", passwordGoid.toString());
                 }
                 props.put("domain.dns.name", domainDnsTextField.getText().trim());
                 props.put("domain.netbios.name", domainNetbiosTextField.getText().trim());
@@ -425,7 +428,7 @@ public class LdapNtlmConfigurationPanel extends IdentityProviderStepPanel {
 
                 if ( password != null ) {
                     password.getName();
-                    passwordComboBox.setSelectedSecurePassword( password.getOid() );
+                    passwordComboBox.setSelectedSecurePassword( password.getGoid() );
                 }
                 else {
                     passwordComboBox.setSelectedItem(null);

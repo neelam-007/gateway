@@ -6,6 +6,7 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.siteminder.SiteMinderAdmin;
 import com.l7tech.gui.util.*;
 import com.l7tech.gui.widgets.TextListCellRenderer;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.Either;
 import com.l7tech.util.MutablePair;
 import sun.security.util.Resources;
@@ -172,8 +173,8 @@ public class SiteMinderRegisterConfigDialog extends JDialog {
             fipsModeComboBox.setSelectedIndex(property.right.getFipsMode());
             hostConfigurationTextField.setText(property.right.getHostConfigObject());
             userNameTextField.setText(property.right.getUserName());
-            if (property.right.getPasswordOid() != null){
-                securePasswordComboBox.setSelectedSecurePassword(property.right.getPasswordOid());
+            if (property.right.getPasswordGoid() != null){
+                securePasswordComboBox.setSelectedSecurePassword(property.right.getPasswordGoid());
             }
         }
     }
@@ -185,7 +186,7 @@ public class SiteMinderRegisterConfigDialog extends JDialog {
 
         String address = addressTextField.getText().trim();
         String userName = userNameTextField.getText().trim();
-        long password = securePasswordComboBox.getSelectedSecurePassword().getOid();
+        Goid password = securePasswordComboBox.getSelectedSecurePassword().getGoid();
         String hostName = hostnameTextField.getText().trim();
         String hostConfiguration = hostConfigurationTextField.getText().trim();
         Integer fipsMode = null;
@@ -237,7 +238,7 @@ public class SiteMinderRegisterConfigDialog extends JDialog {
             }
 
             siteMinderHost.setUserName(userName);
-            siteMinderHost.setPasswordOid(password);
+            siteMinderHost.setPasswordGoid(password);
             property.left = "SiteMinder Host Configuration";
             property.right = siteMinderHost;
 

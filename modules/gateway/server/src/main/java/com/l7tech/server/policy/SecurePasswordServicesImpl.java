@@ -2,6 +2,7 @@ package com.l7tech.server.policy;
 
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.ext.SecurePasswordServices;
 import com.l7tech.policy.assertion.ext.ServiceException;
 import com.l7tech.server.security.password.SecurePasswordManager;
@@ -20,11 +21,11 @@ public class SecurePasswordServicesImpl implements SecurePasswordServices {
     }
 
     @Override
-    public String decryptPassword(long oid) throws ServiceException {
+    public String decryptPassword(String id) throws ServiceException {
         try {
-            SecurePassword securePassword = securePasswordManager.findByPrimaryKey(oid);
+            SecurePassword securePassword = securePasswordManager.findByPrimaryKey(new Goid(id));
             if (securePassword == null) {
-                throw new ServiceException("Password with OID " + oid + " not found.");
+                throw new ServiceException("Password with ID " + id + " not found.");
             } else {
                 return new String(securePasswordManager.decryptPassword(securePassword.getEncodedPassword()));
             }

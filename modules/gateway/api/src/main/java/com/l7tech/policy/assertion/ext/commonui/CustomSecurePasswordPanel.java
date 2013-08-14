@@ -1,7 +1,6 @@
 package com.l7tech.policy.assertion.ext.commonui;
 
 import javax.swing.*;
-import java.awt.event.ActionListener;
 
 /**
  * The secure password panel. The secure password panel contains a combo box populated with passwords or PEM private keys,
@@ -31,16 +30,16 @@ public interface CustomSecurePasswordPanel {
     /**
      * Gets the selected password in the combo box.
      *
-     * @return the OID of the selected password. -1 if a password is not selected.
+     * @return the ID of the selected password. Default id (0000000000000000ffffffffffffffff) if a password is not selected.
      */
-    long getSelectedItem();
+    String getSelectedItem();
 
     /**
      * Selects the specified password in the combo box.
      *
-     * @param oid the OID of the password to select
+     * @param id the ID of the password to select
      */
-    void setSelectedItem (long oid);
+    void setSelectedItem (String id);
 
     /**
      * Checks whether or not a password is selected in the combo box.
@@ -52,10 +51,10 @@ public interface CustomSecurePasswordPanel {
     /**
      * Checks whether or not the specified password is in the combo box.
      *
-     * @param oid the OID of the password
+     * @param id the ID of the password
      * @return true if the password is in the combo box, false otherwise.
      */
-    boolean containsItem (long oid);
+    boolean containsItem (String id);
 
     /**
      * Reloads the combo box.

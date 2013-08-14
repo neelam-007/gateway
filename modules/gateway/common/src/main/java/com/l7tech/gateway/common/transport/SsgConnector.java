@@ -433,7 +433,7 @@ public class SsgConnector extends ZoneableNamedGoidEntityImp implements PortOwne
      * @return the requested property, or null if it is not set
      */
     @Dependencies({
-            @Dependency(methodReturnType = Dependency.MethodReturnType.OID, type = Dependency.DependencyType.SERVICE, key = PROP_HARDWIRED_SERVICE_ID)
+            @Dependency(methodReturnType = Dependency.MethodReturnType.GOID, type = Dependency.DependencyType.SERVICE, key = PROP_HARDWIRED_SERVICE_ID)
     })
     public String getProperty(String key) {
         return properties.get(key);

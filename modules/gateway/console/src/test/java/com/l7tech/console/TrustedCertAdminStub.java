@@ -29,7 +29,7 @@ import java.util.*;
  *
  */
 public class TrustedCertAdminStub implements TrustedCertAdmin {
-    public Map<Long,SecurePassword> securePasswords = new LinkedHashMap<>();
+    public Map<Goid,SecurePassword> securePasswords = new LinkedHashMap<>();
     public int nextId = 5501;
 
     @Override
@@ -175,29 +175,29 @@ public class TrustedCertAdminStub implements TrustedCertAdmin {
     }
 
     @Override
-    public String getSecurePasswordPublicKey( final long securePasswordOid ) throws FindException {
+    public String getSecurePasswordPublicKey( final Goid securePasswordOid ) throws FindException {
         return null;
     }
 
     @Override
-    public long saveSecurePassword(SecurePassword securePassword) throws UpdateException, SaveException, FindException {
-        if (securePassword.getOid() == SecurePassword.DEFAULT_OID)
-            securePassword.setOid(nextId++);
-        securePasswords.put(securePassword.getOid(), securePassword);
-        return securePassword.getOid();
+    public Goid saveSecurePassword(SecurePassword securePassword) throws UpdateException, SaveException, FindException {
+        if (Goid.isDefault(securePassword.getGoid()))
+            securePassword.setGoid(new Goid(0,nextId++));
+        securePasswords.put(securePassword.getGoid(), securePassword);
+        return securePassword.getGoid();
     }
 
     @Override
-    public void setSecurePassword(long securePasswordOid, char[] newPassword) throws FindException, UpdateException {
+    public void setSecurePassword(Goid securePasswordOid, char[] newPassword) throws FindException, UpdateException {
     }
 
     @Override
-    public JobId<Boolean> setGeneratedSecurePassword( final long securePasswordOid, final int keybits ) throws FindException, UpdateException {
+    public JobId<Boolean> setGeneratedSecurePassword( final Goid securePasswordOid, final int keybits ) throws FindException, UpdateException {
         return null;
     }
 
     @Override
-    public void deleteSecurePassword(long oid) throws DeleteException, FindException {
+    public void deleteSecurePassword(Goid oid) throws DeleteException, FindException {
     }
 
     @Override

@@ -7,6 +7,7 @@ import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.TextListCellRenderer;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.ext.commonui.CustomSecurePasswordPanel;
 
 import javax.swing.*;
@@ -86,28 +87,28 @@ public class CustomSecurePasswordPanelImpl implements CustomSecurePasswordPanel 
     }
 
     @Override
-    public long getSelectedItem() {
+    public String getSelectedItem() {
         SecurePassword securePassword = securePasswordComboBox.getSelectedSecurePassword();
         if (securePassword == null) {
-            return -1L;
+            return SecurePassword.DEFAULT_GOID.toString();
         } else {
-            return securePasswordComboBox.getSelectedSecurePassword().getOid();
+            return securePasswordComboBox.getSelectedSecurePassword().getGoid().toString();
         }
     }
 
     @Override
-    public void setSelectedItem (long oid) {
-        securePasswordComboBox.setSelectedSecurePassword(oid);
+    public void setSelectedItem (String goid) {
+        securePasswordComboBox.setSelectedSecurePassword(new Goid(goid));
     }
 
     @Override
-    public  boolean isItemSelected() {
-        return (this.getSelectedItem() != -1L);
+    public boolean isItemSelected() {
+        return securePasswordComboBox.getSelectedSecurePassword() != null;
     }
 
     @Override
-    public boolean containsItem (long oid) {
-        return securePasswordComboBox.containsItem(oid);
+    public boolean containsItem (String goid) {
+        return securePasswordComboBox.containsItem(new Goid(goid));
     }
 
     @Override

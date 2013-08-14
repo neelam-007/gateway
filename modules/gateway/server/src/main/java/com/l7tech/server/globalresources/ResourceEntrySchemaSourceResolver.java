@@ -58,7 +58,7 @@ public class ResourceEntrySchemaSourceResolver implements PostStartupApplication
         try {
             final Collection<ResourceEntryHeader> resourceHeaders = resourceEntryManager.findHeadersByTNS( targetNamespace );
             if ( resourceHeaders.size() == 1 ) {
-                final ResourceEntry entry = resourceEntryManager.findByPrimaryKey( resourceHeaders.iterator().next().getOid() );
+                final ResourceEntry entry = resourceEntryManager.findByPrimaryKey( resourceHeaders.iterator().next().getGoid() );
                 schema = resolved( entry );
             } else if ( !resourceHeaders.isEmpty() ) {
                 final Set<String> uris = Functions.reduce( resourceHeaders, new TreeSet<String>(), new Functions.Binary<Set<String>,Set<String>,ResourceEntryHeader>(){

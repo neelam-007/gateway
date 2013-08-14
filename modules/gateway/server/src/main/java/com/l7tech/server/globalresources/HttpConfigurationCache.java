@@ -9,6 +9,7 @@ import com.l7tech.gateway.common.resources.HttpProxyConfiguration;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.event.EntityClassEvent;
@@ -79,14 +80,14 @@ public class HttpConfigurationCache implements PostStartupApplicationListener, I
                     if ( httpConfiguration.getNtlmDomain() != null ) {
                         httpRequestParameters.setNtlmAuthentication( new NtlmAuthentication(
                             httpConfiguration.getUsername(),
-                            httpConfig.getPassword(httpConfiguration.getPasswordOid()),
+                            httpConfig.getPassword(httpConfiguration.getPasswordGoid()),
                             httpConfiguration.getNtlmDomain(),
                             httpConfiguration.getNtlmHost()==null ? config.getProperty( "clusterHost", "localhost" ): httpConfiguration.getNtlmHost()
                         ) );
                     } else {
                         httpRequestParameters.setPasswordAuthentication( new PasswordAuthentication(
                             httpConfiguration.getUsername(),
-                            httpConfig.getPassword(httpConfiguration.getPasswordOid())
+                            httpConfig.getPassword(httpConfiguration.getPasswordGoid())
                         ) );
                     }
                 }
@@ -134,11 +135,11 @@ public class HttpConfigurationCache implements PostStartupApplicationListener, I
             httpRequestParameters.setProxyHost( proxyConfiguration.getHost() );
             httpRequestParameters.setProxyPort( proxyConfiguration.getPort() );
             if ( proxyConfiguration.getUsername() != null &&
-                 proxyConfiguration.getPasswordOid() != null ) {
+                 proxyConfiguration.getPasswordGoid() != null ) {
                 httpRequestParameters.setProxyAuthentication(
                         new PasswordAuthentication(
                                 proxyConfiguration.getUsername(),
-                                httpConfig.getPassword (proxyConfiguration.getPasswordOid() )) );
+                                httpConfig.getPassword (proxyConfiguration.getPasswordGoid() )) );
             } else {
                 httpRequestParameters.setProxyAuthentication( null );
             }
@@ -357,7 +358,7 @@ public class HttpConfigurationCache implements PostStartupApplicationListener, I
     private static final class HttpConfig {
         private final HttpProxyConfiguration httpProxyConfiguration;
         private final Map<String,Collection<HttpConfiguration>> httpConfigurationsByHost;
-        private final Map<Long,char[]> passwordMap;
+        private final Map<Goid,char[]> passwordMap;
 
         HttpConfig( final HttpProxyConfiguration httpProxyConfiguration,
                     final Collection<HttpConfiguration> httpConfigurations,
@@ -382,10 +383,10 @@ public class HttpConfigurationCache implements PostStartupApplicationListener, I
                     return map;
                 }
             } ) );
-            this.passwordMap = Collections.unmodifiableMap( Functions.reduce( passwords, new HashMap<Long,char[]>(), new Functions.Binary<Map<Long,char[]>,Map<Long,char[]>,SecurePassword>(){
+            this.passwordMap = Collections.unmodifiableMap( Functions.reduce( passwords, new HashMap<Goid,char[]>(), new Functions.Binary<Map<Goid,char[]>,Map<Goid,char[]>,SecurePassword>(){
                 @Override
-                public Map<Long, char[]> call( final Map<Long, char[]> map, final SecurePassword securePassword ) {
-                    map.put( securePassword.getOid(), passwordDecryptor.call( securePassword.getName(), securePassword.getEncodedPassword() ) );
+                public Map<Goid, char[]> call( final Map<Goid, char[]> map, final SecurePassword securePassword ) {
+                    map.put( securePassword.getGoid(), passwordDecryptor.call( securePassword.getName(), securePassword.getEncodedPassword() ) );
                     return map;
                 }
             } ) );
@@ -501,8 +502,8 @@ public class HttpConfigurationCache implements PostStartupApplicationListener, I
             return httpConfiguration;
         }
 
-        public synchronized char[] getPassword( final long passwordOid ) {
-            char[] password = passwordMap.get( passwordOid );
+        public synchronized char[] getPassword( final Goid passwordGoid ) {
+            char[] password = passwordMap.get( passwordGoid );
 
             if ( password == null ) {
                 password = new char[0];
@@ -599,10 +600,10 @@ public class HttpConfigurationCache implements PostStartupApplicationListener, I
 
                     if ( proxyConfiguration != null &&
                          proxyConfiguration.getUsername() != null &&
-                         proxyConfiguration.getPasswordOid() != null ) {
+                         proxyConfiguration.getPasswordGoid() != null ) {
                         passwordAuthentication = new PasswordAuthentication(
                                 proxyConfiguration.getUsername(),
-                                httpConfig.getPassword(proxyConfiguration.getPasswordOid()) );
+                                httpConfig.getPassword(proxyConfiguration.getPasswordGoid()) );
                     }
                 } else if ( RequestorType.SERVER == type ) {
                     HttpConfiguration httpConfiguration = null;
@@ -622,7 +623,7 @@ public class HttpConfigurationCache implements PostStartupApplicationListener, I
                         }
                         passwordAuthentication = new PasswordAuthentication(
                                 username,
-                                httpConfig.getPassword(httpConfiguration.getPasswordOid()) );
+                                httpConfig.getPassword(httpConfiguration.getPasswordGoid()) );
                     }
                 }
             }
