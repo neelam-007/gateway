@@ -37,11 +37,15 @@ public class RequireWssSaml extends RequireSaml implements SecurityHeaderAddress
      */
     public static RequireWssSaml newHolderOfKey() {
         RequireWssSaml ass = new RequireWssSaml();
+        setNewHolderOfKeyProperties(ass);
+        return ass;
+    }
+
+    protected static void setNewHolderOfKeyProperties(RequireWssSaml ass) {
         ass.setVersion(0);
         ass.setRequireHolderOfKeyWithMessageSignature(true);
         ass.setSubjectConfirmations(new String[]{SamlConstants.CONFIRMATION_HOLDER_OF_KEY});
         ass.setSubjectConfirmationDataCheckAddress(true);
-        return ass;
     }
 
     /**

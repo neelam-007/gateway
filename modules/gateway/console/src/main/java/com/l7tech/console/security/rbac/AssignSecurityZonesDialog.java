@@ -443,33 +443,31 @@ public class AssignSecurityZonesDialog extends JDialog {
                 }
                 dataModel.fireTableDataChanged();
 
-                if (!entitiesToUpdate.isEmpty()) {
-                    final RootNode rootNode = TopComponents.getInstance().getRootNode();
-                    switch (selectedEntityType) {
-                        case ASSERTION_ACCESS:
-                            TopComponents.getInstance().getAssertionRegistry().updateAssertionAccess();
-                            break;
-                        case ID_PROVIDER_CONFIG:
-                            IdentityProvidersTree providersTree = (IdentityProvidersTree) TopComponents.getInstance().getComponent(IdentityProvidersTree.NAME);
-                            providersTree.refresh(providersTree.getRootNode());
-                            break;
-                        case ENCAPSULATED_ASSERTION:
-                            TopComponents.getInstance().getEncapsulatedAssertionRegistry().updateEncapsulatedAssertions();
-                            break;
-                        case FOLDER:
-                            for (final EntityHeader header : entitiesToUpdate) {
-                                if (Folder.ROOT_FOLDER_ID.equals(header.getGoid())) {
-                                    rootNode.setSecurityZone(selectedZone);
-                                    break;
-                                }
+                final RootNode rootNode = TopComponents.getInstance().getRootNode();
+                switch (selectedEntityType) {
+                    case ASSERTION_ACCESS:
+                        TopComponents.getInstance().getAssertionRegistry().updateAssertionAccess();
+                        break;
+                    case ID_PROVIDER_CONFIG:
+                        IdentityProvidersTree providersTree = (IdentityProvidersTree) TopComponents.getInstance().getComponent(IdentityProvidersTree.NAME);
+                        providersTree.refresh(providersTree.getRootNode());
+                        break;
+                    case ENCAPSULATED_ASSERTION:
+                        TopComponents.getInstance().getEncapsulatedAssertionRegistry().updateEncapsulatedAssertions();
+                        break;
+                    case FOLDER:
+                        for (final EntityHeader header : entitiesToUpdate) {
+                            if (Folder.ROOT_FOLDER_ID.equals(header.getGoid())) {
+                                rootNode.setSecurityZone(selectedZone);
+                                break;
                             }
-                        case SERVICE:
-                        case POLICY:
-                            final ServicesAndPoliciesTree servicesAndPoliciesTree = (ServicesAndPoliciesTree) TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME);
-                            servicesAndPoliciesTree.refresh(rootNode);
-                        default:
-                            // no reload necessary
-                    }
+                        }
+                    case SERVICE:
+                    case POLICY:
+                        final ServicesAndPoliciesTree servicesAndPoliciesTree = (ServicesAndPoliciesTree) TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME);
+                        servicesAndPoliciesTree.refresh(rootNode);
+                    default:
+                        // no reload necessary
                 }
             } catch (final FindException ex) {
                 DialogDisplayer.showMessageDialog(AssignSecurityZonesDialog.this, "Error", "Error assigning entities to zone.", ex);

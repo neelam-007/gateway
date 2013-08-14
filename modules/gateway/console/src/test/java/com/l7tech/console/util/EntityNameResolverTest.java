@@ -24,6 +24,7 @@ import com.l7tech.policy.*;
 import com.l7tech.policy.assertion.ContentTypeAssertion;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
 import com.l7tech.policy.assertion.composite.AllAssertion;
+import com.l7tech.policy.assertion.xmlsec.AddWssTimestamp;
 import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
 import com.l7tech.test.BugId;
 import org.junit.Before;
@@ -33,8 +34,7 @@ import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Mockito.*;
 
@@ -309,6 +309,15 @@ public class EntityNameResolverTest {
         final EntityHeader assertionHeader = new EntityHeader(OID, EntityType.ASSERTION_ACCESS, className, null);
         when(assertionRegistry.findByClassName(className)).thenReturn(new AllAssertion());
         assertEquals("All assertions must evaluate to true", resolver.getNameForHeader(assertionHeader));
+    }
+
+    @BugId("SSG-7298")
+    @Test
+    public void getNameForAssertionAccessHeaderUsesPaletteName() throws Exception {
+        final String className = "com.l7tech.policy.assertion.xmlsec.AddWssTimestamp";
+        final EntityHeader assertionHeader = new EntityHeader(OID, EntityType.ASSERTION_ACCESS, className, null);
+        when(assertionRegistry.findByClassName(className)).thenReturn(new AddWssTimestamp());
+        assertEquals("Add Timestamp", resolver.getNameForHeader(assertionHeader));
     }
 
     @Test
