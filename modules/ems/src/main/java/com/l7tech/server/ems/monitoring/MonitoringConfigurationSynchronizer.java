@@ -168,6 +168,7 @@ public class MonitoringConfigurationSynchronizer implements ApplicationContextAw
                 for (Class<? extends Entity> entClass : ENTITIES_TRIGGERING_COMPLETE_PUSHDOWN) {
                     if (entClass.isAssignableFrom(entity.getClass())) {
                         setAllDirty();
+                        suspendBackoffForNextRun.set(true);
                         return;
                     }
                 }
