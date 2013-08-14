@@ -1,17 +1,19 @@
 package com.l7tech.server.management.migration.bundle;
 
-import com.l7tech.objectmodel.*;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.ExternalEntityHeader;
+import com.l7tech.objectmodel.JaxbMapType;
 import com.l7tech.objectmodel.migration.MigrationDependency;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
-import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
-import com.l7tech.server.management.api.node.MigrationApi;
 
 import javax.xml.bind.annotation.*;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
-import java.util.*;
-import java.util.logging.Logger;
-import java.util.logging.Level;
 import java.io.Serializable;
+import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
 
 /**
  * Summary of a Migration Bundle, consisting of:
@@ -32,6 +34,7 @@ public class MigrationMetadata implements Serializable {
 
     private static final Logger logger = Logger.getLogger(MigrationMetadata.class.getName());
     private final static String ROOT_FOLDER_OID = "-5002";
+    private final static String ROOT_FOLDER_GOID = "0000000000000000ffffffffffffec76";
 
     /**
      * Headers for all the items in the Migration Bundle.
@@ -275,7 +278,8 @@ public class MigrationMetadata implements Serializable {
     public ExternalEntityHeader getRootFolder() {
         ExternalEntityHeader rootFolder = null;
         for (ExternalEntityHeader header : getAllHeaders()) {
-            if (header.getType() == EntityType.FOLDER &&  ROOT_FOLDER_OID.equals(header.getExternalId())) {
+            //Check if it is the root folder, either oid is -5002 or goid is 0000000000000000ffffffffffffec76
+            if (header.getType() == EntityType.FOLDER &&  (ROOT_FOLDER_OID.equals(header.getExternalId()) || ROOT_FOLDER_GOID.equals(header.getExternalId()))) {
                 if (rootFolder != null)
                     throw new IllegalStateException("More than one root folders found in the bundle.");
                 rootFolder = header;
