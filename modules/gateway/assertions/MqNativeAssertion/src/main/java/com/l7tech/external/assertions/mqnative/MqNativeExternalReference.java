@@ -28,7 +28,8 @@ import static java.util.Collections.emptyList;
  */
 public class MqNativeExternalReference extends ExternalReference {
     public static final String EL_NAME_REF = "MqNativeExternalReference";
-    public static final String EL_NAME_OID = "OID";
+    public static final String EL_NAME_GOID = "Goid";
+    public static final String EL_NAME_OLD_OID = "OldOid";
     public static final String EL_NAME_CONN_NAME = "ConnectorName";
     public static final String EL_NAME_QUEUE_NAME = "QueueName";
     public static final String EL_NAME_CHANNEL_NAME = "ChannelName";
@@ -38,7 +39,7 @@ public class MqNativeExternalReference extends ExternalReference {
 
     private final Logger logger = Logger.getLogger(MqNativeExternalReference.class.getName());
 
-    private Long oid;
+    private Long oldOid;
     private Goid goid;
     private String connectorName;
     private String host;
@@ -60,10 +61,10 @@ public class MqNativeExternalReference extends ExternalReference {
         try {
             SsgActiveConnector connector = getFinder().findConnectorByOidOrGoid(connectorId);
             if (connector == null)
-                throw new IllegalArgumentException("The MQ Native Queue (oid = " + oid + ") does not exist");
+                throw new IllegalArgumentException("The MQ Native Queue (oid = " + (connectorId.isLeft() ? connectorId.left() : connectorId.right().toString()) + ") does not exist");
 
             goid = connector.getGoid();
-            oid = connector.getOldOid();
+            oldOid = connector.getOldOid();
             connectorName = connector.getName();
             host = connector.getProperty(PROPERTIES_KEY_MQ_NATIVE_HOST_NAME);
             port = Integer.parseInt(connector.getProperty(PROPERTIES_KEY_MQ_NATIVE_PORT));
@@ -123,7 +124,10 @@ public class MqNativeExternalReference extends ExternalReference {
         setTypeAttribute(refEl);
         referencesParentElement.appendChild(refEl);
 
-        addParamEl(refEl, EL_NAME_OID, Long.toString(oid), false);
+        if (goid != null)
+            addParamEl(refEl, EL_NAME_GOID, goid.toHexString(), false);
+        if (oldOid != null)
+            addParamEl(refEl, EL_NAME_OLD_OID, Long.toString(oldOid), false);
         addParamEl(refEl, EL_NAME_CONN_NAME, connectorName, false);
         addParamEl(refEl, EL_NAME_HOST, host, false);
         addParamEl(refEl, EL_NAME_PORT, Long.toString(port), false);
@@ -140,7 +144,7 @@ public class MqNativeExternalReference extends ExternalReference {
             if (activeConnector != null) {
                 if (isMatch(activeConnector.getName(), connectorName) && permitMapping(goid, activeConnector.getGoid())) {
                     // Perfect Match (OID and name are matched.)
-                    logger.fine("The MQ Native queue was resolved by oid '" + oid + "' and name '" + activeConnector.getName() + "'");
+                    logger.fine("The MQ Native queue was resolved by oid '" + oldOid + "' and name '" + activeConnector.getName() + "'");
                     return true;
                 }
             } else {
@@ -148,7 +152,7 @@ public class MqNativeExternalReference extends ExternalReference {
                 for (SsgActiveConnector connector: outboundQueues) {
                     if (isMatch(connector.getName(), connectorName) && permitMapping(goid, connector.getGoid())) {
                         // Connector Name matched
-                        logger.fine("The MQ Native queue was resolved from id '" + (goid==null?oid:goid) + "' to '" + connector.getGoid() + "'");
+                        logger.fine("The MQ Native queue was resolved from id '" + (goid==null?oldOid:goid) + "' to '" + connector.getGoid() + "'");
                         localGoid = connector.getGoid();
                         localizeType = LocalizeAction.REPLACE;
                         return true;
@@ -164,7 +168,7 @@ public class MqNativeExternalReference extends ExternalReference {
                         isMatch(connector.getProperty(PROPERTIES_KEY_MQ_NATIVE_TARGET_QUEUE_NAME), queueName) &&
                         permitMapping(goid, connector.getGoid())) {
                         // Partial matched
-                        logger.fine("The MQ Native queue was resolved from oid '" + oid + "' to '" + connector.getGoid() + "'");
+                        logger.fine("The MQ Native queue was resolved from oid '" + oldOid + "' to '" + connector.getGoid() + "'");
                         localGoid = connector.getGoid();
                         localizeType = LocalizeAction.REPLACE;
                         return true;
@@ -172,7 +176,7 @@ public class MqNativeExternalReference extends ExternalReference {
                 }
             }
         } catch (FindException e) {
-            logger.warning("Cannot load Active Connector from oid, " + oid);
+            logger.warning("Cannot load Active Connector from oid, " + oldOid);
         }
 
         return false;
@@ -184,7 +188,7 @@ public class MqNativeExternalReference extends ExternalReference {
             if (assertionToLocalize instanceof MqNativeRoutingAssertion) {
                 final MqNativeRoutingAssertion mqNativeRoutingAssertion = (MqNativeRoutingAssertion) assertionToLocalize;
                 final Long connectorId = mqNativeRoutingAssertion.getSsgActiveConnectorId();
-                if (connectorId != null && connectorId == oid) { // The purpose of "equals" is to find the right assertion and update it using localized value.
+                if (connectorId != null && connectorId == oldOid) { // The purpose of "equals" is to find the right assertion and update it using localized value.
                     if (localizeType == LocalizeAction.REPLACE) {
                         mqNativeRoutingAssertion.setSsgActiveConnectorGoid(localGoid);
                         mqNativeRoutingAssertion.setSsgActiveConnectorName(getActiveConnectorNameByOid(localGoid));
@@ -208,9 +212,13 @@ public class MqNativeExternalReference extends ExternalReference {
 
         MqNativeExternalReference output = new MqNativeExternalReference(context);
 
-        String oid = getParamFromEl(el, EL_NAME_OID);
-        if (oid != null) {
-            output.oid = Long.parseLong(oid);
+        String goid = getParamFromEl(el, EL_NAME_GOID);
+        if (goid != null) {
+            output.goid = Goid.parseGoid(goid);
+        }
+        String oldOid = getParamFromEl(el, EL_NAME_OLD_OID);
+        if (oldOid != null) {
+            output.oldOid = Long.parseLong(oldOid);
         }
         output.connectorName = getParamFromEl(el, EL_NAME_CONN_NAME);
         output.host = getParamFromEl(el, EL_NAME_HOST);

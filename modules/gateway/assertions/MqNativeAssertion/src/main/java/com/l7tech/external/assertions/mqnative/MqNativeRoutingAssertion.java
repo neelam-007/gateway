@@ -506,7 +506,7 @@ public class MqNativeRoutingAssertion extends RoutingAssertion implements UsesEn
                 if(assertion.getSsgActiveConnectorId()!=null){
                     activeConnector = ta.findSsgActiveConnectorByOldId(assertion.getSsgActiveConnectorId());
                 }else{
-                    activeConnector = ta.findSsgActiveConnectorByPrimaryKey(new Goid(assertion.getSsgActiveConnectorName()));
+                    activeConnector = ta.findSsgActiveConnectorByPrimaryKey(assertion.getSsgActiveConnectorGoid());
                 }
                 if ( activeConnector == null ) {
                     activeConnectorStatus = ActiveConnectorStatus.NOT_FOUND;
