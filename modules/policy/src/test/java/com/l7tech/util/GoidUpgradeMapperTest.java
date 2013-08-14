@@ -31,10 +31,12 @@ public class GoidUpgradeMapperTest {
     @Test
     public void testMapOid() throws Exception {
         assertNull( GoidUpgradeMapper.mapOid( null, null ) );
+        assertEquals(GoidEntity.DEFAULT_GOID, GoidUpgradeMapper.mapOid(EntityType.TRUSTED_CERT, -1L));
         assertEquals(new Goid(WRAP, 44), GoidUpgradeMapper.mapOid(EntityType.TRUSTED_CERT, 44L));
         assertEquals(new Goid(WRAP, 45), GoidUpgradeMapper.mapOid(EntityType.SERVICE, 45L));
 
         GoidUpgradeMapperTestUtil.addPrefix("trusted_cert", TRUSTED_CERT_PREFIX);
+        assertEquals(GoidEntity.DEFAULT_GOID, GoidUpgradeMapper.mapOid(EntityType.TRUSTED_CERT, -1L));
         assertEquals(new Goid(TRUSTED_CERT_PREFIX, 44), GoidUpgradeMapper.mapOid(EntityType.TRUSTED_CERT, 44L));
         assertEquals(new Goid(WRAP, 45), GoidUpgradeMapper.mapOid(EntityType.SERVICE, 45L));
         assertEquals(new Goid(WRAP, 41), GoidUpgradeMapper.mapOid(null, 41L));
@@ -46,13 +48,14 @@ public class GoidUpgradeMapperTest {
 
         assertNull(GoidUpgradeMapper.mapOids(EntityType.TRUSTED_CERT, null));
 
-        Goid[] goids = GoidUpgradeMapper.mapOids(EntityType.TRUSTED_CERT, new Long[]{44L, 38383L, null, 222L});
-        assertEquals(4, goids.length);
+        Goid[] goids = GoidUpgradeMapper.mapOids(EntityType.TRUSTED_CERT, new Long[]{44L, 38383L, null, 222L, -1L});
+        assertEquals(5, goids.length);
         assertEquals(new Goid(TRUSTED_CERT_PREFIX, 44L), goids[0]);
         assertEquals(new Goid(TRUSTED_CERT_PREFIX, 38383L), goids[1]);
         assertNull(goids[2]);
         assertEquals(new Goid(TRUSTED_CERT_PREFIX, 222L), goids[3]);
         assertFalse(GoidRange.WRAPPED_OID.isInRange(goids[3]));
+        assertEquals(GoidEntity.DEFAULT_GOID, goids[4]);
 
         goids = GoidUpgradeMapper.mapOids(EntityType.SERVICE, new Long[]{44L, 38383L, null, 222L});
         assertEquals(4, goids.length);
@@ -72,7 +75,18 @@ public class GoidUpgradeMapperTest {
     }
 
     @Test
-    public void test(){
-        System.out.println(GoidEntity.DEFAULT_GOID.toString());
+    public void testMapIds(){
+        assertNull( GoidUpgradeMapper.mapId( null, null ) );
+        assertEquals(GoidEntity.DEFAULT_GOID, GoidUpgradeMapper.mapOid(EntityType.TRUSTED_CERT, -1L));
+        assertEquals(new Goid(WRAP, 44), GoidUpgradeMapper.mapId(EntityType.TRUSTED_CERT, "44"));
+        assertEquals(new Goid(WRAP, 45), GoidUpgradeMapper.mapId(EntityType.SERVICE, "45"));
+        assertEquals(new Goid(123,567), GoidUpgradeMapper.mapId(EntityType.SERVICE, new Goid(123,567).toHexString()));
+
+        GoidUpgradeMapperTestUtil.addPrefix("trusted_cert", TRUSTED_CERT_PREFIX);
+        assertEquals(GoidEntity.DEFAULT_GOID, GoidUpgradeMapper.mapOid(EntityType.TRUSTED_CERT, -1L));
+        assertEquals(new Goid(TRUSTED_CERT_PREFIX, 44), GoidUpgradeMapper.mapId(EntityType.TRUSTED_CERT, "44"));
+        assertEquals(new Goid(WRAP, 45), GoidUpgradeMapper.mapId(EntityType.SERVICE, "45"));
+        assertEquals(new Goid(WRAP, 41), GoidUpgradeMapper.mapId(null, "41"));
+        assertEquals(new Goid(456,890), GoidUpgradeMapper.mapId(EntityType.SERVICE, new Goid(456,890).toHexString()));
     }
 }
