@@ -1032,6 +1032,9 @@ public class MainWindow extends JFrame implements SheetHolder {
             menu.add(getManageJdbcConnectionsAction());
             menu.add(getManageJmsEndpointsMenuItem());
             menu.add(getManageKerberosMenuItem());
+            // temp menu item for legacy role manager
+            // TODO delete me
+            menu.add(getTempLegacyRoleManagerMenuItem());
             menu.add(getManageRolesMenuItem());
             menu.add(getManageSecurityZonesAction());
             menu.add(getManageAuditAlertOptionsMenuItem());
@@ -1053,6 +1056,13 @@ public class MainWindow extends JFrame implements SheetHolder {
             tasksMenu = menu;
         }
         return tasksMenu;
+    }
+
+    // TODO delete me
+    private JMenuItem getTempLegacyRoleManagerMenuItem() {
+        final ManageRolesAction temp = new ManageRolesAction(false);
+        disableUntilLogin(temp);
+        return new JMenuItem(temp);
     }
 
     private JMenuItem getManageAuditAlertOptionsMenuItem() {
@@ -2612,6 +2622,9 @@ public class MainWindow extends JFrame implements SheetHolder {
                 manageMenu.add(getManageJdbcConnectionsAction());
                 manageMenu.add(getManageJmsEndpointsMenuItem());
                 manageMenu.add(getManageKerberosMenuItem());
+                // temp menu item for legacy manage roles
+                // TODO delete me
+                manageMenu.add(getTempLegacyRoleManagerMenuItem());
                 manageMenu.add(getManageRolesMenuItem());
                 manageMenu.add(getManageSecurityZonesAction());
                 manageMenu.add(getManageAuditAlertOptionsMenuItem());
@@ -3753,7 +3766,7 @@ public class MainWindow extends JFrame implements SheetHolder {
 
     private Action getManageRolesAction() {
         if (manageRolesAction == null) {
-            manageRolesAction = new ManageRolesAction();
+            manageRolesAction = new ManageRolesAction(true);
             disableUntilLogin(manageRolesAction);
         }
         return manageRolesAction;
