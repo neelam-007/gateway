@@ -90,15 +90,15 @@ public class CustomSecurePasswordPanelImpl implements CustomSecurePasswordPanel 
     public String getSelectedItem() {
         SecurePassword securePassword = securePasswordComboBox.getSelectedSecurePassword();
         if (securePassword == null) {
-            return SecurePassword.DEFAULT_GOID.toString();
+            return null;
         } else {
             return securePasswordComboBox.getSelectedSecurePassword().getGoid().toString();
         }
     }
 
     @Override
-    public void setSelectedItem (String goid) {
-        securePasswordComboBox.setSelectedSecurePassword(new Goid(goid));
+    public void setSelectedItem (String id) {
+        securePasswordComboBox.setSelectedSecurePassword(new Goid(id));
     }
 
     @Override
@@ -107,8 +107,8 @@ public class CustomSecurePasswordPanelImpl implements CustomSecurePasswordPanel 
     }
 
     @Override
-    public boolean containsItem (String goid) {
-        return securePasswordComboBox.containsItem(new Goid(goid));
+    public boolean containsItem (String id) {
+        return securePasswordComboBox.containsItem(new Goid(id));
     }
 
     @Override

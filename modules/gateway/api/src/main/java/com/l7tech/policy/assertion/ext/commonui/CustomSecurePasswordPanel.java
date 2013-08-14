@@ -30,7 +30,7 @@ public interface CustomSecurePasswordPanel {
     /**
      * Gets the selected password in the combo box.
      *
-     * @return the ID of the selected password. Default id (0000000000000000ffffffffffffffff) if a password is not selected.
+     * @return the ID of the selected password. Null if a password is not selected.
      */
     String getSelectedItem();
 
