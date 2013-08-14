@@ -45,6 +45,7 @@ import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
 import com.l7tech.policy.assertion.ext.action.CustomTaskActionUI;
 import com.l7tech.util.*;
+import org.jetbrains.annotations.NotNull;
 
 import javax.security.auth.login.LoginException;
 import javax.swing.*;
@@ -3978,21 +3979,25 @@ public class MainWindow extends JFrame implements SheetHolder {
             Authorizer auth = Registry.getDefault().getSecurityProvider();
 
             if (auth.hasPermission(new AttemptedDeleteAll(EntityType.ANY))) {
-                long warningPeriod = clusterStatusAdmin.getLicenseExpiryWarningPeriod();
-
-                // check for any license issues we should warn the user of
-                String licenseWarnings = collectLicenseWarnings(compositeLicense, warningPeriod);
-
-                if (licenseWarnings.length() > 0) {
-                    showLicenseWarnings(licenseWarnings);
+                if (null == compositeLicense) {
+                    showManageLicensesDialog();
                 } else {
-                    X509Certificate[] sslCertificates = getServerSslCertChain();
+                    long warningPeriod = clusterStatusAdmin.getLicenseExpiryWarningPeriod();
 
-                    if (sslCertificates != null && sslCertificates.length > 0) {
-                        Date sslExpiryDate = sslCertificates[0].getNotAfter();
+                    // check for any license issues we should warn the user of
+                    String licenseWarnings = collectLicenseWarnings(compositeLicense, warningPeriod);
 
-                        if (sslExpiryDate != null && (sslExpiryDate.getTime() - warningPeriod) < System.currentTimeMillis()) {
-                            showSSLWarning(sslExpiryDate);
+                    if (licenseWarnings.length() > 0) {
+                        showLicenseWarnings(licenseWarnings);
+                    } else {
+                        X509Certificate[] sslCertificates = getServerSslCertChain();
+
+                        if (sslCertificates != null && sslCertificates.length > 0) {
+                            Date sslExpiryDate = sslCertificates[0].getNotAfter();
+
+                            if (sslExpiryDate != null && (sslExpiryDate.getTime() - warningPeriod) < System.currentTimeMillis()) {
+                                showSSLWarning(sslExpiryDate);
+                            }
                         }
                     }
                 }
@@ -4020,108 +4025,106 @@ public class MainWindow extends JFrame implements SheetHolder {
      * @param expiryWarningPeriod the period of time before a license expiry in which the user should be warned of it
      * @return a String containing all warning messages
      */
-    private String collectLicenseWarnings(final CompositeLicense compositeLicense, final long expiryWarningPeriod) {
+    private String collectLicenseWarnings(@NotNull final CompositeLicense compositeLicense, final long expiryWarningPeriod) {
         final StringBuilder message = new StringBuilder();
 
-        if (null == compositeLicense || !Registry.getDefault().getLicenseManager().isPrimaryLicenseInstalled()) {
+        if (!Registry.getDefault().getLicenseManager().isPrimaryLicenseInstalled()) {
             message.append("There is no valid Primary License installed on this gateway.\n");
         }
 
-        if (null != compositeLicense) {
-            SimpleDateFormat sdf = new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss z");
+        SimpleDateFormat sdf = new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss z");
 
-            // check for FeatureLicenses expiring soon
-            if (compositeLicense.hasValid()) {
-                final Map<Long, FeatureLicense> validFeatureLicenses = compositeLicense.getValidFeatureLicenses();
+        // check for FeatureLicenses expiring soon
+        if (compositeLicense.hasValid()) {
+            final Map<Long, FeatureLicense> validFeatureLicenses = compositeLicense.getValidFeatureLicenses();
 
-                ArrayList<Long> expiringKeys = new ArrayList<>();
+            ArrayList<Long> expiringKeys = new ArrayList<>();
 
-                final long warningPeriodEnd = expiryWarningPeriod + System.currentTimeMillis();
+            final long warningPeriodEnd = expiryWarningPeriod + System.currentTimeMillis();
 
-                for (Long idKey : validFeatureLicenses.keySet()) {
-                    if (!validFeatureLicenses.get(idKey).isLicensePeriodExpiryAfter(warningPeriodEnd)) {
-                        expiringKeys.add(idKey);
-                    }
-                }
-
-                if(expiringKeys.size() > 0) {
-                    if (expiringKeys.size() == 1) {
-                        message.append("One of the");
-                    } else {
-                        message.append(validFeatureLicenses.size());
-                    }
-
-                    message.append(" licenses installed on this gateway will expire soon:\n");
-
-                    for (Long idKey : expiringKeys) {
-                        message.append("- License ")
-                                .append(idKey)
-                                .append(" expires ")
-                                .append(sdf.format(validFeatureLicenses.get(idKey).getExpiryDate()))
-                                .append(".\n");
-                    }
+            for (Long idKey : validFeatureLicenses.keySet()) {
+                if (!validFeatureLicenses.get(idKey).isLicensePeriodExpiryAfter(warningPeriodEnd)) {
+                    expiringKeys.add(idKey);
                 }
             }
 
-            // check for expired FeatureLicenses
-            if (compositeLicense.hasExpired()) {
-                final Map<Long, FeatureLicense> expiredFeatureLicenses = compositeLicense.getExpiredFeatureLicenses();
-
-                if (expiredFeatureLicenses.size() == 1) {
-                    message.append("A license installed on this gateway has expired:\n");
+            if(expiringKeys.size() > 0) {
+                if (expiringKeys.size() == 1) {
+                    message.append("One of the");
                 } else {
-                    message.append(expiredFeatureLicenses.size())
-                            .append(" of the licenses installed on this gateway have expired:\n");
+                    message.append(validFeatureLicenses.size());
                 }
 
-                for (Long idKey : expiredFeatureLicenses.keySet()) {
+                message.append(" licenses installed on this gateway will expire soon:\n");
+
+                for (Long idKey : expiringKeys) {
                     message.append("- License ")
                             .append(idKey)
-                            .append(" expired ")
-                            .append(sdf.format(expiredFeatureLicenses.get(idKey).getExpiryDate()))
+                            .append(" expires ")
+                            .append(sdf.format(validFeatureLicenses.get(idKey).getExpiryDate()))
                             .append(".\n");
                 }
             }
+        }
 
-            // check for invalid FeatureLicenses (including start date not reached yet) and LicenseDocuments
-            if (compositeLicense.hasInvalidLicenseDocuments() || compositeLicense.hasInvalidFeatureLicenses()) {
-                final Map<Long, FeatureLicense> invalidFeatureLicenses = compositeLicense.getInvalidFeatureLicenses();
+        // check for expired FeatureLicenses
+        if (compositeLicense.hasExpired()) {
+            final Map<Long, FeatureLicense> expiredFeatureLicenses = compositeLicense.getExpiredFeatureLicenses();
 
-                int invalidCount = compositeLicense.getInvalidFeatureLicenses().size() +
-                                compositeLicense.getInvalidLicenseDocuments().size();
+            if (expiredFeatureLicenses.size() == 1) {
+                message.append("A license installed on this gateway has expired:\n");
+            } else {
+                message.append(expiredFeatureLicenses.size())
+                        .append(" of the licenses installed on this gateway have expired:\n");
+            }
 
-                if (invalidCount == 1) {
-                    message.append("A license installed on this gateway is invalid.\n");
-                } else {
-                    message.append(invalidCount)
-                            .append(" of the licenses installed on this gateway are invalid.\n");
+            for (Long idKey : expiredFeatureLicenses.keySet()) {
+                message.append("- License ")
+                        .append(idKey)
+                        .append(" expired ")
+                        .append(sdf.format(expiredFeatureLicenses.get(idKey).getExpiryDate()))
+                        .append(".\n");
+            }
+        }
+
+        // check for invalid FeatureLicenses (including start date not reached yet) and LicenseDocuments
+        if (compositeLicense.hasInvalidLicenseDocuments() || compositeLicense.hasInvalidFeatureLicenses()) {
+            final Map<Long, FeatureLicense> invalidFeatureLicenses = compositeLicense.getInvalidFeatureLicenses();
+
+            int invalidCount = compositeLicense.getInvalidFeatureLicenses().size() +
+                            compositeLicense.getInvalidLicenseDocuments().size();
+
+            if (invalidCount == 1) {
+                message.append("A license installed on this gateway is invalid.\n");
+            } else {
+                message.append(invalidCount)
+                        .append(" of the licenses installed on this gateway are invalid.\n");
+            }
+
+            for (Long idKey : invalidFeatureLicenses.keySet()) {
+                FeatureLicense l = invalidFeatureLicenses.get(idKey);
+
+                message.append("- License ")
+                        .append(idKey);
+
+                if (!l.hasTrustedIssuer()) {
+                    message.append(" was not signed by a trusted issuer.");
+                } else if (!l.isProductEnabled(BuildInfo.getProductName()) ||
+                        !l.isVersionEnabled(BuildInfo.getProductVersionMajor(), BuildInfo.getProductVersionMinor())) {
+                    message.append(" does not grant access to this version of this product.");
                 }
 
-                for (Long idKey : invalidFeatureLicenses.keySet()) {
-                    FeatureLicense l = invalidFeatureLicenses.get(idKey);
+                message.append("\n");
+            }
 
-                    message.append("- License ")
-                            .append(idKey);
+            int invalidDocsCount = compositeLicense.getInvalidLicenseDocuments().size();
 
-                    if (!l.hasTrustedIssuer()) {
-                        message.append(" was not signed by a trusted issuer.");
-                    } else if (!l.isProductEnabled(BuildInfo.getProductName()) ||
-                            !l.isVersionEnabled(BuildInfo.getProductVersionMajor(), BuildInfo.getProductVersionMinor())) {
-                        message.append(" does not grant access to this version of this product.");
-                    }
-
-                    message.append("\n");
-                }
-
-                int invalidDocsCount = compositeLicense.getInvalidLicenseDocuments().size();
-
-                if (invalidDocsCount == 1) {
-                    message.append("- One license is malformed.\n");
-                } else if (invalidDocsCount > 1) {
-                    message.append("- ")
-                            .append(invalidDocsCount)
-                            .append(" licenses are malformed.\n");
-                }
+            if (invalidDocsCount == 1) {
+                message.append("- One license is malformed.\n");
+            } else if (invalidDocsCount > 1) {
+                message.append("- ")
+                        .append(invalidDocsCount)
+                        .append(" licenses are malformed.\n");
             }
         }
 
@@ -4135,13 +4138,9 @@ public class MainWindow extends JFrame implements SheetHolder {
             DialogDisplayer.OptionListener callback = new DialogDisplayer.OptionListener() {
                 @Override
                 public void reportResult(int retval) {
-                if (retval == JOptionPane.YES_OPTION) {
-                    ManageLicensesDialog dlg = new ManageLicensesDialog(TopComponents.getInstance().getTopParent());
-                    dlg.pack();
-                    Utilities.centerOnParentWindow(dlg);
-                    dlg.setModal(true);
-                    DialogDisplayer.display(dlg);
-                }
+                    if (retval == JOptionPane.YES_OPTION) {
+                        showManageLicensesDialog();
+                    }
                 }
             };
 
@@ -4153,6 +4152,14 @@ public class MainWindow extends JFrame implements SheetHolder {
                     callback);
             }
         });
+    }
+
+    private void showManageLicensesDialog() {
+        ManageLicensesDialog dlg = new ManageLicensesDialog(TopComponents.getInstance().getTopParent());
+        dlg.pack();
+        Utilities.centerOnParentWindow(dlg);
+        dlg.setModal(true);
+        DialogDisplayer.display(dlg);
     }
 
     private void showWarningBanner() {

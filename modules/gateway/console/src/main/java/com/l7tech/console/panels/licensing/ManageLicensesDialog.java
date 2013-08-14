@@ -185,8 +185,12 @@ public class ManageLicensesDialog extends JDialog {
         }
 
         try {
+            setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+
             admin.installLicense(newLicense);
         } catch (LicenseInstallationException e) {
+            setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+
             logger.log(Level.SEVERE, "Unable to install license:\n" + ExceptionUtils.getMessage(e), e);
 
             DialogDisplayer.showMessageDialog(ManageLicensesDialog.this, ExceptionUtils.getMessage(e),
@@ -211,7 +215,8 @@ public class ManageLicensesDialog extends JDialog {
         updateConsoleLicenseManager();
         populateLicenseTable();
         selectTableRowByLicenseId(newLicense.getId());
-        viewDetails();
+
+        setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
     }
 
     private void doRemoveSelectedLicense() {
