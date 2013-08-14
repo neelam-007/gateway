@@ -306,4 +306,29 @@ public abstract class SiteMinderUtil {
         }
         return null;
     }
+
+    /**
+     * Converts SiteMinder UserCredentials to String format
+     * this is a convenience method to complement a lack of proper toString method in UserCredentials class from SM Agent API SDK
+     * @param creds  UserCredentials
+     * @return  String representation of UserCredentials object
+     */
+    public static String getCredentialsAsString(final UserCredentials creds) {
+        if(creds == null) return null; //there is no point to continue
+
+        String s = null;
+        if(creds.name != null && !creds.name.isEmpty()) {
+            s = creds.name;
+        }
+        else if (creds.certBinary != null && creds.certBinary.length > 0){
+            s = "<binary cert>";
+        }
+        else if (creds.certIssuerDN != null && !creds.certIssuerDN.isEmpty()){
+            s = creds.certIssuerDN;
+        }
+        else if (creds.certUserDN != null && !creds.certUserDN.isEmpty()){
+            s = creds.certUserDN;
+        }
+        return s;
+    }
 }

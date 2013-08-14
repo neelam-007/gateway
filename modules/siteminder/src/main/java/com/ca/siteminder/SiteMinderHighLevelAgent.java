@@ -1,10 +1,10 @@
 package com.ca.siteminder;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import com.ca.siteminder.util.SiteMinderUtil;
 import netegrity.siteminder.javaagent.*;
 
 /**
@@ -149,7 +149,6 @@ public class SiteMinderHighLevelAgent {
         SiteMinderLowLevelAgent agent = context.getAgent();
         if(agent == null) throw new SiteMinderApiClassException("Unable to find SiteMinder Agent");
 
-
         // check for some kind of credential
         UserCredentials userCreds = null;
         if(credentials == null) {
@@ -184,17 +183,17 @@ public class SiteMinderHighLevelAgent {
             // authenticate using credentials
             result = agent.authenticate(userCreds, userIp, context.getTransactionId(), context);
             if(result != AgentAPI.YES) {
-               logger.log(Level.FINE, "Unable to authenticate user: " + getCredentialsAsString(userCreds));
+               logger.log(Level.FINE, "Unable to authenticate user: " + SiteMinderUtil.getCredentialsAsString(userCreds));
             }
             else {
-                logger.log(Level.FINE, "Authenticated user via user credentials" + getCredentialsAsString(userCreds));
+                logger.log(Level.FINE, "Authenticated user via user credentials" + SiteMinderUtil.getCredentialsAsString(userCreds));
             }
 
         }
         return result;
     }
 
-    private String getCredentialsAsString(final UserCredentials creds) {
+/*    public String getCredentialsAsString(final UserCredentials creds) {
         String s = null;
         if(creds.name != null && !creds.name.isEmpty()) {
             s = creds.name;
@@ -209,5 +208,5 @@ public class SiteMinderHighLevelAgent {
             s = creds.certUserDN;
         }
         return s;
-    }
+    }*/
 }

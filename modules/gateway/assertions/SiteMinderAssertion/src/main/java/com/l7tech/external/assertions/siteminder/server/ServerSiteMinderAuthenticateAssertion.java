@@ -6,11 +6,13 @@ import com.l7tech.external.assertions.siteminder.SiteMinderAuthenticateAssertion
 import com.l7tech.external.assertions.siteminder.util.SiteMinderAssertionUtil;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.message.HttpRequestKnob;
+import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.variable.NoSuchVariableException;
+import com.l7tech.policy.variable.Syntax;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.variable.ExpandVariables;
@@ -54,25 +56,31 @@ public class ServerSiteMinderAuthenticateAssertion extends AbstractServerSiteMin
             } catch (NoSuchVariableException e) {
                 final String msg = "No SiteMinder context variable ${" + varPrefix + "." + SiteMinderAssertionUtil.SMCONTEXT + "} found in the Policy Enforcement Context";
                 logger.log(Level.SEVERE, msg, ExceptionUtils.getDebugException(e));
-                logAndAudit(AssertionMessages.SITEMINDER_ERROR, msg);
+                logAndAudit(AssertionMessages.SITEMINDER_ERROR, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), msg);
                 return AssertionStatus.FALSIFIED;
             }
+
             if(smContext.getAgent() == null) {
-                logAndAudit(AssertionMessages.SITEMINDER_ERROR, "Agent is null!");
+                logAndAudit(AssertionMessages.SITEMINDER_ERROR, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), "Agent is null!");
                 return AssertionStatus.FALSIFIED;
             }
 
             //first check what credentials are accepted by the policy server
             SiteMinderCredentials credentials = collectCredentials(context, variableMap, smContext);
             int result = hla.processAuthenticationRequest(credentials, getClientIp(context), ssoToken, smContext);
-            if(result == 1) {
+            if(result == SM_YES) {
                 context.setVariable(varPrefix + "." + smCookieName, smContext.getSsoToken());
+                logAndAudit(AssertionMessages.SITEMINDER_FINE, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), ssoToken != null? "Authenticated via SSO Token: " + ssoToken:"Authenticated credentials: " + credentials);
                 status = AssertionStatus.NONE;
             }
+            else {
+                logAndAudit(AssertionMessages.SITEMINDER_WARNING, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), "Unable to authenticate user using" + (ssoToken != null? " SSO Token:" + ssoToken: " credentials: " + credentials));
+            }
+
             populateContextVariables(context, varPrefix, smContext);
 
         } catch (SiteMinderApiClassException e) {
-            logAndAudit(AssertionMessages.SITEMINDER_ERROR, e.getMessage());
+            logAndAudit(AssertionMessages.SITEMINDER_ERROR, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), e.getMessage());
             return AssertionStatus.FAILED;//something really bad happened
         }
 
@@ -96,7 +104,7 @@ public class ServerSiteMinderAuthenticateAssertion extends AbstractServerSiteMin
            }
            else {
                //get cookie from a context variable
-               ssoToken = ExpandVariables.process(assertion.getCookieSourceVar(), variableMap, getAudit());
+               ssoToken = ExpandVariables.process(Syntax.SYNTAX_PREFIX + assertion.getCookieSourceVar() + Syntax.SYNTAX_SUFFIX, variableMap, getAudit());
            }
         }
         return ssoToken;

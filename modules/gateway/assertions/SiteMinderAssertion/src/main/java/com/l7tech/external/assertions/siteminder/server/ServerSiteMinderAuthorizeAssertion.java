@@ -6,6 +6,7 @@ import com.l7tech.common.http.HttpCookie;
 import com.l7tech.external.assertions.siteminder.SiteMinderAuthorizeAssertion;
 import com.l7tech.external.assertions.siteminder.util.SiteMinderAssertionUtil;
 import com.l7tech.gateway.common.audit.AssertionMessages;
+import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.variable.NoSuchVariableException;
@@ -28,8 +29,6 @@ import java.util.logging.Level;
 public class ServerSiteMinderAuthorizeAssertion extends AbstractServerSiteMinderAssertion<SiteMinderAuthorizeAssertion> {
 
     private final String[] variablesUsed;
-
-//    private SiteMinderHighLevelAgent hla;
 
     public ServerSiteMinderAuthorizeAssertion(final SiteMinderAuthorizeAssertion assertion, ApplicationContext springContext) throws PolicyAssertionException {
         super(assertion, springContext);
@@ -61,13 +60,13 @@ public class ServerSiteMinderAuthorizeAssertion extends AbstractServerSiteMinder
             smContext = (SiteMinderContext) context.getVariable(varPrefix + "." + SiteMinderAssertionUtil.SMCONTEXT);
         } catch (NoSuchVariableException e) {
             final String msg = "No SiteMinder context variable ${" + varPrefix + "." + SiteMinderAssertionUtil.SMCONTEXT + "} found in the Policy Enforcement Context";
+            logAndAudit(AssertionMessages.SITEMINDER_ERROR, (String) assertion.meta().get(AssertionMetadata.SHORT_NAME), msg);
             logger.log(Level.SEVERE, msg, ExceptionUtils.getDebugException(e));
-            logAndAudit(AssertionMessages.SITEMINDER_ERROR, msg);
             return AssertionStatus.FALSIFIED;
         }
 
         if(smContext.getAgent() == null) {
-            logAndAudit(AssertionMessages.SITEMINDER_ERROR, "Agent is null!");
+            logAndAudit(AssertionMessages.SITEMINDER_ERROR, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), "Agent is null!");
             return AssertionStatus.FALSIFIED;
         }
 
@@ -77,21 +76,25 @@ public class ServerSiteMinderAuthorizeAssertion extends AbstractServerSiteMinder
             //TODO: find better solution
             ssoToken = ExpandVariables.process(Syntax.SYNTAX_PREFIX + assertion.getCookieSourceVar() + Syntax.SYNTAX_SUFFIX, variableMap, getAudit());
         }
-        //
+
         try {
             int result = hla.processAuthorizationRequest(getClientIp(context), ssoToken, smContext);
-            if(result == 1) {
+            if(result == SM_YES) {
                 context.setVariable(varPrefix + "." + smCookieName, smContext.getSsoToken());
                 if(assertion.isSetSMCookie()) {
                     //set session cookie
                     setSessionCookie(context, smContext, variableMap);
                 }
+                logAndAudit(AssertionMessages.SITEMINDER_FINE, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), "SM Sessions " + ssoToken + " is authorized");
                 status = AssertionStatus.NONE;
+            }
+            else {
+                logAndAudit(AssertionMessages.SITEMINDER_WARNING, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), "SM Sessions " + ssoToken + " is not authorized!");
             }
             populateContextVariables(context, varPrefix, smContext);
 
         } catch (SiteMinderApiClassException e) {
-            logAndAudit(AssertionMessages.SITEMINDER_ERROR, e.getMessage());
+            logAndAudit(AssertionMessages.SITEMINDER_ERROR, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), e.getMessage());
             return AssertionStatus.FAILED;//something really bad happened
         }
 
@@ -109,11 +112,11 @@ public class ServerSiteMinderAuthorizeAssertion extends AbstractServerSiteMinder
         //TODO: use logAndAudit instead
         String ssoCookie = smContext.getSsoToken();
         if(StringUtils.isBlank(ssoCookie)) {
-            logger.log(Level.WARNING, "SMSESSION cookie is blank! Cookie is not set");
+            logAndAudit(AssertionMessages.SITEMINDER_FINE, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), "SMSESSION cookie is blank! Cookie is not set");
             return;
         }
 
-        logger.log(Level.FINE, "Adding the SiteMinder SSO cookie to the response. Cookie is '" + ssoCookie + "'");
+        logAndAudit(AssertionMessages.SITEMINDER_FINE, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), "Adding the SiteMinder SSO cookie to the response. Cookie is '" + ssoCookie + "'");
         //TODO: this should go into Manage Cookies modular assertion
         //get cookie params  directly from assertion
         String domain = SiteMinderAssertionUtil.extractContextVarValue(assertion.getCookieDomain(), varMap, getAudit());
@@ -125,7 +128,7 @@ public class ServerSiteMinderAuthorizeAssertion extends AbstractServerSiteMinder
             try {
                 iVer = Integer.parseInt(version);
             } catch (NumberFormatException nfe) {
-                logger.log(Level.FINE, "Version was set in the context but was not a number");
+                logAndAudit(AssertionMessages.SITEMINDER_FINE, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), "Version was set in the context but was not a number: " + version);
             }
         }
         String maxAge = SiteMinderAssertionUtil.extractContextVarValue(assertion.getCookieMaxAge(), varMap, getAudit());
@@ -134,8 +137,8 @@ public class ServerSiteMinderAuthorizeAssertion extends AbstractServerSiteMinder
             try {
                 iMaxAge = Integer.parseInt(maxAge);
             } catch (NumberFormatException nfe) {
-                logger.log(Level.FINE, "Max Age was set in the context but was not a number");
-            }
+                logAndAudit(AssertionMessages.SITEMINDER_FINE, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), "Max Age was set in the context but was not a number: " + maxAge);
+           }
         }
         String comment = SiteMinderAssertionUtil.extractContextVarValue(assertion.getCookieComment(), varMap, getAudit());
         String path = SiteMinderAssertionUtil.extractContextVarValue(assertion.getCookiePath(), varMap, getAudit());

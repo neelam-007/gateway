@@ -15,6 +15,11 @@ import java.security.cert.X509Certificate;
 public final class SiteMinderCredentials {
     private final UserCredentials credentials;
 
+    @Override
+    public String toString() {
+        return SiteMinderUtil.getCredentialsAsString(credentials);
+    }
+
     public SiteMinderCredentials() {
         credentials = new UserCredentials();//create empty UserCredentials object
     }

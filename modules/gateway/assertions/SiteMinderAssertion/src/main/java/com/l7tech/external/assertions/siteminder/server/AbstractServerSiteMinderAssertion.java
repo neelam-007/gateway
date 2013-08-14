@@ -4,10 +4,12 @@ import com.ca.siteminder.SiteMinderApiClassException;
 import com.ca.siteminder.SiteMinderContext;
 import com.ca.siteminder.SiteMinderHighLevelAgent;
 import com.l7tech.external.assertions.siteminder.util.SiteMinderAssertionUtil;
+import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.message.Message;
 import com.l7tech.message.TcpKnob;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
@@ -22,6 +24,11 @@ import org.springframework.context.ApplicationContext;
  * Date: 7/16/13
  */
 public abstract class AbstractServerSiteMinderAssertion<AT extends Assertion> extends AbstractServerAssertion<AT>{
+    static final int SM_SUCCESS = 0;
+    static final int SM_YES = 1;
+    static final int SM_NO = 2;
+    static final int SM_FAIL = -1;
+
     protected SiteMinderHighLevelAgent hla;
 
     protected ApplicationContext applicationContext;
@@ -39,19 +46,16 @@ public abstract class AbstractServerSiteMinderAssertion<AT extends Assertion> ex
                 context.setAgent(manager.getSiteMinderLowLevelAgent(agentId));
             }
         } catch (SiteMinderApiClassException e) {
-            throw new PolicyAssertionException(assertion, "SiteMinder agent API exception", e);
+            logAndAudit(AssertionMessages.SITEMINDER_ERROR, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), "SiteMinder agent API exception occurred, agentID=" + agentId);
+            throw new PolicyAssertionException(assertion, "SiteMinder agent API exception", ExceptionUtils.getDebugException(e));
         } catch (FindException e) {
+            logAndAudit(AssertionMessages.SITEMINDER_ERROR, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), "Unable to find SiteMinder agent configuration, agentID=" + agentId);
             throw new PolicyAssertionException(assertion, "No SiteMinder agent configuration", ExceptionUtils.getDebugException(e));
         }
     }
 
     protected void populateContextVariables(PolicyEnforcementContext pac, String prefix, SiteMinderContext context) {
         pac.setVariable(prefix + "." + SiteMinderAssertionUtil.SMCONTEXT, context);
-/*        List<Pair<String, Object>> attrList = context.getAttrList();
-        for(Pair<String, Object> attr : attrList){
-            pac.setVariable(prefix + "." + attr.left, attr.right);
-            logger.log(Level.FINE, "key: " + prefix + "." + attr.left + " value: " + attr.right);
-        }*/
     }
 
     protected String getClientIp(PolicyEnforcementContext context) {
@@ -60,8 +64,12 @@ public abstract class AbstractServerSiteMinderAssertion<AT extends Assertion> ex
         String address = null;
         Message target = context.getRequest();
         TcpKnob tcpKnob = target.getTcpKnob();
-        if(tcpKnob != null)
+        if(tcpKnob != null) {
             address = tcpKnob.getRemoteAddress();
+        }
+        else {
+            logAndAudit(AssertionMessages.SITEMINDER_FINE, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), "Client IP address is null!");
+        }
 
         return address;
     }
