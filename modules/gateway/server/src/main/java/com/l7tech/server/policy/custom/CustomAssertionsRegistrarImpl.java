@@ -7,6 +7,7 @@ import com.l7tech.policy.assertion.CustomAssertionHolder;
 import com.l7tech.policy.assertion.ext.*;
 import com.l7tech.policy.assertion.ext.action.CustomTaskActionUI;
 import com.l7tech.policy.assertion.ext.cei.CustomExtensionInterfaceBinding;
+import com.l7tech.policy.assertion.ext.licensing.CustomFeatureSetName;
 import com.l7tech.policy.wsp.ClassLoaderUtil;
 import com.l7tech.server.admin.ExtensionInterfaceManager;
 import com.l7tech.server.store.KeyValueStoreServicesImpl;
@@ -379,8 +380,11 @@ public class CustomAssertionsRegistrarImpl extends ApplicationObjectSupport impl
             customAssertionHolder.setPaletteNodeName(customAssertionDescriptor.getPaletteNodeName());
             customAssertionHolder.setPolicyNodeName(customAssertionDescriptor.getPolicyNodeName());
             customAssertionHolder.setIsUiAutoOpen(customAssertionDescriptor.getIsUiAutoOpen());
-            customAssertionHolder.setRegisteredModuleFileName(customAssertionDescriptor.getModuleFileName());
-            customAssertionHolder.setRegisteredCustomFeatureSetName(customAssertionDescriptor.getFeatureSetName());
+            customAssertionHolder.setModuleFileName(customAssertionDescriptor.getModuleFileName());
+            if (cas instanceof CustomFeatureSetName) {
+                CustomFeatureSetName customFeatureSetName = (CustomFeatureSetName) cas;
+                customAssertionHolder.setRegisteredCustomFeatureSetName(customFeatureSetName.getFeatureSetName());
+            }
         } catch (Exception e) {
             logger.log(Level.WARNING, "Unable to instantiate custom assertion", e);
         }
@@ -518,7 +522,6 @@ public class CustomAssertionsRegistrarImpl extends ApplicationObjectSupport impl
             eh.setUiAllowedResources((String) properties.get(baseKey + ".ui.allowed.resources"));
             eh.setPaletteNodeName((String) properties.get(baseKey + ".palette.node.name"));
             eh.setPolicyNodeName((String) properties.get(baseKey + ".policy.node.name"));
-            eh.setFeatureSetName((String) properties.get(baseKey + ".feature.set.name"));
             eh.setModuleFileName(moduleFileName);
             CustomAssertions.register(eh);
 

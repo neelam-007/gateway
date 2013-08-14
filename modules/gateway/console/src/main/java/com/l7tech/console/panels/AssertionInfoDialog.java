@@ -159,12 +159,12 @@ public class AssertionInfoDialog extends JDialog {
             } catch (Exception e) {
                 LOGGER.log(Level.WARNING, "Error retrieving registered custom assertion module file name from Custom Assertions Registrar: " + e.getMessage(), ExceptionUtils.getDebugException(e));
             }
-            if (registeredCustomAssertionPrototype != null && registeredCustomAssertionPrototype.getRegisteredModuleFileName() != null) {
+            if (registeredCustomAssertionPrototype != null && registeredCustomAssertionPrototype.getModuleFileName() != null) {
                 // use file name from registrar
-                assertionType = "Custom (" + registeredCustomAssertionPrototype.getRegisteredModuleFileName() + ")";
-            } else if (customAssertionHolder.getRegisteredModuleFileName() != null) {
+                assertionType = "Custom (" + registeredCustomAssertionPrototype.getModuleFileName() + ")";
+            } else if (customAssertionHolder.getModuleFileName() != null) {
                 // use de-serialized file name from WspReader thawed assertion
-                assertionType = "Custom (" + customAssertionHolder.getRegisteredModuleFileName() + ")";
+                assertionType = "Custom (" + customAssertionHolder.getModuleFileName() + ")";
             } else {
                 assertionType = "Custom";
             }

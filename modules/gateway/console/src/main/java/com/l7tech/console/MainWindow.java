@@ -2145,12 +2145,11 @@ public class MainWindow extends JFrame implements SheetHolder {
         //  - then again by this.initializeWorkspace(...) after updateCustomAssertions.updateCustomAssertions().
 
         List<Action> customAssertionActions = new ArrayList<>();
-        Collection<CustomAssertionHolder> customAssertionHolders = TopComponents.getInstance().getAssertionRegistry().getCustomAssertions();
         ConsoleLicenseManager consoleLicenseManager = Registry.getDefault().getLicenseManager();
-        for (CustomAssertionHolder customAssertionHolder : customAssertionHolders) {
+        CustomAssertionsRegistrar registrar = Registry.getDefault().getCustomAssertionsRegistrar();
+        for (CustomAssertionHolder customAssertionHolder : TopComponents.getInstance().getAssertionRegistry().getCustomAssertions()) {
             if (consoleLicenseManager.isAssertionEnabled(customAssertionHolder)) {
                 // over the wire call to Gateway (there's possible performance improvement here)
-                CustomAssertionsRegistrar registrar = Registry.getDefault().getCustomAssertionsRegistrar();
                 CustomTaskActionUI taskActionUI = registrar.getTaskActionUI(customAssertionHolder.getCustomAssertion().getClass().getName());
                 if (taskActionUI != null) {
                     customAssertionActions.add(new CustomAssertionHolderAction(taskActionUI));

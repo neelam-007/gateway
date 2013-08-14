@@ -49,7 +49,7 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
 
     /** Prototype instances of assertions loaded from the server. */
     private final Set<Assertion> modulePrototypes = new HashSet<>();
-    private final Map<String, CustomAssertionHolder> customAssertions =  new HashMap<>();
+    private final Map<String, CustomAssertionHolder> customAssertions =  new ConcurrentHashMap<>();
 
     /** Base packages of every modular assertion, for recognizing NoClassDefFoundErrors due to module unload. */
     private final Map<String, String> moduleNameByBasePackage = new ConcurrentHashMap<>();

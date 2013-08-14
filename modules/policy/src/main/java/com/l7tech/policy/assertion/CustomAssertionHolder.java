@@ -19,6 +19,7 @@ import com.l7tech.policy.assertion.ext.validator.CustomPolicyValidator;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.util.ResourceUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.*;
 import java.util.HashSet;
@@ -55,7 +56,7 @@ public class CustomAssertionHolder extends Assertion implements UsesVariables, S
     private String paletteNodeName;
     private String policyNodeName;
     private boolean isUiAutoOpen;
-    private String registeredCustomModuleFileName;
+    private String customModuleFileName;
     private String registeredCustomFeatureSetName;
 
     // add categories set
@@ -190,12 +191,13 @@ public class CustomAssertionHolder extends Assertion implements UsesVariables, S
         return b.append(']').toString();
     }
 
-    public String getRegisteredModuleFileName() {
-        return registeredCustomModuleFileName;
+    @Nullable
+    public String getModuleFileName() {
+        return customModuleFileName;
     }
 
-    public void setRegisteredModuleFileName(String registeredCustomModuleFileName) {
-        this.registeredCustomModuleFileName = registeredCustomModuleFileName;
+    public void setModuleFileName(@Nullable String registeredCustomModuleFileName) {
+        this.customModuleFileName = registeredCustomModuleFileName;
     }
 
     public String getDescriptionText() {
@@ -230,11 +232,12 @@ public class CustomAssertionHolder extends Assertion implements UsesVariables, S
         this.isUiAutoOpen = isUiAutoOpen;
     }
 
+    @Nullable
     public String getRegisteredCustomFeatureSetName() {
         return registeredCustomFeatureSetName;
     }
 
-    public void setRegisteredCustomFeatureSetName(String registeredCustomFeatureSetName) {
+    public void setRegisteredCustomFeatureSetName(@Nullable String registeredCustomFeatureSetName) {
         this.registeredCustomFeatureSetName = registeredCustomFeatureSetName;
     }
 
@@ -268,7 +271,7 @@ public class CustomAssertionHolder extends Assertion implements UsesVariables, S
         clone.paletteNodeName = this.paletteNodeName;
         clone.policyNodeName = this.policyNodeName;
         clone.isUiAutoOpen = this.isUiAutoOpen;
-        clone.registeredCustomModuleFileName = this.registeredCustomModuleFileName;
+        clone.customModuleFileName = this.customModuleFileName;
 
         // do shallow copy, since Category instances are singletons.
         clone.categories = this.categories != null ? new HashSet<>(this.categories) : null;

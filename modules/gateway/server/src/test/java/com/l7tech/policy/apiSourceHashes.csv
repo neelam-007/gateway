@@ -51,3 +51,4 @@ modules/gateway/api/src/main/java/com/l7tech/policy/assertion/ext/AssertionEdito
 modules/gateway/api/src/main/java/com/l7tech/policy/assertion/ext/targetable/CustomMessageTargetable.java,89Yn2mR3Y4HRPzusHWJW8CmkaHg=
 modules/gateway/api/src/main/java/com/l7tech/policy/assertion/ext/ServiceRequest.java,jF8TEc6MbrayZM2qe+RC6A2cifA=
 modules/gateway/api/src/main/java/com/l7tech/policy/assertion/ext/store/KeyValueStoreException.java,x9aXBn7xQHgxuE+31R3ioFjCrgo=
+modules/gateway/api/src/main/java/com/l7tech/policy/assertion/ext/licensing/CustomFeatureSetName.java,UZxiNRi0wv+kL3KIsVNWoeGNvOQ=

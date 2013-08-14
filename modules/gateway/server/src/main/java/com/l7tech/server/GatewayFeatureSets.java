@@ -752,6 +752,7 @@ public class GatewayFeatureSets {
          */
         GatewayFeatureSet salesforceAssertions =
                 fsr("set:SalesforceInstallerAssertion:Assertions", "The necessary assertions to install the Salesforce Connector",
+                        mass("assertion:Salesforce"),
                         mass("assertion:SalesforceInstaller"),
                         cass("assertion:SalesforceOperation"));
 

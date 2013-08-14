@@ -164,7 +164,7 @@ public class CustomAssertionsRegistrarStub implements CustomAssertionsRegistrar 
             customAssertionHolder.setPaletteNodeName(customAssertionDescriptor.getPaletteNodeName());
             customAssertionHolder.setPolicyNodeName(customAssertionDescriptor.getPolicyNodeName());
             customAssertionHolder.setIsUiAutoOpen(customAssertionDescriptor.getIsUiAutoOpen());
-            customAssertionHolder.setRegisteredModuleFileName(customAssertionDescriptor.getModuleFileName());
+            customAssertionHolder.setModuleFileName(customAssertionDescriptor.getModuleFileName());
         } catch (Exception e) {
             logger.log(Level.WARNING, "Unable to instantiate custom assertion", e);
         }
