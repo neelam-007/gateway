@@ -384,11 +384,11 @@ public abstract class SecureConversationContextManager<KT> {
             session.getCreated(),
             session.getExpires(),
             user( session.getProviderId(), session.getUserId(), session.getUserLogin() ),
-            parseTokenElement( session.getOid(), session.getToken() )
+            parseTokenElement( session.getGoid(), session.getToken() )
         );
     }
 
-    private Element parseTokenElement( final long identifier,
+    private Element parseTokenElement( final Goid identifier,
                                        final String token ) {
         Element element = null;
 

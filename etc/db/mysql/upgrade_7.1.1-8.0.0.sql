@@ -1404,6 +1404,16 @@ ALTER TABLE rbac_predicate_oid ADD FOREIGN KEY (goid) REFERENCES rbac_predicate 
 ALTER TABLE rbac_predicate_folder ADD FOREIGN KEY (goid) REFERENCES rbac_predicate (goid) ON DELETE CASCADE;
 ALTER TABLE rbac_predicate_entityfolder ADD FOREIGN KEY (goid) REFERENCES rbac_predicate (goid) ON DELETE CASCADE;
 
+
+-- For WSSC_SESSION
+ALTER TABLE wssc_session ADD COLUMN objectid_backup BIGINT(20);
+update wssc_session set objectid_backup=objectid;
+ALTER TABLE wssc_session CHANGE COLUMN objectid goid BINARY(16) NOT NULL;
+-- For manual runs use: set @wssc_session_prefix=createUnreservedPoorRandomPrefix();
+set @wssc_session_prefix=#RANDOM_LONG_NOT_RESERVED#;
+update wssc_session set goid = toGoid(@wssc_session_prefix,objectid_backup);
+ALTER TABLE wssc_session DROP COLUMN objectid_backup;
+
 --
 -- Register upgrade task for upgrading sink configuration references to GOIDs
 --
@@ -1480,7 +1490,8 @@ INSERT INTO goid_upgrade_map (table_name, prefix) VALUES
       ('trusted_cert', @trusted_cert_prefix),
       ('revocation_check_policy', @revocation_check_policy_prefix),
       ('resource_entry', @resource_entry_prefix),
-      ('secure_password', @secure_password_prefix);
+      ('secure_password', @secure_password_prefix),
+      ('wssc_session', @wssc_session_prefix);
 
 
 --

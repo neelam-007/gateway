@@ -4,7 +4,7 @@ import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.server.HibernateEntityManager;
+import com.l7tech.server.HibernateGoidEntityManager;
 import com.l7tech.util.Functions;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.MasterPasswordManager;
@@ -22,7 +22,7 @@ import java.util.Map;
  *
  */
 @Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
-public class StoredSecureConversationSessionManagerImpl extends HibernateEntityManager<StoredSecureConversationSession, EntityHeader> implements StoredSecureConversationSessionManager {
+public class StoredSecureConversationSessionManagerImpl extends HibernateGoidEntityManager<StoredSecureConversationSession, EntityHeader> implements StoredSecureConversationSessionManager {
 
     //- PUBLIC
 

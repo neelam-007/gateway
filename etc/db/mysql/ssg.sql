@@ -1951,7 +1951,7 @@ CREATE TABLE active_connector_property (
 --
 DROP TABLE IF EXISTS wssc_session;
 CREATE TABLE wssc_session (
-  objectid bigint(20) NOT NULL,
+  goid binary(16) NOT NULL,
   session_key_hash varchar(128),
   inbound tinyint(1) NOT NULL DEFAULT 0,
   identifier varchar(4096) NOT NULL,
@@ -1965,7 +1965,7 @@ CREATE TABLE wssc_session (
   namespace varchar(4096),
   token mediumtext,
   UNIQUE KEY (session_key_hash),
-  PRIMARY KEY (objectid)
+  PRIMARY KEY (goid)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --

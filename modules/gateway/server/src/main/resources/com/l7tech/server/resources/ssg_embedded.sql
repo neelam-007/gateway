@@ -1100,7 +1100,7 @@ create table wsdm_subscription (
 );
 
 create table wssc_session (
-    objectid bigint not null,
+    goid CHAR(16) FOR BIT DATA not null,
     created bigint,
     encrypted_key varchar(255),
     expires bigint,
@@ -1113,7 +1113,7 @@ create table wssc_session (
     token varchar(32672),
     user_id varchar(255),
     user_login varchar(255),
-    primary key (objectid)
+    primary key (goid)
 );
 
 alter table active_connector_property

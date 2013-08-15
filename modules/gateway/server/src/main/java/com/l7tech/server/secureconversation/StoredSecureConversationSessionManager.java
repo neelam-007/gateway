@@ -5,7 +5,7 @@ import com.l7tech.objectmodel.*;
 /**
  * Entity manager for stored WS-SecureConversation sessions.
  */
-public interface StoredSecureConversationSessionManager extends EntityManager<StoredSecureConversationSession, EntityHeader> {
+public interface StoredSecureConversationSessionManager extends GoidEntityManager<StoredSecureConversationSession, EntityHeader> {
 
     /**
      * Find an inbound session by identifier.

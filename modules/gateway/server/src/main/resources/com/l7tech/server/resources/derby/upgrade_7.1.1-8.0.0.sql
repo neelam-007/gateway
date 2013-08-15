@@ -1220,6 +1220,15 @@ alter table rbac_predicate_folder add constraint FKF111A643918005E4 foreign key 
 alter table rbac_predicate_oid add constraint FK37D47C15918005E4 foreign key (goid) references rbac_predicate on delete cascade;
 alter table rbac_predicate_security_zone add constraint FK_predicate_goid foreign key (goid) references rbac_predicate on delete cascade;
 
+-- WSSC_SESSION
+ALTER TABLE wssc_session ADD COLUMN goid CHAR(16) FOR BIT DATA;
+call setVariable('wssc_session_prefix', cast(randomLongNotReserved() as char(21)));
+update wssc_session set goid = toGoid(cast(getVariable('wssc_session_prefix') as bigint), objectid);
+ALTER TABLE wssc_session ALTER COLUMN goid NOT NULL;
+ALTER TABLE wssc_session DROP PRIMARY KEY;
+ALTER TABLE wssc_session DROP COLUMN objectid;
+ALTER TABLE wssc_session ADD PRIMARY KEY (goid);
+
 --
 -- Register upgrade task for upgrading sink configuration references to GOIDs
 --
@@ -1296,4 +1305,5 @@ INSERT INTO goid_upgrade_map (table_name, prefix) VALUES
       ('trusted_cert', cast(getVariable('trusted_cert_prefix') as bigint)),
       ('revocation_check_policy', cast(getVariable('revocation_check_policy_prefix') as bigint)),
       ('resource_entry', cast(getVariable('resource_entry_prefix') as bigint)),
-      ('secure_password', cast(getVariable('secure_password_prefix') as bigint));
+      ('secure_password', cast(getVariable('secure_password_prefix') as bigint)),
+      ('wssc_session', cast(getVariable('wssc_session_prefix') as bigint));
