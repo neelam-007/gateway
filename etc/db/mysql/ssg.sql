@@ -572,7 +572,7 @@ CREATE TABLE fed_user (
   first_name varchar(32) default NULL,
   last_name varchar(32) default NULL,
   PRIMARY KEY (goid),
-  INDEX i_provider_oid (provider_goid),
+  INDEX i_provider_goid (provider_goid),
   INDEX i_email (email),
   INDEX i_login (login),
   INDEX i_subject_dn (subject_dn),
@@ -587,7 +587,7 @@ CREATE TABLE fed_group (
   name varchar(128) NOT NULL,
   description mediumtext,
   PRIMARY KEY  (goid),
-  INDEX i_provider_oid (provider_goid),
+  INDEX i_provider_goid (provider_goid),
   UNIQUE KEY i_name (provider_goid, name)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
@@ -610,7 +610,7 @@ CREATE TABLE fed_group_virtual (
   saml_email_pattern varchar(128),
   properties mediumtext,
   PRIMARY KEY  (goid),
-  INDEX i_provider_oid (provider_goid),
+  INDEX i_provider_goid (provider_goid),
   INDEX i_x509_subject_dn_pattern (x509_subject_dn_pattern),
   INDEX i_saml_email_pattern (saml_email_pattern),
   UNIQUE KEY i_name (provider_goid, name)

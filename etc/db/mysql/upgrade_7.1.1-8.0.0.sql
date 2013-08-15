@@ -459,7 +459,7 @@ call dropForeignKey('rbac_assignment','identity_provider');
 
 ALTER TABLE identity_provider ADD COLUMN old_objectid BIGINT(20);
 UPDATE identity_provider SET old_objectid=objectid;
-ALTER TABLE identity_provider CHANGE COLUMN objectid goid binary(16);
+ALTER TABLE identity_provider CHANGE COLUMN objectid goid binary(16) NOT NULL;
 -- For manual runs use: set @identity_provider_prefix=createUnreservedPoorRandomPrefix();
 SET @identity_provider_prefix=#RANDOM_LONG_NOT_RESERVED#;
 UPDATE identity_provider SET goid = toGoid(@identity_provider_prefix, old_objectid);
@@ -475,7 +475,7 @@ update rbac_predicate_attribute set value = hex(toGoid(@identity_provider_prefix
 
 ALTER TABLE internal_group ADD COLUMN old_objectid BIGINT(20);
 UPDATE internal_group SET old_objectid=objectid;
-ALTER TABLE internal_group CHANGE COLUMN objectid goid binary(16);
+ALTER TABLE internal_group CHANGE COLUMN objectid goid binary(16) NOT NULL;
 -- For manual runs use: set @internal_group_prefix=createUnreservedPoorRandomPrefix();
 SET @internal_group_prefix=#RANDOM_LONG_NOT_RESERVED#;
 UPDATE internal_group SET goid = toGoid(@internal_group_prefix, old_objectid);
@@ -483,7 +483,7 @@ ALTER TABLE internal_group DROP COLUMN old_objectid;
 
 ALTER TABLE internal_user ADD COLUMN old_objectid BIGINT(20);
 UPDATE internal_user SET old_objectid=objectid;
-ALTER TABLE internal_user CHANGE COLUMN objectid goid binary(16);
+ALTER TABLE internal_user CHANGE COLUMN objectid goid binary(16) NOT NULL;
 -- For manual runs use: set @internal_user_prefix=createUnreservedPoorRandomPrefix();
 SET @internal_user_prefix=#RANDOM_LONG_NOT_RESERVED#;
 UPDATE internal_user SET goid = toGoid(@internal_user_prefix, old_objectid);
@@ -494,7 +494,7 @@ DROP INDEX user_id ON internal_user_group;
 
 ALTER TABLE internal_user_group ADD COLUMN old_objectid BIGINT(20);
 UPDATE internal_user_group SET old_objectid=objectid;
-ALTER TABLE internal_user_group CHANGE COLUMN objectid goid binary(16);
+ALTER TABLE internal_user_group CHANGE COLUMN objectid goid binary(16) NOT NULL;
 -- For manual runs use: set @internal_user_group_prefix=createUnreservedPoorRandomPrefix();
 SET @internal_user_group_prefix=#RANDOM_LONG_NOT_RESERVED#;
 UPDATE internal_user_group SET goid = toGoid(@internal_user_group_prefix, old_objectid);
@@ -502,20 +502,20 @@ ALTER TABLE internal_user_group DROP COLUMN old_objectid;
 
 ALTER TABLE internal_user_group ADD COLUMN old_provider_oid BIGINT(20);
 UPDATE internal_user_group SET old_provider_oid=provider_oid;
-ALTER TABLE internal_user_group CHANGE COLUMN provider_oid provider_goid binary(16);
+ALTER TABLE internal_user_group CHANGE COLUMN provider_oid provider_goid binary(16) NOT NULL;
 UPDATE internal_user_group SET provider_goid = toGoid(@identity_provider_prefix, old_provider_oid);
 UPDATE internal_user_group SET provider_goid = toGoid(0, -2) where provider_goid = toGoid(@identity_provider_prefix, -2);
 ALTER TABLE internal_user_group DROP COLUMN old_provider_oid;
 
 ALTER TABLE internal_user_group ADD COLUMN old_user_id BIGINT(20);
 UPDATE internal_user_group SET old_user_id=user_id;
-ALTER TABLE internal_user_group CHANGE COLUMN user_id user_goid binary(16);
+ALTER TABLE internal_user_group CHANGE COLUMN user_id user_goid binary(16) NOT NULL;
 UPDATE internal_user_group SET user_goid = toGoid(@internal_user_prefix, old_user_id);
 ALTER TABLE internal_user_group DROP COLUMN old_user_id;
 
 ALTER TABLE internal_user_group ADD COLUMN old_internal_group BIGINT(20);
 UPDATE internal_user_group SET old_internal_group=internal_group;
-ALTER TABLE internal_user_group CHANGE COLUMN internal_group internal_group binary(16);
+ALTER TABLE internal_user_group CHANGE COLUMN internal_group internal_group binary(16) NOT NULL;
 UPDATE internal_user_group SET internal_group = toGoid(@internal_group_prefix, old_internal_group);
 ALTER TABLE internal_user_group DROP COLUMN old_internal_group;
 
@@ -527,7 +527,7 @@ DROP INDEX i_provider_oid ON fed_user;
 
 ALTER TABLE fed_user ADD COLUMN old_objectid BIGINT(20);
 UPDATE fed_user SET old_objectid=objectid;
-ALTER TABLE fed_user CHANGE COLUMN objectid goid binary(16);
+ALTER TABLE fed_user CHANGE COLUMN objectid goid binary(16) NOT NULL;
 -- For manual runs use: set @fed_user_prefix=createUnreservedPoorRandomPrefix();
 SET @fed_user_prefix=#RANDOM_LONG_NOT_RESERVED#;
 UPDATE fed_user SET goid = toGoid(@fed_user_prefix, old_objectid);
@@ -535,20 +535,20 @@ ALTER TABLE fed_user DROP COLUMN old_objectid;
 
 ALTER TABLE fed_user ADD COLUMN old_provider_oid BIGINT(20);
 UPDATE fed_user SET old_provider_oid=provider_oid;
-ALTER TABLE fed_user CHANGE COLUMN provider_oid provider_goid binary(16);
+ALTER TABLE fed_user CHANGE COLUMN provider_oid provider_goid binary(16) not null;
 UPDATE fed_user SET provider_goid = toGoid(@identity_provider_prefix, old_provider_oid);
 UPDATE fed_user SET provider_goid = toGoid(0, -2) where provider_goid = toGoid(@identity_provider_prefix, -2);
 ALTER TABLE fed_user DROP COLUMN old_provider_oid;
 
-CREATE INDEX i_provider_oid ON fed_user (provider_goid);
-CREATE INDEX i_name ON fed_user (provider_goid, name);
+CREATE INDEX i_provider_goid ON fed_user (provider_goid);
+CREATE UNIQUE INDEX i_name ON fed_user (provider_goid, name);
 
 DROP INDEX i_name ON fed_group;
 DROP INDEX i_provider_oid ON fed_group;
 
 ALTER TABLE fed_group ADD COLUMN old_objectid BIGINT(20);
 UPDATE fed_group SET old_objectid=objectid;
-ALTER TABLE fed_group CHANGE COLUMN objectid goid binary(16);
+ALTER TABLE fed_group CHANGE COLUMN objectid goid binary(16) NOT NULL;
 -- For manual runs use: set @fed_group_prefix=createUnreservedPoorRandomPrefix();
 SET @fed_group_prefix=#RANDOM_LONG_NOT_RESERVED#;
 UPDATE fed_group SET goid = toGoid(@fed_group_prefix, old_objectid);
@@ -556,30 +556,30 @@ ALTER TABLE fed_group DROP COLUMN old_objectid;
 
 ALTER TABLE fed_group ADD COLUMN old_provider_oid BIGINT(20);
 UPDATE fed_group SET old_provider_oid=provider_oid;
-ALTER TABLE fed_group CHANGE COLUMN provider_oid provider_goid binary(16);
+ALTER TABLE fed_group CHANGE COLUMN provider_oid provider_goid binary(16) NOT NULL;
 UPDATE fed_group SET provider_goid = toGoid(@identity_provider_prefix, old_provider_oid);
 UPDATE fed_group SET provider_goid = toGoid(0, -2) where provider_goid = toGoid(@identity_provider_prefix, -2);
 ALTER TABLE fed_group DROP COLUMN old_provider_oid;
 
-CREATE INDEX i_provider_oid ON fed_group (provider_goid);
-CREATE INDEX i_name ON fed_group (provider_goid, name);
+CREATE INDEX i_provider_goid ON fed_group (provider_goid);
+CREATE UNIQUE INDEX i_name ON fed_group (provider_goid, name);
 
 ALTER TABLE fed_user_group ADD COLUMN old_provider_oid BIGINT(20);
 UPDATE fed_user_group SET old_provider_oid=provider_oid;
-ALTER TABLE fed_user_group CHANGE COLUMN provider_oid provider_goid binary(16);
+ALTER TABLE fed_user_group CHANGE COLUMN provider_oid provider_goid binary(16) NOT NULL;
 UPDATE fed_user_group SET provider_goid = toGoid(@identity_provider_prefix, old_provider_oid);
 UPDATE fed_user_group SET provider_goid = toGoid(0, -2) where provider_goid = toGoid(@identity_provider_prefix, -2);
 ALTER TABLE fed_user_group DROP COLUMN old_provider_oid;
 
 ALTER TABLE fed_user_group ADD COLUMN old_fed_user_oid BIGINT(20);
 UPDATE fed_user_group SET old_fed_user_oid=fed_user_oid;
-ALTER TABLE fed_user_group CHANGE COLUMN fed_user_oid fed_user_goid binary(16);
+ALTER TABLE fed_user_group CHANGE COLUMN fed_user_oid fed_user_goid binary(16) NOT NULL;
 UPDATE fed_user_group SET fed_user_goid = toGoid(@fed_user_prefix, old_fed_user_oid);
 ALTER TABLE fed_user_group DROP COLUMN old_fed_user_oid;
 
 ALTER TABLE fed_user_group ADD COLUMN old_fed_group_oid BIGINT(20);
 UPDATE fed_user_group SET old_fed_group_oid=fed_group_oid;
-ALTER TABLE fed_user_group CHANGE COLUMN fed_group_oid fed_group_goid binary(16);
+ALTER TABLE fed_user_group CHANGE COLUMN fed_group_oid fed_group_goid binary(16) NOT NULL;
 UPDATE fed_user_group SET fed_group_goid = toGoid(@fed_group_prefix, old_fed_group_oid);
 ALTER TABLE fed_user_group DROP COLUMN old_fed_group_oid;
 
@@ -588,24 +588,24 @@ DROP INDEX i_provider_oid ON fed_group_virtual;
 
 ALTER TABLE fed_group_virtual ADD COLUMN old_objectid BIGINT(20);
 UPDATE fed_group_virtual SET old_objectid=objectid;
-ALTER TABLE fed_group_virtual CHANGE COLUMN objectid goid binary(16);
+ALTER TABLE fed_group_virtual CHANGE COLUMN objectid goid binary(16) NOT NULL;
 UPDATE fed_group_virtual SET goid = toGoid(@fed_group_prefix, old_objectid);
 ALTER TABLE fed_group_virtual DROP COLUMN old_objectid;
 
 ALTER TABLE fed_group_virtual ADD COLUMN old_provider_oid BIGINT(20);
 UPDATE fed_group_virtual SET old_provider_oid=provider_oid;
-ALTER TABLE fed_group_virtual CHANGE COLUMN provider_oid provider_goid binary(16);
+ALTER TABLE fed_group_virtual CHANGE COLUMN provider_oid provider_goid binary(16) NOT NULL;
 UPDATE fed_group_virtual SET provider_goid = toGoid(@identity_provider_prefix, old_provider_oid);
 UPDATE fed_group_virtual SET provider_goid = toGoid(0, -2) where provider_goid = toGoid(@identity_provider_prefix, -2);
 ALTER TABLE fed_group_virtual DROP COLUMN old_provider_oid;
 
-CREATE INDEX i_provider_oid ON fed_group_virtual (provider_goid);
-CREATE INDEX i_name ON fed_group_virtual (provider_goid, name);
+CREATE INDEX i_provider_goid ON fed_group_virtual (provider_goid);
+CREATE UNIQUE INDEX i_name ON fed_group_virtual (provider_goid, name);
 
 DROP INDEX unique_provider_login ON logon_info;
 ALTER TABLE logon_info ADD COLUMN old_provider_oid BIGINT(20);
 UPDATE logon_info SET old_provider_oid=provider_oid;
-ALTER TABLE logon_info CHANGE COLUMN provider_oid provider_goid binary(16);
+ALTER TABLE logon_info CHANGE COLUMN provider_oid provider_goid binary(16) NOT NULL;
 UPDATE logon_info SET provider_goid = toGoid(@identity_provider_prefix, old_provider_oid);
 UPDATE logon_info SET provider_goid = toGoid(0, -2) where provider_goid = toGoid(@identity_provider_prefix, -2);
 ALTER TABLE logon_info DROP COLUMN old_provider_oid;
@@ -614,10 +614,10 @@ ALTER TABLE logon_info ADD CONSTRAINT logon_info_provider FOREIGN KEY (provider_
 
 ALTER TABLE password_history ADD COLUMN old_internal_user_oid BIGINT(20);
 UPDATE password_history SET old_internal_user_oid=internal_user_oid;
-ALTER TABLE password_history CHANGE COLUMN internal_user_oid internal_user_goid binary(16);
+ALTER TABLE password_history CHANGE COLUMN internal_user_oid internal_user_goid binary(16) NOT NULL;
 UPDATE password_history SET internal_user_goid = toGoid(@internal_user_prefix, old_internal_user_oid);
 ALTER TABLE password_history DROP COLUMN old_internal_user_oid;
-ALTER TABLE password_history ADD FOREIGN KEY (internal_user_goid) REFERENCES internal_user(goid) ON DELETE CASCADE;
+ALTER TABLE password_history ADD FOREIGN KEY (internal_user_goid) REFERENCES internal_user(goid);
 
 ALTER TABLE policy_version ADD COLUMN old_user_provider_oid BIGINT(20);
 UPDATE policy_version SET old_user_provider_oid=user_provider_oid;
@@ -627,7 +627,7 @@ ALTER TABLE policy_version DROP COLUMN old_user_provider_oid;
 
 ALTER TABLE client_cert ADD COLUMN old_provider BIGINT(20);
 UPDATE client_cert SET old_provider=provider;
-ALTER TABLE client_cert CHANGE COLUMN provider provider binary(16);
+ALTER TABLE client_cert CHANGE COLUMN provider provider binary(16) NOT NULL;
 UPDATE client_cert SET provider = toGoid(@identity_provider_prefix, old_provider);
 UPDATE client_cert SET provider = toGoid(0, -2) where provider = toGoid(@identity_provider_prefix, -2);
 ALTER TABLE client_cert DROP COLUMN old_provider;
@@ -680,7 +680,7 @@ ALTER TABLE rbac_assignment ADD INDEX i_rbacassign_poid (provider_goid);
 
 ALTER TABLE wssc_session ADD COLUMN old_provider_oid BIGINT(20);
 UPDATE wssc_session SET old_provider_oid=provider_id;
-ALTER TABLE wssc_session CHANGE COLUMN provider_id provider_goid binary(16);
+ALTER TABLE wssc_session CHANGE COLUMN provider_id provider_goid binary(16) NOT NULL;
 UPDATE wssc_session SET provider_goid = toGoid(@identity_provider_prefix, old_provider_oid);
 UPDATE wssc_session SET provider_goid = toGoid(0, -2) where provider_goid = toGoid(@identity_provider_prefix, -2);
 ALTER TABLE wssc_session DROP COLUMN old_provider_oid;
