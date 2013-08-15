@@ -5,9 +5,7 @@ import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
 import org.junit.Assert;
 
-import java.sql.DatabaseMetaData;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -18,7 +16,10 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public class DbCompareTestUtils {
 
-    public static void compareNewToUpgradedDatabase(DatabaseMetaData newDatabaseMetadata, DatabaseMetaData upgradedDatabaseMetadata) throws SQLException {
+    public static void compareNewToUpgradedDatabase(Connection databaseOneConnection, Connection databaseTwoConnection) throws SQLException {
+
+        DatabaseMetaData newDatabaseMetadata = databaseOneConnection.getMetaData();
+        DatabaseMetaData upgradedDatabaseMetadata = databaseTwoConnection.getMetaData();
 
         // ******************************* Compare tables ********************************************* //
         Map<String, Map<String, String>> newTablesInfo = getResultSetInfo(newDatabaseMetadata.getTables(null, "APP", null, null), 3);
@@ -77,6 +78,62 @@ public class DbCompareTestUtils {
                     "The upgraded database is missing index on table " + tableName,
                     CollectionUtils.set("TABLE_CAT", "INDEX_NAME", "CARDINALITY"));
         }
+
+        // ***************************** Check table data in goid tables ******************************************//
+        Set<String> oidTables = CollectionUtils.set("replication_status", "keystore_file", "resolution_configuration", "sink_config", "password_policy");
+        Set<String> otherTables = CollectionUtils.set("cluster_master", "ssg_version", "hibernate_unique_key");
+        Set<String> ignoreTables = new HashSet<>(oidTables);
+        ignoreTables.addAll(otherTables);
+        Set<String> ignoreProperties = CollectionUtils.set();
+        for (String tableName : newTablesInfo.keySet()) {
+            if (ignoreTables.contains(tableName.toLowerCase())) continue;
+            Statement db1SelectAllStatement = databaseOneConnection.createStatement();
+            Statement db2SelectAllStatement = databaseTwoConnection.createStatement();
+
+            Map<String, Map<String, String>> db1TableData = getResultSetInfo(db1SelectAllStatement.executeQuery("select * from " + tableName), "goid");
+            Map<String, Map<String, String>> db2TableData = getResultSetInfo(db2SelectAllStatement.executeQuery("select * from " + tableName), "goid");
+
+            for (String key : db1TableData.keySet()) {
+                Map<String, String> db1RowData = db1TableData.get(key);
+                Map<String, String> db2RowData = db2TableData.get(key);
+
+                Assert.assertNotNull("Missing data from 2nd database in table: "+tableName+". Key: " + key + "\nMissing Row: " + db1RowData.toString(), db2RowData);
+
+                for (String tableData : db1RowData.keySet()) {
+                    if (ignoreProperties.contains(tableData.toLowerCase())) continue;
+                    String newTablePropertyValue = db1RowData.get(tableData);
+                    String upgradedTablePropertyValue = db2RowData.get(tableData);
+
+                    Assert.assertEquals("Table data does not match for table: "+tableName+" Property: " +tableData + " for key: " + key, newTablePropertyValue, upgradedTablePropertyValue);
+                }
+            }
+        }
+
+        // ***************************** Check table data objectid tables ******************************************//
+        ignoreProperties = CollectionUtils.set();
+        for (String tableName : newTablesInfo.keySet()) {
+            if (!oidTables.contains(tableName.toLowerCase())) continue;
+            Statement db1SelectAllStatement = databaseOneConnection.createStatement();
+            Statement db2SelectAllStatement = databaseTwoConnection.createStatement();
+
+            Map<String, Map<String, String>> db1TableData = getResultSetInfo(db1SelectAllStatement.executeQuery("select * from " + tableName), "objectid");
+            Map<String, Map<String, String>> db2TableData = getResultSetInfo(db2SelectAllStatement.executeQuery("select * from " + tableName), "objectid");
+
+            for (String key : db1TableData.keySet()) {
+                Map<String, String> db1RowData = db1TableData.get(key);
+                Map<String, String> db2RowData = db2TableData.get(key);
+
+                Assert.assertNotNull("Missing data from 2nd database in table: "+tableName+". Key: " + key + "\nMissing Row: " + db1RowData.toString(), db2RowData);
+
+                for (String tableData : db1RowData.keySet()) {
+                    if (ignoreProperties.contains(tableData.toLowerCase())) continue;
+                    String newTablePropertyValue = db1RowData.get(tableData);
+                    String upgradedTablePropertyValue = db2RowData.get(tableData);
+
+                    Assert.assertEquals("Table data does not match for table: "+tableName+" Property: " +tableData + " for key: " + key + "\nRow: " + db1RowData.toString(), newTablePropertyValue, upgradedTablePropertyValue);
+                }
+            }
+        }
     }
 
     private static void compareResultInfo(Map<String, Map<String, String>> newInfo, Map<String, Map<String, String>> upgradedInfo, String differentSizesErrorMessage, String missingRowErrorMessage, String propertyValueMismatchErrorMessage) {
@@ -134,6 +191,24 @@ public class DbCompareTestUtils {
 
             Assert.assertTrue(String.format(missingRowErrorMessage) + "\nMissing Row:   " + newTableInfo.toString() + "\nClosest Match: " + (closestMatch.get().getValue() != null ? closestMatch.get().getValue().toString() : "null") + "\nUpgraded DB rows: " + upgradedInfo.toString(), containsRow);
         }
+    }
+
+    private static Map<String, Map<String, String>> getResultSetInfo(ResultSet resultSet, String idColumn) throws SQLException {
+        HashMap<String, Map<String, String>> resultSetInfoMap = new HashMap<>();
+        ArrayList<String> columnList = new ArrayList<>();
+        for (int i = 1; i < resultSet.getMetaData().getColumnCount() + 1; i++) {
+            columnList.add(resultSet.getMetaData().getColumnName(i));
+        }
+        while (resultSet.next()) {
+            HashMap<String, String> rowMap = new HashMap<>();
+            for (int i = 1; i < resultSet.getMetaData().getColumnCount() + 1; i++) {
+                rowMap.put(columnList.get(i - 1), resultSet.getString(i));
+            }
+            final String key = resultSet.getString(idColumn);
+            Assert.assertNotNull("The row key cannot be null.", key);
+            resultSetInfoMap.put(key, rowMap);
+        }
+        return resultSetInfoMap;
     }
 
     private static Map<String, Map<String, String>> getResultSetInfo(ResultSet resultSet, int idColumn) throws SQLException {

@@ -9,7 +9,6 @@ import org.junit.runner.RunWith;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import java.io.IOException;
-import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
 import java.util.Set;
 
@@ -70,9 +69,7 @@ public class MysqlDatabaseUpgradeTest {
 
     @Test
     public void compareNewToUpgradedDatabase() throws SQLException {
-        DatabaseMetaData newDatabaseMetadata = dbActions.getConnection(newDBConfig, false).getMetaData();
-        DatabaseMetaData upgradedDatabaseMetadata = dbActions.getConnection(upgradeDBConfig, false).getMetaData();
 
-        DbCompareTestUtils.compareNewToUpgradedDatabase(newDatabaseMetadata, upgradedDatabaseMetadata);
+        DbCompareTestUtils.compareNewToUpgradedDatabase(dbActions.getConnection(newDBConfig, false), dbActions.getConnection(upgradeDBConfig, false));
     }
 }

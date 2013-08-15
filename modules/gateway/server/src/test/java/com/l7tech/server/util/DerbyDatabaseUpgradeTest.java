@@ -15,7 +15,6 @@ import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import java.io.File;
 import java.io.IOException;
 import java.sql.Connection;
-import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
 
 /**
@@ -76,9 +75,7 @@ public class DerbyDatabaseUpgradeTest {
 
     @Test
     public void compareNewToUpgradedDatabase() throws SQLException {
-        DatabaseMetaData newDatabaseMetadata = newDBDataSource.getConnection().getMetaData();
-        DatabaseMetaData upgradedDatabaseMetadata = upgradeDBDataSource.getConnection().getMetaData();
 
-        DbCompareTestUtils.compareNewToUpgradedDatabase(newDatabaseMetadata, upgradedDatabaseMetadata);
+        DbCompareTestUtils.compareNewToUpgradedDatabase(newDBDataSource.getConnection(), upgradeDBDataSource.getConnection());
     }
 }

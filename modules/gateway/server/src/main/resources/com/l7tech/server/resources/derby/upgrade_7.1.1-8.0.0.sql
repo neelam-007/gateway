@@ -513,9 +513,9 @@ ALTER TABLE identity_provider ADD PRIMARY KEY (goid);
 update rbac_role set entity_goid = toGoid(cast(getVariable('identity_provider_prefix') as bigint),entity_oid) where entity_oid is not null and entity_type='ID_PROVIDER_CONFIG';
 update rbac_role set entity_goid = toGoid(0,-2) where entity_oid is not null and entity_type='ID_PROVIDER_CONFIG' and entity_goid=toGoid(cast(getVariable('identity_provider_prefix') as bigint),-2);
 update rbac_predicate_oid oid1 set oid1.entity_id = ifnull((select goidToString(toGoid(cast(getVariable('identity_provider_prefix') as bigint),cast(oid1.entity_id as bigint))) from rbac_predicate left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid where rbac_predicate.objectid = oid1.objectid and rbac_permission.entity_type = 'ID_PROVIDER_CONFIG'), oid1.entity_id);
-update rbac_predicate_oid oid1 set oid1.entity_id = ifnull((select goidToString(toGoid(0,-2)) from rbac_predicate left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid where rbac_predicate.objectid = oid1.objectid and rbac_permission.entity_type = 'ID_PROVIDER_CONFIG' and oid1.entity_id=goidToString(toGoid(0,-2))), oid1.entity_id);
-update rbac_predicate_attribute set value = goidToString(toGoid(cast(getVariable('identity_provider_prefix') as bigint),cast(value as bigint))) where attribute='providerId';
-update rbac_predicate_attribute set value = goidToString(toGoid(0,-2)) where attribute='providerId' and value=goidToString(toGoid(cast(getVariable('identity_provider_prefix') as bigint),-2));
+update rbac_predicate_oid oid1 set oid1.entity_id = ifnull((select goidToString(toGoid(0,-2)) from rbac_predicate left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid where rbac_predicate.objectid = oid1.objectid and rbac_permission.entity_type = 'ID_PROVIDER_CONFIG' and oid1.entity_id=goidToString(toGoid(cast(getVariable('identity_provider_prefix') as bigint),-2))), oid1.entity_id);
+update rbac_predicate_attribute set value = goidToString(toGoid(cast(getVariable('identity_provider_prefix') as bigint),cast(value as bigint))) where attribute='providerId' and value != '-2';
+update rbac_predicate_attribute set value = goidToString(toGoid(0,-2)) where attribute='providerId' and value = '-2';
 
 ALTER TABLE internal_group ADD COLUMN objectid_backup bigint;
 update internal_group set objectid_backup = objectid;
@@ -530,10 +530,13 @@ ALTER TABLE internal_user ADD COLUMN objectid_backup bigint;
 update internal_user set objectid_backup = objectid;
 ALTER TABLE internal_user DROP COLUMN objectid;
 ALTER TABLE internal_user ADD COLUMN goid CHAR(16) FOR BIT DATA;
-update internal_user set goid = toGoid(cast(getVariable('internal_user_prefix') as bigint), objectid_backup);
+update internal_user set goid = toGoid(cast(getVariable('internal_user_prefix') as bigint), objectid_backup) where objectid_backup != 3;
+update internal_user set goid = toGoid(0, 3) where objectid_backup = 3;
 ALTER TABLE internal_user ALTER COLUMN goid NOT NULL;
 ALTER TABLE internal_user DROP COLUMN objectid_backup;
 ALTER TABLE internal_user ADD PRIMARY KEY (goid);
+
+UPDATE rbac_assignment SET identity_id = goidToString(toGoid(0, 3)) where identity_id = '3' and entity_type='User';
 
 ALTER TABLE internal_user_group ADD COLUMN objectid_backup bigint;
 update internal_user_group set objectid_backup = objectid;
@@ -1126,26 +1129,31 @@ ALTER TABLE uddi_service_control_monitor_runtime DROP COLUMN uddi_service_contro
 call setVariable('rbac_role_prefix', cast(randomLongNotReserved() as char(21)));
 
 ALTER TABLE rbac_role ADD COLUMN goid CHAR(16) FOR BIT DATA;
-update rbac_role set goid = toGoid(cast(getVariable('rbac_role_prefix') as bigint), objectid);
+update rbac_role set goid = toGoid(cast(getVariable('rbac_role_prefix') as bigint), objectid) where objectid >= 0;
+update rbac_role set goid = toGoid(0, objectid) where objectid < 0;
 ALTER TABLE rbac_role ALTER COLUMN goid NOT NULL;
 ALTER TABLE rbac_role DROP COLUMN objectid;
 ALTER TABLE rbac_role ADD PRIMARY KEY (goid);
 
-update rbac_role set entity_goid = toGoid(cast(getVariable('rbac_role_prefix') as bigint),entity_oid) where entity_oid is not null and entity_type='RBAC_ROLE';
-update rbac_predicate_oid oid1 set oid1.entity_id = ifnull((select goidToString(toGoid(cast(getVariable('rbac_role_prefix') as bigint),cast(oid1.entity_id as bigint))) from rbac_predicate left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid where rbac_predicate.objectid = oid1.objectid and rbac_permission.entity_type = 'RBAC_ROLE'), oid1.entity_id);
+update rbac_role set entity_goid = toGoid(cast(getVariable('rbac_role_prefix') as bigint),entity_oid) where entity_oid is not null and entity_type='RBAC_ROLE' and entity_oid >= 0;
+update rbac_role set entity_goid = toGoid(0,entity_oid) where entity_oid is not null and entity_type='RBAC_ROLE' and entity_oid < 0;
+update rbac_predicate_oid oid1 set oid1.entity_id = ifnull((select goidToString(toGoid(cast(getVariable('rbac_role_prefix') as bigint),cast(oid1.entity_id as bigint))) from rbac_predicate left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid where rbac_predicate.objectid = oid1.objectid and rbac_permission.entity_type = 'RBAC_ROLE' and substr(oid1.entity_id, 1, 1) != '-'), oid1.entity_id);
+update rbac_predicate_oid oid1 set oid1.entity_id = ifnull((select goidToString(toGoid(0,cast(oid1.entity_id as bigint))) from rbac_predicate left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid where rbac_predicate.objectid = oid1.objectid and rbac_permission.entity_type = 'RBAC_ROLE' and substr(oid1.entity_id, 1, 1) != '-'), oid1.entity_id);
 
 -- RBAC role assignment
 
 call setVariable('rbac_assignment_prefix', cast(randomLongNotReserved() as char(21)));
 
 ALTER TABLE rbac_assignment ADD COLUMN goid CHAR(16) FOR BIT DATA;
-update rbac_assignment set goid = toGoid(cast(getVariable('rbac_assignment_prefix') as bigint), objectid);
+update rbac_assignment set goid = toGoid(cast(getVariable('rbac_assignment_prefix') as bigint), objectid) where objectid >= 0;
+update rbac_assignment set goid = toGoid(0, objectid) where objectid < 0;
 ALTER TABLE rbac_assignment ALTER COLUMN goid NOT NULL;
 ALTER TABLE rbac_assignment DROP COLUMN objectid;
 ALTER TABLE rbac_assignment ADD PRIMARY KEY (goid);
 
 ALTER TABLE rbac_assignment ADD COLUMN role_goid CHAR(16) FOR BIT DATA;
-update rbac_assignment set role_goid = toGoid(cast(getVariable('rbac_assignment_prefix') as bigint), role_oid);
+update rbac_assignment set role_goid = toGoid(cast(getVariable('rbac_assignment_prefix') as bigint), role_oid) where role_oid >= 0;
+update rbac_assignment set role_goid = toGoid(0, role_oid) where role_oid < 0;
 ALTER TABLE rbac_assignment ALTER COLUMN role_goid NOT NULL;
 ALTER TABLE rbac_assignment DROP COLUMN role_oid;
 
@@ -1154,13 +1162,15 @@ ALTER TABLE rbac_assignment DROP COLUMN role_oid;
 call setVariable('rbac_permission_prefix', cast(randomLongNotReserved() as char(21)));
 
 ALTER TABLE rbac_permission ADD COLUMN goid CHAR(16) FOR BIT DATA;
-update rbac_permission set goid = toGoid(cast(getVariable('rbac_permission_prefix') as bigint), objectid);
+update rbac_permission set goid = toGoid(cast(getVariable('rbac_permission_prefix') as bigint), objectid) where objectid >= 0;
+update rbac_permission set goid = toGoid(0, objectid) where objectid < 0;
 ALTER TABLE rbac_permission ALTER COLUMN goid NOT NULL;
 ALTER TABLE rbac_permission DROP COLUMN objectid;
 ALTER TABLE rbac_permission ADD PRIMARY KEY (goid);
 
 ALTER TABLE rbac_permission ADD COLUMN role_goid CHAR(16) FOR BIT DATA;
-update rbac_permission set role_goid = toGoid(cast(getVariable('rbac_assignment_prefix') as bigint), role_oid);
+update rbac_permission set role_goid = toGoid(cast(getVariable('rbac_assignment_prefix') as bigint), role_oid) where role_oid >= 0;
+update rbac_permission set role_goid = toGoid(0, role_oid) where role_oid < 0;
 ALTER TABLE rbac_permission ALTER COLUMN role_goid NOT NULL;
 ALTER TABLE rbac_permission DROP COLUMN role_oid;
 
@@ -1169,42 +1179,49 @@ ALTER TABLE rbac_permission DROP COLUMN role_oid;
 call setVariable('rbac_predicate_prefix', cast(randomLongNotReserved() as char(21)));
 
 ALTER TABLE rbac_predicate ADD COLUMN goid CHAR(16) FOR BIT DATA;
-update rbac_predicate set goid = toGoid(cast(getVariable('rbac_predicate_prefix') as bigint), objectid);
+update rbac_predicate set goid = toGoid(cast(getVariable('rbac_predicate_prefix') as bigint), objectid) where objectid >= 0;
+update rbac_predicate set goid = toGoid(0, objectid) where objectid < 0;
 ALTER TABLE rbac_predicate ALTER COLUMN goid NOT NULL;
 ALTER TABLE rbac_predicate DROP COLUMN objectid;
 ALTER TABLE rbac_predicate ADD PRIMARY KEY (goid);
 
 ALTER TABLE rbac_predicate ADD COLUMN permission_goid CHAR(16) FOR BIT DATA;
-update rbac_predicate set permission_goid = toGoid(cast(getVariable('rbac_assignment_prefix') as bigint), permission_oid);
+update rbac_predicate set permission_goid = toGoid(cast(getVariable('rbac_assignment_prefix') as bigint), permission_oid) where permission_oid >= 0;
+update rbac_predicate set permission_goid = toGoid(0, permission_oid) where permission_oid < 0;
 ALTER TABLE rbac_predicate ALTER COLUMN permission_goid NOT NULL;
 ALTER TABLE rbac_predicate DROP COLUMN permission_oid;
 
 ALTER TABLE rbac_predicate_attribute ADD COLUMN goid CHAR(16) FOR BIT DATA;
-update rbac_predicate_attribute set goid = toGoid(cast(getVariable('rbac_predicate_prefix') as bigint), objectid);
+update rbac_predicate_attribute set goid = toGoid(cast(getVariable('rbac_predicate_prefix') as bigint), objectid) where objectid >= 0;
+update rbac_predicate_attribute set goid = toGoid(0, objectid) where objectid < 0;
 ALTER TABLE rbac_predicate_attribute ALTER COLUMN goid NOT NULL;
 ALTER TABLE rbac_predicate_attribute DROP COLUMN objectid;
 ALTER TABLE rbac_predicate_attribute ADD PRIMARY KEY (goid);
 
 ALTER TABLE rbac_predicate_security_zone ADD COLUMN goid CHAR(16) FOR BIT DATA;
-update rbac_predicate_security_zone set goid = toGoid(cast(getVariable('rbac_predicate_prefix') as bigint), objectid);
+update rbac_predicate_security_zone set goid = toGoid(cast(getVariable('rbac_predicate_prefix') as bigint), objectid) where objectid >= 0;
+update rbac_predicate_security_zone set goid = toGoid(0, objectid) where objectid < 0;
 ALTER TABLE rbac_predicate_security_zone ALTER COLUMN goid NOT NULL;
 ALTER TABLE rbac_predicate_security_zone DROP COLUMN objectid;
 ALTER TABLE rbac_predicate_security_zone ADD PRIMARY KEY (goid);
 
 ALTER TABLE rbac_predicate_oid ADD COLUMN goid CHAR(16) FOR BIT DATA;
-update rbac_predicate_oid set goid = toGoid(cast(getVariable('rbac_predicate_prefix') as bigint), objectid);
+update rbac_predicate_oid set goid = toGoid(cast(getVariable('rbac_predicate_prefix') as bigint), objectid) where objectid >= 0;
+update rbac_predicate_oid set goid = toGoid(0, objectid) where objectid < 0;
 ALTER TABLE rbac_predicate_oid ALTER COLUMN goid NOT NULL;
 ALTER TABLE rbac_predicate_oid DROP COLUMN objectid;
 ALTER TABLE rbac_predicate_oid ADD PRIMARY KEY (goid);
 
 ALTER TABLE rbac_predicate_folder ADD COLUMN goid CHAR(16) FOR BIT DATA;
-update rbac_predicate_folder set goid = toGoid(cast(getVariable('rbac_predicate_prefix') as bigint), objectid);
+update rbac_predicate_folder set goid = toGoid(cast(getVariable('rbac_predicate_prefix') as bigint), objectid) where objectid >= 0;
+update rbac_predicate_folder set goid = toGoid(0, objectid) where objectid < 0;
 ALTER TABLE rbac_predicate_folder ALTER COLUMN goid NOT NULL;
 ALTER TABLE rbac_predicate_folder DROP COLUMN objectid;
 ALTER TABLE rbac_predicate_folder ADD PRIMARY KEY (goid);
 
 ALTER TABLE rbac_predicate_entityfolder ADD COLUMN goid CHAR(16) FOR BIT DATA;
-update rbac_predicate_entityfolder set goid = toGoid(cast(getVariable('rbac_predicate_prefix') as bigint), objectid);
+update rbac_predicate_entityfolder set goid = toGoid(cast(getVariable('rbac_predicate_prefix') as bigint), objectid) where objectid >= 0;
+update rbac_predicate_entityfolder set goid = toGoid(0, objectid) where objectid < 0;
 ALTER TABLE rbac_predicate_entityfolder ALTER COLUMN goid NOT NULL;
 ALTER TABLE rbac_predicate_entityfolder DROP COLUMN objectid;
 ALTER TABLE rbac_predicate_entityfolder ADD PRIMARY KEY (goid);

@@ -1483,31 +1483,31 @@ INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_ope
 -- Create other canned roles
 INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -201),0,toGoid(0, -200),'READ',NULL,'USER');
 INSERT INTO rbac_predicate (goid, version, permission_goid) VALUES (toGoid(0, -202),0,toGoid(0, -201));
-INSERT INTO rbac_predicate_attribute (goid, attribute, value, mode) VALUES (toGoid(0, -202),'providerId','0000000000000000fffffffffffffffe','eq');
+INSERT INTO rbac_predicate_attribute (goid, attribute, value, mode) VALUES (toGoid(0, -202),'providerId',goidToString(toGoid(0,-2)),'eq');
 INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -203),0,toGoid(0, -200),'READ',NULL,'ID_PROVIDER_CONFIG');
 INSERT INTO rbac_predicate (goid, version, permission_goid) VALUES (toGoid(0, -204),0,toGoid(0, -203));
-INSERT INTO rbac_predicate_oid (goid, entity_id) VALUES (toGoid(0, -204),'0000000000000000fffffffffffffffe');
+INSERT INTO rbac_predicate_oid (goid, entity_id) VALUES (toGoid(0, -204),goidToString(toGoid(0,-2)));
 INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -205),0,toGoid(0, -200),'UPDATE',NULL,'USER');
 INSERT INTO rbac_predicate (goid, version, permission_goid) VALUES (toGoid(0, -206),0,toGoid(0, -205));
-INSERT INTO rbac_predicate_attribute (goid, attribute, value, mode) VALUES (toGoid(0, -206),'providerId','0000000000000000fffffffffffffffe','eq');
+INSERT INTO rbac_predicate_attribute (goid, attribute, value, mode) VALUES (toGoid(0, -206),'providerId',goidToString(toGoid(0,-2)),'eq');
 INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -207),0,toGoid(0, -200),'READ',NULL,'GROUP');
 INSERT INTO rbac_predicate (goid, version, permission_goid) VALUES (toGoid(0, -208),0,toGoid(0, -207));
-INSERT INTO rbac_predicate_attribute (goid, attribute, value, mode) VALUES (toGoid(0, -208),'providerId','0000000000000000fffffffffffffffe','eq');
+INSERT INTO rbac_predicate_attribute (goid, attribute, value, mode) VALUES (toGoid(0, -208),'providerId',goidToString(toGoid(0,-2)),'eq');
 INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -209),0,toGoid(0, -200),'DELETE',NULL,'USER');
 INSERT INTO rbac_predicate (goid, version, permission_goid) VALUES (toGoid(0, -210),0,toGoid(0, -209));
-INSERT INTO rbac_predicate_attribute (goid, attribute, value, mode) VALUES (toGoid(0, -210),'providerId','0000000000000000fffffffffffffffe','eq');
+INSERT INTO rbac_predicate_attribute (goid, attribute, value, mode) VALUES (toGoid(0, -210),'providerId',goidToString(toGoid(0,-2)),'eq');
 INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -211),0,toGoid(0, -200),'CREATE',NULL,'USER');
 INSERT INTO rbac_predicate (goid, version, permission_goid) VALUES (toGoid(0, -212),0,toGoid(0, -211));
-INSERT INTO rbac_predicate_attribute (goid, attribute, value, mode) VALUES (toGoid(0, -212),'providerId','0000000000000000fffffffffffffffe','eq');
+INSERT INTO rbac_predicate_attribute (goid, attribute, value, mode) VALUES (toGoid(0, -212),'providerId',goidToString(toGoid(0,-2)),'eq');
 INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -213),0,toGoid(0, -200),'CREATE',NULL,'GROUP');
 INSERT INTO rbac_predicate (goid, version, permission_goid) VALUES (toGoid(0, -214),0,toGoid(0, -213));
-INSERT INTO rbac_predicate_attribute (goid, attribute, value, mode) VALUES (toGoid(0, -214),'providerId','0000000000000000fffffffffffffffe','eq');
+INSERT INTO rbac_predicate_attribute (goid, attribute, value, mode) VALUES (toGoid(0, -214),'providerId',goidToString(toGoid(0,-2)),'eq');
 INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -215),0,toGoid(0, -200),'DELETE',NULL,'GROUP');
 INSERT INTO rbac_predicate (goid, version, permission_goid) VALUES (toGoid(0, -216),0,toGoid(0, -215));
-INSERT INTO rbac_predicate_attribute (goid, attribute, value, mode) VALUES (toGoid(0, -216),'providerId','0000000000000000fffffffffffffffe','eq');
+INSERT INTO rbac_predicate_attribute (goid, attribute, value, mode) VALUES (toGoid(0, -216),'providerId',goidToString(toGoid(0,-2)),'eq');
 INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -217),0,toGoid(0, -200),'UPDATE',NULL,'GROUP');
 INSERT INTO rbac_predicate (goid, version, permission_goid) VALUES (toGoid(0, -218),0,toGoid(0, -217));
-INSERT INTO rbac_predicate_attribute (goid, attribute, value, mode) VALUES (toGoid(0, -218),'providerId','0000000000000000fffffffffffffffe','eq');
+INSERT INTO rbac_predicate_attribute (goid, attribute, value, mode) VALUES (toGoid(0, -218),'providerId',goidToString(toGoid(0,-2)),'eq');
 
 INSERT INTO rbac_role (goid, version, name, tag, entity_type, entity_oid, entity_goid, description, user_created) VALUES (toGoid(0, -250),0,'Publish External Identity Providers', null,null,null,null, 'Users assigned to the {0} role have the ability to create new external identity providers.',0);
 INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -251),0,toGoid(0, -250),'CREATE',NULL,'ID_PROVIDER_CONFIG');
@@ -1849,7 +1849,7 @@ INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_ope
 INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -1454),0,toGoid(0, -1450),'DELETE',null,'CUSTOM_KEY_VALUE_STORE');
 
 -- Assign Administrator role to existing admin user
-INSERT INTO rbac_assignment (goid, provider_goid, role_goid, identity_id, entity_type) VALUES (toGoid(0, -105), toGoid(0,-2), toGoid(0, -100), '00000000000000000000000000000003', 'User');
+INSERT INTO rbac_assignment (goid, provider_goid, role_goid, identity_id, entity_type) VALUES (toGoid(0, -105), toGoid(0,-2), toGoid(0, -100), goidToString(toGoid(0,3)), 'User');
 
 DROP TABLE IF EXISTS sink_config;
 CREATE TABLE sink_config (
