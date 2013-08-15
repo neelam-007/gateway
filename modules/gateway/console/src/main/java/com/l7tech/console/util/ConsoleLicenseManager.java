@@ -8,10 +8,9 @@ package com.l7tech.console.util;
 import com.l7tech.console.action.SecureAction;
 import com.l7tech.console.panels.LogonDialog;
 import com.l7tech.gateway.common.LicenseException;
-import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.gateway.common.licensing.CompositeLicense;
+import com.l7tech.gateway.common.licensing.CompositeLicenseManager;
 import com.l7tech.gui.util.Utilities;
-import com.l7tech.policy.AssertionLicense;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
@@ -22,9 +21,11 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Component that caches the license installed on the currently-connected Gateway cluster.
  */
-public class ConsoleLicenseManager implements AssertionLicense, LicenseManager {
+public class ConsoleLicenseManager implements CompositeLicenseManager {
     // Primary Licenses are defined/recognized by including this 'core' feature
     private static final String CORE_FEATURE_SET = "service:MessageProcessor";
+
+    public static final String SERVICE_ADMIN = "service:Admin";
 
     private static final ConsoleLicenseManager INSTANCE = new ConsoleLicenseManager();
     private static final SpecificUser SPECIFICUSER_PROTOTYPE = new SpecificUser();

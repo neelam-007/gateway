@@ -230,9 +230,14 @@ public abstract class SecureAction extends BaseAction implements LogonListener, 
             return true;
 
         ConsoleLicenseManager lm = ConsoleLicenseManager.getInstance();
-        for (String s : featureSetNames)
-            if (lm.isFeatureEnabled(s))
-                return true;
+
+        // actions should not be enabled unless the admin service is also enabled
+        if (lm.isFeatureEnabled(ConsoleLicenseManager.SERVICE_ADMIN)) {
+            for (String s : featureSetNames)
+                if (lm.isFeatureEnabled(s))
+                    return true;
+        }
+
         return false;
     }
 
