@@ -7,6 +7,7 @@ import com.l7tech.gateway.common.transport.SsgActiveConnectorHeader;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.security.rbac.SecurityFilter;
+import com.l7tech.server.security.rbac.SecurityZoneManager;
 import com.l7tech.server.transport.SsgActiveConnectorManager;
 import org.springframework.transaction.PlatformTransactionManager;
 
@@ -19,13 +20,14 @@ import java.util.Map;
  *
  */
 @ResourceFactory.ResourceType(type=ActiveConnectorMO.class)
-public class ActiveConnectorResourceFactory extends GoidEntityManagerResourceFactory<ActiveConnectorMO, SsgActiveConnector, SsgActiveConnectorHeader> {
+public class ActiveConnectorResourceFactory extends SecurityZoneableEntityManagerResourceFactory<ActiveConnectorMO, SsgActiveConnector, SsgActiveConnectorHeader> {
 
     public ActiveConnectorResourceFactory(final RbacServices services,
                                           final SecurityFilter securityFilter,
                                           final PlatformTransactionManager transactionManager,
-                                          final SsgActiveConnectorManager ssgActiveConnectorManager) {
-        super(false, true, services, securityFilter, transactionManager, ssgActiveConnectorManager);
+                                          final SsgActiveConnectorManager ssgActiveConnectorManager,
+                                          final SecurityZoneManager securityZoneManager) {
+        super(false, true, services, securityFilter, transactionManager, ssgActiveConnectorManager, securityZoneManager);
     }
 
     @Override
@@ -45,6 +47,9 @@ public class ActiveConnectorResourceFactory extends GoidEntityManagerResourceFac
         }
         ssgActiveConnectorMO.setProperties(properties);
 
+        // handle securityZone
+        doSecurityZoneAsResource( ssgActiveConnectorMO, entity );
+
         return ssgActiveConnectorMO;
     }
 
@@ -60,6 +65,9 @@ public class ActiveConnectorResourceFactory extends GoidEntityManagerResourceFac
         activeConnector.setName(connectionResource.getName());
         activeConnector.setHardwiredServiceGoid(connectionResource.getHardwiredId()==null?null:Goid.parseGoid(connectionResource.getHardwiredId()));
         activeConnector.setType(connectionResource.getType());
+
+        // handle securityZone
+        doSecurityZoneFromResource( connectionResource, activeConnector );
 
         for (Map.Entry<String, String> entry : connectionResource.getProperties().entrySet()) {
 
@@ -78,5 +86,6 @@ public class ActiveConnectorResourceFactory extends GoidEntityManagerResourceFac
         for (String name : newEntity.getPropertyNames()) {
             oldEntity.setProperty(name, newEntity.getProperty(name));
         }
+        oldEntity.setSecurityZone(newEntity.getSecurityZone());
     }
 }

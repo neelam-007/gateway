@@ -41,7 +41,7 @@ import java.util.Map;
 @XmlRootElement(name="JDBCConnection")
 @XmlType(name="JDBCConnectionType", propOrder={"nameValue","enabledValue","properties","jdbcExtension","extensions"})
 @AccessorSupport.AccessibleResource(name ="jdbcConnections")
-public class JDBCConnectionMO extends AccessibleObject {
+public class JDBCConnectionMO extends SecurityZoneableObject {
 
     //- PUBLIC
 

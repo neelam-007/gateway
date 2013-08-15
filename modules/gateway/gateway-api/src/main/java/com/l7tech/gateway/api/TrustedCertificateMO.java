@@ -47,7 +47,7 @@ import java.util.Map;
 @XmlRootElement(name="TrustedCertificate")
 @XmlType(name="TrustedCertificateType", propOrder={"nameValue","certificateData","properties","trustedCertificateExtension","extensions"})
 @AccessorSupport.AccessibleResource(name ="trustedCertificates")
-public class TrustedCertificateMO extends AccessibleObject {
+public class TrustedCertificateMO extends SecurityZoneableObject {
     
     //- PUBLIC
 

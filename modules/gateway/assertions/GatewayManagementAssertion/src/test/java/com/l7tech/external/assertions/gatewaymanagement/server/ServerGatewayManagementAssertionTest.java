@@ -25,10 +25,7 @@ import com.l7tech.message.HttpRequestKnob;
 import com.l7tech.message.HttpServletRequestKnob;
 import com.l7tech.message.HttpServletResponseKnob;
 import com.l7tech.message.Message;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionArgumentDescriptor;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionResultDescriptor;
@@ -57,6 +54,7 @@ import com.l7tech.server.security.keystore.SsgKeyFinderStub;
 import com.l7tech.server.security.keystore.SsgKeyStoreManagerStub;
 import com.l7tech.server.security.password.SecurePasswordManagerStub;
 import com.l7tech.server.security.rbac.RbacServicesStub;
+import com.l7tech.server.security.rbac.SecurityZoneManagerStub;
 import com.l7tech.server.service.ServiceDocumentManagerStub;
 import com.l7tech.server.service.ServiceManager;
 import com.l7tech.server.store.CustomKeyValueStoreManagerStub;
@@ -3101,6 +3099,27 @@ public class ServerGatewayManagementAssertionTest {
         beanFactory.addBean("customKeyValueStoreManager", new CustomKeyValueStoreManagerStub(
             customKeyValue(new Goid(0,1L), "key.prefix.key1", "<xml>Test value</xml>".getBytes("UTF-8"))
         ) );
+
+        final SecurityZone securityZone1 = new SecurityZone();
+        securityZone1.setGoid(new Goid(0,1));
+        securityZone1.setName("Test Security Zone 0001");
+        securityZone1.setDescription("Canned Testing Security Zone 0001");
+        securityZone1.getPermittedEntityTypes().add(EntityType.POLICY);
+        securityZone1.getPermittedEntityTypes().add(EntityType.SERVICE);
+        securityZone1.getPermittedEntityTypes().add(EntityType.SERVICE_ALIAS);
+        securityZone1.getPermittedEntityTypes().add(EntityType.POLICY_ALIAS);
+        securityZone1.getPermittedEntityTypes().add(EntityType.ASSERTION_ACCESS);
+        securityZone1.getPermittedEntityTypes().add(EntityType.JMS_CONNECTION);
+        securityZone1.getPermittedEntityTypes().add(EntityType.JMS_ENDPOINT);
+        securityZone1.getPermittedEntityTypes().add(EntityType.JDBC_CONNECTION);
+
+        final SecurityZone securityZone2 = new SecurityZone();
+        securityZone2.setGoid(new Goid(0,2));
+        securityZone2.setName("Test Security Zone 0002");
+        securityZone2.setDescription("Canned Testing Security Zone 0002");
+        securityZone2.getPermittedEntityTypes().add(EntityType.ANY);
+
+        beanFactory.addBean("securityZoneManager", new SecurityZoneManagerStub( securityZone1, securityZone2 ));
 
         final ClassLoader systemClassLoader = ClassLoader.getSystemClassLoader();
         final ResourceClassLoader resourceClassLoader = new ResourceClassLoader(

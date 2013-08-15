@@ -7,21 +7,23 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.server.identity.cert.RevocationCheckPolicyManager;
 import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.security.rbac.SecurityFilter;
+import com.l7tech.server.security.rbac.SecurityZoneManager;
 import org.springframework.transaction.PlatformTransactionManager;
 
 /**
  *
  */
 @ResourceFactory.ResourceType(type=RevocationCheckingPolicyMO.class)
-public class RevocationCheckingPolicyResourceFactory extends GoidEntityManagerResourceFactory<RevocationCheckingPolicyMO, RevocationCheckPolicy, EntityHeader> {
+public class RevocationCheckingPolicyResourceFactory extends SecurityZoneableEntityManagerResourceFactory<RevocationCheckingPolicyMO, RevocationCheckPolicy, EntityHeader> {
 
     //- PUBLIC
 
     public RevocationCheckingPolicyResourceFactory( final RbacServices services,
                                                     final SecurityFilter securityFilter,
                                                     final PlatformTransactionManager transactionManager,
-                                                    final RevocationCheckPolicyManager revocationCheckPolicyManager ) {
-        super( true, true, services, securityFilter, transactionManager, revocationCheckPolicyManager );
+                                                    final RevocationCheckPolicyManager revocationCheckPolicyManager,
+                                                    final SecurityZoneManager securityZoneManager ) {
+        super( true, true, services, securityFilter, transactionManager, revocationCheckPolicyManager, securityZoneManager );
     }
 
     //- PROTECTED
@@ -31,6 +33,9 @@ public class RevocationCheckingPolicyResourceFactory extends GoidEntityManagerRe
         final RevocationCheckingPolicyMO revocationCheckingPolicy = ManagedObjectFactory.createRevocationCheckingPolicy();
 
         revocationCheckingPolicy.setName( entity.getName() );
+
+        // handle SecurityZone
+        doSecurityZoneAsResource( revocationCheckingPolicy, entity );
 
         return revocationCheckingPolicy;
     }

@@ -80,6 +80,7 @@
 
     <bean id="folderResourceFactory"  class="com.l7tech.external.assertions.gatewaymanagement.server.FolderResourceFactory" parent="resourceFactoryParent">
         <constructor-arg index="3" ref="folderManager"/>
+        <constructor-arg index="4" ref="securityZoneManager"/>
     </bean>
 
     <bean id="resourceFactoryRegistry" class="com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactoryRegistry">
@@ -87,6 +88,7 @@
             <list>
                 <bean class="com.l7tech.external.assertions.gatewaymanagement.server.CertificateResourceFactory" parent="resourceFactoryParent">
                     <constructor-arg index="3" ref="trustedCertManager"/>
+                    <constructor-arg index="4" ref="securityZoneManager"/>
                 </bean>
                 <bean class="com.l7tech.external.assertions.gatewaymanagement.server.ClusterPropertyResourceFactory" parent="resourceFactoryParent">
                     <constructor-arg index="3" ref="clusterPropertyManager"/>
@@ -94,6 +96,7 @@
                 <bean class="com.l7tech.external.assertions.gatewaymanagement.server.DocumentResourceFactory" parent="resourceFactoryParent">
                     <constructor-arg index="3" ref="resourceEntryManager"/>
                     <constructor-arg index="4" ref="resourceEntrySchemaSourceResolver"/>
+                    <constructor-arg index="5" ref="securityZoneManager"/>
                 </bean>
                 <ref local="folderResourceFactory"/>
                 <bean class="com.l7tech.external.assertions.gatewaymanagement.server.IdentityProviderResourceFactory" parent="resourceFactoryParent">
@@ -106,12 +109,15 @@
                 <bean class="com.l7tech.external.assertions.gatewaymanagement.server.JMSDestinationResourceFactory" parent="resourceFactoryParent">
                     <constructor-arg index="3" ref="jmsEndpointManager"/>
                     <constructor-arg index="4" ref="jmsConnectionManager"/>
+                    <constructor-arg index="5" ref="securityZoneManager"/>
                 </bean>
                 <bean class="com.l7tech.external.assertions.gatewaymanagement.server.JDBCConnectionResourceFactory" parent="resourceFactoryParent">
                     <constructor-arg index="3" ref="jdbcConnectionManager"/>
+                    <constructor-arg index="4" ref="securityZoneManager"/>
                 </bean>
                 <bean class="com.l7tech.external.assertions.gatewaymanagement.server.ListenPortResourceFactory" parent="resourceFactoryParent">
                     <constructor-arg index="3" ref="ssgConnectorManager"/>
+                    <constructor-arg index="4" ref="securityZoneManager"/>
                 </bean>
                 <bean class="com.l7tech.external.assertions.gatewaymanagement.server.PolicyResourceFactory" parent="resourceFactoryParent">
                     <constructor-arg index="3">
@@ -122,6 +128,7 @@
                     </constructor-arg>
                     <constructor-arg index="4" ref="policyHelper"/>
                     <constructor-arg index="5" ref="folderResourceFactory"/>
+                    <constructor-arg index="6" ref="securityZoneManager"/>
                 </bean>
                 <bean class="com.l7tech.external.assertions.gatewaymanagement.server.PrivateKeyResourceFactory" parent="resourceFactoryParent">
                     <constructor-arg index="3" ref="serverConfig"/>
@@ -133,6 +140,7 @@
                 </bean>
                 <bean class="com.l7tech.external.assertions.gatewaymanagement.server.RevocationCheckingPolicyResourceFactory" parent="resourceFactoryParent">
                     <constructor-arg index="3" ref="revocationCheckPolicyManager"/>
+                    <constructor-arg index="4" ref="securityZoneManager"/>
                 </bean>
                 <bean class="com.l7tech.external.assertions.gatewaymanagement.server.ServiceResourceFactory" parent="resourceFactoryParent">
                     <constructor-arg index="3">
@@ -146,13 +154,16 @@
                     <constructor-arg index="6" ref="uddiServiceWsdlUpdateChecker"/>                    
                     <constructor-arg index="7" ref="policyHelper"/>
                     <constructor-arg index="8" ref="folderResourceFactory"/>
+                    <constructor-arg index="9" ref="securityZoneManager"/>
                 </bean>
                 <bean class="com.l7tech.external.assertions.gatewaymanagement.server.SecurePasswordResourceFactory" parent="resourceFactoryParent">
                     <constructor-arg index="3" ref="securePasswordManager"/>
+                    <constructor-arg index="4" ref="securityZoneManager"/>
                 </bean>
                 <bean class="com.l7tech.external.assertions.gatewaymanagement.server.EncapsulatedAssertionResourceFactory" parent="resourceFactoryParent">
                     <constructor-arg index="3" ref="encapsulatedAssertionConfigManager"/>
                     <constructor-arg index="4" ref="policyManager"/>
+                    <constructor-arg index="5" ref="securityZoneManager"/>
                 </bean>
                 <bean class="com.l7tech.external.assertions.gatewaymanagement.server.GenericEntityResourceFactory" parent="resourceFactoryParent">
                     <constructor-arg index="3" ref="genericEntityManager" />
@@ -162,6 +173,7 @@
                 </bean>
                 <bean class="com.l7tech.external.assertions.gatewaymanagement.server.ActiveConnectorResourceFactory" parent="resourceFactoryParent">
                     <constructor-arg index="3" ref="ssgActiveConnectorManager"/>
+                    <constructor-arg index="4" ref="securityZoneManager"/>
                 </bean>
                 <bean class="com.l7tech.external.assertions.gatewaymanagement.server.SecurityZoneResourceFactory" parent="resourceFactoryParent">
                     <constructor-arg index="3" ref="securityZoneManager"/>
@@ -169,6 +181,7 @@
                 <bean class="com.l7tech.external.assertions.gatewaymanagement.server.SiteMinderConfigurationResourceFactory" parent="resourceFactoryParent">
                     <constructor-arg index="3" ref="siteMinderConfigurationManager"/>
                     <constructor-arg index="4" ref="securePasswordManager"/>
+                    <constructor-arg index="5" ref="securityZoneManager"/>
                 </bean>
             </list>
         </constructor-arg>

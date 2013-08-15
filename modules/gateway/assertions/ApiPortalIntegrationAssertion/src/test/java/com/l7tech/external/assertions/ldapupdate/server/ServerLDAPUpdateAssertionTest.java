@@ -155,6 +155,7 @@ public class ServerLDAPUpdateAssertionTest {
 
     @Test
     public void testMultipleOperation() throws Exception {
+        System.setProperty("com.l7tech.external.assertions.ldapupdate.enableDelete", "true");
         System.setProperty("com.l7tech.external.assertions.ldapupdate.enableMultipleOperation", "true");
         ServerLDAPUpdateAssertion sass = (ServerLDAPUpdateAssertion) serverPolicyFactory.compilePolicy(assertion, false);
         peCtx.setVariable(LDAPUpdateAssertion.RESOURCE, MULTPLE_OPERATION_XML);

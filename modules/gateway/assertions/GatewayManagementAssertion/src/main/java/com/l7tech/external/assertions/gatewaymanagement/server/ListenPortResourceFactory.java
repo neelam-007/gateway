@@ -11,6 +11,7 @@ import com.l7tech.gateway.common.transport.TransportDescriptor;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.security.rbac.SecurityFilter;
+import com.l7tech.server.security.rbac.SecurityZoneManager;
 import com.l7tech.server.transport.SsgConnectorManager;
 import com.l7tech.util.CollectionUtils;
 import static com.l7tech.util.CollectionUtils.foreach;
@@ -46,15 +47,16 @@ import java.util.Set;
  *
  */
 @ResourceFactory.ResourceType(type=ListenPortMO.class)
-public class ListenPortResourceFactory extends GoidEntityManagerResourceFactory<ListenPortMO, SsgConnector, EntityHeader> {
+public class ListenPortResourceFactory extends SecurityZoneableEntityManagerResourceFactory<ListenPortMO, SsgConnector, EntityHeader> {
 
     //- PUBLIC
 
     public ListenPortResourceFactory( final RbacServices services,
                                       final SecurityFilter securityFilter,
                                       final PlatformTransactionManager transactionManager,
-                                      final SsgConnectorManager ssgConnectorManager ) {
-        super( false, true, services, securityFilter, transactionManager, ssgConnectorManager );
+                                      final SsgConnectorManager ssgConnectorManager,
+                                      final SecurityZoneManager securityZoneManager ) {
+        super( false, true, services, securityFilter, transactionManager, ssgConnectorManager, securityZoneManager );
         this.ssgConnectorManager = ssgConnectorManager;
     }
 
@@ -73,6 +75,9 @@ public class ListenPortResourceFactory extends GoidEntityManagerResourceFactory<
         listenPort.setTargetServiceId( entity.getProperty( SsgConnector.PROP_HARDWIRED_SERVICE_ID ) );
         listenPort.setTlsSettings( buildTlsSettings(entity) );
         listenPort.setProperties( buildProperties(entity) );
+
+        // handle SecurityZone
+        doSecurityZoneAsResource( listenPort, entity );
 
         return listenPort;
     }
@@ -105,6 +110,9 @@ public class ListenPortResourceFactory extends GoidEntityManagerResourceFactory<
         putProperty( connector, SsgConnector.PROP_HARDWIRED_SERVICE_ID, optional( listenPort.getTargetServiceId() ) );
         setTlsProperties( listenPort, connector );
 
+        // handle SecurityZone
+        doSecurityZoneFromResource( listenPort, connector );
+
         return connector;
     }
 
@@ -120,6 +128,7 @@ public class ListenPortResourceFactory extends GoidEntityManagerResourceFactory<
         oldEntity.setClientAuth( newEntity.getClientAuth() );
         oldEntity.setKeystoreOid( newEntity.getKeystoreOid() );
         oldEntity.setKeyAlias( newEntity.getKeyAlias() );
+        oldEntity.setSecurityZone( newEntity.getSecurityZone() );
         for ( final String name : oldEntity.getPropertyNames() ) {
             oldEntity.removeProperty( name );
         }

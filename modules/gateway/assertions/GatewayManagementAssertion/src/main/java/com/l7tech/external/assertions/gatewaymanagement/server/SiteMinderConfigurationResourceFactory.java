@@ -10,6 +10,7 @@ import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.security.rbac.SecurityFilter;
+import com.l7tech.server.security.rbac.SecurityZoneManager;
 import com.l7tech.server.siteminder.SiteMinderConfigurationManager;
 import org.springframework.transaction.PlatformTransactionManager;
 
@@ -20,7 +21,7 @@ import java.util.Map;
  *
  */
 @ResourceFactory.ResourceType(type=SiteMinderConfigurationMO.class)
-public class SiteMinderConfigurationResourceFactory extends GoidEntityManagerResourceFactory<SiteMinderConfigurationMO, SiteMinderConfiguration, EntityHeader> {
+public class SiteMinderConfigurationResourceFactory extends SecurityZoneableEntityManagerResourceFactory<SiteMinderConfigurationMO, SiteMinderConfiguration, EntityHeader> {
 
     //- PUBLIC
 
@@ -28,8 +29,9 @@ public class SiteMinderConfigurationResourceFactory extends GoidEntityManagerRes
                                                   final SecurityFilter securityFilter,
                                                   final PlatformTransactionManager transactionManager,
                                                   final SiteMinderConfigurationManager siteminderConfigurationManager,
-                                                  final SecurePasswordManager securePasswordManager) {
-        super(false, true, rbacServices, securityFilter, transactionManager, siteminderConfigurationManager);
+                                                  final SecurePasswordManager securePasswordManager,
+                                                  final SecurityZoneManager securityZoneManager) {
+        super(false, true, rbacServices, securityFilter, transactionManager, siteminderConfigurationManager, securityZoneManager);
         this.siteminderConfigManager = siteminderConfigurationManager;
         this.securePasswordManager = securePasswordManager;
     }
@@ -62,6 +64,9 @@ public class SiteMinderConfigurationResourceFactory extends GoidEntityManagerRes
             properties.put(propertyName, siteMinderCfg.getProperties().get(propertyName));
         }
         smResource.setProperties( properties );
+
+        // handle SecurityZone
+        doSecurityZoneAsResource( smResource, siteMinderCfg );
 
         return smResource;
     }
@@ -112,6 +117,9 @@ public class SiteMinderConfigurationResourceFactory extends GoidEntityManagerRes
         }
         smConfiguration.setProperties( smProperties );
 
+        // handle SecurityZone
+        doSecurityZoneFromResource( smResource, smConfiguration );
+
         return smConfiguration;
     }
 
@@ -135,6 +143,7 @@ public class SiteMinderConfigurationResourceFactory extends GoidEntityManagerRes
         oldEntity.setIpcheck( newEntity.isIpcheck() );
         oldEntity.setFipsmode( newEntity.getFipsmode() );
         oldEntity.setCluster_threshold( newEntity.getCluster_threshold() );
+        oldEntity.setSecurityZone( newEntity.getSecurityZone() );
 
         Map<String, String> newProperties = new HashMap<String, String>( newEntity.getProperties().size() );
         for (String prop : newEntity.getPropertyNames()) {

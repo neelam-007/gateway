@@ -16,6 +16,7 @@ import com.l7tech.server.policy.EncapsulatedAssertionConfigManager;
 import com.l7tech.server.policy.PolicyManager;
 import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.security.rbac.SecurityFilter;
+import com.l7tech.server.security.rbac.SecurityZoneManager;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import java.util.*;
@@ -24,7 +25,7 @@ import java.util.*;
  *
  */
 @ResourceFactory.ResourceType(type=EncapsulatedAssertionMO.class)
-public class EncapsulatedAssertionResourceFactory extends GoidEntityManagerResourceFactory<EncapsulatedAssertionMO, EncapsulatedAssertionConfig,GuidEntityHeader> {
+public class EncapsulatedAssertionResourceFactory extends SecurityZoneableEntityManagerResourceFactory<EncapsulatedAssertionMO, EncapsulatedAssertionConfig,GuidEntityHeader> {
 
     //- PUBLIC
 
@@ -32,8 +33,9 @@ public class EncapsulatedAssertionResourceFactory extends GoidEntityManagerResou
                                                  final SecurityFilter securityFilter,
                                                  final PlatformTransactionManager transactionManager,
                                                  final EncapsulatedAssertionConfigManager encapsulatedAssertionConfigManager,
-                                                 final PolicyManager policyManager) {
-        super(false, true, true, services, securityFilter, transactionManager, encapsulatedAssertionConfigManager );
+                                                 final PolicyManager policyManager,
+                                                 final SecurityZoneManager securityZoneManager) {
+        super(false, true, true, services, securityFilter, transactionManager, encapsulatedAssertionConfigManager, securityZoneManager);
         this.policyManager = policyManager;
     }
 
@@ -70,6 +72,9 @@ public class EncapsulatedAssertionResourceFactory extends GoidEntityManagerResou
             throw new InvalidResourceException(InvalidResourceException.ExceptionType.INVALID_VALUES, "invalid or unknown policy reference");
         }
 
+        // handle SecurityZone
+        doSecurityZoneFromResource( encassResource, encassEntity );
+
         return encassEntity;
 
     }
@@ -89,6 +94,9 @@ public class EncapsulatedAssertionResourceFactory extends GoidEntityManagerResou
         if (results != null)
             er.setEncapsulatedResults(results);
         er.setPolicyReference(new ManagedObjectReference(PolicyMO.class, ec.getPolicy().getId()));
+
+        //handle SecurityZone
+        doSecurityZoneAsResource( er, ec );
 
         return er;
     }
@@ -128,6 +136,7 @@ public class EncapsulatedAssertionResourceFactory extends GoidEntityManagerResou
 
         oldEntity.setArgumentDescriptors(copyArgumentDescriptors(newEntity, oldEntity));
         oldEntity.setResultDescriptors(copyResultDescriptors(newEntity, oldEntity));
+        oldEntity.setSecurityZone(newEntity.getSecurityZone());
     }
 
     //- PRIVATE

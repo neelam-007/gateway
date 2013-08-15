@@ -11,6 +11,7 @@ import com.l7tech.gateway.common.transport.jms.JmsProviderType;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.security.rbac.SecurityFilter;
+import com.l7tech.server.security.rbac.SecurityZoneManager;
 import com.l7tech.server.transport.jms.JmsConnectionManager;
 import com.l7tech.server.transport.jms.JmsEndpointManager;
 import com.l7tech.util.Option;
@@ -27,7 +28,7 @@ import java.util.Properties;
  * 
  */
 @ResourceFactory.ResourceType(type=JMSDestinationMO.class)
-public class JMSDestinationResourceFactory extends GoidEntityManagerResourceFactory<JMSDestinationMO, JmsEndpoint, JmsEndpointHeader> {
+public class JMSDestinationResourceFactory extends SecurityZoneableEntityManagerResourceFactory<JMSDestinationMO, JmsEndpoint, JmsEndpointHeader> {
 
     //- PUBLIC
 
@@ -35,8 +36,9 @@ public class JMSDestinationResourceFactory extends GoidEntityManagerResourceFact
                                           final SecurityFilter securityFilter,
                                           final PlatformTransactionManager transactionManager,
                                           final JmsEndpointManager jmsEndpointManager,
-                                          final JmsConnectionManager jmsConnectionManager ) {
-        super( false, true, services, securityFilter, transactionManager, jmsEndpointManager );
+                                          final JmsConnectionManager jmsConnectionManager,
+                                          final SecurityZoneManager securityZoneManager) {
+        super( false, true, services, securityFilter, transactionManager, jmsEndpointManager, securityZoneManager );
         this.jmsConnectionManager = jmsConnectionManager;
     }
 
@@ -86,6 +88,9 @@ public class JMSDestinationResourceFactory extends GoidEntityManagerResourceFact
         jmsDestination.setJmsDestinationDetail( jmsDetails );
         jmsDestination.setJmsConnection( jmsConnection );
 
+        // handleSecurityZone - use zone from JMS endpoint
+        doSecurityZoneAsResource( jmsDestination, jmsEndpoint );
+
         return jmsDestination;
     }
 
@@ -126,6 +131,10 @@ public class JMSDestinationResourceFactory extends GoidEntityManagerResourceFact
         jmsConnection.properties( asProperties( jmsConnectionMO.getContextPropertiesTemplate() ) );
         setProperties( jmsConnection, jmsConnectionMO.getProperties(), JmsConnection.class );
 
+        // handleSecurityZone
+        doSecurityZoneFromResource( jmsDestination, jmsEndpoint );
+        jmsConnection.setSecurityZone( jmsEndpoint.getSecurityZone() );
+
         return new JmsEntityBag( jmsEndpoint, jmsConnection );
     }
 
@@ -159,6 +168,7 @@ public class JMSDestinationResourceFactory extends GoidEntityManagerResourceFact
         oldJmsEndpoint.setPassword( newJmsEndpoint.getPassword() );
         oldJmsEndpoint.setUseMessageIdForCorrelation( newJmsEndpoint.isUseMessageIdForCorrelation() );
         oldJmsEndpoint.setRequestMaxSize(newJmsEndpoint.getRequestMaxSize());
+        oldJmsEndpoint.setSecurityZone(newJmsEndpoint.getSecurityZone());
 
         // Copy connection properties that allow update
         oldJmsConnection.setProviderType( newJmsConnection.getProviderType() );
@@ -171,6 +181,7 @@ public class JMSDestinationResourceFactory extends GoidEntityManagerResourceFact
         oldJmsConnection.setUsername( newJmsConnection.getUsername() );
         oldJmsConnection.setPassword( newJmsConnection.getPassword() );
         oldJmsConnection.properties( newJmsConnection.properties() );
+        oldJmsConnection.setSecurityZone( newJmsConnection.getSecurityZone() );
     }
 
     @Override

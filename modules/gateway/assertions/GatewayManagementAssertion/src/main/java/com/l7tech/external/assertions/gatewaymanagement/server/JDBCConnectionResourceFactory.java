@@ -7,6 +7,7 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.server.jdbc.JdbcConnectionManager;
 import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.security.rbac.SecurityFilter;
+import com.l7tech.server.security.rbac.SecurityZoneManager;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import java.util.HashMap;
@@ -16,15 +17,16 @@ import java.util.Map;
  * 
  */
 @ResourceFactory.ResourceType(type=JDBCConnectionMO.class)
-public class JDBCConnectionResourceFactory extends GoidEntityManagerResourceFactory<JDBCConnectionMO, JdbcConnection, EntityHeader> {
+public class JDBCConnectionResourceFactory extends SecurityZoneableEntityManagerResourceFactory<JDBCConnectionMO, JdbcConnection, EntityHeader> {
 
     //- PUBLIC
 
     public JDBCConnectionResourceFactory( final RbacServices services,
                                           final SecurityFilter securityFilter,
                                           final PlatformTransactionManager transactionManager,
-                                          final JdbcConnectionManager jdbcConnectionManager ) {
-        super( false, true, services, securityFilter, transactionManager, jdbcConnectionManager );
+                                          final JdbcConnectionManager jdbcConnectionManager,
+                                          final SecurityZoneManager securityZoneManager ) {
+        super( false, true, services, securityFilter, transactionManager, jdbcConnectionManager, securityZoneManager );
     }
 
     //- PROTECTED
@@ -41,6 +43,9 @@ public class JDBCConnectionResourceFactory extends GoidEntityManagerResourceFact
         jdbcConnectionMO.setJdbcUrl( jdbcConnection.getJdbcUrl() );
         jdbcConnectionMO.setConnectionProperties( getConnectionProperties( jdbcConnection ) );
         jdbcConnectionMO.setProperties( getProperties( jdbcConnection, JdbcConnection.class ) );
+
+        // handle SecurityZone
+        doSecurityZoneAsResource( jdbcConnectionMO, jdbcConnection );
 
         return jdbcConnectionMO;
     }
@@ -63,6 +68,9 @@ public class JDBCConnectionResourceFactory extends GoidEntityManagerResourceFact
 
         setProperties( jdbcConnection, connectionResource.getProperties(), JdbcConnection.class );
 
+        // handle SecurityZone
+        doSecurityZoneFromResource( connectionResource, jdbcConnection );
+
         return jdbcConnection;
     }
 
@@ -79,6 +87,7 @@ public class JDBCConnectionResourceFactory extends GoidEntityManagerResourceFact
         oldEntity.setMinPoolSize( newEntity.getMinPoolSize() );
         oldEntity.setMaxPoolSize( newEntity.getMaxPoolSize() );
         oldEntity.setAdditionalProperties( newEntity.getAdditionalProperties() );
+        oldEntity.setSecurityZone( newEntity.getSecurityZone() );
     }
 
     //- PRIVATE

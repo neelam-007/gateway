@@ -15,6 +15,7 @@ import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.policy.Policy;
 import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.security.rbac.SecurityFilter;
+import com.l7tech.server.security.rbac.SecurityZoneManager;
 import com.l7tech.server.service.ServiceDocumentManager;
 import com.l7tech.server.service.ServiceDocumentResolver;
 import com.l7tech.server.service.ServiceManager;
@@ -42,7 +43,7 @@ import static com.l7tech.util.Option.optional;
  * 
  */
 @ResourceFactory.ResourceType(type=ServiceMO.class)
-public class ServiceResourceFactory extends GoidEntityManagerResourceFactory<ServiceMO, PublishedService, ServiceHeader> {
+public class ServiceResourceFactory extends SecurityZoneableEntityManagerResourceFactory<ServiceMO, PublishedService, ServiceHeader> {
 
     //- PUBLIC
 
@@ -56,8 +57,9 @@ public class ServiceResourceFactory extends GoidEntityManagerResourceFactory<Ser
                                    final ServiceDocumentResolver serviceDocumentResolver,
                                    final ServiceWsdlUpdateChecker uddiServiceWsdlUpdateChecker,
                                    final PolicyHelper policyHelper,
-                                   final FolderResourceFactory folderResourceFactory ) {
-        super( false, true, services, securityFilter, transactionManager, serviceManager );
+                                   final FolderResourceFactory folderResourceFactory,
+                                   final SecurityZoneManager securityZoneManager ) {
+        super( false, true, services, securityFilter, transactionManager, serviceManager, securityZoneManager );
         this.serviceManager = serviceManager;
         this.serviceDocumentManager = serviceDocumentManager;
         this.serviceDocumentResolver = serviceDocumentResolver;
@@ -187,6 +189,9 @@ public class ServiceResourceFactory extends GoidEntityManagerResourceFactory<Ser
         }
         serviceDetail.setProperties( properties );
 
+        // handle SecurityZone
+        doSecurityZoneAsResource( service, publishedService );
+
         return service;
     }
 
@@ -232,6 +237,9 @@ public class ServiceResourceFactory extends GoidEntityManagerResourceFactory<Ser
         addWsdl( service, serviceDocuments, wsdlResources );
         service.parseWsdlStrategy( new ServiceDocumentWsdlStrategy(serviceDocuments) );
 
+        // handle SecurityZone
+        doSecurityZoneFromResource( serviceMO, service );
+
         return new ServiceEntityBag( service, serviceDocuments );
     }
 
@@ -256,6 +264,7 @@ public class ServiceResourceFactory extends GoidEntityManagerResourceFactory<Ser
         oldPublishedService.setHttpMethods( newPublishedService.getHttpMethodsReadOnly() );
         oldPublishedService.setLaxResolution( newPublishedService.isLaxResolution() );
         oldPublishedService.setWssProcessingEnabled( newPublishedService.isWssProcessingEnabled() );
+        oldPublishedService.setSecurityZone( newPublishedService.getSecurityZone() );
         if ( newPublishedService.soapVersionSet() ) {
             oldPublishedService.setSoapVersion( newPublishedService.getSoapVersion() );
         }

@@ -15,6 +15,7 @@ import com.l7tech.policy.PolicyType;
 import com.l7tech.server.policy.PolicyManager;
 import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.security.rbac.SecurityFilter;
+import com.l7tech.server.security.rbac.SecurityZoneManager;
 import com.l7tech.util.Either;
 import com.l7tech.util.Eithers.*;
 import com.l7tech.util.Option;
@@ -33,7 +34,7 @@ import static com.l7tech.util.Option.optional;
  *
  */
 @ResourceFactory.ResourceType(type=PolicyMO.class)
-public class PolicyResourceFactory extends GoidEntityManagerResourceFactory<PolicyMO, Policy, PolicyHeader> {
+public class PolicyResourceFactory extends SecurityZoneableEntityManagerResourceFactory<PolicyMO, Policy, PolicyHeader> {
 
     //- PUBLIC
 
@@ -42,8 +43,9 @@ public class PolicyResourceFactory extends GoidEntityManagerResourceFactory<Poli
                                   final PlatformTransactionManager transactionManager,
                                   final PolicyManager policyManager,
                                   final PolicyHelper policyHelper,
-                                  final FolderResourceFactory folderResourceFactory ) {
-        super( false, true, true, services, securityFilter, transactionManager, policyManager );
+                                  final FolderResourceFactory folderResourceFactory,
+                                  final SecurityZoneManager securityZoneManager ) {
+        super( false, true, true, services, securityFilter, transactionManager, policyManager, securityZoneManager );
         this.policyManager = policyManager;
         this.policyHelper = policyHelper;
         this.folderResourceFactory = folderResourceFactory;
@@ -170,6 +172,9 @@ public class PolicyResourceFactory extends GoidEntityManagerResourceFactory<Poli
         }
         policyDetail.setProperties( getProperties( policy, Policy.class ) );
 
+        // handle SecurityZone
+        doSecurityZoneAsResource( policyRes, policy );
+
         return policyRes;
     }
 
@@ -215,6 +220,9 @@ public class PolicyResourceFactory extends GoidEntityManagerResourceFactory<Poli
         policy.setFolder( folder.some() );
         setProperties( policy, policyDetail.getProperties(), Policy.class );
 
+        // handle SecurityZone
+        doSecurityZoneFromResource( policyMO, policy );
+
         return policy;
     }
 
@@ -237,6 +245,7 @@ public class PolicyResourceFactory extends GoidEntityManagerResourceFactory<Poli
         oldEntity.setSoap( newEntity.isSoap() );
         oldEntity.setInternalTag( newEntity.getInternalTag() );
         oldEntity.setXml( newEntity.getXml() );
+        oldEntity.setSecurityZone( newEntity.getSecurityZone() );
     }
 
     @Override

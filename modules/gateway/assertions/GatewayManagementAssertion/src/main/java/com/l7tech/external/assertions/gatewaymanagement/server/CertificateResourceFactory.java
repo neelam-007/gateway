@@ -9,6 +9,7 @@ import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.security.cert.TrustedCertManager;
 import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.security.rbac.SecurityFilter;
+import com.l7tech.server.security.rbac.SecurityZoneManager;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Option;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -22,15 +23,16 @@ import java.security.cert.X509Certificate;
  * 
  */
 @ResourceFactory.ResourceType(type=TrustedCertificateMO.class)
-public class CertificateResourceFactory extends GoidEntityManagerResourceFactory<TrustedCertificateMO, TrustedCert, EntityHeader> {
+public class CertificateResourceFactory extends SecurityZoneableEntityManagerResourceFactory<TrustedCertificateMO, TrustedCert, EntityHeader> {
 
     //- PUBLIC
 
     public CertificateResourceFactory( final RbacServices services,
                                        final SecurityFilter securityFilter,
                                        final PlatformTransactionManager transactionManager,
-                                       final TrustedCertManager trustedCertManager ) {
-        super( false, true, services, securityFilter, transactionManager, trustedCertManager );
+                                       final TrustedCertManager trustedCertManager,
+                                       final SecurityZoneManager securityZoneManager ) {
+        super( false, true, services, securityFilter, transactionManager, trustedCertManager, securityZoneManager );
     }
 
     //- PROTECTED
@@ -56,6 +58,9 @@ public class CertificateResourceFactory extends GoidEntityManagerResourceFactory
         certificate.getProperties().put(
                 "revocationCheckingEnabled",
                 trustedCert.getRevocationCheckPolicyType()!=TrustedCert.PolicyUsageType.NONE);
+
+        // handle SecurityZone
+        doSecurityZoneAsResource( certificate, trustedCert );
 
         return certificate;
     }
@@ -85,6 +90,9 @@ public class CertificateResourceFactory extends GoidEntityManagerResourceFactory
         }
         setProperties( certificateEntity, certificateResource.getProperties(), TrustedCert.class );
 
+        // handle SecurityZone
+        doSecurityZoneFromResource( certificateResource, certificateEntity );
+
         return certificateEntity;
     }
 
@@ -99,6 +107,7 @@ public class CertificateResourceFactory extends GoidEntityManagerResourceFactory
         }
         oldEntity.setRevocationCheckPolicyType( newEntity.getRevocationCheckPolicyType() );
         oldEntity.setRevocationCheckPolicyOid( newEntity.getRevocationCheckPolicyOid() );
+        oldEntity.setSecurityZone( newEntity.getSecurityZone() );
     }
 
     //- PRIVATE

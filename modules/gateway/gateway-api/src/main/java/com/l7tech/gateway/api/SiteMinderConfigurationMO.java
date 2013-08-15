@@ -1,6 +1,7 @@
 package com.l7tech.gateway.api;
 
 import com.l7tech.gateway.api.impl.AccessorSupport;
+import com.l7tech.gateway.api.impl.ElementExtendableAccessibleObject;
 import com.l7tech.gateway.api.impl.Extension;
 import com.l7tech.gateway.api.impl.PropertiesMapType;
 
@@ -21,7 +22,7 @@ import static com.l7tech.gateway.api.impl.AttributeExtensibleType.*;
 @XmlRootElement(name="SiteMinderConfiguration")
 @XmlType(name="SiteMinderConfigurationType", propOrder={"nameValue", "agentNameValue", "addressValue", "hostnameValue", "hostConfigurationValue", "userNameValue", "passwordIdValue", "enabledValue", "fipsModeValue", "ipCheckValue", "updateSsoTokenValue", "clusterThresholdValue", "nonClusterFailoverValue", "secretValue", "properties", "extension", "extensions"})
 @AccessorSupport.AccessibleResource(name = "siteMinderConfigurations")
-public class SiteMinderConfigurationMO extends AccessibleObject {
+public class SiteMinderConfigurationMO extends ElementExtendableAccessibleObject {
 
     //- PUBLIC
 
@@ -149,19 +150,7 @@ public class SiteMinderConfigurationMO extends AccessibleObject {
 
     //- PROTECTED
 
-    @XmlElement(name="Extension")
-    @Override
-    protected Extension getExtension() {
-        return super.getExtension();
-    }
-
-    @XmlAnyElement(lax=true)
-    @Override
-    protected List<Object> getExtensions() {
-        return super.getExtensions();
-    }
-
-    @XmlElement(name="Name")
+    @XmlElement(name="Name",required=true)
     protected AttributeExtensibleString getNameValue() {
         return name;
     }
@@ -170,7 +159,7 @@ public class SiteMinderConfigurationMO extends AccessibleObject {
         this.name = name;
     }
 
-    @XmlElement(name="AgentName")
+    @XmlElement(name="AgentName",required=true)
     protected AttributeExtensibleString getAgentNameValue() {
         return agentName;
     }
@@ -179,7 +168,7 @@ public class SiteMinderConfigurationMO extends AccessibleObject {
         this.agentName = agentName;
     }
 
-    @XmlElement(name="Address")
+    @XmlElement(name="Address",required=true)
     protected AttributeExtensibleString getAddressValue() {
         return address;
     }
@@ -188,7 +177,7 @@ public class SiteMinderConfigurationMO extends AccessibleObject {
         this.address = address;
     }
 
-    @XmlElement(name="Secret")
+    @XmlElement(name="Secret",required=true)
     protected AttributeExtensibleString getSecretValue() {
         return secret;
     }
@@ -197,7 +186,7 @@ public class SiteMinderConfigurationMO extends AccessibleObject {
         this.secret = secret;
     }
 
-    @XmlElement(name="Hostname")
+    @XmlElement(name="Hostname",required=true)
     protected AttributeExtensibleString getHostnameValue() {
         return hostname;
     }
@@ -251,7 +240,7 @@ public class SiteMinderConfigurationMO extends AccessibleObject {
         this.updateSsoToken = updateSsoToken;
     }
 
-    @XmlElement(name="Enabled")
+    @XmlElement(name="Enabled",required=true)
     protected AttributeExtensibleBoolean getEnabledValue() {
         return enabled;
     }

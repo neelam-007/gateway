@@ -13,6 +13,7 @@ import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.server.globalresources.ResourceEntryManager;
 import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.security.rbac.SecurityFilter;
+import com.l7tech.server.security.rbac.SecurityZoneManager;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.Either;
 import com.l7tech.util.ExceptionUtils;
@@ -39,7 +40,7 @@ import static com.l7tech.util.TextUtils.trim;
  * for the various resource types.</p>
  */                                                
 @ResourceFactory.ResourceType(type=ResourceDocumentMO.class)
-public class DocumentResourceFactory extends GoidEntityManagerResourceFactory<ResourceDocumentMO, ResourceEntry, ResourceEntryHeader> {
+public class DocumentResourceFactory extends SecurityZoneableEntityManagerResourceFactory<ResourceDocumentMO, ResourceEntry, ResourceEntryHeader> {
 
     //- PUBLIC
 
@@ -47,8 +48,9 @@ public class DocumentResourceFactory extends GoidEntityManagerResourceFactory<Re
                                     final SecurityFilter securityFilter,
                                     final PlatformTransactionManager transactionManager,
                                     final ResourceEntryManager resourceEntryManager,
-                                    final EntityResolver entityResolver ) {
-        super( false, true, services, securityFilter, transactionManager, resourceEntryManager );
+                                    final EntityResolver entityResolver,
+                                    final SecurityZoneManager securityZoneManager ) {
+        super( false, true, services, securityFilter, transactionManager, resourceEntryManager, securityZoneManager );
         this.resourceEntryManager = resourceEntryManager;
         this.entityResolver = entityResolver;
     }
@@ -80,6 +82,9 @@ public class DocumentResourceFactory extends GoidEntityManagerResourceFactory<Re
         }
 
         document.setResource( resource );
+
+        // handle SecurityZone
+        doSecurityZoneAsResource( document, resourceEntry );
 
         return document;
     }
@@ -121,6 +126,9 @@ public class DocumentResourceFactory extends GoidEntityManagerResourceFactory<Re
 
         setProperties( resourceEntry, resourceDocument.getProperties(), ResourceEntry.class );
 
+        // handle SecurityZone
+        doSecurityZoneFromResource( resourceDocument, resourceEntry );
+
         return resourceEntry;
     }
 
@@ -140,7 +148,9 @@ public class DocumentResourceFactory extends GoidEntityManagerResourceFactory<Re
         oldEntity.setResourceKey1( newEntity.getResourceKey1() );
         oldEntity.setResourceKey2( newEntity.getResourceKey2() );
         oldEntity.setResourceKey3( newEntity.getResourceKey3() );
+        oldEntity.setSecurityZone( newEntity.getSecurityZone() );
     }
+
     @Override
     public ResourceDocumentMO getResource(final Map<String, String> selectorMap) throws ResourceNotFoundException {
         return extract( transactional( new TransactionalCallback<Either<ResourceNotFoundException,ResourceDocumentMO>>(){

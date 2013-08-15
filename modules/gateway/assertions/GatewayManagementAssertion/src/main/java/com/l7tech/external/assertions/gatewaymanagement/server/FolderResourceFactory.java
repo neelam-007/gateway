@@ -12,6 +12,7 @@ import com.l7tech.objectmodel.folder.InvalidParentFolderException;
 import com.l7tech.server.folder.FolderManager;
 import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.security.rbac.SecurityFilter;
+import com.l7tech.server.security.rbac.SecurityZoneManager;
 import com.l7tech.util.Either;
 import com.l7tech.util.Functions.Unary;
 import com.l7tech.util.Option;
@@ -32,7 +33,7 @@ import static com.l7tech.util.Option.some;
  * 
  */
 @ResourceFactory.ResourceType(type=FolderMO.class)
-public class FolderResourceFactory extends GoidEntityManagerResourceFactory<FolderMO, Folder, FolderHeader> {
+public class FolderResourceFactory extends SecurityZoneableEntityManagerResourceFactory<FolderMO, Folder, FolderHeader> {
     //The old root folder oid
     private static final String ROOT_FOLDER_OID = "-5002";
 
@@ -41,8 +42,9 @@ public class FolderResourceFactory extends GoidEntityManagerResourceFactory<Fold
     public FolderResourceFactory( final RbacServices services,
                                   final SecurityFilter securityFilter,
                                   final PlatformTransactionManager transactionManager,
-                                  final FolderManager folderManager ) {
-        super( false, true, services, securityFilter, transactionManager, folderManager );
+                                  final FolderManager folderManager,
+                                  final SecurityZoneManager securityZoneManager ) {
+        super( false, true, services, securityFilter, transactionManager, folderManager, securityZoneManager );
         this.folderManager = folderManager;
     }
 
@@ -56,6 +58,9 @@ public class FolderResourceFactory extends GoidEntityManagerResourceFactory<Fold
         folderRes.setVersion( folder.getVersion() );
         folderRes.setFolderId( getFolderId( folder ) );
         folderRes.setName( folder.getName() );
+
+        // handle SecurityZone
+        doSecurityZoneAsResource( folderRes, folder );
 
         return folderRes;
     }
@@ -76,6 +81,9 @@ public class FolderResourceFactory extends GoidEntityManagerResourceFactory<Fold
             throw new InvalidResourceException(InvalidResourceException.ExceptionType.INVALID_VALUES, "invalid parent folder");
         }
 
+        // handle SecurityZone
+        doSecurityZoneFromResource( folderResource, folderEntity );
+
         return folderEntity;
     }
 
@@ -89,6 +97,7 @@ public class FolderResourceFactory extends GoidEntityManagerResourceFactory<Fold
             }
         }
         oldEntity.setName( newEntity.getName() );
+        oldEntity.setSecurityZone( newEntity.getSecurityZone() );
     }
 
     @Override
