@@ -1,6 +1,7 @@
 package com.l7tech.util.db;
 
 import com.l7tech.util.CollectionUtils;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
 import org.junit.Assert;
@@ -80,7 +81,7 @@ public class DbCompareTestUtils {
         }
 
         // ***************************** Check table data in goid tables ******************************************//
-        Set<String> oidTables = CollectionUtils.set("replication_status", "keystore_file", "resolution_configuration", "sink_config", "password_policy");
+        Set<String> oidTables = CollectionUtils.set("replication_status", "keystore_file", "resolution_configuration", "sink_config");
         Set<String> otherTables = CollectionUtils.set("cluster_master", "ssg_version", "hibernate_unique_key");
         Set<String> ignoreTables = new HashSet<>(oidTables);
         ignoreTables.addAll(otherTables);
@@ -116,8 +117,19 @@ public class DbCompareTestUtils {
             Statement db1SelectAllStatement = databaseOneConnection.createStatement();
             Statement db2SelectAllStatement = databaseTwoConnection.createStatement();
 
-            Map<String, Map<String, String>> db1TableData = getResultSetInfo(db1SelectAllStatement.executeQuery("select * from " + tableName), "objectid");
-            Map<String, Map<String, String>> db2TableData = getResultSetInfo(db2SelectAllStatement.executeQuery("select * from " + tableName), "objectid");
+            Map<String, Map<String, String>> db1TableData;
+            try {
+                db1TableData = getResultSetInfo(db1SelectAllStatement.executeQuery("select * from " + tableName), "objectid");
+            } catch (SQLException e) {
+                throw new SQLException("Error loading 1st database data for objectid table " + tableName + ": " + ExceptionUtils.getMessage(e), e);
+            }
+
+            Map<String, Map<String, String>> db2TableData;
+            try {
+                db2TableData = getResultSetInfo(db2SelectAllStatement.executeQuery("select * from " + tableName), "objectid");
+            } catch (SQLException e) {
+                throw new SQLException("Error loading 2nd database data for objectid table " + tableName + ": " + ExceptionUtils.getMessage(e), e);
+            }
 
             for (String key : db1TableData.keySet()) {
                 Map<String, String> db1RowData = db1TableData.get(key);

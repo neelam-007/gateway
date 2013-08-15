@@ -1654,7 +1654,6 @@
                 <ref bean="keystoreFileManager"/>
                 <ref bean="messageContextMappingKeyManager"/>
                 <ref bean="resolutionConfigurationManager"/>
-                <ref bean="passwordPolicyManger"/>
             </list>
         </property>
         <property name="timer" ref="entityVersionCheckerTimer"/>
@@ -1678,6 +1677,7 @@
                 <ref bean="encapsulatedAssertionConfigManager"/>
                 <ref bean="jmsConnectionManager"/>
                 <ref bean="roleManager"/>
+                <ref bean="passwordPolicyManger"/>
                 <ref bean="trustedCertManager"/>
                 <ref bean="revocationCheckPolicyManager"/>
                 <ref bean="jmsEndpointManager"/>

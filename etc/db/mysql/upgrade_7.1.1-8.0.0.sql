@@ -1292,6 +1292,23 @@ ALTER TABLE uddi_business_service_status ADD FOREIGN KEY (uddi_registry_goid) RE
 ALTER TABLE uddi_service_control ADD FOREIGN KEY (uddi_registry_goid) REFERENCES uddi_registries (goid) ON DELETE CASCADE;
 ALTER TABLE uddi_service_control_monitor_runtime ADD FOREIGN KEY (uddi_service_control_goid) REFERENCES uddi_service_control (goid) ON DELETE CASCADE;
 
+-- Password policy
+
+-- For manual runs use: set @password_policy_prefix=createUnreservedPoorRandomPrefix();
+set @password_policy_prefix=#RANDOM_LONG_NOT_RESERVED#;
+
+ALTER TABLE password_policy ADD COLUMN objectid_backup BIGINT(20);
+update password_policy set objectid_backup=objectid;
+ALTER TABLE password_policy CHANGE COLUMN objectid goid BINARY(16) NOT NULL;
+update password_policy set goid = toGoid(@password_policy_prefix,objectid_backup) where objectid_backup >= 0;
+update password_policy set goid = toGoid(0,objectid_backup) where objectid_backup < 0;
+ALTER TABLE password_policy DROP COLUMN objectid_backup;
+
+update rbac_role set entity_goid = toGoid(@password_policy_prefix,entity_oid) where entity_oid is not null and entity_type = 'PASSWORD_POLICY' and entity_oid >= 0;
+update rbac_role set entity_goid = toGoid(0,entity_oid) where entity_oid is not null and entity_type = 'PASSWORD_POLICY' and entity_oid < 0;
+update rbac_predicate_oid oid1 left join rbac_predicate on rbac_predicate.objectid = oid1.objectid left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid set oid1.entity_id = goidToString(toGoid(@password_policy_prefix,oid1.entity_id)) where rbac_permission.entity_type = 'PASSWORD_POLICY' and left(oid1.entity_id, 1) != '-';
+update rbac_predicate_oid oid1 left join rbac_predicate on rbac_predicate.objectid = oid1.objectid left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid set oid1.entity_id = goidToString(toGoid(0,oid1.entity_id)) where rbac_permission.entity_type = 'PASSWORD_POLICY' and left(oid1.entity_id, 1) = '-';
+
 -- RBAC role
 
 call dropForeignKey('rbac_assignment','rbac_role');
@@ -1513,6 +1530,7 @@ INSERT INTO goid_upgrade_map (table_name, prefix) VALUES
       ('rbac_assignment', @rbac_assignment_prefix),
       ('rbac_permission', @rbac_permission_prefix),
       ('rbac_predicate', @rbac_predicate_prefix),
+      ('password_policy', @password_policy_prefix),
       ('client_cert', @client_cert_prefix),
       ('trusted_cert', @trusted_cert_prefix),
       ('revocation_check_policy', @revocation_check_policy_prefix),

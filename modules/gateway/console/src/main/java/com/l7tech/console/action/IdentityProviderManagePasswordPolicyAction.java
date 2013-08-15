@@ -30,7 +30,7 @@ public class IdentityProviderManagePasswordPolicyAction extends SecureAction {
     public IdentityProviderManagePasswordPolicyAction() {
         super(new AttemptedReadSpecific(
                 EntityType.PASSWORD_POLICY, new IdentityProviderPasswordPolicy(
-                        IdentityProviderPasswordPolicy.DEFAULT_OID)), LIC_AUTH_ASSERTIONS);
+                        IdentityProviderPasswordPolicy.DEFAULT_GOID)), LIC_AUTH_ASSERTIONS);
     }
 
     /**

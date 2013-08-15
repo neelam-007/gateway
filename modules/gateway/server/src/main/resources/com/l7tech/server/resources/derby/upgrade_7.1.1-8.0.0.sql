@@ -1124,6 +1124,20 @@ ALTER TABLE uddi_service_control_monitor_runtime ADD COLUMN uddi_service_control
 update uddi_service_control_monitor_runtime set uddi_service_control_goid = toGoid(cast(getVariable('uddi_service_control_prefix') as bigint), uddi_service_control_oid);
 ALTER TABLE uddi_service_control_monitor_runtime DROP COLUMN uddi_service_control_oid;
 
+-- Password policy
+
+ALTER TABLE password_policy ADD COLUMN goid CHAR(16) FOR BIT DATA;
+update password_policy set goid = toGoid(cast(getVariable('password_policy_prefix') as bigint), objectid) where objectid >= 0;
+update password_policy set goid = toGoid(0, objectid) where objectid < 0;
+ALTER TABLE password_policy ALTER COLUMN goid NOT NULL;
+ALTER TABLE password_policy DROP COLUMN objectid;
+ALTER TABLE password_policy ADD PRIMARY KEY (goid);
+
+update rbac_role set entity_goid = toGoid(cast(getVariable('password_policy_prefix') as bigint),entity_oid) where entity_oid is not null and entity_type='PASSWORD_POLICY' and entity_oid >= 0;
+update rbac_role set entity_goid = toGoid(0,entity_oid) where entity_oid is not null and entity_type='PASSWORD_POLICY' and entity_oid < 0;
+update rbac_predicate_oid oid1 set oid1.entity_id = ifnull((select goidToString(toGoid(cast(getVariable('password_policy_prefix') as bigint),cast(oid1.entity_id as bigint))) from rbac_predicate left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid where rbac_predicate.objectid = oid1.objectid and rbac_permission.entity_type = 'PASSWORD_POLICY' and substr(oid1.entity_id, 1, 1) != '-'), oid1.entity_id);
+update rbac_predicate_oid oid1 set oid1.entity_id = ifnull((select goidToString(toGoid(0,cast(oid1.entity_id as bigint))) from rbac_predicate left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid where rbac_predicate.objectid = oid1.objectid and rbac_permission.entity_type = 'PASSWORD_POLICY' and substr(oid1.entity_id, 1, 1) != '-'), oid1.entity_id);
+
 -- RBAC role
 
 call setVariable('rbac_role_prefix', cast(randomLongNotReserved() as char(21)));
