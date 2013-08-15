@@ -1229,6 +1229,15 @@ ALTER TABLE wssc_session DROP PRIMARY KEY;
 ALTER TABLE wssc_session DROP COLUMN objectid;
 ALTER TABLE wssc_session ADD PRIMARY KEY (goid);
 
+-- COUNTERS
+ALTER TABLE counters ADD COLUMN goid CHAR(16) FOR BIT DATA;
+call setVariable('counters_prefix', cast(randomLongNotReserved() as char(21)));
+update counters set goid = toGoid(cast(getVariable('counters_prefix') as bigint), counterid);
+ALTER TABLE counters ALTER COLUMN goid NOT NULL;
+ALTER TABLE counters DROP PRIMARY KEY;
+ALTER TABLE counters DROP COLUMN counterid;
+ALTER TABLE counters ADD PRIMARY KEY (goid);
+
 --
 -- Register upgrade task for upgrading sink configuration references to GOIDs
 --
@@ -1306,4 +1315,5 @@ INSERT INTO goid_upgrade_map (table_name, prefix) VALUES
       ('revocation_check_policy', cast(getVariable('revocation_check_policy_prefix') as bigint)),
       ('resource_entry', cast(getVariable('resource_entry_prefix') as bigint)),
       ('secure_password', cast(getVariable('secure_password_prefix') as bigint)),
-      ('wssc_session', cast(getVariable('wssc_session_prefix') as bigint));
+      ('wssc_session', cast(getVariable('wssc_session_prefix') as bigint)),
+      ('counters', cast(getVariable('counters_prefix') as bigint));

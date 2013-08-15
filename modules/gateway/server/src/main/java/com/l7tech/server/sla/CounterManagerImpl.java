@@ -225,20 +225,19 @@ public class CounterManagerImpl extends HibernateDaoSupport implements CounterMa
                                 PreparedStatement ps = null;
                                 ResultSet rs = null;
                                 try {
-                                    ps = connection.prepareStatement("SELECT counterid,countername,cnt_sec,cnt_min,cnt_hr,cnt_day,cnt_mnt,last_update" +
+                                    ps = connection.prepareStatement("SELECT countername,cnt_sec,cnt_min,cnt_hr,cnt_day,cnt_mnt,last_update" +
                                         " FROM counters WHERE countername=?");
                                     ps.setString(1, counterName);
                                     rs = ps.executeQuery();
                                     if (rs.next()) {
-                                        long oid = rs.getLong(1);
-                                        String name = rs.getString(2);
-                                        long sec = rs.getLong(3);
-                                        long min = rs.getLong(4);
-                                        long hr = rs.getLong(5);
-                                        long day = rs.getLong(6);
-                                        long mnt = rs.getLong(7);
-                                        long lastUpdate = rs.getLong(8);
-                                        ret.set(new CounterInfo(oid, name, sec, min, hr, day, mnt, new Date(lastUpdate)));
+                                        String name = rs.getString(1);
+                                        long sec = rs.getLong(2);
+                                        long min = rs.getLong(3);
+                                        long hr = rs.getLong(4);
+                                        long day = rs.getLong(5);
+                                        long mnt = rs.getLong(6);
+                                        long lastUpdate = rs.getLong(7);
+                                        ret.set(new CounterInfo(name, sec, min, hr, day, mnt, new Date(lastUpdate)));
                                     }
                                 } finally {
                                     ResourceUtils.closeQuietly(rs);

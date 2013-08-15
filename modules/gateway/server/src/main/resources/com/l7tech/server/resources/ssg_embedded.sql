@@ -311,7 +311,7 @@ create table connector_property (
 );
 
 create table counters (
-    counterid bigint not null,
+    goid CHAR(16) FOR BIT DATA not null,
     countername varchar(255) not null,
     cnt_sec bigint default 0,
     cnt_min bigint default 0,
@@ -319,7 +319,7 @@ create table counters (
     cnt_day bigint default 0,
     cnt_mnt bigint default 0,
     last_update bigint default 0,
-    primary key (counterId),
+    primary key (goid),
     unique (countername)
 );
 
