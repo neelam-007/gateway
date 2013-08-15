@@ -12,6 +12,7 @@ import javax.swing.event.TableModelListener;
 import javax.swing.table.TableRowSorter;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.Comparator;
 
 /**
  * Panel which contains a filterable JTable with selectable rows.
@@ -30,6 +31,9 @@ public class SelectableFilterableTablePanel extends JPanel {
     private JPanel noEntitiesPanel;
     private CheckBoxSelectableTableModel model;
     private int[] filterableColumns;
+    private int[] sortableColumns;
+    private boolean[] sortOrder;
+    private Comparator[] comparators;
     private String selectableObjectLabel = ITEMS;
 
     public SelectableFilterableTablePanel() {
@@ -42,15 +46,36 @@ public class SelectableFilterableTablePanel extends JPanel {
     }
 
     /**
-     * Configure the panel.
+     * Configure the panel. All columns will be sortable in ascending order by default.
      *
      * @param model                 the CheckBoxSelectableTableModel which should back the JTable.
      * @param filterableColumns     column indices which are filterable.
      * @param selectableObjectLabel the label to display for the types of objects in the table (ex. no 'selectObjectLabel' are available). Default is 'items'.
      */
     public void configure(@NotNull final CheckBoxSelectableTableModel model, @NotNull final int[] filterableColumns, @Nullable final String selectableObjectLabel) {
+        configure(model, filterableColumns, null, null, null, selectableObjectLabel);
+    }
+
+    /**
+     * Configure the panel.
+     *
+     * @param model                 the CheckBoxSelectableTableModel which should back the JTable.
+     * @param filterableColumns     column indices which are filterable.
+     * @param sortableColumns       column indices which are sortable. See {@link Utilities#setRowSorter(javax.swing.JTable, javax.swing.table.TableModel, int[], boolean[], java.util.Comparator[])}.
+     * @param columnSortOrders      sort order for sortable columns. See {@link Utilities#setRowSorter(javax.swing.JTable, javax.swing.table.TableModel, int[], boolean[], java.util.Comparator[])}.
+     * @param comparators           comparators for sortable columns. See See {@link Utilities#setRowSorter(javax.swing.JTable, javax.swing.table.TableModel, int[], boolean[], java.util.Comparator[])}.
+     * @param selectableObjectLabel the label to display for the types of objects in the table (ex. no 'selectObjectLabel' are available). Default is 'items'.
+     */
+    public void configure(@NotNull final CheckBoxSelectableTableModel model, @NotNull final int[] filterableColumns,
+                          @Nullable final int[] sortableColumns,
+                          @Nullable final boolean[] columnSortOrders,
+                          @Nullable final Comparator[] comparators,
+                          @Nullable final String selectableObjectLabel) {
         this.model = model;
         this.filterableColumns = filterableColumns;
+        this.sortableColumns = sortableColumns;
+        this.sortOrder = columnSortOrders;
+        this.comparators = comparators;
         this.selectableObjectLabel = selectableObjectLabel == null ? ITEMS : selectableObjectLabel;
         loadCount();
         loadSelectionCount();
@@ -128,7 +153,20 @@ public class SelectableFilterableTablePanel extends JPanel {
         });
         if (selectableTable != null) {
             if (model != null) {
-                Utilities.setRowSorter(selectableTable, model);
+                if (sortableColumns != null && sortOrder != null && comparators != null) {
+                    Utilities.setRowSorter(selectableTable, model, sortableColumns, sortOrder, comparators);
+                } else {
+                    final int numCols = model.getColumnCount();
+                    final int[] sortableCols = new int[numCols];
+                    final boolean[] sortOrder = new boolean[numCols];
+                    final Comparator[] comparators = new Comparator[numCols];
+                    for (int i = 0; i < numCols; i++) {
+                        sortableCols[i] = i;
+                        sortOrder[i] = true;
+                        comparators[i] = null;
+                    }
+                    Utilities.setRowSorter(selectableTable, model, sortableCols, sortOrder, comparators);
+                }
             }
             if (filterableColumns != null) {
                 filterPanel.attachRowSorter((TableRowSorter) (selectableTable.getRowSorter()), filterableColumns);

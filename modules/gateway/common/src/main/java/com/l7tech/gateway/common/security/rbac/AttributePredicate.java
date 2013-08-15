@@ -46,7 +46,13 @@ public class AttributePredicate extends ScopePredicate implements ScopeEvaluator
 
     @Override
     public ScopePredicate createAnonymousClone() {
-        AttributePredicate copy = new AttributePredicate(null, this.attribute, this.value);
+        Permission anonymousPermission = null;
+        if (permission != null) {
+            anonymousPermission = new Permission();
+            // want to keep the entity type
+            anonymousPermission.setEntityType(getPermission().getEntityType());
+        }
+        AttributePredicate copy = new AttributePredicate(anonymousPermission, this.attribute, this.value);
         copy.setGoid(this.getGoid());
         copy.setMode(this.mode);
         copy.getter = this.getter;

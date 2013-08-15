@@ -175,13 +175,20 @@ public class EntityNameResolver {
             // get the name and/or path using the full entity
             name = getNameForEntity(entity, includePath);
         } else if (entity == null) {
-            if (includePath && header instanceof HasFolderGoid) {
-                path = getPath((HasFolderGoid) header);
+            if (includePath) {
+                if (header instanceof HasFolderGoid) {
+                    path = getPath((HasFolderGoid) header);
+                } else if (header.getType() == EntityType.ASSERTION_ACCESS) {
+                    final Assertion assertion = assertionRegistry.findByClassName(header.getName());
+                    if (assertion != null) {
+                        path = getPaletteFolders(assertion);
+                    }
+                }
             }
             uniqueInfo = getUniqueInfo(header, relatedEntity);
         }
 
-        return buildName(name, uniqueInfo, path);
+        return buildName(name, uniqueInfo, path, header.getType() != EntityType.ASSERTION_ACCESS);
     }
 
     /**
@@ -259,7 +266,16 @@ public class EntityNameResolver {
             final AttributePredicate predicate = (AttributePredicate) entity;
             final String mode = predicate.getMode();
             final String attribute = predicate.getAttribute();
-            final String value = predicate.getValue();
+            String value = predicate.getValue();
+            if (predicate.getPermission() != null &&
+                    predicate.getPermission().getEntityType() == EntityType.ASSERTION_ACCESS &&
+                    (predicate.getMode() == null || AttributePredicate.EQUALS.equalsIgnoreCase(predicate.getMode()))) {
+                // we don't want to show the full class name
+                final Assertion assertion = assertionRegistry.findByClassName(predicate.getValue());
+                if (assertion != null) {
+                    value = getNameForAssertion(assertion, predicate.getValue());
+                }
+            }
             if (mode == null || AttributePredicate.EQUALS.equalsIgnoreCase(mode) || AttributePredicate.STARTS_WITH.equalsIgnoreCase(mode)) {
                 final String operation = AttributePredicate.STARTS_WITH.equalsIgnoreCase(mode) ? "starts with" : "equals";
                 name = attribute + " " + operation + " " + value;
@@ -297,15 +313,22 @@ public class EntityNameResolver {
             name = named.getName();
         }
         String path = null;
-        if (includePath && entity instanceof HasFolder) {
-            path = getPath((HasFolder) entity);
+        if (includePath) {
+            if (entity instanceof HasFolder) {
+                path = getPath((HasFolder) entity);
+            } else if (entity instanceof AssertionAccess) {
+                final Assertion assertion = assertionRegistry.findByClassName(((AssertionAccess) entity).getName());
+                if (assertion != null) {
+                    path = getPaletteFolders(assertion);
+                }
+            }
         }
         String uniqueInfo = getUniqueInfo(entity);
         if (StringUtils.isBlank(uniqueInfo) && relatedEntity instanceof Entity) {
             uniqueInfo = getUniqueInfo((Entity) relatedEntity);
         }
 
-        return buildName(name, uniqueInfo, path);
+        return buildName(name, uniqueInfo, path, !(entity instanceof AssertionAccess));
     }
 
     /**
@@ -483,7 +506,7 @@ public class EntityNameResolver {
         }
     }
 
-    private String buildName(String name, String uniqueInfo, String path) {
+    private String buildName(String name, String uniqueInfo, String path, boolean includeNameInPath) {
         final StringBuilder stringBuilder = new StringBuilder(name);
         if (StringUtils.isNotBlank(uniqueInfo)) {
             stringBuilder.append(" [");
@@ -494,7 +517,9 @@ public class EntityNameResolver {
             if (!ROOT.equals(path)) {
                 stringBuilder.append(" (");
                 stringBuilder.append(path);
-                stringBuilder.append(name);
+                if (includeNameInPath) {
+                    stringBuilder.append(name);
+                }
                 stringBuilder.append(")");
             } else {
                 stringBuilder.append(" " + path);

@@ -79,6 +79,8 @@ public class PermissionOptionsPanel extends WizardStepPanel {
         allTypesRadio.addItemListener(radioListener);
         specificTypeRadio.addItemListener(radioListener);
         allObjectsRadio.addItemListener(radioListener);
+        conditionRadio.addItemListener(radioListener);
+        specificObjectsRadio.addItemListener(radioListener);
     }
 
     private void initCheckBoxes() {

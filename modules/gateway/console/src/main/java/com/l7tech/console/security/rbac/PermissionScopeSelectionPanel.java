@@ -143,40 +143,45 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
         if (settings instanceof PermissionsConfig) {
             config = (PermissionsConfig) settings;
             final EntityType type = config.getType();
-            switch (config.getScopeType()) {
-                case CONDITIONAL:
-                    SwingUtilities.invokeLater(new Runnable() {
-                        @Override
-                        public void run() {
-                            conditionsPanel.setVisible(true);
-                            specificObjectsPanel.setVisible(false);
-                            header.setText(SELECT_OPTIONS_FOR_THESE_PERMISSIONS);
-                            tabPanel.setEnabledAt(FOLDER_TAB_INDEX, type == EntityType.ANY || type.isFolderable());
-                            tabPanel.setEnabledAt(ZONE_TAB_INDEX, type == EntityType.ANY || type.isSecurityZoneable());
-                        }
-                    });
-                    break;
-                case SPECIFIC_OBJECTS:
-                    SwingUtilities.invokeLater(new Runnable() {
-                        @Override
-                        public void run() {
-                            specificObjectsPanel.setVisible(true);
-                            conditionsPanel.setVisible(false);
-                            header.setText("Select " + config.getType().getPluralName().toLowerCase());
-                            if (config.getSelectedEntities().isEmpty()) {
-                                final List<EntityHeader> entities = new ArrayList<>();
-                                try {
-                                    entities.addAll(EntityUtils.getEntities(config.getType()));
-                                } catch (final FindException e) {
-                                    logger.log(Level.WARNING, "Unable to retrieve entities: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-                                }
-                                specificObjectsModel.setSelectableObjects(entities);
+            if (config.getScopeType() != null) {
+                switch (config.getScopeType()) {
+                    case CONDITIONAL:
+                        SwingUtilities.invokeLater(new Runnable() {
+                            @Override
+                            public void run() {
+                                conditionsPanel.setVisible(true);
+                                specificObjectsPanel.setVisible(false);
+                                header.setText(SELECT_OPTIONS_FOR_THESE_PERMISSIONS);
+                                tabPanel.setEnabledAt(FOLDER_TAB_INDEX, type == EntityType.ANY || type.isFolderable());
+                                tabPanel.setEnabledAt(ZONE_TAB_INDEX, type == EntityType.ANY || type.isSecurityZoneable());
+                                reloadAttributeComboBox();
                             }
-                        }
-                    });
-                    break;
-                default:
-                    throw new IllegalStateException("Unsupported scope type: " + config.getScopeType());
+                        });
+                        break;
+                    case SPECIFIC_OBJECTS:
+                        SwingUtilities.invokeLater(new Runnable() {
+                            @Override
+                            public void run() {
+                                specificObjectsPanel.setVisible(true);
+                                conditionsPanel.setVisible(false);
+                                final String typePlural = config.getType().getPluralName().toLowerCase();
+                                header.setText("Select " + typePlural);
+                                specificObjectsLabel.setText("Permissions will only apply to the selected " + typePlural + ".");
+                                if (config.getSelectedEntities().isEmpty()) {
+                                    final List<EntityHeader> entities = new ArrayList<>();
+                                    try {
+                                        entities.addAll(EntityUtils.getEntities(config.getType()));
+                                    } catch (final FindException e) {
+                                        logger.log(Level.WARNING, "Unable to retrieve entities: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                                    }
+                                    specificObjectsModel.setSelectableObjects(entities);
+                                }
+                            }
+                        });
+                        break;
+                    default:
+                        throw new IllegalStateException("Unsupported scope type: " + config.getScopeType());
+                }
             }
         }
 
@@ -272,9 +277,9 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
                 }
             }
         });
-        Utilities.setRowSorter(attributePredicatesTable, attributesModel);
+        Utilities.setRowSorter(attributePredicatesTable, attributesModel, new int[]{0, 1, 2}, new boolean[]{true, true, true}, new Comparator[]{null, null, null});
 
-        attributeComboBox.setModel(new DefaultComboBoxModel(findAttributeNames(config == null ? EntityType.ANY : config.getType()).toArray()));
+        reloadAttributeComboBox();
         comparisonComboBox.setModel(new DefaultComboBoxModel(validComparisons.keySet().toArray()));
 
         addButton.setEnabled(false);
@@ -303,7 +308,7 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
             @Override
             public void actionPerformed(final ActionEvent e) {
                 final int[] selectedRows = attributePredicatesTable.getSelectedRows();
-                for (int i = 0; i < selectedRows.length; i++) {
+                for (int i = selectedRows.length - 1; i >= 0; i--) {
                     final int selectedRow = selectedRows[i];
                     if (selectedRow >= 0) {
                         final int modelIndex = attributePredicatesTable.convertRowIndexToModel(selectedRow);
@@ -331,6 +336,10 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
                         StringUtils.isNotBlank(attributeValueTextField.getText()));
             }
         });
+    }
+
+    private void reloadAttributeComboBox() {
+        attributeComboBox.setModel(new DefaultComboBoxModel(findAttributeNames(config == null ? EntityType.ANY : config.getType()).toArray()));
     }
 
     private void initFoldersTable(final TableListener tableListener) {
@@ -414,7 +423,7 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
     }
 
     private Collection<String> findAttributeNames(@NotNull final EntityType entityType) {
-        final Collection<String> names = new ArrayList<String>();
+        final Collection<String> names = new ArrayList<>();
         final Class eClazz = entityType.getEntityClass();
         if (eClazz != null) {
             try {

@@ -4,6 +4,7 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.security.cert.TrustedCert;
+import com.l7tech.test.BugId;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
@@ -141,6 +142,16 @@ public class AttributePredicateTest {
         gus.setIssuerDn("cn=bleh,o=foo");
 
         assertFalse(p.matches(gus));
+    }
+
+    @BugId("SSG-5354")
+    @Test
+    public void createAnonymousCloneKeepsEntityType() {
+        final Permission perm = new Permission(new Role(), OperationType.CREATE, EntityType.TRUSTED_CERT);
+        final AttributePredicate predicate = new AttributePredicate(perm, "issuerDn", "cn=blah");
+        final AttributePredicate copy = (AttributePredicate) predicate.createAnonymousClone();
+        assertEquals(EntityType.TRUSTED_CERT, copy.getPermission().getEntityType());
+        assertNull(copy.getPermission().getRole());
     }
 
 }

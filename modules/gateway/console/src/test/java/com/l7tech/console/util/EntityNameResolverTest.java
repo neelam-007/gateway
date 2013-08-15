@@ -41,7 +41,7 @@ import static org.mockito.Mockito.*;
 @RunWith(MockitoJUnitRunner.class)
 public class EntityNameResolverTest {
     private static final long OID = 1234L;
-    private static final Goid GOID = new Goid(0,1234L);
+    private static final Goid GOID = new Goid(0, 1234L);
     private static final String NAME = "test";
     private EntityNameResolver resolver;
     @Mock
@@ -308,7 +308,7 @@ public class EntityNameResolverTest {
         final String className = "com.l7tech.policy.assertion.composite.AllAssertion";
         final EntityHeader assertionHeader = new EntityHeader(OID, EntityType.ASSERTION_ACCESS, className, null);
         when(assertionRegistry.findByClassName(className)).thenReturn(new AllAssertion());
-        assertEquals("All assertions must evaluate to true", resolver.getNameForHeader(assertionHeader));
+        assertEquals("All assertions must evaluate to true", resolver.getNameForHeader(assertionHeader, false));
     }
 
     @BugId("SSG-7298")
@@ -317,7 +317,7 @@ public class EntityNameResolverTest {
         final String className = "com.l7tech.policy.assertion.xmlsec.AddWssTimestamp";
         final EntityHeader assertionHeader = new EntityHeader(OID, EntityType.ASSERTION_ACCESS, className, null);
         when(assertionRegistry.findByClassName(className)).thenReturn(new AddWssTimestamp());
-        assertEquals("Add Timestamp", resolver.getNameForHeader(assertionHeader));
+        assertEquals("Add Timestamp", resolver.getNameForHeader(assertionHeader, false));
     }
 
     @Test
@@ -340,7 +340,16 @@ public class EntityNameResolverTest {
         final String className = CustomAssertionHolder.class.getName();
         final EntityHeader assertionHeader = new EntityHeader(OID, EntityType.ASSERTION_ACCESS, className, null);
         when(assertionRegistry.findByClassName(className)).thenReturn(new CustomAssertionHolder());
-        assertEquals(CustomAssertionHolder.CUSTOM_ASSERTION, resolver.getNameForHeader(assertionHeader));
+        assertEquals(CustomAssertionHolder.CUSTOM_ASSERTION, resolver.getNameForHeader(assertionHeader, false));
+    }
+
+    @Test
+    public void getNameForAssertionAccessHeaderWithPath() throws Exception {
+        final String className = "com.l7tech.policy.assertion.composite.AllAssertion";
+        final EntityHeader assertionHeader = new EntityHeader(OID, EntityType.ASSERTION_ACCESS, className, null);
+        when(assertionRegistry.findByClassName(className)).thenReturn(new AllAssertion());
+        when(folderRegistry.getPaletteFolderName("policyLogic")).thenReturn("Policy Logic");
+        assertEquals("All assertions must evaluate to true (Policy Logic)", resolver.getNameForHeader(assertionHeader, true));
     }
 
     @Test
@@ -450,14 +459,14 @@ public class EntityNameResolverTest {
     public void getNameForAssertionAccess() throws Exception {
         final AssertionAccess assertionAccess = new AssertionAccess(AllAssertion.class.getName());
         when(assertionRegistry.findByClassName(AllAssertion.class.getName())).thenReturn(new AllAssertion());
-        assertEquals("All assertions must evaluate to true", resolver.getNameForEntity(assertionAccess, true));
+        when(folderRegistry.getPaletteFolderName("policyLogic")).thenReturn("Policy Logic");
+        assertEquals("All assertions must evaluate to true (Policy Logic)", resolver.getNameForEntity(assertionAccess, true));
     }
 
     @Test
     public void getNameForAssertionAccessWithoutPath() throws Exception {
         final AssertionAccess assertionAccess = new AssertionAccess(AllAssertion.class.getName());
         when(assertionRegistry.findByClassName(AllAssertion.class.getName())).thenReturn(new AllAssertion());
-        when(folderRegistry.getPaletteFolderName("policyLogic")).thenReturn("Policy Logic");
         assertEquals("All assertions must evaluate to true", resolver.getNameForEntity(assertionAccess, false));
     }
 
@@ -473,7 +482,7 @@ public class EntityNameResolverTest {
     public void getNameForCustomAssertionAccess() throws Exception {
         final AssertionAccess assertionAccess = new AssertionAccess(CustomAssertionHolder.class.getName());
         when(assertionRegistry.findByClassName(CustomAssertionHolder.class.getName())).thenReturn(new CustomAssertionHolder());
-        assertEquals(CustomAssertionHolder.CUSTOM_ASSERTION, resolver.getNameForEntity(assertionAccess, true));
+        assertEquals(CustomAssertionHolder.CUSTOM_ASSERTION, resolver.getNameForEntity(assertionAccess, false));
     }
 
     @Test
@@ -639,6 +648,32 @@ public class EntityNameResolverTest {
     }
 
     @Test
+    public void getNameForAttributePredicateAssertionAccessNameAttribute() throws Exception {
+        final AttributePredicate predicate = new AttributePredicate(new Permission(new Role(), OperationType.READ, EntityType.ASSERTION_ACCESS), "name", AllAssertion.class.getName());
+        when(assertionRegistry.findByClassName(AllAssertion.class.getName())).thenReturn(new AllAssertion());
+        assertEquals("name equals All assertions must evaluate to true", resolver.getNameForEntity(predicate, false));
+    }
+
+    @Test
+    public void getNameForAttributePredicateAssertionAccessNonNameAttribute() throws Exception {
+        final AttributePredicate predicate = new AttributePredicate(new Permission(new Role(), OperationType.READ, EntityType.ASSERTION_ACCESS), "id", "1234");
+        assertEquals("id equals 1234", resolver.getNameForEntity(predicate, false));
+    }
+
+    @Test
+    public void getNameForAttributePredicateAssertionAccessNameAttributeStartsWith() throws Exception {
+        final AttributePredicate predicate = new AttributePredicate(new Permission(new Role(), OperationType.READ, EntityType.ASSERTION_ACCESS), "name", "com.l7tech");
+        predicate.setMode("sw");
+        assertEquals("name starts with com.l7tech", resolver.getNameForEntity(predicate, false));
+    }
+
+    @Test
+    public void getNameForAttributePredicateAssertionAccessNameAttributeUnrecognized() throws Exception {
+        final AttributePredicate predicate = new AttributePredicate(new Permission(new Role(), OperationType.READ, EntityType.ASSERTION_ACCESS), "name", "notvalid");
+        assertEquals("name equals notvalid", resolver.getNameForEntity(predicate, false));
+    }
+
+    @Test
     public void getNameForSecurityZonePredicate() throws Exception {
         final SecurityZone zone = new SecurityZone();
         zone.setName("test");
@@ -666,8 +701,8 @@ public class EntityNameResolverTest {
 
     @Test
     public void getNameForFolderAncestryPredicatePolicy() throws Exception {
-        when(policyAdmin.findPolicyByPrimaryKey(new Goid(0,1234L))).thenReturn(new Policy(PolicyType.INCLUDE_FRAGMENT, "test", "xml", false));
-        final EntityFolderAncestryPredicate predicate = new EntityFolderAncestryPredicate(new Permission(new Role(), OperationType.READ, EntityType.FOLDER), EntityType.POLICY, new Goid(0,1234));
+        when(policyAdmin.findPolicyByPrimaryKey(new Goid(0, 1234L))).thenReturn(new Policy(PolicyType.INCLUDE_FRAGMENT, "test", "xml", false));
+        final EntityFolderAncestryPredicate predicate = new EntityFolderAncestryPredicate(new Permission(new Role(), OperationType.READ, EntityType.FOLDER), EntityType.POLICY, new Goid(0, 1234));
         assertEquals("ancestors of policy \"test\"", resolver.getNameForEntity(predicate, false));
     }
 
@@ -682,8 +717,8 @@ public class EntityNameResolverTest {
 
     @Test
     public void getNameForFolderAncestryPredicateFolder() throws Exception {
-        when(folderAdmin.findByPrimaryKey(new Goid(0,1234L))).thenReturn(new Folder("test", null));
-        final EntityFolderAncestryPredicate predicate = new EntityFolderAncestryPredicate(new Permission(new Role(), OperationType.READ, EntityType.FOLDER), EntityType.FOLDER, new Goid(0,1234));
+        when(folderAdmin.findByPrimaryKey(new Goid(0, 1234L))).thenReturn(new Folder("test", null));
+        final EntityFolderAncestryPredicate predicate = new EntityFolderAncestryPredicate(new Permission(new Role(), OperationType.READ, EntityType.FOLDER), EntityType.FOLDER, new Goid(0, 1234));
         assertEquals("ancestors of folder \"test\"", resolver.getNameForEntity(predicate, false));
     }
 
@@ -691,21 +726,21 @@ public class EntityNameResolverTest {
     public void getNameForFolderAncestryPredicateServiceAlias() throws Exception {
         final PublishedService publishedService = new PublishedService();
         publishedService.setName("test");
-        when(serviceAdmin.findByAlias(new Goid(0,1234L))).thenReturn(publishedService);
-        final EntityFolderAncestryPredicate predicate = new EntityFolderAncestryPredicate(new Permission(new Role(), OperationType.READ, EntityType.FOLDER), EntityType.SERVICE_ALIAS, new Goid(0,1234));
+        when(serviceAdmin.findByAlias(new Goid(0, 1234L))).thenReturn(publishedService);
+        final EntityFolderAncestryPredicate predicate = new EntityFolderAncestryPredicate(new Permission(new Role(), OperationType.READ, EntityType.FOLDER), EntityType.SERVICE_ALIAS, new Goid(0, 1234));
         assertEquals("ancestors of published service alias \"test alias\"", resolver.getNameForEntity(predicate, false));
     }
 
     @Test
     public void getNameForFolderAncestryPredicatePolicyAlias() throws Exception {
-        when(policyAdmin.findByAlias(new Goid(0,1234L))).thenReturn(new Policy(PolicyType.INCLUDE_FRAGMENT, "test", "xml", false));
-        final EntityFolderAncestryPredicate predicate = new EntityFolderAncestryPredicate(new Permission(new Role(), OperationType.READ, EntityType.FOLDER), EntityType.POLICY_ALIAS, new Goid(0,1234));
+        when(policyAdmin.findByAlias(new Goid(0, 1234L))).thenReturn(new Policy(PolicyType.INCLUDE_FRAGMENT, "test", "xml", false));
+        final EntityFolderAncestryPredicate predicate = new EntityFolderAncestryPredicate(new Permission(new Role(), OperationType.READ, EntityType.FOLDER), EntityType.POLICY_ALIAS, new Goid(0, 1234));
         assertEquals("ancestors of policy alias \"test alias\"", resolver.getNameForEntity(predicate, false));
     }
 
     @Test
     public void getNameForFolderAncestryPredicateNullEntityType() throws Exception {
-        final EntityFolderAncestryPredicate predicate = new EntityFolderAncestryPredicate(new Permission(new Role(), OperationType.READ, EntityType.POLICY), null, new Goid(0,1234));
+        final EntityFolderAncestryPredicate predicate = new EntityFolderAncestryPredicate(new Permission(new Role(), OperationType.READ, EntityType.POLICY), null, new Goid(0, 1234));
         assertTrue(resolver.getNameForEntity(predicate, false).isEmpty());
     }
 
