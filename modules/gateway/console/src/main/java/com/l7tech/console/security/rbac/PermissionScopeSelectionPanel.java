@@ -1,6 +1,7 @@
 package com.l7tech.console.security.rbac;
 
 import com.l7tech.console.panels.WizardStepPanel;
+import com.l7tech.console.util.EntityUtils;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.SecurityZoneUtil;
 import com.l7tech.gateway.common.security.rbac.AttributePredicate;
@@ -8,6 +9,7 @@ import com.l7tech.gui.CheckBoxSelectableTableModel;
 import com.l7tech.gui.SimpleTableModel;
 import com.l7tech.gui.util.TableUtil;
 import com.l7tech.gui.util.Utilities;
+import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SecurityZone;
@@ -33,6 +35,7 @@ import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.Method;
 import java.util.*;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -62,6 +65,9 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
     private static final String EQ = "eq";
     private static final String SW = "sw";
     private static final String ENTITIES_WITH_NO_ZONE = "All entities that are not assigned a security zone";
+    private static final int ZONE_TAB_INDEX = 2;
+    private static final int FOLDER_TAB_INDEX = 1;
+    private static final String SELECT_OPTIONS_FOR_THESE_PERMISSIONS = "Select options for these permissions";
     private JPanel contentPanel;
     private JTabbedPane tabPanel;
     private JPanel zonesPanel;
@@ -78,9 +84,16 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
     private JComboBox attributeComboBox;
     private JComboBox comparisonComboBox;
     private JTextField attributeValueTextField;
+    private JLabel conditionsLabel;
+    private JLabel specificObjectsLabel;
+    private SelectableFilterableTablePanel specificObjectsTablePanel;
+    private JPanel specificObjectsPanel;
+    private JPanel conditionsPanel;
+    private JLabel header;
     private CheckBoxSelectableTableModel<SecurityZone> zonesModel;
     private CheckBoxSelectableTableModel<FolderHeader> foldersModel;
     private SimpleTableModel<AttributePredicate> attributesModel;
+    private CheckBoxSelectableTableModel<EntityHeader> specificObjectsModel;
     private static Map<String, String> validComparisons = new HashMap<>();
     private PermissionsConfig config;
 
@@ -104,7 +117,8 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
 
     @Override
     public boolean canAdvance() {
-        return !zonesModel.getSelected().isEmpty() || !foldersModel.getSelected().isEmpty() || attributesModel.getRowCount() > 0;
+        return (config.getScopeType() == PermissionsConfig.ScopeType.SPECIFIC_OBJECTS && !specificObjectsModel.getSelected().isEmpty()) ||
+                (config.getScopeType() == PermissionsConfig.ScopeType.CONDITIONAL && (!zonesModel.getSelected().isEmpty() || !foldersModel.getSelected().isEmpty() || attributesModel.getRowCount() > 0));
     }
 
     @Override
@@ -117,7 +131,7 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
         boolean canSkip = false;
         if (settings instanceof PermissionsConfig) {
             final PermissionsConfig config = (PermissionsConfig) settings;
-            canSkip = !config.isHasScope();
+            canSkip = !config.hasScope();
         } else if (settings != null) {
             logger.log(Level.WARNING, "Cannot handle settings because received invalid settings object: " + settings);
         }
@@ -128,19 +142,67 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
     public void readSettings(final Object settings) throws IllegalArgumentException {
         if (settings instanceof PermissionsConfig) {
             config = (PermissionsConfig) settings;
+            final EntityType type = config.getType();
+            switch (config.getScopeType()) {
+                case CONDITIONAL:
+                    SwingUtilities.invokeLater(new Runnable() {
+                        @Override
+                        public void run() {
+                            conditionsPanel.setVisible(true);
+                            specificObjectsPanel.setVisible(false);
+                            header.setText(SELECT_OPTIONS_FOR_THESE_PERMISSIONS);
+                            tabPanel.setEnabledAt(FOLDER_TAB_INDEX, type == EntityType.ANY || type.isFolderable());
+                            tabPanel.setEnabledAt(ZONE_TAB_INDEX, type == EntityType.ANY || type.isSecurityZoneable());
+                        }
+                    });
+                    break;
+                case SPECIFIC_OBJECTS:
+                    SwingUtilities.invokeLater(new Runnable() {
+                        @Override
+                        public void run() {
+                            specificObjectsPanel.setVisible(true);
+                            conditionsPanel.setVisible(false);
+                            header.setText("Select " + config.getType().getPluralName().toLowerCase());
+                            if (config.getSelectedEntities().isEmpty()) {
+                                final List<EntityHeader> entities = new ArrayList<>();
+                                try {
+                                    entities.addAll(EntityUtils.getEntities(config.getType()));
+                                } catch (final FindException e) {
+                                    logger.log(Level.WARNING, "Unable to retrieve entities: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                                }
+                                specificObjectsModel.setSelectableObjects(entities);
+                            }
+                        }
+                    });
+                    break;
+                default:
+                    throw new IllegalStateException("Unsupported scope type: " + config.getScopeType());
+            }
         }
-        setSkipped(canSkip(settings));
+
+        setSkipped(canSkip(settings)
+
+        );
     }
 
     @Override
     public void storeSettings(final Object settings) throws IllegalArgumentException {
         if (settings instanceof PermissionsConfig) {
             final PermissionsConfig config = (PermissionsConfig) settings;
-            config.setSelectedZones(new HashSet<>(zonesModel.getSelected()));
-            config.setSelectedFolders(new HashSet<>(foldersModel.getSelected()));
-            config.setFolderTransitive(transitiveCheckBox.isSelected());
-            config.setFolderAncestry(ancestryCheckBox.isSelected());
-            config.setAttributePredicates(new HashSet<>(attributesModel.getRows()));
+            switch (config.getScopeType()) {
+                case CONDITIONAL:
+                    config.setSelectedZones(new HashSet<>(zonesModel.getSelected()));
+                    config.setSelectedFolders(new HashSet<>(foldersModel.getSelected()));
+                    config.setFolderTransitive(transitiveCheckBox.isSelected());
+                    config.setFolderAncestry(ancestryCheckBox.isSelected());
+                    config.setAttributePredicates(new HashSet<>(attributesModel.getRows()));
+                    break;
+                case SPECIFIC_OBJECTS:
+                    config.setSelectedEntities(new HashSet<>(specificObjectsModel.getSelected()));
+                    break;
+                default:
+                    throw new IllegalArgumentException("Unsupported scope type: " + config.getScopeType());
+            }
         } else {
             logger.log(Level.WARNING, "Cannot store settings because received invalid settings object: " + settings);
         }
@@ -151,6 +213,32 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
         initZonesTable(tableListener);
         initFoldersTable(tableListener);
         initAttributes(tableListener);
+        initSpecificObjects(tableListener);
+    }
+
+    private void initSpecificObjects(final TableListener tableListener) {
+        specificObjectsModel = TableUtil.configureSelectableTable(specificObjectsTablePanel.getSelectableTable(), CHECK_COL_INDEX,
+                column(StringUtils.EMPTY, CHECK_BOX_WIDTH, CHECK_BOX_WIDTH, MAX_WIDTH, new Functions.Unary<Boolean, EntityHeader>() {
+                    @Override
+                    public Boolean call(final EntityHeader header) {
+                        return specificObjectsModel.isSelected(header);
+                    }
+                }),
+                column(NAME, 30, 600, MAX_WIDTH, new Functions.Unary<String, EntityHeader>() {
+                    @Override
+                    public String call(final EntityHeader header) {
+                        String name = UNAVAILABLE;
+                        try {
+                            name = Registry.getDefault().getEntityNameResolver().getNameForHeader(header, true);
+                        } catch (final FindException e) {
+                            logger.log(Level.WARNING, "Unable to resolve name for header: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                        }
+                        return name;
+                    }
+                }));
+        specificObjectsModel.addTableModelListener(tableListener);
+        specificObjectsModel.setSelectableObjects(Collections.<EntityHeader>emptyList());
+        specificObjectsTablePanel.configure(specificObjectsModel, new int[]{NAME_COL_INDEX}, null);
     }
 
     private void initAttributes(final TableListener tableListener) {

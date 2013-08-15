@@ -3,11 +3,11 @@ package com.l7tech.console.security.rbac;
 import com.l7tech.console.util.SecurityZoneUtil;
 import com.l7tech.gateway.common.admin.FolderAdmin;
 import com.l7tech.gateway.common.security.rbac.*;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.SecurityZone;
+import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.FolderHeader;
+import com.l7tech.policy.assertion.Include;
+import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.test.BugId;
 import org.junit.Before;
 import org.junit.Test;
@@ -32,6 +32,7 @@ public class PermissionSummaryPanelTest {
     private Set<SecurityZone> selectedZones;
     private Set<FolderHeader> selectedFolders;
     private Set<AttributePredicate> attributes;
+    private Set<EntityHeader> entities;
     private Set<OperationType> operations;
 
     @Before
@@ -39,18 +40,20 @@ public class PermissionSummaryPanelTest {
         selectedZones = new HashSet<>();
         selectedFolders = new HashSet<>();
         attributes = new HashSet<>();
+        entities = new HashSet<>();
         operations = new HashSet<>();
         config = new PermissionsConfig(new Role());
         config.setSelectedFolders(selectedFolders);
         config.setSelectedZones(selectedZones);
         config.setAttributePredicates(attributes);
+        config.setSelectedEntities(entities);
         config.setOperations(operations);
         when(folderAdmin.findByPrimaryKey(Folder.DEFAULT_GOID)).thenReturn(TEST_FOLDER);
     }
 
     @Test
     public void generatePermissionsNoScope() {
-        config.setHasScope(false);
+        config.setScopeType(null);
         operations.add(OperationType.READ);
         PermissionSummaryPanel.generatePermissions(config, folderAdmin);
         assertEquals(1, config.getGeneratedPermissions().size());
@@ -59,7 +62,7 @@ public class PermissionSummaryPanelTest {
 
     @Test
     public void generatePermissionsNoScopeMultipleOps() {
-        config.setHasScope(false);
+        config.setScopeType(null);
         operations.add(OperationType.READ);
         operations.add(OperationType.CREATE);
         PermissionSummaryPanel.generatePermissions(config, folderAdmin);
@@ -71,7 +74,7 @@ public class PermissionSummaryPanelTest {
 
     @Test
     public void generatePermissionsZones() {
-        config.setHasScope(true);
+        config.setScopeType(PermissionsConfig.ScopeType.CONDITIONAL);
         operations.add(OperationType.READ);
         // 2 zones
         final SecurityZone zone1 = new SecurityZone();
@@ -91,7 +94,7 @@ public class PermissionSummaryPanelTest {
 
     @Test
     public void generatePermissionsZonesMultipleOps() {
-        config.setHasScope(true);
+        config.setScopeType(PermissionsConfig.ScopeType.CONDITIONAL);
         operations.add(OperationType.READ);
         operations.add(OperationType.UPDATE);
         // 2 zones
@@ -113,7 +116,7 @@ public class PermissionSummaryPanelTest {
     @BugId("SSG-6918")
     @Test
     public void generatePermissionsNullZone() {
-        config.setHasScope(true);
+        config.setScopeType(PermissionsConfig.ScopeType.CONDITIONAL);
         operations.add(OperationType.READ);
         selectedZones.add(SecurityZoneUtil.getNullZone());
         PermissionSummaryPanel.generatePermissions(config, folderAdmin);
@@ -127,7 +130,7 @@ public class PermissionSummaryPanelTest {
 
     @Test
     public void generatePermissionsFolders() throws Exception {
-        config.setHasScope(true);
+        config.setScopeType(PermissionsConfig.ScopeType.CONDITIONAL);
         operations.add(OperationType.READ);
         // 2 folders
         selectedFolders.add(new FolderHeader(TEST_FOLDER));
@@ -147,7 +150,7 @@ public class PermissionSummaryPanelTest {
 
     @Test
     public void generatePermissionsFoldersMultipleOps() throws Exception {
-        config.setHasScope(true);
+        config.setScopeType(PermissionsConfig.ScopeType.CONDITIONAL);
         operations.add(OperationType.READ);
         operations.add(OperationType.UPDATE);
         // 2 folders
@@ -173,7 +176,7 @@ public class PermissionSummaryPanelTest {
 
     @Test
     public void generatePermissionsFoldersFindException() throws Exception {
-        config.setHasScope(true);
+        config.setScopeType(PermissionsConfig.ScopeType.CONDITIONAL);
         operations.add(OperationType.READ);
         // 2 folders
         selectedFolders.add(new FolderHeader(TEST_FOLDER));
@@ -194,7 +197,7 @@ public class PermissionSummaryPanelTest {
 
     @Test
     public void generatePermissionsFoldersTransitiveWithAncestry() throws Exception {
-        config.setHasScope(true);
+        config.setScopeType(PermissionsConfig.ScopeType.CONDITIONAL);
         operations.add(OperationType.READ);
         config.setFolderAncestry(true);
         config.setFolderTransitive(true);
@@ -235,7 +238,7 @@ public class PermissionSummaryPanelTest {
 
     @Test
     public void generatePermissionsFoldersTransitiveWithAncestryMultipleOps() throws Exception {
-        config.setHasScope(true);
+        config.setScopeType(PermissionsConfig.ScopeType.CONDITIONAL);
         operations.add(OperationType.READ);
         operations.add(OperationType.UPDATE);
         config.setFolderAncestry(true);
@@ -282,7 +285,7 @@ public class PermissionSummaryPanelTest {
 
     @Test
     public void generatePermissionsAttributes() {
-        config.setHasScope(true);
+        config.setScopeType(PermissionsConfig.ScopeType.CONDITIONAL);
         operations.add(OperationType.READ);
         attributes.add(new AttributePredicate(null, "name", "test"));
         attributes.add(new AttributePredicate(null, "id", "1"));
@@ -294,7 +297,7 @@ public class PermissionSummaryPanelTest {
 
     @Test
     public void generatePermissionsAttributesMultipleOps() {
-        config.setHasScope(true);
+        config.setScopeType(PermissionsConfig.ScopeType.CONDITIONAL);
         operations.add(OperationType.READ);
         operations.add(OperationType.UPDATE);
         attributes.add(new AttributePredicate(null, "name", "test"));
@@ -315,7 +318,7 @@ public class PermissionSummaryPanelTest {
 
     @Test
     public void generatePermissionsZoneAndFolderAndAttribute() {
-        config.setHasScope(true);
+        config.setScopeType(PermissionsConfig.ScopeType.CONDITIONAL);
         operations.add(OperationType.READ);
         selectedZones.add(new SecurityZone());
         attributes.add(new AttributePredicate(null, "name", "test"));
@@ -333,7 +336,7 @@ public class PermissionSummaryPanelTest {
 
     @Test
     public void generatePermissionsZoneAndFolderAndAttributeMultipleOps() {
-        config.setHasScope(true);
+        config.setScopeType(PermissionsConfig.ScopeType.CONDITIONAL);
         operations.add(OperationType.READ);
         operations.add(OperationType.UPDATE);
         selectedZones.add(new SecurityZone());
@@ -358,7 +361,7 @@ public class PermissionSummaryPanelTest {
 
     @Test
     public void generatePermissionsMultipleZoneAndFolderAndAttribute() throws Exception {
-        config.setHasScope(true);
+        config.setScopeType(PermissionsConfig.ScopeType.CONDITIONAL);
         operations.add(OperationType.READ);
         // 2 zones
         final SecurityZone zone1 = new SecurityZone();
@@ -394,7 +397,7 @@ public class PermissionSummaryPanelTest {
 
     @Test
     public void generatePermissionsMultipleZoneAndFolderAndAttributeMultipleOps() throws Exception {
-        config.setHasScope(true);
+        config.setScopeType(PermissionsConfig.ScopeType.CONDITIONAL);
         operations.add(OperationType.READ);
         operations.add(OperationType.UPDATE);
         // 2 zones
@@ -428,6 +431,41 @@ public class PermissionSummaryPanelTest {
             assertEquals(new Integer(1), predicateTypes.get(SecurityZonePredicate.class));
             assertEquals(new Integer(1), predicateTypes.get(FolderPredicate.class));
             assertEquals(new Integer(2), predicateTypes.get(AttributePredicate.class));
+        }
+        assertEquals(2, foundOps.size());
+        assertTrue(foundOps.contains(OperationType.READ));
+        assertTrue(foundOps.contains(OperationType.UPDATE));
+    }
+
+    @Test
+    public void generatePermissionsSpecificAssertions() throws Exception {
+        config.setScopeType(PermissionsConfig.ScopeType.SPECIFIC_OBJECTS);
+        config.setType(EntityType.ASSERTION_ACCESS);
+        operations.add(OperationType.READ);
+        entities.add(new EntityHeader("1", EntityType.ASSERTION_ACCESS, AllAssertion.class.getName(), null));
+
+        PermissionSummaryPanel.generatePermissions(config, folderAdmin);
+        assertEquals(1, config.getGeneratedPermissions().size());
+        final Map<Class, Integer> predTypes = countPredicateTypes(config.getGeneratedPermissions().iterator().next());
+        assertEquals(new Integer(1), predTypes.get(AttributePredicate.class));
+    }
+
+    @Test
+    public void generatePermissionsMultipleSpecificAssertionsAndOps() throws Exception {
+        config.setScopeType(PermissionsConfig.ScopeType.SPECIFIC_OBJECTS);
+        config.setType(EntityType.ASSERTION_ACCESS);
+        operations.add(OperationType.READ);
+        operations.add(OperationType.UPDATE);
+        entities.add(new EntityHeader("1", EntityType.ASSERTION_ACCESS, AllAssertion.class.getName(), null));
+        entities.add(new EntityHeader("2", EntityType.ASSERTION_ACCESS, Include.class.getName(), null));
+
+        PermissionSummaryPanel.generatePermissions(config, folderAdmin);
+        assertEquals(4, config.getGeneratedPermissions().size());
+        final Set<OperationType> foundOps = new HashSet<>();
+        for (final Permission permission : config.getGeneratedPermissions()) {
+            foundOps.add(permission.getOperation());
+            assertEquals(1, permission.getScope().size());
+            assertTrue(permission.getScope().iterator().next() instanceof AttributePredicate);
         }
         assertEquals(2, foundOps.size());
         assertTrue(foundOps.contains(OperationType.READ));

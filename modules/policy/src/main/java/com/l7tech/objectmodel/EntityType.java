@@ -1,5 +1,7 @@
 package com.l7tech.objectmodel;
 
+import com.l7tech.objectmodel.folder.HasFolder;
+
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import java.util.Comparator;
 
@@ -138,11 +140,19 @@ public enum EntityType implements Comparable<EntityType> {
     }
 
     /**
-     * @return true if entities of this type can be placed into security zones (if the zone also allows it)
+     * @return true if entities of this type can be placed into security zones.
      */
     public boolean isSecurityZoneable() {
-        Class<? extends Entity> ec = getEntityClass();
+        final Class<? extends Entity> ec = getEntityClass();
         return (ec != null && ZoneableEntity.class.isAssignableFrom(ec));
+    }
+
+    /**
+     * @return true if entities of this type can be placed into folders.
+     */
+    public boolean isFolderable() {
+        final Class<? extends Entity> ec = getEntityClass();
+        return (ec != null && HasFolder.class.isAssignableFrom(ec));
     }
 
     public static final NameComparator NAME_COMPARATOR = new NameComparator();

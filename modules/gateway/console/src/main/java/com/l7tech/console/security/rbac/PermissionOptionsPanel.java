@@ -4,11 +4,14 @@ import com.l7tech.console.panels.WizardStepPanel;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.objectmodel.EntityType;
+import org.apache.commons.collections.ComparatorUtils;
 
 import javax.swing.*;
 import java.awt.*;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -18,6 +21,8 @@ import java.util.logging.Logger;
 public class PermissionOptionsPanel extends WizardStepPanel {
     private static final Logger logger = Logger.getLogger(PermissionOptionsPanel.class.getName());
     private static final String PERMISSION_OPTIONS = "Permission options";
+    private static final String SELECT_A_TYPE = "(select a type)";
+    private static final Map<EntityType, Set<OperationType>> ENTITY_TYPES;
     private JPanel contentPanel;
     private JPanel applyToPanel;
     private JPanel restrictScopePanel;
@@ -29,13 +34,54 @@ public class PermissionOptionsPanel extends WizardStepPanel {
     private JCheckBox updateCheckBox;
     private JCheckBox deleteCheckBox;
     private JRadioButton conditionRadio;
+    private JRadioButton specificTypeRadio;
+    private JComboBox typeComboBox;
+    private JRadioButton specificObjectsRadio;
     private PermissionsConfig config;
+
+    static {
+        ENTITY_TYPES = new TreeMap(ComparatorUtils.nullLowComparator(EntityType.NAME_COMPARATOR));
+        ENTITY_TYPES.put(null, null);
+        for (final EntityType type : EntityType.values()) {
+            if (type != EntityType.ANY && type.isDisplayedInGui()) {
+                final Set<OperationType> invalidOps = new HashSet<>();
+                if (type == EntityType.ASSERTION_ACCESS) {
+                    invalidOps.add(OperationType.CREATE);
+                    invalidOps.add(OperationType.DELETE);
+                }
+                ENTITY_TYPES.put(type, invalidOps);
+            }
+        }
+    }
 
     public PermissionOptionsPanel() {
         super(null);
         setLayout(new BorderLayout());
         setShowDescriptionPanel(false);
         add(contentPanel);
+        initComboBox();
+        initCheckBoxes();
+        initRadioButtons();
+        enableDisable();
+    }
+
+    private void initRadioButtons() {
+        final RunOnChangeListener radioListener = new RunOnChangeListener(new Runnable() {
+            @Override
+            public void run() {
+                if (config != null) {
+                    setScope(config);
+                    enableDisable();
+                    notifyListeners();
+                }
+            }
+        });
+        allTypesRadio.addItemListener(radioListener);
+        specificTypeRadio.addItemListener(radioListener);
+        allObjectsRadio.addItemListener(radioListener);
+    }
+
+    private void initCheckBoxes() {
         final RunOnChangeListener checkBoxListener = new RunOnChangeListener(new Runnable() {
             @Override
             public void run() {
@@ -46,17 +92,49 @@ public class PermissionOptionsPanel extends WizardStepPanel {
         readCheckBox.addChangeListener(checkBoxListener);
         updateCheckBox.addChangeListener(checkBoxListener);
         deleteCheckBox.addChangeListener(checkBoxListener);
-        final RunOnChangeListener radioListener = new RunOnChangeListener(new Runnable() {
+    }
+
+    private void initComboBox() {
+        typeComboBox.setModel(new DefaultComboBoxModel(ENTITY_TYPES.keySet().toArray()));
+        typeComboBox.setRenderer(new DefaultListCellRenderer() {
             @Override
-            public void run() {
-                if (config != null) {
-                    setScopeFlag(config);
-                    notifyListeners();
+            public Component getListCellRendererComponent(final JList<?> list, Object value, final int index, final boolean isSelected, final boolean cellHasFocus) {
+                if (value instanceof EntityType) {
+                    value = ((EntityType) value).getPluralName();
+                } else {
+                    value = SELECT_A_TYPE;
                 }
+                return super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
             }
         });
-        allTypesRadio.addItemListener(radioListener);
-        allObjectsRadio.addItemListener(radioListener);
+        typeComboBox.addItemListener(new RunOnChangeListener(new Runnable() {
+            @Override
+            public void run() {
+                enableDisable();
+            }
+        }));
+    }
+
+    private void enableDisable() {
+        typeComboBox.setEnabled(specificTypeRadio.isSelected());
+        final Object selectedItem = typeComboBox.getSelectedItem();
+        final boolean enableRadiosAndBoxes = allTypesRadio.isSelected() || selectedItem != null;
+        Set<OperationType> invalidOps = null;
+        if (selectedItem instanceof EntityType) {
+            final EntityType selected = (EntityType) selectedItem;
+            invalidOps = ENTITY_TYPES.get(selected);
+        }
+        allObjectsRadio.setEnabled(enableRadiosAndBoxes);
+        conditionRadio.setEnabled(enableRadiosAndBoxes);
+        specificObjectsRadio.setEnabled(specificTypeRadio.isSelected() && selectedItem != null);
+        createCheckBox.setEnabled(enableRadiosAndBoxes && operationEnabled(OperationType.CREATE, invalidOps));
+        readCheckBox.setEnabled(enableRadiosAndBoxes && operationEnabled(OperationType.READ, invalidOps));
+        updateCheckBox.setEnabled(enableRadiosAndBoxes && operationEnabled(OperationType.UPDATE, invalidOps));
+        deleteCheckBox.setEnabled(enableRadiosAndBoxes && operationEnabled(OperationType.DELETE, invalidOps));
+    }
+
+    private boolean operationEnabled(final OperationType operation, final Set<OperationType> invalidOps) {
+        return invalidOps == null || !invalidOps.contains(operation);
     }
 
     @Override
@@ -66,7 +144,9 @@ public class PermissionOptionsPanel extends WizardStepPanel {
 
     @Override
     public boolean canAdvance() {
-        return createCheckBox.isSelected() || readCheckBox.isSelected() || updateCheckBox.isSelected() || deleteCheckBox.isSelected();
+        final boolean atLeastOneOpSelected = createCheckBox.isSelected() || readCheckBox.isSelected() || updateCheckBox.isSelected() || deleteCheckBox.isSelected();
+        final boolean typeOk = allTypesRadio.isSelected() || (specificTypeRadio.isSelected() && typeComboBox.getSelectedItem() != null);
+        return atLeastOneOpSelected && typeOk;
     }
 
     @Override
@@ -86,39 +166,52 @@ public class PermissionOptionsPanel extends WizardStepPanel {
     public void storeSettings(final Object settings) throws IllegalArgumentException {
         if (settings instanceof PermissionsConfig) {
             final PermissionsConfig config = (PermissionsConfig) settings;
+            final EntityType selectedType;
             if (allTypesRadio.isSelected()) {
-                config.setType(EntityType.ANY);
+                selectedType = EntityType.ANY;
             } else {
-                // TODO
+                final Object selected = typeComboBox.getSelectedItem();
+                if (selected instanceof EntityType) {
+                    selectedType = (EntityType) selected;
+                } else {
+                    throw new IllegalStateException("Cannot store settings because no EntityType is selected.");
+                }
+            }
+            if (config.getType() != selectedType) {
+                // type was changed
+                config.setType(selectedType);
+                config.getSelectedEntities().clear();
             }
             setOpsOnConfig(config);
-            setScopeFlag(config);
+            setScope(config);
 
         } else {
             logger.log(Level.WARNING, "Cannot store settings because received invalid settings object: " + settings);
         }
     }
 
-    private void setScopeFlag(final PermissionsConfig config) {
+    private void setScope(final PermissionsConfig config) {
         if (allObjectsRadio.isSelected()) {
-            config.setHasScope(false);
-        } else {
-            config.setHasScope(true);
+            config.setScopeType(null);
+        } else if (conditionRadio.isSelected()) {
+            config.setScopeType(PermissionsConfig.ScopeType.CONDITIONAL);
+        } else if (specificObjectsRadio.isSelected()) {
+            config.setScopeType(PermissionsConfig.ScopeType.SPECIFIC_OBJECTS);
         }
     }
 
-    private void setOpsOnConfig(PermissionsConfig config) {
+    private void setOpsOnConfig(final PermissionsConfig config) {
         final Set<OperationType> ops = new HashSet<>();
-        if (createCheckBox.isSelected()) {
+        if (createCheckBox.isEnabled() && createCheckBox.isSelected()) {
             ops.add(OperationType.CREATE);
         }
-        if (readCheckBox.isSelected()) {
+        if (readCheckBox.isEnabled() && readCheckBox.isSelected()) {
             ops.add(OperationType.READ);
         }
-        if (updateCheckBox.isSelected()) {
+        if (updateCheckBox.isEnabled() && updateCheckBox.isSelected()) {
             ops.add(OperationType.UPDATE);
         }
-        if (deleteCheckBox.isSelected()) {
+        if (deleteCheckBox.isEnabled() && deleteCheckBox.isSelected()) {
             ops.add(OperationType.DELETE);
         }
         config.setOperations(ops);

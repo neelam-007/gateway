@@ -4,10 +4,12 @@ import com.l7tech.gateway.common.security.rbac.AttributePredicate;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.security.rbac.Permission;
 import com.l7tech.gateway.common.security.rbac.Role;
+import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.SecurityZone;
 import com.l7tech.objectmodel.folder.FolderHeader;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -19,12 +21,13 @@ public class PermissionsConfig {
     private final Role role;
     private EntityType type = EntityType.ANY;
     private Set<OperationType> operations = new HashSet<>();
-    private boolean hasScope;
+    private ScopeType scopeType;
     private Set<SecurityZone> selectedZones = new HashSet<>();
     private Set<FolderHeader> selectedFolders = new HashSet<>();
     private boolean folderTransitive;
     private boolean folderAncestry;
     private Set<AttributePredicate> attributePredicates = new HashSet<>();
+    private Set<EntityHeader> selectedEntities = new HashSet<>();
     private Set<Permission> generatedPermissions = new HashSet<>();
 
     public PermissionsConfig(@NotNull final Role role) {
@@ -36,6 +39,9 @@ public class PermissionsConfig {
         return role;
     }
 
+    /**
+     * @return the EntityType which applies to the permissions.
+     */
     @NotNull
     public EntityType getType() {
         return type;
@@ -45,6 +51,9 @@ public class PermissionsConfig {
         this.type = type;
     }
 
+    /**
+     * @return a set of OperationType which the user has selected.
+     */
     @NotNull
     public Set<OperationType> getOperations() {
         return operations;
@@ -54,14 +63,28 @@ public class PermissionsConfig {
         this.operations = operations;
     }
 
-    public boolean isHasScope() {
-        return hasScope;
+    /**
+     * @return the ScopeType which applies to the permissions or null if the permissions have no scope.
+     */
+    @Nullable
+    public ScopeType getScopeType() {
+        return scopeType;
     }
 
-    public void setHasScope(boolean hasScope) {
-        this.hasScope = hasScope;
+    public void setScopeType(@Nullable final ScopeType scopeType) {
+        this.scopeType = scopeType;
     }
 
+    /**
+     * @return true if the permissions have ScopePredicates or false otherwise.
+     */
+    public boolean hasScope() {
+        return scopeType != null;
+    }
+
+    /**
+     * @return a set of SecurityZones that the user has selected. Applies to {@link ScopeType#CONDITIONAL}.
+     */
     @NotNull
     public Set<SecurityZone> getSelectedZones() {
         return selectedZones;
@@ -71,6 +94,9 @@ public class PermissionsConfig {
         this.selectedZones = selectedZones;
     }
 
+    /**
+     * @return a set of FolderHeaders which the user has selected. Applies to {@link ScopeType#CONDITIONAL}.
+     */
     @NotNull
     public Set<FolderHeader> getSelectedFolders() {
         return selectedFolders;
@@ -80,6 +106,9 @@ public class PermissionsConfig {
         this.selectedFolders = selectedFolders;
     }
 
+    /**
+     * @return true if the user has selected to make FolderPredicates apply to subfolders. Applies to {@link ScopeType#CONDITIONAL}.
+     */
     public boolean isFolderTransitive() {
         return folderTransitive;
     }
@@ -88,6 +117,10 @@ public class PermissionsConfig {
         this.folderTransitive = folderTransitive;
     }
 
+    /**
+     * @return true if the user has selected to grant read permissions to all folders required in order to view a selected folder
+     *         (parents + subfolders + selected folder itself). Applies to {@link ScopeType#CONDITIONAL}.
+     */
     public boolean isFolderAncestry() {
         return folderAncestry;
     }
@@ -96,6 +129,9 @@ public class PermissionsConfig {
         this.folderAncestry = folderAncestry;
     }
 
+    /**
+     * @return a set of AttributePredicates that the user has selected. Applies to {@link ScopeType#CONDITIONAL}.
+     */
     @NotNull
     public Set<AttributePredicate> getAttributePredicates() {
         return attributePredicates;
@@ -105,6 +141,21 @@ public class PermissionsConfig {
         this.attributePredicates = attributePredicates;
     }
 
+    /**
+     * @return a set of EntityHeaders which the user has selected. Applies to {@link ScopeType#SPECIFIC_OBJECTS}.
+     */
+    @NotNull
+    public Set<EntityHeader> getSelectedEntities() {
+        return selectedEntities;
+    }
+
+    public void setSelectedEntities(@NotNull final Set<EntityHeader> selectedEntities) {
+        this.selectedEntities = selectedEntities;
+    }
+
+    /**
+     * @return a set of Permissions which have been generated based on user input.
+     */
     @NotNull
     public Set<Permission> getGeneratedPermissions() {
         return generatedPermissions;
@@ -112,5 +163,15 @@ public class PermissionsConfig {
 
     public void setGeneratedPermissions(@NotNull final Set<Permission> generatedPermissions) {
         this.generatedPermissions = generatedPermissions;
+    }
+
+    /**
+     * The type of scope that applies to the permissions.
+     */
+    public enum ScopeType {
+        // scope applies to a set of specific objects
+        SPECIFIC_OBJECTS,
+        // scope applies to a set of conditions
+        CONDITIONAL;
     }
 }

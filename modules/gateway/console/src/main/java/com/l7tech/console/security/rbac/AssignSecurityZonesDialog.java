@@ -235,7 +235,7 @@ public class AssignSecurityZonesDialog extends JDialog {
         if (selected != null) {
             selected = convertToBackingEntityType(selected);
             try {
-                final EntityHeaderSet<EntityHeader> entities = getEntities(selected);
+                final EntityHeaderSet<EntityHeader> entities = EntityUtils.getEntities(selected);
                 final List<EntityHeader> headers = new ArrayList<>();
                 for (final EntityHeader header : entities) {
                     if (header instanceof PolicyHeader) {
@@ -286,57 +286,6 @@ public class AssignSecurityZonesDialog extends JDialog {
             path = "path unavailable";
         }
         return path;
-    }
-
-    private EntityHeaderSet<EntityHeader> getEntities(@NotNull final EntityType selected) throws FindException {
-        final EntityHeaderSet<EntityHeader> entities;
-        if (selected == EntityType.ASSERTION_ACCESS) {
-            // get assertion access from registry as they may not all be persisted in the database
-            entities = new EntityHeaderSet<>();
-            final ConsoleAssertionRegistry assertionRegistry = TopComponents.getInstance().getAssertionRegistry();
-            final Collection<AssertionAccess> assertions = assertionRegistry.getPermittedAssertions();
-            long nonPersistedAssertions = 0L;
-            boolean customAssertionProcessed = false;
-            for (final AssertionAccess assertionAccess : assertions) {
-                if (CustomAssertionHolder.class.getName().equals(assertionAccess.getName()) && customAssertionProcessed) {
-                    // bundle all CustomAssertions as one
-                    continue;
-                }
-                Goid goid = assertionAccess.getGoid();
-                if (assertionAccess.isUnsaved()) {
-                    // this assertion access is not yet persisted
-                    // give it some wrapped dummy goid so that it won't be considered 'equal' to the other headers
-                    goid = new Goid(GoidRange.WRAPPED_OID.getFirstHi(), --nonPersistedAssertions);
-                }
-                final ZoneableEntityHeader assertionHeader = new ZoneableEntityHeader(goid, EntityType.ASSERTION_ACCESS, assertionAccess.getName(), null, assertionAccess.getVersion());
-                assertionHeader.setSecurityZoneGoid(assertionAccess.getSecurityZone() == null ? null : assertionAccess.getSecurityZone().getGoid());
-                entities.add(assertionHeader);
-            }
-        } else if (selected == EntityType.SSG_KEY_METADATA) {
-            entities = new EntityHeaderSet<>();
-            long nonPersistedMetadatas = 0L;
-            try {
-                final TrustedCertAdmin trustedCertManager = Registry.getDefault().getTrustedCertManager();
-                final List<KeystoreFileEntityHeader> keystores = trustedCertManager.findAllKeystores(true);
-                for (final KeystoreFileEntityHeader keystore : keystores) {
-                    final List<SsgKeyEntry> keys = trustedCertManager.findAllKeys(keystore.getOid(), true);
-                    for (final SsgKeyEntry key : keys) {
-                        SsgKeyMetadata keyMetadata = key.getKeyMetadata();
-                        if (keyMetadata == null) {
-                            // this key metadata is not yet persisted
-                            keyMetadata = new SsgKeyMetadata(key.getKeystoreId(), key.getAlias(), null);
-                            keyMetadata.setOid(--nonPersistedMetadatas);
-                        }
-                        entities.add(new KeyMetadataHeaderWrapper(keyMetadata));
-                    }
-                }
-            } catch (final IOException | KeyStoreException | CertificateException e) {
-                throw new FindException("Error retrieving private key metadata.", e);
-            }
-        } else {
-            entities = Registry.getDefault().getRbacAdmin().findEntities(selected);
-        }
-        return entities;
     }
 
     private EntityType convertToBackingEntityType(final EntityType selected) {
