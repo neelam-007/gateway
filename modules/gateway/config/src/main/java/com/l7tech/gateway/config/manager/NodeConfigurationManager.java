@@ -535,7 +535,7 @@ public class NodeConfigurationManager {
             final String hashedPass = passwordHasher.hashPassword(adminPassword.getBytes(Charsets.UTF8));
             final String escapedLogin = derbyEscape(adminLogin);
             final String internalUserQuery = "UPDATE internal_user set name='" + escapedLogin + "',login='" + escapedLogin +
-                    "',password='" + hashedPass + "',version=1 where objectid=3;";
+                    "',password='" + hashedPass + "',version=1 where goid=X'00000000000000000000000000000003';";
             stringBuilder.append(internalUserQuery);
         }
         if (clusterHostname != null) {

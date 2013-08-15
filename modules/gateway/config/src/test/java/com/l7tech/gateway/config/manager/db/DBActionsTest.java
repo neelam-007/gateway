@@ -1,5 +1,6 @@
 package com.l7tech.gateway.config.manager.db;
 
+import com.l7tech.gateway.config.manager.AccountReset;
 import com.l7tech.server.management.config.node.DatabaseConfig;
 import com.l7tech.util.BuildInfo;
 import com.l7tech.util.SyspropUtil;
@@ -123,6 +124,11 @@ public class DBActionsTest {
         }
 
         Assert.assertEquals("The sorted versions do not match the expected order (expected " + Arrays.asList(goldVersions) + " but got " + Arrays.asList(testVersions) + ")", true, Arrays.equals(goldVersions, testVersions));
+    }
+
+    @Ignore("This test modifies the database on localhost")
+    @Test public void testAccountReset() throws Exception{
+        AccountReset.resetAccount(getDatabaseConfig("blah"),"newAdmin","layer7");
     }
 
     private DatabaseConfig getDatabaseConfig( String dbName ) {

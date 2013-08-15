@@ -111,7 +111,7 @@ public class NodeConfigurationManagerTest {
     public void createDerbyQueries(){
         final String query = NodeConfigurationManager.createDerbyQueries("pmadmin", "7layer", "nodeconfigmantest.l7tech.com");
         assertTrue(query.contains("UPDATE internal_user set name='pmadmin',login='pmadmin',password='"));
-        assertTrue(query.contains("',version=1 where objectid=3;"));
+        assertTrue(query.contains("',version=1 where goid=X'00000000000000000000000000000003';"));
         assertTrue(query.contains("UPDATE cluster_properties set propvalue='nodeconfigmantest.l7tech.com',version=1 where goid=X'0000000000000000fffffffffff5519f' and propkey='cluster.hostname';"));
     }
 
@@ -119,7 +119,7 @@ public class NodeConfigurationManagerTest {
     public void createDerbyQueriesEscapChars(){
         final String query = NodeConfigurationManager.createDerbyQueries("pm'admin'", "7layer", "node'configman'test.l7tech.com");
         assertTrue(query.contains("UPDATE internal_user set name='pm''admin''',login='pm''admin''',password='"));
-        assertTrue(query.contains("',version=1 where objectid=3;"));
+        assertTrue(query.contains("',version=1 where goid=X'00000000000000000000000000000003';"));
         assertTrue(query.contains("UPDATE cluster_properties set propvalue='node''configman''test.l7tech.com',version=1 where goid=X'0000000000000000fffffffffff5519f' and propkey='cluster.hostname';"));
     }
 
@@ -141,7 +141,7 @@ public class NodeConfigurationManagerTest {
     public void createDerbyQueriesNoClusterHost(){
         final String query = NodeConfigurationManager.createDerbyQueries("pmadmin", "7layer", null);
         assertTrue(query.contains("UPDATE internal_user set name='pmadmin',login='pmadmin',password='"));
-        assertTrue(query.contains("',version=1 where objectid=3;"));
+        assertTrue(query.contains("',version=1 where goid=X'00000000000000000000000000000003';"));
         assertFalse(query.contains("UPDATE cluster_properties"));
     }
 

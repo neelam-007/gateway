@@ -51,6 +51,6 @@ done
 ADMIN_HASH='$6$S7Z3HcudYNsObgs8$SjwZ3xtCkSjXOK2vHfOVEg2dJES3cgvtIUdHbEN/KdCBXoI6uuPSbxTEwcH.av6lpcb1p6Lu.gFeIX04FBxiJ.'
 
 # UPDATE DATABASE
-UPDATE_SYNTAX="UPDATE internal_user SET password='$ADMIN_HASH', login='$ACCOUNT_NAME', name='$ACCOUNT_NAME' WHERE objectid=3"
+UPDATE_SYNTAX="UPDATE internal_user SET password='$ADMIN_HASH', login='$ACCOUNT_NAME', name='$ACCOUNT_NAME' WHERE goid=toGoid(0,3)"
 RES=`mysql -h localhost -u $1 -p$2 $DATABASE_NAME -e "${UPDATE_SYNTAX}"`
 echo $RES

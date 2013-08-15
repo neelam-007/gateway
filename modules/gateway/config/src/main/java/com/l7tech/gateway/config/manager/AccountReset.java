@@ -2,6 +2,7 @@ package com.l7tech.gateway.config.manager;
 
 import com.l7tech.common.password.PasswordHasher;
 import com.l7tech.common.password.Sha512CryptPasswordHasher;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.*;
 import com.l7tech.server.management.config.node.DatabaseConfig;
 import com.l7tech.server.management.config.node.NodeConfig;
@@ -48,14 +49,15 @@ public class AccountReset {
         try {
             connection = dba.getConnection( config, false );
             statement = connection.prepareStatement(
-                    "INSERT INTO internal_user (objectid,version,name,login,password,first_name,last_name,email,description,expiration,password_expiry) " +
-                    "VALUES (3,1,?,?,?,'','','','',-1,?) " +
-                    "ON DUPLICATE KEY UPDATE login=values(login), name=values(name), version=version+1, password=values(password), expiration=-1, password_expiry=values(password_expiry), change_password=0;"
+                    "INSERT INTO internal_user (goid,version,name,login,password,first_name,last_name,email,description,expiration,password_expiry) " +
+                            "VALUES (?,1,?,?,?,'','','','',-1,?) " +
+                            "ON DUPLICATE KEY UPDATE login=values(login), name=values(name), version=version+1, password=values(password), expiration=-1, password_expiry=values(password_expiry), change_password=0;"
             );
-            statement.setString(1, accountname);
+            statement.setBytes(1,(new Goid(0,3).getBytes()));
             statement.setString(2, accountname);
-            statement.setString(3, passwordHasher.hashPassword(accountPassword.getBytes(Charsets.UTF8)));
-            statement.setLong(4, TimeUnit.DAYS.toMillis(PASSWORD_EXPIRY_DAYS) + System.currentTimeMillis());
+            statement.setString(3, accountname);
+            statement.setString(4, passwordHasher.hashPassword(accountPassword.getBytes(Charsets.UTF8)));
+            statement.setLong(5, TimeUnit.DAYS.toMillis(PASSWORD_EXPIRY_DAYS) + System.currentTimeMillis());
             statement.executeUpdate();
         } catch ( SQLException se ) {
             throw new CausedIOException( se.getMessage(), se );
