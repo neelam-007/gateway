@@ -11,6 +11,7 @@ import org.hibernate.annotations.Type;
 import org.jetbrains.annotations.Nullable;
 
 import javax.persistence.*;
+import javax.validation.constraints.Size;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -121,6 +122,13 @@ public class SsgActiveConnector extends ZoneableNamedGoidEntityImp {
         SsgActiveConnector ret = new SsgActiveConnector();
         ret.setType(type);
         return ret;
+    }
+
+    @Size(min = 1, max = 128)
+    @Transient
+    @Override
+    public String getName() {
+        return super.getName();
     }
 
     @Column(name="enabled")

@@ -6,10 +6,8 @@ import org.hibernate.annotations.Proxy;
 import org.hibernate.annotations.Type;
 import org.jetbrains.annotations.NotNull;
 
-import javax.persistence.Column;
-import javax.persistence.Inheritance;
-import javax.persistence.InheritanceType;
-import javax.persistence.Table;
+import javax.persistence.*;
+import javax.validation.constraints.Size;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlType;
 import java.util.EnumSet;
@@ -30,9 +28,17 @@ public class SecurityZone extends NamedGoidEntityImp {
     private String description = "";
     private Set<EntityType> permittedEntityTypes = EnumSet.noneOf(EntityType.class);
 
+    @Size(min = 1, max = 128)
+    @Transient
+    @Override
+    public String getName() {
+        return super.getName();
+    }
+
     /**
      * @return description of security zone, or null.
      */
+    @Size(max = 255)
     public String getDescription() {
         return description;
     }

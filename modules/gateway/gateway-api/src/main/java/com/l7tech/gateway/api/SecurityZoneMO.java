@@ -60,7 +60,7 @@ public class SecurityZoneMO extends AccessibleObject {
         return super.getExtensions();
     }
 
-    @XmlElement(name = "Name")
+    @XmlElement(name = "Name", required = true)
     protected AttributeExtensibleString getNameValue() {
         return name;
     }
@@ -69,7 +69,7 @@ public class SecurityZoneMO extends AccessibleObject {
         this.name = name;
     }
 
-    @XmlElement(name = "Description")
+    @XmlElement(name = "Description", required = true)
     protected AttributeExtensibleString getDescriptionValue() {
         return description;
     }
@@ -78,7 +78,7 @@ public class SecurityZoneMO extends AccessibleObject {
         this.description = description;
     }
 
-    @XmlElement(name = "PermitedEntitiesTypes")
+    @XmlElement(name = "PermittedEntityTypes", required = true)
     protected AttributeExtensibleStringList getPermittedEntityTypesValue() {
         return permittedEntityTypes;
     }
