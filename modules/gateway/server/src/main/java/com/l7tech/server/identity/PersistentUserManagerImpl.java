@@ -5,7 +5,7 @@ import com.l7tech.identity.PersistentUser;
 import com.l7tech.identity.User;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.objectmodel.*;
-import com.l7tech.server.HibernateEntityManager;
+import com.l7tech.server.HibernateGoidEntityManager;
 import com.l7tech.server.logon.LogonInfoManager;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import com.l7tech.util.ExceptionUtils;
@@ -25,7 +25,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT extends PersistentGroup, UMT extends PersistentUserManager<UT>, GMT extends PersistentGroupManager<UT, GT>>
-        extends HibernateEntityManager<UT, IdentityHeader>
+        extends HibernateGoidEntityManager<UT, IdentityHeader>
         implements PersistentUserManager<UT>
 {
     @SuppressWarnings({ "FieldNameHidesFieldInSuperclass" })
@@ -37,7 +37,7 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
 
     private final String HQL_DELETE =
             "FROM user IN CLASS " + getImpClass().getName() +
-                    " WHERE user.oid = ?";
+                    " WHERE user.goid = ?";
 
     protected PersistentIdentityProvider<UT, GT, UMT, GMT> identityProvider;
     private final ClientCertManager clientCertManager;
@@ -55,9 +55,10 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
                 logger.fine("findByPrimaryKey called with null arg.");
                 return null;
             }
-            UT out = findByPrimaryKey(getImpClass(), Long.parseLong(oid));
+            UT out = findByPrimaryKey(getImpClass(), Goid.parseGoid(oid));
+
             if (out == null) return null;
-            out.setProviderId(getProviderOid());
+            out.setProviderId(getProviderGoid());
             return out;
         } catch (NumberFormatException nfe) {
             logger.fine("findByPrimaryKey called with invalid arg '"+oid+"'.");
@@ -79,7 +80,7 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
                 }
             });
             if (puser != null)
-                puser.setProviderId(getProviderOid());
+                puser.setProviderId(getProviderGoid());
             return puser;
         } catch (Exception e) {
             logger.log(Level.SEVERE, null, e);
@@ -127,12 +128,12 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
         }
     }
 
-    protected long getProviderOid() {
-        return identityProvider.getConfig().getOid();
+    protected Goid getProviderGoid() {
+        return identityProvider.getConfig().getGoid();
     }
 
     @Override
-    public void delete( long oid ) throws DeleteException, FindException {
+    public void delete( Goid oid ) throws DeleteException, FindException {
         findAndDelete( oid );
     }
 
@@ -167,7 +168,7 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
                 @Override
                 @SuppressWarnings({"unchecked"})
                 public Void doInHibernate( final Session session) throws HibernateException, SQLException {
-                    UT entity = (UT)session.get(userImp.getClass(), userImp.getOid());
+                    UT entity = (UT)session.get(userImp.getClass(), userImp.getGoid());
                     if (entity == null) {
                         session.delete(userImp);
                     } else {
@@ -198,13 +199,13 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
      * @throws DeleteException
      */
     @Override
-    public void deleteAll(final long ipoid) throws DeleteException {
+    public void deleteAll(final Goid ipoid) throws DeleteException {
         try {
             getHibernateTemplate().execute(new HibernateCallback<Void>() {
                 @Override
                 public Void doInHibernate(Session session) throws HibernateException, SQLException {
                     Query q = session.createQuery(HQL_DELETE_BY_PROVIDEROID);
-                    q.setLong(0, ipoid);
+                    q.setBinary(0, ipoid.getBytes());
                     for (Iterator i = q.iterate(); i.hasNext();) {
                         session.delete(i.next());
                     }
@@ -242,15 +243,15 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
     }
 
     @Override
-    public long save(UT entity) throws SaveException {
+    public Goid save(UT entity) throws SaveException {
         String id = save(entity, null);
-        return Long.parseLong(id);
+        return Goid.parseGoid(id);
     }
 
     @Override
     public String save(UT user, Set<IdentityHeader> groupHeaders) throws SaveException {
         UT imp = cast(user);
-        imp.setProviderId(getProviderOid());
+        imp.setProviderId(getProviderGoid());
 
         try {
             preSave(imp);
@@ -292,7 +293,7 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
     public void update(UT user, Set<IdentityHeader> groupHeaders) throws UpdateException {
         UT imp = cast(user);
 
-        if (imp.getProviderId() != getProviderOid()) throw new UpdateException("Can't update users from a different provider");
+        if (!imp.getProviderId().equals(getProviderGoid())) throw new UpdateException("Can't update users from a different provider");
         try {
             UT originalUser = findByPrimaryKey(user.getId());
             if (originalUser == null) {
@@ -341,7 +342,7 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
 
     @Override
     protected IdentityHeader newHeader(UT entity) {
-        return new IdentityHeader(getProviderOid(), entity.getOid(), EntityType.USER, entity.getLogin(), null, entity.getName(), entity.getVersion());
+        return new IdentityHeader(getProviderGoid(), entity.getGoid(), EntityType.USER, entity.getLogin(), null, entity.getName(), entity.getVersion());
     }
 
     @Override

@@ -40,12 +40,12 @@ public final class EntityHeaderUtils {
     public static AnonymousEntityReference fromHeader(EntityHeader header) {
         EntityType type = header.getType();
         if (type == ID_PROVIDER_CONFIG) {
-            return new AnonymousEntityReference(IdentityProviderConfig.class, header.getOid(), header.getName());
+            return new AnonymousEntityReference(IdentityProviderConfig.class, header.getGoid(), header.getName());
         } else if (type == USER || type == GROUP) {
-            long providerOid = IdentityProviderConfig.DEFAULT_OID;
+            Goid providerOid = IdentityProviderConfig.DEFAULT_GOID;
             if (header instanceof IdentityHeader) {
                 IdentityHeader identityHeader = (IdentityHeader) header;
-                providerOid = identityHeader.getProviderOid();
+                providerOid = identityHeader.getProviderGoid();
             }
 
             if (type == USER) {
@@ -81,16 +81,16 @@ public final class EntityHeaderUtils {
             return new FolderHeader((Folder) e);
         } else if (e instanceof FederatedUser) {
             FederatedUser user = (FederatedUser) e;
-            return new IdentityHeader(user.getProviderId(), user.getOid(), USER, user.getLogin(), null, user.getName(), user.getVersion());
+            return new IdentityHeader(user.getProviderId(), user.getGoid(), USER, user.getLogin(), null, user.getName(), user.getVersion());
         } else if (e instanceof PersistentUser) {
             PersistentUser user = (PersistentUser) e;
-            return new IdentityHeader(user.getProviderId(), user.getOid(), USER, user.getLogin(), null, user.getName(), user.getVersion());
+            return new IdentityHeader(user.getProviderId(), user.getGoid(), USER, user.getLogin(), null, user.getName(), user.getVersion());
         } else if (e instanceof User) {
             User user = (User) e;
             return new IdentityHeader(user.getProviderId(), user.getId(), USER, user.getLogin(), null, user.getName(), null);
         } else if (e instanceof PersistentGroup) {
             PersistentGroup group = (PersistentGroup) e;
-            return new IdentityHeader(group.getProviderId(), group.getOid(), GROUP, group.getName(), null, group.getName(), group.getVersion());
+            return new IdentityHeader(group.getProviderId(), group.getGoid(), GROUP, group.getName(), null, group.getName(), group.getVersion());
         } else if (e instanceof Group) {
             Group group = (Group) e;
             return new IdentityHeader(group.getProviderId(), group.getId(), GROUP, group.getName(), null, group.getName(), null);
@@ -183,7 +183,7 @@ public final class EntityHeaderUtils {
             externalEntityHeader.setProperty("Enabled", Boolean.toString(!serviceHeader.isDisabled()));
         } else if (header instanceof IdentityHeader) {
             IdentityHeader idHeader = (IdentityHeader) header;
-            externalEntityHeader = new ExternalEntityHeader(idHeader.getProviderOid() + ":" + header.getStrId(), header);
+            externalEntityHeader = new ExternalEntityHeader(idHeader.getProviderGoid() + ":" + header.getStrId(), header);
             externalEntityHeader.setProperty("Display Name", (idHeader.getName() != null ? idHeader.getName() : "") +
                     (idHeader.getCommonName() != null ? " (" + idHeader.getCommonName() + ")" : ""));
             externalEntityHeader.setProperty("Scope Type", EntityType.ID_PROVIDER_CONFIG.toString());
@@ -245,7 +245,7 @@ public final class EntityHeaderUtils {
                     throw new IllegalArgumentException("Invalid ID found for external header of type " + eh.getType() + " : " + eh.getExternalId());
                 sepIndex = eh.getExternalId().indexOf(":");
                 header = new IdentityHeader(
-                        Long.parseLong(eh.getExternalId().substring(0, sepIndex)),
+                        Goid.parseGoid(eh.getExternalId().substring(0, sepIndex)),
                         eh.getExternalId().substring(sepIndex + 1),
                         eh.getType(),
                         eh.getName(),

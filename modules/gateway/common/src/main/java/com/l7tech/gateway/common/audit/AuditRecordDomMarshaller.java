@@ -87,7 +87,7 @@ public class AuditRecordDomMarshaller {
 
         if (rec.getUserId() != null || rec.getUserName() != null) {
             Element user = e.getOwnerDocument().createElementNS(NS, "user");
-            user.setAttribute("identityProviderOid", Long.toString(rec.getIdentityProviderOid()));
+            user.setAttribute("identityProviderGoid", Goid.toString(rec.getIdentityProviderGoid()));
             user.setAttribute("id", rec.getUserId());
             user.setAttribute("name", rec.getUserName());
             e.appendChild(user);

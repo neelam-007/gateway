@@ -52,7 +52,7 @@ public class StandardReportSettingsManagerImpl extends HibernateEntityManager<St
         StandardReportSettings settingsForUser = null;
 
         final StandardReportSettings settings = findByPrimaryKey( oid );
-        if ( settings.getProvider() == user.getProviderId() &&
+        if ( settings.getProvider().equals(user.getProviderId()) &&
              settings.getUserId() != null &&
              settings.getUserId().equals(user.getId()) ) {
             settingsForUser = settings;           

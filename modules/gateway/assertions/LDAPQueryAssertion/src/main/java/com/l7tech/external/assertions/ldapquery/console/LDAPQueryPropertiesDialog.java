@@ -12,6 +12,7 @@ import com.l7tech.gui.util.Utilities;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderType;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.ObjectModelException;
 
 import javax.swing.*;
@@ -167,9 +168,9 @@ public class LDAPQueryPropertiesDialog extends AssertionPropertiesEditorSupport<
         // update gui from assertion
         localMappings.clear();
         localMappings.addAll(Arrays.asList(assertion.getQueryMappings()));
-        long id = assertion.getLdapProviderOid();
+        Goid id = assertion.getLdapProviderOid();
         for (ComboItem i : comboStuff) {
-            if (i.oid == id) {
+            if (i.oid.equals(id)) {
                 ldapCombo.setSelectedItem(i);
             }
         }
@@ -210,7 +211,7 @@ public class LDAPQueryPropertiesDialog extends AssertionPropertiesEditorSupport<
 
     public class ComboItem {
         String name;
-        long oid;
+        Goid oid;
         @Override
         public String toString() {
             return name;
@@ -241,10 +242,10 @@ public class LDAPQueryPropertiesDialog extends AssertionPropertiesEditorSupport<
                 return new Object[0];
             }
             for (EntityHeader header : identityProviderConfigs) {
-                IdentityProviderConfig cfg = identityAdmin.findIdentityProviderConfigByID(header.getOid());
+                IdentityProviderConfig cfg = identityAdmin.findIdentityProviderConfigByID(header.getGoid());
                 if (IdentityProviderType.fromVal(cfg.getTypeVal()) == IdentityProviderType.LDAP) {
                     ComboItem item = new ComboItem();
-                    item.oid = header.getOid();
+                    item.oid = header.getGoid();
                     item.name = cfg.getName();
                     comboStuff.add(item);
                 }

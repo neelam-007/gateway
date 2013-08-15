@@ -9,6 +9,7 @@ import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.ExceptionUtils;
 
 import javax.swing.*;
@@ -207,7 +208,7 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
 
                 LdapIdentityProviderConfig iProviderConfig = (LdapIdentityProviderConfig) settings;
 
-                if (acceptNewProvider || iProviderConfig.getOid() != -1) {
+                if (acceptNewProvider || !Goid.isDefault(iProviderConfig.getGoid())) {
 
                     providerNameTextField.setText(iProviderConfig.getName());
                     ldapBindPasswordField.setText(iProviderConfig.getBindPasswd());
@@ -236,7 +237,7 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
                 updateControlButtonState();
 
                 // select name field for clone
-                if( iProviderConfig.getOid() == LdapIdentityProviderConfig.DEFAULT_OID)
+                if( iProviderConfig.getGoid().equals(LdapIdentityProviderConfig.DEFAULT_GOID))
                 {
                     providerNameTextField.requestFocus();
                     providerNameTextField.selectAll();

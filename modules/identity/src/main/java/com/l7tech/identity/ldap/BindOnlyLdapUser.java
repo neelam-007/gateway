@@ -1,11 +1,13 @@
 package com.l7tech.identity.ldap;
 
+import com.l7tech.objectmodel.Goid;
+
 /**
  * Represents a bind-only user.  Unlike a regular user, the login name is used as the unique identifier (rather than the full DN, which is expanded at runtime).
  */
 public class BindOnlyLdapUser extends LdapUser {
-    public BindOnlyLdapUser(long identityProviderOid, String dn, String login) {
-        super(identityProviderOid, dn, login);
+    public BindOnlyLdapUser(Goid identityProviderGoid, String dn, String login) {
+        super(identityProviderGoid, dn, login);
         setLogin( login );
     }
 

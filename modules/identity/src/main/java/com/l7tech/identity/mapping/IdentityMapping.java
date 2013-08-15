@@ -1,14 +1,18 @@
 package com.l7tech.identity.mapping;
 
+import com.l7tech.identity.IdentityProviderConfigManager;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.UsersOrGroups;
 import com.l7tech.objectmodel.AttributeHeader;
+import com.l7tech.util.GoidUpgradeMapper;
 
 /**
  * Describes how the attribute described by an {@link AttributeConfig} is implemented in a particular
  * {@link com.l7tech.identity.IdentityProvider}.
  */
 public abstract class IdentityMapping extends AttributeMapping {
-    private long providerOid;
+    private Goid providerGoid;
     private UsersOrGroups usersOrGroups;
     private boolean unique;
     private boolean searchable;
@@ -30,18 +34,26 @@ public abstract class IdentityMapping extends AttributeMapping {
         };
     }
 
-    protected IdentityMapping(AttributeConfig parent, long providerOid, UsersOrGroups uog) {
+    protected IdentityMapping(AttributeConfig parent, Goid providerGoid, UsersOrGroups uog) {
         super(parent);
-        this.providerOid = providerOid;
+        this.providerGoid = providerGoid;
         this.usersOrGroups = uog;
     }
 
-    public long getProviderOid() {
-        return providerOid;
+    public Goid getProviderOid() {
+        return providerGoid;
     }
 
+    public void setProviderOid(Goid providerOid) {
+        this.providerGoid = providerOid;
+    }
+
+    // For backward compat while parsing pre-GOID policies.  Not needed for new assertions.
+    @Deprecated
     public void setProviderOid(long providerOid) {
-        this.providerOid = providerOid;
+        this.providerGoid = (providerOid== IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OLD_OID) ?
+                IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_GOID:
+                GoidUpgradeMapper.mapOid(EntityType.ID_PROVIDER_CONFIG,providerOid);
     }
 
     public boolean isValidForUsers() {
@@ -130,7 +142,7 @@ public abstract class IdentityMapping extends AttributeMapping {
 
         IdentityMapping that = (IdentityMapping) o;
 
-        if (providerOid != that.providerOid) return false;
+        if (providerGoid != null ? !providerGoid.equals(that.providerGoid) : that.providerGoid != null) return false;
         if (searchable != that.searchable) return false;
         if (unique != that.unique) return false;
         if (customAttributeName != null ? !customAttributeName.equals(that.customAttributeName) : that.customAttributeName != null)
@@ -142,7 +154,7 @@ public abstract class IdentityMapping extends AttributeMapping {
 
     public int hashCode() {
         int result = super.hashCode();
-        result = 31 * result + (int) (providerOid ^ (providerOid >>> 32));
+        result = 31 * result + (providerGoid != null ? providerGoid.hashCode() : 0);
         result = 31 * result + (usersOrGroups != null ? usersOrGroups.hashCode() : 0);
         result = 31 * result + (unique ? 1 : 0);
         result = 31 * result + (searchable ? 1 : 0);

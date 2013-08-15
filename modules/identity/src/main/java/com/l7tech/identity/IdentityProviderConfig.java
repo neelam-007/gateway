@@ -2,7 +2,7 @@ package com.l7tech.identity;
 
 import com.l7tech.common.io.NonCloseableOutputStream;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.imp.ZoneableNamedEntityImp;
+import com.l7tech.objectmodel.imp.ZoneableNamedGoidEntityImp;
 import com.l7tech.security.types.CertificateValidationType;
 import com.l7tech.util.*;
 import org.hibernate.annotations.Proxy;
@@ -41,7 +41,7 @@ import java.util.logging.Logger;
     discriminatorType=DiscriminatorType.INTEGER
 )
 @DiscriminatorValue("1")
-public class IdentityProviderConfig extends ZoneableNamedEntityImp {
+public class IdentityProviderConfig extends ZoneableNamedGoidEntityImp {
 
     public IdentityProviderConfig(IdentityProviderType type) {
         this.type = type;

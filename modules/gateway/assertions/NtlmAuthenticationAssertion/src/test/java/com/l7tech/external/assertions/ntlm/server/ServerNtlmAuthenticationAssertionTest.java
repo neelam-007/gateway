@@ -14,6 +14,7 @@ import com.l7tech.ntlm.adapter.LocalAuthenticationAdapter;
 import com.l7tech.ntlm.protocol.AuthenticationProvider;
 import com.l7tech.ntlm.protocol.NtlmAuthenticationServer;
 import com.l7tech.ntlm.protocol.NtlmClient;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.credential.CredentialFinderException;
@@ -66,7 +67,7 @@ public class ServerNtlmAuthenticationAssertionTest {
         assertion.setVariablePrefix("protocol");
         assertion.setMaxConnectionIdleTime(0);
         assertion.setMaxConnectionDuration(0);
-        assertion.setLdapProviderOid(0);
+        assertion.setLdapProviderOid(new Goid(0,0));
         assertion.setLdapProviderName("TEST LDAP PROVIDER");
         //Setup Context
         requestMsg = new Message();
@@ -79,7 +80,7 @@ public class ServerNtlmAuthenticationAssertionTest {
         //Setup LdapIdentityProvider
         LdapIdentityProviderConfig ldapIdentityProviderConfig = new LdapIdentityProviderConfig();
         ldapIdentityProviderConfig.setLdapUrl(new String[]{"TEST"});
-        ldapIdentityProviderConfig.setOid(assertion.getLdapProviderOid());
+        ldapIdentityProviderConfig.setGoid(assertion.getLdapProviderOid());
 
         TestIdentityProviderConfigManager identityProviderConfigManager = applicationContext.getBean("identityProviderConfigManager", TestIdentityProviderConfigManager.class);
         identityProviderConfigManager.update(ldapIdentityProviderConfig);
@@ -157,7 +158,7 @@ public class ServerNtlmAuthenticationAssertionTest {
     @Test
     public void testInvalidProvider() throws Exception {
         //set invalid provider
-        assertion.setLdapProviderOid(9999999);
+        assertion.setLdapProviderOid(new Goid(0,9999999));
         sendNegotiateMsg("NTLM");
         assertTrue(fixture.checkRequest(context) == AssertionStatus.AUTH_FAILED);
     }

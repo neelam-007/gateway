@@ -68,7 +68,7 @@ public class UserPropertiesAction extends NodeAction {
                 if (eh instanceof IdentityHeader) {
                     header = (IdentityHeader) eh;
                 } else {
-                    header = new IdentityHeader(config.getOid(), eh);
+                    header = new IdentityHeader(config.getGoid(), eh);
                 }
                 UserPanel panel;
                 if (UserPropertiesAction.this instanceof GenericUserPropertiesAction) {

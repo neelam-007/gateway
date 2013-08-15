@@ -332,16 +332,16 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
             modelOut.clearDataSet();
 
             IdentityAdmin admin = Registry.getDefault().getIdentityAdmin();
-            EntityHeaderSet<IdentityHeader> identities = admin.findAllUsers(ipc.getOid());
+            EntityHeaderSet<IdentityHeader> identities = admin.findAllUsers(ipc.getGoid());
 
             for(IdentityHeader header : identities) {
-                User u = admin.findUserByID(ipc.getOid(), header.getStrId());
+                User u = admin.findUserByID(ipc.getGoid(), header.getStrId());
                 modelOut.addRow(u);
             }
 
-            EntityHeaderSet<IdentityHeader> groups = admin.findAllGroups(ipc.getOid());
+            EntityHeaderSet<IdentityHeader> groups = admin.findAllGroups(ipc.getGoid());
             for (IdentityHeader header : groups) {
-                Group g = admin.findGroupByID(ipc.getOid(), header.getStrId());
+                Group g = admin.findGroupByID(ipc.getGoid(), header.getStrId());
                 modelOut.addRow(g);
             }
 
@@ -395,7 +395,7 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
             final IdentityAdmin admin = Registry.getDefault().getIdentityAdmin();
             EntityHeader[] headers = admin.findAllIdentityProviderConfig();
             for ( EntityHeader header : headers ) {
-                providersComboBoxModel.addElement( admin.findIdentityProviderConfigByID( header.getOid() ) );
+                providersComboBoxModel.addElement( admin.findIdentityProviderConfigByID( header.getGoid() ) );
             }
         } catch (Exception e) {
             e.printStackTrace();  //todo: fix this with better, general exception management

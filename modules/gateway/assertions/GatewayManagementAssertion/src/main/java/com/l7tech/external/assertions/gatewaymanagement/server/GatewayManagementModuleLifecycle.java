@@ -181,7 +181,7 @@ public class GatewayManagementModuleLifecycle implements ApplicationListener {
 
     private static String getDefaultPolicyXml() throws IOException {
         final AuthenticationAssertion authenticationAssertion = new AuthenticationAssertion();
-        authenticationAssertion.setIdentityProviderOid( IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID );
+        authenticationAssertion.setIdentityProviderOid( IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_GOID );
         final Assertion allAss = new AllAssertion( Arrays.asList(
                 new SslAssertion(),
                 new HttpBasic(),

@@ -65,7 +65,7 @@ public class ForceAdminPasswordResetAction extends SecureAction {
 
         if (result == JOptionPane.YES_OPTION) {
             try {
-                getIdentityAdmin().forceAdminUsersResetPassword(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID);
+                getIdentityAdmin().forceAdminUsersResetPassword(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_GOID);
             } catch (ObjectModelException e) {
                 logger.log(Level.WARNING, "Failed to force password change: " + ExceptionUtils.getMessage(e), e);
                 DialogDisplayer.showMessageDialog(f, "Failed to force password change: " + ExceptionUtils.getMessage(e), "Edit Failed", JOptionPane.ERROR_MESSAGE, null);

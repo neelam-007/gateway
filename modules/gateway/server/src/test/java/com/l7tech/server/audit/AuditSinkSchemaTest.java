@@ -74,7 +74,7 @@ public class AuditSinkSchemaTest {
                 Component.GW_AUDIT_SYSTEM,
                 "message",
                 false,
-                -2,
+                new Goid(0,-2),
                 "user name",
                 "user id",
                 "action",
@@ -103,7 +103,7 @@ public class AuditSinkSchemaTest {
                 "name",
                 AdminAuditRecord.ACTION_OTHER,
                 "msg",
-                -2,
+                new Goid(0,-2),
                 "adminLogin",
                 "adminId",
                 "0.0.0.0");
@@ -125,7 +125,7 @@ public class AuditSinkSchemaTest {
                 "clientAddr", "requestXml", 5,
                 "responseXml", 6 , 1234, 5678,
                 new Goid(0,7), "serviceName", "operationNameHaver",
-                true, SecurityTokenType.UNKNOWN, -5,
+                true, SecurityTokenType.UNKNOWN, new Goid(0,-5),
                 "userName", "userId", -10);
         signAuditRecord(record);
 

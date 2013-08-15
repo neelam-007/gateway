@@ -322,7 +322,7 @@ public class TrustedCertManagerImp
                                                       nodeInfo.getNodeIdentifier(),
                                                       Component.GW_TRUST_STORE,
                                                       "One or more trusted certificates has expired or is expiring soon",
-                                                      alwaysAudit, -1, null, null, "Checking", nodeInfo.getAddress());
+                                                      alwaysAudit, null, null, null, "Checking", nodeInfo.getAddress());
             auditContextFactory.doWithNewAuditContext(record, new Runnable() {
                 @Override
                 public void run() {

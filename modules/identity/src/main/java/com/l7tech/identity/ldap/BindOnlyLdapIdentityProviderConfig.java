@@ -20,8 +20,8 @@ import java.io.Serializable;
 public class BindOnlyLdapIdentityProviderConfig extends LdapUrlBasedIdentityProviderConfig implements Serializable {
     public BindOnlyLdapIdentityProviderConfig(IdentityProviderConfig config) {
         super(IdentityProviderType.BIND_ONLY_LDAP);
-        this._version = config.getVersion();
-	    this._oid = config.getOid();
+        setVersion(config.getVersion());
+	    setGoid(config.getGoid());
         copyFrom(config);
     }
 

@@ -6,6 +6,7 @@ import org.specs2.mock._
 import com.l7tech.identity.ldap.LdapIdentity
 import javax.naming.directory.Attributes
 import com.l7tech.identity.IdentityProviderConfig
+import com.l7tech.objectmodel.Goid
 
 /**
  * Copyright: Layer 7 Technologies, 2012
@@ -51,7 +52,7 @@ class IdProviderReferenceTest extends SpecificationWithJUnit with Mockito{
   }
 
   val mockFinder = mock[ExternalReferenceFinder]
-  val testOid = 0L
+  val testOid = new Goid(0,0L)
   mockFinder.findIdentityProviderConfigByID(testOid) returns mock[IdentityProviderConfig]
   val fixture = new IdProviderReference(mockFinder, testOid)
 }

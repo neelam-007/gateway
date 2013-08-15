@@ -4,6 +4,7 @@ import com.l7tech.identity.*;
 import com.l7tech.identity.internal.InternalGroup;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.identity.TestIdentityProvider;
 import com.l7tech.objectmodel.IdentityHeader;
 
@@ -32,7 +33,7 @@ public class GroupCacheTest {
 
     private static final String USER_NAME = "admin";
     private static final String PASSWORD = "password";
-    private static final long PROVIDER_ID = 1L;
+    private static final Goid PROVIDER_ID = new Goid(0,1L);
 
     private GroupCache cache = null;
     @Mock IdentityProvider identityProvider;
@@ -45,7 +46,7 @@ public class GroupCacheTest {
         assertNotNull(cache);
 
         final IdentityProviderConfig config = new IdentityProviderConfig();
-        config.setOid(PROVIDER_ID);
+        config.setGoid(PROVIDER_ID);
         when(identityProvider.getConfig()).thenReturn(config);
         when(identityProvider.getGroupManager()).thenReturn(groupManager);
     }
@@ -64,7 +65,7 @@ public class GroupCacheTest {
     @Test
     public void testValidUserNoGroupMembership() throws Exception{
         TestIdentityProvider tIP = new TestIdentityProvider(TestIdentityProvider.TEST_IDENTITY_PROVIDER_CONFIG);
-        UserBean ub = new UserBean(tIP.getConfig().getOid(), USER_NAME);
+        UserBean ub = new UserBean(tIP.getConfig().getGoid(), USER_NAME);
         TestIdentityProvider.addUser(ub, USER_NAME, PASSWORD.toCharArray());
 
         Set<IdentityHeader> sP = cache.getCachedValidatedGroups(ub, tIP, false);
@@ -94,7 +95,7 @@ public class GroupCacheTest {
 
     private void doExpiredUserTest(boolean skipAccountValidation) throws ValidationException {
         TestIdentityProvider tIP = new TestIdentityProvider(TestIdentityProvider.TEST_IDENTITY_PROVIDER_CONFIG);
-        UserBean ub = new UserBean(tIP.getConfig().getOid(), USER_NAME);
+        UserBean ub = new UserBean(tIP.getConfig().getGoid(), USER_NAME);
         ub.setPasswordExpiry(System.currentTimeMillis()-1);
         TestIdentityProvider.addUser(ub, USER_NAME, PASSWORD.toCharArray());
 
@@ -111,7 +112,7 @@ public class GroupCacheTest {
     @Test
     public void testValidUserWithGroupMembership() throws Exception{
         TestIdentityProvider tIP = new TestIdentityProvider(TestIdentityProvider.TEST_IDENTITY_PROVIDER_CONFIG);
-        UserBean ub = new UserBean(tIP.getConfig().getOid(), USER_NAME);
+        UserBean ub = new UserBean(tIP.getConfig().getGoid(), USER_NAME);
         TestIdentityProvider.addUser(ub, USER_NAME, PASSWORD.toCharArray());
         GroupManager<User,Group> gM = tIP.getGroupManager();
         Set<Group> groupSet = new HashSet<Group>();
@@ -136,7 +137,7 @@ public class GroupCacheTest {
     @Test
     public void testNoValidUser() throws Exception{
         TestIdentityProvider tIP = new TestIdentityProvider(TestIdentityProvider.TEST_IDENTITY_PROVIDER_CONFIG);
-        UserBean ub = new UserBean(tIP.getConfig().getOid(), USER_NAME);
+        UserBean ub = new UserBean(tIP.getConfig().getGoid(), USER_NAME);
 
         boolean exceptionThrown = false;
         try{
@@ -155,7 +156,7 @@ public class GroupCacheTest {
     @Test
     public void testValidCacheHit() throws Exception{
         TestIdentityProvider tIP = new TestIdentityProvider(TestIdentityProvider.TEST_IDENTITY_PROVIDER_CONFIG);
-        UserBean ub = new UserBean(tIP.getConfig().getOid(), USER_NAME);
+        UserBean ub = new UserBean(tIP.getConfig().getGoid(), USER_NAME);
         //CacheKey in GroupPrincipalCache uses User.getId, so want it to be non null
         ub.setUniqueIdentifier(ub.getLogin());
         TestIdentityProvider.addUser(ub, ub.getLogin(), PASSWORD.toCharArray());
@@ -175,7 +176,7 @@ public class GroupCacheTest {
         assertNotNull(m);
         m.setAccessible(true);
 
-        GroupCache.CacheKey cKey = new GroupCache.CacheKey(tIP.getConfig().getOid(), EntityType.USER, ub.getLogin());
+        GroupCache.CacheKey cKey = new GroupCache.CacheKey(tIP.getConfig().getGoid(), EntityType.USER, ub.getLogin());
         Object o = m.invoke(cache, cKey, ub.getLogin(), tIP, 1000);
         assertNotNull(o);
         assertTrue(o instanceof Set);
@@ -190,7 +191,7 @@ public class GroupCacheTest {
     @Test
     public void testValidUserCacheExpired() throws Exception{
         TestIdentityProvider tIP = new TestIdentityProvider(TestIdentityProvider.TEST_IDENTITY_PROVIDER_CONFIG);
-        UserBean ub = new UserBean(tIP.getConfig().getOid(), USER_NAME);
+        UserBean ub = new UserBean(tIP.getConfig().getGoid(), USER_NAME);
         //CacheKey in GroupPrincipalCache uses User.getId, so want it to be non null
         ub.setUniqueIdentifier(ub.getLogin());
         TestIdentityProvider.addUser(ub, USER_NAME, PASSWORD.toCharArray());
@@ -216,16 +217,16 @@ public class GroupCacheTest {
         m.setAccessible(true);
         //Sleep just to ensure that the expiry time of 1 second below will work
         Thread.sleep(1000);
-        GroupCache.CacheKey cKey = new GroupCache.CacheKey(tIP.getConfig().getOid(), EntityType.USER, ub.getLogin());
+        GroupCache.CacheKey cKey = new GroupCache.CacheKey(tIP.getConfig().getGoid(), EntityType.USER, ub.getLogin());
         Object o = m.invoke(cache, cKey, ub.getLogin(), tIP, 1);
         assertNull(o);
     }
 
     @Test
     public void getCachedGroups() throws FindException {
-        when(groupManager.getGroupHeadersForNestedGroup("1234")).thenReturn(Collections.singleton(new IdentityHeader(PROVIDER_ID, 1L, EntityType.GROUP, null, null, null, 0)));
+        when(groupManager.getGroupHeadersForNestedGroup(Goid.toString(new Goid(0,1234L)))).thenReturn(Collections.singleton(new IdentityHeader(PROVIDER_ID, new Goid(0,1L), EntityType.GROUP, null, null, null, 0)));
         final InternalGroup group = new InternalGroup("TestGroup");
-        group.setOid(1234L);
+        group.setGoid(new Goid(0,1234L));
         final Set<IdentityHeader> result = cache.getCachedGroups(group, identityProvider);
         assertEquals(1, result.size());
     }
@@ -234,7 +235,7 @@ public class GroupCacheTest {
     public void getCachedGroupsNone() throws FindException {
         when(groupManager.getGroupHeadersForNestedGroup("1234")).thenReturn(Collections.emptySet());
         final InternalGroup group = new InternalGroup("TestGroup");
-        group.setOid(1234L);
+        group.setGoid(new Goid(0,1234L));
         assertTrue(cache.getCachedGroups(group, identityProvider).isEmpty());
     }
 
@@ -242,11 +243,11 @@ public class GroupCacheTest {
     public void getCachedGroupsOverMax() throws Exception {
         final GroupCache cacheWith1MaxGroup = getGroupCache(1);
         final Set<IdentityHeader> groups = new HashSet<>();
-        groups.add(new IdentityHeader(PROVIDER_ID, 1L, EntityType.GROUP, null, null, null, 0));
-        groups.add(new IdentityHeader(PROVIDER_ID, 2L, EntityType.GROUP, null, null, null, 0));
-        when(groupManager.getGroupHeadersForNestedGroup("1234")).thenReturn(groups);
+        groups.add(new IdentityHeader(PROVIDER_ID, new Goid(0,1L), EntityType.GROUP, null, null, null, 0));
+        groups.add(new IdentityHeader(PROVIDER_ID, new Goid(0,2L), EntityType.GROUP, null, null, null, 0));
+        when(groupManager.getGroupHeadersForNestedGroup(Goid.toString(new Goid(0,1234L)))).thenReturn(groups);
         final InternalGroup group = new InternalGroup("TestGroup");
-        group.setOid(1234L);
+        group.setGoid(new Goid(0,1234L));
 
         final Set<IdentityHeader> result = cacheWith1MaxGroup.getCachedGroups(group, identityProvider);
         assertEquals(1, result.size());

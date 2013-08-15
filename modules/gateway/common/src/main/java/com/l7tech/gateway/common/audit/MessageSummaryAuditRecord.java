@@ -60,7 +60,7 @@ public class MessageSummaryAuditRecord extends AuditRecord implements ZoneableEn
      * @param operationNameHaver an Object on which toString() will be called if the operation name is needed, or null if one will not be provided.
      * @param authenticated true if the request was authenticated, false otherwise
      * @param authenticationType the authentication type for the request (may be null)
-     * @param identityProviderOid the OID of the {@link IdentityProviderConfig IdentityProvider} against which the user authenticated, or {@link IdentityProviderConfig#DEFAULT_OID} if the request was not authenticated.
+     * @param identityProviderOid the OID of the {@link IdentityProviderConfig IdentityProvider} against which the user authenticated, or {@link IdentityProviderConfig#DEFAULT_GOID} if the request was not authenticated.
      * @param userName the name or login of the user who was authenticated, or null if the request was not authenticated.
      * @param userId the OID or DN of the user who was authenticated, or null if the request was not authenticated.
      */
@@ -68,7 +68,7 @@ public class MessageSummaryAuditRecord extends AuditRecord implements ZoneableEn
                                      String clientAddr, String requestXml, int requestContentLength,
                                      String responseXml, int responseContentLength, int httpRespStatus, int routingLatency,
                                      Goid serviceGoid, String serviceName, Object operationNameHaver,
-                                     boolean authenticated, SecurityTokenType authenticationType, long identityProviderOid,
+                                     boolean authenticated, SecurityTokenType authenticationType, Goid identityProviderOid,
                                      String userName, String userId, Number mappingValueOidHaver)
     {
         super(level, nodeId, clientAddr, identityProviderOid, userName, userId, serviceName, null);

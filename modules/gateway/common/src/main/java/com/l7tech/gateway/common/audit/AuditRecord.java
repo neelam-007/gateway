@@ -2,6 +2,7 @@ package com.l7tech.gateway.common.audit;
 
 import com.l7tech.gateway.common.RequestId;
 import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.NamedEntity;
 import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.util.TextUtils;
@@ -42,7 +43,7 @@ public abstract class AuditRecord implements NamedEntity, PersistentEntity, Seri
     private final long sequenceNumber;
 
     /** OID of the IdentityProvider that the requesting user, if any, belongs to.  -1 indicates unknown. */
-    protected long identityProviderOid = IdentityProviderConfig.DEFAULT_OID;
+    protected Goid identityProviderGoid = IdentityProviderConfig.DEFAULT_GOID;
     /** Login or name of the user that is making the request if known, or null otherwise. */
     protected String userName;
     /** Unique ID of the user that is making the request (if known), or null otherwise. */
@@ -80,11 +81,11 @@ public abstract class AuditRecord implements NamedEntity, PersistentEntity, Seri
      * @param ipAddress the IP address of the entity that caused this AuditRecord to be created.  It could be that of a cluster node, an administrative workstation or a web service requestor, or null if unavailable.
      * @param name the name of the service or system affected by event that generated the AuditRecord
      * @param message a short description of the event that generated the AuditRecord
-     * @param identityProviderOid the OID of the {@link IdentityProviderConfig IdentityProvider} against which the user authenticated, or {@link IdentityProviderConfig#DEFAULT_OID} if the request was not authenticated.
+     * @param identityProviderOid the OID of the {@link IdentityProviderConfig IdentityProvider} against which the user authenticated, or {@link IdentityProviderConfig#DEFAULT_GOID} if the request was not authenticated.
      * @param userName the name or login of the user who was authenticated, or null if the request was not authenticated.
      * @param userId the OID or DN of the user who was authenticated, or null if the request was not authenticated.
      */
-    protected AuditRecord(Level level, String nodeId, String ipAddress, long identityProviderOid, String userName, String userId, String name, String message) {
+    protected AuditRecord(Level level, String nodeId, String ipAddress, Goid identityProviderOid, String userName, String userId, String name, String message) {
         this.sequenceNumber = globalSequenceNumber.incrementAndGet();
         this.level = level;
         this.millis = System.currentTimeMillis();
@@ -92,7 +93,7 @@ public abstract class AuditRecord implements NamedEntity, PersistentEntity, Seri
         this.nodeId = nodeId;
         this.name = TextUtils.truncStringMiddle(name, 254);
         this.ipAddress = ipAddress;
-        this.identityProviderOid = identityProviderOid;
+        this.identityProviderGoid = identityProviderOid;
         this.userName = userName;
         this.userId = userId;
     }
@@ -225,11 +226,11 @@ public abstract class AuditRecord implements NamedEntity, PersistentEntity, Seri
     }
 
     /**
-     * Gets the OID of the {@link com.l7tech.identity.IdentityProviderConfig IdentityProvider} against which the user authenticated, or {@link com.l7tech.identity.IdentityProviderConfig#DEFAULT_OID} if the request was not authenticated.
-     * @return the OID of the {@link com.l7tech.identity.IdentityProviderConfig IdentityProvider} against which the user authenticated, or {@link com.l7tech.identity.IdentityProviderConfig#DEFAULT_OID} if the request was not authenticated.
+     * Gets the OID of the {@link com.l7tech.identity.IdentityProviderConfig IdentityProvider} against which the user authenticated, or {@link com.l7tech.identity.IdentityProviderConfig#DEFAULT_GOID} if the request was not authenticated.
+     * @return the OID of the {@link com.l7tech.identity.IdentityProviderConfig IdentityProvider} against which the user authenticated, or {@link com.l7tech.identity.IdentityProviderConfig#DEFAULT_GOID} if the request was not authenticated.
      */
-    public long getIdentityProviderOid() {
-        return identityProviderOid;
+    public Goid getIdentityProviderGoid() {
+        return identityProviderGoid;
     }
 
     /**
@@ -264,8 +265,8 @@ public abstract class AuditRecord implements NamedEntity, PersistentEntity, Seri
 
     /** @deprecated to be called only for serialization and persistence purposes! */
     @Deprecated
-    public void setIdentityProviderOid( long identityProviderOid ) {
-        this.identityProviderOid = identityProviderOid;
+    public void setIdentityProviderGoid(Goid identityProviderOid) {
+        this.identityProviderGoid = identityProviderOid;
     }
 
     /** @deprecated to be called only for serialization and persistence purposes! */
@@ -376,7 +377,7 @@ public abstract class AuditRecord implements NamedEntity, PersistentEntity, Seri
         if (userId != null) out.write(userId.getBytes());
         out.write(SERSEP.getBytes());
 
-        out.write(Long.toString(identityProviderOid).getBytes());
+        if (identityProviderGoid != null) out.write(Goid.toString(identityProviderGoid).getBytes());
         out.write(SERSEP.getBytes());
 
         // AdminAuditRecord does entity_class:entity_id:action

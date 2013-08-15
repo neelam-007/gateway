@@ -7,6 +7,7 @@ import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.admin.IdentityAdmin;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.Goid;
 
 import javax.swing.*;
 import javax.swing.tree.TreeNode;
@@ -125,7 +126,7 @@ public abstract class EntityHeaderNode<HT extends EntityHeader> extends Abstract
             return config;
         }
         try {
-            long oid = getEntityHeader().getOid();
+            Goid oid = getEntityHeader().getGoid();
             config = getIdentityAdmin().findIdentityProviderConfigByID(oid);
             return config;
         }

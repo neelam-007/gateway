@@ -14,12 +14,8 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.identity.User;
 import com.l7tech.identity.fed.FederatedUser;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.IdentityHeader;
-import com.l7tech.objectmodel.ObjectNotFoundException;
+import com.l7tech.objectmodel.*;
 import com.l7tech.common.io.CertUtils;
-import com.l7tech.objectmodel.RuleViolationUpdateException;
 import com.l7tech.util.ExceptionUtils;
 
 import javax.swing.*;
@@ -136,15 +132,15 @@ public class FederatedUserPanel extends UserPanel {
             }
 
             AttemptedOperation ao;
-            boolean isNew = userHeader.getOid() == 0;
+            boolean isNew = userHeader.getGoid() == null || Goid.isDefault(userHeader.getGoid());
             if (isNew) {
-                FederatedUser user = new FederatedUser(config.getOid(), userHeader.getName());
+                FederatedUser user = new FederatedUser(config.getGoid(), userHeader.getName());
                 userGroups = null;
                 ao = new AttemptedCreateSpecific(USER, user);
                 this.user = user;
             } else {
                 IdentityAdmin admin = getIdentityAdmin();
-                FederatedUser u = (FederatedUser) admin.findUserByID(config.getOid(), userHeader.getStrId());
+                FederatedUser u = (FederatedUser) admin.findUserByID(config.getGoid(), userHeader.getStrId());
                 if (u == null) {
                     JOptionPane.showMessageDialog(topParent, USER_DOES_NOT_EXIST_MSG, "Warning", JOptionPane.WARNING_MESSAGE);
                     throw new NoSuchElementException("User missing " + userHeader.getOid());
@@ -152,7 +148,7 @@ public class FederatedUserPanel extends UserPanel {
                     ao = new AttemptedUpdate(USER, u);
                 }
                 user = u;
-                userGroups = admin.getGroupHeaders(config.getOid(), u.getId());
+                userGroups = admin.getGroupHeaders(config.getGoid(), u.getId());
             }
             canUpdate = Registry.getDefault().getSecurityProvider().hasPermission(ao);
 
@@ -683,9 +679,9 @@ public class FederatedUserPanel extends UserPanel {
         try {
             String id;
             if (userHeader.getStrId() != null) {
-                getIdentityAdmin().saveUser(config.getOid(), user, userGroups);
+                getIdentityAdmin().saveUser(config.getGoid(), user, userGroups);
             } else {
-                id = getIdentityAdmin().saveUser(config.getOid(), user, userGroups);
+                id = getIdentityAdmin().saveUser(config.getGoid(), user, userGroups);
                 userHeader.setStrId(id);
             }
 

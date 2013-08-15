@@ -1,11 +1,13 @@
 package com.l7tech.gateway.common.mapping;
 
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.imp.PersistentEntityImp;
 import com.l7tech.util.HexUtils;
 
 import javax.persistence.*;
 
 import org.hibernate.annotations.Proxy;
+import org.hibernate.annotations.Type;
 
 /**
  * Value information for a message context mapping.
@@ -25,7 +27,7 @@ public class MessageContextMappingValues extends PersistentEntityImp {
     private String digested;
 
     // special case mappings
-    private Long authUserProviderId;
+    private Goid authUserProviderId;
     private String authUserId; // this is not part of the identity
     private String authUserUniqueId;
     private String serviceOperation;
@@ -67,11 +69,12 @@ public class MessageContextMappingValues extends PersistentEntityImp {
     }
 
     @Column(name="auth_user_provider_id")
-    public Long getAuthUserProviderId() {
+    @Type(type = "com.l7tech.server.util.GoidType")
+    public Goid getAuthUserProviderId() {
         return authUserProviderId;
     }
 
-    public void setAuthUserProviderId(Long authUserProviderId) {
+    public void setAuthUserProviderId(Goid authUserProviderId) {
         this.authUserProviderId = authUserProviderId;
     }
 

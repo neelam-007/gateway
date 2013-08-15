@@ -130,7 +130,7 @@ public class BindOnlyLdapIdentityProviderImpl implements BindOnlyLdapIdentityPro
                     throw new FindException("Unable to create stub user: " + ExceptionUtils.getMessage(e));
                 }
 
-                ret.add(new IdentityHeader(config.getOid(), login, EntityType.USER, login, "Template username \"" + login + "\"", login, null));
+                ret.add(new IdentityHeader(config.getGoid(), login, EntityType.USER, login, "Template username \"" + login + "\"", login, null));
             }
         }
 

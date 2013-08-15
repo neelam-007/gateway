@@ -5,7 +5,8 @@
 package com.l7tech.identity;
 
 import com.l7tech.common.io.NonCloseableOutputStream;
-import com.l7tech.objectmodel.imp.NamedEntityImp;
+import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.imp.NamedGoidEntityImp;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.util.PoolByteArrayOutputStream;
@@ -30,10 +31,10 @@ import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
  * @author alex
  */
 @MappedSuperclass
-public abstract class PersistentGroup extends NamedEntityImp implements Group {
+public abstract class PersistentGroup extends NamedGoidEntityImp implements Group {
     public static final Charset PROPERTIES_ENCODING = Charsets.UTF8;
 
-    private long providerOid;
+    private Goid providerGoid;
     private String description;
     private transient String xmlProperties;
     private Map<String, String> properties;
@@ -43,13 +44,13 @@ public abstract class PersistentGroup extends NamedEntityImp implements Group {
 
     }
 
-    protected PersistentGroup(long providerOid, String name) {
-        this.providerOid = providerOid;
+    protected PersistentGroup(Goid providerGoid, String name) {
+        this.providerGoid = providerGoid;
         this._name = name;
     }
 
-    protected PersistentGroup(long providerOid, String name, Map<String, String> properties) {
-        this.providerOid = providerOid;
+    protected PersistentGroup(Goid providerGoid, String name, Map<String, String> properties) {
+        this.providerGoid = providerGoid;
         this._name = name;
         this.properties = new HashMap<String, String>(properties);
     }
@@ -93,16 +94,16 @@ public abstract class PersistentGroup extends NamedEntityImp implements Group {
 
     @Transient
     @Migration(mapName = NONE, mapValue = NONE, export = false, resolver = PropertyResolver.Type.ID_PROVIDER_CONFIG)
-    public long getProviderId() {
-        return providerOid;
+    public Goid getProviderId() {
+        return providerGoid;
     }
 
-    public void setProviderId( long providerId ) {
-        this.providerOid = providerId;
+    public void setProviderId( Goid providerId ) {
+        this.providerGoid = providerId;
     }
 
     public void copyFrom( PersistentGroup imp ) {
-        setOid(imp.getOid());
+        setGoid(imp.getGoid());
         setName(imp.getName());
         setDescription(imp.getDescription());
         setProviderId(imp.getProviderId());
@@ -120,13 +121,13 @@ public abstract class PersistentGroup extends NamedEntityImp implements Group {
 
         PersistentGroup that = (PersistentGroup) o;
 
-        return providerOid == that.providerOid && !(description != null ? !description.equals(that.description) : that.description != null);
+        return providerGoid.equals(that.providerGoid) && !(description != null ? !description.equals(that.description) : that.description != null);
 
     }
 
     public int hashCode() {
         int result = super.hashCode();
-        result = 31 * result + (int) (providerOid ^ (providerOid >>> 32));
+        result = 31 * result + providerGoid.hashCode();
         result = 31 * result + (description != null ? description.hashCode() : 0);
         return result;
     }

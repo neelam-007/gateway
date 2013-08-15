@@ -27,7 +27,7 @@ import static com.l7tech.gateway.api.IdentityProviderMO.*;
  * 
  */
 @ResourceFactory.ResourceType(type=IdentityProviderMO.class)
-public class IdentityProviderResourceFactory extends EntityManagerResourceFactory<IdentityProviderMO, IdentityProviderConfig, EntityHeader>{
+public class IdentityProviderResourceFactory extends GoidEntityManagerResourceFactory<IdentityProviderMO, IdentityProviderConfig, EntityHeader>{
 
     //- PUBLIC
 
@@ -404,7 +404,7 @@ public class IdentityProviderResourceFactory extends EntityManagerResourceFactor
                 if ( values.length != 2 ) {
                     throw new InvalidResourceException( InvalidResourceException.ExceptionType.INVALID_VALUES, "Invalid SSL key identifier" );
                 }
-                ldapIdentityProviderConfig.setKeystoreId( toInternalId( values[0], "SSL key identifier" ));
+                ldapIdentityProviderConfig.setKeystoreId( toInternalIdLong( values[0], "SSL key identifier" ));
                 ldapIdentityProviderConfig.setKeyAlias( values[1] );
             }
             ldapIdentityProviderConfig.setSearchBase( detail.getSearchBase() );
@@ -430,7 +430,7 @@ public class IdentityProviderResourceFactory extends EntityManagerResourceFactor
                 if ( values.length != 2 ) {
                     throw new InvalidResourceException( InvalidResourceException.ExceptionType.INVALID_VALUES, "Invalid SSL key identifier" );
                 }
-                bindOnlyProviderConfig.setKeystoreId(toInternalId(values[0], "SSL key identifier"));
+                bindOnlyProviderConfig.setKeystoreId(toInternalIdLong(values[0], "SSL key identifier"));
                 bindOnlyProviderConfig.setKeyAlias(values[1]);
             }
 

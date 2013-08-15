@@ -27,7 +27,7 @@ public class NewVirtualGroupAction extends NodeAction {
             MemberOfGroup.class,
             new AttemptedCreateSpecific(
                     EntityType.GROUP,
-                    new VirtualGroup(node.getEntityHeader().getOid(), "<new virtual group>")));
+                    new VirtualGroup(node.getEntityHeader().getGoid(), "<new virtual group>")));
     }
 
     /**

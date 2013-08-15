@@ -299,7 +299,7 @@ public class MigrationArtifactResource extends SecureResource {
                 MigrationRecord migration = manager.findByPrimaryKey( Long.parseLong( migrationId ) );
                 if ( migration != null ) {
                     if ( user.getId().equals( migration.getUserId() ) &&
-                         user.getProviderId() == migration.getProvider() ) {
+                         user.getProviderId().equals(migration.getProvider())) {
                         owner = true;
                     }
                 }

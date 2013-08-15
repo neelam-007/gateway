@@ -195,7 +195,7 @@ public class FederatedIdentityProviderImpl
         Auditor auditor = new Auditor(this, applicationContext, logger);
         this.x509Handler = new X509AuthorizationHandler(this, trustedCertServices, clientCertManager, certValidationProcessor, auditor, validTrustedCertOids);
         this.samlHandler = new SamlAuthorizationHandler(this, trustedCertServices, clientCertManager, certValidationProcessor, auditor, validTrustedCertOids);
-        this.sessionAuthenticator = new SessionAuthenticator( providerConfig.getOid() );
+        this.sessionAuthenticator = new SessionAuthenticator( providerConfig.getGoid() );
     }
 
     @Override
@@ -255,7 +255,7 @@ public class FederatedIdentityProviderImpl
         final SessionSecurityToken sessionSecurityToken = (SessionSecurityToken) securityToken;
 
         // verify provider
-        if ( sessionSecurityToken.getProviderId() != getConfig().getOid() ) {
+        if ( !sessionSecurityToken.getProviderId().equals(getConfig().getGoid()) ) {
             return null;
         }
 
@@ -272,7 +272,7 @@ public class FederatedIdentityProviderImpl
             }
         } else {
             // re-create virtual user
-            user = new FederatedUser(getConfig().getOid(), null);
+            user = new FederatedUser(getConfig().getGoid(), null);
         }
 
         return user;

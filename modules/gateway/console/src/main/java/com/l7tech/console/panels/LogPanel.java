@@ -1242,7 +1242,7 @@ public class LogPanel extends JPanel {
                 msg += TextUtils.pad("Event Type", maxWidth) + ": Manager Action" + "\n";
                 msg += TextUtils.pad("Admin User Name", maxWidth) + ": " + aarec.getUserName() + "\n";
                 msg += TextUtils.pad("Admin User ID", maxWidth) + ": " + aarec.getUserId() + "\n";
-                msg += TextUtils.pad("Identity Provider ID", maxWidth) + ": " + aarec.getIdentityProviderOid() + "\n"; // "Identity Provider ID" width = 20
+                msg += TextUtils.pad("Identity Provider ID", maxWidth) + ": " + aarec.getIdentityProviderGoid() + "\n"; // "Identity Provider ID" width = 20
                 msg += TextUtils.pad("Admin IP", maxWidth) + ": " + arec.getIpAddress() + "\n";
                 msg += "\n";
                 msg += TextUtils.pad("Action", maxWidth) + ": " + fixAction(aarec.getAction()) + "\n";

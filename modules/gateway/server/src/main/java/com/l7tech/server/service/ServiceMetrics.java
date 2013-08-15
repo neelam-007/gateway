@@ -158,13 +158,13 @@ class ServiceMetrics {
 
     static class MetricsDetailKey {
         private final String operation;
-        private final long userProviderId;
+        private final Goid userProviderId;
         private final String userId;
         private final Set<MessageContextMapping> mappings;
 
         MetricsDetailKey(String operation, User user, List<MessageContextMapping> mappings) {
             this.operation = operation;
-            this.userProviderId = user==null ? -1L : user.getProviderId();
+            this.userProviderId = user==null ? null : user.getProviderId();
             this.userId = user == null ? null : user.getId();
             this.mappings = mappings == null ? null : new TreeSet<MessageContextMapping>(mappings);
         }
@@ -173,7 +173,7 @@ class ServiceMetrics {
             return operation;
         }
 
-        public long getUserProviderId() {
+        public Goid getUserProviderId() {
             return userProviderId;
         }
 
@@ -192,7 +192,7 @@ class ServiceMetrics {
 
             MetricsDetailKey that = (MetricsDetailKey) o;
 
-            if (hasUserMapping() && userProviderId != that.userProviderId) return false;
+            if (hasUserMapping() && (userProviderId != null ? !userProviderId.equals(that.userProviderId) : that.userProviderId != null)) return false;
             if (mappings != null ? !mappings.equals(that.mappings) : that.mappings != null) return false;
             if (operation != null ? !operation.equals(that.operation) : that.operation != null) return false;
             if (hasUserMapping() && (userId != null ? !userId.equals(that.userId) : that.userId != null)) return false;
@@ -203,7 +203,7 @@ class ServiceMetrics {
         public int hashCode() {
             int result;
             result = (operation != null ? operation.hashCode() : 0);
-            result = 31 * result + (int) (hasUserMapping() ? userProviderId ^ (userProviderId >>> 32) : -1L ^ (-1L >>> 32));
+            result = 31 * result + (hasUserMapping() && userProviderId != null ? userProviderId.hashCode() : 0);
             result = 31 * result + (hasUserMapping() && userId != null ? userId.hashCode() : 0);
             result = 31 * result + (mappings != null ? mappings.hashCode() : 0);
             return result;

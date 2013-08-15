@@ -4,6 +4,7 @@
 
 package com.l7tech.client.gui;
 
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.FalseAssertion;
 import com.l7tech.policy.assertion.TrueAssertion;
@@ -43,7 +44,7 @@ public class SsgPropertyDialogTest {
         Ssg ssg = new Ssg(1, "blah.bloof.com");
         ssg.getRuntime().getPolicyManager().setPolicy(new PolicyAttachmentKey("http://blah",  "http://gwerg.asd.gfa", null), new Policy(new AllAssertion(Arrays.asList(new Assertion[] {
             new HttpBasic(),
-            new SpecificUser(444, "blahuser", null, null),
+            new SpecificUser(new Goid(0,444), "blahuser", null, null),
         })), "testpolicy"));
         ssg.getRuntime().getPolicyManager().setPolicy(new PolicyAttachmentKey("http://HugeTree.com/Other",
                          "http://example.com/soapaction/other", null), new Policy(

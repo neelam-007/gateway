@@ -5,6 +5,7 @@ import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.identity.LogonInfo;
 import com.l7tech.identity.*;
 import com.l7tech.identity.internal.InternalUser;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.event.system.SystemEvent;
@@ -278,11 +279,11 @@ public class SSMLogonService implements LogonService, PropertyChangeListener, Ap
     public void checkLogonInfos() {
         String exceptionMsg = null;
         try {
-            final Collection<Pair<Long, String>> allPairs = roleManager.getExplicitRoleAssignments();
-            for (Pair<Long, String> pair : allPairs) {
-                long providerId = pair.left;
+            final Collection<Pair<Goid, String>> allPairs = roleManager.getExplicitRoleAssignments();
+            for (Pair<Goid, String> pair : allPairs) {
+                Goid providerId = pair.left;
                 final String login;
-                if (providerId == IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID) {
+                if (providerId.equals(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_GOID)) {
                     final InternalUserManager userManager = getInternalUserManager();
                     final InternalUser internalUser = userManager.findByPrimaryKey(pair.right);
                     login = internalUser.getLogin();
@@ -446,7 +447,7 @@ public class SSMLogonService implements LogonService, PropertyChangeListener, Ap
     private InternalUserManager getInternalUserManager() throws FindException {
         if (internalUserManager == null) {
             final InternalIdentityProvider identityProvider =
-                    (InternalIdentityProvider) identityProviderFactory.getProvider(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID);
+                    (InternalIdentityProvider) identityProviderFactory.getProvider(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_GOID);
             if (identityProvider == null) {
                 throw new FindException("IdentityProvider could not be found");
             }

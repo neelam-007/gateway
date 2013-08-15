@@ -30,7 +30,7 @@ public class IdentityProviderManagePasswordPolicyAction extends SecureAction {
     public IdentityProviderManagePasswordPolicyAction() {
         super(new AttemptedReadSpecific(
                 EntityType.PASSWORD_POLICY, new IdentityProviderPasswordPolicy(
-                        IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID)), LIC_AUTH_ASSERTIONS);
+                        IdentityProviderPasswordPolicy.DEFAULT_OID)), LIC_AUTH_ASSERTIONS);
     }
 
     /**
@@ -71,7 +71,7 @@ public class IdentityProviderManagePasswordPolicyAction extends SecureAction {
         Frame f = TopComponents.getInstance().getTopParent();
         try {
             passwordPolicy =
-              getIdentityAdmin().getPasswordPolicyForIdentityProvider(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID);
+              getIdentityAdmin().getPasswordPolicyForIdentityProvider(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_GOID);
         } catch (FindException e) {
             logger.log(Level.WARNING, "Failed to find password policy: " + ExceptionUtils.getMessage(e), e);
             DialogDisplayer.showMessageDialog(f, "Failed to find password policy: " + ExceptionUtils.getMessage(e), "Find Failed", JOptionPane.ERROR_MESSAGE, null);
@@ -92,7 +92,7 @@ public class IdentityProviderManagePasswordPolicyAction extends SecureAction {
            public void run() {
                if (dlg.isConfirmed()) {
                    try {
-                       getIdentityAdmin().updatePasswordPolicy(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID, passwordPolicy);
+                       getIdentityAdmin().updatePasswordPolicy(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_GOID, passwordPolicy);
                    } catch (ObjectModelException e) {
                        logger.log(Level.WARNING, "Failed to save password policy: " + ExceptionUtils.getMessage(e), e);
                        DialogDisplayer.showMessageDialog(dlg, "Failed to save password policy: " + ExceptionUtils.getMessage(e), "Save Failed", JOptionPane.ERROR_MESSAGE, null);

@@ -8,6 +8,7 @@ import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.User;
 import com.l7tech.identity.Group;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.IdentityHeader;
 import com.l7tech.objectmodel.EntityHeaderSet;
 import static org.junit.Assert.*;
@@ -37,26 +38,26 @@ public class RegistryStubTest {
     public void testIntegrity() throws Exception {
         IdentityAdmin admin = registry.getIdentityAdmin();
         IdentityProviderConfig ipc = registry.getInternalProviderConfig();
-        final long providerConfigOid = ipc.getOid();
+        final Goid providerConfigOid = ipc.getGoid();
 
         EntityHeaderSet<IdentityHeader> headers = admin.findAllUsers(providerConfigOid);
         for (EntityHeader header : headers) {
             User u = admin.findUserByID(providerConfigOid, header.getStrId());
             assertTrue("Expected provider " + providerConfigOid +
-              " received " + u.getProviderId(), u.getProviderId() == providerConfigOid);
+              " received " + u.getProviderId(), u.getProviderId().equals(providerConfigOid));
         }
 
         headers = admin.findAllGroups(providerConfigOid);
         for (EntityHeader header : headers) {
             Group g = admin.findGroupByID(providerConfigOid, header.getStrId());
             assertTrue("Expected provider " + providerConfigOid +
-              " received " + g.getProviderId(), g.getProviderId() == providerConfigOid);
+              " received " + g.getProviderId(), g.getProviderId().equals(providerConfigOid));
         }
     }
 
     @Test
     public void testAddAndUpdateUser() throws Exception {
-        long provider = IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID;
+        Goid provider = IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_GOID;
         IdentityAdmin admin = registry.getIdentityAdmin();
         InternalUser user = new InternalUser();
         user.setLogin("mgreen");
@@ -82,7 +83,7 @@ public class RegistryStubTest {
 
     @Test
     public void testAddAndUpdateGroup() throws Exception {
-        long provider = IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID;
+        Goid provider = IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_GOID;
         IdentityAdmin admin = registry.getIdentityAdmin();
         InternalGroup group = new InternalGroup();
         group.setName("26-floor");
@@ -100,7 +101,7 @@ public class RegistryStubTest {
 
     @Test
     public void testAddAndUpdateUserGroups() throws Exception {
-        long provider = IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID;
+        Goid provider = IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_GOID;
         IdentityAdmin admin = registry.getIdentityAdmin();
 
         testAddAndUpdateUser();

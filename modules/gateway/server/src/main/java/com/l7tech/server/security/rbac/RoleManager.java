@@ -55,7 +55,7 @@ public interface RoleManager extends EntityManager<Role, EntityHeader>, RbacServ
      * @throws FindException
      */
     @Transactional(readOnly=true)
-    public Collection<Pair<Long, String>> getExplicitRoleAssignments() throws FindException;
+    public Collection<Pair<Goid, String>> getExplicitRoleAssignments() throws FindException;
 
     /**
      * Find a role by tag.

@@ -2,6 +2,7 @@ package com.l7tech.console.panels;
 
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.objectmodel.Goid;
 
 import javax.swing.*;
 import java.awt.*;
@@ -45,7 +46,7 @@ public class InternalIdentityProviderConfigPanel extends WizardStepPanel {
 
                 IdentityProviderConfig iProviderConfig = (IdentityProviderConfig) settings;
 
-                if (iProviderConfig.getOid() != -1) {
+                if (!Goid.isDefault(iProviderConfig.getGoid())) {
 
                     getProviderNameTextField().setText(iProviderConfig.getName());
                 }

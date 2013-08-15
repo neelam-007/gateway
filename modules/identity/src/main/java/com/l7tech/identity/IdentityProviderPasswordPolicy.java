@@ -1,12 +1,14 @@
 package com.l7tech.identity;
 
 import com.l7tech.common.io.NonCloseableOutputStream;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.imp.PersistentEntityImp;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.PoolByteArrayOutputStream;
 import com.l7tech.util.ResourceUtils;
 import org.hibernate.annotations.Proxy;
+import org.hibernate.annotations.Type;
 
 import javax.persistence.*;
 import javax.xml.bind.annotation.XmlRootElement;
@@ -29,7 +31,7 @@ import java.util.TreeMap;
 public class IdentityProviderPasswordPolicy extends PersistentEntityImp {
     private String propertiesXml;
     private Map<String, Object> properties = new TreeMap<String, Object>();
-    private long internalIdentityProviderOid;
+    private Goid internalIdentityProviderGoid;
 
     public static final String FORCE_PWD_CHANGE = "forcePasswordChangeNewUser";
     public static final String NO_REPEAT_CHARS = "noRepeatingCharacters";
@@ -80,13 +82,14 @@ public class IdentityProviderPasswordPolicy extends PersistentEntityImp {
         if (passwordChangeDaily) setProperty( ALLOWABLE_CHANGES, passwordChangeDaily );
     }
 
-    @Column(name="internal_identity_provider_oid")
-    public Long getInternalIdentityProviderOid() {
-        return internalIdentityProviderOid;
+    @Column(name="internal_identity_provider_goid")
+    @Type(type = "com.l7tech.server.util.GoidType")
+    public Goid getInternalIdentityProviderGoid() {
+        return internalIdentityProviderGoid;
     }
 
-    public void setInternalIdentityProviderOid(Long oid) {
-        this.internalIdentityProviderOid = oid;
+    public void setInternalIdentityProviderGoid(Goid oid) {
+        this.internalIdentityProviderGoid = oid;
     }
 
     @Override

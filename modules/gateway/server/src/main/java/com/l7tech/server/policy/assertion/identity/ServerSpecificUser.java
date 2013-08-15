@@ -1,10 +1,13 @@
 package com.l7tech.server.policy.assertion.identity;
 
 import com.l7tech.gateway.common.audit.AssertionMessages;
+import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.User;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.server.identity.AuthenticationResult;
+import com.l7tech.server.util.ServerGoidUpgradeMapper;
 import org.springframework.context.ApplicationContext;
 
 public class ServerSpecificUser extends ServerIdentityAssertion<SpecificUser> {
@@ -32,13 +35,13 @@ public class ServerSpecificUser extends ServerIdentityAssertion<SpecificUser> {
         }
 
         User requestingUser = authResult.getUser();
-        long requestProvider = requestingUser.getProviderId();
+        Goid requestProvider = requestingUser.getProviderId();
         String requestLogin = requestingUser.getLogin();
 
         // provider must always match
-        if (requestProvider != requiredProvider) {
+        if (!requestProvider.equals(requiredProvider)) {
             logAndAudit(AssertionMessages.SPECIFICUSER_PROVIDER_MISMATCH,
-                    Long.toString(requestProvider), Long.toString(requiredProvider));
+                    Goid.toString(requestProvider), Goid.toString(requiredProvider));
             return AssertionStatus.AUTH_FAILED;
         }
 
@@ -65,5 +68,5 @@ public class ServerSpecificUser extends ServerIdentityAssertion<SpecificUser> {
     protected SpecificUser specificUser;
     private final String requiredLogin;
     private final String requiredUid;
-    private final long requiredProvider;
+    private final Goid requiredProvider;
 }

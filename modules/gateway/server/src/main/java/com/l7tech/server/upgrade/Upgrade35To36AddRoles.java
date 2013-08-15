@@ -78,11 +78,11 @@ public class Upgrade35To36AddRoles implements UpgradeTask {
         // If any of them doesn't have a role, try to create it
         Collection<IdentityProviderConfig> ipcs = ipcManager.findAll();
         for (IdentityProviderConfig ipc : ipcs) {
-            if (ipc.getOid() <= 0) continue;  // Don't mess with built-in ones
+            if (!ipc.getGoid().equals(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_GOID)) continue;  // Don't mess with built-in ones
             
-            Collection<Role> roles = roleManager.findEntitySpecificRoles(ID_PROVIDER_CONFIG, ipc.getOid());
+            Collection<Role> roles = roleManager.findEntitySpecificRoles(ID_PROVIDER_CONFIG, ipc.getGoid());
             if (roles == null || roles.isEmpty() ) {
-                logger.info("Auto-creating missing admin Role for identity provider " + ipc.getName() + " (#" + ipc.getOid() + ")");
+                logger.info("Auto-creating missing admin Role for identity provider " + ipc.getName() + " (#" + ipc.getGoid() + ")");
                 ipcManager.createRoles(ipc);
             }
         }

@@ -10,6 +10,7 @@ import com.l7tech.console.tree.IdentityProviderNode;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.identity.GroupBean;
 import com.l7tech.identity.IdentityProviderConfigManager;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 
 import javax.swing.*;
@@ -45,8 +46,8 @@ public class NewGroupAction extends NodeAction {
             ao = getAttemptedCreateInternal();
         } else {
             // This probably belongs to a node in the provider tree
-            long providerId = ((IdentityProviderNode)node).getEntityHeader().getOid();
-            if (providerId == IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID) {
+            Goid providerId = ((IdentityProviderNode)node).getEntityHeader().getGoid();
+            if (providerId.equals(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_GOID)) {
                 ao = getAttemptedCreateInternal();
             } else {
                 ao = new AttemptedCreateSpecific(EntityType.GROUP, new GroupBean(providerId, "<new group>"));
@@ -57,7 +58,7 @@ public class NewGroupAction extends NodeAction {
 
     private AttemptedOperation getAttemptedCreateInternal() {
         if (attemptedCreateInternal == null) {
-            attemptedCreateInternal = new AttemptedCreateSpecific(EntityType.GROUP, new GroupBean(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID, "<new group>"));
+            attemptedCreateInternal = new AttemptedCreateSpecific(EntityType.GROUP, new GroupBean(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_GOID, "<new group>"));
         }
         return attemptedCreateInternal;
     }

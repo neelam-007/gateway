@@ -3,6 +3,7 @@ package com.l7tech.server.secureconversation;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.util.Functions;
 import com.l7tech.util.HexUtils;
@@ -33,7 +34,7 @@ public class StoredSecureConversationSessionManagerImpl extends HibernateEntityM
     }
 
     @Override
-    public StoredSecureConversationSession findOutboundSessionByUserAndService( final long providerId,
+    public StoredSecureConversationSession findOutboundSessionByUserAndService( final Goid providerId,
                                                                                 final String userId,
                                                                                 final String serviceUrl ) throws FindException {
         return findBySessionKey(
@@ -49,7 +50,7 @@ public class StoredSecureConversationSessionManagerImpl extends HibernateEntityM
     }
 
     @Override
-    public void deleteOutboundSessionByUserAndService( final long providerId, final String userId, final String serviceUrl ) throws DeleteException {
+    public void deleteOutboundSessionByUserAndService( final Goid providerId, final String userId, final String serviceUrl ) throws DeleteException {
         deleteIfMatches(
                 StoredSecureConversationSession.generateSessionKey( providerId, userId, serviceUrl ),
                 outboundMatcher( providerId, userId, serviceUrl ));
@@ -143,7 +144,7 @@ public class StoredSecureConversationSessionManagerImpl extends HibernateEntityM
         };
     }
 
-    private Functions.Unary<Boolean,StoredSecureConversationSession> outboundMatcher( final long providerId,
+    private Functions.Unary<Boolean,StoredSecureConversationSession> outboundMatcher( final Goid providerId,
                                                                                       final String userId,
                                                                                       final String serviceUrl ) {
         return new Functions.Unary<Boolean, StoredSecureConversationSession>() {
@@ -151,7 +152,7 @@ public class StoredSecureConversationSessionManagerImpl extends HibernateEntityM
             public Boolean call( final StoredSecureConversationSession session ) {
                 return session != null &&
                         !session.isInbound() &&
-                        session.getProviderId()==providerId &&
+                        session.getProviderId().equals(providerId) &&
                         session.getUserId().equals( userId ) &&
                         session.getServiceUrl().equals( serviceUrl );
             }

@@ -5,6 +5,7 @@ package com.l7tech.identity.cert;
 
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.ObjectNotFoundException;
 import com.l7tech.objectmodel.UpdateException;
 
@@ -125,7 +126,7 @@ public interface ClientCertManager {
      * @see ClientCertManager#findAll()
      */
     interface CertInfo {
-        long getProviderId();
+        Goid getProviderId();
         String getUserId();
         String getLogin();
     }

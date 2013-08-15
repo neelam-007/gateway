@@ -45,7 +45,7 @@ public class AuditRecordManagerImplTest {
         manager = new TestableAuditRecorManager();
         manager.setApplicationContext(applicationContext);
         ApplicationContexts.inject(manager, CollectionUtils.<String, Object>mapBuilder().put("serviceCache", serviceCache).map(), false);
-        messageSummary = new MessageSummaryAuditRecord(Level.INFO, "node1", "2342345-4545", AssertionStatus.NONE, "3.2.1.1", null, 4833, null, 9483, 200, 232, SERVICE_GOID, "ACMEWarehouse", "listProducts", true, SecurityTokenType.HTTP_BASIC, -2, "alice", "41123",null);
+        messageSummary = new MessageSummaryAuditRecord(Level.INFO, "node1", "2342345-4545", AssertionStatus.NONE, "3.2.1.1", null, 4833, null, 9483, 200, 232, SERVICE_GOID, "ACMEWarehouse", "listProducts", true, SecurityTokenType.HTTP_BASIC, new Goid(0,-2), "alice", "41123",null);
         zone = new SecurityZone();
         service = new PublishedService();
         service.setSecurityZone(zone);
@@ -61,7 +61,7 @@ public class AuditRecordManagerImplTest {
 
     @Test
     public void findByPrimaryKeyNotMessageSummary() throws Exception {
-        final SystemAuditRecord systemAuditRecord = new SystemAuditRecord(Level.INFO, "node1", Component.GATEWAY, "test", true, 1234, "user", "userId", "action", "127.0.0.1");
+        final SystemAuditRecord systemAuditRecord = new SystemAuditRecord(Level.INFO, "node1", Component.GATEWAY, "test", true, new Goid(0,1234), "user", "userId", "action", "127.0.0.1");
         when(hibernateTemplate.execute(any(HibernateCallback.class))).thenReturn(systemAuditRecord);
         final AuditRecord found = manager.findByPrimaryKey(1L);
         assertEquals(systemAuditRecord, found);

@@ -127,13 +127,13 @@ public class SetupManagerImpl implements InitializingBean, SetupManager {
 
                             logger.info("Creating configuration for internal identity provider.");
                             IdentityProviderConfig config = new IdentityProviderConfig();
-                            config.setOid(-2);
+                            config.setGoid(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_GOID);
                             config.setTypeVal(1);
                             config.setAdminEnabled(true);
                             config.setName("Internal Identity Provider");
                             config.setDescription("Internal Identity Provider");
-                            long id = identityProviderConfigManager.save(config);
-                            logger.info("Created configuration for internal identity provider with identifier '" + id + "'.");
+                            Goid goid = identityProviderConfigManager.save(config);
+                            logger.info("Created configuration for internal identity provider with identifier '" + goid + "'.");
 
                             logger.info("Creating configuration for administration role.");
                             Role role = new Role();
@@ -144,7 +144,7 @@ public class SetupManagerImpl implements InitializingBean, SetupManager {
                             role.getPermissions().add(new Permission(role, OperationType.READ, EntityType.ANY));
                             role.getPermissions().add(new Permission(role, OperationType.UPDATE, EntityType.ANY));
                             role.getPermissions().add(new Permission(role, OperationType.DELETE, EntityType.ANY));
-                            id = roleManager.save(role);
+                            Long id = roleManager.save(role);
                             logger.info("Created configuration for administration role with identifier '" + id + "'.");
                         }
                     } catch ( Exception e ) {
@@ -178,7 +178,7 @@ public class SetupManagerImpl implements InitializingBean, SetupManager {
                                 user.setHashedPassword(initialAdminPassword);
 
                                 String id = internalUserManager.save(user, Collections.<IdentityHeader>emptySet());
-                                user.setOid( Long.parseLong(id) );
+                                user.setGoid( Goid.parseGoid(id) );
 
                                 Role adminRole = roleManager.findByTag(Role.Tag.ADMIN);
                                 if ( adminRole != null ) {

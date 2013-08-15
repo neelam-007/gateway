@@ -3,10 +3,7 @@ package com.l7tech.server.security.rbac;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.identity.User;
-import com.l7tech.objectmodel.Entity;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.OrganizationHeader;
+import com.l7tech.objectmodel.*;
 import com.l7tech.server.EntityFinder;
 import com.l7tech.util.Cacheable;
 import com.l7tech.util.Pair;
@@ -102,7 +99,7 @@ public interface RbacServices {
      * @throws com.l7tech.objectmodel.FindException if there is a problem looking up the necessary information.
      */
     @Cacheable(relevantArg=0,maxAge=5000)
-    boolean isAdministrativeUser(@NotNull Pair<Long, String> providerAndUserId, @NotNull User user) throws FindException;
+    boolean isAdministrativeUser(@NotNull Pair<Goid, String> providerAndUserId, @NotNull User user) throws FindException;
 
     /**
      * Get the roles for the specified user, with default values for skipAccountValidation and disabledGroupIsError.
@@ -114,5 +111,5 @@ public interface RbacServices {
      * @throws com.l7tech.objectmodel.FindException if there is a problem looking up the necessary information.
      */
     @Cacheable(relevantArg=0,maxAge=1000)
-    Collection<Role> getAssignedRoles(@NotNull Pair<Long, String> providerAndUserId, @NotNull User user) throws FindException;
+    Collection<Role> getAssignedRoles(@NotNull Pair<Goid, String> providerAndUserId, @NotNull User user) throws FindException;
 }

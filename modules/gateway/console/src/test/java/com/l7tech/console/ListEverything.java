@@ -4,10 +4,7 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.admin.IdentityAdmin;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderConfigManager;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.IdentityHeader;
-import com.l7tech.objectmodel.EntityHeaderSet;
+import com.l7tech.objectmodel.*;
 import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.util.SyspropUtil;
 
@@ -45,8 +42,8 @@ public class ListEverything extends SsgAdminSession {
         EntityHeader[] providerHeaders = identityAdmin.findAllIdentityProviderConfig();
         for (EntityHeader header : providerHeaders) {
             if (header.getType() == EntityType.ID_PROVIDER_CONFIG) {
-                long oid = header.getOid();
-                if (oid == IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID) {
+                Goid oid = header.getGoid();
+                if (oid.equals(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_GOID)) {
                     internalProviderConfig = identityAdmin.findIdentityProviderConfigByID(oid);
                 }
             }
@@ -55,12 +52,12 @@ public class ListEverything extends SsgAdminSession {
 
         if ( internalProviderConfig == null ) throw new IllegalStateException( "No internal provider!" );
 
-        EntityHeaderSet<IdentityHeader> userHeaders = identityAdmin.findAllUsers(internalProviderConfig.getOid());
+        EntityHeaderSet<IdentityHeader> userHeaders = identityAdmin.findAllUsers(internalProviderConfig.getGoid());
         for(EntityHeader userHeader : userHeaders) {
             System.out.println(userHeader);
         }
 
-        EntityHeaderSet<IdentityHeader> groupHeaders = identityAdmin.findAllGroups(internalProviderConfig.getOid());
+        EntityHeaderSet<IdentityHeader> groupHeaders = identityAdmin.findAllGroups(internalProviderConfig.getGoid());
         for(EntityHeader groupHeader : groupHeaders) {
             System.out.println(groupHeader);
         }

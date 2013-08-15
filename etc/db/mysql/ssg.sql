@@ -88,14 +88,14 @@ INSERT INTO replication_status (objectid, nodeid) values (1, null);
 
 DROP TABLE IF EXISTS identity_provider;
 CREATE TABLE identity_provider (
-  objectid bigint(20) NOT NULL,
+  goid binary(16) NOT NULL,
   version int(11) default NULL,
   name varchar(128) NOT NULL,
   description mediumtext,
   type bigint(20) NOT NULL,
   properties mediumtext,
   security_zone_goid binary(16),
-  PRIMARY KEY  (objectid),
+  PRIMARY KEY  (goid),
   UNIQUE KEY ipnm_idx (name),
   CONSTRAINT identity_provider_security_zone FOREIGN KEY (security_zone_goid) REFERENCES security_zone (goid) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
@@ -104,7 +104,7 @@ CREATE TABLE identity_provider (
 -- Dumping data for table 'identity_provider'
 --
 
-INSERT INTO identity_provider (objectid,name,description,type,properties,version,security_zone_goid) VALUES (-2,'Internal Identity Provider','Internal Identity Provider',1,'<java version="1.6.0_01" class="java.beans.XMLDecoder"><object class="java.util.HashMap"><void method="put"><string>adminEnabled</string><boolean>true</boolean></void></object></java>',0,NULL);
+INSERT INTO identity_provider (goid,name,description,type,properties,version,security_zone_goid) VALUES (toGoid(0,-2),'Internal Identity Provider','Internal Identity Provider',1,'<java version="1.6.0_01" class="java.beans.XMLDecoder"><object class="java.util.HashMap"><void method="put"><string>adminEnabled</string><boolean>true</boolean></void></object></java>',0,NULL);
 
 --
 -- Table structure for table 'internal_group'
@@ -112,12 +112,12 @@ INSERT INTO identity_provider (objectid,name,description,type,properties,version
 
 DROP TABLE IF EXISTS internal_group;
 CREATE TABLE internal_group (
-  objectid bigint(20) NOT NULL,
+  goid binary(16) NOT NULL,
   version int(11) NOT NULL,
   name varchar(128) NOT NULL,
   description mediumtext,
   enabled boolean DEFAULT TRUE,
-  PRIMARY KEY  (objectid),
+  PRIMARY KEY  (goid),
   UNIQUE KEY g_idx (name)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
@@ -127,7 +127,7 @@ CREATE TABLE internal_group (
 
 DROP TABLE IF EXISTS internal_user;
 CREATE TABLE internal_user (
-  objectid bigint(20) NOT NULL,
+  goid binary(16) NOT NULL,
   version int(11) NOT NULL,
   name varchar(128) default NULL,
   login varchar(255) NOT NULL,
@@ -142,7 +142,7 @@ CREATE TABLE internal_user (
   change_password boolean DEFAULT TRUE,
   enabled boolean DEFAULT TRUE,
   properties mediumtext default NULL,
-  PRIMARY KEY  (objectid),
+  PRIMARY KEY  (goid),
   UNIQUE KEY l_idx (login)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
@@ -151,7 +151,7 @@ CREATE TABLE internal_user (
 --
 
 -- The same hash from resetAdmin.sh is used here. Digest property is set to NULL by default.
-INSERT INTO internal_user (objectid, version, name, login, password, digest, first_name, last_name, email, description, expiration, password_expiry, change_password, enabled, properties) VALUES (3,0,'admin','admin','$6$S7Z3HcudYNsObgs8$SjwZ3xtCkSjXOK2vHfOVEg2dJES3cgvtIUdHbEN/KdCBXoI6uuPSbxTEwcH.av6lpcb1p6Lu.gFeIX04FBxiJ.',NULL,'','','','',-1,1577865600000,FALSE,TRUE,NULL);
+INSERT INTO internal_user (goid, version, name, login, password, digest, first_name, last_name, email, description, expiration, password_expiry, change_password, enabled, properties) VALUES (toGoid(0,3),0,'admin','admin','$6$S7Z3HcudYNsObgs8$SjwZ3xtCkSjXOK2vHfOVEg2dJES3cgvtIUdHbEN/KdCBXoI6uuPSbxTEwcH.av6lpcb1p6Lu.gFeIX04FBxiJ.',NULL,'','','','',-1,1577865600000,FALSE,TRUE,NULL);
 
 --
 -- Table structure for table 'internal_user_group'
@@ -159,16 +159,16 @@ INSERT INTO internal_user (objectid, version, name, login, password, digest, fir
 
 DROP TABLE IF EXISTS internal_user_group;
 CREATE TABLE internal_user_group (
-  objectid bigint(20) not null,
+  goid binary(16) not null,
   version int(11) not null,
-  internal_group bigint(20) NOT NULL,
-  provider_oid bigint(20) NOT NULL,
-  user_id varchar(255),
+  internal_group binary(16) NOT NULL,
+  provider_goid binary(16) NOT NULL,
+  user_goid binary(16) NOT NULL,
   subgroup_id varchar(255),
-  PRIMARY KEY (objectid),
+  PRIMARY KEY (goid),
   INDEX (internal_group),
-  INDEX (provider_oid),
-  INDEX (user_id),
+  INDEX (provider_goid),
+  INDEX (user_goid),
   INDEX (subgroup_id)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
@@ -200,15 +200,15 @@ DROP TABLE IF EXISTS logon_info;
 CREATE TABLE logon_info (
   goid BINARY(16) NOT NULL,
   version int(11) NOT NULL,
-  provider_oid bigint(20) NOT NULL,
+  provider_goid binary(16) NOT NULL,
   login varchar(255) NOT NULL,
   fail_count int(11) NOT NULL DEFAULT 0,
   last_attempted bigint(20) NOT NULL,
   last_activity bigint(20) NOT NULL,
   state varchar(32) NOT NULL DEFAULT 'ACTIVE',
   PRIMARY KEY (goid),
-  UNIQUE KEY unique_provider_login (provider_oid, login),
-  CONSTRAINT logon_info_provider FOREIGN KEY (provider_oid) REFERENCES identity_provider(objectid) ON DELETE CASCADE
+  UNIQUE KEY unique_provider_login (provider_goid, login),
+  CONSTRAINT logon_info_provider FOREIGN KEY (provider_goid) REFERENCES identity_provider(goid) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --
@@ -217,11 +217,11 @@ CREATE TABLE logon_info (
 DROP TABLE IF EXISTS password_history;
 CREATE TABLE password_history (
   objectid bigint(20) NOT NULL,
-  internal_user_oid bigint(20) NOT NULL,
+  internal_user_goid binary(16) NOT NULL,
   last_changed bigint(20) NOT NULL,
   prev_password varchar(256) NULL,
   PRIMARY KEY (objectid),
-  FOREIGN KEY (internal_user_oid) REFERENCES internal_user (objectid)
+  FOREIGN KEY (internal_user_goid) REFERENCES internal_user (goid)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --
@@ -307,7 +307,7 @@ CREATE TABLE policy_version (
   policy_goid binary(16) NOT NULL,
   ordinal int(20) NOT NULL,
   time bigint(20) NOT NULL,
-  user_provider_oid bigint(20),
+  user_provider_goid binary(16),
   user_login varchar(255),
   active boolean,
   xml mediumtext,
@@ -343,7 +343,7 @@ CREATE TABLE policy_alias (
 DROP TABLE IF EXISTS client_cert;
 CREATE TABLE client_cert (
   goid binary(16) NOT NULL,
-  provider bigint NOT NULL,
+  provider binary(16) NOT NULL,
   user_id varchar(255),
   login varchar(255),
   cert mediumtext DEFAULT NULL,
@@ -354,7 +354,7 @@ CREATE TABLE client_cert (
   issuer_dn varchar(2048),
   serial varchar(64),
   PRIMARY KEY  (goid),
-  FOREIGN KEY (provider) REFERENCES identity_provider (objectid) ON DELETE CASCADE,
+  FOREIGN KEY (provider) REFERENCES identity_provider (goid) ON DELETE CASCADE,
   UNIQUE KEY i_identity (provider, user_id),
   INDEX i_subject_dn (subject_dn(255)),
   INDEX i_issuer_dn (issuer_dn(255)),
@@ -551,69 +551,69 @@ CREATE TABLE trusted_esm_user (
   objectid bigint NOT NULL,
   version integer NOT NULL,
   trusted_esm_oid bigint(20) NOT NULL,
-  provider_oid bigint(20) NOT NULL,
+  provider_goid binary(16) NOT NULL,
   user_id varchar(128) NOT NULL,
   esm_user_id varchar(128) NOT NULL,
   esm_user_display_name varchar(128) default NULL,
   PRIMARY KEY(objectid),
   FOREIGN KEY (trusted_esm_oid) REFERENCES trusted_esm (objectid) ON DELETE CASCADE,
-  FOREIGN KEY (provider_oid) REFERENCES identity_provider (objectid) ON DELETE CASCADE
+  FOREIGN KEY (provider_goid) REFERENCES identity_provider (goid) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
 DROP TABLE IF EXISTS fed_user;
 CREATE TABLE fed_user (
-  objectid bigint(20) NOT NULL,
+  goid binary(16) NOT NULL,
   version int(11) NOT NULL,
   name varchar(128) NOT NULL,
-  provider_oid bigint(20) NOT NULL,
+  provider_goid binary(16) NOT NULL,
   subject_dn varchar(255),
   email varchar(128) default NULL,
   login varchar(255),
   first_name varchar(32) default NULL,
   last_name varchar(32) default NULL,
-  PRIMARY KEY (objectid),
-  INDEX i_provider_oid (provider_oid),
+  PRIMARY KEY (goid),
+  INDEX i_provider_oid (provider_goid),
   INDEX i_email (email),
   INDEX i_login (login),
   INDEX i_subject_dn (subject_dn),
-  UNIQUE KEY i_name (provider_oid, name)
+  UNIQUE KEY i_name (provider_goid, name)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
 DROP TABLE IF EXISTS fed_group;
 CREATE TABLE fed_group (
-  objectid bigint(20) NOT NULL,
+  goid binary(16) NOT NULL,
   version int(11) NOT NULL,
-  provider_oid bigint(20) NOT NULL,
+  provider_goid binary(16) NOT NULL,
   name varchar(128) NOT NULL,
   description mediumtext,
-  PRIMARY KEY  (objectid),
-  INDEX i_provider_oid (provider_oid),
-  UNIQUE KEY i_name (provider_oid, name)
+  PRIMARY KEY  (goid),
+  INDEX i_provider_oid (provider_goid),
+  UNIQUE KEY i_name (provider_goid, name)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
 DROP TABLE IF EXISTS fed_user_group;
 CREATE TABLE fed_user_group (
-  provider_oid bigint(20) NOT NULL,
-  fed_user_oid bigint(20) NOT NULL,
-  fed_group_oid bigint(20) NOT NULL,
-  PRIMARY KEY (provider_oid,fed_user_oid,fed_group_oid)
+  provider_goid binary(16) NOT NULL,
+  fed_user_goid binary(16) NOT NULL,
+  fed_group_goid binary(16) NOT NULL,
+  PRIMARY KEY (provider_goid,fed_user_goid,fed_group_goid)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
 DROP TABLE IF EXISTS fed_group_virtual;
 CREATE TABLE fed_group_virtual (
-  objectid bigint(20) NOT NULL,
+  goid binary(16) NOT NULL,
   version int(11) NOT NULL,
-  provider_oid bigint(20) NOT NULL,
+  provider_goid binary(16) NOT NULL,
   name varchar(128) NOT NULL,
   description mediumtext,
   x509_subject_dn_pattern varchar(255),
   saml_email_pattern varchar(128),
   properties mediumtext,
-  PRIMARY KEY  (objectid),
-  INDEX i_provider_oid (provider_oid),
+  PRIMARY KEY  (goid),
+  INDEX i_provider_oid (provider_goid),
   INDEX i_x509_subject_dn_pattern (x509_subject_dn_pattern),
   INDEX i_saml_email_pattern (saml_email_pattern),
-  UNIQUE KEY i_name (provider_oid, name)
+  UNIQUE KEY i_name (provider_goid, name)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --
@@ -647,7 +647,7 @@ CREATE TABLE message_context_mapping_values (
   objectid bigint(20) NOT NULL,
   digested char(36) NOT NULL,
   mapping_keys_oid bigint(20) NOT NULL,
-  auth_user_provider_id bigint(20),
+  auth_user_provider_id binary(16),
   auth_user_id varchar(255),
   auth_user_unique_id varchar(255),
   service_operation varchar(255),
@@ -677,12 +677,12 @@ CREATE TABLE audit_main (
   ip_address varchar(39),
   user_name varchar(255),
   user_id varchar(255),
-  provider_oid bigint(20) NOT NULL DEFAULT -1,
+  provider_goid binary(16),
   signature varchar(1024),
   PRIMARY KEY  (objectid),
   KEY idx_time (time),
   KEY idx_ip_address (ip_address),
-  KEY idx_prov_user (provider_oid, user_id)
+  KEY idx_prov_user (provider_goid, user_id)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --
@@ -1238,13 +1238,13 @@ CREATE TABLE password_policy (
   objectid bigint(20) NOT NULL,
   version int(11) NOT NULL,
   properties mediumtext,
-  internal_identity_provider_oid bigint(20),
+  internal_identity_provider_goid binary(16),
   PRIMARY KEY (objectid),
-  UNIQUE KEY  (internal_identity_provider_oid),
-  FOREIGN KEY (internal_identity_provider_oid) REFERENCES identity_provider (objectid) ON DELETE CASCADE
+  UNIQUE KEY  (internal_identity_provider_goid),
+  FOREIGN KEY (internal_identity_provider_goid) REFERENCES identity_provider (goid) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 -- STIG default:
-INSERT INTO password_policy (objectid, version, properties, internal_identity_provider_oid) VALUES (-2, 0, '<?xml version="1.0" encoding="UTF-8"?><java version="1.6.0_21" class="java.beans.XMLDecoder"> <object class="java.util.TreeMap">  <void method="put">   <string>allowableChangesPerDay</string>   <boolean>true</boolean>  </void>  <void method="put">   <string>charDiffMinimum</string>   <int>4</int>  </void>  <void method="put">   <string>forcePasswordChangeNewUser</string>   <boolean>true</boolean>  </void>  <void method="put">   <string>lowerMinimum</string>   <int>1</int>  </void>  <void method="put">   <string>maxPasswordLength</string>   <int>32</int>  </void>  <void method="put">   <string>minPasswordLength</string>   <int>8</int>  </void>  <void method="put">   <string>noRepeatingCharacters</string>   <boolean>true</boolean>  </void>  <void method="put">   <string>numberMinimum</string>   <int>1</int>  </void>  <void method="put">   <string>passwordExpiry</string>   <int>90</int>  </void>  <void method="put">   <string>repeatFrequency</string>   <int>10</int>  </void>  <void method="put">   <string>symbolMinimum</string>   <int>1</int>  </void>  <void method="put">   <string>upperMinimum</string>   <int>1</int>  </void> </object></java>', -2);
+INSERT INTO password_policy (objectid, version, properties, internal_identity_provider_goid) VALUES (-2, 0, '<?xml version="1.0" encoding="UTF-8"?><java version="1.6.0_21" class="java.beans.XMLDecoder"> <object class="java.util.TreeMap">  <void method="put">   <string>allowableChangesPerDay</string>   <boolean>true</boolean>  </void>  <void method="put">   <string>charDiffMinimum</string>   <int>4</int>  </void>  <void method="put">   <string>forcePasswordChangeNewUser</string>   <boolean>true</boolean>  </void>  <void method="put">   <string>lowerMinimum</string>   <int>1</int>  </void>  <void method="put">   <string>maxPasswordLength</string>   <int>32</int>  </void>  <void method="put">   <string>minPasswordLength</string>   <int>8</int>  </void>  <void method="put">   <string>noRepeatingCharacters</string>   <boolean>true</boolean>  </void>  <void method="put">   <string>numberMinimum</string>   <int>1</int>  </void>  <void method="put">   <string>passwordExpiry</string>   <int>90</int>  </void>  <void method="put">   <string>repeatFrequency</string>   <int>10</int>  </void>  <void method="put">   <string>symbolMinimum</string>   <int>1</int>  </void>  <void method="put">   <string>upperMinimum</string>   <int>1</int>  </void> </object></java>', toGoid(0,-2));
 
 --
 -- Tracking table for metrics and policy attachment publishing
@@ -1348,15 +1348,15 @@ CREATE TABLE rbac_role (
 DROP TABLE IF EXISTS rbac_assignment;
 CREATE TABLE rbac_assignment (
   objectid bigint(20) NOT NULL,
-  provider_oid bigint(20) NOT NULL,
+  provider_goid binary(16) NOT NULL,
   role_oid bigint(20) NOT NULL,
   identity_id varchar(255) NOT NULL,
   entity_type varchar(50) NOT NULL,
   PRIMARY KEY  (objectid),
-  UNIQUE KEY unique_assignment (provider_oid,role_oid,identity_id, entity_type),
+  UNIQUE KEY unique_assignment (provider_goid,role_oid,identity_id, entity_type),
   FOREIGN KEY (role_oid) REFERENCES rbac_role (objectid) ON DELETE CASCADE,
-  CONSTRAINT rbac_assignment_provider FOREIGN KEY (provider_oid) REFERENCES identity_provider (objectid) ON DELETE CASCADE,  
-  INDEX i_rbacassign_poid (provider_oid),
+  CONSTRAINT rbac_assignment_provider FOREIGN KEY (provider_goid) REFERENCES identity_provider (goid) ON DELETE CASCADE,
+  INDEX i_rbacassign_poid (provider_goid),
   INDEX i_rbacassign_uid (identity_id)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
@@ -1484,31 +1484,31 @@ INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_
 INSERT INTO rbac_role (objectid, version, name, tag, entity_type, entity_oid, entity_goid, description, user_created) VALUES (-200,0,'Manage Internal Users and Groups', null,null,null,null, 'Users assigned to the {0} role have the ability to create, read, update and delete users and groups in the internal identity provider.',0);
 INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-201,0,-200,'READ',NULL,'USER');
 INSERT INTO rbac_predicate (objectid, version, permission_oid) VALUES (-202,0,-201);
-INSERT INTO rbac_predicate_attribute (objectid, attribute, value, mode) VALUES (-202,'providerId','-2','eq');
+INSERT INTO rbac_predicate_attribute (objectid, attribute, value, mode) VALUES (-202,'providerId','0000000000000000fffffffffffffffe','eq');
 INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-203,0,-200,'READ',NULL,'ID_PROVIDER_CONFIG');
 INSERT INTO rbac_predicate (objectid, version, permission_oid) VALUES (-204,0,-203);
-INSERT INTO rbac_predicate_oid (objectid, entity_id) VALUES (-204,'-2');
+INSERT INTO rbac_predicate_oid (objectid, entity_id) VALUES (-204,'0000000000000000fffffffffffffffe');
 INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-205,0,-200,'UPDATE',NULL,'USER');
 INSERT INTO rbac_predicate (objectid, version, permission_oid) VALUES (-206,0,-205);
-INSERT INTO rbac_predicate_attribute (objectid, attribute, value, mode) VALUES (-206,'providerId','-2','eq');
+INSERT INTO rbac_predicate_attribute (objectid, attribute, value, mode) VALUES (-206,'providerId','0000000000000000fffffffffffffffe','eq');
 INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-207,0,-200,'READ',NULL,'GROUP');
 INSERT INTO rbac_predicate (objectid, version, permission_oid) VALUES (-208,0,-207);
-INSERT INTO rbac_predicate_attribute (objectid, attribute, value, mode) VALUES (-208,'providerId','-2','eq');
+INSERT INTO rbac_predicate_attribute (objectid, attribute, value, mode) VALUES (-208,'providerId','0000000000000000fffffffffffffffe','eq');
 INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-209,0,-200,'DELETE',NULL,'USER');
 INSERT INTO rbac_predicate (objectid, version, permission_oid) VALUES (-210,0,-209);
-INSERT INTO rbac_predicate_attribute (objectid, attribute, value, mode) VALUES (-210,'providerId','-2','eq');
+INSERT INTO rbac_predicate_attribute (objectid, attribute, value, mode) VALUES (-210,'providerId','0000000000000000fffffffffffffffe','eq');
 INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-211,0,-200,'CREATE',NULL,'USER');
 INSERT INTO rbac_predicate (objectid, version, permission_oid) VALUES (-212,0,-211);
-INSERT INTO rbac_predicate_attribute (objectid, attribute, value, mode) VALUES (-212,'providerId','-2','eq');
+INSERT INTO rbac_predicate_attribute (objectid, attribute, value, mode) VALUES (-212,'providerId','0000000000000000fffffffffffffffe','eq');
 INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-213,0,-200,'CREATE',NULL,'GROUP');
 INSERT INTO rbac_predicate (objectid, version, permission_oid) VALUES (-214,0,-213);
-INSERT INTO rbac_predicate_attribute (objectid, attribute, value, mode) VALUES (-214,'providerId','-2','eq');
+INSERT INTO rbac_predicate_attribute (objectid, attribute, value, mode) VALUES (-214,'providerId','0000000000000000fffffffffffffffe','eq');
 INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-215,0,-200,'DELETE',NULL,'GROUP');
 INSERT INTO rbac_predicate (objectid, version, permission_oid) VALUES (-216,0,-215);
-INSERT INTO rbac_predicate_attribute (objectid, attribute, value, mode) VALUES (-216,'providerId','-2','eq');
+INSERT INTO rbac_predicate_attribute (objectid, attribute, value, mode) VALUES (-216,'providerId','0000000000000000fffffffffffffffe','eq');
 INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-217,0,-200,'UPDATE',NULL,'GROUP');
 INSERT INTO rbac_predicate (objectid, version, permission_oid) VALUES (-218,0,-217);
-INSERT INTO rbac_predicate_attribute (objectid, attribute, value, mode) VALUES (-218,'providerId','-2','eq');
+INSERT INTO rbac_predicate_attribute (objectid, attribute, value, mode) VALUES (-218,'providerId','0000000000000000fffffffffffffffe','eq');
 
 INSERT INTO rbac_role (objectid, version, name, tag, entity_type, entity_oid, entity_goid, description, user_created) VALUES (-250,0,'Publish External Identity Providers', null,null,null,null, 'Users assigned to the {0} role have the ability to create new external identity providers.',0);
 INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-251,0,-250,'CREATE',NULL,'ID_PROVIDER_CONFIG');
@@ -1850,7 +1850,7 @@ INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_
 INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-1454,0,-1450,'DELETE',null,'CUSTOM_KEY_VALUE_STORE');
 
 -- Assign Administrator role to existing admin user
-INSERT INTO rbac_assignment (objectid, provider_oid, role_oid, identity_id, entity_type) VALUES (-105, -2, -100, '3', 'User');
+INSERT INTO rbac_assignment (objectid, provider_goid, role_oid, identity_id, entity_type) VALUES (-105, toGoid(0,-2), -100, '00000000000000000000000000000003', 'User');
 
 DROP TABLE IF EXISTS sink_config;
 CREATE TABLE sink_config (
@@ -1960,7 +1960,7 @@ CREATE TABLE wssc_session (
   encrypted_key varchar(4096),
   created bigint(20) NOT NULL,
   expires bigint(20) NOT NULL,
-  provider_id bigint NOT NULL,
+  provider_goid binary(16) NOT NULL,
   user_id varchar(255) NOT NULL,
   user_login varchar(255) NOT NULL,
   namespace varchar(4096),

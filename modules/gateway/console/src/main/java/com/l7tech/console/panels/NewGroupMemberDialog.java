@@ -198,7 +198,7 @@ public class NewGroupMemberDialog extends JDialog {
                     Set<IdentityHeader> set = parent.getCurrentUsers();
                     if (set !=null) currentUsers.addAll(set);
 
-                    EntityHeaderSet<IdentityHeader> nonMembers = Registry.getDefault().getIdentityAdmin().findAllUsers(ipc.getOid());
+                    EntityHeaderSet<IdentityHeader> nonMembers = Registry.getDefault().getIdentityAdmin().findAllUsers(ipc.getGoid());
 
                     for (IdentityHeader eh : nonMembers) {
                         if (!currentUsers.contains(eh)) sl.add(eh);

@@ -89,7 +89,7 @@ import java.util.logging.Level;
  */
 public class PolicyServlet extends AuthenticatableHttpServlet {
 
-    private static final String DUMMY_ID_PROVIDER_OID = Long.toString(Long.MAX_VALUE); // Dummy ID provider OID for NOPASS headers
+    private static final String DUMMY_ID_PROVIDER_OID = Goid.toString(new Goid(0,Long.MAX_VALUE)); // Dummy ID provider OID for NOPASS headers
 
     private AuditContextFactory auditContextFactory;
     private SoapFaultManager soapFaultManager;
@@ -160,7 +160,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
             final boolean[] success = {false};
 
             final PolicyEnforcementContext finalContext = context;
-            final SystemAuditRecord record = new SystemAuditRecord(Level.INFO, nodeId, Component.GW_POLICY_SERVICE, "Policy request", false, -1, null, null, "GET", servletRequest.getRemoteAddr());
+            final SystemAuditRecord record = new SystemAuditRecord(Level.INFO, nodeId, Component.GW_POLICY_SERVICE, "Policy request", false, null , null, null, "GET", servletRequest.getRemoteAddr());
             auditContextFactory.doWithNewAuditContext(record, new Callable<Void>() {
                 @Override
                 public Void call() throws Exception {
@@ -506,7 +506,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
                         final byte[] userSaltBytes = passwordHasher.extractSaltFromVerifier(hashedPassword);
                         if (userSaltBytes != null) {
                             String userSaltHex = HexUtils.hexDump(userSaltBytes);
-                            String oid = Long.toString(provider.getConfig().getOid());
+                            String oid = Goid.toString(provider.getConfig().getGoid());
 
                             byte[] serverNonceBytes = new byte[16];
                             secureRandom.nextBytes(serverNonceBytes);

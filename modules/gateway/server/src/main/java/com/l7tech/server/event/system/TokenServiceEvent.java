@@ -3,6 +3,7 @@ package com.l7tech.server.event.system;
 import java.util.logging.Level;
 
 import com.l7tech.gateway.common.Component;
+import com.l7tech.objectmodel.Goid;
 
 /**
  * Event class for use by the STS.
@@ -19,7 +20,7 @@ public class TokenServiceEvent extends SystemEvent {
             Level level,
             String ip,
             String message,
-            long identityProviderOid,
+            Goid identityProviderOid,
             String userName,
             String userId) {
         super(source, Component.GW_TOKEN_SERVICE, ip, level, message, identityProviderOid, userName, userId);

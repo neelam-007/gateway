@@ -5,6 +5,7 @@
 package com.l7tech.identity.fed;
 
 import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.objectmodel.Goid;
 import org.hibernate.annotations.Proxy;
 
 import javax.persistence.*;
@@ -27,10 +28,10 @@ import javax.xml.bind.annotation.XmlRootElement;
 @Table(name="fed_group_virtual")
 public class VirtualGroup extends FederatedGroup {
     public VirtualGroup() {
-        this(IdentityProviderConfig.DEFAULT_OID, null);
+        this(IdentityProviderConfig.DEFAULT_GOID, null);
     }
 
-    public VirtualGroup(long providerOid, String name) {
+    public VirtualGroup(Goid providerOid, String name) {
         super(providerOid, name);
     }
 

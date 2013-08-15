@@ -9,6 +9,7 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.security.token.SessionSecurityToken;
+import com.l7tech.util.GoidUpgradeMapper;
 
 import javax.security.auth.x500.X500Principal;
 import java.security.cert.X509Certificate;
@@ -19,7 +20,7 @@ import java.math.BigInteger;
  * @author mike
  */
 public class TestIdentityProvider implements AuthenticatingIdentityProvider<User,Group,UserManager<User>,GroupManager<User,Group>> {
-    public static long PROVIDER_ID = 9898;
+    public static Goid PROVIDER_ID = GoidUpgradeMapper.mapOid(null, 9898L);
     public static int PROVIDER_VERSION = 1;
 
     private static Map<String, MyUser> usernameMap = Collections.synchronizedMap(new HashMap<String, MyUser>());
@@ -33,7 +34,7 @@ public class TestIdentityProvider implements AuthenticatingIdentityProvider<User
     }
 
     static {
-        TEST_IDENTITY_PROVIDER_CONFIG.setOid(PROVIDER_ID);
+        TEST_IDENTITY_PROVIDER_CONFIG.setGoid(PROVIDER_ID);
         TEST_IDENTITY_PROVIDER_CONFIG.setName("TestIdentityProvider");
         TEST_IDENTITY_PROVIDER_CONFIG.setDescription("ID provider for testing");
         TEST_IDENTITY_PROVIDER_CONFIG.setVersion(PROVIDER_VERSION);
@@ -130,7 +131,7 @@ public class TestIdentityProvider implements AuthenticatingIdentityProvider<User
         }
         if ( pc.getFormat().equals( CredentialFormat.SESSIONTOKEN ) &&
              mu.user.getId().equals( ((SessionSecurityToken)pc.getSecurityToken()).getUserId() ) &&
-             config.getOid() == ((SessionSecurityToken)pc.getSecurityToken()).getProviderId() ) {
+             config.getGoid().equals(((SessionSecurityToken)pc.getSecurityToken()).getProviderId())) {
             return new AuthenticationResult(mu.user, pc.getSecurityTokens());
         }
         throw new AuthenticationException("Invalid username or password");
@@ -218,9 +219,9 @@ public class TestIdentityProvider implements AuthenticatingIdentityProvider<User
 
     private class TestGroupManager implements GroupManager<User, Group> {
         private Map<User, Set<Group>> userToGroupMap = new HashMap<User, Set<Group>>();
-        private long providerId;
+        private Goid providerId;
 
-        public TestGroupManager(long providerId){
+        public TestGroupManager(Goid providerId){
             this.providerId = providerId;    
         }
         @Override
@@ -252,12 +253,12 @@ public class TestIdentityProvider implements AuthenticatingIdentityProvider<User
         }
 
         @Override
-        public void deleteAll(long ipoid) throws DeleteException, ObjectNotFoundException {
+        public void deleteAll(Goid ipoid) throws DeleteException, ObjectNotFoundException {
             throw new UnsupportedOperationException("not supported for TestIdentityProvider");
         }
 
         @Override
-        public void deleteAllVirtual(long ipoid) throws DeleteException, ObjectNotFoundException {
+        public void deleteAllVirtual(Goid ipoid) throws DeleteException, ObjectNotFoundException {
             throw new UnsupportedOperationException("not supported for TestIdentityProvider");
         }
 
@@ -302,7 +303,7 @@ public class TestIdentityProvider implements AuthenticatingIdentityProvider<User
             outer: for ( MyGroup myGroup : groupMap.values() ) {
                 if ( myGroup.group.getId().equals(group.getId() )) {
                     for ( UserBean groupUser : myGroup.users ) {
-                        if ( groupUser.getProviderId()==user.getProviderId() &&
+                        if ( groupUser.getProviderId().equals(user.getProviderId()) &&
                             groupUser.getId().equals(user.getId())) {
                             member = true;
                             break outer;
@@ -432,7 +433,7 @@ public class TestIdentityProvider implements AuthenticatingIdentityProvider<User
         }
 
         @Override
-        public void deleteAll(long ipoid) {
+        public void deleteAll(Goid ipoid) {
             throw new UnsupportedOperationException("not supported for TestIdentityProvider");
         }
 

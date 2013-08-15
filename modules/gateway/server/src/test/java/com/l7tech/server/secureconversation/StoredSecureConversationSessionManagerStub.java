@@ -2,6 +2,7 @@ package com.l7tech.server.secureconversation;
 
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.OidEntityManagerStub;
 
 /**
@@ -15,7 +16,7 @@ public class StoredSecureConversationSessionManagerStub extends OidEntityManager
     }
 
     @Override
-    public StoredSecureConversationSession findOutboundSessionByUserAndService( final long providerId, final String userId, final String serviceUrl ) {
+    public StoredSecureConversationSession findOutboundSessionByUserAndService( final Goid providerId, final String userId, final String serviceUrl ) {
         return null;
     }
 
@@ -24,7 +25,7 @@ public class StoredSecureConversationSessionManagerStub extends OidEntityManager
     }
 
     @Override
-    public void deleteOutboundSessionByUserAndService( final long providerId, final String userId, final String serviceUrl ) {
+    public void deleteOutboundSessionByUserAndService( final Goid providerId, final String userId, final String serviceUrl ) {
     }
 
     @Override

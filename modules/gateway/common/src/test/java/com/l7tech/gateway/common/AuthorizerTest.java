@@ -1,5 +1,6 @@
 package com.l7tech.gateway.common;
 
+import com.l7tech.objectmodel.Goid;
 import org.junit.Test;
 import org.junit.Assert;
 import com.l7tech.gateway.common.security.rbac.Permission;
@@ -27,31 +28,31 @@ public class AuthorizerTest {
     @Test
     public void testAttributePredicateCreate() {
         Authorizer authorizer = buildInternalIdProviderAuthorizer();
-        Assert.assertTrue( "Should be permitted", authorizer.hasPermission(new AttemptedCreateSpecific(EntityType.USER, new UserBean(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID, "<new user>")) ));
-        Assert.assertFalse( "Should not be permitted", authorizer.hasPermission(new AttemptedCreateSpecific(EntityType.USER, new UserBean(1, "<new user>") )));
+        Assert.assertTrue( "Should be permitted", authorizer.hasPermission(new AttemptedCreateSpecific(EntityType.USER, new UserBean(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_GOID, "<new user>")) ));
+        Assert.assertFalse( "Should not be permitted", authorizer.hasPermission(new AttemptedCreateSpecific(EntityType.USER, new UserBean(new Goid(0,1), "<new user>") )));
     }
 
     @Test
     public void testAttributePredicateUpdate() {
         Authorizer authorizer = buildInternalIdProviderAuthorizer();
-        Assert.assertTrue( "Should be permitted", authorizer.hasPermission(new AttemptedUpdate(EntityType.USER, new UserBean(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID, "<new user>")) ));
-        Assert.assertFalse( "Should not be permitted", authorizer.hasPermission(new AttemptedUpdate(EntityType.USER, new UserBean(1, "<new user>") )));
+        Assert.assertTrue( "Should be permitted", authorizer.hasPermission(new AttemptedUpdate(EntityType.USER, new UserBean(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_GOID, "<new user>")) ));
+        Assert.assertFalse( "Should not be permitted", authorizer.hasPermission(new AttemptedUpdate(EntityType.USER, new UserBean(new Goid(0,1), "<new user>") )));
     }
 
     @Test
     public void testAttributePredicateDelete() {
         Authorizer authorizer = buildInternalIdProviderAuthorizer();
-        Assert.assertTrue( "Should be permitted", authorizer.hasPermission(new AttemptedDeleteSpecific(EntityType.USER, new UserBean(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID, "<new user>")) ));
-        Assert.assertFalse( "Should not be permitted", authorizer.hasPermission(new AttemptedDeleteSpecific(EntityType.USER, new UserBean(1, "<new user>") )));
+        Assert.assertTrue( "Should be permitted", authorizer.hasPermission(new AttemptedDeleteSpecific(EntityType.USER, new UserBean(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_GOID, "<new user>")) ));
+        Assert.assertFalse( "Should not be permitted", authorizer.hasPermission(new AttemptedDeleteSpecific(EntityType.USER, new UserBean(new Goid(0,1), "<new user>") )));
     }
 
     @Test
     public void testIdentityPredicateNoId() {
         Authorizer authorizer = buildInternalUserAuthorizer();
-        UserBean user = new UserBean(1, "<admin user>");
+        UserBean user = new UserBean(new Goid(0,1), "<admin user>");
         user.setUniqueIdentifier( "-3" );
         Assert.assertTrue( "Should be permitted", authorizer.hasPermission(new AttemptedUpdate(EntityType.USER, user )) );
-        Assert.assertFalse( "Should not be permitted", authorizer.hasPermission(new AttemptedUpdate(EntityType.USER, new UserBean(1, "<other user>") )) );
+        Assert.assertFalse( "Should not be permitted", authorizer.hasPermission(new AttemptedUpdate(EntityType.USER, new UserBean(new Goid(0,1), "<other user>") )) );
     }
 
     private Authorizer buildInternalUserAuthorizer() {
@@ -70,13 +71,13 @@ public class AuthorizerTest {
             public Collection<Permission> getUserPermissions() throws RuntimeException {
                 Role role = new Role();
                 Permission cpermission = new Permission( role, OperationType.CREATE, EntityType.USER );
-                cpermission.setScope( Collections.<ScopePredicate>singleton( new AttributePredicate( cpermission, "providerId", "-2") ) );
+                cpermission.setScope( Collections.<ScopePredicate>singleton( new AttributePredicate( cpermission, "providerId", "0000000000000000fffffffffffffffe") ) );
                 Permission rpermission = new Permission( role, OperationType.READ, EntityType.USER );
-                rpermission.setScope( Collections.<ScopePredicate>singleton( new AttributePredicate( rpermission, "providerId", "-2") ) );
+                rpermission.setScope( Collections.<ScopePredicate>singleton( new AttributePredicate( rpermission, "providerId", "0000000000000000fffffffffffffffe") ) );
                 Permission upermission = new Permission( role, OperationType.UPDATE, EntityType.USER );
-                upermission.setScope( Collections.<ScopePredicate>singleton( new AttributePredicate( upermission, "providerId", "-2") ) );
+                upermission.setScope( Collections.<ScopePredicate>singleton( new AttributePredicate( upermission, "providerId", "0000000000000000fffffffffffffffe") ) );
                 Permission dpermission = new Permission( role, OperationType.DELETE, EntityType.USER );
-                dpermission.setScope( Collections.<ScopePredicate>singleton( new AttributePredicate( dpermission, "providerId", "-2") ) );
+                dpermission.setScope( Collections.<ScopePredicate>singleton( new AttributePredicate( dpermission, "providerId", "0000000000000000fffffffffffffffe") ) );
                 return Arrays.asList( cpermission, rpermission, upermission, dpermission );
             }
         };

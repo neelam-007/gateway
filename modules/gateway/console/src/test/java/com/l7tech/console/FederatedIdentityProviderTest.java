@@ -9,6 +9,8 @@ import com.l7tech.identity.fed.VirtualGroup;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import static org.junit.Assert.*;
+
+import com.l7tech.objectmodel.Goid;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
@@ -45,7 +47,7 @@ public class FederatedIdentityProviderTest {
 
     @Test
     public void testSaveConfig() throws Exception {
-        final long oid = registry.getIdentityAdmin().saveIdentityProviderConfig(config);
+        final Goid oid = registry.getIdentityAdmin().saveIdentityProviderConfig(config);
         System.err.println("Saved Federated IDPC #" + oid);
 
         FederatedIdentityProviderConfig conf = (FederatedIdentityProviderConfig) registry.getIdentityAdmin().findIdentityProviderConfigByID(oid);
@@ -64,7 +66,7 @@ public class FederatedIdentityProviderTest {
         for (int i = 0; i < configs.length; i++) {
             EntityHeader entityHeader = configs[i];
             if (entityHeader.getType() == EntityType.ID_PROVIDER_CONFIG) {
-                config = identityAdmin.findIdentityProviderConfigByID(entityHeader.getOid());
+                config = identityAdmin.findIdentityProviderConfigByID(entityHeader.getGoid());
                 if (config.type() == IdentityProviderType.FEDERATED) {
                     break;
                 } else {
@@ -75,9 +77,9 @@ public class FederatedIdentityProviderTest {
 
         assertNotNull("There must already be a Federated Identity Provider", config);
 
-        final VirtualGroup vg = new VirtualGroup(config.getOid(), "CN is anything");
+        final VirtualGroup vg = new VirtualGroup(config.getGoid(), "CN is anything");
         vg.setX509SubjectDnPattern("CN=*");
-        String soid = identityAdmin.saveGroup(config.getOid(), vg, null);
+        String soid = identityAdmin.saveGroup(config.getGoid(), vg, null);
 
         assertNotNull("Couldn't save virtual group", soid);
     }

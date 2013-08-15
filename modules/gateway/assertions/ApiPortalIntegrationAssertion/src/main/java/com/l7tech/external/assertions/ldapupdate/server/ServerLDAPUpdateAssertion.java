@@ -6,6 +6,7 @@ import com.l7tech.external.assertions.ldapupdate.server.resource.*;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.identity.IdentityProviderFactory;
@@ -341,21 +342,21 @@ public class ServerLDAPUpdateAssertion extends AbstractServerAssertion<LDAPUpdat
 
     private IdentityProvider getIdProvider() throws FindException {
         // get identity provider
-        Long providerOid = cacheProviderName.get(providerName);
+        Goid providerOid = cacheProviderName.get(providerName);
 
         if (providerOid == null) {
             //not yet in cache, so find it!
             for (IdentityProvider identityProvider : identityProviderFactory.findAllIdentityProviders()) {
-                logger.log(Level.FINE, "Checking " + identityProvider.getConfig().getName() + "," + identityProvider.getConfig().getId() + "," + identityProvider.getConfig().getOid());
+                logger.log(Level.FINE, "Checking " + identityProvider.getConfig().getName() + "," + identityProvider.getConfig().getId() + "," + identityProvider.getConfig().getGoid());
                 if (identityProvider.getConfig().getName().trim().equalsIgnoreCase(providerName.trim())) {
-                    providerOid = identityProvider.getConfig().getOidAsLong();
+                    providerOid = identityProvider.getConfig().getGoid();
                     cacheProviderName.put(providerName, providerOid);
                     return identityProvider;
                 }
             }
             throw new FindException("The ldap identity provider referenced from this assertion cannot be found - " + providerName + ".");
         } else {
-            IdentityProvider output = identityProviderFactory.getProvider(providerOid.longValue());
+            IdentityProvider output = identityProviderFactory.getProvider(providerOid);
             if (output == null) {
                 cacheProviderName.remove(providerName);//the cache entry, is no longer valid, remove it then
                 throw new FindException("The ldap identity provider referenced from this assertion cannot be found anymore - " + providerName + ", " + providerOid + ".");
@@ -430,7 +431,7 @@ public class ServerLDAPUpdateAssertion extends AbstractServerAssertion<LDAPUpdat
 
     private static final long cacheCleanupInterval = ConfigFactory.getLongProperty("com.l7tech.external.assertions.ldapupdate.cacheCleanupInterval", 321123L); // 3853476=1hr,
     // key: resolved search filter value value: cached entry
-    private final ConcurrentMap<String, Long> cacheProviderName = new ConcurrentHashMap<String, Long>();
+    private final ConcurrentMap<String, Goid> cacheProviderName = new ConcurrentHashMap<String, Goid>();
     private final TimerTask cacheCleanupTask = new ManagedTimerTask() {
         @Override
         protected void doRun() {

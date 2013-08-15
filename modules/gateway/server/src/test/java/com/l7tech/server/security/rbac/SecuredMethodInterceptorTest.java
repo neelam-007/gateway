@@ -77,8 +77,8 @@ public class SecuredMethodInterceptorTest {
     private static MyGoidEntity deniedGoidEntityExisting = new MyGoidEntity(new Goid(0,456l));
     private static EntityHeader allowedEntityHeader = new EntityHeader(allowedEntityExisting.getId(), GENERIC, "allowedTest", "test");
     private static EntityHeader deniedEntityHeader = new EntityHeader(deniedEntityExisting.getId(), GENERIC, "deniedTest", "test");
-    private static IdentityHeader allowedIdentityHeaderUserType = new IdentityHeader(allowedEntityExisting.getOid(), allowedEntityExisting.getId(), USER, null, null, null, null);
-    private static IdentityHeader deniedIdentityHeaderUserType = new IdentityHeader(deniedEntityExisting.getOid(), deniedEntityExisting.getId(), USER, null, null, null, null);
+    private static IdentityHeader allowedIdentityHeaderUserType = new IdentityHeader(allowedGoidEntityExisting.getGoid(), allowedEntityExisting.getId(), USER, null, null, null, null);
+    private static IdentityHeader deniedIdentityHeaderUserType = new IdentityHeader(deniedGoidEntityExisting.getGoid(), deniedEntityExisting.getId(), USER, null, null, null, null);
     private static EntityHeader allowedGoidEntityHeader = new EntityHeader(allowedGoidEntityExisting.getId(), GENERIC, "allowedTest", "test");
     private static EntityHeader deniedGoidEntityHeader = new EntityHeader(deniedGoidEntityExisting.getId(), GENERIC, "deniedTest", "test");
     public static String genericString = UUID.randomUUID().toString();
@@ -194,10 +194,10 @@ public class SecuredMethodInterceptorTest {
                 {"deleteById", privilegedUser, new Object[]{deniedEntityExisting.getId()}, null, null, PermissionDeniedException.class},
                 {"deleteById", privilegedUser, new Object[]{deniedGoidEntityExisting.getId()}, null, null, PermissionDeniedException.class},
                 //deleteIdentityById
-                {"deleteIdentityById", privilegedUser, new Object[]{allowedEntityNew.getOid(), allowedEntityNew.getId()}, null, null, NullPointerException.class},
-                {"deleteIdentityById", privilegedUser, new Object[]{deniedEntityNew.getOid(), deniedEntityNew.getId()}, null, null, NullPointerException.class},
-                {"deleteIdentityById", privilegedUser, new Object[]{allowedEntityExisting.getOid(), allowedEntityExisting.getId()}, null, null, null},
-                {"deleteIdentityById", privilegedUser, new Object[]{deniedEntityExisting.getOid(), deniedEntityExisting.getId()}, null, null, PermissionDeniedException.class},
+                {"deleteIdentityById", privilegedUser, new Object[]{allowedGoidEntityNew.getGoid(), allowedEntityNew.getId()}, null, null, NullPointerException.class},
+                {"deleteIdentityById", privilegedUser, new Object[]{deniedGoidEntityNew.getGoid(), deniedEntityNew.getId()}, null, null, NullPointerException.class},
+                {"deleteIdentityById", privilegedUser, new Object[]{allowedGoidEntityExisting.getGoid(), allowedEntityExisting.getId()}, null, null, null},
+                {"deleteIdentityById", privilegedUser, new Object[]{deniedGoidEntityExisting.getGoid(), deniedEntityExisting.getId()}, null, null, PermissionDeniedException.class},
                 //deleteByUniqueAttribute
                 {"deleteByUniqueAttribute", privilegedUser, null, null, null, null},
                 {"deleteByUniqueAttribute", unprivilegedUser, null, null, null, PermissionDeniedException.class},
@@ -232,10 +232,10 @@ public class SecuredMethodInterceptorTest {
                 {"getPropertyById", privilegedUser, new Object[]{deniedEntityExisting.getId()}, genericString, genericString, PermissionDeniedException.class},
                 {"getPropertyById", privilegedUser, new Object[]{deniedGoidEntityExisting.getId()}, genericString, genericString, PermissionDeniedException.class},
                 //getIdentityPropertyById
-                {"getIdentityPropertyById", privilegedUser, new Object[]{allowedEntityNew.getOid(), allowedEntityNew.getId()}, genericString, genericString, NullPointerException.class},
-                {"getIdentityPropertyById", privilegedUser, new Object[]{deniedEntityNew.getOid(), deniedEntityNew.getId()}, genericString, genericString, NullPointerException.class},
-                {"getIdentityPropertyById", privilegedUser, new Object[]{allowedEntityExisting.getOid(), allowedEntityExisting.getId()}, genericString, genericString, null},
-                {"getIdentityPropertyById", privilegedUser, new Object[]{deniedEntityExisting.getOid(), deniedEntityExisting.getId()}, genericString, genericString, PermissionDeniedException.class},
+                {"getIdentityPropertyById", privilegedUser, new Object[]{allowedGoidEntityNew.getGoid(), allowedEntityNew.getId()}, genericString, genericString, NullPointerException.class},
+                {"getIdentityPropertyById", privilegedUser, new Object[]{deniedGoidEntityNew.getGoid(), deniedEntityNew.getId()}, genericString, genericString, NullPointerException.class},
+                {"getIdentityPropertyById", privilegedUser, new Object[]{allowedGoidEntityExisting.getGoid(), allowedEntityExisting.getId()}, genericString, genericString, null},
+                {"getIdentityPropertyById", privilegedUser, new Object[]{deniedGoidEntityExisting.getGoid(), deniedEntityExisting.getId()}, genericString, genericString, PermissionDeniedException.class},
                 //setPropertyOfEntity
                 {"setPropertyOfEntity", privilegedUser, new Object[]{genericString, allowedEntityNew}, null, null, null},
                 {"setPropertyOfEntity", privilegedUser, new Object[]{genericString, allowedGoidEntityNew}, null, null, null},

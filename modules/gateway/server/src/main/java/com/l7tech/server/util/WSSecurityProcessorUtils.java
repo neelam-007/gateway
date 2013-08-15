@@ -663,7 +663,7 @@ public class WSSecurityProcessorUtils {
                 if ( target.getTargetIdentityType() != null ) {
                     switch ( target.getTargetIdentityType() ) {
                         case USER:
-                            if ( target.getIdentityProviderOid() == user.getProviderId() &&
+                            if ( target.getIdentityProviderOid().equals(user.getProviderId()) &&
                                  user.getId().equals(target.getIdentityId()) ) {
                                 if ( signingSecurityToken != null ) throw new MultipleTokenException("Multiple tokens found for identity '"+target.describeIdentity()+"'.");
                                 signingSecurityToken = token;
@@ -680,7 +680,7 @@ public class WSSecurityProcessorUtils {
                             }
                             break;
                         case PROVIDER:
-                            if ( target.getIdentityProviderOid() == user.getProviderId() ) {
+                            if ( target.getIdentityProviderOid().equals(user.getProviderId())) {
                                 if ( signingSecurityToken != null ) throw new MultipleTokenException("Multiple tokens found for identity '"+target.describeIdentity()+"'.");
                                 signingSecurityToken = token;
                             }

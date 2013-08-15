@@ -197,7 +197,7 @@ public class ApiPortalAuthenticationConfiguration {
                 }, false));
 
                 for (EntityHeader header : providerHeaders) {
-                    IdentityProviderConfig ipc = admin.findIdentityProviderConfigByID(header.getOid());
+                    IdentityProviderConfig ipc = admin.findIdentityProviderConfigByID(header.getGoid());
                     if (ipc != null && ipc instanceof LdapIdentityProviderConfig) {
                         LdapIdentityProviderConfig lipc = (LdapIdentityProviderConfig)ipc;
                         String templateName = lipc.getTemplateName();

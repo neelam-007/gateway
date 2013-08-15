@@ -1,5 +1,6 @@
 package com.l7tech.console.util;
 
+import com.l7tech.objectmodel.Goid;
 import org.junit.Test;
 import org.junit.Assert;
 import com.l7tech.test.BugNumber;
@@ -21,13 +22,13 @@ public class LimitExceededMarkerIdentityHeaderTest {
 
     @Test
     public void testComparability() {
-        IdentityHeader ih1 = new IdentityHeader(3, "1", EntityType.USER, "admin", "", "", null);
-        IdentityHeader ih2 = new IdentityHeader(2, "1", EntityType.USER, "admin", "", "", null);
-        IdentityHeader ih3 = new IdentityHeader(1, "1", EntityType.USER, "admin", "", "", null);
-        IdentityHeader ih4 = new IdentityHeader(1, "2", EntityType.USER, "admin2", "", "", null);
-        IdentityHeader ih5 = new IdentityHeader(2, "2", EntityType.USER, "admin2", "", "", null);
-        IdentityHeader ih6 = new IdentityHeader(1, "0", EntityType.USER, "admin3", "", "", null);
-        IdentityHeader ih7 = new IdentityHeader(4, "1", EntityType.USER, "admin", "", "", null);
+        IdentityHeader ih1 = new IdentityHeader(new Goid(0,3), "1", EntityType.USER, "admin", "", "", null);
+        IdentityHeader ih2 = new IdentityHeader(new Goid(0,2), "1", EntityType.USER, "admin", "", "", null);
+        IdentityHeader ih3 = new IdentityHeader(new Goid(0,1), "1", EntityType.USER, "admin", "", "", null);
+        IdentityHeader ih4 = new IdentityHeader(new Goid(0,1), "2", EntityType.USER, "admin2", "", "", null);
+        IdentityHeader ih5 = new IdentityHeader(new Goid(0,2), "2", EntityType.USER, "admin2", "", "", null);
+        IdentityHeader ih6 = new IdentityHeader(new Goid(0,1), "0", EntityType.USER, "admin3", "", "", null);
+        IdentityHeader ih7 = new IdentityHeader(new Goid(0,4), "1", EntityType.USER, "admin", "", "", null);
         IdentityHeader ih8 = new LimitExceededMarkerIdentityHeader();
 
         IdentityHeader[] headers1 = {

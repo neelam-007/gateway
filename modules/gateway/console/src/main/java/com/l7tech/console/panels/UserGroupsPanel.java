@@ -373,7 +373,7 @@ class UserGroupsPanel extends JPanel {
                 filter = new Filter<IdentityHeader>() {
                     public boolean accept(IdentityHeader ih) {
                         try {
-                            Group g = Registry.getDefault().getIdentityAdmin().findGroupByID(ih.getProviderOid(), ih.getStrId());
+                            Group g = Registry.getDefault().getIdentityAdmin().findGroupByID(ih.getProviderGoid(), ih.getStrId());
                             return g instanceof FederatedGroup && !(g instanceof VirtualGroup);
                         } catch (Exception e) {
                             throw new RuntimeException("Couldn't retrieve Federated Group", e);

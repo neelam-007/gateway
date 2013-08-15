@@ -111,7 +111,7 @@ public class ServerCancelSecurityContext extends AbstractMessageTargetableServer
 
         for ( final AuthenticationResult authenticationResult : authenticationContext.getAllAuthenticationResults() ) {
             final User authenticatedUser = authenticationResult.getUser();
-            if ( authenticatedUser.getProviderId()==user.getProviderId() &&
+            if ( authenticatedUser.getProviderId().equals(user.getProviderId()) &&
                  authenticatedUser.getId().equals( user.getId() ) ) {
                 found = true;
                 break;

@@ -1,5 +1,6 @@
 package com.l7tech.console.util;
 
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.IdentityHeader;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
@@ -16,7 +17,7 @@ import com.l7tech.objectmodel.EntityType;
 public class LimitExceededMarkerIdentityHeader extends IdentityHeader {
 
     public LimitExceededMarkerIdentityHeader() {
-        super(-1, new EntityHeader(-1, EntityType.USER, new String(new char[]{Character.MIN_VALUE}), ""));
+        super(new Goid(0,-1), new EntityHeader(-1, EntityType.USER, new String(new char[]{Character.MIN_VALUE}), ""));
     }
 
     public String getName() {

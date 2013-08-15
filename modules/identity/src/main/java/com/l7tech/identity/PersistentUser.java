@@ -3,10 +3,8 @@
  */
 package com.l7tech.identity;
 
-import com.l7tech.objectmodel.imp.NamedEntityImp;
-import com.l7tech.objectmodel.migration.Migration;
-import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
-import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.imp.NamedGoidEntityImp;
 
 import javax.persistence.Column;
 import javax.persistence.MappedSuperclass;
@@ -16,9 +14,9 @@ import javax.persistence.Transient;
  * @author alex
  */
 @MappedSuperclass
-public abstract class PersistentUser extends NamedEntityImp implements User {
+public abstract class PersistentUser extends NamedGoidEntityImp implements User {
     protected String login;
-    protected long providerOid;
+    protected Goid providerGoid;
     protected String subjectDn;
     protected String firstName;
     protected String lastName;
@@ -31,8 +29,8 @@ public abstract class PersistentUser extends NamedEntityImp implements User {
 
     }
     
-    protected PersistentUser(long providerOid, String login) {
-        this.providerOid = providerOid;
+    protected PersistentUser(Goid providerGoid, String login) {
+        this.providerGoid = providerGoid;
         this.login = login;
         this._name = login;
     }
@@ -40,8 +38,8 @@ public abstract class PersistentUser extends NamedEntityImp implements User {
     /**
      * this is not persisted, it is set at run time by the provider who creates the object
      */
-    public void setProviderId( long providerId) {
-        this.providerOid = providerId;
+    public void setProviderId( Goid providerId) {
+        this.providerGoid = providerId;
     }
 
     @Transient
@@ -61,8 +59,8 @@ public abstract class PersistentUser extends NamedEntityImp implements User {
      * this is not persisted, it is set at run time by the provider who creates the object
      */
     @Transient
-    public long getProviderId() {
-        return providerOid;
+    public Goid getProviderId() {
+        return providerGoid;
     }
 
     @Column(name="login", nullable=false, length=255)
@@ -101,7 +99,7 @@ public abstract class PersistentUser extends NamedEntityImp implements User {
                 "\n\tFirst name=" + firstName +
                 "\n\tLast name=" + lastName +
                 "\n\tLogin=" + login +
-                "\n\tproviderId=" + providerOid;
+                "\n\tproviderId=" + providerGoid;
     }
 
     public void setDescription( String description ) {
@@ -138,7 +136,7 @@ public abstract class PersistentUser extends NamedEntityImp implements User {
 
         PersistentUser that = (PersistentUser) o;
 
-        if (providerOid != that.providerOid) return false;
+        if (providerGoid != null ? !providerGoid.equals(that.providerGoid) : that.providerGoid != null) return false;
         if (department != null ? !department.equals(that.department) : that.department != null) return false;
         if (email != null ? !email.equals(that.email) : that.email != null) return false;
         if (firstName != null ? !firstName.equals(that.firstName) : that.firstName != null) return false;
@@ -153,7 +151,7 @@ public abstract class PersistentUser extends NamedEntityImp implements User {
     public int hashCode() {
         int result = super.hashCode();
         result = 31 * result + (login != null ? login.hashCode() : 0);
-        result = 31 * result + (int) (providerOid ^ (providerOid >>> 32));
+        result = 31 * result + (providerGoid != null ? providerGoid.hashCode() : 0);
         result = 31 * result + (subjectDn != null ? subjectDn.hashCode() : 0);
         result = 31 * result + (firstName != null ? firstName.hashCode() : 0);
         result = 31 * result + (lastName != null ? lastName.hashCode() : 0);

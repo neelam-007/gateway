@@ -8,6 +8,7 @@ import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
 
@@ -168,12 +169,12 @@ public abstract class NodeAction extends SecureAction {
      * @return the identity provider or null if not found
      */
     public IdentityProviderConfig getIdentityProviderConfig(EntityHeaderNode node) {
-        long providerId = IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID;
+        Goid providerId = IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_GOID;
 
         if (node != null) {
             EntityHeader header = node.getEntityHeader();
             if (header.getType().equals(EntityType.ID_PROVIDER_CONFIG)) {
-                providerId = header.getOid();
+                providerId = header.getGoid();
             }
         }
 

@@ -3,6 +3,7 @@
  */
 package com.l7tech.identity.mapping;
 
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.objectmodel.UsersOrGroups;
 import com.l7tech.objectmodel.AttributeHeader;
@@ -26,7 +27,7 @@ public abstract class PersistentAttributeMapping extends IdentityMapping {
         return my;
     }
 
-    protected PersistentAttributeMapping(AttributeConfig parent, long providerOid, UsersOrGroups uog) {
+    protected PersistentAttributeMapping(AttributeConfig parent, Goid providerOid, UsersOrGroups uog) {
         super(parent, providerOid, uog);
     }
 }

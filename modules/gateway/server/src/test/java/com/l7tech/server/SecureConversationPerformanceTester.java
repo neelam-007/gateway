@@ -3,6 +3,7 @@ package com.l7tech.server;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.identity.UserBean;
 import com.l7tech.message.Message;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.security.xml.WssDecoratorTest;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.security.xml.decorator.WssDecoratorImpl;
@@ -29,7 +30,7 @@ public class SecureConversationPerformanceTester {
     public void testSignatureValidationPerformance() throws Exception {
         final InboundSecureConversationContextManager manager = new InboundSecureConversationContextManager( new MockConfig( new Properties() ), new StoredSecureConversationSessionManagerStub() );
         WssDecoratorTest.TestDocument td = new WssDecoratorTest().getSigningOnlyWithSecureConversationTestDocument();
-        final SecureConversationSession session = manager.createContextForUser(new UserBean( 3L, "foo"), SoapConstants.WSSC_NAMESPACE2);
+        final SecureConversationSession session = manager.createContextForUser(new UserBean( new Goid(0,3L), "foo"), SoapConstants.WSSC_NAMESPACE2);
         td.req.setSecureConversationSession(new DecorationRequirements.SimpleSecureConversationSession(session.getIdentifier(),
                 session.getSharedSecret(),
                 session.getSecConvNamespaceUsed()));

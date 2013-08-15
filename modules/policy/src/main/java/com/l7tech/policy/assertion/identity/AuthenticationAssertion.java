@@ -3,6 +3,7 @@
  */
 package com.l7tech.policy.assertion.identity;
 
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.DefaultAssertionMetadata;
 import com.l7tech.policy.assertion.IdentityTarget;
@@ -23,14 +24,14 @@ public class AuthenticationAssertion extends IdentityAssertion {
     }
 
     @Override
-    public void setIdentityProviderOid(long provider) {
+    public void setIdentityProviderOid(Goid provider) {
         super.setIdentityProviderOid(provider);
         updateLoggingIdentity();
     }
 
     private void updateLoggingIdentity() {
-        long poid = getIdentityProviderOid();
-        if (-1 == poid)
+        Goid poid = getIdentityProviderOid();
+        if ( poid == null)
             loggingIdentity = "default identity provider";
         else
             loggingIdentity = "identity provider ID " + poid;
@@ -42,7 +43,7 @@ public class AuthenticationAssertion extends IdentityAssertion {
     }
 
     @Override
-    public long getIdentityProviderOid() {
+    public Goid getIdentityProviderOid() {
         return super.getIdentityProviderOid();
     }
 

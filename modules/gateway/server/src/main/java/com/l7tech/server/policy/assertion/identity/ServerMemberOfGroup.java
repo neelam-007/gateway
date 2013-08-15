@@ -89,7 +89,7 @@ public class ServerMemberOfGroup extends ServerIdentityAssertion<MemberOfGroup> 
             Boolean wasMember = authResult.getCachedGroupMembership(targetGroup);
             if (wasMember == null) {
                 if (authResult.getUser() != null &&
-                        authResult.getUser().getProviderId() == assertion.getIdentityProviderOid()) {
+                        authResult.getUser().getProviderId().equals(assertion.getIdentityProviderOid())) {
                     // Cache miss
                     if (gman.isMember(authResult.getUser(), targetGroup)) {
                         authResult.setCachedGroupMembership(targetGroup, true);

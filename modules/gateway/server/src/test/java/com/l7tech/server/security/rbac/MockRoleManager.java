@@ -32,21 +32,21 @@ public class MockRoleManager extends OidEntityManagerStub<Role,EntityHeader> imp
     }
 
     @Override
-    public Collection<Pair<Long, String>> getExplicitRoleAssignments() throws FindException {
+    public Collection<Pair<Goid, String>> getExplicitRoleAssignments() throws FindException {
         return null;
     }
 
     @Override
     public Collection<Role> getAssignedRoles(User thisGuy) throws FindException {
         final Set<Role> assignedRoles = new HashSet<Role>();
-        Map<Long, IdentityHeader> thisGuysGroupMap = null;
+        Map<Goid, IdentityHeader> thisGuysGroupMap = null;
 
         for (Role role : entities.values()) {
             for (RoleAssignment assignment : role.getRoleAssignments()) {
                 final EntityType type = EntityType.valueOf(assignment.getEntityType().toUpperCase());
                 switch(type) {
                     case USER:
-                        if (assignment.getProviderId() == thisGuy.getProviderId() &&
+                        if (assignment.getProviderId().equals(thisGuy.getProviderId()) &&
                             assignment.getIdentityId().equals(thisGuy.getId()))
                         {
                             assignedRoles.add(role);
@@ -55,9 +55,9 @@ public class MockRoleManager extends OidEntityManagerStub<Role,EntityHeader> imp
                     case GROUP:
                         if (groupManager == null) break;
                         if (thisGuysGroupMap == null) thisGuysGroupMap = getThisGuysGroups(thisGuy);
-                        IdentityHeader groupHeader = thisGuysGroupMap.get(Long.valueOf(assignment.getIdentityId()));
+                        IdentityHeader groupHeader = thisGuysGroupMap.get(Goid.parseGoid(assignment.getIdentityId()));
                         if (groupHeader != null &&
-                            groupHeader.getProviderOid() == thisGuy.getProviderId()) {
+                            groupHeader.getProviderGoid().equals(thisGuy.getProviderId())) {
                             assignedRoles.add(role);
                         }
                         break;
@@ -73,13 +73,13 @@ public class MockRoleManager extends OidEntityManagerStub<Role,EntityHeader> imp
     public Collection<Role> getAssignedRoles(@NotNull Group group) throws FindException {
         return null;
     }
-
-    private Map<Long, IdentityHeader> getThisGuysGroups(User thisGuy) throws FindException {
+    
+    private Map<Goid, IdentityHeader> getThisGuysGroups(User thisGuy) throws FindException {
         if (groupManager == null) return Collections.emptyMap();
-        final Map<Long, IdentityHeader> thisGuysGroupMap = new HashMap<Long, IdentityHeader>();
+        final Map<Goid, IdentityHeader> thisGuysGroupMap = new HashMap<Goid, IdentityHeader>();
         final Set<IdentityHeader> groups = groupManager.getGroupHeaders(thisGuy);
         for (IdentityHeader header : groups)
-            thisGuysGroupMap.put(header.getOid(), header);
+            thisGuysGroupMap.put(header.getGoid(), header);
         return thisGuysGroupMap;
     }
 
@@ -137,7 +137,7 @@ public class MockRoleManager extends OidEntityManagerStub<Role,EntityHeader> imp
             for (Iterator<RoleAssignment> it = role.getRoleAssignments().iterator(); it.hasNext();) {
                 final RoleAssignment ass = it.next();
                 if (EntityType.USER.name().equals(ass.getEntityType()) &&
-                        ass.getProviderId() == user.getProviderId() &&
+                        ass.getProviderId().equals(user.getProviderId()) &&
                         ass.getIdentityId().equals(user.getId()))
                     it.remove();
             }
@@ -150,7 +150,7 @@ public class MockRoleManager extends OidEntityManagerStub<Role,EntityHeader> imp
             for (Iterator<RoleAssignment> it = role.getRoleAssignments().iterator(); it.hasNext();) {
                 final RoleAssignment ass = it.next();
                 if (EntityType.GROUP.name().equals(ass.getEntityType()) &&
-                        ass.getProviderId() == group.getProviderId() &&
+                        ass.getProviderId().equals(group.getProviderId()) &&
                         ass.getIdentityId().equals(group.getId()))
                     it.remove();
             }
@@ -199,12 +199,12 @@ public class MockRoleManager extends OidEntityManagerStub<Role,EntityHeader> imp
     }
 
     @Override
-    public boolean isAdministrativeUser(@NotNull Pair<Long, String> providerAndUserId, @NotNull User user) throws FindException {
+    public boolean isAdministrativeUser(@NotNull Pair<Goid, String> providerAndUserId, @NotNull User user) throws FindException {
         return rbacServices.isAdministrativeUser(providerAndUserId, user);
     }
 
     @Override
-    public Collection<Role> getAssignedRoles(@NotNull Pair<Long, String> providerAndUserId, @NotNull User user) throws FindException {
+    public Collection<Role> getAssignedRoles(@NotNull Pair<Goid, String> providerAndUserId, @NotNull User user) throws FindException {
         return getAssignedRoles(user, false, true);
     }
 }

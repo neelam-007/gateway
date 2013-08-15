@@ -5,6 +5,8 @@ import static com.l7tech.server.secureconversation.OutboundSecureConversationCon
 import com.l7tech.identity.UserBean;
 
 import static org.junit.Assert.*;
+
+import com.l7tech.objectmodel.Goid;
 import org.junit.Test;
 
 /**
@@ -15,7 +17,7 @@ public class OutboundSecureConversationContextManagerTest {
     @Test
     public void testKeyRoundTrip() {
         final UserBean user = new UserBean();
-        user.setProviderId( 12 );
+        user.setProviderId( new Goid(0,12) );
         user.setUniqueIdentifier( "uid" );
         user.setLogin( "login" );
         final OutboundSessionKey key = OutboundSecureConversationContextManager.newSessionKey( user, "service url" );

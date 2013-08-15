@@ -147,12 +147,12 @@ public class RbacServicesImpl implements RbacServices, InitializingBean, PostSta
     }
 
     @Override
-    public boolean isAdministrativeUser(@NotNull Pair<Long, String> providerAndUserId, @NotNull User user) throws FindException {
+    public boolean isAdministrativeUser(@NotNull Pair<Goid, String> providerAndUserId, @NotNull User user) throws FindException {
         if (user.getId() == null)
             throw new NullPointerException("user ID");
         if (!user.getId().equals(providerAndUserId.right))
             throw new IllegalArgumentException("user ID mismatch");
-        if (!((Long)user.getProviderId()).equals(providerAndUserId.left))
+        if (!(user.getProviderId()).equals(providerAndUserId.left))
             throw new IllegalArgumentException("provider ID mismatch");
 
         boolean hasPermission = false;
@@ -175,19 +175,19 @@ public class RbacServicesImpl implements RbacServices, InitializingBean, PostSta
     }
 
     @Override
-    public Collection<Role> getAssignedRoles(@NotNull Pair<Long, String> providerAndUserId, @NotNull User user) throws FindException {
+    public Collection<Role> getAssignedRoles(@NotNull Pair<Goid, String> providerAndUserId, @NotNull User user) throws FindException {
         if (user.getId() == null)
             throw new NullPointerException("user ID");
         if (!user.getId().equals(providerAndUserId.right))
             throw new IllegalArgumentException("user ID mismatch");
-        if (!((Long)user.getProviderId()).equals(providerAndUserId.left))
+        if (!(user.getProviderId()).equals(providerAndUserId.left))
             throw new IllegalArgumentException("provider ID mismatch");
 
         return Collections.unmodifiableCollection(roleManager.getAssignedRoles(user));
     }
 
-    private static Pair<Long, String> makeKey(User user) {
-        return new Pair<Long, String>(user.getProviderId(), user.getId());
+    private static Pair<Goid, String> makeKey(User user) {
+        return new Pair<Goid, String>(user.getProviderId(), user.getId());
     }
 
     private boolean isPermitted(final Collection<Role> assignedRoles,

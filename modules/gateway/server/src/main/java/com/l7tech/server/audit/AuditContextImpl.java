@@ -347,7 +347,7 @@ public class AuditContextImpl implements AuditContext {
                             Component.GW_AUDIT_SYSTEM,
                             AuditClusterPropertiesChecker.AUDIT_SINK_FALL_BACK_WARNING,
                             false,
-                            0L,
+                            null,
                             null,
                             null,
                             "Audit Sink Properties Evaluation",
@@ -398,7 +398,7 @@ public class AuditContextImpl implements AuditContext {
         if (sinkPolicyFailed) {
             // Need to audit something about the failure, says func spec
             SystemAuditRecord fail = new SystemAuditRecord(Level.WARNING, nodeId, Component.GW_AUDIT_SYSTEM,
-                    "Audit sink policy failed; status = " + sinkPolicyStatus.getNumeric(), false, 0L, null, null, "Sink Failure", OUR_IP);
+                    "Audit sink policy failed; status = " + sinkPolicyStatus.getNumeric(), false, null, null, null, "Sink Failure", OUR_IP);
             if(isSignAudits()){
                 signRecord(fail);
             }

@@ -109,7 +109,7 @@ public class RoleManagerImpl extends HibernateEntityManager<Role, EntityHeader> 
         final Collection<Role> roles = new ArrayList<>(getDirectlyAssignedRolesForGroup(group.getProviderId(), group.getId(), false));
         final Set<IdentityHeader> groups = groupProvider.getGroups(group);
         for (final IdentityHeader header : groups) {
-            roles.addAll(getDirectlyAssignedRolesForGroup(header.getProviderOid(), header.getStrId(), true));
+            roles.addAll(getDirectlyAssignedRolesForGroup(header.getProviderGoid(), header.getStrId(), true));
         }
         return roles;
     }
@@ -122,21 +122,21 @@ public class RoleManagerImpl extends HibernateEntityManager<Role, EntityHeader> 
     }
 
     @Override
-    public Collection<Pair<Long, String>> getExplicitRoleAssignments(){
+    public Collection<Pair<Goid, String>> getExplicitRoleAssignments(){
         //noinspection unchecked
-        return (Collection<Pair<Long, String>>) getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
+        return (Collection<Pair<Goid, String>>) getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
             @Override
             public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
                 final List list = session.createQuery("select distinct r.identityId, r.providerId from " +
                         "com.l7tech.gateway.common.security.rbac.RoleAssignment r where r.entityType = 'User'").list();
 
-                final Collection<Pair<Long, String>> roleAssignedUsers = new ArrayList<Pair<Long, String>>();
+                final Collection<Pair<Goid, String>> roleAssignedUsers = new ArrayList<Pair<Goid, String>>();
                 for (Object o : list) {
                     if(o instanceof Object[]){
                         Object [] result = (Object[]) o;
                         if(result.length != 2) throw new IllegalStateException("Incorrect number of columns found.");
 
-                        final Pair<Long, String> pair = new Pair<Long, String>(Long.valueOf(result[1].toString()), result[0].toString());
+                        final Pair<Goid, String> pair = new Pair<Goid, String>(Goid.parseGoid(result[1].toString()), result[0].toString());
                         roleAssignedUsers.add(pair);
                     }
                 }
@@ -145,7 +145,7 @@ public class RoleManagerImpl extends HibernateEntityManager<Role, EntityHeader> 
         });
     }
 
-    private Collection<Role> getDirectlyAssignedRolesForGroup(final long providerId, final String groupId, final boolean inherited) throws FindException {
+    private Collection<Role> getDirectlyAssignedRolesForGroup(final Goid providerId, final String groupId, final boolean inherited) throws FindException {
        try {
            //noinspection unchecked
            return (Collection<Role>) getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
@@ -193,7 +193,7 @@ public class RoleManagerImpl extends HibernateEntityManager<Role, EntityHeader> 
                 //Now get the Roles the user can access via it's group membership
                 final List<String> groupIds = new ArrayList<String>();
                 for( final IdentityHeader groupHeader : groupHeaders ){
-                    if ( groupHeader != null && groupHeader.getProviderOid()==user.getProviderId() ) {
+                    if ( groupHeader != null && groupHeader.getProviderGoid().equals(user.getProviderId())) {
                         groupIds.add( groupHeader.getStrId() );
                     }
                 }
@@ -643,7 +643,7 @@ public class RoleManagerImpl extends HibernateEntityManager<Role, EntityHeader> 
         long oid = RoleAssignment.DEFAULT_OID;
 
         for ( RoleAssignment ura : roleAssignments) {
-            if ( ura.getProviderId()==assignment.getProviderId() &&
+            if ( ura.getProviderId().equals(assignment.getProviderId()) &&
                  ura.getIdentityId().equals(assignment.getIdentityId())  ) {
                 oid = ura.getOid();
                 break;
@@ -666,12 +666,12 @@ public class RoleManagerImpl extends HibernateEntityManager<Role, EntityHeader> 
     }
 
     @Override
-    public boolean isAdministrativeUser(@NotNull Pair<Long, String> providerAndUserId, @NotNull User user) throws FindException {
+    public boolean isAdministrativeUser(@NotNull Pair<Goid, String> providerAndUserId, @NotNull User user) throws FindException {
         return rbacServices.isAdministrativeUser(providerAndUserId, user);
     }
 
     @Override
-    public Collection<Role> getAssignedRoles(@NotNull Pair<Long, String> providerAndUserId, @NotNull User user) throws FindException {
+    public Collection<Role> getAssignedRoles(@NotNull Pair<Goid, String> providerAndUserId, @NotNull User user) throws FindException {
         return rbacServices.getAssignedRoles(providerAndUserId, user);
     }
 

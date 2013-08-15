@@ -48,7 +48,7 @@ public class ExternalAuditsUtils {
                 Component.GW_AUDIT_SYSTEM,
                 "message",
                 false,
-                -2,
+                new Goid(456,123),
                 "user name",
                 "user id",
                 "action",
@@ -95,7 +95,7 @@ public class ExternalAuditsUtils {
                 "name",
                 AdminAuditRecord.ACTION_OTHER,
                 "msg",
-                -2,
+                new Goid(456,123),
                 "adminLogin",
                 "adminId",
                 "0.0.0.0");
@@ -149,7 +149,7 @@ public class ExternalAuditsUtils {
                 "clientAddr",requestXML, requestXML.length(),
                 responseXML, responseXML.length() , 1234, 5678,
                 new Goid(0,7), "serviceName", "operationNameHaver",
-                true, SecurityTokenType.UNKNOWN, -5,
+                true, SecurityTokenType.UNKNOWN, new Goid(789,123),
                 "userName", "userId",null);
         signAuditRecord(record,defaultKey);
 
@@ -275,7 +275,7 @@ public class ExternalAuditsUtils {
                     name,
                     action.charAt(0),
                     message,
-                    Long.parseLong(providerOid),
+                    getGoid(providerOid),
                     userName,
                     userId,
                     ip_addr) ;
@@ -302,12 +302,12 @@ public class ExternalAuditsUtils {
                     responseLength,
                     responseStatus,
                     latency,
-                    Goid.parseGoid(serviceGoid),
+                    getGoid(serviceGoid),
                     name,
                     operationName,
                     authenticated,
                     tokenType,
-                    Long.parseLong(providerOid),
+                    getGoid(providerOid),
                     userName,
                     userId ,
                     null ) ;  //mappingValueOidHaver
@@ -321,7 +321,7 @@ public class ExternalAuditsUtils {
                     Component.fromId(componentId),
                     message,
                     false, // alwaysAudit - not displayed, only used in flush
-                    Long.parseLong(providerOid),
+                    getGoid(providerOid),
                     userName,
                     userId,
                     action,
@@ -332,6 +332,17 @@ public class ExternalAuditsUtils {
         record.setMillis(time);
 
         return record;
+    }
+
+    private static Goid getGoid(String toGoid) {
+        if(toGoid.isEmpty())
+            return null;
+        try{
+            return Goid.parseGoid(toGoid);
+        }catch(IllegalArgumentException e){
+            // must be an old oid
+            return new Goid(0,Long.parseLong(toGoid));
+        }
     }
 
     private static String getDecompressedString(byte[] in){

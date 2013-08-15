@@ -34,8 +34,8 @@ import java.util.*;
 public class LdapIdentityProviderConfig extends LdapUrlBasedIdentityProviderConfig implements Serializable {
     public LdapIdentityProviderConfig(IdentityProviderConfig toto) {
         super(IdentityProviderType.LDAP);
-        this._version = toto.getVersion();
-	    this._oid = toto.getOid();
+        setVersion(toto.getVersion());
+	    setGoid(toto.getGoid());
         copyFrom(toto);
     }
 

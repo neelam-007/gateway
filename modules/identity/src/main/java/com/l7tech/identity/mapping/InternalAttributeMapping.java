@@ -20,10 +20,10 @@ public class InternalAttributeMapping extends PersistentAttributeMapping {
     }
 
     public InternalAttributeMapping() {
-        super(null, IdentityProviderConfig.DEFAULT_OID, UsersOrGroups.USERS);
+        super(null, IdentityProviderConfig.DEFAULT_GOID, UsersOrGroups.USERS);
     }
 
     public InternalAttributeMapping(AttributeConfig parent, UsersOrGroups uog) {
-        super(parent, IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID, uog);
+        super(parent, IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_GOID, uog);
     }
 }

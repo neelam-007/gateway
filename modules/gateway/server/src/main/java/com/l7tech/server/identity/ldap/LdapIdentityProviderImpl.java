@@ -84,7 +84,7 @@ public class LdapIdentityProviderImpl
         userManager.configure( this );
         groupManager.configure( this );
 
-        sessionAuthenticator = new SessionAuthenticator( config.getOid() );
+        sessionAuthenticator = new SessionAuthenticator( config.getGoid() );
 
         ldapTemplate = new LdapUtils.LdapTemplate(config.getSearchBase(), returningAttributes){
             @Override
@@ -95,7 +95,7 @@ public class LdapIdentityProviderImpl
 
         urlProvider = new LdapUrlProviderImpl(config.getLdapUrl(), ldapRuntimeConfig);
 
-        String description = config.getName() + "(#" + config.getOid() + "," + config.getVersion() + ")";
+        String description = config.getName() + "(#" + config.getGoid() + "," + config.getVersion() + ")";
         ldapCertificateCache = new LdapCertificateCache(
                 config,
                 configManager, 
@@ -1155,7 +1155,7 @@ public class LdapIdentityProviderImpl
                     description = tmp.toString();
                 }
                 if (login != null) {
-                    return new IdentityHeader(config.getOid(), dn, EntityType.USER, login, description, cn, null);
+                    return new IdentityHeader(config.getGoid(), dn, EntityType.USER, login, description, cn, null);
                 } else {
                     return null;
                 }
@@ -1187,7 +1187,7 @@ public class LdapIdentityProviderImpl
                 if (tmp != null) {
                     description = tmp.toString();
                 }
-                return new IdentityHeader(config.getOid(), dn, EntityType.GROUP, groupName, description, null, null);
+                return new IdentityHeader(config.getGoid(), dn, EntityType.GROUP, groupName, description, null, null);
             }
         return null;
     }

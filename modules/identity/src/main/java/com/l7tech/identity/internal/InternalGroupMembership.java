@@ -2,8 +2,10 @@ package com.l7tech.identity.internal;
 
 import com.l7tech.identity.GroupMembership;
 import com.l7tech.identity.IdentityProviderConfigManager;
+import com.l7tech.objectmodel.Goid;
 import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.annotations.Proxy;
+import org.hibernate.annotations.Type;
 
 import javax.persistence.*;
 
@@ -12,8 +14,8 @@ import javax.persistence.*;
  *
  * Each row constitutes an edge in the many-to-many relationship between Users and Groups.
  *
- * The inherited {@link com.l7tech.objectmodel.imp.PersistentEntityImp#getOid()} property is
- * a generated OID in this class.
+ * The inherited {@link com.l7tech.objectmodel.imp.GoidEntityImp#getGoid()} ()} property is
+ * a generated GOID in this class.
  *
  * @author alex
  */
@@ -22,10 +24,10 @@ import javax.persistence.*;
 @Table(name="internal_user_group")
 public class InternalGroupMembership extends GroupMembership {
 
-    private long _oid;
+    private Goid _goid;
     private int _version;
-    private long thisGroupOid; // The OID of the {@link InternalGroup} to which this membership belongs
-    private long memberProviderOid;
+    private Goid thisGroupGoid; // The OID of the {@link InternalGroup} to which this membership belongs
+    private Goid memberProviderGoid;
     private String memberSubgroupId;
 
     /**
@@ -33,54 +35,58 @@ public class InternalGroupMembership extends GroupMembership {
      * instead, as it defines theproper provider oid values.
      */
     protected InternalGroupMembership() {
-        //bug 5726: internal group should only have one provider ID (INTERNALPROVIDER_SPECIAL_OID)        
-        super.thisGroupProviderOid = IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID;
+        //bug 5726: internal group should only have one provider ID (INTERNALPROVIDER_SPECIAL_GOID)
+        super.thisGroupProviderGoid = IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_GOID;
     }
 
     @Override
     @Id
-    @Column(name="objectid", nullable=false, updatable=false)
-    @GenericGenerator( name="generator", strategy = "layer7-generator" )
+    @Column(name="goid", nullable=false, updatable=false)
+    @GenericGenerator( name="generator", strategy = "layer7-goid-generator" )
     @GeneratedValue( generator = "generator")
-    public long getOid() {
-        return _oid;
+    @Type(type = "com.l7tech.server.util.GoidType")
+    public Goid getGoid() {
+        return _goid;
     }
 
     @Override
     @Transient
     public String getId() {
-        return Long.toString(_oid);
+        return Goid.toString(_goid);
     }
 
     @Override
-    public void setOid( long oid ) {
-        _oid = oid;
+    public void setGoid( Goid goid ) {
+        _goid = goid;
     }
 
     @Override
-    @Column(name="user_id")
-    public long getMemberUserId() {
+    @Column(name="user_goid")
+    @Type(type = "com.l7tech.server.util.GoidType")
+    public Goid getMemberUserId() {
         return super.getMemberUserId();
     }
 
     @Override
     @Column(name="internal_group")
-    public long getThisGroupId() {
-        return thisGroupOid;
+    @Type(type = "com.l7tech.server.util.GoidType")
+    public Goid getThisGroupId() {
+        return thisGroupGoid;
     }
 
     @Override
-    public void setThisGroupId(long thisGroupId) {
-        this.thisGroupOid = thisGroupId;
+    public void setThisGroupId(Goid thisGroupId) {
+        this.thisGroupGoid = thisGroupId;
     }
 
-    @Column(name="provider_oid", nullable=false)
-    public long getMemberProviderOid() {
-        return memberProviderOid;
+    @Column(name="provider_goid", nullable=false)
+    @Type(type = "com.l7tech.server.util.GoidType")
+    public Goid getMemberProviderGoid() {
+        return memberProviderGoid;
     }
 
-    public void setMemberProviderOid(long memberProviderOid) {
-        this.memberProviderOid = memberProviderOid;
+    public void setMemberProviderGoid(Goid memberProviderGoid) {
+        this.memberProviderGoid = memberProviderGoid;
     }
 
     /**
@@ -88,14 +94,14 @@ public class InternalGroupMembership extends GroupMembership {
      * @param internalGroupOid the OID of the {@link InternalGroup} to which the user belongs
      * @param internalUserOid the OID of the {@link InternalUser} being added to the group
      */
-    public static InternalGroupMembership newInternalMembership(long internalGroupOid, long internalUserOid) {
+    public static InternalGroupMembership newInternalMembership(Goid internalGroupOid, Goid internalUserOid) {
         InternalGroupMembership mem = new InternalGroupMembership();
 
-        mem.thisGroupOid = internalGroupOid;
-        mem.thisGroupProviderOid = IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID;
+        mem.thisGroupGoid = internalGroupOid;
+        mem.thisGroupProviderGoid = IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_GOID;
 
         mem.memberUserId = internalUserOid;
-        mem.memberProviderOid = IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID;
+        mem.memberProviderGoid = IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_GOID;
 
         return mem;
     }
@@ -106,13 +112,13 @@ public class InternalGroupMembership extends GroupMembership {
      * @param memberProviderOid the OID of the {@link com.l7tech.identity.IdentityProviderConfig} in which the member is defined
      * @param memberUserId the ID of the {@link com.l7tech.identity.User} being added to this group
      */
-    public static InternalGroupMembership newMetaUserMembership(long internalGroupOid, long memberProviderOid, long memberUserId) {
+    public static InternalGroupMembership newMetaUserMembership(Goid internalGroupOid, Goid memberProviderOid, Goid memberUserId) {
         InternalGroupMembership mem = new InternalGroupMembership();
 
-        mem.thisGroupOid = internalGroupOid;
-        mem.thisGroupProviderOid = IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID;
+        mem.thisGroupGoid = internalGroupOid;
+        mem.thisGroupProviderGoid = IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_GOID;
 
-        mem.memberProviderOid = memberProviderOid;
+        mem.memberProviderGoid = memberProviderOid;
         mem.memberUserId = memberUserId;
         mem.memberSubgroupId = null;
 
@@ -148,8 +154,10 @@ public class InternalGroupMembership extends GroupMembership {
 
         final InternalGroupMembership that = (InternalGroupMembership)o;
 
-        if (memberProviderOid != that.memberProviderOid) return false;
-        if (thisGroupOid != that.thisGroupOid) return false;
+        if (memberProviderGoid != null ? !memberProviderGoid.equals(that.memberProviderGoid) : that.memberProviderGoid != null)
+            return false;
+        if (thisGroupGoid != null ? !thisGroupGoid.equals(that.thisGroupGoid) : that.thisGroupGoid != null)
+            return false;
         if (memberSubgroupId != null ? !memberSubgroupId.equals(that.memberSubgroupId) : that.memberSubgroupId != null)
             return false;
 
@@ -158,8 +166,8 @@ public class InternalGroupMembership extends GroupMembership {
 
     public int hashCode() {
         int result = super.hashCode();
-        result = 31 * result + (int)(thisGroupOid ^ (thisGroupOid >>> 32));
-        result = 31 * result + (int)(memberProviderOid ^ (memberProviderOid >>> 32));
+        result = 31 * result + (thisGroupGoid != null ? thisGroupGoid.hashCode() : 0);
+        result = 31 * result + (memberProviderGoid != null ? memberProviderGoid.hashCode() : 0);
         result = 31 * result + (memberSubgroupId != null ? memberSubgroupId.hashCode() : 0);
         return result;
     }

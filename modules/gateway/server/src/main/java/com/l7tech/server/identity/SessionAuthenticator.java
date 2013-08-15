@@ -2,6 +2,7 @@ package com.l7tech.server.identity;
 
 import com.l7tech.identity.BadCredentialsException;
 import com.l7tech.identity.User;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.security.token.SecurityToken;
 import com.l7tech.security.token.SessionSecurityToken;
@@ -13,7 +14,7 @@ public class SessionAuthenticator {
 
     //- PUBLIC
 
-    public SessionAuthenticator( final long providerId ) {
+    public SessionAuthenticator( final Goid providerId ) {
         this.providerId = providerId;
     }
 
@@ -36,7 +37,7 @@ public class SessionAuthenticator {
         }
 
         final SessionSecurityToken token = (SessionSecurityToken) securityToken;
-        if ( token.getProviderId() != providerId ) {
+        if ( token.getProviderId().equals(providerId )) {
             return null;
         } else if ( (user.getId()==null&&token.getUserId()!=null) ||
                     (user.getId()!=null&&!user.getId().equals( token.getUserId() )) ) {
@@ -60,7 +61,7 @@ public class SessionAuthenticator {
         final SecurityToken securityToken = pc.getSecurityToken();
         if ( securityToken instanceof SessionSecurityToken ) {
             final SessionSecurityToken token = (SessionSecurityToken) securityToken;
-            if ( token.getProviderId() == providerId ) {
+            if ( token.getProviderId().equals(providerId ) ){
                 userId = token.getUserId();
             }
         }
@@ -70,5 +71,5 @@ public class SessionAuthenticator {
 
     //- PRIVATE
 
-    private final long providerId;
+    private final Goid providerId;
 }

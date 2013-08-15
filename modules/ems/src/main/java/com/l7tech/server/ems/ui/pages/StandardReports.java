@@ -155,7 +155,7 @@ public class StandardReports extends EsmStandardWebPage {
                     logger.fine("Deleting standard report settings (OID = "+ deletedSettingsOid + ").");
                     final StandardReportSettings settings = standardReportSettingsManager.findByPrimaryKey(Long.parseLong(deletedSettingsOid));
                     final User user = getUser();
-                    if ( settings != null && user.getId().equals(settings.getUserId()) && user.getProviderId()==settings.getProvider() ) {
+                    if ( settings != null && user.getId().equals(settings.getUserId()) && user.getProviderId().equals(settings.getProvider())) {
                         standardReportSettingsManager.delete( settings );
                         return null;    // No response object expected if successful.
                     } else {

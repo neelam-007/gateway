@@ -411,7 +411,7 @@ public class PolicyMapping extends EsmStandardWebPage {
         boolean canUpdate = false;
 
         User user = getUser();
-        if ( (user.getId().equals( migration.getUserId() ) && user.getProviderId()==migration.getProvider())
+        if ( (user.getId().equals( migration.getUserId() ) && user.getProviderId().equals(migration.getProvider()))
              || securityManager.hasPermission( new AttemptedUpdate(EntityType.ESM_MIGRATION_RECORD, migration) ) ) {
             canUpdate = true;
         }
@@ -426,7 +426,7 @@ public class PolicyMapping extends EsmStandardWebPage {
         boolean canUpdate = false;
 
         User user = getUser();
-        if ( (user.getId().equals( migration.getUserId() ) && user.getProviderId()==migration.getProvider())
+        if ( (user.getId().equals( migration.getUserId() ) && user.getProviderId().equals(migration.getProvider()))
              || securityManager.hasPermission( new AttemptedDeleteSpecific(EntityType.ESM_MIGRATION_RECORD, migration) ) ) {
             canUpdate = true;
         }

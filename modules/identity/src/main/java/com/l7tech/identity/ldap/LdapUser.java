@@ -3,6 +3,7 @@ package com.l7tech.identity.ldap;
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.User;
+import com.l7tech.objectmodel.Goid;
 
 import java.io.Serializable;
 import java.security.cert.CertificateEncodingException;
@@ -39,11 +40,11 @@ public class LdapUser extends LdapIdentityBase implements User, Serializable {
     private transient X509Certificate cachedCert;
 
     public LdapUser() {
-        this(IdentityProviderConfig.DEFAULT_OID, null, null);
+        this(IdentityProviderConfig.DEFAULT_GOID, null, null);
     }
 
-    public LdapUser(long providerOid, String dn, String cn) {
-        super(providerOid, dn, cn);
+    public LdapUser(Goid providerGoid, String dn, String cn) {
+        super(providerGoid, dn, cn);
     }
 
     @Override

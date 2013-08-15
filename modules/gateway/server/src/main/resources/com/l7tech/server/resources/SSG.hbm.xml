@@ -90,7 +90,7 @@
         <property name="policyGoid" column="policy_goid" type="goid"/>
         <property name="ordinal" column="ordinal" type="long"/>
         <property name="time" column="time" type="long"/>
-        <property name="userProviderOid" column="user_provider_oid" type="long"/>
+        <property name="userProviderGoid" column="user_provider_goid" type="goid"/>
         <property name="userLogin" column="user_login" type="string"/>
         <property name="xml" column="`xml`" type="text" lazy="true"/>
         <property name="active" column="active" type="boolean"/>

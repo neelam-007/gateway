@@ -1,11 +1,14 @@
 package com.l7tech.external.assertions.ldapquery;
 
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.wsp.WspConstants;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.policy.wsp.WspWriter;
 import static org.junit.Assert.*;
+
+import com.l7tech.util.GoidUpgradeMapper;
 import org.junit.*;
 
 import java.util.ArrayList;
@@ -32,7 +35,7 @@ public class LDAPQueryAssertionWspTest {
         LDAPQueryAssertion ass = new LDAPQueryAssertion();
         ass.setQueryMappings(mappings());
         ass.setEnableCache(true);
-        ass.setLdapProviderOid(443);
+        ass.setLdapProviderOid(new Goid(0,443));
         ass.setSearchFilter("blarg");
         ass.setCachePeriod(49384);
         ass.setFailIfNoResults(true);
@@ -45,7 +48,7 @@ public class LDAPQueryAssertionWspTest {
         LDAPQueryAssertion ass = new LDAPQueryAssertion();
         ass.setQueryMappings(mappings());
         ass.setEnableCache(true);
-        ass.setLdapProviderOid(353);
+        ass.setLdapProviderOid(new Goid(0,353));
         ass.setSearchFilter("qwfasdjfkh");
         ass.setCachePeriod(66633);
         ass.setFailIfNoResults(true);
@@ -113,7 +116,7 @@ public class LDAPQueryAssertionWspTest {
     public void testCompatibilityWithPre466Assertions() throws Exception {
         LDAPQueryAssertion ass = (LDAPQueryAssertion)WspReader.getDefault().parseStrictly(OLD_PRE_466_FORMAT_ASSERTION_XML, WspReader.INCLUDE_DISABLED);
         assertEquals(49384, ass.getCachePeriod());
-        assertEquals(443, ass.getLdapProviderOid());
+        assertEquals(GoidUpgradeMapper.mapOid(null,443L), ass.getLdapProviderOid());
         assertEquals("blarg", ass.getSearchFilter());
         assertEquals(true, ass.isFailIfNoResults());
         assertNotNull(ass.getQueryMappings());

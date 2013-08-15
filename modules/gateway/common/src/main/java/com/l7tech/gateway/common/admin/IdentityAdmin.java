@@ -67,7 +67,7 @@ public interface IdentityAdmin {
     @Transactional(readOnly = true)
     @Secured(types = ID_PROVIDER_CONFIG, stereotype = FIND_ENTITY)
     @Administrative(licensed = false)
-    IdentityProviderConfig findIdentityProviderConfigByID(long oid) throws FindException;
+    IdentityProviderConfig findIdentityProviderConfigByID(Goid oid) throws FindException;
 
     /**
      * Retrieve all available LDAP templates.  An LDAP template is a preconfigured set of LDAP properties for
@@ -91,7 +91,7 @@ public interface IdentityAdmin {
      * @throws UpdateException if the requested information could not be updated
      */
     @Secured(types = ID_PROVIDER_CONFIG, stereotype = SAVE_OR_UPDATE)
-    long saveIdentityProviderConfig(IdentityProviderConfig cfg)
+    Goid saveIdentityProviderConfig(IdentityProviderConfig cfg)
             throws SaveException, UpdateException;
 
     /**
@@ -102,7 +102,7 @@ public interface IdentityAdmin {
      * @throws DeleteException if the requested object ID did not exist
      */
     @Secured(types = ID_PROVIDER_CONFIG, stereotype = DELETE_BY_ID)
-    void deleteIdentityProviderConfig(long oid) throws DeleteException;
+    void deleteIdentityProviderConfig(Goid oid) throws DeleteException;
 
     /**
      * Retrieve all available {@link com.l7tech.identity.User}s for a given {@link IdentityProviderConfig}.
@@ -116,7 +116,7 @@ public interface IdentityAdmin {
      */
     @Transactional(readOnly = true)
     @Secured(types = USER, stereotype = FIND_HEADERS)
-    EntityHeaderSet<IdentityHeader> findAllUsers(long idProvCfgId) throws FindException;
+    EntityHeaderSet<IdentityHeader> findAllUsers(Goid idProvCfgId) throws FindException;
 
     /**
      * Search for {@link com.l7tech.identity.Identity}s matching a pattern within the specified {@link IdentityProviderConfig}.
@@ -137,7 +137,7 @@ public interface IdentityAdmin {
      */
     @Transactional(readOnly = true)
     @Secured(types = {USER, GROUP}, stereotype = FIND_HEADERS)
-    EntityHeaderSet<IdentityHeader> searchIdentities(long idProvCfgId, EntityType[] types, String pattern)
+    EntityHeaderSet<IdentityHeader> searchIdentities(Goid idProvCfgId, EntityType[] types, String pattern)
             throws FindException;
 
     /**
@@ -150,7 +150,7 @@ public interface IdentityAdmin {
      */
     @Transactional(readOnly = true)
     @Secured(types = USER, stereotype = FIND_ENTITY, relevantArg = 1)
-    User findUserByID(long idProvCfgId, String userId)
+    User findUserByID(Goid idProvCfgId, String userId)
             throws FindException;
 
     /**
@@ -163,7 +163,7 @@ public interface IdentityAdmin {
      */
     @Transactional(readOnly = true)
     @Secured(types = USER, stereotype = FIND_ENTITY)
-    User findUserByLogin(long idProvCfgId, String login)
+    User findUserByLogin(Goid idProvCfgId, String login)
             throws FindException;
 
     /**
@@ -176,7 +176,7 @@ public interface IdentityAdmin {
      *                                 identity provider
      */
     @Secured(types = USER, stereotype = DELETE_IDENTITY_BY_ID, relevantArg = 1)
-    void deleteUser(long idProvCfgId, String userId)
+    void deleteUser(Goid idProvCfgId, String userId)
             throws DeleteException, ObjectNotFoundException;
 
     /**
@@ -207,15 +207,15 @@ public interface IdentityAdmin {
      *                                 if clearTextPassword does not meet the password requirements
      */
     @Secured(types = USER, stereotype = SAVE_OR_UPDATE, relevantArg = 1)
-    String saveUser(long idProvCfgId, User user, Set<IdentityHeader> groupHeaders, String clearTextPassword)
+    String saveUser(Goid idProvCfgId, User user, Set<IdentityHeader> groupHeaders, String clearTextPassword)
             throws SaveException, UpdateException, ObjectNotFoundException, InvalidPasswordException;
 
     /**
-     * See {@link IdentityAdmin#saveUser(long, com.l7tech.identity.User, java.util.Set, String)}. Delegates with a value
+     * See {@link IdentityAdmin#saveUser(com.l7tech.objectmodel.Goid, com.l7tech.identity.User, java.util.Set, String)}. Delegates with a value
      * of null for clearTextPassword. This method cannot be used to create a new Internal User.
      */
     @Secured(types = USER, stereotype = SAVE_OR_UPDATE, relevantArg = 1)
-    String saveUser(long idProvCfgId, User user, Set<IdentityHeader> groupHeaders)
+    String saveUser(Goid idProvCfgId, User user, Set<IdentityHeader> groupHeaders)
             throws SaveException, UpdateException, ObjectNotFoundException;
 
     /**
@@ -244,7 +244,7 @@ public interface IdentityAdmin {
      */
     @Transactional(readOnly = true)
     @Secured(types = GROUP, stereotype = FIND_HEADERS)
-    EntityHeaderSet<IdentityHeader> findAllGroups(long idProvCfgId) throws FindException;
+    EntityHeaderSet<IdentityHeader> findAllGroups(Goid idProvCfgId) throws FindException;
 
     /**
      * Search for a {@link com.l7tech.identity.Group} by its user ID within an {@link IdentityProviderConfig}.
@@ -257,7 +257,7 @@ public interface IdentityAdmin {
      */
     @Transactional(readOnly = true)
     @Secured(types = GROUP, stereotype = FIND_ENTITY, relevantArg = 1)
-    Group findGroupByID(long idProvCfgId, String groupId)
+    Group findGroupByID(Goid idProvCfgId, String groupId)
             throws FindException;
 
     /**
@@ -270,7 +270,7 @@ public interface IdentityAdmin {
      */
     @Transactional(readOnly = true)
     @Secured(types = GROUP, stereotype = FIND_ENTITY)
-    Group findGroupByName(long idProvCfgId, String name)
+    Group findGroupByName(Goid idProvCfgId, String name)
             throws FindException;
 
     /**
@@ -283,7 +283,7 @@ public interface IdentityAdmin {
      *                                 identity provider
      */
     @Secured(types = GROUP, stereotype = DELETE_IDENTITY_BY_ID, relevantArg = 1)
-    void deleteGroup(long idProvCfgId, String groupId)
+    void deleteGroup(Goid idProvCfgId, String groupId)
             throws DeleteException, ObjectNotFoundException;
 
     /**
@@ -309,15 +309,15 @@ public interface IdentityAdmin {
      *                                 unique identifier exists in the specified identity provider.
      */
     @Secured(types = GROUP, stereotype = SAVE_OR_UPDATE, relevantArg = 1)
-    String saveGroup(long idProvCfgId, Group group, Set<IdentityHeader> userHeaders)
+    String saveGroup(Goid idProvCfgId, Group group, Set<IdentityHeader> userHeaders)
             throws SaveException, UpdateException, ObjectNotFoundException;
 
     /**
      * Get a user's X.509 certificate as Base64-encoded ASN.1 DER.
      *
      * @param user the {@link User} whose certificate is to be retrieved.  Must not be null.  Must be an
-     *             already-existing {@link User} instance obtained from {@link #findUserByID(long, String)} or
-     *             {@link #findUserByLogin(long, String)}.
+     *             already-existing {@link User} instance obtained from {@link #findUserByID(com.l7tech.objectmodel.Goid, String)} or
+     *             {@link #findUserByLogin(com.l7tech.objectmodel.Goid, String)}.
      * @return the user's X.509 certificate DER encoded and then converted to Base64, or null if the user did not
      *         have one.
      * @throws CertificateEncodingException if an encoding error occurs producing the DER
@@ -360,7 +360,7 @@ public interface IdentityAdmin {
      *
      * @param user the user whose certificate should be revoked and password locked, if possible.  May not be null.
      *             Must be an already-existing {@link User} instance obtained from
-     *             {@link #findUserByID(long, String)} or {@link #findUserByLogin(long, String)}.
+     *             {@link #findUserByID(com.l7tech.objectmodel.Goid, String)} or {@link #findUserByLogin(com.l7tech.objectmodel.Goid, String)}.
      * @throws ObjectNotFoundException if the specified user does not exist
      * @throws UpdateException         if there was a problem updating the database
      */
@@ -381,7 +381,7 @@ public interface IdentityAdmin {
      *
      * @param user the {@link User} who is to be assigned a certificate.  Must not be null.
      *             Must be an already-existing {@link User} instance obtained from
-     *             {@link #findUserByID(long, String)} or {@link #findUserByLogin(long, String)}.
+     *             {@link #findUserByID(com.l7tech.objectmodel.Goid, String)} or {@link #findUserByLogin(com.l7tech.objectmodel.Goid, String)}.
      * @param cert the certificate to save.  Must not be null.
      * @throws UpdateException if user was not in a state that allows the creation of a certificate
      *                         (already has a cert; has tried too many times to create a cert; ID provider is
@@ -420,7 +420,7 @@ public interface IdentityAdmin {
      */
     @Transactional(readOnly = true)
     @Secured(types = USER, stereotype = GET_IDENTITY_PROPERTY_BY_ID, relevantArg = 1)
-    Set<IdentityHeader> getGroupHeaders(long providerId, String userId) throws FindException;
+    Set<IdentityHeader> getGroupHeaders(Goid providerId, String userId) throws FindException;
 
     /**
      * Get the specified {@link Group}'s set of group membership {@link IdentityHeader}s.
@@ -433,7 +433,7 @@ public interface IdentityAdmin {
      */
     @Transactional(readOnly = true)
     @Secured(types = GROUP, stereotype = GET_IDENTITY_PROPERTY_BY_ID, relevantArg = 1)
-    Set<IdentityHeader> getGroupHeadersForGroup(final long providerId, @NotNull final String groupId) throws FindException;
+    Set<IdentityHeader> getGroupHeadersForGroup(final Goid providerId, @NotNull final String groupId) throws FindException;
 
     /**
      * Get the specified {@link Group}'s set of member user {@link IdentityHeader}s.
@@ -446,7 +446,7 @@ public interface IdentityAdmin {
      */
     @Transactional(readOnly = true)
     @Secured(types = GROUP, stereotype = GET_IDENTITY_PROPERTY_BY_ID, relevantArg = 1)
-    Set<IdentityHeader> getUserHeaders(long providerId, String groupId) throws FindException;
+    Set<IdentityHeader> getUserHeaders(Goid providerId, String groupId) throws FindException;
 
     /**
      * Get the password policy associated with the identity provider
@@ -457,7 +457,7 @@ public interface IdentityAdmin {
      */
     @Transactional(readOnly = true)
     @Secured(types = PASSWORD_POLICY, stereotype = FIND_ENTITY)
-    IdentityProviderPasswordPolicy getPasswordPolicyForIdentityProvider(long providerId) throws FindException;
+    IdentityProviderPasswordPolicy getPasswordPolicyForIdentityProvider(Goid providerId) throws FindException;
 
     /**
      * Get the password policy description associated with the current user's identity provider
@@ -496,7 +496,7 @@ public interface IdentityAdmin {
 
     /**
      * Saves the password policy for the identity provider
-     * Note: only works for the ONE internal identity provider with special oid {@link IdentityProviderConfigManager#INTERNALPROVIDER_SPECIAL_OID}
+     * Note: only works for the ONE internal identity provider with special oid {@link IdentityProviderConfigManager#INTERNALPROVIDER_SPECIAL_GOID}
      *
      * @param providerId Identity provider ID
      * @param policy     password policy to save
@@ -506,7 +506,7 @@ public interface IdentityAdmin {
      * @throws ObjectNotFoundException
      */
     @Secured(types = PASSWORD_POLICY, stereotype = SAVE_OR_UPDATE, relevantArg = 1)
-    String updatePasswordPolicy(long providerId, IdentityProviderPasswordPolicy policy)
+    String updatePasswordPolicy(Goid providerId, IdentityProviderPasswordPolicy policy)
             throws SaveException, UpdateException, ObjectNotFoundException;
 
     /**
@@ -518,7 +518,7 @@ public interface IdentityAdmin {
      * @throws ObjectModelException If an error occurs
      */
     @Secured(types = ID_PROVIDER_CONFIG, stereotype = SAVE_OR_UPDATE)
-    void forceAdminUsersResetPassword(long identityProviderConfigId) throws ObjectModelException;
+    void forceAdminUsersResetPassword(Goid identityProviderConfigId) throws ObjectModelException;
 
     /**
      * Activates the user by resetting the values in the corresponding logon info

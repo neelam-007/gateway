@@ -6,6 +6,8 @@
 
 package com.l7tech.gateway.common.audit;
 
+import com.l7tech.objectmodel.Goid;
+
 import java.util.logging.Level;
 import java.io.OutputStream;
 import java.io.IOException;
@@ -49,7 +51,7 @@ public class AdminAuditRecord extends AuditRecord {
             String name,
             char action,
             String msg,
-            long identityProviderOid,
+            Goid identityProviderOid,
             String adminLogin,
             String adminId,
             String ip) {

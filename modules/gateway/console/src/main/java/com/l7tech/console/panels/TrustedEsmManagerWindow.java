@@ -12,6 +12,7 @@ import com.l7tech.gui.util.Utilities;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.objectmodel.ObjectNotFoundException;
 import com.l7tech.util.ExceptionUtils;
@@ -221,7 +222,7 @@ public class TrustedEsmManagerWindow extends JDialog {
                 @Override
                 public UserRow call(TrustedEsmUser trustedEsmUser) {
                     try {
-                        final long providerOid = trustedEsmUser.getProviderOid();
+                        final Goid providerOid = trustedEsmUser.getProviderGoid();
                         IdentityProviderConfig idprov = identityAdmin.findIdentityProviderConfigByID(providerOid);
                         if (idprov == null) {
                             logger.log(Level.WARNING, "ID provider not found for ESM user mapping " + trustedEsmUser);
@@ -230,7 +231,7 @@ public class TrustedEsmManagerWindow extends JDialog {
                         }
 
                         String idProviderDisplayName = idprov.getName();
-                        User user = identityAdmin.findUserByID(idprov.getOid(), trustedEsmUser.getSsgUserId());
+                        User user = identityAdmin.findUserByID(idprov.getGoid(), trustedEsmUser.getSsgUserId());
                         if (user == null) {
                             logger.log(Level.WARNING, "User not found for ESM user mapping " + trustedEsmUser);
                             incompleteLoad[0] = true;

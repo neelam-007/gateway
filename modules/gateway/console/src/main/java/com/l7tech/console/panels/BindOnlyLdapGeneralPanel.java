@@ -5,6 +5,7 @@ import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.identity.ldap.BindOnlyLdapIdentityProviderConfig;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.Goid;
 
 import javax.swing.*;
 import java.awt.*;
@@ -86,7 +87,7 @@ public class BindOnlyLdapGeneralPanel extends IdentityProviderStepPanel {
             dnSuffixField.setText(config.getBindPatternSuffix());
 
             // select name field for clone
-            if( config.getOid() == BindOnlyLdapIdentityProviderConfig.DEFAULT_OID) {
+            if(Goid.isDefault(config.getGoid())) {
                 providerNameField.requestFocus();
                 providerNameField.selectAll();
                 zoneControl.configure(OperationType.CREATE, config);

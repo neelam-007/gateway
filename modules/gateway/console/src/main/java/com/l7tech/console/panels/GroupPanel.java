@@ -93,7 +93,7 @@ public abstract class GroupPanel<GT extends Group> extends EntityEditorPanel {
 
     public static GroupPanel newInstance(IdentityProviderConfig config, EntityHeader header) throws FindException {
         Group g;
-            g = getIdentityAdmin().findGroupByID(config.getOid(), header.getStrId());
+            g = getIdentityAdmin().findGroupByID(config.getGoid(), header.getStrId());
 
             if (g instanceof VirtualGroup) {
                 return newVirtualGroupPanel(config);
@@ -171,7 +171,7 @@ public abstract class GroupPanel<GT extends Group> extends EntityEditorPanel {
             } else {
                 final IdentityAdmin admin = getIdentityAdmin();
                 //noinspection unchecked
-                GT g = (GT) admin.findGroupByID(config.getOid(), groupHeader.getStrId());
+                GT g = (GT) admin.findGroupByID(config.getGoid(), groupHeader.getStrId());
                 if (g == null) {
                     JOptionPane.showMessageDialog(topParent, GROUP_DOES_NOT_EXIST_MSG, "Warning", JOptionPane.WARNING_MESSAGE);
                     throw new NoSuchElementException("User missing " + groupHeader.getOid());
@@ -563,7 +563,7 @@ public abstract class GroupPanel<GT extends Group> extends EntityEditorPanel {
             if (group instanceof PersistentGroup) {
                 PersistentGroup pgroup = (PersistentGroup) group;
                 AttemptedOperation ao;
-                if (PersistentGroup.DEFAULT_OID == pgroup.getOid()) {
+                if (Goid.isDefault(pgroup.getGoid())) {
                     ao = new AttemptedCreate(GROUP);
                 } else {
                     ao = new AttemptedUpdate(GROUP, pgroup);

@@ -3,6 +3,7 @@ package com.l7tech.server.identity;
 import com.l7tech.common.io.WhirlycacheFactory;
 import com.l7tech.identity.Group;
 import com.l7tech.identity.User;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.security.token.SecurityToken;
 import com.l7tech.server.ServerConfigParams;
@@ -222,13 +223,13 @@ public final class AuthenticationResult {
     private static class CacheKey {
         private static final String IGNORE_USER_ID = Long.toString( PersistentEntity.DEFAULT_OID );
 
-        private final long userProviderOid;
+        private final Goid userProviderOid;
         private final String userId;
-        private final long groupProviderOid;
+        private final Goid groupProviderOid;
         private final String groupId;
         private final int hashCode;
 
-        private CacheKey(long userProviderOid, String userId, long groupProviderOid, String groupId) {
+        private CacheKey(Goid userProviderOid, String userId, Goid groupProviderOid, String groupId) {
             if (userId == null || groupId == null) throw new NullPointerException();
             this.userProviderOid = userProviderOid;
             this.userId = userId;
@@ -249,8 +250,8 @@ public final class AuthenticationResult {
 
             final CacheKey cacheKey = (CacheKey)o;
 
-            if (groupProviderOid != cacheKey.groupProviderOid) return false;
-            if (userProviderOid != cacheKey.userProviderOid) return false;
+            if (groupProviderOid!=null?!groupProviderOid.equals(cacheKey.groupProviderOid):cacheKey.groupProviderOid!=null) return false;
+            if (userProviderOid!=null?!userProviderOid.equals(cacheKey.userProviderOid):cacheKey.userProviderOid!=null) return false;
             if (!groupId.equals(cacheKey.groupId)) return false;
             if (!userId.equals(cacheKey.userId)) return false;
 
@@ -264,9 +265,9 @@ public final class AuthenticationResult {
 
         private int makeHashCode() {
             int result;
-            result = (int)(userProviderOid ^ (userProviderOid >>> 32));
+            result = (userProviderOid!=null?userProviderOid.hashCode():0);
             result = 29 * result + userId.hashCode();
-            result = 29 * result + (int)(groupProviderOid ^ (groupProviderOid >>> 32));
+            result = 29 * result + (groupProviderOid!=null?groupProviderOid.hashCode():0);
             result = 29 * result + groupId.hashCode();
             return result;
         }

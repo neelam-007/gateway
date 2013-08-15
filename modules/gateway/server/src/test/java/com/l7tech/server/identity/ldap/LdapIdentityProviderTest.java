@@ -590,8 +590,8 @@ public class LdapIdentityProviderTest {
     }
 
     private IdentityHeader idh( LdapIdentityProvider ldapIdentityProvider, String dn, String cn, EntityType type ) {
-        // long providerOid, String identityId, EntityType type, String loginName, String description, String commonName, Integer version
-        return new IdentityHeader( ldapIdentityProvider.getConfig().getOid(), dn, type, cn, "", cn, -1 );
+        // long providerGoid, String identityId, EntityType type, String loginName, String description, String commonName, Integer version
+        return new IdentityHeader( ldapIdentityProvider.getConfig().getGoid(), dn, type, cn, "", cn, -1 );
     }
 
     private LdapIdentityProvider getLdapIdentityProvider() throws Exception {

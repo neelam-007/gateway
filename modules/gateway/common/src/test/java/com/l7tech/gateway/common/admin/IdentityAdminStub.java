@@ -24,9 +24,9 @@ public class IdentityAdminStub implements IdentityAdmin {
 
     @Override
     public EntityHeader[] findAllIdentityProviderConfig() throws FindException {
-        Map<Long, IdentityProviderConfig> configs = StubDataStore.defaultStore().getIdentityProviderConfigs();
+        Map<Goid, IdentityProviderConfig> configs = StubDataStore.defaultStore().getIdentityProviderConfigs();
         List<EntityHeader> headers = new ArrayList<EntityHeader>();
-        for (Long key : configs.keySet()) {
+        for (Goid key : configs.keySet()) {
             IdentityProviderConfig config = configs.get(key);
             headers.add(fromIdentityProviderConfig(config));
         }
@@ -34,8 +34,8 @@ public class IdentityAdminStub implements IdentityAdmin {
     }
 
     @Override
-    public IdentityProviderConfig findIdentityProviderConfigByID(long oid) throws FindException {
-        return StubDataStore.defaultStore().getIdentityProviderConfigs().get(new Long(oid));
+    public IdentityProviderConfig findIdentityProviderConfigByID(Goid oid) throws FindException {
+        return StubDataStore.defaultStore().getIdentityProviderConfigs().get(oid);
     }
 
     @Override
@@ -44,24 +44,23 @@ public class IdentityAdminStub implements IdentityAdmin {
     }
 
     @Override
-    public long saveIdentityProviderConfig(IdentityProviderConfig config) throws SaveException, UpdateException {
-        long oid = config.getOid();
-        if (oid == 0 || oid == PersistentEntity.DEFAULT_OID) {
-            oid = StubDataStore.defaultStore().nextObjectId();
+    public Goid saveIdentityProviderConfig(IdentityProviderConfig config) throws SaveException, UpdateException {
+        Goid oid = config.getGoid();
+        if (oid == null || Goid.isDefault(oid)) {
+            oid = StubDataStore.defaultStore().nextGoid();
         }
-        config.setOid(oid);
-        Long key = new Long(oid);
-        StubDataStore.defaultStore().getIdentityProviderConfigs().put(key, config);
+        config.setGoid(oid);
+        StubDataStore.defaultStore().getIdentityProviderConfigs().put(oid, config);
         return oid;
     }
 
     @Override
-    public void deleteIdentityProviderConfig(long oid) throws DeleteException {
-        StubDataStore.defaultStore().getIdentityProviderConfigs().remove(new Long(oid));
+    public void deleteIdentityProviderConfig(Goid oid) throws DeleteException {
+        StubDataStore.defaultStore().getIdentityProviderConfigs().remove(oid);
     }
 
     @Override
-    public EntityHeaderSet<IdentityHeader> findAllUsers(long idProvCfgId) throws FindException {
+    public EntityHeaderSet<IdentityHeader> findAllUsers(Goid idProvCfgId) throws FindException {
         Map<String, PersistentUser> users = StubDataStore.defaultStore().getUsers();
         EntityHeaderSet<IdentityHeader> results = new EntityHeaderSet<IdentityHeader>();
         for (String s : users.keySet()) {
@@ -72,7 +71,7 @@ public class IdentityAdminStub implements IdentityAdmin {
     }
 
     @Override
-    public EntityHeaderSet<IdentityHeader> searchIdentities(long idProvCfgId, EntityType[] types, String pattern) throws FindException {
+    public EntityHeaderSet<IdentityHeader> searchIdentities(Goid idProvCfgId, EntityType[] types, String pattern) throws FindException {
         EntityHeaderSet<IdentityHeader> results = new EntityHeaderSet<IdentityHeader>();
         for (EntityType type : types) {
             if (type == EntityType.USER)
@@ -84,12 +83,12 @@ public class IdentityAdminStub implements IdentityAdmin {
     }
 
     @Override
-    public User findUserByID(long idProvCfgId, String userId) throws FindException {
+    public User findUserByID(Goid idProvCfgId, String userId) throws FindException {
         return StubDataStore.defaultStore().getUsers().get(userId);
     }
 
     @Override
-    public User findUserByLogin(long idProvCfgId, String login) throws FindException {
+    public User findUserByLogin(Goid idProvCfgId, String login) throws FindException {
         if (login == null) return null;
         Map<String, PersistentUser> users = StubDataStore.defaultStore().getUsers();
         for (String uid : users.keySet()) {
@@ -100,30 +99,30 @@ public class IdentityAdminStub implements IdentityAdmin {
     }
 
     @Override
-    public void deleteUser(long idProvCfgId, String userId) throws DeleteException, ObjectNotFoundException {
+    public void deleteUser(Goid idProvCfgId, String userId) throws DeleteException, ObjectNotFoundException {
         Map users = StubDataStore.defaultStore().getUsers();
         users.remove(userId);
     }
 
     @Override
-    public String saveUser(long idProvCfgId, User user, Set<IdentityHeader> groupHeaders ) throws SaveException, UpdateException, ObjectNotFoundException {
+    public String saveUser(Goid idProvCfgId, User user, Set<IdentityHeader> groupHeaders ) throws SaveException, UpdateException, ObjectNotFoundException {
         if (!(user instanceof PersistentUser)) throw new IllegalArgumentException("IdentityAdminStub only supports Internal and Federated users");
         PersistentUser pu = (PersistentUser) user;
         final StubDataStore store = StubDataStore.defaultStore();
-        if (pu.getId() == null)
-            pu.setOid(store.nextObjectId());
+        if (pu.getId() == null || Goid.isDefault(pu.getGoid()))
+            pu.setGoid(store.nextGoid());
         pu.setProviderId(idProvCfgId);
         store.getUsers().put(pu.getId(), pu);
         if (groupHeaders != null) {
             // Clear existing memberships
             for (Iterator i = store.getGroupMemberships().iterator(); i.hasNext();) {
                 GroupMembership gm = (GroupMembership)i.next();
-                if (Long.valueOf(pu.getId()).equals(gm.getMemberUserId())) i.remove();
+                if (Goid.parseGoid(pu.getId()).equals(gm.getMemberUserId())) i.remove();
             }
 
             // Set new memberships
             for (IdentityHeader header : groupHeaders) {
-                GroupMembership mem = InternalGroupMembership.newInternalMembership(header.getOid(), pu.getOid());
+                GroupMembership mem = InternalGroupMembership.newInternalMembership(header.getGoid(), pu.getGoid());
                 store.getGroupMemberships().add(mem);
             }
         }
@@ -131,7 +130,7 @@ public class IdentityAdminStub implements IdentityAdmin {
     }
 
     @Override
-    public String saveUser(long idProvCfgId, User user, Set<IdentityHeader> groupHeaders, String clearTextPassword) throws SaveException, UpdateException, ObjectNotFoundException, InvalidPasswordException {
+    public String saveUser(Goid idProvCfgId, User user, Set<IdentityHeader> groupHeaders, String clearTextPassword) throws SaveException, UpdateException, ObjectNotFoundException, InvalidPasswordException {
         return null;
     }
 
@@ -146,7 +145,7 @@ public class IdentityAdminStub implements IdentityAdmin {
     }
 
     @Override
-    public EntityHeaderSet<IdentityHeader> findAllGroups(long idProvCfgId) throws FindException {
+    public EntityHeaderSet<IdentityHeader> findAllGroups(Goid idProvCfgId) throws FindException {
         final StubDataStore store = StubDataStore.defaultStore();
         Map<String, PersistentGroup> groups = store.getGroups();
         EntityHeaderSet<IdentityHeader> results = new EntityHeaderSet<IdentityHeader>();
@@ -158,32 +157,32 @@ public class IdentityAdminStub implements IdentityAdmin {
     }
 
     @Override
-    public Group findGroupByID(long idProvCfgId, String groupId) throws FindException {
+    public Group findGroupByID(Goid idProvCfgId, String groupId) throws FindException {
         final StubDataStore store = StubDataStore.defaultStore();
         Map groups = store.getGroups();
         return (Group)groups.get(groupId);
     }
 
     @Override
-    public Group findGroupByName(long idProvCfgId, String name) throws FindException {
+    public Group findGroupByName(Goid idProvCfgId, String name) throws FindException {
         return null;
     }
 
     @Override
-    public void deleteGroup(long idProvCfgId, String groupId) throws DeleteException, ObjectNotFoundException {
+    public void deleteGroup(Goid idProvCfgId, String groupId) throws DeleteException, ObjectNotFoundException {
         final StubDataStore store = StubDataStore.defaultStore();
         Map groups = store.getGroups();
         groups.remove(groupId);
     }
 
     @Override
-    public String saveGroup(long idProvCfgId, Group group, Set userHeaders) throws SaveException, UpdateException, ObjectNotFoundException {
+    public String saveGroup(Goid idProvCfgId, Group group, Set userHeaders) throws SaveException, UpdateException, ObjectNotFoundException {
         if (!(group instanceof PersistentGroup)) throw new IllegalArgumentException("IdentityAdminStub only supports Internal and Federated groups");
         PersistentGroup pg = (PersistentGroup) group;
         final StubDataStore store = StubDataStore.defaultStore();
         Map<String, PersistentGroup> groups = store.getGroups();
-        if (pg.getId() == null || pg.getId().equals(Long.toString(PersistentEntity.DEFAULT_OID))) {
-            pg.setOid(store.nextObjectId());
+        if (pg.getId() == null || Goid.isDefault(pg.getGoid())) {
+            pg.setGoid(store.nextGoid());
         }
         groups.put(pg.getId(), pg);
         return pg.getId();
@@ -221,7 +220,7 @@ public class IdentityAdminStub implements IdentityAdmin {
     }
 
     @Override
-    public Set<IdentityHeader> getGroupHeaders(long providerId, String userId) throws FindException {
+    public Set<IdentityHeader> getGroupHeaders(Goid providerId, String userId) throws FindException {
         final StubDataStore store = StubDataStore.defaultStore();
         Set<GroupMembership> memberships = store.getGroupMemberships();
         Set<IdentityHeader> results = new HashSet<IdentityHeader>();
@@ -235,12 +234,12 @@ public class IdentityAdminStub implements IdentityAdmin {
     }
 
     @Override
-    public Set<IdentityHeader> getGroupHeadersForGroup(long providerId, String groupId) throws FindException {
+    public Set<IdentityHeader> getGroupHeadersForGroup(Goid providerId, String groupId) throws FindException {
         return Collections.emptySet();
     }
 
     @Override
-    public Set<IdentityHeader> getUserHeaders(long providerId, String groupId) throws FindException {
+    public Set<IdentityHeader> getUserHeaders(Goid providerId, String groupId) throws FindException {
         final StubDataStore store = StubDataStore.defaultStore();
         Set<GroupMembership> memberships = store.getGroupMemberships();
         Set<IdentityHeader> results = new HashSet<IdentityHeader>();
@@ -297,13 +296,13 @@ public class IdentityAdminStub implements IdentityAdmin {
         EntityHeader out = new EntityHeader();
         out.setDescription(config.getDescription());
         out.setName(config.getName());
-        out.setOid(config.getOid());
+        out.setGoid(config.getGoid());
         out.setType(EntityType.ID_PROVIDER_CONFIG);
         return out;
     }
 
     @Override
-    public IdentityProviderPasswordPolicy getPasswordPolicyForIdentityProvider(long providerId) throws FindException {
+    public IdentityProviderPasswordPolicy getPasswordPolicyForIdentityProvider(Goid providerId) throws FindException {
         return null; // TODO ?
     }
 
@@ -328,12 +327,12 @@ public class IdentityAdminStub implements IdentityAdmin {
     }
 
     @Override
-    public String updatePasswordPolicy(long providerId, IdentityProviderPasswordPolicy policy) throws SaveException, UpdateException, ObjectNotFoundException {
+    public String updatePasswordPolicy(Goid providerId, IdentityProviderPasswordPolicy policy) throws SaveException, UpdateException, ObjectNotFoundException {
         return null; // TODO ?
     }
 
     @Override
-    public void forceAdminUsersResetPassword(long identityProviderConfigId) throws FindException, SaveException, UpdateException {
+    public void forceAdminUsersResetPassword(Goid identityProviderConfigId) throws FindException, SaveException, UpdateException {
         // TODO ?
     }
 

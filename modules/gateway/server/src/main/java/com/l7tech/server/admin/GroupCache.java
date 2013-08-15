@@ -3,6 +3,7 @@ package com.l7tech.server.admin;
 import com.l7tech.identity.*;
 import com.l7tech.common.io.WhirlycacheFactory;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.IdentityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.util.Either;
@@ -30,7 +31,7 @@ class GroupCache {
 
     private final AtomicInteger cacheMaxTime = new AtomicInteger();
     private final AtomicInteger cacheMaxGroups = new AtomicInteger();
-    private final Map<Long,Long> providerInvalidation = new ConcurrentHashMap<Long,Long>();
+    private final Map<Goid,Long> providerInvalidation = new ConcurrentHashMap<Goid,Long>();
     private final Cache cache;
     
     GroupCache( final String name, final int cacheMaxSize, final int cacheMaxTime, final int cacheMaxGroups ){
@@ -54,7 +55,7 @@ class GroupCache {
                                                          final IdentityProvider ip,
                                                          final boolean skipAccountValidation ) throws ValidationException {
 
-        final long providerOid = ip.getConfig().getOid();
+        final Goid providerOid = ip.getConfig().getGoid();
         final CacheKey ckey = new CacheKey(providerOid, EntityType.USER, u.getId());
         final Set<IdentityHeader> cached = getCacheEntry(ckey, u.getLogin(), ip, cacheMaxTime.get());
 
@@ -73,7 +74,7 @@ class GroupCache {
      * @throws FindException
      */
     public Set<IdentityHeader> getCachedGroups(final Group g, final IdentityProvider ip) throws FindException {
-        final long providerOid = ip.getConfig().getOid();
+        final Goid providerOid = ip.getConfig().getGoid();
         final CacheKey ckey = new CacheKey(providerOid, EntityType.GROUP, g.getId());
         final Set<IdentityHeader> cached = getCacheEntry(ckey, g.getName(), ip, cacheMaxTime.get());
         if ( cached != null ) {
@@ -87,7 +88,7 @@ class GroupCache {
      *
      * @param providerOid The provider identifier
      */
-    public void invalidate( final long providerOid ) {
+    public void invalidate( final Goid providerOid ) {
         providerInvalidation.put( providerOid, System.currentTimeMillis() );
     }
 
@@ -217,12 +218,12 @@ class GroupCache {
 
     public static class CacheKey {
         private int cachedHashcode = -1;
-        private final long providerOid;
+        private final Goid providerOid;
         // user/group
         private final EntityType entityType;
         private final String identityId;
 
-        public CacheKey(long providerOid, final EntityType entityType, String identityId) {
+        public CacheKey(Goid providerOid, final EntityType entityType, String identityId) {
             this.providerOid = providerOid;
             this.entityType = entityType;
             this.identityId = identityId;
@@ -236,7 +237,7 @@ class GroupCache {
 
             final CacheKey cacheKey = (CacheKey)o;
 
-            if (providerOid != cacheKey.providerOid) return false;
+            if (providerOid != null ? !providerOid.equals(cacheKey.providerOid) : cacheKey.providerOid != null) return false;
             if (entityType != cacheKey.entityType) return false;
             if (identityId != null ? !identityId.equals(cacheKey.identityId) : cacheKey.identityId != null) return false;
 
@@ -247,7 +248,7 @@ class GroupCache {
         public int hashCode() {
             if (cachedHashcode == -1) {
                 int result;
-                result = (int)(providerOid ^ (providerOid >>> 32));
+                result = (providerOid != null ? providerOid.hashCode() : 0);
                 result = 31 * result + (entityType != null ? entityType.hashCode() : 0);
                 result = 31 * result + (identityId != null ? identityId.hashCode() : 0);
                 cachedHashcode = result;

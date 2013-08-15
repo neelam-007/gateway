@@ -3,6 +3,7 @@ package com.l7tech.server.ems.gateway;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.ems.enterprise.SsgCluster;
 import com.l7tech.server.ems.enterprise.SsgClusterManager;
 import com.l7tech.server.ems.enterprise.SsgNode;
@@ -170,14 +171,14 @@ public class GatewayClusterClientManagerImpl implements GatewayClusterClientMana
 
     static class ClientKey {
         final String clusterId;
-        final long userProviderOid;
+        final Goid userProviderOid;
         final String userId;
 
         ClientKey(String clusterId, User user) {
             this(clusterId, user.getProviderId(), user.getId());
         }
 
-        private ClientKey(String clusterId, long userProviderOid, String userId) {
+        private ClientKey(String clusterId, Goid userProviderOid, String userId) {
             this.clusterId = clusterId;
             this.userProviderOid = userProviderOid;
             this.userId = userId;
@@ -191,7 +192,7 @@ public class GatewayClusterClientManagerImpl implements GatewayClusterClientMana
 
             ClientKey clientKey = (ClientKey) o;
 
-            if (userProviderOid != clientKey.userProviderOid) return false;
+            if (userProviderOid != null ? !userProviderOid.equals(clientKey.userProviderOid) : clientKey.userProviderOid != null) return false;
             if (clusterId != null ? !clusterId.equals(clientKey.clusterId) : clientKey.clusterId != null) return false;
             if (userId != null ? !userId.equals(clientKey.userId) : clientKey.userId != null) return false;
 
@@ -202,7 +203,7 @@ public class GatewayClusterClientManagerImpl implements GatewayClusterClientMana
         public int hashCode() {
             int result;
             result = (clusterId != null ? clusterId.hashCode() : 0);
-            result = 31 * result + (int) (userProviderOid ^ (userProviderOid >>> 32));
+            result = 31 * result + (userProviderOid != null ? userProviderOid.hashCode() : 0);
             result = 31 * result + (userId != null ? userId.hashCode() : 0);
             return result;
         }

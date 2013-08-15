@@ -3,6 +3,7 @@
  */
 package com.l7tech.skunkworks;
 
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.identity.IdProvConfManagerServer;
 import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.objectmodel.EntityType;
@@ -51,7 +52,7 @@ public class TestCreateStuff {
     }
 
     private Role createManageInternalUsersAndGroups() {
-        final String iipOid = Long.toString(IdProvConfManagerServer.INTERNALPROVIDER_SPECIAL_OID);
+        final String iipOid = Goid.toString(IdProvConfManagerServer.INTERNALPROVIDER_SPECIAL_GOID);
 
         Role manageInternalRole = new Role();
         manageInternalRole.setName("Manage Internal Users and Groups");

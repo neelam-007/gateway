@@ -4,12 +4,14 @@
 package com.l7tech.gateway.common.security.rbac;
 
 import com.l7tech.identity.User;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.imp.PersistentEntityImp;
 import com.l7tech.objectmodel.EntityType;
 
 import javax.persistence.*;
 
 import org.hibernate.annotations.Proxy;
+import org.hibernate.annotations.Type;
 
 /**
  * Statically assigns a {@link Role} to a {@link User}.
@@ -20,17 +22,17 @@ import org.hibernate.annotations.Proxy;
 @Entity
 @Proxy(lazy=false)
 @Table(name="rbac_assignment",
-       uniqueConstraints=@UniqueConstraint(columnNames={"provider_oid", "role_oid", "identity_id", "entity_type"})
+       uniqueConstraints=@UniqueConstraint(columnNames={"provider_goid", "role_oid", "identity_id", "entity_type"})
 )
 public class RoleAssignment extends PersistentEntityImp {
-    protected long providerId;
+    protected Goid providerId;
     protected String identityId;
     private Role role;
 
     private String entityType;
     private boolean inherited;
 
-    public RoleAssignment(Role role, long providerId, String identityId, EntityType entityType) {
+    public RoleAssignment(Role role, Goid providerId, String identityId, EntityType entityType) {
         if (role == null) throw new IllegalArgumentException("Role cannot be null");
         this.role = role;
         this.providerId = providerId;
@@ -45,16 +47,17 @@ public class RoleAssignment extends PersistentEntityImp {
         return identityId;
     }
 
-    protected void setIdentityId(String identityId) {
+    public void setIdentityId(String identityId) {
         this.identityId = identityId;
     }
 
-    @Column(name="provider_oid", nullable=false)
-    public long getProviderId() {
+    @Column(name="provider_goid", nullable=false)
+    @Type(type = "com.l7tech.server.util.GoidType")
+    public Goid getProviderId() {
         return providerId;
     }
 
-    protected void setProviderId(long providerId) {
+    protected void setProviderId(Goid providerId) {
         this.providerId = providerId;
     }
 
@@ -100,7 +103,7 @@ public class RoleAssignment extends PersistentEntityImp {
 
         RoleAssignment that = (RoleAssignment) o;
 
-        if (providerId != that.providerId) return false;
+        if (providerId != null ? !providerId.equals(that.providerId) : that.providerId != null) return false;
         if (role != null ? (that.role == null || role.getOid() != that.role.getOid()) : that.role != null) return false;
         if (identityId != null ? !identityId.equals(that.identityId) : that.identityId != null) return false;
 
@@ -109,7 +112,7 @@ public class RoleAssignment extends PersistentEntityImp {
 
     public int hashCode() {
         int result = super.hashCode();
-        result = 31 * result + (int) (providerId ^ (providerId >>> 32));
+        result = 31 * result + (providerId != null ? providerId.hashCode() : 0);
         result = 31 * result + (identityId != null ? identityId.hashCode() : 0);
         result = 31 * result + (role != null ? (int)(role.getOid() ^ (role.getOid() >>> 32)) : 0);
         return result;

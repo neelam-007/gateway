@@ -1,5 +1,6 @@
 package com.l7tech.server.ems.standardreports;
 
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.server.ems.enterprise.SsgCluster;
 
@@ -14,13 +15,7 @@ import javax.persistence.FetchType;
 import java.util.Set;
 import java.util.HashSet;
 
-import org.hibernate.annotations.Fetch;
-import org.hibernate.annotations.FetchMode;
-import org.hibernate.annotations.Cascade;
-import org.hibernate.annotations.OnDelete;
-import org.hibernate.annotations.OnDeleteAction;
-import org.hibernate.annotations.BatchSize;
-import org.hibernate.annotations.Proxy;
+import org.hibernate.annotations.*;
 
 /**
  * 
@@ -42,11 +37,12 @@ public class StandardReport extends NamedEntityImp {
     }
 
     @Column(name="provider", nullable=false)
-    public long getProvider() {
+    @Type(type = "com.l7tech.server.util.GoidType")
+    public Goid getProvider() {
         return provider;
     }
 
-    public void setProvider( final long providerId ) {
+    public void setProvider( final Goid providerId ) {
         this.provider = providerId;
     }
 
@@ -149,7 +145,7 @@ public class StandardReport extends NamedEntityImp {
     private String submissionHost;
     private String submissionId;
 
-    private long provider;
+    private Goid provider;
     private String userId;
 
     private Set<StandardReportArtifact> artifacts = new HashSet<StandardReportArtifact>();

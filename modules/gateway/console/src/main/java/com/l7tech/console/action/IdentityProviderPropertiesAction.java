@@ -16,6 +16,7 @@ import com.l7tech.identity.fed.FederatedIdentityProviderConfig;
 import com.l7tech.objectmodel.DuplicateObjectException;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.TextUtils;
 
@@ -79,9 +80,9 @@ public class IdentityProviderPropertiesAction extends NodeAction {
             public void run() {
                 EntityHeader header = ((EntityHeaderNode)node).getEntityHeader();
                 IdentityProviderConfig iProvider;
-                if (header.getOid() != -1L ) {
+                if (!Goid.isDefault(header.getGoid()) ) {
                     try {
-                        iProvider = getIdentityAdmin().findIdentityProviderConfigByID(header.getOid());
+                        iProvider = getIdentityAdmin().findIdentityProviderConfigByID(header.getGoid());
 
                         if ( iProvider == null ) {
                             handleProviderDeleted(header);

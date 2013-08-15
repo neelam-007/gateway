@@ -113,7 +113,7 @@ public class AuditPolicyEvaluatorTest {
     }
 
     private AuditRecord makeSystemAuditRecord(int idx) {
-        AuditRecord auditRecord = new SystemAuditRecord(Level.INFO, "node1", Component.GW_TRUST_STORE, "sysrec#" + idx, false, -1, null, null, "Checking", "192.168.1.42");
+        AuditRecord auditRecord = new SystemAuditRecord(Level.INFO, "node1", Component.GW_TRUST_STORE, "sysrec#" + idx, false, new Goid(0,-1), null, null, "Checking", "192.168.1.42");
         return auditRecord;
     }
 

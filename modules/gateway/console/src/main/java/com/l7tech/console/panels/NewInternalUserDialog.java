@@ -290,7 +290,7 @@ public class NewInternalUserDialog extends JDialog {
         final String name = idTextField.getText().trim();
         final String password = new String(passwordField.getPassword());
 
-        user.setProviderId(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID);
+        user.setProviderId(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_GOID);
         user.setName( name );
         user.setLogin( name );
 
@@ -300,7 +300,7 @@ public class NewInternalUserDialog extends JDialog {
             header.setName(name);
             final String userId =
                 Registry.getDefault().getIdentityAdmin().saveUser(
-                    IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID,
+                    IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_GOID,
                     user, null, password);
             header.setStrId(userId);
             user.setUniqueIdentifier(header.getStrId());

@@ -9,6 +9,7 @@ import com.l7tech.identity.Identity;
 import com.l7tech.identity.Group;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -21,7 +22,7 @@ import java.util.Map;
 class IdentityHolder {
 
     private static IdentityAdmin identityAdmin;
-    private static Map<Long, String> idpNames;
+    private static Map<Goid, String> idpNames;
 
     private final RoleAssignment roleAssignment;
     private final Identity identity;
@@ -30,7 +31,7 @@ class IdentityHolder {
     private void initIdpMap() {
         if (identityAdmin == null) {
             identityAdmin = Registry.getDefault().getIdentityAdmin();
-            idpNames = new HashMap<Long, String>();
+            idpNames = new HashMap<Goid, String>();
 
             EntityHeader[] hs;
             try {
@@ -40,7 +41,7 @@ class IdentityHolder {
             }
 
             for (EntityHeader h : hs) {
-                idpNames.put(h.getOid(), h.getName());
+                idpNames.put(h.getGoid(), h.getName());
             }
         }
     }

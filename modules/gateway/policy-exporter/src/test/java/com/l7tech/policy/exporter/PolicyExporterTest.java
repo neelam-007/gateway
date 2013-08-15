@@ -109,11 +109,11 @@ public class PolicyExporterTest {
         root.addChild( svass );
 
         // FederatedIdProviderReference
-        SpecificUser suassf = new SpecificUser(1234, "feduser", null, null);
+        SpecificUser suassf = new SpecificUser(new Goid(0,1234), "feduser", null, null);
         root.addChild(suassf);        
 
         // IdProviderReference
-        SpecificUser suass = new SpecificUser(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID, "john", null, null);
+        SpecificUser suass = new SpecificUser(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_GOID, "john", null, null);
         root.addChild(suass);
 
         // IncludedPolicyReference
@@ -149,9 +149,9 @@ public class PolicyExporterTest {
     private ExternalReferenceFinder getExternalReferenceFinder() {
         return new ExternalReferenceFinderStub(){
             @Override
-            public IdentityProviderConfig findIdentityProviderConfigByID( final long providerOid ) throws FindException {
+            public IdentityProviderConfig findIdentityProviderConfigByID( final Goid providerOid ) throws FindException {
                 IdentityProviderConfig config;
-                if ( providerOid == IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID ) {
+                if ( providerOid.equals(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_GOID )){
                     config = new IdentityProviderConfig( IdentityProviderType.INTERNAL );
                     config.setName( "Internal Identity Provider" );
                 } else {

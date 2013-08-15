@@ -7,12 +7,9 @@ import com.l7tech.identity.Identity;
 import com.l7tech.identity.internal.InternalGroup;
 import com.l7tech.identity.internal.InternalGroupMembership;
 import com.l7tech.identity.internal.InternalUser;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.IdentityHeader;
+import com.l7tech.objectmodel.*;
 import com.l7tech.server.identity.PersistentGroupManagerImpl;
 import com.l7tech.server.security.rbac.RoleManager;
-import com.l7tech.objectmodel.DeleteException;
-import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.util.ExceptionUtils;
 import org.hibernate.Criteria;
 import org.hibernate.criterion.Restrictions;
@@ -47,14 +44,14 @@ public class InternalGroupManagerImpl
     public InternalGroup reify(GroupBean bean) {
         InternalGroup ig = new InternalGroup(bean.getName());
         ig.setDescription(bean.getDescription());
-        ig.setOid(bean.getId() == null ? InternalGroup.DEFAULT_OID : Long.valueOf(bean.getId()));
+        ig.setGoid(bean.getId() == null ? InternalGroup.DEFAULT_GOID : Goid.parseGoid(bean.getId()));
         return ig;
     }
 
     @Override
     public GroupMembership newMembership(InternalGroup group, InternalUser user) {
-        long groupOid = Long.parseLong(group.getId());
-        long userOid = Long.parseLong(user.getId());
+        Goid groupOid = Goid.parseGoid(group.getId());
+        Goid userOid = Goid.parseGoid(user.getId());
         return InternalGroupMembership.newInternalMembership(groupOid, userOid);
     }
 
@@ -90,12 +87,12 @@ public class InternalGroupManagerImpl
 
     @Override
     protected IdentityHeader newHeader( final InternalGroup entity ) {
-        return new IdentityHeader(getProviderOid(), entity.getOid(), EntityType.GROUP, entity.getName(), entity.getDescription(), null, entity.getVersion(), entity.isEnabled());
+        return new IdentityHeader(getProviderGoid(), entity.getGoid(), EntityType.GROUP, entity.getName(), entity.getDescription(), null, entity.getVersion(), entity.isEnabled());
     }
 
     @Override
     protected void addMembershipCriteria(Criteria crit, Group group, Identity identity) {
-        crit.add(Restrictions.eq("memberProviderOid", identity.getProviderId()));
+        crit.add(Restrictions.eq("memberProviderGoid", identity.getProviderId()));
     }
 
     @Override

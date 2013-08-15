@@ -541,8 +541,8 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationC
     }
 
     private void checkIdentityFromId(Object[] args, CheckInfo check, OperationType operation) throws FindException {
-        if (args[0] instanceof Long && args[1] instanceof String) {
-            IdentityHeader header = new IdentityHeader((Long)args[0], (String)args[1], check.types[0], null, null, null, null);
+        if (args[0] instanceof Goid && args[1] instanceof String) {
+            IdentityHeader header = new IdentityHeader((Goid)args[0], (String)args[1], check.types[0], null, null, null, null);
             Entity ent = entityFinder.find(header);
             check.setBefore(CheckBefore.ENTITY);
             check.operation = operation;

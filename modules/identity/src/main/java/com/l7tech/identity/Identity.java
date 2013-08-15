@@ -4,6 +4,7 @@
 package com.l7tech.identity;
 
 import com.l7tech.objectmodel.Entity;
+import com.l7tech.objectmodel.Goid;
 
 import java.security.Principal;
 
@@ -21,9 +22,9 @@ public interface Identity extends Principal, Entity {
      * Gets the OID of the {@link com.l7tech.identity.IdentityProviderConfig} to which this User belongs. This is only persisted for {@link com.l7tech.identity.fed.FederatedUser}s.
      * @return the OID of the {@link com.l7tech.identity.IdentityProviderConfig} to which this User belongs.
      *
-     * For internal users, the provider ID is {@link com.l7tech.identity.IdentityProviderConfigManager#INTERNALPROVIDER_SPECIAL_OID}
+     * For internal users, the provider ID is {@link com.l7tech.identity.IdentityProviderConfigManager#INTERNALPROVIDER_SPECIAL_GOID}
      */
-    long getProviderId();
+    Goid getProviderId();
 
     /**
      * Check whether the provided ID is semantically equivalent to this Identity's.

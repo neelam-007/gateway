@@ -8,6 +8,7 @@ import com.l7tech.identity.IdentityProviderPasswordPolicyManager;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.HibernateEntityManager;
 
 import java.util.Arrays;
@@ -55,12 +56,12 @@ public class IdentityProviderPasswordPolicyManagerImpl
     @Override
     protected Collection<Map<String, Object>> getUniqueConstraints(IdentityProviderPasswordPolicy entity) {
         Map<String,Object> serviceOidMap = new HashMap<String, Object>();
-        serviceOidMap.put("internalIdentityProviderOid", entity.getInternalIdentityProviderOid());
+        serviceOidMap.put("internalIdentityProviderGoid", entity.getInternalIdentityProviderGoid());
         return Arrays.asList(serviceOidMap);
     }
 
     @Override
-    public IdentityProviderPasswordPolicy findByInternalIdentityProviderOid(long identityProviderOid) throws FindException {
-        return findByUniqueKey( "internalIdentityProviderOid", identityProviderOid );
+    public IdentityProviderPasswordPolicy findByInternalIdentityProviderOid(Goid identityProviderOid) throws FindException {
+        return findByUniqueKey( "internalIdentityProviderGoid", identityProviderOid );
     }
 }

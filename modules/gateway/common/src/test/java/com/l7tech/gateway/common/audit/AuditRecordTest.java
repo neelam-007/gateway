@@ -146,6 +146,9 @@ public class AuditRecordTest {
         } else if (Byte.class == propClass || byte.class == propClass) {
             Byte b = (Byte)prop;
             return b == null ? 1 : b + 1;
+        } else if (Goid.class == propClass ) {
+            Goid g = (Goid)prop;
+            return g == null ? new Goid(0,1) : new Goid(g.getHi(),Math.abs(g.getLow()+1));
         } else if (Short.class == propClass || short.class == propClass) {
             Short s = (Short)prop;
             return s == null ? 1 : s + 1;
@@ -184,7 +187,7 @@ public class AuditRecordTest {
     }
 
     public static AuditRecord makeAdminAuditRecord() {
-        AuditRecord auditRecord = new AdminAuditRecord(Level.INFO, "node1", 1234, User.class.getName(), "testuser", AdminAuditRecord.ACTION_UPDATED, "updated", -1, "admin", "1111", "2.3.4.5");
+        AuditRecord auditRecord = new AdminAuditRecord(Level.INFO, "node1", 1234, User.class.getName(), "testuser", AdminAuditRecord.ACTION_UPDATED, "updated", new Goid(0,-1), "admin", "1111", "2.3.4.5");
         auditRecord.setStrRequestId(new RequestId(3, 555).toString());
         final AuditDetail detail1 = new AuditDetail(Messages.EXCEPTION_INFO_WITH_MORE_INFO, new String[]{"foomp"}, new IllegalArgumentException("Exception for foomp detail"));
         auditRecord.getDetails().add(detail1);
@@ -192,14 +195,14 @@ public class AuditRecordTest {
     }
 
     public static AuditRecord makeMessageAuditRecord() {
-        AuditRecord auditRecord = new MessageSummaryAuditRecord(Level.INFO, "node1", "2342345-4545", AssertionStatus.NONE, "3.2.1.1", null, 4833, null, 9483, 200, 232, new Goid(0, 8859), "ACMEWarehouse", "listProducts", true, SecurityTokenType.HTTP_BASIC, -2, "alice", "41123", 49585);
+        AuditRecord auditRecord = new MessageSummaryAuditRecord(Level.INFO, "node1", "2342345-4545", AssertionStatus.NONE, "3.2.1.1", null, 4833, null, 9483, 200, 232, new Goid(0, 8859), "ACMEWarehouse", "listProducts", true, SecurityTokenType.HTTP_BASIC, new Goid(0,-2), "alice", "41123", 49585);
         final AuditDetail detail1 = new AuditDetail(Messages.EXCEPTION_INFO_WITH_MORE_INFO, new String[]{"foomp"}, new IllegalArgumentException("Exception for foomp detail"));
         auditRecord.getDetails().add(detail1);
         return auditRecord;
     }
 
     public static AuditRecord makeSystemAuditRecord() {
-        AuditRecord auditRecord = new SystemAuditRecord(Level.INFO, "node1", Component.GW_TRUST_STORE, "One or more trusted certificates has expired or is expiring soon", false, -1, null, null, "Checking", "192.168.1.42");
+        AuditRecord auditRecord = new SystemAuditRecord(Level.INFO, "node1", Component.GW_TRUST_STORE, "One or more trusted certificates has expired or is expiring soon", false, new Goid(0,-1), null, null, "Checking", "192.168.1.42");
         return auditRecord;
     }
 }

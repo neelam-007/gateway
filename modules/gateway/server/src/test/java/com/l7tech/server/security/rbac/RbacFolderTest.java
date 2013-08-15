@@ -144,7 +144,7 @@ public class RbacFolderTest {
         folderManager.save(folder2);
 
         jimbo = new InternalUser("jimbo");
-        jimbo.setOid(1);
+        jimbo.setGoid(new Goid(0,1));
 
         aPolicy = new Policy(PolicyType.INCLUDE_FRAGMENT, "A policy", WspWriter.getPolicyXml(new CommentAssertion("A policy")), true);
         aPolicy.setFolder(folder1);

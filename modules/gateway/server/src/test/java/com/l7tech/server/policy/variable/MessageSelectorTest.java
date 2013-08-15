@@ -188,8 +188,8 @@ public class MessageSelectorTest {
     public void testMultiValue() {
         PolicyEnforcementContext c = PolicyEnforcementContextFactory.createPolicyEnforcementContext(message, message);
         AuthenticationContext ac = c.getAuthenticationContext(message);
-        User user1 = new UserBean(123, "Tester1");
-        User user2 = new UserBean(123, "Tester2");
+        User user1 = new UserBean(new Goid(0,123), "Tester1");
+        User user2 = new UserBean(new Goid(0,123), "Tester2");
         AuthenticationResult ar1 = new AuthenticationResult( user1, new OpaqueSecurityToken());
         AuthenticationResult ar2 = new AuthenticationResult( user2, new OpaqueSecurityToken());
         ac.addAuthenticationResult(ar1);
@@ -235,8 +235,8 @@ public class MessageSelectorTest {
     public void testMultiValueLength() {
         PolicyEnforcementContext c = PolicyEnforcementContextFactory.createPolicyEnforcementContext(message, message);
         AuthenticationContext ac = c.getAuthenticationContext(message);
-        User user1 = new UserBean(123, "Tester1");
-        User user2 = new UserBean(123, "Tester2");
+        User user1 = new UserBean(new Goid(0,123), "Tester1");
+        User user2 = new UserBean(new Goid(0,123), "Tester2");
         AuthenticationResult ar1 = new AuthenticationResult( user1, new OpaqueSecurityToken());
         AuthenticationResult ar2 = new AuthenticationResult( user2, new OpaqueSecurityToken());
         ac.addAuthenticationResult(ar1);

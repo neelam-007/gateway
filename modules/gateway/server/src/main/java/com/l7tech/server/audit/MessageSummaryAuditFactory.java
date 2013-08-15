@@ -76,7 +76,7 @@ public class MessageSummaryAuditFactory implements PropertyChangeListener{
         int requestContentLength = -1;
         String responseXml = null;
         int responseContentLength = -1;
-        long identityProviderOid = -1;
+        Goid identityProviderOid = null;
         String userName = null;
         String clientAddr = null;
         Goid serviceGoid = PublishedService.DEFAULT_GOID;
@@ -320,7 +320,7 @@ public class MessageSummaryAuditFactory implements PropertyChangeListener{
         return operationName;
     }
 
-    private String describe( final Long providerOid, final String userId ) {
+    private String describe( final Goid providerOid, final String userId ) {
         String description = null;
 
         try {

@@ -13,6 +13,7 @@ import com.l7tech.identity.User;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
@@ -92,7 +93,7 @@ public class AddIdentityAssertionAction extends PolicyUpdatingAssertionAction {
 
             private void updateExistingAssertion(@Nullable final FindIdentitiesDialog.FindResult result){
                 if (result != null) {
-                    long providerId = result.providerConfigOid;
+                    Goid providerId = result.providerConfigOid;
                     EntityHeader[] headers = result.entityHeaders;
                     IdentityAdmin admin = Registry.getDefault().getIdentityAdmin();
 
@@ -134,7 +135,7 @@ public class AddIdentityAssertionAction extends PolicyUpdatingAssertionAction {
             }
             
             private void addNewAssertions(final FindIdentitiesDialog.FindResult result){
-                long providerId = result.providerConfigOid;
+                Goid providerId = result.providerConfigOid;
                 EntityHeader[] headers = result.entityHeaders;
                 java.util.List<IdentityAssertion> identityAssertions = new ArrayList<IdentityAssertion>();
                 IdentityAdmin admin = Registry.getDefault().getIdentityAdmin();

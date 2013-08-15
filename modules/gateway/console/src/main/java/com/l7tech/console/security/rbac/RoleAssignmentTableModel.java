@@ -41,8 +41,8 @@ public class RoleAssignmentTableModel  extends AbstractTableModel {
             public int compare(Object o1, Object o2) {
                 Identity i1 = (Identity) o1;
                 Identity i2 = (Identity) o2;
-                if(i1.getProviderId() != i2.getProviderId()){
-                    return (i1.getProviderId() < i2.getProviderId())? -1:(i1.getProviderId() > i2.getProviderId())? 1: 0;
+                if(!i1.getProviderId().equals(i2.getProviderId())){
+                    return i1.getProviderId().compareTo(i2.getProviderId());
                 }
 
                 if(i1 instanceof User && i2 instanceof Group) return -1;
@@ -83,7 +83,7 @@ public class RoleAssignmentTableModel  extends AbstractTableModel {
 
         //check if ra is a duplicate
         for (RoleAssignment roleAssignement : roleAssignmentToIdentityHolder.keySet()) {
-            if (roleAssignement.getProviderId() == ra.getProviderId()
+            if (roleAssignement.getProviderId().equals(ra.getProviderId())
                     && roleAssignement.getIdentityId().equals(ra.getIdentityId())
                     && roleAssignement.getRole().getOid() == ra.getRole().getOid()) {
                 String userType = ra.getEntityType();

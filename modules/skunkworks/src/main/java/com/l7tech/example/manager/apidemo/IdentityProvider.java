@@ -135,28 +135,28 @@ public class IdentityProvider {
 
     public void removeBulkUsers(String namePrefix) throws FindException, RemoteException, ObjectNotFoundException, DeleteException {
         IdentityAdmin identityAdmin = session.getIdentityAdmin();
-        EntityHeaderSet<IdentityHeader> res = identityAdmin.findAllUsers(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID);
+        EntityHeaderSet<IdentityHeader> res = identityAdmin.findAllUsers(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_GOID);
         for (EntityHeader header : res) {
             if (header.getName().startsWith(namePrefix)) {
-                identityAdmin.deleteUser(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID, header.getStrId());
+                identityAdmin.deleteUser(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_GOID, header.getStrId());
             }
         }
     }
 
     public String[] listUsers() throws RemoteException, FindException {
         IdentityAdmin  identityAdmin = session.getIdentityAdmin();
-        EntityHeaderSet<IdentityHeader> res = identityAdmin.findAllUsers(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID);
+        EntityHeaderSet<IdentityHeader> res = identityAdmin.findAllUsers(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_GOID);
         String[] output = new String[res.size()];
         int i = 0;
         for (EntityHeader header : res) {
-            output[i++] = "User " + header.getName() + " [" + header.getOid() + "]";
+            output[i++] = "User " + header.getName() + " [" + header.getGoid() + "]";
         }
         return output;
     }
 
     private User constructUser(final String login, final String passwd) {
         UserBean u = new UserBean();
-        u.setProviderId(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID);
+        u.setProviderId(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_GOID);
         u.setLogin(login);
         String passwdenc = passwordHasher.hashPassword(passwd.getBytes(Charsets.UTF8));
         u.setHashedPassword(passwdenc);
@@ -172,6 +172,6 @@ public class IdentityProvider {
      */
     public String saveUser(final User ub) throws RemoteException, SaveException, ObjectNotFoundException, UpdateException, InvalidPasswordException {
         IdentityAdmin  identityAdmin = session.getIdentityAdmin();
-        return identityAdmin.saveUser(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID, ub, null);
+        return identityAdmin.saveUser(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_GOID, ub, null);
     }
 }

@@ -434,12 +434,12 @@ public class Role extends NamedEntityImp implements Comparable<Role> {
     }
 
     private boolean assignmentMatchesUser(@NotNull final RoleAssignment roleAssignment, @NotNull final User user) {
-        return roleAssignment.getIdentityId().equals(user.getId()) && roleAssignment.getProviderId() == user.getProviderId()
+        return roleAssignment.getIdentityId().equals(user.getId()) && roleAssignment.getProviderId().equals(user.getProviderId())
                             && roleAssignment.getEntityType().equals(EntityType.USER.getName());
     }
 
     private boolean assignmentMatchesGroup(@NotNull final RoleAssignment roleAssignment, @NotNull final Group group) {
-        return roleAssignment.getIdentityId().equals(group.getId()) && roleAssignment.getProviderId() == group.getProviderId()
+        return roleAssignment.getIdentityId().equals(group.getId()) && roleAssignment.getProviderId().equals(group.getProviderId())
                             && roleAssignment.getEntityType().equals(EntityType.GROUP.getName());
     }
 

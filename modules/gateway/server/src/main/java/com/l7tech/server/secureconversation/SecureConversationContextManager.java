@@ -5,6 +5,7 @@ import com.l7tech.identity.User;
 import com.l7tech.identity.UserBean;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.security.xml.SecureConversationKeyDeriver;
 import com.l7tech.util.Config;
@@ -405,7 +406,7 @@ public abstract class SecureConversationContextManager<KT> {
         return element;
     }
 
-    private User user( final long providerId,
+    private User user( final Goid providerId,
                        final String userId,
                        final String login ) {
         final UserBean userBean = new UserBean( providerId, login );

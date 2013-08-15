@@ -479,7 +479,7 @@ public class SinkConfigurationFilterSelectionDialog extends JDialog {
                 selection = doAdmin( null, new UnaryThrows<User,Registry,ObjectModelException>(){
                     @Override
                     public User call( final Registry registry ) throws ObjectModelException {
-                        return registry.getIdentityAdmin().findUserByID( Long.parseLong( id[0] ), id[1] );
+                        return registry.getIdentityAdmin().findUserByID( Goid.parseGoid( id[0] ), id[1] );
                     }
                 } ).map( new Unary<FilterSelection, User>(){
                     @Override
@@ -495,8 +495,8 @@ public class SinkConfigurationFilterSelectionDialog extends JDialog {
             return selection;
         }
 
-        private String getIdentityProviderName( final long providerId ) {
-            return findHeader( getIdentityProviderHeaders(), Long.toString( providerId ) )
+        private String getIdentityProviderName( final Goid providerId ) {
+            return findHeader( getIdentityProviderHeaders(), Goid.toString( providerId ) )
                     .map( toName() )
                     .orSome( "Unknown Provider '" + providerId + "'" );
         }
@@ -530,7 +530,7 @@ public class SinkConfigurationFilterSelectionDialog extends JDialog {
             return new Unary<FilterSelection, IdentityHeader>(){
                 @Override
                 public FilterSelection call( final IdentityHeader header ) {
-                    return new FilterSelection( GatewayDiagnosticContextKeys.USER_ID, header.getProviderOid()+":"+header.getStrId(), getIdentityProviderName(header.getProviderOid())+"/"+header.getName() );
+                    return new FilterSelection( GatewayDiagnosticContextKeys.USER_ID, header.getProviderGoid()+":"+header.getStrId(), getIdentityProviderName(header.getProviderGoid())+"/"+header.getName() );
                 }
             };
         }

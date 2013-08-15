@@ -164,10 +164,10 @@ public class PolicyExporter {
             final UsesEntities entitiesUser = (UsesEntities)assertion;
             for( final EntityHeader entityHeader : entitiesUser.getEntitiesUsed() ) {
                 if( entityHeader.getType().equals(EntityType.ID_PROVIDER_CONFIG) ) {
-                    final IdProviderReference idProviderRef = new IdProviderReference( finder, entityHeader.getOid());
+                    final IdProviderReference idProviderRef = new IdProviderReference( finder, entityHeader.getGoid());
 
                     if( idProviderRef.getIdProviderTypeVal() == IdentityProviderType.FEDERATED.toVal() ) {
-                        addReference( new FederatedIdProviderReference( finder, entityHeader.getOid()), refs);
+                        addReference( new FederatedIdProviderReference( finder, entityHeader.getGoid()), refs);
                     } else {
                         addReference( idProviderRef, refs);
                     }

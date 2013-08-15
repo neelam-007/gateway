@@ -1,9 +1,11 @@
 package com.l7tech.server.secureconversation;
 
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.imp.PersistentEntityImp;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.HexUtils;
 import org.hibernate.annotations.Proxy;
+import org.hibernate.annotations.Type;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -36,7 +38,7 @@ public class StoredSecureConversationSession extends PersistentEntityImp {
                                             final long expires,
                                             final String namespace,
                                             final String encryptedKey,
-                                            final long providerId,
+                                            final Goid providerId,
                                             final String userId,
                                             final String userLogin ) {
         this.sessionKey = generateSessionKey( identifier );
@@ -65,7 +67,7 @@ public class StoredSecureConversationSession extends PersistentEntityImp {
      * @param userLogin The user login for the session user.
      */
     public StoredSecureConversationSession( final String serviceUrl,
-                                            final long providerId,
+                                            final Goid providerId,
                                             final String userId,
                                             final String userLogin,
                                             final String identifier,
@@ -169,12 +171,13 @@ public class StoredSecureConversationSession extends PersistentEntityImp {
         this.encryptedKey = encryptedKey;
     }
 
-    @Column(name="provider_id", updatable=false)
-    public long getProviderId() {
+    @Column(name="provider_goid", updatable=false)
+    @Type(type = "com.l7tech.server.util.GoidType")
+    public Goid getProviderId() {
         return providerId;
     }
 
-    public void setProviderId( final long providerId ) {
+    public void setProviderId( final Goid providerId ) {
         this.providerId = providerId;
     }
 
@@ -221,9 +224,9 @@ public class StoredSecureConversationSession extends PersistentEntityImp {
      * @param serviceUrl The URL of the service for the session.
      * @return The session key.
      */
-    static String generateSessionKey( final long providerId, final String userId, final String serviceUrl ) {
+    static String generateSessionKey( final Goid providerId, final String userId, final String serviceUrl ) {
         return HexUtils.encodeBase64( HexUtils.getSha512Digest( new byte[][]{
-                Long.toString( providerId ).getBytes( Charsets.UTF8 ),
+                Goid.toString( providerId ).getBytes(Charsets.UTF8),
                 userId.getBytes( Charsets.UTF8 ),
                 serviceUrl.getBytes( Charsets.UTF8 )
         } ), true );
@@ -240,7 +243,7 @@ public class StoredSecureConversationSession extends PersistentEntityImp {
     private String token;
     private String serviceUrl;
     private String encryptedKey;
-    private long providerId;
+    private Goid providerId;
     private String userId;
     private String userLogin;
 }

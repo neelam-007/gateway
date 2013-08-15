@@ -6,6 +6,7 @@
 
 package com.l7tech.server.policy.filter;
 
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.server.ApplicationContexts;
 import com.l7tech.identity.IdentityProviderConfigManager;
@@ -46,7 +47,7 @@ public class FilterTest{
 
     @Test
     public void testSimpleFilter() throws Exception {
-        long providerid = IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID;
+        Goid providerid = IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_GOID;
         Assertion pol = new AllAssertion(Arrays.asList(new Assertion[] {
             new SslAssertion(),
             new HttpBasic(),
@@ -76,7 +77,7 @@ public class FilterTest{
 
     @Test
     public void testUserSpecificFilter() throws Exception {
-        long providerid = IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID;
+        Goid providerid = IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_GOID;
         //URL policyUrl = getClass().getClassLoader().getResource(POLICY_USERSPECIFIC);
         //Assertion policy = WspReader.parse(policyUrl.openStream());
         Assertion policy = new AllAssertion(Arrays.asList(new Assertion[] {

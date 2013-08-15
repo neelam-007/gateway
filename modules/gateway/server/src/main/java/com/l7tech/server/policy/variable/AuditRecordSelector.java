@@ -223,7 +223,7 @@ public class AuditRecordSelector implements ExpandVariables.Selector<AuditRecord
         baseFields.put("user.idProv", new FieldGetter<AuditRecord>() {
             @Override
             public Selection getFieldValue(AuditRecord auditRecord, String baseAndRemainingName) {
-                return new Selection(auditRecord.getIdentityProviderOid());
+                return new Selection(auditRecord.getIdentityProviderGoid());
             }
         });
 

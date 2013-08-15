@@ -8,6 +8,7 @@ import com.l7tech.identity.IdentityProviderPasswordPolicy;
 import com.l7tech.identity.IdentityProviderPasswordPolicyManager;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.IdentityHeader;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.identity.ldap.LdapConfigTemplateManager;
@@ -29,7 +30,7 @@ import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class IdentityAdminImplTest {
-    private static final long PROVIDER_ID = 1L;
+    private static final Goid PROVIDER_ID = new Goid(0,1L);
     private static final String GROUP_ID = "1234";
     private IdentityAdminImpl admin;
     @Mock

@@ -86,7 +86,7 @@ public interface TrustedEsmUserManager extends EntityManager<TrustedEsmUser, Ent
      * @throws com.l7tech.objectmodel.FindException if DB problem
      * @throws com.l7tech.objectmodel.DeleteException if DB problem
      */
-    boolean deleteMappingsForIdentityProvider(long identityProviderOid) throws FindException, DeleteException;
+    boolean deleteMappingsForIdentityProvider(Goid identityProviderOid) throws FindException, DeleteException;
 
     /**
      * Find all user mappings for the specified Trusted ESM, identified by its OID.

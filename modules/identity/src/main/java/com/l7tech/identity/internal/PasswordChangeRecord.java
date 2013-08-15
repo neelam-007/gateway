@@ -41,7 +41,7 @@ public class PasswordChangeRecord extends PersistentEntityImp {
     }
 
     @ManyToOne
-    @JoinColumn(name="internal_user_oid", nullable=false)
+    @JoinColumn(name="internal_user_goid", nullable=false)
     public InternalUser getInternalUser() {
         return internalUser;
     }

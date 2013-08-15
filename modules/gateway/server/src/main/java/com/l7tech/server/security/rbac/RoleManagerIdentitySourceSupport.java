@@ -59,7 +59,7 @@ public abstract class RoleManagerIdentitySourceSupport implements RoleManagerIde
 
                     // Check for user assignment first
                     for ( RoleAssignment assignment : adminRole.getRoleAssignments() ) {
-                        if ( assignment.getProviderId()==internalProvider.getConfig().getOid() ) {
+                        if ( assignment.getProviderId().equals(internalProvider.getConfig().getGoid() )){
                             if ( EntityType.USER.getName().equals(assignment.getEntityType()) ) {
                                 InternalUser user = userManager.findByPrimaryKey( assignment.getIdentityId() );
                                 if ( user != null && user.isEnabled() && (user.getExpiration()<0)) {
@@ -75,7 +75,7 @@ public abstract class RoleManagerIdentitySourceSupport implements RoleManagerIde
                     if ( !found ) {
                         // Check group assignments
                         for ( RoleAssignment assignment : adminRole.getRoleAssignments() ) {
-                            if ( assignment.getProviderId()==internalProvider.getConfig().getOid() ) {
+                            if ( assignment.getProviderId().equals(internalProvider.getConfig().getGoid()) ) {
                                 if ( EntityType.GROUP.getName().equals(assignment.getEntityType()) ) {
                                     InternalGroup group = groupManager.findByPrimaryKey(assignment.getIdentityId());
                                     if(!group.isEnabled())

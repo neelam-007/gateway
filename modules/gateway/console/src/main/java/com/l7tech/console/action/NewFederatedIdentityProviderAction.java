@@ -14,10 +14,7 @@ import com.l7tech.identity.fed.FederatedIdentityProviderConfig;
 import com.l7tech.identity.fed.FederatedGroup;
 import com.l7tech.identity.fed.FederatedUser;
 import com.l7tech.identity.fed.VirtualGroup;
-import com.l7tech.objectmodel.DuplicateObjectException;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.IdentityHeader;
+import com.l7tech.objectmodel.*;
 import com.l7tech.util.ExceptionUtils;
 import org.jetbrains.annotations.Nullable;
 
@@ -153,7 +150,7 @@ public class NewFederatedIdentityProviderAction extends NewProviderAction {
                         header.setName(iProvider.getName());
                         header.setType(EntityType.ID_PROVIDER_CONFIG);
                         try {
-                            header.setOid(getIdentityAdmin().saveIdentityProviderConfig(iProvider));
+                            header.setGoid(getIdentityAdmin().saveIdentityProviderConfig(iProvider));
                             // Refresh permission cache so that newly created IdP is usable
                             Registry.getDefault().getSecurityProvider().refreshPermissionCache();
                         } catch (DuplicateObjectException doe) {
@@ -172,10 +169,10 @@ public class NewFederatedIdentityProviderAction extends NewProviderAction {
                                     // Import the users
                                     for(FederatedUser user : iProvider.getImportedUsers().values()) {
                                         String oldOid = user.getId();
-                                        user.setOid(FederatedUser.DEFAULT_OID);
+                                        user.setGoid(FederatedUser.DEFAULT_GOID);
                                         preenFields(user);
-                                        String newOid = getIdentityAdmin().saveUser(header.getOid(), user, null);
-                                        user.setOid(Long.parseLong(newOid));
+                                        String newOid = getIdentityAdmin().saveUser(header.getGoid(), user, null);
+                                        user.setGoid(Goid.parseGoid(newOid));
 
                                         userOidMap.put(oldOid, user);
                                         if(userUpdateMap != null) {
@@ -188,7 +185,7 @@ public class NewFederatedIdentityProviderAction extends NewProviderAction {
                                     // Import the groups
                                     for(FederatedGroup group : iProvider.getImportedGroups().values()) {
                                         String oldOid = group.getId();
-                                        group.setOid(FederatedGroup.DEFAULT_OID);
+                                        group.setGoid(FederatedGroup.DEFAULT_GOID);
 
                                         Set<IdentityHeader> memberHeaders = new HashSet<IdentityHeader>();
                                         if(!(group instanceof VirtualGroup)) {
@@ -198,15 +195,15 @@ public class NewFederatedIdentityProviderAction extends NewProviderAction {
                                                     for(String memberOid : members) {
                                                         if(userOidMap.containsKey(memberOid)) {
                                                             FederatedUser user = userOidMap.get(memberOid);
-                                                            memberHeaders.add(new IdentityHeader(header.getOid(), user.getId(), EntityType.USER, user.getName(), null, null, null));
+                                                            memberHeaders.add(new IdentityHeader(header.getGoid(), user.getId(), EntityType.USER, user.getName(), null, null, null));
                                                         }
                                                     }
                                                 }
                                             }
                                         }
 
-                                        String newOid = getIdentityAdmin().saveGroup(header.getOid(), group, memberHeaders);
-                                        group.setOid(Long.parseLong(newOid));
+                                        String newOid = getIdentityAdmin().saveGroup(header.getGoid(), group, memberHeaders);
+                                        group.setGoid(Goid.parseGoid(newOid));
 
                                         if(groupUpdateMap != null) {
                                             groupUpdateMap.put(oldOid, newOid);

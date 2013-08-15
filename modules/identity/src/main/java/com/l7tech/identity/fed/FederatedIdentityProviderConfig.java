@@ -32,8 +32,8 @@ public class FederatedIdentityProviderConfig extends IdentityProviderConfig {
 
     public FederatedIdentityProviderConfig(IdentityProviderConfig other) {
         super(IdentityProviderType.FEDERATED);
-        this._version = other.getVersion();
-	    this._oid = other.getOid();
+        setVersion(other.getVersion());
+	    setGoid(other.getGoid());
         copyFrom(other);
     }
 
@@ -133,7 +133,7 @@ public class FederatedIdentityProviderConfig extends IdentityProviderConfig {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder("<FederatedIdentityProviderConfig ");
-        sb.append("oid=\"").append(_oid).append("\" ");
+        sb.append("goid=\"").append(getGoid()).append("\" ");
         sb.append("name=\"").append(_name).append("\" ");
         sb.append("samlSupported=\"").append(isSamlSupported()).append("\" ");
         sb.append("x509Supported=\"").append(isX509Supported()).append("\">\n  ");

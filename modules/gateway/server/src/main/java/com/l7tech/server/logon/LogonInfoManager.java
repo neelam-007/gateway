@@ -20,7 +20,7 @@ public interface LogonInfoManager extends GoidEntityManager<LogonInfo, EntityHea
      * @return              The LogonInfo object if found.
      * @throws FindException
      */
-    public LogonInfo findByCompositeKey(long providerId, String login, boolean lock) throws FindException;
+    public LogonInfo findByCompositeKey(Goid providerId, String login, boolean lock) throws FindException;
 
     /**
      * Updates the logon information object into the database.
@@ -37,5 +37,5 @@ public interface LogonInfoManager extends GoidEntityManager<LogonInfo, EntityHea
      * @param login         The login name
      * @throws DeleteException
      */
-    public void delete(long providerId, String login) throws DeleteException;
+    public void delete(Goid providerId, String login) throws DeleteException;
 }

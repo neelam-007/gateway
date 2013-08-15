@@ -86,7 +86,8 @@ public class ConfiguredSessionFactoryBean extends AnnotationSessionFactoryBean {
 
             // use an existing goid if one is given.
             if (o instanceof GoidEntity &&
-                    !GoidEntity.DEFAULT_GOID.equals(((GoidEntity) o).getGoid())) {
+                    (((GoidEntity) o).getGoid()!=null &&
+                    !GoidEntity.DEFAULT_GOID.equals(((GoidEntity) o).getGoid()))) {
                 return ((GoidEntity) o).getGoid();
             }
             //TODO: is there a more efficient way of creating a new goid?

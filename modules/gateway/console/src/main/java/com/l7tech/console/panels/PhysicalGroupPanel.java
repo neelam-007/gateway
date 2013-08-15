@@ -28,7 +28,7 @@ public class PhysicalGroupPanel extends GroupPanel {
     }
 
     protected void loadedGroup(Group g) throws FindException {
-        groupMembers = getIdentityAdmin().getUserHeaders(config.getOid(), group.getId());
+        groupMembers = getIdentityAdmin().getUserHeaders(config.getGoid(), group.getId());
     }
 
     protected Group newGroup( EntityHeader groupHeader ) {
@@ -52,7 +52,7 @@ public class PhysicalGroupPanel extends GroupPanel {
     }
 
     protected String save() throws SaveException, UpdateException, ObjectNotFoundException {
-        return getIdentityAdmin().saveGroup(config.getOid(), group, groupMembers);
+        return getIdentityAdmin().saveGroup(config.getGoid(), group, groupMembers);
     }
 
     /**

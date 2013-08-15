@@ -95,7 +95,7 @@ public class StubDataStore {
         return memberships;
     }
 
-    public Map<Long, IdentityProviderConfig> getIdentityProviderConfigs() {
+    public Map<Goid, IdentityProviderConfig> getIdentityProviderConfigs() {
         return providerConfigs;
     }
 
@@ -127,7 +127,7 @@ public class StubDataStore {
 
     private IdentityProviderConfig initialInternalProvider(XMLEncoder encoder) {
         IdentityProviderConfig config = new IdentityProviderConfig( IdentityProviderType.INTERNAL);
-        config.setOid( IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID);
+        config.setGoid( IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_GOID);
         config.setDescription("Internal identity provider (stub)");
         config.setName(config.getDescription());
         encoder.writeObject(config);
@@ -137,7 +137,7 @@ public class StubDataStore {
 
     private void initialUsers(XMLEncoder encoder) {
         InternalUser user = new InternalUser();
-        user.setOid(nextObjectId());
+        user.setGoid(nextGoid());
         user.setLogin("fred");
         user.setName(user.getLogin());
         user.setFirstName("Fred");
@@ -147,7 +147,7 @@ public class StubDataStore {
         populate(user);
 
         user = new InternalUser();
-        user.setOid(nextObjectId());
+        user.setGoid(nextGoid());
         user.setLogin("don");
         user.setName(user.getLogin());
         user.setFirstName("Don");
@@ -157,7 +157,7 @@ public class StubDataStore {
         populate(user);
 
         user = new InternalUser();
-        user.setOid(nextObjectId());
+        user.setGoid(nextGoid());
         user.setLogin("schwartz");
         user.setName(user.getLogin());
         user.setFirstName("Hertz");
@@ -169,7 +169,7 @@ public class StubDataStore {
 
     private void initialGroups(XMLEncoder encoder) {
         InternalGroup group = new InternalGroup();
-        group.setOid(nextObjectId());
+        group.setGoid(nextGoid());
         group.setName("all-staff");
         group.setDescription("All staff group");
 
@@ -177,14 +177,14 @@ public class StubDataStore {
         populate(group);
 
         group = new InternalGroup();
-        group.setOid(nextObjectId());
+        group.setGoid(nextGoid());
         group.setName("marketing");
         group.setDescription("Marketing group");
         encoder.writeObject(group);
         populate(group);
 
         group = new InternalGroup();
-        group.setOid(nextObjectId());
+        group.setGoid(nextGoid());
         group.setName("engineering");
         group.setDescription("Engineering group");
         encoder.writeObject(group);
@@ -196,7 +196,7 @@ public class StubDataStore {
         for (; groups.hasNext();) {
             InternalGroup g = (InternalGroup)groups.next();
             for (PersistentUser u : users.values()) {
-                InternalGroupMembership gm = InternalGroupMembership.newInternalMembership(g.getOid(), u.getOid());
+                InternalGroupMembership gm = InternalGroupMembership.newInternalMembership(g.getGoid(), u.getGoid());
                 encoder.writeObject(gm);
                 populate(gm);
             }
@@ -259,7 +259,7 @@ public class StubDataStore {
         Group g = groups.values().iterator().next();
         List<IdentityAssertion> identities = new ArrayList<IdentityAssertion>();
 
-        long providerId = pc.getOid();
+        Goid providerId = pc.getGoid();
 
         MemberOfGroup memberOfGroup = new MemberOfGroup(providerId, g.getName(), g.getId());
         memberOfGroup.setGroupName(g.getName());
@@ -300,7 +300,7 @@ public class StubDataStore {
         } else if (o instanceof GroupMembership) {
             memberships.add((GroupMembership) o);
         } else if (o instanceof IdentityProviderConfig) {
-            providerConfigs.put(new Long(((IdentityProviderConfig)o).getOid()), (IdentityProviderConfig) o);
+            providerConfigs.put(((IdentityProviderConfig) o).getGoid(), (IdentityProviderConfig) o);
         } else if (o instanceof PublishedService) {
             pubServices.put(((PublishedService)o).getGoid(), (PublishedService) o);
         } else if (o instanceof JmsConnection) {
@@ -333,7 +333,7 @@ public class StubDataStore {
         }
     }
 
-    private Map<Long, IdentityProviderConfig> providerConfigs = new HashMap<Long, IdentityProviderConfig>();
+    private Map<Goid, IdentityProviderConfig> providerConfigs = new HashMap<Goid, IdentityProviderConfig>();
     private Map<String, PersistentUser> users = new HashMap<String, PersistentUser>();
     private Map<String, PersistentGroup> groups = new HashMap<String, PersistentGroup>();
     private Set<GroupMembership> memberships = new HashSet<GroupMembership>();

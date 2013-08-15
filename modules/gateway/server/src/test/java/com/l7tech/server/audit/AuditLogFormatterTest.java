@@ -523,7 +523,7 @@ public class AuditLogFormatterTest {
         final String SERVICE_NAME = "Warehoust [/wh2]";
 
         final SecurityTokenType SECURITY_TOKEN = SecurityTokenType.HTTP_BASIC;
-        final long IDENTITY_PROV_OID = -2L;
+        final Goid IDENTITY_PROV_OID = new Goid(0,-2L);
 
         final String USER_NAME = "Lance Uppercut";
         final String USER_ID = "luppercut";

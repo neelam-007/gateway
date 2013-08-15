@@ -3,10 +3,7 @@ package com.l7tech.server.security.rbac;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.identity.User;
-import com.l7tech.objectmodel.Entity;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.OrganizationHeader;
+import com.l7tech.objectmodel.*;
 import com.l7tech.server.EntityFinder;
 import com.l7tech.util.Pair;
 import org.jetbrains.annotations.NotNull;
@@ -46,12 +43,12 @@ public class RbacServicesStub implements RbacServices, SecurityFilter {
     }
 
     @Override
-    public boolean isAdministrativeUser(@NotNull Pair<Long, String> providerAndUserId, @NotNull User user) throws FindException {
+    public boolean isAdministrativeUser(@NotNull Pair<Goid, String> providerAndUserId, @NotNull User user) throws FindException {
         return true;
     }
 
     @Override
-    public Collection<Role> getAssignedRoles(@NotNull Pair<Long, String> providerAndUserId, @NotNull User user) throws FindException {
+    public Collection<Role> getAssignedRoles(@NotNull Pair<Goid, String> providerAndUserId, @NotNull User user) throws FindException {
         return Collections.emptyList();
     }
 

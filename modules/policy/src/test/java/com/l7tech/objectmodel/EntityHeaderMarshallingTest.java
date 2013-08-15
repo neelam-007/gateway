@@ -22,7 +22,7 @@ public class EntityHeaderMarshallingTest {
 
     @Test
     public void testIdentityHeader() throws Exception {
-        JAXB.marshal(new IdentityHeader(1, "2", EntityType.USER, "username", "some user", null, null), System.out);
+        JAXB.marshal(new IdentityHeader(new Goid(0,1), "2", EntityType.USER, "username", "some user", null, null), System.out);
     }
 
     @Test

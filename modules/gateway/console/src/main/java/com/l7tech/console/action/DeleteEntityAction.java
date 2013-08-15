@@ -71,10 +71,10 @@ public class DeleteEntityAction extends SecureAction {
         Entity deleteMe;
         if (type == EntityType.USER) {
             type = USER;
-            deleteMe = new AnonymousUserReference(header.getStrId(), config.getOid(), header.getName());
+            deleteMe = new AnonymousUserReference(header.getStrId(), config.getGoid(), header.getName());
         } else if (type == EntityType.GROUP) {
             type = GROUP;
-            deleteMe = new AnonymousGroupReference(header.getStrId(), config.getOid(), header.getName());
+            deleteMe = new AnonymousGroupReference(header.getStrId(), config.getGoid(), header.getName());
         } else if (type == EntityType.ID_PROVIDER_CONFIG) {
             type = ID_PROVIDER_CONFIG;
             deleteMe = config;

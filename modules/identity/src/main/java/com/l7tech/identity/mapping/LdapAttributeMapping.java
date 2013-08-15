@@ -4,6 +4,7 @@
 package com.l7tech.identity.mapping;
 
 import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.UsersOrGroups;
 import com.l7tech.objectmodel.AttributeHeader;
 
@@ -20,10 +21,10 @@ public class LdapAttributeMapping extends IdentityMapping {
     }
 
     public LdapAttributeMapping() {
-        super(null, IdentityProviderConfig.DEFAULT_OID, UsersOrGroups.USERS);
+        super(null, IdentityProviderConfig.DEFAULT_GOID, UsersOrGroups.USERS);
     }
 
-    public LdapAttributeMapping(AttributeConfig parent, long providerOid, UsersOrGroups uog) {
+    public LdapAttributeMapping(AttributeConfig parent, Goid providerOid, UsersOrGroups uog) {
         super(parent, providerOid, uog);
     }
 }

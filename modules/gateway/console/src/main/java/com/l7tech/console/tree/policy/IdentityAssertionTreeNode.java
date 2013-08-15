@@ -8,6 +8,7 @@ import com.l7tech.gateway.common.admin.IdentityAdmin;
 import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.assertion.AssertionUtils;
 import com.l7tech.util.ExceptionUtils;
@@ -39,10 +40,10 @@ public abstract class IdentityAssertionTreeNode<AT extends IdentityAssertion> ex
 
     protected String idProviderName() {
         if (provName == null) {
-            long providerid = assertion.getIdentityProviderOid();
+            Goid providerid = assertion.getIdentityProviderOid();
             IdentityProviderConfig cfg;
             try {
-                if (providerid == IdentityProviderConfig.DEFAULT_OID)
+                if (Goid.isDefault(providerid))
                     provName = NA;
                 else {
                     cfg = getIdentityAdmin().findIdentityProviderConfigByID(providerid);

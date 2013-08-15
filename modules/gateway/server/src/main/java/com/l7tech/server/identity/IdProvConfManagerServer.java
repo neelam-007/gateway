@@ -9,7 +9,7 @@ import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.IdentityProviderType;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
-import com.l7tech.server.HibernateEntityManager;
+import com.l7tech.server.HibernateGoidEntityManager;
 import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.server.util.JaasUtils;
 import com.l7tech.util.ConfigFactory;
@@ -28,7 +28,7 @@ import static com.l7tech.objectmodel.EntityType.*;
  * @author flascelles
  */
 public class IdProvConfManagerServer
-    extends HibernateEntityManager<IdentityProviderConfig, EntityHeader>
+    extends HibernateGoidEntityManager<IdentityProviderConfig, EntityHeader>
     implements IdentityProviderConfigManager
 {
     @SuppressWarnings({ "FieldNameHidesFieldInSuperclass" })
@@ -43,7 +43,7 @@ public class IdProvConfManagerServer
     }
 
     @Override
-    public long save(IdentityProviderConfig identityProviderConfig) throws SaveException {
+    public Goid save(IdentityProviderConfig identityProviderConfig) throws SaveException {
 
         // For the moment don't allow the name etc to be changed
         if (identityProviderConfig.type() == IdentityProviderType.INTERNAL) {
@@ -74,8 +74,8 @@ public class IdProvConfManagerServer
     }
 
     @Override
-    public void delete( long oid ) throws DeleteException, FindException {
-        findAndDelete( oid );
+    public void delete( Goid goid ) throws DeleteException, FindException {
+        findAndDelete( goid );
     }
 
     @Override
@@ -119,8 +119,8 @@ public class IdProvConfManagerServer
     }
 
     @Override
-    public void deleteRoles( final long entityOid ) throws DeleteException {
-        roleManager.deleteEntitySpecificRoles(ID_PROVIDER_CONFIG, entityOid);
+    public void deleteRoles( final Goid entityGoid ) throws DeleteException {
+        roleManager.deleteEntitySpecificRoles(ID_PROVIDER_CONFIG, entityGoid);
     }
 
     // ************************************************
@@ -131,7 +131,7 @@ public class IdProvConfManagerServer
         EntityHeader out = new EntityHeader();
         out.setDescription(cfg.getDescription());
         out.setName(cfg.getName());
-        out.setOid(cfg.getOid());
+        out.setGoid(cfg.getGoid());
         out.setType(EntityType.ID_PROVIDER_CONFIG);
         return out;
     }
@@ -150,7 +150,7 @@ public class IdProvConfManagerServer
     private void addManageProviderRole(IdentityProviderConfig config) throws SaveException {
         User currentUser = JaasUtils.getCurrentUser();
 
-        String name = MessageFormat.format(IdentityAdmin.ROLE_NAME_PATTERN, config.getName(), config.getOid());
+        String name = MessageFormat.format(IdentityAdmin.ROLE_NAME_PATTERN, config.getName(), config.getGoid());
 
         logger.info("Creating new Role: " + name);
 
@@ -178,7 +178,7 @@ public class IdProvConfManagerServer
         newRole.addEntityPermission(OperationType.READ, SSG_KEYSTORE, null);
 
         newRole.setEntityType(ID_PROVIDER_CONFIG);
-        newRole.setEntityOid(config.getOid());
+        newRole.setEntityGoid(config.getGoid());
         newRole.setDescription("Users assigned to the {0} role have the ability to read, update and delete the {1} provider, and create, search, update and delete its users and groups.");
 
         // Assignees will need to search TrustedCerts if this is a FIP

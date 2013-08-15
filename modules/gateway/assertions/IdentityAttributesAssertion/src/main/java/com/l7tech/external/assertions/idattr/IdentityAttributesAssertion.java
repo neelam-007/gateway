@@ -3,6 +3,7 @@ package com.l7tech.external.assertions.idattr;
 import com.l7tech.identity.mapping.*;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.UsersOrGroups;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
@@ -11,6 +12,7 @@ import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.wsp.*;
+import com.l7tech.util.GoidUpgradeMapper;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -18,7 +20,7 @@ import java.util.List;
 
 public class IdentityAttributesAssertion extends Assertion implements SetsVariables, UsesEntities {
     private String variablePrefix;
-    private long identityProviderOid;
+    private Goid identityProviderOid;
     private IdentityMapping[] lookupAttributes;
 
     public static final String DEFAULT_VAR_PREFIX = "authenticatedUser";
@@ -31,18 +33,26 @@ public class IdentityAttributesAssertion extends Assertion implements SetsVariab
         this.variablePrefix = variablePrefix;
     }
 
-    public long getIdentityProviderOid() {
+    public Goid getIdentityProviderOid() {
         return identityProviderOid;
     }
 
-    public void setIdentityProviderOid(long identityProviderOid) {
+    public void setIdentityProviderOid(Goid identityProviderOid) {
         this.identityProviderOid = identityProviderOid;
+    }
+
+    // For backward compat while parsing pre-GOID policies.  Not needed for new assertions.
+    @Deprecated
+    public void setIdentityProviderOid( long identityProviderOid ) {
+        this.identityProviderOid = (identityProviderOid == -2) ?
+                new Goid(0,-2L):
+                GoidUpgradeMapper.mapOid(EntityType.ID_PROVIDER_CONFIG, identityProviderOid);
     }
 
     @Migration(mapName = MigrationMappingSelection.REQUIRED, resolver = PropertyResolver.Type.ASSERTION)
     @Override
     public EntityHeader[] getEntitiesUsed() {
-        if(identityProviderOid > 0L) {
+        if(identityProviderOid!=null || !Goid.isDefault(identityProviderOid)) {
             return new EntityHeader[] {new EntityHeader(identityProviderOid, EntityType.ID_PROVIDER_CONFIG, null, null)};
         } else {
             return new EntityHeader[0];
@@ -51,10 +61,11 @@ public class IdentityAttributesAssertion extends Assertion implements SetsVariab
 
     @Override
     public void replaceEntity(EntityHeader oldEntityHeader, EntityHeader newEntityHeader) {
-        if(oldEntityHeader.getType().equals(EntityType.ID_PROVIDER_CONFIG) && oldEntityHeader.getOid() == identityProviderOid &&
+        if(oldEntityHeader.getType().equals(EntityType.ID_PROVIDER_CONFIG) &&
+                oldEntityHeader.getGoid().equals(identityProviderOid) &&
                 newEntityHeader.getType().equals(EntityType.ID_PROVIDER_CONFIG))
         {
-            identityProviderOid = newEntityHeader.getOid();
+            identityProviderOid = newEntityHeader.getGoid();
         }
     }
 

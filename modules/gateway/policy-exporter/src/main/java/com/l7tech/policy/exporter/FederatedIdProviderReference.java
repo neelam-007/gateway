@@ -4,14 +4,10 @@ import com.l7tech.common.io.XmlUtil;
 import com.l7tech.identity.fed.FederatedGroup;
 import com.l7tech.identity.fed.FederatedUser;
 import com.l7tech.identity.fed.VirtualGroup;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.IdentityHeader;
+import com.l7tech.objectmodel.*;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
-import com.l7tech.util.Charsets;
-import com.l7tech.util.HexUtils;
-import com.l7tech.util.InvalidDocumentFormatException;
+import com.l7tech.util.*;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.w3c.dom.Text;
@@ -47,7 +43,7 @@ public class FederatedIdProviderReference extends IdProviderReference {
     private HashMap<String, String> userUpdateMap = new HashMap<String, String>();
     private HashMap<String, String> groupUpdateMap = new HashMap<String, String>();
 
-    public FederatedIdProviderReference(final ExternalReferenceFinder finder, long providerId) {
+    public FederatedIdProviderReference(final ExternalReferenceFinder finder, Goid providerId) {
         super(finder, providerId);
     }
 
@@ -81,9 +77,22 @@ public class FederatedIdProviderReference extends IdProviderReference {
             throw new InvalidDocumentFormatException("Expecting element of name " + REF_EL_NAME);
         }
         FederatedIdProviderReference output = new FederatedIdProviderReference(context);
-        String val = getParamFromEl(el, OID_EL_NAME);
+        String val = getParamFromEl(el, OLD_OID_EL_NAME);
         if (val != null) {
-            output.providerId = Long.parseLong(val);
+            try {
+                output.providerId = GoidUpgradeMapper.mapOid(EntityType.ID_PROVIDER_CONFIG, Long.parseLong(val));
+            } catch (NumberFormatException nfe) {
+                output.providerId = GoidEntity.DEFAULT_GOID;
+            }
+        }
+
+        val = getParamFromEl(el, GOID_EL_NAME);
+        if (val != null) {
+            try {
+                output.providerId = new Goid(val);
+            } catch (IllegalArgumentException e) {
+                throw new InvalidDocumentFormatException("Invalid identity provider goid: " + ExceptionUtils.getMessage(e), e);
+            }
         }
         output.providerName = getParamFromEl(el, NAME_EL_NAME);
         String b64edProps = getParamFromEl(el, PROPS_EL_NAME);
@@ -103,9 +112,9 @@ public class FederatedIdProviderReference extends IdProviderReference {
                 Element groupElement = (Element)groupElements.item(i);
 
                 FederatedGroup group = new FederatedGroup();
-                val = getParamFromEl(groupElement, OID_EL_NAME);
+                val = getParamFromEl(groupElement, GOID_EL_NAME);
                 if(val != null) {
-                    group.setOid(Long.parseLong(val));
+                    group.setGoid(Goid.parseGoid(val));
                 }
 
                 val = getParamFromEl(groupElement, NAME_EL_NAME);
@@ -140,9 +149,9 @@ public class FederatedIdProviderReference extends IdProviderReference {
                 Element groupElement = (Element)groupElements.item(i);
 
                 VirtualGroup group = new VirtualGroup();
-                val = getParamFromEl(groupElement, OID_EL_NAME);
+                val = getParamFromEl(groupElement, GOID_EL_NAME);
                 if(val != null) {
-                    group.setOid(Long.parseLong(val));
+                    group.setGoid(Goid.parseGoid(val));
                 }
 
                 val = getParamFromEl(groupElement, NAME_EL_NAME);
@@ -173,9 +182,9 @@ public class FederatedIdProviderReference extends IdProviderReference {
                 Element userElement = (Element)userElements.item(i);
 
                 FederatedUser user = new FederatedUser();
-                val = getParamFromEl(userElement, OID_EL_NAME);
+                val = getParamFromEl(userElement, GOID_EL_NAME);
                 if(val != null) {
-                    user.setOid(Long.parseLong(val));
+                    user.setGoid(Goid.parseGoid(val));
                 }
 
                 val = getParamFromEl(userElement, NAME_EL_NAME);
@@ -231,8 +240,8 @@ public class FederatedIdProviderReference extends IdProviderReference {
         Element refEl = referencesParentElement.getOwnerDocument().createElement(REF_EL_NAME);
         setTypeAttribute( refEl );
         referencesParentElement.appendChild(refEl);
-        Element oidEl = referencesParentElement.getOwnerDocument().createElement(OID_EL_NAME);
-        Text txt = XmlUtil.createTextNode(referencesParentElement, Long.toString(providerId));
+        Element oidEl = referencesParentElement.getOwnerDocument().createElement(GOID_EL_NAME);
+        Text txt = XmlUtil.createTextNode(referencesParentElement, Goid.toString(providerId));
         oidEl.appendChild(txt);
         refEl.appendChild(oidEl);
         if ( providerName != null ) {
@@ -266,7 +275,7 @@ public class FederatedIdProviderReference extends IdProviderReference {
 
                 Element groupEl = referencesParentElement.getOwnerDocument().createElement(isVirtual ? VIRTUAL_GROUP_EL_NAME : GROUP_EL_NAME);
 
-                appendStringValueElement(OID_EL_NAME, group.getId(), referencesParentElement, groupEl);
+                appendStringValueElement(GOID_EL_NAME, group.getId(), referencesParentElement, groupEl);
                 appendStringValueElement(NAME_EL_NAME, group.getName(), referencesParentElement, groupEl);
                 appendStringValueElement(DESCRIPTION_EL_NAME, group.getDescription(), referencesParentElement, groupEl);
 
@@ -297,7 +306,7 @@ public class FederatedIdProviderReference extends IdProviderReference {
                 FederatedUser user = (FederatedUser) getFinder().findUserByID(providerId, userHeader.getStrId());
                 Element userEl = referencesParentElement.getOwnerDocument().createElement(USER_EL_NAME);
 
-                appendStringValueElement(OID_EL_NAME, user.getId(), referencesParentElement, userEl);
+                appendStringValueElement(GOID_EL_NAME, user.getId(), referencesParentElement, userEl);
                 appendStringValueElement(NAME_EL_NAME, user.getName(), referencesParentElement, userEl);
                 appendStringValueElement(USER_SUBJECT_DN_EL_NAME, user.getSubjectDn(), referencesParentElement, userEl);
                 appendStringValueElement(USER_LOGIN_EL_NAME, user.getLogin(), referencesParentElement, userEl);

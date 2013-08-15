@@ -1,5 +1,6 @@
 package com.l7tech.server.event;
 
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.InetAddressUtil;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.User;
@@ -27,7 +28,7 @@ public class AdminInfo {
     public static final String LOCALHOST_IP = InetAddressUtil.getLocalHostAddress();
     public static final String LOCALHOST_SUBJECT = "localsystem";
 
-    public AdminInfo(String login, String id, long ipOid, String ip, Subject subject) {
+    public AdminInfo(String login, String id, Goid ipOid, String ip, Subject subject) {
         this.ip = ip;
         this.id = id;
         this.identityProviderOid = ipOid;
@@ -37,7 +38,7 @@ public class AdminInfo {
 
     public final String login;
     public final String id;
-    public final long identityProviderOid;
+    public final Goid identityProviderOid;
     public final String ip;
     private final Subject subject;
 
@@ -55,7 +56,7 @@ public class AdminInfo {
         String login = null;
         String uniqueId = null;
         String address;
-        long providerOid = IdentityProviderConfig.DEFAULT_OID;
+        Goid providerOid = IdentityProviderConfig.DEFAULT_GOID;
         try {
             address = RemoteUtils.getClientHost();
             clientSubject = Subject.getSubject(AccessController.getContext());

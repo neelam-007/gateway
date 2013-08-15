@@ -2,6 +2,7 @@ package com.l7tech.server;
 
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.security.xml.SecurityTokenResolver;
 import com.l7tech.server.identity.AuthenticatingIdentityProvider;
 import com.l7tech.server.identity.IdentityProviderFactory;
@@ -70,7 +71,7 @@ public class IdentityProviderSecurityTokenResolver extends SecurityTokenResolver
     private static final Logger logger = Logger.getLogger(IdentityProviderSecurityTokenResolver.class.getName());
 
     private final IdentityProviderFactory identityProviderFactory;
-    private volatile Collection<Long> providers = Collections.emptyList();
+    private volatile Collection<Goid> providers = Collections.emptyList();
 
     private synchronized void initiateLDAPGetters() {
         buildAuthenticatingProviderList();
@@ -85,11 +86,11 @@ public class IdentityProviderSecurityTokenResolver extends SecurityTokenResolver
 
     private void buildAuthenticatingProviderList() {
         logger.fine("Rebuilding the list of identity providers that might contain certs");
-        List<Long> tmp = new ArrayList<Long>();
+        List<Goid> tmp = new ArrayList<Goid>();
         try {
             for (IdentityProvider provider : identityProviderFactory.findAllIdentityProviders()) {
                 if (provider instanceof AuthenticatingIdentityProvider) {
-                    tmp.add(provider.getConfig().getOid());
+                    tmp.add(provider.getConfig().getGoid());
                 }
             }
 
@@ -99,7 +100,7 @@ public class IdentityProviderSecurityTokenResolver extends SecurityTokenResolver
         }
     }
 
-    private AuthenticatingIdentityProvider getProvider( final long oid ) {
+    private AuthenticatingIdentityProvider getProvider( final Goid oid ) {
         AuthenticatingIdentityProvider authProvider = null;
 
         try {
@@ -117,7 +118,7 @@ public class IdentityProviderSecurityTokenResolver extends SecurityTokenResolver
     private X509Certificate doLookup( @Nullable final X500Principal issuer, @Nullable final BigInteger serial, @Nullable final String ski, @Nullable final String thumbprint, @Nullable final X500Principal subject ) {
         X509Certificate certificate = null;
 
-        for (Long providerOid : providers) {
+        for (Goid providerOid : providers) {
             AuthenticatingIdentityProvider provider = getProvider(providerOid);
             if ( provider != null ) {
                 try {

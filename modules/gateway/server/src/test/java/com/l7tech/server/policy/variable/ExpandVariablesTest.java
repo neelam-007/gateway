@@ -10,6 +10,7 @@ import com.l7tech.gateway.common.audit.*;
 import com.l7tech.identity.UserBean;
 import com.l7tech.identity.ldap.LdapUser;
 import com.l7tech.message.*;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.AuditDetailAssertion;
 import com.l7tech.policy.assertion.RequestXpathAssertion;
@@ -440,7 +441,7 @@ public class ExpandVariablesTest {
     }
 
     public void testCertIssuerDnToString() throws Exception {
-        LdapUser u = new LdapUser( 1234L, "cn=Alice,dc=l7tech,dc=com", "Alice");
+        LdapUser u = new LdapUser( new Goid(0,1234), "cn=Alice,dc=l7tech,dc=com", "Alice");
         u.setCertificate(TestDocuments.getWssInteropAliceCert());
         Map<String, Object> vars = new TreeMap<String, Object>(String.CASE_INSENSITIVE_ORDER);
         vars.put("authenticatedUser", u);
@@ -448,7 +449,7 @@ public class ExpandVariablesTest {
     }
 
     public void testCertIssuerDnName() throws Exception {
-        LdapUser u = new LdapUser( 1234L, "cn=Alice,dc=l7tech,dc=com", "Alice");
+        LdapUser u = new LdapUser( new Goid(0,1234), "cn=Alice,dc=l7tech,dc=com", "Alice");
         u.setCertificate(TestDocuments.getWssInteropAliceCert());
         Map<String, Object> vars = new TreeMap<String, Object>(String.CASE_INSENSITIVE_ORDER);
         vars.put("authenticatedUser", u);
@@ -456,7 +457,7 @@ public class ExpandVariablesTest {
     }
 
     public void testCertIssuerAttribute() throws Exception {
-        LdapUser u = new LdapUser( 1234L, "cn=Alice,dc=l7tech,dc=com", "Alice");
+        LdapUser u = new LdapUser( new Goid(0,1234), "cn=Alice,dc=l7tech,dc=com", "Alice");
         u.setCertificate(TestDocuments.getWssInteropAliceCert());
         Map<String, Object> vars = new TreeMap<String, Object>(String.CASE_INSENSITIVE_ORDER);
         vars.put("authenticatedUser", u);
@@ -464,7 +465,7 @@ public class ExpandVariablesTest {
     }
 
     public void testCertSubjectAttribute() throws Exception {
-        LdapUser u = new LdapUser( 1234L, "cn=Alice,dc=l7tech,dc=com", "Alice");
+        LdapUser u = new LdapUser( new Goid(0,1234), "cn=Alice,dc=l7tech,dc=com", "Alice");
         u.setCertificate(TestDocuments.getWssInteropAliceCert());
         Map<String, Object> vars = new TreeMap<String, Object>(String.CASE_INSENSITIVE_ORDER);
         vars.put("authenticatedUser", u);
@@ -472,7 +473,7 @@ public class ExpandVariablesTest {
     }
 
     public void testMixedCaseCertAttributeName() throws Exception {
-        LdapUser u = new LdapUser( 1234L, "cn=Alice,dc=l7tech,dc=com", "Alice");
+        LdapUser u = new LdapUser( new Goid(0,1234), "cn=Alice,dc=l7tech,dc=com", "Alice");
         u.setCertificate(TestDocuments.getWssInteropAliceCert());
         Map<String, Object> vars = new TreeMap<String, Object>(String.CASE_INSENSITIVE_ORDER);
         vars.put("authenticatedUser", u);
@@ -480,7 +481,7 @@ public class ExpandVariablesTest {
     }
 
     public void testMultivaluedDcAttributes() throws Exception {
-        LdapUser u = new LdapUser( 1234L, "cn=Alice,dc=l7tech,dc=com", "Alice");
+        LdapUser u = new LdapUser( new Goid(0,1234), "cn=Alice,dc=l7tech,dc=com", "Alice");
         u.setCertificate(CertUtils.decodeFromPEM(A_CERT));
         Map<String, Object> vars = new TreeMap<String, Object>(String.CASE_INSENSITIVE_ORDER);
         vars.put("authenticatedUser", u);
@@ -489,7 +490,7 @@ public class ExpandVariablesTest {
     }
 
     public void testMultivaluedDcBttributes() throws Exception {
-        LdapUser u = new LdapUser( 1234L, "cn=Alice,dc=l7tech,dc=com", "Alice");
+        LdapUser u = new LdapUser( new Goid(0,1234), "cn=Alice,dc=l7tech,dc=com", "Alice");
         u.setCertificate(CertUtils.decodeFromPEM(B_CERT));
         Map<String, Object> vars = new TreeMap<String, Object>(String.CASE_INSENSITIVE_ORDER);
         vars.put("authenticatedUser", u);

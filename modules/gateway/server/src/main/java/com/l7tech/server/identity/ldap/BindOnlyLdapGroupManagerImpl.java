@@ -31,12 +31,12 @@ public class BindOnlyLdapGroupManagerImpl implements BindOnlyLdapGroupManager {
     }
 
     @Override
-    public void deleteAll(long ipoid) throws DeleteException, ObjectNotFoundException {
+    public void deleteAll(Goid ipoid) throws DeleteException, ObjectNotFoundException {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public void deleteAllVirtual(long ipoid) throws DeleteException, ObjectNotFoundException {
+    public void deleteAllVirtual(Goid ipoid) throws DeleteException, ObjectNotFoundException {
         throw new UnsupportedOperationException();
     }
 

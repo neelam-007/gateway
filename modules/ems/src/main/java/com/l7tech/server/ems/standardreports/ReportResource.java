@@ -263,7 +263,7 @@ public class ReportResource extends SecureResource {
                 StandardReport report = manager.findByPrimaryKey( Long.parseLong( reportId ) );
                 if ( report != null ) {
                     if ( user.getId().equals( report.getUserId() ) &&
-                         user.getProviderId() == report.getProvider() ) {
+                         user.getProviderId().equals(report.getProvider())) {
                         owner = true;
                     }
                 }

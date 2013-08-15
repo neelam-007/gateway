@@ -9,10 +9,7 @@ import com.l7tech.identity.PersistentUser;
 import com.l7tech.identity.ValidationException;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.identity.cert.CertEntryRow;
-import com.l7tech.objectmodel.EntityHeaderSet;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.IdentityHeader;
+import com.l7tech.objectmodel.*;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
@@ -115,9 +112,9 @@ public abstract class PersistentIdentityProviderImpl<UT extends PersistentUser, 
     private X509Certificate processCertificateSearch( final List<CertEntryRow> rows ) throws FindException{
         X509Certificate got = null;
 
-        final long providerOid = getConfig().getOid();
+        final Goid providerOid = getConfig().getGoid();
         for (CertEntryRow row : rows) {
-            if (row.getProvider() == providerOid) {
+            if (row.getProvider().equals(providerOid)) {
                 if (got != null) throw new FindException("Found multiple matching certificates");
                 got = row.getCertificate();
             }

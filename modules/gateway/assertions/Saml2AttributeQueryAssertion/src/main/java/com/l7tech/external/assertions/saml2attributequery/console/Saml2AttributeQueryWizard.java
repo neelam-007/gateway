@@ -3,6 +3,7 @@ package com.l7tech.external.assertions.saml2attributequery.console;
 import com.l7tech.console.panels.Wizard;
 import com.l7tech.external.assertions.saml2attributequery.Saml2AttributeQueryAssertion;
 import com.l7tech.external.assertions.saml2attributequery.console.Saml2AttributeQueryAttributeListPanel;
+import com.l7tech.objectmodel.Goid;
 
 import java.awt.*;
 
@@ -34,7 +35,7 @@ public class Saml2AttributeQueryWizard extends Wizard {
     public static void main(String[] args) {
         Frame f = new Frame();
         Saml2AttributeQueryAssertion assertion = new Saml2AttributeQueryAssertion();
-        assertion.setLdapProviderOid(2);
+        assertion.setLdapProviderOid(new Goid(0,2));
         Saml2AttributeQueryWizard wizard = new Saml2AttributeQueryWizard(f, assertion);
 
         wizard.setVisible(true);

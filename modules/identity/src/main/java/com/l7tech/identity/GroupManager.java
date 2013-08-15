@@ -13,8 +13,8 @@ public interface GroupManager<UT extends User, GT extends Group> {
     GT findByPrimaryKey( String identifier ) throws FindException;
     void delete(GT group) throws DeleteException, ObjectNotFoundException;
     void delete(String identifier) throws DeleteException, ObjectNotFoundException;
-    void deleteAll( long ipoid ) throws DeleteException, ObjectNotFoundException;
-    void deleteAllVirtual( long ipoid ) throws DeleteException, ObjectNotFoundException;
+    void deleteAll( Goid ipoid ) throws DeleteException, ObjectNotFoundException;
+    void deleteAllVirtual( Goid ipoid ) throws DeleteException, ObjectNotFoundException;
     String saveGroup(GT group) throws SaveException;
     void update(GT group) throws UpdateException, FindException;
     String save(GT group, Set<IdentityHeader> userHeaders ) throws SaveException;

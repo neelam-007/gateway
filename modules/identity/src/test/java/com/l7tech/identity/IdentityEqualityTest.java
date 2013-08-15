@@ -7,6 +7,7 @@ import com.l7tech.identity.internal.InternalGroup;
 import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.identity.ldap.LdapGroup;
 import com.l7tech.identity.ldap.LdapUser;
+import com.l7tech.objectmodel.Goid;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -117,11 +118,11 @@ public class IdentityEqualityTest {
     }
 
     private LdapUser ldapBob() {
-        return new LdapUser(1234, null, "bob");
+        return new LdapUser(new Goid(0,1234), null, "bob");
     }
 
     private LdapGroup ldapDevelopers() {
-        return new LdapGroup(1234, null, "developers");
+        return new LdapGroup(new Goid(0,1234), null, "developers");
     }
 
     private InternalUser internalBob() {

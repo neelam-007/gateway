@@ -1,17 +1,19 @@
 package com.l7tech.security.token;
 
+import com.l7tech.objectmodel.Goid;
+
 /**
  * Security token that represents an internal session.
  */
 public class SessionSecurityToken implements SecurityToken {
 
     private final SecurityTokenType type;
-    private final long providerId;
+    private final Goid providerId;
     private final String userId;
     private final String login;
 
     public SessionSecurityToken( final SecurityTokenType type,
-                                 final long providerId,
+                                 final Goid providerId,
                                  final String userId,
                                  final String login ) {
         this.type = type;
@@ -20,7 +22,7 @@ public class SessionSecurityToken implements SecurityToken {
         this.login = login;
     }
 
-    public long getProviderId() {
+    public Goid getProviderId() {
         return providerId;
     }
 

@@ -63,7 +63,7 @@ public class InternalUser extends PersistentUser {
     }
 
     public InternalUser(String login) {
-        super(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID, login);
+        super(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_GOID, login);
     }
 
     /**
@@ -72,7 +72,7 @@ public class InternalUser extends PersistentUser {
     @Override
     public void copyFrom( User objToCopy ) {
         InternalUser imp = (InternalUser)objToCopy;
-        setOid(imp.getOid());
+        setGoid(imp.getGoid());
         setName(imp.getName());
         setProviderId(imp.getProviderId());
         setLogin(imp.getLogin());

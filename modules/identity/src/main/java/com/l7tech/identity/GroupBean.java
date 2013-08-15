@@ -1,5 +1,6 @@
 package com.l7tech.identity;
 
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.PropertyResolver;
 import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
@@ -9,7 +10,7 @@ import java.util.Map;
 import java.util.HashMap;
 
 public class GroupBean implements Group, Serializable {
-    public GroupBean(long providerId, String _name) {
+    public GroupBean(Goid providerId, String _name) {
         this.providerId = providerId;
         this.name = _name;
     }
@@ -50,7 +51,7 @@ public class GroupBean implements Group, Serializable {
     }
 
     @Migration(mapName = NONE, mapValue = NONE, export = false, resolver = PropertyResolver.Type.ID_PROVIDER_CONFIG)
-    public long getProviderId() {
+    public Goid getProviderId() {
         return providerId;
     }
 
@@ -82,7 +83,7 @@ public class GroupBean implements Group, Serializable {
 
         GroupBean groupBean = (GroupBean) o;
 
-        if (providerId != groupBean.providerId) return false;
+        if (providerId != null ? !providerId.equals(groupBean.providerId) : groupBean.providerId != null) return false;
         if (description != null ? !description.equals(groupBean.description) : groupBean.description != null)
             return false;
         if (name != null ? !name.equals(groupBean.name) : groupBean.name != null) return false;
@@ -101,13 +102,13 @@ public class GroupBean implements Group, Serializable {
     public int hashCode() {
         int result;
         result = (name != null ? name.hashCode() : 0);
+        result = 31 * result + (providerId != null ? providerId.hashCode() : 0);
         result = 31 * result + (description != null ? description.hashCode() : 0);
-        result = 31 * result + (int) (providerId ^ (providerId >>> 32));
         result = 31 * result + (properties != null ? properties.hashCode() : 0);
         return result;
     }
 
-    public void setProviderId( long providerId ) {
+    public void setProviderId( Goid providerId ) {
         this.providerId = providerId;
     }
 
@@ -116,7 +117,7 @@ public class GroupBean implements Group, Serializable {
     private String uniqueId;
     private String name;
     private String description;
-    private long providerId;
+    private Goid providerId;
     private Map<String, String> properties;
     private int version;
 }

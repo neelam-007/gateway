@@ -525,7 +525,7 @@ public class EntityNameResolverTest {
     @Test
     public void getNameForIdentityProviderRole() throws Exception {
         final IdentityProviderConfig provider = new IdentityProviderConfig();
-        provider.setOid(OID);
+        provider.setGoid(GOID);
         provider.setName(NAME);
         final Role role = createRole("Manage test Identity Provider (#1234)", provider);
         assertEquals("Manage test Identity Provider", resolver.getNameForEntity(role, true));

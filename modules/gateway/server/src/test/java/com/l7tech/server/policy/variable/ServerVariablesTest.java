@@ -17,6 +17,7 @@ import com.l7tech.identity.ldap.LdapUser;
 import com.l7tech.message.HttpServletRequestKnob;
 import com.l7tech.message.Message;
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.GoidEntity;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyHeader;
 import com.l7tech.policy.PolicyType;
@@ -230,7 +231,7 @@ public class ServerVariablesTest {
 
     @Test
     public void testNullDn() throws Exception {
-        PolicyEnforcementContext context = context(new LdapUser(-3823, null, null));
+        PolicyEnforcementContext context = context(new LdapUser(new Goid(0,-3823), null, null));
         expandAndCheck(context, "${request.authenticatedUser}", "");
         expandAndCheck(context, "${request.authenticatedUsers}", "");
         expandAndCheck(context, "${request.authenticatedDn}", "");
@@ -239,7 +240,7 @@ public class ServerVariablesTest {
 
     @Test
     public void testNonNumericSuffix() throws Exception {
-        PolicyEnforcementContext context = context(new LdapUser(-3823, "cn=blah", "blah"));
+        PolicyEnforcementContext context = context(new LdapUser(new Goid(0,-3823), "cn=blah", "blah"));
         expandAndCheck(context, "${request.authenticatedUser.bogus}", "");
         expandAndCheck(context, "${request.authenticatedUsers.bogus}", "");
         expandAndCheck(context, "${request.authenticatedDn.bogus}", "");
@@ -249,9 +250,9 @@ public class ServerVariablesTest {
     @Test
     public void testOutOfBoundsSuffix() throws Exception {
         PolicyEnforcementContext context = context();
-        context.getDefaultAuthenticationContext().addAuthenticationResult(new AuthenticationResult(new LdapUser(-3823, "cn=test\\+1, ou=foobar, o=bling", "test+1"), new OpaqueSecurityToken()));
-        context.getDefaultAuthenticationContext().addAuthenticationResult(new AuthenticationResult(new LdapUser(-3824, "cn=test\\+2", "test+2"), new OpaqueSecurityToken()));
-        context.getDefaultAuthenticationContext().addAuthenticationResult(new AuthenticationResult(new LdapUser(-3825, "cn=test\\+3", "test+3"), new OpaqueSecurityToken()));
+        context.getDefaultAuthenticationContext().addAuthenticationResult(new AuthenticationResult(new LdapUser(new Goid(0,-3823), "cn=test\\+1, ou=foobar, o=bling", "test+1"), new OpaqueSecurityToken()));
+        context.getDefaultAuthenticationContext().addAuthenticationResult(new AuthenticationResult(new LdapUser(new Goid(0,-3824), "cn=test\\+2", "test+2"), new OpaqueSecurityToken()));
+        context.getDefaultAuthenticationContext().addAuthenticationResult(new AuthenticationResult(new LdapUser(new Goid(0,-3825), "cn=test\\+3", "test+3"), new OpaqueSecurityToken()));
         expandAndCheck(context, "${request.authenticatedUser}", "test+3");
         expandAndCheck(context, "${request.authenticatedUser.0}", "test+1");
         expandAndCheck(context, "${request.authenticatedUser.1}", "test+2");
@@ -263,7 +264,7 @@ public class ServerVariablesTest {
 
     @Test
     public void testEmptyDn() throws Exception {
-        PolicyEnforcementContext context = context(new LdapUser(-3823, "", null));
+        PolicyEnforcementContext context = context(new LdapUser(new Goid(0,-3823), "", null));
         expandAndCheck(context, "${request.authenticatedUser}", "");
         expandAndCheck(context, "${request.authenticatedUsers}", "");
         expandAndCheck(context, "${request.authenticatedDn}", "");
@@ -272,7 +273,7 @@ public class ServerVariablesTest {
 
     @Test
     public void testEscapedDnUserName() throws Exception {
-        PolicyEnforcementContext context = context(new LdapUser(-3823, "cn=test\\+1, ou=foobar, o=bling", "test+1"));
+        PolicyEnforcementContext context = context(new LdapUser(new Goid(0,-3823), "cn=test\\+1, ou=foobar, o=bling", "test+1"));
         expandAndCheck(context, "${request.authenticatedUser}", "test+1");
         expandAndCheck(context, "${request.authenticatedUsers}", "test+1");
     }
@@ -280,9 +281,9 @@ public class ServerVariablesTest {
     @Test
     public void testMultipleUserNames() throws Exception {
         PolicyEnforcementContext context = context();
-        context.getDefaultAuthenticationContext().addAuthenticationResult(new AuthenticationResult(new LdapUser(-3823, "cn=test\\+1, ou=foobar, o=bling", "test+1"), new OpaqueSecurityToken()));
-        context.getDefaultAuthenticationContext().addAuthenticationResult(new AuthenticationResult(new LdapUser(-3824, "cn=test\\+2", "test+2"), new OpaqueSecurityToken()));
-        context.getDefaultAuthenticationContext().addAuthenticationResult(new AuthenticationResult(new LdapUser(-3825, "cn=test\\+3", "test+3"), new OpaqueSecurityToken()));
+        context.getDefaultAuthenticationContext().addAuthenticationResult(new AuthenticationResult(new LdapUser(new Goid(0,-3823), "cn=test\\+1, ou=foobar, o=bling", "test+1"), new OpaqueSecurityToken()));
+        context.getDefaultAuthenticationContext().addAuthenticationResult(new AuthenticationResult(new LdapUser(new Goid(0,-3824), "cn=test\\+2", "test+2"), new OpaqueSecurityToken()));
+        context.getDefaultAuthenticationContext().addAuthenticationResult(new AuthenticationResult(new LdapUser(new Goid(0,-3825), "cn=test\\+3", "test+3"), new OpaqueSecurityToken()));
         expandAndCheck(context, "${request.authenticatedUser}", "test+3");
         expandAndCheck(context, "${request.authenticatedUser.0}", "test+1");
         expandAndCheck(context, "${request.authenticatedUser.1}", "test+2");
@@ -295,9 +296,9 @@ public class ServerVariablesTest {
     @Test
     public void testMultipleUserDns() throws Exception {
         PolicyEnforcementContext context = context();
-        context.getDefaultAuthenticationContext().addAuthenticationResult(new AuthenticationResult(new LdapUser(-3823, "cn=test1, ou=foobar, o=bling", "test1"), new OpaqueSecurityToken()));
-        context.getDefaultAuthenticationContext().addAuthenticationResult(new AuthenticationResult(new LdapUser(-3824, "cn=test2", "test2"), new OpaqueSecurityToken()));
-        context.getDefaultAuthenticationContext().addAuthenticationResult(new AuthenticationResult(new LdapUser(-3825, "cn=test3", "test3"), new OpaqueSecurityToken()));
+        context.getDefaultAuthenticationContext().addAuthenticationResult(new AuthenticationResult(new LdapUser(new Goid(0,-3823), "cn=test1, ou=foobar, o=bling", "test1"), new OpaqueSecurityToken()));
+        context.getDefaultAuthenticationContext().addAuthenticationResult(new AuthenticationResult(new LdapUser(new Goid(0,-3824), "cn=test2", "test2"), new OpaqueSecurityToken()));
+        context.getDefaultAuthenticationContext().addAuthenticationResult(new AuthenticationResult(new LdapUser(new Goid(0,-3825), "cn=test3", "test3"), new OpaqueSecurityToken()));
         expandAndCheck(context, "${request.authenticatedDn}", "cn=test3");
         expandAndCheck(context, "${request.authenticatedDn.0}", "cn=test1, ou=foobar, o=bling");
         expandAndCheck(context, "${request.authenticatedDn.1}", "cn=test2");
@@ -310,7 +311,7 @@ public class ServerVariablesTest {
     @Test
     @BugNumber(6813)
     public void testEscapedDnUserDn() throws Exception {
-        PolicyEnforcementContext context = context(new LdapUser(-3823, "cn=test\\+1, ou=foobar, o=bling", "test+1"));
+        PolicyEnforcementContext context = context(new LdapUser(new Goid(0,-3823), "cn=test\\+1, ou=foobar, o=bling", "test+1"));
         expandAndCheck(context, "${request.authenticatedDn}", "cn=test\\+1, ou=foobar, o=bling");
         expandAndCheck(context, "${request.authenticatedDns}", "cn=test\\+1, ou=foobar, o=bling");
     }
@@ -319,9 +320,9 @@ public class ServerVariablesTest {
     @BugNumber(6813)
     public void testMultipleUserDnsEscaped() throws Exception {
         PolicyEnforcementContext context = context();
-        context.getDefaultAuthenticationContext().addAuthenticationResult(new AuthenticationResult(new LdapUser(-3823, "cn=test\\+1, ou=foobar, o=bling", "test+1"), new OpaqueSecurityToken()));
-        context.getDefaultAuthenticationContext().addAuthenticationResult(new AuthenticationResult(new LdapUser(-3824, "cn=test\\+2", "test+2"), new OpaqueSecurityToken()));
-        context.getDefaultAuthenticationContext().addAuthenticationResult(new AuthenticationResult(new LdapUser(-3825, "cn=test\\+3", "test+3"), new OpaqueSecurityToken()));
+        context.getDefaultAuthenticationContext().addAuthenticationResult(new AuthenticationResult(new LdapUser(new Goid(0,-3823), "cn=test\\+1, ou=foobar, o=bling", "test+1"), new OpaqueSecurityToken()));
+        context.getDefaultAuthenticationContext().addAuthenticationResult(new AuthenticationResult(new LdapUser(new Goid(0,-3824), "cn=test\\+2", "test+2"), new OpaqueSecurityToken()));
+        context.getDefaultAuthenticationContext().addAuthenticationResult(new AuthenticationResult(new LdapUser(new Goid(0,-3825), "cn=test\\+3", "test+3"), new OpaqueSecurityToken()));
         expandAndCheck(context, "||${request.authenticatedDns|||}||", "||cn=test\\+1, ou=foobar, o=bling||cn=test\\+2||cn=test\\+3||");
         expandAndCheck(context, "${request.authenticatedDns}", "cn=test\\+1, ou=foobar, o=bling, cn=test\\+2, cn=test\\+3");
         expandAndCheck(context, "${request.authenticatedDns|, }", "cn=test\\+1, ou=foobar, o=bling, cn=test\\+2, cn=test\\+3");
@@ -348,7 +349,7 @@ public class ServerVariablesTest {
 
     @Test
     public void testResponseNullDn() throws Exception {
-        PolicyEnforcementContext context = responseContext(new LdapUser(-3823, null, null));
+        PolicyEnforcementContext context = responseContext(new LdapUser(new Goid(0,-3823), null, null));
         expandAndCheck(context, "${response.AuthenticatedUser}", "");
         expandAndCheck(context, "${response.AuthenticatedUser}", "");
         expandAndCheck(context, "${response.AuthenticatedUser}", "");
@@ -357,7 +358,7 @@ public class ServerVariablesTest {
 
     @Test
     public void testResponseNonNumericSuffix() throws Exception {
-        PolicyEnforcementContext context = responseContext(new LdapUser(-3823, "cn=blah", "blah"));
+        PolicyEnforcementContext context = responseContext(new LdapUser(new Goid(0,-3823), "cn=blah", "blah"));
         expandAndCheck(context, "${response.authenticatedUser.bogus}", "");
         expandAndCheck(context, "${response.authenticatedUsers.bogus}", "");
         expandAndCheck(context, "${response.authenticatedDn.bogus}", "");
@@ -367,9 +368,9 @@ public class ServerVariablesTest {
     @Test
     public void testResponseOutOfBoundsSuffix() throws Exception {
         PolicyEnforcementContext context = context();
-        context.getAuthenticationContext(context.getResponse()).addAuthenticationResult(new AuthenticationResult(new LdapUser(-3823, "cn=test\\+1, ou=foobar, o=bling", "test+1"), new OpaqueSecurityToken()));
-        context.getAuthenticationContext(context.getResponse()).addAuthenticationResult(new AuthenticationResult(new LdapUser(-3824, "cn=test\\+2", "test+2"), new OpaqueSecurityToken()));
-        context.getAuthenticationContext(context.getResponse()).addAuthenticationResult(new AuthenticationResult(new LdapUser(-3825, "cn=test\\+3", "test+3"), new OpaqueSecurityToken()));
+        context.getAuthenticationContext(context.getResponse()).addAuthenticationResult(new AuthenticationResult(new LdapUser(new Goid(0,-3823), "cn=test\\+1, ou=foobar, o=bling", "test+1"), new OpaqueSecurityToken()));
+        context.getAuthenticationContext(context.getResponse()).addAuthenticationResult(new AuthenticationResult(new LdapUser(new Goid(0,-3824), "cn=test\\+2", "test+2"), new OpaqueSecurityToken()));
+        context.getAuthenticationContext(context.getResponse()).addAuthenticationResult(new AuthenticationResult(new LdapUser(new Goid(0,-3825), "cn=test\\+3", "test+3"), new OpaqueSecurityToken()));
         expandAndCheck(context, "${response.authenticatedUser}", "test+3");
         expandAndCheck(context, "${response.authenticatedUser.0}", "test+1");
         expandAndCheck(context, "${response.authenticatedUser.1}", "test+2");
@@ -381,7 +382,7 @@ public class ServerVariablesTest {
 
     @Test
     public void testResponseEmptyDn() throws Exception {
-        PolicyEnforcementContext context = responseContext(new LdapUser(-3823, "", null));
+        PolicyEnforcementContext context = responseContext(new LdapUser(new Goid(0,-3823), "", null));
         expandAndCheck(context, "${response.authenticatedUser}", "");
         expandAndCheck(context, "${response.authenticatedUsers}", "");
         expandAndCheck(context, "${response.authenticatedDn}", "");
@@ -390,7 +391,7 @@ public class ServerVariablesTest {
 
     @Test
     public void testResponseEscapedDnUserName() throws Exception {
-        PolicyEnforcementContext context = responseContext(new LdapUser(-3823, "cn=test\\+1, ou=foobar, o=bling", "test+1"));
+        PolicyEnforcementContext context = responseContext(new LdapUser(new Goid(0,-3823), "cn=test\\+1, ou=foobar, o=bling", "test+1"));
         expandAndCheck(context, "${response.authenticatedUser}", "test+1");
         expandAndCheck(context, "${response.authenticatedUsers}", "test+1");
     }
@@ -398,9 +399,9 @@ public class ServerVariablesTest {
     @Test
     public void testResponseMultipleUserNames() throws Exception {
         PolicyEnforcementContext context = context();
-        context.getAuthenticationContext(context.getResponse()).addAuthenticationResult(new AuthenticationResult(new LdapUser(-3823, "cn=test\\+1, ou=foobar, o=bling", "test+1"), new OpaqueSecurityToken()));
-        context.getAuthenticationContext(context.getResponse()).addAuthenticationResult(new AuthenticationResult(new LdapUser(-3824, "cn=test\\+2", "test+2"), new OpaqueSecurityToken()));
-        context.getAuthenticationContext(context.getResponse()).addAuthenticationResult(new AuthenticationResult(new LdapUser(-3825, "cn=test\\+3", "test+3"), new OpaqueSecurityToken()));
+        context.getAuthenticationContext(context.getResponse()).addAuthenticationResult(new AuthenticationResult(new LdapUser(new Goid(0,-3823), "cn=test\\+1, ou=foobar, o=bling", "test+1"), new OpaqueSecurityToken()));
+        context.getAuthenticationContext(context.getResponse()).addAuthenticationResult(new AuthenticationResult(new LdapUser(new Goid(0,-3824), "cn=test\\+2", "test+2"), new OpaqueSecurityToken()));
+        context.getAuthenticationContext(context.getResponse()).addAuthenticationResult(new AuthenticationResult(new LdapUser(new Goid(0,-3825), "cn=test\\+3", "test+3"), new OpaqueSecurityToken()));
         expandAndCheck(context, "${response.authenticatedUser}", "test+3");
         expandAndCheck(context, "${response.authenticatedUser.0}", "test+1");
         expandAndCheck(context, "${response.authenticatedUser.1}", "test+2");
@@ -413,9 +414,9 @@ public class ServerVariablesTest {
     @Test
     public void testResponseMultipleUserDns() throws Exception {
         PolicyEnforcementContext context = context();
-        context.getAuthenticationContext(context.getResponse()).addAuthenticationResult(new AuthenticationResult(new LdapUser(-3823, "cn=test1, ou=foobar, o=bling", "test1"), new OpaqueSecurityToken()));
-        context.getAuthenticationContext(context.getResponse()).addAuthenticationResult(new AuthenticationResult(new LdapUser(-3824, "cn=test2", "test2"), new OpaqueSecurityToken()));
-        context.getAuthenticationContext(context.getResponse()).addAuthenticationResult(new AuthenticationResult(new LdapUser(-3825, "cn=test3", "test3"), new OpaqueSecurityToken()));
+        context.getAuthenticationContext(context.getResponse()).addAuthenticationResult(new AuthenticationResult(new LdapUser(new Goid(0,-3823), "cn=test1, ou=foobar, o=bling", "test1"), new OpaqueSecurityToken()));
+        context.getAuthenticationContext(context.getResponse()).addAuthenticationResult(new AuthenticationResult(new LdapUser(new Goid(0,-3824), "cn=test2", "test2"), new OpaqueSecurityToken()));
+        context.getAuthenticationContext(context.getResponse()).addAuthenticationResult(new AuthenticationResult(new LdapUser(new Goid(0,-3825), "cn=test3", "test3"), new OpaqueSecurityToken()));
         expandAndCheck(context, "${response.authenticatedDn}", "cn=test3");
         expandAndCheck(context, "${response.authenticatedDn.0}", "cn=test1, ou=foobar, o=bling");
         expandAndCheck(context, "${response.authenticatedDn.1}", "cn=test2");
@@ -427,7 +428,7 @@ public class ServerVariablesTest {
 
     @Test
     public void testResponseEscapedDnUserDn() throws Exception {
-        PolicyEnforcementContext context = responseContext(new LdapUser(-3823, "cn=test\\+1, ou=foobar, o=bling", "test+1"));
+        PolicyEnforcementContext context = responseContext(new LdapUser(new Goid(0,-3823), "cn=test\\+1, ou=foobar, o=bling", "test+1"));
         expandAndCheck(context, "${response.authenticatedDn}", "cn=test\\+1, ou=foobar, o=bling");
         expandAndCheck(context, "${response.authenticatedDns}", "cn=test\\+1, ou=foobar, o=bling");
     }
@@ -435,9 +436,9 @@ public class ServerVariablesTest {
     @Test
     public void testResponseMultipleUserDnsEscaped() throws Exception {
         PolicyEnforcementContext context = context();
-        context.getAuthenticationContext(context.getResponse()).addAuthenticationResult(new AuthenticationResult(new LdapUser(-3823, "cn=test\\+1, ou=foobar, o=bling", "test+1"), new OpaqueSecurityToken()));
-        context.getAuthenticationContext(context.getResponse()).addAuthenticationResult(new AuthenticationResult(new LdapUser(-3824, "cn=test\\+2", "test+2"), new OpaqueSecurityToken()));
-        context.getAuthenticationContext(context.getResponse()).addAuthenticationResult(new AuthenticationResult(new LdapUser(-3825, "cn=test\\+3", "test+3"), new OpaqueSecurityToken()));
+        context.getAuthenticationContext(context.getResponse()).addAuthenticationResult(new AuthenticationResult(new LdapUser(new Goid(0,-3823), "cn=test\\+1, ou=foobar, o=bling", "test+1"), new OpaqueSecurityToken()));
+        context.getAuthenticationContext(context.getResponse()).addAuthenticationResult(new AuthenticationResult(new LdapUser(new Goid(0,-3824), "cn=test\\+2", "test+2"), new OpaqueSecurityToken()));
+        context.getAuthenticationContext(context.getResponse()).addAuthenticationResult(new AuthenticationResult(new LdapUser(new Goid(0,-3825), "cn=test\\+3", "test+3"), new OpaqueSecurityToken()));
         expandAndCheck(context, "||${response.authenticatedDns|||}||", "||cn=test\\+1, ou=foobar, o=bling||cn=test\\+2||cn=test\\+3||");
         expandAndCheck(context, "${response.authenticatedDns}", "cn=test\\+1, ou=foobar, o=bling, cn=test\\+2, cn=test\\+3");
         expandAndCheck(context, "${response.authenticatedDns|, }", "cn=test\\+1, ou=foobar, o=bling, cn=test\\+2, cn=test\\+3");
@@ -654,7 +655,7 @@ public class ServerVariablesTest {
         expandAndCheck(c, "${audit.ipAddress}", "3.2.1.1");
         expandAndCheck(c, "${audit.user.name}", "alice");
         expandAndCheck(c, "${audit.user.id}", "41123");
-        expandAndCheck(c, "${audit.user.idProv}", "-2");
+        expandAndCheck(c, "${audit.user.idProv}", "0000000000000000fffffffffffffffe");
         expandAndCheck(c, "${audit.authType}", "HTTP Basic");
         expandAndCheck(c, "${audit.thrown}", "");
         expandAndCheck(c, "${audit.entity.class}", ""); // only for admin records
@@ -716,7 +717,7 @@ public class ServerVariablesTest {
 
     @Test
     public void testSystemAuditRecordFields() throws Exception {
-        SystemAuditRecord rec = new SystemAuditRecord(Level.WARNING, "node1", Component.GW_CSR_SERVLET, "CSR servlet is dancing!", true, 0, null, null, "Dancing", "1.2.3.4");
+        SystemAuditRecord rec = new SystemAuditRecord(Level.WARNING, "node1", Component.GW_CSR_SERVLET, "CSR servlet is dancing!", true, GoidEntity.DEFAULT_GOID, null, null, "Dancing", "1.2.3.4");
         final AuditSinkPolicyEnforcementContext c = new AuditSinkPolicyEnforcementContext(rec, delegate(), context());
         expandAndCheck(c, "${audit.type}", "system");
         expandAndCheck(c, "${audit.levelStr}", "WARNING");
@@ -730,13 +731,13 @@ public class ServerVariablesTest {
         expandAndCheck(c, "${audit.ipAddress}", "1.2.3.4");
         expandAndCheck(c, "${audit.user.name}", "");
         expandAndCheck(c, "${audit.user.id}", "");
-        expandAndCheck(c, "${audit.user.idProv}", "0");
+        expandAndCheck(c, "${audit.user.idProv}", "0000000000000000ffffffffffffffff");
         expandAndCheck(c, "${audit.authType}", "");
     }
 
     @Test
     public void testAdminAuditRecordFields() throws Exception {
-        AdminAuditRecord rec = new AdminAuditRecord(Level.WARNING, "node1", 31, "com.l7tech.MyEntity", "thename", 'U', "Updated thename", -2, "alice", "483", "1.4.2.1");
+        AdminAuditRecord rec = new AdminAuditRecord(Level.WARNING, "node1", 31, "com.l7tech.MyEntity", "thename", 'U', "Updated thename", new Goid(0,-2), "alice", "483", "1.4.2.1");
         rec.setStrRequestId(new RequestId("222-333").toString());
         final AuditSinkPolicyEnforcementContext c = new AuditSinkPolicyEnforcementContext(rec, delegate(), context());
         expandAndCheck(c, "${audit.type}", "admin");
@@ -750,7 +751,7 @@ public class ServerVariablesTest {
         expandAndCheck(c, "${audit.ipAddress}", "1.4.2.1");
         expandAndCheck(c, "${audit.user.name}", "alice");
         expandAndCheck(c, "${audit.user.id}", "483");
-        expandAndCheck(c, "${audit.user.idProv}", "-2");
+        expandAndCheck(c, "${audit.user.idProv}", "0000000000000000fffffffffffffffe");
         expandAndCheck(c, "${audit.authType}", "");
         expandAndCheck(c, "${audit.thrown}", "");
         expandAndCheck(c, "${audit.entity.class}", "com.l7tech.MyEntity"); // only for admin records
@@ -1202,7 +1203,7 @@ public class ServerVariablesTest {
     @SuppressWarnings({"deprecation"})
     AuditRecord auditRecord() {
         AuditRecord auditRecord = new MessageSummaryAuditRecord(Level.INFO, "node1", "req4545", AssertionStatus.NONE, "3.2.1.1", AUDITED_REQUEST_XML, 4833, AUDITED_RESPONSE_XML, 9483, 200, 232, new Goid(0,8859), "ACMEWarehouse",
-                "listProducts", true, SecurityTokenType.HTTP_BASIC, -2, "alice", "41123", 49585);
+                "listProducts", true, SecurityTokenType.HTTP_BASIC, new Goid(0,-2), "alice", "41123", 49585);
         //noinspection deprecation
         auditRecord.setOid(9777L);
         auditRecord.setStrRequestId(new RequestId("222-333").toString());

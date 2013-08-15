@@ -11,7 +11,7 @@ import com.l7tech.objectmodel.imp.NamedGoidEntityImp;
 public class PolicyVersion extends NamedGoidEntityImp {
     private long ordinal;
     private long time;
-    private long userProviderOid;
+    private Goid userProviderGoid;
     private String userLogin;
     private String xml;
     private Goid policyGoid;
@@ -49,12 +49,12 @@ public class PolicyVersion extends NamedGoidEntityImp {
         this.userLogin = userLogin;
     }
 
-    public long getUserProviderOid() {
-        return userProviderOid;
+    public Goid getUserProviderGoid() {
+        return userProviderGoid;
     }
 
-    public void setUserProviderOid(long userProviderOid) {
-        this.userProviderOid = userProviderOid;
+    public void setUserProviderGoid(Goid userProviderGoid) {
+        this.userProviderGoid = userProviderGoid;
     }
 
     /**

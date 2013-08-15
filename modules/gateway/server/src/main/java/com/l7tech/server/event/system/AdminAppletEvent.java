@@ -1,6 +1,7 @@
 package com.l7tech.server.event.system;
 
 import com.l7tech.gateway.common.Component;
+import com.l7tech.objectmodel.Goid;
 
 import java.util.logging.Level;
 
@@ -24,7 +25,7 @@ public class AdminAppletEvent extends SystemEvent {
                             Level level,
                             String ip,
                             String message,
-                            long identityProviderOid,
+                            Goid identityProviderOid,
                             String userName,
                             String userId)
     {

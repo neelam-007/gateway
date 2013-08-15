@@ -128,7 +128,7 @@ public final class RegistryImpl extends Registry
     public IdentityProviderConfig getInternalProviderConfig() {
         IdentityAdmin admin = getIdentityAdmin();
         try {
-            return admin.findIdentityProviderConfigByID(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID);
+            return admin.findIdentityProviderConfigByID(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_GOID);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

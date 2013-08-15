@@ -1,5 +1,6 @@
 package com.l7tech.gateway.common.mapping;
 
+import com.l7tech.objectmodel.Goid;
 import org.junit.Test;
 import org.junit.Assert;
 
@@ -145,7 +146,7 @@ public class MappingIdentityTest {
         mcmv1.setMappingKeysOid(2345L);
         mcmv1.setAuthUserId("testuser1 [Provider A oldname]");
         mcmv1.setAuthUserUniqueId("testuser1");
-        mcmv1.setAuthUserProviderId( 200031L );
+        mcmv1.setAuthUserProviderId( new Goid(0,200031L) );
         mcmv1.setMapping1_value("A");
         mcmv1.setMapping2_value("B");
         mcmv1.setMapping2_value("C");
@@ -155,7 +156,7 @@ public class MappingIdentityTest {
         mcmv2.setMappingKeysOid(2345L);
         mcmv2.setAuthUserId("testuser [Provider A]");
         mcmv2.setAuthUserUniqueId("testuser1");
-        mcmv2.setAuthUserProviderId( 200031L );
+        mcmv2.setAuthUserProviderId(  new Goid(0,200031L) );
         mcmv2.setMapping1_value("A");
         mcmv2.setMapping2_value("B");
         mcmv2.setMapping2_value("C");
@@ -172,14 +173,14 @@ public class MappingIdentityTest {
         mcmv1.setMappingKeysOid(2345L);
         mcmv1.setAuthUserId("testuser1 [Provider A oldname]");
         mcmv1.setAuthUserUniqueId("testuser1");
-        mcmv1.setAuthUserProviderId( 200031L );
+        mcmv1.setAuthUserProviderId(  new Goid(0,200031L) );
 
         MessageContextMappingValues mcmv2 = new MessageContextMappingValues();
         mcmv2.setOid(123);
         mcmv2.setMappingKeysOid(2345L);
         mcmv2.setAuthUserId("testuser [Provider A]");
         mcmv2.setAuthUserUniqueId("testuser1");
-        mcmv2.setAuthUserProviderId( 200031L );
+        mcmv2.setAuthUserProviderId( new Goid(0, 200031L) );
 
         Assert.assertTrue( "Value user digest equality test", mcmv1.generateDigest().equals(mcmv2.generateDigest()) );
         Assert.assertTrue( "Value user matches test", mcmv1.matches(mcmv2) );
@@ -227,7 +228,7 @@ public class MappingIdentityTest {
         mcmv2.setMappingKeysOid(2345L);
         mcmv2.setAuthUserId("testuser [Provider A]");
         mcmv2.setAuthUserUniqueId("testuser1");
-        mcmv2.setAuthUserProviderId( 200031L );
+        mcmv2.setAuthUserProviderId(  new Goid(0,200031L) );
         mcmv2.setMapping1_value("A");
         mcmv2.setMapping2_value("B");
         mcmv2.setMapping3_value("C");

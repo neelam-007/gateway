@@ -166,7 +166,7 @@ public class NotificationAttemptAuditor implements InitializingBean, Application
                                                                  Component.ENTERPRISE_MANAGER,
                                                                  shortMessage,
                                                                  true,
-                                                                 0,
+                                                                 null,
                                                                  null,
                                                                  null,
                                                                  "Notification Sent",

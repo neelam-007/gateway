@@ -68,7 +68,8 @@ public class GatewaySanityChecker extends ApplicationObjectSupport implements In
                     "com.l7tech.server.upgrade.Upgrade62To70CanonicalizeFedUserSubjectDNs",
                     "com.l7tech.server.upgrade.Upgrade70to71UpdateGatewayManagementWsdl",
                     "com.l7tech.server.upgrade.Upgrade71To80SinkConfig",
-                    "com.l7tech.server.upgrade.Upgrade71To80IdReferences") )
+                    "com.l7tech.server.upgrade.Upgrade71To80IdReferences",
+                    "com.l7tech.server.upgrade.Upgrade71To80IdProviderReferences") )
             .put(Starting.class, set(
                     "com.l7tech.server.upgrade.Upgrade365To37AddSampleMessagePermissions" ))
             .put(Started.class, set(
@@ -77,7 +78,8 @@ public class GatewaySanityChecker extends ApplicationObjectSupport implements In
                     "com.l7tech.server.upgrade.Upgrade42To43AddInitialPolicyVersions",
                     "com.l7tech.server.upgrade.Upgrade465To50UpdateRoles",
                     "com.l7tech.server.upgrade.Upgrade70To71UpdateRoles",
-                    "com.l7tech.server.upgrade.Upgrade71To80UpdateRoles" ) )
+                    "com.l7tech.server.upgrade.Upgrade71To80UpdateRoles",
+                    "com.l7tech.server.upgrade.Upgrade71To80AuditRecords") )
         .unmodifiableMap();
 
     private final ClusterPropertyManager clusterPropertyManager;

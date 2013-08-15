@@ -181,7 +181,7 @@ public class InternalIdentityProviderImplTest {
         }
 
         @Override
-        public void deleteAll(long ipoid) throws DeleteException, FindException {
+        public void deleteAll(Goid ipoid) throws DeleteException, FindException {
 
         }
 

@@ -77,7 +77,7 @@ public class UserNode extends EntityHeaderNode {
      */
     protected final boolean isInternal() {
         IdentityProviderNode parent = (IdentityProviderNode)getParent();
-        return parent.getEntityHeader().getOid() == IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID;
+        return parent.getEntityHeader().getGoid().equals(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_GOID);
     }
 
 
@@ -92,7 +92,7 @@ public class UserNode extends EntityHeaderNode {
         IdentityAdmin admin = Registry.getDefault().getIdentityAdmin();
         User u = null;
         try {
-            u = admin.findUserByID(parent.getEntityHeader().getOid(), getEntityHeader().getStrId());
+            u = admin.findUserByID(parent.getEntityHeader().getGoid(), getEntityHeader().getStrId());
             return new SpecificUser(u.getProviderId(), u.getLogin(), u.getId(), u.getName());
         } catch (Exception e) {
             throw new RuntimeException("Couldn't retrieve user", e);

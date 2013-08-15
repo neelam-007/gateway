@@ -2,6 +2,7 @@ package com.l7tech.server.ems.standardreports;
 
 import com.l7tech.common.io.NonCloseableOutputStream;
 import com.l7tech.identity.User;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.server.ems.enterprise.JSONConstants;
 import com.l7tech.util.PoolByteArrayOutputStream;
@@ -9,6 +10,7 @@ import com.l7tech.util.Charsets;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.ResourceUtils;
 import org.hibernate.annotations.Proxy;
+import org.hibernate.annotations.Type;
 import org.mortbay.util.ajax.JSON;
 
 import javax.persistence.*;
@@ -46,11 +48,12 @@ public class StandardReportSettings extends NamedEntityImp implements JSON.Conve
     }
 
     @Column(name="provider", nullable=false)
-    public long getProvider() {
+    @Type(type = "com.l7tech.server.util.GoidType")
+    public Goid getProvider() {
         return provider;
     }
 
-    public void setProvider( final long providerId ) {
+    public void setProvider( final Goid providerId ) {
         this.provider = providerId;
     }
 
@@ -152,7 +155,7 @@ public class StandardReportSettings extends NamedEntityImp implements JSON.Conve
 
     //- PRIVATE
 
-    private long provider;
+    private Goid provider;
     private String userId;
     private Map<String, Object> settingsProps = new HashMap<String, Object>();
     private String settingsPropsXml;

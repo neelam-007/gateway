@@ -4,9 +4,7 @@
 package com.l7tech.identity.ldap;
 
 import com.l7tech.identity.IdentityProviderConfig;
-import com.l7tech.objectmodel.migration.Migration;
-import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
-import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.Goid;
 
 import javax.naming.InvalidNameException;
 import javax.naming.directory.Attributes;
@@ -24,7 +22,7 @@ abstract class LdapIdentityBase implements LdapIdentity, Serializable {
     /** Used in {@link #equals} and {@link #hashCode} for a semantic comparison (e.g. <code>OU=foo</code> is equivalent to <code>ou=foo</code>) */
     private transient LdapName ldapName;
 
-    protected long providerId;
+    protected Goid providerId;
     protected String cn;
     protected String dn;
     protected transient Attributes attributes;
@@ -34,11 +32,11 @@ abstract class LdapIdentityBase implements LdapIdentity, Serializable {
      */
     @Deprecated
     protected LdapIdentityBase() {
-        this(IdentityProviderConfig.DEFAULT_OID, null, null);
+        this(IdentityProviderConfig.DEFAULT_GOID, null, null);
     }
 
-    protected LdapIdentityBase(long providerOid, String dn, String cn) {
-        this.providerId = providerOid;
+    protected LdapIdentityBase(Goid providerGoid, String dn, String cn) {
+        this.providerId = providerGoid;
         this.dn = dn;
         this.cn = cn;
     }
@@ -55,12 +53,12 @@ abstract class LdapIdentityBase implements LdapIdentity, Serializable {
         return cn;
     }
 
-    public long getProviderId() {
+    public Goid getProviderId() {
         return providerId;
     }
 
-    public void setProviderId(long providerOid) {
-        this.providerId = providerOid;
+    public void setProviderId(Goid providerGoid) {
+        this.providerId = providerGoid;
     }
 
     public String getName() {
@@ -134,7 +132,7 @@ abstract class LdapIdentityBase implements LdapIdentity, Serializable {
         final LdapName thisName = getLdapName();
         final LdapName thatName = that.getLdapName();
 
-        if (providerId != that.providerId) return false;
+        if (providerId != null ? !providerId.equals(that.providerId) : that.providerId != null) return false;
         if (attributes != null ? !attributes.equals(that.attributes) : that.attributes != null) return false;
         if (cn != null ? !cn.equals(that.cn) : that.cn != null) return false;
         if (thisName != null ? !thisName.equals(thatName) : thatName != null) return false;
@@ -150,7 +148,7 @@ abstract class LdapIdentityBase implements LdapIdentity, Serializable {
         int result;
         final LdapName thisName = getLdapName();
         result = (thisName != null ? thisName.hashCode() : 0);
-        result = 31 * result + (int) (providerId ^ (providerId >>> 32));
+        result = 31 * result + (providerId != null ? providerId.hashCode() : 0);
         result = 31 * result + (cn != null ? cn.hashCode() : 0);
         result = 31 * result + (attributes != null ? attributes.hashCode() : 0);
         return result;

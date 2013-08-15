@@ -37,7 +37,7 @@ public interface UserManager<UT extends User> {
      * Deletes all users.
      * @param ipoid is unnecessary, since the UserManager maintains a link to its provider.
      */
-    void deleteAll(long ipoid) throws DeleteException, FindException;
+    void deleteAll(Goid ipoid) throws DeleteException, FindException;
 
     /**
      * Updates an existing user.

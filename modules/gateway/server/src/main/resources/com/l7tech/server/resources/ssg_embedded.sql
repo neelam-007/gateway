@@ -86,7 +86,7 @@ create table audit_detail_params (
 
 create table audit_main (
     objectid bigint not null,
-    provider_oid bigint,
+    provider_goid CHAR(16) FOR BIT DATA,
     ip_address varchar(32),
     message varchar(255) not null,
     time bigint not null,
@@ -146,7 +146,7 @@ create table message_context_mapping_values (
     objectid bigint not null,
     digested varchar(36) not null,
     mapping_keys_oid bigint,
-    auth_user_provider_id bigint,
+    auth_user_provider_id CHAR(16) FOR BIT DATA,
     auth_user_id varchar(255),
     auth_user_unique_id varchar(255),
     service_operation varchar(255),
@@ -253,7 +253,7 @@ create table client_cert (
     subject_dn varchar(2048),
     thumbprint_sha1 varchar(64),
     login varchar(255),
-    provider bigint not null,
+    provider  CHAR(16) FOR BIT DATA not null,
     reset_counter integer not null,
     user_id varchar(255),
     primary key (goid)
@@ -354,44 +354,44 @@ create table email_listener_state (
 );
 
 create table fed_group (
-    objectid bigint not null,
+    goid  CHAR(16) FOR BIT DATA not null,
     name varchar(128) not null,
     version integer,
     description varchar(4096),
-    provider_oid bigint not null,
-    primary key (objectid)
+    provider_goid  CHAR(16) FOR BIT DATA not null,
+    primary key (goid)
 );
 
 create table fed_group_virtual (
-    objectid bigint not null,
+    goid  CHAR(16) FOR BIT DATA not null,
     name varchar(128) not null,
     version integer,
     description varchar(4096),
-    provider_oid bigint not null,
+    provider_goid  CHAR(16) FOR BIT DATA not null,
     saml_email_pattern varchar(128),
     x509_subject_dn_pattern varchar(1024),
     properties clob(2147483647),
-    primary key (objectid)
+    primary key (goid)
 );
 
 create table fed_user (
-    objectid bigint not null,
+    goid  CHAR(16) FOR BIT DATA not null,
     name varchar(128) not null,
     version integer,
     email varchar(128),
     first_name varchar(32),
     last_name varchar(32),
     login varchar(255) not null,
-    provider_oid bigint,
+    provider_goid  CHAR(16) FOR BIT DATA,
     subject_dn varchar(255),
-    primary key (objectid)
+    primary key (goid)
 );
 
 create table fed_user_group (
-    provider_oid bigint not null,
-    fed_group_oid bigint not null,
-    fed_user_oid bigint not null,
-    primary key (provider_oid, fed_group_oid, fed_user_oid)
+    provider_goid  CHAR(16) FOR BIT DATA not null,
+    fed_group_goid  CHAR(16) FOR BIT DATA not null,
+    fed_user_goid  CHAR(16) FOR BIT DATA not null,
+    primary key (provider_goid, fed_group_goid, fed_user_goid)
 );
 
 create table folder (
@@ -432,27 +432,27 @@ create table http_configuration (
 );
 
 create table identity_provider (
-    objectid bigint not null,
+    goid  CHAR(16) FOR BIT DATA not null,
     version integer,
     name varchar(128) not null,
     description clob(2147483647),
     type integer not null,
     properties clob(2147483647),
     security_zone_goid CHAR(16) FOR BIT DATA references security_zone(goid) on delete set null,
-    primary key (objectid)
+    primary key (goid)
 );
 
 create table internal_group (
-    objectid bigint not null,
+    goid CHAR(16) FOR BIT DATA not null,
     name varchar(128) not null,
     version integer,
     description varchar(4096),
     enabled smallint default 1,
-    primary key (objectid)
+    primary key (goid)
 );
 
 create table internal_user (
-    objectid bigint not null,
+    goid CHAR(16) FOR BIT DATA not null,
     version integer,
     name varchar(128) not null,
     login varchar(255) not null,
@@ -467,17 +467,17 @@ create table internal_user (
     change_password smallint default 1,
     enabled smallint default 1,
     properties clob(2147483647),
-    primary key (objectid)
+    primary key (goid)
 );
 
 create table internal_user_group (
-    objectid bigint not null,
-    provider_oid bigint not null,
+    goid  CHAR(16) FOR BIT DATA not null,
+    provider_goid  CHAR(16) FOR BIT DATA not null,
     subgroup_id varchar(255),
-    user_id bigint not null,
-    internal_group bigint not null,
+    user_goid  CHAR(16) FOR BIT DATA not null,
+    internal_group CHAR(16) FOR BIT DATA  not null,
     version integer,
-    primary key (objectid)
+    primary key (goid)
 );
 
 create table jdbc_connection (
@@ -593,7 +593,7 @@ create table logon_info (
     last_activity bigint,
     last_attempted bigint,
     login varchar(255),
-    provider_oid bigint,
+    provider_goid  CHAR(16) FOR BIT DATA,
     state varchar(255),
     version integer,
     primary key (goid)
@@ -609,7 +609,7 @@ create table password_history (
     objectid bigint not null,
     last_changed bigint,
     prev_password varchar(255) not null,
-    internal_user_oid bigint not null,
+    internal_user_goid CHAR(16) FOR BIT DATA not null,
     primary key (objectid)
 );
 
@@ -617,7 +617,7 @@ create table password_policy (
     objectid bigint not null,
     version integer,
     properties clob(2147483647),
-    internal_identity_provider_oid bigint,
+    internal_identity_provider_goid  CHAR(16) FOR BIT DATA,
     primary key (objectid)
 );
 
@@ -651,7 +651,7 @@ create table policy_version (
     policy_goid CHAR(16) FOR BIT DATA,
     ordinal bigint,
     time bigint,
-    user_provider_oid bigint,
+    user_provider_goid  CHAR(16) FOR BIT DATA,
     user_login varchar(255),
     "xml"  clob(2147483647),
     active smallint,
@@ -691,12 +691,12 @@ create table published_service_alias (
 
 create table rbac_assignment (
     objectid bigint not null,
-    provider_oid bigint not null,
+    provider_goid  CHAR(16) FOR BIT DATA not null,
     role_oid bigint not null,
     identity_id varchar(255) not null,
     entity_type varchar(50) not null,
     primary key (objectid),
-    unique (provider_oid, role_oid, identity_id, entity_type)
+    unique (provider_goid, role_oid, identity_id, entity_type)
 );
 
 create table rbac_permission (
@@ -947,7 +947,7 @@ create table trusted_esm_user (
     objectid bigint not null,
     esm_user_display_name varchar(128),
     esm_user_id varchar(128),
-    provider_oid bigint,
+    provider_goid  CHAR(16) FOR BIT DATA not null,
     user_id varchar(128),
     version integer,
     trusted_esm_oid bigint not null,
@@ -1107,7 +1107,7 @@ create table wssc_session (
     identifier varchar(4096) not null,
     inbound smallint,
     namespace varchar(4096),
-    provider_id bigint,
+    provider_goid  CHAR(16) FOR BIT DATA,
     service_url varchar(4096),
     session_key_hash varchar(128) not null unique,
     token varchar(32672),
@@ -1141,7 +1141,7 @@ alter table folder
 
 alter table password_history
     add constraint FKF16E7AF0C9B8DFC1
-    foreign key (internal_user_oid)
+    foreign key (internal_user_goid)
     references internal_user;
 
 alter table policy
@@ -1239,10 +1239,10 @@ alter table uddi_proxied_service
 -- Populate initial data
 -- **************************************************************************
 
-INSERT INTO identity_provider (objectid,name,description,type,properties,version,security_zone_goid) VALUES (-2,'Internal Identity Provider','Internal Identity Provider',1,'<java version="1.6.0_01" class="java.beans.XMLDecoder"><object class="java.util.HashMap"><void method="put"><string>adminEnabled</string><boolean>true</boolean></void></object></java>',0,NULL);
+INSERT INTO identity_provider (goid,name,description,type,properties,version,security_zone_goid) VALUES (toGoid(0,-2),'Internal Identity Provider','Internal Identity Provider',1,'<java version="1.6.0_01" class="java.beans.XMLDecoder"><object class="java.util.HashMap"><void method="put"><string>adminEnabled</string><boolean>true</boolean></void></object></java>',0,NULL);
 
 -- The same hash from resetAdmin.sh is used here. Digest property is set to NULL by default.
-INSERT INTO internal_user (objectid, version, name, login, password, digest, first_name, last_name, email, description, expiration, password_expiry, change_password, enabled, properties) VALUES (3,0,'admin','admin','$6$S7Z3HcudYNsObgs8$SjwZ3xtCkSjXOK2vHfOVEg2dJES3cgvtIUdHbEN/KdCBXoI6uuPSbxTEwcH.av6lpcb1p6Lu.gFeIX04FBxiJ.',NULL,'','','','',-1,1577865600000,0,1,NULL);
+INSERT INTO internal_user (goid, version, name, login, password, digest, first_name, last_name, email, description, expiration, password_expiry, change_password, enabled, properties) VALUES (toGoid(0,3),0,'admin','admin','$6$S7Z3HcudYNsObgs8$SjwZ3xtCkSjXOK2vHfOVEg2dJES3cgvtIUdHbEN/KdCBXoI6uuPSbxTEwcH.av6lpcb1p6Lu.gFeIX04FBxiJ.',NULL,'','','','',-1,1577865600000,0,1,NULL);
 
 INSERT INTO folder (goid, version, name, parent_folder_goid, security_zone_goid) VALUES (toGoid(0,-5002), 0, 'Root Node', NULL, NULL);
 
@@ -1266,7 +1266,7 @@ insert into keystore_file (objectid, version, name, format, databytes, propertie
 insert into keystore_file (objectid, version, name, format, databytes, properties) values (4, 0, 'nCipher HSM', 'hsm.NcipherKeyStoreData', null, null);
 
 -- STIG default:
-INSERT INTO password_policy (objectid, version, properties, internal_identity_provider_oid) VALUES (-2, 0, '<?xml version="1.0" encoding="UTF-8"?><java version="1.6.0_21" class="java.beans.XMLDecoder"> <object class="java.util.TreeMap">  <void method="put">   <string>allowableChangesPerDay</string>   <boolean>true</boolean>  </void>  <void method="put">   <string>charDiffMinimum</string>   <int>4</int>  </void>  <void method="put">   <string>forcePasswordChangeNewUser</string>   <boolean>true</boolean>  </void>  <void method="put">   <string>lowerMinimum</string>   <int>1</int>  </void>  <void method="put">   <string>maxPasswordLength</string>   <int>32</int>  </void>  <void method="put">   <string>minPasswordLength</string>   <int>8</int>  </void>  <void method="put">   <string>noRepeatingCharacters</string>   <boolean>true</boolean>  </void>  <void method="put">   <string>numberMinimum</string>   <int>1</int>  </void>  <void method="put">   <string>passwordExpiry</string>   <int>90</int>  </void>  <void method="put">   <string>repeatFrequency</string>   <int>10</int>  </void>  <void method="put">   <string>symbolMinimum</string>   <int>1</int>  </void>  <void method="put">   <string>upperMinimum</string>   <int>1</int>  </void> </object></java>', -2);
+INSERT INTO password_policy (objectid, version, properties, internal_identity_provider_goid) VALUES (-2, 0, '<?xml version="1.0" encoding="UTF-8"?><java version="1.6.0_21" class="java.beans.XMLDecoder"> <object class="java.util.TreeMap">  <void method="put">   <string>allowableChangesPerDay</string>   <boolean>true</boolean>  </void>  <void method="put">   <string>charDiffMinimum</string>   <int>4</int>  </void>  <void method="put">   <string>forcePasswordChangeNewUser</string>   <boolean>true</boolean>  </void>  <void method="put">   <string>lowerMinimum</string>   <int>1</int>  </void>  <void method="put">   <string>maxPasswordLength</string>   <int>32</int>  </void>  <void method="put">   <string>minPasswordLength</string>   <int>8</int>  </void>  <void method="put">   <string>noRepeatingCharacters</string>   <boolean>true</boolean>  </void>  <void method="put">   <string>numberMinimum</string>   <int>1</int>  </void>  <void method="put">   <string>passwordExpiry</string>   <int>90</int>  </void>  <void method="put">   <string>repeatFrequency</string>   <int>10</int>  </void>  <void method="put">   <string>symbolMinimum</string>   <int>1</int>  </void>  <void method="put">   <string>upperMinimum</string>   <int>1</int>  </void> </object></java>', toGoid(0,-2));
 
 -- Default global resources
 INSERT INTO resource_entry (goid, version, uri, uri_hash, type, content_type, content, resource_key1, security_zone_goid) VALUES (toGoid(0,-3),0,'http://schemas.xmlsoap.org/soap/envelope/','hC3quuokv29o8XDUK1vtJg29ywKS/fDsnJsj2chtn0maXa6J/7ga3LQxz12tlDYbLmJVWV/iP4PJsmBZ7lGiaQ==','XML_SCHEMA','text/xml','<?xml version=''1.0'' encoding=''UTF-8'' ?>\n<xs:schema xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"\n           xmlns:tns=\"http://schemas.xmlsoap.org/soap/envelope/\"\n           targetNamespace=\"http://schemas.xmlsoap.org/soap/envelope/\" >\n  <!-- Envelope, header and body -->\n  <xs:element name=\"Envelope\" type=\"tns:Envelope\" />\n  <xs:complexType name=\"Envelope\" >\n    <xs:sequence>\n      <xs:element ref=\"tns:Header\" minOccurs=\"0\" />\n      <xs:element ref=\"tns:Body\" minOccurs=\"1\" />\n      <xs:any namespace=\"##other\" minOccurs=\"0\" maxOccurs=\"unbounded\" processContents=\"lax\" />\n    </xs:sequence>\n    <xs:anyAttribute namespace=\"##other\" processContents=\"lax\" />\n  </xs:complexType>\n  <xs:element name=\"Header\" type=\"tns:Header\" />\n  <xs:complexType name=\"Header\" >\n    <xs:sequence>\n      <xs:any namespace=\"##other\" minOccurs=\"0\" maxOccurs=\"unbounded\" processContents=\"lax\" />\n    </xs:sequence>\n    <xs:anyAttribute namespace=\"##other\" processContents=\"lax\" />\n  </xs:complexType>\n  <xs:element name=\"Body\" type=\"tns:Body\" />\n  <xs:complexType name=\"Body\" >\n    <xs:sequence>\n      <xs:any namespace=\"##any\" minOccurs=\"0\" maxOccurs=\"unbounded\" processContents=\"lax\" />\n    </xs:sequence>\n    <xs:anyAttribute namespace=\"##any\" processContents=\"lax\" >\n          <xs:annotation>\n            <xs:documentation>\n                  Prose in the spec does not specify that attributes are allowed on the Body element\n                </xs:documentation>\n          </xs:annotation>\n        </xs:anyAttribute>\n  </xs:complexType>\n  <!-- Global Attributes.  The following attributes are intended to be usable via qualified attribute names on any complex type referencing them.  -->\n  <xs:attribute name=\"mustUnderstand\" >\n     <xs:simpleType>\n     <xs:restriction base=''xs:boolean''>\n           <xs:pattern value=''0|1'' />\n         </xs:restriction>\n   </xs:simpleType>\n  </xs:attribute>\n  <xs:attribute name=\"actor\" type=\"xs:anyURI\" />\n  <xs:simpleType name=\"encodingStyle\" >\n    <xs:annotation>\n          <xs:documentation>\n            ''encodingStyle'' indicates any canonicalization conventions followed in the contents of the containing element.  For example, the value ''http://schemas.xmlsoap.org/soap/encoding/'' indicates the pattern described in SOAP specification\n          </xs:documentation>\n        </xs:annotation>\n    <xs:list itemType=\"xs:anyURI\" />\n  </xs:simpleType>\n  <xs:attribute name=\"encodingStyle\" type=\"tns:encodingStyle\" />\n  <xs:attributeGroup name=\"encodingStyle\" >\n    <xs:attribute ref=\"tns:encodingStyle\" />\n  </xs:attributeGroup>  <xs:element name=\"Fault\" type=\"tns:Fault\" />\n  <xs:complexType name=\"Fault\" final=\"extension\" >\n    <xs:annotation>\n          <xs:documentation>\n            Fault reporting structure\n          </xs:documentation>\n        </xs:annotation>\n    <xs:sequence>\n      <xs:element name=\"faultcode\" type=\"xs:QName\" />\n      <xs:element name=\"faultstring\" type=\"xs:string\" />\n      <xs:element name=\"faultactor\" type=\"xs:anyURI\" minOccurs=\"0\" />\n      <xs:element name=\"detail\" type=\"tns:detail\" minOccurs=\"0\" />\n    </xs:sequence>\n  </xs:complexType>\n  <xs:complexType name=\"detail\">\n    <xs:sequence>\n      <xs:any namespace=\"##any\" minOccurs=\"0\" maxOccurs=\"unbounded\" processContents=\"lax\" />\n    </xs:sequence>\n    <xs:anyAttribute namespace=\"##any\" processContents=\"lax\" />\n  </xs:complexType>\n</xs:schema>','http://schemas.xmlsoap.org/soap/envelope/',NULL);
@@ -1290,31 +1290,31 @@ INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_
 INSERT INTO rbac_role (objectid, version, name, tag, entity_type, entity_oid, entity_goid, description, user_created) VALUES (-200,0,'Manage Internal Users and Groups', null,null,null,null, 'Users assigned to the {0} role have the ability to create, read, update and delete users and groups in the internal identity provider.',0);
 INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-201,0,-200,'READ',NULL,'USER');
 INSERT INTO rbac_predicate (objectid, version, permission_oid) VALUES (-202,0,-201);
-INSERT INTO rbac_predicate_attribute (objectid, attribute, value, mode) VALUES (-202,'providerId','-2','eq');
+INSERT INTO rbac_predicate_attribute (objectid, attribute, value, mode) VALUES (-202,'providerId','0000000000000000fffffffffffffffe','eq');
 INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-203,0,-200,'READ',NULL,'ID_PROVIDER_CONFIG');
 INSERT INTO rbac_predicate (objectid, version, permission_oid) VALUES (-204,0,-203);
-INSERT INTO rbac_predicate_oid (objectid, entity_id) VALUES (-204,'-2');
+INSERT INTO rbac_predicate_oid (objectid, entity_id) VALUES (-204,'0000000000000000fffffffffffffffe');
 INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-205,0,-200,'UPDATE',NULL,'USER');
 INSERT INTO rbac_predicate (objectid, version, permission_oid) VALUES (-206,0,-205);
-INSERT INTO rbac_predicate_attribute (objectid, attribute, value, mode) VALUES (-206,'providerId','-2','eq');
+INSERT INTO rbac_predicate_attribute (objectid, attribute, value, mode) VALUES (-206,'providerId','0000000000000000fffffffffffffffe','eq');
 INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-207,0,-200,'READ',NULL,'GROUP');
 INSERT INTO rbac_predicate (objectid, version, permission_oid) VALUES (-208,0,-207);
-INSERT INTO rbac_predicate_attribute (objectid, attribute, value, mode) VALUES (-208,'providerId','-2','eq');
+INSERT INTO rbac_predicate_attribute (objectid, attribute, value, mode) VALUES (-208,'providerId','0000000000000000fffffffffffffffe','eq');
 INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-209,0,-200,'DELETE',NULL,'USER');
 INSERT INTO rbac_predicate (objectid, version, permission_oid) VALUES (-210,0,-209);
-INSERT INTO rbac_predicate_attribute (objectid, attribute, value, mode) VALUES (-210,'providerId','-2','eq');
+INSERT INTO rbac_predicate_attribute (objectid, attribute, value, mode) VALUES (-210,'providerId','0000000000000000fffffffffffffffe','eq');
 INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-211,0,-200,'CREATE',NULL,'USER');
 INSERT INTO rbac_predicate (objectid, version, permission_oid) VALUES (-212,0,-211);
-INSERT INTO rbac_predicate_attribute (objectid, attribute, value, mode) VALUES (-212,'providerId','-2','eq');
+INSERT INTO rbac_predicate_attribute (objectid, attribute, value, mode) VALUES (-212,'providerId','0000000000000000fffffffffffffffe','eq');
 INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-213,0,-200,'CREATE',NULL,'GROUP');
 INSERT INTO rbac_predicate (objectid, version, permission_oid) VALUES (-214,0,-213);
-INSERT INTO rbac_predicate_attribute (objectid, attribute, value, mode) VALUES (-214,'providerId','-2','eq');
+INSERT INTO rbac_predicate_attribute (objectid, attribute, value, mode) VALUES (-214,'providerId','0000000000000000fffffffffffffffe','eq');
 INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-215,0,-200,'DELETE',NULL,'GROUP');
 INSERT INTO rbac_predicate (objectid, version, permission_oid) VALUES (-216,0,-215);
-INSERT INTO rbac_predicate_attribute (objectid, attribute, value, mode) VALUES (-216,'providerId','-2','eq');
+INSERT INTO rbac_predicate_attribute (objectid, attribute, value, mode) VALUES (-216,'providerId','0000000000000000fffffffffffffffe','eq');
 INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-217,0,-200,'UPDATE',NULL,'GROUP');
 INSERT INTO rbac_predicate (objectid, version, permission_oid) VALUES (-218,0,-217);
-INSERT INTO rbac_predicate_attribute (objectid, attribute, value, mode) VALUES (-218,'providerId','-2','eq');
+INSERT INTO rbac_predicate_attribute (objectid, attribute, value, mode) VALUES (-218,'providerId','0000000000000000fffffffffffffffe','eq');
 
 INSERT INTO rbac_role (objectid, version, name, tag, entity_type, entity_oid, entity_goid, description, user_created) VALUES (-250,0,'Publish External Identity Providers', null,null,null,null, 'Users assigned to the {0} role have the ability to create new external identity providers.',0);
 INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-251,0,-250,'CREATE',NULL,'ID_PROVIDER_CONFIG');
@@ -1643,7 +1643,7 @@ INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_
 INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-1454,0,-1450,'DELETE',null,'CUSTOM_KEY_VALUE_STORE');
 
 -- Assign Administrator role to existing admin user
-INSERT INTO rbac_assignment (objectid, provider_oid, role_oid, identity_id, entity_type) VALUES (-105, -2, -100, '3', 'User');
+INSERT INTO rbac_assignment (objectid, provider_goid, role_oid, identity_id, entity_type) VALUES (-105, toGoid(0,-2), -100, '00000000000000000000000000000003', 'User');
 
 INSERT INTO sink_config (objectid, version, name, description, type, enabled, severity, categories, properties, security_zone_goid) VALUES (-810,0,'ssg','Main log','FILE',1,'INFO','AUDIT,LOG','<java version="1.6.0" class="java.beans.XMLDecoder"><object class="java.util.HashMap"><void method="put"><string>file.maxSize</string><string>20000</string></void><void method="put"><string>file.format</string><string>STANDARD</string></void><void method="put"><string>file.logCount</string><string>10</string></void></object></java>',NULL);
 INSERT INTO sink_config (objectid, version, name, description, type, enabled, severity, categories, properties, security_zone_goid) VALUES (-811,0,'sspc','Process Controller Log','FILE',0,'FINEST','SSPC','<java version="1.6.0" class="java.beans.XMLDecoder"><object class="java.util.HashMap"><void method="put"><string>file.maxSize</string><string>20000</string></void><void method="put"><string>file.format</string><string>STANDARD</string></void><void method="put"><string>file.logCount</string><string>10</string></void></object></java>',NULL);

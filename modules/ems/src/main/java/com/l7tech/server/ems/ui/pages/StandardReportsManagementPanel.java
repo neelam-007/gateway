@@ -112,7 +112,7 @@ public class StandardReportsManagementPanel extends Panel {
                                     if ( button == YuiDialog.Button.OK ) {
                                         User user = getUser();
                                         for ( StandardReport report : reports ) {
-                                            if ( (user.getId().equals( report.getUserId() ) && user.getProviderId()==report.getProvider())
+                                            if ( (user.getId().equals( report.getUserId() ) && user.getProviderId().equals(report.getProvider()))
                                                  || securityManager.hasPermission( new AttemptedDeleteSpecific(EntityType.ESM_STANDARD_REPORT, report) ) ) {
                                                 try {
                                                     reportManager.delete( report );

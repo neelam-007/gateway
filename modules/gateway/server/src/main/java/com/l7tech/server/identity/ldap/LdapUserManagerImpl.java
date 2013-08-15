@@ -4,10 +4,7 @@ import com.l7tech.identity.UserBean;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.identity.ldap.LdapUser;
 import com.l7tech.identity.ldap.UserMappingConfig;
-import com.l7tech.objectmodel.EntityHeaderSet;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.IdentityHeader;
+import com.l7tech.objectmodel.*;
 import com.l7tech.util.ExceptionUtils;
 
 import javax.naming.AuthenticationException;
@@ -140,7 +137,7 @@ public class LdapUserManagerImpl implements LdapUserManager {
             String userclass = userType.getObjClass();
             if (LdapUtils.attrContainsCaseIndependent(objectclasses, userclass)) {
                 LdapUser out = new LdapUser();
-                out.setProviderId(ldapIdentityProviderConfig.getOid());
+                out.setProviderId(ldapIdentityProviderConfig.getGoid());
                 out.setDn(dn);
                 out.setAttributes(attributes);
                 Object tmp = LdapUtils.extractOneAttributeValue(attributes, userType.getEmailNameAttrName());
@@ -194,7 +191,7 @@ public class LdapUserManagerImpl implements LdapUserManager {
      * throws UnsupportedOperationException
      */
     @Override
-    public void deleteAll(long ipoid) {
+    public void deleteAll(Goid ipoid) {
         throw new UnsupportedOperationException();
     }
 
@@ -263,7 +260,7 @@ public class LdapUserManagerImpl implements LdapUserManager {
     @Override
     public LdapUser headerToUser(IdentityHeader header) {
         LdapUser user = new LdapUser();
-        user.setProviderId(identityProviderConfig.getOid());
+        user.setProviderId(identityProviderConfig.getGoid());
         user.setDn(header.getStrId());
         user.setCn(header.getName());
         return user;

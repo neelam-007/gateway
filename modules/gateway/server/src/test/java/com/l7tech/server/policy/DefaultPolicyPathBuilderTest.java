@@ -6,6 +6,7 @@
 package com.l7tech.server.policy;
 
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.HeaderBasedEntityFinder;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import com.l7tech.policy.assertion.*;
@@ -206,11 +207,11 @@ public class DefaultPolicyPathBuilderTest {
     public void testBug1022() throws Exception {
         Assertion firstAll = new AllAssertion(Arrays.asList(new Assertion[]{
             new RequireWssX509Cert(),
-            new SpecificUser(-2, "fred", "fred", "fred")
+            new SpecificUser(new Goid(0,-2), "fred", "fred", "fred")
         }));
         Assertion secondAll = new AllAssertion(Arrays.asList(new Assertion[]{
             new HttpBasic(),
-            new SpecificUser(-2, "wilma", "wilma", "wilma")
+            new SpecificUser(new Goid(0,-2), "wilma", "wilma", "wilma")
         }));
 
         Assertion top = new AllAssertion(Arrays.asList(new Assertion[]{
@@ -228,13 +229,13 @@ public class DefaultPolicyPathBuilderTest {
         Assertion firstAll = new AllAssertion(Arrays.asList(new Assertion[]{
             new RequireWssX509Cert(),
             new OneOrMoreAssertion(Arrays.asList(new Assertion[]{
-                new SpecificUser(-2, "fred", "fred", "fred")
+                new SpecificUser(new Goid(0,-2), "fred", "fred", "fred")
             }))
         }));
         Assertion secondAll = new AllAssertion(Arrays.asList(new Assertion[]{
             new HttpBasic(),
             new OneOrMoreAssertion(Arrays.asList(new Assertion[]{
-                new SpecificUser(-2, "wilma", "wilma", "wilma")
+                new SpecificUser(new Goid(0,-2), "wilma", "wilma", "wilma")
             }))
         }));
 
@@ -263,7 +264,7 @@ public class DefaultPolicyPathBuilderTest {
             Assertion firstOr = new OneOrMoreAssertion(childrenOr);
 
             Assertion secondOr = new OneOrMoreAssertion(Arrays.asList(new Assertion[]{
-                new SpecificUser(-2, "wilma", "wilma", "wilma")
+                new SpecificUser(new Goid(0,-2), "wilma", "wilma", "wilma")
             }));
 
             Assertion top = new AllAssertion(Arrays.asList(new Assertion[]{

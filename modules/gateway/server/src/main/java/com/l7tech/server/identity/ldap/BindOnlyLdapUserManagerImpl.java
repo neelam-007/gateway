@@ -54,7 +54,7 @@ public class BindOnlyLdapUserManagerImpl implements BindOnlyLdapUserManager {
     }
 
     @Override
-    public void deleteAll(long ipoid) throws DeleteException, FindException {
+    public void deleteAll(Goid ipoid) throws DeleteException, FindException {
         throw new UnsupportedOperationException();
     }
 
@@ -70,7 +70,7 @@ public class BindOnlyLdapUserManagerImpl implements BindOnlyLdapUserManager {
 
     @Override
     public BindOnlyLdapUser reify(UserBean bean) {
-        if (bean.getProviderId() != identityProviderConfig.getOid())
+        if (!bean.getProviderId().equals(identityProviderConfig.getGoid()))
             throw new IllegalArgumentException("User bean does not belong to this provider");
 
         BindOnlyLdapUser user = makeUser(bean.getLogin(), bean.getSubjectDn());
@@ -97,7 +97,7 @@ public class BindOnlyLdapUserManagerImpl implements BindOnlyLdapUserManager {
     @Override
     public BindOnlyLdapUser headerToUser(IdentityHeader header) {
         BindOnlyLdapUser user = makeUser(header.getStrId(), null);
-        user.setProviderId(identityProviderConfig.getOid());
+        user.setProviderId(identityProviderConfig.getGoid());
         user.setLogin(header.getStrId());
         return user;
     }
@@ -174,7 +174,7 @@ public class BindOnlyLdapUserManagerImpl implements BindOnlyLdapUserManager {
     }
 
     private BindOnlyLdapUser makeUser(String login, @Nullable String dn) {
-        return new BindOnlyLdapUser(identityProviderConfig.getOid(), dn, login);
+        return new BindOnlyLdapUser(identityProviderConfig.getGoid(), dn, login);
     }
 
 }

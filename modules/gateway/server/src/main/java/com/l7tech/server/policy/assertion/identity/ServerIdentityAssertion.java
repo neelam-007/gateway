@@ -6,6 +6,7 @@ import com.l7tech.message.Message;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.identity.*;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.ObjectNotFoundException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
@@ -70,9 +71,9 @@ public abstract class ServerIdentityAssertion<AT extends IdentityAssertion> exte
             return AssertionStatus.AUTH_REQUIRED;
         }
 
-        if (assertion.getIdentityProviderOid() == IdentityProviderConfig.DEFAULT_OID) {
+        if (Goid.isDefault(assertion.getIdentityProviderOid())) {
             logAndAudit(AssertionMessages.IDENTITY_PROVIDER_NOT_SET);
-            throw new IllegalStateException("Can't call checkRequest() when no valid identityProviderOid has been set!");
+            throw new IllegalStateException("Can't call checkRequest() when no valid identityProviderGoid has been set!");
         }
 
         AssertionStatus lastStatus = AssertionStatus.UNDEFINED;
@@ -233,7 +234,7 @@ public abstract class ServerIdentityAssertion<AT extends IdentityAssertion> exte
 
     /**
      * Loads the {@link IdentityProvider} object corresponding to the
-     * <code>identityProviderOid</code> property, using a cache if possible.
+     * <code>identityProviderGoid</code> property, using a cache if possible.
      *
      * @return
      * @throws FindException if there was an error retrieving the provider

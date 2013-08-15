@@ -1,56 +1,67 @@
 package com.l7tech.identity;
 
-import com.l7tech.objectmodel.PersistentEntity;
+import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.GoidEntity;
 
 import java.io.Serializable;
 
 /**
  * Abstract superclass of all group memberships.
  */
-public abstract class GroupMembership implements PersistentEntity, Serializable {
-    protected long thisGroupProviderOid;
-    protected long memberUserId;
+public abstract class GroupMembership implements GoidEntity, Serializable {
+    protected Goid thisGroupProviderGoid;
+    protected Goid memberUserId;
 
     /**
-     * The OID of the {@link Group} to which this membership pertains.
+     * The Goid of the {@link Group} to which this membership pertains.
      *
-     * Not the OID of the membership itself!
+     * Not the Goid of the membership itself!
      */
-    public abstract long getThisGroupId();
+    public abstract Goid getThisGroupId();
 
     /**
-     * The OID of the {@link Group} to which this membership pertains.
+     * The Goid of the {@link Group} to which this membership pertains.
      *
-     * Not the OID of the membership itself!
+     * Not the Goid of the membership itself!
      */
-    public abstract void setThisGroupId(long thisGroupId);
+    public abstract void setThisGroupId(Goid thisGroupId);
+
+    /**
+     * This should never be used.  This entity does not have a primary key
+     * @return
+     */
+    @Deprecated
+    @Override
+    public boolean isUnsaved() {
+        return false;
+    }
 
     /**
      * The ID of the {@link User} who's a member of the group.  May be null.
      */
-    public long getMemberUserId() {
+    public Goid getMemberUserId() {
         return memberUserId;
     }
 
     /**
      * The ID of the {@link User} who's a member of the group.  May be null.
      */
-    public void setMemberUserId(long memberUserId) {
+    public void setMemberUserId(Goid memberUserId) {
         this.memberUserId = memberUserId;
     }
 
     /**
      * The OID of the {@link IdentityProviderConfig} to which this group belongs.
      */
-    public long getThisGroupProviderOid() {
-        return thisGroupProviderOid;
+    public Goid getThisGroupProviderGoid() {
+        return thisGroupProviderGoid;
     }
 
     /**
      * The OID of the {@link IdentityProviderConfig} to which this group belongs.
      */
-    public void setThisGroupProviderOid(long thisGroupProviderOid) {
-        this.thisGroupProviderOid = thisGroupProviderOid;
+    public void setThisGroupProviderGoid(Goid thisGroupProviderGoid) {
+        this.thisGroupProviderGoid = thisGroupProviderGoid;
     }
 
     @SuppressWarnings({"RedundantIfStatement"})
@@ -61,16 +72,16 @@ public abstract class GroupMembership implements PersistentEntity, Serializable 
 
         final GroupMembership that = (GroupMembership)o;
 
-        if (thisGroupProviderOid != that.thisGroupProviderOid) return false;
-        if (memberUserId != that.memberUserId) return false;
+        if (!thisGroupProviderGoid.equals(that.thisGroupProviderGoid)) return false;
+        if (!memberUserId.equals(that.memberUserId)) return false;
 
         return true;
     }
 
     public int hashCode() {
         int result = super.hashCode();
-        result = 29 * result + (int)(thisGroupProviderOid ^ (thisGroupProviderOid >>> 32));
-        result = 29 * result + (int)(memberUserId ^ (memberUserId >>> 32));
+        result = 29 * result + thisGroupProviderGoid.hashCode();
+        result = 29 * result + memberUserId.hashCode();
         return result;
     }
 }

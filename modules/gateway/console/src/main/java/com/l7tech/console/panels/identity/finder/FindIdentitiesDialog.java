@@ -164,16 +164,16 @@ public class FindIdentitiesDialog extends JDialog {
     public FindResult showDialog() {
         setVisible(true);
         ProviderEntry providerEntry = (ProviderEntry)providersComboBoxModel.getSelectedItem();
-        return providerEntry == null ? null : new FindResult(providerEntry.getOid(), selections);
+        return providerEntry == null ? null : new FindResult(providerEntry.getGoid(), selections);
     }
 
     public static class FindResult {
-        public FindResult(long ipc, IdentityHeader[] headers) {
+        public FindResult(Goid ipc, IdentityHeader[] headers) {
             this.providerConfigOid = ipc;
             this.entityHeaders = headers;
         }
 
-        public final long providerConfigOid;
+        public final Goid providerConfigOid;
         public final IdentityHeader[] entityHeaders;
     }
 
@@ -238,7 +238,7 @@ public class FindIdentitiesDialog extends JDialog {
         int size = cbModel.getSize();
         for (int i = 0; i < size; i++) {
             ProviderEntry providerEntry = (ProviderEntry)cbModel.getElementAt(i);
-            if (options.getInitialProviderOid() == providerEntry.getOid()) {
+            if (options.getInitialProviderOid().equals(providerEntry.getGoid()) ){
                 cbModel.setSelectedItem(providerEntry);
                 break;
             }
@@ -358,7 +358,7 @@ public class FindIdentitiesDialog extends JDialog {
             final Set<IdentityHeader> tableModelHeaders;
             final EntityHeaderSet<IdentityHeader> headers =
                     info.getProviderEntry() == null ? new EntityHeaderSet<IdentityHeader>() :
-                    getIdentityAdmin().searchIdentities( info.getProviderEntry().getOid(), types, searchName);
+                    getIdentityAdmin().searchIdentities( info.getProviderEntry().getGoid(), types, searchName);
             if (headers.isMaxExceeded()) {
                 tableModelHeaders = new LinkedHashSet<IdentityHeader>();
                 tableModelHeaders.add(new LimitExceededMarkerIdentityHeader());
@@ -833,9 +833,9 @@ public class FindIdentitiesDialog extends JDialog {
             if ( headers != null ) {
                 identityProviderEntries = new ArrayList<ProviderEntry>();
                 for ( final EntityHeader header : headers ) {
-                    final IdentityProviderConfig config = admin.findIdentityProviderConfigByID(header.getOid());
+                    final IdentityProviderConfig config = admin.findIdentityProviderConfigByID(header.getGoid());
                     if ( config == null ) {
-                        logger.warning("IdentityProviderConfig #" + header.getOid() + " no longer exists");
+                        logger.warning("IdentityProviderConfig #" + header.getGoid() + " no longer exists");
                     } else {
                         if ( config.isAdminEnabled() || !options.isAdminOnly() ) {
                             identityProviderEntries.add( new ProviderEntry( config ) );
@@ -850,26 +850,26 @@ public class FindIdentitiesDialog extends JDialog {
     }
 
     private static class ProviderEntry implements Comparable<ProviderEntry> {
-        private final long oid;
+        private final Goid oid;
         private final String name;
         private final boolean writable;
         private final IdentityProviderConfig config;
 
         private ProviderEntry( final EntityHeader header ) {
-            this.oid = header.getOid();
+            this.oid = header.getGoid();
             this.name = header.getName();
             this.writable = false;
             this.config = null;
         }
 
         private ProviderEntry( final IdentityProviderConfig config ) {
-            this.oid = config.getOid();
+            this.oid = config.getGoid();
             this.name = config.getName();
             this.writable = config.isWritable();
             this.config = config;
         }
 
-        public long getOid() {
+        public Goid getGoid() {
             return oid;
         }
 
@@ -902,14 +902,14 @@ public class FindIdentitiesDialog extends JDialog {
 
             final ProviderEntry that = (ProviderEntry) o;
 
-            if ( oid != that.oid ) return false;
+            if ( !oid.equals(that.oid) ) return false;
 
             return true;
         }
 
         @Override
         public int hashCode() {
-            return (int) (oid ^ (oid >>> 32));
+            return oid.hashCode();
         }
 
         private static Unary<ProviderEntry,EntityHeader> fromEntity() {

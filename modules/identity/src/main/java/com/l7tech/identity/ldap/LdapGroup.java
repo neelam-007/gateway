@@ -2,6 +2,7 @@ package com.l7tech.identity.ldap;
 
 import com.l7tech.identity.Group;
 import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.objectmodel.Goid;
 
 import java.io.Serializable;
 
@@ -12,11 +13,11 @@ public class LdapGroup extends LdapIdentityBase implements Group, LdapIdentity, 
     private String description;
 
     public LdapGroup() {
-        this(IdentityProviderConfig.DEFAULT_OID, null, null);
+        this(IdentityProviderConfig.DEFAULT_GOID, null, null);
     }
 
-    public LdapGroup(long providerOid, String dn, String cn) {
-        super(providerOid, dn, cn);
+    public LdapGroup(Goid providerGoid, String dn, String cn) {
+        super(providerGoid, dn, cn);
     }
 
     public String getDescription() {

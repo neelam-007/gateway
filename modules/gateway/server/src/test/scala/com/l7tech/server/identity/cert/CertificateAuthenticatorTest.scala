@@ -16,6 +16,7 @@ import com.l7tech.xml.saml.SamlAssertionV1
 import com.l7tech.policy.assertion.xmlsec.RequireWssSaml
 import com.l7tech.common.io.XmlUtil
 import com.l7tech.server.security.cert.CertValidationProcessor.Facility
+import com.l7tech.objectmodel.Goid
 
 import org.junit.{Assert, Test}
 
@@ -93,7 +94,7 @@ class CertificateAuthenticatorTest {
                           ) : AuthenticationResult = {
     certificateAuthenticator.authenticateX509Credentials(
       credentials,
-      user(1,"1","Alice"),
+      user(new Goid(0,1),"00000000000000000000000000000001","Alice"),
       CertificateValidationType.CERTIFICATE_ONLY,
       new TestAudit() )
   }
@@ -105,7 +106,7 @@ class CertificateAuthenticatorTest {
     certificateAuthenticator.authenticateX509Credentials(
       credentials,
       certificate,
-      user(1,"1","Alice"),
+      user(new Goid(0,1),"00000000000000000000000000000001","Alice"),
       CertificateValidationType.CERTIFICATE_ONLY,
       new TestAudit(),
       false )
@@ -117,17 +118,17 @@ class CertificateAuthenticatorTest {
     Assert.assertNotNull("Result", result);
     Assert.assertNotNull("Result cert", result.getAuthenticatedCert)
     Assert.assertNotNull("Result user", result.getUser)
-    Assert.assertEquals("Result user provider", 1, result.getUser.getProviderId)
-    Assert.assertEquals("Result user id", "1", result.getUser.getId)
+    Assert.assertEquals("Result user provider", new Goid(0,1), result.getUser.getProviderId)
+    Assert.assertEquals("Result user id", "00000000000000000000000000000001", result.getUser.getId)
   }
 
-  private def user(  providerId: Long, userId: String, login: String ) : User = {
+  private def user(  providerId: Goid, userId: String, login: String ) : User = {
     val user = new UserBean( providerId, login );
     user.setUniqueIdentifier( userId )
     user
   }
 
-  private def entry( providerId: Long, userId: String, login: String, certificate: X509Certificate ) : CertEntryRow = {
+  private def entry( providerId: Goid, userId: String, login: String, certificate: X509Certificate ) : CertEntryRow = {
     val entry = new CertEntryRow();
     entry.setProvider( providerId )
     entry.setUserId( userId )
@@ -138,8 +139,8 @@ class CertificateAuthenticatorTest {
 
   private def certEntryRows : Seq[CertEntryRow] = {
     Seq(
-      entry(1,"1","Alice",TestDocuments.getWssInteropAliceCert),
-      entry(1,"2","Bob",TestDocuments.getWssInteropBobCert)
+      entry(new Goid(0,1),"00000000000000000000000000000001","Alice",TestDocuments.getWssInteropAliceCert),
+      entry(new Goid(0,1),"00000000000000000000000000000002","Bob",TestDocuments.getWssInteropBobCert)
     )
   }
 

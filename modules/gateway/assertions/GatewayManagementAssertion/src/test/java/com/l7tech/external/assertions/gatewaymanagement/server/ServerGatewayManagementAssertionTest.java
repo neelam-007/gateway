@@ -809,7 +809,7 @@ public class ServerGatewayManagementAssertionTest {
                 "        </FederatedIdentityProviderDetail>\n" +
                 "    </Extension>\n" +
                 "</IdentityProvider>";
-        String[] expectedIds = new String[]{"1","2","3","4"};
+        String[] expectedIds = new String[]{Goid.toString(new Goid(0,1)),Goid.toString(new Goid(0,2)),Goid.toString(new Goid(0,3)),Goid.toString(new Goid(0,4))};
         doCreate( resourceUri, payload, expectedIds );
     }
 
@@ -827,7 +827,7 @@ public class ServerGatewayManagementAssertionTest {
                 "        </BindOnlyLdapIdentityProviderDetail>\n" +
                 "    </Extension>\n" +
                 "</IdentityProvider>";
-        String[] expectedIds = new String[]{"1","2","3","4"};
+        String[] expectedIds = new String[]{Goid.toString(new Goid(0,1)),Goid.toString(new Goid(0,2)),Goid.toString(new Goid(0,3)),Goid.toString(new Goid(0,4))};
         doCreate( resourceUri, payload, expectedIds );
     }
 
@@ -855,7 +855,7 @@ public class ServerGatewayManagementAssertionTest {
                 "        </LdapIdentityProviderDetail>\n" +
                 "    </Extension>\n" +
                 "</IdentityProvider>";
-        String[] expectedIds = new String[]{"1","2","3","4"};
+        String[] expectedIds = new String[]{Goid.toString(new Goid(0,1)),Goid.toString(new Goid(0,2)),Goid.toString(new Goid(0,3)),Goid.toString(new Goid(0,4))};
         doCreate( resourceUri, payload, expectedIds );
     }
 
@@ -960,7 +960,7 @@ public class ServerGatewayManagementAssertionTest {
                 "        </LdapIdentityProviderDetail>\n" +
                 "    </Extension>\n" +
                 "</IdentityProvider>";
-        String[] expectedIds = new String[]{"1","2","3","4"};
+        String[] expectedIds = new String[]{Goid.toString(new Goid(0,1)),Goid.toString(new Goid(0,2)),Goid.toString(new Goid(0,3)),Goid.toString(new Goid(0,4))};
         doCreate( resourceUri, payload, expectedIds );
     }
 
@@ -1598,8 +1598,8 @@ public class ServerGatewayManagementAssertionTest {
     @BugNumber(10947)
     @Test
     public void testPutIdentityProvider() throws Exception {
-        final String message = "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\"><s:Header><wsa:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Put</wsa:Action><wsa:To s:mustUnderstand=\"true\">http://127.0.0.1:8080/wsman</wsa:To><wsman:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/identityProviders</wsman:ResourceURI><wsa:MessageID s:mustUnderstand=\"true\">uuid:afad2993-7d39-1d39-8002-481688002100</wsa:MessageID><wsa:ReplyTo><wsa:Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo><wsman:SelectorSet><wsman:Selector Name=\"id\">-3</wsman:Selector></wsman:SelectorSet><wsman:RequestEPR/></s:Header><s:Body> " +
-                    "<l7:IdentityProvider id=\"-3\" version=\"0\">\n" +
+        final String message = "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\"><s:Header><wsa:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Put</wsa:Action><wsa:To s:mustUnderstand=\"true\">http://127.0.0.1:8080/wsman</wsa:To><wsman:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/identityProviders</wsman:ResourceURI><wsa:MessageID s:mustUnderstand=\"true\">uuid:afad2993-7d39-1d39-8002-481688002100</wsa:MessageID><wsa:ReplyTo><wsa:Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo><wsman:SelectorSet><wsman:Selector Name=\"id\">0000000000000000fffffffffffffffd</wsman:Selector></wsman:SelectorSet><wsman:RequestEPR/></s:Header><s:Body> " +
+                    "<l7:IdentityProvider id=\"0000000000000000fffffffffffffffd\" version=\"0\">\n" +
                     "    <l7:Name>LDAP (updated)</l7:Name>\n" +
                     "    <l7:IdentityProviderType>LDAP</l7:IdentityProviderType>\n" +
                     "    <l7:Properties>\n" +
@@ -2497,8 +2497,6 @@ public class ServerGatewayManagementAssertionTest {
 
         final Document result = processRequest( "http://ns.l7tech.com/2010/04/gateway-management/policies/ImportPolicy", message );
 
-        System.out.println( XmlUtil.nodeToFormattedString(result ) );
-
         final Element soapBody = SoapUtil.getBodyElement(result);
         final Element importResult = XmlUtil.findExactlyOneChildElementByName(soapBody, NS_GATEWAY_MANAGEMENT, "PolicyImportResult");
         final Element importedPolicyRefs = XmlUtil.findExactlyOneChildElementByName(importResult, NS_GATEWAY_MANAGEMENT, "ImportedPolicyReferences");
@@ -2526,7 +2524,7 @@ public class ServerGatewayManagementAssertionTest {
                         "    xmlns:exp=\"http://www.layer7tech.com/ws/policy/export\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\"&gt;\n" +
                         "    &lt;exp:References>\n" +
                         "        &lt;IDProviderReference RefType=\"com.l7tech.console.policy.exporter.IdProviderReference\">\n" +
-                        "            &lt;OID&gt;200&lt;/OID&gt;\n" +
+                        "            &lt;GOID&gt;000000000000000300000000000000c8&lt;/GOID&gt;\n" +
                         "            &lt;Name&gt;Internal Identity Provider&lt;/Name&gt;\n" +
                         "            &lt;TypeVal&gt;2&lt;/TypeVal&gt;\n" +
                         "        &lt;/IDProviderReference&gt;\n" +
@@ -2577,7 +2575,7 @@ public class ServerGatewayManagementAssertionTest {
                         "        &lt;wsp:All wsp:Usage=\"Required\"&gt;\n" +
                         "            &lt;L7p:AuditAssertion/&gt;\n" +
                         "            &lt;L7p:Authentication&gt;\n" +
-                        "                &lt;L7p:IdentityProviderOid longValue=\"200\"/&gt;\n" +
+                        "                &lt;L7p:IdentityProviderOid longValue=\"000000000000000300000000000000c8\"/&gt;\n" +
                         "            &lt;/L7p:Authentication&gt;\n" +
                         "            &lt;L7p:JdbcQuery&gt;\n" +
                         "                &lt;L7p:ConnectionName stringValue=\"Invalid Connection\"/&gt;\n" +
@@ -2615,7 +2613,7 @@ public class ServerGatewayManagementAssertionTest {
                         "&lt;/exp:Export&gt;\n" +
                         "</Resource>\n" +
                         "<PolicyReferenceInstructions>\n" +
-                        "    <PolicyReferenceInstruction type=\"Map\"    referenceType=\"com.l7tech.console.policy.exporter.IdProviderReference\"     referenceId=\"200\" mappedReferenceId=\"-2\"/>\n" +
+                        "    <PolicyReferenceInstruction type=\"Map\"    referenceType=\"com.l7tech.console.policy.exporter.IdProviderReference\"     referenceId=\"000000000000000300000000000000c8\" mappedReferenceId=\"0000000000000000fffffffffffffffe\"/>\n" +
                         "    <PolicyReferenceInstruction type=\"Ignore\" referenceType=\"com.l7tech.console.policy.exporter.JdbcConnectionReference\" referenceId=\"syn:70ab8caf-35e4-3c3f-a3ae-3685e4b296e0\" />\n" +
                         "    <PolicyReferenceInstruction type=\"Delete\" referenceType=\"com.l7tech.console.policy.exporter.ExternalSchemaReference\" referenceId=\"syn:e69a8c36-66c6-3f0b-ba67-74749c1c62b5\" />\n" +
                         "    <PolicyReferenceInstruction type=\"Rename\" referenceType=\"com.l7tech.console.policy.exporter.IncludedPolicyReference\" referenceId=\"006ece03-a64c-4c17-93cf-ce49e7265daa\" mappedName=\"Renamed Imported Policy Include Fragment\"/>\n" +
@@ -3032,8 +3030,8 @@ public class ServerGatewayManagementAssertionTest {
                 testFolder,
                 folder( new Goid(0,2L), testFolder, "Nested Test Folder") ) );
         beanFactory.addBean( "identityProviderConfigManager", new TestIdentityProviderConfigManager(
-                provider( -2L, IdentityProviderType.INTERNAL, "Internal Identity Provider"),
-                            provider( -3L, IdentityProviderType.LDAP, "LDAP", "userLookupByCertMode", "CERT")));
+                provider( new Goid(0,-2L), IdentityProviderType.INTERNAL, "Internal Identity Provider"),
+                            provider( new Goid(0,-3L), IdentityProviderType.LDAP, "LDAP", "userLookupByCertMode", "CERT")));
         beanFactory.addBean( "jmsConnectionManager",  new JmsConnectionManagerStub(
                 jmsConnection( 1L, "Test Endpoint", "com.context.Classname", "qcf", "ldap://jndi", null),
                 jmsConnection( 2L, "Test Endpoint 2", "com.context.Classname", "qcf 2", "ldap://jndi2", JmsProviderType.Weblogic)));
@@ -3163,9 +3161,9 @@ public class ServerGatewayManagementAssertionTest {
         return folder;
     }
 
-    private static IdentityProviderConfig provider( final long oid, final IdentityProviderType type, final String name, String... props ) {
+    private static IdentityProviderConfig provider( final Goid oid, final IdentityProviderType type, final String name, String... props ) {
         final IdentityProviderConfig provider = type == IdentityProviderType.LDAP ? new LdapIdentityProviderConfig() : new IdentityProviderConfig( type );
-        provider.setOid( oid );
+        provider.setGoid(oid);
         provider.setName( name );
         if (props != null && props.length > 0) {
             int numprops = props.length / 2;

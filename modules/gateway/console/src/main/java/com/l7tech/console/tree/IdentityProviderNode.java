@@ -7,6 +7,7 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderType;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
 import org.jetbrains.annotations.NotNull;
@@ -53,7 +54,7 @@ public class IdentityProviderNode extends EntityHeaderNode<EntityHeader> {
         options.setEnableDeleteAction(true);
         Object obj = getUserObject();
         if (obj instanceof EntityHeader) {
-            options.setInitialProvider(((EntityHeader)obj).getOid());
+            options.setInitialProvider(((EntityHeader)obj).getGoid());
         }
         IdentityProviderConfig config = getProviderConfig();
 
@@ -115,8 +116,8 @@ public class IdentityProviderNode extends EntityHeaderNode<EntityHeader> {
                 @Override
                 public IdentityProviderConfig saveEntity(@NotNull final IdentityProviderConfig entity) throws SaveException {
                     try {
-                        final long oid = Registry.getDefault().getIdentityAdmin().saveIdentityProviderConfig(entity);
-                        entity.setOid(oid);
+                        final Goid oid = Registry.getDefault().getIdentityAdmin().saveIdentityProviderConfig(entity);
+                        entity.setGoid(oid);
                     } catch (final UpdateException e) {
                         throw new SaveException("Unable to save identity provider: " + e.getMessage(), e);
                     }

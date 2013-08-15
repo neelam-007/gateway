@@ -3,7 +3,8 @@ package com.l7tech.server.identity;
 import com.l7tech.identity.*;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.server.event.EntityInvalidationEvent;
+import com.l7tech.objectmodel.Goid;
+import com.l7tech.server.event.GoidEntityInvalidationEvent;
 import com.l7tech.server.util.PostStartupApplicationListener;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
@@ -35,7 +36,7 @@ public class IdentityProviderFactory implements ApplicationContextAware, PostSta
         EntityHeader header;
         while (i.hasNext()) {
             header = (EntityHeader)i.next();
-            IdentityProvider provider = getProvider(header.getOid());
+            IdentityProvider provider = getProvider(header.getGoid());
             if (provider != null) providers.add(provider);
         }
         return Collections.unmodifiableList(providers);
@@ -51,7 +52,7 @@ public class IdentityProviderFactory implements ApplicationContextAware, PostSta
      * @return the IdentityProvider, or null if it's not in the database (either it was deleted or never existed)
      * @throws FindException if there is problem loading information from the database
      */
-    public IdentityProvider getProvider(long idpOid) throws FindException {
+    public IdentityProvider getProvider(Goid idpOid) throws FindException {
 
         IdentityProvider cachedProvider = providers.get(idpOid);
         if (cachedProvider != null)
@@ -105,12 +106,12 @@ public class IdentityProviderFactory implements ApplicationContextAware, PostSta
 
     @Override
     public void onApplicationEvent(final ApplicationEvent event) {
-        if (event instanceof EntityInvalidationEvent) {
-            EntityInvalidationEvent iev = (EntityInvalidationEvent)event;
+        if (event instanceof GoidEntityInvalidationEvent) {
+            GoidEntityInvalidationEvent iev = (GoidEntityInvalidationEvent)event;
             if (IdentityProviderConfig.class.isAssignableFrom(iev.getEntityClass())) {
                 // Throw them out of the cache so they get reloaded next time they are needed
-                long[] oids = iev.getEntityIds();
-                for (long oid : oids) {
+                Goid[] oids = iev.getEntityIds();
+                for (Goid oid : oids) {
                     destroyProvider(oid);
                     providers.remove(oid);
                 }
@@ -123,7 +124,7 @@ public class IdentityProviderFactory implements ApplicationContextAware, PostSta
     private static final Logger logger = Logger.getLogger(IdentityProviderFactory.class.getName());
 
     // note these need to be singletons so that they can be invalidates in case of deletion
-    private static Map<Long, IdentityProvider> providers = new ConcurrentHashMap<Long, IdentityProvider>();
+    private static Map<Goid, IdentityProvider> providers = new ConcurrentHashMap<Goid, IdentityProvider>();
 
     private final IdentityProviderConfigManager identityProviderConfigManager;
     private ApplicationContext springContext;
@@ -174,7 +175,7 @@ public class IdentityProviderFactory implements ApplicationContextAware, PostSta
      * Creates a new IdentityProvider of the correct type indicated by the specified
      * {@link IdentityProviderConfig} and initializes it.
      * <p/>
-     * Call {@link #getProvider(long)} for runtime use, it has a cache.
+     * Call {@link #getProvider(com.l7tech.objectmodel.Goid)} for runtime use, it has a cache.
      *
      * @param config the configuration to intialize the provider with.
      * @param start true to start provider maintenance tasks
@@ -195,7 +196,7 @@ public class IdentityProviderFactory implements ApplicationContextAware, PostSta
         }
     }
 
-    private void destroyProvider( final long oid ) {
+    private void destroyProvider( final Goid oid ) {
         IdentityProvider identityProvider = providers.get(oid);
         if ( identityProvider != null ) {
             try {

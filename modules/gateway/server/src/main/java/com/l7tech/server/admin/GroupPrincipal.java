@@ -3,7 +3,6 @@ package com.l7tech.server.admin;
 import com.l7tech.objectmodel.IdentityHeader;
 
 import java.security.Principal;
-import java.util.Set;
 
 /**
  * Created by IntelliJ IDEA.
@@ -21,11 +20,11 @@ public class GroupPrincipal implements Principal {
     
     public GroupPrincipal(String name, IdentityHeader groupHeader){
         this.name = name;
-        this.groupHeader = new IdentityHeader(groupHeader.getProviderOid(), groupHeader);
+        this.groupHeader = new IdentityHeader(groupHeader.getProviderGoid(), groupHeader);
     }
 
     public IdentityHeader getGroupHeader() {
-        return new IdentityHeader(groupHeader.getProviderOid(), groupHeader);
+        return new IdentityHeader(groupHeader.getProviderGoid(), groupHeader);
     }
 
     public String getName() {

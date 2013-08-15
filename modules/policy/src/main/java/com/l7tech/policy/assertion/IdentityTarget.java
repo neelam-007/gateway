@@ -1,8 +1,7 @@
 package com.l7tech.policy.assertion;
 
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.IdentityHeader;
+import com.l7tech.objectmodel.*;
+import com.l7tech.util.GoidUpgradeMapper;
 
 import java.io.*;
 import java.util.*;
@@ -20,12 +19,12 @@ public final class IdentityTarget implements Comparable, Serializable, UsesEntit
     }
 
     public IdentityTarget( final TargetIdentityType targetIdentityType,
-                           final long identityProviderOid ) {
-        this( targetIdentityType, identityProviderOid, null, null );
+                           final Goid identityProviderGoid) {
+        this( targetIdentityType, identityProviderGoid, null, null );
     }
 
     public IdentityTarget( final String identityTag ) {
-        this( TargetIdentityType.TAG, 0, identityTag, null );
+        this( TargetIdentityType.TAG, null, identityTag, null );
     }
 
     /**
@@ -36,7 +35,7 @@ public final class IdentityTarget implements Comparable, Serializable, UsesEntit
     public IdentityTarget( final IdentityTarget identityTarget ) {
         if ( identityTarget != null ) {
             this.targetIdentityType = identityTarget.targetIdentityType;
-            this.identityProviderOid = identityTarget.identityProviderOid;
+            this.identityProviderGoid = identityTarget.identityProviderGoid;
             this.identityProviderName = identityTarget.identityProviderName;
             this.identityId = identityTarget.identityId;
             this.identityInfo = identityTarget.identityInfo;
@@ -44,11 +43,11 @@ public final class IdentityTarget implements Comparable, Serializable, UsesEntit
     }
 
     public IdentityTarget( final TargetIdentityType targetIdentityType,
-                           final long identityProviderOid,
+                           final Goid identityProviderGoid,
                            final String identityId,
                            final String identityInfo ) {
         this.targetIdentityType = targetIdentityType;
-        this.identityProviderOid = identityProviderOid;
+        this.identityProviderGoid = identityProviderGoid;
         this.identityId = identityId;
         this.identityInfo = identityInfo;        
     }
@@ -65,16 +64,26 @@ public final class IdentityTarget implements Comparable, Serializable, UsesEntit
         this.targetIdentityType = targetIdentityType;
     }
 
-    public long getIdentityProviderOid() {
-        return identityProviderOid;
+
+
+    public Goid getIdentityProviderOid() {
+        return identityProviderGoid;
     }
 
     /**
      * @deprecated For serialization only
      */
     @Deprecated
-    public void setIdentityProviderOid( final long identityProviderOid ) {
-        this.identityProviderOid = identityProviderOid;
+    public void setIdentityProviderOid(final Goid identityProviderGoid) {
+        this.identityProviderGoid = identityProviderGoid;
+    }      // For backward compat while parsing pre-GOID policies.  Not needed for new assertions.
+
+    @Deprecated
+    public void setIdentityProviderOid( long providerOid ) {
+        this.identityProviderGoid = (providerOid == -2) ?
+                new Goid(0,-2L):
+                GoidUpgradeMapper.mapOid(EntityType.ID_PROVIDER_CONFIG, providerOid);
+        mapUserId();
     }
 
     public boolean needsIdentityProviderName() {
@@ -100,6 +109,7 @@ public final class IdentityTarget implements Comparable, Serializable, UsesEntit
     @Deprecated
     public void setIdentityId( final String identityId ) {
         this.identityId = identityId;
+        mapUserId();
     }
 
     public String getIdentityInfo() {
@@ -112,6 +122,22 @@ public final class IdentityTarget implements Comparable, Serializable, UsesEntit
     @Deprecated
     public void setIdentityInfo( final String identityInfo ) {
         this.identityInfo = identityInfo;
+    }
+
+    private final Goid INTERNAL_IDENTITY_PROVIDER = new Goid(0,-2);
+    private void mapUserId(){
+        if(getIdentityId()!=null && getIdentityId().length()!=32 && getIdentityProviderOid()!=null&& !getIdentityProviderOid().equals(GoidEntity.DEFAULT_GOID)){
+            try{
+                Long groupOidId = Long.parseLong(getIdentityId());
+                if(getIdentityProviderOid().equals(INTERNAL_IDENTITY_PROVIDER)){
+                    setIdentityId(GoidUpgradeMapper.mapOidFromTableName("internal_user", groupOidId).toString());
+                }else{
+                    setIdentityId(GoidUpgradeMapper.mapOidFromTableName("fed_user",groupOidId).toString());
+                }
+            }catch(NumberFormatException e){
+                // no need to map dn group id
+            }
+        }
     }
 
     /**
@@ -134,7 +160,7 @@ public final class IdentityTarget implements Comparable, Serializable, UsesEntit
                         identityBuilder.append(identityProviderName);
                     } else {
                         identityBuilder.append("#");
-                        identityBuilder.append(identityProviderOid);
+                        identityBuilder.append(identityProviderGoid);
                     }
                     break;
                 case USER:
@@ -150,7 +176,7 @@ public final class IdentityTarget implements Comparable, Serializable, UsesEntit
                         identityBuilder.append(identityProviderName);
                     } else {
                         identityBuilder.append("#");
-                        identityBuilder.append(identityProviderOid);
+                        identityBuilder.append(identityProviderGoid);
                     }
                     break;
                 case GROUP:
@@ -166,7 +192,7 @@ public final class IdentityTarget implements Comparable, Serializable, UsesEntit
                         identityBuilder.append(identityProviderName);
                     } else {
                         identityBuilder.append("#");
-                        identityBuilder.append(identityProviderOid);
+                        identityBuilder.append(identityProviderGoid);
                     }
                     break;
             }
@@ -194,7 +220,7 @@ public final class IdentityTarget implements Comparable, Serializable, UsesEntit
                     break;
                 case PROVIDER:
                     identityBuilder.append("Identity Provider #");
-                    identityBuilder.append(identityProviderOid);
+                    identityBuilder.append(identityProviderGoid);
                     if ( identityProviderName != null ) {
                         identityBuilder.append(", name '");
                         identityBuilder.append(identityProviderName);
@@ -238,22 +264,22 @@ public final class IdentityTarget implements Comparable, Serializable, UsesEntit
         if ( targetIdentityType != null ) {
             switch (targetIdentityType) {
                 case GROUP:
-                    headers.add( new EntityHeader(identityProviderOid, EntityType.ID_PROVIDER_CONFIG, identityProviderName, null) );
-                    headers.add( new IdentityHeader(identityProviderOid, identityId, EntityType.GROUP, identityInfo, null, null, null) );
+                    headers.add( new EntityHeader(identityProviderGoid, EntityType.ID_PROVIDER_CONFIG, identityProviderName, null) );
+                    headers.add( new IdentityHeader(identityProviderGoid, identityId, EntityType.GROUP, identityInfo, null, null, null) );
                     break;
                 case PROVIDER:
-                    headers.add( new EntityHeader(identityProviderOid, EntityType.ID_PROVIDER_CONFIG, identityProviderName, null) );
+                    headers.add( new EntityHeader(identityProviderGoid, EntityType.ID_PROVIDER_CONFIG, identityProviderName, null) );
                     break;
                 case TAG:
                     break;
                 case USER:
-                    headers.add( new EntityHeader(identityProviderOid, EntityType.ID_PROVIDER_CONFIG, identityProviderName, null) );
-                    headers.add( new IdentityHeader(identityProviderOid, identityId, EntityType.USER, identityInfo, null, null, null) );
+                    headers.add( new EntityHeader(identityProviderGoid, EntityType.ID_PROVIDER_CONFIG, identityProviderName, null) );
+                    headers.add( new IdentityHeader(identityProviderGoid, identityId, EntityType.USER, identityInfo, null, null, null) );
                     break;
             }
         }
 
-        return headers.toArray( new EntityHeader[headers.size()] );        
+        return headers.toArray(new EntityHeader[headers.size()]);
     }
 
     /**
@@ -271,10 +297,10 @@ public final class IdentityTarget implements Comparable, Serializable, UsesEntit
                          oldEntityHeader  instanceof IdentityHeader ) {
                         IdentityHeader newIdentityHeader = (IdentityHeader) newEntityHeader;
                         IdentityHeader oldIdentityHeader = (IdentityHeader) oldEntityHeader;
-                        if ( oldIdentityHeader.getProviderOid() == identityProviderOid &&
+                        if ( oldIdentityHeader.getProviderGoid() == identityProviderGoid &&
                              oldIdentityHeader.getStrId() != null &&
                              oldIdentityHeader.getStrId().equalsIgnoreCase(identityId) ) {
-                            this.identityProviderOid = newIdentityHeader.getProviderOid();
+                            this.identityProviderGoid = newIdentityHeader.getProviderGoid();
                             this.identityProviderName = null;
                             this.identityId = newIdentityHeader.getStrId();
                             this.identityInfo = newIdentityHeader.getName();
@@ -282,8 +308,8 @@ public final class IdentityTarget implements Comparable, Serializable, UsesEntit
                     }
                     break;
                 case ID_PROVIDER_CONFIG:
-                    if ( oldEntityHeader.getOid() == this.identityProviderOid ) {
-                        this.identityProviderOid = newEntityHeader.getOid();
+                    if ( oldEntityHeader.getGoid().equals(this.identityProviderGoid)) {
+                        this.identityProviderGoid = newEntityHeader.getGoid();
                         this.identityProviderName = null; // name in header may be stale
                     }
                     break;
@@ -300,7 +326,7 @@ public final class IdentityTarget implements Comparable, Serializable, UsesEntit
             result = targetIdentityType.compareTo(otherIdentityTarget.targetIdentityType);
         }
         if ( result == 0 ) {
-            result = Long.valueOf(identityProviderOid).compareTo(otherIdentityTarget.identityProviderOid);
+            result = identityProviderGoid.compareTo(otherIdentityTarget.identityProviderGoid);
         }
         if ( result == 0 && identityId!=null && otherIdentityTarget.identityId!=null) {
             result = identityId.compareToIgnoreCase(otherIdentityTarget.identityId);
@@ -317,7 +343,7 @@ public final class IdentityTarget implements Comparable, Serializable, UsesEntit
 
         IdentityTarget that = (IdentityTarget) o;
 
-        if (identityProviderOid != that.identityProviderOid) return false;
+        if (identityProviderGoid != null ? !identityProviderGoid.equals(that.identityProviderGoid) : that.identityProviderGoid != null) return false;
         if (identityId != null ? !identityId.equalsIgnoreCase(that.identityId) : that.identityId != null) return false;
         if (targetIdentityType != that.targetIdentityType) return false;
 
@@ -328,7 +354,7 @@ public final class IdentityTarget implements Comparable, Serializable, UsesEntit
     public int hashCode() {
         int result;
         result = (targetIdentityType != null ? targetIdentityType.hashCode() : 0);
-        result = 31 * result + (int) (identityProviderOid ^ (identityProviderOid >>> 32));
+        result = 31 * result + (identityProviderGoid != null ? identityProviderGoid.hashCode() : 0);
         result = 31 * result + (identityId != null ? identityId.toLowerCase().hashCode() : 0);
         return result;
     }
@@ -336,7 +362,7 @@ public final class IdentityTarget implements Comparable, Serializable, UsesEntit
     //- PRIVATE
 
     private TargetIdentityType targetIdentityType;
-    private long identityProviderOid;
+    private Goid identityProviderGoid;
     private String identityProviderName; // not part of identity (eq/hash)
     private String identityId; // case insensitive identifier
     private String identityInfo; // not part of identity (eq/hash)

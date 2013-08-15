@@ -223,6 +223,38 @@ public class GoidUpgradeMapper {
     }
 
     /**
+     * Map or wrap the specified legacy OID into a GOID, mapping it to the correct GOID for an entity from an updated
+     * database, if applicable; otherwise, wrapping it as a Goid within the range reserved for a wrapped OID
+     * (for temporary use within a Gateway upgraded from a pre-GOID database).
+     * <p/>
+     * <b>NOTE:</b> Mapped (upgraded prefix) GOIDs created by this method are the actual, real GOIDs of entities that
+     * have been upgraded to GOID from OID.  They can be used anywhere like any other GOID.
+     * <p/>
+     * Wrapped (prefix 0003) GOIDs created by this method are to be used for transitional purposes and
+     * must not be persisted or externalized as identifiers for persisted entities -- doing so would defeat the purpose of using GOIDs.
+     * It is OK to use such GOIDs as placeholders for references to entities that do not exist, as long as the
+     * GOIDs never validly point at any real saved entities.
+     * <p/>
+     * You can use {@link GoidRange#WRAPPED_OID}'s {@link GoidRange#isInRange(com.l7tech.objectmodel.Goid)} method
+     * to test whether a returned GOID has been wrapped vs mapped.
+     *
+     * @param tableName the table name associated with the OID, or null to avoid checking for an upgraded prefix
+     *                   and just always use the WRAPPED_OID prefix.
+     * @param oid the objectid to wrap, or null to just return null.
+     * @return a new Goid encoding this object ID with the upgraded prefix for this entity type, if available, or
+     *         else with the WRAPPED_OID prefix, or null if oid was null.
+     */
+    public static Goid mapOidFromTableName(@NotNull String tableName, @Nullable Long oid) {
+        Long prefix = getPrefix(tableName);
+        if (prefix == null)
+            prefix = GoidRange.WRAPPED_OID.getFirstHi();
+
+        return oid == null
+                ? null
+                : new Goid( prefix, oid );
+    }
+
+    /**
      * Map or wrap legacy OIDs in the specified array to GOIDs, mapping them to the correct GOIDs for
      * entities from an updated database, if applicable; otherwise, wrapping them to GOIDs within the range reserved
      * for wrapped OIDs (for temporary use within a Gateway upgraded from a pre-GOID database). If a default oid is give

@@ -38,7 +38,7 @@ public class NewInternalUserAction extends NodeAction {
     @Override
     public boolean isAuthorized() {
         if (attemptedCreateUser == null) {
-            attemptedCreateUser = new AttemptedCreateSpecific(EntityType.USER, new UserBean(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID, "<new user>"));
+            attemptedCreateUser = new AttemptedCreateSpecific(EntityType.USER, new UserBean(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_GOID, "<new user>"));
         }
         return canAttemptOperation(attemptedCreateUser);
     }

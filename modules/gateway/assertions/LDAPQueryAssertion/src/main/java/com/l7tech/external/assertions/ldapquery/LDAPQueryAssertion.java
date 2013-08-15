@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.ldapquery;
 
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
@@ -15,6 +16,7 @@ import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.util.Functions;
+import com.l7tech.util.GoidUpgradeMapper;
 
 import java.io.Serializable;
 import java.util.*;
@@ -37,7 +39,7 @@ public class LDAPQueryAssertion extends Assertion implements UsesEntities, UsesV
     private String searchFilter;
     private boolean searchFilterInjectionProtected = false;
     private QueryAttributeMapping[] queryMappings = new QueryAttributeMapping[0];
-    private long ldapProviderOid;
+    private Goid ldapProviderOid;
     private int cacheSize = 0; // 0 for unlimited
     private long cachePeriod = 10; // minutes
     private boolean enableCache = true;
@@ -132,26 +134,33 @@ public class LDAPQueryAssertion extends Assertion implements UsesEntities, UsesV
         this.queryMappings = queryMappings;
     }
 
-    public long getLdapProviderOid() {
+    public Goid getLdapProviderOid() {
         return ldapProviderOid;
     }
 
-    public void setLdapProviderOid(long ldapProviderOid) {
+    public void setLdapProviderOid(Goid ldapProviderOid) {
         this.ldapProviderOid = ldapProviderOid;
+    }
+
+    // For backward compat while parsing pre-GOID policies.  Not needed for new assertions.
+    @Deprecated
+    public void setLdapProviderOid( long ldapProviderOid ) {
+        this.ldapProviderOid =
+                GoidUpgradeMapper.mapOid(EntityType.ID_PROVIDER_CONFIG, ldapProviderOid);
     }
 
     @Override
     @Migration(mapName = MigrationMappingSelection.REQUIRED, export = false, resolver = PropertyResolver.Type.ASSERTION)
     public EntityHeader[] getEntitiesUsed() {
-        return new EntityHeader[] { new EntityHeader(Long.toString(ldapProviderOid), EntityType.ID_PROVIDER_CONFIG, null, null) };
+        return new EntityHeader[] { new EntityHeader(ldapProviderOid, EntityType.ID_PROVIDER_CONFIG, null, null) };
     }
 
     @Override
     public void replaceEntity(EntityHeader oldEntityHeader, EntityHeader newEntityHeader) {
         if( oldEntityHeader.getType().equals(EntityType.ID_PROVIDER_CONFIG) &&
-            oldEntityHeader.getOid() == ldapProviderOid &&
+            oldEntityHeader.getGoid().equals(ldapProviderOid) &&
             newEntityHeader.getType().equals(EntityType.ID_PROVIDER_CONFIG)) {
-            ldapProviderOid = newEntityHeader.getOid();
+            ldapProviderOid = newEntityHeader.getGoid();
         }
     }
 

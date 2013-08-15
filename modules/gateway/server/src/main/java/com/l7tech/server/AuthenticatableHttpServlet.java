@@ -352,11 +352,11 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
         return provider;
     }
 
-    private Unary<Boolean, IdentityProvider> providerOidPredicate( final long providerOid ) {
+    private Unary<Boolean, IdentityProvider> providerOidPredicate( final Goid providerOid ) {
         return new Unary<Boolean,IdentityProvider>(){
             @Override
             public Boolean call( final IdentityProvider identityProvider ) {
-                return providerOid == identityProvider.getConfig().getOid();
+                return providerOid.equals(identityProvider.getConfig().getGoid());
             }
         };
     }
@@ -438,7 +438,7 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
                     CustomAssertionHolder ch = (CustomAssertionHolder)ass;
                     if (ch.isCustomCredentialSource()) { // bingo
                         UserBean user = new UserBean();
-                        user.setProviderId(Long.MAX_VALUE);
+                        user.setProviderId(new Goid(0,Long.MAX_VALUE));
                         user.setLogin(creds.getLogin());
                         final String passwordHashed = passwordHasher.hashPassword(new String(creds.getCredentials()).getBytes(Charsets.UTF8));
                         //todo there does not appear to be a need for setting the hashed password. Only client of this logic is WsdlProxyServlet.
@@ -496,7 +496,7 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
      *
      * @return The name or "Unknown" if not found or an error occurs.
      */
-    protected String getIdentityProviderName( final long oid ) {
+    protected String getIdentityProviderName( final Goid oid ) {
         String name = "Unknown";
 
         try {

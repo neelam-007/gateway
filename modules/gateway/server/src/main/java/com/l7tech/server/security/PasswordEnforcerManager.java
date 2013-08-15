@@ -465,7 +465,7 @@ public class PasswordEnforcerManager implements PropertyChangeListener, Applicat
         IdentityProviderPasswordPolicy passwordPolicy = null;
         final String msg = "Could not find password policy for internal identity provider.";
         try {
-            passwordPolicy = passwordPolicyManager.findByInternalIdentityProviderOid(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID);
+            passwordPolicy = passwordPolicyManager.findByInternalIdentityProviderOid(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_GOID);
         } catch (FindException e) {
             //this should not happen and is a serious configuration issue.
             logger.log(Level.WARNING, msg);

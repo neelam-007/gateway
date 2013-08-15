@@ -57,7 +57,7 @@ public class InternalUserManagerImpl
 
     @Override
     protected IdentityHeader newHeader( final InternalUser entity ) {
-        return new IdentityHeader(entity.getProviderId(), entity.getOid(), EntityType.USER, entity.getLogin(), entity.getDescription(), entity.getName(), entity.getVersion(), entity.isEnabled());
+        return new IdentityHeader(entity.getProviderId(), entity.getGoid(), EntityType.USER, entity.getLogin(), entity.getDescription(), entity.getName(), entity.getVersion(), entity.isEnabled());
     }
 
     @Override
@@ -68,7 +68,7 @@ public class InternalUserManagerImpl
         iu.setFirstName(bean.getFirstName());
         iu.setLastName(bean.getLastName());
         iu.setName(bean.getName());
-        iu.setOid(bean.getId() == null ? InternalUser.DEFAULT_OID : Long.valueOf(bean.getId()));
+        iu.setGoid(bean.getId() == null ? InternalUser.DEFAULT_GOID : Goid.parseGoid(bean.getId()));
         iu.setHashedPassword(bean.getHashedPassword());
         iu.setHttpDigest(bean.getHttpDigest());
         iu.setSubjectDn(bean.getSubjectDn());
@@ -81,8 +81,8 @@ public class InternalUserManagerImpl
     @Transactional(propagation=Propagation.SUPPORTS)
     public InternalUser headerToUser(IdentityHeader header) {
         InternalUser iu = new InternalUser();
-        iu.setProviderId(getProviderOid());
-        iu.setOid(header.getOid());
+        iu.setProviderId(getProviderGoid());
+        iu.setGoid(header.getGoid());
         iu.setLogin(header.getName());
         return iu;
     }

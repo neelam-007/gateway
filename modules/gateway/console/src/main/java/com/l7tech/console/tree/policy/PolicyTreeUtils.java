@@ -1,5 +1,6 @@
 package com.l7tech.console.tree.policy;
 
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.IdentityTargetable;
 import com.l7tech.gateway.common.admin.IdentityAdmin;
@@ -26,13 +27,13 @@ public class PolicyTreeUtils {
      */
     @SuppressWarnings({"unchecked"})
     public static void updateAssertions( final AssertionTreeNode atn,
-                                         final Map<Long,String> identityProviderNameMap ) {
+                                         final Map<Goid,String> identityProviderNameMap ) {
         Assertion assertion = atn.asAssertion();
         if ( assertion instanceof IdentityTargetable ) {
             IdentityTargetable identityTargetable = (IdentityTargetable) assertion;
             if ( identityTargetable.getIdentityTarget() != null &&
                  identityTargetable.getIdentityTarget().needsIdentityProviderName() ) {
-                long providerOid = identityTargetable.getIdentityTarget().getIdentityProviderOid();
+                Goid providerOid = identityTargetable.getIdentityTarget().getIdentityProviderOid();
                 String name = identityProviderNameMap.get( providerOid );
                 if ( name == null ) {
                     try {

@@ -12,10 +12,7 @@ import com.l7tech.gui.util.Utilities;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderType;
 import com.l7tech.identity.mapping.*;
-import com.l7tech.objectmodel.AttributeHeader;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.UsersOrGroups;
+import com.l7tech.objectmodel.*;
 
 import javax.swing.*;
 import javax.swing.event.*;
@@ -60,8 +57,8 @@ public class IdentityAttributesAssertionDialog extends AssertionPropertiesEditor
 
     private IdentityAttributesAssertion assertion;
     private IdentityProviderConfig previousProvider;
-    private final Map<Long, IdentityProviderConfig> configs = new HashMap<Long, IdentityProviderConfig>();
-    private final Map<Long, EntityHeader> headers = new HashMap<Long, EntityHeader>();
+    private final Map<Goid, IdentityProviderConfig> configs = new HashMap<Goid, IdentityProviderConfig>();
+    private final Map<Goid, EntityHeader> headers = new HashMap<Goid, EntityHeader>();
     private final IdentityMappingTableModel tableModel = new IdentityMappingTableModel();
     private static final String BAD_ATTRIBUTE_MESSAGE = resources.getString("badAttributeMessage");
 
@@ -103,7 +100,7 @@ public class IdentityAttributesAssertionDialog extends AssertionPropertiesEditor
                 assertion.setLookupAttributes(mappings.toArray(new IdentityMapping[mappings.size()]));
                 final String text = variablePrefixField.getVariable();
                 assertion.setVariablePrefix(text.equals(DEFAULT_VAR_PREFIX) ? null : text);
-                assertion.setIdentityProviderOid(previousProvider.getOid());
+                assertion.setIdentityProviderOid(previousProvider.getGoid());
                 ok = true;
                 dispose();
             }
@@ -123,16 +120,16 @@ public class IdentityAttributesAssertionDialog extends AssertionPropertiesEditor
                 if (previousProvider.type() == IdentityProviderType.INTERNAL) {
                     im = new InternalAttributeMapping(ac, uog);
                 } else if (previousProvider.type() == IdentityProviderType.LDAP) {
-                    im = new LdapAttributeMapping(ac, previousProvider.getOid(), uog);
+                    im = new LdapAttributeMapping(ac, previousProvider.getGoid(), uog);
                 } else if (previousProvider.type() == IdentityProviderType.FEDERATED) {
-                    im = new FederatedAttributeMapping(ac, previousProvider.getOid(), uog);
+                    im = new FederatedAttributeMapping(ac, previousProvider.getGoid(), uog);
                 } else if (previousProvider.type() == IdentityProviderType.BIND_ONLY_LDAP) {
                     DialogDisplayer.showMessageDialog(addButton,
                             MessageFormat.format("Identity Provider #{0} ({1}) is of type \"{2}\" and does not support attribute mappings.",
-                                    previousProvider.getOid(), previousProvider.getName(), previousProvider.type().description()), null);
+                                    previousProvider.getGoid(), previousProvider.getName(), previousProvider.type().description()), null);
                     return;
                 } else {
-                    throw new IllegalStateException(MessageFormat.format("Identity Provider #{0} ({1}) is of an unsupported type \"{2}\"", previousProvider.getOid(), previousProvider.getName(), previousProvider.type().description()));
+                    throw new IllegalStateException(MessageFormat.format("Identity Provider #{0} ({1}) is of an unsupported type \"{2}\"", previousProvider.getGoid(), previousProvider.getName(), previousProvider.type().description()));
                 }
                 
                 if (edit(im)) {
@@ -196,7 +193,7 @@ public class IdentityAttributesAssertionDialog extends AssertionPropertiesEditor
 
         final IdentityProviderConfig newProvider;
         try {
-            newProvider = Registry.getDefault().getIdentityAdmin().findIdentityProviderConfigByID(which.getOid());
+            newProvider = Registry.getDefault().getIdentityAdmin().findIdentityProviderConfigByID(which.getGoid());
             if (newProvider == null) {
                 DialogDisplayer.showMessageDialog(this, "Identity Provider Deleted", "The selected identity provider has been deleted!", null);
                 dispose();
@@ -206,12 +203,12 @@ public class IdentityAttributesAssertionDialog extends AssertionPropertiesEditor
             throw new RuntimeException(MessageFormat.format("Unable to load Identity Provider #{0} ({1})", which.getOid(), which.getName()), e);
         }
 
-        if (newProvider.getOid() == previousProvider.getOid()) return; // No change
+        if (newProvider.getGoid().equals(previousProvider.getGoid())) return; // No change
 
         final FilterResult result = filterUnsupportedAttributes(previousProvider, newProvider);
         synchronized(this) {
             if (result == CANCEL) {
-                identityProviderComboBox.setSelectedItem(headers.get(previousProvider.getOid()));
+                identityProviderComboBox.setSelectedItem(headers.get(previousProvider.getGoid()));
                 return;
             }
 
@@ -321,7 +318,7 @@ public class IdentityAttributesAssertionDialog extends AssertionPropertiesEditor
         try {
             EntityHeader[] allHeaders = Registry.getDefault().getIdentityAdmin().findAllIdentityProviderConfig();
             for (EntityHeader header : allHeaders) {
-                final IdentityProviderConfig config = Registry.getDefault().getIdentityAdmin().findIdentityProviderConfigByID(header.getOid());
+                final IdentityProviderConfig config = Registry.getDefault().getIdentityAdmin().findIdentityProviderConfigByID(header.getGoid());
                 IdentityProviderType type = config.type();
                 if (builtinAttributes.get(type) == null) {
                     // Provider type does not support attributes (eg Simple LDAP)
@@ -330,15 +327,15 @@ public class IdentityAttributesAssertionDialog extends AssertionPropertiesEditor
                 if (type != IdentityProviderType.INTERNAL) {
                     header.setName(header.getName() + " [" + type.description() + "]");
                 }
-                this.configs.put(header.getOid(), config);
-                this.headers.put(header.getOid(), header);
+                this.configs.put(header.getGoid(), config);
+                this.headers.put(header.getGoid(), header);
                 tempHeaders.add(header);
             }
         } catch (FindException e) {
             throw new RuntimeException("Unable to load identity provider(s)", e);
         }
 
-        long initialOid = assertion.getIdentityProviderOid();
+        Goid initialOid = assertion.getIdentityProviderOid();
         final IdentityProviderConfig initialConfig = configs.get(initialOid);
         if (initialConfig != null) {
             this.previousProvider = initialConfig;
@@ -346,7 +343,7 @@ public class IdentityAttributesAssertionDialog extends AssertionPropertiesEditor
             // Select the first one
             Iterator<EntityHeader> iterator = tempHeaders.iterator();
             if(iterator.hasNext()){
-                initialOid = iterator.next().getOid();
+                initialOid = iterator.next().getGoid();
                 this.previousProvider = configs.get(initialOid);
             }
         }

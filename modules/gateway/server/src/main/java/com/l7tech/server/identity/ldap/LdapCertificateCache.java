@@ -208,7 +208,7 @@ class LdapCertificateCache implements Lifecycle {
             logger.warning("Config Manager is null.");
         } else {
             try {
-                IdentityProviderConfig config = configManager.findByPrimaryKey(this.config.getOid());
+                IdentityProviderConfig config = configManager.findByPrimaryKey(this.config.getGoid());
                 return config == null || config.getVersion()!=this.config.getVersion();
             } catch (FindException e) {
                 logger.log( Level.WARNING, "Error checking identity configuration for " + config, ExceptionUtils.getDebugException( e ) );

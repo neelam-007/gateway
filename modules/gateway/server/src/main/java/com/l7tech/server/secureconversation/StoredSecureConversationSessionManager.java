@@ -1,9 +1,6 @@
 package com.l7tech.server.secureconversation;
 
-import com.l7tech.objectmodel.DeleteException;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityManager;
-import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.*;
 
 /**
  * Entity manager for stored WS-SecureConversation sessions.
@@ -28,7 +25,7 @@ public interface StoredSecureConversationSessionManager extends EntityManager<St
      * @return The session or null.
      * @throws FindException If an error occurs
      */
-    StoredSecureConversationSession findOutboundSessionByUserAndService( long providerId,
+    StoredSecureConversationSession findOutboundSessionByUserAndService( Goid providerId,
                                                                          String userId,
                                                                          String serviceUrl ) throws FindException;
 
@@ -48,7 +45,7 @@ public interface StoredSecureConversationSessionManager extends EntityManager<St
      * @param serviceUrl The service URL for the session.
      * @throws DeleteException If an error occurs
      */
-    void deleteOutboundSessionByUserAndService( long providerId,
+    void deleteOutboundSessionByUserAndService( Goid providerId,
                                                 String userId,
                                                 String serviceUrl ) throws DeleteException;
 

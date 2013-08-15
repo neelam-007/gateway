@@ -5,6 +5,7 @@
 
 package com.l7tech.policy;
 
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
@@ -35,7 +36,7 @@ import java.util.logging.Logger;
  */
 public class SamplePolicyTest {
     private static Logger log = Logger.getLogger(SamplePolicyTest.class.getName());
-    long identityProvider = 111;
+    Goid identityProvider = new Goid(0,111);
     String userAlice = "alice";
     String userBob = "bob";
 

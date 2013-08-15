@@ -1,5 +1,6 @@
 package com.l7tech.server.policy.assertion.identity;
 
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.assertion.identity.AuthenticationAssertion;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -23,12 +24,12 @@ public class ServerAuthenticationAssertion extends ServerIdentityAssertion<Authe
     @Override
     protected AssertionStatus checkUser(AuthenticationResult authResult) {       
         User requestingUser = authResult.getUser();
-        long requestProvider = requestingUser.getProviderId();
+        Goid requestProvider = requestingUser.getProviderId();
 
         // provider must always match
-        if (requestProvider != assertion.getIdentityProviderOid()) {
+        if (!requestProvider.equals(assertion.getIdentityProviderOid())) {
             logAndAudit(AssertionMessages.SPECIFICUSER_PROVIDER_MISMATCH,
-                    Long.toString(requestProvider), Long.toString(assertion.getIdentityProviderOid()));
+                    Goid.toString(requestProvider), Goid.toString(assertion.getIdentityProviderOid()));
             return AssertionStatus.AUTH_FAILED;
         }
 

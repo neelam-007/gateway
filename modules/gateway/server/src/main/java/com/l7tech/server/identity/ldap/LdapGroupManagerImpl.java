@@ -190,7 +190,7 @@ public class LdapGroupManagerImpl implements LdapGroupManager, Lifecycle {
      * throws an UnsupportedOperationException
      */
     @Override
-    public void deleteAll(long ipoid) {
+    public void deleteAll(Goid ipoid) {
         throw new UnsupportedOperationException();
     }
 
@@ -198,7 +198,7 @@ public class LdapGroupManagerImpl implements LdapGroupManager, Lifecycle {
      * throws an UnsupportedOperationException
      */
     @Override
-    public void deleteAllVirtual(long ipoid) {
+    public void deleteAllVirtual(Goid ipoid) {
         throw new UnsupportedOperationException();
     }
 
@@ -262,7 +262,7 @@ public class LdapGroupManagerImpl implements LdapGroupManager, Lifecycle {
     @Override
     public boolean isMember( final User user,
                              final LdapGroup group ) throws FindException {
-        if (user.getProviderId() != getProviderOid()) {
+        if (user.getProviderId().equals(getProviderOid())){
             logger.log(Level.FINE, "User is not from this Identity Provider");
             return false;
         }
@@ -1138,15 +1138,12 @@ public class LdapGroupManagerImpl implements LdapGroupManager, Lifecycle {
         return provider;
     }
 
-    private long getProviderOid() {
-        long oid = providerOid;
-
-        if ( oid == 0L ) {
-            oid = identityProviderConfig.getOid();
-            providerOid = oid;
+    private Goid getProviderOid() {
+        if ( providerOid == null ) {
+            providerOid = identityProviderConfig.getGoid();
         }
 
-        return oid;
+        return providerOid;
     }
 
     private String getId() {
@@ -1263,7 +1260,7 @@ public class LdapGroupManagerImpl implements LdapGroupManager, Lifecycle {
         return group;
     }
 
-    private static LdapGroup buildGroup( final long providerOid, final String dn, final String cn, final Attributes attributes ) {
+    private static LdapGroup buildGroup( final Goid providerOid, final String dn, final String cn, final Attributes attributes ) {
         LdapGroup ldapGroup = new LdapGroup();
         ldapGroup.setProviderId(providerOid);
         ldapGroup.setDn(dn);
@@ -1306,7 +1303,7 @@ public class LdapGroupManagerImpl implements LdapGroupManager, Lifecycle {
     }
 
     private static final class GroupCacheEntry {
-        private final long providerOid;
+        private final Goid providerOid;
         private final String dn;
         private final String cn;
         private final Attributes attributes;
@@ -1321,7 +1318,7 @@ public class LdapGroupManagerImpl implements LdapGroupManager, Lifecycle {
                   ldapGroup.getAttributes() );
         }
 
-        private GroupCacheEntry( final long providerOid,
+        private GroupCacheEntry( final Goid providerOid,
                                  final String dn,
                                  final String cn,
                                  final Attributes attributes ) {
@@ -1365,7 +1362,7 @@ public class LdapGroupManagerImpl implements LdapGroupManager, Lifecycle {
     private LdapIdentityProviderConfig identityProviderConfig;
     private LdapIdentityProvider identityProvider;
     private LdapRuntimeConfig ldapRuntimeConfig;
-    private long providerOid;
+    private Goid providerOid;
     private LdapUtils.LdapTemplate ldapTemplate;
     private Cache groupCache;
     private int cacheSize = DEFAULT_GROUP_CACHE_SIZE;

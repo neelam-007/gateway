@@ -15,6 +15,7 @@ import com.l7tech.console.util.LicenseListener;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.IdentityHeader;
 import org.jetbrains.annotations.NotNull;
 
@@ -110,7 +111,7 @@ public class FindIdentityAction extends BaseAction implements LicenseListener, P
      *
      * @param header the principal instance to edit
      */
-    private void showEditDialog(long providerId, IdentityHeader header) {
+    private void showEditDialog(Goid providerId, IdentityHeader header) {
         AbstractTreeNode an = TreeNodeFactory.asTreeNode(header, null);
         final BaseAction a = (BaseAction)an.getPreferredAction();
         if (a == null) return;

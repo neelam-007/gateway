@@ -19,10 +19,7 @@ import com.l7tech.identity.Group;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.User;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.SaveException;
+import com.l7tech.objectmodel.*;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import org.apache.commons.lang.StringUtils;
@@ -54,7 +51,7 @@ public class RoleAssignmentsPanel extends JPanel {
     private JButton removeButton;
     private Role role;
     private SimpleTableModel<RoleAssignment> assignmentsTableModel;
-    private Map<Long, IdentityProviderConfig> knownProviders = new HashMap<>();
+    private Map<Goid, IdentityProviderConfig> knownProviders = new HashMap<>();
     private Map<RoleAssignment, String> knownAssignmentNames = new HashMap<>();
 
     public RoleAssignmentsPanel() {
@@ -128,7 +125,7 @@ public class RoleAssignmentsPanel extends JPanel {
                     @Override
                     public String call(final RoleAssignment assignment) {
                         String providerName = UNKNOWN;
-                        final long providerId = assignment.getProviderId();
+                        final Goid providerId = assignment.getProviderId();
                         final IdentityProviderConfig knownProvider = knownProviders.get(providerId);
                         if (knownProvider != null) {
                             providerName = knownProvider.getName();
@@ -292,7 +289,7 @@ public class RoleAssignmentsPanel extends JPanel {
                 if (result != null && result.entityHeaders != null) {
                     final IdentityAdmin identityAdmin = Registry.getDefault().getIdentityAdmin();
                     try {
-                        long providerId = result.providerConfigOid;
+                        Goid providerId = result.providerConfigOid;
                         for (final EntityHeader header : result.entityHeaders) {
                             switch (header.getType()) {
                                 case USER:
@@ -325,7 +322,7 @@ public class RoleAssignmentsPanel extends JPanel {
 
         private Options createDefaultSearchOptions() {
             Options opts = new Options();
-            opts.setInitialProvider(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID);
+            opts.setInitialProvider(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_GOID);
             opts.setSearchType(SearchType.ALL);
             opts.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
             opts.setDisposeOnSelect(true);

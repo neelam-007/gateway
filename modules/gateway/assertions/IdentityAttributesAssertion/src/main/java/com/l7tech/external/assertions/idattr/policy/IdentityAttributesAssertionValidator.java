@@ -4,6 +4,7 @@
 package com.l7tech.external.assertions.idattr.policy;
 
 import com.l7tech.external.assertions.idattr.IdentityAttributesAssertion;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.Assertion;
@@ -28,7 +29,7 @@ public class IdentityAttributesAssertionValidator implements AssertionValidator 
     @Override
     public void validate(AssertionPath path, PolicyValidationContext pvc, PolicyValidatorResult result) {
         int firstIdPos = -1;
-        Set<Long> authenticatedProviders = new HashSet<Long>();
+        Set<Goid> authenticatedProviders = new HashSet<Goid>();
         for (int i = 0; i < path.getPath().length; i++) {
             Assertion assertion = path.getPath()[i];
             if (!assertion.isEnabled()) continue;

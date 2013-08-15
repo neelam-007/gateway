@@ -40,7 +40,7 @@ import static java.util.Collections.sort;
 public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel {
     private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.FederatedIdentityProviderDialog");
 
-    private long oid;
+    private Goid oid;
     private JPanel mainPanel;
     private JPanel certPanel;
     private boolean x509CertSelected = false;
@@ -94,7 +94,7 @@ public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel {
 
         FederatedIdentityProviderConfig iProviderConfig = (FederatedIdentityProviderConfig) settings;
 
-        oid = iProviderConfig.getOid();
+        oid = iProviderConfig.getGoid();
         x509CertSelected = iProviderConfig.isX509Supported();
         trustedCertsPanel.setCertificateGoids(iProviderConfig.getTrustedCertGoids());
     }
@@ -222,8 +222,8 @@ public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel {
                 final IdentityAdmin idadmin = Registry.getDefault().getIdentityAdmin();
                 final EntityHeader[] providerHeaders = idadmin.findAllIdentityProviderConfig();
                 for ( final EntityHeader providerHeader : providerHeaders) {
-                    final IdentityProviderConfig config = idadmin.findIdentityProviderConfigByID(providerHeader.getOid());
-                    if ( config.getOid() != oid && config instanceof FederatedIdentityProviderConfig ) {
+                    final IdentityProviderConfig config = idadmin.findIdentityProviderConfigByID(providerHeader.getGoid());
+                    if ( !config.getGoid().equals( oid) && config instanceof FederatedIdentityProviderConfig ) {
                         fedIdProvConfigs.add((FederatedIdentityProviderConfig) config);
                     }
                 }

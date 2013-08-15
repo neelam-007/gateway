@@ -57,7 +57,7 @@ public class ServerIdentityAttributesAssertion extends AbstractServerAssertion<I
         for (AuthenticationResult result : results) {
             User u = result.getUser();
             if (u == null) continue;
-            if (u.getProviderId() == assertion.getIdentityProviderOid()) {
+            if (u.getProviderId().equals(assertion.getIdentityProviderOid())) {
                 if (foundUser != null) {
                     logAndAudit(AssertionMessages.IDENTITY_ATTRIBUTE_MULTI_USERS);
                     break;

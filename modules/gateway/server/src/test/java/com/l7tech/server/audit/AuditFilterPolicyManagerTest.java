@@ -112,7 +112,7 @@ public class AuditFilterPolicyManagerTest {
                 new Goid(0,123),
                 "serviceName",
                 null,
-                false, null, 02, "user name", "user id", null);
+                false, null, new Goid(0,02), "user name", "user id", null);
         successAMFOutput = "<output>AMF output</output>";
         auditedMessages = new ArrayList<Integer>();
     }

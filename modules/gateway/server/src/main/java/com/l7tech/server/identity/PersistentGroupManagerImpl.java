@@ -8,8 +8,8 @@ import com.l7tech.identity.*;
 import com.l7tech.identity.fed.VirtualGroup;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.ObjectNotFoundException;
+import com.l7tech.server.HibernateGoidEntityManager;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
-import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.util.ExceptionUtils;
 import org.hibernate.*;
 import org.hibernate.criterion.Restrictions;
@@ -26,7 +26,7 @@ import java.util.logging.Logger;
  * @author alex
  */
 public abstract class PersistentGroupManagerImpl<UT extends PersistentUser, GT extends PersistentGroup, UMT extends PersistentUserManager<UT>, GMT extends PersistentGroupManager<UT, GT>>
-        extends HibernateEntityManager<GT, IdentityHeader>
+        extends HibernateGoidEntityManager<GT, IdentityHeader>
         implements PersistentGroupManager<UT, GT>
 {
     private final String HQL_DELETE_BY_PROVIDEROID =
@@ -35,7 +35,7 @@ public abstract class PersistentGroupManagerImpl<UT extends PersistentUser, GT e
 
     private final String HQL_DELETE_MEMBERSHIPS_BY_PROVIDEROID =
             "FROM mem IN CLASS " + getMembershipClass().getName() +
-                    " WHERE mem.thisGroupProviderOid = ?";
+                    " WHERE mem.thisGroupProviderGoid = ?";
 
     private static final String HQL_DELETE_VIRTUAL_BY_PROVIDEROID =
             "FROM vg IN CLASS " + VirtualGroup.class.getName() + " WHERE vg.providerId = ?";
@@ -44,7 +44,7 @@ public abstract class PersistentGroupManagerImpl<UT extends PersistentUser, GT e
             "select grp from " +
                     "grp in class " + getImpClass().getName() + ", " +
                     "mem in class " + getMembershipClass().getName() +
-                " where mem.thisGroupId = grp.oid " +
+                " where mem.thisGroupId = grp.goid " +
                 "and mem.memberUserId = ?";
 
     private final String HQL_ISMEMBER = "from membership in class "+ getMembershipClass().getName() +
@@ -66,7 +66,7 @@ public abstract class PersistentGroupManagerImpl<UT extends PersistentUser, GT e
             StringBuilder queryString = new StringBuilder("select usr from usr in class ");
             queryString.append(identityProvider.getUserManager().getImpClass().getName()).append(", ");
             queryString.append("membership in class ").append(getMembershipClass().getName());
-            queryString.append(" where membership.memberUserId = usr.oid ");
+            queryString.append(" where membership.memberUserId = usr.goid ");
             queryString.append("and membership.thisGroupId = ?");
             getMembersQuery = queryString.toString();
         }
@@ -76,7 +76,7 @@ public abstract class PersistentGroupManagerImpl<UT extends PersistentUser, GT e
     @Override
     public GT findByName(String name) throws FindException {
         GT pg = super.findByUniqueName(name);
-        if (pg != null) pg.setProviderId(identityProvider.getConfig().getOid());
+        if (pg != null) pg.setProviderId(identityProvider.getConfig().getGoid());
         return pg;
     }
 
@@ -87,9 +87,9 @@ public abstract class PersistentGroupManagerImpl<UT extends PersistentUser, GT e
                 logger.fine("findByPrimaryKey called with null arg.");
                 return null;
             }
-            GT out = findByPrimaryKey(getImpClass(), Long.parseLong(oid));
+            GT out = findByPrimaryKey(getImpClass(), Goid.parseGoid(oid));
             if (out == null) return null;
-            out.setProviderId(getProviderOid());
+            out.setProviderId(getProviderGoid());
             return out;
         } catch (NumberFormatException nfe) {
             throw new FindException("Can't find groups with non-numeric OIDs!", nfe);
@@ -139,18 +139,18 @@ public abstract class PersistentGroupManagerImpl<UT extends PersistentUser, GT e
 
     @Override
     protected IdentityHeader newHeader(GT entity) {
-        return new IdentityHeader(getProviderOid(), entity.getOid(), EntityType.GROUP, entity.getName(), entity.getDescription(), null, entity.getVersion());
+        return new IdentityHeader(getProviderGoid(), entity.getGoid(), EntityType.GROUP, entity.getName(), entity.getDescription(), null, entity.getVersion());
     }
 
-    protected long getProviderOid() {
-        return identityProvider.getConfig().getOid();
+    protected Goid getProviderGoid() {
+        return identityProvider.getConfig().getGoid();
     }
 
     /**
      * Must be called in a transaction!
      */
     @Override
-    public void delete(long oid) throws DeleteException, FindException {
+    public void delete(Goid oid) throws DeleteException, FindException {
         findAndDelete( oid );        
     }
 
@@ -221,14 +221,14 @@ public abstract class PersistentGroupManagerImpl<UT extends PersistentUser, GT e
      * @throws ObjectNotFoundException
      */
     @Override
-    public void deleteAll(final long ipoid) throws DeleteException, ObjectNotFoundException {
+    public void deleteAll(final Goid ipoid) throws DeleteException, ObjectNotFoundException {
         try {
             getHibernateTemplate().execute(new HibernateCallback() {
                 @Override
                 public Object doInHibernate(Session session) throws HibernateException, SQLException {
                     // Delete all group members
                     Query q = session.createQuery(HQL_DELETE_MEMBERSHIPS_BY_PROVIDEROID);
-                    q.setLong(0, ipoid);
+                    q.setBinary(0, ipoid.getBytes());
 
                     for (Iterator i = q.iterate(); i.hasNext();) {
                         session.delete(i.next());
@@ -236,7 +236,7 @@ public abstract class PersistentGroupManagerImpl<UT extends PersistentUser, GT e
 
                     // Delete all groups
                     q = session.createQuery(HQL_DELETE_BY_PROVIDEROID);
-                    q.setLong(0, ipoid);
+                    q.setBinary(0, ipoid.getBytes());
                     for (Iterator i = q.iterate(); i.hasNext();) {
                         session.delete(i.next());
                     }
@@ -263,13 +263,13 @@ public abstract class PersistentGroupManagerImpl<UT extends PersistentUser, GT e
      * @throws ObjectNotFoundException
      */
     @Override
-    public void deleteAllVirtual(final long ipoid) throws DeleteException, ObjectNotFoundException {
+    public void deleteAllVirtual(final Goid ipoid) throws DeleteException, ObjectNotFoundException {
         try {
             getHibernateTemplate().execute(new HibernateCallback() {
                 @Override
                 public Object doInHibernate(Session session) throws HibernateException, SQLException {
                     Query q = session.createQuery(HQL_DELETE_VIRTUAL_BY_PROVIDEROID);
-                    q.setLong(0, ipoid);
+                    q.setBinary(0, ipoid.getBytes());
                     for (Iterator i = q.iterate(); i.hasNext();) {
                         session.delete(i.next());
                     }
@@ -303,7 +303,7 @@ public abstract class PersistentGroupManagerImpl<UT extends PersistentUser, GT e
             }
 
             GT imp = cast(group);
-            imp.setProviderId(identityProvider.getConfig().getOid());
+            imp.setProviderId(identityProvider.getConfig().getGoid());
             preSave(imp);
             String oid = getHibernateTemplate().save(imp).toString();
 
@@ -348,7 +348,7 @@ public abstract class PersistentGroupManagerImpl<UT extends PersistentUser, GT e
                 throw new StaleUpdateException(msg);
             }
 
-            if (group.getProviderId() != identityProvider.getConfig().getOid()) throw new IllegalArgumentException("Can't update a Group from a different provider");
+            if (!group.getProviderId().equals(identityProvider.getConfig().getGoid())) throw new IllegalArgumentException("Can't update a Group from a different provider");
             setUserHeaders(group.getId(), userHeaders);
 
             originalGroup.copyFrom(imp);
@@ -369,8 +369,8 @@ public abstract class PersistentGroupManagerImpl<UT extends PersistentUser, GT e
                 @Override
                 public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
                     Query query = session.createQuery(HQL_ISMEMBER);
-                    query.setString(0, user.getId());
-                    query.setString(1, group.getId());
+                    query.setBinary(0, Goid.parseGoid(user.getId()).getBytes());
+                    query.setBinary(1, Goid.parseGoid(group.getId()).getBytes());
                     return (query.iterate().hasNext());
                 }
             });
@@ -382,10 +382,10 @@ public abstract class PersistentGroupManagerImpl<UT extends PersistentUser, GT e
     protected boolean checkProvider(User user) {
         String msg = null;
         Level level = null;
-        if (user.getProviderId() == UT.DEFAULT_OID) {
+        if (Goid.isDefault(user.getProviderId())) {
             msg = "User was authenticated by an unknown identity provider";
             level = Level.WARNING;
-        } else if (user.getProviderId() != identityProvider.getConfig().getOid()) {
+        } else if (!user.getProviderId().equals(identityProvider.getConfig().getGoid())) {
             msg = "User was authenticated by a different identity provider";
             level = Level.FINE;
         }
@@ -435,14 +435,14 @@ public abstract class PersistentGroupManagerImpl<UT extends PersistentUser, GT e
             public Object doInHibernate(Session session) throws HibernateException, SQLException {
                 Criteria crit = session.createCriteria(getMembershipClass());
                 addMembershipCriteria(crit, group, user);
-                crit.add(Restrictions.eq("memberUserId", user.getOid()));
-                crit.add(Restrictions.eq("thisGroupId", group.getOid()));
+                crit.add(Restrictions.eq("memberUserId", user.getGoid()));
+                crit.add(Restrictions.eq("thisGroupId", group.getGoid()));
                 addMembershipCriteria(crit, group, user);
                 List toBeDeleted = crit.list();
                 if (toBeDeleted == null || toBeDeleted.size() == 0) {
-                    throw new RuntimeException("Couldn't find membership to be deleted; user " + user.getOid() + ", group " + group.getOid());
+                    throw new RuntimeException("Couldn't find membership to be deleted; user " + user.getGoid() + ", group " + group.getGoid());
                 } else if (toBeDeleted.size() > 1) {
-                    throw new RuntimeException("Found more than one membership to be deleted; user " + user.getOid() + ", group " + group.getOid());
+                    throw new RuntimeException("Found more than one membership to be deleted; user " + user.getGoid() + ", group " + group.getGoid());
                 }
                 session.delete(toBeDeleted.get(0));
                 return null;
@@ -583,20 +583,20 @@ public abstract class PersistentGroupManagerImpl<UT extends PersistentUser, GT e
     @Override
     public Set<IdentityHeader> getUserHeaders(String groupId) throws FindException {
         try {
-            return doGetUserHeaders(groupId);
+            return doGetUserHeaders(Goid.parseGoid(groupId));
         } catch (HibernateException he) {
             throw new FindException(he.toString(), he);
         }
     }
 
-    private Set<IdentityHeader> doGetUserHeaders(final String groupId) throws HibernateException {
+    private Set<IdentityHeader> doGetUserHeaders(final Goid groupId) throws HibernateException {
         //noinspection unchecked
         return (Set<IdentityHeader>)getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
             @Override
             public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
                 Set<IdentityHeader> headers = new HashSet<IdentityHeader>();
                 Query query = session.createQuery(getMemberQueryString());
-                query.setString(0, groupId);
+                query.setBinary(0, groupId.getBytes());
                 for (Iterator i = query.iterate(); i.hasNext();) {
                     //noinspection unchecked
                     UT user = (UT) i.next();
@@ -614,7 +614,13 @@ public abstract class PersistentGroupManagerImpl<UT extends PersistentUser, GT e
             public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
                 Set<IdentityHeader> headers = new HashSet<IdentityHeader>();
                 Query query = session.createQuery(HQL_GETGROUPS);
-                query.setString(0, userId);
+                Goid userGoid;
+                try{
+                    userGoid =  Goid.parseGoid(userId);
+                }catch(IllegalArgumentException e){
+                    throw new SQLException(e);
+                }
+                query.setBinary(0,userGoid.getBytes());
                 for (Iterator i = query.iterate(); i.hasNext();) {
                     //noinspection unchecked
                     GT group = (GT) i.next();
@@ -643,7 +649,7 @@ public abstract class PersistentGroupManagerImpl<UT extends PersistentUser, GT e
         if (userHeaders == null) return;
         try {
             Set<String> newUids = headersToIds(userHeaders);
-            Set<String> existingUids = headersToIds(doGetUserHeaders(groupId));
+            Set<String> existingUids = headersToIds(doGetUserHeaders(Goid.parseGoid(groupId)));
 
             GT thisGroup = findByPrimaryKey(groupId);
 

@@ -4,14 +4,13 @@
 
 package com.l7tech.policy.assertion.identity;
 
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.IdentityHeader;
+import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.DefaultAssertionMetadata;
 import com.l7tech.policy.assertion.IdentityTarget;
+import com.l7tech.util.GoidUpgradeMapper;
 
 import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
 
@@ -35,7 +34,7 @@ public class SpecificUser extends IdentityAssertion {
      * @param userUid the unique identifier (DN for an {@code com.l7tech.identity.ldap.LdapUser} or
      * oid for a {@code com.l7tech.identity.PersistentUser}). May be null.
      */
-    public SpecificUser(long providerId, String userLogin, String userUid, String userName) {
+    public SpecificUser(Goid providerId, String userLogin, String userUid, String userName) {
         super(providerId);
         this.userLogin = userLogin;
         this.userName = userName;
@@ -56,6 +55,7 @@ public class SpecificUser extends IdentityAssertion {
 
     public void setUserUid( String userUid ) {
         this.userUid = userUid;
+        mapUserId();
     }
 
     public String getUserName() {
@@ -64,6 +64,12 @@ public class SpecificUser extends IdentityAssertion {
 
     public void setUserName( String userName ) {
         this.userName = userName;
+    }
+
+    @Override
+    public void setIdentityProviderOid(long providerOid) {
+        super.setIdentityProviderOid(providerOid);
+        mapUserId();
     }
 
     @Override
@@ -76,6 +82,22 @@ public class SpecificUser extends IdentityAssertion {
         return headers2;
     }
 
+    private final Goid INTERNAL_IDENTITY_PROVIDER = new Goid(0,-2);
+    private void mapUserId(){
+        if(getUserUid()!=null && getUserUid().length()!=32 && getIdentityProviderOid()!=null&& !getIdentityProviderOid().equals(GoidEntity.DEFAULT_GOID)){
+            try{
+                Long groupOidId = Long.parseLong(getUserUid());
+                if(getIdentityProviderOid().equals(INTERNAL_IDENTITY_PROVIDER)){
+                    setUserUid(GoidUpgradeMapper.mapOidFromTableName("internal_user", groupOidId).toString());
+                }else{
+                    setUserUid(GoidUpgradeMapper.mapOidFromTableName("fed_user",groupOidId).toString());
+                }
+            }catch(NumberFormatException e){
+                // no need to map dn group id
+            }
+        }
+    }
+
     @Override
     public void replaceEntity(EntityHeader oldEntityHeader, EntityHeader newEntityHeader) {
         if(!oldEntityHeader.getType().equals(newEntityHeader.getType())) {
@@ -86,8 +108,8 @@ public class SpecificUser extends IdentityAssertion {
             IdentityHeader oldIdentityHeader = (IdentityHeader)oldEntityHeader;
             IdentityHeader newIdentityHeader = (IdentityHeader)newEntityHeader;
 
-            if(oldIdentityHeader.getProviderOid() == _identityProviderOid && oldIdentityHeader.getStrId().equals(userUid)) {
-                _identityProviderOid = newIdentityHeader.getProviderOid();
+            if(oldIdentityHeader.getProviderGoid().equals(_identityProviderOid) && oldIdentityHeader.getStrId().equals(userUid)) {
+                _identityProviderOid = newIdentityHeader.getProviderGoid();
                 userUid = newIdentityHeader.getStrId();
                 userLogin = newIdentityHeader.getName();
                 userName = newIdentityHeader.getCommonName();

@@ -35,7 +35,7 @@ public class IdentityEntitiesCollection implements EntitiesCollection {
         }
         try {
             exhausted = true;
-            return Arrays.asList(Registry.getDefault().getIdentityAdmin().searchIdentities(identityProviderConfig.getOid(), searchTypes, "*"));
+            return Arrays.asList(Registry.getDefault().getIdentityAdmin().searchIdentities(identityProviderConfig.getGoid(), searchTypes, "*"));
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

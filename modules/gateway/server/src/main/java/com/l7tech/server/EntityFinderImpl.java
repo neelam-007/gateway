@@ -173,7 +173,7 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
     public Entity find(@NotNull EntityHeader header) throws FindException {
         if (header instanceof IdentityHeader) {
             IdentityHeader identityHeader = (IdentityHeader)header;
-            IdentityProvider provider = identityProviderFactory.getProvider(identityHeader.getProviderOid());
+            IdentityProvider provider = identityProviderFactory.getProvider(identityHeader.getProviderGoid());
             if (provider == null) return null;
             if (header.getType() == EntityType.USER) {
                 return provider.getUserManager().findByPrimaryKey(header.getStrId());
@@ -211,14 +211,14 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
             ExternalAuditRecordHeader auditHeader = (ExternalAuditRecordHeader) header;
             if(auditHeader.getRecordType().equals(AuditRecordUtils.TYPE_ADMIN)){
                 return new AdminAuditRecord(
-                        auditHeader.getLevel(),auditHeader.getNodeId(),123,null, auditHeader.getName(),AdminAuditRecord.ACTION_OTHER,null,-2,"fake",null,null);
+                        auditHeader.getLevel(),auditHeader.getNodeId(),123,null, auditHeader.getName(),AdminAuditRecord.ACTION_OTHER,null,new Goid(123,456),"fake",null,null);
             }else if(auditHeader.getRecordType().equals(AuditRecordUtils.TYPE_MESSAGE)){
                 return new MessageSummaryAuditRecord(
                         auditHeader.getLevel(),auditHeader.getNodeId(),  null,AssertionStatus.NONE,null,null, 3,
-                        null, 3, 4, 3,new Goid(0,45), null, null,false, SecurityTokenType.HTTP_BASIC,4,null, null,null);
+                        null, 3, 4, 3,new Goid(0,45), null, null,false, SecurityTokenType.HTTP_BASIC,new Goid(123,456),null, null,null);
             }else if(auditHeader.getRecordType().equals(AuditRecordUtils.TYPE_SYSTEM)){
                return  new SystemAuditRecord(auditHeader.getLevel(), auditHeader.getNodeId(), Component.GW_AUDIT_SYSTEM,
-                       "fake", false, 0L, null, null, "fake", "0.0.0.0");
+                       "fake", false, new Goid(0,0), null, null, "fake", "0.0.0.0");
             }
             throw new FindException("Error looking audit record type: " + auditHeader.getRecordType());
         } else if(header instanceof AuditRecordHeader) {

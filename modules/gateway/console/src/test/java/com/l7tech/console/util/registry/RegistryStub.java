@@ -93,7 +93,7 @@ public class RegistryStub extends Registry {
     @Override
     public IdentityProviderConfig getInternalProviderConfig() {
         try {
-            return identityAdmin.findIdentityProviderConfigByID(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID);
+            return identityAdmin.findIdentityProviderConfigByID(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_GOID);
         } catch ( Exception e ) {
             throw new RuntimeException(e);
         }

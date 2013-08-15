@@ -1,5 +1,6 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.IdentityTarget;
 import com.l7tech.policy.assertion.IdentityTargetable;
 import com.l7tech.policy.assertion.Assertion;
@@ -115,7 +116,7 @@ public class IdentityTargetSelector extends OkCancelDialog<IdentityTarget> {
                                                               final MessageTargetable messageTargetable  ) {
         final TreeSet<IdentityTarget> targetOptions = new TreeSet<IdentityTarget>();
         final Iterator<Assertion> assertionIterator = inlineIncludes(policy).preorderIterator();
-        final Map<Long,String> identityProviderNameMap = new HashMap<Long,String>(); 
+        final Map<Goid,String> identityProviderNameMap = new HashMap<Goid,String>();
 
         while( assertionIterator.hasNext() ){
             Assertion assertion = assertionIterator.next();
@@ -146,9 +147,9 @@ public class IdentityTargetSelector extends OkCancelDialog<IdentityTarget> {
      * Load provider name if required 
      */
     private static IdentityTarget providerName( final IdentityTarget identityTarget,
-                                                final Map<Long,String> identityProviderNameMap ) {
+                                                final Map<Goid,String> identityProviderNameMap ) {
         if ( identityTarget.needsIdentityProviderName() ) {
-            long providerOid = identityTarget.getIdentityProviderOid();
+            Goid providerOid = identityTarget.getIdentityProviderOid();
             String name = identityProviderNameMap.get( providerOid );
             if ( name == null ) {
                 try {

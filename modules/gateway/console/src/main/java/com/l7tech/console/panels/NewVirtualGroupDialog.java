@@ -156,7 +156,7 @@ public class NewVirtualGroupDialog extends JDialog {
     private void insertGroup() {
         group.setName(groupNameTextField.getText());
         group.setDescription(groupDescriptionTextField.getText());
-        final VirtualGroup vGroup = new VirtualGroup(ipc.getOid(), groupNameTextField.getText());
+        final VirtualGroup vGroup = new VirtualGroup(ipc.getGoid(), groupNameTextField.getText());
         vGroup.setX509SubjectDnPattern(x509DNPatternTextField.getText());
         vGroup.setSamlEmailPattern(emailPatternTextField.getText());
         vGroup.setDescription(groupDescriptionTextField.getText());
@@ -167,8 +167,8 @@ public class NewVirtualGroupDialog extends JDialog {
                     public void run() {
                         String errorMessage = null;
                         try {
-                            IdentityHeader header = new IdentityHeader(ipc.getOid(), group.getId(), EntityType.GROUP, group.getName(), group.getDescription(), null, null);
-                            group.setUniqueIdentifier(Registry.getDefault().getIdentityAdmin().saveGroup(ipc.getOid(), vGroup, null ));
+                            IdentityHeader header = new IdentityHeader(ipc.getGoid(), group.getId(), EntityType.GROUP, group.getName(), group.getDescription(), null, null);
+                            group.setUniqueIdentifier(Registry.getDefault().getIdentityAdmin().saveGroup(ipc.getGoid(), vGroup, null ));
                             NewVirtualGroupDialog.this.fireEventGroupAdded(header);
                         } catch (DuplicateObjectException doe) {
                             errorMessage = ExceptionUtils.getMessage(doe);

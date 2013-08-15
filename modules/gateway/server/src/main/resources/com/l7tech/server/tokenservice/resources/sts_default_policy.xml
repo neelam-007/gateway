@@ -132,7 +132,7 @@
             </L7p:CommentAssertion>
             <wsp:OneOrMore wsp:Usage="Required">
                 <L7p:Authentication>
-                    <L7p:IdentityProviderOid longValue="-2"/>
+                    <L7p:IdentityProviderOid goidValue="0000000000000000fffffffffffffffe"/>
                 </L7p:Authentication>
             </wsp:OneOrMore>
             <L7p:assertionComment>

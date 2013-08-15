@@ -212,7 +212,7 @@ public class NewGroupForUserDialog extends JDialog {
                     Set<IdentityHeader> set = parent.getCurrentGroups();
                     if (set != null) currentGroups.addAll(set);
 
-                    EntityHeaderSet<IdentityHeader> headers = Registry.getDefault().getIdentityAdmin().findAllGroups(ipc.getOid());
+                    EntityHeaderSet<IdentityHeader> headers = Registry.getDefault().getIdentityAdmin().findAllGroups(ipc.getGoid());
 
                     for (IdentityHeader header : headers) {
                         if (!currentGroups.contains(header)) sl.add(header);

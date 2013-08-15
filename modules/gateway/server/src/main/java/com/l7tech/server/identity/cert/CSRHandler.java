@@ -7,6 +7,7 @@ import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.identity.*;
 import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.security.prov.RsaSignerEngine;
@@ -121,7 +122,7 @@ public class CSRHandler extends AuthenticatableHttpServlet {
                 return;
             }
 
-            final long oid  = authenticatedUser.getProviderId();
+            final Goid oid  = authenticatedUser.getProviderId();
             final IdentityProviderConfig conf = providerConfigManager.findByPrimaryKey(oid);
             if (!conf.canIssueCertificates()) {
                logger.log(Level.WARNING,

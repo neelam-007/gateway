@@ -87,7 +87,7 @@ public class Upgrade465To50UpdateRoles implements UpgradeTask {
         Collection<IdentityProviderConfig> providers = identityManager.findAll();
         for (IdentityProviderConfig provider : providers) {
             //find all roles that have entity_type = ID_PROVIDER_CONFIG
-            Collection<Role> roles = roleManager.findEntitySpecificRoles(EntityType.ID_PROVIDER_CONFIG, provider.getOid());
+            Collection<Role> roles = roleManager.findEntitySpecificRoles(EntityType.ID_PROVIDER_CONFIG, provider.getGoid());
             for (Role role : roles) {
                 role.addEntityPermission(OperationType.READ, SSG_KEY_ENTRY, null);
                 role.addEntityPermission(OperationType.READ, SSG_KEYSTORE, null);

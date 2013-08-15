@@ -336,7 +336,7 @@ public class AdminLoginImpl
     }
 
     private InternalIdentityProvider getInternalIdentityProvider() throws ObjectModelException, InvalidIdProviderCfgException {
-        IdentityProvider provider = identityProviderFactory.getProvider(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID);
+        IdentityProvider provider = identityProviderFactory.getProvider(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_GOID);
         if (!(provider instanceof InternalIdentityProvider)) {
             throw new IllegalStateException("Could not find the internal identity provider!");
         }

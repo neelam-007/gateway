@@ -70,21 +70,21 @@ public interface ExternalReferenceFinder {
 
     EntityHeader[] findAllIdentityProviderConfig() throws FindException;
 
-    IdentityProviderConfig findIdentityProviderConfigByID( long providerOid ) throws FindException;
+    IdentityProviderConfig findIdentityProviderConfigByID( Goid providerOid ) throws FindException;
 
-    Collection<IdentityHeader> findAllGroups( long providerOid ) throws FindException;
+    Collection<IdentityHeader> findAllGroups( Goid providerOid ) throws FindException;
 
-    Group findGroupByID( long providerOid, String groupId ) throws FindException;
+    Group findGroupByID( Goid providerOid, String groupId ) throws FindException;
 
-    Group findGroupByName( long providerOid, String name ) throws FindException;
+    Group findGroupByName( Goid providerOid, String name ) throws FindException;
 
-    Collection<IdentityHeader> getUserHeaders( long providerOid, String groupId ) throws FindException;
+    Collection<IdentityHeader> getUserHeaders( Goid providerOid, String groupId ) throws FindException;
 
-    Collection<IdentityHeader> findAllUsers( long providerOid ) throws FindException;
+    Collection<IdentityHeader> findAllUsers( Goid providerOid ) throws FindException;
 
-    User findUserByID( long providerOid, String userId ) throws FindException;
+    User findUserByID( Goid providerOid, String userId ) throws FindException;
 
-    User findUserByLogin( long providerOid, String login ) throws FindException;
+    User findUserByLogin( Goid providerOid, String login ) throws FindException;
 
     SiteMinderConfiguration findSiteMinderConfigurationByName(final String name) throws FindException;
 

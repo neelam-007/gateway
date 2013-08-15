@@ -8,7 +8,6 @@ import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import com.l7tech.util.Config;
 import com.l7tech.util.Functions;
 import com.l7tech.objectmodel.*;
-import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.server.event.AdminInfo;
 import org.hibernate.Criteria;
 import org.hibernate.FlushMode;
@@ -235,7 +234,7 @@ public class PolicyVersionManagerImpl extends HibernateGoidEntityManager<PolicyV
         ver.setOrdinal(ordinal);
         ver.setTime(System.currentTimeMillis());
         ver.setUserLogin(adminInfo.login);
-        ver.setUserProviderOid(adminInfo.identityProviderOid);
+        ver.setUserProviderGoid(adminInfo.identityProviderOid);
         ver.setXml(policy.getXml());
         return ver;
     }

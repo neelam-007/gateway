@@ -67,7 +67,7 @@ public class PolicyRevisionsDialog extends JDialog {
     private final PolicyTreeCellRenderer policyTreeCellRenderer = new PolicyTreeCellRenderer();
 
     private SimpleTableModel<PolicyVersion> tableModel;
-    private Map<Long,String> identityProviderNameMap = new HashMap<Long,String>();
+    private Map<Goid,String> identityProviderNameMap = new HashMap<Goid,String>();
 
     /** Predicate that matches any PolicyVersion whose 'active' flag is true. */
     private static final Functions.Unary<Boolean, PolicyVersion> IS_ACTIVE = new Functions.Unary<Boolean, PolicyVersion>() {

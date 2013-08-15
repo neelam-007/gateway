@@ -327,7 +327,7 @@ public class InternalIdentityProviderImpl
         userManager.configure( this );
         if (groupManager != null) groupManager.configure( this );
 
-        this.sessionAuthenticator = new SessionAuthenticator( config.getOid() );
+        this.sessionAuthenticator = new SessionAuthenticator( config.getGoid() );
     }
 
     @Override

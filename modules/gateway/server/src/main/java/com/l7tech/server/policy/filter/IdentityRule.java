@@ -2,6 +2,7 @@ package com.l7tech.server.policy.filter;
 
 import com.l7tech.identity.*;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
@@ -131,7 +132,7 @@ public class IdentityRule implements Filter {
     public static boolean canUserPassIDAssertion(IdentityAssertion idassertion, User user, IdentityProviderFactory identityProviderFactory) throws FilteringException {
         if (user == null) return false;
 
-        if (idassertion.getIdentityProviderOid() != user.getProviderId()) return false;
+        if (!idassertion.getIdentityProviderOid().equals(user.getProviderId())) return false;
 
         // check what type of assertion we have
         if (idassertion instanceof SpecificUser) {
@@ -150,7 +151,7 @@ public class IdentityRule implements Filter {
             return false;
         } else if (idassertion instanceof MemberOfGroup) {
             MemberOfGroup grpmemship = (MemberOfGroup)idassertion;
-            long idprovider = grpmemship.getIdentityProviderOid();
+            Goid idprovider = grpmemship.getIdentityProviderOid();
                 try {
                     IdentityProvider prov = identityProviderFactory.getProvider(idprovider);
                     if (prov == null) {

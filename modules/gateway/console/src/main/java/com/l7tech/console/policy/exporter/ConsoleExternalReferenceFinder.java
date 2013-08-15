@@ -187,49 +187,49 @@ public class ConsoleExternalReferenceFinder implements ExternalReferenceFinder, 
     }
 
     @Override
-    public IdentityProviderConfig findIdentityProviderConfigByID( long providerOid ) throws FindException {
+    public IdentityProviderConfig findIdentityProviderConfigByID( Goid providerOid ) throws FindException {
         IdentityAdmin idAdmin = getAdminInterface(IdentityAdmin.class);
         return idAdmin.findIdentityProviderConfigByID( providerOid );
     }
 
     @Override
-    public EntityHeaderSet<IdentityHeader> findAllGroups( long providerOid ) throws FindException {
+    public EntityHeaderSet<IdentityHeader> findAllGroups( Goid providerOid ) throws FindException {
         IdentityAdmin idAdmin = getAdminInterface( IdentityAdmin.class );
         return idAdmin.findAllGroups( providerOid );
     }
 
     @Override
-    public Group findGroupByID( long providerOid, String groupId ) throws FindException {
+    public Group findGroupByID( Goid providerOid, String groupId ) throws FindException {
         IdentityAdmin idAdmin = getAdminInterface( IdentityAdmin.class );
         return idAdmin.findGroupByID( providerOid, groupId );
     }
 
     @Override
-    public Group findGroupByName( long providerOid, String name ) throws FindException {
+    public Group findGroupByName( Goid providerOid, String name ) throws FindException {
         IdentityAdmin idAdmin = getAdminInterface( IdentityAdmin.class );
         return idAdmin.findGroupByName( providerOid, name );
     }
 
     @Override
-    public Set<IdentityHeader> getUserHeaders( long providerOid, String groupId ) throws FindException {
+    public Set<IdentityHeader> getUserHeaders( Goid providerOid, String groupId ) throws FindException {
         IdentityAdmin idAdmin = getAdminInterface( IdentityAdmin.class );
         return idAdmin.getUserHeaders( providerOid, groupId );
     }
 
     @Override
-    public  EntityHeaderSet<IdentityHeader> findAllUsers( long providerOid ) throws FindException {
+    public  EntityHeaderSet<IdentityHeader> findAllUsers( Goid providerOid ) throws FindException {
         IdentityAdmin idAdmin = getAdminInterface( IdentityAdmin.class );
         return idAdmin.findAllUsers( providerOid );
     }
 
     @Override
-    public User findUserByID( long providerOid, String userId ) throws FindException {
+    public User findUserByID( Goid providerOid, String userId ) throws FindException {
         IdentityAdmin idAdmin = getAdminInterface( IdentityAdmin.class );
         return idAdmin.findUserByID( providerOid, userId );
     }
 
     @Override
-    public User findUserByLogin( long providerOid, String login ) throws FindException {
+    public User findUserByLogin( Goid providerOid, String login ) throws FindException {
         IdentityAdmin idAdmin = getAdminInterface( IdentityAdmin.class );
         return idAdmin.findUserByLogin( providerOid, login );
     }

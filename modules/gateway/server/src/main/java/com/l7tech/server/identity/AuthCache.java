@@ -3,6 +3,7 @@ package com.l7tech.server.identity;
 import com.l7tech.common.io.WhirlycacheFactory;
 import com.l7tech.identity.AuthenticationException;
 import com.l7tech.identity.IdentityProvider;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.server.ServerConfigParams;
@@ -84,10 +85,10 @@ public final class AuthCache {
 
     private static class CacheKey {
         private int cachedHashcode = -1;
-        private final long providerOid;
+        private final Goid providerOid;
         private final LoginCredentials creds;
 
-        private CacheKey(long providerOid, LoginCredentials creds) {
+        private CacheKey(Goid providerOid, LoginCredentials creds) {
             this.providerOid = providerOid;
             this.creds = creds;
         }
@@ -100,7 +101,7 @@ public final class AuthCache {
 
             final CacheKey cacheKey = (CacheKey)o;
 
-            if (providerOid != cacheKey.providerOid) return false;
+            if (providerOid != null ? !providerOid.equals(cacheKey.providerOid) : cacheKey.providerOid != null) return false;
             if (creds != null ? !creds.equals(cacheKey.creds) : cacheKey.creds != null) return false;
 
             return true;
@@ -110,7 +111,7 @@ public final class AuthCache {
         public int hashCode() {
             if (cachedHashcode == -1) {
                 int result;
-                result = (int)(providerOid ^ (providerOid >>> 32));
+                result = (providerOid != null ? providerOid.hashCode() : 0);
                 result = 31 * result + (creds != null ? creds.hashCode() : 0);
                 cachedHashcode = result;
             }
@@ -157,7 +158,7 @@ public final class AuthCache {
             throws AuthenticationException
     {
         String credString = creds.toString();
-        final long providerOid = idp.getConfig().getOid();
+        final Goid providerOid = idp.getConfig().getGoid();
         final CacheKey ckey = new CacheKey(providerOid, creds);
         Object cached = getCacheEntry(ckey, credString, idp, maxSuccessAge, maxFailAge);
         if (cached instanceof AuthenticationResult) {
@@ -178,7 +179,7 @@ public final class AuthCache {
         if (AUTH_MUTEX_ENABLED && !successCacheDisabled && !isInternalPasswordAuth) {
             // Let's make sure only one thread does so on this SSG.
             // Lock username so we only auth it on one thread at a time
-            String credsMutex = (Long.toString(providerOid) + credString).intern();
+            String credsMutex = (Goid.toString(providerOid) + credString).intern();
             synchronized (credsMutex) {
                 // Recheck successCache now that we have the username lock
                 cached = getCacheEntry(ckey, credString, idp, maxSuccessAge, maxFailAge);

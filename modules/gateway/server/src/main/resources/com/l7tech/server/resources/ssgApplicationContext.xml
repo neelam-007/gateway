@@ -1651,7 +1651,6 @@
         <property name="entityManagers">
             <list>
                 <ref bean="roleManager"/>
-                <ref bean="identityProviderConfigManager"/>
                 <ref bean="sinkManager"/>
                 <ref bean="keystoreFileManager"/>
                 <ref bean="messageContextMappingKeyManager"/>
@@ -1690,6 +1689,7 @@
                 <ref bean="ssgActiveConnectorManager"/>
                 <ref bean="siteMinderConfigurationManager"/>
                 <ref bean="licenseDocumentManager"/>
+                <ref bean="identityProviderConfigManager"/>
             </list>
         </property>
         <property name="timer" ref="entityVersionCheckerTimer"/>

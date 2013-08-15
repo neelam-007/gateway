@@ -244,23 +244,23 @@ public class PolicyProcessingTest {
     }
 
     private static void buildUsers() {
-        UserBean ub1 = new UserBean(9898, "Alice");
-        ub1.setUniqueIdentifier( "4718592" );
+        UserBean ub1 = new UserBean(GoidUpgradeMapper.mapOid(null,9898L), "Alice");
+        ub1.setUniqueIdentifier( GoidUpgradeMapper.mapOid(null,4718592L).toString() );
         TestIdentityProvider.addUser(ub1, "Alice", "password".toCharArray(), "CN=Alice, OU=OASIS Interop Test Cert, O=OASIS");
 
-        UserBean ub2 = new UserBean(9898, "Bob");
-        ub2.setUniqueIdentifier( "4718593" );
+        UserBean ub2 = new UserBean(GoidUpgradeMapper.mapOid(null,9898L), "Bob");
+        ub2.setUniqueIdentifier( GoidUpgradeMapper.mapOid(null,4718593L).toString()  );
         TestIdentityProvider.addUser(ub2, "Bob", "password".toCharArray(), "CN=Bob, OU=OASIS Interop Test Cert, O=OASIS");
 
-        GroupBean gb1 = new GroupBean(9898, "BobGroup");
-        gb1.setUniqueIdentifier( "4718594" );
+        GroupBean gb1 = new GroupBean(GoidUpgradeMapper.mapOid(null,9898L), "BobGroup");
+        gb1.setUniqueIdentifier( GoidUpgradeMapper.mapOid(null,4718594L).toString() );
         TestIdentityProvider.addGroup(gb1, ub2);
     }
 
     private static void createSecureConversationSession() throws SessionCreationException {
         // Create a well known test session for secure conversation testing
-        UserBean ub1 = new UserBean(9898, "Alice");
-        ub1.setUniqueIdentifier( "4718592" );
+        UserBean ub1 = new UserBean(GoidUpgradeMapper.mapOid(null,9898L), "Alice");
+        ub1.setUniqueIdentifier( GoidUpgradeMapper.mapOid(null,4718592L).toString()  );
         if (inboundSecureConversationContextManager.getSession("http://www.layer7tech.com/uuid/00000001") == null) {
             inboundSecureConversationContextManager.createContextForUser(
                     "http://www.layer7tech.com/uuid/00000001",

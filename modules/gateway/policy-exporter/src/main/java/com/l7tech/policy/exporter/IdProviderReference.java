@@ -1,22 +1,14 @@
 package com.l7tech.policy.exporter;
 
-import com.l7tech.identity.Group;
-import com.l7tech.identity.IdentityProviderConfig;
-import com.l7tech.identity.IdentityProviderType;
-import com.l7tech.identity.User;
+import com.l7tech.identity.*;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.*;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.UsesEntities;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
-import com.l7tech.util.Charsets;
-import com.l7tech.util.DomUtils;
-import com.l7tech.util.HexUtils;
-import com.l7tech.util.InvalidDocumentFormatException;
+import com.l7tech.util.*;
 import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Element;
 import org.w3c.dom.Text;
@@ -43,7 +35,7 @@ public class IdProviderReference extends ExternalReference {
      * settings.
      */
     public IdProviderReference( final ExternalReferenceFinder finder,
-                                final long providerId) {
+                                final Goid providerId) {
         this( finder );
 
         // try to retrieve this id provider to remember its settings
@@ -76,10 +68,29 @@ public class IdProviderReference extends ExternalReference {
             throw new InvalidDocumentFormatException("Expecting element of name " + REF_EL_NAME);
         }
         IdProviderReference output = new IdProviderReference(context);
-        String val = getParamFromEl(el, OID_EL_NAME);
+        String val = getParamFromEl(el, OLD_OID_EL_NAME);
         if (val != null) {
-            output.providerId = Long.parseLong(val);
+            try {
+                Long oldOid = Long.parseLong(val);
+                if(oldOid.equals(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OLD_OID ) ){
+                    output.providerId = IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_GOID;
+                }else{
+                    output.providerId = GoidUpgradeMapper.mapOid(EntityType.ID_PROVIDER_CONFIG, Long.parseLong(val));
+                }
+            } catch (NumberFormatException nfe) {
+                output.providerId = GoidEntity.DEFAULT_GOID;
+            }
         }
+
+        val = getParamFromEl(el, GOID_EL_NAME);
+        if (val != null) {
+            try {
+                output.providerId = new Goid(val);
+            } catch (IllegalArgumentException e) {
+                throw new InvalidDocumentFormatException("Invalid identity provider goid: " + ExceptionUtils.getMessage(e), e);
+            }
+        }
+
         output.providerName = getParamFromEl(el, NAME_EL_NAME);
         String b64edProps = getParamFromEl(el, PROPS_EL_NAME);
         if (b64edProps != null) {
@@ -100,8 +111,8 @@ public class IdProviderReference extends ExternalReference {
     public String getRefId() {
         String id = null;
 
-        if ( providerId > 0L ) {
-            id = Long.toString( providerId );   
+        if ( providerId!=null &&  !providerId.equals(IdentityProviderConfig.DEFAULT_GOID)) {
+            id = Goid.toString( providerId );
         }
 
         return id;
@@ -112,8 +123,8 @@ public class IdProviderReference extends ExternalReference {
         Element refEl = referencesParentElement.getOwnerDocument().createElement(REF_EL_NAME);
         setTypeAttribute( refEl );
         referencesParentElement.appendChild(refEl);
-        Element oidEl = referencesParentElement.getOwnerDocument().createElement(OID_EL_NAME);
-        Text txt = DomUtils.createTextNode(referencesParentElement, Long.toString(providerId));
+        Element oidEl = referencesParentElement.getOwnerDocument().createElement(GOID_EL_NAME);
+        Text txt = DomUtils.createTextNode(referencesParentElement, Goid.toString(providerId));
         oidEl.appendChild(txt);
         refEl.appendChild(oidEl);
         if ( providerName != null ) { 
@@ -178,7 +189,7 @@ public class IdProviderReference extends ExternalReference {
         if (allConfigHeaders != null) {
             for (EntityHeader header : allConfigHeaders) {
                 try {
-                    configOnThisSystem = getFinder().findIdentityProviderConfigByID(header.getOid());
+                    configOnThisSystem = getFinder().findIdentityProviderConfigByID(header.getGoid());
                 } catch (RuntimeException e) {
                     logger.log(Level.WARNING, "cannot get id provider config", e);
                     continue;
@@ -197,9 +208,9 @@ public class IdProviderReference extends ExternalReference {
                     logger.log(Level.WARNING, "Cannot get serialized properties");
                     return false;
                 }
-                if (equalsProps(localProps, getIdProviderConfProps()) && permitMapping( providerId, configOnThisSystem.getOid() )) {
+                if (equalsProps(localProps, getIdProviderConfProps()) && permitMapping( providerId, configOnThisSystem.getGoid() )) {
                     // WE GOT A MATCH!
-                    setLocalizeReplace( configOnThisSystem.getOid() );
+                    setLocalizeReplace( configOnThisSystem.getGoid() );
                     logger.fine("the provider was matched using the config's properties.");
                     return true;
                 } else {
@@ -231,8 +242,8 @@ public class IdProviderReference extends ExternalReference {
                                 // check that at least one url is common
                                 for (String s1 : urls1) {
                                     for (String s2 : urls2) {
-                                       if (s1.equalsIgnoreCase(s2) && permitMapping( providerId, configOnThisSystem.getOid() )) {
-                                           setLocalizeReplace( configOnThisSystem.getOid() );
+                                       if (s1.equalsIgnoreCase(s2) && permitMapping( providerId, configOnThisSystem.getGoid() )) {
+                                           setLocalizeReplace( configOnThisSystem.getGoid() );
                                            logger.fine("LDAP URL common to both id providers (" + s1 + ")");
                                            return true;
                                        }
@@ -314,9 +325,9 @@ public class IdProviderReference extends ExternalReference {
         if (localizeType != LocalizeAction.IGNORE) {
             if (assertionToLocalize instanceof IdentityAssertion) {
                 IdentityAssertion idass = (IdentityAssertion)assertionToLocalize;
-                if (idass.getIdentityProviderOid() == providerId) {
+                if (idass.getIdentityProviderOid().equals(providerId)){
                     if (localizeType == LocalizeAction.REPLACE) {
-                        if ( locallyMatchingProviderId != providerId ) {
+                        if ( !locallyMatchingProviderId.equals(providerId) ) {
                             idass.setIdentityProviderOid(locallyMatchingProviderId);
                             logger.info("The provider id of the imported id assertion has been changed " +
                                         "from " + providerId + " to " + locallyMatchingProviderId);
@@ -330,9 +341,9 @@ public class IdProviderReference extends ExternalReference {
             } else if(assertionToLocalize instanceof UsesEntities) {
                 UsesEntities entitiesUser = (UsesEntities)assertionToLocalize;
                 for(EntityHeader entityHeader : entitiesUser.getEntitiesUsed()) {
-                    if(entityHeader.getType().equals(EntityType.ID_PROVIDER_CONFIG) && entityHeader.getOid() == providerId) {
+                    if(entityHeader.getType().equals(EntityType.ID_PROVIDER_CONFIG) && entityHeader.getGoid()!=null&& entityHeader.getGoid().equals(providerId)) {
                         if(localizeType == LocalizeAction.REPLACE) {
-                            if(locallyMatchingProviderId != providerId) {
+                            if(!locallyMatchingProviderId.equals( providerId)) {
                                 EntityHeader newEntityHeader = new EntityHeader(locallyMatchingProviderId, EntityType.ID_PROVIDER_CONFIG, null, null);
                                 entitiesUser.replaceEntity(entityHeader, newEntityHeader);
 
@@ -376,7 +387,7 @@ public class IdProviderReference extends ExternalReference {
     }
 
     protected void localizeLoginOrIdForSpecificUser(SpecificUser su) throws FindException {
-        long providerId = su.getIdentityProviderOid();
+        Goid providerId = su.getIdentityProviderOid();
         User userFromId = getFinder().findUserByID(providerId, su.getUserUid());
         if (userFromId != null) {
             if (userFromId.getLogin() != null && !userFromId.getLogin().equals(su.getUserLogin())) {
@@ -406,7 +417,7 @@ public class IdProviderReference extends ExternalReference {
     }
 
     protected void localizeLoginOrIdForSpecificGroup(MemberOfGroup mog) throws FindException {
-        long providerId = mog.getIdentityProviderOid();
+        Goid providerId = mog.getIdentityProviderOid();
         Group groupFromId = getFinder().findGroupByID(providerId, mog.getGroupId());
         if ( groupFromId != null ) {
             if (groupFromId.getName() != null && !groupFromId.getName().equals(mog.getGroupName())) {
@@ -439,18 +450,18 @@ public class IdProviderReference extends ExternalReference {
         if (this == o) return true;
         if (!(o instanceof IdProviderReference)) return false;
         final IdProviderReference idProviderReference = (IdProviderReference)o;
-        return providerId == idProviderReference.providerId;
+        return providerId!=null ? providerId.equals( idProviderReference.providerId) : idProviderReference.providerId == null;
     }
 
     public int hashCode() {
-        return (int) (providerId ^ (providerId >>> 32));
+        return providerId != null ? providerId.hashCode(): 0 ;
     }
 
-    public long getProviderId() {
+    public Goid getProviderId() {
         return providerId;
     }
 
-    public void setProviderId(long providerId) {
+    public void setProviderId(Goid providerId) {
         this.providerId = providerId;
     }
 
@@ -470,7 +481,7 @@ public class IdProviderReference extends ExternalReference {
         this.providerName = providerName;
     }
 
-    public long getLocallyMatchingProviderId() {
+    public Goid getLocallyMatchingProviderId() {
         return locallyMatchingProviderId;
     }
 
@@ -488,7 +499,7 @@ public class IdProviderReference extends ExternalReference {
      * @param alternateIdprovider the local provider value
      */
     @Override
-    public boolean setLocalizeReplace(long alternateIdprovider) {
+    public boolean setLocalizeReplace(Goid alternateIdprovider) {
         localizeType = LocalizeAction.REPLACE;
         locallyMatchingProviderId = alternateIdprovider;
         return true;
@@ -515,8 +526,8 @@ public class IdProviderReference extends ExternalReference {
     }
 
     private LocalizeAction localizeType = null;
-    protected long providerId;
-    private long locallyMatchingProviderId;
+    protected Goid providerId;
+    private Goid locallyMatchingProviderId;
     protected int idProviderTypeVal;
     protected String providerName;
     protected String idProviderConfProps;
@@ -524,7 +535,8 @@ public class IdProviderReference extends ExternalReference {
 
     public static final String REF_EL_NAME = "IDProviderReference";
     public static final String PROPS_EL_NAME = "Props";
-    public static final String OID_EL_NAME = "OID";
+    public static final String OLD_OID_EL_NAME = "OID";
+    public static final String GOID_EL_NAME = "GOID";
     public static final String NAME_EL_NAME = "Name";
     public static final String TYPEVAL_EL_NAME = "TypeVal";
 }

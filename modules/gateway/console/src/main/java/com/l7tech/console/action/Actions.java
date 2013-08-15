@@ -70,7 +70,7 @@ public class Actions {
                 try {
                     EntityHeader eh = node.getEntityHeader();
                     IdentityAdmin admin = Registry.getDefault().getIdentityAdmin();
-                    admin.deleteUser(config.getOid(), eh.getStrId());
+                    admin.deleteUser(config.getGoid(), eh.getStrId());
                     result.call(true);
                     return;
                 } catch (DeleteException e) {
@@ -119,7 +119,7 @@ public class Actions {
                 // Delete the  node and update the tree
                 try {
                     EntityHeader eh = node.getEntityHeader();
-                    Registry.getDefault().getIdentityAdmin().deleteGroup(config.getOid(), eh.getStrId());
+                    Registry.getDefault().getIdentityAdmin().deleteGroup(config.getGoid(), eh.getStrId());
                     result.call(true);
                     return;
                 } catch (ObjectModelException ome) {
@@ -158,7 +158,7 @@ public class Actions {
                 // Delete the  node and update the tree
                 try {
                     EntityHeader eh = nodeIdentity.getEntityHeader();
-                    Registry.getDefault().getIdentityAdmin().deleteIdentityProviderConfig(eh.getOid());
+                    Registry.getDefault().getIdentityAdmin().deleteIdentityProviderConfig(eh.getGoid());
                     result.call(true);
                     return;
                 } catch (ObjectModelException ome) {

@@ -676,7 +676,7 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport implements Se
         }
     }
 
-    private String describe( final Long providerOid, final String userId ) {
+    private String describe( final Goid providerOid, final String userId ) {
         String description = null;
 
         try {

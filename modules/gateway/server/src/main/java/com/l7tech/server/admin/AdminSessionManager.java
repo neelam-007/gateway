@@ -153,13 +153,13 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
      * @return The user or null if not authenticated.
      * @throws ObjectModelException If an error occurs during authorization.
      */
-    public User authorize(final long providerId,
+    public User authorize(final Goid providerId,
                           final String userId) throws ObjectModelException {
         Set<IdentityProvider> providers = getAdminIdentityProviders();
         User user = null;
 
         for (IdentityProvider provider : providers) {
-            if (provider.getConfig().getOid() == providerId) {
+            if (provider.getConfig().getGoid().equals(providerId)) {
                 try {
                     User authdUser = provider.getUserManager().findByPrimaryKey(userId);
                     if (authdUser != null) {
@@ -344,7 +344,7 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
 
         IdentityProvider identityProvider = null;
         for (IdentityProvider provider : providers) {
-            if (provider.getConfig().getOid() == user.getProviderId()) {
+            if (provider.getConfig().getGoid().equals( user.getProviderId())) {
                 identityProvider = provider;
                 break;
             }
@@ -498,7 +498,7 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
     @Override
     public Set<IdentityHeader> getGroups(final User u,
                                          final boolean skipAccountValidation) throws FindException {
-        Long pId = u.getProviderId();
+        Goid pId = u.getProviderId();
 
         // Try internal first (internal accounts with the same credentials should hide externals)
         Set<IdentityProvider> providers = getAdminIdentityProviders();
@@ -506,7 +506,7 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
         //find the identity provider
         Set<IdentityHeader> pSet = new HashSet<IdentityHeader>();
         for (IdentityProvider iP : providers) {
-            if (iP.getConfig().getOid() == pId) {
+            if (iP.getConfig().getGoid().equals(pId)){
                 //Get the group memberhsip from the group cache.
                 try {
                     Set<IdentityHeader> groupPrincipals = this.groupCache.getCachedValidatedGroups(u, iP, skipAccountValidation);
@@ -528,11 +528,11 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
 
     @Override
     public Set<IdentityHeader> getGroups(@NotNull final Group group) throws FindException {
-        final Long pId = group.getProviderId();
+        final Goid pId = group.getProviderId();
         final Set<IdentityProvider> providers = getAdminIdentityProviders();
         final Set<IdentityHeader> pSet = new HashSet<>();
         for (final IdentityProvider iP : providers) {
-            if (iP.getConfig().getOid() == pId) {
+            if (iP.getConfig().getGoid().equals(pId)) {
                 final Set<IdentityHeader> groupPrincipals = this.groupCache.getCachedGroups(group, iP);
                 if (groupPrincipals != null) {
                     pSet.addAll(groupPrincipals);
@@ -544,7 +544,7 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
     }
 
     public boolean isAdministrativeUser(final User user) throws FindException {
-        return rbacServices.isAdministrativeUser(new Pair<Long, String>(user.getProviderId(), user.getId()), user);
+        return rbacServices.isAdministrativeUser(new Pair<Goid, String>(user.getProviderId(), user.getId()), user);
     }
 
     public static void setCertRequirementWavedChecker(Functions.Nullary<Boolean> certReqWavedChecker) {
@@ -675,7 +675,7 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
             IdentityProviderConfig config2 = o2.getConfig();
             if (config1.type() == IdentityProviderType.INTERNAL && config2.type() == IdentityProviderType.INTERNAL) {
                 // Both internal, lower-numbered (i.e. -2 for "the" internal provider) comes first
-                return config1.getOid() < config2.getOid() ? -1 : 1;
+                return config1.getGoid().compareTo(config2.getGoid());
             } else {
                 // Internal comes first
                 return config1.type() == IdentityProviderType.INTERNAL ? -1 : 1;

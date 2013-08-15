@@ -12,6 +12,7 @@ import com.l7tech.identity.IdentityProviderType;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import org.apache.commons.lang.StringUtils;
 
 import javax.swing.*;
@@ -60,12 +61,12 @@ public class NtlmAuthenticationPropertiesDialog extends AssertionPropertiesOkCan
             if(Registry.getDefault() != null && Registry.getDefault().getIdentityAdmin() != null) {
                 IdentityAdmin identityAdmin = Registry.getDefault().getIdentityAdmin();
                 for(EntityHeader entityHeader : identityAdmin.findAllIdentityProviderConfig()) {
-                    IdentityProviderConfig cfg = identityAdmin.findIdentityProviderConfigByID(entityHeader.getOid());
+                    IdentityProviderConfig cfg = identityAdmin.findIdentityProviderConfigByID(entityHeader.getGoid());
                     if (IdentityProviderType.fromVal(cfg.getTypeVal()) == IdentityProviderType.LDAP) {
                         LdapIdentityProviderConfig ldapConfig = (LdapIdentityProviderConfig)cfg ;
                         Map<String, String> props = ldapConfig.getNtlmAuthenticationProviderProperties();
                         if(props.size() > 0 && Boolean.TRUE.toString().equals(props.get("enabled"))) {
-                            model.addElement(new LdapServerEntry(entityHeader.getOid(), entityHeader.getName()));
+                            model.addElement(new LdapServerEntry(entityHeader.getGoid(), entityHeader.getName()));
                         }
                     }
                 }
@@ -139,13 +140,13 @@ public class NtlmAuthenticationPropertiesDialog extends AssertionPropertiesOkCan
        }
 
 
-       long ldapProviderOid = assertion.getLdapProviderOid();
-       if(ldapProviderOid != -1) {
+       Goid ldapProviderOid = assertion.getLdapProviderOid();
+       if(ldapProviderOid != null) {
            ldapServerComboBox.setSelectedIndex(-1);
 
            for(int i = 0;i < ldapServerComboBox.getItemCount();i++) {
                 LdapServerEntry entry = (LdapServerEntry) ldapServerComboBox.getItemAt(i);
-                if(entry.getOid() == ldapProviderOid) {
+                if(entry.getGoid().equals(ldapProviderOid)) {
                     ldapServerComboBox.setSelectedIndex(i);
                     break;
                 }
@@ -179,7 +180,7 @@ public class NtlmAuthenticationPropertiesDialog extends AssertionPropertiesOkCan
 
         LdapServerEntry entry = (LdapServerEntry) ldapServerComboBox.getSelectedItem();
         if(entry != null) {
-            assertion.setLdapProviderOid(entry.getOid());
+            assertion.setLdapProviderOid(entry.getGoid());
             assertion.setLdapProviderName(entry.getName());
         }
 
@@ -215,11 +216,11 @@ public class NtlmAuthenticationPropertiesDialog extends AssertionPropertiesOkCan
     }
 
     private static class LdapServerEntry {
-        private long oid;
+        private Goid goid;
         private String name;
 
-        public LdapServerEntry(long oid, String name) {
-            this.oid = oid;
+        public LdapServerEntry(Goid goid, String name) {
+            this.goid = goid;
             this.name = name;
         }
 
@@ -227,8 +228,8 @@ public class NtlmAuthenticationPropertiesDialog extends AssertionPropertiesOkCan
             return name;
         }
 
-        public long getOid() {
-            return oid;
+        public Goid getGoid() {
+            return goid;
         }
 
         public String toString() {

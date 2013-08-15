@@ -26,7 +26,7 @@ public class IdentityExternalEntityHeaderEnhancer implements ExternalEntityHeade
             try {
                 final EntityHeader header = entityCrud.findHeader(
                         EntityType.ID_PROVIDER_CONFIG,
-                        ((IdentityHeader) EntityHeaderUtils.fromExternal( externalEntityHeader )).getProviderOid() );
+                        ((IdentityHeader) EntityHeaderUtils.fromExternal( externalEntityHeader )).getProviderGoid() );
                 if ( header != null ) {
                     externalEntityHeader.setProperty("Scope Name", header.getName());
                 }

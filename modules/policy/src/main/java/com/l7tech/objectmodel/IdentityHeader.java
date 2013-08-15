@@ -1,15 +1,19 @@
 package com.l7tech.objectmodel;
 
+import org.hibernate.annotations.Type;
+
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlTransient;
 import javax.xml.bind.annotation.XmlAttribute;
+import javax.xml.bind.annotation.XmlType;
+import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 
 /**
  * Extends EntityHeader to include an Identity Provider OID.
  */
 @XmlRootElement
 public class IdentityHeader extends EntityHeader {
-    private long providerOid;
+    private Goid providerGoid;
     private final String commonName;
     private final boolean enabled;
 
@@ -19,41 +23,42 @@ public class IdentityHeader extends EntityHeader {
         enabled = true;
     }
 
-    public IdentityHeader(long providerOid, long identityOid, EntityType type, String loginName, String description, String commonName, int version) {
-        this(providerOid, Long.toString(identityOid), type, loginName, description, commonName, version, true);
+    public IdentityHeader(Goid providerGoid, Goid identityOid, EntityType type, String loginName, String description, String commonName, int version) {
+        this(providerGoid, Goid.toString(identityOid), type, loginName, description, commonName, version, true);
     }
 
-    public IdentityHeader(long providerOid, long identityOid, EntityType type, String loginName, String description, String commonName, int version, boolean enabled) {
-        this(providerOid, Long.toString(identityOid), type, loginName, description, commonName, version, enabled);
+    public IdentityHeader(Goid providerGoid, Goid identityOid, EntityType type, String loginName, String description, String commonName, int version, boolean enabled) {
+        this(providerGoid, Goid.toString(identityOid), type, loginName, description, commonName, version, enabled);
     }
 
     //added for bug #5321
-    public IdentityHeader(long providerOid, String identityId, EntityType type, String loginName, String description, String commonName, Integer version) {
-        this(providerOid, identityId, type, loginName, description, commonName, version, true );
+    public IdentityHeader(Goid providerGoid, String identityId, EntityType type, String loginName, String description, String commonName, Integer version) {
+        this(providerGoid, identityId, type, loginName, description, commonName, version, true );
     }
 
-    public IdentityHeader(long providerOid, String identityId, EntityType type, String loginName, String description, String commonName, Integer version, boolean enabled) {
+    public IdentityHeader(Goid providerGoid, String identityId, EntityType type, String loginName, String description, String commonName, Integer version, boolean enabled) {
         super(identityId, type, loginName, description, version);
         if (type != EntityType.USER && type != EntityType.GROUP)
             throw new IllegalArgumentException("EntityType must be USER or GROUP");
-        this.providerOid = providerOid;
+        this.providerGoid = providerGoid;
         this.commonName = commonName;
         this.enabled = enabled;
     }
 
-    public IdentityHeader( long providerOid, EntityHeader header ) {
-        this(providerOid, header.getStrId(), header.getType(), header.getName(), header.getDescription(), getCommonName(header), header.getVersion(),
+    public IdentityHeader( Goid providerGoid, EntityHeader header ) {
+        this(providerGoid, header.getStrId(), header.getType(), header.getName(), header.getDescription(), getCommonName(header), header.getVersion(),
                 !(header instanceof IdentityHeader) || ((IdentityHeader) header).isEnabled() );
     }
 
-    @XmlAttribute
-    public long getProviderOid() {
-        return providerOid;
+    @XmlAttribute()
+    @XmlJavaTypeAdapter(GoidAdapter.class)
+    public Goid getProviderGoid() {
+        return providerGoid;
     }
 
     @Deprecated // use for serialization only
-    public void setProviderOid(long providerOid) {
-        this.providerOid = providerOid;
+    public void setProviderGoid(Goid providerGoid) {
+        this.providerGoid = providerGoid;
     }
 
     // /added for bug #5321
@@ -75,13 +80,13 @@ public class IdentityHeader extends EntityHeader {
 
         final IdentityHeader that = (IdentityHeader) o;
 
-        return providerOid == that.providerOid;
+        return providerGoid.equals(that.providerGoid);
     }
 
     @Override
     public int hashCode() {
         int result = super.hashCode();
-        result = 29 * result + (int) (providerOid ^ (providerOid >>> 32));
+        result = 29 * result + providerGoid.hashCode();
         return result;
     }
 
@@ -90,7 +95,7 @@ public class IdentityHeader extends EntityHeader {
         int compareResult = super.compareTo(o);
         if ( compareResult == 0 ) {
             final IdentityHeader that = (IdentityHeader)o;
-            compareResult = Long.valueOf( providerOid ).compareTo( that.providerOid );          
+            compareResult = providerGoid.compareTo(that.providerGoid);
         }
         return compareResult;
     }

@@ -512,7 +512,7 @@ public class AuditRecordManagerImpl
     private static final String PROP_REQUEST_ID = "strRequestId";
     private static final String PROP_OPERATION = "operationName";
     private static final String PROP_NAME = "name";
-    private static final String PROP_PROV_ID = "identityProviderOid";
+    private static final String PROP_PROV_ID = "identityProviderGoid";
     private static final String PROP_USER_ID = "userId";
     private static final String PROP_USER_NAME = "userName";
     private static final String PROP_ENTITY_CLASS = "entityClassname";

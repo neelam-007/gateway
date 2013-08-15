@@ -35,7 +35,7 @@ public class IdentityEntityManager implements ReadOnlyEntityManager<Identity, Id
         if (searchFilter == null || searchFilter.isEmpty()) searchFilter = "*";
 
         for ( IdentityProvider provider : identityProviderFactory.findAllIdentityProviders() ) {
-            if ( provider.getConfig().getOid() == scopeEntityHeader.getOid() ) {
+            if ( provider.getConfig().getGoid().equals(scopeEntityHeader.getGoid()) ) {
                 EntityHeaderSet<IdentityHeader> identityHeaders = provider.search( new EntityType[]{type}, searchFilter );
                 headers.addAll( new ArrayList<IdentityHeader>(identityHeaders).subList(0, Math.min( identityHeaders.size(), windowSize - headers.size() )) );
                 break;

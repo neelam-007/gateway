@@ -17,10 +17,7 @@ import com.l7tech.gui.util.Utilities;
 import com.l7tech.identity.Group;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.User;
-import com.l7tech.objectmodel.DuplicateObjectException;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.ObjectModelException;
+import com.l7tech.objectmodel.*;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import org.apache.commons.lang.StringUtils;
@@ -309,7 +306,7 @@ public class EditRoleDialog extends JDialog {
             @Override
             public void actionPerformed(ActionEvent e) {
                 Options opts = new Options();
-                opts.setInitialProvider(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID);
+                opts.setInitialProvider(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_GOID);
                 opts.setSearchType(SearchType.ALL);
                 opts.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
                 opts.setDisposeOnSelect(true);
@@ -324,7 +321,7 @@ public class EditRoleDialog extends JDialog {
                 if (result == null)
                     return;
 
-                long providerId = result.providerConfigOid;
+                Goid providerId = result.providerConfigOid;
                 for (EntityHeader header : result.entityHeaders) {
                     try {
                         if(header.getType() == com.l7tech.objectmodel.EntityType.USER){

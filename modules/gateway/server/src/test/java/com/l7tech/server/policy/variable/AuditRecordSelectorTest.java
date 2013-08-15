@@ -22,7 +22,7 @@ public class AuditRecordSelectorTest {
 
     @Test
     public void testAuditRecordSelector() throws Exception {
-        final AuditRecord auditRecord = new MessageSummaryAuditRecord(Level.INFO, "node1", "2342345-4545", AssertionStatus.NONE, "3.2.1.1", null, 4833, null, 9483, 200, 232, new Goid(0,8859), "ACMEWarehouse", "listProducts", true, SecurityTokenType.HTTP_BASIC, -2, "alice", "41123", 49585);
+        final AuditRecord auditRecord = new MessageSummaryAuditRecord(Level.INFO, "node1", "2342345-4545", AssertionStatus.NONE, "3.2.1.1", null, 4833, null, 9483, 200, 232, new Goid(0,8859), "ACMEWarehouse", "listProducts", true, SecurityTokenType.HTTP_BASIC, new Goid(0,-2), "alice", "41123", 49585);
         Set<AuditDetail> details = new HashSet<AuditDetail>();
         AuditDetail ad1 = new AuditDetail(AssertionMessages.EXCEPTION_SEVERE);
         ad1.setOrdinal(0);
@@ -43,7 +43,7 @@ public class AuditRecordSelectorTest {
     @BugNumber(13278)
     @Test
     public void testAuditRecordSelectorLength() throws Exception {
-        final AuditRecord auditRecord = new MessageSummaryAuditRecord(Level.INFO, "node1", "2342345-4545", AssertionStatus.NONE, "3.2.1.1", null, 4833, null, 9483, 200, 232, new Goid(0,8859), "ACMEWarehouse", "listProducts", true, SecurityTokenType.HTTP_BASIC, -2, "alice", "41123", 49585);
+        final AuditRecord auditRecord = new MessageSummaryAuditRecord(Level.INFO, "node1", "2342345-4545", AssertionStatus.NONE, "3.2.1.1", null, 4833, null, 9483, 200, 232, new Goid(0,8859), "ACMEWarehouse", "listProducts", true, SecurityTokenType.HTTP_BASIC, new Goid(0,-2), "alice", "41123", 49585);
         Set<AuditDetail> details = new HashSet<AuditDetail>();
         AuditDetail ad1 = new AuditDetail(AssertionMessages.EXCEPTION_SEVERE);
         ad1.setOrdinal(0);

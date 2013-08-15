@@ -4,6 +4,7 @@
 package com.l7tech.identity;
 
 import com.l7tech.objectmodel.AnonymousEntityReference;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.PropertyResolver;
 import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
@@ -14,14 +15,14 @@ import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
 public class AnonymousUserReference extends AnonymousEntityReference implements User {
     private final UserBean userBean;
 
-    public AnonymousUserReference(String uniqueId, long providerOid, String name) {
+    public AnonymousUserReference(String uniqueId, Goid providerOid, String name) {
         super(User.class, uniqueId, name);
         this.userBean = new UserBean(providerOid, null);
         this.userBean.setUniqueIdentifier(uniqueId);
     }
 
     @Migration(mapName = NONE, mapValue = NONE, export = false, resolver = PropertyResolver.Type.ID_PROVIDER_CONFIG)
-    public long getProviderId() {
+    public Goid getProviderId() {
         return userBean.getProviderId();
     }
 

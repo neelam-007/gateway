@@ -78,7 +78,7 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
     @Inject
     private Config config;
 
-    private static final String DEFAULT_ID = Long.toString(PersistentEntity.DEFAULT_OID);
+    private static final String DEFAULT_ID = Goid.toString(GoidEntity.DEFAULT_GOID);
 
     public IdentityAdminImpl(final RoleManager roleManager,
                              final IdentityProviderPasswordPolicyManager passwordPolicyManger,
@@ -129,29 +129,29 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
      * @return An identity provider config object
      */
     @Override
-    public IdentityProviderConfig findIdentityProviderConfigByID(long oid)
+    public IdentityProviderConfig findIdentityProviderConfigByID(Goid oid)
             throws FindException {
         return getIdProvCfgMan().findByPrimaryKey(oid);
     }
 
     @Override
-    public long saveIdentityProviderConfig(IdentityProviderConfig identityProviderConfig)
+    public Goid saveIdentityProviderConfig(IdentityProviderConfig identityProviderConfig)
             throws SaveException, UpdateException {
         try {
-            long oid;
-            if (identityProviderConfig.getOid() != IdentityProviderConfig.DEFAULT_OID) {
+            Goid oid;
+            if (!Goid.isDefault(identityProviderConfig.getGoid())) {
                 IdentityProviderConfigManager manager = getIdProvCfgMan();
-                IdentityProviderConfig originalConfig = manager.findByPrimaryKey(identityProviderConfig.getOid());
+                IdentityProviderConfig originalConfig = manager.findByPrimaryKey(identityProviderConfig.getGoid());
                 if ( originalConfig == null ) {
-                    throw new SaveException("Identity provider not found for id '"+identityProviderConfig.getOid()+"'.");
+                    throw new SaveException("Identity provider not found for id '"+identityProviderConfig.getGoid()+"'.");
                 }
 
                 originalConfig.copyFrom(identityProviderConfig);
                 manager.update(originalConfig);
-                logger.info("Updated IDProviderConfig: " + identityProviderConfig.getOid());
-                oid = identityProviderConfig.getOid();
+                logger.info("Updated IDProviderConfig: " + identityProviderConfig.getGoid());
+                oid = identityProviderConfig.getGoid();
             } else {
-                logger.info("Saving IDProviderConfig: " + identityProviderConfig.getOid());
+                logger.info("Saving IDProviderConfig: " + identityProviderConfig.getGoid());
                 oid = getIdProvCfgMan().save(identityProviderConfig);
                 getIdProvCfgMan().createRoles(identityProviderConfig);
             }
@@ -171,7 +171,7 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
      * @param ipoid The identity provider id
      * @throws DeleteException
      */
-    private void deleteAllUsers(long ipoid) throws DeleteException {
+    private void deleteAllUsers(Goid ipoid) throws DeleteException {
         try {
             UserManager userManager = retrieveUserManager(ipoid);
             if (userManager == null) throw new DeleteException("Cannot retrieve the UserManager");
@@ -190,7 +190,7 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
      * @param ipoid The identity provider id
      * @throws DeleteException
      */
-    private void deleteAllGroups(long ipoid) throws DeleteException {
+    private void deleteAllGroups(Goid ipoid) throws DeleteException {
         try {
             GroupManager groupManager = retrieveGroupManager(ipoid);
             if (groupManager == null) throw new DeleteException("Cannot retrieve the GroupManager");
@@ -210,7 +210,7 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
      * @param ipoid The identity provider id
      * @throws DeleteException
      */
-    private void deleteAllVirtualGroups(long ipoid) throws DeleteException {
+    private void deleteAllVirtualGroups(Goid ipoid) throws DeleteException {
         try {
             GroupManager groupManager = retrieveGroupManager(ipoid);
             if (groupManager == null) throw new DeleteException("Cannot retrieve the GroupManager");
@@ -223,7 +223,7 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
     }
 
     @Override
-    public void deleteIdentityProviderConfig(long oid) throws DeleteException {
+    public void deleteIdentityProviderConfig(Goid oid) throws DeleteException {
         try {
             IdentityProviderConfigManager manager = getIdProvCfgMan();
 
@@ -238,10 +238,10 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
                 deleteAllVirtualGroups(oid);
             }
 
-            manager.deleteRoles( ipc.getOid() );
+            manager.deleteRoles( ipc.getGoid() );
             manager.delete(ipc);
 
-            trustedEsmUserManager.deleteMappingsForIdentityProvider(ipc.getOid());
+            trustedEsmUserManager.deleteMappingsForIdentityProvider(ipc.getGoid());
             logger.info("Deleted IDProviderConfig: " + ipc);
         } catch (FindException e) {
             logger.log(Level.SEVERE, null, e);
@@ -250,13 +250,13 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
     }
 
     @Override
-    public EntityHeaderSet<IdentityHeader> findAllUsers(long identityProviderConfigId) throws FindException {
+    public EntityHeaderSet<IdentityHeader> findAllUsers(Goid identityProviderConfigId) throws FindException {
         UserManager<?> userManager = retrieveUserManager(identityProviderConfigId);
         return userManager.findAllHeaders();
     }
 
     @Override
-    public EntityHeaderSet<IdentityHeader> searchIdentities(long identityProviderConfigId, EntityType[] types, String pattern)
+    public EntityHeaderSet<IdentityHeader> searchIdentities(Goid identityProviderConfigId, EntityType[] types, String pattern)
             throws FindException {
         IdentityProvider<?, ?, ?, ?> provider = identityProviderFactory.getProvider(identityProviderConfigId);
         if (provider == null) throw new FindException("IdentityProvider could not be found");
@@ -264,7 +264,7 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
     }
 
     @Override
-    public User findUserByID(long identityProviderConfigId, String userId)
+    public User findUserByID(Goid identityProviderConfigId, String userId)
             throws FindException {
         IdentityProvider provider = identityProviderFactory.getProvider(identityProviderConfigId);
         if (provider == null) {
@@ -277,7 +277,7 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
     }
 
     @Override
-    public User findUserByLogin(long idProvCfgId, String login) throws FindException {
+    public User findUserByLogin(Goid idProvCfgId, String login) throws FindException {
         IdentityProvider provider = identityProviderFactory.getProvider(idProvCfgId);
         if (provider == null) {
             logger.warning("Identity Provider #" + idProvCfgId + " does not exist");
@@ -289,7 +289,7 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
     }
 
     @Override
-    public void deleteUser(long cfgid, String userId)
+    public void deleteUser(Goid cfgid, String userId)
             throws DeleteException, ObjectNotFoundException {
         try {
             UserManager userManager = retrieveUserManager(cfgid);
@@ -310,7 +310,7 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
     }
 
     @Override
-    public String saveUser(long idProvCfgId, User user, Set<IdentityHeader> groupHeaders)
+    public String saveUser(Goid idProvCfgId, User user, Set<IdentityHeader> groupHeaders)
             throws SaveException, UpdateException, ObjectNotFoundException {
         try {
             return saveUser(idProvCfgId, user, groupHeaders, null);
@@ -321,7 +321,7 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
     }
 
     @Override
-    public String saveUser(long identityProviderConfigId, User user, Set groupHeaders, @Nullable String clearTextPassword)
+    public String saveUser(Goid identityProviderConfigId, User user, Set groupHeaders, @Nullable String clearTextPassword)
             throws SaveException, UpdateException, ObjectNotFoundException, InvalidPasswordException {
         boolean isSave = true;
         try {
@@ -426,7 +426,7 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
             throw new IllegalStateException("Users should require update.");
         }
         passwordEnforcerManager.setUserPasswordPolicyAttributes(disconnectedUser, true);
-        logger.info("Updated password for Internal User " + disconnectedUser.getLogin() + " [" + disconnectedUser.getOid() + "]");
+        logger.info("Updated password for Internal User " + disconnectedUser.getLogin() + " [" + disconnectedUser.getGoid() + "]");
         // activate user
         activateUser(disconnectedUser);
 
@@ -434,12 +434,12 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
     }
 
     @Override
-    public EntityHeaderSet<IdentityHeader> findAllGroups(long cfgid) throws FindException {
+    public EntityHeaderSet<IdentityHeader> findAllGroups(Goid cfgid) throws FindException {
         return retrieveGroupManager(cfgid).findAllHeaders();
     }
 
     @Override
-    public Group findGroupByID(long cfgid, String groupId) throws FindException {
+    public Group findGroupByID(Goid cfgid, String groupId) throws FindException {
         IdentityProvider provider = identityProviderFactory.getProvider(cfgid);
         if (provider == null) {
             logger.warning("Identity Provider #" + cfgid + " does not exist");
@@ -451,7 +451,7 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
     }
 
     @Override
-    public Group findGroupByName(long cfgid, String name) throws FindException {
+    public Group findGroupByName(Goid cfgid, String name) throws FindException {
         IdentityProvider provider = identityProviderFactory.getProvider(cfgid);
         if (provider == null) {
             logger.warning("Identity Provider #" + cfgid + " does not exist");
@@ -463,7 +463,7 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
     }
 
     @Override
-    public void deleteGroup(long cfgid, String groupId)
+    public void deleteGroup(Goid cfgid, String groupId)
             throws DeleteException, ObjectNotFoundException {
         try {
             GroupManager groupManager = retrieveGroupManager(cfgid);
@@ -477,7 +477,7 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
     }
 
     @Override
-    public String saveGroup(long identityProviderConfigId, Group group, Set<IdentityHeader> userHeaders)
+    public String saveGroup(Goid identityProviderConfigId, Group group, Set<IdentityHeader> userHeaders)
             throws SaveException, UpdateException, ObjectNotFoundException {
         boolean isSave = true;
         try {
@@ -584,7 +584,7 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
             List<ClientCertManager.CertInfo> infos = clientCertManager.findAll();
             for (ClientCertManager.CertInfo info : infos) {
                 logger.log(Level.FINE, "Revoking certificate for user ''{0}'' [{1}/{2}].",
-                        new String[]{info.getLogin(), Long.toString(info.getProviderId()), info.getUserId()});
+                        new String[]{info.getLogin(), Goid.toString(info.getProviderId()), info.getUserId()});
 
                 UserBean userBean = new UserBean();
                 userBean.setProviderId(info.getProviderId());
@@ -593,10 +593,10 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
                 if (clientCertManager.revokeUserCertIfIssuerMatches(userBean, caSubject)) {
                     revocationCount++;
                     logger.log(Level.INFO, "Revoked certificate for user ''{0}'' [{1}/{2}].",
-                            new String[]{info.getLogin(), Long.toString(info.getProviderId()), info.getUserId()});
+                            new String[]{info.getLogin(), Goid.toString(info.getProviderId()), info.getUserId()});
                 } else {
                     logger.log(Level.INFO, "Certificate not revoked for user ''{0}'' [{1}/{2}].",
-                            new String[]{info.getLogin(), Long.toString(info.getProviderId()), info.getUserId()});
+                            new String[]{info.getLogin(), Goid.toString(info.getProviderId()), info.getUserId()});
                 }
             }
 
@@ -617,7 +617,7 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
     }
 
     @Override
-    public IdentityProviderPasswordPolicy getPasswordPolicyForIdentityProvider(long providerId) throws FindException {
+    public IdentityProviderPasswordPolicy getPasswordPolicyForIdentityProvider(Goid providerId) throws FindException {
         return passwordPolicyManger.findByInternalIdentityProviderOid(providerId);
     }
 
@@ -681,18 +681,18 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
     }
 
     @Override
-    public String updatePasswordPolicy(long providerId, IdentityProviderPasswordPolicy policy) throws SaveException, UpdateException, ObjectNotFoundException {
-        if (providerId != IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID) {
+    public String updatePasswordPolicy(Goid providerId, IdentityProviderPasswordPolicy policy) throws SaveException, UpdateException, ObjectNotFoundException {
+        if (!providerId.equals(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_GOID) ){
             throw new SaveException("Cannot update password policy for identity provider [" + providerId + "].");
         }
 
-        policy.setInternalIdentityProviderOid(providerId);
+        policy.setInternalIdentityProviderGoid(providerId);
         passwordPolicyManger.update(policy);
-        return policy.getOidAsLong().toString();
+        return policy.getId();
     }
 
     @Override
-    public void forceAdminUsersResetPassword(final long identityProviderConfigId) throws ObjectModelException {
+    public void forceAdminUsersResetPassword(final Goid identityProviderConfigId) throws ObjectModelException {
         final IdentityProvider provider = identityProviderFactory.getProvider(identityProviderConfigId);
         if (provider instanceof InternalIdentityProvider) {
             final InternalIdentityProvider internalProvider = (InternalIdentityProvider) provider;
@@ -810,25 +810,25 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
     }
 
     @Override
-    public Set<IdentityHeader> getGroupHeaders(long providerId, String userId) throws FindException {
+    public Set<IdentityHeader> getGroupHeaders(Goid providerId, String userId) throws FindException {
         return retrieveGroupManager(providerId).getGroupHeaders(userId);
     }
 
     @Override
-    public Set<IdentityHeader> getGroupHeadersForGroup(final long providerId, @NotNull final String groupId) throws FindException {
+    public Set<IdentityHeader> getGroupHeadersForGroup(final Goid providerId, @NotNull final String groupId) throws FindException {
         return retrieveGroupManager(providerId).getGroupHeadersForNestedGroup(groupId);
     }
 
-    public void setGroupHeaders(long providerId, String userId, Set<IdentityHeader> groupHeaders) throws FindException, UpdateException {
+    public void setGroupHeaders(Goid providerId, String userId, Set<IdentityHeader> groupHeaders) throws FindException, UpdateException {
         retrieveGroupManager(providerId).setGroupHeaders(userId, groupHeaders);
     }
 
     @Override
-    public Set<IdentityHeader> getUserHeaders(long providerId, String groupId) throws FindException {
+    public Set<IdentityHeader> getUserHeaders(Goid providerId, String groupId) throws FindException {
         return retrieveGroupManager(providerId).getUserHeaders(groupId);
     }
 
-    public void setUserHeaders(long providerId, String groupId, Set<IdentityHeader> groupHeaders) throws FindException, UpdateException {
+    public void setUserHeaders(Goid providerId, String groupId, Set<IdentityHeader> groupHeaders) throws FindException, UpdateException {
         retrieveGroupManager(providerId).setUserHeaders(groupId, groupHeaders);
     }
 
@@ -882,7 +882,7 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
     }
 
 
-    private UserManager retrieveUserManager(long cfgid) throws FindException {
+    private UserManager retrieveUserManager(Goid cfgid) throws FindException {
         IdentityProvider provider = identityProviderFactory.getProvider(cfgid);
 
         if (provider == null)
@@ -891,7 +891,7 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
         return provider.getUserManager();
     }
 
-    private GroupManager<?, ?> retrieveGroupManager(long cfgid) throws FindException {
+    private GroupManager<?, ?> retrieveGroupManager(Goid cfgid) throws FindException {
         IdentityProvider provider = identityProviderFactory.getProvider(cfgid);
 
         if (provider == null)

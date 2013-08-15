@@ -26,7 +26,7 @@ public class NewFederatedUserAction extends NodeAction {
             LIC_AUTH_ASSERTIONS,
             new AttemptedCreateSpecific(
                     EntityType.USER,
-                    new FederatedUser(node.getEntityHeader().getOid(), "<new federated user>")));
+                    new FederatedUser(node.getEntityHeader().getGoid(), "<new federated user>")));
     }
 
     /**

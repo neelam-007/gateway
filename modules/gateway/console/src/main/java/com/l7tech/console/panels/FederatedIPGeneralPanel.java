@@ -5,6 +5,7 @@ import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.identity.fed.FederatedIdentityProviderConfig;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.Goid;
 
 import javax.swing.*;
 import java.awt.*;
@@ -100,7 +101,7 @@ public class FederatedIPGeneralPanel extends IdentityProviderStepPanel {
 
         FederatedIdentityProviderConfig iProviderConfig = (FederatedIdentityProviderConfig) settings;
 
-        if (setNameField || iProviderConfig.getOid() != -1) {
+        if (setNameField || !Goid.isDefault(iProviderConfig.getGoid())) {
             providerNameTextField.setText(iProviderConfig.getName());
         }
 
@@ -108,7 +109,7 @@ public class FederatedIPGeneralPanel extends IdentityProviderStepPanel {
         samlCheckbox.setSelected(iProviderConfig.isSamlSupported());
 
         // select name field for clone
-        if( iProviderConfig.getOid() == LdapIdentityProviderConfig.DEFAULT_OID)
+        if(Goid.isDefault(iProviderConfig.getGoid()))
         {
             providerNameTextField.requestFocus();
             providerNameTextField.selectAll();

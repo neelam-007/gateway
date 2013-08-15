@@ -184,7 +184,7 @@ public class ServicePublication {
             "        </wsse:Integrity>\n" +
             "        <L7p:SpecificUser>\n" +
             "            <L7p:UserLogin stringValue=\"quincy\"/>\n" +
-            "            <L7p:IdentityProviderOid longValue=\"-2\"/>\n" +
+            "            <L7p:IdentityProviderOid stringValue=\"0000000000000000fffffffffffffffe\"/>\n" +
             "            <L7p:UserUid stringValue=\"2457601\"/>\n" +
             "            <L7p:UserName stringValue=\"quincy\"/>\n" +
             "        </L7p:SpecificUser>\n" +

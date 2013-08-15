@@ -229,7 +229,7 @@ class SamlAuthorizationHandler extends FederatedAuthorizationHandler {
             throw new BadCredentialsException("Subject Name Identifier is required");
         }
 
-        final FederatedUser u = new FederatedUser(provider.getConfig().getOid(), null);
+        final FederatedUser u = new FederatedUser(provider.getConfig().getGoid(), null);
         u.setSubjectDn(certSubjectDn);
 
         if ( SamlConstants.NAMEIDENTIFIER_EMAIL.equals(niFormat) ) {

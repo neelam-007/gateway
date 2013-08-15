@@ -123,42 +123,42 @@ public class ExternalReferenceFinderStub implements ExternalReferenceFinder {
     }
 
     @Override
-    public IdentityProviderConfig findIdentityProviderConfigByID( final long providerOid ) throws FindException {
+    public IdentityProviderConfig findIdentityProviderConfigByID( final Goid providerOid ) throws FindException {
         return null;
     }
 
     @Override
-    public EntityHeaderSet<IdentityHeader> findAllGroups( final long providerOid ) throws FindException {
+    public EntityHeaderSet<IdentityHeader> findAllGroups( final Goid providerOid ) throws FindException {
         return new EntityHeaderSet<IdentityHeader>();
     }
 
     @Override
-    public Group findGroupByID( final long providerOid, final String groupId ) throws FindException {
+    public Group findGroupByID( final Goid providerOid, final String groupId ) throws FindException {
         return null;
     }
 
     @Override
-    public Group findGroupByName( final long providerOid, final String name ) throws FindException {
+    public Group findGroupByName( final Goid providerOid, final String name ) throws FindException {
         return null;
     }
 
     @Override
-    public Set<IdentityHeader> getUserHeaders( final long providerOid, final String groupId ) throws FindException {
+    public Set<IdentityHeader> getUserHeaders( final Goid providerOid, final String groupId ) throws FindException {
         return Collections.emptySet();
     }
 
     @Override
-    public EntityHeaderSet<IdentityHeader> findAllUsers( final long providerOid ) throws FindException {
+    public EntityHeaderSet<IdentityHeader> findAllUsers( final Goid providerOid ) throws FindException {
         return new EntityHeaderSet<IdentityHeader>();
     }
 
     @Override
-    public User findUserByID( final long providerOid, final String userId ) throws FindException {
+    public User findUserByID( final Goid providerOid, final String userId ) throws FindException {
         return null;
     }
 
     @Override
-    public User findUserByLogin( final long providerOid, final String login ) throws FindException {
+    public User findUserByLogin( final Goid providerOid, final String login ) throws FindException {
         return null;
     }
 

@@ -1,5 +1,6 @@
 package com.l7tech.server.ems.user;
 
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.imp.PersistentEntityImp;
 
 import javax.persistence.Entity;
@@ -8,6 +9,7 @@ import javax.persistence.Column;
 import javax.persistence.UniqueConstraint;
 
 import org.hibernate.annotations.Proxy;
+import org.hibernate.annotations.Type;
 
 /**
  *  Represents a single property name/value pair for a user.
@@ -21,11 +23,12 @@ public class UserProperty extends PersistentEntityImp {
     //- PUBLIC
     
     @Column(name="provider", nullable=false)
-    public long getProvider() {
+    @Type(type = "com.l7tech.server.util.GoidType")
+    public Goid getProvider() {
         return provider;
     }
 
-    public void setProvider(long providerId) {
+    public void setProvider(Goid providerId) {
         this.provider = providerId;
     }
 
@@ -67,7 +70,7 @@ public class UserProperty extends PersistentEntityImp {
 
     //- PRIVATE
 
-    private long provider;
+    private Goid provider;
     private String login;
     private String userId;
     private String name;

@@ -1,5 +1,6 @@
 package com.l7tech.policy;
 
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.xmlsec.XmlSecurityRecipientContext;
@@ -149,6 +150,7 @@ public class AllAssertionsTest {
                         o1 instanceof WsTrustRequestType ||
                         o1 instanceof HtmlFormDataLocation ||
                         o1 instanceof HtmlFormDataType ||
+                        o1 instanceof Goid ||
                         o1 instanceof Integer ||
                         o1.getClass().isEnum() ||
                         o1.getClass().isPrimitive() ) {

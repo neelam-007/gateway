@@ -282,7 +282,7 @@ class ExternalReferenceResolver {
                 if (reference instanceof IdProviderReference) {
                     IdentityAssertion idAssn = (IdentityAssertion) assertion;
                     IdProviderReference ipRef = (IdProviderReference) reference;
-                    if (ipRef.getProviderId() == idAssn.getIdentityProviderOid()) {
+                    if (ipRef.getProviderId()!=null && ipRef.getProviderId().equals(idAssn.getIdentityProviderOid())) {
                         itr.remove();
                         break;
                     }
@@ -351,7 +351,7 @@ class ExternalReferenceResolver {
                 if (reference instanceof IdProviderReference) {
                     IdProviderReference ipRef = (IdProviderReference) reference;
                     for (EntityHeader entityHeader : entitiesUser.getEntitiesUsed()) {
-                        if (ipRef.getProviderId() == entityHeader.getOid()) {
+                        if (ipRef.getProviderId()!=null && ipRef.getProviderId().equals(entityHeader.getGoid())) {
                             itr.remove();
                             break;
                         }

@@ -384,6 +384,254 @@ ALTER TABLE connector_property ADD PRIMARY KEY (connector_goid, name);
 update rbac_role set entity_goid = toGoid(cast(getVariable('connector_prefix') as bigint),entity_oid) where entity_oid is not null and entity_type='SSG_CONNECTOR';
 update rbac_predicate_oid oid1 set oid1.entity_id = ifnull((select goidToString(toGoid(cast(getVariable('connector_prefix') as bigint),cast(oid1.entity_id as bigint))) from rbac_predicate left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid where rbac_predicate.objectid = oid1.objectid and rbac_permission.entity_type = 'SSG_CONNECTOR'), oid1.entity_id);
 
+
+-- identity provider, user, groups
+
+call setVariable('identity_provider_prefix', cast(randomLongNotReserved() as char(21)));
+call setVariable('internal_group_prefix', cast(randomLongNotReserved() as char(21)));
+call setVariable('internal_user_prefix', cast(randomLongNotReserved() as char(21)));
+call setVariable('internal_user_group_prefix', cast(randomLongNotReserved() as char(21)));
+call setVariable('fed_user_prefix', cast(randomLongNotReserved() as char(21)));
+call setVariable('fed_group_prefix', cast(randomLongNotReserved() as char(21)));
+call setVariable('fed_user_group_prefix', cast(randomLongNotReserved() as char(21)));
+
+ALTER TABLE audit_main ADD COLUMN provider_oid_backup bigint;
+update audit_main set provider_oid_backup = provider_oid;
+ALTER TABLE audit_main DROP COLUMN provider_oid;
+ALTER TABLE audit_main ADD COLUMN provider_goid CHAR(16) FOR BIT DATA;
+update audit_main set provider_goid = toGoid(cast(getVariable('identity_provider_prefix') as bigint), provider_oid_backup);
+update audit_main set provider_goid = toGoid(0,-2) where provider_oid_backup = -2;
+UPDATE audit_main SET provider_goid = toGoid(cast(getVariable('identity_provider_prefix') as bigint), provider_oid_backup) where provider_oid_backup<>-1;
+ALTER TABLE audit_main DROP COLUMN provider_oid_backup;
+
+ALTER TABLE message_context_mapping_values ADD COLUMN auth_user_provider_id_backup bigint;
+update message_context_mapping_values set auth_user_provider_id_backup = auth_user_provider_id;
+ALTER TABLE message_context_mapping_values DROP COLUMN auth_user_provider_id;
+ALTER TABLE message_context_mapping_values ADD COLUMN auth_user_provider_id CHAR(16) FOR BIT DATA;
+update message_context_mapping_values set auth_user_provider_id = toGoid(cast(getVariable('identity_provider_prefix') as bigint), auth_user_provider_id_backup);
+update message_context_mapping_values set auth_user_provider_id = toGoid(0,-2) where auth_user_provider_id_backup = -2;
+ALTER TABLE message_context_mapping_values DROP COLUMN auth_user_provider_id_backup;
+
+ALTER TABLE client_cert ADD COLUMN provider_backup bigint;
+update client_cert set provider_backup = provider;
+ALTER TABLE client_cert DROP COLUMN provider;
+ALTER TABLE client_cert ADD COLUMN provider CHAR(16) FOR BIT DATA;
+update client_cert set provider = toGoid(cast(getVariable('identity_provider_prefix') as bigint), provider_backup);
+update client_cert set provider = toGoid(0,-2) where provider_backup = -2;
+ALTER TABLE client_cert DROP COLUMN provider_backup;
+ALTER TABLE client_cert ALTER COLUMN provider NOT NULL;
+
+ALTER TABLE fed_group ADD COLUMN objectid_backup bigint;
+update fed_group set objectid_backup = objectid;
+ALTER TABLE fed_group DROP COLUMN objectid;
+ALTER TABLE fed_group ADD COLUMN goid CHAR(16) FOR BIT DATA;
+update fed_group set goid = toGoid(cast(getVariable('fed_group_prefix') as bigint), objectid_backup);
+ALTER TABLE fed_group ALTER COLUMN goid NOT NULL;
+ALTER TABLE fed_group DROP COLUMN objectid_backup;
+ALTER TABLE fed_group ADD PRIMARY KEY (goid);
+
+ALTER TABLE fed_group ADD COLUMN provider_oid_backup bigint;
+update fed_group set provider_oid_backup = provider_oid;
+ALTER TABLE fed_group DROP COLUMN provider_oid;
+ALTER TABLE fed_group ADD COLUMN provider_goid CHAR(16) FOR BIT DATA;
+update fed_group set provider_goid = toGoid(cast(getVariable('identity_provider_prefix') as bigint), provider_oid_backup);
+update fed_group set provider_goid = toGoid(0,-2) where provider_oid_backup = -2;
+ALTER TABLE fed_group DROP COLUMN provider_oid_backup;
+ALTER TABLE fed_group ALTER COLUMN provider_goid NOT NULL;
+
+ALTER TABLE fed_group_virtual ADD COLUMN objectid_backup bigint;
+update fed_group_virtual set objectid_backup = objectid;
+ALTER TABLE fed_group_virtual DROP COLUMN objectid;
+ALTER TABLE fed_group_virtual ADD COLUMN goid CHAR(16) FOR BIT DATA;
+update fed_group_virtual set goid = toGoid(cast(getVariable('fed_group_prefix') as bigint), objectid_backup);
+ALTER TABLE fed_group_virtual ALTER COLUMN goid NOT NULL;
+ALTER TABLE fed_group_virtual DROP COLUMN objectid_backup;
+ALTER TABLE fed_group_virtual ADD PRIMARY KEY (goid);
+
+ALTER TABLE fed_group_virtual ADD COLUMN provider_oid_backup bigint;
+update fed_group_virtual set provider_oid_backup = provider_oid;
+ALTER TABLE fed_group_virtual DROP COLUMN provider_oid;
+ALTER TABLE fed_group_virtual ADD COLUMN provider_goid CHAR(16) FOR BIT DATA;
+update fed_group_virtual set provider_goid = toGoid(cast(getVariable('identity_provider_prefix') as bigint), provider_oid_backup);
+update fed_group_virtual set provider_goid = toGoid(0,-2) where provider_oid_backup = -2;
+ALTER TABLE fed_group_virtual DROP COLUMN provider_oid_backup;
+ALTER TABLE fed_group_virtual ALTER COLUMN provider_goid NOT NULL;
+
+ALTER TABLE fed_user ADD COLUMN objectid_backup bigint;
+update fed_user set objectid_backup = objectid;
+ALTER TABLE fed_user DROP COLUMN objectid;
+ALTER TABLE fed_user ADD COLUMN goid CHAR(16) FOR BIT DATA;
+update fed_user set goid = toGoid(cast(getVariable('fed_user_prefix') as bigint), objectid_backup);
+ALTER TABLE fed_user ALTER COLUMN goid NOT NULL;
+ALTER TABLE fed_user DROP COLUMN objectid_backup;
+ALTER TABLE fed_user ADD PRIMARY KEY (goid);
+
+ALTER TABLE fed_user ADD COLUMN provider_oid_backup bigint;
+update fed_user set provider_oid_backup = provider_oid;
+ALTER TABLE fed_user DROP COLUMN provider_oid;
+ALTER TABLE fed_user ADD COLUMN provider_goid CHAR(16) FOR BIT DATA;
+update fed_user set provider_goid = toGoid(cast(getVariable('identity_provider_prefix') as bigint), provider_oid_backup);
+update fed_user set provider_goid = toGoid(0,-2) where provider_oid_backup = -2;
+ALTER TABLE fed_user DROP COLUMN provider_oid_backup;
+
+ALTER TABLE fed_user_group ADD COLUMN provider_oid_backup bigint;
+update fed_user_group set provider_oid_backup = provider_oid;
+ALTER TABLE fed_user_group DROP COLUMN provider_oid;
+ALTER TABLE fed_user_group ADD COLUMN provider_goid CHAR(16) FOR BIT DATA;
+update fed_user_group set provider_goid = toGoid(cast(getVariable('identity_provider_prefix') as bigint), provider_oid_backup);
+update fed_user_group set provider_goid = toGoid(0,-2) where provider_oid_backup = -2;
+ALTER TABLE fed_user_group DROP COLUMN provider_oid_backup;
+ALTER TABLE fed_user_group ALTER COLUMN provider_goid NOT NULL;
+
+ALTER TABLE fed_user_group ADD COLUMN fed_group_oid_backup bigint;
+update fed_user_group set fed_group_oid_backup = fed_group_oid;
+ALTER TABLE fed_user_group DROP COLUMN fed_group_oid;
+ALTER TABLE fed_user_group ADD COLUMN fed_group_goid CHAR(16) FOR BIT DATA;
+update fed_user_group set fed_group_goid = toGoid(cast(getVariable('fed_group_prefix') as bigint), fed_group_oid_backup);
+ALTER TABLE fed_user_group DROP COLUMN fed_group_oid_backup;
+ALTER TABLE fed_user_group ALTER COLUMN fed_group_goid NOT NULL;
+
+ALTER TABLE fed_user_group ADD COLUMN fed_user_oid_backup bigint;
+update fed_user_group set fed_user_oid_backup = fed_user_oid;
+ALTER TABLE fed_user_group DROP COLUMN fed_user_oid;
+ALTER TABLE fed_user_group ADD COLUMN fed_user_goid CHAR(16) FOR BIT DATA;
+update fed_user_group set fed_user_goid = toGoid(cast(getVariable('fed_user_prefix') as bigint), fed_user_oid_backup);
+ALTER TABLE fed_user_group DROP COLUMN fed_user_oid_backup;
+ALTER TABLE fed_user_group ALTER COLUMN fed_user_goid NOT NULL;
+ALTER TABLE fed_user_group ADD PRIMARY KEY (provider_goid, fed_group_goid, fed_user_goid);
+
+ALTER TABLE identity_provider ADD COLUMN objectid_backup bigint;
+update identity_provider set objectid_backup = objectid;
+ALTER TABLE identity_provider DROP COLUMN objectid;
+ALTER TABLE identity_provider ADD COLUMN goid CHAR(16) FOR BIT DATA;
+update identity_provider set goid = toGoid(cast(getVariable('identity_provider_prefix') as bigint), objectid_backup);
+update identity_provider set goid = toGoid(0,-2) where objectid_backup = -2;
+ALTER TABLE identity_provider ALTER COLUMN goid NOT NULL;
+ALTER TABLE identity_provider DROP COLUMN objectid_backup;
+ALTER TABLE identity_provider ADD PRIMARY KEY (goid);
+
+update rbac_role set entity_goid = toGoid(cast(getVariable('identity_provider_prefix') as bigint),entity_oid) where entity_oid is not null and entity_type='ID_PROVIDER_CONFIG';
+update rbac_role set entity_goid = toGoid(0,-2) where entity_oid is not null and entity_type='ID_PROVIDER_CONFIG' and entity_goid=toGoid(cast(getVariable('identity_provider_prefix') as bigint),-2);
+update rbac_predicate_oid oid1 set oid1.entity_id = ifnull((select goidToString(toGoid(cast(getVariable('identity_provider_prefix') as bigint),cast(oid1.entity_id as bigint))) from rbac_predicate left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid where rbac_predicate.objectid = oid1.objectid and rbac_permission.entity_type = 'ID_PROVIDER_CONFIG'), oid1.entity_id);
+update rbac_predicate_oid oid1 set oid1.entity_id = ifnull((select goidToString(toGoid(0,-2)) from rbac_predicate left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid where rbac_predicate.objectid = oid1.objectid and rbac_permission.entity_type = 'ID_PROVIDER_CONFIG' and oid1.entity_id=goidToString(toGoid(0,-2))), oid1.entity_id);
+update rbac_predicate_attribute set value = goidToString(toGoid(cast(getVariable('identity_provider_prefix') as bigint),cast(value as bigint))) where attribute='providerId';
+update rbac_predicate_attribute set value = goidToString(toGoid(0,-2)) where attribute='providerId' and value=goidToString(toGoid(cast(getVariable('identity_provider_prefix') as bigint),-2));
+
+ALTER TABLE internal_group ADD COLUMN objectid_backup bigint;
+update internal_group set objectid_backup = objectid;
+ALTER TABLE internal_group DROP COLUMN objectid;
+ALTER TABLE internal_group ADD COLUMN goid CHAR(16) FOR BIT DATA;
+update internal_group set goid = toGoid(cast(getVariable('internal_group_prefix') as bigint), objectid_backup);
+ALTER TABLE internal_group ALTER COLUMN goid NOT NULL;
+ALTER TABLE internal_group DROP COLUMN objectid_backup;
+ALTER TABLE internal_group ADD PRIMARY KEY (goid);
+
+ALTER TABLE internal_user ADD COLUMN objectid_backup bigint;
+update internal_user set objectid_backup = objectid;
+ALTER TABLE internal_user DROP COLUMN objectid;
+ALTER TABLE internal_user ADD COLUMN goid CHAR(16) FOR BIT DATA;
+update internal_user set goid = toGoid(cast(getVariable('internal_user_prefix') as bigint), objectid_backup);
+ALTER TABLE internal_user ALTER COLUMN goid NOT NULL;
+ALTER TABLE internal_user DROP COLUMN objectid_backup;
+ALTER TABLE internal_user ADD PRIMARY KEY (goid);
+
+ALTER TABLE internal_user_group ADD COLUMN objectid_backup bigint;
+update internal_user_group set objectid_backup = objectid;
+ALTER TABLE internal_user_group DROP COLUMN objectid;
+ALTER TABLE internal_user_group ADD COLUMN goid CHAR(16) FOR BIT DATA;
+update internal_user_group set goid = toGoid(cast(getVariable('internal_user_group_prefix') as bigint), objectid_backup);
+ALTER TABLE internal_user_group ALTER COLUMN goid NOT NULL;
+ALTER TABLE internal_user_group DROP COLUMN objectid_backup;
+ALTER TABLE internal_user_group ADD PRIMARY KEY (goid);
+
+ALTER TABLE internal_user_group ADD COLUMN provider_oid_backup bigint;
+update internal_user_group set provider_oid_backup = provider_oid;
+ALTER TABLE internal_user_group DROP COLUMN provider_oid;
+ALTER TABLE internal_user_group ADD COLUMN provider_goid CHAR(16) FOR BIT DATA;
+update internal_user_group set provider_goid = toGoid(cast(getVariable('identity_provider_prefix') as bigint), provider_oid_backup);
+update internal_user_group set provider_goid = toGoid(0,-2) where provider_oid_backup = -2;
+ALTER TABLE internal_user_group DROP COLUMN provider_oid_backup;
+ALTER TABLE internal_user_group ALTER COLUMN provider_goid NOT NULL;
+
+ALTER TABLE internal_user_group ADD COLUMN user_id_backup bigint;
+update internal_user_group set user_id_backup = user_id;
+ALTER TABLE internal_user_group DROP COLUMN user_id;
+ALTER TABLE internal_user_group ADD COLUMN user_goid CHAR(16) FOR BIT DATA;
+update internal_user_group set user_goid = toGoid(cast(getVariable('internal_user_prefix') as bigint), user_id_backup);
+ALTER TABLE internal_user_group DROP COLUMN user_id_backup;
+ALTER TABLE internal_user_group ALTER COLUMN user_goid NOT NULL;
+
+
+ALTER TABLE internal_user_group ADD COLUMN internal_group_backup bigint;
+update internal_user_group set internal_group_backup = internal_group;
+ALTER TABLE internal_user_group DROP COLUMN internal_group;
+ALTER TABLE internal_user_group ADD COLUMN internal_group CHAR(16) FOR BIT DATA;
+update internal_user_group set internal_group = toGoid(cast(getVariable('internal_group_prefix') as bigint), internal_group_backup);
+ALTER TABLE internal_user_group DROP COLUMN internal_group_backup;
+ALTER TABLE internal_user_group ALTER COLUMN internal_group NOT NULL;
+
+
+ALTER TABLE logon_info ADD COLUMN provider_oid_backup bigint;
+update logon_info set provider_oid_backup = provider_oid;
+ALTER TABLE logon_info DROP COLUMN provider_oid;
+ALTER TABLE logon_info ADD COLUMN provider_goid CHAR(16) FOR BIT DATA;
+update logon_info set provider_goid = toGoid(cast(getVariable('identity_provider_prefix') as bigint), provider_oid_backup);
+update logon_info set provider_goid = toGoid(0,-2) where provider_oid_backup = -2;
+ALTER TABLE logon_info DROP COLUMN provider_oid_backup;
+
+ALTER TABLE password_history ADD COLUMN internal_user_oid_backup bigint;
+update password_history set internal_user_oid_backup = internal_user_oid;
+ALTER TABLE password_history DROP COLUMN internal_user_oid;
+ALTER TABLE password_history ADD COLUMN internal_user_goid CHAR(16) FOR BIT DATA;
+update password_history set internal_user_goid = toGoid(cast(getVariable('internal_user_prefix') as bigint), internal_user_oid_backup);
+update password_history set internal_user_goid = toGoid(0,-2) where internal_user_oid_backup = -2;
+ALTER TABLE password_history DROP COLUMN internal_user_oid_backup;
+ALTER TABLE password_history ALTER COLUMN internal_user_goid NOT NULL;
+alter table password_history add constraint FKF16E7AF0C9B8DFC1 foreign key (internal_user_goid) references internal_user;
+
+ALTER TABLE password_policy ADD COLUMN internal_identity_provider_oid_backup bigint;
+update password_policy set internal_identity_provider_oid_backup = internal_identity_provider_oid;
+ALTER TABLE password_policy DROP COLUMN internal_identity_provider_oid;
+ALTER TABLE password_policy ADD COLUMN internal_identity_provider_goid CHAR(16) FOR BIT DATA;
+update password_policy set internal_identity_provider_goid = toGoid(cast(getVariable('identity_provider_prefix') as bigint), internal_identity_provider_oid_backup);
+update password_policy set internal_identity_provider_goid = toGoid(0,-2) where internal_identity_provider_oid_backup = -2;
+ALTER TABLE password_policy DROP COLUMN internal_identity_provider_oid_backup;
+
+ALTER TABLE policy_version ADD COLUMN user_provider_oid_backup bigint;
+update policy_version set user_provider_oid_backup = user_provider_oid;
+ALTER TABLE policy_version DROP COLUMN user_provider_oid;
+ALTER TABLE policy_version ADD COLUMN user_provider_goid CHAR(16) FOR BIT DATA;
+update policy_version set user_provider_goid = toGoid(cast(getVariable('identity_provider_prefix') as bigint), user_provider_oid_backup);
+update policy_version set user_provider_goid = toGoid(0,-2) where user_provider_oid_backup = -2;
+ALTER TABLE policy_version DROP COLUMN user_provider_oid_backup;
+
+ALTER TABLE rbac_assignment ADD COLUMN provider_oid_backup bigint;
+update rbac_assignment set provider_oid_backup = provider_oid;
+ALTER TABLE rbac_assignment DROP COLUMN provider_oid;
+ALTER TABLE rbac_assignment ADD COLUMN provider_goid CHAR(16) FOR BIT DATA;
+update rbac_assignment set provider_goid = toGoid(cast(getVariable('identity_provider_prefix') as bigint), provider_oid_backup);
+update rbac_assignment set provider_goid = toGoid(0,-2) where provider_oid_backup = -2;
+ALTER TABLE rbac_assignment DROP COLUMN provider_oid_backup;
+ALTER TABLE rbac_assignment ALTER COLUMN provider_goid NOT NULL;
+ALTER TABLE rbac_assignment ADD UNIQUE (provider_goid, role_oid, identity_id, entity_type);
+
+ALTER TABLE trusted_esm_user ADD COLUMN provider_oid_backup bigint;
+update trusted_esm_user set provider_oid_backup = provider_oid;
+ALTER TABLE trusted_esm_user DROP COLUMN provider_oid;
+ALTER TABLE trusted_esm_user ADD COLUMN provider_goid CHAR(16) FOR BIT DATA;
+update trusted_esm_user set provider_goid = toGoid(cast(getVariable('identity_provider_prefix') as bigint), provider_oid_backup);
+update trusted_esm_user set provider_goid = toGoid(0,-2) where provider_oid_backup = -2;
+ALTER TABLE trusted_esm_user DROP COLUMN provider_oid_backup;
+ALTER TABLE trusted_esm_user ALTER COLUMN provider_goid NOT NULL;
+
+ALTER TABLE wssc_session ADD COLUMN provider_oid_backup bigint;
+update wssc_session set provider_oid_backup = provider_id;
+ALTER TABLE wssc_session DROP COLUMN provider_id;
+ALTER TABLE wssc_session ADD COLUMN provider_goid CHAR(16) FOR BIT DATA;
+update wssc_session set provider_goid = toGoid(cast(getVariable('identity_provider_prefix') as bigint), provider_oid_backup);
+update wssc_session set provider_goid = toGoid(0,-2) where provider_oid_backup = -2;
+ALTER TABLE wssc_session DROP COLUMN provider_oid_backup;
+
 -- Firewall rule
 
 ALTER TABLE firewall_rule ADD COLUMN objectid_backup bigint;
@@ -878,9 +1126,11 @@ ALTER TABLE uddi_service_control_monitor_runtime DROP COLUMN uddi_service_contro
 -- Register upgrade task for upgrading sink configuration references to GOIDs
 --
 INSERT INTO cluster_properties
-    (goid, version, propkey, propvalue, properties)
-    values (toGoid(0,-800001), 0, 'upgrade.task.800001', 'com.l7tech.server.upgrade.Upgrade71To80SinkConfig', null),
-           (toGoid(0,-800002), 0, 'upgrade.task.800002', 'com.l7tech.server.upgrade.Upgrade71To80IdReferences', null);
+    (goid, version, propkey, propvalue, properties) values
+           (toGoid(0,-800001), 0, 'upgrade.task.800001', 'com.l7tech.server.upgrade.Upgrade71To80SinkConfig', null),
+           (toGoid(0,-800002), 0, 'upgrade.task.800002', 'com.l7tech.server.upgrade.Upgrade71To80IdReferences', null),
+           (toGoid(0,-800003), 0, 'upgrade.task.800003', 'com.l7tech.server.upgrade.Upgrade71To80IdProviderReferences', null),
+           (toGoid(0,-800004), 0, 'upgrade.task.800004', 'com.l7tech.server.upgrade.Upgrade71To80AuditRecords', null);
 
 
 --
@@ -910,6 +1160,13 @@ INSERT INTO goid_upgrade_map (table_name, prefix) VALUES
       ('email_listener_state', cast(getVariable('email_listener_state_prefix') as bigint)),
       ('generic_entity', cast(getVariable('generic_entity_prefix') as bigint)),
       ('connector', cast(getVariable('connector_prefix') as bigint)),
+      ('identity_provider', cast(getVariable('identity_provider_prefix') as bigint)),
+      ('internal_group', cast(getVariable('internal_group_prefix') as bigint)),
+      ('internal_user', cast(getVariable('internal_user_prefix') as bigint)),
+      ('internal_user_group', cast(getVariable('internal_user_group_prefix') as bigint)),
+      ('fed_user', cast(getVariable('fed_user_prefix') as bigint)),
+      ('fed_group', cast(getVariable('fed_group_prefix') as bigint)),
+      ('fed_user_group', cast(getVariable('fed_user_group_prefix') as bigint)),
       ('firewall_rule', cast(getVariable('firewall_rule_prefix') as bigint)),
       ('encapsulated_assertion', cast(getVariable('encass_prefix') as bigint)),
       ('encapsulated_assertion_argument', cast(getVariable('encass_argument_prefix') as bigint)),

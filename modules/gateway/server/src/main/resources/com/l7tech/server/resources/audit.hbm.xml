@@ -22,7 +22,7 @@
         <property name="message" column="message" type="string"/>
         <property name="ipAddress" column="ip_address" type="string"/>
         <property name="name" column="name" type="string"/>
-        <property name="identityProviderOid" column="provider_oid" type="long"/>
+        <property name="identityProviderGoid" column="provider_goid" type="goid"/>
         <property name="userId" column="user_id" type="string"/>
         <property name="userName" column="user_name" type="string"/>
         <property name="signature" column="signature" type="string"/>

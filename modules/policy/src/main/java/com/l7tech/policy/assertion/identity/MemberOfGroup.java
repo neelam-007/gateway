@@ -4,15 +4,12 @@
 
 package com.l7tech.policy.assertion.identity;
 
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.IdentityHeader;
+import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.PropertyResolver;
 import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
 import com.l7tech.policy.assertion.IdentityTarget;
-import com.l7tech.policy.assertion.AssertionMetadata;
-import com.l7tech.policy.assertion.DefaultAssertionMetadata;
+import com.l7tech.util.GoidUpgradeMapper;
 
 /**
  * Asserts that the requestor is a member of a particular group.
@@ -38,12 +35,35 @@ public class MemberOfGroup extends IdentityAssertion {
 
     public void setGroupId(String groupId) {
         this.groupId = groupId;
+        mapGroupId();
     }
 
-    public MemberOfGroup(long providerOid, String groupName, String groupID) {
+    public MemberOfGroup(Goid providerOid, String groupName, String groupID) {
         super(providerOid);
         this._groupName = groupName;
         this.groupId = groupID;
+    }
+
+    @Override
+    public void setIdentityProviderOid(long providerOid) {
+        super.setIdentityProviderOid(providerOid);
+        mapGroupId();
+    }
+
+    private final Goid INTERNAL_IDENTITY_PROVIDER = new Goid(0,-2);
+    private void mapGroupId(){
+        if(getGroupId()!=null && getGroupId().length()!=32 && getIdentityProviderOid()!=null && !getIdentityProviderOid().equals(GoidEntity.DEFAULT_GOID)){
+            try{
+                Long groupOidId = Long.parseLong(getGroupId());
+                if(getIdentityProviderOid().equals(INTERNAL_IDENTITY_PROVIDER)){
+                    setGroupId(GoidUpgradeMapper.mapOidFromTableName("internal_group", groupOidId).toString());
+                }else{
+                    setGroupId(GoidUpgradeMapper.mapOidFromTableName("fed_group", groupOidId).toString());
+                }
+            }catch(NumberFormatException e){
+                // no need to map dn group id
+            }
+        }
     }
 
     @Override
@@ -66,8 +86,8 @@ public class MemberOfGroup extends IdentityAssertion {
             IdentityHeader oldIdentityHeader = (IdentityHeader)oldEntityHeader;
             IdentityHeader newIdentityHeader = (IdentityHeader)newEntityHeader;
 
-            if(oldIdentityHeader.getProviderOid() == _identityProviderOid && oldIdentityHeader.getStrId().equals(groupId)) {
-                _identityProviderOid = newIdentityHeader.getProviderOid();
+            if(oldIdentityHeader.getProviderGoid().equals(_identityProviderOid) && oldIdentityHeader.getStrId().equals(groupId)) {
+                _identityProviderOid = newIdentityHeader.getProviderGoid();
                 groupId = newIdentityHeader.getStrId();
                 _groupName = newIdentityHeader.getName();
 

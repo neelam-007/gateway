@@ -4,7 +4,7 @@
 
 package com.l7tech.identity;
 
-import com.l7tech.util.HexUtils;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.PropertyResolver;
 import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
@@ -18,14 +18,14 @@ public class UserBean implements User, Serializable {
     public UserBean() {
     }
 
-    public UserBean(long providerId, String login) {
+    public UserBean(Goid providerId, String login) {
         this.providerId = providerId;
         this.name = login;
         this.login = login;
     }
 
     public UserBean(String login) {
-        this(IdentityProviderConfig.DEFAULT_OID, login);
+        this(IdentityProviderConfig.DEFAULT_GOID, login);
     }
 
     public String getId() {
@@ -69,7 +69,7 @@ public class UserBean implements User, Serializable {
     }
 
     @Migration(mapName = NONE, mapValue = NONE, export = false, resolver = PropertyResolver.Type.ID_PROVIDER_CONFIG)
-    public long getProviderId() {
+    public Goid getProviderId() {
         return providerId;
     }
 
@@ -77,7 +77,7 @@ public class UserBean implements User, Serializable {
         return uniqueId != null && uniqueId.equals(thatId);
     }
 
-    public void setProviderId( long providerId ) {
+    public void setProviderId( Goid providerId ) {
         this.providerId = providerId;
     }
 
@@ -158,7 +158,7 @@ public class UserBean implements User, Serializable {
 
         UserBean userBean = (UserBean) o;
 
-        if (providerId != userBean.providerId) return false;
+        if (providerId != null ? !providerId.equals(userBean.providerId) : userBean.providerId != null) return false;
         if (department != null ? !department.equals(userBean.department) : userBean.department != null)
             return false;
         if (email != null ? !email.equals(userBean.email) : userBean.email != null) return false;
@@ -181,7 +181,7 @@ public class UserBean implements User, Serializable {
      */
     public int hashCode() {
         int result;
-        result = (int) (providerId ^ (providerId >>> 32));
+        result = providerId.hashCode();
         result = 31 * result + (name != null ? name.hashCode() : 0);
         result = 31 * result + (login != null ? login.hashCode() : 0);
         result = 31 * result + (firstName != null ? firstName.hashCode() : 0);
@@ -195,7 +195,7 @@ public class UserBean implements User, Serializable {
 
     private static final long serialVersionUID = -2689153614711342567L;
 
-    protected long providerId = IdentityProviderConfig.DEFAULT_OID;
+    protected Goid providerId = IdentityProviderConfig.DEFAULT_GOID;
     protected String uniqueId;
     protected String name;
     protected String login;

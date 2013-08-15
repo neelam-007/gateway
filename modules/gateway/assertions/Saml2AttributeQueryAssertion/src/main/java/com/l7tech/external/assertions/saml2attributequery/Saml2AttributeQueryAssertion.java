@@ -1,9 +1,12 @@
 package com.l7tech.external.assertions.saml2attributequery;
 
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.DefaultAssertionMetadata;
 import com.l7tech.policy.assertion.RoutingAssertion;
 import com.l7tech.policy.assertion.UsesVariables;
+import com.l7tech.util.GoidUpgradeMapper;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,12 +28,20 @@ public class Saml2AttributeQueryAssertion extends RoutingAssertion implements Us
         return new String[] {idContextVariable};
     }
 
-    public long getLdapProviderOid() {
+    public Goid getLdapProviderOid() {
         return ldapProviderOid;
     }
 
-    public void setLdapProviderOid(long ldapProviderOid) {
+    public void setLdapProviderOid(Goid ldapProviderOid) {
         this.ldapProviderOid = ldapProviderOid;
+    }
+
+    // For backward compat while parsing pre-GOID policies.  Not needed for new assertions.
+    @Deprecated
+    public void setLdapProviderOid( long ldapProviderOid ) {
+        this.ldapProviderOid = (ldapProviderOid == -2) ?
+                new Goid(0,-2L):
+                GoidUpgradeMapper.mapOid(EntityType.ID_PROVIDER_CONFIG, ldapProviderOid);
     }
 
     public String getIdFieldName() {
@@ -168,7 +179,7 @@ public class Saml2AttributeQueryAssertion extends RoutingAssertion implements Us
 
     //- PRIVATE
 
-    private long ldapProviderOid = -1;
+    private Goid ldapProviderOid = null;
     private String idFieldName = null;
     private String idContextVariable = null;
     private String mapClusterProperty = null;

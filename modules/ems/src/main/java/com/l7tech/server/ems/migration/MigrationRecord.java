@@ -1,5 +1,6 @@
 package com.l7tech.server.ems.migration;
 
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.server.management.migration.bundle.MigrationBundle;
@@ -37,7 +38,7 @@ import java.util.ArrayList;
 public class MigrationRecord extends NamedEntityImp {
 
     private long timeCreated;
-    private long provider;
+    private Goid provider;
     private String userId;
     private SsgCluster sourceCluster;
     private SsgCluster targetCluster;
@@ -83,11 +84,12 @@ public class MigrationRecord extends NamedEntityImp {
     }
 
     @Column(name="provider", nullable=false)
-    public long getProvider() {
+    @Type(type = "com.l7tech.server.util.GoidType")
+    public Goid getProvider() {
         return provider;
     }
 
-    public void setProvider( final long providerId ) {
+    public void setProvider( final Goid providerId ) {
         this.provider = providerId;
     }
 

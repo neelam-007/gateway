@@ -9,6 +9,7 @@ import com.l7tech.identity.User;
 import com.l7tech.identity.cert.CertEntryRow;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.audit.AuditContextUtils;
@@ -367,7 +368,7 @@ public class ClientCertManagerImp extends HibernateDaoSupport implements ClientC
     private static final String USER_LOGIN = "login";
 
     private static class CertInfoImpl implements CertInfo {
-        private final long providerId;
+        private final Goid providerId;
         private final String userId;
         private final String login;
 
@@ -383,7 +384,7 @@ public class ClientCertManagerImp extends HibernateDaoSupport implements ClientC
         }
 
         @Override
-        public long getProviderId() {
+        public Goid getProviderId() {
             return providerId;
         }
 

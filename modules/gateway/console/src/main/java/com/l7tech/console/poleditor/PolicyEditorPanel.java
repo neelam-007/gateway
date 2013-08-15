@@ -691,7 +691,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     }
 
     public void updateAssertions( final AssertionTreeNode atn ) {
-        PolicyTreeUtils.updateAssertions( atn, new HashMap<Long,String>() );
+        PolicyTreeUtils.updateAssertions( atn, new HashMap<Goid,String>() );
     }
 
     private AssertionTreeNode getCurrentRoot() {

@@ -1,11 +1,13 @@
 package com.l7tech.identity;
 
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.imp.GoidEntityImp;
 
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.persistence.*;
 
 import org.hibernate.annotations.Proxy;
+import org.hibernate.annotations.Type;
 
 /**
  * The logon information object stores information about the user that has attempted to log into the system.
@@ -26,7 +28,7 @@ public class LogonInfo extends GoidEntityImp {
 
 
     private String login;
-    private long providerId;
+    private Goid providerId;
     private long lastAttempted;   //last login attempt
     private int failCount;  //number of login failure attempts
     private long lastActivity;
@@ -43,7 +45,7 @@ public class LogonInfo extends GoidEntityImp {
      * @param providerId users provider id
      * @param login users unique logon
      */
-    public LogonInfo(long providerId, String login) {
+    public LogonInfo(Goid providerId, String login) {
         this.providerId = providerId;
         this.login = login;
         this.lastAttempted = -1;
@@ -55,12 +57,13 @@ public class LogonInfo extends GoidEntityImp {
         ACTIVE, EXCEED_ATTEMPT, INACTIVE
     }
 
-    @Column(name="provider_oid")
-    public long getProviderId() {
+    @Column(name="provider_goid")
+    @Type(type = "com.l7tech.server.util.GoidType")
+    public Goid getProviderId() {
         return providerId;
     }
 
-    public void setProviderId(long providerId) {
+    public void setProviderId(Goid providerId) {
         this.providerId = providerId;
     }
 
@@ -127,7 +130,7 @@ public class LogonInfo extends GoidEntityImp {
 
         if (failCount != logonInfo.failCount) return false;
         if (lastAttempted != logonInfo.lastAttempted) return false;
-        if (providerId != logonInfo.providerId) return false;
+        if (providerId != null ? !providerId.equals(logonInfo.providerId) : logonInfo.providerId != null) return false;
         if (login != null ? !login.equals(logonInfo.login) : logonInfo.login != null) return false;
         if (state != logonInfo.state) return false;
 
@@ -137,7 +140,7 @@ public class LogonInfo extends GoidEntityImp {
     public int hashCode() {
         int result = super.hashCode();
         result = 31 * result + (login != null ? login.hashCode() : 0);
-        result = 31 * result + (int) (providerId ^ (providerId >>> 32));
+        result = 31 * result + (providerId != null ? providerId.hashCode() : 0);
         result = 31 * result + (int) (lastAttempted ^ (lastAttempted >>> 32));
         result = 31 * result + failCount;
         result = 31 * result + (state != null ? state.hashCode() : 0);

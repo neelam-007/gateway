@@ -23,7 +23,7 @@ public class InternalGroup extends PersistentGroup {
     }
 
     public InternalGroup(String name) {
-        super(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID, name);
+        super(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_GOID, name);
     }
 
     public String toString() {

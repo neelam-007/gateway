@@ -75,7 +75,7 @@ public class NewFederatedUserDialog extends JDialog {
         super(parent, true);
         this.ipc = ipc;
         this.user = new UserBean();
-        this.user.setProviderId(ipc.getOid());
+        this.user.setProviderId(ipc.getGoid());
         initialize();
         pack();
         Utilities.centerOnScreen(this);
@@ -294,7 +294,7 @@ public class NewFederatedUserDialog extends JDialog {
 
                     final String userId =
                                     Registry.getDefault().getIdentityAdmin().saveUser(
-                                            ipc.getOid(),
+                                            ipc.getGoid(),
                                             user, null);
                             header.setStrId( userId);
                             user.setUniqueIdentifier(header.getStrId());

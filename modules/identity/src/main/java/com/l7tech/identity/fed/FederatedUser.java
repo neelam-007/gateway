@@ -13,7 +13,9 @@ import javax.persistence.Entity;
 import javax.persistence.Table;
 import javax.persistence.Column;
 
+import com.l7tech.objectmodel.Goid;
 import org.hibernate.annotations.Proxy;
+import org.hibernate.annotations.Type;
 
 /**
  * @author alex
@@ -24,16 +26,17 @@ import org.hibernate.annotations.Proxy;
 @Table(name="fed_user")
 public class FederatedUser extends PersistentUser {
     public FederatedUser() {
-        this(IdentityProviderConfig.DEFAULT_OID, null);
+        this(IdentityProviderConfig.DEFAULT_GOID, null);
     }
 
-    public FederatedUser(long providerOid, String login) {
-        super(providerOid, login);
+    public FederatedUser(Goid providerGoid, String login) {
+        super(providerGoid, login);
     }
 
     @Override
-    @Column(name="provider_oid")
-    public long getProviderId() {
+    @Column(name="provider_goid")
+    @Type(type = "com.l7tech.server.util.GoidType")
+    public Goid getProviderId() {
         return super.getProviderId();
     }
 
@@ -46,7 +49,7 @@ public class FederatedUser extends PersistentUser {
     @Override
     public void copyFrom( User objToCopy ) {
         FederatedUser imp = (FederatedUser)objToCopy;
-        setOid(imp.getOid());
+        setGoid(imp.getGoid());
         setName(imp.getName());
         setSubjectDn(imp.getSubjectDn());
         setProviderId(imp.getProviderId());

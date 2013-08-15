@@ -10,6 +10,7 @@ import com.l7tech.gateway.common.esmtrust.TrustedEsmUser;
 import com.l7tech.gateway.common.spring.remoting.RemoteUtils;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.identity.User;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.server.GatewayFeatureSets;
 import com.l7tech.server.TrustedEsmManager;
@@ -154,7 +155,7 @@ public class EsmApiInterceptor extends AbstractPhaseInterceptor<Message> {
                     throw new SoapFault("Access Denied", SoapFault.FAULT_CODE_CLIENT);
                 }
 
-                long providerId = emsUser.getProviderOid();
+                Goid providerId = emsUser.getProviderGoid();
                 String userId = emsUser.getSsgUserId();
 
                 user = adminSessionManager.authorize( providerId, userId );

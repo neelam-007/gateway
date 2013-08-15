@@ -2,6 +2,7 @@ package com.l7tech.server.event.system;
 
 import com.l7tech.gateway.common.Component;
 import com.l7tech.gateway.common.audit.AuditDetail;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.event.HasAuditDetails;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -29,7 +30,7 @@ public abstract class DetailedSystemEvent extends SystemEvent implements HasAudi
         super(source, component, ipAddress, level, message);
     }
 
-    public DetailedSystemEvent(Object source, Component component, String ipAddress, Level level, String message, long identityProviderOid, String userName, String userId) {
+    public DetailedSystemEvent(Object source, Component component, String ipAddress, Level level, String message, Goid identityProviderOid, String userName, String userId) {
         super(source, component, ipAddress, level, message, identityProviderOid, userName, userId);
     }
 

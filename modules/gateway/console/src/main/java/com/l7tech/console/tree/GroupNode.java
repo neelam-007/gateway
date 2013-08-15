@@ -74,7 +74,7 @@ public class GroupNode extends EntityHeaderNode {
      */
     protected final boolean isInternal() {
         IdentityProviderNode parent = (IdentityProviderNode)getParent();
-        return parent.getEntityHeader().getOid() == IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID;
+        return parent.getEntityHeader().getGoid().equals(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_GOID);
     }
 
     /**
@@ -86,7 +86,7 @@ public class GroupNode extends EntityHeaderNode {
     public Assertion asAssertion() {
         IdentityProviderNode parent = (IdentityProviderNode)getParent();
         EntityHeader e = getEntityHeader();
-        MemberOfGroup memberOfGroup = new MemberOfGroup(parent.getEntityHeader().getOid(), e.getName(), e.getStrId());
+        MemberOfGroup memberOfGroup = new MemberOfGroup(parent.getEntityHeader().getGoid(), e.getName(), e.getStrId());
         // check
         memberOfGroup.setGroupName(e.getName());
         memberOfGroup.setGroupId(e.getStrId());

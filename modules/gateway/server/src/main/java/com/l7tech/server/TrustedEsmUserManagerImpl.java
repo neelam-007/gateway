@@ -76,7 +76,7 @@ public class TrustedEsmUserManagerImpl extends HibernateEntityManager<TrustedEsm
                 throw new MappingAlreadyExistsException("A mapping already exists for the specified user on the specified ESM instance.");
 
             //if not mapping to a different user, then we just return
-            if (trustedEsmUser.getSsgUserId().equals(user.getId()) && trustedEsmUser.getProviderOid() == user.getProviderId())
+            if (trustedEsmUser.getSsgUserId().equals(user.getId()) && trustedEsmUser.getProviderGoid().equals(user.getProviderId()))
                 return trustedEsmUser;
 
             if (esmUserDisplayName != null && trustedEsmUser.getEsmUserDisplayName() == null)
@@ -93,7 +93,7 @@ public class TrustedEsmUserManagerImpl extends HibernateEntityManager<TrustedEsm
         trustedEsmUser = new TrustedEsmUser();
         trustedEsmUser.setTrustedEsm(trustedEsm);
         trustedEsmUser.setSsgUserId(user.getId());
-        trustedEsmUser.setProviderOid(user.getProviderId());
+        trustedEsmUser.setProviderGoid(user.getProviderId());
         trustedEsmUser.setEsmUserId(esmUsername);
         trustedEsmUser.setEsmUserDisplayName(esmUserDisplayName);
 
@@ -107,7 +107,7 @@ public class TrustedEsmUserManagerImpl extends HibernateEntityManager<TrustedEsm
     public boolean deleteMappingsForUser(User user) throws FindException, DeleteException {
         Map<String, Object> map = new HashMap<String, Object>();        
         map.put("ssgUserId", user.getId());
-        map.put("providerOid", user.getProviderId());
+        map.put("providerGoid", user.getProviderId());
 
         boolean didDelete = false;
         List<TrustedEsmUser> found = findMatching(Arrays.asList(map));
@@ -123,9 +123,9 @@ public class TrustedEsmUserManagerImpl extends HibernateEntityManager<TrustedEsm
     }
 
     @Override
-    public boolean deleteMappingsForIdentityProvider(long identityProviderOid) throws FindException, DeleteException {
+    public boolean deleteMappingsForIdentityProvider(Goid identityProviderOid) throws FindException, DeleteException {
         Map<String, Object> map = new HashMap<String, Object>();
-        map.put("providerOid", identityProviderOid);
+        map.put("providerGoid", identityProviderOid);
 
         boolean didDelete = false;
         List<TrustedEsmUser> found = findMatching(Arrays.asList(map));

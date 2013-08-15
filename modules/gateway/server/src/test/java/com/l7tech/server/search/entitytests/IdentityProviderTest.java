@@ -10,6 +10,7 @@ import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.server.search.objects.DependencySearchResults;
 import com.l7tech.server.search.objects.DependentEntity;
 import com.l7tech.util.CollectionUtils;
+import org.jgroups.stack.GossipData;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -34,8 +35,8 @@ public class IdentityProviderTest extends DependencyTestBaseClass {
         mockEntity(securityZone, new EntityHeader(securityZoneGoid, EntityType.SECURITY_ZONE, null, null));
 
         IdentityProviderConfig identityProviderConfig = new IdentityProviderConfig();
-        final long identityProviderOid = idCount.getAndIncrement();
-        identityProviderConfig.setOid(identityProviderOid);
+        final Goid identityProviderOid = new Goid(0,idCount.getAndIncrement());
+        identityProviderConfig.setGoid(identityProviderOid);
         identityProviderConfig.setSecurityZone(securityZone);
 
         final EntityHeader IdentityProviderConfigEntityHeader = new EntityHeader(identityProviderOid, EntityType.ID_PROVIDER_CONFIG, null, null);
@@ -45,7 +46,7 @@ public class IdentityProviderTest extends DependencyTestBaseClass {
         DependencySearchResults result = dependencyAnalyzer.getDependencies(IdentityProviderConfigEntityHeader);
 
         Assert.assertNotNull(result);
-        Assert.assertEquals(identityProviderOid, Long.parseLong(((DependentEntity) result.getDependent()).getInternalID()));
+        Assert.assertEquals(identityProviderOid, Goid.parseGoid(((DependentEntity) result.getDependent()).getInternalID()));
         Assert.assertEquals(EntityType.ID_PROVIDER_CONFIG, ((DependentEntity) result.getDependent()).getEntityType());
         Assert.assertNotNull(result.getDependencies());
         Assert.assertEquals(securityZoneGoid.toHexString(), ((DependentEntity) result.getDependencies().get(0).getDependent()).getInternalID());
@@ -56,8 +57,8 @@ public class IdentityProviderTest extends DependencyTestBaseClass {
     public void testFederated0TrustedCert() throws FindException {
 
         FederatedIdentityProviderConfig identityProviderConfig = new FederatedIdentityProviderConfig();
-        final long identityProviderOid = idCount.getAndIncrement();
-        identityProviderConfig.setOid(identityProviderOid);
+        final Goid identityProviderOid = new Goid(0,idCount.getAndIncrement());
+        identityProviderConfig.setGoid(identityProviderOid);
 
         final EntityHeader IdentityProviderConfigEntityHeader = new EntityHeader(identityProviderOid, EntityType.ID_PROVIDER_CONFIG, null, null);
 
@@ -66,7 +67,7 @@ public class IdentityProviderTest extends DependencyTestBaseClass {
         DependencySearchResults result = dependencyAnalyzer.getDependencies(IdentityProviderConfigEntityHeader);
 
         Assert.assertNotNull(result);
-        Assert.assertEquals(identityProviderOid, Long.parseLong(((DependentEntity) result.getDependent()).getInternalID()));
+        Assert.assertEquals(identityProviderOid, Goid.parseGoid(((DependentEntity) result.getDependent()).getInternalID()));
         Assert.assertEquals(EntityType.ID_PROVIDER_CONFIG, ((DependentEntity) result.getDependent()).getEntityType());
         Assert.assertEquals(0, result.getDependencies().size());
     }
@@ -82,8 +83,8 @@ public class IdentityProviderTest extends DependencyTestBaseClass {
         mockEntity(trustedCert, new EntityHeader(trustedCertOid, EntityType.TRUSTED_CERT, null, null));
 
         FederatedIdentityProviderConfig identityProviderConfig = new FederatedIdentityProviderConfig();
-        final long identityProviderOid = idCount.getAndIncrement();
-        identityProviderConfig.setOid(identityProviderOid);
+        final Goid identityProviderOid = new Goid(0,idCount.getAndIncrement());
+        identityProviderConfig.setGoid(identityProviderOid);
         identityProviderConfig.setTrustedCertGoids(new Goid[]{trustedCertOid});
 
         final EntityHeader IdentityProviderConfigEntityHeader = new EntityHeader(identityProviderOid, EntityType.ID_PROVIDER_CONFIG, null, null);
@@ -93,7 +94,7 @@ public class IdentityProviderTest extends DependencyTestBaseClass {
         DependencySearchResults result = dependencyAnalyzer.getDependencies(IdentityProviderConfigEntityHeader);
 
         Assert.assertNotNull(result);
-        Assert.assertEquals(identityProviderOid, Long.parseLong(((DependentEntity) result.getDependent()).getInternalID()));
+        Assert.assertEquals(identityProviderOid, Goid.parseGoid(((DependentEntity) result.getDependent()).getInternalID()));
         Assert.assertEquals(EntityType.ID_PROVIDER_CONFIG, ((DependentEntity) result.getDependent()).getEntityType());
         Assert.assertNotNull(result.getDependencies());
         Assert.assertEquals(trustedCertOid, new Goid(((DependentEntity) result.getDependencies().get(0).getDependent()).getInternalID()));
@@ -123,8 +124,8 @@ public class IdentityProviderTest extends DependencyTestBaseClass {
         mockEntity(trustedCert3, new EntityHeader(trustedCert3Oid, EntityType.TRUSTED_CERT, null, null));
 
         FederatedIdentityProviderConfig identityProviderConfig = new FederatedIdentityProviderConfig();
-        final long identityProviderOid = idCount.getAndIncrement();
-        identityProviderConfig.setOid(identityProviderOid);
+        final Goid identityProviderOid = new Goid(0,idCount.getAndIncrement());
+        identityProviderConfig.setGoid(identityProviderOid);
         identityProviderConfig.setTrustedCertGoids(new Goid[]{trustedCertOid, trustedCert2Oid, trustedCert3Oid});
 
         final EntityHeader IdentityProviderConfigEntityHeader = new EntityHeader(identityProviderOid, EntityType.ID_PROVIDER_CONFIG, null, null);
@@ -134,7 +135,7 @@ public class IdentityProviderTest extends DependencyTestBaseClass {
         DependencySearchResults result = dependencyAnalyzer.getDependencies(IdentityProviderConfigEntityHeader);
 
         Assert.assertNotNull(result);
-        Assert.assertEquals(identityProviderOid, Long.parseLong(((DependentEntity) result.getDependent()).getInternalID()));
+        Assert.assertEquals(identityProviderOid, Goid.parseGoid(((DependentEntity) result.getDependent()).getInternalID()));
         Assert.assertEquals(EntityType.ID_PROVIDER_CONFIG, ((DependentEntity) result.getDependent()).getEntityType());
         Assert.assertNotNull(result.getDependencies());
         Assert.assertEquals(3, result.getDependencies().size());
@@ -143,8 +144,8 @@ public class IdentityProviderTest extends DependencyTestBaseClass {
     @Test
     public void simpleLDAP() throws FindException {
         BindOnlyLdapIdentityProviderConfig bindOnlyLdapIdentityProviderConfig = new BindOnlyLdapIdentityProviderConfig();
-        final long identityProviderOid = idCount.getAndIncrement();
-        bindOnlyLdapIdentityProviderConfig.setOid(identityProviderOid);
+        final Goid identityProviderOid = new Goid(0,idCount.getAndIncrement());
+        bindOnlyLdapIdentityProviderConfig.setGoid(identityProviderOid);
 
         final EntityHeader identityProviderConfigEntityHeader = new EntityHeader(identityProviderOid, EntityType.ID_PROVIDER_CONFIG, null, null);
 
@@ -153,7 +154,7 @@ public class IdentityProviderTest extends DependencyTestBaseClass {
         DependencySearchResults result = dependencyAnalyzer.getDependencies(identityProviderConfigEntityHeader);
 
         Assert.assertNotNull(result);
-        Assert.assertEquals(identityProviderOid, Long.parseLong(((DependentEntity) result.getDependent()).getInternalID()));
+        Assert.assertEquals(identityProviderOid, Goid.parseGoid(((DependentEntity) result.getDependent()).getInternalID()));
         Assert.assertEquals(EntityType.ID_PROVIDER_CONFIG, ((DependentEntity) result.getDependent()).getEntityType());
         //Private keys are not returned as keys yet...
     }
@@ -175,8 +176,8 @@ public class IdentityProviderTest extends DependencyTestBaseClass {
         mockEntity(securePassword2, new EntityHeader(securePasswordGoid2, EntityType.SECURE_PASSWORD, securePasswordName2, null));
 
         LdapIdentityProviderConfig ldapIdentityProviderConfig = new LdapIdentityProviderConfig();
-        final long identityProviderOid = idCount.getAndIncrement();
-        ldapIdentityProviderConfig.setOid(identityProviderOid);
+        final Goid identityProviderOid = new Goid(0,idCount.getAndIncrement());
+        ldapIdentityProviderConfig.setGoid(identityProviderOid);
         ldapIdentityProviderConfig.setBindPasswd("${secpass." + securePasswordName + ".plaintext}");
         ldapIdentityProviderConfig.setNtlmAuthenticationProviderProperties(new TreeMap<>(CollectionUtils.MapBuilder.<String, String>builder()
                 .put("enabled", "true")
@@ -190,7 +191,7 @@ public class IdentityProviderTest extends DependencyTestBaseClass {
         DependencySearchResults result = dependencyAnalyzer.getDependencies(identityProviderConfigEntityHeader);
 
         Assert.assertNotNull(result);
-        Assert.assertEquals(identityProviderOid, Long.parseLong(((DependentEntity) result.getDependent()).getInternalID()));
+        Assert.assertEquals(identityProviderOid, Goid.parseGoid(((DependentEntity) result.getDependent()).getInternalID()));
         Assert.assertEquals(EntityType.ID_PROVIDER_CONFIG, ((DependentEntity) result.getDependent()).getEntityType());
         Assert.assertEquals(2, result.getDependencies().size());
     }

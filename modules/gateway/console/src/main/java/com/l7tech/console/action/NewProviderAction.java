@@ -67,7 +67,7 @@ abstract public class NewProviderAction extends NodeAction {
                             header.setName(iProvider.getName());
                             header.setType(EntityType.ID_PROVIDER_CONFIG);
                             try {
-                                header.setOid(getIdentityAdmin().saveIdentityProviderConfig(iProvider));
+                                header.setGoid(getIdentityAdmin().saveIdentityProviderConfig(iProvider));
                                 // Refresh permission cache so that newly created IdP is usable
                                 Registry.getDefault().getSecurityProvider().refreshPermissionCache();
                             } catch (DuplicateObjectException doe) {

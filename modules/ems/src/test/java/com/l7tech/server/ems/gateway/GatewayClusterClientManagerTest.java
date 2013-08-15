@@ -3,6 +3,7 @@ package com.l7tech.server.ems.gateway;
 import com.l7tech.identity.User;
 import com.l7tech.identity.UserBean;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.ems.enterprise.MockSsgClusterManager;
 import com.l7tech.server.ems.enterprise.SsgCluster;
 import com.l7tech.server.ems.enterprise.SsgNode;
@@ -26,9 +27,9 @@ public class GatewayClusterClientManagerTest {
     private User userAlice;
     private User userBob;
 
-    private User makeUser(long oid, String login) {
-        UserBean ub = new UserBean(-1, login);
-        ub.setUniqueIdentifier(Long.toString(oid));
+    private User makeUser(Goid oid, String login) {
+        UserBean ub = new UserBean(new Goid(0,-1), login);
+        ub.setUniqueIdentifier(Goid.toString(oid));
         return ub;
     }
 
@@ -57,8 +58,8 @@ public class GatewayClusterClientManagerTest {
         };
         gatewayContextFactory = new MockGatewayContextFactory();
 
-        userAlice = makeUser(321, "alice");
-        userBob = makeUser(123, "bob");
+        userAlice = makeUser(new Goid(0,321), "alice");
+        userBob = makeUser(new Goid(0,123), "bob");
     }
 
     @Test

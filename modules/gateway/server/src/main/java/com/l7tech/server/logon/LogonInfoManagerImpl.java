@@ -47,7 +47,7 @@ public class LogonInfoManagerImpl extends HibernateGoidEntityManager<LogonInfo, 
     }
 
     @Override
-    public LogonInfo findByCompositeKey(final long providerId, final String login, final boolean lock) throws FindException {
+    public LogonInfo findByCompositeKey(final Goid providerId, final String login, final boolean lock) throws FindException {
         try {
             return (LogonInfo) getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
                 @Override
@@ -72,7 +72,7 @@ public class LogonInfoManagerImpl extends HibernateGoidEntityManager<LogonInfo, 
 
 
     @Override
-    public void delete(long providerId, String login) throws DeleteException {
+    public void delete(Goid providerId, String login) throws DeleteException {
         try {
             //check if record exists to delete
             LogonInfo original = findByCompositeKey(providerId, login, true);

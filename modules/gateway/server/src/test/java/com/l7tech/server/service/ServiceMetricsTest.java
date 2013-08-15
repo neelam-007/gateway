@@ -1,5 +1,6 @@
 package com.l7tech.server.service;
 
+import com.l7tech.objectmodel.Goid;
 import org.junit.Test;
 import org.junit.Assert;
 import com.l7tech.identity.UserBean;
@@ -16,11 +17,11 @@ public class ServiceMetricsTest {
     public void testMetricsDetailKeyEqualityWithoutUserMapping() {
         // test equality with different users when there is no user mapping
         {
-            UserBean ub1 = new UserBean(-2, "admin");
+            UserBean ub1 = new UserBean(new Goid(0,-2), "admin");
             ub1.setUniqueIdentifier("3");
             ServiceMetrics.MetricsDetailKey mdk1 = new ServiceMetrics.MetricsDetailKey("getProductDetails", ub1, null);
 
-            UserBean ub2 = new UserBean(-2, "steve");
+            UserBean ub2 = new UserBean(new Goid(0,-2), "steve");
             ub2.setUniqueIdentifier("786432");
             ServiceMetrics.MetricsDetailKey mdk2 = new ServiceMetrics.MetricsDetailKey("getProductDetails", ub2, null);
 
@@ -29,11 +30,11 @@ public class ServiceMetricsTest {
         }
         // test inequality with different operation
         {
-            UserBean ub1 = new UserBean(-2, "admin");
+            UserBean ub1 = new UserBean(new Goid(0,-2), "admin");
             ub1.setUniqueIdentifier("3");
             ServiceMetrics.MetricsDetailKey mdk1 = new ServiceMetrics.MetricsDetailKey("getProductDetail", ub1, null);
 
-            UserBean ub2 = new UserBean(-2, "steve");
+            UserBean ub2 = new UserBean(new Goid(0,-2), "steve");
             ub2.setUniqueIdentifier("786432");
             ServiceMetrics.MetricsDetailKey mdk2 = new ServiceMetrics.MetricsDetailKey("getProductDetails", ub2, null);
 
@@ -46,13 +47,13 @@ public class ServiceMetricsTest {
     public void testMetricsDetailKeyEqualityWithUserMapping() {
         // test inequality for different user mappings
         {
-            UserBean ub1 = new UserBean(-2, "admin");
+            UserBean ub1 = new UserBean(new Goid(0,-2), "admin");
             ub1.setUniqueIdentifier("3");
             MessageContextMapping mcm1 = new MessageContextMapping();
             mcm1.setMappingType(MessageContextMapping.MappingType.AUTH_USER);
             ServiceMetrics.MetricsDetailKey mdk1 = new ServiceMetrics.MetricsDetailKey("getProductDetails", ub1, Collections.singletonList(mcm1));
 
-            UserBean ub2 = new UserBean(-2, "steve");
+            UserBean ub2 = new UserBean(new Goid(0,-2), "steve");
             ub2.setUniqueIdentifier("786432");
             MessageContextMapping mcm2 = new MessageContextMapping();
             mcm2.setMappingType(MessageContextMapping.MappingType.AUTH_USER);
@@ -63,13 +64,13 @@ public class ServiceMetricsTest {
         }
         // test equality with the same user mapping
         {
-            UserBean ub1 = new UserBean(-2, "admin");
+            UserBean ub1 = new UserBean(new Goid(0,-2), "admin");
             ub1.setUniqueIdentifier("3");
             MessageContextMapping mcm1 = new MessageContextMapping();
             mcm1.setMappingType(MessageContextMapping.MappingType.AUTH_USER);
             ServiceMetrics.MetricsDetailKey mdk1 = new ServiceMetrics.MetricsDetailKey("getProductDetails", ub1, Collections.singletonList(mcm1));
 
-            UserBean ub2 = new UserBean(-2, "admin");
+            UserBean ub2 = new UserBean(new Goid(0,-2), "admin");
             ub2.setUniqueIdentifier("3");
             MessageContextMapping mcm2 = new MessageContextMapping();
             mcm2.setMappingType(MessageContextMapping.MappingType.AUTH_USER);

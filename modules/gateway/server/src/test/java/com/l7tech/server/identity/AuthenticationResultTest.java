@@ -8,6 +8,7 @@ package com.l7tech.server.identity;
 import com.l7tech.identity.GroupBean;
 import com.l7tech.identity.UserBean;
 import com.l7tech.common.TestDocuments;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.security.token.OpaqueSecurityToken;
 import org.junit.Test;
 import org.junit.Assert;
@@ -20,43 +21,43 @@ public class AuthenticationResultTest {
     @Test
     public void testEquality() throws Exception {
         {
-            AuthenticationResult result1 = new AuthenticationResult( new UserBean(123, "Alice"), new OpaqueSecurityToken() );
-            AuthenticationResult result2 = new AuthenticationResult( new UserBean(123, "Alice"), new OpaqueSecurityToken() );
+            AuthenticationResult result1 = new AuthenticationResult( new UserBean(new Goid(0,123), "Alice"), new OpaqueSecurityToken() );
+            AuthenticationResult result2 = new AuthenticationResult( new UserBean(new Goid(0,123), "Alice"), new OpaqueSecurityToken() );
             Assert.assertEquals("Same user", result1, result2);
 
-            AuthenticationResult result3 = new AuthenticationResult( new UserBean(123, "Alice"), new OpaqueSecurityToken() );
-            AuthenticationResult result4 = new AuthenticationResult( new UserBean(123, "Bob"), new OpaqueSecurityToken() );
+            AuthenticationResult result3 = new AuthenticationResult( new UserBean(new Goid(0,123), "Alice"), new OpaqueSecurityToken() );
+            AuthenticationResult result4 = new AuthenticationResult( new UserBean(new Goid(0,123), "Bob"), new OpaqueSecurityToken() );
             Assert.assertFalse("Different user", result3.equals(result4));
             Assert.assertFalse("Different user", result4.equals(result3));
 
-            AuthenticationResult result5 = new AuthenticationResult( new UserBean(123, "Alice"), new OpaqueSecurityToken() );
-            AuthenticationResult result6 = new AuthenticationResult( new UserBean(124, "Alice"), new OpaqueSecurityToken() );
+            AuthenticationResult result5 = new AuthenticationResult( new UserBean(new Goid(0,123), "Alice"), new OpaqueSecurityToken() );
+            AuthenticationResult result6 = new AuthenticationResult( new UserBean(new Goid(0,124), "Alice"), new OpaqueSecurityToken() );
             Assert.assertFalse("Different user", result5.equals(result6));
             Assert.assertFalse("Different user", result6.equals(result5));
         }
         {
-            AuthenticationResult result1 = new AuthenticationResult( new UserBean(123, "Alice"), new OpaqueSecurityToken(), TestDocuments.getWssInteropAliceCert(), false );
-            AuthenticationResult result2 = new AuthenticationResult( new UserBean(123, "Alice"), new OpaqueSecurityToken(), TestDocuments.getWssInteropAliceCert(), false );
+            AuthenticationResult result1 = new AuthenticationResult( new UserBean(new Goid(0,123), "Alice"), new OpaqueSecurityToken(), TestDocuments.getWssInteropAliceCert(), false );
+            AuthenticationResult result2 = new AuthenticationResult( new UserBean(new Goid(0,123), "Alice"), new OpaqueSecurityToken(), TestDocuments.getWssInteropAliceCert(), false );
             Assert.assertEquals("Same user", result1, result2);
 
-            AuthenticationResult result3 = new AuthenticationResult( new UserBean(123, "Alice"), new OpaqueSecurityToken(), TestDocuments.getWssInteropAliceCert(), false  );
-            AuthenticationResult result4 = new AuthenticationResult( new UserBean(124, "Alice"), new OpaqueSecurityToken(), TestDocuments.getWssInteropAliceCert(), false  );
+            AuthenticationResult result3 = new AuthenticationResult( new UserBean(new Goid(0,123), "Alice"), new OpaqueSecurityToken(), TestDocuments.getWssInteropAliceCert(), false  );
+            AuthenticationResult result4 = new AuthenticationResult( new UserBean(new Goid(0,124), "Alice"), new OpaqueSecurityToken(), TestDocuments.getWssInteropAliceCert(), false  );
             Assert.assertFalse("Different user", result3.equals(result4));
             Assert.assertFalse("Different user", result4.equals(result3));
 
-            AuthenticationResult result5 = new AuthenticationResult( new UserBean(123, "Alice"), new OpaqueSecurityToken(), TestDocuments.getWssInteropAliceCert(), false  );
-            AuthenticationResult result6 = new AuthenticationResult( new UserBean(123, "Alice"), new OpaqueSecurityToken(), TestDocuments.getWssInteropBobCert(), false  );
+            AuthenticationResult result5 = new AuthenticationResult( new UserBean(new Goid(0,123), "Alice"), new OpaqueSecurityToken(), TestDocuments.getWssInteropAliceCert(), false  );
+            AuthenticationResult result6 = new AuthenticationResult( new UserBean(new Goid(0,123), "Alice"), new OpaqueSecurityToken(), TestDocuments.getWssInteropBobCert(), false  );
             Assert.assertFalse("Different certificate", result5.equals(result6));
             Assert.assertFalse("Different certificate", result6.equals(result5));
 
-            AuthenticationResult result7 = new AuthenticationResult( new UserBean(123, "Alice"), new OpaqueSecurityToken(), TestDocuments.getWssInteropAliceCert(), false  );
-            AuthenticationResult result8 = new AuthenticationResult( new UserBean(123, "Alice"), new OpaqueSecurityToken(), TestDocuments.getWssInteropAliceCert(), true  );
+            AuthenticationResult result7 = new AuthenticationResult( new UserBean(new Goid(0,123), "Alice"), new OpaqueSecurityToken(), TestDocuments.getWssInteropAliceCert(), false  );
+            AuthenticationResult result8 = new AuthenticationResult( new UserBean(new Goid(0,123), "Alice"), new OpaqueSecurityToken(), TestDocuments.getWssInteropAliceCert(), true  );
             Assert.assertFalse("Different certificate status", result7.equals(result8));
             Assert.assertFalse("Different certificate status", result8.equals(result7));
         }
         {
-            AuthenticationResult result1 = new AuthenticationResult( new UserBean(123, "Alice"), new OpaqueSecurityToken(), null, false  );
-            AuthenticationResult result2 = new AuthenticationResult( new UserBean(123, "Alice"), new OpaqueSecurityToken(), TestDocuments.getWssInteropAliceCert(), false  );
+            AuthenticationResult result1 = new AuthenticationResult( new UserBean(new Goid(0,123), "Alice"), new OpaqueSecurityToken(), null, false  );
+            AuthenticationResult result2 = new AuthenticationResult( new UserBean(new Goid(0,123), "Alice"), new OpaqueSecurityToken(), TestDocuments.getWssInteropAliceCert(), false  );
             Assert.assertFalse("Null certificate", result1.equals(result2));
             Assert.assertFalse("Null certificate", result2.equals(result1));
         }

@@ -10,6 +10,8 @@ import com.l7tech.server.identity.PersistentUserManagerImpl;
 import com.l7tech.server.logon.LogonInfoManager;
 import com.l7tech.util.CollectionUtils;
 import static org.apache.commons.lang.StringUtils.*;
+
+import com.l7tech.util.GoidUpgradeMapper;
 import org.hibernate.Criteria;
 import org.hibernate.criterion.Conjunction;
 import org.hibernate.criterion.Restrictions;
@@ -40,15 +42,15 @@ public class FederatedUserManagerImpl
     @Override
     @Transactional(propagation=Propagation.SUPPORTS)
     public FederatedUser headerToUser(IdentityHeader header) {
-        FederatedUser fu = new FederatedUser(getProviderOid(), header.getName());
-        fu.setOid( header.getOid() );
+        FederatedUser fu = new FederatedUser(getProviderGoid(), header.getName());
+        fu.setGoid( header.getGoid() );
         return fu;
     }
 
     @Override
     public FederatedUser reify(UserBean bean) {
         FederatedUser fu = new FederatedUser(bean.getProviderId(), bean.getLogin());
-        fu.setOid(bean.getId() == null ? FederatedUser.DEFAULT_OID : Long.valueOf(bean.getId()));
+        fu.setGoid(bean.getId() == null ? FederatedUser.DEFAULT_GOID : Goid.parseGoid(bean.getId()));
         fu.setName(bean.getName());
         fu.setDepartment(bean.getDepartment());
         fu.setEmail(bean.getEmail());
@@ -72,7 +74,7 @@ public class FederatedUserManagerImpl
     @Transactional(readOnly=true)
     public FederatedUser findBySubjectDN(String dn) throws FindException {
         try {
-            List results = getHibernateTemplate().find(FIND_BY_DN, getProviderOid(), dn );
+            List results = getHibernateTemplate().find(FIND_BY_DN, getProviderGoid(), dn );
             switch( results.size() ) {
                 case 0:
                     return null;
@@ -90,7 +92,7 @@ public class FederatedUserManagerImpl
     @Transactional(readOnly=true)
     public FederatedUser findByEmail(String email) throws FindException {
         try {
-            List results = getHibernateTemplate().find(FIND_BY_EMAIL, getProviderOid(), email );
+            List results = getHibernateTemplate().find(FIND_BY_EMAIL, getProviderGoid(), email );
             switch( results.size() ) {
                 case 0:
                     return null;
@@ -132,7 +134,7 @@ public class FederatedUserManagerImpl
 
     @Override
     protected void addFindByNameCriteria(Criteria crit) {
-        crit.add(Restrictions.eq("providerId", getProviderOid()));
+        crit.add(Restrictions.eq("providerId", getProviderGoid()));
     }
 
     @Override
@@ -142,12 +144,12 @@ public class FederatedUserManagerImpl
 
     @Override
     protected IdentityHeader newHeader( final FederatedUser user ) {
-        return new IdentityHeader(user.getProviderId(), user.getOid(), EntityType.USER, user.getName(), null, user.getName(), user.getVersion());
+        return new IdentityHeader(user.getProviderId(), user.getGoid(), EntityType.USER, user.getName(), null, user.getName(), user.getVersion());
     }
 
     @Override
     protected void addFindAllCriteria( Criteria findHeadersCriteria ) {
-        findHeadersCriteria.add(Restrictions.eq("providerId", getProviderOid()));
+        findHeadersCriteria.add(Restrictions.eq("providerId", getProviderGoid()));
     }
 
     @Override
@@ -166,7 +168,7 @@ public class FederatedUserManagerImpl
     }
 
     private void addConstraint( final Collection<Map<String,Object>> constraints,
-                                final long providerId,
+                                final Goid providerId,
                                 final String propertyName,
                                 final String propertyValue ) {
         if ( !isEmpty( trim( propertyValue ) ) ) {
@@ -183,8 +185,8 @@ public class FederatedUserManagerImpl
         try {
             final Conjunction conjunction = Restrictions.conjunction();
             conjunction.add( asCriterion( getUniqueConstraints( user ) ) );
-            if ( user.getOid() != FederatedUser.DEFAULT_OID ) {
-                conjunction.add( Restrictions.ne( "oid", user.getOid() ) );
+            if ( Goid.isDefault(user.getGoid()) ) {
+                conjunction.add( Restrictions.ne( "goid", user.getGoid() ) );
             }
             existing = findMatching( conjunction );
         } catch (FindException e) {

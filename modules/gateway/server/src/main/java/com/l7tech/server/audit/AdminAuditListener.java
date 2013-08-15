@@ -227,7 +227,7 @@ public class AdminAuditListener extends ApplicationObjectSupport implements Appl
                                         "Backup Service",
                                         AdminAuditRecord.ACTION_OTHER,
                                         event.getNote(),
-                                        user == null ? -1 : user.getProviderId(),
+                                        user == null ? null : user.getProviderId(),
                                         user == null ? "<none>" : user.getLogin(),
                                         user == null ? "<none>" : user.getId(),
                                         event.getClientAddr());

@@ -1,6 +1,7 @@
 package com.l7tech.console.panels.identity.finder;
 
 import com.l7tech.identity.IdentityProviderConfigManager;
+import com.l7tech.objectmodel.Goid;
 
 import javax.swing.*;
 
@@ -65,7 +66,7 @@ public class Options {
         return selectionMode;
     }
 
-    public long getInitialProviderOid() {
+    public Goid getInitialProviderOid() {
         return initialProviderOid;
     }
 
@@ -85,7 +86,7 @@ public class Options {
      *
      * @param id the provider id
      */
-    public void setInitialProvider(long id) {
+    public void setInitialProvider(Goid id) {
         this.initialProviderOid = id;
     }
 
@@ -123,7 +124,7 @@ public class Options {
     private boolean adminOnly = false;
     private boolean disposeOnSelect = false;
     private int selectionMode = ListSelectionModel.MULTIPLE_INTERVAL_SELECTION;
-    private long initialProviderOid = IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID;
+    private Goid initialProviderOid = IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_GOID;
     // TODO Update copy constructor if adding fields
     // TODO Update copy constructor if adding fields
     // TODO Update copy constructor if adding fields

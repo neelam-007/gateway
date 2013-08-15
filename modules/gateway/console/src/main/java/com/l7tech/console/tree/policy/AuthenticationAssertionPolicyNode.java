@@ -25,7 +25,7 @@ public class AuthenticationAssertionPolicyNode extends IdentityAssertionTreeNode
             FindEntityDialog.find(EntityType.ID_PROVIDER_CONFIG, new Functions.UnaryVoid<EntityHeader>() {
                 @Override
                 public void call(EntityHeader entityHeader) {
-                    assertion.setIdentityProviderOid(entityHeader.getOid());
+                    assertion.setIdentityProviderOid(entityHeader.getGoid());
                     provName = null; // Reset cached name
                     PolicyTree tree = (PolicyTree) TopComponents.getInstance().getComponent(PolicyTree.NAME);
                     PolicyTreeModel dtm = (PolicyTreeModel) tree.getModel();

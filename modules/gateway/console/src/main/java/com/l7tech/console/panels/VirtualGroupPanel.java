@@ -48,7 +48,7 @@ public class VirtualGroupPanel extends GroupPanel<VirtualGroup> {
     }
 
     protected VirtualGroup newGroup(EntityHeader groupHeader) {
-        return new VirtualGroup(config.getOid(), groupHeader.getName());
+        return new VirtualGroup(config.getGoid(), groupHeader.getName());
     }
 
     IdentityProviderConfig getIdentityProviderConfig() {
@@ -188,7 +188,7 @@ public class VirtualGroupPanel extends GroupPanel<VirtualGroup> {
      */
     protected Group collectChanges() {
         VirtualGroup vGroup = group;
-        vGroup.setProviderId(config.getOid());
+        vGroup.setProviderId(config.getGoid());
         vGroup.setDescription(virtualGroupDetailsPanel.getGroupDescTextField().getText());
         vGroup.setSamlEmailPattern(virtualGroupDetailsPanel.getEmailTextField().getText());
         vGroup.setX509SubjectDnPattern(virtualGroupDetailsPanel.getX509SubjectDNTextField().getText());
@@ -197,7 +197,7 @@ public class VirtualGroupPanel extends GroupPanel<VirtualGroup> {
     }
 
     protected String save() throws SaveException, UpdateException, ObjectNotFoundException {
-        return getIdentityAdmin().saveGroup(config.getOid(), group, emptyMembers);
+        return getIdentityAdmin().saveGroup(config.getGoid(), group, emptyMembers);
     }
 }
 

@@ -1,10 +1,12 @@
 package com.l7tech.gateway.common.esmtrust;
 
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.imp.PersistentEntityImp;
 
 import javax.persistence.*;
 
 import org.hibernate.annotations.Proxy;
+import org.hibernate.annotations.Type;
 
 /**
  * Represents a mapping of an ESM user ID (on some Trusted ESM) to a local user ID on this Gateway cluster.
@@ -14,7 +16,7 @@ import org.hibernate.annotations.Proxy;
 @Table(name="trusted_esm_user")
 public class TrustedEsmUser extends PersistentEntityImp {
     private transient TrustedEsm trustedEsm;
-    private long providerOid;
+    private Goid providerGoid;
     private String ssgUserId;
     private String esmUserId;
     private String esmUserDisplayName;
@@ -36,13 +38,14 @@ public class TrustedEsmUser extends PersistentEntityImp {
         this.trustedEsm = trustedEsm;
     }
 
-    @Column(name="provider_oid")
-    public long getProviderOid() {
-        return providerOid;
+    @Column(name="provider_goid")
+    @Type(type = "com.l7tech.server.util.GoidType")
+    public Goid getProviderGoid() {
+        return providerGoid;
     }
 
-    public void setProviderOid(long providerOid) {
-        this.providerOid = providerOid;
+    public void setProviderGoid(Goid providerGoid) {
+        this.providerGoid = providerGoid;
     }
 
     @Column(name="user_id", length=128)

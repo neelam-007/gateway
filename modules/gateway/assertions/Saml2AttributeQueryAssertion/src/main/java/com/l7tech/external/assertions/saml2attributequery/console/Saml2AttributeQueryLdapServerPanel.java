@@ -11,6 +11,7 @@ import com.l7tech.identity.IdentityProviderType;
 import com.l7tech.gateway.common.admin.IdentityAdmin;
 import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
+import com.l7tech.objectmodel.Goid;
 
 import javax.swing.*;
 import javax.swing.event.DocumentListener;
@@ -28,11 +29,11 @@ import java.awt.event.ActionEvent;
  */
 public class Saml2AttributeQueryLdapServerPanel extends WizardStepPanel {
     private static class LdapServerEntry {
-        private long oid;
+        private Goid goid;
         private String name;
 
-        public LdapServerEntry(long oid, String name) {
-            this.oid = oid;
+        public LdapServerEntry(Goid goid, String name) {
+            this.goid = goid;
             this.name = name;
         }
 
@@ -40,8 +41,8 @@ public class Saml2AttributeQueryLdapServerPanel extends WizardStepPanel {
             return name;
         }
 
-        public long getOid() {
-            return oid;
+        public Goid getGoid() {
+            return goid;
         }
     }
 
@@ -66,9 +67,9 @@ public class Saml2AttributeQueryLdapServerPanel extends WizardStepPanel {
             if(Registry.getDefault() != null && Registry.getDefault().getIdentityAdmin() != null) {
                 IdentityAdmin identityAdmin = Registry.getDefault().getIdentityAdmin();
                 for(EntityHeader entityHeader : identityAdmin.findAllIdentityProviderConfig()) {
-                    IdentityProviderConfig cfg = identityAdmin.findIdentityProviderConfigByID(entityHeader.getOid());
+                    IdentityProviderConfig cfg = identityAdmin.findIdentityProviderConfigByID(entityHeader.getGoid());
                     if (IdentityProviderType.fromVal(cfg.getTypeVal()) == IdentityProviderType.LDAP) {
-                        model.addElement(new LdapServerEntry(entityHeader.getOid(), entityHeader.getName()));
+                        model.addElement(new LdapServerEntry(entityHeader.getGoid(), entityHeader.getName()));
                     }
                 }
             }
@@ -193,10 +194,10 @@ public class Saml2AttributeQueryLdapServerPanel extends WizardStepPanel {
 
         Saml2AttributeQueryAssertion assertion = (Saml2AttributeQueryAssertion)settings;
 
-        long ldapProviderOid = assertion.getLdapProviderOid();
+        Goid ldapProviderOid = assertion.getLdapProviderOid();
         for(int i = 0;i < ldapServerDropdown.getItemCount();i++) {
             LdapServerEntry entry = (LdapServerEntry)ldapServerDropdown.getItemAt(i);
-            if(entry.getOid() == ldapProviderOid) {
+            if(entry.getGoid().equals( ldapProviderOid)) {
                 ldapServerDropdown.setSelectedIndex(i);
                 break;
             }
@@ -228,7 +229,7 @@ public class Saml2AttributeQueryLdapServerPanel extends WizardStepPanel {
 
         LdapServerEntry entry = (LdapServerEntry)ldapServerDropdown.getSelectedItem();
         if(entry != null) {
-            assertion.setLdapProviderOid(entry.getOid());
+            assertion.setLdapProviderOid(entry.getGoid());
         }
 
         assertion.setIdFieldName(idField.getText());

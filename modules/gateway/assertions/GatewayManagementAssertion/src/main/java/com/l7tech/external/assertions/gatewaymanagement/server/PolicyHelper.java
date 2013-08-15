@@ -571,42 +571,42 @@ public class PolicyHelper {
         }
 
         @Override
-        public IdentityProviderConfig findIdentityProviderConfigByID( final long providerOid ) throws FindException {
+        public IdentityProviderConfig findIdentityProviderConfigByID( final Goid providerOid ) throws FindException {
             return filter( identityProviderConfigManager.findByPrimaryKey( providerOid ) );
         }
 
         @Override
-        public EntityHeaderSet<IdentityHeader> findAllGroups( final long providerOid ) throws FindException {
+        public EntityHeaderSet<IdentityHeader> findAllGroups( final Goid providerOid ) throws FindException {
             return (EntityHeaderSet<IdentityHeader>)filter( getIdentityProvider( providerOid ).getGroupManager().findAllHeaders() );
         }
 
         @Override
-        public Group findGroupByID( final long providerOid, final String groupId ) throws FindException {
+        public Group findGroupByID( final Goid providerOid, final String groupId ) throws FindException {
             return filter( getIdentityProvider( providerOid ).getGroupManager().findByPrimaryKey( groupId ) );
         }
 
         @Override
-        public Group findGroupByName( final long providerOid, final String name ) throws FindException {
+        public Group findGroupByName( final Goid providerOid, final String name ) throws FindException {
             return filter( getIdentityProvider( providerOid ).getGroupManager().findByName( name ) );
         }
 
         @Override
-        public Collection<IdentityHeader> getUserHeaders( final long providerOid, final String groupId ) throws FindException {
+        public Collection<IdentityHeader> getUserHeaders( final Goid providerOid, final String groupId ) throws FindException {
             return filter( getIdentityProvider( providerOid ).getGroupManager().getUserHeaders( groupId ) );
         }
 
         @Override
-        public Collection<IdentityHeader> findAllUsers( final long providerOid ) throws FindException {
+        public Collection<IdentityHeader> findAllUsers( final Goid providerOid ) throws FindException {
             return filter( getIdentityProvider( providerOid ).getUserManager().findAllHeaders() );
         }
 
         @Override
-        public User findUserByID( final long providerOid, final String userId ) throws FindException {
+        public User findUserByID( final Goid providerOid, final String userId ) throws FindException {
             return filter( getIdentityProvider( providerOid ).getUserManager().findByPrimaryKey( userId ) );
         }
 
         @Override
-        public User findUserByLogin( final long providerOid, final String login ) throws FindException {
+        public User findUserByLogin( final Goid providerOid, final String login ) throws FindException {
             return filter( getIdentityProvider( providerOid ).getUserManager().findByLogin( login ) );
         }
 
@@ -626,7 +626,7 @@ public class PolicyHelper {
             return genericEntityManager.getEntityManager(entityClass);
         }
 
-        private IdentityProvider<?,?,?,?> getIdentityProvider( final long providerOid ) throws FindException {
+        private IdentityProvider<?,?,?,?> getIdentityProvider( final Goid providerOid ) throws FindException {
             final IdentityProvider provider = identityProviderFactory.getProvider( providerOid );
             if ( provider == null )
                 throw new FindException("IdentityProvider could not be found");

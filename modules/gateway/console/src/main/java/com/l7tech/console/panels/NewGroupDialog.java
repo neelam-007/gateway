@@ -60,7 +60,7 @@ public class NewGroupDialog extends JDialog {
         this.ipc = ipc;
         this.group = new GroupBean();
         if (ipc != null) {
-            this.group.setProviderId(ipc.getOid());
+            this.group.setProviderId(ipc.getGoid());
         }
         initResources();
         initComponents();
@@ -358,10 +358,10 @@ public class NewGroupDialog extends JDialog {
                             EntityHeader header = new EntityHeader();
                             header.setType(EntityType.GROUP);
                             header.setName(group.getName());
-                            long providerid;
+                            Goid providerid;
                             if (ipc == null) {
-                                providerid = IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID;
-                            } else providerid = ipc.getOid();
+                                providerid = IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_GOID;
+                            } else providerid = ipc.getGoid();
                             group.setUniqueIdentifier(Registry.getDefault().getIdentityAdmin().saveGroup(providerid, group, null ));
                             header.setStrId(group.getId());
                             NewGroupDialog.this.fireEventGroupAdded(header);
@@ -405,7 +405,7 @@ public class NewGroupDialog extends JDialog {
                         new Runnable() {
                             @Override
                             public void run() {
-                                IdentityHeader header = new IdentityHeader(ipc.getOid(), group.getId(), EntityType.GROUP, group.getName(), null, null, null);
+                                IdentityHeader header = new IdentityHeader(ipc.getGoid(), group.getId(), EntityType.GROUP, group.getName(), null, null, null);
                                 GroupPanel panel = null;
                                 try {
                                     panel = GroupPanel.newInstance(ipc, header);

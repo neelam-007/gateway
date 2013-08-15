@@ -24,7 +24,7 @@ public class AddAuthenticationAssertionAdvice implements Advice {
         final AuthenticationAssertion ass = (AuthenticationAssertion) assertions[0];
         FindEntityDialog.find(EntityType.ID_PROVIDER_CONFIG, new Functions.UnaryVoid<EntityHeader>() {
             public void call(EntityHeader entityHeader) {
-                ass.setIdentityProviderOid(entityHeader.getOid());
+                ass.setIdentityProviderOid(entityHeader.getGoid());
                 pc.proceed();
             }
         }, ass);

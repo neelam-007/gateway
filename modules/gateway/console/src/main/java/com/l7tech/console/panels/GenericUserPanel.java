@@ -167,9 +167,9 @@ public class GenericUserPanel extends UserPanel {
                     user = lu;
                 }
                 userGroups = null;
-                ao = new AttemptedCreateSpecific(USER, new UserBean(config.getOid(), "<new user>"));
+                ao = new AttemptedCreateSpecific(USER, new UserBean(config.getGoid(), "<new user>"));
             } else {
-                User u = getIdentityAdmin().findUserByID(config.getOid(), userHeader.getStrId());
+                User u = getIdentityAdmin().findUserByID(config.getGoid(), userHeader.getStrId());
                 if (u == null) {
                     JOptionPane.showMessageDialog(TopComponents.getInstance().getTopParent(),
                             USER_DOES_NOT_EXIST_MSG, "Warning", JOptionPane.WARNING_MESSAGE);
@@ -178,7 +178,7 @@ public class GenericUserPanel extends UserPanel {
                     ao = new AttemptedUpdate(USER, u);
                 }
                 user = u;
-                userGroups = getIdentityAdmin().getGroupHeaders(config.getOid(), u.getId());
+                userGroups = getIdentityAdmin().getGroupHeaders(config.getGoid(), u.getId());
             }
             canUpdate = Registry.getDefault().getSecurityProvider().hasPermission(ao);
             // Populate the form for insert/update
@@ -732,7 +732,7 @@ public class GenericUserPanel extends UserPanel {
         public void entityUpdated(EntityEvent ev) {
             try {
                 user =
-                        getIdentityAdmin().findUserByID(config.getOid(), userHeader.getStrId());
+                        getIdentityAdmin().findUserByID(config.getGoid(), userHeader.getStrId());
                 user = collectChanges();
                 boolean b = formModified;
                 setData(user);
@@ -825,9 +825,9 @@ public class GenericUserPanel extends UserPanel {
         try {
             String id;
             if (userHeader.getStrId() != null) {
-                getIdentityAdmin().saveUser(config.getOid(), user, userGroups);
+                getIdentityAdmin().saveUser(config.getGoid(), user, userGroups);
             } else {
-                id = getIdentityAdmin().saveUser(config.getOid(), user, userGroups);
+                id = getIdentityAdmin().saveUser(config.getGoid(), user, userGroups);
                 userHeader.setStrId(id);
             }
 
@@ -880,7 +880,7 @@ public class GenericUserPanel extends UserPanel {
             if (user instanceof PersistentUser) {
                 PersistentUser puser = (PersistentUser) user;
                 AttemptedOperation ao;
-                if (puser.getOid() == PersistentUser.DEFAULT_OID) {
+                if (Goid.isDefault(puser.getGoid())) {
                     ao = new AttemptedCreate(USER);
                 } else {
                     ao = new AttemptedUpdate(USER, puser);
@@ -1017,7 +1017,7 @@ public class GenericUserPanel extends UserPanel {
         eh.setOid(0);
         eh.setName("Test user");
         eh.setType(EntityType.USER);
-        IdentityHeader ih = new IdentityHeader(-2, eh);
+        IdentityHeader ih = new IdentityHeader(new Goid(0,-2), eh);
         panel.edit(ih, new IdentityProviderConfig(IdentityProviderType.INTERNAL));
 
         JFrame frame = new JFrame("Group panel Test");

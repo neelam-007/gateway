@@ -3,10 +3,9 @@
  */
 package com.l7tech.policy.assertion.identity;
 
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.PersistentEntity;
+import com.l7tech.objectmodel.*;
 import com.l7tech.policy.assertion.*;
+import com.l7tech.util.GoidUpgradeMapper;
 
 /**
  * Subclasses of IdentityAssertion are used to specify that the entity making
@@ -17,14 +16,15 @@ import com.l7tech.policy.assertion.*;
  * @version $Revision$
  */
 public abstract class IdentityAssertion extends MessageTargetableAssertion implements UsesEntities, IdentityTagable {
-    protected long _identityProviderOid = PersistentEntity.DEFAULT_OID;
+
+    protected Goid _identityProviderOid = GoidEntity.DEFAULT_GOID;
     protected String identityTag;
 
     protected IdentityAssertion() {
         super(false);
     }
 
-    protected IdentityAssertion(long providerOid) {
+    protected IdentityAssertion(Goid providerOid) {
         super(false);
         this._identityProviderOid = providerOid;
     }
@@ -35,15 +35,23 @@ public abstract class IdentityAssertion extends MessageTargetableAssertion imple
      *
      * @param provider
      */
-    public void setIdentityProviderOid( long provider ) {
+    public void setIdentityProviderOid( Goid provider ) {
         _identityProviderOid = provider;
+    }
+
+    // For backward compat while parsing pre-GOID policies.  Not needed for new assertions.
+    @Deprecated
+    public void setIdentityProviderOid( long providerOid ) {
+        _identityProviderOid = (providerOid == -2) ?
+                new Goid(0,-2L):
+                GoidUpgradeMapper.mapOid(EntityType.ID_PROVIDER_CONFIG, providerOid);
     }
 
     /**
      * Sets the OID of the <code>IdentityProvider</code> in which identities specified
      * using this Assertion should be enrolled.
      */
-    public long getIdentityProviderOid() {
+    public Goid getIdentityProviderOid() {
         return _identityProviderOid;
     }
 
@@ -59,15 +67,15 @@ public abstract class IdentityAssertion extends MessageTargetableAssertion imple
 
     @Override
     public EntityHeader[] getEntitiesUsed() {
-        return new EntityHeader[] { new EntityHeader(Long.toString(_identityProviderOid), EntityType.ID_PROVIDER_CONFIG, null, null) };
+        return new EntityHeader[] { new EntityHeader(Goid.toString(_identityProviderOid), EntityType.ID_PROVIDER_CONFIG, null, null) };
     }
 
     @Override
     public void replaceEntity(EntityHeader oldEntityHeader, EntityHeader newEntityHeader) {
-        if(oldEntityHeader.getType().equals(EntityType.ID_PROVIDER_CONFIG) && oldEntityHeader.getOid() == _identityProviderOid &&
+        if(oldEntityHeader.getType().equals(EntityType.ID_PROVIDER_CONFIG) && oldEntityHeader.getGoid().equals(_identityProviderOid) &&
                 newEntityHeader.getType().equals(EntityType.ID_PROVIDER_CONFIG))
         {
-            _identityProviderOid = newEntityHeader.getOid();
+            _identityProviderOid = newEntityHeader.getGoid();
         }
     }
 

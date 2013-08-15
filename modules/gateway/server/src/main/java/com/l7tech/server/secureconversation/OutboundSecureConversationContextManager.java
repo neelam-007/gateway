@@ -5,6 +5,7 @@ import com.l7tech.common.io.XmlUtil;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.PoolByteArrayOutputStream;
@@ -51,7 +52,7 @@ public class OutboundSecureConversationContextManager extends SecureConversation
      * <p>An outbound session is for a particular user and service (or group of services).</p>
      */
     public static final class OutboundSessionKey implements Serializable {
-        private final long providerId;
+        private final Goid providerId;
         private final String userId;
         private final String serviceUrl;
 
@@ -134,7 +135,7 @@ public class OutboundSecureConversationContextManager extends SecureConversation
 
             final OutboundSessionKey that = (OutboundSessionKey) o;
 
-            if ( providerId != that.providerId ) return false;
+            if ( providerId != null ? !providerId.equals( that.providerId ) : that.providerId != null ) return false;
             if ( !serviceUrl.equals( that.serviceUrl ) ) return false;
             if ( userId != null ? !userId.equals( that.userId ) : that.userId != null ) return false;
 
@@ -143,7 +144,7 @@ public class OutboundSecureConversationContextManager extends SecureConversation
 
         @Override
         public int hashCode() {
-            int result = (int) (providerId ^ (providerId >>> 32));
+            int result = (providerId != null ? providerId.hashCode() : 0);
             result = 31 * result + (userId != null ? userId.hashCode() : 0);
             result = 31 * result + serviceUrl.hashCode();
             return result;
@@ -212,7 +213,7 @@ public class OutboundSecureConversationContextManager extends SecureConversation
         }
 
         if ( user != null &&
-             ( user.getProviderId() != sessionKey.providerId || !sessionKey.userId.equals( user.getId() )) ) {
+             ( !user.getProviderId().equals(sessionKey.providerId) || !sessionKey.userId.equals( user.getId() )) ) {
             throw new SessionCreationException( "Unable to create session for user (invalid user for session)" );
         }
     }

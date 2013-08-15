@@ -8,6 +8,7 @@ import com.l7tech.identity.IdentityProviderType;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.message.Message;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.TestLicenseManager;
@@ -72,6 +73,7 @@ public class ServerLDAPUpdateAssertionTest {
     private PolicyEnforcementContext peCtx;
 
     private final static String PROVIDER_NAME = "myldap";
+    private final static Goid PROVIDER_GOID = new Goid(0,3);
 
     private Timer timer = new MockTimer();
 
@@ -86,9 +88,10 @@ public class ServerLDAPUpdateAssertionTest {
         ldapIdentityProviders.add(identityProvider);
         when(ldapIdentityProviderConfig.getName()).thenReturn(PROVIDER_NAME);
         when(identityProvider.getConfig()).thenReturn(ldapIdentityProviderConfig);
+        when(identityProvider.getConfig().getGoid()).thenReturn(PROVIDER_GOID);
         when(identityProvider.getConfig().type()).thenReturn(identityProviderType);
         when(identityProvider.getConfig().getSerializedProps()).thenReturn("<java version=\"1.6.0_01\" class=\"java.beans.XMLDecoder\"><object class=\"java.util.HashMap\"><void method=\"put\"><string>originalTemplateName</string><string>GenericLDAP</string></void></object></java>");
-        when(identityProviderFactory.getProvider(anyLong())).thenReturn(identityProvider);
+        when(identityProviderFactory.getProvider((Goid)any())).thenReturn(identityProvider);
         when(identityProviderFactory.findAllIdentityProviders()).thenReturn(ldapIdentityProviders);
         when(identityProvider.getBrowseContext()).thenReturn(dirContext);
         final GenericApplicationContext applicationContext = new GenericApplicationContext(new SimpleSingletonBeanFactory(new HashMap<String, Object>() {{
@@ -336,8 +339,9 @@ public class ServerLDAPUpdateAssertionTest {
         Collection<IdentityProvider> ldapIdentityProviders = new ArrayList<IdentityProvider>();
         ldapIdentityProviders.add(identityProvider);
         when(ldapIdentityProviderConfig.getName()).thenReturn(PROVIDER_NAME);
+        when(ldapIdentityProviderConfig.getGoid()).thenReturn(PROVIDER_GOID);
         when(identityProvider.getConfig()).thenReturn(ldapIdentityProviderConfig);
-        when(identityProviderFactory.getProvider(anyLong())).thenReturn(null);
+        when(identityProviderFactory.getProvider((Goid)any())).thenReturn(null);
         when(identityProviderFactory.findAllIdentityProviders()).thenReturn(ldapIdentityProviders);
         when(identityProvider.getBrowseContext()).thenReturn(dirContext);
         when(dirContext.createSubcontext(anyString(), any(Attributes.class))).thenThrow(new NamingException("WILL_NOT_PERFORM"));
@@ -371,8 +375,9 @@ public class ServerLDAPUpdateAssertionTest {
         Collection<IdentityProvider> ldapIdentityProviders = new ArrayList<IdentityProvider>();
         ldapIdentityProviders.add(identityProvider);
         when(ldapIdentityProviderConfig.getName()).thenReturn(PROVIDER_NAME);
+        when(ldapIdentityProviderConfig.getGoid()).thenReturn(PROVIDER_GOID);
         when(identityProvider.getConfig()).thenReturn(ldapIdentityProviderConfig);
-        when(identityProviderFactory.getProvider(anyLong())).thenReturn(identityProvider);
+        when(identityProviderFactory.getProvider((Goid)any())).thenReturn(identityProvider);
         when(identityProviderFactory.findAllIdentityProviders()).thenReturn(ldapIdentityProviders);
         when(identityProvider.getBrowseContext()).thenReturn(dirContext);
         when(dirContext.createSubcontext(anyString(), any(Attributes.class))).thenThrow(new NamingException("WILL_NOT_PERFORM"));
@@ -405,8 +410,9 @@ public class ServerLDAPUpdateAssertionTest {
         Collection<IdentityProvider> ldapIdentityProviders = new ArrayList<IdentityProvider>();
         ldapIdentityProviders.add(internalIdentityProvider);
         when(ldapIdentityProviderConfig.getName()).thenReturn(PROVIDER_NAME);
+        when(ldapIdentityProviderConfig.getGoid()).thenReturn(PROVIDER_GOID);
         when(internalIdentityProvider.getConfig()).thenReturn(ldapIdentityProviderConfig);
-        when(identityProviderFactory.getProvider(anyLong())).thenReturn(internalIdentityProvider);
+        when(identityProviderFactory.getProvider((Goid)any())).thenReturn(internalIdentityProvider);
         when(identityProviderFactory.findAllIdentityProviders()).thenReturn(ldapIdentityProviders);
         when(identityProvider.getBrowseContext()).thenReturn(dirContext);
         final GenericApplicationContext applicationContext = new GenericApplicationContext(new SimpleSingletonBeanFactory(new HashMap<String, Object>() {{

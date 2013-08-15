@@ -10,6 +10,7 @@ import com.l7tech.common.io.CertUtils;
 import com.l7tech.identity.*;
 import com.l7tech.identity.fed.*;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.server.identity.PersistentGroupManagerImpl;
 import org.hibernate.Criteria;
@@ -59,7 +60,7 @@ public class FederatedGroupManagerImpl
     public FederatedGroup reify(GroupBean bean) {
         FederatedGroup fg = new FederatedGroup(bean.getProviderId(), bean.getName(), bean.getProperties());
         fg.setDescription(bean.getDescription());
-        fg.setOid(bean.getId() == null ? FederatedGroup.DEFAULT_OID : Long.valueOf(bean.getId()));
+        fg.setGoid(bean.getId() == null ? FederatedGroup.DEFAULT_GOID : Goid.parseGoid(bean.getId()));
         return fg;
     }
 
@@ -67,7 +68,7 @@ public class FederatedGroupManagerImpl
     @Transactional(propagation=Propagation.SUPPORTS)
     public GroupMembership newMembership(FederatedGroup group, FederatedUser user) {
         FederatedGroup fgroup = cast(group);
-        return new FederatedGroupMembership(providerConfig.getOid(), fgroup.getOid(), Long.parseLong(user.getId()));
+        return new FederatedGroupMembership(providerConfig.getGoid(), fgroup.getGoid(), Goid.parseGoid(user.getId()));
     }
 
     @Override
@@ -83,12 +84,12 @@ public class FederatedGroupManagerImpl
 
     @Override
     protected void addFindByNameCriteria(Criteria crit) {
-        crit.add(Restrictions.eq("providerId", getProviderOid()));
+        crit.add(Restrictions.eq("providerId", getProviderGoid()));
     }
 
     @Override
     protected void addFindAllCriteria( Criteria allHeadersCriteria ) {
-        allHeadersCriteria.add(Restrictions.eq("providerId", getProviderOid()));
+        allHeadersCriteria.add(Restrictions.eq("providerId", getProviderGoid()));
     }
 
     @Override
@@ -97,9 +98,9 @@ public class FederatedGroupManagerImpl
         try {
             FederatedGroup g = super.findByPrimaryKey(oid);
             if ( g == null ) {
-                g = findByPrimaryKey(VirtualGroup.class, Long.parseLong(oid));
+                g = findByPrimaryKey(VirtualGroup.class, Goid.parseGoid(oid));
                 if (g != null) {
-                    g.setProviderId(providerConfig.getOid());
+                    g.setProviderId(providerConfig.getGoid());
                 }
             }
             return g;

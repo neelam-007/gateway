@@ -299,7 +299,7 @@ public class ResolveForeignIdentityProviderPanel extends WizardStepPanel {
         DefaultComboBoxModel idprovidermodel = new DefaultComboBoxModel();
         for (EntityHeader entityHeader : providerHeaders) {
             try {
-                IdentityProviderConfig ipc = admin.findIdentityProviderConfigByID(entityHeader.getOid());
+                IdentityProviderConfig ipc = admin.findIdentityProviderConfigByID(entityHeader.getGoid());
                 if (ipc != null && (requiredProviderType == 0 || ipc.getTypeVal() == requiredProviderType) ) {
                     idprovidermodel.addElement(entityHeader.getName());
                 }

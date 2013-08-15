@@ -6,6 +6,7 @@ package com.l7tech.server.event;
 
 import com.l7tech.identity.*;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import org.springframework.context.ApplicationContext;
 
@@ -14,19 +15,19 @@ import org.springframework.context.ApplicationContext;
  */
 public class GroupMembershipEventInfo {
     public GroupMembershipEventInfo(final GroupMembership gm, String verb, ApplicationContext springContext) {
-        long providerOid = gm.getThisGroupProviderOid();
+        Goid providerOid = gm.getThisGroupProviderGoid();
         try {
             Group g = null;
             User u = null;
             IdentityProviderFactory ipf = (IdentityProviderFactory)springContext.getBean("identityProviderFactory");
             IdentityProvider provider = ipf.getProvider(providerOid);
             if (provider != null) {
-                g = provider.getGroupManager().findByPrimaryKey(Long.toString(gm.getThisGroupId()));
-                u = provider.getUserManager().findByPrimaryKey(Long.toString(gm.getMemberUserId()));
+                g = provider.getGroupManager().findByPrimaryKey(Goid.toString(gm.getThisGroupId()));
+                u = provider.getUserManager().findByPrimaryKey(Goid.toString(gm.getMemberUserId()));
             }
 
-            if (g == null) g = new AnonymousGroupReference(Long.toString(gm.getThisGroupId()), gm.getThisGroupProviderOid(), null);
-            if (u == null) u = new AnonymousUserReference(Long.toString(gm.getMemberUserId()), gm.getThisGroupProviderOid(), null);
+            if (g == null) g = new AnonymousGroupReference(Goid.toString(gm.getThisGroupId()), gm.getThisGroupProviderGoid(), null);
+            if (u == null) u = new AnonymousUserReference(Goid.toString(gm.getMemberUserId()), gm.getThisGroupProviderGoid(), null);
             this.group = g;
             String name = u.getName();
             if (name == null) {

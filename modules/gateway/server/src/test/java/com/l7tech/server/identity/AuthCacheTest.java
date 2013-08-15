@@ -47,7 +47,7 @@ public class AuthCacheTest {
             }
         };
 
-        UserBean ub = new UserBean(tIP.getConfig().getOid(), USER_NAME);
+        UserBean ub = new UserBean(tIP.getConfig().getGoid(), USER_NAME);
         TestIdentityProvider.addUser(ub, USER_NAME, PASSWORD.toCharArray());
 
         final long[] time = new long[]{ System.currentTimeMillis() };
@@ -146,7 +146,7 @@ public class AuthCacheTest {
         };
 
         String userName = USER_NAME+"1";
-        UserBean ub1 = new UserBean(tIP.getConfig().getOid(), userName);
+        UserBean ub1 = new UserBean(tIP.getConfig().getGoid(), userName);
 
         TestIdentityProvider.addUser(ub1, userName, PASSWORD.toCharArray());
         LoginCredentials lc1 = LoginCredentials.makeLoginCredentials(new HttpBasicToken(userName, PASSWORD.toCharArray()), HttpBasic.class);
@@ -203,7 +203,7 @@ public class AuthCacheTest {
     private void addSomeUsers(int numUsers, TestIdentityProvider tIP, AuthCache aC) throws Exception{
         for(int i = 0; i < numUsers; i++){
             String userName = USER_NAME+"users"+i;
-            UserBean ub = new UserBean(tIP.getConfig().getOid(), userName);
+            UserBean ub = new UserBean(tIP.getConfig().getGoid(), userName);
             TestIdentityProvider.addUser(ub, userName, PASSWORD.toCharArray());
             LoginCredentials lc = LoginCredentials.makeLoginCredentials(new HttpBasicToken(userName, PASSWORD.toCharArray()), HttpBasic.class);
             Assert.assertNotNull(aC.getCachedAuthResult(lc, tIP, MAX_AGE, MAX_AGE));

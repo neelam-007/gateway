@@ -3,6 +3,7 @@
  */
 package com.l7tech.identity.cert;
 
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.security.cert.X509Entity;
 
 import javax.persistence.AttributeOverride;
@@ -11,6 +12,7 @@ import javax.persistence.Entity;
 import javax.persistence.Table;
 
 import org.hibernate.annotations.Proxy;
+import org.hibernate.annotations.Type;
 
 /**
  * A certificate for a user in an SSG Identity Provider; not necessarily a certificate issued by the SSG's CA.
@@ -20,12 +22,14 @@ import org.hibernate.annotations.Proxy;
 @Table(name="client_cert")
 @AttributeOverride(name="certBase64",column=@Column(name="cert"))
 public class CertEntryRow extends X509Entity {
+
     @Column(name="provider", nullable=false)
-    public long getProvider() {
+    @Type(type = "com.l7tech.server.util.GoidType")
+    public Goid getProvider() {
         return provider;
     }
 
-    public void setProvider(long providerId) {
+    public void setProvider(Goid providerId) {
         mutate();
         this.provider = providerId;
     }
@@ -60,7 +64,7 @@ public class CertEntryRow extends X509Entity {
         this.userId = userId;
     }
 
-    private long provider;
+    private Goid provider;
     private String login;
     private String userId;
     private int resetCounter;
