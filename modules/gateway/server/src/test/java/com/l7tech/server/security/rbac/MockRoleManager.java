@@ -7,17 +7,18 @@ import com.l7tech.identity.Group;
 import com.l7tech.identity.GroupManager;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
+import com.l7tech.objectmodel.imp.GoidEntityImp;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.objectmodel.imp.NamedGoidEntityImp;
 import com.l7tech.server.EntityFinder;
-import com.l7tech.server.OidEntityManagerStub;
+import com.l7tech.server.GoidEntityManagerStub;
 import com.l7tech.util.Pair;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 import java.util.regex.Pattern;
 
-public class MockRoleManager extends OidEntityManagerStub<Role,EntityHeader> implements RoleManager, RbacServices {
+public class MockRoleManager extends GoidEntityManagerStub<Role,EntityHeader> implements RoleManager, RbacServices {
     private GroupManager groupManager;
 
     public MockRoleManager(EntityFinder entityFinder) {
@@ -162,7 +163,7 @@ public class MockRoleManager extends OidEntityManagerStub<Role,EntityHeader> imp
     }
 
     @Override
-    public Class<? extends Entity> getImpClass() {
+    public Class<? extends GoidEntityImp> getImpClass() {
         return Role.class;
     }
 

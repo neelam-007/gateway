@@ -90,7 +90,7 @@ public class EditRoleDialog extends JDialog {
         setContentPane(contentPane);
         getRootPane().setDefaultButton(buttonOK);
 
-        if (role.getOid() == Role.DEFAULT_OID) {
+        if (role.isUnsaved()) {
             setTitle(resources.getString("editRoleDialog.newTitle"));
         } else {
             setTitle(MessageFormat.format(resources.getString(flags.canUpdateSome()?"editRoleDialog.existingTitle":"editRoleDialog.readOnlyExistingTitle"), role.getName()));
@@ -441,8 +441,8 @@ public class EditRoleDialog extends JDialog {
             }
 
             try {
-                long oid = Registry.getDefault().getRbacAdmin().saveRole(role);
-                role.setOid(oid);
+                Goid goid = Registry.getDefault().getRbacAdmin().saveRole(role);
+                role.setGoid(goid);
             } catch (ObjectModelException se) {
                 JOptionPane.showMessageDialog(this.getParent(),
                         "The Role could not be saved: " + ExceptionUtils.getMessage(se),

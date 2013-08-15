@@ -292,7 +292,7 @@ public class RolePermissionsPanel extends JPanel {
     private boolean hasNewPermission(@NotNull final PermissionGroup group) {
         boolean hasNewPermission = false;
         for (final Permission permission : group.getPermissions()) {
-            if (permission.getOid() == Permission.DEFAULT_OID) {
+            if (permission.isUnsaved()) {
                 hasNewPermission = true;
                 break;
             }

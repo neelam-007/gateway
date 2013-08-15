@@ -113,7 +113,7 @@ public class RbacUtilities {
        if (in != null) {
            for (final ScopePredicate scopePredicate : in) {
                final ScopePredicate clone = scopePredicate.createAnonymousClone();
-               clone.setOid(ScopePredicate.DEFAULT_OID);
+               clone.setGoid(ScopePredicate.DEFAULT_GOID);
                out.add(clone);
            }
        }

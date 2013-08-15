@@ -6,7 +6,8 @@ package com.l7tech.gateway.common.security.rbac;
 import com.l7tech.objectmodel.AnonymousEntityReference;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.imp.PersistentEntityImp;
+import com.l7tech.objectmodel.GoidEntity;
+import com.l7tech.objectmodel.imp.GoidEntityImp;
 import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
@@ -25,7 +26,7 @@ import java.util.Set;
 @javax.persistence.Entity
 @Proxy(lazy=false)
 @Table(name="rbac_permission")
-public class Permission extends PersistentEntityImp implements Cloneable {
+public class Permission extends GoidEntityImp implements Cloneable {
     private Role role;
     private OperationType operation;
     private String otherOperationName;
@@ -81,7 +82,7 @@ public class Permission extends PersistentEntityImp implements Cloneable {
     }
 
     @ManyToOne(optional=false)
-    @JoinColumn(name="role_oid", nullable=false)
+    @JoinColumn(name="role_goid", nullable=false)
     public Role getRole() {
         return role;
     }
@@ -219,8 +220,8 @@ public class Permission extends PersistentEntityImp implements Cloneable {
     public void copyFrom(Permission perm) {
         if (perm.role != null)
             this.role = perm.role;
-        if (perm.getOid() != DEFAULT_OID)
-            this.setOid(perm.getOid());
+        if (!GoidEntity.DEFAULT_GOID.equals(perm.getGoid()))
+            this.setGoid(perm.getGoid());
         this.operation = perm.getOperation();
         this.entityType = perm.getEntityType();
         this.otherOperationName = perm.getOtherOperationName();
@@ -249,7 +250,7 @@ public class Permission extends PersistentEntityImp implements Cloneable {
     }
 
     public String toString() {
-        return "<permission id=\"" + getOid() + "\" op=\"" + operation + "\" type=\"" + entityType + "\" scope=\"" + scope + "\"/>";
+        return "<permission id=\"" + getGoid() + "\" op=\"" + operation + "\" type=\"" + entityType + "\" scope=\"" + scope + "\"/>";
     }
 
     

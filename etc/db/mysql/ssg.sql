@@ -1325,7 +1325,7 @@ CREATE TABLE uddi_service_control_monitor_runtime (
 
 DROP TABLE IF EXISTS rbac_role;
 CREATE TABLE rbac_role (
-  objectid bigint(20) NOT NULL,
+  goid binary(16) NOT NULL,
   version int(11) NOT NULL,
   name varchar(128) default NULL,
   tag varchar(36) default NULL,
@@ -1334,7 +1334,7 @@ CREATE TABLE rbac_role (
   entity_goid binary(16),
   description mediumtext,
   user_created tinyint(1) NOT NULL default 0,
-  PRIMARY KEY (objectid),
+  PRIMARY KEY (goid),
   UNIQUE KEY name (name),
   INDEX i_rbacrole_etype (entity_type),
   INDEX i_rbacrole_eoid (entity_oid),
@@ -1347,14 +1347,14 @@ CREATE TABLE rbac_role (
 
 DROP TABLE IF EXISTS rbac_assignment;
 CREATE TABLE rbac_assignment (
-  objectid bigint(20) NOT NULL,
+  goid binary(16) NOT NULL,
   provider_goid binary(16) NOT NULL,
-  role_oid bigint(20) NOT NULL,
+  role_goid binary(16) NOT NULL,
   identity_id varchar(255) NOT NULL,
   entity_type varchar(50) NOT NULL,
-  PRIMARY KEY  (objectid),
-  UNIQUE KEY unique_assignment (provider_goid,role_oid,identity_id, entity_type),
-  FOREIGN KEY (role_oid) REFERENCES rbac_role (objectid) ON DELETE CASCADE,
+  PRIMARY KEY  (goid),
+  UNIQUE KEY unique_assignment (provider_goid,role_goid,identity_id, entity_type),
+  FOREIGN KEY (role_goid) REFERENCES rbac_role (goid) ON DELETE CASCADE,
   CONSTRAINT rbac_assignment_provider FOREIGN KEY (provider_goid) REFERENCES identity_provider (goid) ON DELETE CASCADE,
   INDEX i_rbacassign_poid (provider_goid),
   INDEX i_rbacassign_uid (identity_id)
@@ -1366,14 +1366,14 @@ CREATE TABLE rbac_assignment (
 
 DROP TABLE IF EXISTS rbac_permission;
 CREATE TABLE rbac_permission (
-  objectid bigint(20) NOT NULL,
+  goid binary(16) NOT NULL,
   version int(11) NOT NULL,
-  role_oid bigint(20) default NULL,
+  role_goid binary(16) default NULL,
   operation_type varchar(16) default NULL,
   other_operation varchar(255) default NULL,
   entity_type varchar(255) default NULL,
-  PRIMARY KEY (objectid),
-  FOREIGN KEY (role_oid) REFERENCES rbac_role (objectid) ON DELETE CASCADE
+  PRIMARY KEY (goid),
+  FOREIGN KEY (role_goid) REFERENCES rbac_role (goid) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --
@@ -1382,11 +1382,11 @@ CREATE TABLE rbac_permission (
 
 DROP TABLE IF EXISTS rbac_predicate;
 CREATE TABLE rbac_predicate (
-  objectid bigint(20) NOT NULL,
+  goid binary(16) NOT NULL,
   version int(11) NOT NULL,
-  permission_oid bigint(20) default NULL,
-  PRIMARY KEY (objectid),
-  FOREIGN KEY (permission_oid) REFERENCES rbac_permission (objectid) ON DELETE CASCADE
+  permission_goid binary(16) default NULL,
+  PRIMARY KEY (goid),
+  FOREIGN KEY (permission_goid) REFERENCES rbac_permission (goid) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --
@@ -1395,12 +1395,12 @@ CREATE TABLE rbac_predicate (
 
 DROP TABLE IF EXISTS rbac_predicate_attribute;
 CREATE TABLE rbac_predicate_attribute (
-  objectid bigint(20) NOT NULL,
+  goid binary(16) NOT NULL,
   attribute varchar(255) default NULL,
   value varchar(255) default NULL,
   mode varchar(255) default NULL,
-  PRIMARY KEY (objectid),
-  FOREIGN KEY (objectid) REFERENCES rbac_predicate (objectid) ON DELETE CASCADE
+  PRIMARY KEY (goid),
+  FOREIGN KEY (goid) REFERENCES rbac_predicate (goid) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --
@@ -1408,10 +1408,10 @@ CREATE TABLE rbac_predicate_attribute (
 --
 DROP TABLE IF EXISTS rbac_predicate_security_zone;
 CREATE TABLE rbac_predicate_security_zone (
-  objectid bigint(20) NOT NULL,
+  goid binary(16) NOT NULL,
   security_zone_goid binary(16),
-  PRIMARY KEY (objectid),
-  FOREIGN KEY (objectid) REFERENCES rbac_predicate (objectid) ON DELETE CASCADE,
+  PRIMARY KEY (goid),
+  FOREIGN KEY (goid) REFERENCES rbac_predicate (goid) ON DELETE CASCADE,
   FOREIGN KEY (security_zone_goid) REFERENCES security_zone (goid) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
@@ -1421,10 +1421,10 @@ CREATE TABLE rbac_predicate_security_zone (
 
 DROP TABLE IF EXISTS rbac_predicate_oid;
 CREATE TABLE rbac_predicate_oid (
-  objectid bigint(20) NOT NULL,
+  goid binary(16) NOT NULL,
   entity_id varchar(255) default NULL,
-  PRIMARY KEY (objectid),
-  FOREIGN KEY (objectid) REFERENCES rbac_predicate (objectid) ON DELETE CASCADE
+  PRIMARY KEY (goid),
+  FOREIGN KEY (goid) REFERENCES rbac_predicate (goid) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --
@@ -1432,11 +1432,11 @@ CREATE TABLE rbac_predicate_oid (
 --
 DROP TABLE IF EXISTS rbac_predicate_folder;
 CREATE TABLE rbac_predicate_folder (
-  objectid bigint(20) NOT NULL,
+  goid binary(16) NOT NULL,
   folder_goid binary(16) NOT NULL,
   transitive boolean NOT NULL,
-  PRIMARY KEY (objectid),
-  FOREIGN KEY (objectid) REFERENCES rbac_predicate (objectid) ON DELETE CASCADE,
+  PRIMARY KEY (goid),
+  FOREIGN KEY (goid) REFERENCES rbac_predicate (goid) ON DELETE CASCADE,
   FOREIGN KEY (folder_goid) REFERENCES folder (goid) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
@@ -1445,11 +1445,11 @@ CREATE TABLE rbac_predicate_folder (
 --
 DROP TABLE IF EXISTS rbac_predicate_entityfolder;
 CREATE TABLE rbac_predicate_entityfolder (
-  objectid bigint(20) NOT NULL,
+  goid binary(16) NOT NULL,
   entity_type VARCHAR(64) NOT NULL,
   entity_id VARCHAR(255) NOT NULL,
-  PRIMARY KEY (objectid),
-  FOREIGN KEY (objectid) REFERENCES rbac_predicate (objectid) ON DELETE CASCADE
+  PRIMARY KEY (goid),
+  FOREIGN KEY (goid) REFERENCES rbac_predicate (goid) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --
@@ -1467,358 +1467,357 @@ CREATE TABLE assertion_access (
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
 -- Create Administrator role
--- XXX NOTE!! COPIED in Role#ADMIN_ROLE_OID
+-- XXX NOTE!! COPIED in Role#ADMIN_ROLE_OID                                                                      `
 
-INSERT INTO rbac_role (objectid, version, name, tag, entity_type, entity_oid, entity_goid, description, user_created) VALUES (-100,0,'Administrator','ADMIN',null,null,null,'Users assigned to the {0} role have full access to the gateway.',0);
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-101, 0, -100, 'CREATE', null, 'ANY');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-102, 0, -100, 'READ',   null, 'ANY');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-103, 0, -100, 'UPDATE', null, 'ANY');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-104, 0, -100, 'DELETE', null, 'ANY');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-105, 0, -100, 'OTHER', 'log-viewer', 'LOG_SINK');
+INSERT INTO rbac_role (goid, version, name, tag, entity_type, entity_oid, entity_goid, description, user_created) VALUES (toGoid(0, -100),0,'Administrator','ADMIN',null,null,null,'Users assigned to the {0} role have full access to the gateway.',0);
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -101), 0, toGoid(0, -100), 'CREATE', null, 'ANY');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -102), 0, toGoid(0, -100), 'READ',   null, 'ANY');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -103), 0, toGoid(0, -100), 'UPDATE', null, 'ANY');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -104), 0, toGoid(0, -100), 'DELETE', null, 'ANY');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -105), 0, toGoid(0, -100), 'OTHER', 'log-viewer', 'LOG_SINK');
 -- Create Operator role
-INSERT INTO rbac_role (objectid, version, name, tag, entity_type, entity_oid, entity_goid, description, user_created) VALUES (-150,0,'Operator',null,null,null,null,'Users assigned to the {0} role have read only access to the gateway.',0);
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-151, 0, -150, 'READ', null, 'ANY');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-152, 0, -150, 'OTHER', 'log-viewer', 'LOG_SINK');
+INSERT INTO rbac_role (goid, version, name, tag, entity_type, entity_oid, entity_goid, description, user_created) VALUES (toGoid(0, -150),0,'Operator',null,null,null,null,'Users assigned to the {0} role have read only access to the gateway.',0);
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -151), 0, toGoid(0, -150), 'READ', null, 'ANY');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -152), 0, toGoid(0, -150), 'OTHER', 'log-viewer', 'LOG_SINK');
 
 -- Create other canned roles
-INSERT INTO rbac_role (objectid, version, name, tag, entity_type, entity_oid, entity_goid, description, user_created) VALUES (-200,0,'Manage Internal Users and Groups', null,null,null,null, 'Users assigned to the {0} role have the ability to create, read, update and delete users and groups in the internal identity provider.',0);
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-201,0,-200,'READ',NULL,'USER');
-INSERT INTO rbac_predicate (objectid, version, permission_oid) VALUES (-202,0,-201);
-INSERT INTO rbac_predicate_attribute (objectid, attribute, value, mode) VALUES (-202,'providerId','0000000000000000fffffffffffffffe','eq');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-203,0,-200,'READ',NULL,'ID_PROVIDER_CONFIG');
-INSERT INTO rbac_predicate (objectid, version, permission_oid) VALUES (-204,0,-203);
-INSERT INTO rbac_predicate_oid (objectid, entity_id) VALUES (-204,'0000000000000000fffffffffffffffe');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-205,0,-200,'UPDATE',NULL,'USER');
-INSERT INTO rbac_predicate (objectid, version, permission_oid) VALUES (-206,0,-205);
-INSERT INTO rbac_predicate_attribute (objectid, attribute, value, mode) VALUES (-206,'providerId','0000000000000000fffffffffffffffe','eq');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-207,0,-200,'READ',NULL,'GROUP');
-INSERT INTO rbac_predicate (objectid, version, permission_oid) VALUES (-208,0,-207);
-INSERT INTO rbac_predicate_attribute (objectid, attribute, value, mode) VALUES (-208,'providerId','0000000000000000fffffffffffffffe','eq');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-209,0,-200,'DELETE',NULL,'USER');
-INSERT INTO rbac_predicate (objectid, version, permission_oid) VALUES (-210,0,-209);
-INSERT INTO rbac_predicate_attribute (objectid, attribute, value, mode) VALUES (-210,'providerId','0000000000000000fffffffffffffffe','eq');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-211,0,-200,'CREATE',NULL,'USER');
-INSERT INTO rbac_predicate (objectid, version, permission_oid) VALUES (-212,0,-211);
-INSERT INTO rbac_predicate_attribute (objectid, attribute, value, mode) VALUES (-212,'providerId','0000000000000000fffffffffffffffe','eq');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-213,0,-200,'CREATE',NULL,'GROUP');
-INSERT INTO rbac_predicate (objectid, version, permission_oid) VALUES (-214,0,-213);
-INSERT INTO rbac_predicate_attribute (objectid, attribute, value, mode) VALUES (-214,'providerId','0000000000000000fffffffffffffffe','eq');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-215,0,-200,'DELETE',NULL,'GROUP');
-INSERT INTO rbac_predicate (objectid, version, permission_oid) VALUES (-216,0,-215);
-INSERT INTO rbac_predicate_attribute (objectid, attribute, value, mode) VALUES (-216,'providerId','0000000000000000fffffffffffffffe','eq');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-217,0,-200,'UPDATE',NULL,'GROUP');
-INSERT INTO rbac_predicate (objectid, version, permission_oid) VALUES (-218,0,-217);
-INSERT INTO rbac_predicate_attribute (objectid, attribute, value, mode) VALUES (-218,'providerId','0000000000000000fffffffffffffffe','eq');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -201),0,toGoid(0, -200),'READ',NULL,'USER');
+INSERT INTO rbac_predicate (goid, version, permission_goid) VALUES (toGoid(0, -202),0,toGoid(0, -201));
+INSERT INTO rbac_predicate_attribute (goid, attribute, value, mode) VALUES (toGoid(0, -202),'providerId','0000000000000000fffffffffffffffe','eq');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -203),0,toGoid(0, -200),'READ',NULL,'ID_PROVIDER_CONFIG');
+INSERT INTO rbac_predicate (goid, version, permission_goid) VALUES (toGoid(0, -204),0,toGoid(0, -203));
+INSERT INTO rbac_predicate_oid (goid, entity_id) VALUES (toGoid(0, -204),'0000000000000000fffffffffffffffe');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -205),0,toGoid(0, -200),'UPDATE',NULL,'USER');
+INSERT INTO rbac_predicate (goid, version, permission_goid) VALUES (toGoid(0, -206),0,toGoid(0, -205));
+INSERT INTO rbac_predicate_attribute (goid, attribute, value, mode) VALUES (toGoid(0, -206),'providerId','0000000000000000fffffffffffffffe','eq');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -207),0,toGoid(0, -200),'READ',NULL,'GROUP');
+INSERT INTO rbac_predicate (goid, version, permission_goid) VALUES (toGoid(0, -208),0,toGoid(0, -207));
+INSERT INTO rbac_predicate_attribute (goid, attribute, value, mode) VALUES (toGoid(0, -208),'providerId','0000000000000000fffffffffffffffe','eq');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -209),0,toGoid(0, -200),'DELETE',NULL,'USER');
+INSERT INTO rbac_predicate (goid, version, permission_goid) VALUES (toGoid(0, -210),0,toGoid(0, -209));
+INSERT INTO rbac_predicate_attribute (goid, attribute, value, mode) VALUES (toGoid(0, -210),'providerId','0000000000000000fffffffffffffffe','eq');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -211),0,toGoid(0, -200),'CREATE',NULL,'USER');
+INSERT INTO rbac_predicate (goid, version, permission_goid) VALUES (toGoid(0, -212),0,toGoid(0, -211));
+INSERT INTO rbac_predicate_attribute (goid, attribute, value, mode) VALUES (toGoid(0, -212),'providerId','0000000000000000fffffffffffffffe','eq');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -213),0,toGoid(0, -200),'CREATE',NULL,'GROUP');
+INSERT INTO rbac_predicate (goid, version, permission_goid) VALUES (toGoid(0, -214),0,toGoid(0, -213));
+INSERT INTO rbac_predicate_attribute (goid, attribute, value, mode) VALUES (toGoid(0, -214),'providerId','0000000000000000fffffffffffffffe','eq');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -215),0,toGoid(0, -200),'DELETE',NULL,'GROUP');
+INSERT INTO rbac_predicate (goid, version, permission_goid) VALUES (toGoid(0, -216),0,toGoid(0, -215));
+INSERT INTO rbac_predicate_attribute (goid, attribute, value, mode) VALUES (toGoid(0, -216),'providerId','0000000000000000fffffffffffffffe','eq');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -217),0,toGoid(0, -200),'UPDATE',NULL,'GROUP');
+INSERT INTO rbac_predicate (goid, version, permission_goid) VALUES (toGoid(0, -218),0,toGoid(0, -217));
+INSERT INTO rbac_predicate_attribute (goid, attribute, value, mode) VALUES (toGoid(0, -218),'providerId','0000000000000000fffffffffffffffe','eq');
 
-INSERT INTO rbac_role (objectid, version, name, tag, entity_type, entity_oid, entity_goid, description, user_created) VALUES (-250,0,'Publish External Identity Providers', null,null,null,null, 'Users assigned to the {0} role have the ability to create new external identity providers.',0);
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-251,0,-250,'CREATE',NULL,'ID_PROVIDER_CONFIG');
-INSERT INTO rbac_predicate (objectid, version, permission_oid) VALUES (-252,0,-251);
-INSERT INTO rbac_predicate_attribute (objectid, attribute, value, mode) VALUES (-252,'typeVal','2','eq');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-253,0,-250,'CREATE',NULL,'ID_PROVIDER_CONFIG');
-INSERT INTO rbac_predicate (objectid, version, permission_oid) VALUES (-254,0,-253);
-INSERT INTO rbac_predicate_attribute (objectid, attribute, value, mode) VALUES (-254,'typeVal','3','eq');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-258,0,-250,'CREATE',NULL,'ID_PROVIDER_CONFIG');
-INSERT INTO rbac_predicate (objectid, version, permission_oid) VALUES (-259,0,-258);
-INSERT INTO rbac_predicate_attribute (objectid, attribute, value, mode) VALUES (-259,'typeVal','4','eq');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-255,0,-250,'READ',NULL,'TRUSTED_CERT');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-256,0,-250,'READ',NULL,'SSG_KEYSTORE');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-257,0,-250,'READ',NULL,'SSG_KEY_ENTRY');
+INSERT INTO rbac_role (goid, version, name, tag, entity_type, entity_oid, entity_goid, description, user_created) VALUES (toGoid(0, -250),0,'Publish External Identity Providers', null,null,null,null, 'Users assigned to the {0} role have the ability to create new external identity providers.',0);
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -251),0,toGoid(0, -250),'CREATE',NULL,'ID_PROVIDER_CONFIG');
+INSERT INTO rbac_predicate (goid, version, permission_goid) VALUES (toGoid(0, -252),0,toGoid(0, -251));
+INSERT INTO rbac_predicate_attribute (goid, attribute, value, mode) VALUES (toGoid(0, -252),'typeVal','2','eq');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -253),0,toGoid(0, -250),'CREATE',NULL,'ID_PROVIDER_CONFIG');
+INSERT INTO rbac_predicate (goid, version, permission_goid) VALUES (toGoid(0, -254),0,toGoid(0, -253));
+INSERT INTO rbac_predicate_attribute (goid, attribute, value, mode) VALUES (toGoid(0, -254),'typeVal','3','eq');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -258),0,toGoid(0, -250),'CREATE',NULL,'ID_PROVIDER_CONFIG');
+INSERT INTO rbac_predicate (goid, version, permission_goid) VALUES (toGoid(0, -259),0,toGoid(0, -258));
+INSERT INTO rbac_predicate_attribute (goid, attribute, value, mode) VALUES (toGoid(0, -259),'typeVal','4','eq');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -255),0,toGoid(0, -250),'READ',NULL,'TRUSTED_CERT');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -256),0,toGoid(0, -250),'READ',NULL,'SSG_KEYSTORE');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -257),0,toGoid(0, -250),'READ',NULL,'SSG_KEY_ENTRY');
 
-INSERT INTO rbac_role (objectid, version, name, tag, entity_type, entity_oid, entity_goid, description, user_created) VALUES (-300,0,'Search Users and Groups', null,null,null,null, 'Users assigned to the {0} role have permission to search and view users and groups in all identity providers.',0);
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-301,0,-300,'READ',NULL,'USER');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-302,0,-300,'READ',NULL,'ID_PROVIDER_CONFIG');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-303,0,-300,'READ',NULL,'GROUP');
+INSERT INTO rbac_role (goid, version, name, tag, entity_type, entity_oid, entity_goid, description, user_created) VALUES (toGoid(0, -300),0,'Search Users and Groups', null,null,null,null, 'Users assigned to the {0} role have permission to search and view users and groups in all identity providers.',0);
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -301),0,toGoid(0, -300),'READ',NULL,'USER');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -302),0,toGoid(0, -300),'READ',NULL,'ID_PROVIDER_CONFIG');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -303),0,toGoid(0, -300),'READ',NULL,'GROUP');
 
-INSERT INTO rbac_role (objectid, version, name, tag, entity_type, entity_oid, entity_goid, description, user_created) VALUES (-350,0,'Publish Webservices', null,null,null,null, 'Users assigned to the {0} role have the ability to publish new web services.' ,0);
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-351,0,-350,'READ',NULL,'GROUP');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-352,0,-350,'READ',NULL,'ID_PROVIDER_CONFIG');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-353,0,-350,'READ',NULL,'USER');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-354,0,-350,'CREATE',NULL,'SERVICE');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-355,0,-350,'READ',NULL,'SERVICE_TEMPLATE');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-356,0,-350,'READ',NULL,'UDDI_REGISTRY');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-357,0,-350,'READ',NULL,'JDBC_CONNECTION');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-358,0,-350,'READ',NULL,'HTTP_CONFIGURATION');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-359,0,-350,'READ',NULL,'ENCAPSULATED_ASSERTION');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-360,0,-350,'READ',NULL,'ASSERTION_ACCESS');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-361,0,-350,'CREATE',NULL,'ASSERTION_ACCESS');
+INSERT INTO rbac_role (goid, version, name, tag, entity_type, entity_oid, entity_goid, description, user_created) VALUES (toGoid(0, -350),0,'Publish Webservices', null,null,null,null, 'Users assigned to the {0} role have the ability to publish new web services.' ,0);
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -351),0,toGoid(0, -350),'READ',NULL,'GROUP');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -352),0,toGoid(0, -350),'READ',NULL,'ID_PROVIDER_CONFIG');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -353),0,toGoid(0, -350),'READ',NULL,'USER');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -354),0,toGoid(0, -350),'CREATE',NULL,'SERVICE');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -355),0,toGoid(0, -350),'READ',NULL,'SERVICE_TEMPLATE');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -356),0,toGoid(0, -350),'READ',NULL,'UDDI_REGISTRY');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -357),0,toGoid(0, -350),'READ',NULL,'JDBC_CONNECTION');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -358),0,toGoid(0, -350),'READ',NULL,'HTTP_CONFIGURATION');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -359),0,toGoid(0, -350),'READ',NULL,'ENCAPSULATED_ASSERTION');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -360),0,toGoid(0, -350),'READ',NULL,'ASSERTION_ACCESS');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -361),0,toGoid(0, -350),'CREATE',NULL,'ASSERTION_ACCESS');
 
-INSERT INTO rbac_role (objectid, version, name, tag, entity_type, entity_oid, entity_goid, description, user_created) VALUES (-400,1,'Manage Webservices', null,null,null,null, 'Users assigned to the {0} role have the ability to publish new services and edit existing ones.',0);
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-401,0,-400,'READ',NULL,'ID_PROVIDER_CONFIG');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-402,0,-400,'READ',NULL,'GROUP');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-403,0,-400,'READ',NULL,'USER');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-404,0,-400,'READ',NULL,'SERVICE');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-405,0,-400,'CREATE',NULL,'SERVICE');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-406,0,-400,'UPDATE',NULL,'SERVICE');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-407,0,-400,'DELETE',NULL,'SERVICE');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-408,0,-400,'READ',NULL,'CLUSTER_INFO');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-409,0,-400,'READ',NULL,'SERVICE_USAGE');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-410,0,-400,'READ',NULL,'METRICS_BIN');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-411,0,-400,'READ',NULL,'AUDIT_MESSAGE');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-412,0,-400,'READ',NULL,'JMS_CONNECTION');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-413,0,-400,'READ',NULL,'JMS_ENDPOINT');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-414,0,-400,'READ',NULL,'SERVICE_TEMPLATE');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-415,0,-400,'READ',NULL,'POLICY');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-416,0,-400,'UPDATE',NULL,'POLICY');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-417,0,-400,'CREATE',NULL,'FOLDER');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-418,0,-400,'READ',  NULL,'FOLDER');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-419,0,-400,'UPDATE',NULL,'FOLDER');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-420,0,-400,'DELETE',NULL,'FOLDER');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-421,0,-400,'CREATE',NULL,'POLICY_ALIAS');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-422,0,-400,'READ',  NULL,'POLICY_ALIAS');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-423,0,-400,'UPDATE',NULL,'POLICY_ALIAS');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-424,0,-400,'DELETE',NULL,'POLICY_ALIAS');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-425,0,-400,'CREATE',NULL,'SERVICE_ALIAS');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-426,0,-400,'READ',  NULL,'SERVICE_ALIAS');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-427,0,-400,'UPDATE',NULL,'SERVICE_ALIAS');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-428,0,-400,'DELETE',NULL,'SERVICE_ALIAS');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-429,0,-400,'READ',NULL,'UDDI_REGISTRY');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-430,0,-400,'READ',NULL,'UDDI_PROXIED_SERVICE_INFO');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-431,0,-400,'UPDATE',NULL,'UDDI_PROXIED_SERVICE_INFO');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-432,0,-400,'DELETE',NULL,'UDDI_PROXIED_SERVICE_INFO');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-433,0,-400,'CREATE',NULL,'UDDI_PROXIED_SERVICE_INFO');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-434,0,-400,'READ',NULL,'UDDI_SERVICE_CONTROL');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-435,0,-400,'UPDATE',NULL,'UDDI_SERVICE_CONTROL');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-436,0,-400,'DELETE',NULL,'UDDI_SERVICE_CONTROL');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-437,0,-400,'CREATE',NULL,'UDDI_SERVICE_CONTROL');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-438,0,-400,'READ',NULL,'JDBC_CONNECTION');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-439,0,-400,'READ',NULL,'HTTP_CONFIGURATION');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-440,0,-400,'CREATE',NULL,'POLICY');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-441,0,-400,'READ',NULL,'ENCAPSULATED_ASSERTION');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-442,0,-400,'CREATE',NULL,'ASSERTION_ACCESS');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-443,0,-400,'READ',NULL,'ASSERTION_ACCESS');
+INSERT INTO rbac_role (goid, version, name, tag, entity_type, entity_oid, entity_goid, description, user_created) VALUES (toGoid(0, -400),1,'Manage Webservices', null,null,null,null, 'Users assigned to the {0} role have the ability to publish new services and edit existing ones.',0);
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -401),0,toGoid(0, -400),'READ',NULL,'ID_PROVIDER_CONFIG');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -402),0,toGoid(0, -400),'READ',NULL,'GROUP');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -403),0,toGoid(0, -400),'READ',NULL,'USER');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -404),0,toGoid(0, -400),'READ',NULL,'SERVICE');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -405),0,toGoid(0, -400),'CREATE',NULL,'SERVICE');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -406),0,toGoid(0, -400),'UPDATE',NULL,'SERVICE');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -407),0,toGoid(0, -400),'DELETE',NULL,'SERVICE');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -408),0,toGoid(0, -400),'READ',NULL,'CLUSTER_INFO');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -409),0,toGoid(0, -400),'READ',NULL,'SERVICE_USAGE');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -410),0,toGoid(0, -400),'READ',NULL,'METRICS_BIN');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -411),0,toGoid(0, -400),'READ',NULL,'AUDIT_MESSAGE');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -412),0,toGoid(0, -400),'READ',NULL,'JMS_CONNECTION');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -413),0,toGoid(0, -400),'READ',NULL,'JMS_ENDPOINT');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -414),0,toGoid(0, -400),'READ',NULL,'SERVICE_TEMPLATE');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -415),0,toGoid(0, -400),'READ',NULL,'POLICY');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -416),0,toGoid(0, -400),'UPDATE',NULL,'POLICY');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -417),0,toGoid(0, -400),'CREATE',NULL,'FOLDER');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -418),0,toGoid(0, -400),'READ',  NULL,'FOLDER');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -419),0,toGoid(0, -400),'UPDATE',NULL,'FOLDER');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -420),0,toGoid(0, -400),'DELETE',NULL,'FOLDER');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -421),0,toGoid(0, -400),'CREATE',NULL,'POLICY_ALIAS');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -422),0,toGoid(0, -400),'READ',  NULL,'POLICY_ALIAS');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -423),0,toGoid(0, -400),'UPDATE',NULL,'POLICY_ALIAS');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -424),0,toGoid(0, -400),'DELETE',NULL,'POLICY_ALIAS');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -425),0,toGoid(0, -400),'CREATE',NULL,'SERVICE_ALIAS');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -426),0,toGoid(0, -400),'READ',  NULL,'SERVICE_ALIAS');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -427),0,toGoid(0, -400),'UPDATE',NULL,'SERVICE_ALIAS');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -428),0,toGoid(0, -400),'DELETE',NULL,'SERVICE_ALIAS');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -429),0,toGoid(0, -400),'READ',NULL,'UDDI_REGISTRY');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -430),0,toGoid(0, -400),'READ',NULL,'UDDI_PROXIED_SERVICE_INFO');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -431),0,toGoid(0, -400),'UPDATE',NULL,'UDDI_PROXIED_SERVICE_INFO');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -432),0,toGoid(0, -400),'DELETE',NULL,'UDDI_PROXIED_SERVICE_INFO');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -433),0,toGoid(0, -400),'CREATE',NULL,'UDDI_PROXIED_SERVICE_INFO');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -434),0,toGoid(0, -400),'READ',NULL,'UDDI_SERVICE_CONTROL');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -435),0,toGoid(0, -400),'UPDATE',NULL,'UDDI_SERVICE_CONTROL');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -436),0,toGoid(0, -400),'DELETE',NULL,'UDDI_SERVICE_CONTROL');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -437),0,toGoid(0, -400),'CREATE',NULL,'UDDI_SERVICE_CONTROL');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -438),0,toGoid(0, -400),'READ',NULL,'JDBC_CONNECTION');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -439),0,toGoid(0, -400),'READ',NULL,'HTTP_CONFIGURATION');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -440),0,toGoid(0, -400),'CREATE',NULL,'POLICY');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -441),0,toGoid(0, -400),'READ',NULL,'ENCAPSULATED_ASSERTION');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -442),0,toGoid(0, -400),'CREATE',NULL,'ASSERTION_ACCESS');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -443),0,toGoid(0, -400),'READ',NULL,'ASSERTION_ACCESS');
 
-INSERT INTO rbac_role (objectid, version, name, tag, entity_type, entity_oid, entity_goid, description, user_created) VALUES (-450,0,'View Audit Records', null,null,null,null, 'Users assigned to the {0} role have the ability to view audits in the manager.',0);
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-451,0,-450,'READ',NULL,'CLUSTER_INFO');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-452,0,-450,'READ',NULL,'AUDIT_RECORD');
+INSERT INTO rbac_role (goid, version, name, tag, entity_type, entity_oid, entity_goid, description, user_created) VALUES (toGoid(0, -450),0,'View Audit Records', null,null,null,null, 'Users assigned to the {0} role have the ability to view audits in the manager.',0);
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -451),0,toGoid(0, -450),'READ',NULL,'CLUSTER_INFO');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -452),0,toGoid(0, -450),'READ',NULL,'AUDIT_RECORD');
 
-INSERT INTO rbac_role (objectid, version, name, tag, entity_type, entity_oid, entity_goid, description, user_created) VALUES (-500,0,'View Service Metrics', null,null,null,null, 'Users assigned to the {0} role have the ability to monitor service metrics in the manager.',0);
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-501,0,-500,'READ',NULL,'METRICS_BIN');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-502,0,-500,'READ',NULL,'SERVICE');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-503,0,-500,'READ',NULL,'CLUSTER_INFO');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-504,0,-500,'READ',NULL,'SERVICE_USAGE');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-505,0,-500,'READ',NULL,'FOLDER');
+INSERT INTO rbac_role (goid, version, name, tag, entity_type, entity_oid, entity_goid, description, user_created) VALUES (toGoid(0, -500),0,'View Service Metrics', null,null,null,null, 'Users assigned to the {0} role have the ability to monitor service metrics in the manager.',0);
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -501),0,toGoid(0, -500),'READ',NULL,'METRICS_BIN');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -502),0,toGoid(0, -500),'READ',NULL,'SERVICE');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -503),0,toGoid(0, -500),'READ',NULL,'CLUSTER_INFO');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -504),0,toGoid(0, -500),'READ',NULL,'SERVICE_USAGE');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -505),0,toGoid(0, -500),'READ',NULL,'FOLDER');
 
-INSERT INTO rbac_role (objectid, version, name, tag, entity_type, entity_oid, entity_goid, description, user_created) VALUES (-550,0,'Manage Cluster Status', null,null,null,null, 'Users assigned to the {0} role have the ability to read, create, update and delete cluster status information.',0);
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-551,0,-550,'READ',NULL,'CLUSTER_INFO');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-552,0,-550,'UPDATE',NULL,'CLUSTER_INFO');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-553,0,-550,'DELETE',NULL,'CLUSTER_INFO');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-554,0,-550,'READ',NULL,'METRICS_BIN');
+INSERT INTO rbac_role (goid, version, name, tag, entity_type, entity_oid, entity_goid, description, user_created) VALUES (toGoid(0, -550),0,'Manage Cluster Status', null,null,null,null, 'Users assigned to the {0} role have the ability to read, create, update and delete cluster status information.',0);
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -551),0,toGoid(0, -550),'READ',NULL,'CLUSTER_INFO');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -552),0,toGoid(0, -550),'UPDATE',NULL,'CLUSTER_INFO');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -553),0,toGoid(0, -550),'DELETE',NULL,'CLUSTER_INFO');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -554),0,toGoid(0, -550),'READ',NULL,'METRICS_BIN');
 
-INSERT INTO rbac_role (objectid, version, name, tag, entity_type, entity_oid, entity_goid, description, user_created) VALUES (-600,0,'Manage Certificates (truststore)', null,null,null,null, 'Users assigned to the {0} role have the ability to read, create, update and delete trusted certificates and policies for revocation checking.',0);
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-601,0,-600,'UPDATE',NULL,'TRUSTED_CERT');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-602,0,-600,'READ',NULL,'TRUSTED_CERT');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-603,0,-600,'DELETE',NULL,'TRUSTED_CERT');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-604,0,-600,'CREATE',NULL,'TRUSTED_CERT');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-605,0,-600,'UPDATE',NULL,'REVOCATION_CHECK_POLICY');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-606,0,-600,'READ',NULL,'REVOCATION_CHECK_POLICY');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-607,0,-600,'DELETE',NULL,'REVOCATION_CHECK_POLICY');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-608,0,-600,'CREATE',NULL,'REVOCATION_CHECK_POLICY');
+INSERT INTO rbac_role (goid, version, name, tag, entity_type, entity_oid, entity_goid, description, user_created) VALUES (toGoid(0, -600),0,'Manage Certificates (truststore)', null,null,null,null, 'Users assigned to the {0} role have the ability to read, create, update and delete trusted certificates and policies for revocation checking.',0);
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -601),0,toGoid(0, -600),'UPDATE',NULL,'TRUSTED_CERT');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -602),0,toGoid(0, -600),'READ',NULL,'TRUSTED_CERT');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -603),0,toGoid(0, -600),'DELETE',NULL,'TRUSTED_CERT');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -604),0,toGoid(0, -600),'CREATE',NULL,'TRUSTED_CERT');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -605),0,toGoid(0, -600),'UPDATE',NULL,'REVOCATION_CHECK_POLICY');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -606),0,toGoid(0, -600),'READ',NULL,'REVOCATION_CHECK_POLICY');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -607),0,toGoid(0, -600),'DELETE',NULL,'REVOCATION_CHECK_POLICY');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -608),0,toGoid(0, -600),'CREATE',NULL,'REVOCATION_CHECK_POLICY');
 
-INSERT INTO rbac_role (objectid, version, name, tag, entity_type, entity_oid, entity_goid, description, user_created) VALUES (-650,0,'Manage Message Destinations', null,null,null,null, 'Users assigned to the {0} role have the ability to read, create, update and delete message destinations.',0);
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-651,1,-650,'READ',NULL,'JMS_CONNECTION');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-652,1,-650,'DELETE',NULL,'JMS_CONNECTION');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-653,1,-650,'CREATE',NULL,'JMS_CONNECTION');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-654,1,-650,'UPDATE',NULL,'JMS_CONNECTION');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-655,1,-650,'CREATE',NULL,'JMS_ENDPOINT');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-656,1,-650,'DELETE',NULL,'JMS_ENDPOINT');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-657,1,-650,'UPDATE',NULL,'JMS_ENDPOINT');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-658,1,-650,'READ',NULL,'JMS_ENDPOINT');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-659,1,-650,'READ',NULL,'SERVICE');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-660,1,-650,'READ',NULL,'SSG_KEYSTORE');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-661,1,-650,'READ',NULL,'SSG_KEY_ENTRY');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-662,1,-650,'READ',NULL,'SSG_ACTIVE_CONNECTOR');
-INSERT INTO rbac_predicate (objectid, version, permission_oid) VALUES (-663,0,-662);
-INSERT INTO rbac_predicate_attribute (objectid, attribute, value, mode) VALUES (-663,'type','MqNative','eq');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-664,1,-650,'DELETE',NULL,'SSG_ACTIVE_CONNECTOR');
-INSERT INTO rbac_predicate (objectid, version, permission_oid) VALUES (-665,0,-664);
-INSERT INTO rbac_predicate_attribute (objectid, attribute, value, mode) VALUES (-665,'type','MqNative','eq');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-666,1,-650,'CREATE',NULL,'SSG_ACTIVE_CONNECTOR');
-INSERT INTO rbac_predicate (objectid, version, permission_oid) VALUES (-667,0,-666);
-INSERT INTO rbac_predicate_attribute (objectid, attribute, value, mode) VALUES (-667,'type','MqNative','eq');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-668,1,-650,'UPDATE',NULL,'SSG_ACTIVE_CONNECTOR');
-INSERT INTO rbac_predicate (objectid, version, permission_oid) VALUES (-669,0,-668);
-INSERT INTO rbac_predicate_attribute (objectid, attribute, value, mode) VALUES (-669,'type','MqNative','eq');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-670,0,-650,'READ',NULL,'SECURE_PASSWORD');
+INSERT INTO rbac_role (goid, version, name, tag, entity_type, entity_oid, entity_goid, description, user_created) VALUES (toGoid(0, -650),0,'Manage Message Destinations', null,null,null,null, 'Users assigned to the {0} role have the ability to read, create, update and delete message destinations.',0);
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -651),1,toGoid(0, -650),'READ',NULL,'JMS_CONNECTION');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -652),1,toGoid(0, -650),'DELETE',NULL,'JMS_CONNECTION');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -653),1,toGoid(0, -650),'CREATE',NULL,'JMS_CONNECTION');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -654),1,toGoid(0, -650),'UPDATE',NULL,'JMS_CONNECTION');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -655),1,toGoid(0, -650),'CREATE',NULL,'JMS_ENDPOINT');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -656),1,toGoid(0, -650),'DELETE',NULL,'JMS_ENDPOINT');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -657),1,toGoid(0, -650),'UPDATE',NULL,'JMS_ENDPOINT');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -658),1,toGoid(0, -650),'READ',NULL,'JMS_ENDPOINT');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -659),1,toGoid(0, -650),'READ',NULL,'SERVICE');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -660),1,toGoid(0, -650),'READ',NULL,'SSG_KEYSTORE');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -661),1,toGoid(0, -650),'READ',NULL,'SSG_KEY_ENTRY');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -662),1,toGoid(0, -650),'READ',NULL,'SSG_ACTIVE_CONNECTOR');
+INSERT INTO rbac_predicate (goid, version, permission_goid) VALUES (toGoid(0, -663),0,toGoid(0, -662));
+INSERT INTO rbac_predicate_attribute (goid, attribute, value, mode) VALUES (toGoid(0, -663),'type','MqNative','eq');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -664),1,toGoid(0, -650),'DELETE',NULL,'SSG_ACTIVE_CONNECTOR');
+INSERT INTO rbac_predicate (goid, version, permission_goid) VALUES (toGoid(0, -665),0,toGoid(0, -664));
+INSERT INTO rbac_predicate_attribute (goid, attribute, value, mode) VALUES (toGoid(0, -665),'type','MqNative','eq');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -666),1,toGoid(0, -650),'CREATE',NULL,'SSG_ACTIVE_CONNECTOR');
+INSERT INTO rbac_predicate (goid, version, permission_goid) VALUES (toGoid(0, -667),0,toGoid(0, -666));
+INSERT INTO rbac_predicate_attribute (goid, attribute, value, mode) VALUES (toGoid(0, -667),'type','MqNative','eq');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -668),1,toGoid(0, -650),'UPDATE',NULL,'SSG_ACTIVE_CONNECTOR');
+INSERT INTO rbac_predicate (goid, version, permission_goid) VALUES (toGoid(0, -669),0,toGoid(0, -668));
+INSERT INTO rbac_predicate_attribute (goid, attribute, value, mode) VALUES (toGoid(0, -669),'type','MqNative','eq');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -670),0,toGoid(0, -650),'READ',NULL,'SECURE_PASSWORD');
 
-INSERT INTO rbac_role (objectid, version, name, tag, entity_type, entity_oid, entity_goid, description, user_created) VALUES (-700,0,'Manage Cluster Properties', null,null,null,null, 'Users assigned to the {0} role have the ability to read, create, update and delete cluster properties.',0);
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-701,0,-700,'READ',NULL,'CLUSTER_PROPERTY');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-702,0,-700,'CREATE',NULL,'CLUSTER_PROPERTY');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-703,0,-700,'UPDATE',NULL,'CLUSTER_PROPERTY');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-704,0,-700,'DELETE',NULL,'CLUSTER_PROPERTY');
+INSERT INTO rbac_role (goid, version, name, tag, entity_type, entity_oid, entity_goid, description, user_created) VALUES (toGoid(0, -700),0,'Manage Cluster Properties', null,null,null,null, 'Users assigned to the {0} role have the ability to read, create, update and delete cluster properties.',0);
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -701),0,toGoid(0, -700),'READ',NULL,'CLUSTER_PROPERTY');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -702),0,toGoid(0, -700),'CREATE',NULL,'CLUSTER_PROPERTY');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -703),0,toGoid(0, -700),'UPDATE',NULL,'CLUSTER_PROPERTY');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -704),0,toGoid(0, -700),'DELETE',NULL,'CLUSTER_PROPERTY');
 
-INSERT INTO rbac_role (objectid, version, name, tag, entity_type, entity_oid, entity_goid, description, user_created) VALUES (-750,0,'Manage Listen Ports', null,null,null,null, 'Users assigned to the {0} role have the ability to read, create, update and delete Gateway listen ports (HTTP(S) and FTP(S)) and to list published services.',0);
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-751,0,-750,'READ',NULL,'SSG_CONNECTOR');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-752,0,-750,'CREATE',NULL,'SSG_CONNECTOR');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-753,0,-750,'UPDATE',NULL,'SSG_CONNECTOR');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-754,0,-750,'DELETE',NULL,'SSG_CONNECTOR');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-755,0,-750,'READ',NULL,'SERVICE');
+INSERT INTO rbac_role (goid, version, name, tag, entity_type, entity_oid, entity_goid, description, user_created) VALUES (toGoid(0, -750),0,'Manage Listen Ports', null,null,null,null, 'Users assigned to the {0} role have the ability to read, create, update and delete Gateway listen ports (HTTP(S) and FTP(S)) and to list published services.',0);
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -751),0,toGoid(0, -750),'READ',NULL,'SSG_CONNECTOR');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -752),0,toGoid(0, -750),'CREATE',NULL,'SSG_CONNECTOR');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -753),0,toGoid(0, -750),'UPDATE',NULL,'SSG_CONNECTOR');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -754),0,toGoid(0, -750),'DELETE',NULL,'SSG_CONNECTOR');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -755),0,toGoid(0, -750),'READ',NULL,'SERVICE');
 
-INSERT INTO rbac_role (objectid, version, name, tag, entity_type, entity_oid, entity_goid, description, user_created) VALUES (-800,0,'Manage Log Sinks', null,null,null,null, 'Users assigned to the {0} role have the ability to read, create, update and delete log sinks.',0);
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-801,0,-800,'READ',NULL,'LOG_SINK');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-802,0,-800,'CREATE',NULL,'LOG_SINK');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-803,0,-800,'UPDATE',NULL,'LOG_SINK');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-804,0,-800,'DELETE',NULL,'LOG_SINK');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-805,0,-800,'READ',NULL,'CLUSTER_INFO');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-806,0,-800,'OTHER','log-viewer','LOG_SINK');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-807,0,-800,'READ',NULL,'SSG_CONNECTOR');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-808,0,-800,'READ',NULL,'SERVICE');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-809,0,-800,'READ',NULL,'FOLDER');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-810,0,-800,'READ',NULL,'JMS_ENDPOINT');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-811,0,-800,'READ',NULL,'USER');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-812,0,-800,'READ',NULL,'ID_PROVIDER_CONFIG');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-813,0,-800,'READ',NULL,'POLICY');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-814,0,-800,'READ',NULL,'EMAIL_LISTENER');
+INSERT INTO rbac_role (goid, version, name, tag, entity_type, entity_oid, entity_goid, description, user_created) VALUES (toGoid(0, -800),0,'Manage Log Sinks', null,null,null,null, 'Users assigned to the {0} role have the ability to read, create, update and delete log sinks.',0);
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -801),0,toGoid(0, -800),'READ',NULL,'LOG_SINK');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -802),0,toGoid(0, -800),'CREATE',NULL,'LOG_SINK');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -803),0,toGoid(0, -800),'UPDATE',NULL,'LOG_SINK');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -804),0,toGoid(0, -800),'DELETE',NULL,'LOG_SINK');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -805),0,toGoid(0, -800),'READ',NULL,'CLUSTER_INFO');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -806),0,toGoid(0, -800),'OTHER','log-viewer','LOG_SINK');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -807),0,toGoid(0, -800),'READ',NULL,'SSG_CONNECTOR');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -808),0,toGoid(0, -800),'READ',NULL,'SERVICE');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -809),0,toGoid(0, -800),'READ',NULL,'FOLDER');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -810),0,toGoid(0, -800),'READ',NULL,'JMS_ENDPOINT');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -811),0,toGoid(0, -800),'READ',NULL,'USER');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -812),0,toGoid(0, -800),'READ',NULL,'ID_PROVIDER_CONFIG');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -813),0,toGoid(0, -800),'READ',NULL,'POLICY');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -814),0,toGoid(0, -800),'READ',NULL,'EMAIL_LISTENER');
 
-INSERT INTO rbac_role (objectid, version, name, tag, entity_type, entity_oid, entity_goid, description, user_created) VALUES (-850,0,'Gateway Maintenance', null,null,null,null, 'Users assigned to the {0} role have the ability to perform Gateway maintenance tasks.',0);
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-851,0,-850,'READ',NULL,'CLUSTER_PROPERTY');
-INSERT INTO rbac_predicate (objectid, version, permission_oid) VALUES (-852,0,-851);
-INSERT INTO rbac_predicate_attribute (objectid, attribute, value, mode) VALUES (-852,'name','audit.archiver.ftp.config','eq');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-853,0,-850,'UPDATE',NULL,'CLUSTER_PROPERTY');
-INSERT INTO rbac_predicate (objectid, version, permission_oid) VALUES (-854,0,-853);
-INSERT INTO rbac_predicate_attribute (objectid, attribute, value, mode) VALUES (-854,'name','audit.archiver.ftp.config','eq');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-855,0,-850,'CREATE',NULL,'CLUSTER_PROPERTY');
-INSERT INTO rbac_predicate (objectid, version, permission_oid) VALUES (-856,0,-855);
-INSERT INTO rbac_predicate_attribute (objectid, attribute, value, mode) VALUES (-856,'name','audit.archiver.ftp.config','eq');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-857,0,-850,'DELETE',NULL,'AUDIT_RECORD');
+INSERT INTO rbac_role (goid, version, name, tag, entity_type, entity_oid, entity_goid, description, user_created) VALUES (toGoid(0, -850),0,'Gateway Maintenance', null,null,null,null, 'Users assigned to the {0} role have the ability to perform Gateway maintenance tasks.',0);
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -851),0,toGoid(0, -850),'READ',NULL,'CLUSTER_PROPERTY');
+INSERT INTO rbac_predicate (goid, version, permission_goid) VALUES (toGoid(0, -852),0,toGoid(0, -851));
+INSERT INTO rbac_predicate_attribute (goid, attribute, value, mode) VALUES (toGoid(0, -852),'name','audit.archiver.ftp.config','eq');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -853),0,toGoid(0, -850),'UPDATE',NULL,'CLUSTER_PROPERTY');
+INSERT INTO rbac_predicate (goid, version, permission_goid) VALUES (toGoid(0, -854),0,toGoid(0, -853));
+INSERT INTO rbac_predicate_attribute (goid, attribute, value, mode) VALUES (toGoid(0, -854),'name','audit.archiver.ftp.config','eq');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -855),0,toGoid(0, -850),'CREATE',NULL,'CLUSTER_PROPERTY');
+INSERT INTO rbac_predicate (goid, version, permission_goid) VALUES (toGoid(0, -856),0,toGoid(0, -855));
+INSERT INTO rbac_predicate_attribute (goid, attribute, value, mode) VALUES (toGoid(0, -856),'name','audit.archiver.ftp.config','eq');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -857),0,toGoid(0, -850),'DELETE',NULL,'AUDIT_RECORD');
 -- No predicates implies all entities
 
-INSERT INTO rbac_role (objectid, version, name, tag, entity_type, entity_oid, entity_goid, description, user_created) VALUES (-900,0,'Manage Email Listeners', null,null,null,null, 'Users assigned to the {0} role have the ability to read, create, update and delete email listeners.',0);
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-901,0,-900,'READ',NULL,'EMAIL_LISTENER');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-902,0,-900,'CREATE',NULL,'EMAIL_LISTENER');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-903,0,-900,'UPDATE',NULL,'EMAIL_LISTENER');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-904,0,-900,'DELETE',NULL,'EMAIL_LISTENER');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-905,0,-900,'READ',NULL,'SERVICE');
+INSERT INTO rbac_role (goid, version, name, tag, entity_type, entity_oid, entity_goid, description, user_created) VALUES (toGoid(0, -900),0,'Manage Email Listeners', null,null,null,null, 'Users assigned to the {0} role have the ability to read, create, update and delete email listeners.',0);
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -901),0,toGoid(0, -900),'READ',NULL,'EMAIL_LISTENER');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -902),0,toGoid(0, -900),'CREATE',NULL,'EMAIL_LISTENER');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -903),0,toGoid(0, -900),'UPDATE',NULL,'EMAIL_LISTENER');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -904),0,toGoid(0, -900),'DELETE',NULL,'EMAIL_LISTENER');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -905),0,toGoid(0, -900),'READ',NULL,'SERVICE');
 
-INSERT INTO rbac_role (objectid, version, name, tag, entity_type, entity_oid, entity_goid, description, user_created) VALUES (-950,0,'Manage JDBC Connections', null,null,null,null, 'Users assigned to the {0} role have the ability to read, create, update and delete JDBC connections.',0);
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-951,0,-950,'READ',NULL,'JDBC_CONNECTION');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-952,0,-950,'CREATE',NULL,'JDBC_CONNECTION');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-953,0,-950,'UPDATE',NULL,'JDBC_CONNECTION');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-954,0,-950,'DELETE',NULL,'JDBC_CONNECTION');
+INSERT INTO rbac_role (goid, version, name, tag, entity_type, entity_oid, entity_goid, description, user_created) VALUES (toGoid(0, -950),0,'Manage JDBC Connections', null,null,null,null, 'Users assigned to the {0} role have the ability to read, create, update and delete JDBC connections.',0);
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -951),0,toGoid(0, -950),'READ',NULL,'JDBC_CONNECTION');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -952),0,toGoid(0, -950),'CREATE',NULL,'JDBC_CONNECTION');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -953),0,toGoid(0, -950),'UPDATE',NULL,'JDBC_CONNECTION');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -954),0,toGoid(0, -950),'DELETE',NULL,'JDBC_CONNECTION');
 
-INSERT INTO rbac_role (objectid, version, name, tag, entity_type, entity_oid, entity_goid, description, user_created) VALUES (-1000,0,'Manage UDDI Registries', null,null,null,null, 'Users assigned to the {0} role have the ability to read, create, update and delete UDDI Registry connections.',0);
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-1001,0,-1000,'READ',NULL,'UDDI_REGISTRY');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-1002,0,-1000,'CREATE',NULL,'UDDI_REGISTRY');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-1003,0,-1000,'UPDATE',NULL,'UDDI_REGISTRY');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-1004,0,-1000,'DELETE',NULL,'UDDI_REGISTRY');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-1005,0,-1000,'READ',NULL,'SERVICE');
+INSERT INTO rbac_role (goid, version, name, tag, entity_type, entity_oid, entity_goid, description, user_created) VALUES (toGoid(0, -1000),0,'Manage UDDI Registries', null,null,null,null, 'Users assigned to the {0} role have the ability to read, create, update and delete UDDI Registry connections.',0);
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -1001),0,toGoid(0, -1000),'READ',NULL,'UDDI_REGISTRY');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -1002),0,toGoid(0, -1000),'CREATE',NULL,'UDDI_REGISTRY');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -1003),0,toGoid(0, -1000),'UPDATE',NULL,'UDDI_REGISTRY');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -1004),0,toGoid(0, -1000),'DELETE',NULL,'UDDI_REGISTRY');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -1005),0,toGoid(0, -1000),'READ',NULL,'SERVICE');
 
-INSERT INTO rbac_role (objectid, version, name, tag, entity_type, entity_oid, entity_goid, description, user_created) VALUES (-1050,0,'Manage Secure Passwords', null,null,null,null, 'Users assigned to the {0} role have the ability to read, create, update and delete any stored password.',0);
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-1051,0,-1050,'READ',NULL,'SECURE_PASSWORD');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-1052,0,-1050,'CREATE',NULL,'SECURE_PASSWORD');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-1053,0,-1050,'UPDATE',NULL,'SECURE_PASSWORD');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-1054,0,-1050,'DELETE',NULL,'SECURE_PASSWORD');
+INSERT INTO rbac_role (goid, version, name, tag, entity_type, entity_oid, entity_goid, description, user_created) VALUES (toGoid(0, -1050),0,'Manage Secure Passwords', null,null,null,null, 'Users assigned to the {0} role have the ability to read, create, update and delete any stored password.',0);
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -1051),0,toGoid(0, -1050),'READ',NULL,'SECURE_PASSWORD');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -1052),0,toGoid(0, -1050),'CREATE',NULL,'SECURE_PASSWORD');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -1053),0,toGoid(0, -1050),'UPDATE',NULL,'SECURE_PASSWORD');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -1054),0,toGoid(0, -1050),'DELETE',NULL,'SECURE_PASSWORD');
 
-INSERT INTO `rbac_role` (objectid, version, name, tag, entity_type, entity_oid, entity_goid, description, user_created) VALUES (-1100,1,'Manage Private Keys',NULL,NULL,NULL,NULL,'Users in this role have the ability to read, create, update, and delete private keys, as well as the ability to change the designated special-purpose keys (eg, the SSL or CA key).',0);
-INSERT INTO `rbac_permission` VALUES
-    (-1101,0,-1100,'UPDATE',NULL,'CLUSTER_PROPERTY'),
-    (-1102,0,-1100,'DELETE',NULL,'SSG_KEY_ENTRY'),
-    (-1103,0,-1100,'READ',NULL,'CLUSTER_PROPERTY'),
-    (-1104,0,-1100,'READ',NULL,'SSG_KEY_ENTRY'),
-    (-1105,0,-1100,'READ',NULL,'CLUSTER_PROPERTY'),
-    (-1106,0,-1100,'UPDATE',NULL,'SSG_KEY_ENTRY'),
-    (-1107,0,-1100,'CREATE',NULL,'SSG_KEY_ENTRY'),
-    (-1108,0,-1100,'UPDATE',NULL,'CLUSTER_PROPERTY'),
-    (-1109,0,-1100,'DELETE',NULL,'CLUSTER_PROPERTY'),
-    (-1110,0,-1100,'CREATE',NULL,'CLUSTER_PROPERTY'),
-    (-1111,0,-1100,'CREATE',NULL,'CLUSTER_PROPERTY'),
-    (-1112,0,-1100,'UPDATE',NULL,'SSG_KEYSTORE'),
-    (-1113,0,-1100,'DELETE',NULL,'CLUSTER_PROPERTY'),
-    (-1114,0,-1100,'READ',NULL,'SSG_KEYSTORE'),
-    (-1115,0,-1100,'UPDATE',NULL,'CLUSTER_PROPERTY'),
-    (-1116,0,-1100,'DELETE',NULL,'CLUSTER_PROPERTY'),
-    (-1117,0,-1100,'CREATE',NULL,'CLUSTER_PROPERTY'),
-    (-1118,0,-1100,'READ',NULL,'CLUSTER_PROPERTY'),
-    (-1119,0,-1100,'UPDATE',NULL,'CLUSTER_PROPERTY'),
-    (-1120,0,-1100,'DELETE',NULL,'CLUSTER_PROPERTY'),
-    (-1121,0,-1100,'CREATE',NULL,'CLUSTER_PROPERTY'),
-    (-1122,0,-1100,'READ',NULL,'CLUSTER_PROPERTY');
-INSERT INTO `rbac_predicate` VALUES
-    (-1101,0,-1101),
-    (-1103,0,-1103),
-    (-1105,0,-1105),
-    (-1108,0,-1108),
-    (-1109,0,-1109),
-    (-1110,0,-1110),
-    (-1111,0,-1111),
-    (-1113,0,-1113),
-    (-1115,0,-1115),
-    (-1116,0,-1116),
-    (-1117,0,-1117),
-    (-1118,0,-1118),
-    (-1119,0,-1119),
-    (-1120,0,-1120),
-    (-1121,0,-1121),
-    (-1122,0,-1122);
-INSERT INTO `rbac_predicate_attribute` VALUES
-    (-1101,'name','keyStore.defaultSsl.alias','eq'),
-    (-1103,'name','keyStore.defaultCa.alias','eq'),
-    (-1105,'name','keyStore.defaultSsl.alias','eq'),
-    (-1108,'name','keyStore.defaultCa.alias','eq'),
-    (-1109,'name','keyStore.defaultSsl.alias','eq'),
-    (-1110,'name','keyStore.defaultCa.alias','eq'),
-    (-1111,'name','keyStore.defaultSsl.alias','eq'),
-    (-1113,'name','keyStore.defaultCa.alias','eq'),
-    (-1115,'name','keyStore.auditViewer.alias','eq'),
-    (-1116,'name','keyStore.auditViewer.alias','eq'),
-    (-1117,'name','keyStore.auditViewer.alias','eq'),
-    (-1118,'name','keyStore.auditViewer.alias','eq'),
-    (-1119,'name','keyStore.auditSigning.alias','eq'),
-    (-1120,'name','keyStore.auditSigning.alias','eq'),
-    (-1121,'name','keyStore.auditSigning.alias','eq'),
-    (-1122,'name','keyStore.auditSigning.alias','eq');
+INSERT INTO `rbac_role` (goid, version, name, tag, entity_type, entity_oid, entity_goid, description, user_created) VALUES (toGoid(0, -1100),1,'Manage Private Keys',NULL,NULL,NULL,NULL,'Users in this role have the ability to read, create, update, and delete private keys, as well as the ability to change the designated special-purpose keys (eg, the SSL or CA key).',0);
+INSERT INTO `rbac_permission` (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES
+    (toGoid(0, -1101),0,toGoid(0, -1100),'UPDATE',NULL,'CLUSTER_PROPERTY'),
+    (toGoid(0, -1102),0,toGoid(0, -1100),'DELETE',NULL,'SSG_KEY_ENTRY'),
+    (toGoid(0, -1103),0,toGoid(0, -1100),'READ',NULL,'CLUSTER_PROPERTY'),
+    (toGoid(0, -1104),0,toGoid(0, -1100),'READ',NULL,'SSG_KEY_ENTRY'),
+    (toGoid(0, -1105),0,toGoid(0, -1100),'READ',NULL,'CLUSTER_PROPERTY'),
+    (toGoid(0, -1106),0,toGoid(0, -1100),'UPDATE',NULL,'SSG_KEY_ENTRY'),
+    (toGoid(0, -1107),0,toGoid(0, -1100),'CREATE',NULL,'SSG_KEY_ENTRY'),
+    (toGoid(0, -1108),0,toGoid(0, -1100),'UPDATE',NULL,'CLUSTER_PROPERTY'),
+    (toGoid(0, -1109),0,toGoid(0, -1100),'DELETE',NULL,'CLUSTER_PROPERTY'),
+    (toGoid(0, -1110),0,toGoid(0, -1100),'CREATE',NULL,'CLUSTER_PROPERTY'),
+    (toGoid(0, -1111),0,toGoid(0, -1100),'CREATE',NULL,'CLUSTER_PROPERTY'),
+    (toGoid(0, -1112),0,toGoid(0, -1100),'UPDATE',NULL,'SSG_KEYSTORE'),
+    (toGoid(0, -1113),0,toGoid(0, -1100),'DELETE',NULL,'CLUSTER_PROPERTY'),
+    (toGoid(0, -1114),0,toGoid(0, -1100),'READ',NULL,'SSG_KEYSTORE'),
+    (toGoid(0, -1115),0,toGoid(0, -1100),'UPDATE',NULL,'CLUSTER_PROPERTY'),
+    (toGoid(0, -1116),0,toGoid(0, -1100),'DELETE',NULL,'CLUSTER_PROPERTY'),
+    (toGoid(0, -1117),0,toGoid(0, -1100),'CREATE',NULL,'CLUSTER_PROPERTY'),
+    (toGoid(0, -1118),0,toGoid(0, -1100),'READ',NULL,'CLUSTER_PROPERTY'),
+    (toGoid(0, -1119),0,toGoid(0, -1100),'UPDATE',NULL,'CLUSTER_PROPERTY'),
+    (toGoid(0, -1120),0,toGoid(0, -1100),'DELETE',NULL,'CLUSTER_PROPERTY'),
+    (toGoid(0, -1121),0,toGoid(0, -1100),'CREATE',NULL,'CLUSTER_PROPERTY'),
+    (toGoid(0, -1122),0,toGoid(0, -1100),'READ',NULL,'CLUSTER_PROPERTY');
+INSERT INTO `rbac_predicate` (goid, version, permission_goid) VALUES
+    (toGoid(0, -1101),0,toGoid(0, -1101)),
+    (toGoid(0, -1103),0,toGoid(0, -1103)),
+    (toGoid(0, -1105),0,toGoid(0, -1105)),
+    (toGoid(0, -1108),0,toGoid(0, -1108)),
+    (toGoid(0, -1109),0,toGoid(0, -1109)),
+    (toGoid(0, -1110),0,toGoid(0, -1110)),
+    (toGoid(0, -1111),0,toGoid(0, -1111)),
+    (toGoid(0, -1113),0,toGoid(0, -1113)),
+    (toGoid(0, -1115),0,toGoid(0, -1115)),
+    (toGoid(0, -1116),0,toGoid(0, -1116)),
+    (toGoid(0, -1117),0,toGoid(0, -1117)),
+    (toGoid(0, -1118),0,toGoid(0, -1118)),
+    (toGoid(0, -1119),0,toGoid(0, -1119)),
+    (toGoid(0, -1120),0,toGoid(0, -1120)),
+    (toGoid(0, -1121),0,toGoid(0, -1121)),
+    (toGoid(0, -1122),0,toGoid(0, -1122));
+INSERT INTO `rbac_predicate_attribute` (goid, attribute, value, mode) VALUES
+    (toGoid(0, -1101),'name','keyStore.defaultSsl.alias','eq'),
+    (toGoid(0, -1103),'name','keyStore.defaultCa.alias','eq'),
+    (toGoid(0, -1105),'name','keyStore.defaultSsl.alias','eq'),
+    (toGoid(0, -1108),'name','keyStore.defaultCa.alias','eq'),
+    (toGoid(0, -1109),'name','keyStore.defaultSsl.alias','eq'),
+    (toGoid(0, -1110),'name','keyStore.defaultCa.alias','eq'),
+    (toGoid(0, -1111),'name','keyStore.defaultSsl.alias','eq'),
+    (toGoid(0, -1113),'name','keyStore.defaultCa.alias','eq'),
+    (toGoid(0, -1115),'name','keyStore.auditViewer.alias','eq'),
+    (toGoid(0, -1116),'name','keyStore.auditViewer.alias','eq'),
+    (toGoid(0, -1117),'name','keyStore.auditViewer.alias','eq'),
+    (toGoid(0, -1118),'name','keyStore.auditViewer.alias','eq'),
+    (toGoid(0, -1119),'name','keyStore.auditSigning.alias','eq'),
+    (toGoid(0, -1120),'name','keyStore.auditSigning.alias','eq'),
+    (toGoid(0, -1121),'name','keyStore.auditSigning.alias','eq'),
+    (toGoid(0, -1122),'name','keyStore.auditSigning.alias','eq');
 
-INSERT INTO rbac_role (objectid, version, name, tag, entity_type, entity_oid, entity_goid, description, user_created) VALUES (-1150,0,'Manage Password Policies', null,null,null,null, 'Users assigned to the {0} role have the ability to read and update any stored password policy and view the identity providers.',0);
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-1151,0,-1150,'READ',NULL,'PASSWORD_POLICY');
--- INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-1052,0,-1050,'CREATE',NULL,'PASSWORD_POLICY');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-1153,0,-1150,'UPDATE',NULL,'PASSWORD_POLICY');
--- INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-1054,0,-1050,'DELETE',NULL,'PASSWORD_POLICY');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-1155,0,-1150,'READ',NULL,'ID_PROVIDER_CONFIG');
+INSERT INTO rbac_role (goid, version, name, tag, entity_type, entity_oid, entity_goid, description, user_created) VALUES (toGoid(0, -1150),0,'Manage Password Policies', null,null,null,null, 'Users assigned to the {0} role have the ability to read and update any stored password policy and view the identity providers.',0);
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -1151),0,toGoid(0, -1150),'READ',NULL,'PASSWORD_POLICY');
+-- INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -1052),0,toGoid(0, -1050),'CREATE',NULL,'PASSWORD_POLICY');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -1153),0,toGoid(0, -1150),'UPDATE',NULL,'PASSWORD_POLICY');
+-- INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -1054),0,toGoid(0, -1050),'DELETE',NULL,'PASSWORD_POLICY');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -1155),0,toGoid(0, -1150),'READ',NULL,'ID_PROVIDER_CONFIG');
 
 --
 -- New role to invoke the audit viewer policy. Requires READ on audits to be able to open the audit viewer.
 --
-INSERT INTO rbac_role (objectid, version, name, tag, entity_type, entity_oid, entity_goid, description, user_created) VALUES (-1200,0,'Invoke Audit Viewer Policy', null,null,null,null, 'Allow the INTERNAL audit-viewer policy to be invoked for an audited message (request / response or detail)',0);
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-1201,0,-1200,'OTHER','audit-viewer policy', 'AUDIT_RECORD');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-1202,0,-1200,'READ',NULL,'AUDIT_RECORD');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-1203,0,-1200,'READ',NULL,'CLUSTER_INFO');
+INSERT INTO rbac_role (goid, version, name, tag, entity_type, entity_oid, entity_goid, description, user_created) VALUES (toGoid(0, -1200),0,'Invoke Audit Viewer Policy', null,null,null,null, 'Allow the INTERNAL audit-viewer policy to be invoked for an audited message (request / response or detail)',0);
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -1201),0,toGoid(0, -1200),'OTHER','audit-viewer policy', 'AUDIT_RECORD');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -1202),0,toGoid(0, -1200),'READ',NULL,'AUDIT_RECORD');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -1203),0,toGoid(0, -1200),'READ',NULL,'CLUSTER_INFO');
 
-INSERT INTO rbac_role (objectid, version, name, tag, entity_type, entity_oid, entity_goid, description, user_created) VALUES (-1250,0,'Manage Administrative Accounts Configuration', null,null,null,null, 'Users assigned to the {0} role have the ability to create/read/update cluster properties applicable to administrative accounts configurations.',0);
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-1251,0,-1250,'READ',NULL,'CLUSTER_PROPERTY');
-INSERT INTO rbac_predicate (objectid, version, permission_oid) VALUES (-1252,0,-1251);
-INSERT INTO rbac_predicate_attribute (objectid, attribute, value, mode) VALUES (-1252,'name','logon.maxAllowableAttempts','eq');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-1253,0,-1250,'READ',NULL,'CLUSTER_PROPERTY');
-INSERT INTO rbac_predicate (objectid, version, permission_oid) VALUES (-1254,0,-1253);
-INSERT INTO rbac_predicate_attribute (objectid, attribute, value, mode) VALUES (-1254,'name','logon.lockoutTime','eq');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-1255,0,-1250,'READ',NULL,'CLUSTER_PROPERTY');
-INSERT INTO rbac_predicate (objectid, version, permission_oid) VALUES (-1256,0,-1255);
-INSERT INTO rbac_predicate_attribute (objectid, attribute, value, mode) VALUES (-1256,'name','logon.sessionExpiry','eq');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-1257,0,-1250,'READ',NULL,'CLUSTER_PROPERTY');
-INSERT INTO rbac_predicate (objectid, version, permission_oid) VALUES (-1258,0,-1257);
-INSERT INTO rbac_predicate_attribute (objectid, attribute, value, mode) VALUES (-1258,'name','logon.inactivityPeriod','eq');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-1259,0,-1250,'UPDATE',NULL,'CLUSTER_PROPERTY');
-INSERT INTO rbac_predicate (objectid, version, permission_oid) VALUES (-1260,0,-1259);
-INSERT INTO rbac_predicate_attribute (objectid, attribute, value, mode) VALUES (-1260,'name','logon.maxAllowableAttempts','eq');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-1261,0,-1250,'UPDATE',NULL,'CLUSTER_PROPERTY');
-INSERT INTO rbac_predicate (objectid, version, permission_oid) VALUES (-1262,0,-1261);
-INSERT INTO rbac_predicate_attribute (objectid, attribute, value, mode) VALUES (-1262,'name','logon.lockoutTime','eq');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-1263,0,-1250,'UPDATE',NULL,'CLUSTER_PROPERTY');
-INSERT INTO rbac_predicate (objectid, version, permission_oid) VALUES (-1264,0,-1263);
-INSERT INTO rbac_predicate_attribute (objectid, attribute, value, mode) VALUES (-1264,'name','logon.sessionExpiry','eq');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-1265,0,-1250,'UPDATE',NULL,'CLUSTER_PROPERTY');
-INSERT INTO rbac_predicate (objectid, version, permission_oid) VALUES (-1266,0,-1265);
-INSERT INTO rbac_predicate_attribute (objectid, attribute, value, mode) VALUES (-1266,'name','logon.inactivityPeriod','eq');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-1267,0,-1250,'CREATE',NULL,'CLUSTER_PROPERTY');
-INSERT INTO rbac_predicate (objectid, version, permission_oid) VALUES (-1268,0,-1267);
-INSERT INTO rbac_predicate_attribute (objectid, attribute, value, mode) VALUES (-1268,'name','logon.maxAllowableAttempts','eq');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-1269,0,-1250,'CREATE',NULL,'CLUSTER_PROPERTY');
-INSERT INTO rbac_predicate (objectid, version, permission_oid) VALUES (-1270,0,-1269);
-INSERT INTO rbac_predicate_attribute (objectid, attribute, value, mode) VALUES (-1270,'name','logon.lockoutTime','eq');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-1271,0,-1250,'CREATE',NULL,'CLUSTER_PROPERTY');
-INSERT INTO rbac_predicate (objectid, version, permission_oid) VALUES (-1272,0,-1271);
-INSERT INTO rbac_predicate_attribute (objectid, attribute, value, mode) VALUES (-1272,'name','logon.sessionExpiry','eq');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-1273,0,-1250,'CREATE',NULL,'CLUSTER_PROPERTY');
-INSERT INTO rbac_predicate (objectid, version, permission_oid) VALUES (-1274,0,-1273);
-INSERT INTO rbac_predicate_attribute (objectid, attribute, value, mode) VALUES (-1274,'name','logon.inactivityPeriod','eq');
+INSERT INTO rbac_role (goid, version, name, tag, entity_type, entity_oid, entity_goid, description, user_created) VALUES (toGoid(0, -1250),0,'Manage Administrative Accounts Configuration', null,null,null,null, 'Users assigned to the {0} role have the ability to create/read/update cluster properties applicable to administrative accounts configurations.',0);
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -1251),0,toGoid(0, -1250),'READ',NULL,'CLUSTER_PROPERTY');
+INSERT INTO rbac_predicate (goid, version, permission_goid) VALUES (toGoid(0, -1252),0,toGoid(0, -1251));
+INSERT INTO rbac_predicate_attribute (goid, attribute, value, mode) VALUES (toGoid(0, -1252),'name','logon.maxAllowableAttempts','eq');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -1253),0,toGoid(0, -1250),'READ',NULL,'CLUSTER_PROPERTY');
+INSERT INTO rbac_predicate (goid, version, permission_goid) VALUES (toGoid(0, -1254),0,toGoid(0, -1253));
+INSERT INTO rbac_predicate_attribute (goid, attribute, value, mode) VALUES (toGoid(0, -1254),'name','logon.lockoutTime','eq');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -1255),0,toGoid(0, -1250),'READ',NULL,'CLUSTER_PROPERTY');
+INSERT INTO rbac_predicate (goid, version, permission_goid) VALUES (toGoid(0, -1256),0,toGoid(0, -1255));
+INSERT INTO rbac_predicate_attribute (goid, attribute, value, mode) VALUES (toGoid(0, -1256),'name','logon.sessionExpiry','eq');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -1257),0,toGoid(0, -1250),'READ',NULL,'CLUSTER_PROPERTY');
+INSERT INTO rbac_predicate (goid, version, permission_goid) VALUES (toGoid(0, -1258),0,toGoid(0, -1257));
+INSERT INTO rbac_predicate_attribute (goid, attribute, value, mode) VALUES (toGoid(0, -1258),'name','logon.inactivityPeriod','eq');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -1259),0,toGoid(0, -1250),'UPDATE',NULL,'CLUSTER_PROPERTY');
+INSERT INTO rbac_predicate (goid, version, permission_goid) VALUES (toGoid(0, -1260),0,toGoid(0, -1259));
+INSERT INTO rbac_predicate_attribute (goid, attribute, value, mode) VALUES (toGoid(0, -1260),'name','logon.maxAllowableAttempts','eq');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -1261),0,toGoid(0, -1250),'UPDATE',NULL,'CLUSTER_PROPERTY');
+INSERT INTO rbac_predicate (goid, version, permission_goid) VALUES (toGoid(0, -1262),0,toGoid(0, -1261));
+INSERT INTO rbac_predicate_attribute (goid, attribute, value, mode) VALUES (toGoid(0, -1262),'name','logon.lockoutTime','eq');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -1263),0,toGoid(0, -1250),'UPDATE',NULL,'CLUSTER_PROPERTY');
+INSERT INTO rbac_predicate (goid, version, permission_goid) VALUES (toGoid(0, -1264),0,toGoid(0, -1263));
+INSERT INTO rbac_predicate_attribute (goid, attribute, value, mode) VALUES (toGoid(0, -1264),'name','logon.sessionExpiry','eq');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -1265),0,toGoid(0, -1250),'UPDATE',NULL,'CLUSTER_PROPERTY');
+INSERT INTO rbac_predicate (goid, version, permission_goid) VALUES (toGoid(0, -1266),0,toGoid(0, -1265));
+INSERT INTO rbac_predicate_attribute (goid, attribute, value, mode) VALUES (toGoid(0, -1266),'name','logon.inactivityPeriod','eq');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -1267),0,toGoid(0, -1250),'CREATE',NULL,'CLUSTER_PROPERTY');
+INSERT INTO rbac_predicate (goid, version, permission_goid) VALUES (toGoid(0, -1268),0,toGoid(0, -1267));
+INSERT INTO rbac_predicate_attribute (goid, attribute, value, mode) VALUES (toGoid(0, -1268),'name','logon.maxAllowableAttempts','eq');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -1269),0,toGoid(0, -1250),'CREATE',NULL,'CLUSTER_PROPERTY');
+INSERT INTO rbac_predicate (goid, version, permission_goid) VALUES (toGoid(0, -1270),0,toGoid(0, -1269));
+INSERT INTO rbac_predicate_attribute (goid, attribute, value, mode) VALUES (toGoid(0, -1270),'name','logon.lockoutTime','eq');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -1271),0,toGoid(0, -1250),'CREATE',NULL,'CLUSTER_PROPERTY');
+INSERT INTO rbac_predicate (goid, version, permission_goid) VALUES (toGoid(0, -1272),0,toGoid(0, -1271));
+INSERT INTO rbac_predicate_attribute (goid, attribute, value, mode) VALUES (toGoid(0, -1272),'name','logon.sessionExpiry','eq');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -1273),0,toGoid(0, -1250),'CREATE',NULL,'CLUSTER_PROPERTY');
+INSERT INTO rbac_predicate (goid, version, permission_goid) VALUES (toGoid(0, -1274),0,toGoid(0, -1273));
+INSERT INTO rbac_predicate_attribute (goid, attribute, value, mode) VALUES (toGoid(0, -1274),'name','logon.inactivityPeriod','eq');
 
 --
 -- New role for viewing the default log (oid = -810)
@@ -1826,31 +1825,31 @@ INSERT INTO rbac_predicate_attribute (objectid, attribute, value, mode) VALUES (
 -- NOTE: This is an entity specific role and will be deleted if the default log
 -- sink is removed.
 --
-INSERT INTO rbac_role (objectid, version, name, tag, entity_type, entity_oid, entity_goid, description, user_created) VALUES (-1300,0,'View ssg Log Sink (#-1,300)',null,'LOG_SINK',-810,null, 'Users assigned to the {0} role have the ability to read the log sink and any associated log files.',0);
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-1301,0,-1300,'READ',NULL,'LOG_SINK');
-INSERT INTO rbac_predicate (objectid, version, permission_oid) VALUES (-1301,0,-1301);
-INSERT INTO rbac_predicate_oid (objectid, entity_id) VALUES (-1301,'-810');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-1302,0,-1300,'READ',NULL,'CLUSTER_INFO');
+INSERT INTO rbac_role (goid, version, name, tag, entity_type, entity_oid, entity_goid, description, user_created) VALUES (toGoid(0, -1300),0,'View ssg Log Sink (#-1,300)',null,'LOG_SINK',-810,null, 'Users assigned to the {0} role have the ability to read the log sink and any associated log files.',0);
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -1301),0,toGoid(0, -1300),'READ',NULL,'LOG_SINK');
+INSERT INTO rbac_predicate (goid, version, permission_goid) VALUES (toGoid(0, -1301),0,toGoid(0, -1301));
+INSERT INTO rbac_predicate_oid (goid, entity_id) VALUES (toGoid(0, -1301),'-810');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -1302),0,toGoid(0, -1300),'READ',NULL,'CLUSTER_INFO');
 
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-1303,0,-1300,'OTHER','log-viewer','LOG_SINK');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -1303),0,toGoid(0, -1300),'OTHER','log-viewer','LOG_SINK');
 
-INSERT INTO rbac_role (objectid, version, name, tag, entity_type, entity_oid, entity_goid, description, user_created) VALUES (-1350,0,'Manage Encapsulated Assertions', null,'ENCAPSULATED_ASSERTION',null,null, 'Users assigned to the {0} role have the ability to create/read/update/delete encapsulated assertions.',0);
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-1351,0,-1350,'CREATE',null,'ENCAPSULATED_ASSERTION');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-1352,0,-1350,'READ',NULL,'ENCAPSULATED_ASSERTION');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-1353,0,-1350,'UPDATE',null, 'ENCAPSULATED_ASSERTION');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-1354,0,-1350,'DELETE',NULL,'ENCAPSULATED_ASSERTION');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-1355,0,-1350,'READ',NULL,'POLICY');
-INSERT INTO rbac_predicate (objectid, version, permission_oid) VALUES (-1356,0,-1355);
-INSERT INTO rbac_predicate_attribute (objectid, attribute, value, mode) VALUES (-1356,'type','Included Policy Fragment','eq');
+INSERT INTO rbac_role (goid, version, name, tag, entity_type, entity_oid, entity_goid, description, user_created) VALUES (toGoid(0, -1350),0,'Manage Encapsulated Assertions', null,'ENCAPSULATED_ASSERTION',null,null, 'Users assigned to the {0} role have the ability to create/read/update/delete encapsulated assertions.',0);
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -1351),0,toGoid(0, -1350),'CREATE',null,'ENCAPSULATED_ASSERTION');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -1352),0,toGoid(0, -1350),'READ',NULL,'ENCAPSULATED_ASSERTION');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -1353),0,toGoid(0, -1350),'UPDATE',null, 'ENCAPSULATED_ASSERTION');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -1354),0,toGoid(0, -1350),'DELETE',NULL,'ENCAPSULATED_ASSERTION');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -1355),0,toGoid(0, -1350),'READ',NULL,'POLICY');
+INSERT INTO rbac_predicate (goid, version, permission_goid) VALUES (toGoid(0, -1356),0,toGoid(0, -1355));
+INSERT INTO rbac_predicate_attribute (goid, attribute, value, mode) VALUES (toGoid(0, -1356),'type','Included Policy Fragment','eq');
 
-INSERT INTO rbac_role (objectid, version, name, tag, entity_type, entity_oid, entity_goid, description, user_created) VALUES (-1450,0,'Manage Custom Key Value Store', null,'CUSTOM_KEY_VALUE_STORE',null,null, 'Users assigned to the {0} role have the ability to read, create, update, and delete key values from custom key value store.',0);
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-1451,0,-1450,'CREATE',null,'CUSTOM_KEY_VALUE_STORE');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-1452,0,-1450,'READ',null,'CUSTOM_KEY_VALUE_STORE');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-1453,0,-1450,'UPDATE',null,'CUSTOM_KEY_VALUE_STORE');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-1454,0,-1450,'DELETE',null,'CUSTOM_KEY_VALUE_STORE');
+INSERT INTO rbac_role (goid, version, name, tag, entity_type, entity_oid, entity_goid, description, user_created) VALUES (toGoid(0, -1450),0,'Manage Custom Key Value Store', null,'CUSTOM_KEY_VALUE_STORE',null,null, 'Users assigned to the {0} role have the ability to read, create, update, and delete key values from custom key value store.',0);
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -1451),0,toGoid(0, -1450),'CREATE',null,'CUSTOM_KEY_VALUE_STORE');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -1452),0,toGoid(0, -1450),'READ',null,'CUSTOM_KEY_VALUE_STORE');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -1453),0,toGoid(0, -1450),'UPDATE',null,'CUSTOM_KEY_VALUE_STORE');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -1454),0,toGoid(0, -1450),'DELETE',null,'CUSTOM_KEY_VALUE_STORE');
 
 -- Assign Administrator role to existing admin user
-INSERT INTO rbac_assignment (objectid, provider_goid, role_oid, identity_id, entity_type) VALUES (-105, toGoid(0,-2), -100, '00000000000000000000000000000003', 'User');
+INSERT INTO rbac_assignment (goid, provider_goid, role_goid, identity_id, entity_type) VALUES (toGoid(0, -105), toGoid(0,-2), toGoid(0, -100), '00000000000000000000000000000003', 'User');
 
 DROP TABLE IF EXISTS sink_config;
 CREATE TABLE sink_config (
@@ -2079,19 +2078,19 @@ CREATE TABLE ssg_version (
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
 -- create new RBAC role for Manage Firewall Rules --
-INSERT INTO rbac_role (objectid, version, name, entity_type, description, user_created) VALUES (-1400, 0, 'Manage Firewall Rules', 'FIREWALL_RULE', 'Users assigned to the {0} role have the ability to read, create, update and delete Firewall rules.', 0);
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-1275,0,-1400,'CREATE',NULL,'FIREWALL_RULE');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-1276,0,-1400,'READ',NULL,'FIREWALL_RULE');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-1277,0,-1400,'UPDATE',NULL,'FIREWALL_RULE');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-1278,0,-1400,'DELETE',NULL,'FIREWALL_RULE');
+INSERT INTO rbac_role (goid, version, name, entity_type, description, user_created) VALUES (toGoid(0, -1400), 0, 'Manage Firewall Rules', 'FIREWALL_RULE', 'Users assigned to the {0} role have the ability to read, create, update and delete Firewall rules.', 0);
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -1275),0,toGoid(0, -1400),'CREATE',NULL,'FIREWALL_RULE');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -1276),0,toGoid(0, -1400),'READ',NULL,'FIREWALL_RULE');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -1277),0,toGoid(0, -1400),'UPDATE',NULL,'FIREWALL_RULE');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -1278),0,toGoid(0, -1400),'DELETE',NULL,'FIREWALL_RULE');
 
 -- create new RBAC role for SiteMinder Configuration --
-INSERT INTO rbac_role (objectid, version, name, tag, entity_type, entity_oid, entity_goid, description, user_created) VALUES (-1500,0,'Manage SiteMinder Configuration', null, 'SITEMINDER_CONFIGURATION', null, null, 'Users assigned to the {0} role have the ability to read, create, update and delete SiteMinder configuration.',0);
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-1501,0,-1500,'READ',NULL,'SITEMINDER_CONFIGURATION');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-1502,0,-1500,'CREATE',NULL,'SITEMINDER_CONFIGURATION');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-1503,0,-1500,'UPDATE',NULL,'SITEMINDER_CONFIGURATION');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-1504,0,-1500,'DELETE',NULL,'SITEMINDER_CONFIGURATION');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-1505,0,-1500,'READ',NULL,'SECURE_PASSWORD');
+INSERT INTO rbac_role (goid, version, name, tag, entity_type, entity_oid, entity_goid, description, user_created) VALUES (toGoid(0, -1500),0,'Manage SiteMinder Configuration', null, 'SITEMINDER_CONFIGURATION', null, null, 'Users assigned to the {0} role have the ability to read, create, update and delete SiteMinder configuration.',0);
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -1501),0,toGoid(0, -1500),'READ',NULL,'SITEMINDER_CONFIGURATION');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -1502),0,toGoid(0, -1500),'CREATE',NULL,'SITEMINDER_CONFIGURATION');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -1503),0,toGoid(0, -1500),'UPDATE',NULL,'SITEMINDER_CONFIGURATION');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -1504),0,toGoid(0, -1500),'DELETE',NULL,'SITEMINDER_CONFIGURATION');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -1505),0,toGoid(0, -1500),'READ',NULL,'SECURE_PASSWORD');
 
 
 INSERT INTO ssg_version (current_version) VALUES ('8.0.0');

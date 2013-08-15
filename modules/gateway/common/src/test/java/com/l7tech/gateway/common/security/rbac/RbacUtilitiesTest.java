@@ -1,6 +1,7 @@
 package com.l7tech.gateway.common.security.rbac;
 
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.SecurityZone;
 import org.junit.Test;
 
@@ -22,12 +23,12 @@ public class RbacUtilitiesTest {
     @Test
     public void getAnonymousNoOidsCopyOfScope() {
         final SecurityZonePredicate pred = new SecurityZonePredicate(new Permission(new Role(), OperationType.CREATE, EntityType.POLICY), new SecurityZone());
-        pred.setOid(1234L);
+        pred.setGoid(new Goid(0, 1234L));
 
         final Set<ScopePredicate> copy = RbacUtilities.getAnonymousNoOidsCopyOfScope(Collections.<ScopePredicate>singleton(pred));
         assertEquals(1, copy.size());
         final ScopePredicate predCopy = copy.iterator().next();
-        assertEquals(ScopePredicate.DEFAULT_OID, predCopy.getOid());
+        assertEquals(ScopePredicate.DEFAULT_GOID, predCopy.getGoid());
         assertNull(predCopy.getPermission());
     }
 

@@ -41,7 +41,7 @@ public class FolderPredicate extends ScopePredicate implements ScopeEvaluator {
     @Override
     public ScopePredicate createAnonymousClone() {
         FolderPredicate copy = new FolderPredicate(null, this.folder, this.transitive);
-        copy.setOid(this.getOid());
+        copy.setGoid(this.getGoid());
         return copy;
     }
 

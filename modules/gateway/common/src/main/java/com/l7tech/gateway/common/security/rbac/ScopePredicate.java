@@ -3,7 +3,7 @@
  */
 package com.l7tech.gateway.common.security.rbac;
 
-import com.l7tech.objectmodel.imp.PersistentEntityImp;
+import com.l7tech.objectmodel.imp.GoidEntityImp;
 
 import javax.persistence.*;
 
@@ -16,7 +16,7 @@ import javax.persistence.*;
 @javax.persistence.Entity
 @Table(name="rbac_predicate")
 @Inheritance(strategy=InheritanceType.JOINED)
-public abstract class ScopePredicate extends PersistentEntityImp {
+public abstract class ScopePredicate extends GoidEntityImp {
     protected Permission permission;
 
     protected ScopePredicate(Permission permission) {
@@ -34,7 +34,7 @@ public abstract class ScopePredicate extends PersistentEntityImp {
     }
 
     @ManyToOne(optional=false)
-    @JoinColumn(name="permission_oid", nullable=false)
+    @JoinColumn(name="permission_goid", nullable=false)
     public Permission getPermission() {
         return permission;
     }

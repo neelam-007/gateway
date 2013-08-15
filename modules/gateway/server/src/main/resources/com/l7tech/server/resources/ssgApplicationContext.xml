@@ -1650,7 +1650,6 @@
         <property name="applicationEventProxy" ref="applicationEventProxy"/>
         <property name="entityManagers">
             <list>
-                <ref bean="roleManager"/>
                 <ref bean="sinkManager"/>
                 <ref bean="keystoreFileManager"/>
                 <ref bean="messageContextMappingKeyManager"/>
@@ -1678,6 +1677,7 @@
                 <ref bean="ssgFirewallRuleManager"/>
                 <ref bean="encapsulatedAssertionConfigManager"/>
                 <ref bean="jmsConnectionManager"/>
+                <ref bean="roleManager"/>
                 <ref bean="trustedCertManager"/>
                 <ref bean="revocationCheckPolicyManager"/>
                 <ref bean="jmsEndpointManager"/>

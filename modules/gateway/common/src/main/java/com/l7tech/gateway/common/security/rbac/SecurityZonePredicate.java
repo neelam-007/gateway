@@ -69,7 +69,7 @@ public class SecurityZonePredicate extends ScopePredicate implements ScopeEvalua
     @Override
     public ScopePredicate createAnonymousClone() {
         SecurityZonePredicate copy = new SecurityZonePredicate(null, requiredZone);
-        copy.setOid(this.getOid());
+        copy.setGoid(this.getGoid());
         return copy;
     }
 

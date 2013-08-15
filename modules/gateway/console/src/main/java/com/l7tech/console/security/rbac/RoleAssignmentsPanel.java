@@ -206,7 +206,7 @@ public class RoleAssignmentsPanel extends JPanel {
     private void saveAndReloadRole() {
         final RbacAdmin rbacAdmin = Registry.getDefault().getRbacAdmin();
         try {
-            final long oid = rbacAdmin.saveRole(role);
+            final Goid oid = rbacAdmin.saveRole(role);
             final Role reloadedRole = rbacAdmin.findRoleByPrimaryKey(oid);
             if (reloadedRole != null) {
                 // version has changed

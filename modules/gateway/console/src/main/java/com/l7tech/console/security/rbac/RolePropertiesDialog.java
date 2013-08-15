@@ -45,9 +45,9 @@ public class RolePropertiesDialog extends JDialog {
 
     public RolePropertiesDialog(@NotNull final Window owner, @NotNull final Role role, final boolean readOnly, @NotNull final Set<String> reservedNames, @NotNull final Functions.UnaryVoidThrows<Role, SaveException> afterEditListener) {
 
-        super(owner, readOnly ? "Role Properties" : role.getOid() == Role.DEFAULT_OID ? "Create Role" : "Edit Role", DEFAULT_MODALITY_TYPE);
+        super(owner, readOnly ? "Role Properties" : role.isUnsaved() ? "Create Role" : "Edit Role", DEFAULT_MODALITY_TYPE);
         this.role = role;
-        this.operation = role.getOid() == Role.DEFAULT_OID ? "Create" : "Edit";
+        this.operation = role.isUnsaved() ? "Create" : "Edit";
         this.reservedNames = new HashSet<>();
         for (final String reservedName : reservedNames) {
             // for case-insensitive checks
@@ -73,12 +73,12 @@ public class RolePropertiesDialog extends JDialog {
         okCancelPanel.getCancelButton().addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(final ActionEvent e) {
-                if (role.getOid() != Role.DEFAULT_OID) {
+                if (!role.isUnsaved()) {
                     // restore permissions to pre-modified state
                     try {
-                        final Role found = Registry.getDefault().getRbacAdmin().findRoleByPrimaryKey(role.getOid());
+                        final Role found = Registry.getDefault().getRbacAdmin().findRoleByPrimaryKey(role.getGoid());
                         if (found == null) {
-                            throw new FindException("Unable to retrieve role with oid " + role.getOid());
+                            throw new FindException("Unable to retrieve role with id " + role.getGoid());
                         }
                         role.getPermissions().clear();
                         role.getPermissions().addAll(found.getPermissions());

@@ -43,7 +43,7 @@ public interface RbacAdmin {
      */
     @Transactional(readOnly=true)
     @Secured(stereotype=FIND_ENTITY)
-    Role findRoleByPrimaryKey(long oid) throws FindException;
+    Role findRoleByPrimaryKey(Goid oid) throws FindException;
 
     /**
      * Gets the permissions of the current admin user.  This is unsecured, so that anyone running
@@ -84,7 +84,7 @@ public interface RbacAdmin {
      * @return the OID of the role that was saved
      */
     @Secured(stereotype=SAVE_OR_UPDATE)
-    long saveRole(Role role) throws SaveException;
+    Goid saveRole(Role role) throws SaveException;
 
     @Secured(stereotype=DELETE_ENTITY)
     void deleteRole(Role selectedRole) throws DeleteException;

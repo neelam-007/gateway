@@ -311,7 +311,7 @@ public class RbacFolderTest {
         });
     }
 
-    private long canReadSpecific(final User user, final EntityType etype, final Goid... goids) throws SaveException {
+    private Goid canReadSpecific(final User user, final EntityType etype, final Goid... goids) throws SaveException {
         Role role = new Role();
         role.addAssignedUser(user);
         for (Goid goid : goids) {
@@ -320,7 +320,7 @@ public class RbacFolderTest {
         return roleManager.save(role);
     }
 
-    private long canReadStuffInFolder(final User user, Folder folder, final boolean transitive, final EntityType... types) throws SaveException {
+    private Goid canReadStuffInFolder(final User user, Folder folder, final boolean transitive, final EntityType... types) throws SaveException {
         Role role = new Role();
         role.addAssignedUser(user);
         for (EntityType type : types) {
@@ -329,7 +329,7 @@ public class RbacFolderTest {
         return roleManager.save(role);
     }
 
-    private long canReadAnyPolicy(final User user) throws SaveException {
+    private Goid canReadAnyPolicy(final User user) throws SaveException {
         Role role = new Role();
         role.addAssignedUser(user);
         role.addEntityPermission(OperationType.READ, EntityType.POLICY, null);

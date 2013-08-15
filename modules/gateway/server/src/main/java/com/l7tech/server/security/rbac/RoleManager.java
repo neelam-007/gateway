@@ -21,7 +21,7 @@ import java.util.regex.Pattern;
  *
  * TODO de-implement RbacServices when it becomes tractable
  */
-public interface RoleManager extends EntityManager<Role, EntityHeader>, RbacServices {
+public interface RoleManager extends GoidEntityManager<Role, EntityHeader>, RbacServices {
     public static final String ADMIN_REQUIRED = "At least one enabled User with no expiry must always be assigned to the Administrator role";
 
     @Transactional(readOnly=true)

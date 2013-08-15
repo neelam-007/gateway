@@ -7,6 +7,7 @@ import com.l7tech.objectmodel.DuplicateObjectException;
 import com.l7tech.identity.Identity;
 import com.l7tech.identity.User;
 import com.l7tech.identity.Group;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.ExceptionUtils;
 
 import javax.swing.table.AbstractTableModel;
@@ -85,7 +86,7 @@ public class RoleAssignmentTableModel  extends AbstractTableModel {
         for (RoleAssignment roleAssignement : roleAssignmentToIdentityHolder.keySet()) {
             if (roleAssignement.getProviderId().equals(ra.getProviderId())
                     && roleAssignement.getIdentityId().equals(ra.getIdentityId())
-                    && roleAssignement.getRole().getOid() == ra.getRole().getOid()) {
+                    && Goid.equals(roleAssignement.getRole().getGoid(), ra.getRole().getGoid())) {
                 String userType = ra.getEntityType();
                 throw new DuplicateObjectException("The "+userType+" \"" + iH.getIdentity().getName() + "\" is already assigned to this role");
             }

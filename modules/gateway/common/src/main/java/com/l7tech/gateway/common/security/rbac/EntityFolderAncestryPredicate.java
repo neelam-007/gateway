@@ -31,7 +31,7 @@ public class EntityFolderAncestryPredicate extends ScopePredicate {
     @Override
     public ScopePredicate createAnonymousClone() {
         EntityFolderAncestryPredicate copy = new EntityFolderAncestryPredicate(null, entityType, new Goid(entityId));
-        copy.setOid(this.getOid());
+        copy.setGoid(this.getGoid());
         return copy;
     }
 

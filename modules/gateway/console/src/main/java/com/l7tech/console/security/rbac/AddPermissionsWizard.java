@@ -78,7 +78,7 @@ public class AddPermissionsWizard extends Wizard {
     }
 
     private void resetOids(final Permission permission) {
-        permission.setOid(Permission.DEFAULT_OID);
+        permission.setGoid(Permission.DEFAULT_GOID);
         permission.setScope(RbacUtilities.getAnonymousNoOidsCopyOfScope(permission.getScope()));
     }
 }

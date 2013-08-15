@@ -52,8 +52,8 @@ public class RbacAdminImpl implements RbacAdmin {
         return roles;
     }
 
-    public Role findRoleByPrimaryKey(long oid) throws FindException {
-        return attachEntities(roleManager.findByPrimaryKey(oid));
+    public Role findRoleByPrimaryKey(Goid goid) throws FindException {
+        return attachEntities(roleManager.findByPrimaryKey(goid));
     }
 
 
@@ -139,17 +139,17 @@ public class RbacAdminImpl implements RbacAdmin {
         return theRole;
     }
 
-    public long saveRole(Role role) throws SaveException {
-        if (role.getOid() == Role.DEFAULT_OID) {
+    public Goid saveRole(Role role) throws SaveException {
+        if (role.isUnsaved()) {
             return roleManager.save(role);
         } else {
-            long oid = role.getOid();
+            Goid goid = role.getGoid();
             try {
                 roleManager.update(role);
             } catch (UpdateException e) {
                 throw new SaveException(e.getMessage(), e);
             }
-            return oid;
+            return goid;
         }
     }
 

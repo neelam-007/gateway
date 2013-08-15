@@ -6,18 +6,18 @@ import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.identity.Group;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.User;
-import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.Entity;
+import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.HasFolder;
-import com.l7tech.objectmodel.imp.NamedEntityImp;
+import com.l7tech.objectmodel.imp.NamedGoidEntityImp;
 import com.l7tech.util.TextUtils;
 import org.hibernate.annotations.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import javax.persistence.*;
 import javax.persistence.CascadeType;
+import javax.persistence.*;
 import javax.persistence.Table;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -39,7 +39,7 @@ import java.util.regex.Matcher;
 @javax.persistence.Entity
 @Proxy(lazy=false)
 @Table(name="rbac_role")
-public class Role extends NamedEntityImp implements Comparable<Role> {
+public class Role extends NamedGoidEntityImp implements Comparable<Role> {
     public static enum Tag { ADMIN }
     private static final Logger logger = Logger.getLogger(Role.class.getName());
     private Set<Permission> permissions = new HashSet<Permission>();

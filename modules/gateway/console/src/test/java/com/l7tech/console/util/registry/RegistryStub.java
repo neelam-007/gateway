@@ -189,7 +189,7 @@ public class RegistryStub extends Registry {
             private final Role role = new Role();
             {
                 role.setName("Stub role");
-                role.setOid(-777L);
+                role.setGoid(new Goid (0, -777L));
                 role.setDescription("Fake role for testing");
             }
 
@@ -199,8 +199,10 @@ public class RegistryStub extends Registry {
             }
 
             @Override
-            public Role findRoleByPrimaryKey(long oid) throws FindException {
-                if (role.getOid() == oid) return role;
+            public Role findRoleByPrimaryKey(Goid goid) throws FindException {
+                if (role.getGoid() != null &&
+                    role.getGoid().equals(goid))
+                    return role;
                 return null;
             }
 
@@ -227,7 +229,7 @@ public class RegistryStub extends Registry {
             }
 
             @Override
-            public long saveRole(Role role) throws SaveException {
+            public Goid saveRole(Role role) throws SaveException {
                 throw new SaveException("Can't save roles in stub mode");
             }
 

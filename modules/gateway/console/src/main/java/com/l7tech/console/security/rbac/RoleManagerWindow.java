@@ -10,15 +10,11 @@ import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.TableUtil;
 import com.l7tech.gui.util.Utilities;
-import com.l7tech.objectmodel.DeleteException;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.SaveException;
+import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.comparator.NamedEntityComparator;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.TextUtils;
-import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -118,12 +114,12 @@ public class RoleManagerWindow extends JDialog {
         crudController.setEntitySaver(new EntitySaver<Role>() {
             @Override
             public Role saveEntity(@NotNull final Role entity) throws SaveException {
-                long oid = Registry.getDefault().getRbacAdmin().saveRole(entity);
+                Goid oid = Registry.getDefault().getRbacAdmin().saveRole(entity);
                 try {
                     return Registry.getDefault().getRbacAdmin().findRoleByPrimaryKey(oid);
                 } catch (final FindException e) {
                     logger.log(Level.WARNING, "Unable to retrieve saved role: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-                    entity.setOid(oid);
+                    entity.setGoid(oid);
                     return entity;
                 } catch (final PermissionDeniedException e) {
                     throw new SaveException("Cannot retrieve saved entity: " + ExceptionUtils.getMessage(e), e);
@@ -133,7 +129,7 @@ public class RoleManagerWindow extends JDialog {
         crudController.setEntityEditor(new EntityEditor<Role>() {
             @Override
             public void displayEditDialog(@NotNull final Role role, @NotNull final Functions.UnaryVoidThrows<Role, SaveException> afterEditListener) {
-                boolean create = Role.DEFAULT_OID == role.getOid();
+                boolean create = role.isUnsaved();
                 AttemptedOperation operation = create
                         ? new AttemptedCreateSpecific(EntityType.RBAC_ROLE, role)
                         : new AttemptedUpdate(EntityType.RBAC_ROLE, role);

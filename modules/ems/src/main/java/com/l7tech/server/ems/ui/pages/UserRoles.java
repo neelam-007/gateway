@@ -1,35 +1,29 @@
 package com.l7tech.server.ems.ui.pages;
 
+import com.l7tech.gateway.common.security.rbac.*;
+import com.l7tech.identity.internal.InternalUser;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.server.ems.ui.NavigationPage;
 import com.l7tech.server.ems.user.EsmAccountManager;
 import com.l7tech.server.security.rbac.RoleManager;
-import com.l7tech.gateway.common.security.rbac.Role;
-import com.l7tech.gateway.common.security.rbac.RoleAssignment;
-import com.l7tech.gateway.common.security.rbac.RbacUtilities;
-import com.l7tech.gateway.common.security.rbac.AttemptedUpdateAny;
-import com.l7tech.gateway.common.security.rbac.RequiredPermissionSet;
-import com.l7tech.gateway.common.security.rbac.RequiredPermission;
-import com.l7tech.gateway.common.security.rbac.OperationType;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.UpdateException;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.identity.internal.InternalUser;
-import org.apache.wicket.markup.html.form.*;
-import org.apache.wicket.markup.html.WebMarkupContainer;
-import org.apache.wicket.markup.html.basic.Label;
-import org.apache.wicket.markup.html.panel.Panel;
-import org.apache.wicket.markup.html.panel.EmptyPanel;
-import org.apache.wicket.model.*;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.form.AjaxFormComponentUpdatingBehavior;
-import javax.inject.Inject;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.PropertyColumn;
 import org.apache.wicket.extensions.markup.html.repeater.util.SortableDataProvider;
+import org.apache.wicket.markup.html.WebMarkupContainer;
+import org.apache.wicket.markup.html.basic.Label;
+import org.apache.wicket.markup.html.form.*;
+import org.apache.wicket.markup.html.panel.EmptyPanel;
+import org.apache.wicket.markup.html.panel.Panel;
+import org.apache.wicket.model.*;
 
-import java.util.*;
-import java.util.logging.Logger;
-import java.util.logging.Level;
+import javax.inject.Inject;
 import java.io.Serializable;
+import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * A page to manage a role for users such as assign a role to a user or unassign a user from a role.
@@ -110,7 +104,7 @@ public class UserRoles extends EsmStandardWebPage {
             protected void onSubmit(final AjaxRequestTarget ajaxRequestTarget, Form form) {
                 final String userId =  YuiDataTable.unescapeIdentitifer((String) form.get("assignedUserId").getDefaultModelObject());
                 try {
-                    Role role = roleManager.findByPrimaryKey(roleModel.selectedRole.getOid());
+                    Role role = roleManager.findByPrimaryKey(roleModel.selectedRole.getGoid());
                     role.removeAssignedUser(emsAccountManager.findByLogin(userId));
                     roleManager.update(role);
                     roleModel.selectedRole = role;
@@ -159,7 +153,7 @@ public class UserRoles extends EsmStandardWebPage {
             protected void onSubmit(AjaxRequestTarget ajaxRequestTarget, Form form) {
                 final String userId = YuiDataTable.unescapeIdentitifer((String) form.get("unassignedUserId").getDefaultModelObject());
                 try {
-                    Role role = roleManager.findByPrimaryKey(roleModel.selectedRole.getOid());
+                    Role role = roleManager.findByPrimaryKey(roleModel.selectedRole.getGoid());
                     role.addAssignedUser(emsAccountManager.findByLogin(userId));
                     roleManager.update(role);
                     roleModel.selectedRole = role;
@@ -351,7 +345,7 @@ public class UserRoles extends EsmStandardWebPage {
             try {
                 Collection<InternalUser> users =
                     emsAccountManager.getUserPage(first, count, getSort().getProperty(), getSort().isAscending());
-                Role role = roleManager.findByPrimaryKey(roleModel.selectedRole.getOid());
+                Role role = roleManager.findByPrimaryKey(roleModel.selectedRole.getGoid());
 
                 if (assigned) {
                     List<InternalUser> assignedUsers = new ArrayList<InternalUser>();

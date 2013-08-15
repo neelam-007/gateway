@@ -144,8 +144,8 @@ public class SetupManagerImpl implements InitializingBean, SetupManager {
                             role.getPermissions().add(new Permission(role, OperationType.READ, EntityType.ANY));
                             role.getPermissions().add(new Permission(role, OperationType.UPDATE, EntityType.ANY));
                             role.getPermissions().add(new Permission(role, OperationType.DELETE, EntityType.ANY));
-                            Long id = roleManager.save(role);
-                            logger.info("Created configuration for administration role with identifier '" + id + "'.");
+                            goid = roleManager.save(role);
+                            logger.info("Created configuration for administration role with identifier '" + goid + "'.");
                         }
                     } catch ( Exception e ) {
                         transactionStatus.setRollbackOnly();

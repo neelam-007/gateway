@@ -38,7 +38,7 @@ public class ObjectIdentityPredicate extends ScopePredicate implements ScopeEval
     @Override
     public ScopePredicate createAnonymousClone() {
         ObjectIdentityPredicate copy = new ObjectIdentityPredicate(null, this.targetEntityId);
-        copy.setOid(this.getOid());
+        copy.setGoid(this.getGoid());
         copy.header = this.header;
         return copy;
     }

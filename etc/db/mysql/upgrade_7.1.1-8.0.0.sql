@@ -1288,6 +1288,122 @@ ALTER TABLE uddi_publish_status ADD FOREIGN KEY (uddi_proxied_service_info_goid)
 ALTER TABLE uddi_business_service_status ADD FOREIGN KEY (uddi_registry_goid) REFERENCES uddi_registries (goid) ON DELETE CASCADE;
 ALTER TABLE uddi_service_control ADD FOREIGN KEY (uddi_registry_goid) REFERENCES uddi_registries (goid) ON DELETE CASCADE;
 ALTER TABLE uddi_service_control_monitor_runtime ADD FOREIGN KEY (uddi_service_control_goid) REFERENCES uddi_service_control (goid) ON DELETE CASCADE;
+
+-- RBAC role
+
+call dropForeignKey('rbac_assignment','rbac_role');
+call dropForeignKey('rbac_permission','rbac_role');
+call dropForeignKey('rbac_predicate','rbac_permission');
+call dropForeignKey('rbac_predicate_attribute','rbac_predicate');
+call dropForeignKey('rbac_predicate_security_zone','rbac_predicate');
+call dropForeignKey('rbac_predicate_oid','rbac_predicate');
+call dropForeignKey('rbac_predicate_folder','rbac_predicate');
+call dropForeignKey('rbac_predicate_entityfolder','rbac_predicate');
+
+-- For manual runs use: set @rbac_role_prefix=createUnreservedPoorRandomPrefix();
+set @rbac_role_prefix=#RANDOM_LONG_NOT_RESERVED#;
+
+ALTER TABLE rbac_role ADD COLUMN objectid_backup BIGINT(20);
+update rbac_role set objectid_backup=objectid;
+ALTER TABLE rbac_role CHANGE COLUMN objectid goid BINARY(16) NOT NULL;
+update rbac_role set goid = toGoid(@rbac_role_prefix,objectid_backup);
+ALTER TABLE rbac_role DROP COLUMN objectid_backup;
+
+update rbac_role set entity_goid = toGoid(@rbac_role_prefix,entity_oid) where entity_oid is not null and entity_type = 'RBAC_ROLE';
+update rbac_predicate_oid oid1 left join rbac_predicate on rbac_predicate.objectid = oid1.objectid left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid set oid1.entity_id = goidToString(toGoid(@rbac_role_prefix,oid1.entity_id)) where rbac_permission.entity_type = 'RBAC_ROLE';
+
+-- RBAC role assignment
+
+-- For manual runs use: set @rbac_assignment_prefix=createUnreservedPoorRandomPrefix();
+set @rbac_assignment_prefix=#RANDOM_LONG_NOT_RESERVED#;
+
+ALTER TABLE rbac_assignment ADD COLUMN objectid_backup BIGINT(20);
+update rbac_assignment set objectid_backup=objectid;
+ALTER TABLE rbac_assignment CHANGE COLUMN objectid goid BINARY(16) NOT NULL;
+update rbac_assignment set goid = toGoid(@rbac_assignment_prefix,objectid_backup);
+ALTER TABLE rbac_assignment DROP COLUMN objectid_backup;
+
+ALTER TABLE rbac_assignment ADD COLUMN role_oid_backup BIGINT(20);
+update rbac_assignment set role_oid_backup=role_oid;
+ALTER TABLE rbac_assignment CHANGE COLUMN role_oid role_goid binary(16) NOT NULL;
+update rbac_assignment set role_goid = toGoid(@rbac_role_prefix,role_oid_backup);
+ALTER TABLE rbac_assignment DROP COLUMN role_oid_backup;
+
+-- RBAC permission
+
+-- For manual runs use: set @rbac_permission_prefix=createUnreservedPoorRandomPrefix();
+set @rbac_permission_prefix=#RANDOM_LONG_NOT_RESERVED#;
+
+ALTER TABLE rbac_permission ADD COLUMN objectid_backup BIGINT(20);
+update rbac_permission set objectid_backup=objectid;
+ALTER TABLE rbac_permission CHANGE COLUMN objectid goid BINARY(16) NOT NULL;
+update rbac_permission set goid = toGoid(@rbac_permission_prefix,objectid_backup);
+ALTER TABLE rbac_permission DROP COLUMN objectid_backup;
+
+ALTER TABLE rbac_permission ADD COLUMN role_oid_backup BIGINT(20);
+update rbac_permission set role_oid_backup=role_oid;
+ALTER TABLE rbac_permission CHANGE COLUMN role_oid role_goid binary(16) DEFAULT NULL;
+update rbac_permission set role_goid = toGoid(@rbac_role_prefix,role_oid_backup);
+ALTER TABLE rbac_permission DROP COLUMN role_oid_backup;
+
+-- RBAC scope predicates
+
+-- For manual runs use: set @rbac_predicate_prefix=createUnreservedPoorRandomPrefix();
+set @rbac_predicate_prefix=#RANDOM_LONG_NOT_RESERVED#;
+
+ALTER TABLE rbac_predicate ADD COLUMN objectid_backup BIGINT(20);
+update rbac_predicate set objectid_backup=objectid;
+ALTER TABLE rbac_predicate CHANGE COLUMN objectid goid BINARY(16) NOT NULL;
+update rbac_predicate set goid = toGoid(@rbac_predicate_prefix,objectid_backup);
+ALTER TABLE rbac_predicate DROP COLUMN objectid_backup;
+
+ALTER TABLE rbac_predicate ADD COLUMN permission_oid_backup BIGINT(20);
+update rbac_predicate set permission_oid_backup=permission_oid;
+ALTER TABLE rbac_predicate CHANGE COLUMN permission_oid permission_goid binary(16) DEFAULT NULL;
+update rbac_predicate set permission_goid = toGoid(@rbac_permission_prefix,permission_oid_backup);
+ALTER TABLE rbac_predicate DROP COLUMN permission_oid_backup;
+
+ALTER TABLE rbac_predicate_attribute ADD COLUMN objectid_backup BIGINT(20);
+update rbac_predicate_attribute set objectid_backup=objectid;
+ALTER TABLE rbac_predicate_attribute CHANGE COLUMN objectid goid BINARY(16) NOT NULL;
+update rbac_predicate_attribute set goid = toGoid(@rbac_predicate_prefix,objectid_backup);
+ALTER TABLE rbac_predicate_attribute DROP COLUMN objectid_backup;
+
+ALTER TABLE rbac_predicate_security_zone ADD COLUMN objectid_backup BIGINT(20);
+update rbac_predicate_security_zone set objectid_backup=objectid;
+ALTER TABLE rbac_predicate_security_zone CHANGE COLUMN objectid goid BINARY(16) NOT NULL;
+update rbac_predicate_security_zone set goid = toGoid(@rbac_predicate_prefix,objectid_backup);
+ALTER TABLE rbac_predicate_security_zone DROP COLUMN objectid_backup;
+
+ALTER TABLE rbac_predicate_oid ADD COLUMN objectid_backup BIGINT(20);
+update rbac_predicate_oid set objectid_backup=objectid;
+ALTER TABLE rbac_predicate_oid CHANGE COLUMN objectid goid BINARY(16) NOT NULL;
+update rbac_predicate_oid set goid = toGoid(@rbac_predicate_prefix,objectid_backup);
+ALTER TABLE rbac_predicate_oid DROP COLUMN objectid_backup;
+
+ALTER TABLE rbac_predicate_folder ADD COLUMN objectid_backup BIGINT(20);
+update rbac_predicate_folder set objectid_backup=objectid;
+ALTER TABLE rbac_predicate_folder CHANGE COLUMN objectid goid BINARY(16) NOT NULL;
+update rbac_predicate_folder set goid = toGoid(@rbac_predicate_prefix,objectid_backup);
+ALTER TABLE rbac_predicate_folder DROP COLUMN objectid_backup;
+
+ALTER TABLE rbac_predicate_entityfolder ADD COLUMN objectid_backup BIGINT(20);
+update rbac_predicate_entityfolder set objectid_backup=objectid;
+ALTER TABLE rbac_predicate_entityfolder CHANGE COLUMN objectid goid BINARY(16) NOT NULL;
+update rbac_predicate_entityfolder set goid = toGoid(@rbac_predicate_prefix,objectid_backup);
+ALTER TABLE rbac_predicate_entityfolder DROP COLUMN objectid_backup;
+
+-- RBAC foreign key constraints
+
+ALTER TABLE rbac_assignment ADD FOREIGN KEY (role_goid) REFERENCES rbac_role (goid) ON DELETE CASCADE;
+ALTER TABLE rbac_permission ADD FOREIGN KEY (role_goid) REFERENCES rbac_role (goid) ON DELETE CASCADE;
+ALTER TABLE rbac_predicate ADD FOREIGN KEY (permission_goid) REFERENCES rbac_permission (goid) ON DELETE CASCADE;
+ALTER TABLE rbac_predicate_attribute ADD FOREIGN KEY (goid) REFERENCES rbac_predicate (goid) ON DELETE CASCADE;
+ALTER TABLE rbac_predicate_security_zone ADD FOREIGN KEY (goid) REFERENCES rbac_predicate (goid) ON DELETE CASCADE;
+ALTER TABLE rbac_predicate_oid ADD FOREIGN KEY (goid) REFERENCES rbac_predicate (goid) ON DELETE CASCADE;
+ALTER TABLE rbac_predicate_folder ADD FOREIGN KEY (goid) REFERENCES rbac_predicate (goid) ON DELETE CASCADE;
+ALTER TABLE rbac_predicate_entityfolder ADD FOREIGN KEY (goid) REFERENCES rbac_predicate (goid) ON DELETE CASCADE;
+
 --
 -- Register upgrade task for upgrading sink configuration references to GOIDs
 --
@@ -1356,6 +1472,10 @@ INSERT INTO goid_upgrade_map (table_name, prefix) VALUES
       ('uddi_business_service_status', @uddi_business_service_status_prefix),
       ('uddi_service_control', @uddi_service_control_prefix),
       ('uddi_service_control_monitor_runtime', @uddi_service_control_monitor_runtime_prefix),
+      ('rbac_role', @rbac_role_prefix),
+      ('rbac_assignment', @rbac_assignment_prefix),
+      ('rbac_permission', @rbac_permission_prefix),
+      ('rbac_predicate', @rbac_predicate_prefix),
       ('client_cert', @client_cert_prefix),
       ('trusted_cert', @trusted_cert_prefix),
       ('revocation_check_policy', @revocation_check_policy_prefix),

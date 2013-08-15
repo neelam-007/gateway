@@ -39,10 +39,10 @@ public class RoleAssignmentTest {
     @Test
     public void testHashCodeSameRoleOid() {
         final Role r1 = new Role();
-        r1.setOid(1L);
+        r1.setGoid(new Goid(0, 1L));
         r1.setName("r1");
         final Role r2 = new Role();
-        r2.setOid(1L);
+        r2.setGoid(new Goid(0, 1L));
         r2.setName("r2");
         final RoleAssignment ra1 = new RoleAssignment(r1, new Goid(0,1L), "1", EntityType.USER);
         final RoleAssignment ra2 = new RoleAssignment(r2, new Goid(0,1L), "1", EntityType.USER);
@@ -52,9 +52,9 @@ public class RoleAssignmentTest {
     @Test
     public void testHashCodeDifferentRoleOid() {
         final Role r1 = new Role();
-        r1.setOid(1L);
+        r1.setGoid(new Goid(0, 1L));
         final Role r2 = new Role();
-        r2.setOid(2L);
+        r2.setGoid(new Goid(0, 2L));
         final RoleAssignment ra1 = new RoleAssignment(r1, new Goid(0,1L), "1", EntityType.USER);
         final RoleAssignment ra2 = new RoleAssignment(r2, new Goid(0,1L), "1", EntityType.USER);
         assertFalse(ra1.hashCode() == ra2.hashCode());
@@ -72,10 +72,10 @@ public class RoleAssignmentTest {
     @Test
     public void testEqualsSameRoleOid() {
         final Role r1 = new Role();
-        r1.setOid(1L);
+        r1.setGoid(new Goid(0, 1L));
         r1.setName("r1");
         final Role r2 = new Role();
-        r2.setOid(1L);
+        r2.setGoid(new Goid(0, 1L));
         r2.setName("r2");
         final RoleAssignment ra1 = new RoleAssignment(r1, new Goid(0,1L), "1", EntityType.USER);
         final RoleAssignment ra2 = new RoleAssignment(r2, new Goid(0,1L), "1", EntityType.USER);
@@ -86,9 +86,9 @@ public class RoleAssignmentTest {
     @Test
     public void testEqualsDifferentRoleOid() {
         final Role r1 = new Role();
-        r1.setOid(1L);
+        r1.setGoid(new Goid(0, 1L));
         final Role r2 = new Role();
-        r2.setOid(2L);
+        r2.setGoid(new Goid(0, 2L));
         final RoleAssignment ra1 = new RoleAssignment(r1, new Goid(0,1L), "1", EntityType.USER);
         final RoleAssignment ra2 = new RoleAssignment(r2, new Goid(0,1L), "1", EntityType.USER);
         assertFalse(ra1.equals(ra2));

@@ -7,6 +7,10 @@ import com.l7tech.identity.User;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.imp.PersistentEntityImp;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.imp.GoidEntityImp;
+import org.hibernate.annotations.Proxy;
+import org.hibernate.annotations.Type;
 
 import javax.persistence.*;
 
@@ -22,9 +26,9 @@ import org.hibernate.annotations.Type;
 @Entity
 @Proxy(lazy=false)
 @Table(name="rbac_assignment",
-       uniqueConstraints=@UniqueConstraint(columnNames={"provider_goid", "role_oid", "identity_id", "entity_type"})
+       uniqueConstraints=@UniqueConstraint(columnNames={"provider_goid", "role_goid", "identity_id", "entity_type"})
 )
-public class RoleAssignment extends PersistentEntityImp {
+public class RoleAssignment extends GoidEntityImp {
     protected Goid providerId;
     protected String identityId;
     private Role role;
@@ -62,7 +66,7 @@ public class RoleAssignment extends PersistentEntityImp {
     }
 
     @ManyToOne(optional=false)
-    @JoinColumn(name="role_oid", nullable=false)
+    @JoinColumn(name="role_goid", nullable=false)
     public Role getRole() {
         return role;
     }
@@ -95,7 +99,8 @@ public class RoleAssignment extends PersistentEntityImp {
         this.inherited = inherited;
     }
 
-    @SuppressWarnings({"RedundantIfStatement"})
+    @SuppressWarnings("RedundantIfStatement")
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
@@ -103,18 +108,20 @@ public class RoleAssignment extends PersistentEntityImp {
 
         RoleAssignment that = (RoleAssignment) o;
 
-        if (providerId != null ? !providerId.equals(that.providerId) : that.providerId != null) return false;
-        if (role != null ? (that.role == null || role.getOid() != that.role.getOid()) : that.role != null) return false;
         if (identityId != null ? !identityId.equals(that.identityId) : that.identityId != null) return false;
+        if (providerId != null ? !providerId.equals(that.providerId) : that.providerId != null) return false;
+        if ((role == null) != (that.role == null)) return false;
+        if (role != null && !Goid.equals(role.getGoid(), that.role.getGoid())) return false;
 
         return true;
     }
 
+    @Override
     public int hashCode() {
         int result = super.hashCode();
         result = 31 * result + (providerId != null ? providerId.hashCode() : 0);
         result = 31 * result + (identityId != null ? identityId.hashCode() : 0);
-        result = 31 * result + (role != null ? (int)(role.getOid() ^ (role.getOid() >>> 32)) : 0);
+        result = 31 * result + (role != null && role.getGoid() != null ? role.getGoid().hashCode() : 0);
         return result;
     }
 }

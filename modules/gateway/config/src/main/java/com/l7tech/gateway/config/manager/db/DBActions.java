@@ -198,8 +198,10 @@ public class DBActions {
                     }
 
                     conn.setAutoCommit(false);
+                    String lastStatementAttempted = null;
                     try{
                         for (String statement : statements) {
+                            lastStatementAttempted = statement;
                             stmt.executeUpdate(statement);
                         }
                     } catch (SQLException e) {
@@ -229,6 +231,7 @@ public class DBActions {
                                 throw new SQLException("Error checking success, no result returned.");
                             }
                         } else {
+                            logger.log(Level.INFO, "Last SQL statement attempted: " + lastStatementAttempted);
                             throw e;
                         }
                     }

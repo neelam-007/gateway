@@ -7,7 +7,7 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.objectmodel.imp.NamedGoidEntityImp;
 import com.l7tech.server.EntityFinder;
-import com.l7tech.server.HibernateEntityManager;
+import com.l7tech.server.HibernateGoidEntityManager;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import com.l7tech.util.Either;
 import com.l7tech.util.ExceptionUtils;
@@ -33,7 +33,7 @@ import java.util.regex.Pattern;
  * @author alex
  */
 @Transactional(propagation=Propagation.REQUIRED, rollbackFor = Throwable.class)
-public class RoleManagerImpl extends HibernateEntityManager<Role, EntityHeader> implements RoleManager, RbacServices {
+public class RoleManagerImpl extends HibernateGoidEntityManager<Role, EntityHeader> implements RoleManager, RbacServices {
     @SuppressWarnings({ "FieldNameHidesFieldInSuperclass" })
     private static final Logger logger = Logger.getLogger(RoleManagerImpl.class.getName());
     private static final String IDENTITY_ID = "identityId";
@@ -308,7 +308,7 @@ public class RoleManagerImpl extends HibernateEntityManager<Role, EntityHeader> 
         // Merge in OIDs for any known user assignments (See bug 4176)
         boolean needsOidMerge = false;
         for ( RoleAssignment ura : role.getRoleAssignments() ) {
-            if ( ura.getOid() == RoleAssignment.DEFAULT_OID ) {
+            if ( ura.isUnsaved() ) {
                 needsOidMerge = true;
                 break;
             }
@@ -316,12 +316,14 @@ public class RoleManagerImpl extends HibernateEntityManager<Role, EntityHeader> 
 
         if ( needsOidMerge ) {
             try {
-                Role persistedRole = findByPrimaryKey(role.getOid());
-                Set<RoleAssignment> previousAssignments = persistedRole.getRoleAssignments();
+                Role persistedRole = findByPrimaryKey(role.getGoid());
+                Set<RoleAssignment> previousAssignments = persistedRole != null
+                    ? persistedRole.getRoleAssignments()
+                    : Collections.<RoleAssignment>emptySet();
 
                 for ( RoleAssignment ura : role.getRoleAssignments() ) {
-                    if ( ura.getOid() == RoleAssignment.DEFAULT_OID ) {
-                        ura.setOid(getOidForAssignment(previousAssignments, ura));
+                    if ( ura.isUnsaved() ) {
+                        ura.setGoid(getIdForAssignment(previousAssignments, ura));
                     }
                 }
             } catch (FindException fe) {
@@ -406,7 +408,7 @@ public class RoleManagerImpl extends HibernateEntityManager<Role, EntityHeader> 
             Collection<Role> roles = findEntitySpecificRoles(etype, entityOid);
             if (roles == null) return;
             for ( Role role : roles ) {
-                logger.info("Deleting obsolete Role #" + role.getOid() + " (" + role.getName() + ")");
+                logger.info("Deleting obsolete Role #" + role.getGoid() + " (" + role.getName() + ")");
                 delete(role);
             }
 
@@ -423,7 +425,7 @@ public class RoleManagerImpl extends HibernateEntityManager<Role, EntityHeader> 
             Collection<Role> roles = findEntitySpecificRoles(etype, entityGoid);
             if (roles == null) return;
             for ( Role role : roles ) {
-                logger.info("Deleting obsolete Role #" + role.getOid() + " (" + role.getName() + ")");
+                logger.info("Deleting obsolete Role #" + role.getGoid() + " (" + role.getName() + ")");
                 delete(role);
             }
 
@@ -461,10 +463,10 @@ public class RoleManagerImpl extends HibernateEntityManager<Role, EntityHeader> 
 
         for (Role role : rolesToUpdate) {
             try {
-                logger.info("Removing obsolete permissions from Role #" + role.getOid() + " (" + role.getName() + ")");
+                logger.info("Removing obsolete permissions from Role #" + role.getGoid() + " (" + role.getName() + ")");
                 update(role);
             } catch (UpdateException e) {
-                logger.log(Level.SEVERE, "Unable to remove obsolete permissions from Role #" + role.getOid() + " (" + role.getName() + "): " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                logger.log(Level.SEVERE, "Unable to remove obsolete permissions from Role #" + role.getGoid() + " (" + role.getName() + "): " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             }
         }
     }
@@ -495,10 +497,10 @@ public class RoleManagerImpl extends HibernateEntityManager<Role, EntityHeader> 
 
         for (Role role : rolesToUpdate) {
             try {
-                logger.info("Removing obsolete permissions from Role #" + role.getOid() + " (" + role.getName() + ")");
+                logger.info("Removing obsolete permissions from Role #" + role.getGoid() + " (" + role.getName() + ")");
                 update(role);
             } catch (UpdateException e) {
-                logger.log(Level.SEVERE, "Unable to remove obsolete permissions from Role #" + role.getOid() + " (" + role.getName() + "): " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                logger.log(Level.SEVERE, "Unable to remove obsolete permissions from Role #" + role.getGoid() + " (" + role.getName() + "): " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             }
         }
     }
@@ -639,18 +641,18 @@ public class RoleManagerImpl extends HibernateEntityManager<Role, EntityHeader> 
     }
 
     @Transactional(readOnly=true)
-    private long getOidForAssignment(Set<RoleAssignment> roleAssignments, RoleAssignment assignment) {
-        long oid = RoleAssignment.DEFAULT_OID;
+    private Goid getIdForAssignment(Set<RoleAssignment> roleAssignments, RoleAssignment assignment) {
+        Goid goid = RoleAssignment.DEFAULT_GOID;
 
         for ( RoleAssignment ura : roleAssignments) {
             if ( ura.getProviderId().equals(assignment.getProviderId()) &&
                  ura.getIdentityId().equals(assignment.getIdentityId())  ) {
-                oid = ura.getOid();
+                goid = ura.getGoid();
                 break;
             }
         }
 
-        return oid;
+        return goid;
     }
 
 

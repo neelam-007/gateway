@@ -84,7 +84,7 @@ public class EditPermissionsDialog extends JDialog {
         setupButtonListeners();
         setupActionListeners();
 
-        if (permission.getOid() == Permission.DEFAULT_OID) {
+        if (permission.isUnsaved()) {
             setTitle("Create new Permission");
             scopeField.setText(getScopeString(permission));
         } else {
