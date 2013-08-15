@@ -318,8 +318,10 @@ ALTER TABLE resource_entry DROP PRIMARY KEY;
 ALTER TABLE resource_entry DROP COLUMN objectid;
 ALTER TABLE resource_entry ADD PRIMARY KEY (goid);
 
-update rbac_role set entity_goid = toGoid(cast(getVariable('resource_entry_prefix') as bigint),entity_oid) where entity_oid is not null and entity_type='RESOURCE_ENTRY';
-update rbac_predicate_oid oid1 set oid1.entity_id = ifnull((select goidToString(toGoid(cast(getVariable('resource_entry_prefix') as bigint),cast(oid1.entity_id as bigint))) from rbac_predicate left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid where rbac_predicate.objectid = oid1.objectid and rbac_permission.entity_type = 'RESOURCE_ENTRY'), oid1.entity_id);
+update rbac_role set entity_goid = toGoid(cast(getVariable('resource_entry_prefix') as bigint),entity_oid) where entity_oid is not null and entity_type='RESOURCE_ENTRY' and entity_oid not in (-3,-4,-5,-6,-7);
+update rbac_role set entity_goid = toGoid(0,entity_oid) where entity_oid is not null and entity_type='RESOURCE_ENTRY' and entity_oid in (-3,-4,-5,-6,-7);
+update rbac_predicate_oid oid1 set oid1.entity_id = ifnull((select goidToString(toGoid(cast(getVariable('resource_entry_prefix') as bigint),cast(oid1.entity_id as bigint))) from rbac_predicate left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid where rbac_predicate.objectid = oid1.objectid and rbac_permission.entity_type = 'RESOURCE_ENTRY'), oid1.entity_id) where entity_id not in ('-3','-4','-5','-6','-7');
+update rbac_predicate_oid oid1 set oid1.entity_id = goidToString(toGoid(0,cast(oid1.entity_id as bigint))) where entity_id in ('-3','-4','-5','-6','-7');
 
 -- EmailListener
 ALTER TABLE email_listener_state DROP CONSTRAINT FK5A708C492FC43EC3;
@@ -587,6 +589,7 @@ ALTER TABLE folder add constraint FKB45D1C6EF8097918 foreign key (parent_folder_
 update rbac_role set entity_goid = toGoid(cast(getVariable('folder_prefix') as bigint),entity_oid) where entity_oid is not null and entity_type='FOLDER';
 update rbac_role set entity_goid = toGoid(0, -5002) where entity_oid is not null and entity_type='FOLDER' and entity_goid = toGoid(cast(getVariable('folder_prefix') as bigint), -5002);
 update rbac_predicate_oid oid1 set oid1.entity_id = ifnull((select goidToString(toGoid(cast(getVariable('folder_prefix') as bigint),cast(oid1.entity_id as bigint))) from rbac_predicate left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid where rbac_predicate.objectid = oid1.objectid and rbac_permission.entity_type = 'FOLDER'), oid1.entity_id);
+update rbac_predicate_oid set entity_id = goidToString(toGoid(0, -5002)) where entity_id = goidToString(toGoid(cast(getVariable('folder_prefix') as bigint), -5002));
 
 ALTER TABLE policy ADD COLUMN goid CHAR(16) FOR BIT DATA;
 call setVariable('policy_prefix', cast(randomLongNotReserved() as char(21)));

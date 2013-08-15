@@ -385,8 +385,10 @@ update resource_entry set goid = toGoid(@resource_entry_prefix,objectid_backup);
 update resource_entry set goid = toGoid(0,objectid_backup) where objectid_backup in (-3,-4,-5,-6,-7);
 ALTER TABLE resource_entry DROP COLUMN objectid_backup;
 
-update rbac_role set entity_goid = toGoid(@resource_entry_prefix,entity_oid) where entity_oid is not null and entity_type='RESOURCE_ENTRY';
-update rbac_predicate_oid oid1 left join rbac_predicate on rbac_predicate.objectid = oid1.objectid left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid set oid1.entity_id = goidToString(toGoid(@resource_entry_prefix,oid1.entity_id)) where rbac_permission.entity_type = 'RESOURCE_ENTRY';
+update rbac_role set entity_goid = toGoid(@resource_entry_prefix,entity_oid) where entity_oid is not null and entity_type='RESOURCE_ENTRY' and entity_oid not in (-3,-4,-5,-6,-7);
+update rbac_role set entity_goid = toGoid(0,entity_oid) where entity_oid is not null and entity_type='RESOURCE_ENTRY' and entity_oid in (-3,-4,-5,-6,-7);
+update rbac_predicate_oid oid1 left join rbac_predicate on rbac_predicate.objectid = oid1.objectid left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid set oid1.entity_id = goidToString(toGoid(@resource_entry_prefix,oid1.entity_id)) where rbac_permission.entity_type = 'RESOURCE_ENTRY' and entity_id not in ('-3','-4','-5','-6','-7');
+update rbac_predicate_oid oid1 set oid1.entity_id = goidToString(toGoid(0,oid1.entity_id)) where entity_id in ('-3','-4','-5','-6','-7');
 
 -- EmailListener
 ALTER TABLE email_listener ADD COLUMN objectid_backup BIGINT(20);
@@ -668,6 +670,7 @@ ALTER TABLE folder ADD UNIQUE KEY `i_name_parent` (`name`,`parent_folder_goid`);
 update rbac_role set entity_goid = toGoid(@folder_prefix,entity_oid) where entity_oid is not null and entity_type='FOLDER';
 update rbac_role set entity_goid = toGoid(0, -5002) where entity_oid is not null and entity_type='FOLDER' and entity_goid = toGoid(@folder_prefix, -5002);
 update rbac_predicate_oid oid1 left join rbac_predicate on rbac_predicate.objectid = oid1.objectid left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid set oid1.entity_id = goidToString(toGoid(@folder_prefix,oid1.entity_id)) where rbac_permission.entity_type = 'FOLDER';
+update rbac_predicate_oid set entity_id = goidToString(toGoid(0, -5002)) where entity_id = goidToString(toGoid(@folder_prefix, -5002));
 
 call dropForeignKey('policy_alias','policy');
 call dropForeignKey('policy_version','policy');
