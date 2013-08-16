@@ -90,6 +90,8 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
     private JPanel specificObjectsPanel;
     private JPanel conditionsPanel;
     private JLabel header;
+    // use this check box for entity type specific input
+    private JCheckBox customCheckBox;
     private CheckBoxSelectableTableModel<SecurityZone> zonesModel;
     private CheckBoxSelectableTableModel<FolderHeader> foldersModel;
     private SimpleTableModel<AttributePredicate> attributesModel;
@@ -167,6 +169,8 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
                                 final String typePlural = config.getType().getPluralName().toLowerCase();
                                 header.setText("Select " + typePlural);
                                 specificObjectsLabel.setText("Permissions will only apply to the selected " + typePlural + ".");
+                                customCheckBox.setText(type == EntityType.FOLDER ? "Grant read access to the ancestors of the selected folders." : StringUtils.EMPTY);
+                                customCheckBox.setVisible(type == EntityType.FOLDER);
                                 if (config.getSelectedEntities().isEmpty()) {
                                     final List<EntityHeader> entities = new ArrayList<>();
                                     try {
@@ -204,6 +208,11 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
                     break;
                 case SPECIFIC_OBJECTS:
                     config.setSelectedEntities(new HashSet<>(specificObjectsModel.getSelected()));
+                    if (config.getType() == EntityType.FOLDER && customCheckBox.isSelected()) {
+                        config.setSpecificFolderAncestry(true);
+                    } else {
+                        config.setSpecificFolderAncestry(false);
+                    }
                     break;
                 default:
                     throw new IllegalArgumentException("Unsupported scope type: " + config.getScopeType());

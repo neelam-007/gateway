@@ -26,6 +26,7 @@ public class PermissionsConfig {
     private Set<FolderHeader> selectedFolders = new HashSet<>();
     private boolean folderTransitive;
     private boolean folderAncestry;
+    private boolean specificFolderAncestry;
     private Set<AttributePredicate> attributePredicates = new HashSet<>();
     private Set<EntityHeader> selectedEntities = new HashSet<>();
     private Set<Permission> generatedPermissions = new HashSet<>();
@@ -127,6 +128,18 @@ public class PermissionsConfig {
 
     public void setFolderAncestry(boolean folderAncestry) {
         this.folderAncestry = folderAncestry;
+    }
+
+    public boolean isSpecificFolderAncestry() {
+        return specificFolderAncestry;
+    }
+
+    /**
+     * @param specificFolderAncestry true if the user has selected to grant read permissions to all parent folders of any selected folder entities.
+     *                               Applies to {@link ScopeType#SPECIFIC_OBJECTS}.
+     */
+    public void setSpecificFolderAncestry(final boolean specificFolderAncestry) {
+        this.specificFolderAncestry = specificFolderAncestry;
     }
 
     /**

@@ -96,9 +96,7 @@ public class PermissionSummaryPanel extends WizardStepPanel {
                                 throw new FindException("No folder exists with goid: " + folderHeader.getGoid());
                             } else {
                                 retrievedFolders.put(folderHeader.getGoid(), folder);
-                                final Permission ancestryPermission = new Permission(config.getRole(), OperationType.READ, EntityType.FOLDER);
-                                ancestryPermission.getScope().add(new EntityFolderAncestryPredicate(ancestryPermission, EntityType.FOLDER, folderHeader.getGoid()));
-                                config.getGeneratedPermissions().add(ancestryPermission);
+                                config.getGeneratedPermissions().add(createReadFolderAncestryPermission(config, folderHeader));
 
                                 final Permission readFolderPermission = new Permission(config.getRole(), OperationType.READ, EntityType.FOLDER);
                                 final ObjectIdentityPredicate specificFolderPredicate = new ObjectIdentityPredicate(readFolderPermission, folderHeader.getStrId());
@@ -161,8 +159,8 @@ public class PermissionSummaryPanel extends WizardStepPanel {
                 }
                 break;
             case SPECIFIC_OBJECTS:
-                for (final OperationType op : config.getOperations()) {
-                    for (final EntityHeader header : config.getSelectedEntities()) {
+                for (final EntityHeader header : config.getSelectedEntities()) {
+                    for (final OperationType op : config.getOperations()) {
                         final Permission specificEntityPermission = new Permission(config.getRole(), op, config.getType());
                         final ScopePredicate specificPredicate;
                         if (config.getType() == EntityType.ASSERTION_ACCESS) {
@@ -173,12 +171,22 @@ public class PermissionSummaryPanel extends WizardStepPanel {
                         }
                         specificEntityPermission.getScope().add(specificPredicate);
                         config.getGeneratedPermissions().add(specificEntityPermission);
+
+                    }
+                    if (config.getType() == EntityType.FOLDER && config.isSpecificFolderAncestry()) {
+                        config.getGeneratedPermissions().add(createReadFolderAncestryPermission(config, header));
                     }
                 }
                 break;
             default:
                 throw new IllegalArgumentException("Scope type not supported: " + config.getScopeType());
         }
+    }
+
+    private static Permission createReadFolderAncestryPermission(final PermissionsConfig config, final EntityHeader folderHeader) {
+        final Permission ancestryPermission = new Permission(config.getRole(), OperationType.READ, EntityType.FOLDER);
+        ancestryPermission.getScope().add(new EntityFolderAncestryPredicate(ancestryPermission, EntityType.FOLDER, folderHeader.getGoid()));
+        return ancestryPermission;
     }
 
     private static void generateUnrestrictedPermissions(final PermissionsConfig config) {

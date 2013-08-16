@@ -15,10 +15,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.when;
@@ -472,16 +469,69 @@ public class PermissionSummaryPanelTest {
         assertTrue(foundOps.contains(OperationType.UPDATE));
     }
 
+    @Test
+    public void generatePermissionsSpecificFolder() throws Exception {
+        config.setScopeType(PermissionsConfig.ScopeType.SPECIFIC_OBJECTS);
+        config.setType(EntityType.FOLDER);
+        config.setSpecificFolderAncestry(false);
+        operations.add(OperationType.READ);
+        entities.add(new EntityHeader("1", EntityType.FOLDER, "test", null));
+
+        PermissionSummaryPanel.generatePermissions(config, folderAdmin);
+        assertEquals(1, config.getGeneratedPermissions().size());
+        final Map<Class, Integer> predTypes = countPredicateTypes(config.getGeneratedPermissions().iterator().next());
+        assertEquals(new Integer(1), predTypes.get(ObjectIdentityPredicate.class));
+    }
+
+    @Test
+    public void generatePermissionsSpecificFolderWithAncestry() throws Exception {
+        config.setScopeType(PermissionsConfig.ScopeType.SPECIFIC_OBJECTS);
+        config.setType(EntityType.FOLDER);
+        config.setSpecificFolderAncestry(true);
+        operations.add(OperationType.READ);
+        entities.add(new EntityHeader("1", EntityType.FOLDER, "test", null));
+
+        PermissionSummaryPanel.generatePermissions(config, folderAdmin);
+        assertEquals(2, config.getGeneratedPermissions().size());
+        final Map<Class, Integer> predTypes = countPredicateTypes(config.getGeneratedPermissions());
+        assertEquals(new Integer(1), predTypes.get(ObjectIdentityPredicate.class));
+        assertEquals(new Integer(1), predTypes.get(EntityFolderAncestryPredicate.class));
+    }
+
+    @Test
+    public void generatePermissionsMultipleSpecificFolderAndOpsWithAncestry() throws Exception {
+        config.setScopeType(PermissionsConfig.ScopeType.SPECIFIC_OBJECTS);
+        config.setType(EntityType.FOLDER);
+        config.setSpecificFolderAncestry(true);
+        operations.add(OperationType.READ);
+        operations.add(OperationType.UPDATE);
+        entities.add(new EntityHeader(new Goid(0, 1), EntityType.FOLDER, "test", null));
+        entities.add(new EntityHeader(new Goid(0, 2), EntityType.FOLDER, "test2", null));
+
+        PermissionSummaryPanel.generatePermissions(config, folderAdmin);
+        assertEquals(6, config.getGeneratedPermissions().size());
+        final Map<Class, Integer> predTypes = countPredicateTypes(config.getGeneratedPermissions());
+        assertEquals(new Integer(4), predTypes.get(ObjectIdentityPredicate.class));
+        assertEquals(new Integer(2), predTypes.get(EntityFolderAncestryPredicate.class));
+    }
+
     private Map<Class, Integer> countPredicateTypes(final Permission permission) {
+        return countPredicateTypes(Collections.singleton(permission));
+    }
+
+    private Map<Class, Integer> countPredicateTypes(final Collection<Permission> permissions) {
         final Map<Class, Integer> predicateTypes = new HashMap<>();
-        for (final ScopePredicate predicate : permission.getScope()) {
-            final Class<? extends ScopePredicate> predClass = predicate.getClass();
-            if (!predicateTypes.containsKey(predClass)) {
-                predicateTypes.put(predClass, 1);
-            } else {
-                predicateTypes.put(predClass, predicateTypes.get(predClass) + 1);
+        for (final Permission permission : permissions) {
+            for (final ScopePredicate predicate : permission.getScope()) {
+                final Class<? extends ScopePredicate> predClass = predicate.getClass();
+                if (!predicateTypes.containsKey(predClass)) {
+                    predicateTypes.put(predClass, 1);
+                } else {
+                    predicateTypes.put(predClass, predicateTypes.get(predClass) + 1);
+                }
             }
         }
         return predicateTypes;
     }
+
 }

@@ -148,7 +148,9 @@ public class PermissionOptionsPanel extends WizardStepPanel {
     public boolean canAdvance() {
         final boolean atLeastOneOpSelected = createCheckBox.isSelected() || readCheckBox.isSelected() || updateCheckBox.isSelected() || deleteCheckBox.isSelected();
         final boolean typeOk = allTypesRadio.isSelected() || (specificTypeRadio.isSelected() && typeComboBox.getSelectedItem() != null);
-        return atLeastOneOpSelected && typeOk;
+        // specific objects scope cannot be selected in combination with all types
+        final boolean scopeOk = !(specificObjectsRadio.isSelected() && allTypesRadio.isSelected());
+        return atLeastOneOpSelected && typeOk && scopeOk;
     }
 
     @Override
