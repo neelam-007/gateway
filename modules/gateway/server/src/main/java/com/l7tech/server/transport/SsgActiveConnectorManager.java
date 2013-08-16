@@ -24,11 +24,4 @@ public interface SsgActiveConnectorManager extends GoidEntityManager<SsgActiveCo
     @NotNull
     Collection<SsgActiveConnector> findSsgActiveConnectorsByType( @NotNull String type ) throws FindException;
 
-    /**
-     * Find an entity by old oid
-     * @param oid the old oid to search for
-     * @return the jms connection object if found.  null if not
-     * @throws FindException
-     */
-    public SsgActiveConnector findByOldOid(long oid) throws FindException ;
 }

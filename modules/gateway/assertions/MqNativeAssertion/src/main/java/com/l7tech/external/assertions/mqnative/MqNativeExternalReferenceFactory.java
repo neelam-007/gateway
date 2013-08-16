@@ -2,11 +2,9 @@ package com.l7tech.external.assertions.mqnative;
 
 import com.l7tech.external.assertions.mqnative.console.ResolveForeignMqNativePanel;
 import com.l7tech.gateway.common.export.ExternalReferenceFactory;
-import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.exporter.ExternalReference;
 import com.l7tech.policy.exporter.ExternalReferenceFinder;
-import com.l7tech.util.Either;
 import com.l7tech.util.InvalidDocumentFormatException;
 import org.w3c.dom.Element;
 
@@ -27,8 +25,7 @@ public class MqNativeExternalReferenceFactory extends ExternalReferenceFactory<E
 
         return new MqNativeExternalReference(
             finder,                                                          // Finder
-            mqAss.getSsgActiveConnectorId()!=null? Either.<Long,Goid>left(mqAss.getSsgActiveConnectorId()):
-                Either.<Long,Goid>right(new Goid(mqAss.getSsgActiveConnectorGoid()))
+            mqAss.getSsgActiveConnectorId()
         );
     }
 

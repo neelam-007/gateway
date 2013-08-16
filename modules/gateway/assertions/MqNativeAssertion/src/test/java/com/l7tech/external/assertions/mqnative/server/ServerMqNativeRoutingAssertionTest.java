@@ -15,7 +15,6 @@ import com.l7tech.gateway.common.audit.LoggingAudit;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import com.l7tech.message.HasHeaders;
 import com.l7tech.message.Message;
-import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.AddHeaderAssertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -32,10 +31,7 @@ import com.l7tech.server.transport.SsgActiveConnectorManagerStub;
 import com.l7tech.server.util.ApplicationEventProxy;
 import com.l7tech.server.util.EventChannel;
 import com.l7tech.server.util.MockInjector;
-import com.l7tech.util.Config;
-import com.l7tech.util.HexUtils;
-import com.l7tech.util.MockConfig;
-import com.l7tech.util.Pair;
+import com.l7tech.util.*;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -182,14 +178,12 @@ public class ServerMqNativeRoutingAssertionTest {
         fixture.setMqNativeResourceManager(resourceManagerSpy);
 
         SsgActiveConnector connector = new SsgActiveConnector();
-        connector.setGoid(new Goid(0,1));
         connector.setProperty(PROPERTIES_KEY_IS_INBOUND, "false");
         connector.setEnabled(true);
         connector.setType(ACTIVE_CONNECTOR_TYPE_MQ_NATIVE);
         connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_TARGET_QUEUE_NAME, REQUEST_QUEUE);
         connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_SPECIFIED_REPLY_QUEUE_NAME, REPLY_QUEUE);
         connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_REPLY_TYPE, MqNativeReplyType.REPLY_SPECIFIED_QUEUE.name());
-        connector.setOldOid(1234L);
 
         SsgActiveConnectorManager connectorManager = (SsgActiveConnectorManager) applicationContext.getBean("ssgActiveConnectorManager");
         connectorManager.save(connector);
@@ -226,29 +220,6 @@ public class ServerMqNativeRoutingAssertionTest {
         addHeaderAssertion.setHeaderValue(value);
         ServerAddHeaderAssertion serverAddHeaderAssertion = new ServerAddHeaderAssertion(addHeaderAssertion);
         serverAddHeaderAssertion.checkRequest(context);
-
-    }
-
-    @Test
-    public void testOldOidPassThrough() throws Exception {
-        MqNativeMessagePropertyRuleSet ruleSet = new MqNativeMessagePropertyRuleSet();
-        ruleSet.setPassThroughHeaders(true);
-        ruleSet.setPassThroughMqMessageHeaders(true);
-        ruleSet.setPassThroughMqMessageProperties(true);
-        assertion.setRequestMqNativeMessagePropertyRuleSet(ruleSet);
-        assertion.setSsgActiveConnectorId(1234L);
-
-        MQMessage mqMessage = createMqMessage();
-        context = makeContext(mqMessage);
-        fixture.checkRequest(context);
-        MQMessage routedMessage = (MQMessage) requestQ.pop();
-        MqMessageProxy original = new MqMessageProxy(mqMessage);
-        MqMessageProxy routed = new MqMessageProxy(routedMessage);
-
-        assertEquals(original.getPrimaryHeaderValue("folder.rfh2Field1"), routed.getPrimaryHeaderValue("folder.rfh2Field1"));
-        assertEquals(original.getMessageProperty("folder.propertyField1"), routed.getMessageProperty("folder.propertyField1"));
-        assertEquals(original.getMessageDescriptor("expiry"), routed.getMessageDescriptor("expiry"));
-        assertEquals(null, assertion.getSsgActiveConnectorGoid());
 
     }
 

@@ -299,7 +299,7 @@ public class ServerPolicyValidator extends AbstractPolicyValidator implements In
         } else if ( assertion instanceof JmsRoutingAssertion) {
             JmsRoutingAssertion jmsass = (JmsRoutingAssertion) assertion;
             if (jmsass.getEndpointOid() != null) {
-                long endpointid = jmsass.getEndpointOid();
+                Goid endpointid = jmsass.getEndpointOid();
                 boolean jmsEndpointDefinedOk = false;
                 try {
                     JmsEndpoint routedRequestEndpoint = jmsEndpointManager.findByPrimaryKey(endpointid);

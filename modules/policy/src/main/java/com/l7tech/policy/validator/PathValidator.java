@@ -1,5 +1,6 @@
 package com.l7tech.policy.validator;
 
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.AssertionLicense;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyType;
@@ -648,7 +649,7 @@ public class PathValidator {
     }
 
     private void processJmsRouting(JmsRoutingAssertion a) {
-        Long oid = a.getEndpointOid();
+        Goid oid = a.getEndpointOid();
         if (oid == null) {
             result.addWarning(new PolicyValidatorResult.Warning(a,
                     bundle.getString("jms.noqueuedefined"), null));

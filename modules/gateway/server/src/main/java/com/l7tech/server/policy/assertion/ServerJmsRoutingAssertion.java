@@ -818,15 +818,8 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
     }
 
     private JmsEndpoint getJmsEndpoint() throws FindException {
-        if(assertion.getEndpointGoid()==null){
-            // try with old oid
-            return jmsEndpointManager.findByOldOid(assertion.getEndpointOid());
-        }
-
-        Goid endpointGoid = new Goid(assertion.getEndpointGoid());
+        Goid endpointGoid = new Goid(assertion.getEndpointOid());
         return jmsEndpointManager.findByPrimaryKey(endpointGoid);
-
-
     }
 
     private JmsConnection getRoutedRequestConnection( final JmsEndpoint endpoint ) throws FindException {

@@ -340,11 +340,6 @@ public class RegistryStub extends Registry {
             }
 
             @Override
-            public SsgActiveConnector findSsgActiveConnectorByOldId(long oid) throws FindException {
-                throw new FindException("Not implemented");
-            }
-
-            @Override
             public SsgActiveConnector findSsgActiveConnectorByTypeAndName(String type, String name) throws FindException {
                 throw new FindException("Not implemented");
             }

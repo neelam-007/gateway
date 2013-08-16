@@ -106,11 +106,6 @@ public class TransportAdminImpl implements TransportAdmin {
     }
 
     @Override
-    public SsgActiveConnector findSsgActiveConnectorByOldId(long oid) throws FindException {
-        return ssgActiveConnectorManager.findByOldOid(oid);
-    }
-
-    @Override
     public SsgActiveConnector findSsgActiveConnectorByTypeAndName(String type, String name) throws FindException {
         if (type == null || name == null) return null;
 

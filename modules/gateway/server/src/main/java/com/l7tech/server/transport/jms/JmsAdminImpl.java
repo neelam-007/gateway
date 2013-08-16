@@ -97,11 +97,6 @@ public class JmsAdminImpl implements JmsAdmin {
     }
 
     @Override
-    public JmsEndpoint findEndpointByOldId(Long id) throws FindException{
-        return jmsEndpointManager.findByOldOid(id);
-    }
-
-    @Override
     public void setEndpointMessageSource(Goid goid, boolean isMessageSource) throws FindException, UpdateException {
         JmsEndpoint endpoint = findEndpointByPrimaryKey(goid);
         if (endpoint == null) throw new FindException("No endpoint with GOID " + goid + " could be found");

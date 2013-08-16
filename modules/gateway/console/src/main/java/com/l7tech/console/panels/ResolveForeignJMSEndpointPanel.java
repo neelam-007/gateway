@@ -96,7 +96,6 @@ public class ResolveForeignJMSEndpointPanel extends WizardStepPanel {
         jmsEndpoint.setQueue(foreignRef.isQueue());
         jmsEndpoint.setTemplate(foreignRef.isEndpointTemplate());
         jmsEndpoint.setDestinationName(foreignRef.getDestinationName());
-        jmsEndpoint.setOldOid(foreignRef.getOldOid());
 
         final JmsQueuePropertiesDialog jqpd = JmsQueuePropertiesDialog.createInstance(this.getOwner(), jmsConnection, jmsEndpoint, false);
         jqpd.pack();

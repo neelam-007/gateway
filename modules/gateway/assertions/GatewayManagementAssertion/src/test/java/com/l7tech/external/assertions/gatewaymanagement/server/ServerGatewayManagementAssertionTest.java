@@ -2436,7 +2436,7 @@ public class ServerGatewayManagementAssertionTest {
                         "            &lt;CertificateSerialNum&gt;127901500862700997089151460209364726264&lt;/CertificateSerialNum&gt;\n" +
                         "        &lt;/TrustedCertificateReference&gt;\n" +
                         "        &lt;JMSConnectionReference RefType=\"com.l7tech.console.policy.exporter.JMSEndpointReference\"&gt;\n" +
-                        "            &lt;OID&gt;1&lt;/OID&gt;\n" +
+                        "            &lt;GOID&gt;000000000000007b00000000000001c8&lt;/GOID&gt;\n" +
                         "            &lt;InitialContextFactoryClassname&gt;com.context.Classname&lt;/InitialContextFactoryClassname&gt;\n" +
                         "            &lt;JndiUrl&gt;ldap://jndi&lt;/JndiUrl&gt;\n" +
                         "            &lt;QueueFactoryUrl&gt;qcf&lt;/QueueFactoryUrl&gt;\n" +
@@ -2475,7 +2475,7 @@ public class ServerGatewayManagementAssertionTest {
                         "            &lt;/L7p:WsSecurity&gt;\n" +
                         "            &lt;L7p:JmsRoutingAssertion&gt;\n" +
                         "                &lt;L7p:EndpointName stringValue=\"Test Endpoint\"/&gt;\n" +
-                        "                &lt;L7p:EndpointOid boxedLongValue=\"1\"/&gt;\n" +
+                        "                &lt;L7p:EndpointOid goidValue=\"000000000000007b00000000000001c8\"/&gt;\n" +
                         "                &lt;L7p:RequestJmsMessagePropertyRuleSet jmsMessagePropertyRuleSet=\"included\"&gt;\n" +
                         "                    &lt;L7p:Rules jmsMessagePropertyRuleArray=\"included\"/&gt;\n" +
                         "                &lt;/L7p:RequestJmsMessagePropertyRuleSet&gt;\n" +
@@ -2554,7 +2554,7 @@ public class ServerGatewayManagementAssertionTest {
                         "            &lt;CertificateSerialNum&gt;997089151460209364726264&lt;/CertificateSerialNum&gt;\n" +
                         "        &lt;/TrustedCertificateReference&gt;\n" +
                         "        &lt;JMSConnectionReference RefType=\"com.l7tech.console.policy.exporter.JMSEndpointReference\"&gt;\n" +
-                        "            &lt;OID&gt;33&lt;/OID&gt;\n" +
+                        "            &lt;GOID&gt;00260000000000a30000000007ba0033&lt;/GOID&gt;\n" +
                         "            &lt;InitialContextFactoryClassname&gt;com.context.OtherClassname&lt;/InitialContextFactoryClassname&gt;\n" +
                         "            &lt;JndiUrl&gt;ldap://host/&lt;/JndiUrl&gt;\n" +
                         "            &lt;QueueFactoryUrl&gt;qcf2&lt;/QueueFactoryUrl&gt;\n" +
@@ -2593,7 +2593,7 @@ public class ServerGatewayManagementAssertionTest {
                         "            &lt;/L7p:WsSecurity&gt;\n" +
                         "            &lt;L7p:JmsRoutingAssertion&gt;\n" +
                         "                &lt;L7p:EndpointName stringValue=\"Invalid Test Endpoint\"/&gt;\n" +
-                        "                &lt;L7p:EndpointOid boxedLongValue=\"33\"/&gt;\n" +
+                        "                &lt;L7p:EndpointOid goidValue=\"00260000000000a30000000007ba0033\"/&gt;\n" +
                         "                &lt;L7p:RequestJmsMessagePropertyRuleSet jmsMessagePropertyRuleSet=\"included\"&gt;\n" +
                         "                    &lt;L7p:Rules jmsMessagePropertyRuleArray=\"included\"/&gt;\n" +
                         "                &lt;/L7p:RequestJmsMessagePropertyRuleSet&gt;\n" +
@@ -2616,7 +2616,7 @@ public class ServerGatewayManagementAssertionTest {
                         "    <PolicyReferenceInstruction type=\"Delete\" referenceType=\"com.l7tech.console.policy.exporter.ExternalSchemaReference\" referenceId=\"syn:e69a8c36-66c6-3f0b-ba67-74749c1c62b5\" />\n" +
                         "    <PolicyReferenceInstruction type=\"Rename\" referenceType=\"com.l7tech.console.policy.exporter.IncludedPolicyReference\" referenceId=\"006ece03-a64c-4c17-93cf-ce49e7265daa\" mappedName=\"Renamed Imported Policy Include Fragment\"/>\n" +
                         "    <PolicyReferenceInstruction type=\"Ignore\" referenceType=\"com.l7tech.console.policy.exporter.TrustedCertReference\"    referenceId=\"00000000000000030000000007ba0000\" />\n" +
-                        "    <PolicyReferenceInstruction type=\"Ignore\" referenceType=\"com.l7tech.console.policy.exporter.JMSEndpointReference\"    referenceId=\"33\" />\n" +
+                        "    <PolicyReferenceInstruction type=\"Ignore\" referenceType=\"com.l7tech.console.policy.exporter.JMSEndpointReference\"    referenceId=\"00260000000000a30000000007ba0033\" />\n" +
                         "    <PolicyReferenceInstruction type=\"Ignore\" referenceType=\"com.l7tech.console.policy.exporter.PrivateKeyReference\"     referenceId=\"2:invalid\" />\n" +
                         "</PolicyReferenceInstructions>\n" +
                         "</PolicyImportContext></env:Body></env:Envelope>";

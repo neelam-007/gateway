@@ -282,8 +282,7 @@ public class SftpPollingListenersWindow extends JDialog {
             List<SsgActiveConnector> modelRows = tableModel.getConnectors();
             for (int i = 0; i < modelRows.size(); ++i) {
                 SsgActiveConnector modelItem = modelRows.get(i);
-                if (modelItem != null && ((modelItem.getGoid()!=null && modelItem.getGoid().toString().equals( selectedConfiguration.getGoid())))||
-                        (modelItem.getOldOid() != null && modelItem.getOldOid().equals(selectedConfiguration.getOldOid()))) {
+                if (modelItem != null && modelItem.getGoid().equals(selectedConfiguration.getGoid())) {
                     int viewRow = listenersTable.convertRowIndexToView(i);
                     if (viewRow >= 0) {
                         listenersTable.getSelectionModel().setSelectionInterval(viewRow, viewRow);

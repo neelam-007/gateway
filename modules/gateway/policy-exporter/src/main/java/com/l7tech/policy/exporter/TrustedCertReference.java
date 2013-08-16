@@ -158,7 +158,7 @@ public class TrustedCertReference extends ExternalReference {
             } else if ( assertionToLocalize instanceof UsesEntities ) {
                 UsesEntities entitiesUser = (UsesEntities)assertionToLocalize;
                 for(EntityHeader entityHeader : entitiesUser.getEntitiesUsed()) {
-                    if ( entityHeader.getType().equals(EntityType.TRUSTED_CERT) && entityHeader.equalsId(goid, null) ) {
+                    if ( entityHeader.getType().equals(EntityType.TRUSTED_CERT) && entityHeader.equalsId(goid) ) {
                         if(localizeType == LocalizeAction.REPLACE) {
                             if ( !localCertId.equals(goid)) {
                                 EntityHeader newEntityHeader = new EntityHeader(localCertId, EntityType.TRUSTED_CERT, null, null);

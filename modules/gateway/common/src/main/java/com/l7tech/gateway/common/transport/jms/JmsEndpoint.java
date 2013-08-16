@@ -49,7 +49,6 @@ public class JmsEndpoint extends ZoneableNamedGoidEntityImp implements Serializa
     private boolean useMessageIdForCorrelation;
     private boolean template;
     private long requestMaxSize = -1;
-    private Long oldOid = null;
 
     public JmsEndpoint(){
     }
@@ -80,7 +79,6 @@ public class JmsEndpoint extends ZoneableNamedGoidEntityImp implements Serializa
         setUseMessageIdForCorrelation(other.isUseMessageIdForCorrelation());
         setRequestMaxSize(other.getRequestMaxSize());
         setSecurityZone(other.getSecurityZone());
-        setOldOid(other.getOldOid());
     }
 
     /**
@@ -171,19 +169,6 @@ public class JmsEndpoint extends ZoneableNamedGoidEntityImp implements Serializa
         checkLocked();
         _connectionGoid = conn;
     }
-
-
-    @Column(name="old_objectid")
-    public Long getOldOid() {
-        return oldOid;
-    }
-
-    // only for hibernate
-    @Deprecated
-    public void setOldOid(Long oldOid) {
-        this.oldOid = oldOid;
-    }
-
 
     /**
      * Is the destination a Queue or Topic.

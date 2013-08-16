@@ -16,13 +16,4 @@ public interface JmsEndpointManager extends PropertySearchableEntityManager<JmsE
     Collection findMessageSourceEndpoints() throws FindException;
     JmsEndpoint[] findEndpointsForConnection(Goid connectionGoid) throws FindException;
     JmsEndpointHeader[] findEndpointHeadersForConnection(Goid connectionGoid) throws FindException;
-
-
-    /**
-     * Find an entity by old oid
-     * @param oid the old oid to search for
-     * @return the jms connection object if found.  null if not
-     * @throws FindException
-     */
-    JmsEndpoint findByOldOid(long oid) throws FindException;
 }

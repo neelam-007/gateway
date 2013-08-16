@@ -367,7 +367,7 @@ class ExternalReferenceResolver {
                 } else if (reference instanceof TrustedCertReference) {
                     TrustedCertReference trustedCertRef = (TrustedCertReference) reference;
                     for (EntityHeader entityHeader : entitiesUser.getEntitiesUsed()) {
-                        if ( entityHeader.equalsId(trustedCertRef.getGoid(), null) ) {
+                        if ( entityHeader.equalsId(trustedCertRef.getGoid()) ) {
                             itr.remove();
                             break;
                         }

@@ -509,13 +509,6 @@ public class PolicyHelper {
         }
 
         @Override
-        public JmsEndpoint findEndpointByOidOrGoid(Either<Long, Goid> endpointId) throws FindException {
-            if(endpointId.isLeft())
-                return filter(jmsEndpointManager.findByOldOid(endpointId.left()));
-            return filter(jmsEndpointManager.findByPrimaryKey(endpointId.right()));
-        }
-
-        @Override
         public JmsEndpoint findEndpointByPrimaryKey( final Goid goid ) throws FindException {
             return filter( jmsEndpointManager.findByPrimaryKey( goid ) );
         }
@@ -528,13 +521,6 @@ public class PolicyHelper {
         @Override
         public SsgActiveConnector findConnectorByPrimaryKey(Goid goid) throws FindException {
             return filter(ssgActiveConnectorManager.findByPrimaryKey(goid));
-        }
-
-        @Override
-        public SsgActiveConnector findConnectorByOidOrGoid(Either<Long, Goid> endpointId) throws FindException {
-            if(endpointId.isLeft())
-                return filter(ssgActiveConnectorManager.findByOldOid(endpointId.left()));
-            return filter(ssgActiveConnectorManager.findByPrimaryKey(endpointId.right()));
         }
 
         @Override

@@ -233,7 +233,6 @@ create table active_connector (
     hardwired_service_goid CHAR(16) FOR BIT DATA,
     type varchar(64) not null,
     security_zone_goid CHAR(16) FOR BIT DATA references security_zone(goid) on delete set null,
-    old_objectid bigint,
     primary key (goid)
 );
 
@@ -563,7 +562,6 @@ create table jms_endpoint (
     use_message_id_for_correlation smallint,
     username varchar(255),
     security_zone_goid CHAR(16) FOR BIT DATA references security_zone(goid) on delete set null,
-    old_objectid bigint,
     primary key (goid)
 );
 

@@ -28,19 +28,6 @@ public class SsgActiveConnectorManagerImpl
     }
 
     @Override
-    public SsgActiveConnector findByOldOid(long oid) throws FindException {
-        Criteria oldOidCriteria = getSession().createCriteria(getImpClass());
-        oldOidCriteria.add(Restrictions.eq("oldOid", oid));
-        List<SsgActiveConnector> result = oldOidCriteria.list();
-        if(result.size()>1){
-            throw new FindException("More then one entity found for old_objectid="+oid);
-        }
-        if(result.isEmpty())
-            return null;
-        return result.get(0);
-    }
-
-    @Override
     public Class<SsgActiveConnector> getImpClass() {
         return SsgActiveConnector.class;
     }

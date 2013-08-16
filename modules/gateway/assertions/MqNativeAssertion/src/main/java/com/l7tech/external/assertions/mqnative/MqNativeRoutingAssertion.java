@@ -26,6 +26,7 @@ import com.l7tech.policy.wsp.TypeMapping;
 import com.l7tech.server.util.EntityUseUtils.EntityTypeOverride;
 import com.l7tech.server.util.EntityUseUtils.EntityUse;
 import com.l7tech.util.CollectionUtils;
+import com.l7tech.util.GoidUpgradeMapper;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -59,7 +60,6 @@ public class MqNativeRoutingAssertion extends RoutingAssertion implements UsesEn
     private static final String META_INITIALIZED = MqNativeRoutingAssertion.class.getName() + ".metadataInitialized";
 
     @Nullable
-    private Long ssgActiveConnectorId;
     private Goid ssgActiveConnectorGoid;
     private String ssgActiveConnectorName;
     private String responseTimeout;
@@ -109,25 +109,28 @@ public class MqNativeRoutingAssertion extends RoutingAssertion implements UsesEn
     }
 
     /**
-     * Get the OID of the associated SsgActiveConnector.
+     * Get the GOID of the associated SsgActiveConnector.
      *
-     * @return the OID of the connector, or null.
+     * @return the GOID of the connector, or null.
      */
     @Nullable
-    public Long getSsgActiveConnectorId() {
-        return ssgActiveConnectorId;
+    public Goid getSsgActiveConnectorId() {
+        return ssgActiveConnectorGoid;
     }
 
     /**
-     * Deprecated. Save the Goid instead
      * Set the OID for the associated SsgActiveConnector.
      *
      * @param ssgActiveConnectorId the OID, or null.
      */
+    public void setSsgActiveConnectorId( @Nullable final Goid ssgActiveConnectorId ) {
+        this.ssgActiveConnectorGoid = ssgActiveConnectorId;
+    }
+
+    // For backward compat while parsing pre-GOID policies.  Not needed for new assertions.
     @Deprecated
     public void setSsgActiveConnectorId( @Nullable final Long ssgActiveConnectorId ) {
-        this.ssgActiveConnectorId = ssgActiveConnectorId;
-        this.ssgActiveConnectorGoid = null;
+        this.ssgActiveConnectorGoid = GoidUpgradeMapper.mapOid(EntityType.SSG_ACTIVE_CONNECTOR, ssgActiveConnectorId);
     }
 
     /**
@@ -147,7 +150,6 @@ public class MqNativeRoutingAssertion extends RoutingAssertion implements UsesEn
      */
     public void setSsgActiveConnectorGoid(@Nullable Goid ssgActiveConnectorGoid) {
         this.ssgActiveConnectorGoid = ssgActiveConnectorGoid;
-        this.ssgActiveConnectorId = null;
     }
 
     /**
@@ -503,11 +505,7 @@ public class MqNativeRoutingAssertion extends RoutingAssertion implements UsesEn
             SsgActiveConnector activeConnector;
             TransportAdmin ta = Registry.getDefault().getTransportAdmin();
             try {
-                if(assertion.getSsgActiveConnectorId()!=null){
-                    activeConnector = ta.findSsgActiveConnectorByOldId(assertion.getSsgActiveConnectorId());
-                }else{
-                    activeConnector = ta.findSsgActiveConnectorByPrimaryKey(assertion.getSsgActiveConnectorGoid());
-                }
+                activeConnector = ta.findSsgActiveConnectorByPrimaryKey(assertion.getSsgActiveConnectorGoid());
                 if ( activeConnector == null ) {
                     activeConnectorStatus = ActiveConnectorStatus.NOT_FOUND;
                     return;
@@ -576,9 +574,6 @@ public class MqNativeRoutingAssertion extends RoutingAssertion implements UsesEn
         if( ssgActiveConnectorGoid != null) {
             return new EntityHeader[] {new EntityHeader(ssgActiveConnectorGoid.toString(), EntityType.SSG_ACTIVE_CONNECTOR, ssgActiveConnectorName, null)}; // always outgoing
         }
-        else if( ssgActiveConnectorId != null) {
-            return new EntityHeader[] {new EntityHeader(ssgActiveConnectorId.toString(), EntityType.SSG_ACTIVE_CONNECTOR, ssgActiveConnectorName, null)}; // always outgoing
-        }
         else {
             return new EntityHeader[0];
         }
@@ -586,11 +581,10 @@ public class MqNativeRoutingAssertion extends RoutingAssertion implements UsesEn
 
     @Override
     public void replaceEntity(EntityHeader oldEntityHeader, EntityHeader newEntityHeader) {
-        if( oldEntityHeader.getType().equals( EntityType.SSG_ACTIVE_CONNECTOR) &&
-             (oldEntityHeader.getStrId().equals(ssgActiveConnectorGoid!=null? ssgActiveConnectorGoid.toString():(ssgActiveConnectorId!=null?Long.toString(ssgActiveConnectorId):null)))
-              && newEntityHeader.getType().equals(EntityType.SSG_ACTIVE_CONNECTOR))
+        if( oldEntityHeader.getType().equals( EntityType.SSG_ACTIVE_CONNECTOR) && ssgActiveConnectorGoid != null &&
+                oldEntityHeader.getGoid().equals(ssgActiveConnectorGoid) && newEntityHeader.getType().equals(EntityType.SSG_ACTIVE_CONNECTOR))
         {
-            setSsgActiveConnectorGoid( newEntityHeader.getGoid());
+            ssgActiveConnectorGoid = newEntityHeader.getGoid();
             ssgActiveConnectorName = newEntityHeader.getName();
         }
     }

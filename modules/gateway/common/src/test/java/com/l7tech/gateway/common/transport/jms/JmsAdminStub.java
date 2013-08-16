@@ -116,15 +116,6 @@ public class JmsAdminStub implements JmsAdmin {
     }
 
     @Override
-    public JmsEndpoint findEndpointByOldId(Long id) throws FindException {
-        for(JmsEndpoint endpoint : endpoints.values()){
-            if(endpoint.getOldOid()!=null && endpoint.getOldOid().equals(id))
-                return endpoint;
-        }
-        return null;
-    }
-
-    @Override
     public void testConnection(JmsConnection connection) throws JmsTestException {
         // automatic success in stub mode, unless the name contains "FAIL"
         if (connection.getName().indexOf("FAIL") >= 0)

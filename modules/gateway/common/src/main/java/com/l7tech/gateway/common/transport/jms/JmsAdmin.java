@@ -116,17 +116,6 @@ public interface JmsAdmin {
     JmsEndpoint findEndpointByPrimaryKey(Goid goid) throws FindException;
 
     /**
-     * Finds the {@link JmsEndpoint} with the given legacy OID.
-     *
-     * @param id the OID of the endpoint to retrieve
-     * @return the {@link JmsEndpoint} with the specified OID, or null if no such endpoint could be found
-     * @throws FindException   if a database problem prevented the endpoint from being retrieved
-     */
-    @Transactional(readOnly=true)
-    @Secured(types=JMS_ENDPOINT, stereotype=MethodStereotype.FIND_ENTITY)
-    JmsEndpoint findEndpointByOldId(Long id) throws FindException;
-
-    /**
      * Sets a flag indicating whether the {@link JmsEndpoint} with the specified GOID is a message source
      * (i.e. should be polled for inbound messages) or not (i.e. is used for outbound messages)
      *

@@ -43,13 +43,4 @@ public class JmsEndpointManagerStub extends GoidEntityManagerStub<JmsEndpoint, J
         throw new UnsupportedOperationException();
     }
 
-    @Override
-    public JmsEndpoint findByOldOid(final long oid) throws FindException {
-        return Functions.grepFirst( findAll(), new Functions.Unary<Boolean,JmsEndpoint>(){
-            @Override
-            public Boolean call( final JmsEndpoint jmsEndpoint ) {
-                return jmsEndpoint.getOldOid().equals(oid);
-            }
-        } );
-    }
 }

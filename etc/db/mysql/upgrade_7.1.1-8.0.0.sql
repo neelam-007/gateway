@@ -773,6 +773,7 @@ ALTER TABLE jms_endpoint CHANGE COLUMN objectid goid binary(16) NOT NULL;
 -- For manual runs use: set @jms_endpoint_prefix=createUnreservedPoorRandomPrefix();
 SET @jms_endpoint_prefix=#RANDOM_LONG_NOT_RESERVED#;
 update jms_endpoint set goid = toGoid(@jms_endpoint_prefix,old_objectid);
+ALTER TABLE jms_endpoint DROP COLUMN old_objectid;
 
 ALTER TABLE jms_connection ADD COLUMN objectid_backup BIGINT(20);
 update jms_connection set objectid_backup=objectid;
@@ -815,6 +816,7 @@ ALTER TABLE active_connector CHANGE COLUMN objectid goid binary(16) NOT NULL;
 -- For manual runs use: set @active_connector_prefix=createUnreservedPoorRandomPrefix();
 SET @active_connector_prefix=#RANDOM_LONG_NOT_RESERVED#;
 update active_connector set goid = toGoid(@active_connector_prefix,old_objectid);
+ALTER TABLE active_connector DROP COLUMN old_objectid;
 
 ALTER TABLE active_connector_property ADD COLUMN connector_oid_backup BIGINT(20);
 UPDATE  active_connector_property SET connector_oid_backup = connector_oid;

@@ -125,14 +125,6 @@ public class ConsoleExternalReferenceFinder implements ExternalReferenceFinder, 
     }
 
     @Override
-    public JmsEndpoint findEndpointByOidOrGoid(Either<Long, Goid> endpointId) throws FindException {
-        JmsAdmin jmsAdmin = getAdminInterface( JmsAdmin.class );
-        if(endpointId.isLeft())
-            return jmsAdmin.findEndpointByOldId(endpointId.left());
-        return jmsAdmin.findEndpointByPrimaryKey( endpointId.right() );
-    }
-
-    @Override
     public JmsEndpoint findEndpointByPrimaryKey( final Goid goid ) throws FindException {
         JmsAdmin jmsAdmin = getAdminInterface( JmsAdmin.class );
         return jmsAdmin.findEndpointByPrimaryKey( goid );
@@ -148,14 +140,6 @@ public class ConsoleExternalReferenceFinder implements ExternalReferenceFinder, 
     public SsgActiveConnector findConnectorByPrimaryKey(Goid goid) throws FindException {
         TransportAdmin transportAdmin = getAdminInterface( TransportAdmin.class );
         return transportAdmin.findSsgActiveConnectorByPrimaryKey(goid);
-    }
-
-    @Override
-    public SsgActiveConnector findConnectorByOidOrGoid(Either<Long, Goid> endpointId) throws FindException {
-        TransportAdmin transportAdmin = getAdminInterface( TransportAdmin.class );
-        if(endpointId.isLeft())
-            return transportAdmin.findSsgActiveConnectorByOldId(endpointId.left());
-        return transportAdmin.findSsgActiveConnectorByPrimaryKey( endpointId.right() );
     }
 
     @Override

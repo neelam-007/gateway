@@ -172,7 +172,7 @@ public class PolicyExporter {
                         addReference( idProviderRef, refs);
                     }
                 } else if( entityHeader.getType().equals(EntityType.JMS_ENDPOINT) ) {
-                    addReference( new JMSEndpointReference( finder, entityHeader.getEitherGoidOrId()), refs);
+                    addReference( new JMSEndpointReference( finder, entityHeader.getGoid()), refs);
                 } else if( entityHeader.getType().equals(EntityType.TRUSTED_CERT) ) {
                     addReference( new TrustedCertReference( finder, entityHeader.getGoid()), refs);
                 }

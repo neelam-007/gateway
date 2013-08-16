@@ -98,85 +98,18 @@ public class EntityHeader extends EntityHeaderRef {
     }
 
     /**
-     * Get the ID string as either a GOID or an OID, depending on its formt.
-     *
-     * @return a Goid if the string is a valid GOID hex string; otherwise, an OID if the string is a valid long;
-     *         otherwise the default Goid.  Never null.
-     */
-    @NotNull
-    public Either<Long,Goid> getEitherGoidOrId(){
-        if (strId == null || strId.trim().length() < 1)
-            return Either.right(new Goid(GoidEntity.DEFAULT_GOID));
-
-        try {
-            return Either.<Long,Goid>right(new Goid(strId));
-        } catch (Exception e) {
-            /* FALLTHROUGH and treat as OID */
-        }
-
-        try {
-            return Either.<Long,Goid>left(Long.parseLong(strId));
-        } catch (Exception e) {
-            return Either.right(new Goid(GoidEntity.DEFAULT_GOID));
-        }
-    }
-
-    /**
-     * Returns true if and only if the specified other entity header contains an non-null non-default ID (OID or GOID)
-     * that is the same format and the same value as this entity header's non-null on-default ID.
-     *
-     * @param other the other header to examine.
-     * @return true if both this header and the other header contain a non-null non-default ID string,
-     *         and both strings are in the same format (GOID or OID) and encode the same ID value.
-     */
-    public boolean equalsId(@NotNull EntityHeader other) {
-        Either<Long, Goid> a = getEitherGoidOrId();
-        Either<Long, Goid> b = other.getEitherGoidOrId();
-
-        return a.isLeft() == b.isLeft() && (a.isLeft()
-            ? !a.left().equals(PersistentEntity.DEFAULT_OID) && a.left().equals(b.left())
-            : !a.right().equals(GoidEntity.DEFAULT_GOID) && a.right().equals(b.right()));
-    }
-
-    /**
      * Returns true if and only if this entity header contains a non-null non-default ID (OID or GOID)
      * that matches one of the specified IDs.
      *
      * @param goid a GOID to check.  If a non-null non-default GOID is specified, any oid argument will be ignored completely (even if the GOID doesn't match).
-     * @param oid an OID to check.  Will be ignored if a goid argument is provided.
      *
      * @return true if this entity header contains a non-null non-default ID matching the specified GOID (if provided) or OID.
      */
-    public boolean equalsId( @Nullable Goid goid, @Nullable Long oid ) {
-        if ( goid != null && !GoidEntity.DEFAULT_GOID.equals(goid) ) {
-            Either<Long, Goid> id = getEitherGoidOrId();
-            return id.isRight() && id.right().equals(goid);
-        }
-        if ( oid != null && !oid.equals(PersistentEntity.DEFAULT_OID) ) {
-            Either<Long, Goid> id = getEitherGoidOrId();
-            return id.isLeft() && id.left().equals(oid);
+    public boolean equalsId( @Nullable Goid goid ) {
+        if(goid!=null && !goid.equals(GoidEntity.DEFAULT_GOID)){
+            return Goid.equals(goid,getGoid());
         }
         return false;
-    }
-
-    /**
-     * Returns true if and only if this entity header contains a non-null non-default ID (OID or GOID)
-     * that matches one of the specified IDs.
-     *
-     * @param goidString a GOID to check, encoded as a hex string.  If a valid non-default GOID is specified, any oid argument will be ignored completely (even if the GOID doesn't match).
-     * @param oid an OID to check.  Will be ignored if a goid argument is provided.
-     *
-     * @return true if this entity header contains a non-null non-default ID matching the specified GOID (if provided) or OID.
-     */
-    public boolean equalsId( @Nullable String goidString, @Nullable Long oid ) {
-        Goid goid = null;
-        try {
-            if (goidString != null)
-                goid = new Goid(goidString);
-        } catch (Exception e) {
-            /* FALLTHROUGH and leave GOID as null */
-        }
-        return equalsId( goid, oid );
     }
 
     @XmlAttribute

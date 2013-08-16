@@ -10,8 +10,6 @@ import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
 import com.l7tech.objectmodel.JmsEndpointHeader;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.HibernateGoidEntityManager;
-import org.hibernate.Criteria;
-import org.hibernate.criterion.Restrictions;
 import org.springframework.dao.DataAccessException;
 
 import java.util.*;
@@ -75,20 +73,6 @@ public class JmsEndpointManagerImpl
         } catch (DataAccessException e) {
             throw new FindException(e.toString(), e);
         }
-    }
-
-
-    @Override
-    public JmsEndpoint findByOldOid(long oid) throws FindException {
-        Criteria oldOidCriteria = getSession().createCriteria(getImpClass());
-        oldOidCriteria.add(Restrictions.eq("oldOid", oid));
-        List<JmsEndpoint> result = oldOidCriteria.list();
-        if(result.size()>1){
-            throw new FindException("More then one entity found for old_objectid="+oid);
-        }
-        if(result.isEmpty())
-            return null;
-        return result.get(0);
     }
 
     @Override

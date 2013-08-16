@@ -15,7 +15,6 @@ import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.imp.GoidEntityImp;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.util.Functions.*;
 
@@ -326,9 +325,7 @@ public class MqNativeRoutingAssertionDialog extends AssertionPropertiesOkCancelS
         if ( mqNativeDynamicProperties != null ) {
             final SsgActiveConnector selected = (SsgActiveConnector)queueComboBox.getSelectedItem();
             if ( selected != null ) {
-                if ( assertion.getSsgActiveConnectorId()!=null &&
-                        ((selected.getGoid()!=null && selected.getGoid().toString().equals( assertion.getSsgActiveConnectorGoid()))||
-                         (selected.getOldOid() != null && selected.getOldOid().equals(assertion.getSsgActiveConnectorId()))) ) {
+                if ( assertion.getSsgActiveConnectorId()!=null && selected.getGoid().equals(assertion.getSsgActiveConnectorId())) {
                     setIfDynamic( mqNativeDynamicProperties.getQueueName(), "", dynamicDestQueueName );
                     setIfDynamic( mqNativeDynamicProperties.getReplyToQueue(), "", dynamicReplyQueueName );
                 }
@@ -446,12 +443,9 @@ public class MqNativeRoutingAssertionDialog extends AssertionPropertiesOkCancelS
     private void modelToView( final MqNativeRoutingAssertion assertion ) {
         configSecurityHeaderRadioButtons( assertion, -1, null, secHdrButtons );
 
-        final Long endpointOid = assertion.getSsgActiveConnectorId();
-        final Goid endpointGoid = assertion.getSsgActiveConnectorGoid();
-        final SsgActiveConnector foundQueue = endpointGoid != null ?
-                grepFirst( getQueueItems(), equality( goid(), endpointGoid) ) :
-                endpointOid != null ?
-                        grepFirst( getQueueItems(), equality( oldOid(), endpointOid ) ) :
+        final Goid endpointOid = assertion.getSsgActiveConnectorId();
+        final SsgActiveConnector foundQueue = endpointOid != null ?
+                        grepFirst( getQueueItems(), equality( goid(), endpointOid ) ) :
                         null ;
 
         if( foundQueue != null )
@@ -502,15 +496,6 @@ public class MqNativeRoutingAssertionDialog extends AssertionPropertiesOkCancelS
         responseByteLimitPanel.setValue(assertion.getResponseSize(), getMqNativeAdmin().getDefaultMqMessageMaxBytes());
 
         enableOrDisableComponents();
-    }
-
-    private Unary<Long, SsgActiveConnector> oldOid() {
-        return new Unary<Long,SsgActiveConnector>(){
-            @Override
-            public Long call( final SsgActiveConnector entity ) {
-                return entity == null ?  null : entity.getOldOid();
-            }
-        };
     }
 
     private static MqNativeAdmin getMqNativeAdmin() {

@@ -13,7 +13,6 @@ import com.l7tech.gateway.common.audit.AuditDetailMessage;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import com.l7tech.message.*;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.policy.assertion.TargetMessageType;
@@ -801,11 +800,8 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
 
         final SsgActiveConnector ssgActiveConnector;
         try {
-            if(assertion.getSsgActiveConnectorGoid() == null){
-                ssgActiveConnector = ssgActiveConnectorManager.findByOldOid( assertion.getSsgActiveConnectorId() );
-            }else{
-                ssgActiveConnector = ssgActiveConnectorManager.findByPrimaryKey(new Goid(assertion.getSsgActiveConnectorGoid()));
-            }
+            ssgActiveConnector = ssgActiveConnectorManager.findByPrimaryKey(assertion.getSsgActiveConnectorGoid());
+
         } catch ( FindException e ) {
             throw new MqNativeConfigException(
                     "Error accessing MQ endpoint #" + (assertion.getSsgActiveConnectorGoid()==null ?assertion.getSsgActiveConnectorId() : assertion.getSsgActiveConnectorGoid()), e );

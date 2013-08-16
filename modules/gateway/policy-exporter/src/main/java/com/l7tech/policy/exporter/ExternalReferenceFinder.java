@@ -52,13 +52,9 @@ public interface ExternalReferenceFinder {
 
     JdbcConnection getJdbcConnection( String name ) throws FindException;
 
-    JmsEndpoint findEndpointByOidOrGoid(Either<Long, Goid> endpointId) throws FindException;
-
     JmsEndpoint findEndpointByPrimaryKey( Goid goid ) throws FindException;
 
     JmsConnection findConnectionByPrimaryKey( Goid goid ) throws FindException;
-
-    SsgActiveConnector findConnectorByOidOrGoid(Either<Long, Goid> connectorId) throws FindException;
 
     SsgActiveConnector findConnectorByPrimaryKey (Goid oid) throws FindException;
 

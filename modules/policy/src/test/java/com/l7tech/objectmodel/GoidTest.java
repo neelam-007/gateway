@@ -15,7 +15,7 @@ public class GoidTest {
 
     @Test
     public void blah(){
-        System.out.println(new Goid(0,-3));
+        System.out.println(new Goid(123,456));
     }
 
 

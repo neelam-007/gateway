@@ -64,29 +64,6 @@ public class JmsEndpointManagerStub extends GoidEntityManagerStub<JmsEndpoint, J
         return endpt;
     }
 
-    @Override
-    public JmsEndpoint findByOldOid(long oid) throws FindException {
-        JmsEndpoint endpt;
-
-        if (oid == 101L) {
-            endpt = buildEndpoint(JmsConnectionManagerStub.TEST_CONFIG_AMQ_IN);
-        } else if (oid == 102L) {
-            endpt = buildEndpoint(JmsConnectionManagerStub.TEST_CONFIG_AMQ_OUT);
-        } else if (oid == 103L) {
-            endpt = buildEndpoint(JmsConnectionManagerStub.TEST_CONFIG_MQS_IN);
-        } else if (oid == 104L) {
-            endpt = buildEndpoint(JmsConnectionManagerStub.TEST_CONFIG_MQS_OUT);
-        } else if (oid == 107L) {
-            endpt = buildEndpoint(JmsConnectionManagerStub.TEST_CONFIG_DYNAMIC_IN);
-        } else if (oid == 108L) {
-            endpt = buildEndpoint(JmsConnectionManagerStub.TEST_CONFIG_DYNAMIC_OUT);
-        } else {
-            endpt = buildEndpoint(6666);
-        }
-
-        return endpt;
-    }
-
 
     private JmsEndpoint buildEndpoint(int which) {
 

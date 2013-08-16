@@ -43,7 +43,7 @@ public class JmsRoutingAssertionTreeNode extends DefaultAssertionPolicyNode<JmsR
 
         String actor = SecurityHeaderAddressableSupport.getActorSuffix(ass);
 
-        if (ass.getEndpointOid() == null && ass.getEndpointGoid() == null) {
+        if (ass.getEndpointOid() == null) {
             return addCommentToDisplayText(assertion, assertionName + " (Not Yet Specified)" + actor);
         }
 
@@ -95,24 +95,19 @@ public class JmsRoutingAssertionTreeNode extends DefaultAssertionPolicyNode<JmsR
         if ( endpointDescription == null ) {
             final JmsRoutingAssertion ass = (JmsRoutingAssertion) getUserObject();
             try {
-                final JmsEndpoint endpoint;
-                if(ass.getEndpointGoid()==null)
-                    endpoint = Registry.getDefault().getJmsManager().findEndpointByOldId(ass.getEndpointOid());
-                else
-                    endpoint = Registry.getDefault().getJmsManager().findEndpointByPrimaryKey(new Goid(ass.getEndpointGoid()));
+                final JmsEndpoint endpoint = Registry.getDefault().getJmsManager().findEndpointByPrimaryKey(ass.getEndpointOid());
                 if( endpoint != null ) {
- 	 	            endpointDescription = (endpoint.isQueue() ? "Queue " : "Topic ") + endpoint.getName();
+                    endpointDescription = (endpoint.isQueue() ? "Queue " : "Topic ") + endpoint.getName();
                 }
-            } catch(final FindException | PermissionDeniedException e) {
+            } catch(FindException e) {
                 // Use name from assertion
-                logger.log(Level.WARNING, "Unable to retrieve jms endpoint description: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             }
 
             if ( endpointDescription == null ) {
                 endpointDescription = "Destination " + ass.getEndpointName();
- 	 	    }
+            }
 
- 	 	    this.endpointDescription = endpointDescription;
+            this.endpointDescription = endpointDescription;
         }
 
         return endpointDescription;

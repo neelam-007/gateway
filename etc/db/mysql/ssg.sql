@@ -480,7 +480,6 @@ CREATE TABLE jms_endpoint(
   use_message_id_for_correlation tinyint(1) NOT NULL DEFAULT 0,
   request_max_size bigint NOT NULL default -1,
   security_zone_goid binary(16),
-  old_objectid bigint,
   primary key(goid),
   CONSTRAINT jms_endpoint_security_zone FOREIGN KEY (security_zone_goid) REFERENCES security_zone (goid) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
@@ -1934,7 +1933,6 @@ CREATE TABLE active_connector (
   type varchar(128) NOT NULL,
   hardwired_service_goid binary(16),
   security_zone_goid binary(16),
-  old_objectid bigint(20),
   PRIMARY KEY (goid),
   CONSTRAINT active_conn_security_zone FOREIGN KEY (security_zone_goid) REFERENCES security_zone (goid) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;

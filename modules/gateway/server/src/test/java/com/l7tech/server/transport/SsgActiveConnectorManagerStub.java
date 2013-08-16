@@ -27,12 +27,4 @@ public class SsgActiveConnectorManagerStub extends GoidEntityManagerStub<SsgActi
         return null;
     }
 
-    @Override
-    public SsgActiveConnector findByOldOid(long oid) throws FindException {
-        for(SsgActiveConnector connector : findAll()){
-           if(connector.getOldOid().equals(oid))
-               return connector;
-        }
-        return null;
-    }
 }

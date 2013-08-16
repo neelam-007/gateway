@@ -103,7 +103,6 @@ public class SsgActiveConnector extends ZoneableNamedGoidEntityImp {
     private String type;
     private Goid hardwiredServiceGoid;
     private Map<String,String> properties = new HashMap<String,String>();
-    private Long oldOid;
 
     public SsgActiveConnector() {
     }
@@ -115,7 +114,6 @@ public class SsgActiveConnector extends ZoneableNamedGoidEntityImp {
         this.hardwiredServiceGoid = ssgActiveConnector.getHardwiredServiceGoid();
         this.setProperties( new HashMap<String, String>( ssgActiveConnector.getProperties() ) );
         this.setSecurityZone(ssgActiveConnector.getSecurityZone());
-        this.oldOid = ssgActiveConnector.oldOid;
     }
 
     public static SsgActiveConnector newWithType(String type) {
@@ -161,15 +159,6 @@ public class SsgActiveConnector extends ZoneableNamedGoidEntityImp {
     public void setHardwiredServiceGoid(Goid hardwiredServiceGoid) {
         checkLocked();
         this.hardwiredServiceGoid = hardwiredServiceGoid;
-    }
-
-    @Column(name="old_objectid")
-    public Long getOldOid() {
-        return oldOid;
-    }
-
-    public void setOldOid(Long oldOid) {
-        this.oldOid = oldOid;
     }
 
     /**

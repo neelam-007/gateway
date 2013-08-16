@@ -14,13 +14,4 @@ public class SsgActiveConnectorTest {
         final SsgActiveConnector copy = new SsgActiveConnector(conn);
         assertEquals(zone, copy.getSecurityZone());
     }
-
-    @Test
-    public void copyConstructorSetsOldOid() {
-        final SsgActiveConnector conn = new SsgActiveConnector();
-        conn.setOldOid(1234L);
-        final SsgActiveConnector copy = new SsgActiveConnector(conn);
-        assertEquals(new Long(1234L), copy.getOldOid());
-        assertEquals(conn,copy);
-    }
 }

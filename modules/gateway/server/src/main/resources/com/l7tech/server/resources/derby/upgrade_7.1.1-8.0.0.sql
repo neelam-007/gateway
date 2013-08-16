@@ -711,6 +711,7 @@ ALTER TABLE jms_endpoint ADD COLUMN goid CHAR(16) FOR BIT DATA;
 call setVariable('jms_endpoint_prefix', cast(randomLongNotReserved() as char(21)));
 update jms_endpoint set goid = toGoid(cast(getVariable('jms_endpoint_prefix') as bigint), old_objectid);
 ALTER TABLE jms_endpoint ALTER COLUMN goid NOT NULL;
+ALTER TABLE jms_endpoint DROP COLUMN old_objectid;
 ALTER TABLE jms_endpoint ADD PRIMARY KEY (goid);
 
 ALTER TABLE jms_connection ADD COLUMN objectid_backup bigint;
@@ -757,6 +758,7 @@ ALTER TABLE active_connector ADD COLUMN goid CHAR(16) FOR BIT DATA;
 call setVariable('active_connector_prefix', cast(randomLongNotReserved() as char(21)));
 update active_connector set goid = toGoid(cast(getVariable('active_connector_prefix') as bigint), old_objectid);
 ALTER TABLE active_connector ALTER COLUMN goid NOT NULL;
+ALTER TABLE active_connector DROP COLUMN old_objectid;
 ALTER TABLE active_connector ADD PRIMARY KEY (goid);
 
 ALTER TABLE active_connector_property ADD COLUMN connector_goid CHAR(16) FOR BIT DATA;

@@ -78,11 +78,6 @@ public class ExternalReferenceFinderStub implements ExternalReferenceFinder {
     }
 
     @Override
-    public JmsEndpoint findEndpointByOidOrGoid(Either<Long, Goid> endpointId) throws FindException {
-        return null;
-    }
-
-    @Override
     public JmsEndpoint findEndpointByPrimaryKey( final Goid oid ) throws FindException {
         return null;
     }
@@ -94,11 +89,6 @@ public class ExternalReferenceFinderStub implements ExternalReferenceFinder {
 
     @Override
     public SsgActiveConnector findConnectorByPrimaryKey(Goid oid) throws FindException {
-        return null;
-    }
-
-    @Override
-    public SsgActiveConnector findConnectorByOidOrGoid(Either<Long, Goid> connectorId) throws FindException {
         return null;
     }
 
