@@ -46,10 +46,9 @@ public class PermissionOptionsPanel extends WizardStepPanel {
         for (final EntityType type : EntityType.values()) {
             if (type != EntityType.ANY && type.isDisplayedInGui()) {
                 final Set<OperationType> invalidOps = new HashSet<>();
-                if (type == EntityType.ASSERTION_ACCESS) {
-                    invalidOps.add(OperationType.CREATE);
-                    invalidOps.add(OperationType.DELETE);
-                } else if (type == EntityType.SSG_KEYSTORE) {
+                if (type == EntityType.ASSERTION_ACCESS ||
+                        type == EntityType.SSG_KEYSTORE ||
+                        type == EntityType.RESOLUTION_CONFIGURATION) {
                     invalidOps.add(OperationType.CREATE);
                     invalidOps.add(OperationType.DELETE);
                 }
@@ -59,6 +58,7 @@ public class PermissionOptionsPanel extends WizardStepPanel {
 
         SINGULAR_ENTITY_TYPES = new HashSet<>();
         SINGULAR_ENTITY_TYPES.add(EntityType.SSG_KEYSTORE);
+        SINGULAR_ENTITY_TYPES.add(EntityType.RESOLUTION_CONFIGURATION);
     }
 
     public PermissionOptionsPanel() {
