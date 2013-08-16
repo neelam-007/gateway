@@ -840,8 +840,8 @@ public abstract class Assertion implements Cloneable, Serializable {
         String basePackage;
         if (this instanceof CustomAssertionHolder) {
             CustomAssertionHolder customAssertionHolder = (CustomAssertionHolder) this;
-            if ("(fromCustomAssertionClass)".equals(customAssertionHolder.getRegisteredCustomFeatureSetName()) && customAssertionHolder.getCustomAssertion() != null) {
-                basePackage = customAssertionHolder.getCustomAssertion().getClass().getPackage().getName();
+            if ("(fromCustomAssertionClass)".equals(customAssertionHolder.getRegisteredCustomFeatureSetName()) && fullName != null) {
+                basePackage = fullName.substring(0, fullName.lastIndexOf('.')); // java.lang.Class.getPackage() returns null within Applet Policy Manager
             } else {
                 basePackage = (String)meta().get(AssertionMetadata.BASE_PACKAGE);
             }
