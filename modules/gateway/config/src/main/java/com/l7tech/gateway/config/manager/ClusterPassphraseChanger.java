@@ -3,13 +3,7 @@ package com.l7tech.gateway.config.manager;
 import com.l7tech.server.management.config.node.DatabaseConfig;
 import com.l7tech.server.management.config.node.DatabaseType;
 import com.l7tech.server.management.config.node.NodeConfig;
-import com.l7tech.util.CausedIOException;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.DefaultMasterPasswordFinder;
-import com.l7tech.util.MasterPasswordManager;
-import com.l7tech.util.JdkLoggerConfigurator;
-import com.l7tech.util.SyspropUtil;
-import com.l7tech.util.TextUtils;
+import com.l7tech.util.*;
 import org.xml.sax.SAXException;
 
 import java.io.File;
@@ -110,7 +104,7 @@ public class ClusterPassphraseChanger {
 
         // Update properties file with new passphrase
         if (nodePropsFile.exists()) {
-            NodeConfigurationManager.configureGatewayNode(NODE, null, newClusterPass, false, null, null);
+            NodeConfigurationManager.configureGatewayNode(NODE, null, newClusterPass, false, Option.<DatabaseConfig>none(), Option.<DatabaseConfig>none());
         }
 
         System.out.println("Cluster passphrase changed successfully.");
