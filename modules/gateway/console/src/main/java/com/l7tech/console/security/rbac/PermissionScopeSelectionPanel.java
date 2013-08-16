@@ -91,7 +91,7 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
     private JPanel conditionsPanel;
     private JLabel header;
     // use this check box for entity type specific input
-    private JCheckBox customCheckBox;
+    private JCheckBox specificAncestryCheckBox;
     private CheckBoxSelectableTableModel<SecurityZone> zonesModel;
     private CheckBoxSelectableTableModel<FolderHeader> foldersModel;
     private SimpleTableModel<AttributePredicate> attributesModel;
@@ -169,8 +169,9 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
                                 final String typePlural = config.getType().getPluralName().toLowerCase();
                                 header.setText("Select " + typePlural);
                                 specificObjectsLabel.setText("Permissions will only apply to the selected " + typePlural + ".");
-                                customCheckBox.setText(type == EntityType.FOLDER ? "Grant read access to the ancestors of the selected folders." : StringUtils.EMPTY);
-                                customCheckBox.setVisible(type == EntityType.FOLDER);
+                                specificObjectsTablePanel.setSelectableObjectLabel(typePlural);
+                                specificAncestryCheckBox.setText(type.isFolderable() ? "Grant read access to the ancestors of the selected " + typePlural + "." : StringUtils.EMPTY);
+                                specificAncestryCheckBox.setVisible(type.isFolderable());
                                 if (config.getSelectedEntities().isEmpty()) {
                                     final List<EntityHeader> entities = new ArrayList<>();
                                     try {
@@ -208,7 +209,7 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
                     break;
                 case SPECIFIC_OBJECTS:
                     config.setSelectedEntities(new HashSet<>(specificObjectsModel.getSelected()));
-                    if (config.getType() == EntityType.FOLDER && customCheckBox.isSelected()) {
+                    if (config.getType().isFolderable() && specificAncestryCheckBox.isSelected()) {
                         config.setSpecificFolderAncestry(true);
                     } else {
                         config.setSpecificFolderAncestry(false);

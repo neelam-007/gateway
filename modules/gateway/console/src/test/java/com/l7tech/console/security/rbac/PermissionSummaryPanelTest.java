@@ -534,6 +534,21 @@ public class PermissionSummaryPanelTest {
         assertEquals("test", attributePredicate.getValue());
     }
 
+    @Test
+    public void generatePermissionsSpecificServiceWithAncestry() throws Exception {
+        config.setScopeType(PermissionsConfig.ScopeType.SPECIFIC_OBJECTS);
+        config.setType(EntityType.SERVICE);
+        config.setSpecificFolderAncestry(true);
+        operations.add(OperationType.READ);
+        entities.add(new EntityHeader("1", EntityType.SERVICE, "test", null));
+
+        PermissionSummaryPanel.generatePermissions(config, folderAdmin);
+        assertEquals(2, config.getGeneratedPermissions().size());
+        final Map<Class, Integer> predTypes = countPredicateTypes(config.getGeneratedPermissions());
+        assertEquals(new Integer(1), predTypes.get(ObjectIdentityPredicate.class));
+        assertEquals(new Integer(1), predTypes.get(EntityFolderAncestryPredicate.class));
+    }
+
     private Map<Class, Integer> countPredicateTypes(final Permission permission) {
         return countPredicateTypes(Collections.singleton(permission));
     }

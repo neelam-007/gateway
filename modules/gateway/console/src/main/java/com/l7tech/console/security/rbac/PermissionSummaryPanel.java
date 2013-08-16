@@ -174,7 +174,7 @@ public class PermissionSummaryPanel extends WizardStepPanel {
                         config.getGeneratedPermissions().add(specificEntityPermission);
 
                     }
-                    if (entityType == EntityType.FOLDER && config.isSpecificFolderAncestry()) {
+                    if (entityType.isFolderable() && config.isSpecificFolderAncestry()) {
                         config.getGeneratedPermissions().add(createReadFolderAncestryPermission(config, header));
                     }
                 }
@@ -184,9 +184,12 @@ public class PermissionSummaryPanel extends WizardStepPanel {
         }
     }
 
-    private static Permission createReadFolderAncestryPermission(final PermissionsConfig config, final EntityHeader folderHeader) {
+    /**
+     * @return a Permission which allows user to read all parent folders of the given entity.
+     */
+    private static Permission createReadFolderAncestryPermission(final PermissionsConfig config, final EntityHeader header) {
         final Permission ancestryPermission = new Permission(config.getRole(), OperationType.READ, EntityType.FOLDER);
-        ancestryPermission.getScope().add(new EntityFolderAncestryPredicate(ancestryPermission, EntityType.FOLDER, folderHeader.getGoid()));
+        ancestryPermission.getScope().add(new EntityFolderAncestryPredicate(ancestryPermission, header.getType(), header.getGoid()));
         return ancestryPermission;
     }
 
