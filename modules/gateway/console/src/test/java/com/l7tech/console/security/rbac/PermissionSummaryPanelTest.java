@@ -3,9 +3,14 @@ package com.l7tech.console.security.rbac;
 import com.l7tech.console.util.SecurityZoneUtil;
 import com.l7tech.gateway.common.admin.FolderAdmin;
 import com.l7tech.gateway.common.security.rbac.*;
+import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.gateway.common.service.PublishedServiceAlias;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.FolderHeader;
+import com.l7tech.policy.Policy;
+import com.l7tech.policy.PolicyAlias;
+import com.l7tech.policy.PolicyType;
 import com.l7tech.policy.assertion.Include;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.test.BugId;
@@ -22,6 +27,7 @@ import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class PermissionSummaryPanelTest {
+    private static final Integer ONE = new Integer(1);
     private final Folder TEST_FOLDER = new Folder("test", null);
     @Mock
     private FolderAdmin folderAdmin;
@@ -85,7 +91,7 @@ public class PermissionSummaryPanelTest {
         assertEquals(2, config.getGeneratedPermissions().size());
         for (final Permission permission : config.getGeneratedPermissions()) {
             final Map<Class, Integer> predicateTypes = countPredicateTypes(permission);
-            assertEquals(new Integer(1), predicateTypes.get(SecurityZonePredicate.class));
+            assertEquals(ONE, predicateTypes.get(SecurityZonePredicate.class));
         }
     }
 
@@ -106,7 +112,7 @@ public class PermissionSummaryPanelTest {
         assertEquals(4, config.getGeneratedPermissions().size());
         for (final Permission permission : config.getGeneratedPermissions()) {
             final Map<Class, Integer> predicateTypes = countPredicateTypes(permission);
-            assertEquals(new Integer(1), predicateTypes.get(SecurityZonePredicate.class));
+            assertEquals(ONE, predicateTypes.get(SecurityZonePredicate.class));
         }
     }
 
@@ -141,7 +147,7 @@ public class PermissionSummaryPanelTest {
         assertEquals(2, config.getGeneratedPermissions().size());
         for (final Permission permission : config.getGeneratedPermissions()) {
             final Map<Class, Integer> predicateTypes = countPredicateTypes(permission);
-            assertEquals(new Integer(1), predicateTypes.get(FolderPredicate.class));
+            assertEquals(ONE, predicateTypes.get(FolderPredicate.class));
         }
     }
 
@@ -164,7 +170,7 @@ public class PermissionSummaryPanelTest {
         for (final Permission permission : config.getGeneratedPermissions()) {
             foundOps.add(permission.getOperation());
             final Map<Class, Integer> predicateTypes = countPredicateTypes(permission);
-            assertEquals(new Integer(1), predicateTypes.get(FolderPredicate.class));
+            assertEquals(ONE, predicateTypes.get(FolderPredicate.class));
         }
         assertEquals(2, foundOps.size());
         assertTrue(foundOps.contains(OperationType.READ));
@@ -196,7 +202,7 @@ public class PermissionSummaryPanelTest {
     public void generatePermissionsFoldersTransitiveWithAncestry() throws Exception {
         config.setScopeType(PermissionsConfig.ScopeType.CONDITIONAL);
         operations.add(OperationType.READ);
-        config.setFolderAncestry(true);
+        config.setGrantReadFolderAncestry(true);
         config.setFolderTransitive(true);
         // 2 folders
         selectedFolders.add(new FolderHeader(TEST_FOLDER));
@@ -215,16 +221,16 @@ public class PermissionSummaryPanelTest {
             final Map<Class, Integer> predicateTypes = countPredicateTypes(permission);
             if (predicateTypes.containsKey(FolderPredicate.class)) {
                 // regular folder permission
-                assertEquals(new Integer(1), predicateTypes.get(FolderPredicate.class));
+                assertEquals(ONE, predicateTypes.get(FolderPredicate.class));
                 folderPermissionCount++;
                 assertTrue(((FolderPredicate) permission.getScope().iterator().next()).isTransitive());
             } else if (predicateTypes.containsKey(EntityFolderAncestryPredicate.class)) {
                 // should be the ancestry permission
-                assertEquals(new Integer(1), predicateTypes.get(EntityFolderAncestryPredicate.class));
+                assertEquals(ONE, predicateTypes.get(EntityFolderAncestryPredicate.class));
                 ancestryPermissionCount++;
             } else {
                 // should be the read folder permission
-                assertEquals(new Integer(1), predicateTypes.get(ObjectIdentityPredicate.class));
+                assertEquals(ONE, predicateTypes.get(ObjectIdentityPredicate.class));
                 specificFolderPermissionCount++;
             }
         }
@@ -238,7 +244,7 @@ public class PermissionSummaryPanelTest {
         config.setScopeType(PermissionsConfig.ScopeType.CONDITIONAL);
         operations.add(OperationType.READ);
         operations.add(OperationType.UPDATE);
-        config.setFolderAncestry(true);
+        config.setGrantReadFolderAncestry(true);
         config.setFolderTransitive(true);
         // 2 folders
         selectedFolders.add(new FolderHeader(TEST_FOLDER));
@@ -259,16 +265,16 @@ public class PermissionSummaryPanelTest {
             final Map<Class, Integer> predicateTypes = countPredicateTypes(permission);
             if (predicateTypes.containsKey(FolderPredicate.class)) {
                 // regular folder permission
-                assertEquals(new Integer(1), predicateTypes.get(FolderPredicate.class));
+                assertEquals(ONE, predicateTypes.get(FolderPredicate.class));
                 folderPermissionCount++;
                 assertTrue(((FolderPredicate) permission.getScope().iterator().next()).isTransitive());
             } else if (predicateTypes.containsKey(EntityFolderAncestryPredicate.class)) {
                 // should be the ancestry permission
-                assertEquals(new Integer(1), predicateTypes.get(EntityFolderAncestryPredicate.class));
+                assertEquals(ONE, predicateTypes.get(EntityFolderAncestryPredicate.class));
                 ancestryPermissionCount++;
             } else {
                 // should be the read folder permission
-                assertEquals(new Integer(1), predicateTypes.get(ObjectIdentityPredicate.class));
+                assertEquals(ONE, predicateTypes.get(ObjectIdentityPredicate.class));
                 specificFolderPermissionCount++;
             }
         }
@@ -326,9 +332,9 @@ public class PermissionSummaryPanelTest {
         final Permission permission = config.getGeneratedPermissions().iterator().next();
         assertEquals(3, permission.getScope().size());
         final Map<Class, Integer> predTypes = countPredicateTypes(permission);
-        assertEquals(new Integer(1), predTypes.get(SecurityZonePredicate.class));
-        assertEquals(new Integer(1), predTypes.get(FolderPredicate.class));
-        assertEquals(new Integer(1), predTypes.get(AttributePredicate.class));
+        assertEquals(ONE, predTypes.get(SecurityZonePredicate.class));
+        assertEquals(ONE, predTypes.get(FolderPredicate.class));
+        assertEquals(ONE, predTypes.get(AttributePredicate.class));
     }
 
     @Test
@@ -347,9 +353,9 @@ public class PermissionSummaryPanelTest {
             foundOps.add(permission.getOperation());
             assertEquals(3, permission.getScope().size());
             final Map<Class, Integer> predTypes = countPredicateTypes(permission);
-            assertEquals(new Integer(1), predTypes.get(SecurityZonePredicate.class));
-            assertEquals(new Integer(1), predTypes.get(FolderPredicate.class));
-            assertEquals(new Integer(1), predTypes.get(AttributePredicate.class));
+            assertEquals(ONE, predTypes.get(SecurityZonePredicate.class));
+            assertEquals(ONE, predTypes.get(FolderPredicate.class));
+            assertEquals(ONE, predTypes.get(AttributePredicate.class));
         }
         assertEquals(2, foundOps.size());
         assertTrue(foundOps.contains(OperationType.READ));
@@ -386,8 +392,8 @@ public class PermissionSummaryPanelTest {
         for (final Permission permission : config.getGeneratedPermissions()) {
             assertEquals(4, permission.getScope().size());
             final Map<Class, Integer> predicateTypes = countPredicateTypes(permission);
-            assertEquals(new Integer(1), predicateTypes.get(SecurityZonePredicate.class));
-            assertEquals(new Integer(1), predicateTypes.get(FolderPredicate.class));
+            assertEquals(ONE, predicateTypes.get(SecurityZonePredicate.class));
+            assertEquals(ONE, predicateTypes.get(FolderPredicate.class));
             assertEquals(new Integer(2), predicateTypes.get(AttributePredicate.class));
         }
     }
@@ -425,8 +431,8 @@ public class PermissionSummaryPanelTest {
             foundOps.add(permission.getOperation());
             assertEquals(4, permission.getScope().size());
             final Map<Class, Integer> predicateTypes = countPredicateTypes(permission);
-            assertEquals(new Integer(1), predicateTypes.get(SecurityZonePredicate.class));
-            assertEquals(new Integer(1), predicateTypes.get(FolderPredicate.class));
+            assertEquals(ONE, predicateTypes.get(SecurityZonePredicate.class));
+            assertEquals(ONE, predicateTypes.get(FolderPredicate.class));
             assertEquals(new Integer(2), predicateTypes.get(AttributePredicate.class));
         }
         assertEquals(2, foundOps.size());
@@ -476,36 +482,36 @@ public class PermissionSummaryPanelTest {
     public void generatePermissionsSpecificFolder() throws Exception {
         config.setScopeType(PermissionsConfig.ScopeType.SPECIFIC_OBJECTS);
         config.setType(EntityType.FOLDER);
-        config.setSpecificFolderAncestry(false);
+        config.setGrantReadSpecificFolderAncestry(false);
         operations.add(OperationType.READ);
         entities.add(new EntityHeader("1", EntityType.FOLDER, "test", null));
 
         PermissionSummaryPanel.generatePermissions(config, folderAdmin);
         assertEquals(1, config.getGeneratedPermissions().size());
         final Map<Class, Integer> predTypes = countPredicateTypes(config.getGeneratedPermissions().iterator().next());
-        assertEquals(new Integer(1), predTypes.get(ObjectIdentityPredicate.class));
+        assertEquals(ONE, predTypes.get(ObjectIdentityPredicate.class));
     }
 
     @Test
     public void generatePermissionsSpecificFolderWithAncestry() throws Exception {
         config.setScopeType(PermissionsConfig.ScopeType.SPECIFIC_OBJECTS);
         config.setType(EntityType.FOLDER);
-        config.setSpecificFolderAncestry(true);
+        config.setGrantReadSpecificFolderAncestry(true);
         operations.add(OperationType.READ);
         entities.add(new EntityHeader("1", EntityType.FOLDER, "test", null));
 
         PermissionSummaryPanel.generatePermissions(config, folderAdmin);
         assertEquals(2, config.getGeneratedPermissions().size());
         final Map<Class, Integer> predTypes = countPredicateTypes(config.getGeneratedPermissions());
-        assertEquals(new Integer(1), predTypes.get(ObjectIdentityPredicate.class));
-        assertEquals(new Integer(1), predTypes.get(EntityFolderAncestryPredicate.class));
+        assertEquals(ONE, predTypes.get(ObjectIdentityPredicate.class));
+        assertEquals(ONE, predTypes.get(EntityFolderAncestryPredicate.class));
     }
 
     @Test
     public void generatePermissionsMultipleSpecificFolderAndOpsWithAncestry() throws Exception {
         config.setScopeType(PermissionsConfig.ScopeType.SPECIFIC_OBJECTS);
         config.setType(EntityType.FOLDER);
-        config.setSpecificFolderAncestry(true);
+        config.setGrantReadSpecificFolderAncestry(true);
         operations.add(OperationType.READ);
         operations.add(OperationType.UPDATE);
         entities.add(new EntityHeader(new Goid(0, 1), EntityType.FOLDER, "test", null));
@@ -538,15 +544,94 @@ public class PermissionSummaryPanelTest {
     public void generatePermissionsSpecificServiceWithAncestry() throws Exception {
         config.setScopeType(PermissionsConfig.ScopeType.SPECIFIC_OBJECTS);
         config.setType(EntityType.SERVICE);
-        config.setSpecificFolderAncestry(true);
+        config.setGrantReadSpecificFolderAncestry(true);
         operations.add(OperationType.READ);
         entities.add(new EntityHeader("1", EntityType.SERVICE, "test", null));
 
         PermissionSummaryPanel.generatePermissions(config, folderAdmin);
         assertEquals(2, config.getGeneratedPermissions().size());
         final Map<Class, Integer> predTypes = countPredicateTypes(config.getGeneratedPermissions());
-        assertEquals(new Integer(1), predTypes.get(ObjectIdentityPredicate.class));
-        assertEquals(new Integer(1), predTypes.get(EntityFolderAncestryPredicate.class));
+        assertEquals(ONE, predTypes.get(ObjectIdentityPredicate.class));
+        assertEquals(ONE, predTypes.get(EntityFolderAncestryPredicate.class));
+    }
+
+    @BugId("SSG-6960")
+    @Test
+    public void generatePermissionsSpecificServiceAliasWithReadAncestry() throws Exception {
+        config.setScopeType(PermissionsConfig.ScopeType.SPECIFIC_OBJECTS);
+        config.setType(EntityType.SERVICE_ALIAS);
+        config.setGrantReadSpecificFolderAncestry(true);
+        config.setGrantReadAliasOwningEntities(false);
+        operations.add(OperationType.READ);
+        final PublishedService service = new PublishedService();
+        service.setGoid(new Goid(0, 1));
+        final PublishedServiceAlias alias = new PublishedServiceAlias(service, new Folder("test", null));
+        entities.add(new AliasHeader(alias));
+
+        PermissionSummaryPanel.generatePermissions(config, folderAdmin);
+        assertEquals(2, config.getGeneratedPermissions().size());
+        final Map<Class, Integer> predTypes = countPredicateTypes(config.getGeneratedPermissions());
+        assertEquals(ONE, predTypes.get(ObjectIdentityPredicate.class));
+        assertEquals(ONE, predTypes.get(EntityFolderAncestryPredicate.class));
+    }
+
+    @BugId("SSG-6960")
+    @Test
+    public void generatePermissionsSpecificServiceAliasWithReadOwningService() throws Exception {
+        config.setScopeType(PermissionsConfig.ScopeType.SPECIFIC_OBJECTS);
+        config.setType(EntityType.SERVICE_ALIAS);
+        config.setGrantReadSpecificFolderAncestry(false);
+        config.setGrantReadAliasOwningEntities(true);
+        operations.add(OperationType.READ);
+        final PublishedService service = new PublishedService();
+        service.setGoid(new Goid(0, 1));
+        final PublishedServiceAlias alias = new PublishedServiceAlias(service, new Folder("test", null));
+        entities.add(new AliasHeader(alias));
+
+        PermissionSummaryPanel.generatePermissions(config, folderAdmin);
+        assertEquals(2, config.getGeneratedPermissions().size());
+        final Map<Class, Integer> predTypes = countPredicateTypes(config.getGeneratedPermissions());
+        assertEquals(new Integer(2), predTypes.get(ObjectIdentityPredicate.class));
+    }
+
+    @BugId("SSG-6960")
+    @Test
+    public void generatePermissionsSpecificServiceAliasWithReadAncestryAndOwningService() throws Exception {
+        config.setScopeType(PermissionsConfig.ScopeType.SPECIFIC_OBJECTS);
+        config.setType(EntityType.SERVICE_ALIAS);
+        config.setGrantReadSpecificFolderAncestry(true);
+        config.setGrantReadAliasOwningEntities(true);
+        operations.add(OperationType.READ);
+        final PublishedService service = new PublishedService();
+        service.setGoid(new Goid(0, 1));
+        final PublishedServiceAlias alias = new PublishedServiceAlias(service, new Folder("test", null));
+        entities.add(new AliasHeader(alias));
+
+        PermissionSummaryPanel.generatePermissions(config, folderAdmin);
+        assertEquals(3, config.getGeneratedPermissions().size());
+        final Map<Class, Integer> predTypes = countPredicateTypes(config.getGeneratedPermissions());
+        // one identity predicate for alias itself and one for owning service
+        assertEquals(new Integer(2), predTypes.get(ObjectIdentityPredicate.class));
+        assertEquals(ONE, predTypes.get(EntityFolderAncestryPredicate.class));
+    }
+
+    @BugId("SSG-6962")
+    @Test
+    public void generatePermissionsSpecificPolicyAliasWithReadOwningPolicy() throws Exception {
+        config.setScopeType(PermissionsConfig.ScopeType.SPECIFIC_OBJECTS);
+        config.setType(EntityType.POLICY_ALIAS);
+        config.setGrantReadSpecificFolderAncestry(false);
+        config.setGrantReadAliasOwningEntities(true);
+        operations.add(OperationType.READ);
+        final Policy policy = new Policy(PolicyType.INCLUDE_FRAGMENT, "test", "xml", false);
+        policy.setGoid(new Goid(0, 1));
+        final PolicyAlias alias = new PolicyAlias(policy, new Folder("test", null));
+        entities.add(new AliasHeader(alias));
+
+        PermissionSummaryPanel.generatePermissions(config, folderAdmin);
+        assertEquals(2, config.getGeneratedPermissions().size());
+        final Map<Class, Integer> predTypes = countPredicateTypes(config.getGeneratedPermissions());
+        assertEquals(new Integer(2), predTypes.get(ObjectIdentityPredicate.class));
     }
 
     private Map<Class, Integer> countPredicateTypes(final Permission permission) {

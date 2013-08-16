@@ -88,7 +88,7 @@ public class PermissionSummaryPanel extends WizardStepPanel {
         switch (config.getScopeType()) {
             case CONDITIONAL:
                 final Map<Goid, Folder> retrievedFolders = new HashMap<>();
-                if (config.isFolderAncestry()) {
+                if (config.isGrantReadFolderAncestry()) {
                     // provide read access for ancestry of each selected folder, the selected folder itself and its subfolders
                     for (final FolderHeader folderHeader : config.getSelectedFolders()) {
                         try {
@@ -174,8 +174,21 @@ public class PermissionSummaryPanel extends WizardStepPanel {
                         config.getGeneratedPermissions().add(specificEntityPermission);
 
                     }
-                    if (entityType.isFolderable() && config.isSpecificFolderAncestry()) {
+                    if (entityType.isFolderable() && config.isGrantReadSpecificFolderAncestry()) {
                         config.getGeneratedPermissions().add(createReadFolderAncestryPermission(config, header));
+                    }
+                    if (header instanceof AliasHeader && config.isGrantReadAliasOwningEntities()) {
+                        final AliasHeader aliasHeader = (AliasHeader) header;
+                        if (aliasHeader.getAliasedEntityId() != null && aliasHeader.getAliasedEntityType() != null) {
+                            final Permission readOwningEntityPermission = new Permission(config.getRole(), OperationType.READ, aliasHeader.getAliasedEntityType());
+                            final String owningEntityId = aliasHeader.getAliasedEntityId().toHexString();
+                            final ObjectIdentityPredicate identityPredicate = new ObjectIdentityPredicate(readOwningEntityPermission, owningEntityId);
+                            identityPredicate.setHeader(new EntityHeader(owningEntityId, aliasHeader.getAliasedEntityType(), null, null));
+                            readOwningEntityPermission.getScope().add(identityPredicate);
+                            config.getGeneratedPermissions().add(readOwningEntityPermission);
+                        } else {
+                            logger.log(Level.WARNING, "Cannot add read owning entity permission for alias " + aliasHeader + " because either aliased entity id or type is null.");
+                        }
                     }
                 }
                 break;

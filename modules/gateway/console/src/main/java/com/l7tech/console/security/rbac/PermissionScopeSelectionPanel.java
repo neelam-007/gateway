@@ -9,10 +9,7 @@ import com.l7tech.gui.CheckBoxSelectableTableModel;
 import com.l7tech.gui.SimpleTableModel;
 import com.l7tech.gui.util.TableUtil;
 import com.l7tech.gui.util.Utilities;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.SecurityZone;
+import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.folder.FolderHeader;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
@@ -92,6 +89,7 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
     private JLabel header;
     // use this check box for entity type specific input
     private JCheckBox specificAncestryCheckBox;
+    private JCheckBox aliasOwnersCheckBox;
     private CheckBoxSelectableTableModel<SecurityZone> zonesModel;
     private CheckBoxSelectableTableModel<FolderHeader> foldersModel;
     private SimpleTableModel<AttributePredicate> attributesModel;
@@ -172,6 +170,9 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
                                 specificObjectsTablePanel.setSelectableObjectLabel(typePlural);
                                 specificAncestryCheckBox.setText(type.isFolderable() ? "Grant read access to the ancestors of the selected " + typePlural + "." : StringUtils.EMPTY);
                                 specificAncestryCheckBox.setVisible(type.isFolderable());
+                                final boolean isAlias = Alias.class.isAssignableFrom(type.getEntityClass());
+                                aliasOwnersCheckBox.setVisible(isAlias);
+                                aliasOwnersCheckBox.setText(isAlias ? "Grant read access to the object referenced by each selected alias." : StringUtils.EMPTY);
                                 if (config.getSelectedEntities().isEmpty()) {
                                     final List<EntityHeader> entities = new ArrayList<>();
                                     try {
@@ -204,16 +205,13 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
                     config.setSelectedZones(new HashSet<>(zonesModel.getSelected()));
                     config.setSelectedFolders(new HashSet<>(foldersModel.getSelected()));
                     config.setFolderTransitive(transitiveCheckBox.isSelected());
-                    config.setFolderAncestry(ancestryCheckBox.isSelected());
+                    config.setGrantReadFolderAncestry(ancestryCheckBox.isSelected());
                     config.setAttributePredicates(new HashSet<>(attributesModel.getRows()));
                     break;
                 case SPECIFIC_OBJECTS:
                     config.setSelectedEntities(new HashSet<>(specificObjectsModel.getSelected()));
-                    if (config.getType().isFolderable() && specificAncestryCheckBox.isSelected()) {
-                        config.setSpecificFolderAncestry(true);
-                    } else {
-                        config.setSpecificFolderAncestry(false);
-                    }
+                    config.setGrantReadSpecificFolderAncestry(config.getType().isFolderable() && specificAncestryCheckBox.isSelected());
+                    config.setGrantReadAliasOwningEntities(Alias.class.isAssignableFrom(config.getType().getEntityClass()) && aliasOwnersCheckBox.isSelected());
                     break;
                 default:
                     throw new IllegalArgumentException("Unsupported scope type: " + config.getScopeType());
