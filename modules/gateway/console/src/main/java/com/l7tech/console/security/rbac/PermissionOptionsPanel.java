@@ -23,6 +23,7 @@ public class PermissionOptionsPanel extends WizardStepPanel {
     private static final String PERMISSION_OPTIONS = "Permission options";
     private static final String SELECT_A_TYPE = "(select a type)";
     private static final Map<EntityType, Set<OperationType>> ENTITY_TYPES;
+    private static final Set<EntityType> SINGULAR_ENTITY_TYPES;
     private JPanel contentPanel;
     private JPanel applyToPanel;
     private JPanel restrictScopePanel;
@@ -48,10 +49,16 @@ public class PermissionOptionsPanel extends WizardStepPanel {
                 if (type == EntityType.ASSERTION_ACCESS) {
                     invalidOps.add(OperationType.CREATE);
                     invalidOps.add(OperationType.DELETE);
+                } else if (type == EntityType.SSG_KEYSTORE) {
+                    invalidOps.add(OperationType.CREATE);
+                    invalidOps.add(OperationType.DELETE);
                 }
                 ENTITY_TYPES.put(type, invalidOps);
             }
         }
+
+        SINGULAR_ENTITY_TYPES = new HashSet<>();
+        SINGULAR_ENTITY_TYPES.add(EntityType.SSG_KEYSTORE);
     }
 
     public PermissionOptionsPanel() {
@@ -102,7 +109,8 @@ public class PermissionOptionsPanel extends WizardStepPanel {
             @Override
             public Component getListCellRendererComponent(final JList<?> list, Object value, final int index, final boolean isSelected, final boolean cellHasFocus) {
                 if (value instanceof EntityType) {
-                    value = ((EntityType) value).getPluralName();
+                    final EntityType type = (EntityType) value;
+                    value = SINGULAR_ENTITY_TYPES.contains(type) ? type.getName() : type.getPluralName();
                 } else {
                     value = SELECT_A_TYPE;
                 }
@@ -127,8 +135,8 @@ public class PermissionOptionsPanel extends WizardStepPanel {
             invalidOps = ENTITY_TYPES.get(selected);
         }
         allObjectsRadio.setEnabled(enableRadiosAndBoxes);
-        conditionRadio.setEnabled(enableRadiosAndBoxes);
-        specificObjectsRadio.setEnabled(specificTypeRadio.isSelected() && selectedItem != null);
+        conditionRadio.setEnabled(allTypesRadio.isSelected() || (selectedItem != null && !SINGULAR_ENTITY_TYPES.contains(selectedItem)));
+        specificObjectsRadio.setEnabled(specificTypeRadio.isSelected() && selectedItem != null && !SINGULAR_ENTITY_TYPES.contains(selectedItem));
         createCheckBox.setEnabled(enableRadiosAndBoxes && operationEnabled(OperationType.CREATE, invalidOps));
         readCheckBox.setEnabled(enableRadiosAndBoxes && operationEnabled(OperationType.READ, invalidOps));
         updateCheckBox.setEnabled(enableRadiosAndBoxes && operationEnabled(OperationType.UPDATE, invalidOps));
