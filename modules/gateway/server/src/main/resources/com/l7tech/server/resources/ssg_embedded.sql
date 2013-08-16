@@ -1635,6 +1635,7 @@ INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_ope
 INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -1355),0, toGoid(0, -1350),'READ',NULL,'POLICY');
 INSERT INTO rbac_predicate (goid, version, permission_goid) VALUES (toGoid(0, -1356),0,toGoid(0, -1355));
 INSERT INTO rbac_predicate_attribute (goid, attribute, value, mode) VALUES (toGoid(0, -1356),'type','Included Policy Fragment','eq');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -1356),0, toGoid(0, -1350),'READ',NULL,'ASSERTION_ACCESS');
 
 INSERT INTO rbac_role (goid, version, name, tag, entity_type, entity_oid, entity_goid, description, user_created) VALUES (toGoid(0, -1450),0,'Manage Custom Key Value Store', null,'CUSTOM_KEY_VALUE_STORE',null,null, 'Users assigned to the {0} role have the ability to read, create, update, and delete key values from custom key value store.',0);
 INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -1451),0, toGoid(0, -1450),'CREATE',null,'CUSTOM_KEY_VALUE_STORE');
