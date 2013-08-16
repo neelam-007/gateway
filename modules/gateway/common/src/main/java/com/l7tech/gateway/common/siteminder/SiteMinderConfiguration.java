@@ -1,6 +1,5 @@
 package com.l7tech.gateway.common.siteminder;
 
-import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.imp.ZoneableNamedGoidEntityImp;
 import com.l7tech.search.Dependency;
@@ -61,7 +60,7 @@ public class SiteMinderConfiguration extends ZoneableNamedGoidEntityImp implemen
         enabled = true;
         hostConfiguration = "";
         userName = "";
-        passwordGoid = SecurePassword.DEFAULT_GOID;
+        passwordGoid = null;
         updateSSOToken = false;
     }
 
@@ -272,11 +271,11 @@ public class SiteMinderConfiguration extends ZoneableNamedGoidEntityImp implemen
     public int compareTo(Object o) {
         if (o == null || ! (o instanceof SiteMinderConfiguration)) throw new IllegalArgumentException("The compared object must be a SiteMinderConfiguration.");
 
-        String originalConnectionName = getName();
-        String comparedConnectionName = ((SiteMinderConfiguration)o).getName();
+        String originalConfigurationName = getName();
+        String comparedConfigurationName = ((SiteMinderConfiguration)o).getName();
 
-        if (originalConnectionName == null || comparedConnectionName == null) throw new NullPointerException("SiteMinderConfiguration name must not be null.");
-        return originalConnectionName.compareToIgnoreCase(comparedConnectionName);
+        if (originalConfigurationName == null || comparedConfigurationName == null) throw new NullPointerException("SiteMinderConfiguration name must not be null.");
+        return originalConfigurationName.compareToIgnoreCase(comparedConfigurationName);
     }
 
     public void copyFrom(SiteMinderConfiguration other) {
