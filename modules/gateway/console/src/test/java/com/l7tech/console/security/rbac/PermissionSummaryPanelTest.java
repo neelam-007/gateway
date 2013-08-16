@@ -634,6 +634,23 @@ public class PermissionSummaryPanelTest {
         assertEquals(new Integer(2), predTypes.get(ObjectIdentityPredicate.class));
     }
 
+    @BugId("SSG-6973")
+    @Test
+    public void generatePermissionsSpecificServiceTemplate() throws Exception {
+        config.setScopeType(PermissionsConfig.ScopeType.SPECIFIC_OBJECTS);
+        config.setType(EntityType.SERVICE_TEMPLATE);
+        operations.add(OperationType.READ);
+        entities.add(new EntityHeader("1", EntityType.SERVICE_TEMPLATE, "test", null));
+
+        PermissionSummaryPanel.generatePermissions(config, folderAdmin);
+        assertEquals(1, config.getGeneratedPermissions().size());
+        final Set<ScopePredicate> scope = config.getGeneratedPermissions().iterator().next().getScope();
+        assertEquals(1, scope.size());
+        final AttributePredicate attributePredicate = (AttributePredicate) scope.iterator().next();
+        assertEquals("name", attributePredicate.getAttribute());
+        assertEquals("test", attributePredicate.getValue());
+    }
+
     private Map<Class, Integer> countPredicateTypes(final Permission permission) {
         return countPredicateTypes(Collections.singleton(permission));
     }

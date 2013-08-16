@@ -7,6 +7,7 @@ import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gateway.common.security.keystore.KeystoreFileEntityHeader;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.security.keystore.SsgKeyMetadata;
+import com.l7tech.gateway.common.service.ServiceTemplate;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.objectmodel.imp.NamedGoidEntityImp;
@@ -17,10 +18,7 @@ import org.jetbrains.annotations.NotNull;
 import java.io.IOException;
 import java.security.KeyStoreException;
 import java.security.cert.CertificateException;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Utility methods for entities
@@ -152,6 +150,11 @@ public class EntityUtils {
                 }
             }
             entities.addAll(clusterProperties.values());
+        } else if (type == EntityType.SERVICE_TEMPLATE) {
+            final Set<ServiceTemplate> templates = Registry.getDefault().getServiceManager().findAllTemplates();
+            for (final ServiceTemplate template : templates) {
+                entities.add(new EntityHeader(template.getName(), EntityType.SERVICE_TEMPLATE, template.getName(), null, 0));
+            }
         } else {
             entities = Registry.getDefault().getRbacAdmin().findEntities(type);
         }

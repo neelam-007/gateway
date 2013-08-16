@@ -164,7 +164,9 @@ public class PermissionSummaryPanel extends WizardStepPanel {
                     for (final OperationType op : config.getOperations()) {
                         final Permission specificEntityPermission = new Permission(config.getRole(), op, entityType);
                         final ScopePredicate specificPredicate;
-                        if (entityType == EntityType.ASSERTION_ACCESS || entityType == EntityType.CLUSTER_PROPERTY) {
+                        if (entityType == EntityType.ASSERTION_ACCESS ||
+                                entityType == EntityType.CLUSTER_PROPERTY ||
+                                entityType == EntityType.SERVICE_TEMPLATE) {
                             specificPredicate = new AttributePredicate(specificEntityPermission, NAME, header.getName());
                         } else {
                             specificPredicate = new ObjectIdentityPredicate(specificEntityPermission, header.getStrId());

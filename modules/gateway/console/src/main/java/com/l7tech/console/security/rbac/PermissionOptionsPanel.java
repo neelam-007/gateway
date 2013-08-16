@@ -51,6 +51,10 @@ public class PermissionOptionsPanel extends WizardStepPanel {
                         type == EntityType.RESOLUTION_CONFIGURATION) {
                     invalidOps.add(OperationType.CREATE);
                     invalidOps.add(OperationType.DELETE);
+                } else if (type == EntityType.SERVICE_TEMPLATE) {
+                    invalidOps.add(OperationType.CREATE);
+                    invalidOps.add(OperationType.DELETE);
+                    invalidOps.add(OperationType.UPDATE);
                 }
                 ENTITY_TYPES.put(type, invalidOps);
             }
