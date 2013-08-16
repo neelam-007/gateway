@@ -171,21 +171,6 @@ public class EntityNameResolverTest {
         assertTrue(resolver.getNameForHeader(new EntityHeader(OID, EntityType.ANY, null, null)).isEmpty());
     }
 
-    /**
-     * If the header has the entity's oid as its name - go get more info for the name.
-     */
-    @Test
-    public void getNameForHeaderWithOidInName() throws Exception {
-        final PublishedService service = createService(GOID, NAME, null);
-        final Folder folder = createFolderInRoot(GOID, "aliases");
-        final PublishedServiceAlias alias = createServiceAlias(GOID, service, folder);
-        when(serviceAdmin.findByAlias(GOID)).thenReturn(service);
-        when(folderAdmin.findByPrimaryKey(GOID)).thenReturn(folder);
-        final AliasHeader header = new AliasHeader(alias);
-        header.setName(String.valueOf(GOID));
-        assertEquals("test alias (/aliases/test alias)", resolver.getNameForHeader(header));
-    }
-
     @Test
     public void getNameForHasFolderOidHeader() throws Exception {
         when(folderAdmin.findByPrimaryKey(GOID)).thenReturn(new Folder("folder2", new Folder("folder1", new Folder("Root Node", null))));

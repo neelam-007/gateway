@@ -443,8 +443,11 @@ public class PermissionSummaryPanelTest {
 
         PermissionSummaryPanel.generatePermissions(config, folderAdmin);
         assertEquals(1, config.getGeneratedPermissions().size());
-        final Map<Class, Integer> predTypes = countPredicateTypes(config.getGeneratedPermissions().iterator().next());
-        assertEquals(new Integer(1), predTypes.get(AttributePredicate.class));
+        final Set<ScopePredicate> scope = config.getGeneratedPermissions().iterator().next().getScope();
+        assertEquals(1, scope.size());
+        final AttributePredicate attributePredicate = (AttributePredicate) scope.iterator().next();
+        assertEquals("name", attributePredicate.getAttribute());
+        assertEquals(AllAssertion.class.getName(), attributePredicate.getValue());
     }
 
     @Test
@@ -513,6 +516,22 @@ public class PermissionSummaryPanelTest {
         final Map<Class, Integer> predTypes = countPredicateTypes(config.getGeneratedPermissions());
         assertEquals(new Integer(4), predTypes.get(ObjectIdentityPredicate.class));
         assertEquals(new Integer(2), predTypes.get(EntityFolderAncestryPredicate.class));
+    }
+
+    @Test
+    public void generatePermissionsSpecificClusterProperties() throws Exception {
+        config.setScopeType(PermissionsConfig.ScopeType.SPECIFIC_OBJECTS);
+        config.setType(EntityType.CLUSTER_PROPERTY);
+        operations.add(OperationType.READ);
+        entities.add(new EntityHeader("1", EntityType.CLUSTER_PROPERTY, "test", null));
+
+        PermissionSummaryPanel.generatePermissions(config, folderAdmin);
+        assertEquals(1, config.getGeneratedPermissions().size());
+        final Set<ScopePredicate> scope = config.getGeneratedPermissions().iterator().next().getScope();
+        assertEquals(1, scope.size());
+        final AttributePredicate attributePredicate = (AttributePredicate) scope.iterator().next();
+        assertEquals("name", attributePredicate.getAttribute());
+        assertEquals("test", attributePredicate.getValue());
     }
 
     private Map<Class, Integer> countPredicateTypes(final Permission permission) {

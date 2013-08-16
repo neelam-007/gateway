@@ -1,6 +1,8 @@
 package com.l7tech.console.util;
 
 import com.l7tech.console.policy.ConsoleAssertionRegistry;
+import com.l7tech.gateway.common.cluster.ClusterProperty;
+import com.l7tech.gateway.common.cluster.ClusterPropertyDescriptor;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gateway.common.security.keystore.KeystoreFileEntityHeader;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
@@ -16,7 +18,9 @@ import java.io.IOException;
 import java.security.KeyStoreException;
 import java.security.cert.CertificateException;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Utility methods for entities
@@ -87,10 +91,9 @@ public class EntityUtils {
      * @throws FindException if there was an error retrieving the entities.
      */
     public static EntityHeaderSet<EntityHeader> getEntities(@NotNull final EntityType type) throws FindException {
-        final EntityHeaderSet<EntityHeader> entities;
+        EntityHeaderSet<EntityHeader> entities = new EntityHeaderSet<>();
         if (type == EntityType.ASSERTION_ACCESS) {
             // get assertion access from registry as they may not all be persisted in the database
-            entities = new EntityHeaderSet<>();
             final ConsoleAssertionRegistry assertionRegistry = TopComponents.getInstance().getAssertionRegistry();
             final Collection<AssertionAccess> assertions = assertionRegistry.getPermittedAssertions();
             long nonPersistedAssertions = 0L;
@@ -111,7 +114,6 @@ public class EntityUtils {
                 entities.add(assertionHeader);
             }
         } else if (type == EntityType.SSG_KEY_METADATA) {
-            entities = new EntityHeaderSet<>();
             long nonPersistedMetadatas = 0L;
             try {
                 final TrustedCertAdmin trustedCertManager = Registry.getDefault().getTrustedCertManager();
@@ -131,6 +133,25 @@ public class EntityUtils {
             } catch (final IOException | KeyStoreException | CertificateException e) {
                 throw new FindException("Error retrieving private key metadata.", e);
             }
+        } else if (type == EntityType.CLUSTER_PROPERTY) {
+            final Map<String, EntityHeader> clusterProperties = new HashMap<>();
+            final Collection<ClusterProperty> persistedProperties = Registry.getDefault().getClusterStatusAdmin().getAllProperties();
+            for (final ClusterProperty persistedProperty : persistedProperties) {
+                clusterProperties.put(persistedProperty.getName(),
+                        new EntityHeader(persistedProperty.getGoid(),
+                                EntityType.CLUSTER_PROPERTY, persistedProperty.getName(),
+                                persistedProperty.getProperty(ClusterProperty.DESCRIPTION_PROPERTY_KEY),
+                                persistedProperty.getVersion()));
+            }
+            final Collection<ClusterPropertyDescriptor> mightBePersistedProperties = Registry.getDefault().getClusterStatusAdmin().getAllPropertyDescriptors();
+            for (final ClusterPropertyDescriptor mightBePersistedProperty : mightBePersistedProperties) {
+                // persisted one has precedence
+                if (!clusterProperties.containsKey(mightBePersistedProperty.getName())) {
+                    clusterProperties.put(mightBePersistedProperty.getName(),
+                            new EntityHeader(mightBePersistedProperty.getName(), EntityType.CLUSTER_PROPERTY, mightBePersistedProperty.getName(), mightBePersistedProperty.getDescription(), 0));
+                }
+            }
+            entities.addAll(clusterProperties.values());
         } else {
             entities = Registry.getDefault().getRbacAdmin().findEntities(type);
         }

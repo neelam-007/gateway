@@ -84,6 +84,7 @@ public class PermissionSummaryPanel extends WizardStepPanel {
     }
 
     private static void generateScopedPermissions(final PermissionsConfig config, final FolderAdmin folderAdmin) {
+        final EntityType entityType = config.getType();
         switch (config.getScopeType()) {
             case CONDITIONAL:
                 final Map<Goid, Folder> retrievedFolders = new HashMap<>();
@@ -126,7 +127,7 @@ public class PermissionSummaryPanel extends WizardStepPanel {
                     for (final SecurityZone zone : config.getSelectedZones()) {
                         for (final FolderHeader folderHeader : config.getSelectedFolders()) {
                             try {
-                                final Permission permission = new Permission(config.getRole(), op, config.getType());
+                                final Permission permission = new Permission(config.getRole(), op, entityType);
                                 if (zone != null) {
                                     permission.getScope().add(new SecurityZonePredicate(permission, zone.equals(SecurityZoneUtil.getNullZone()) ? null : zone));
                                 }
@@ -161,9 +162,9 @@ public class PermissionSummaryPanel extends WizardStepPanel {
             case SPECIFIC_OBJECTS:
                 for (final EntityHeader header : config.getSelectedEntities()) {
                     for (final OperationType op : config.getOperations()) {
-                        final Permission specificEntityPermission = new Permission(config.getRole(), op, config.getType());
+                        final Permission specificEntityPermission = new Permission(config.getRole(), op, entityType);
                         final ScopePredicate specificPredicate;
-                        if (config.getType() == EntityType.ASSERTION_ACCESS) {
+                        if (entityType == EntityType.ASSERTION_ACCESS || entityType == EntityType.CLUSTER_PROPERTY) {
                             specificPredicate = new AttributePredicate(specificEntityPermission, NAME, header.getName());
                         } else {
                             specificPredicate = new ObjectIdentityPredicate(specificEntityPermission, header.getStrId());
@@ -173,7 +174,7 @@ public class PermissionSummaryPanel extends WizardStepPanel {
                         config.getGeneratedPermissions().add(specificEntityPermission);
 
                     }
-                    if (config.getType() == EntityType.FOLDER && config.isSpecificFolderAncestry()) {
+                    if (entityType == EntityType.FOLDER && config.isSpecificFolderAncestry()) {
                         config.getGeneratedPermissions().add(createReadFolderAncestryPermission(config, header));
                     }
                 }

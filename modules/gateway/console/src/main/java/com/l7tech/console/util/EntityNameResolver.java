@@ -102,7 +102,7 @@ public class EntityNameResolver {
         Entity entity = null;
         // entity which is related to but not referenced by the header
         Entity relatedEntity = null;
-        if (header.getType() != null && (StringUtils.isBlank(name) || name.equalsIgnoreCase(header.getStrId()))) {
+        if (header.getType() != null && (StringUtils.isBlank(name))) {
             switch (header.getType()) {
                 case POLICY:
                     final Policy policy = policyAdmin.findPolicyByPrimaryKey(header.getGoid());
