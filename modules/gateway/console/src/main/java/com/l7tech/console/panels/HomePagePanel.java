@@ -143,7 +143,7 @@ public class HomePagePanel extends JPanel {
 
     private List<HomePageToolbarAction> createActionList() {
         actions.clear();
-        if (Registry.getDefault().getLicenseManager().getLicense() == null) {
+        if (!Registry.getDefault().getLicenseManager().isPrimaryLicenseInstalled()) {
             add("cert32.gif", new ManageClusterLicensesAction());
         }
 
