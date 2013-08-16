@@ -6,6 +6,7 @@
 package com.l7tech.console.action;
 
 import com.l7tech.console.panels.licensing.ManageLicensesDialog;
+import com.l7tech.console.util.ConsoleLicenseManager;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
@@ -30,6 +31,12 @@ public class ManageClusterLicensesAction extends SecureAction {
 
     protected String iconResource() {
         return "com/l7tech/console/resources/cert16.gif";
+    }
+
+    @Override
+    protected boolean isPrerequisiteFeatureSetLicensed(ConsoleLicenseManager lm) {
+        // this action does not require service:Admin to be licensed
+        return true;
     }
 
     protected void performAction() {

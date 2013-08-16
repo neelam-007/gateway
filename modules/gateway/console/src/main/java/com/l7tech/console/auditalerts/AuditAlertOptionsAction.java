@@ -1,5 +1,6 @@
 package com.l7tech.console.auditalerts;
 
+import com.l7tech.console.util.ConsoleLicenseManager;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.objectmodel.EntityType;
@@ -32,7 +33,7 @@ public class AuditAlertOptionsAction extends SecureAction {
 
     private AuditAlertOptionsAction() {
         super(null);
-        auditWatchers = new ArrayList<AuditWatcher>();
+        auditWatchers = new ArrayList<>();
     }
 
     public void addAuditWatcher(AuditWatcher watcher) {
@@ -46,6 +47,12 @@ public class AuditAlertOptionsAction extends SecureAction {
 
     protected String iconResource() {
         return "com/l7tech/console/resources/Properties16.gif";
+    }
+
+    @Override
+    protected boolean isPrerequisiteFeatureSetLicensed(ConsoleLicenseManager lm) {
+        // this action does not require service:Admin to be licensed
+        return true;
     }
 
     public boolean isAuthorized() {

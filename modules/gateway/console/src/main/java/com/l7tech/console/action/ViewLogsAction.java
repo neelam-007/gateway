@@ -1,6 +1,7 @@
 package com.l7tech.console.action;
 
 import com.l7tech.console.panels.LogChooserWindow;
+import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.security.rbac.AttemptedOther;
 import com.l7tech.gateway.common.security.rbac.OtherOperationName;
 import com.l7tech.gui.util.Utilities;
@@ -19,6 +20,7 @@ public class ViewLogsAction extends SecureAction {
 
     public ViewLogsAction() {
         super(new AttemptedOther(EntityType.LOG_SINK, OtherOperationName.LOG_VIEWER.getOperationName()));
+        Registry.getDefault().getLicenseManager().addLicenseListener(this);
     }
 
     /**
@@ -30,7 +32,7 @@ public class ViewLogsAction extends SecureAction {
     }
 
     /**
-     * @return the aciton description
+     * @return the action description
      */
     @Override
     public String getDescription() {

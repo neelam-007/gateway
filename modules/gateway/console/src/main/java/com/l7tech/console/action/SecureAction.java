@@ -31,6 +31,7 @@ public abstract class SecureAction extends BaseAction implements LogonListener, 
     static final Logger logger = Logger.getLogger(SecureAction.class.getName());
 
     // Well-known feature set names
+    public static final String ADMIN_FEATURESET_NAME = "service:Admin";
     public static final String TRUSTSTORE_FEATURESET_NAME = "service:TrustStore";
     public static final String KEYSTORE_FEATURESET_NAME = "service:KeyStore";
     public static final String SECURE_PASSWORD_FEATURESET_NAME = "service:SecurePassword";
@@ -226,19 +227,30 @@ public abstract class SecureAction extends BaseAction implements LogonListener, 
      * @return true if at least one of the required assertion license classnames is licensed.
      */
     public final boolean isLicensed() {
-        if (featureSetNames.isEmpty())
-            return true;
-
         ConsoleLicenseManager lm = ConsoleLicenseManager.getInstance();
 
-        // actions should not be enabled unless the admin service is also enabled
-        if (lm.isFeatureEnabled(ConsoleLicenseManager.SERVICE_ADMIN)) {
+        if (isPrerequisiteFeatureSetLicensed(lm)) {
+            if (featureSetNames.isEmpty())
+                return true;
+
             for (String s : featureSetNames)
                 if (lm.isFeatureEnabled(s))
                     return true;
         }
 
         return false;
+    }
+
+    /**
+     * Check that all prerequisite features for this Secure Action are licensed. The default prerequisite feature
+     * is "service:Admin". This should be overridden in cases of additional, different, or no features being required.
+     *
+     * @param lm a ConsoleLicenseManager
+     * @return true iff all prerequisite features are licensed
+     */
+    protected boolean isPrerequisiteFeatureSetLicensed(ConsoleLicenseManager lm) {
+        // by default, secure actions should not be enabled unless the admin service is also enabled
+        return lm.isFeatureEnabled(ADMIN_FEATURESET_NAME);
     }
 
     @SuppressWarnings({"SimplifiableIfStatement"})
