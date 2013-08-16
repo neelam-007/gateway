@@ -2,7 +2,7 @@ package com.l7tech.external.assertions.gims;
 
 import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.gateway.common.service.ServiceTemplate;
-import com.l7tech.server.event.system.LicenseEvent;
+import com.l7tech.server.event.system.LicenseChangeEvent;
 import com.l7tech.server.service.ServiceTemplateManager;
 import com.l7tech.server.util.ApplicationEventProxy;
 import org.junit.After;
@@ -64,7 +64,7 @@ public class GenericIdentityManagementServiceModuleLoadListenerTest {
     @Test
     public void testOnApplicationEvent() throws Exception {
         when(mockLicenseManager.isFeatureEnabled(new GenericIdentityManagementServiceAssertion().getFeatureSetName())).thenReturn(true);
-        ApplicationEvent event = new LicenseEvent("", Level.INFO, "", "");
+        ApplicationEvent event = new LicenseChangeEvent("", Level.INFO, "", "");
         fixture.onApplicationEvent(event);
         verify(mockServiceTemplateManager, times(1)).register(argThat(new ServiceTemplateArgMatcher(GenericIdentityManagementServiceModuleLoadListener.SERVICE_TEMPLATE_NAME, GenericIdentityManagementServiceModuleLoadListener.DEFAULT_URI_PREFIX)));
 
@@ -73,7 +73,7 @@ public class GenericIdentityManagementServiceModuleLoadListenerTest {
     @Test
     public void shouldFailOnLicenseEventWhenFeatureNotEnabled() throws Exception {
         when(mockLicenseManager.isFeatureEnabled(new GenericIdentityManagementServiceAssertion().getFeatureSetName())).thenReturn(false);
-        ApplicationEvent event = new LicenseEvent("", Level.INFO, "", "");
+        ApplicationEvent event = new LicenseChangeEvent("", Level.INFO, "", "");
         fixture.onApplicationEvent(event);
         verify(mockServiceTemplateManager, never()).register(argThat(new ServiceTemplateArgMatcher(GenericIdentityManagementServiceModuleLoadListener.SERVICE_TEMPLATE_NAME, GenericIdentityManagementServiceModuleLoadListener.DEFAULT_URI_PREFIX)));
 

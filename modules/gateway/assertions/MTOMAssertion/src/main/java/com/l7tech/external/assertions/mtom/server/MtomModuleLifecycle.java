@@ -1,8 +1,11 @@
 package com.l7tech.external.assertions.mtom.server;
 
+import com.l7tech.external.assertions.mtom.MtomDecodeAssertion;
+import com.l7tech.external.assertions.mtom.MtomEncodeAssertion;
+import com.l7tech.external.assertions.mtom.MtomValidateAssertion;
 import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.policy.PolicyType;
-import com.l7tech.server.event.system.LicenseEvent;
+import com.l7tech.server.event.system.LicenseChangeEvent;
 import com.l7tech.server.event.system.Started;
 import com.l7tech.server.policy.AssertionModuleRegistrationEvent;
 import com.l7tech.server.policy.PolicyCache;
@@ -65,7 +68,7 @@ public class MtomModuleLifecycle implements ApplicationListener {
 
     @Override
     public void onApplicationEvent( final ApplicationEvent event ) {
-        if ( event instanceof LicenseEvent ) {
+        if ( event instanceof LicenseChangeEvent) {
             handleLicenceEvent();
         } else if ( event instanceof AssertionModuleRegistrationEvent ) {
             if (!initialized()) handleLicenceEvent();
@@ -79,6 +82,9 @@ public class MtomModuleLifecycle implements ApplicationListener {
     private static final Logger logger = Logger.getLogger(MtomModuleLifecycle.class.getName());
 
     private static final String MTOM_POLICY_RESOURCE = "mtom_decode.xml";
+    private static final String MTOM_DECODE_FEATURE = new MtomDecodeAssertion().getFeatureSetName();
+    private static final String MTOM_ENCODE_FEATURE = new MtomEncodeAssertion().getFeatureSetName();
+    private static final String MTOM_VALIDATE_FEATURE = new MtomValidateAssertion().getFeatureSetName();
 
     private static MtomModuleLifecycle instance = null;
 
@@ -109,7 +115,11 @@ public class MtomModuleLifecycle implements ApplicationListener {
 
     private boolean isLicensed() {
         LicenseManager licMan = (LicenseManager) spring.getBean("licenseManager");
-        return licMan.isFeatureEnabled("set:modularAssertions");
+
+        // require at least one of the Mtom Assertions to be licensed
+        return licMan.isFeatureEnabled(MTOM_DECODE_FEATURE) ||
+                licMan.isFeatureEnabled(MTOM_ENCODE_FEATURE) ||
+                licMan.isFeatureEnabled(MTOM_VALIDATE_FEATURE);
     }
 
     private void registerGlobalPolicy() {

@@ -9,7 +9,7 @@ import com.l7tech.server.GatewayFeatureSets;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.admin.ExtensionInterfaceManager;
-import com.l7tech.server.event.system.LicenseEvent;
+import com.l7tech.server.event.system.LicenseChangeEvent;
 import com.l7tech.util.*;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.context.ApplicationContext;
@@ -762,7 +762,7 @@ public class ServerAssertionRegistry extends AssertionRegistry implements Dispos
             // Ignore events once shutdown starts
             return;
 
-        if (applicationEvent instanceof LicenseEvent) {
+        if (applicationEvent instanceof LicenseChangeEvent) {
             // License has changed.  Ensure that module rescan occurs.
             synchronized (this) {
                 lastScannedDirModTime = 0;

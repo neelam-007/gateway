@@ -13,6 +13,7 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
 import com.l7tech.server.event.GoidEntityInvalidationEvent;
+import com.l7tech.server.event.system.LicenseChangeEvent;
 import com.l7tech.server.event.system.LicenseEvent;
 import com.l7tech.util.*;
 import org.apache.commons.lang.ObjectUtils;
@@ -26,6 +27,7 @@ import java.io.ByteArrayInputStream;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.text.MessageFormat;
 import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -117,7 +119,7 @@ public abstract class AbstractCompositeLicenseManager extends ApplicationObjectS
             rebuildCompositeLicense();
 
             // audit successful installation
-//            audit.logAndAudit(SystemMessages.LICENSE_INSTALLED, Long.toString(license.getId()));
+            fireEvent("License installed", SystemMessages.LICENSE_INSTALLED, Long.toString(license.getId()));
         } catch (SaveException e) {
             throw new LicenseInstallationException(ExceptionUtils.getMessage(e), e);
         } finally {
@@ -137,7 +139,7 @@ public abstract class AbstractCompositeLicenseManager extends ApplicationObjectS
             rebuildCompositeLicense();
 
             // audit successful removal
-//            audit.logAndAudit(SystemMessages.LICENSE_REMOVED, Long.toString(license.getId()));
+            fireEvent("License removed", SystemMessages.LICENSE_REMOVED);
         } catch (DeleteException e) {
             throw new LicenseRemovalException(ExceptionUtils.getMessage(e), e);
         } finally {
@@ -316,11 +318,10 @@ public abstract class AbstractCompositeLicenseManager extends ApplicationObjectS
                 if (null != compositeLicense.get() &&
                         (System.currentTimeMillis() - lastUpdate.get() < DB_FAILURE_GRACE_PERIOD)) {
                     // audit the error, but leave the CompositeLicense as is
-//                    audit.logAndAudit(SystemMessages.LICENSE_DB_ERROR_RETRY, null, e);
+                    fireEvent("Retrying", SystemMessages.LICENSE_DB_ERROR_RETRY);
                 } else {
-//                    audit.logAndAudit(SystemMessages.LICENSE_DB_ERROR_GAVEUP, null, e);
-
                     // grace period has expired, treat as if no licenses exist
+                    fireEvent("Giving up", SystemMessages.LICENSE_DB_ERROR_GAVEUP);
                     setCompositeLicense(null);
                 }
 
@@ -331,7 +332,7 @@ public abstract class AbstractCompositeLicenseManager extends ApplicationObjectS
             }
 
             if(licenseDocuments.isEmpty()) {
-//                audit.logAndAudit(SystemMessages.LICENSE_NO_LICENSE);
+                fireEvent("No license", SystemMessages.LICENSE_NO_LICENSE);
                 setCompositeLicense(null);
             } else {
                 ArrayList<FeatureLicense> featureLicenses = new ArrayList<>();
@@ -345,7 +346,8 @@ public abstract class AbstractCompositeLicenseManager extends ApplicationObjectS
                         FeatureLicense license = createFeatureLicense(document);
                         featureLicenses.add(license);
                     } catch (InvalidLicenseException e) {
-//                        audit.logAndAudit(SystemMessages.LICENSE_INVALID, null, e);
+                        fireEvent("Invalid license", SystemMessages.LICENSE_INVALID);
+
                         // an invalid LicenseDocument has been found - include it as such in the CompositeLicense
                         invalidDocuments.add(document);
                     }
@@ -356,8 +358,8 @@ public abstract class AbstractCompositeLicenseManager extends ApplicationObjectS
                     try {
                         validateLicenseExpiry(license);
                     } catch (InvalidLicenseException e) {
-//                        audit.logAndAudit(SystemMessages.LICENSE_EXPIRED,
-//                                new String[] {Long.toString(license.getId())}, e);
+                        fireEvent("Expired license",
+                                SystemMessages.LICENSE_EXPIRED, Long.toString(license.getId()));
                         expiredLicenses.put(license.getId(), license);
                         continue;
                     }
@@ -365,8 +367,8 @@ public abstract class AbstractCompositeLicenseManager extends ApplicationObjectS
                     try {
                         validateLicenseStart(license);
                     } catch (InvalidLicenseException e) {
-//                        audit.logAndAudit(SystemMessages.LICENSE_NOT_YET_VALID,
-//                                new String[] {Long.toString(license.getId())}, e);
+                        fireEvent("Invalid license",
+                                SystemMessages.LICENSE_NOT_YET_VALID, Long.toString(license.getId()));
                         invalidLicenses.put(license.getId(), license);
                         continue;
                     }
@@ -374,8 +376,8 @@ public abstract class AbstractCompositeLicenseManager extends ApplicationObjectS
                     try {
                         validateIssuer(license);
                     } catch (InvalidLicenseException e) {
-//                        audit.logAndAudit(SystemMessages.LICENSE_INVALID_ISSUER,
-//                                new String[] {Long.toString(license.getId())}, e);
+                        fireEvent("Invalid license",
+                                SystemMessages.LICENSE_INVALID_ISSUER, Long.toString(license.getId()));
                         invalidLicenses.put(license.getId(), license);
                         continue;
                     }
@@ -383,8 +385,8 @@ public abstract class AbstractCompositeLicenseManager extends ApplicationObjectS
                     try {
                         validateProduct(license);
                     } catch (InvalidLicenseException e) {
-//                        audit.logAndAudit(SystemMessages.LICENSE_INVALID_PRODUCT,
-//                                new String[] {Long.toString(license.getId())}, e);
+                        fireEvent("Invalid license",
+                                SystemMessages.LICENSE_INVALID_PRODUCT, Long.toString(license.getId()));
                         invalidLicenses.put(license.getId(), license);
                         continue;
                     }
@@ -393,9 +395,9 @@ public abstract class AbstractCompositeLicenseManager extends ApplicationObjectS
                 }
 
                 if (validLicenses.isEmpty()) {
-//                    audit.logAndAudit(SystemMessages.LICENSE_NO_LICENSE);
+                    fireEvent("No license", SystemMessages.LICENSE_NO_LICENSE);
                 } else {
-//                    audit.logAndAudit(SystemMessages.LICENSE_FOUND);
+                    fireEvent("License(s) found", SystemMessages.LICENSE_FOUND);
                 }
 
                 final CompositeLicense newCompositeLicense = new CompositeLicense(validLicenses,
@@ -427,21 +429,42 @@ public abstract class AbstractCompositeLicenseManager extends ApplicationObjectS
             lastUpdate.set(System.currentTimeMillis());
             licenseSet = true;
 
-            fireEvent("Updated", SystemMessages.LICENSE_UPDATED);
+            fireChangeEvent("Updated", SystemMessages.LICENSE_UPDATED);
         } finally {
             updateLock.unlock();
         }
     }
 
     /**
-     * Publish a LicenseEvent.
+     * Create and publish a LicenseEvent
      *
      * @param action the event action
      * @param message the audit message
      */
-    private void fireEvent(final String action, final AuditDetailMessage message) {
-        final LicenseEvent event = new LicenseEvent(action, message.getLevel(), action, message.getMessage());
+    private void fireEvent(final String action, final AuditDetailMessage message, String ... params) {
+        String formattedMessage = formatMessage(message.getMessage(), params);
 
+        fireEvent(new LicenseEvent(this, message.getLevel(), action, formattedMessage));
+    }
+
+    /**
+     * Create and publish a LicenseChangeEvent
+     *
+     * @param action the event action
+     * @param message the audit message
+     */
+    private void fireChangeEvent(final String action, final AuditDetailMessage message, String ... params) {
+        String formattedMessage = formatMessage(message.getMessage(), params);
+
+        fireEvent(new LicenseChangeEvent(this, message.getLevel(), action, formattedMessage));
+    }
+
+    /**
+     * Publish (or queue for publishing when possible) a LicenseEvent.
+     *
+     * @param event the LicenseEvent to publish (or queue)
+     */
+    private void fireEvent(final LicenseEvent event) {
         if (!isRunning()) {
             // Save these and send them out later to avoid deadlocks from sending events too early in startup.
             // This is not strictly thread safe, but is sufficiently so for our current usage (should set/recheck
@@ -458,6 +481,10 @@ public abstract class AbstractCompositeLicenseManager extends ApplicationObjectS
                 }
             }, 0);
         }
+    }
+
+    private String formatMessage(String message, String[] params) {
+        return params.length == 0 ? message : MessageFormat.format(message, params);
     }
 
     // --- Abstract methods --- //

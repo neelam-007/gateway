@@ -18,7 +18,7 @@ import com.l7tech.server.ServerConfig;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.entity.GenericEntityManager;
 import com.l7tech.server.event.GoidEntityInvalidationEvent;
-import com.l7tech.server.event.system.LicenseEvent;
+import com.l7tech.server.event.system.LicenseChangeEvent;
 import com.l7tech.server.event.system.ReadyForMessages;
 import com.l7tech.server.folder.FolderManager;
 import com.l7tech.server.policy.PolicyManager;
@@ -239,7 +239,7 @@ public class ModuleLoadListenerTest {
 
     @Test
     public void onApplicationEventLicenseEvent() {
-        event = new LicenseEvent("", Level.INFO, "", "");
+        event = new LicenseChangeEvent("", Level.INFO, "", "");
         final String featureSetName = new ApiPortalIntegrationAssertion().getFeatureSetName();
         when(licenseManager.isFeatureEnabled(featureSetName)).thenReturn(true);
 
@@ -252,7 +252,7 @@ public class ModuleLoadListenerTest {
 
     @Test
     public void onApplicationEventLicenseEventFeatureNotEnabled() {
-        event = new LicenseEvent("", Level.INFO, "", "");
+        event = new LicenseChangeEvent("", Level.INFO, "", "");
         final String featureSetName = new ApiPortalIntegrationAssertion().getFeatureSetName();
         when(licenseManager.isFeatureEnabled(featureSetName)).thenReturn(false);
 
@@ -269,7 +269,7 @@ public class ModuleLoadListenerTest {
     public void onApplicationEventLicenseEventExceptionReadingKeyPolicyFile() {
         listener = new ModuleLoadListener(applicationContext, apiKeyManager, portalManagedServiceManager,
                 "doesnotexist", ModuleLoadListener.API_PORTAL_INTEGRATION_POLICY_XML);
-        event = new LicenseEvent("", Level.INFO, "", "");
+        event = new LicenseChangeEvent("", Level.INFO, "", "");
         final String featureSetName = new ApiPortalIntegrationAssertion().getFeatureSetName();
         when(licenseManager.isFeatureEnabled(featureSetName)).thenReturn(true);
 
@@ -284,7 +284,7 @@ public class ModuleLoadListenerTest {
     public void onApplicationEventLicenseEventExceptionReadingPlansPolicyFile() {
         listener = new ModuleLoadListener(applicationContext, apiKeyManager, portalManagedServiceManager,
                 ModuleLoadListener.API_KEY_MANAGEMENT_SERVICE_POLICY_XML, "doesnotexist");
-        event = new LicenseEvent("", Level.INFO, "", "");
+        event = new LicenseChangeEvent("", Level.INFO, "", "");
         final String featureSetName = new ApiPortalIntegrationAssertion().getFeatureSetName();
         when(licenseManager.isFeatureEnabled(featureSetName)).thenReturn(true);
 
@@ -299,7 +299,7 @@ public class ModuleLoadListenerTest {
     public void onApplicationEventLicenseEventExceptionReadingApiIntegrationPolicyFile() {
         listener = new ModuleLoadListener(applicationContext, apiKeyManager, portalManagedServiceManager,
                 "doesnotexist", ModuleLoadListener.API_PORTAL_INTEGRATION_POLICY_XML);
-        event = new LicenseEvent("", Level.INFO, "", "");
+        event = new LicenseChangeEvent("", Level.INFO, "", "");
         final String featureSetName = new ApiPortalIntegrationAssertion().getFeatureSetName();
         when(licenseManager.isFeatureEnabled(featureSetName)).thenReturn(true);
 

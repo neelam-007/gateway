@@ -13,6 +13,7 @@ import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.identity.AuthenticationAssertion;
 import com.l7tech.policy.wsp.WspWriter;
+import com.l7tech.server.event.system.LicenseChangeEvent;
 import com.l7tech.server.event.system.LicenseEvent;
 import com.l7tech.server.service.ServiceTemplateManager;
 import com.l7tech.server.util.ApplicationEventProxy;
@@ -77,7 +78,7 @@ public class GatewayManagementModuleLifecycle implements ApplicationListener {
 
     @Override
     public void onApplicationEvent( final ApplicationEvent event ) {
-        if ( event instanceof LicenseEvent) {
+        if ( event instanceof LicenseChangeEvent) {
             handleLicenceEvent();
         }
     }

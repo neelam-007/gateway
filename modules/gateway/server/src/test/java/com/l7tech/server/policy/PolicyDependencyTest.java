@@ -18,7 +18,7 @@ import com.l7tech.policy.wsp.WspConstants;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.server.EntityFinderStub;
 import com.l7tech.server.event.PolicyCacheEvent;
-import com.l7tech.server.event.system.LicenseEvent;
+import com.l7tech.server.event.system.LicenseChangeEvent;
 import com.l7tech.server.event.system.Started;
 import com.l7tech.server.folder.FolderCacheStub;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -442,7 +442,7 @@ public class PolicyDependencyTest {
         assertEquals( "Policy result", AssertionStatus.FAILED, cache.getServerPolicy( new Goid(0,11001L) ).checkRequest( null ) );
 
         policiesToSetAsUnlicensed.clear();
-        cache.onApplicationEvent( new LicenseEvent(this, Level.INFO, "Updated", "New license") );
+        cache.onApplicationEvent( new LicenseChangeEvent(this, Level.INFO, "Updated", "New license") );
 
         assertNotNull( "11001 is valid", cache.getServerPolicy( new Goid(0,11001) ));
         assertNotNull( "12001 is valid", cache.getServerPolicy( new Goid(0,12001) ));

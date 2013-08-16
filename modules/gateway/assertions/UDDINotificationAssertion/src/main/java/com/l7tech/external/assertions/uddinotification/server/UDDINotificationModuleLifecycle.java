@@ -1,8 +1,8 @@
 package com.l7tech.external.assertions.uddinotification.server;
 
+import com.l7tech.server.event.system.LicenseChangeEvent;
 import com.l7tech.server.service.ServiceTemplateManager;
 import com.l7tech.server.util.ApplicationEventProxy;
-import com.l7tech.server.event.system.LicenseEvent;
 import com.l7tech.gateway.common.service.ServiceTemplate;
 import com.l7tech.gateway.common.service.ServiceType;
 import com.l7tech.gateway.common.service.ServiceDocumentWsdlStrategy;
@@ -74,7 +74,7 @@ public class UDDINotificationModuleLifecycle implements ApplicationListener {
 
     @Override
     public void onApplicationEvent( final ApplicationEvent event ) {
-        if ( event instanceof LicenseEvent ) {
+        if ( event instanceof LicenseChangeEvent) {
             handleLicenceEvent();
         }
     }

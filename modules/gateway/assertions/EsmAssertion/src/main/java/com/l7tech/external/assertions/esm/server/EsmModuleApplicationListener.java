@@ -15,7 +15,7 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.wsp.WspWriter;
-import com.l7tech.server.event.system.LicenseEvent;
+import com.l7tech.server.event.system.LicenseChangeEvent;
 import com.l7tech.server.event.system.Started;
 import com.l7tech.server.policy.AssertionModuleRegistrationEvent;
 import com.l7tech.server.policy.AssertionModuleUnregistrationEvent;
@@ -120,7 +120,7 @@ public class EsmModuleApplicationListener implements ApplicationListener {
         } else if (event instanceof AssertionModuleUnregistrationEvent) {
             logger.info("ESM module is unregistering");
             unregisterServices();
-        } else if (event instanceof LicenseEvent) {
+        } else if (event instanceof LicenseChangeEvent) {
             handleLicenceEvent();
         } else if (event instanceof Started) {
             // Make sure we initialize properly on startup (too early to get our own registration event)

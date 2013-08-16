@@ -3,7 +3,7 @@ package com.l7tech.external.assertions.gims;
 import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.gateway.common.service.ServiceTemplate;
 import com.l7tech.gateway.common.service.ServiceType;
-import com.l7tech.server.event.system.LicenseEvent;
+import com.l7tech.server.event.system.LicenseChangeEvent;
 import com.l7tech.server.service.ServiceTemplateManager;
 import com.l7tech.server.util.ApplicationEventProxy;
 import com.l7tech.util.ExceptionUtils;
@@ -74,7 +74,7 @@ public class GenericIdentityManagementServiceModuleLoadListener implements Appli
 
     @Override
     public void onApplicationEvent(final ApplicationEvent applicationEvent) {
-        if (applicationEvent instanceof LicenseEvent) {
+        if (applicationEvent instanceof LicenseChangeEvent) {
             registerServiceTemplate();
         }
     }

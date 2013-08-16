@@ -17,7 +17,7 @@ import com.l7tech.policy.PolicyType;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.event.GoidEntityInvalidationEvent;
-import com.l7tech.server.event.system.LicenseEvent;
+import com.l7tech.server.event.system.LicenseChangeEvent;
 import com.l7tech.server.event.system.ReadyForMessages;
 import com.l7tech.server.folder.FolderManager;
 import com.l7tech.server.policy.PolicyManager;
@@ -85,7 +85,7 @@ public class ModuleLoadListener implements ApplicationListener {
         if (applicationEvent instanceof ReadyForMessages) {
             // init portal managed services
             refreshAllPortalManagedServices();
-        } else if (applicationEvent instanceof LicenseEvent) {
+        } else if (applicationEvent instanceof LicenseChangeEvent) {
             registerServiceTemplates();
         } else if (applicationEvent instanceof GoidEntityInvalidationEvent) {
             final GoidEntityInvalidationEvent event = (GoidEntityInvalidationEvent) applicationEvent;

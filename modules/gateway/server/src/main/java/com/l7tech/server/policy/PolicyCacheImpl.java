@@ -16,7 +16,7 @@ import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.event.GoidEntityInvalidationEvent;
 import com.l7tech.server.event.PolicyCacheEvent;
-import com.l7tech.server.event.system.LicenseEvent;
+import com.l7tech.server.event.system.LicenseChangeEvent;
 import com.l7tech.server.event.system.PolicyReloadEvent;
 import com.l7tech.server.event.system.Started;
 import com.l7tech.server.folder.FolderCache;
@@ -522,7 +522,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
      */
     @Override
     public void onApplicationEvent( final ApplicationEvent applicationEvent ) {
-        if( applicationEvent instanceof LicenseEvent || applicationEvent instanceof AssertionModuleRegistrationEvent ) {
+        if( applicationEvent instanceof LicenseChangeEvent || applicationEvent instanceof AssertionModuleRegistrationEvent ) {
             transactionIfAvailable( new Runnable() {
                 @Override
                 public void run() {

@@ -1,7 +1,7 @@
 package com.l7tech.server;
 
 import com.l7tech.gateway.common.LicenseManager;
-import com.l7tech.server.event.system.LicenseEvent;
+import com.l7tech.server.event.system.LicenseChangeEvent;
 import com.l7tech.server.event.system.Stopped;
 import com.l7tech.server.util.ApplicationEventProxy;
 import com.l7tech.util.Background;
@@ -161,7 +161,7 @@ public abstract class LifecycleBean implements Lifecycle, InitializingBean, Appl
 
     protected void onApplicationEvent(final ApplicationEvent applicationEvent) {
         if ( licenseFeature != null ) {
-            if (applicationEvent instanceof LicenseEvent) {
+            if (applicationEvent instanceof LicenseChangeEvent) {
                 // If the subsystem becomes licensed after bootup, start it now
                 // We do not, however, support de-licensing an already-active subsystem without a reboot
                 if (isStarted())

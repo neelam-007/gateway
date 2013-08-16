@@ -10,7 +10,7 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.server.event.system.DetailedSystemEvent;
-import com.l7tech.server.event.system.LicenseEvent;
+import com.l7tech.server.event.system.LicenseChangeEvent;
 import com.l7tech.server.event.wsman.DryRunInstallPolicyBundleEvent;
 import com.l7tech.server.event.wsman.InstallPolicyBundleEvent;
 import com.l7tech.server.event.wsman.PolicyBundleEvent;
@@ -53,7 +53,7 @@ public class PolicyBundleInstallerLifecycle implements ApplicationListener{
 
     @Override
     public void onApplicationEvent(ApplicationEvent applicationEvent) {
-        if (applicationEvent instanceof LicenseEvent) {
+        if (applicationEvent instanceof LicenseChangeEvent) {
             configureBeans();
             return;
         }
