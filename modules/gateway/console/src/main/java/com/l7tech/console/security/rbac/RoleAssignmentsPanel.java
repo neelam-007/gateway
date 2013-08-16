@@ -7,6 +7,7 @@ import com.l7tech.console.panels.identity.finder.SearchType;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.admin.IdentityAdmin;
+import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.gateway.common.security.rbac.RbacAdmin;
 import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.gateway.common.security.rbac.RoleAssignment;
@@ -40,8 +41,7 @@ public class RoleAssignmentsPanel extends JPanel {
     private static final int NAME_COL_INDEX = 0;
     private static final int TYPE_COL_INDEX = 1;
     private static final int PROVIDER_COL_INDEX = 2;
-    private static final String UNKNOWN = "unknown";
-    private static final String UNAVAILABLE = "unavailable";
+    private static final String UNAVAILABLE = "<name unavailable>";
     private JPanel assignmentsContentPanel;
     private JTextField assignmentsRoleTextField;
     private JTable assignmentsTable;
@@ -89,30 +89,7 @@ public class RoleAssignmentsPanel extends JPanel {
                 column("Name", 80, 300, 99999, new Functions.Unary<String, RoleAssignment>() {
                     @Override
                     public String call(final RoleAssignment assignment) {
-                        String name = UNKNOWN;
-                        final IdentityAdmin identityAdmin = Registry.getDefault().getIdentityAdmin();
-                        try {
-                            if (EntityType.USER.getName().equalsIgnoreCase(assignment.getEntityType())) {
-                                final User found = identityAdmin.findUserByID(assignment.getProviderId(), assignment.getIdentityId());
-                                if (found != null) {
-                                    name = found.getLogin();
-                                }
-                            } else if (EntityType.GROUP.getName().equalsIgnoreCase(assignment.getEntityType())) {
-                                final Group found = identityAdmin.findGroupByID(assignment.getProviderId(), assignment.getIdentityId());
-                                if (found != null) {
-                                    name = found.getName();
-                                }
-                            } else {
-                                logger.log(Level.WARNING, "Expected group or user but received: " + assignment.getEntityType());
-                            }
-                            if (!name.isEmpty()) {
-                                knownAssignmentNames.put(assignment, name);
-                            }
-                        } catch (final FindException e) {
-                            logger.log(Level.WARNING, "Error retrieving identity: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-                            name = UNAVAILABLE;
-                        }
-                        return name;
+                        return knownAssignmentNames.get(assignment);
                     }
                 }),
                 column("Type", 80, 300, 99999, new Functions.Unary<String, RoleAssignment>() {
@@ -124,7 +101,7 @@ public class RoleAssignmentsPanel extends JPanel {
                 column("Provider", 80, 300, 99999, new Functions.Unary<String, RoleAssignment>() {
                     @Override
                     public String call(final RoleAssignment assignment) {
-                        String providerName = UNKNOWN;
+                        String providerName = UNAVAILABLE;
                         final Goid providerId = assignment.getProviderId();
                         final IdentityProviderConfig knownProvider = knownProviders.get(providerId);
                         if (knownProvider != null) {
@@ -136,9 +113,8 @@ public class RoleAssignmentsPanel extends JPanel {
                                     providerName = found.getName();
                                     knownProviders.put(providerId, found);
                                 }
-                            } catch (final FindException e) {
+                            } catch (final FindException | PermissionDeniedException e) {
                                 logger.log(Level.WARNING, "Error retrieving provider: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-                                providerName = UNAVAILABLE;
                             }
                         }
                         return providerName;
@@ -151,6 +127,28 @@ public class RoleAssignmentsPanel extends JPanel {
         assignmentsTable.getSelectionModel().addListSelectionListener(enableDisableListener);
         assignmentsTableModel.addTableModelListener(enableDisableListener);
         Utilities.setRowSorter(assignmentsTable, assignmentsTableModel);
+    }
+
+    private void loadIdentityNameForAssignment(final RoleAssignment assignment) throws FindException {
+        String name = null;
+        final IdentityAdmin identityAdmin = Registry.getDefault().getIdentityAdmin();
+        if (EntityType.USER.getName().equalsIgnoreCase(assignment.getEntityType())) {
+            final User found = identityAdmin.findUserByID(assignment.getProviderId(), assignment.getIdentityId());
+            if (found != null) {
+                name = found.getLogin();
+            }
+        } else if (EntityType.GROUP.getName().equalsIgnoreCase(assignment.getEntityType())) {
+            final Group found = identityAdmin.findGroupByID(assignment.getProviderId(), assignment.getIdentityId());
+            if (found != null) {
+                name = found.getName();
+            }
+        } else {
+            logger.log(Level.WARNING, "Expected group or user but received: " + assignment.getEntityType());
+        }
+        if (name == null) {
+            throw new FindException("Unable to find identity name for assignment: " + assignment);
+        }
+        knownAssignmentNames.put(assignment, name);
     }
 
     private void initButtons() {
@@ -179,7 +177,19 @@ public class RoleAssignmentsPanel extends JPanel {
 
     private void loadTable() {
         if (role != null) {
-            assignmentsTableModel.setRows(new ArrayList<>(this.role.getRoleAssignments()));
+            final ArrayList<RoleAssignment> rows = new ArrayList<>();
+            for (final RoleAssignment assignment : role.getRoleAssignments()) {
+                // filter out assignments which have unreadable users
+                try {
+                    loadIdentityNameForAssignment(assignment);
+                    rows.add(assignment);
+                } catch (final FindException e) {
+                    logger.log(Level.WARNING, "User does not have permission to read the role assignment identity: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                } catch (final PermissionDeniedException e) {
+                    logger.log(Level.WARNING, "Unable to determine name for the role assignment identity: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                }
+            }
+            assignmentsTableModel.setRows(rows);
         } else {
             assignmentsTableModel.setRows(Collections.<RoleAssignment>emptyList());
         }
