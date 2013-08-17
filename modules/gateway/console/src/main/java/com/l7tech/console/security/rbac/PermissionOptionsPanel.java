@@ -41,14 +41,17 @@ public class PermissionOptionsPanel extends WizardStepPanel {
     private PermissionsConfig config;
 
     static {
+        SINGULAR_ENTITY_TYPES = new HashSet<>();
+        SINGULAR_ENTITY_TYPES.add(EntityType.SSG_KEYSTORE);
+        SINGULAR_ENTITY_TYPES.add(EntityType.RESOLUTION_CONFIGURATION);
+        SINGULAR_ENTITY_TYPES.add(EntityType.PASSWORD_POLICY);
+
         ENTITY_TYPES = new TreeMap(ComparatorUtils.nullLowComparator(EntityType.NAME_COMPARATOR));
         ENTITY_TYPES.put(null, null);
         for (final EntityType type : EntityType.values()) {
             if (type != EntityType.ANY && type.isDisplayedInGui()) {
                 final Set<OperationType> invalidOps = new HashSet<>();
-                if (type == EntityType.ASSERTION_ACCESS ||
-                        type == EntityType.SSG_KEYSTORE ||
-                        type == EntityType.RESOLUTION_CONFIGURATION) {
+                if (SINGULAR_ENTITY_TYPES.contains(type) || type == EntityType.ASSERTION_ACCESS) {
                     invalidOps.add(OperationType.CREATE);
                     invalidOps.add(OperationType.DELETE);
                 } else if (type == EntityType.SERVICE_TEMPLATE) {
@@ -59,10 +62,6 @@ public class PermissionOptionsPanel extends WizardStepPanel {
                 ENTITY_TYPES.put(type, invalidOps);
             }
         }
-
-        SINGULAR_ENTITY_TYPES = new HashSet<>();
-        SINGULAR_ENTITY_TYPES.add(EntityType.SSG_KEYSTORE);
-        SINGULAR_ENTITY_TYPES.add(EntityType.RESOLUTION_CONFIGURATION);
     }
 
     public PermissionOptionsPanel() {
